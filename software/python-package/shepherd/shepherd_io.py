@@ -245,7 +245,7 @@ class SharedMem(object):
         )
         gpio_values = np.frombuffer(
             self.mapped_mem,
-            "=u1",
+            "=u2",
             count=n_gpio_events,
             offset=gpio_values_offset,
         )
