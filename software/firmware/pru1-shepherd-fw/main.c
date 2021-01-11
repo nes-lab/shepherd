@@ -19,24 +19,11 @@
 #define HOST_INT_TIMESTAMP_MASK (1U << 30U)
 #define PRU_INT_MASK 		(1U << 31U)
 
-#ifndef SHEPHERD_VER
-#define SHEPHERD_VER 1
-#endif
-
-#if (SHEPHERD_VER == 1)
-
-#define DEBUG_PIN0_MASK         BIT_SHIFT(P8_41)
-#define DEBUG_PIN1_MASK         BIT_SHIFT(P8_42)
-
-#define GPIO_MASK		(0x0F)
-
-#elif (SHEPHERD_VER == 2)
-
 // both pins have a LED
 #define DEBUG_PIN0_MASK 	BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK 	BIT_SHIFT(P8_30)
 
-#define GPIO_MASK		(0x00FF) // (0x03FF) TODO: reduced to 8 bit register
+#define GPIO_MASK		(0x03FF)
 
 /* overview for current pin-mirroring
 #define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
@@ -51,9 +38,6 @@
 #define TARGET_GPIO4            BIT_SHIFT(P8_29) // r31_09
 */
 
-#else
-#error "shepherd-version not defined"
-#endif
 
 /* The IEP is clocked with 200 MHz -> 5 nanoseconds per tick */
 #define TIMER_TICK_NS       5U
@@ -168,7 +152,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem,
 
 		simple_mutex_enter(&shared_mem->gpio_edges_mutex);
 		shared_mem->gpio_edges->timestamp_ns[cIDX] = gpio_timestamp;
-		shared_mem->gpio_edges->bitmask[cIDX] = (uint8_t)gpio_status; // TODO: should be >= 10 bit for V2, leave 8 bit for now
+		shared_mem->gpio_edges->bitmask[cIDX] = (uint16_t)gpio_status;
 		shared_mem->gpio_edges->idx = cIDX + 1;
 		simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 	}
