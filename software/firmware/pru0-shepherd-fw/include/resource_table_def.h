@@ -40,6 +40,7 @@
 #include "resource_table.h"
 
 #include "commons.h"
+#include "ringbuffer.h"
 
 /*
  * Sizes of the virtqueues (expressed in number of buffers supported,
@@ -58,6 +59,11 @@
 
 /* Definition for unused interrupts */
 #define HOST_UNUSED     255U
+
+#define SIZE_CARVEOUT	(RING_SIZE * sizeof(struct SampleBuffer))
+
+// pseudo-assertion to test for correct struct-size, zero cost
+extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= 64 * (8 + 4 + 2*10000*4 + 4 + 8*16384 + 2*16384))];
 
 /* Mapping sysevts to a channel. Each pair contains a sysevt, channel. */
 struct ch_map pru_intc_map[] = {
@@ -135,12 +141,12 @@ struct my_resource_table resourceTable = {
                 },
         },
         {
-                TYPE_CARVEOUT, 0x0, /* Memory address */
-                0x0, /* Physical address */
-                14558208, /* Length in bytes 64*(2*10000*4+12+4+16384+8*16384) */
-                0, /* Flags */
-                0, /* Reserved */
-                "PRU_HOST_SHARED_MEM"
+		TYPE_CARVEOUT, 0x0, /* Memory address */
+		0x0, /* Physical address */
+		SIZE_CARVEOUT, /* ~ 15 MB */
+		0, /* Flags */
+		0, /* Reserved */
+		"PRU_HOST_SHARED_MEM"
         },
 };
 
