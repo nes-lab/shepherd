@@ -190,7 +190,7 @@ class LogWriter(object):
         self.gpio_grp.create_dataset(
             "value",
             (0,),
-            dtype="u1",
+            dtype="u2",
             maxshape=(None,),
             compression=LogWriter.compression_algo,
             #compression_opts=LogWriter.compression_level,
