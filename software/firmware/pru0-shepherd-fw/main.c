@@ -21,8 +21,7 @@
 #include "ringbuffer.h"
 #include "sampling.h"
 #include "shepherd_config.h"
-#include "virtcap.h"
-
+#include "virtual_regulator.h"
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 0xFFFFFFFF
@@ -212,8 +211,8 @@ void main(void)
 	shared_mememory->samples_per_buffer = ADC_SAMPLES_PER_BUFFER;
 	shared_mememory->buffer_period_ns = BUFFER_PERIOD_NS;
 
-	shared_mememory->harvesting_voltage = 0;
-	shared_mememory->shepherd_mode = MODE_HARVESTING;
+	shared_mememory->dac_ch_a_voltage = 0;
+	shared_mememory->shepherd_mode = MODE_HARVEST;
 
 	shared_mememory->next_timestamp_ns = 0;
 	shared_mememory->analog_sample_counter = 0;
@@ -243,13 +242,11 @@ reset:
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
 	// TODO: how do we make sure, that virtcap_settings & calibration_settings is initialized?
-	if (shared_mememory->shepherd_mode == MODE_VIRTCAP)
-	virtcap_init((struct VirtCapSettings *)&shared_mememory->virtcap_settings,
-		 (struct CalibrationSettings *)&shared_mememory->calibration_settings);
+	if (shared_mememory->shepherd_mode == MODE_EMULATE)
+		vreg_init((struct VirtCapSettings *)&shared_mememory->virtcap_settings, (struct CalibrationSettings *)&shared_mememory->calibration_settings);
 
 	ring_init(&free_buffers);
-	sampling_init((enum ShepherdMode)shared_mememory->shepherd_mode,
-	      shared_mememory->harvesting_voltage);
+	sample_init((enum ShepherdMode)shared_mememory->shepherd_mode, shared_mememory->dac_ch_a_voltage);
 	shared_mememory->gpio_edges = NULL;
 
 	/* Clear all interrupt events */
