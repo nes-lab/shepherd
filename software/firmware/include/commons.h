@@ -35,10 +35,10 @@ enum DEPMsgID {
 enum SyncMsgID { MSG_SYNC_CTRL_REQ = 0x55, MSG_SYNC_CTRL_REP = 0xAA };
 
 enum ShepherdMode {
-	MODE_HARVESTING,
-	MODE_LOAD,
-	MODE_EMULATION,
-	MODE_VIRTCAP,
+	MODE_HARVEST,
+	MODE_HARVEST_TEST,
+	MODE_EMULATE,
+	MODE_EMULATE_TEST,
 	MODE_DEBUG
 };
 enum ShepherdState {
@@ -130,8 +130,8 @@ struct SharedMem {
 	uint32_t shepherd_state;
 	/* Stores the mode, e.g. harvesting or emulation */
 	uint32_t shepherd_mode;
-	/* Allows setting a fixed harvesting voltage as reference for the boost converter */
-	uint32_t harvesting_voltage;
+	/* Allows setting a fixed harvesting voltage as reference for the boost converter, TODO */
+	uint32_t dac_ch_a_voltage;
 	/* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
 	uint32_t mem_base_addr;
 	/* Length of shared area in DDR RAM */
@@ -169,13 +169,5 @@ struct SharedMem {
 	bool_ft cmp1_handled_by_pru0;
 	bool_ft cmp1_handled_by_pru1;
 } __attribute__((packed));
-
-
-
-struct ADCReading {
-	int32_t current;
-	int32_t voltage;
-};
-
 
 #endif /* __COMMONS_H_ */
