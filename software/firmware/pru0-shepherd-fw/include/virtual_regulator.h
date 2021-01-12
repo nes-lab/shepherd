@@ -31,14 +31,12 @@ static const struct VirtCapSettings kBQ25570Settings = {
     {4551,4551,4602,4708,4708,4708,4708,4654,4654,},
     {4602,4654,4681,4654,4602,4628,4628,4602,4602,},
   }
-};
+}; // TODO: remove, get fully from pyShepherd
 
-void virtcap_init(struct VirtCapSettings *vcap_arg,
-		  struct CalibrationSettings *calib_arg);
-void virtcap_update(int32_t current_measured, int32_t voltage_measured,
-		    int32_t input_current, int32_t input_voltage);
+void vreg_init(struct VirtCapSettings *vcap_arg, struct CalibrationSettings *calib_arg);
+uint32_t vreg_update(uint32_t current_measured, uint32_t input_current, uint32_t input_voltage);
 
-bool_ft virtcap_get_output_state();
+bool_ft get_output_state();
 
 static inline int32_t voltage_mv_to_logic(int32_t voltage);
 static inline int32_t current_ua_to_logic(int32_t current);

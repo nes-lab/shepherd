@@ -1,4 +1,4 @@
-#include "virtcap.h"
+#include "virtual_regulator.h"
 #include <stdint.h>
 #include <stdio.h>
 #include "commons.h"
@@ -71,18 +71,15 @@ static struct CalibrationSettings cali_cfg = {
 	.adc_load_voltage_offset =  ADC_LOAD_VOLTAGE_OFFSET,
 };
 
-void virtcap_init(struct VirtCapSettings *const vcap_arg,
-		  struct CalibrationSettings *const cali_arg)
+void vreg_init(struct VirtCapSettings *vcap_arg, struct CalibrationSettings *calib_arg)
 {
 	vcap_cfg = *vcap_arg; // copies content of whole struct
-	cali_cfg = *cali_arg;
+	cali_cfg = *calib_arg;
 
-	GPIO_OFF(VIRTCAP_OUT_MASK);
-
-	cali_arg->adc_load_current_gain = ADC_LOAD_CURRENT_GAIN; // TODO: why overwriting values provided by system?
-	cali_arg->adc_load_current_offset = ADC_LOAD_CURRENT_OFFSET;
-	cali_arg->adc_load_voltage_gain = ADC_LOAD_VOLTAGE_GAIN;
-	cali_arg->adc_load_voltage_offset = ADC_LOAD_VOLTAGE_OFFSET;
+	calib_arg->adc_load_current_gain = ADC_LOAD_CURRENT_GAIN; // TODO: why overwriting values provided by system?
+	calib_arg->adc_load_current_offset = ADC_LOAD_CURRENT_OFFSET;
+	calib_arg->adc_load_voltage_gain = ADC_LOAD_VOLTAGE_GAIN;
+	calib_arg->adc_load_voltage_offset = ADC_LOAD_VOLTAGE_OFFSET;
 
 	*vcap_arg = kBQ25570Settings; // TODO: weird config in 3 Steps, why overwriting values provided by system?
 
@@ -118,12 +115,12 @@ void virtcap_init(struct VirtCapSettings *const vcap_arg,
 	// TODO: add tests for valid ranges
 }
 
-void virtcap_update(int32_t output_current, const int32_t output_voltage,
-		    const int32_t input_current, const int32_t input_voltage) // TODO: out-volt not needed here, even remove spi-read from calling fn
+uint32_t vreg_update(const uint32_t current_measured, const uint32_t input_current,
+		       const uint32_t input_voltage)
 {
 	// TODO: explain design goals and limitations... why does the code looks that way
 
-	const int32_t output_efficiency = lookup(vcap_cfg.lookup_output_efficiency, output_current);
+	const int32_t output_efficiency = lookup(vcap_cfg.lookup_output_efficiency, current_measured);
     	const int32_t input_efficiency = lookup(vcap_cfg.lookup_input_efficiency, input_current);
 
 	// TODO: whole model should be transformed to unsigned, values don't change sign (except sum of dV_cap), we get more resolution, cleaner bit-shifts and safer array access
@@ -134,9 +131,9 @@ void virtcap_update(int32_t output_current, const int32_t output_voltage,
 	cin = cin >> SHIFT_VOLT;
 
 	/* Calculate current (cout) flowing out of the storage capacitor*/
-	if (!is_outputting) output_current = 0;
+	//if (!is_outputting) current_measured = 0;
 
-	int32_t cout = (output_current * output_multiplier) >> SHIFT_VOLT; // TODO: crude simplification here, brings error of +-5%
+	int32_t cout = (current_measured * output_multiplier) >> SHIFT_VOLT; // TODO: crude simplification here, brings error of +-5%
 	cout *= output_efficiency; // TODO: efficiency should be divided for the output, LUT seems to do that, but name confuses
 	cout = cout >> SHIFT_VOLT; // TODO: shift should be some kind of DIV4096() or the real thing, it will get optimized (probably)
 	cout += vcap_cfg.leakage_current; // TODO: ESR could also be considered
@@ -160,15 +157,16 @@ void virtcap_update(int32_t output_current, const int32_t output_voltage,
 		if (is_outputting &&
 		    (new_cap_voltage < vcap_cfg.lower_threshold_voltage)) {
 			is_outputting = 0U; // we fall under our threshold
-			virtcap_set_output_state(0U); // TODO: is_outputting and this fn each keep the same state ...
+			//virtcap_set_output_state(0U); // TODO: is_outputting and this fn each keep the same state ...
 		} else if (!is_outputting &&(new_cap_voltage > vcap_cfg.upper_threshold_voltage)) {
 			is_outputting = 1U; // we have enough voltage to switch on again
-			virtcap_set_output_state(1U);
+			//virtcap_set_output_state(1U);
 			new_cap_voltage = (new_cap_voltage >> 10) * outputcap_scale_factor; // TODO: magic numbers ... could be replaced by matching FN, analog to scale-calculation in init()
 		}
 	}
 
 	cap_voltage = new_cap_voltage;
+	return cap_voltage;
 }
 
 uint32_t SquareRootRounded(const uint32_t a_nInput)
@@ -256,14 +254,6 @@ static int32_t lookup(int32_t table[const][9], const int32_t current)
 		// Should never get here
 		return table[3][8];
 	}
-}
-
-static void virtcap_set_output_state(const bool_ft value)
-{
-	VIRTCAP_OUT_PIN_state = value;
-
-	if (value)  GPIO_ON(VIRTCAP_OUT_MASK);
-	else 	    GPIO_OFF(VIRTCAP_OUT_MASK);
 }
 
 bool_ft virtcap_get_output_state()
