@@ -39,8 +39,10 @@ enum ShepherdMode {
 	MODE_HARVEST_TEST,
 	MODE_EMULATE,
 	MODE_EMULATE_TEST,
-	MODE_DEBUG
-};
+	MODE_DEBUG,
+	MODE_NONE
+}; // TODO: allow to set "NONE", shutsdown hrv & emu
+
 enum ShepherdState {
 	STATE_UNKNOWN,
 	STATE_IDLE,
