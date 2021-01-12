@@ -3,191 +3,240 @@
 #include "gpio.h"
 #include "hw_config.h"
 #include "sampling.h"
-#include "virtcap.h"
+#include "virtual_regulator.h"
 
-#define CMD_ID_ADC      0U
-#define CMD_ID_DAC      1U
-
-#define ADC_CH_V_IN     0U
-#define ADC_CH_V_OUT    1U
-#define ADC_CH_A_IN     2U
-#define ADC_CH_A_OUT    3U
-
-#define MAN_CH_SLCT     ((1U << 15U) | (1U << 14U))
-
-#define DAC_CH_V_ADDR   (1U << 16U)
+/* DAC8562 Register Config */
 #define DAC_CH_A_ADDR   (0U << 16U)
+#define DAC_CH_B_ADDR   (1U << 16U)
+#define DAC_CH_AB_ADDR  (7U << 16U)
 
-#define DAC_CMD_OFFSET  19U
-#define DAC_ADDR_OFFSET 16U
+#define DAC_CMD_OFFSET  (19U)
+#define DAC_ADDR_OFFSET (16U)
 
+#define DAC_MAX_VAL	(0xFFFFu)
+#define DAC_V_LSB	(76.2939e-6)
+
+/* ADS8691 Register Config */
+#define REGISTER_WRITE	(0b11010000u << 24u)
+#define REGISTER_READ	(0b01001000u << 24u)
+
+#define ADDR_REG_PWRCTL	(0x04u << 16u)
+#define WRITE_KEY	(0x69u << 8u)
+#define PWRDOWN		(1u)
+#define NOT_PWRDOWN	(0u)
+
+#define ADDR_REG_RANGE	(0x14u << 16u)
+#define RANGE_SEL_P125 	(0b00001011u)
+
+#define ADC_V_LSB	(19.5313e-6)
+#define ADC_C_LSB	(195.313e-9)
+
+/* VIn = DOut * Gain * Vref  / 2^n */
+/* VIn = DOut * 1.25 * 4.096 / 2^18 */
+/* VIn = DOut * 19.5313 uV */
+/* CIn = DOut * 195.313 nA */
 extern uint32_t adc_readwrite(uint32_t cs_pin, uint32_t val);
+
+/* VOut = (DIn / 2^n ) * VRef * Gain */
+/* VOut = (DIn / 2^16) * 2.5  * 2 */
+/* VOut = DIn * 76.2939 uV  */
 extern void dac_write(uint32_t cs_pin, uint32_t val);
+
 
 static inline void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-	/* Read current  and select channel 0 (voltage) for the read after! */
-	buffer->values_current[sample_idx] = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_V_IN << 10U));
-	/* Read voltage and select channel 2 (current) for the read after! */
-	buffer->values_voltage[sample_idx] = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_IN << 10U));
+	/* reference algorithm */
+	static const uint8_ft SETTLE_INC = 5;
+	const uint32_t current_adc = adc_readwrite(SPI_CS_HRV_C_ADC_PIN, 0u);
+	const uint32_t voltage_adc = adc_readwrite(SPI_CS_HRV_C_ADC_PIN, 0u);
+
+	/* just a simple algorithm that sets 75% of open circuit voltage_adc  */
+	if (sample_idx <= SETTLE_INC)
+	{
+		if (sample_idx == 0)
+		{
+			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
+		}
+		else if (sample_idx == SETTLE_INC)
+		{
+			/* factor = 75 % * 76.2939 uV / 19.5313 uV = ~ 393 / 2048  */
+			const uint32_t voltage_dac = (393u * voltage_adc) >> 11u;
+			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+		}
+	}
+
+	buffer->values_current[sample_idx] = current_adc;
+	buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-static inline void sample_load(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+
+static inline void sample_harvesting_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-	/* Read load current and select load voltage for next reading */
-	buffer->values_current[sample_idx] = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_V_OUT << 10U));
-	/* Read load voltage and select load current for next reading */
-	buffer->values_voltage[sample_idx] = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_OUT << 10U));
+	/* empty playground for new algorithms to test in parallel with above reference algorithm */
+	sample_harvesting(buffer, sample_idx);
 }
+
 
 static inline void sample_emulation(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-	/* write the emulation voltage value from buffer to DAC */
-	dac_write(SPI_CS_DAC_PIN, buffer->values_current[sample_idx] | DAC_CH_A_ADDR);
-	/* write the emulation current value from buffer to DAC */
-	dac_write(SPI_CS_DAC_PIN, buffer->values_voltage[sample_idx] | DAC_CH_V_ADDR);
-
-	/* read the load current value from ADC to buffer and select load voltage for
-   * next reading */
-	buffer->values_current[sample_idx] = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_V_OUT << 10U));
-	/* read the load voltage value from ADC to buffer and select load current for
-   * next reading */
-	buffer->values_voltage[sample_idx] = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_OUT << 10U));
-}
-
-static inline void sample_virtcap(struct SampleBuffer *const buffer, const uint32_t sample_idx)
-{
-	struct ADCReading read;
-	static uint8_ft under_sample_voltage_cntr = 0;
-	static int32_t last_voltage_measurement = 0;
-	static int32_t last_current_measurement = 0;
-
 	/* Get input current/voltage from shared memory buffer */
-	const int32_t input_current = buffer->values_current[sample_idx] - ((1U << 17U) - 1);
+	const int32_t input_current = buffer->values_current[sample_idx] - ((1U << 17U) - 1); // TODO: why convert it to int and subtract 16bit?
 	const int32_t input_voltage = buffer->values_voltage[sample_idx];
 
-	// TODO: time budget would allow to read both values everytime
-	if (under_sample_voltage_cntr++ == 7) {
-		under_sample_voltage_cntr = 0;
-
-		read.current = last_current_measurement;
-		buffer->values_current[sample_idx] = last_current_measurement;
-
-		/* Read load voltage and select load current for next reading */
-		read.voltage = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_OUT << 10U));
-        	last_voltage_measurement = read.voltage;
-		buffer->values_voltage[sample_idx] = read.voltage;
-
-
-	} else if (under_sample_voltage_cntr == 6) {
-		/* Read load current and select load voltage for next reading */
-		read.current = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_V_OUT << 10U));
-        	last_current_measurement = read.current;
-		buffer->values_current[sample_idx] = read.current;
-
-		read.voltage = last_voltage_measurement;
-		buffer->values_voltage[sample_idx] = last_voltage_measurement;
-
-	} else {
-		/* Read load current and select load current for next reading */
-		read.current = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_OUT << 10U));
-		buffer->values_current[sample_idx] = read.current;
-
-		read.voltage = last_voltage_measurement;
-		buffer->values_voltage[sample_idx] = last_voltage_measurement;
-	}
+	/* measure current flow */
+	const uint32_t current_adc = adc_readwrite(SPI_CS_EMU_ADC_PIN, 0u);
 
 	/* Execute virtcap algorithm */
-	// TODO: routine seems broken, there is no dac-output updated, and buffer->voltage gets into fn, but is not used
-	virtcap_update(buffer->values_current[sample_idx] - ((1U << 17U) - 1U),
-		       buffer->values_voltage[sample_idx], input_current,
-		       input_voltage);
+	const uint32_t voltage_dac = vreg_update(current_adc, input_current, input_voltage);
+	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
 
-	/*
-	 * If output is off, force buffer voltage to zero.
-	 * Else it will go to max 2.6V, because voltage sense is put before
-	 * output switch.
-	 */
-	if (!virtcap_get_output_state())
-		buffer->values_voltage[sample_idx] = 0U;
-
-    // TODO: probably missing part - this is completely guessed - not tested:
-    //const int32_t cap_volt_logic = voltage_mv_to_logic(cap_voltage);
-    // dac_write(SPI_CS_DAC, cap_volt_logic | DAC_CH_V_ADDR);
+	/* write back regulator-state into shared memory buffer */
+	buffer->values_current[sample_idx] = current_adc;
+	buffer->values_voltage[sample_idx] = voltage_dac;
 }
+
+
+static inline void sample_emulation_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+{
+	/* empty playground for new algorithms to test in parallel with above reference algorithm */
+	sample_emulation(buffer, sample_idx);
+}
+
 
 void sample(struct SampleBuffer *const current_buffer_far, const uint32_t sample_idx,
 	    const enum ShepherdMode mode)
 {
 	switch (mode) // reordered to prioritize longer routines
 	{
-	case MODE_EMULATION: // ~ 6860 ns
+	case MODE_EMULATE: // ~ ## ns
 		sample_emulation(current_buffer_far, sample_idx);
 		break;
-	case MODE_VIRTCAP: // ~ 4220 ns, TODO: routine is not complete
-		sample_virtcap(current_buffer_far, sample_idx);
+	case MODE_EMULATE_TEST: // ~ ## ns, TODO: test timing for new revision
+		sample_emulation_test(current_buffer_far, sample_idx);
 		break;
-	case MODE_HARVESTING: // ~ 4340 ns
+	case MODE_HARVEST: // ~ ## ns
 		sample_harvesting(current_buffer_far, sample_idx);
 		break;
-	case MODE_LOAD: // ~ 4340 ns
-		sample_load(current_buffer_far, sample_idx);
+	case MODE_HARVEST_TEST: // ~ ## ns
+		sample_harvesting_test(current_buffer_far, sample_idx);
 		break;
 	default:
 	    break;
 	}
-
-	// TODO: at least ADC supports power-down mode, useful for battery-based setup during waiting
 }
 
-uint32_t sample_dbg_adc(const uint32_t channel_no)
+
+uint32_t sample_dbg_adc(const uint32_t channel_num)
 {
-	adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (channel_no << 10U));
-	const uint32_t result = adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (channel_no << 10U));
+	uint32_t result;
+
+	switch (channel_num)
+	{
+	case 0:
+		result = adc_readwrite(SPI_CS_HRV_C_ADC_PIN, 0u);
+		break;
+	case 1:
+		result = adc_readwrite(SPI_CS_HRV_V_ADC_PIN, 0u);
+		break;
+	default:
+		result = adc_readwrite(SPI_CS_EMU_ADC_PIN, 0u);
+		break;
+	}
 	return result;
 }
 
+
 void sample_dbg_dac(const uint32_t value)
 {
-	dac_write(SPI_CS_DAC_PIN, value);
+	dac_write(SPI_CS_HRV_DAC_PIN, value);
+	dac_write(SPI_CS_EMU_DAC_PIN, value);
+	// TODO: handle both DACs for the moment (one should be turned off)
 }
 
-void sampling_init(const enum ShepherdMode mode, const uint32_t harvesting_voltage)
+
+void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
+{
+	if (activate == 0)
+	{
+		/* power down both channels if not needed, 1 kOhm to GND */
+		dac_write(cs_pin, (0x4u << DAC_CMD_OFFSET) | ((8U + 3U) << 0U));
+		__delay_cycles(12);
+		return;
+	}
+
+	/* Reset all registers -> DAC8562 clears to zero scale (see DAC8562T datasheet Table 17) */
+	dac_write(cs_pin, (0x5u << DAC_CMD_OFFSET) | (1U << 0U));
+	__delay_cycles(12);
+
+	/* Enable internal 2.5V reference with gain=2 (see DAC8562T datasheet Table 17) */
+	dac_write(cs_pin, (0x7u << DAC_CMD_OFFSET) | (1U << 0U));
+	__delay_cycles(12);
+
+	/* (redundant) GAIN=2 for DAC-B and GAIN=2 for DAC-A (see DAC8562T datasheet Table 17) */
+	dac_write(cs_pin, (0x2u << DAC_ADDR_OFFSET) | (0U << 0U));
+	__delay_cycles(12);
+
+	/* LDAC pin inactive for DAC-B and DAC-A -> synchronous mode / update on 24th clk cycle (see DAC8562T datasheet Table 17) */
+	dac_write(cs_pin, (0x6u << DAC_CMD_OFFSET) | (3U << 0U));
+	__delay_cycles(12);
+
+	/* activate both channels */
+	dac_write(cs_pin, (0x4u << DAC_CMD_OFFSET) | (3U << 0U));
+	__delay_cycles(12);
+}
+
+
+void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
+{
+	if (activate)
+	{
+		adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | NOT_PWRDOWN);
+	}
+	else
+	{
+		adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | WRITE_KEY);
+		adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | WRITE_KEY | PWRDOWN);
+		return;
+	}
+
+	/* set Input Range = 1.25 * Vref, with Vref = 4.096 V, -> LSB = 19.53 uV */
+	adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_RANGE | RANGE_SEL_P125);
+
+	adc_readwrite(cs_pin, REGISTER_READ | ADDR_REG_RANGE);
+	const uint32_t  response = adc_readwrite(cs_pin, 0u);
+	if (response != RANGE_SEL_P125)
+	{
+		// TODO: Alert kernel module that this hw-unit seems to be not present
+	}
+}
+
+
+void sample_init(enum ShepherdMode mode, uint32_t emu_ch_a_voltage)
 {
 	/* Chip-Select signals are active low */
-	GPIO_ON(SPI_CS_ADC_MASK | SPI_CS_DAC_MASK);
+	GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
+	GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
 	GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-	/* Reset all registers (see DAC8562T datasheet Table 17) */
-	dac_write(SPI_CS_DAC_PIN, (0x5u << DAC_CMD_OFFSET) | (1U << 0U));
-	__delay_cycles(12);
+	/* deactivate hw-units when not needed, initialize the other */
+	const bool_ft use_harvester = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
+	const bool_ft use_emulator = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
 
-	/* Enable internal 2.5V reference (see DAC8562T datasheet Table 17) */
-	dac_write(SPI_CS_DAC_PIN, (0x7u << DAC_CMD_OFFSET) | (1U << 0U));
-	__delay_cycles(12);
+	dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
 
-	/* GAIN=2 for DAC-B and GAIN=1 for DAC-A (see DAC8562T datasheet Table 17) */
-	dac_write(SPI_CS_DAC_PIN, (0x2u << DAC_ADDR_OFFSET) | (1U << 0U));
-	__delay_cycles(12);
+	if (use_harvester)
+	{
+		/* after DAC-Reset the output is at Zero, fast return CH B to Max to not drain the power-source */
+		/* NOTE: if harvester is not used, dac is currently shut down -> connects power source with 1 Ohm to GND */
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | emu_ch_a_voltage);
+	}
 
-	/* LDAC pin inactive for DAC-B and DAC-A (see DAC8562T datasheet Table 17) */
-	dac_write(SPI_CS_DAC_PIN, (0x6u << DAC_CMD_OFFSET) | (1U << 1U) | (1U << 0U));
-	__delay_cycles(12);
+	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
+	ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
 
-	/* Range 1.25*VREF: B9-15 select CH, B8 enables write, B0-4 select range*/
-	adc_readwrite(SPI_CS_ADC_PIN, ((ADC_CH_V_IN + 5U) << 9U) | (1U << 8U) | (1U << 2U) | (1U << 1U));
-	adc_readwrite(SPI_CS_ADC_PIN, ((ADC_CH_V_OUT + 5U) << 9U) | (1U << 8U) | (1U << 2U) | (1U << 1U));
+	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
+	ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 
-	/* Range +/-0.625*VREF */
-	adc_readwrite(SPI_CS_ADC_PIN, ((ADC_CH_A_IN + 5U) << 9U) | (1U << 8U) | (1U << 1U));
-	adc_readwrite(SPI_CS_ADC_PIN, ((ADC_CH_A_OUT + 5U) << 9U) | (1U << 8U) | (1U << 1U));
-
-	/* Initialize ADC for correct channel */
-	if (mode == MODE_HARVESTING) {
-		/* Select harvesting current for first reading */
-		adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_IN << 10U));
-		dac_write(SPI_CS_DAC_PIN, harvesting_voltage | DAC_CH_V_ADDR);
-	} else
-		/* Select load current for first reading */
-		adc_readwrite(SPI_CS_ADC_PIN, MAN_CH_SLCT | (ADC_CH_A_OUT << 10U));
+	if (use_emulator)	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | emu_ch_a_voltage);
 }
