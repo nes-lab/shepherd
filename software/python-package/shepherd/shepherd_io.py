@@ -27,7 +27,7 @@ from periphery import GPIO
 from shepherd import sysfs_interface
 from shepherd import commons
 from shepherd import calibration_default
-from shepherd import const_reg
+# from shepherd import const_reg  # TODO: remove
 from shepherd.calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
@@ -300,7 +300,7 @@ class ShepherdIO(object):
         self.load = load
         self.shared_mem = None
 
-        self.ldo = const_reg.VariableLDO()
+        # self.ldo = const_reg.VariableLDO() # TODO: remove
 
     def __del__(self):
         ShepherdIO._instance = None
@@ -362,8 +362,9 @@ class ShepherdIO(object):
             logger.debug(f"Setting load to '{ self.load }'")
             self.set_load(self.load)
 
-            self.ldo.__enter__()
-            self.set_ldo_voltage(False)
+            # TODO: remove
+            # self.ldo.__enter__()
+            # self.set_ldo_voltage(False)
 
         except Exception:
             self._cleanup()
@@ -447,7 +448,7 @@ class ShepherdIO(object):
 
         try:
             self.set_ldo_voltage(False)
-            self.ldo.__exit__()
+            # self.ldo.__exit__()  # TODO: remove
         except Exception as e:
             print(e)
 
@@ -505,12 +506,13 @@ class ShepherdIO(object):
                 False disables the LDO.
         """
         if not voltage:
-            self.ldo.set_output(False)
+            # self.ldo.set_output(False)  # TODO: remove
             return
 
         logger.debug(f"Setting LDO voltage to {voltage}")
-        self.ldo.set_voltage(voltage)
-        self.ldo.set_output(True)
+        # self.ldo.set_voltage(voltage)
+        # self.ldo.set_output(True)
+        # TODO: remove
 
     def set_lvl_conv(self, state: bool):
         """Enables or disables the GPIO level converter.
@@ -574,8 +576,9 @@ class ShepherdIO(object):
         """
         if not 0.0 <= voltage <= 4.8:
             raise ValueError("Voltage out of range 0..4.8V")
-        dac_value = calibration_default.voltage_to_dac(voltage)
+        dac_value = calibration_default.voltage_to_dac_ch_a(voltage)
         sysfs_interface.set_harvesting_voltage(dac_value)
+        # TODO: adapt
 
     def send_calibration_settings(self, calibration_settings: CalibrationData):
         """Sends calibration settings to PRU core
