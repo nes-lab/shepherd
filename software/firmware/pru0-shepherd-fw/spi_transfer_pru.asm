@@ -7,7 +7,7 @@ MISO .set 2
    MOV r23, r23
 .endm
 
-    .global adc_readwrite
+    .global adc_readwrite ; code performs with 16.66 MHz, ~ 2060 ns CS low
 adc_readwrite:
     MOV r24, r14 ; Save input arg (CS pin)
     LDI r20, 16 ; Load Counter for outloop
@@ -53,7 +53,7 @@ skip_adc_miso_clear:
     JMP r3.w2
 
 
-    .global dac_write
+    .global dac_write  ; code performs with 25 MHz, ~ 980 ns CS low
 dac_write:
     LDI r20, 24 ; Load Counter for outloop
     CLR r30, r30, r14 ; Set CS low
@@ -62,16 +62,18 @@ dac_write:
 dac_loop:
     SUB r20, r20, 1 ; Decrement counter
     SET r30, r30, SCLK ; Set SCLK high
-    QBBS set_mosi, r15, r20 ; If bit number [r20] is set in value [r15]
+    QBBS dac_mosi_set, r15, r20 ; If bit number [r20] is set in value [r15]
+dac_mosi_clr:
     CLR r30, r30, MOSI ; Set MOSI low
-    JMP skip_mosi_set
-set_mosi:
+    JMP dac_clk_low
+dac_mosi_set:
     SET r30, r30, MOSI ; Set MOSI high
     NOP
-skip_mosi_set:
+dac_clk_low:
     CLR r30, r30, SCLK ; Set SCLK low
     NOP
     QBLT dac_loop, r20, 0
+dac_end:
     CLR r30, r30, MOSI ; clear MOSI
     NOP
     SET r30, r30, r14 ; set CS high
