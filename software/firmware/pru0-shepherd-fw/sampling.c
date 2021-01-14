@@ -36,19 +36,25 @@
 /* VIn = DOut * 19.5313 uV */
 /* CIn = DOut * 195.313 nA */
 extern uint32_t adc_readwrite(uint32_t cs_pin, uint32_t val);
+extern uint32_t adc_fastread(uint32_t cs_pin);
 
 /* VOut = (DIn / 2^n ) * VRef * Gain */
 /* VOut = (DIn / 2^16) * 2.5  * 2 */
 /* VOut = DIn * 76.2939 uV  */
 extern void dac_write(uint32_t cs_pin, uint32_t val);
 
+/* NOTE:
+ * Changes in HW or ADC/DAC Config also change the calibration.data!
+ * (ie. py-package/shepherd/calibration_default.py)
+ */
 
+// TODO: refresh adc reading before going into sampling (rising cs-edge)
 static inline void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* reference algorithm */
-	static const uint8_ft SETTLE_INC = 5;
-	const uint32_t current_adc = adc_readwrite(SPI_CS_HRV_C_ADC_PIN, 0u);
-	const uint32_t voltage_adc = adc_readwrite(SPI_CS_HRV_C_ADC_PIN, 0u);
+	static const uint8_ft SETTLE_INC = 5; /* NOTE: ADC sampled at last CS-Rising-Edge (prev. sample) */
+	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+	const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
 	/* just a simple algorithm that sets 75% of open circuit voltage_adc  */
 	if (sample_idx <= SETTLE_INC)
@@ -84,7 +90,7 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	const int32_t input_voltage = buffer->values_voltage[sample_idx];
 
 	/* measure current flow */
-	const uint32_t current_adc = adc_readwrite(SPI_CS_EMU_ADC_PIN, 0u);
+	const uint32_t current_adc = adc_fastread(SPI_CS_EMU_ADC_PIN);
 
 	/* Execute virtcap algorithm */
 	const uint32_t voltage_dac = vreg_update(current_adc, input_current, input_voltage);
@@ -133,13 +139,13 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 	switch (channel_num)
 	{
 	case 0:
-		result = adc_readwrite(SPI_CS_HRV_C_ADC_PIN, 0u);
+		result = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
 		break;
 	case 1:
-		result = adc_readwrite(SPI_CS_HRV_V_ADC_PIN, 0u);
+		result = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 		break;
 	default:
-		result = adc_readwrite(SPI_CS_EMU_ADC_PIN, 0u);
+		result = adc_fastread(SPI_CS_EMU_ADC_PIN);
 		break;
 	}
 	return result;
