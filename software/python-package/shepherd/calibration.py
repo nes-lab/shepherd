@@ -93,7 +93,7 @@ class CalibrationData(object):
         calib_dict["emulation"] = dict()
         for channel in ["voltage", "current"]:
             calib_dict["emulation"][channel] = dict()
-            offset = getattr(calibration_default, f"dac_to_{ channel }")(0)
+            offset = getattr(calibration_default, f"dac_to_{ channel }")(0.0)
             gain = (
                 getattr(calibration_default, f"dac_to_{ channel }")(1.0)
                 - offset
@@ -102,7 +102,7 @@ class CalibrationData(object):
                 gain
             )
             calib_dict["emulation"][channel]["gain"] = 1.0 / float(gain)
-
+        # TODO: this voltage / current thing is not correct anymore
         return cls(calib_dict)
 
     @classmethod
