@@ -27,7 +27,6 @@ from periphery import GPIO
 from shepherd import sysfs_interface
 from shepherd import commons
 from shepherd import calibration_default
-# from shepherd import const_reg  # TODO: remove
 from shepherd.calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
