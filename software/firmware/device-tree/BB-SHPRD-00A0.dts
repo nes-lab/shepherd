@@ -122,7 +122,8 @@
             P8_19(MUX_MODE7)                // gpio0[22]
 
             P8_26(MUX_MODE7)                // gpio1[29]
-            P8_27(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r31_8
+            // P8_27(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r31_8, TODO: BATOK is no input
+            P8_27(MUX_MODE5)                // pr1_pru1_pru_r30_8
             P8_28(MUX_MODE5)                // pr1_pru1_pru_r30_10
             P8_29(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r31_9
             P8_30(MUX_MODE5)                // pr1_pru1_pru_r30_11
@@ -145,7 +146,7 @@
 
             P9_23(MUX_MODE7)                // gpio1[17]
 
-            P9_25(MUX_MODE5)
+            P9_25(MUX_MODE5)                // pr1_pru0_pru_r30_7
 
             P9_27(MUX_MODE5)                // pr1_pru0_pru_r30_5
             P9_28(MUX_MODE5)                // pr1_pru0_pru_r30_3
