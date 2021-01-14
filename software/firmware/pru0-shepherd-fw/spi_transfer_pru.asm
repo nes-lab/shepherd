@@ -14,41 +14,41 @@ adc_readwrite:
     LDI r21, 18; Load Counter for inloop
     CLR r30, r30, r24 ; Set CS low
     LDI r14, 0 ; Clear return reg
-adc_outloop:
+
+adc_outloop_head:
     SUB r20, r20, 1 ; decrement shiftloop counter
+    QBBC adc_mosi_clr, r15, r20
+adc_mosi_set:
     SET r30, r30, SCLK ; Set SCLK high
-    QBBC mosi_clear, r15, r20
     SET r30, r30, MOSI ; Set MOSI high
-    JMP skip_mosi_clear
-mosi_clear:
+    JMP adc_outloop_tail
+adc_mosi_clr:
+    SET r30, r30, SCLK ; Set SCLK high
     CLR r30, r30, MOSI ; Set MOSI low
     NOP
-skip_mosi_clear:
-    NOP
+adc_outloop_tail:
     NOP
     CLR r30, r30, SCLK ; Set SCLK low
+    QBLT adc_outloop_head, r20, 0
     NOP
-    NOP
-    NOP
-    QBLT adc_outloop, r20, 0
     CLR r30, r30, MOSI ; clear MOSI
-adc_inloop:
+
+adc_inloop_head:
     SET r30, r30, SCLK ; Set SCLK high
     SUB r21, r21, 1 ; decrement shiftloop counter
     NOP
     NOP
-    NOP
-    MOV r25, r31
     CLR r30, r30, SCLK ; Set SCLK low
-    QBBC adc_miso_clear, r25, MISO
+    QBBC adc_miso_clr, r31, MISO
+adc_miso_set:
     SET r14, r14, r21
-    JMP skip_adc_miso_clear
-adc_miso_clear:
+    QBLT adc_inloop_head, r21, 0
+    JMP adc_end
+adc_miso_clr:
     NOP
-    NOP
-skip_adc_miso_clear:
-    NOP
-    QBLT adc_inloop, r21, 0
+    QBLT adc_inloop_head, r21, 0
+
+adc_end:
     SET r30, r30, r24 ; set CS high
     JMP r3.w2
 
@@ -59,22 +59,24 @@ dac_write:
     CLR r30, r30, r14 ; Set CS low
     NOP
 
-dac_loop:
+dac_loop_head:
     SUB r20, r20, 1 ; Decrement counter
-    SET r30, r30, SCLK ; Set SCLK high
     QBBS dac_mosi_set, r15, r20 ; If bit number [r20] is set in value [r15]
 dac_mosi_clr:
+    SET r30, r30, SCLK ; Set SCLK high
     CLR r30, r30, MOSI ; Set MOSI low
-    JMP dac_clk_low
+    JMP dac_loop_tail
 dac_mosi_set:
+    SET r30, r30, SCLK ; Set SCLK high
     SET r30, r30, MOSI ; Set MOSI high
     NOP
-dac_clk_low:
+dac_loop_tail:
+    NOP
     CLR r30, r30, SCLK ; Set SCLK low
-    NOP
-    QBLT dac_loop, r20, 0
+    QBLT dac_loop_head, r20, 0
+
 dac_end:
-    CLR r30, r30, MOSI ; clear MOSI
     NOP
+    CLR r30, r30, MOSI ; clear MOSI
     SET r30, r30, r14 ; set CS high
     JMP r3.w2
