@@ -67,7 +67,7 @@ struct SampleBuffer {
 } __attribute__((packed));
 
 struct CalibrationSettings {
-	/* Gain of load current adc. It converts current to adc value */
+	/* Gain of load current adc. It converts current to adc value, TODO: probably nA? */
 	int32_t adc_load_current_gain;
 	/* Offset of load current adc */
 	int32_t adc_load_current_offset;
@@ -75,23 +75,31 @@ struct CalibrationSettings {
 	int32_t adc_load_voltage_gain;
 	/* Offset of load voltage adc */
 	int32_t adc_load_voltage_offset;
+	/* TODO: this should also contain DAC-Values */
 } __attribute__((packed));
 
-/* This structure defines all settings of virtcap emulation*/
-struct VirtCapSettings {
-  int32_t upper_threshold_voltage;
-  int32_t lower_threshold_voltage;
-  int32_t sample_period_us;
-  int32_t capacitance_uf;
-  int32_t max_cap_voltage;
-  int32_t min_cap_voltage;
-  int32_t init_cap_voltage;
-  int32_t dc_output_voltage;
-  int32_t leakage_current;
-  int32_t discretize;
-  int32_t output_cap_uf;
-  int32_t lookup_input_efficiency[4][9];
-  int32_t lookup_output_efficiency[4][9];
+/* This structure defines all settings of virtual regulator emulation*/
+/* more complex regulators use vars in their section and above */
+struct virtSourceSettings {
+
+	/* Direct Reg */
+	uint32_t c_output_capacitance_uf; // final (always last) stage to catch current spikes of target
+
+	/* Boost Reg, ie. BQ25504 */
+	uint32_t v_harvest_boost_threshold_mV; // min input-voltage for the boost converter to work
+	uint32_t c_storage_capacitance_uf;
+	uint32_t c_storage_voltage_init_mV; // allow a proper / fast startup
+	uint32_t c_storage_voltage_max_mV;  // -> boost shuts off
+	uint32_t c_storage_current_leak_nA;
+	uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
+	uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
+	uint8_t LUT_inp_efficiency_n8[10][10]; // depending on inp_voltage, inp_current, (cap voltage)
+	// n8 means normalized to 2^8 = 1.0
+
+	/* Buck Boost, ie. BQ25570) */
+	uint32_t dc_output_voltage_mV;
+	uint8_t LUT_output_efficiency_n8[10]; // depending on output_current
+
 } __attribute__((packed));
 
 /* Format of RPMSG used in Data Exchange Protocol between PRU0 and user space */
@@ -147,7 +155,7 @@ struct SharedMem {
 	/* ADC calibration settings */
 	struct CalibrationSettings calibration_settings;
 	/* This structure defines all settings of virtcap emulation*/
-	struct VirtCapSettings virtcap_settings;
+	struct virtSourceSettings virtsource_settings;
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
 	struct CtrlRepMsg ctrl_rep;
