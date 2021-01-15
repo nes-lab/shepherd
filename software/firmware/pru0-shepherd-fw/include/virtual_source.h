@@ -7,7 +7,7 @@
 #define SHIFT_VOLT          12U
 #define EFFICIENCY_RANGE    (1U << 12U)
 
-void vsource_init(struct virtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg);
+void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg);
 uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_current, const uint32_t input_voltage);
 
 bool_ft get_output_state();
@@ -34,12 +34,14 @@ static void lookup_init();
  * - storage-capacitor has capacitance, init-voltage, current-leakage
  * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
  * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
+ * - to disable set c_storage_voltage_max_mV to 0
  * - the real boost converter will be handled in pyPackage and work with IV-Curves
  */
 
 /* Buck-Boost-Converter
- * - boost stage from before, but output is regulated (i.e. BQ25570)
+ * - uses boost stage from before, but output is regulated (i.e. BQ25570)
  * - buck-converter has output_voltage and efficiency-LUT (depending on output-current)
+ * - to disable set output_voltage to 0
  */
 
 /* Solar - Diode - Target
@@ -55,5 +57,5 @@ VCap-Variables not needed:
 	sample_period_us // should be linked to default sample time
 	discretize // only update output every 'discretize' time
 
-TODO: PGOOD / BAT-OK threshold -> extra pin, zwei thresholds,
+TODO: PGOOD / BAT-OK threshold -> extra pin, two thresholds, other PRU
  */

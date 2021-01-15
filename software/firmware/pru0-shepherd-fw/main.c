@@ -243,7 +243,7 @@ reset:
 
 	// TODO: how do we make sure, that virtsource_settings & calibration_settings is initialized?
 	if (shared_mememory->shepherd_mode == MODE_EMULATE)
-		vsource_init((struct virtSourceSettings *)&shared_mememory->virtsource_settings,
+		vsource_init((struct VirtSourceSettings *)&shared_mememory->virtsource_settings,
 			     (struct CalibrationSettings *)&shared_mememory->calibration_settings);
 
 	ring_init(&free_buffers);

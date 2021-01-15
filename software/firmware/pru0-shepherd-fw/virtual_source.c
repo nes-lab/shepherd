@@ -57,7 +57,7 @@ uint32_t SquareRootRounded(uint32_t a_nInput);
 static void virtcap_set_output_state(bool_ft value);
 
 // Global vars to access in update function
-static struct virtSourceSettings vsource_cfg;
+static struct VirtSourceSettings vsource_cfg;
 
 #define ADC_LOAD_CURRENT_GAIN       (int32_t)(((1U << 17U) - 1) * 2.0 * 50.25 / (0.625 * 4.096))
 #define ADC_LOAD_CURRENT_OFFSET     (-(1U << 17U))  // TODO: should be positive
@@ -71,7 +71,7 @@ static struct CalibrationSettings cali_cfg = {
 	.adc_load_voltage_offset =  ADC_LOAD_VOLTAGE_OFFSET,
 };
 
-void vsource_init(struct virtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg)
+void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg)
 {
 	vsource_cfg = *vsource_arg; // copies content of whole struct
 	cali_cfg = *calib_arg;
