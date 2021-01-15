@@ -53,11 +53,11 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 static ssize_t sysfs_calibration_settings_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf);
 
-static ssize_t sysfs_virtcap_settings_store(struct kobject *kobj,
+static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 						struct kobj_attribute *attr,
 						const char *buf, size_t count);
 
-static ssize_t sysfs_virtcap_settings_show(struct kobject *kobj,
+static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf);
 
 struct kobj_attr_struct_s {
@@ -103,10 +103,10 @@ struct kobj_attr_struct_s attr_calibration_settings = {
 		       sysfs_calibration_settings_store),
 	.val_offset = offsetof(struct SharedMem, calibration_settings)
 };
-struct kobj_attr_struct_s attr_virtcap_settings = {
-	.attr = __ATTR(virtcap_settings, 0660, sysfs_virtcap_settings_show,
-		       sysfs_virtcap_settings_store),
-	.val_offset = offsetof(struct SharedMem, virtcap_settings)
+struct kobj_attr_struct_s attr_virtsource_settings = {
+	.attr = __ATTR(virtsource_settings, 0660, sysfs_virtsource_settings_show,
+		       sysfs_virtsource_settings_store),
+	.val_offset = offsetof(struct SharedMem, virtsource_settings)
 };
 
 struct kobj_attribute attr_sync_error =
@@ -125,7 +125,7 @@ static struct attribute *pru_attrs[] = {
 	&attr_mode.attr.attr,
 	&attr_harvesting_voltage.attr.attr,
 	&attr_calibration_settings.attr.attr,
-	&attr_virtcap_settings.attr.attr,
+	&attr_virtsource_settings.attr.attr,
 	NULL,
 };
 
@@ -256,16 +256,18 @@ static ssize_t sysfs_mode_show(struct kobject *kobj,
 	mode = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
 	switch (mode) {
-	case MODE_HARVESTING:
+	case MODE_HARVEST:
 		return sprintf(buf, "harvesting");
-	case MODE_LOAD:
-		return sprintf(buf, "load");
-	case MODE_EMULATION:
+	case MODE_HARVEST_TEST:
+		return sprintf(buf, "harvesting (test)");
+	case MODE_EMULATE:
 		return sprintf(buf, "emulation");
-	case MODE_VIRTCAP:
-		return sprintf(buf, "virtcap");
+	case MODE_EMULATE_TEST:
+		return sprintf(buf, "emulation (test)"); // TODO: adapt modes to pru-changes
 	case MODE_DEBUG:
 		return sprintf(buf, "debug");
+    case MODE_NONE:
+        return sprintf(buf, "none");
 	default:
 		return -EINVAL;
 	}
@@ -290,22 +292,22 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 		if ((count < 10) || (count > 11))
 			return -EINVAL;
 
-		mode = MODE_HARVESTING;
-	} else if (strncmp(buf, "load", 4) == 0) {
+		mode = MODE_HARVEST;
+	} else if (strncmp(buf, "harvesting (test)", 4) == 0) {
 		if ((count < 4) || (count > 5))
 			return -EINVAL;
 
-		mode = MODE_LOAD;
+		mode = MODE_HARVEST_TEST;
 	} else if (strncmp(buf, "emulation", 9) == 0) {
 		if ((count < 9) || (count > 10))
 			return -EINVAL;
 
-		mode = MODE_EMULATION;
-	} else if (strncmp(buf, "virtcap", 7) == 0) {
+		mode = MODE_EMULATE;
+	} else if (strncmp(buf, "emulation (test)", 7) == 0) {
 		if ((count < 7) || (count > 8))
 			return -EINVAL;
 
-		mode = MODE_VIRTCAP;
+		mode = MODE_EMULATE_TEST;
 	} else if (strncmp(buf, "debug", 5) == 0) {
 		if ((count < 5) || (count > 6))
 			return -EINVAL;
@@ -396,7 +398,7 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj,
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12));
 }
 
-static ssize_t sysfs_virtcap_settings_store(struct kobject *kobj,
+static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 						struct kobj_attribute *attr,
 						const char *buf, size_t count)
 {
@@ -409,11 +411,11 @@ static ssize_t sysfs_virtcap_settings_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	for (i = 0; i < sizeof(struct VirtCapSettings); i += 4)
+	for (i = 0; i < sizeof(struct VirtSourceSettings); i += 4)
 	{
 		int read, n;
 		int ret = sscanf(&buf[pos],"%d%n",&read,&n);
-    pos += n;
+        pos += n;
 
 		if (ret != 1)
 			return -EINVAL;
@@ -424,7 +426,7 @@ static ssize_t sysfs_virtcap_settings_store(struct kobject *kobj,
 	return count;
 }
 
-static ssize_t sysfs_virtcap_settings_show(struct kobject *kobj,
+static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf)
 {
 	struct kobj_attr_struct_s *kobj_attr_wrapped;
@@ -434,7 +436,7 @@ static ssize_t sysfs_virtcap_settings_show(struct kobject *kobj,
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
 
-	for (i = 0; i < sizeof(struct VirtCapSettings); i += 4)
+	for (i = 0; i < sizeof(struct VirtSourceSettings); i += 4)
 	{
 		count += sprintf(strlen(buf) + buf,"%d ", 
 			readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + i));

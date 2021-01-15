@@ -1,6 +1,6 @@
 #ifndef __COMMONS_H_
 #define __COMMONS_H_
-// NOTE: a similar version of this definition-file exists for the pru-firmware (copy changes by hand)
+// NOTE: a Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**
  * These are the system events that we use to signal events to the PRUs.
@@ -14,11 +14,12 @@
 enum SyncMsgID { MSG_SYNC_CTRL_REQ = 0x55, MSG_SYNC_CTRL_REP = 0xAA };
 
 enum ShepherdMode {
-	MODE_HARVESTING,
-	MODE_LOAD,
-	MODE_EMULATION,
-	MODE_VIRTCAP,
-	MODE_DEBUG
+	MODE_HARVEST,
+	MODE_HARVEST_TEST,
+	MODE_EMULATE,
+	MODE_EMULATE_TEST,
+	MODE_DEBUG,
+	MODE_NONE
 };
 enum ShepherdState {
 	STATE_UNKNOWN,
@@ -30,31 +31,37 @@ enum ShepherdState {
 };
 
 struct CalibrationSettings {
-	/* Gain of load current adc. It converts current to adc value */
-	int32_t adc_load_current_gain;
-	/* Offset of load current adc */
-	int32_t adc_load_current_offset;
-	/* Gain of load voltage adc. It converts voltage to adc value */
-	int32_t adc_load_voltage_gain;
-	/* Offset of load voltage adc */
-	int32_t adc_load_voltage_offset;
+    /* Gain of load current adc. It converts current to adc value, TODO: probably nA? */
+    int32_t adc_load_current_gain;
+    /* Offset of load current adc */
+    int32_t adc_load_current_offset;
+    /* Gain of load voltage adc. It converts voltage to adc value */
+    int32_t adc_load_voltage_gain;
+    /* Offset of load voltage adc */
+    int32_t adc_load_voltage_offset;
+    /* TODO: this should also contain DAC-Values */
 } __attribute__((packed));
 
-/* This structure defines all settings of virtcap emulation*/
-struct VirtCapSettings {
-  int32_t upper_threshold_voltage;
-  int32_t lower_threshold_voltage;
-  int32_t sample_period_us;
-  int32_t capacitance_uf;
-  int32_t max_cap_voltage;
-  int32_t min_cap_voltage;
-  int32_t init_cap_voltage;
-  int32_t dc_output_voltage;
-  int32_t leakage_current;
-  int32_t discretize;
-  int32_t output_cap_uf;
-  int32_t lookup_input_efficiency[4][9];
-  int32_t lookup_output_efficiency[4][9];
+/* This structure defines all settings of virtual source emulation*/
+/* more complex regulators use vars in their section and above */
+struct VirtSourceSettings {
+    /* Direct Reg */
+    uint32_t c_output_capacitance_uf; // final (always last) stage to catch current spikes of target
+    /* Boost Reg, ie. BQ25504 */
+    uint32_t v_harvest_boost_threshold_mV; // min input-voltage for the boost converter to work
+    uint32_t c_storage_capacitance_uf;
+    uint32_t c_storage_voltage_init_mV; // allow a proper / fast startup
+    uint32_t c_storage_voltage_max_mV;  // -> boost shuts off
+    uint32_t c_storage_current_leak_nA;
+    uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
+    uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
+    uint8_t LUT_inp_efficiency_n8[12][12]; // depending on inp_voltage, inp_current, (cap voltage)
+        // n8 means normalized to 2^8 = 1.0
+    uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
+    uint32_t pwr_good_high_threshold_mV;
+    /* Buck Boost, ie. BQ25570) */
+    uint32_t dc_output_voltage_mV;
+    uint8_t LUT_output_efficiency_n8[12]; // depending on output_current
 } __attribute__((packed));
 
 /* Control request message sent from PRU1 to this kernel module */
@@ -106,8 +113,8 @@ struct SharedMem {
 	uint32_t buffer_period_ns;
 	/* ADC calibration settings */
 	struct CalibrationSettings calibration_settings;
-	/* This structure defines all settings of virtcap emulation*/
-	struct VirtCapSettings virtcap_settings;
+	/* This structure defines all settings of virtual source emulation*/
+	struct VirtSourceSettings virtsource_settings;
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
 	struct CtrlRepMsg ctrl_rep;
