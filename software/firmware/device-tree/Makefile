@@ -23,7 +23,7 @@ clean:
 	@echo ' '
 
 .PHONY: install
-install: BB-SHPRD-00A0.dtbo BB-SHPRDVCAP-00A0.dtbo
+install: BB-SHPRD-00A0.dtbo
 	@echo ' '
 	@echo '*******************  Installing DT-Files **********************'
 	install -D BB-SHPRD-00A0.dtbo \
