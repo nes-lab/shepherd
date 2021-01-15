@@ -46,7 +46,7 @@ set(SRC_PRU0
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/ringbuffer.c
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/spi_transfer_pru.asm
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/sampling.c
-        ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/virtual_regulator.c
+        ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/virtual_source.c
         )
 set(HDR_PRU0
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include/hw_config.h
@@ -54,7 +54,7 @@ set(HDR_PRU0
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include/resource_table_def.h
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include/ringbuffer.h
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include/sampling.h
-        ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include/virtual_regulator.h
+        ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include/virtual_source.h
         )
 
 set(HDR_SHARED
@@ -134,7 +134,7 @@ set(TEMPEPE
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/ringbuffer.c
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/spi_transfer_pru.asm
         ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/sampling.c
-        ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/virtual_regulator.c
+        ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/virtual_source.c
 
         ${SOURCE}
         ${HEADERS}

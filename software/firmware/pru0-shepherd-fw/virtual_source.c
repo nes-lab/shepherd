@@ -1,4 +1,4 @@
-#include "virtual_regulator.h"
+#include "virtual_source.h"
 #include <stdint.h>
 #include <stdio.h>
 #include "commons.h"

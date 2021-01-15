@@ -3,7 +3,7 @@
 #include "gpio.h"
 #include "hw_config.h"
 #include "sampling.h"
-#include "virtual_regulator.h"
+#include "virtual_source.h"
 
 /* DAC8562 Register Config */
 #define DAC_CH_A_ADDR   (0U << 16U)
@@ -48,7 +48,7 @@ extern void dac_write(uint32_t cs_pin, uint32_t val);
  * (ie. py-package/shepherd/calibration_default.py)
  */
 
-// TODO: refresh adc reading before going into sampling (rising cs-edge)
+// TODO: how to refresh adc reading before going into sampling (rising cs-edge)
 static inline void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* reference algorithm */
@@ -93,7 +93,7 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	const uint32_t current_adc = adc_fastread(SPI_CS_EMU_ADC_PIN);
 
 	/* Execute virtcap algorithm */
-	const uint32_t voltage_dac = vreg_update(current_adc, input_current, input_voltage);
+	const uint32_t voltage_dac = vsource_update(current_adc, input_current, input_voltage);
 	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
 
 	/* write back regulator-state into shared memory buffer */

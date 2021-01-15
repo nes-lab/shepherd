@@ -21,7 +21,7 @@
 #include "ringbuffer.h"
 #include "sampling.h"
 #include "shepherd_config.h"
-#include "virtual_regulator.h"
+#include "virtual_source.h"
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 0xFFFFFFFF
@@ -241,9 +241,10 @@ void main(void)
 reset:
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-	// TODO: how do we make sure, that virtcap_settings & calibration_settings is initialized?
+	// TODO: how do we make sure, that virtsource_settings & calibration_settings is initialized?
 	if (shared_mememory->shepherd_mode == MODE_EMULATE)
-		vreg_init((struct VirtCapSettings *)&shared_mememory->virtcap_settings, (struct CalibrationSettings *)&shared_mememory->calibration_settings);
+		vsource_init((struct virtSourceSettings *)&shared_mememory->virtsource_settings,
+			     (struct CalibrationSettings *)&shared_mememory->calibration_settings);
 
 	ring_init(&free_buffers);
 	sample_init((enum ShepherdMode)shared_mememory->shepherd_mode, shared_mememory->dac_ch_a_voltage);
