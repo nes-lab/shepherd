@@ -7,34 +7,8 @@
 #define SHIFT_VOLT          12U
 #define EFFICIENCY_RANGE    (1U << 12U)
 
-static const struct VirtCapSettings kBQ25570Settings = {
-  .upper_threshold_voltage = 3500,
-  .lower_threshold_voltage = 3200,
-  .sample_period_us = 10,
-  .capacitance_uf = 1000,
-  .max_cap_voltage = 4200,
-  .min_cap_voltage = 0,
-  .init_cap_voltage = 3200,
-  .dc_output_voltage = 2300,
-  .leakage_current = 9,
-  .discretize = 5695,
-  .output_cap_uf = 10,
-  .lookup_input_efficiency = {
-    {2621,3276,3440,3522,3522,3522,3522,3563,3604,},
-    {3624,3686,3727,3768,3768,3768,3788,3788,3788,},
-    {3788,3788,3788,3788,3788,3809,3809,3788,3727,},
-    {3706,3706,3645,3604,3481,3481,3481,3481,3481,},
-  },
-  .lookup_output_efficiency = {
-    {4995,4818,4790,4762,4735,4735,4708,4708,4681,},
-    {4681,4681,4681,4654,4654,4654,4654,4654,4602,},
-    {4551,4551,4602,4708,4708,4708,4708,4654,4654,},
-    {4602,4654,4681,4654,4602,4628,4628,4602,4602,},
-  }
-}; // TODO: remove, get fully from pyShepherd
-
-void vreg_init(struct VirtCapSettings *vcap_arg, struct CalibrationSettings *calib_arg);
-uint32_t vreg_update(uint32_t current_measured, uint32_t input_current, uint32_t input_voltage);
+void vsource_init(struct virtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg);
+uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_current, const uint32_t input_voltage);
 
 bool_ft get_output_state();
 
@@ -44,3 +18,42 @@ static inline int32_t current_ua_to_logic(int32_t current);
 
 static int32_t lookup(int32_t table[const][9], int32_t current);
 static void lookup_init();
+
+// TODO: get sampletime from main or config
+
+/* Direct Connection
+ * - Voltage-value in buffer is written to DAC
+ * - (optional) current-value in buffer is used as a limiter (power to target shuts down if it is drawing to much)
+ * - (optional) output-capacitor (C != 0) is catching current-spikes of target
+ * - this regulator is currently the closest possible simulation of solar -> diode -> target (with voltage-value set to threshold of target)
+ * - further usage: on/off-patterns
+ */
+
+/* Boost Converter
+ * - boost converter with storage_cap and output_cap on output (i.e. BQ25504)
+ * - storage-capacitor has capacitance, init-voltage, current-leakage
+ * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
+ * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
+ * - the real boost converter will be handled in pyPackage and work with IV-Curves
+ */
+
+/* Buck-Boost-Converter
+ * - boost stage from before, but output is regulated (i.e. BQ25570)
+ * - buck-converter has output_voltage and efficiency-LUT (depending on output-current)
+ */
+
+/* Solar - Diode - Target
+ * -> currently not possible to emulate
+ * - needs IV-curves and feedback to
+ */
+
+/*
+TODO: normally there is a lower threshold for the input where the boost can't work -> in our case 130mV
+TODO: not only depending on inp_current -> inp_voltage, (cap_voltage) 10x10x10, x1 byte, or 2 byte
+
+VCap-Variables not needed:
+	sample_period_us // should be linked to default sample time
+	discretize // only update output every 'discretize' time
+
+TODO: PGOOD / BAT-OK threshold -> extra pin, zwei thresholds,
+ */

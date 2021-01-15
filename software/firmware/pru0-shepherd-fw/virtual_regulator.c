@@ -57,7 +57,7 @@ uint32_t SquareRootRounded(uint32_t a_nInput);
 static void virtcap_set_output_state(bool_ft value);
 
 // Global vars to access in update function
-static struct VirtCapSettings vcap_cfg;
+static struct virtSourceSettings vsource_cfg;
 
 #define ADC_LOAD_CURRENT_GAIN       (int32_t)(((1U << 17U) - 1) * 2.0 * 50.25 / (0.625 * 4.096))
 #define ADC_LOAD_CURRENT_OFFSET     (-(1U << 17U))  // TODO: should be positive
@@ -71,9 +71,9 @@ static struct CalibrationSettings cali_cfg = {
 	.adc_load_voltage_offset =  ADC_LOAD_VOLTAGE_OFFSET,
 };
 
-void vreg_init(struct VirtCapSettings *vcap_arg, struct CalibrationSettings *calib_arg)
+void vsource_init(struct virtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg)
 {
-	vcap_cfg = *vcap_arg; // copies content of whole struct
+	vsource_cfg = *vsource_arg; // copies content of whole struct
 	cali_cfg = *calib_arg;
 
 	calib_arg->adc_load_current_gain = ADC_LOAD_CURRENT_GAIN; // TODO: why overwriting values provided by system?
@@ -81,47 +81,48 @@ void vreg_init(struct VirtCapSettings *vcap_arg, struct CalibrationSettings *cal
 	calib_arg->adc_load_voltage_gain = ADC_LOAD_VOLTAGE_GAIN;
 	calib_arg->adc_load_voltage_offset = ADC_LOAD_VOLTAGE_OFFSET;
 
-	*vcap_arg = kBQ25570Settings; // TODO: weird config in 3 Steps, why overwriting values provided by system?
+	//*vsource_arg = kBQ25570Settings; // TODO: weird config in 3 Steps, why overwriting values provided by system?
 
 	// convert voltages and currents to logic values
-	vcap_cfg.upper_threshold_voltage =	voltage_mv_to_logic(vcap_arg->upper_threshold_voltage);
-	vcap_cfg.lower_threshold_voltage =	voltage_mv_to_logic(vcap_arg->lower_threshold_voltage);
-	vcap_cfg.max_cap_voltage = voltage_mv_to_logic(vcap_arg->max_cap_voltage);
-	vcap_cfg.min_cap_voltage = voltage_mv_to_logic(vcap_arg->min_cap_voltage);
-	vcap_cfg.init_cap_voltage = voltage_mv_to_logic(vcap_arg->init_cap_voltage);
-	vcap_cfg.dc_output_voltage = voltage_mv_to_logic(vcap_arg->dc_output_voltage);
-	vcap_cfg.leakage_current = current_ua_to_logic(vcap_arg->leakage_current);
+	
+	vsource_cfg.upper_threshold_voltage =	voltage_mv_to_logic(vsource_arg->upper_threshold_voltage);
+	vsource_cfg.lower_threshold_voltage =	voltage_mv_to_logic(vsource_arg->lower_threshold_voltage);
+	vsource_cfg.max_cap_voltage = voltage_mv_to_logic(vsource_arg->max_cap_voltage);
+	vsource_cfg.min_cap_voltage = voltage_mv_to_logic(vsource_arg->min_cap_voltage);
+	vsource_cfg.init_cap_voltage = voltage_mv_to_logic(vsource_arg->init_cap_voltage);
+	vsource_cfg.dc_output_voltage = voltage_mv_to_logic(vsource_arg->dc_output_voltage);
+	vsource_cfg.leakage_current = current_ua_to_logic(vsource_arg->leakage_current);
 
 	/* Calculate how much output cap should be discharged when turning on, based
 	* on the storage capacitor and output capacitor size */
 	// TODO: seems wrong, even the formular mentioned in thesis, it assumes C_out gets only V_cap...
 	// base: C_cap * V_cap_new^2 / 2 = C_cap * V_cap_old^2 / 2 - C_out * V_out^2 / 2
-	const int32_t scale =	((vcap_cfg.capacitance_uf - vcap_cfg.output_cap_uf) << 20U) / vcap_cfg.capacitance_uf;
+	const int32_t scale =	((vsource_cfg.capacitance_uf - vsource_cfg.output_cap_uf) << 20U) / vsource_cfg.capacitance_uf;
 	outputcap_scale_factor = SquareRootRounded(scale);
 
 	// Initialize vars
-	cap_voltage = vcap_cfg.init_cap_voltage;
+	cap_voltage = vsource_cfg.init_cap_voltage;
 	is_outputting = false;
 	discretize_cntr = 0;
 
 	// Calculate harvest multiplier
-	harvest_multiplier = (vcap_cfg.sample_period_us << (SHIFT_VOLT + SHIFT_VOLT)) /
-			     (cali_cfg.adc_load_current_gain / cali_cfg.adc_load_voltage_gain * vcap_cfg.capacitance_uf);
+	harvest_multiplier = (vsource_cfg.sample_period_us << (SHIFT_VOLT + SHIFT_VOLT)) /
+			     (cali_cfg.adc_load_current_gain / cali_cfg.adc_load_voltage_gain * vsource_cfg.capacitance_uf);
 
-	avg_cap_voltage = (vcap_cfg.upper_threshold_voltage + vcap_cfg.lower_threshold_voltage) / 2;
-	output_multiplier = vcap_cfg.dc_output_voltage / (avg_cap_voltage >> SHIFT_VOLT);
+	avg_cap_voltage = (vsource_cfg.upper_threshold_voltage + vsource_cfg.lower_threshold_voltage) / 2;
+	output_multiplier = vsource_cfg.dc_output_voltage / (avg_cap_voltage >> SHIFT_VOLT);
 
 	lookup_init();
 	// TODO: add tests for valid ranges
 }
 
-uint32_t vreg_update(const uint32_t current_measured, const uint32_t input_current,
+uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_current,
 		       const uint32_t input_voltage)
 {
 	// TODO: explain design goals and limitations... why does the code looks that way
 
-	const int32_t output_efficiency = lookup(vcap_cfg.lookup_output_efficiency, current_measured);
-    	const int32_t input_efficiency = lookup(vcap_cfg.lookup_input_efficiency, input_current);
+	const int32_t output_efficiency = lookup(vsource_cfg.lookup_output_efficiency, current_measured);
+    	const int32_t input_efficiency = lookup(vsource_cfg.lookup_input_efficiency, input_current);
 
 	// TODO: whole model should be transformed to unsigned, values don't change sign (except sum of dV_cap), we get more resolution, cleaner bit-shifts and safer array access
 	/* Calculate current (cin) flowing into the storage capacitor */
@@ -136,7 +137,7 @@ uint32_t vreg_update(const uint32_t current_measured, const uint32_t input_curre
 	int32_t cout = (current_measured * output_multiplier) >> SHIFT_VOLT; // TODO: crude simplification here, brings error of +-5%
 	cout *= output_efficiency; // TODO: efficiency should be divided for the output, LUT seems to do that, but name confuses
 	cout = cout >> SHIFT_VOLT; // TODO: shift should be some kind of DIV4096() or the real thing, it will get optimized (probably)
-	cout += vcap_cfg.leakage_current; // TODO: ESR could also be considered
+	cout += vsource_cfg.leakage_current; // TODO: ESR could also be considered
 
 	/* Calculate delta V*/
 	const int32_t delta_i = cin - cout;
@@ -144,21 +145,21 @@ uint32_t vreg_update(const uint32_t current_measured, const uint32_t input_curre
 	int32_t new_cap_voltage = cap_voltage + delta_v; // TODO: var can already be the original cap_voltage
 
 	// Make sure the voltage does not go beyond it's boundaries
-	if (new_cap_voltage > vcap_cfg.max_cap_voltage)         new_cap_voltage = vcap_cfg.max_cap_voltage;
-	else if (new_cap_voltage < vcap_cfg.min_cap_voltage)    new_cap_voltage = vcap_cfg.min_cap_voltage;
+	if (new_cap_voltage > vsource_cfg.max_cap_voltage)         new_cap_voltage = vsource_cfg.max_cap_voltage;
+	else if (new_cap_voltage < vsource_cfg.min_cap_voltage)    new_cap_voltage = vsource_cfg.min_cap_voltage;
 
 	// TODO: there is another effect of the converter -> every 16 seconds it optimizes power-draw, is it already in the data-stream?
 
 	// only update output every 'discretize' time
-	if (++discretize_cntr >= vcap_cfg.discretize) {
+	if (++discretize_cntr >= vsource_cfg.discretize) {
 		discretize_cntr = 0;
 
 		// determine whether we should be in a new state
 		if (is_outputting &&
-		    (new_cap_voltage < vcap_cfg.lower_threshold_voltage)) {
+		    (new_cap_voltage < vsource_cfg.lower_threshold_voltage)) {
 			is_outputting = 0U; // we fall under our threshold
 			//virtcap_set_output_state(0U); // TODO: is_outputting and this fn each keep the same state ...
-		} else if (!is_outputting &&(new_cap_voltage > vcap_cfg.upper_threshold_voltage)) {
+		} else if (!is_outputting &&(new_cap_voltage > vsource_cfg.upper_threshold_voltage)) {
 			is_outputting = 1U; // we have enough voltage to switch on again
 			//virtcap_set_output_state(1U);
 			new_cap_voltage = (new_cap_voltage >> 10) * outputcap_scale_factor; // TODO: magic numbers ... could be replaced by matching FN, analog to scale-calculation in init()
