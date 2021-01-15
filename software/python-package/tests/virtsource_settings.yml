@@ -1,0 +1,39 @@
+virtsource:
+
+  # Direct Reg
+  c_output_capacitance_uf: 10   # final (always last) stage to catch current spikes of target
+
+  # Boost Reg, ie. BQ25504
+  v_harvest_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
+  c_storage_capacitance_uf: 1000
+  c_storage_voltage_init_mV: 3500 # allow a proper / fast startup
+  c_storage_voltage_max_mV:  4200 # -> boost shuts off
+  c_storage_current_leak_nA: 9
+  c_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
+  c_storage_disable_threshold_mV: 2300 # -> target gets disconnected
+  LUT_inp_efficiency_n8[12][12]: [
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
+  ]# depending on inp_voltage, inp_current, (cap voltage)
+  # n8 means normalized to 2^8 - 1 = 1.0
+  # TODO: LUT could be accessed by highest bit-position of "1" in depending var. should suffice for 8192 int
+  pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
+  pwr_good_high_threshold_mV: 5000
+
+  # Buck Boost, ie. BQ25570)
+  dc_output_voltage_mV: 2300
+  LUT_output_efficiency_n8[12]: [200,200,200,200,200,200,200,200,200,200,200,200]
+  # depending on output_current
+
+  # TODO: test all 3 separate regulators, can be checked against returning voltage
+
