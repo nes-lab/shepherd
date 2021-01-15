@@ -1,6 +1,6 @@
 #ifndef __COMMONS_H_
 #define __COMMONS_H_
-// NOTE: a similar version of this definition-file exists for the kernel module (copy changes by hand)
+// NOTE: a Copy of this definition-file exists for the kernel module (copy changes by hand)
 // NOTE: and most of the structs are hardcoded in read_buffer() in shepherd_io.py
 
 #include "simple_lock.h"
@@ -78,13 +78,12 @@ struct CalibrationSettings {
 	/* TODO: this should also contain DAC-Values */
 } __attribute__((packed));
 
-/* This structure defines all settings of virtual regulator emulation*/
+/* This structure defines all settings of virtual source emulation*/
 /* more complex regulators use vars in their section and above */
-struct virtSourceSettings {
-
+/* NOTE: sys-FS-FNs uses 4 byte steps, so struct must be (size)mod4=0 */
+struct VirtSourceSettings {
 	/* Direct Reg */
 	uint32_t c_output_capacitance_uf; // final (always last) stage to catch current spikes of target
-
 	/* Boost Reg, ie. BQ25504 */
 	uint32_t v_harvest_boost_threshold_mV; // min input-voltage for the boost converter to work
 	uint32_t c_storage_capacitance_uf;
@@ -93,14 +92,17 @@ struct virtSourceSettings {
 	uint32_t c_storage_current_leak_nA;
 	uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
 	uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
-	uint8_t LUT_inp_efficiency_n8[10][10]; // depending on inp_voltage, inp_current, (cap voltage)
-	// n8 means normalized to 2^8 = 1.0
-
+	uint8_t LUT_inp_efficiency_n8[12][12]; // depending on inp_voltage, inp_current, (cap voltage)
+		// n8 means normalized to 2^8 = 1.0
+	uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
+	uint32_t pwr_good_high_threshold_mV;
 	/* Buck Boost, ie. BQ25570) */
 	uint32_t dc_output_voltage_mV;
-	uint8_t LUT_output_efficiency_n8[10]; // depending on output_current
-
+	uint8_t LUT_output_efficiency_n8[12]; // depending on output_current
 } __attribute__((packed));
+
+// pseudo-assertion to test for correct struct-size, zero cost
+extern uint32_t CHECK_VIRTSOURCE[1/((sizeof(struct VirtSourceSettings) & 0x03u) == 0x00u)];
 
 /* Format of RPMSG used in Data Exchange Protocol between PRU0 and user space */
 struct DEPMsg {
@@ -155,7 +157,7 @@ struct SharedMem {
 	/* ADC calibration settings */
 	struct CalibrationSettings calibration_settings;
 	/* This structure defines all settings of virtcap emulation*/
-	struct virtSourceSettings virtsource_settings;
+	struct VirtSourceSettings virtsource_settings;
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
 	struct CtrlRepMsg ctrl_rep;
