@@ -22,9 +22,10 @@
 #define DAC_V_SHIFT 	(10u)
 #define DAC_V_FACTOR 	(1000000u * (1u << DAC_V_SHIFT) / DAC_V_LSB_nV)
 #define DAC_mV_2_raw(x)	((DAC_V_FACTOR * (x)) >> DAC_V_SHIFT)
-// Test value-pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t TEST_DAC_INTERM[1/((DAC_V_FACTOR * DAC_MAX_mV) < 0xFFFFFFFFu)];
-extern uint32_t TEST_DAC_mVConv[1/(DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL)];
+// TODO: add calibration data
+// Test range and conversion
+ASSERT(dac_interm, (DAC_V_FACTOR * DAC_MAX_mV) < ((1u << 32u) - 1u));
+ASSERT(dac_convert, DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL);
 
 /* ADS8691 Register Config */
 #define REGISTER_WRITE	(0b11010000u << 24u)
