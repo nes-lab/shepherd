@@ -13,9 +13,9 @@ static inline uint32_t voltage_mv_to_logic(uint32_t voltage);
 static inline uint32_t current_ua_to_logic(uint32_t current);
 //int32_t current_ma_to_logic(int32_t current);
 
-static uint8_ft lookup_input_efficiency(uint8_t table[const][12], uint32_t current);
-static uint8_ft lookup_output_efficiency(uint8_t table[const], uint32_t current);
-static void lookup_init();
+static uint8_ft input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], uint32_t voltage, uint32_t current);
+static uint8_ft output_efficiency(uint8_t efficiency_lut[const], uint32_t current);
+
 
 // TODO: get sampletime from main or config
 

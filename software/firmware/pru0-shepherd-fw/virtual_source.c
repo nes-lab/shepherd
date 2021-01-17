@@ -7,7 +7,7 @@
 #include "stdint_fast.h"
 #include "virtual_source.h"
 /* ---------------------------------------------------------------------
- * Virtual Source
+ * Virtual Source, TODO: update description
  *
  * input:
  *    output current: current flowing out of shepherd
@@ -26,21 +26,11 @@
  * ----------------------------------------------------------------------
  */
 
-#define SHIFT_VOLT          (12U)
-#define EFFICIENCY_RANGE    (1U << 12U)
+#define SHIFT_VOLT		(12U)
+#define EFFICIENCY_RANGE	(1U << 12U)
 
-#define SHIFT_LUT   26U
+#define SHIFT_LUT		(26U)
 
-/* Values for converter efficiency lookup table */ // TODO: deglobalize, can't it be unsigned?
-static uint32_t max_t1;
-static uint32_t max_t2;
-static uint32_t max_t3;
-static uint32_t max_t4;
-
-static uint32_t scale_index_t1;
-static uint32_t scale_index_t2;
-static uint32_t scale_index_t3;
-static uint32_t scale_index_t4;
 
 // Output state of virtcap, TODO
 static bool_ft VIRTCAP_OUT_PIN_state = 0U;
@@ -56,21 +46,17 @@ static uint32_t cap_voltage;
 static bool_ft is_outputting;
 
 uint32_t SquareRootRounded(uint32_t a_nInput);
+static uint8_t get_msb_position(uint32_t value);
 
 // Global vars to access in update function
 static struct VirtSourceSettings vsource_cfg;
+static struct CalibrationSettings cali_cfg;
 
 #define ADC_LOAD_CURRENT_GAIN       (int32_t)(((1U << 17U) - 1) * 2.0 * 50.25 / (0.625 * 4.096))
 #define ADC_LOAD_CURRENT_OFFSET     (-(1U << 17U))  // TODO: should be positive
 #define ADC_LOAD_VOLTAGE_GAIN       (int32_t)(((1U << 18U) - 1) / (1.25 * 4.096))
 #define ADC_LOAD_VOLTAGE_OFFSET     0
 
-static struct CalibrationSettings cali_cfg = {
-	.adc_load_current_gain =    ADC_LOAD_CURRENT_GAIN,
-	.adc_load_current_offset =  ADC_LOAD_CURRENT_OFFSET,
-	.adc_load_voltage_gain =    ADC_LOAD_VOLTAGE_GAIN,
-	.adc_load_voltage_offset =  ADC_LOAD_VOLTAGE_OFFSET,
-};
 
 void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg)
 {
@@ -83,7 +69,6 @@ void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSett
 	calib_arg->adc_load_voltage_gain = ADC_LOAD_VOLTAGE_GAIN;
 	calib_arg->adc_load_voltage_offset = ADC_LOAD_VOLTAGE_OFFSET;
 	*/
-	//*vsource_arg = kBQ25570Settings; // TODO: weird config in 3 Steps, why overwriting values provided by system?
 
 	// convert voltages and currents to logic values
 
@@ -112,7 +97,6 @@ void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSett
 	avg_cap_voltage = (vsource_cfg.c_storage_voltage_max_mV + vsource_cfg.c_storage_disable_threshold_mV) / 2;
 	output_multiplier = vsource_cfg.dc_output_voltage_mV / (avg_cap_voltage >> SHIFT_VOLT);
 
-	lookup_init();
 	// TODO: add tests for valid ranges
 }
 
@@ -121,8 +105,15 @@ uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_cu
 {
 	// TODO: explain design goals and limitations... why does the code looks that way
 
-	const int32_t output_efficiency = lookup_output_efficiency(vsource_cfg.LUT_output_efficiency_n8, current_measured);
-    	const int32_t input_efficiency = lookup_input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_current);
+	/* input meta */
+	const uint8_t size_iv = get_msb_position(input_voltage);
+	const uint8_t size_ic = get_msb_position(input_current);
+	const uint8_t size_oc = get_msb_position(current_measured);
+	/* TODO: build into pseudo float system */
+
+	/* BOOST */
+    	const uint32_t inp_efficiency_n8 = input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_voltage, input_current);
+	const uint32_t inp_power = input_current * input_voltage; // TODO: data could already be preprocessed by system fpu
 
 	// TODO: whole model should be transformed to unsigned, values don't change sign (except sum of dV_cap), we get more resolution, cleaner bit-shifts and safer array access
 	/* Calculate current (cin) flowing into the storage capacitor */
@@ -150,6 +141,9 @@ uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_cu
 	// TODO: test for zero, but this can be done earlier, before adding delta_v
 
 	// TODO: there is another effect of the converter -> every 16 seconds it optimizes power-draw, is it already in the data-stream?
+
+	const uint32_t out_efficiency_n8 = output_efficiency(vsource_cfg.LUT_output_efficiency_n8, current_measured);
+
 
 	// determine whether we should be in a new state
 	if (is_outputting &&
@@ -211,72 +205,35 @@ static inline uint32_t current_ua_to_logic(const uint32_t current)
 	return logic_current;
 }
 
-static void lookup_init()
-{
-	max_t1 = current_ua_to_logic(0.1 * 1e3); // TODO: these hardcoded values should be part of the config
-	max_t2 = current_ua_to_logic(1 * 1e3);
-	max_t3 = current_ua_to_logic(10 * 1e3);
-	max_t4 = current_ua_to_logic(100 * 1e3);
 
-	scale_index_t1 = 9 * (1U << SHIFT_LUT) / max_t1;
-	scale_index_t2 = 9 * (1U << SHIFT_LUT) / max_t2;
-	scale_index_t3 = 9 * (1U << SHIFT_LUT) / max_t3;
-	scale_index_t4 = 9 * (1U << SHIFT_LUT) / max_t4;
+static uint8_t get_msb_position(const uint32_t value)
+{
+	uint32_t _value = value;
+	uint8_t	position = 0;
+	for (; _value > 0; _value >>= 1) position++;
+	return position;
 }
 
-/*
- * The lookup table returns the efficiency corresponding to the given
- * input current. Lookup table is divided into 4 sections, which each have
- * a different x-axis scale. First is determined in which section the current
- * points to. Then the current is scaled to a value between 0--9, which is used
- * as index in the lookup table.
- *
- * Figure 4: 'Charger Efficiency vs Input Current' in the datatsheet on
- * https://www.ti.com/lit/ds/symlink/bq25570.pdf shows how those 4 sections are
- * defined.
- */
-static uint8_ft lookup_input_efficiency(uint8_t table[const][12], const uint32_t current)
+
+static uint8_ft input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
 {
-	if (current < max_t1) {
-		const uint32_t index = current * scale_index_t1 >> SHIFT_LUT;    // TODO: this looks wrong! int with bitshift, to index? without sign-test, without brackets to make precedence obvious
-		return table[0][index];
-	} else if (current < max_t2) {
-        	const uint32_t index = current * scale_index_t2 >> SHIFT_LUT;
-		return table[1][index];
-	} else if (current < max_t3) {
-        	const uint32_t index = current * scale_index_t3 >> SHIFT_LUT;
-		return table[2][index];
-	} else if (current < max_t4) {
-        	const uint32_t index = current * scale_index_t4 >> SHIFT_LUT;
-		return table[3][index];
-	} else {
-		// Should never get here
-		return table[3][8];
-	}
+	uint8_t pos_v = get_msb_position(voltage);
+	uint8_t pos_c = get_msb_position(current);
+	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
+	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
+	/* TODO: could interpolate here between 4 values, if there is space for overhead */
+        return efficiency_lut[pos_v][pos_c];
 }
 
-static uint8_ft lookup_output_efficiency(uint8_t table[const], const uint32_t current)
+static uint8_ft output_efficiency(uint8_t efficiency_lut[const], const uint32_t current)
 {
-	// TODO: wrong legacy, update
-	if (current < max_t1) {
-		const uint32_t index = current * scale_index_t1 >> SHIFT_LUT;    // TODO: this looks wrong! int with bitshift, to index? without sign-test, without brackets to make precedence obvious
-		return table[index];
-	} else if (current < max_t2) {
-		const uint32_t index = current * scale_index_t2 >> SHIFT_LUT;
-		return table[index];
-	} else if (current < max_t3) {
-		const uint32_t index = current * scale_index_t3 >> SHIFT_LUT;
-		return table[index];
-	} else if (current < max_t4) {
-		const uint32_t index = current * scale_index_t4 >> SHIFT_LUT;
-		return table[index];
-	} else {
-		// Should never get here
-		return table[8];
-	}
+	uint8_t pos_c = get_msb_position_for_lut(current);
+	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
+	/* TODO: could interpolate here between 2 values, if there is space for overhead */
+	return efficiency_lut[pos_c];
 }
 
 bool_ft virtcap_get_output_state()
 {
-	return VIRTCAP_OUT_PIN_state;
+	return VIRTCAP_OUT_PIN_state; // TODO: legacy
 }
