@@ -165,7 +165,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
 
         sync_loop(&ctrl_rep, &ctrl_req);
 
-        if (!pru_com_set_ctrl_reply(&ctrl_rep))
+        if (!pru_comm_send_ctrl_reply(&ctrl_rep))
         {
             /* Error occurs if PRU was not able to handle previous message in time */
             printk(KERN_WARNING "shprd: Kernel Send_CtrlResponse -> back-pressure\n");

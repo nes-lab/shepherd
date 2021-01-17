@@ -119,15 +119,19 @@ unsigned int pru_comm_get_buffer_period_ns(void)
 
 unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
 {
+    void __iomem *offset_msg;
+    void __iomem *offset_unread;
+
+    offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_req)
+    offset_unread = offset_msg + offsetof(struct CtrlReqMsg, msg_unread)
+
     /* testing for unread-msg-token */
-    if (readb(pru_shared_mem_io + offsetof(struct SharedMem, ctrl_req) + 1) >= 1)
+    if (readb(offset_unread) >= 1)
     {
         /* if unread, then continue to copy request */
-        memcpy_fromio(ctrl_request,
-                pru_shared_mem_io + offsetof(struct SharedMem, ctrl_req),
-                sizeof(struct CtrlReqMsg));
+        memcpy_fromio(ctrl_request, offset_msg, sizeof(struct CtrlReqMsg));
         /* mark as read */
-        writeb(0, pru_shared_mem_io + offsetof(struct SharedMem, ctrl_req) + 1);
+        writeb(0, offset_unread);
         return 1;
     }
     return 0;
@@ -135,22 +139,22 @@ unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
 
 
 
-unsigned char pru_com_set_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
+unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
 {
-    unsigned char status = readb(pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep) + 1) == 0;
+    unsigned char status;
+    void __iomem *offset_msg;
+    void __iomem *offset_unread;
+
+    offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep)
+    offset_unread = offset_msg + offsetof(struct CtrlRepMsg, msg_unread)
+    status = readb(offset_unread) == 0;
 
     /* first update payload in memory */
-    ctrl_reply->identifier = 0;
+    ctrl_reply->identifier = MSG_SYNC_CTRL_REP;
     ctrl_reply->msg_unread = 0;
-    memcpy_toio(pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep),
-            ctrl_reply,
-            sizeof(struct CtrlRepMsg));
+    memcpy_toio(offset_msg, ctrl_reply, sizeof(struct CtrlRepMsg));
 
     /* activate message */
-    ctrl_reply->identifier = MSG_SYNC_CTRL_REP;
-    ctrl_reply->msg_unread = 1;
-    memcpy_toio(pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep),
-            ctrl_reply,
-            sizeof(struct CtrlRepMsg));
+    writeb(1u, offset_unread);
     return status;
 }
