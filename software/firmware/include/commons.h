@@ -17,6 +17,9 @@
 
 #define MAX_GPIO_EVT_PER_BUFFER         16384U
 
+// Test data-containers and constants with pseudo-assertion with zero cost (if expression evaluates to 0 this causes a div0
+// NOTE: name => alphanum without spaces and without ""
+#define ASSERT(name, expression) 	extern uint32_t assert_name[1/(expression)];
 
 /* Message IDs used in Data Exchange Protocol between PRU0 and user space */
 enum DEPMsgID {
@@ -77,7 +80,11 @@ struct CalibrationSettings {
 	int32_t adc_load_voltage_offset;
 	/* TODO: this should also contain DAC-Values */
 	/* TODO: rename to  */
+	/* TODO: gain should be factor, also convert it to int, offer a value for a binary shift (division)  */
 } __attribute__((packed));
+
+
+#define LUT_SIZE	(12)
 
 /* This structure defines all settings of virtual source emulation*/
 /* more complex regulators use vars in their section and above */
@@ -93,13 +100,13 @@ struct VirtSourceSettings {
 	uint32_t c_storage_current_leak_nA;
 	uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
 	uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
-	uint8_t LUT_inp_efficiency_n8[12][12]; // depending on inp_voltage, inp_current, (cap voltage)
+	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage)
 		// n8 means normalized to 2^8 = 1.0
 	uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
 	uint32_t pwr_good_high_threshold_mV;
 	/* Buck Boost, ie. BQ25570) */
 	uint32_t dc_output_voltage_mV;
-	uint8_t LUT_output_efficiency_n8[12]; // depending on output_current
+	uint8_t LUT_output_efficiency_n8[LUT_SIZE]; // depending on output_current
 } __attribute__((packed));
 
 // pseudo-assertion to test for correct struct-size, zero cost
