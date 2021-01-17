@@ -39,11 +39,6 @@
 */
 
 
-/* The IEP is clocked with 200 MHz -> 5 nanoseconds per tick */
-#define TIMER_TICK_NS       5U
-#define TIMER_BASE_PERIOD   (BUFFER_PERIOD_NS / TIMER_TICK_NS)
-#define SAMPLE_INTERVAL_NS  (BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
-
 enum SyncState {
 	IDLE,
 	WAIT_IEP_WRAP,
