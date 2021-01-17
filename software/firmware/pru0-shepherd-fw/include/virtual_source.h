@@ -4,19 +4,17 @@
 #include <stdbool.h>
 #include "commons.h"
 
-#define SHIFT_VOLT          12U
-#define EFFICIENCY_RANGE    (1U << 12U)
-
 void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg);
-uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_current, const uint32_t input_voltage);
+uint32_t vsource_update(uint32_t current_measured, uint32_t input_current, uint32_t input_voltage);
 
 bool_ft get_output_state();
 
-static inline int32_t voltage_mv_to_logic(int32_t voltage);
-static inline int32_t current_ua_to_logic(int32_t current);
+static inline uint32_t voltage_mv_to_logic(uint32_t voltage);
+static inline uint32_t current_ua_to_logic(uint32_t current);
 //int32_t current_ma_to_logic(int32_t current);
 
-static int32_t lookup(int32_t table[const][9], int32_t current);
+static uint8_ft lookup_input_efficiency(uint8_t table[const][12], uint32_t current);
+static uint8_ft lookup_output_efficiency(uint8_t table[const], uint32_t current);
 static void lookup_init();
 
 // TODO: get sampletime from main or config
