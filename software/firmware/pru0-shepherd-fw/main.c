@@ -211,7 +211,7 @@ void main(void)
 	shared_mememory->samples_per_buffer = ADC_SAMPLES_PER_BUFFER;
 	shared_mememory->buffer_period_ns = BUFFER_PERIOD_NS;
 
-	shared_mememory->dac_ch_a_voltage = 0;
+	shared_mememory->dac_auxiliary_voltage_mV = 0;
 	shared_mememory->shepherd_mode = MODE_HARVEST;
 
 	shared_mememory->next_timestamp_ns = 0;
@@ -247,7 +247,7 @@ reset:
 			     (struct CalibrationSettings *)&shared_mememory->calibration_settings);
 
 	ring_init(&free_buffers);
-	sample_init((enum ShepherdMode)shared_mememory->shepherd_mode, shared_mememory->dac_ch_a_voltage);
+	sample_init((enum ShepherdMode)shared_mememory->shepherd_mode, shared_mememory->dac_auxiliary_voltage_mV);
 	shared_mememory->gpio_edges = NULL;
 
 	/* Clear all interrupt events */

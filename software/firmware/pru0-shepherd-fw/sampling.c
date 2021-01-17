@@ -13,8 +13,18 @@
 #define DAC_CMD_OFFSET  (19U)
 #define DAC_ADDR_OFFSET (16U)
 
+#define DAC_MAX_mV	(5000u)
 #define DAC_MAX_VAL	(0xFFFFu)
 #define DAC_V_LSB	(76.2939e-6)
+
+/* DAC Shift OPs */
+#define DAC_V_LSB_nV	(76294u)
+#define DAC_V_SHIFT 	(10u)
+#define DAC_V_FACTOR 	(1000000u * (1u << DAC_V_SHIFT) / DAC_V_LSB_nV)
+#define DAC_mV_2_raw(x)	((DAC_V_FACTOR * (x)) >> DAC_V_SHIFT)
+// Test value-pseudo-assertion to test for correct struct-size, zero cost
+extern uint32_t TEST_DAC_INTERM[1/((DAC_V_FACTOR * DAC_MAX_mV) < 0xFFFFFFFFu)];
+extern uint32_t TEST_DAC_mVConv[1/(DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL)];
 
 /* ADS8691 Register Config */
 #define REGISTER_WRITE	(0b11010000u << 24u)
@@ -70,6 +80,9 @@ static inline void sample_harvesting(struct SampleBuffer *const buffer, const ui
 			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
 		}
 	}
+
+	/* TODO: also use ch-a of adc, shared_mememory->dac_auxiliary_voltage_mV */
+	//static uint32_t aux_voltage_mV =
 
 	buffer->values_current[sample_idx] = current_adc;
 	buffer->values_voltage[sample_idx] = voltage_adc;
@@ -217,7 +230,7 @@ void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 }
 
 
-void sample_init(enum ShepherdMode mode, uint32_t emu_ch_a_voltage)
+void sample_init(const enum ShepherdMode mode, const uint32_t dac_ch_a_voltage_mV)
 {
 	/* Chip-Select signals are active low */
 	GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
@@ -235,7 +248,7 @@ void sample_init(enum ShepherdMode mode, uint32_t emu_ch_a_voltage)
 		/* after DAC-Reset the output is at Zero, fast return CH B to Max to not drain the power-source */
 		/* NOTE: if harvester is not used, dac is currently shut down -> connects power source with 1 Ohm to GND */
 		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
-		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | emu_ch_a_voltage);
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
 	}
 
 	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
@@ -244,5 +257,5 @@ void sample_init(enum ShepherdMode mode, uint32_t emu_ch_a_voltage)
 	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
 	ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 
-	if (use_emulator)	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | emu_ch_a_voltage);
+	if (use_emulator)	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
 }
