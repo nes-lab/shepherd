@@ -122,8 +122,8 @@ unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
     void __iomem *offset_msg;
     void __iomem *offset_unread;
 
-    offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_req)
-    offset_unread = offset_msg + offsetof(struct CtrlReqMsg, msg_unread)
+    offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_req);
+    offset_unread = offset_msg + offsetof(struct CtrlReqMsg, msg_unread);
 
     /* testing for unread-msg-token */
     if (readb(offset_unread) >= 1)
@@ -145,8 +145,8 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
     void __iomem *offset_msg;
     void __iomem *offset_unread;
 
-    offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep)
-    offset_unread = offset_msg + offsetof(struct CtrlRepMsg, msg_unread)
+    offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep);
+    offset_unread = offset_msg + offsetof(struct CtrlRepMsg, msg_unread);
     status = readb(offset_unread) == 0;
 
     /* first update payload in memory */
