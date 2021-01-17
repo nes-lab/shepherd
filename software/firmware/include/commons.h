@@ -106,13 +106,14 @@ struct VirtSourceSettings {
 	uint32_t pwr_good_high_threshold_mV;
 	/* Buck Boost, ie. BQ25570) */
 	uint32_t dc_output_voltage_mV;
-	uint8_t LUT_output_efficiency_n8[LUT_SIZE]; // depending on output_current
-} __attribute__((packed));
+	uint8_t LUT_output_efficiency_n8[LUT_SIZE]; // depending on output_current, TODO: was inverse
+	/* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage, and all power be used? */
+    } __attribute__((packed));
 
-// pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t CHECK_VIRTSOURCE[1/((sizeof(struct VirtSourceSettings) & 0x03u) == 0x00u)];
+    // pseudo-assertion to test for correct struct-size, zero cost
+    extern uint32_t CHECK_VIRTSOURCE[1/((sizeof(struct VirtSourceSettings) & 0x03u) == 0x00u)];
 
-/* Format of RPMSG used in Data Exchange Protocol between PRU0 and user space */
+    /* Format of RPMSG used in Data Exchange Protocol between PRU0 and user space */
 struct DEPMsg {
 	uint32_t msg_type;
 	uint32_t value;

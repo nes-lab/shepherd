@@ -61,7 +61,8 @@ struct VirtSourceSettings {
     uint32_t pwr_good_high_threshold_mV;
     /* Buck Boost, ie. BQ25570) */
     uint32_t dc_output_voltage_mV;
-    uint8_t LUT_output_efficiency_n8[12]; // depending on output_current
+    uint8_t LUT_output_efficiency_n8[12]; // depending on output_current, TODO: was inverse
+    /* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage, and all power be used? */
 } __attribute__((packed));
 
 /* Control request message sent from PRU1 to this kernel module */
