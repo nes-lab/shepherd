@@ -42,7 +42,7 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 				struct kobj_attribute *attr, const char *buf,
 				size_t count);
 
-static ssize_t sysfs_harvesting_voltage_store(struct kobject *kobj,
+static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj,
 					      struct kobj_attribute *attr,
 					      const char *buf, size_t count);
 
@@ -93,10 +93,10 @@ struct kobj_attr_struct_s attr_mode = {
 	.attr = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
 	.val_offset = offsetof(struct SharedMem, shepherd_mode)
 };
-struct kobj_attr_struct_s attr_harvesting_voltage = {
-	.attr = __ATTR(harvesting_voltage, 0660, sysfs_SharedMem_show,
-		       sysfs_harvesting_voltage_store),
-	.val_offset = offsetof(struct SharedMem, harvesting_voltage)
+struct kobj_attr_struct_s attr_auxiliary_voltage = {
+	.attr = __ATTR(dac_auxiliary_voltage_mV, 0660, sysfs_SharedMem_show,
+		       sysfs_auxiliary_voltage_store),
+	.val_offset = offsetof(struct SharedMem, dac_auxiliary_voltage_mV)
 };
 struct kobj_attr_struct_s attr_calibration_settings = {
 	.attr = __ATTR(calibration_settings, 0660, sysfs_calibration_settings_show,
@@ -123,7 +123,7 @@ static struct attribute *pru_attrs[] = {
 	&attr_samples_per_buffer.attr.attr,
 	&attr_buffer_period_ns.attr.attr,
 	&attr_mode.attr.attr,
-	&attr_harvesting_voltage.attr.attr,
+	&attr_auxiliary_voltage.attr.attr,
 	&attr_calibration_settings.attr.attr,
 	&attr_virtsource_settings.attr.attr,
 	NULL,
@@ -322,7 +322,7 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 	return count;
 }
 
-static ssize_t sysfs_harvesting_voltage_store(struct kobject *kobj,
+static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj,
 					      struct kobj_attribute *attr,
 					      const char *buf, size_t count)
 {
@@ -335,7 +335,7 @@ static ssize_t sysfs_harvesting_voltage_store(struct kobject *kobj,
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
 	if (sscanf(buf, "%u", &tmp) == 1) {
-		printk(KERN_INFO "shprd: Setting harvesting voltage to %u",
+		printk(KERN_INFO "shprd: Setting auxiliary DAC-voltage to %u",
 		       tmp);
 		writel(tmp, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
