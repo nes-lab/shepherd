@@ -76,6 +76,7 @@ struct CalibrationSettings {
 	/* Offset of load voltage adc */
 	int32_t adc_load_voltage_offset;
 	/* TODO: this should also contain DAC-Values */
+	/* TODO: rename to  */
 } __attribute__((packed));
 
 /* This structure defines all settings of virtual source emulation*/
@@ -142,8 +143,9 @@ struct SharedMem {
 	uint32_t shepherd_state;
 	/* Stores the mode, e.g. harvesting or emulation */
 	uint32_t shepherd_mode;
-	/* Allows setting a fixed harvesting voltage as reference for the boost converter, TODO */
-	uint32_t dac_ch_a_voltage;
+	/* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
+	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
+	uint32_t dac_auxiliary_voltage_mV;
 	/* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
 	uint32_t mem_base_addr;
 	/* Length of shared area in DDR RAM */
