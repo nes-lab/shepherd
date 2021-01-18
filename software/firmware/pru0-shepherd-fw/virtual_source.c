@@ -36,17 +36,50 @@
 static bool_ft VIRTCAP_OUT_PIN_state = 0U;
 
 // Derived constants
-static int32_t harvest_multiplier;
-static int32_t output_multiplier;
-static int32_t outputcap_scale_factor;
-static int32_t avg_cap_voltage;
+static uint32_t harvest_multiplier;
+static uint32_t output_multiplier;
+static uint32_t outputcap_scale_factor;
+static uint32_t avg_cap_voltage;
 
 // Working vars
-static uint32_t cap_voltage;
+static uint32_t cap_voltage_uV;
 static bool_ft is_outputting;
 
+// new source vars
+static uint32_t inv_efficiency_output_n8[LUT_SIZE];
+static uint32_t output_voltage_uV;
+
+struct VirtSource_State {
+	/* Direct Reg */
+	uint32_t c_output_capacitance_uf; // final (always last) stage to catch current spikes of target
+	/* Boost Reg, ie. BQ25504 */
+	uint32_t v_harvest_boost_threshold_mV; // min input-voltage for the boost converter to work
+	uint32_t c_storage_capacitance_uf;
+	uint32_t c_storage_voltage_init_mV; // allow a proper / fast startup
+	uint32_t c_storage_voltage_max_mV;  // -> boost shuts off
+	uint32_t c_storage_current_leak_nA;
+	uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
+	uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
+	uint8_t LUT_inp_efficiency_n8[12][12]; // depending on inp_voltage, inp_current, (cap voltage)
+	// n8 means normalized to 2^8 = 1.0
+	uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
+	uint32_t pwr_good_high_threshold_mV;
+	/* Buck Boost, ie. BQ25570) */
+	uint32_t dc_output_voltage_mV;
+	uint8_t LUT_output_efficiency_n8[12]; // depending on output_current, TODO: was inverse
+	/* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage, and all power be used? */
+} __attribute__((packed));
+
+
+
 uint32_t SquareRootRounded(uint32_t a_nInput);
-static uint8_t get_msb_position(uint32_t value);
+
+#ifdef __GNUC__
+static uint8_t get_left_zero_count(uint32_t value);
+#else
+/* use from asm-file */
+extern uint8_t get_left_zero_count(uint32_t value)
+#endif
 
 // Global vars to access in update function
 static struct VirtSourceSettings vsource_cfg;
@@ -64,20 +97,20 @@ void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSett
 	cali_cfg = *calib_arg;
 
 	/*
-	calib_arg->adc_load_current_gain = ADC_LOAD_CURRENT_GAIN; // TODO: why overwriting values provided by system?
-	calib_arg->adc_load_current_offset = ADC_LOAD_CURRENT_OFFSET;
-	calib_arg->adc_load_voltage_gain = ADC_LOAD_VOLTAGE_GAIN;
-	calib_arg->adc_load_voltage_offset = ADC_LOAD_VOLTAGE_OFFSET;
+	calib_arg->adc_current_factor_nA_n8 = ADC_LOAD_CURRENT_GAIN; // TODO: why overwriting values provided by system?
+	calib_arg->adc_current_offset_nA = ADC_LOAD_CURRENT_OFFSET;
+	calib_arg->adc_load_voltage_gain_mV_n8 = ADC_LOAD_VOLTAGE_GAIN;
+	calib_arg->adc_voltage_offset_uV = ADC_LOAD_VOLTAGE_OFFSET;
 	*/
 
 	// convert voltages and currents to logic values
 
-	vsource_cfg.c_storage_enable_threshold_mV =	voltage_mv_to_logic(vsource_arg->c_storage_enable_threshold_mV);
-	vsource_cfg.c_storage_disable_threshold_mV =	voltage_mv_to_logic(vsource_arg->c_storage_disable_threshold_mV);
-	vsource_cfg.c_storage_voltage_max_mV = voltage_mv_to_logic(vsource_arg->c_storage_voltage_max_mV);
-	vsource_cfg.c_storage_voltage_init_mV = voltage_mv_to_logic(vsource_arg->c_storage_voltage_init_mV);
-	vsource_cfg.dc_output_voltage_mV = voltage_mv_to_logic(vsource_arg->dc_output_voltage_mV);
-	vsource_cfg.c_storage_current_leak_nA = current_ua_to_logic(vsource_arg->c_storage_current_leak_nA);
+	vsource_cfg.c_storage_enable_threshold_mV = conv_uV_to_adc_raw_n8(vsource_arg->c_storage_enable_threshold_mV);
+	vsource_cfg.c_storage_disable_threshold_mV = conv_uV_to_adc_raw_n8(vsource_arg->c_storage_disable_threshold_mV);
+	vsource_cfg.c_storage_voltage_max_mV = conv_uV_to_adc_raw_n8(vsource_arg->c_storage_voltage_max_mV);
+	vsource_cfg.c_storage_voltage_init_mV = conv_uV_to_adc_raw_n8(vsource_arg->c_storage_voltage_init_mV);
+	vsource_cfg.dc_output_voltage_mV = conv_uV_to_adc_raw_n8(vsource_arg->dc_output_voltage_mV);
+	vsource_cfg.c_storage_current_leak_nA = conv_nA_to_adc_raw_n8(vsource_arg->c_storage_current_leak_nA);
 
 	/* Calculate how much output cap should be discharged when turning on, based
 	* on the storage capacitor and output capacitor size */
@@ -87,53 +120,66 @@ void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSett
 	outputcap_scale_factor = SquareRootRounded(scale);
 
 	// Initialize vars
-	cap_voltage = vsource_cfg.c_storage_voltage_init_mV;
+	cap_voltage_uV = vsource_cfg.c_storage_voltage_init_mV;
 	is_outputting = false;
 
 	// Calculate harvest multiplier
 	harvest_multiplier = (SAMPLE_INTERVAL_NS << (SHIFT_VOLT + SHIFT_VOLT)) /
-			     (cali_cfg.adc_load_current_gain / cali_cfg.adc_load_voltage_gain * vsource_cfg.c_storage_capacitance_uf);
+			     (cali_cfg.adc_current_factor_nA_n8 / cali_cfg.adc_load_voltage_gain_mV_n8 * vsource_cfg.c_storage_capacitance_uf);
 
-	avg_cap_voltage = (vsource_cfg.c_storage_voltage_max_mV + vsource_cfg.c_storage_disable_threshold_mV) / 2;
-	output_multiplier = vsource_cfg.dc_output_voltage_mV / (avg_cap_voltage >> SHIFT_VOLT);
+	//avg_cap_voltage = (vsource_cfg.c_storage_voltage_max_mV + vsource_cfg.c_storage_disable_threshold_mV) / 2;
+	//output_multiplier = vsource_cfg.dc_output_voltage_mV / (avg_cap_voltage >> SHIFT_VOLT);
+
+	for (uint8_t index = 0; index < LUT_SIZE; index++)
+	{
+		if (vsource_cfg.LUT_output_efficiency_n8[index] > 0)
+		{
+			inv_efficiency_output_n8[index] = (255u << 8u) / vsource_cfg.LUT_output_efficiency_n8[index];
+		}
+		else
+		{
+			/* 0% is aproximated by biggest inverse value to avoid div0 */
+			inv_efficiency_output_n8[index] = (255u << 8u);
+		}
+	}
+
+	// TODO: inverse efficiency for output, to get rid of division in loop
 
 	// TODO: add tests for valid ranges
 }
 
-uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_current,
-		       const uint32_t input_voltage)
+uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_current_nA,
+		       const uint32_t input_voltage_uV)
 {
 	// TODO: explain design goals and limitations... why does the code looks that way
+	// TODO: input should be bound to specific normalization (adc_value with correction or physical uV)
 
-	/* input meta */
-	const uint8_t size_iv = get_msb_position(input_voltage);
-	const uint8_t size_ic = get_msb_position(input_current);
-	const uint8_t size_oc = get_msb_position(current_measured);
-	/* TODO: build into pseudo float system */
+	/* TODO: build into pseudo float system, there is a asm-cmd LMBD that gives us the left most bit detect, (32 - get_left_zero_count()) */
 
-	/* BOOST */
-    	const uint32_t inp_efficiency_n8 = input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_voltage, input_current);
-	const uint32_t inp_power = input_current * input_voltage; // TODO: data could already be preprocessed by system fpu
+	/* BOOST, Calculate current flowing into the storage capacitor */
+    	const uint32_t eta_inp_n8 = input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_voltage_uV, input_current_nA);
+	const uint64_t dP_inp_pW_n8 = input_current_nA * input_voltage_uV * eta_inp_n8; // TODO: uint32_t, and bitshift accordingly
 
-	// TODO: whole model should be transformed to unsigned, values don't change sign (except sum of dV_cap), we get more resolution, cleaner bit-shifts and safer array access
-	/* Calculate current (cin) flowing into the storage capacitor */
-	const int32_t input_power = input_current * input_voltage; // TODO: data could already be preprocessed by system fpu
-	int32_t cin = input_power / (cap_voltage >> SHIFT_VOLT); // TODO: cin, cout are dI_in, dI_out
-	cin *= input_efficiency;
-	cin = cin >> SHIFT_VOLT;
+	/* BUCK, Calculate current flowing out of the storage capacitor*/
+	const uint32_t eta_inv_out_n8 = output_efficiency(inv_efficiency_output_n8, current_adc_raw);
+	const uint32_t current_out_nA_n6 = conv_adc_raw_to_nA_n6(current_adc_raw);
+	const uint64_t dP_out_pW_n8 = current_out_nA_n6 * output_voltage_uV * eta_inv_out_n8 +
+ 				((vsource_cfg.c_storage_current_leak_nA * cap_voltage_uV) << 8u);
 
-	/* Calculate current (cout) flowing out of the storage capacitor*/
-	//if (!is_outputting) current_measured = 0;
+	uint64_t dI_sum;
+	if (dP_inp_pW_n8 > dP_out_pW_n8)
+	{
+		dP_sum = (dP_inp_pW_n8 - dP_out_pW_n8) / ;
+		dI
+	}
 
-	int32_t cout = (current_measured * output_multiplier) >> SHIFT_VOLT; // TODO: crude simplification here, brings error of +-5%
-	cout *= output_efficiency; // TODO: efficiency should be divided for the output, LUT seems to do that, but name confuses
-	cout = cout >> SHIFT_VOLT; // TODO: shift should be some kind of DIV4096() or the real thing, it will get optimized (probably)
-	cout += vsource_cfg.c_storage_current_leak_nA; // TODO: ESR could also be considered
+	uint32_t dI_out = (current_adc_raw * output_multiplier) >> SHIFT_VOLT; // TODO: crude simplification here, brings error of +-5%
+	dI_out += vsource_cfg.c_storage_current_leak_nA; // TODO: ESR could also be considered
 
 	/* Calculate delta V*/
 	const int32_t delta_i = cin - cout;
 	const int32_t delta_v = (delta_i * harvest_multiplier) >> SHIFT_VOLT; // TODO: looks wrong, harvest mult is specific for V*A ADC-Gains, but for OUT we have no Volt, and for leakage neither
-	uint32_t new_cap_voltage = cap_voltage + delta_v; // TODO: var can already be the original cap_voltage
+	uint32_t new_cap_voltage = cap_voltage_uV + delta_v; // TODO: var can already be the original cap_voltage_uV
 
 	// Make sure the voltage does not go beyond it's boundaries
 	if (new_cap_voltage > vsource_cfg.c_storage_voltage_max_mV)         new_cap_voltage = vsource_cfg.c_storage_voltage_max_mV;
@@ -142,7 +188,7 @@ uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_cu
 
 	// TODO: there is another effect of the converter -> every 16 seconds it optimizes power-draw, is it already in the data-stream?
 
-	const uint32_t out_efficiency_n8 = output_efficiency(vsource_cfg.LUT_output_efficiency_n8, current_measured);
+
 
 
 	// determine whether we should be in a new state
@@ -156,10 +202,12 @@ uint32_t vsource_update(const uint32_t current_measured, const uint32_t input_cu
 		new_cap_voltage = (new_cap_voltage >> 10) * outputcap_scale_factor; // TODO: magic numbers ... could be replaced by matching FN, analog to scale-calculation in init()
 	}
 
-	// TODO: add second branch (like before) for pwr_good
 
-	cap_voltage = new_cap_voltage;
-	return cap_voltage;
+	// TODO: add second branch (like before) for pwr_good
+	cap_voltage_uV = new_cap_voltage;
+
+	const uint32_t output_dac_raw = conv_uV_to_dac_raw_n8(output_voltage_uV) >> 8u;
+	return output_dac_raw;
 }
 
 uint32_t SquareRootRounded(const uint32_t a_nInput)
@@ -188,49 +236,180 @@ uint32_t SquareRootRounded(const uint32_t a_nInput)
 	return res;
 }
 
-static inline uint32_t voltage_mv_to_logic(const uint32_t voltage)
+/* if one exponent is smaller and there is head-space, it will double this value, or if no head-space, half the other value*/
+void equalize_exp(uint32_t* const value1, int8_t* const expo1,
+		  uint32_t* const value2, int8_t* const expo2)
 {
-	/* Compensate for adc gain and offset, division for mv is split to optimize accuracy */
-	uint32_t logic_voltage = voltage * (cali_cfg.adc_load_voltage_gain / 100) / 10;
-	logic_voltage += cali_cfg.adc_load_voltage_offset;
-	return logic_voltage << SHIFT_VOLT;
+	while (*expo1 != *expo2)
+	{
+		if (*expo1 > *expo2)
+		{
+			if (get_left_zero_count(*value2) > 0)
+			{
+				*value2 <<= 1;
+				(*expo2)++;
+			}
+			else
+			{
+				*value1 >>= 1;
+				(*expo1)--;
+			}
+		}
+		else
+		{
+			if (get_left_zero_count(*value1) > 0)
+			{
+				*value1 <<= 1;
+				(*expo1)++;
+			}
+			else
+			{
+				*value2 >>= 1;
+				(*expo2)--;
+			}
+		}
+	}
 }
 
-static inline uint32_t current_ua_to_logic(const uint32_t current)
+/* */
+void add(uint32_t* const res_value, int8_t* const res_expo,
+	  uint32_t value1, int8_t expo1,
+	  uint32_t value2, int8_t expo2)
 {
-	/* Compensate for adc gain and offset, division for ua is split to optimize accuracy */
-	uint32_t logic_current = current * (cali_cfg.adc_load_current_gain / 1000) / 1000;
-	/* Add 2^17 because current is defined around zero, not 2^17 */
-	logic_current += cali_cfg.adc_load_current_offset + (1U << 17U); // TODO: why first remove 1<<17 and then add it again?
-	return logic_current;
+	equalize_exp(&value1, &expo1, &value2, &expo2);
+	if ((get_left_zero_count(value1) < 1) | (get_left_zero_count(value2) < 1))
+	{
+		value1 >>= 1;
+		value2 >>= 1;
+		(*res_expo)--;
+	}
+	*res_value = value1 + value2;
+	*res_expo += expo1;
+}
+
+void sub(uint32_t* const res_value, int8_t* const res_expo,
+	 uint32_t value1, int8_t expo1,
+	 uint32_t value2, int8_t expo2)
+{
+	equalize_exp(&value1, &expo1, &value2, &expo2);
+	if ((get_left_zero_count(value1) < 1) | (get_left_zero_count(value2) < 1))
+	{
+		value1 >>= 1;
+		value2 >>= 1;
+		(*res_expo)--;
+	}
+	*res_value = value1 + value2;
+	*res_expo += expo1;
+}
+
+void mult(uint32_t* const res_value, int8_t* const res_exp,
+	  uint32_t mul1_value, const int8_t mul1_exp,
+	  uint32_t mul2_value, const int8_t mul2_exp)
+{
+	uint8_t mul1_lzc = get_left_zero_count(mul1_value);
+	uint8_t mul2_lzc = get_left_zero_count(mul2_value);
+	while (mul1_lzc + mul2_lzc < 32)
+	{
+		if (mul1_lzc > mul2_lzc)
+		{
+			mul1_value >>= 1;
+			mul1_lzc++;
+			(*res_exp)--;
+		}
+		else
+		{
+			mul2_value >>= 1;
+			mul2_lzc++;
+			(*res_exp)--;
+		}
+	}
+	*res_value = mul1_value * mul2_value;
+	*res_exp += mul1_exp + mul2_exp;
 }
 
 
-static uint8_t get_msb_position(const uint32_t value)
+
+
+/* bring values into adc domain with -> voltage_uV = adc_value * gain_factor + offset
+ * original definition in: https://github.com/geissdoerfer/shepherd/blob/master/docs/user/data_format.rst */
+static inline uint32_t conv_uV_to_adc_raw_n8(const uint32_t voltage_uV)
 {
+	uint32_t voltage_raw_n8 = 0;
+	if ((int32_t)voltage_uV > cali_cfg.adc_voltage_offset_uV)
+	{
+		voltage_raw_n8 = voltage_uV - cali_cfg.adc_voltage_offset_uV;
+	}
+	voltage_raw_n8 *= cali_cfg.adc_voltage_ifactor_uV_n8;
+	return voltage_raw_n8;
+}
+
+// safe conversion - 50mA are 16 bit as uA, 26 bit as nA // raw is 18 bit, raw_n8 is 26 bit
+// TODO: adc_current_ifactor_nA_n8 is near 1 ... not optimal
+static inline uint32_t conv_nA_to_adc_raw_n8(const uint32_t current_nA)
+{
+	uint32_t current_raw_n8 = 0;
+	if ((int32_t)current_nA > cali_cfg.adc_current_offset_nA)
+	{
+		current_raw_n8 = current_nA - cali_cfg.adc_current_offset_nA;
+	}
+	current_raw_n8 *= cali_cfg.adc_current_ifactor_nA_n8;
+	return current_raw_n8;
+}
+
+// TODO: n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
+static inline uint32_t conv_adc_raw_to_nA_n6(const uint32_t current_raw)
+{
+	uint32_t current_nA_n6 = (current_raw * cali_cfg.adc_current_factor_nA_n8) >> 2u;
+	int32_t offset_nA_n6 = cali_cfg.adc_current_offset_nA * (1u << 6u);
+
+	if ((int32_t)current_nA_n6 > offset_nA_n6)
+	{
+		current_nA_n6 -= offset_nA_n6;
+	}
+	else
+		current_nA_n6 = 0;
+	return current_nA_n6;
+}
+
+// safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
+static inline uint32_t conv_uV_to_dac_raw_n8(const uint32_t voltage_uV)
+{
+	uint32_t voltage_raw_n8 = 0;
+	if ((int32_t)voltage_uV > cali_cfg.dac_voltage_offset_uV)
+	{
+		voltage_raw_n8 = voltage_uV - cali_cfg.dac_voltage_offset_uV;
+	}
+	voltage_raw_n8 *= cali_cfg.dac_voltage_ifactor_mV_n8;
+	return voltage_raw_n8;
+}
+
+#ifdef __GNUC__
+static uint8_t get_left_zero_count(const uint32_t value)
+{
+	/* TODO: there is a ASM-COMMAND for that, LMBD r2, r1, 1 */
 	uint32_t _value = value;
-	uint8_t	position = 0;
-	for (; _value > 0; _value >>= 1) position++;
-	return position;
+	uint8_t	count = 32;
+	for (; _value > 0; _value >>= 1) count--;
+	return count;
 }
-
+#endif
 
 static uint8_ft input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
 {
-	uint8_t pos_v = get_msb_position(voltage);
-	uint8_t pos_c = get_msb_position(current);
+	uint8_t pos_v = 32 - get_left_zero_count(voltage);
+	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 4 values, if there is space for overhead */
         return efficiency_lut[pos_v][pos_c];
 }
 
-static uint8_ft output_efficiency(uint8_t efficiency_lut[const], const uint32_t current)
+static uint32_t output_efficiency(uint32_t inv_efficiency_lut[const], const uint32_t current)
 {
 	uint8_t pos_c = get_msb_position_for_lut(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 2 values, if there is space for overhead */
-	return efficiency_lut[pos_c];
+	return inv_efficiency_lut[pos_c];
 }
 
 bool_ft virtcap_get_output_state()

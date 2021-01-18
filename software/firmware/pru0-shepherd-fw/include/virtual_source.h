@@ -5,16 +5,19 @@
 #include "commons.h"
 
 void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg);
-uint32_t vsource_update(uint32_t current_measured, uint32_t input_current, uint32_t input_voltage);
+uint32_t vsource_update(uint32_t current_adc_raw, uint32_t input_current_nA, uint32_t input_voltage_uV);
 
 bool_ft get_output_state();
 
-static inline uint32_t voltage_mv_to_logic(uint32_t voltage);
-static inline uint32_t current_ua_to_logic(uint32_t current);
-//int32_t current_ma_to_logic(int32_t current);
+static inline uint32_t conv_uV_to_adc_raw_n8(uint32_t voltage_uV);
+static inline uint32_t conv_nA_to_adc_raw_n8(uint32_t current_nA);
+
+static inline uint32_t conv_adc_raw_to_nA_n6(const uint32_t current_raw);
+
+static inline uint32_t conv_uV_to_dac_raw_n8(uint32_t voltage_uV);
 
 static uint8_ft input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], uint32_t voltage, uint32_t current);
-static uint8_ft output_efficiency(uint8_t efficiency_lut[const], uint32_t current);
+static uint32_t output_efficiency(uint32_t efficiency_lut[const], uint32_t current);
 
 
 // TODO: get sampletime from main or config
@@ -32,6 +35,7 @@ static uint8_ft output_efficiency(uint8_t efficiency_lut[const], uint32_t curren
  * - storage-capacitor has capacitance, init-voltage, current-leakage
  * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
  * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
+ * - target / output disconnect check is only every 65 ms
  * - to disable set c_storage_voltage_max_mV to 0
  * - the real boost converter will be handled in pyPackage and work with IV-Curves
  */
@@ -39,6 +43,7 @@ static uint8_ft output_efficiency(uint8_t efficiency_lut[const], uint32_t curren
 /* Buck-Boost-Converter
  * - uses boost stage from before, but output is regulated (i.e. BQ25570)
  * - buck-converter has output_voltage and efficiency-LUT (depending on output-current)
+ * - it will disconnect output when disable threshold voltage is reached or v_storage < v_out
  * - to disable set output_voltage to 0
  */
 
@@ -49,7 +54,7 @@ static uint8_ft output_efficiency(uint8_t efficiency_lut[const], uint32_t curren
 
 /*
 TODO: normally there is a lower threshold for the input where the boost can't work -> in our case 130mV
-TODO: not only depending on inp_current -> inp_voltage, (cap_voltage) 10x10x10, x1 byte, or 2 byte
+TODO: not only depending on inp_current -> inp_voltage, (cap_voltage_uV) 10x10x10, x1 byte, or 2 byte
 
 VCap-Variables not needed:
 	sample_period_us // should be linked to default sample time
