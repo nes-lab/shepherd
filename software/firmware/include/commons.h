@@ -70,15 +70,21 @@ struct SampleBuffer {
 } __attribute__((packed));
 
 struct CalibrationSettings {
-	/* Gain of load current adc. It converts current to adc value, TODO: probably nA? */
-	int32_t adc_load_current_gain;
+	/* Gain of load current adc. It converts current to ADC raw value */
+	uint32_t adc_current_factor_nA_n8;
+	uint32_t adc_current_ifactor_nA_n8;
 	/* Offset of load current adc */
-	int32_t adc_load_current_offset;
-	/* Gain of load voltage adc. It converts voltage to adc value */
-	int32_t adc_load_voltage_gain;
-	/* Offset of load voltage adc */
-	int32_t adc_load_voltage_offset;
-	/* TODO: this should also contain DAC-Values */
+	int32_t adc_current_offset_nA;
+	/* Gain of load voltage adc. It converts voltage to ADC value */
+	uint32_t adc_load_voltage_gain_mV_n8;
+	uint32_t adc_voltage_ifactor_uV_n8;
+	/* Offset of load voltage ADC */
+	int32_t adc_voltage_offset_uV;
+	/* Gain of DAC. It converts voltage to DAC raw value */
+	uint32_t dac_voltage_factor_mV_n8;
+	uint32_t dac_voltage_ifactor_mV_n8;
+	/* Offset of load voltage DAC */
+	int32_t dac_voltage_offset_uV;
 	/* TODO: rename to  */
 	/* TODO: gain should be factor, also convert it to int, offer a value for a binary shift (division)  */
 } __attribute__((packed));
@@ -100,6 +106,7 @@ struct VirtSourceSettings {
 	uint32_t c_storage_current_leak_nA;
 	uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
 	uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
+	uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
 	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage)
 		// n8 means normalized to 2^8 = 1.0
 	uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
@@ -191,5 +198,7 @@ struct SharedMem {
 	bool_ft cmp1_handled_by_pru0;
 	bool_ft cmp1_handled_by_pru1;
 } __attribute__((packed));
+
+ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000);
 
 #endif /* __COMMONS_H_ */

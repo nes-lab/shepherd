@@ -11,6 +11,7 @@ virtsource:
   c_storage_current_leak_nA: 9
   c_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
   c_storage_disable_threshold_mV: 2300 # -> target gets disconnected
+  interval_check_thresholds_ns: 65000000  # some BQs check every 65 ms if output should be disconnected
   LUT_inp_efficiency_n8[12][12]: [
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],

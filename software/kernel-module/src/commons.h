@@ -55,14 +55,15 @@ struct VirtSourceSettings {
     uint32_t c_storage_current_leak_nA;
     uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
     uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
+    uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
     uint8_t LUT_inp_efficiency_n8[12][12]; // depending on inp_voltage, inp_current, (cap voltage)
         // n8 means normalized to 2^8 = 1.0
     uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
     uint32_t pwr_good_high_threshold_mV;
     /* Buck Boost, ie. BQ25570) */
     uint32_t dc_output_voltage_mV;
-    uint8_t LUT_output_efficiency_n8[12]; // depending on output_current, TODO: was inverse
-    /* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage, and all power be used? */
+    uint8_t LUT_output_efficiency_n8[12]; // depending on output_current, TODO: there is trouble here: n8 for uint8_t means that 256 (100%) is not reachable!
+    /* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage (it can't), and all power be used? - python warning*/
 } __attribute__((packed));
 
 /* Control request message sent from PRU1 to this kernel module */
