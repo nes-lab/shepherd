@@ -4,8 +4,8 @@ command: record
 parameters:
   no_calib: false
   force: false
-  ldo_voltage: 2.0
-  load: artificial
+  ldo_voltage: 2.0 # TODO: does not exist in this form anymore
+  load: artificial # TODO: does not exist in this form anymore
   mode: harvesting
   output: /var/shepherd/recordings
 verbose: 2
