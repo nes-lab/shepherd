@@ -100,18 +100,18 @@ static inline void sample_harvesting_test(struct SampleBuffer *const buffer, con
 static inline void sample_emulation(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* Get input current/voltage from shared memory buffer */
-	const int32_t input_current = buffer->values_current[sample_idx] - ((1U << 17U) - 1); // TODO: why convert it to int and subtract 16bit?
-	const int32_t input_voltage = buffer->values_voltage[sample_idx];
+	const uint32_t input_current_nA = buffer->values_current[sample_idx] - ((1U << 17U) - 1); // TODO: why convert it to int and subtract 16bit?
+	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
 
 	/* measure current flow */
-	const uint32_t current_adc = adc_fastread(SPI_CS_EMU_ADC_PIN);
+	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
 
-	/* Execute virtcap algorithm */
-	const uint32_t voltage_dac = vsource_update(current_adc, input_current, input_voltage);
+	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
+	const uint32_t voltage_dac = vsource_update(current_adc_raw, input_current_nA, input_voltage_uV);
 	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
 
 	/* write back regulator-state into shared memory buffer */
-	buffer->values_current[sample_idx] = current_adc;
+	buffer->values_current[sample_idx] = current_adc_raw;
 	buffer->values_voltage[sample_idx] = voltage_dac;
 }
 
