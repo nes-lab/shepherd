@@ -15,6 +15,8 @@ SOURCES += simple_lock.c
 SOURCES += iep.c
 
 ASM_SOURCES = spi_transfer_pru.asm
+ASM_SOURCES += ./../lib/src/gpio_io_fast.asm
+ASM_SOURCES += ./../lib/src/register_magic.asm
 
 BASE_PATH ?= ./..
 
