@@ -10,31 +10,62 @@ extern uint32_t max_value(uint32_t value1, uint32_t value2);
 extern uint32_t min_value(uint32_t value1, uint32_t value2);
 #endif
 
-void equalize_exp(uint32_t* value1, int8_t* shift1,
-		  uint32_t* value2, int8_t* shift2);
+/* Pseudo unsigned float has the following features:
+ * - catches div0 (results in MAX-value)
+ * - tries to keep as much resolution as possible during calculation
+ * - bring new numbers into the system -> number following the Operation tells the count of ufloat-input-parameter
+ * - should be faster than float-emulation
+ */
 
-void add2(uint32_t* res_value, int8_t* res_expo,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2);
-
-void sub2(uint32_t* res_value, int8_t* res_expo,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2);
-
-void mul2(uint32_t* res_value, int8_t* res_exp,
-	  uint32_t value1, int8_t expo1,
-	  uint32_t value2, int8_t expo2);
-
-/* */
-void mul1(uint32_t* value1, int8_t* expo1,
-	   uint32_t value2, int8_t expo2);
-
-void div2(uint32_t* res_value, int8_t* res_exp,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2);
+struct pseudo_float {
+	uint32_t value;
+	int8_t   shift;
+};
+typedef struct pseudo_float ufloat;
 
 
+uint32_t extract_value(ufloat num1);
 
+
+uint32_t compare_gt(ufloat num1, ufloat num2);
+
+
+void equalize_exp2(ufloat * num1, ufloat * num2);
+
+void equalize_exp0(uint32_t* value1, int8_t* shift1,
+		   uint32_t* value2, int8_t* shift2);
+
+ufloat add2(ufloat num1, ufloat num2);
+
+ufloat add1(ufloat num1, uint32_t value2, int8_t shift2);
+
+ufloat add0(uint32_t value1, int8_t shift1,
+	    uint32_t value2, int8_t shift2);
+
+ufloat sub2(ufloat num1, ufloat num2);
+
+ufloat sub1(ufloat num1, uint32_t value2, int8_t shift2);
+
+ufloat sub1r(uint32_t value1, int8_t shift1, ufloat num2);
+
+ufloat sub0(uint32_t value1, int8_t shift1,
+	    uint32_t value2, int8_t shift2);
+
+ufloat mul2(ufloat num1, ufloat num2);
+
+ufloat mul1(ufloat num1, uint32_t value2, int8_t shift2);
+
+ufloat mul0(uint32_t value1, int8_t shift1,
+	    uint32_t value2, int8_t shift2);
+
+ufloat div2(ufloat num1, ufloat num2);
+
+ufloat div1(ufloat num1, uint32_t value2, int8_t shift2);
+
+ufloat div1r(uint32_t value1, int8_t shift1, ufloat num2);
+
+ufloat div0(uint32_t value1, int8_t shift1,
+	    uint32_t value2, int8_t shift2);
 
 
 #endif //FLOAT_PSEUDO_H
