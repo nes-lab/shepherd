@@ -78,8 +78,34 @@ uint32_t SquareRootRounded(uint32_t a_nInput);
 static uint8_t get_left_zero_count(uint32_t value);
 #else
 /* use from asm-file */
-extern uint8_t get_left_zero_count(uint32_t value)
+extern uint8_t get_left_zero_count(uint32_t value);
+extern uint32_t max_value(uint32_t value1, uint32_t value2);
+extern uint32_t min_value(uint32_t value1, uint32_t value2);
 #endif
+
+
+void equalize_exp(uint32_t* value1, int8_t* shift1,
+		  uint32_t* value2, int8_t* shift2);
+
+void add(uint32_t* res_value, int8_t* res_expo,
+	 uint32_t value1, int8_t expo1,
+	 uint32_t value2, int8_t expo2);
+
+void sub(uint32_t* res_value, int8_t* res_expo,
+	 uint32_t value1, int8_t expo1,
+	 uint32_t value2, int8_t expo2);
+
+void mult(uint32_t* res_value, int8_t* res_exp,
+	  uint32_t value1, int8_t expo1,
+	  uint32_t value2, int8_t expo2);
+
+void mult1(uint32_t* value1, int8_t* expo1,
+	   uint32_t value2, int8_t expo2);
+
+void div(uint32_t* res_value, int8_t* res_exp,
+	 uint32_t value1, int8_t expo1,
+	 uint32_t value2, int8_t expo2);
+
 
 // Global vars to access in update function
 static struct VirtSourceSettings vsource_cfg;
@@ -152,13 +178,14 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 		       const uint32_t input_voltage_uV)
 {
 	// TODO: explain design goals and limitations... why does the code looks that way
-	// TODO: input should be bound to specific normalization (adc_value with correction or physical uV)
-
-	/* TODO: build into pseudo float system, there is a asm-cmd LMBD that gives us the left most bit detect, (32 - get_left_zero_count()) */
 
 	/* BOOST, Calculate current flowing into the storage capacitor */
     	const uint32_t eta_inp_n8 = input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_voltage_uV, input_current_nA);
-	const uint64_t dP_inp_pW_n8 = input_current_nA * input_voltage_uV * eta_inp_n8; // TODO: uint32_t, and bitshift accordingly
+	//const uint64_t dP_inp_pW_n8 = input_current_nA * input_voltage_uV * eta_inp_n8;
+	int8_t dP_inp_expo = 0;
+	uint32_t dP_inp_pW;
+	mult(&dP_inp_pW, &dP_inp_expo, input_current_nA, 0, input_voltage_uV, 0);
+	mult1(&dP_inp_pW, &dP_inp_expo, eta_inp_n8, -8);
 
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
 	const uint32_t eta_inv_out_n8 = output_efficiency(inv_efficiency_output_n8, current_adc_raw);
@@ -237,22 +264,22 @@ uint32_t SquareRootRounded(const uint32_t a_nInput)
 }
 
 /* if one exponent is smaller and there is head-space, it will double this value, or if no head-space, half the other value*/
-void equalize_exp(uint32_t* const value1, int8_t* const expo1,
-		  uint32_t* const value2, int8_t* const expo2)
+void equalize_exp(uint32_t* const value1, int8_t* const shift1,
+		  uint32_t* const value2, int8_t* const shift2)
 {
-	while (*expo1 != *expo2)
+	while (*shift1 != *shift2) // TODO: runs not optimal, but ok for a prototype
 	{
-		if (*expo1 > *expo2)
+		if (*shift1 < *shift2)
 		{
 			if (get_left_zero_count(*value2) > 0)
 			{
 				*value2 <<= 1;
-				(*expo2)++;
+				(*shift2)--;
 			}
 			else
 			{
 				*value1 >>= 1;
-				(*expo1)--;
+				(*shift1)++;
 			}
 		}
 		else
@@ -260,12 +287,12 @@ void equalize_exp(uint32_t* const value1, int8_t* const expo1,
 			if (get_left_zero_count(*value1) > 0)
 			{
 				*value1 <<= 1;
-				(*expo1)++;
+				(*shift1)--;
 			}
 			else
 			{
 				*value2 >>= 1;
-				(*expo2)--;
+				(*shift2)++;
 			}
 		}
 	}
@@ -277,14 +304,14 @@ void add(uint32_t* const res_value, int8_t* const res_expo,
 	  uint32_t value2, int8_t expo2)
 {
 	equalize_exp(&value1, &expo1, &value2, &expo2);
+	*res_expo = expo1;
 	if ((get_left_zero_count(value1) < 1) | (get_left_zero_count(value2) < 1))
 	{
 		value1 >>= 1;
 		value2 >>= 1;
-		(*res_expo)--;
+		(*res_expo)++;
 	}
 	*res_value = value1 + value2;
-	*res_expo += expo1;
 }
 
 void sub(uint32_t* const res_value, int8_t* const res_expo,
@@ -292,41 +319,87 @@ void sub(uint32_t* const res_value, int8_t* const res_expo,
 	 uint32_t value2, int8_t expo2)
 {
 	equalize_exp(&value1, &expo1, &value2, &expo2);
-	if ((get_left_zero_count(value1) < 1) | (get_left_zero_count(value2) < 1))
-	{
-		value1 >>= 1;
-		value2 >>= 1;
-		(*res_expo)--;
-	}
-	*res_value = value1 + value2;
-	*res_expo += expo1;
+	*res_expo = expo1;
+	if (value1 > value2)	*res_value = value1 - value2;
+	else			*res_value = 0;
 }
 
+
 void mult(uint32_t* const res_value, int8_t* const res_exp,
-	  uint32_t mul1_value, const int8_t mul1_exp,
-	  uint32_t mul2_value, const int8_t mul2_exp)
+	  uint32_t value1, const int8_t expo1,
+	  uint32_t value2, const int8_t expo2)
 {
-	uint8_t mul1_lzc = get_left_zero_count(mul1_value);
-	uint8_t mul2_lzc = get_left_zero_count(mul2_value);
-	while (mul1_lzc + mul2_lzc < 32)
+	uint8_t lezec1 = get_left_zero_count(value1);
+	uint8_t lezec2 = get_left_zero_count(value2);
+	*res_exp = expo1 + expo2;
+	while (lezec1 + lezec2 < 32)  // TODO: runs not optimal, but ok for a prototype
 	{
-		if (mul1_lzc > mul2_lzc)
+		(*res_exp)++;
+		if (lezec1 > lezec2)
 		{
-			mul1_value >>= 1;
-			mul1_lzc++;
-			(*res_exp)--;
+			value1 >>= 1;
+			lezec1++;
 		}
 		else
 		{
-			mul2_value >>= 1;
-			mul2_lzc++;
-			(*res_exp)--;
+			value2 >>= 1;
+			lezec2++;
 		}
 	}
-	*res_value = mul1_value * mul2_value;
-	*res_exp += mul1_exp + mul2_exp;
+	*res_value = value1 * value2;
 }
 
+void mult1(uint32_t* const value1, int8_t* const expo1,
+	  uint32_t value2, const int8_t expo2)
+{
+	uint8_t lezec1 = get_left_zero_count(*value1);
+	uint8_t lezec2 = get_left_zero_count(value2);
+	*expo1 += expo2;
+	while (lezec1 + lezec2 < 32)  // TODO: runs not optimal, but ok for a prototype
+	{
+		(*expo1)++;
+		if (lezec1 > lezec2)
+		{
+			*value1 >>= 1;
+			lezec1++;
+		}
+		else
+		{
+			value2 >>= 1;
+			lezec2++;
+		}
+	}
+	*value1 *= value2;
+}
+
+/* bring dividend to full 32bit, and divisor to max 16 bit, shrink if necessary */
+void div(uint32_t* const res_value, int8_t* const res_exp,
+	 uint32_t value1, const int8_t expo1,
+	 uint32_t value2, const int8_t expo2)
+{
+	*res_exp = expo1 + expo2;
+
+	uint8_t lezec1 = get_left_zero_count(value1);
+	value1 <<= lezec1;
+	*res_exp -= lezec1;
+
+	uint8_t lezec2 = get_left_zero_count(value2);
+	if (lezec2 < 16)
+	{
+		lezec2 = 16 - lezec2;
+		value2 >>= lezec2;
+		*res_exp += lezec2;
+	}
+	else if (lezec2 == 32)
+	{
+		*res_value = 0xFFFFFFFFu;
+		return;
+	}
+
+	*res_value = value1 / value2;
+}
+
+// TODO: some fn that brings value to desired exponent
 
 
 
