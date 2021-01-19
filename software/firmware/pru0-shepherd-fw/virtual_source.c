@@ -6,6 +6,8 @@
 #include "hw_config.h"
 #include "stdint_fast.h"
 #include "virtual_source.h"
+#include "float_pseudo.h"
+
 /* ---------------------------------------------------------------------
  * Virtual Source, TODO: update description
  *
@@ -70,41 +72,7 @@ struct VirtSource_State {
 	/* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage, and all power be used? */
 } __attribute__((packed));
 
-
-
 uint32_t SquareRootRounded(uint32_t a_nInput);
-
-#ifdef __GNUC__
-static uint8_t get_left_zero_count(uint32_t value);
-#else
-/* use from asm-file */
-extern uint8_t get_left_zero_count(uint32_t value);
-extern uint32_t max_value(uint32_t value1, uint32_t value2);
-extern uint32_t min_value(uint32_t value1, uint32_t value2);
-#endif
-
-
-void equalize_exp(uint32_t* value1, int8_t* shift1,
-		  uint32_t* value2, int8_t* shift2);
-
-void add(uint32_t* res_value, int8_t* res_expo,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2);
-
-void sub(uint32_t* res_value, int8_t* res_expo,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2);
-
-void mult(uint32_t* res_value, int8_t* res_exp,
-	  uint32_t value1, int8_t expo1,
-	  uint32_t value2, int8_t expo2);
-
-void mult1(uint32_t* value1, int8_t* expo1,
-	   uint32_t value2, int8_t expo2);
-
-void div(uint32_t* res_value, int8_t* res_exp,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2);
 
 
 // Global vars to access in update function
@@ -184,8 +152,8 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 	//const uint64_t dP_inp_pW_n8 = input_current_nA * input_voltage_uV * eta_inp_n8;
 	int8_t dP_inp_expo = 0;
 	uint32_t dP_inp_pW;
-	mult(&dP_inp_pW, &dP_inp_expo, input_current_nA, 0, input_voltage_uV, 0);
-	mult1(&dP_inp_pW, &dP_inp_expo, eta_inp_n8, -8);
+	mul2(&dP_inp_pW, &dP_inp_expo, input_current_nA, 0, input_voltage_uV, 0);
+	mul1(&dP_inp_pW, &dP_inp_expo, eta_inp_n8, -8);
 
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
 	const uint32_t eta_inv_out_n8 = output_efficiency(inv_efficiency_output_n8, current_adc_raw);
@@ -262,144 +230,6 @@ uint32_t SquareRootRounded(const uint32_t a_nInput)
 
 	return res;
 }
-
-/* if one exponent is smaller and there is head-space, it will double this value, or if no head-space, half the other value*/
-void equalize_exp(uint32_t* const value1, int8_t* const shift1,
-		  uint32_t* const value2, int8_t* const shift2)
-{
-	while (*shift1 != *shift2) // TODO: runs not optimal, but ok for a prototype
-	{
-		if (*shift1 < *shift2)
-		{
-			if (get_left_zero_count(*value2) > 0)
-			{
-				*value2 <<= 1;
-				(*shift2)--;
-			}
-			else
-			{
-				*value1 >>= 1;
-				(*shift1)++;
-			}
-		}
-		else
-		{
-			if (get_left_zero_count(*value1) > 0)
-			{
-				*value1 <<= 1;
-				(*shift1)--;
-			}
-			else
-			{
-				*value2 >>= 1;
-				(*shift2)++;
-			}
-		}
-	}
-}
-
-/* */
-void add(uint32_t* const res_value, int8_t* const res_expo,
-	  uint32_t value1, int8_t expo1,
-	  uint32_t value2, int8_t expo2)
-{
-	equalize_exp(&value1, &expo1, &value2, &expo2);
-	*res_expo = expo1;
-	if ((get_left_zero_count(value1) < 1) | (get_left_zero_count(value2) < 1))
-	{
-		value1 >>= 1;
-		value2 >>= 1;
-		(*res_expo)++;
-	}
-	*res_value = value1 + value2;
-}
-
-void sub(uint32_t* const res_value, int8_t* const res_expo,
-	 uint32_t value1, int8_t expo1,
-	 uint32_t value2, int8_t expo2)
-{
-	equalize_exp(&value1, &expo1, &value2, &expo2);
-	*res_expo = expo1;
-	if (value1 > value2)	*res_value = value1 - value2;
-	else			*res_value = 0;
-}
-
-
-void mult(uint32_t* const res_value, int8_t* const res_exp,
-	  uint32_t value1, const int8_t expo1,
-	  uint32_t value2, const int8_t expo2)
-{
-	uint8_t lezec1 = get_left_zero_count(value1);
-	uint8_t lezec2 = get_left_zero_count(value2);
-	*res_exp = expo1 + expo2;
-	while (lezec1 + lezec2 < 32)  // TODO: runs not optimal, but ok for a prototype
-	{
-		(*res_exp)++;
-		if (lezec1 > lezec2)
-		{
-			value1 >>= 1;
-			lezec1++;
-		}
-		else
-		{
-			value2 >>= 1;
-			lezec2++;
-		}
-	}
-	*res_value = value1 * value2;
-}
-
-void mult1(uint32_t* const value1, int8_t* const expo1,
-	  uint32_t value2, const int8_t expo2)
-{
-	uint8_t lezec1 = get_left_zero_count(*value1);
-	uint8_t lezec2 = get_left_zero_count(value2);
-	*expo1 += expo2;
-	while (lezec1 + lezec2 < 32)  // TODO: runs not optimal, but ok for a prototype
-	{
-		(*expo1)++;
-		if (lezec1 > lezec2)
-		{
-			*value1 >>= 1;
-			lezec1++;
-		}
-		else
-		{
-			value2 >>= 1;
-			lezec2++;
-		}
-	}
-	*value1 *= value2;
-}
-
-/* bring dividend to full 32bit, and divisor to max 16 bit, shrink if necessary */
-void div(uint32_t* const res_value, int8_t* const res_exp,
-	 uint32_t value1, const int8_t expo1,
-	 uint32_t value2, const int8_t expo2)
-{
-	*res_exp = expo1 + expo2;
-
-	uint8_t lezec1 = get_left_zero_count(value1);
-	value1 <<= lezec1;
-	*res_exp -= lezec1;
-
-	uint8_t lezec2 = get_left_zero_count(value2);
-	if (lezec2 < 16)
-	{
-		lezec2 = 16 - lezec2;
-		value2 >>= lezec2;
-		*res_exp += lezec2;
-	}
-	else if (lezec2 == 32)
-	{
-		*res_value = 0xFFFFFFFFu;
-		return;
-	}
-
-	*res_value = value1 / value2;
-}
-
-// TODO: some fn that brings value to desired exponent
 
 
 
