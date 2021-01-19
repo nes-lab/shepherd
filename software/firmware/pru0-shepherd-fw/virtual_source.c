@@ -28,12 +28,6 @@
  * ----------------------------------------------------------------------
  */
 
-#define SHIFT_VOLT		(12U)
-#define EFFICIENCY_RANGE	(1U << 12U)
-
-#define SHIFT_LUT		(26U)
-
-
 // Output state of virtcap, TODO
 static bool_ft VIRTCAP_OUT_PIN_state = 0U;
 
@@ -93,7 +87,7 @@ void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSett
 	/*
 	calib_arg->adc_current_factor_nA_n8 = ADC_LOAD_CURRENT_GAIN; // TODO: why overwriting values provided by system?
 	calib_arg->adc_current_offset_nA = ADC_LOAD_CURRENT_OFFSET;
-	calib_arg->adc_load_voltage_gain_mV_n8 = ADC_LOAD_VOLTAGE_GAIN;
+	calib_arg->adc_voltage_factor_mV_n8 = ADC_LOAD_VOLTAGE_GAIN;
 	calib_arg->adc_voltage_offset_uV = ADC_LOAD_VOLTAGE_OFFSET;
 	*/
 
@@ -118,8 +112,8 @@ void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSett
 	is_outputting = false;
 
 	// Calculate harvest multiplier
-	harvest_multiplier = (SAMPLE_INTERVAL_NS << (SHIFT_VOLT + SHIFT_VOLT)) /
-			     (cali_cfg.adc_current_factor_nA_n8 / cali_cfg.adc_load_voltage_gain_mV_n8 * vsource_cfg.c_storage_capacitance_uf);
+	harvest_multiplier = (SAMPLE_INTERVAL_NS) /
+			     (cali_cfg.adc_current_factor_nA_n8 / cali_cfg.adc_voltage_factor_mV_n8 * vsource_cfg.c_storage_capacitance_uf);
 
 	//avg_cap_voltage = (vsource_cfg.c_storage_voltage_max_mV + vsource_cfg.c_storage_disable_threshold_mV) / 2;
 	//output_multiplier = vsource_cfg.dc_output_voltage_mV / (avg_cap_voltage >> SHIFT_VOLT);
@@ -148,28 +142,34 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 	// TODO: explain design goals and limitations... why does the code looks that way
 
 	/* BOOST, Calculate current flowing into the storage capacitor */
-    	const uint32_t eta_inp_n8 = input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_voltage_uV, input_current_nA);
+    	const ufloat eta_inp = input_efficiency(vsource_cfg.LUT_inp_efficiency_n8, input_voltage_uV, input_current_nA);
 	//const uint64_t dP_inp_pW_n8 = input_current_nA * input_voltage_uV * eta_inp_n8;
-	int8_t dP_inp_expo = 0;
-	uint32_t dP_inp_pW;
-	mul2(&dP_inp_pW, &dP_inp_expo, input_current_nA, 0, input_voltage_uV, 0);
-	mul1(&dP_inp_pW, &dP_inp_expo, eta_inp_n8, -8);
+	ufloat dP_inp_pW;
+	dP_inp_pW = mul0(input_current_nA, 0, input_voltage_uV, 0);
+	dP_inp_pW = mul2(dP_inp_pW, eta_inp);
 
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
-	const uint32_t eta_inv_out_n8 = output_efficiency(inv_efficiency_output_n8, current_adc_raw);
+	const ufloat eta_inv_out = output_efficiency(inv_efficiency_output_n8, current_adc_raw);
 	const uint32_t current_out_nA_n6 = conv_adc_raw_to_nA_n6(current_adc_raw);
-	const uint64_t dP_out_pW_n8 = current_out_nA_n6 * output_voltage_uV * eta_inv_out_n8 +
- 				((vsource_cfg.c_storage_current_leak_nA * cap_voltage_uV) << 8u);
+	const ufloat dP_leak_pW = mul0(vsource_cfg.c_storage_current_leak_nA, 0, cap_voltage_uV, 0);
+	ufloat dP_out_pW;
+	dP_out_pW = mul0(current_out_nA_n6, -6, output_voltage_uV, 0);
+	dP_out_pW = mul2(dP_out_pW, eta_inv_out);
+	dP_out_pW = add2(dP_out_pW, dP_leak_pW);
 
-	uint64_t dI_sum;
-	if (dP_inp_pW_n8 > dP_out_pW_n8)
+	ufloat dP_sum_pW; // TODO: the only downside to ufloat
+	if (compare_gt(dP_inp_pW, dP_out_pW))
 	{
-		dP_sum = (dP_inp_pW_n8 - dP_out_pW_n8) / ;
-		dI
+		dP_sum_pW = sub2(dP_inp_pW, dP_out_pW);
+	}
+	else
+	{
+		dP_sum_pW = sub2(dP_out_pW, dP_inp_pW);
 	}
 
+
 	uint32_t dI_out = (current_adc_raw * output_multiplier) >> SHIFT_VOLT; // TODO: crude simplification here, brings error of +-5%
-	dI_out += vsource_cfg.c_storage_current_leak_nA; // TODO: ESR could also be considered
+	dI_out += vsource_cfg.c_storage_current_leak_nA;
 
 	/* Calculate delta V*/
 	const int32_t delta_i = cin - cout;
@@ -182,9 +182,6 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 	// TODO: test for zero, but this can be done earlier, before adding delta_v
 
 	// TODO: there is another effect of the converter -> every 16 seconds it optimizes power-draw, is it already in the data-stream?
-
-
-
 
 	// determine whether we should be in a new state
 	if (is_outputting &&
@@ -232,7 +229,7 @@ uint32_t SquareRootRounded(const uint32_t a_nInput)
 }
 
 
-
+// TODO: bring the following FNs to uflaot
 /* bring values into adc domain with -> voltage_uV = adc_value * gain_factor + offset
  * original definition in: https://github.com/geissdoerfer/shepherd/blob/master/docs/user/data_format.rst */
 static inline uint32_t conv_uV_to_adc_raw_n8(const uint32_t voltage_uV)
@@ -297,22 +294,24 @@ static uint8_t get_left_zero_count(const uint32_t value)
 }
 #endif
 
-static uint8_ft input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
+static ufloat input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
 {
 	uint8_t pos_v = 32 - get_left_zero_count(voltage);
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 4 values, if there is space for overhead */
-        return efficiency_lut[pos_v][pos_c];
+	ufloat result = {.value = efficiency_lut[pos_v][pos_c], .shift = -8};
+        return result;
 }
 
-static uint32_t output_efficiency(uint32_t inv_efficiency_lut[const], const uint32_t current)
+static ufloat output_efficiency(const uint32_t inv_efficiency_lut[const], const uint32_t current)
 {
-	uint8_t pos_c = get_msb_position_for_lut(current);
+	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 2 values, if there is space for overhead */
-	return inv_efficiency_lut[pos_c];
+	ufloat result = {.value = inv_efficiency_lut[pos_c], .shift = -8};
+	return result;
 }
 
 bool_ft virtcap_get_output_state()

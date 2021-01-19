@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "commons.h"
+#include "float_pseudo.h"
 
 void vsource_init(struct VirtSourceSettings *vsource_arg, struct CalibrationSettings *calib_arg);
 uint32_t vsource_update(uint32_t current_adc_raw, uint32_t input_current_nA, uint32_t input_voltage_uV);
@@ -12,12 +13,12 @@ bool_ft get_output_state();
 static inline uint32_t conv_uV_to_adc_raw_n8(uint32_t voltage_uV);
 static inline uint32_t conv_nA_to_adc_raw_n8(uint32_t current_nA);
 
-static inline uint32_t conv_adc_raw_to_nA_n6(const uint32_t current_raw);
+static inline uint32_t conv_adc_raw_to_nA_n6(uint32_t current_raw);
 
 static inline uint32_t conv_uV_to_dac_raw_n8(uint32_t voltage_uV);
 
-static uint8_ft input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], uint32_t voltage, uint32_t current);
-static uint32_t output_efficiency(uint32_t efficiency_lut[const], uint32_t current);
+static ufloat input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], uint32_t voltage, uint32_t current);
+static ufloat output_efficiency(const uint32_t efficiency_lut[const], uint32_t current);
 
 
 // TODO: get sampletime from main or config
