@@ -76,7 +76,7 @@ struct CalibrationSettings {
 	/* Offset of load current adc */
 	int32_t adc_current_offset_nA;
 	/* Gain of load voltage adc. It converts voltage to ADC value */
-	uint32_t adc_load_voltage_gain_mV_n8;
+	uint32_t adc_voltage_factor_mV_n8;
 	uint32_t adc_voltage_ifactor_uV_n8;
 	/* Offset of load voltage ADC */
 	int32_t adc_voltage_offset_uV;
@@ -103,7 +103,7 @@ struct VirtSourceSettings {
 	uint32_t c_storage_capacitance_uf;
 	uint32_t c_storage_voltage_init_mV; // allow a proper / fast startup
 	uint32_t c_storage_voltage_max_mV;  // -> boost shuts off
-	uint32_t c_storage_current_leak_nA;
+	uint32_t c_storage_current_leak_nA; // TODO: ESR could also be considered
 	uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
 	uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
 	uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
