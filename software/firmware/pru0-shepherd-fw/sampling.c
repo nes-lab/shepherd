@@ -24,7 +24,7 @@
 #define DAC_mV_2_raw(x)	((DAC_V_FACTOR * (x)) >> DAC_V_SHIFT)
 // TODO: add calibration data
 // Test range and conversion
-ASSERT(dac_interm, (DAC_V_FACTOR * DAC_MAX_mV) < ((1u << 32u) - 1u));
+ASSERT(dac_interm, (DAC_V_FACTOR * DAC_MAX_mV) < ((1ull << 32u) - 1u));
 ASSERT(dac_convert, DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL);
 
 /* ADS8691 Register Config */
@@ -249,7 +249,7 @@ void sample_init(const enum ShepherdMode mode, const uint32_t dac_ch_a_voltage_m
 		/* after DAC-Reset the output is at Zero, fast return CH B to Max to not drain the power-source */
 		/* NOTE: if harvester is not used, dac is currently shut down -> connects power source with 1 Ohm to GND */
 		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
-		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV)); // TODO: write aux more often if needed
 	}
 
 	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
