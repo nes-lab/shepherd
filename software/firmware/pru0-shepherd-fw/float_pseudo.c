@@ -1,6 +1,30 @@
 #include <stdint.h>
 #include "float_pseudo.h"
 
+
+#ifdef __GNUC__
+static uint8_t get_left_zero_count(const uint32_t value)
+{
+	/* TODO: there is a ASM-COMMAND for that, LMBD r2, r1, 1 */
+	uint32_t _value = value;
+	uint8_t	count = 32;
+	for (; _value > 0; _value >>= 1) count--;
+	return count;
+}
+
+static uint32_t max_value(uint32_t value1, uint32_t value2)
+{
+	if (value1 > value2) return value1;
+	else return value2;
+}
+
+static uint32_t min_value(uint32_t value1, uint32_t value2)
+{
+	if (value1 < value2) return value1;
+	else return value2;
+}
+#endif
+
 // TODO: some of these could be a lot faster in asm
 
 uint32_t extract_value(ufloat num1)
@@ -41,6 +65,26 @@ uint32_t compare_gt(ufloat num1, ufloat num2)
 	else
 	{
 		if (lezec1 < lezec2)
+			return 1u;
+		else 	return 0u;
+	}
+}
+
+
+uint32_t compare_lt(ufloat num1, ufloat num2)
+{
+	int8_t lezec1 = get_left_zero_count(num1.value) - num1.shift;
+	int8_t lezec2 = get_left_zero_count(num2.value) - num2.shift;
+	if (lezec1 == lezec2)
+	{
+		equalize_exp0(&(num1.value), &(num1.shift), &(num2.value), &(num2.shift)); // TODO: there should be a fast / dirty FN without while
+		if (num1.value < num2.value)
+			return 1u;
+		else	return 0u;
+	}
+	else
+	{
+		if (lezec1 > lezec2)
 			return 1u;
 		else 	return 0u;
 	}
@@ -156,7 +200,7 @@ ufloat mul0(uint32_t value1, int8_t shift1,
 	uint8_t lezec1 = get_left_zero_count(value1);
 	uint8_t lezec2 = get_left_zero_count(value2);
 	result.shift = shift1 + shift2;
-	while (lezec1 + lezec2 < 32u)  // TODO: runs not optimal, but ok for a prototype
+	while ((lezec1 + lezec2) < 32u)  // TODO: runs not optimal, but ok for a prototype
 	{
 		result.shift++;
 		if (lezec1 > lezec2)
@@ -216,3 +260,45 @@ ufloat div0(uint32_t value1, int8_t shift1,
 	result.value = value1 / value2;
 	return result;
 }
+
+ufloat sqrt_rounded(const ufloat num1)
+{
+	uint8_t lezec1 = get_left_zero_count(num1.value);
+	ufloat result;
+	uint32_t op;
+
+	if (lezec1 > 1u)
+	{
+		op = num1.value << (lezec1 - 1u);
+		result.shift = num1.shift - lezec1 + 1;
+	}
+	else
+	{
+		op = num1.value;
+		result.shift = num1.shift;
+	}
+
+	uint32_t res = 0U;
+	uint32_t one = 1uL << 30u;
+
+	while (one > op)  // TODO: could be removed
+	{
+		one >>= 2u;
+	}
+
+	while (one != 0u)
+	{
+		if (op >= res + one)
+		{
+			op = op - (res + one);
+			res = res + 2U * one;
+		}
+		res >>= 1U;
+		one >>= 2U;
+	}
+	if (op > res) res++;
+
+	result.value = res;
+	return result;
+}
+

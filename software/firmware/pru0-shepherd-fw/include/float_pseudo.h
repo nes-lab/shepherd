@@ -3,6 +3,8 @@
 
 #ifdef __GNUC__
 static uint8_t get_left_zero_count(uint32_t value);
+static uint32_t max_value(uint32_t value1, uint32_t value2);
+static uint32_t min_value(uint32_t value1, uint32_t value2);
 #else
 /* use from asm-file */
 extern uint8_t get_left_zero_count(uint32_t value);
@@ -29,6 +31,7 @@ uint32_t extract_value(ufloat num1);
 
 
 uint32_t compare_gt(ufloat num1, ufloat num2);
+uint32_t compare_lt(ufloat num1, ufloat num2);
 
 
 void equalize_exp2(ufloat * num1, ufloat * num2);
@@ -68,5 +71,6 @@ ufloat div1r(uint32_t value1, int8_t shift1, ufloat num2);
 ufloat div0(uint32_t value1, int8_t shift1,
 	    uint32_t value2, int8_t shift2);
 
+ufloat sqrt_rounded(ufloat num1);
 
 #endif //FLOAT_PSEUDO_H
