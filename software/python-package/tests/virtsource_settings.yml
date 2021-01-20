@@ -1,17 +1,18 @@
-virtsource: # TODO: convert to (float) SI-Units, 2.3e-4, because there is no proper int-formatting (like in py 1_000_000)
+virtsource:
+  # NOTE: input can be also float (ie. 2.3e-4), there is no proper int-formatting (like in py 1_000_000)
 
   # Direct Reg
-  c_output_capacitance_uf: 10   # final (always last) stage to catch current spikes of target
+  c_output_uf: 10   # final (always last) stage to catch current spikes of target
 
   # Boost Reg, ie. BQ25504
-  v_harvest_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-  c_storage_capacitance_uf: 1000
-  c_storage_voltage_init_mV: 3500 # allow a proper / fast startup
-  c_storage_voltage_max_mV:  4200 # -> boost shuts off
-  c_storage_current_leak_nA: 9
-  c_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
-  c_storage_disable_threshold_mV: 2300 # -> target gets disconnected
-  interval_check_thresholds_ns: 65000000  # some BQs check every 65 ms if output should be disconnected
+  v_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
+  c_storage_uf: 1000
+  v_storage_init_mV: 3500 # allow a proper / fast startup
+  v_storage_max_mV:  4200 # -> boost shuts off
+  v_storage_leak_nA: 9
+  v_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
+  v_storage_disable_threshold_mV: 2300 # -> target gets disconnected
+  interval_check_thresholds_ms: 65.0  # some BQs check every 65 ms if output should be disconnected
   LUT_inp_efficiency_n8[12][12]: [
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
@@ -25,16 +26,15 @@ virtsource: # TODO: convert to (float) SI-Units, 2.3e-4, because there is no pro
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
     [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-  ]# depending on inp_voltage, inp_current, (cap voltage)
+  ]# depending on inp_voltage, inp_current, (cap voltage), TODO: 50% for now
   # n8 means normalized to 2^8 - 1 = 1.0
-  # TODO: LUT could be accessed by highest bit-position of "1" in depending var. should suffice for 8192 int
-  pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
-  pwr_good_high_threshold_mV: 5000
+  # TODO: LUT could be accessed by highest bit-position of "1" in depending index/input. 12 bit should suffice for 8192 int
+  v_pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
+  v_pwr_good_high_threshold_mV: 5000
 
   # Buck Boost, ie. BQ25570)
-  dc_output_voltage_mV: 2300
+  v_output_mV: 2300
   LUT_output_efficiency_n8[12]: [200,200,200,200,200,200,200,200,200,200,200,200]
   # depending on output_current
 
   # TODO: test all 3 separate regulators, can be checked against returning voltage
-

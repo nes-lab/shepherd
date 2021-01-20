@@ -31,39 +31,38 @@ enum ShepherdState {
 };
 
 struct CalibrationSettings {
-    /* Gain of load current adc. It converts current to adc value, TODO: probably nA? */
-    int32_t adc_load_current_gain;
+    /* Gain of load current adc. It converts current to ADC raw value */
+    uint32_t adc_current_factor_nA_n8;
+        // n8 means normalized to 2^8 = 1.0
     /* Offset of load current adc */
-    int32_t adc_load_current_offset;
-    /* Gain of load voltage adc. It converts voltage to adc value */
-    int32_t adc_load_voltage_gain;
-    /* Offset of load voltage adc */
-    int32_t adc_load_voltage_offset;
-    /* TODO: this should also contain DAC-Values */
+    int32_t adc_current_offset_nA;
+    /* Gain of DAC. It converts voltage to DAC raw value */
+    uint32_t dac_voltage_factor_uV_n8;
+    /* Offset of load voltage DAC */
+    int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
 
 /* This structure defines all settings of virtual source emulation*/
 /* more complex regulators use vars in their section and above */
 struct VirtSourceSettings {
     /* Direct Reg */
-    uint32_t c_output_capacitance_uf; // final (always last) stage to catch current spikes of target
+    uint32_t C_output_uf; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
     /* Boost Reg, ie. BQ25504 */
-    uint32_t v_harvest_boost_threshold_mV; // min input-voltage for the boost converter to work
-    uint32_t c_storage_capacitance_uf;
-    uint32_t c_storage_voltage_init_mV; // allow a proper / fast startup
-    uint32_t c_storage_voltage_max_mV;  // -> boost shuts off
-    uint32_t c_storage_current_leak_nA;
-    uint32_t c_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
-    uint32_t c_storage_disable_threshold_mV; // -> target gets disconnected
+    uint32_t V_inp_boost_threshold_mV; // min input-voltage for the boost converter to work
+    uint32_t C_storage_uf;
+    uint32_t V_storage_init_mV; // allow a proper / fast startup
+    uint32_t V_storage_max_mV;  // -> boost shuts off
+    uint32_t I_storage_leak_nA; // TODO: ESR could also be considered
+    uint32_t V_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
+    uint32_t V_storage_disable_threshold_mV; // -> target gets disconnected
     uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
-    uint8_t LUT_inp_efficiency_n8[12][12]; // depending on inp_voltage, inp_current, (cap voltage)
-        // n8 means normalized to 2^8 = 1.0
-    uint32_t pwr_good_low_threshold_mV; // range where target is informed by output-pin
-    uint32_t pwr_good_high_threshold_mV;
+    uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage)
+    // n8 means normalized to 2^8 = 1.0
+    uint32_t V_pwr_good_low_threshold_mV; // range where target is informed by output-pin
+    uint32_t V_pwr_good_high_threshold_mV;
     /* Buck Boost, ie. BQ25570) */
-    uint32_t dc_output_voltage_mV;
-    uint8_t LUT_output_efficiency_n8[12]; // depending on output_current, TODO: there is trouble here: n8 for uint8_t means that 256 (100%) is not reachable!
-    /* TODO: is there a drop voltage?, can input voltage be higher than cap-voltage (it can't), and all power be used? - python warning*/
+    uint32_t V_output_mV;
+    uint8_t LUT_output_efficiency_n8[LUT_SIZE]; // depending on output_current
 } __attribute__((packed));
 
 /* Control request message sent from PRU1 to this kernel module */
