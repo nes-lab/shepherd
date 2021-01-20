@@ -72,17 +72,10 @@ struct SampleBuffer {
 struct CalibrationSettings {
 	/* Gain of load current adc. It converts current to ADC raw value */
 	uint32_t adc_current_factor_nA_n8;
-	uint32_t adc_current_ifactor_nA_n8;
 	/* Offset of load current adc */
 	int32_t adc_current_offset_nA;
-	/* Gain of load voltage adc. It converts voltage to ADC value */
-	uint32_t adc_voltage_factor_mV_n8;
-	uint32_t adc_voltage_ifactor_uV_n8;
-	/* Offset of load voltage ADC */
-	int32_t adc_voltage_offset_uV;
 	/* Gain of DAC. It converts voltage to DAC raw value */
-	uint32_t dac_voltage_factor_mV_n8;
-	uint32_t dac_voltage_ifactor_mV_n8;
+	uint32_t dac_voltage_factor_uV_n8;
 	/* Offset of load voltage DAC */
 	int32_t dac_voltage_offset_uV;
 	/* TODO: rename to  */
@@ -97,7 +90,7 @@ struct CalibrationSettings {
 /* NOTE: sys-FS-FNs uses 4 byte steps, so struct must be (size)mod4=0 */
 struct VirtSourceSettings {
 	/* Direct Reg */
-	uint32_t c_output_capacitance_uf; // final (always last) stage to catch current spikes of target
+	uint32_t c_output_capacitance_uf; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
 	/* Boost Reg, ie. BQ25504 */
 	uint32_t v_harvest_boost_threshold_mV; // min input-voltage for the boost converter to work
 	uint32_t c_storage_capacitance_uf;
