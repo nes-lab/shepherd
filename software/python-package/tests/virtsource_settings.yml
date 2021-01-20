@@ -1,4 +1,4 @@
-virtsource:
+virtsource: # TODO: convert to (float) SI-Units, 2.3e-4, because there is no proper int-formatting (like in py 1_000_000)
 
   # Direct Reg
   c_output_capacitance_uf: 10   # final (always last) stage to catch current spikes of target
