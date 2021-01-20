@@ -69,6 +69,7 @@ struct SampleBuffer {
 	struct GPIOEdges gpio_edges;
 } __attribute__((packed));
 
+/* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
 struct CalibrationSettings {
 	/* Gain of load current adc. It converts current to ADC raw value */
 	uint32_t adc_current_factor_nA_n8;

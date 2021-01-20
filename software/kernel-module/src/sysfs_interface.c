@@ -358,24 +358,23 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (sscanf(buf,"%d %d %d %d", &tmp.adc_load_current_gain,
-		   &tmp.adc_load_current_offset, &tmp.adc_load_voltage_gain,
-		   &tmp.adc_load_voltage_offset) == 4) {
+	if (sscanf(buf,"%d %d %d %d", &tmp.adc_current_factor_nA_n8, &tmp.adc_current_offset_nA,
+	        &tmp.dac_voltage_factor_uV_n8, &tmp.dac_voltage_offset_uV) == 4) {
 		printk(KERN_INFO
-		       "shprd: Setting current calibration settings. Current gain: %d, current offset: %d\n",
-		       tmp.adc_load_current_gain, tmp.adc_load_current_offset);
+		       "shprd: Setting ADC-Current calibration settings. Current gain: %d, current offset: %d\n",
+		       tmp.adc_current_factor_nA_n8, tmp.adc_current_offset_nA);
 
 		printk(KERN_INFO
-		       "shprd: Setting voltage calibration settings. Voltage gain: %d, voltage offset: %d\n",
-		       tmp.adc_load_voltage_gain, tmp.adc_load_voltage_offset);
+		       "shprd: Setting DAC-Voltage calibration settings. Voltage gain: %d, voltage offset: %d\n",
+		       tmp.dac_voltage_factor_uV_n8, tmp.dac_voltage_offset_uV);
 
-		writel(tmp.adc_load_current_gain,
+		writel(tmp.adc_current_factor_nA_n8,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset);
-		writel(tmp.adc_load_current_offset,
+		writel(tmp.adc_current_offset_nA,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
-		writel(tmp.adc_load_voltage_gain,
+		writel(tmp.dac_voltage_factor_uV_n8,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
-		writel(tmp.adc_load_voltage_offset,
+		writel(tmp.dac_voltage_offset_uV,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
 
 		return count;

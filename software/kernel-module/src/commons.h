@@ -30,6 +30,7 @@ enum ShepherdState {
 	STATE_FAULT
 };
 
+/* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
 struct CalibrationSettings {
     /* Gain of load current adc. It converts current to ADC raw value */
     uint32_t adc_current_factor_nA_n8;
@@ -41,6 +42,8 @@ struct CalibrationSettings {
     /* Offset of load voltage DAC */
     int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
+
+#define LUT_SIZE	(12)
 
 /* This structure defines all settings of virtual source emulation*/
 /* more complex regulators use vars in their section and above */
