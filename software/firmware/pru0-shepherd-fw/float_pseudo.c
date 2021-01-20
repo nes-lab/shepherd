@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "float_pseudo.h"
 
+// TODO: some of these could be a lot faster in asm
 
 uint32_t extract_value(ufloat num1)
 {
@@ -32,7 +33,7 @@ uint32_t compare_gt(ufloat num1, ufloat num2)
 	int8_t lezec2 = get_left_zero_count(num2.value) - num2.shift;
 	if (lezec1 == lezec2)
 	{
-		equalize_exp0(&(num1.value), &(num1.shift), &(num2.value), &(num2.shift));
+		equalize_exp0(&(num1.value), &(num1.shift), &(num2.value), &(num2.shift)); // TODO: there should be a fast / dirty FN without while
 		if (num1.value > num2.value)
 			return 1u;
 		else	return 0u;
@@ -55,7 +56,7 @@ void equalize_exp2(ufloat * const num1, ufloat * const num2)
 void equalize_exp0(uint32_t* const value1, int8_t* const shift1,
 		   uint32_t* const value2, int8_t* const shift2)
 {
-	while (*shift1 != *shift2) // TODO: runs not optimal, but ok for a prototype
+	while (*shift1 != *shift2) // TODO: runs not optimal, but ok for a prototype, instead of while this algo could jump directly, using fast min/max
 	{
 		if (*shift1 < *shift2)
 		{

@@ -11,8 +11,9 @@ extern uint32_t min_value(uint32_t value1, uint32_t value2);
 #endif
 
 /* Pseudo unsigned float has the following features:
- * - catches div0 (results in MAX-value)
  * - tries to keep as much resolution as possible during calculation
+ * - catches div0 (results in MAX-value)
+ * - catches subtraction with first value being smaller than second (results in 0)
  * - bring new numbers into the system -> number following the Operation tells the count of ufloat-input-parameter
  * - should be faster than float-emulation
  */
