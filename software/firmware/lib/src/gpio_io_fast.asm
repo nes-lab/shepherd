@@ -3,10 +3,10 @@
 gpio_read_pin:
     QBBS pin_is_set, r31, r14
 pin_is_clear:
-    MOV r14, 0
+    LDI r14, 0
     JMP r3.w2
 pin_is_set:
-    MOV r14, 1
+    LDI r14, 1
     JMP r3.w2
 
 
