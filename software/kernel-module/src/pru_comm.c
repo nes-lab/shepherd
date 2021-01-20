@@ -126,12 +126,12 @@ unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
     offset_unread = offset_msg + offsetof(struct CtrlReqMsg, msg_unread);
 
     /* testing for unread-msg-token */
-    if (readb(offset_unread) >= 1)
+    if (readb(offset_unread) >= 1u)
     {
         /* if unread, then continue to copy request */
         memcpy_fromio(ctrl_request, offset_msg, sizeof(struct CtrlReqMsg));
         /* mark as read */
-        writeb(0, offset_unread);
+        writeb(0u, offset_unread);
         return 1;
     }
     return 0;
@@ -147,11 +147,11 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
 
     offset_msg = pru_shared_mem_io + offsetof(struct SharedMem, ctrl_rep);
     offset_unread = offset_msg + offsetof(struct CtrlRepMsg, msg_unread);
-    status = readb(offset_unread) == 0;
+    status = readb(offset_unread) == 0u;
 
     /* first update payload in memory */
     ctrl_reply->identifier = MSG_SYNC_CTRL_REP;
-    ctrl_reply->msg_unread = 0;
+    ctrl_reply->msg_unread = 0u;
     memcpy_toio(offset_msg, ctrl_reply, sizeof(struct CtrlRepMsg));
 
     /* activate message */

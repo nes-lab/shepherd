@@ -90,7 +90,7 @@ struct kobj_attr_struct_s attr_buffer_period_ns = {
 	.val_offset = offsetof(struct SharedMem, buffer_period_ns)
 };
 struct kobj_attr_struct_s attr_mode = {
-	.attr = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
+	.attr = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store), // TODO: why only "mode" here?
 	.val_offset = offsetof(struct SharedMem, shepherd_mode)
 };
 struct kobj_attr_struct_s attr_auxiliary_voltage = {
@@ -433,7 +433,6 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 	int i = 0;
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-
 
 	for (i = 0; i < sizeof(struct VirtSourceSettings); i += 4)
 	{

@@ -6,10 +6,10 @@
  * These are the system events that we use to signal events to the PRUs.
  * See the AM335x TRM Table 4-22 for a list of all events
  */
-#define HOST_PRU_EVT_TIMESTAMP 20
+#define HOST_PRU_EVT_TIMESTAMP          (20)
 
 /* The SharedMem struct resides at the beginning of the PRUs shared memory */
-#define PRU_SHARED_MEM_STRUCT_OFFSET 0x10000
+#define PRU_SHARED_MEM_STRUCT_OFFSET    (0x10000)
 
 enum SyncMsgID { MSG_SYNC_CTRL_REQ = 0x55, MSG_SYNC_CTRL_REP = 0xAA };
 
@@ -33,8 +33,7 @@ enum ShepherdState {
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
 struct CalibrationSettings {
     /* Gain of load current adc. It converts current to ADC raw value */
-    uint32_t adc_current_factor_nA_n8;
-        // n8 means normalized to 2^8 = 1.0
+    uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 = 1.0
     /* Offset of load current adc */
     int32_t adc_current_offset_nA;
     /* Gain of DAC. It converts voltage to DAC raw value */

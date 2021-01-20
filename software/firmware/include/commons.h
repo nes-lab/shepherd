@@ -72,7 +72,7 @@ struct SampleBuffer {
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
 struct CalibrationSettings {
 	/* Gain of load current adc. It converts current to ADC raw value */
-	uint32_t adc_current_factor_nA_n8;
+	uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 = 1.0
 	/* Offset of load current adc */
 	int32_t adc_current_offset_nA;
 	/* Gain of DAC. It converts voltage to DAC raw value */
@@ -117,7 +117,7 @@ struct DEPMsg {
 	uint32_t value;
 } __attribute__((packed));
 
-/* Format of RPMSG message sent from PRU1 to kernel module */
+/* Control request message sent from PRU1 to this kernel module */
 struct CtrlReqMsg {
 	/* Identifier => Canary, This is used to identify memory corruption */
 	uint8_t identifier;
@@ -131,7 +131,7 @@ struct CtrlReqMsg {
 	uint32_t old_period;
 } __attribute__((packed));
 
-/* Format of RPMSG message sent from kernel module to PRU1 */
+/* Control reply message sent from this kernel module to PRU1 after running the control loop */
 struct CtrlRepMsg {
 	/* Identifier => Canary, This is used to identify memory corruption */
 	uint8_t identifier;
@@ -164,7 +164,7 @@ struct SharedMem {
 	uint32_t buffer_period_ns;
 	/* ADC calibration settings */
 	struct CalibrationSettings calibration_settings;
-	/* This structure defines all settings of virtcap emulation*/
+	/* This structure defines all settings of virtual source emulation*/
 	struct VirtSourceSettings virtsource_settings;
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
