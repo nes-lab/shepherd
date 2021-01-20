@@ -10,12 +10,9 @@ uint32_t vsource_update(uint32_t current_adc_raw, uint32_t input_current_nA, uin
 
 bool_ft get_output_state();
 
-static inline uint32_t conv_uV_to_adc_raw_n8(uint32_t voltage_uV);
-static inline uint32_t conv_nA_to_adc_raw_n8(uint32_t current_nA);
-
 static inline uint32_t conv_adc_raw_to_nA_n6(uint32_t current_raw);
 
-static inline uint32_t conv_uV_to_dac_raw_n8(uint32_t voltage_uV);
+static inline uint32_t conv_uV_to_dac_raw_n8(ufloat voltage_uV);
 
 static ufloat input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], uint32_t voltage, uint32_t current);
 static ufloat output_efficiency(const uint32_t efficiency_lut[const], uint32_t current);
@@ -37,8 +34,9 @@ static ufloat output_efficiency(const uint32_t efficiency_lut[const], uint32_t c
  * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
  * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
  * - target / output disconnect check is only every 65 ms
- * - to disable set c_storage_voltage_max_mV to 0
- * - the real boost converter will be handled in pyPackage and work with IV-Curves
+ * - TODO: to disable set c_storage_voltage_max_mV to 0
+ * - input voltage can not be higher than cap_voltage and will be limited by algo
+ * - the power point setting will be handled in pyPackage and work with IV-Curves
  */
 
 /* Buck-Boost-Converter
