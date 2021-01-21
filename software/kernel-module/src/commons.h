@@ -48,23 +48,25 @@ struct CalibrationSettings {
 /* more complex regulators use vars in their section and above */
 struct VirtSourceSettings {
     /* Direct Reg */
-    uint32_t C_output_uf; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
+    uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
     /* Boost Reg, ie. BQ25504 */
-    uint32_t V_inp_boost_threshold_mV; // min input-voltage for the boost converter to work
-    uint32_t C_storage_uf;
-    uint32_t V_storage_init_mV; // allow a proper / fast startup
-    uint32_t V_storage_max_mV;  // -> boost shuts off
+    uint32_t V_inp_boost_threshold_uV; // min input-voltage for the boost converter to work
+    uint32_t C_storage_nF;
+    uint32_t V_storage_init_uV; // allow a proper / fast startup
+    uint32_t V_storage_max_uV;  // -> boost shuts off
     uint32_t I_storage_leak_nA; // TODO: ESR could also be considered
-    uint32_t V_storage_enable_threshold_mV;  // -> target gets connected (hysteresis-combo with next value)
-    uint32_t V_storage_disable_threshold_mV; // -> target gets disconnected
+    uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
+    uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
     uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
     uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage)
     // n8 means normalized to 2^8 = 1.0
-    uint32_t V_pwr_good_low_threshold_mV; // range where target is informed by output-pin
-    uint32_t V_pwr_good_high_threshold_mV;
+    uint32_t V_pwr_good_low_threshold_uV; // range where target is informed by output-pin
+    uint32_t V_pwr_good_high_threshold_uV;
+    uint32_t dV_stor_en_thrs_uV; // compensate C_out, for disable state when V_store < V_store_enable/disable_threshold_uV
     /* Buck Boost, ie. BQ25570) */
-    uint32_t V_output_mV;
-    uint8_t LUT_output_efficiency_n8[LUT_SIZE]; // depending on output_current
+    uint32_t V_output_uV;
+    uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
+    uint32_t LUT_out_inv_efficiency_n24[LUT_SIZE]; // depending on output_current
 } __attribute__((packed));
 
 /* Control request message sent from PRU1 to this kernel module */
