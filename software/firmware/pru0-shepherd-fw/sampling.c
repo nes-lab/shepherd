@@ -100,7 +100,7 @@ static inline void sample_harvesting_test(struct SampleBuffer *const buffer, con
 static inline void sample_emulation(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* Get input current/voltage from shared memory buffer */
-	const uint32_t input_current_nA = buffer->values_current[sample_idx] - ((1U << 17U) - 1); // TODO: why convert it to int and subtract 16bit?
+	const uint32_t input_current_nA = buffer->values_current[sample_idx];
 	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
 
 	/* measure current flow */
@@ -230,7 +230,7 @@ void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 	}
 }
 
-
+//
 void sample_init(const enum ShepherdMode mode, const uint32_t dac_ch_a_voltage_mV)
 {
 	/* Chip-Select signals are active low */
@@ -243,6 +243,8 @@ void sample_init(const enum ShepherdMode mode, const uint32_t dac_ch_a_voltage_m
 	const bool_ft use_emulator = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
 
 	dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
+	// TODO: init more efficient, can be done all same ICs at the same time (common cs_low)
+	// just init-emulator takes 10.5 us, 5x DAC * 750 ns, 4x ADC x 1440 ns
 
 	if (use_harvester)
 	{
