@@ -33,7 +33,7 @@ static inline ufloat conv_adc_raw_to_nA(uint32_t current_raw);
 
 static inline uint32_t conv_uV_to_dac_raw(ufloat voltage_uV);
 
-static ufloat input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], uint32_t voltage, uint32_t current);
+static ufloat input_efficiency(uint8_t efficiency_lut_n8[const][LUT_SIZE], uint32_t voltage, uint32_t current);
 static ufloat output_efficiency(const uint32_t inv_efficiency_lut_n24[const], uint32_t current);
 
 /* data-structure that hold the state - variables for direct use */
@@ -61,7 +61,7 @@ void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *
 	GPIO_OFF(DEBUG_PIN1_MASK);
 	/* Boost Reg */
 
-	vss.dt_us_per_C_nF = div0(dt_us_const, 0, vsc_arg->C_storage_nF, 0);
+	vss.dt_us_per_C_nF = div((ufloat){.value=dt_us_const, .shift=0}, (ufloat){.value=vsc_arg->C_storage_nF, .shift=0});
 	/* container for the stored energy: */
 	vss.V_store_uV = (ufloat){.value = vsc_arg->V_storage_init_uV, .shift = 0};
 
@@ -127,18 +127,18 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 		if (compare_gt(V_inp_uV, vss.V_store_uV))
 			V_inp_uV = vss.V_store_uV;
 
-		P_inp_pW = mul1(V_inp_uV, input_current_nA, 0);
-		P_inp_pW = mul2(P_inp_pW, eta_inp);
+		P_inp_pW = mul(V_inp_uV, (ufloat){.value=input_current_nA, .shift=0});
+		P_inp_pW = mul(P_inp_pW, eta_inp);
 
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		/* BUCK, Calculate current flowing out of the storage capacitor*/
 		const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
 		const ufloat eta_inv_out = output_efficiency(vsc->LUT_out_inv_efficiency_n24, current_adc_raw); // TODO: wrong input, should be nA
-		const ufloat dP_leak_pW = mul1(vss.V_store_uV, vsc->I_storage_leak_nA, 0);
+		const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vsc->I_storage_leak_nA, .shift=0});
 		ufloat P_out_pW;
-		P_out_pW = mul2(I_out_nA, vss.V_out_uV);
-		P_out_pW = mul2(P_out_pW, eta_inv_out);
-		P_out_pW = add2(P_out_pW, dP_leak_pW);
+		P_out_pW = mul(I_out_nA, vss.V_out_uV);
+		P_out_pW = mul(P_out_pW, eta_inv_out);
+		P_out_pW = add(P_out_pW, dP_leak_pW);
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		return 1;
 	}
@@ -154,17 +154,17 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 	ufloat dV_cStor_uV;
 	if (compare_gt(P_inp_pW, P_out_pW))
 	{
-		P_sum_pW = sub2(P_inp_pW, P_out_pW);
-		I_cStor_nA = div2(P_sum_pW, vss.V_store_uV);
-		dV_cStor_uV = mul2(I_cStor_nA, vss.dt_us_per_C_nF);
-		vss.V_store_uV = add2(vss.V_store_uV, dV_cStor_uV);
+		P_sum_pW = sub(P_inp_pW, P_out_pW);
+		I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
+		dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
+		vss.V_store_uV = add(vss.V_store_uV, dV_cStor_uV);
 	}
 	else
 	{
-		P_sum_pW = sub2(P_out_pW, P_inp_pW);
-		I_cStor_nA = div2(P_sum_pW, vss.V_store_uV);
-		dV_cStor_uV = mul2(I_cStor_nA, vss.dt_us_per_C_nF);
-		vss.V_store_uV = sub2(vss.V_store_uV, dV_cStor_uV);
+		P_sum_pW = sub(P_out_pW, P_inp_pW);
+		I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
+		dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
+		vss.V_store_uV = sub(vss.V_store_uV, dV_cStor_uV);
 	}
 
 	// Make sure the voltage stays in it's boundaries, TODO: is this also only in 65ms interval?
@@ -194,12 +194,12 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 			if (compare_gt(vss.V_store_uV, vss.V_out_uV))
 			{
 				is_outputting = true;
-				vss.V_store_uV = sub2(vss.V_store_uV, (ufloat){.value=vsc->dV_stor_low_uV, .shift=0});
+				vss.V_store_uV = sub(vss.V_store_uV, (ufloat){.value=vsc->dV_stor_low_uV, .shift=0});
 			}
 			if (compare_gt(vss.V_store_uV, (ufloat){.value = vsc->V_storage_enable_threshold_uV, .shift=0}))
 			{
 				is_outputting = true;
-				vss.V_store_uV = sub2(vss.V_store_uV, (ufloat){.value=vsc->dV_stor_en_thrs_uV, .shift=0});
+				vss.V_store_uV = sub(vss.V_store_uV, (ufloat){.value=vsc->dV_stor_en_thrs_uV, .shift=0});
 			}
 		}
 	}
@@ -222,30 +222,27 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 // (previous) unsafe conversion -> n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
 static inline ufloat conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-	ufloat current_nA;
-	current_nA = mul0(current_raw, 0u, cal_cfg.adc_current_factor_n8, -8);
-	current_nA = sub1(current_nA, cal_cfg.adc_current_offset_nA, 0u);
-	return current_nA;
+	const ufloat current_nA = mul((ufloat){.value=current_raw, .shift=0}, (ufloat){.value=cal_cfg.adc_current_factor_nA, .shift=0});
+	return  sub(current_nA, (ufloat){.value=cal_cfg.adc_current_offset_nA, .shift=0});
 }
 
 // safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
 static inline uint32_t conv_uV_to_dac_raw(const ufloat voltage_uV)
 {
-	ufloat voltage_raw;
-	voltage_raw = sub1(voltage_uV, cal_cfg.dac_voltage_offset_uV, 0u);
-	voltage_raw = mul1(voltage_raw, cal_cfg.dac_voltage_inv_factor_n24, -24);
+	ufloat voltage_raw = sub(voltage_uV, (ufloat){.value=cal_cfg.dac_voltage_offset_uV, .shift=0});
+	voltage_raw = mul(voltage_raw, (ufloat){.value=cal_cfg.dac_voltage_inv_factor_nA_n16, .shift=-16}); // TODO: rework both factors
 	return extract_value(voltage_raw);
 }
 
 // TODO: fix input to take SI-units
-static ufloat input_efficiency(uint8_t efficiency_lut[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
+static ufloat input_efficiency(uint8_t efficiency_lut_n8[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
 {
 	uint8_t pos_v = 32 - get_left_zero_count(voltage);
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 4 values, if there is space for overhead */
-        return (ufloat){.value = efficiency_lut[pos_v][pos_c], .shift = -8};
+        return (ufloat){.value = efficiency_lut_n8[pos_v][pos_c], .shift = -8};
 }
 
 // TODO: fix input to take SI-units

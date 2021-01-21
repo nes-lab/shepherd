@@ -72,11 +72,11 @@ struct SampleBuffer {
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
 struct Calibration_Config {
 	/* Gain of load current adc. It converts current to ADC raw value */
-	uint32_t adc_current_factor_n8; // n8 means normalized to 2^8 = 1.0
+	uint32_t adc_current_factor_nA; // n8 means normalized to 2^8 = 1.0
 	/* Offset of load current adc */
 	int32_t adc_current_offset_nA;
 	/* Gain of DAC. It converts voltage to DAC raw value */
-	uint32_t dac_voltage_inv_factor_n24;
+	uint32_t dac_voltage_inv_factor_nA_n16;
 	/* Offset of load voltage DAC */
 	int32_t dac_voltage_offset_uV;
 } __attribute__((packed));

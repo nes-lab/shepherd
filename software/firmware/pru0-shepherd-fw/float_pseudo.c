@@ -57,7 +57,7 @@ uint32_t compare_gt(ufloat num1, ufloat num2)
 	int8_t lezec2 = get_left_zero_count(num2.value) - num2.shift;
 	if (lezec1 == lezec2)
 	{
-		equalize_exp0(&(num1.value), &(num1.shift), &(num2.value), &(num2.shift)); // TODO: there should be a fast / dirty FN without while
+		equalize_exp(&num1, &num1); // TODO: there should be a fast / dirty FN without while
 		if (num1.value > num2.value)
 			return 1u;
 		else	return 0u;
@@ -77,7 +77,7 @@ uint32_t compare_lt(ufloat num1, ufloat num2)
 	int8_t lezec2 = get_left_zero_count(num2.value) - num2.shift;
 	if (lezec1 == lezec2)
 	{
-		equalize_exp0(&(num1.value), &(num1.shift), &(num2.value), &(num2.shift)); // TODO: there should be a fast / dirty FN without while
+		equalize_exp(&num1, &num1); // TODO: there should be a fast / dirty FN without while
 		if (num1.value < num2.value)
 			return 1u;
 		else	return 0u;
@@ -90,165 +90,104 @@ uint32_t compare_lt(ufloat num1, ufloat num2)
 	}
 }
 
-
-void equalize_exp2(ufloat * const num1, ufloat * const num2)
+/* if one shift-value is smaller and there is head-space, it will double this value, or if no head-space, half the other value*/
+void equalize_exp(ufloat * const num1, ufloat * const num2)
 {
-	equalize_exp0(&(num1->value), &(num1->shift), &(num2->value), &(num2->shift));
-}
-
-/* if one shiftnent is smaller and there is head-space, it will double this value, or if no head-space, half the other value*/
-void equalize_exp0(uint32_t* const value1, int8_t* const shift1,
-		   uint32_t* const value2, int8_t* const shift2)
-{
-	while (*shift1 != *shift2) // TODO: runs not optimal, but ok for a prototype, instead of while this algo could jump directly, using fast min/max
+	// TODO: runs not optimal, but ok for a prototype, instead of while this algo could jump directly, using fast min/max
+	while (num1->shift != num2->shift)
 	{
-		if (*shift1 < *shift2)
+		if (num1->shift < num2->shift)
 		{
-			if (get_left_zero_count(*value2) > 0u)
+			if (get_left_zero_count(num2->value) > 0u)
 			{
-				*value2 <<= 1u;
-				(*shift2)--;
+				num2->value <<= 1u;
+				(num2->shift)--;
 			}
 			else
 			{
-				*value1 >>= 1u;
-				(*shift1)++;
+				num1->value >>= 1u;
+				(num1->shift)++;
 			}
 		}
 		else
 		{
-			if (get_left_zero_count(*value1) > 0u)
+			if (get_left_zero_count(num1->value) > 0u)
 			{
-				*value1 <<= 1u;
-				(*shift1)--;
+				num1->value <<= 1u;
+				(num1->shift)--;
 			}
 			else
 			{
-				*value2 >>= 1u;
-				(*shift2)++;
+				num2->value >>= 1u;
+				(num2->shift)++;
 			}
 		}
 	}
 }
 
-ufloat add2(ufloat num1, ufloat num2)
-{
-	return add0(num1.value, num1.shift, num2.value, num2.shift);
-}
-
-ufloat add1(ufloat num1, uint32_t value2, int8_t shift2)
-{
-	return add0(num1.value, num1.shift, value2, shift2);
-}
-
-ufloat add0(uint32_t value1, int8_t shift1,
-	    uint32_t value2, int8_t shift2)
+ufloat add(ufloat num1, ufloat num2)
 {
 	ufloat result;
-	equalize_exp0(&value1, &shift1, &value2, &shift2);
-	result.shift = shift1;
-	if ((get_left_zero_count(value1) < 1u) | (get_left_zero_count(value2) < 1u))
+	equalize_exp(&num1, &num2);
+	result.shift = num1.shift;
+	if ((get_left_zero_count(num1.value) < 1u) | (get_left_zero_count(num2.value) < 1u))
 	{
-		value1 >>= 1u;
-		value2 >>= 1u;
+		num1.value >>= 1u;
+		num2.value >>= 1u;
 		result.shift++;
 	}
-	result.value = value1 + value2;
+	result.value = num1.value + num2.value;
 	return result;
 }
 
-ufloat sub2(ufloat num1, ufloat num2)
-{
-	return sub0(num1.value, num1.shift, num2.value, num2.shift);
-}
-
-ufloat sub1(ufloat num1, uint32_t value2, int8_t shift2)
-{
-	return sub0(num1.value, num1.shift, value2, shift2);
-}
-
-ufloat sub1r(uint32_t value1, int8_t shift1, ufloat num2)
-{
-	return sub0(value1, shift1, num2.value, num2.shift);
-}
-
-ufloat sub0(uint32_t value1, int8_t shift1,
-	    uint32_t value2, int8_t shift2)
+ufloat sub(ufloat num1, ufloat num2)
 {
 	ufloat result;
-	equalize_exp0(&value1, &shift1, &value2, &shift2);
-	result.shift = shift1;
-	if (value1 > value2)	result.value = value1 - value2;
-	else			result.value = 0u;
+	equalize_exp(&num1, &num2);
+	result.shift = num1.shift;
+	if (num1.value > num2.value)	result.value = num1.value - num2.value;
+	else				result.value = 0u;
 	return result;
 }
 
-ufloat mul2(ufloat num1, ufloat num2)
-{
-	return mul0(num1.value, num1.shift, num2.value, num2.shift);
-}
-
-ufloat mul1(ufloat num1, uint32_t value2, int8_t shift2)
-{
-	return mul0(num1.value, num1.shift, value2, shift2);
-}
-
-ufloat mul0(uint32_t value1, int8_t shift1,
-	    uint32_t value2, int8_t shift2)
+ufloat mul(ufloat num1, ufloat num2)
 {
 	ufloat result;
-	uint8_t lezec1 = get_left_zero_count(value1);
-	uint8_t lezec2 = get_left_zero_count(value2);
-	result.shift = shift1 + shift2;
+	uint8_t lezec1 = get_left_zero_count(num1.value);
+	uint8_t lezec2 = get_left_zero_count(num2.value);
+	result.shift = num1.shift + num2.shift;
 	while ((lezec1 + lezec2) < 32u)  // TODO: runs not optimal, but ok for a prototype
 	{
 		result.shift++;
 		if (lezec1 > lezec2)
 		{
-			value1 >>= 1u;
+			num1.value >>= 1u;
 			lezec1++;
 		}
 		else
 		{
-			value2 >>= 1u;
+			num2.value >>= 1u;
 			lezec2++;
 		}
 	}
-	result.value = value1 * value2;
+	result.value = num1.value * num2.value;
 	return result;
 }
 
-ufloat div2(ufloat num1, ufloat num2)
-{
-	return div0(num1.value, num1.shift, num2.value, num2.shift);
-}
-
-ufloat div1(ufloat num1, uint32_t value2, int8_t shift2)
-{
-	return div0(num1.value, num1.shift, value2, shift2);
-}
-
-ufloat div1r(uint32_t value1, int8_t shift1, ufloat num2)
-{
-	return div0(value1, shift1, num2.value, num2.shift);
-}
-
-/* bring dividend to full 32bit, and divisor to max 16 bit, shrink if necessary */
-ufloat div0(uint32_t value1, int8_t shift1,
-	    uint32_t value2, int8_t shift2)
+ufloat div(ufloat num1, ufloat num2)
 {
 	ufloat result;
-	result.shift = shift1 + shift2;
+	result.shift = num1.shift + num2.shift;
 
-	uint8_t lezec1 = get_left_zero_count(value1);
-	value1 <<= lezec1;
+	uint8_t lezec1 = get_left_zero_count(num1.value);
+	num1.value <<= lezec1;
 	result.shift -= lezec1;
 
-	uint8_t lezec2 = get_left_zero_count(value2);
+	uint8_t lezec2 = get_left_zero_count(num2.value);
 	if (lezec2 < 16u)
 	{
 		lezec2 = 16u - lezec2;
-		value2 >>= lezec2;
+		num2.value >>= lezec2;
 		result.shift += lezec2;
 	}
 	else if (lezec2 == 32u)
@@ -257,10 +196,11 @@ ufloat div0(uint32_t value1, int8_t shift1,
 		return result;
 	}
 
-	result.value = value1 / value2;
+	result.value = num1.value / num2.value;
 	return result;
 }
 
+/*
 ufloat sqrt_rounded(const ufloat num1)
 {
 	uint8_t lezec1 = get_left_zero_count(num1.value);
@@ -301,4 +241,4 @@ ufloat sqrt_rounded(const ufloat num1)
 	result.value = res;
 	return result;
 }
-
+ */
