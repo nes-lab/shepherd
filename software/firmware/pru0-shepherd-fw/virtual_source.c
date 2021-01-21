@@ -53,7 +53,7 @@ static struct VirtSource_Config vs_cfg;
 static struct Calibration_Config cal_cfg;
 #define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)
 
-void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *cal_arg)
+void vsource_init(const struct VirtSource_Config *const vsc_arg, const struct Calibration_Config *const cal_arg)
 {
 	/* Initialize state */
 	cal_cfg = *cal_arg;
@@ -75,6 +75,7 @@ void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *
 	/* compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
 	 * -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
 	 * TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when VCap >= V_out
+	 * TODO: this can be done in python, even both enable-cases
 	 * Math behind this calculation:
 	 * Energy-Change in Storage Cap -> 	E_new = E_old - E_output
 	 * with Energy of a Cap 	-> 	E_x = C_x * V_x^2 / 2
@@ -84,7 +85,6 @@ void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *
 	 * in case of V_cap = V_out 	-> 	dV = V_store_old * (sqrt(1 - C_out / C_store) - 1)
 	 */
 	/*
-	// TODO: this can be done in python, even both enable-cases
 	const ufloat V_old_sq_uV = mul0(vs_cfg.V_storage_enable_threshold_uV, 0, vs_cfg.V_storage_enable_threshold_uV, 0);
 	const ufloat V_out_sq_uV = mul2(vss.V_out_uV, vss.V_out_uV);
 	const ufloat cap_ratio   = div0(vs_cfg.C_output_nF, 0, vs_cfg.C_storage_nF, 0);
@@ -232,7 +232,7 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 // (previous) unsafe conversion -> n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
 static inline ufloat conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-	const ufloat current_nA = mul((ufloat){.value=current_raw, .shift=0}, (ufloat){.value=cal_cfg.adc_current_factor_nA, .shift=0});
+	const ufloat current_nA = mul((ufloat){.value=current_raw, .shift=0}, (ufloat){.value=cal_cfg.adc_current_factor_nA_n8, .shift=-8});
 	return  sub(current_nA, (ufloat){.value=cal_cfg.adc_current_offset_nA, .shift=0});
 }
 
@@ -240,7 +240,7 @@ static inline ufloat conv_adc_raw_to_nA(const uint32_t current_raw)
 static inline uint32_t conv_uV_to_dac_raw(const ufloat voltage_uV)
 {
 	ufloat voltage_raw = sub(voltage_uV, (ufloat){.value=cal_cfg.dac_voltage_offset_uV, .shift=0});
-	voltage_raw = mul(voltage_raw, (ufloat){.value=cal_cfg.dac_voltage_inv_factor_nA_n16, .shift=-16}); // TODO: rework both factors
+	voltage_raw = mul(voltage_raw, (ufloat){.value=cal_cfg.dac_voltage_inv_factor_uV_n20, .shift=-20}); // TODO: rework both factors
 	return extract_value(voltage_raw);
 }
 
@@ -260,5 +260,5 @@ static ufloat output_efficiency(const uint32_t current)
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 2 values, if there is space for overhead */
-	return (ufloat){.value = vs_cfg.LUT_out_inv_efficiency_n24[pos_c], .shift = -24};
+	return (ufloat){.value = vs_cfg.LUT_out_inv_efficiency_n10[pos_c], .shift = -10};
 }

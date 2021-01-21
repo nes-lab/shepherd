@@ -119,7 +119,11 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 static inline void sample_emulation_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* empty playground for new algorithms to test in parallel with above reference algorithm */
-	sample_emulation(buffer, sample_idx);
+	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
+	const uint32_t voltage_dac = 5000;
+	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+	buffer->values_current[sample_idx] = current_adc_raw;
+	buffer->values_voltage[sample_idx] = voltage_dac;
 }
 
 
@@ -231,12 +235,15 @@ void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 }
 
 //
-void sample_init(const enum ShepherdMode mode, const uint32_t dac_ch_a_voltage_mV)
+void sample_init(volatile const struct SharedMem *const shared_mem)
 {
 	/* Chip-Select signals are active low */
 	GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
 	GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
 	GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
+
+	const enum ShepherdMode mode = shared_mem->shepherd_mode;
+	const uint32_t dac_ch_a_voltage_mV = shared_mem->dac_auxiliary_voltage_mV;
 
 	/* deactivate hw-units when not needed, initialize the other */
 	const bool_ft use_harvester = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
@@ -260,5 +267,13 @@ void sample_init(const enum ShepherdMode mode, const uint32_t dac_ch_a_voltage_m
 	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
 	ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 
-	if (use_emulator)	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
+	if (use_emulator)
+	{
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
+	}
+
+	if (mode == MODE_EMULATE)
+	{
+		vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
+	}
 }

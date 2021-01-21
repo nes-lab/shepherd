@@ -194,6 +194,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 
 void main(void)
 {
+	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 	static struct RingBuffer free_buffers;
 
 	/*
@@ -239,15 +240,12 @@ void main(void)
 #endif
 
 reset:
+	 ring_init(&free_buffers);
+
+	GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+	sample_init(shared_mememory);
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-	// TODO: how do we make sure, that virtsource_settings & calibration_settings is initialized?
-	if (shared_mememory->shepherd_mode == MODE_EMULATE)
-		vsource_init((struct VirtSourceSettings *)&shared_mememory->virtsource_settings,
-			     (struct CalibrationSettings *)&shared_mememory->calibration_settings);
-
-	ring_init(&free_buffers);
-	sample_init((enum ShepherdMode)shared_mememory->shepherd_mode, shared_mememory->dac_auxiliary_voltage_mV);
 	shared_mememory->gpio_edges = NULL;
 
 	/* Clear all interrupt events */
