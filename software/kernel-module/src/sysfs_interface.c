@@ -350,7 +350,7 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 						struct kobj_attribute *attr,
 						const char *buf, size_t count)
 {
-	struct CalibrationSettings tmp;
+	struct Calibration_Config tmp;
 	struct kobj_attr_struct_s *kobj_attr_wrapped;
 
 	if (pru_comm_get_state() != STATE_IDLE)
@@ -358,21 +358,22 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (sscanf(buf,"%d %d %d %d", &tmp.adc_current_factor_nA_n8, &tmp.adc_current_offset_nA,
-	        &tmp.dac_voltage_factor_uV_n8, &tmp.dac_voltage_offset_uV) == 4) {
+	if (sscanf(buf,"%d %d %d %d",
+	        &tmp.adc_current_factor_nA_n8, &tmp.adc_current_offset_nA,
+	        &tmp.dac_voltage_inv_factor_uV_n20, &tmp.dac_voltage_offset_uV) == 4) {
 		printk(KERN_INFO
 		       "shprd: Setting ADC-Current calibration settings. Current gain: %d, current offset: %d\n",
 		       tmp.adc_current_factor_nA_n8, tmp.adc_current_offset_nA);
 
 		printk(KERN_INFO
 		       "shprd: Setting DAC-Voltage calibration settings. Voltage gain: %d, voltage offset: %d\n",
-		       tmp.dac_voltage_factor_uV_n8, tmp.dac_voltage_offset_uV);
+		       tmp.dac_voltage_inv_factor_uV_n20, tmp.dac_voltage_offset_uV);
 
 		writel(tmp.adc_current_factor_nA_n8,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 		writel(tmp.adc_current_offset_nA,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
-		writel(tmp.dac_voltage_factor_uV_n8,
+		writel(tmp.dac_voltage_inv_factor_uV_n20,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
 		writel(tmp.dac_voltage_offset_uV,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
@@ -410,7 +411,7 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	for (i = 0; i < sizeof(struct VirtSourceSettings); i += 4)
+	for (i = 0; i < sizeof(struct VirtSource_Config); i += 4)
 	{
 		int read, n;
 		int ret = sscanf(&buf[pos],"%d%n",&read,&n);
@@ -434,7 +435,7 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	for (i = 0; i < sizeof(struct VirtSourceSettings); i += 4)
+	for (i = 0; i < sizeof(struct VirtSource_Config); i += 4)
 	{
 		count += sprintf(strlen(buf) + buf,"%d ", 
 			readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + i));

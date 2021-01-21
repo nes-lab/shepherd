@@ -69,14 +69,19 @@ struct SampleBuffer {
 	struct GPIOEdges gpio_edges;
 } __attribute__((packed));
 
-/* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
+/* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
+ * numbers for hw-rev2.0
+ * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256) = 5'000
+ * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256) = 50'000
+ * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
+ */
 struct Calibration_Config {
 	/* Gain of load current adc. It converts current to ADC raw value */
-	uint32_t adc_current_factor_nA; // n8 means normalized to 2^8 = 1.0
+	uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 => 1.0
 	/* Offset of load current adc */
 	int32_t adc_current_offset_nA;
 	/* Gain of DAC. It converts voltage to DAC raw value */
-	uint32_t dac_voltage_inv_factor_nA_n16;
+	uint32_t dac_voltage_inv_factor_uV_n20;
 	/* Offset of load voltage DAC */
 	int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
@@ -91,7 +96,6 @@ struct Calibration_Config {
  * 	_nF-u32 = ~ 4.3 F
  * 	_uV-u32 = 4294 V
  * 	_nA-u32 = ~ 4.3 A
-
  */
 struct VirtSource_Config {
 	/* Direct Reg */
@@ -105,15 +109,15 @@ struct VirtSource_Config {
 	uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
 	uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
 	uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
-	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage)
-		// n8 means normalized to 2^8 = 1.0
 	uint32_t V_pwr_good_low_threshold_uV; // range where target is informed by output-pin
 	uint32_t V_pwr_good_high_threshold_uV;
 	uint32_t dV_stor_en_thrs_uV; // compensate C_out, for disable state when V_store < V_store_enable/disable_threshold_uV
 	/* Buck Boost, ie. BQ25570) */
 	uint32_t V_output_uV;
 	uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
-	uint32_t LUT_out_inv_efficiency_n24[LUT_SIZE]; // depending on output_current
+	/* LUTs */
+	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
+	uint32_t LUT_out_inv_efficiency_n10[LUT_SIZE]; // depending on output_current, n8 means normalized to 2^8 => 1/1.0,
 } __attribute__((packed));
 
 // pseudo-assertion to test for correct struct-size, zero cost

@@ -30,23 +30,34 @@ enum ShepherdState {
 	STATE_FAULT
 };
 
-/* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset */
-struct CalibrationSettings {
+/* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
+ * numbers for hw-rev2.0
+ * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256) = 5'000
+ * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256) = 50'000
+ * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
+ */
+struct Calibration_Config {
     /* Gain of load current adc. It converts current to ADC raw value */
-    uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 = 1.0
+    uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 => 1.0
     /* Offset of load current adc */
     int32_t adc_current_offset_nA;
     /* Gain of DAC. It converts voltage to DAC raw value */
-    uint32_t dac_voltage_factor_uV_n8;
+    uint32_t dac_voltage_inv_factor_uV_n20;
     /* Offset of load voltage DAC */
     int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
 
 #define LUT_SIZE	(12)
 
-/* This structure defines all settings of virtual source emulation*/
-/* more complex regulators use vars in their section and above */
-struct VirtSourceSettings {
+/* This structure defines all settings of virtual source emulation
+ * more complex regulators use vars in their section and above
+ * NOTE: sys-FS-FNs currently uses 4 byte steps for transfer, so struct must be (size)mod4=0
+ * Container-sizes with SI-Units:
+ * 	_nF-u32 = ~ 4.3 F
+ * 	_uV-u32 = 4294 V
+ * 	_nA-u32 = ~ 4.3 A
+ */
+struct VirtSource_Config {
     /* Direct Reg */
     uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
     /* Boost Reg, ie. BQ25504 */
@@ -58,15 +69,15 @@ struct VirtSourceSettings {
     uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
     uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
     uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
-    uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage)
-    // n8 means normalized to 2^8 = 1.0
     uint32_t V_pwr_good_low_threshold_uV; // range where target is informed by output-pin
     uint32_t V_pwr_good_high_threshold_uV;
     uint32_t dV_stor_en_thrs_uV; // compensate C_out, for disable state when V_store < V_store_enable/disable_threshold_uV
     /* Buck Boost, ie. BQ25570) */
     uint32_t V_output_uV;
     uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
-    uint32_t LUT_out_inv_efficiency_n24[LUT_SIZE]; // depending on output_current
+    /* LUTs */
+    uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
+    uint32_t LUT_out_inv_efficiency_n10[LUT_SIZE]; // depending on output_current, n10 means value = 2^10 / eta,
 } __attribute__((packed));
 
 /* Control request message sent from PRU1 to this kernel module */
@@ -118,9 +129,9 @@ struct SharedMem {
 	/* The time for sampling samples_per_buffer. Determines sampling rate */
 	uint32_t buffer_period_ns;
 	/* ADC calibration settings */
-	struct CalibrationSettings calibration_settings;
+	struct Calibration_Config calibration_settings;
 	/* This structure defines all settings of virtual source emulation*/
-	struct VirtSourceSettings virtsource_settings;
+	struct VirtSource_Config virtsource_settings;
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
 	struct CtrlRepMsg ctrl_rep;
