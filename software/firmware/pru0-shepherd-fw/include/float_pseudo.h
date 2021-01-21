@@ -44,6 +44,4 @@ ufloat mul(ufloat num1, ufloat num2);
 
 ufloat div(ufloat num1, ufloat num2);
 
-//ufloat sqrt_rounded(ufloat num1);
-
 #endif //FLOAT_PSEUDO_H
