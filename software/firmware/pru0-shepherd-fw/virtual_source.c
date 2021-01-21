@@ -33,8 +33,8 @@ static inline ufloat conv_adc_raw_to_nA(uint32_t current_raw);
 
 static inline uint32_t conv_uV_to_dac_raw(ufloat voltage_uV);
 
-static ufloat input_efficiency(uint8_t efficiency_lut_n8[const][LUT_SIZE], uint32_t voltage, uint32_t current);
-static ufloat output_efficiency(const uint32_t inv_efficiency_lut_n24[const], uint32_t current);
+static ufloat input_efficiency(uint32_t voltage_uV, uint32_t current_nA);
+static ufloat output_efficiency(uint32_t current);
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
@@ -55,26 +55,23 @@ static struct Calibration_Config cal_cfg;
 
 void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *cal_arg)
 {
-	// Initialize state (order in struct) - convert for direct use,
+	/* Initialize state */
 	cal_cfg = *cal_arg;
 	vsc = vsc_arg;
-	GPIO_OFF(DEBUG_PIN1_MASK);
-	/* Boost Reg */
 
+	/* Boost Reg */
 	vss.dt_us_per_C_nF = div((ufloat){.value=dt_us_const, .shift=0}, (ufloat){.value=vsc_arg->C_storage_nF, .shift=0});
 	/* container for the stored energy: */
 	vss.V_store_uV = (ufloat){.value = vsc_arg->V_storage_init_uV, .shift = 0};
 
-	/* Output check every n Samples */
+	/* Check Output-Limits every n Samples: */
 	vss.interval_check_thrs_sample = vsc_arg->interval_check_thresholds_ns / SAMPLE_INTERVAL_NS;
-	GPIO_ON(DEBUG_PIN1_MASK);
 
 	/* Buck Boost */
 	vss.V_out_uV = (ufloat){.value = vsc_arg->V_output_uV, .shift = 0};
 
 	vss.V_out_dac_raw = conv_uV_to_dac_raw(vss.V_out_uV);
 
-	GPIO_OFF(DEBUG_PIN1_MASK);
 	/* compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
 	 * -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
 	 * TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when VCap >= V_out
@@ -110,35 +107,34 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 	 * voltage of storage cap -> 		V += dV
 	 *
 	 */
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	static bool_ft part_switch = true;
 	if (part_switch) {
 		part_switch = false;
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		/* BOOST, Calculate current flowing into the storage capacitor */
-		const ufloat eta_inp = input_efficiency(vsc->LUT_inp_efficiency_n8, input_voltage_uV, input_current_nA);
-		//const uint64_t dP_inp_pW_n8 = input_current_nA * input_voltage_uV * eta_inp_n8;
-		ufloat P_inp_pW;
+
 		ufloat V_inp_uV = { .value = 0u, .shift = 0 };
-		/* disable boost if input voltage too low for boost to work, TODO: is this also only in 65ms interval? */
+		/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
 		if (input_voltage_uV >= vsc->V_inp_boost_threshold_uV)
 			V_inp_uV.value = input_voltage_uV;
-		/* limit input voltage when higher then voltage of storage cap, TODO: is this also only in 65ms interval? */
+		/* limit input voltage when higher then voltage of storage cap, TODO: is this also in 65ms interval? */
 		if (compare_gt(V_inp_uV, vss.V_store_uV))
 			V_inp_uV = vss.V_store_uV;
 
+		const ufloat eta_inp = input_efficiency(input_voltage_uV, input_current_nA);
+		ufloat P_inp_pW;
 		P_inp_pW = mul(V_inp_uV, (ufloat){.value=input_current_nA, .shift=0});
 		P_inp_pW = mul(P_inp_pW, eta_inp);
 
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		/* BUCK, Calculate current flowing out of the storage capacitor*/
 		const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-		const ufloat eta_inv_out = output_efficiency(vsc->LUT_out_inv_efficiency_n24, current_adc_raw); // TODO: wrong input, should be nA
-		const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vsc->I_storage_leak_nA, .shift=0});
+		const ufloat eta_inv_out = output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
+		//const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vsc->I_storage_leak_nA, .shift=0}); // TODO: re-enable
 		ufloat P_out_pW;
 		P_out_pW = mul(I_out_nA, vss.V_out_uV);
 		P_out_pW = mul(P_out_pW, eta_inv_out);
-		P_out_pW = add(P_out_pW, dP_leak_pW);
+		//P_out_pW = add(P_out_pW, dP_leak_pW); // TODO: re-enable
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		return 1;
 	}
@@ -167,13 +163,14 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 		vss.V_store_uV = sub(vss.V_store_uV, dV_cStor_uV);
 	}
 
-	// Make sure the voltage stays in it's boundaries, TODO: is this also only in 65ms interval?
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+
+	// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
 	if (compare_gt(vss.V_store_uV, (ufloat){.value = vsc->V_storage_max_uV, .shift = 0}))
 	{
 		vss.V_store_uV.value = vsc->V_storage_max_uV;
 	}
 
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* connect or disconnect output on certain events */
 	static uint32_t sample_count = 0;
 	static bool_ft is_outputting = false;
@@ -234,22 +231,21 @@ static inline uint32_t conv_uV_to_dac_raw(const ufloat voltage_uV)
 	return extract_value(voltage_raw);
 }
 
-// TODO: fix input to take SI-units
-static ufloat input_efficiency(uint8_t efficiency_lut_n8[const][LUT_SIZE], const uint32_t voltage, const uint32_t current)
+static ufloat input_efficiency(const uint32_t voltage_uV, const uint32_t current_nA)
 {
-	uint8_t pos_v = 32 - get_left_zero_count(voltage);
-	uint8_t pos_c = 32 - get_left_zero_count(current);
+	uint8_t pos_v = 32 - get_left_zero_count(voltage_uV>>10);
+	uint8_t pos_c = 32 - get_left_zero_count(current_nA>>10);
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 4 values, if there is space for overhead */
-        return (ufloat){.value = efficiency_lut_n8[pos_v][pos_c], .shift = -8};
+        return (ufloat){.value = vsc->LUT_inp_efficiency_n8[pos_v][pos_c], .shift = -8};
 }
 
 // TODO: fix input to take SI-units
-static ufloat output_efficiency(const uint32_t inv_efficiency_lut_n24[const], const uint32_t current)
+static ufloat output_efficiency(const uint32_t current)
 {
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 2 values, if there is space for overhead */
-	return (ufloat){.value = inv_efficiency_lut_n24[pos_c], .shift = -24};
+	return (ufloat){.value = vsc->LUT_out_inv_efficiency_n24[pos_c], .shift = -24};
 }
