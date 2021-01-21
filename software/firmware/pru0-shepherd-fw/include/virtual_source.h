@@ -5,7 +5,7 @@
 #include "commons.h"
 #include "float_pseudo.h"
 
-void vsource_init(struct VirtSourceSettings *vss_arg, struct CalibrationSettings *calib_arg);
+void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *cal_arg);
 uint32_t vsource_update(uint32_t current_adc_raw, uint32_t input_current_nA, uint32_t input_voltage_uV);
 
 /* Direct Connection
@@ -22,7 +22,7 @@ uint32_t vsource_update(uint32_t current_adc_raw, uint32_t input_current_nA, uin
  * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
  * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
  * - target / output disconnect check is only every 65 ms
- * - TODO: to disable set V_storage_max_mV to 0
+ * - TODO: to disable set V_storage_max_uV to 0
  * - input voltage can not be higher than cap_voltage and will be limited by algo
  * - the power point setting will be handled in pyPackage and work with IV-Curves
  */
