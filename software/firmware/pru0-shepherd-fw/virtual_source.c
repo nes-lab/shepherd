@@ -49,7 +49,7 @@ struct VirtSource_State {
 
 /* (local) global vars to access in update function */
 static struct VirtSource_State vss;
-static struct VirtSource_Config* vsc;
+static struct VirtSource_Config vs_cfg;
 static struct Calibration_Config cal_cfg;
 #define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)
 
@@ -57,18 +57,18 @@ void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *
 {
 	/* Initialize state */
 	cal_cfg = *cal_arg;
-	vsc = vsc_arg;
+	vs_cfg = *vsc_arg; // TODO: can be changed to pointer again, has same performance
 
 	/* Boost Reg */
-	vss.dt_us_per_C_nF = div((ufloat){.value=dt_us_const, .shift=0}, (ufloat){.value=vsc_arg->C_storage_nF, .shift=0});
+	vss.dt_us_per_C_nF = div((ufloat){.value=dt_us_const, .shift=0}, (ufloat){.value=vs_cfg.C_storage_nF, .shift=0});
 	/* container for the stored energy: */
-	vss.V_store_uV = (ufloat){.value = vsc_arg->V_storage_init_uV, .shift = 0};
+	vss.V_store_uV = (ufloat){.value = vs_cfg.V_storage_init_uV, .shift = 0};
 
 	/* Check Output-Limits every n Samples: */
-	vss.interval_check_thrs_sample = vsc_arg->interval_check_thresholds_ns / SAMPLE_INTERVAL_NS;
+	vss.interval_check_thrs_sample = vs_cfg.interval_check_thresholds_ns / SAMPLE_INTERVAL_NS;
 
 	/* Buck Boost */
-	vss.V_out_uV = (ufloat){.value = vsc_arg->V_output_uV, .shift = 0};
+	vss.V_out_uV = (ufloat){.value = vs_cfg.V_output_uV, .shift = 0};
 
 	vss.V_out_dac_raw = conv_uV_to_dac_raw(vss.V_out_uV);
 
@@ -85,12 +85,12 @@ void vsource_init(struct VirtSource_Config *vsc_arg, struct Calibration_Config *
 	 */
 	/*
 	// TODO: this can be done in python, even both enable-cases
-	const ufloat V_old_sq_uV = mul0(vsc->V_storage_enable_threshold_uV, 0, vsc->V_storage_enable_threshold_uV, 0);
+	const ufloat V_old_sq_uV = mul0(vs_cfg.V_storage_enable_threshold_uV, 0, vs_cfg.V_storage_enable_threshold_uV, 0);
 	const ufloat V_out_sq_uV = mul2(vss.V_out_uV, vss.V_out_uV);
-	const ufloat cap_ratio   = div0(vsc->C_output_nF, 0, vsc->C_storage_nF, 0);
+	const ufloat cap_ratio   = div0(vs_cfg.C_output_nF, 0, vs_cfg.C_storage_nF, 0);
 	const ufloat V_new_sq_uV = sub2(V_old_sq_uV, mul2(cap_ratio, V_out_sq_uV));
 	GPIO_ON(DEBUG_PIN1_MASK);
-	vss.dV_stor_en_uV = sub1r(vsc->V_storage_enable_threshold_uV, 0, sqrt_rounded(V_new_sq_uV)); // reversed, because new voltage is lower then old
+	vss.dV_stor_en_uV = sub1r(vs_cfg.V_storage_enable_threshold_uV, 0, sqrt_rounded(V_new_sq_uV)); // reversed, because new voltage is lower then old
 	*/
 	// TODO: add tests for valid ranges
 }
@@ -107,15 +107,16 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 	 * voltage of storage cap -> 		V += dV
 	 *
 	 */
-	static bool_ft part_switch = true;
-	if (part_switch) {
-		part_switch = false;
+	static uint32_t part_switch = 1;
+	if (part_switch == 1)
+	{
+		part_switch = 2;
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		/* BOOST, Calculate current flowing into the storage capacitor */
 
 		ufloat V_inp_uV = { .value = 0u, .shift = 0 };
 		/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
-		if (input_voltage_uV >= vsc->V_inp_boost_threshold_uV)
+		if (input_voltage_uV >= vs_cfg.V_inp_boost_threshold_uV)
 			V_inp_uV.value = input_voltage_uV;
 		/* limit input voltage when higher then voltage of storage cap, TODO: is this also in 65ms interval? */
 		if (compare_gt(V_inp_uV, vss.V_store_uV))
@@ -123,52 +124,64 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 
 		const ufloat eta_inp = input_efficiency(input_voltage_uV, input_current_nA);
 		ufloat P_inp_pW;
-		P_inp_pW = mul(V_inp_uV, (ufloat){.value=input_current_nA, .shift=0});
+		P_inp_pW = mul(V_inp_uV, (ufloat){ .value = input_current_nA, .shift = 0 });
 		P_inp_pW = mul(P_inp_pW, eta_inp);
-
+		GPIO_TOGGLE(DEBUG_PIN1_MASK);
+		return 1;
+	}
+	else if (part_switch == 2)
+	{
+		part_switch = 3;
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		/* BUCK, Calculate current flowing out of the storage capacitor*/
 		const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
 		const ufloat eta_inv_out = output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
-		//const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vsc->I_storage_leak_nA, .shift=0}); // TODO: re-enable
+		const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vs_cfg.I_storage_leak_nA, .shift=0}); // TODO: re-enable
 		ufloat P_out_pW;
 		P_out_pW = mul(I_out_nA, vss.V_out_uV);
 		P_out_pW = mul(P_out_pW, eta_inv_out);
-		//P_out_pW = add(P_out_pW, dP_leak_pW); // TODO: re-enable
+		P_out_pW = add(P_out_pW, dP_leak_pW); // TODO: re-enable
 		GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		return 1;
 	}
-	ufloat P_inp_pW = {.value = 5, .shift = 0};
-	ufloat P_out_pW = {.value = 7, .shift = 3};
-	part_switch = true;
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
-	/* Sum up Power and calculate new Capacitor Voltage
-	 * NOTE: slightly more complex code due to uint -> the only downside to ufloat
-	 */
-	ufloat P_sum_pW; //
-	ufloat I_cStor_nA;
-	ufloat dV_cStor_uV;
-	if (compare_gt(P_inp_pW, P_out_pW))
+	else if (part_switch == 3)
 	{
-		P_sum_pW = sub(P_inp_pW, P_out_pW);
-		I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
-		dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
-		vss.V_store_uV = add(vss.V_store_uV, dV_cStor_uV);
-	}
-	else
-	{
-		P_sum_pW = sub(P_out_pW, P_inp_pW);
-		I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
-		dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
-		vss.V_store_uV = sub(vss.V_store_uV, dV_cStor_uV);
+		ufloat P_inp_pW = {.value = 5, .shift = 0};
+		ufloat P_out_pW = {.value = 7, .shift = 3};
+		part_switch = 4;
+		GPIO_TOGGLE(DEBUG_PIN1_MASK);
+		/* Sum up Power and calculate new Capacitor Voltage
+		 * NOTE: slightly more complex code due to uint -> the only downside to ufloat
+		 */
+		ufloat P_sum_pW; //
+		ufloat I_cStor_nA;
+		ufloat dV_cStor_uV;
+		if (compare_gt(P_inp_pW, P_out_pW))
+		{
+			P_sum_pW = sub(P_inp_pW, P_out_pW);
+			I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
+			dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
+			vss.V_store_uV = add(vss.V_store_uV, dV_cStor_uV);
+		}
+		else
+		{
+			P_sum_pW = sub(P_out_pW, P_inp_pW);
+			I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
+			dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
+			vss.V_store_uV = sub(vss.V_store_uV, dV_cStor_uV);
+		}
+
+		GPIO_TOGGLE(DEBUG_PIN1_MASK);
+		return 1;
 	}
 
+	part_switch = 1;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 
 	// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
-	if (compare_gt(vss.V_store_uV, (ufloat){.value = vsc->V_storage_max_uV, .shift = 0}))
+	if (compare_gt(vss.V_store_uV, (ufloat){.value = vs_cfg.V_storage_max_uV, .shift = 0}))
 	{
-		vss.V_store_uV.value = vsc->V_storage_max_uV;
+		vss.V_store_uV.value = vs_cfg.V_storage_max_uV;
 	}
 
 	/* connect or disconnect output on certain events */
@@ -180,7 +193,7 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 		sample_count = 0;
 		if (is_outputting)
 		{
-			if (compare_lt(vss.V_store_uV, vss.V_out_uV) | compare_lt(vss.V_store_uV, (ufloat){.value = vsc->V_storage_disable_threshold_uV, .shift= 0}))
+			if (compare_lt(vss.V_store_uV, vss.V_out_uV) | compare_lt(vss.V_store_uV, (ufloat){.value = vs_cfg.V_storage_disable_threshold_uV, .shift= 0}))
 			{
 				is_outputting = false;
 			}
@@ -191,12 +204,12 @@ uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_cur
 			if (compare_gt(vss.V_store_uV, vss.V_out_uV))
 			{
 				is_outputting = true;
-				vss.V_store_uV = sub(vss.V_store_uV, (ufloat){.value=vsc->dV_stor_low_uV, .shift=0});
+				vss.V_store_uV = sub(vss.V_store_uV, (ufloat){.value=vs_cfg.dV_stor_low_uV, .shift=0});
 			}
-			if (compare_gt(vss.V_store_uV, (ufloat){.value = vsc->V_storage_enable_threshold_uV, .shift=0}))
+			if (compare_gt(vss.V_store_uV, (ufloat){.value = vs_cfg.V_storage_enable_threshold_uV, .shift=0}))
 			{
 				is_outputting = true;
-				vss.V_store_uV = sub(vss.V_store_uV, (ufloat){.value=vsc->dV_stor_en_thrs_uV, .shift=0});
+				vss.V_store_uV = sub(vss.V_store_uV, (ufloat){.value=vs_cfg.dV_stor_en_thrs_uV, .shift=0});
 			}
 		}
 	}
@@ -238,7 +251,7 @@ static ufloat input_efficiency(const uint32_t voltage_uV, const uint32_t current
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 4 values, if there is space for overhead */
-        return (ufloat){.value = vsc->LUT_inp_efficiency_n8[pos_v][pos_c], .shift = -8};
+        return (ufloat){.value = vs_cfg.LUT_inp_efficiency_n8[pos_v][pos_c], .shift = -8};
 }
 
 // TODO: fix input to take SI-units
@@ -247,5 +260,5 @@ static ufloat output_efficiency(const uint32_t current)
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 2 values, if there is space for overhead */
-	return (ufloat){.value = vsc->LUT_out_inv_efficiency_n24[pos_c], .shift = -24};
+	return (ufloat){.value = vs_cfg.LUT_out_inv_efficiency_n24[pos_c], .shift = -24};
 }
