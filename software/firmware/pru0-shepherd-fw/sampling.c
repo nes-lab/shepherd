@@ -226,15 +226,16 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 	/* set Input Range = 1.25 * Vref, with Vref = 4.096 V, -> LSB = 19.53 uV */
 	adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_RANGE | RANGE_SEL_P125);
 
-	adc_readwrite(cs_pin, REGISTER_READ | ADDR_REG_RANGE);
+/*	adc_readwrite(cs_pin, REGISTER_READ | ADDR_REG_RANGE);
 	const uint32_t  response = adc_readwrite(cs_pin, 0u);
 	if (response != RANGE_SEL_P125)
 	{
 		// TODO: Alert kernel module that this hw-unit seems to be not present
-	}
+	}*/ // TODO: checkup disabled for now, doubles adc-init-speed
 }
 
-//
+// harvest-init takes 	32'800 ns ATM
+// emulator-init takes
 void sample_init(volatile const struct SharedMem *const shared_mem)
 {
 	/* Chip-Select signals are active low */
@@ -270,6 +271,8 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 	if (use_emulator)
 	{
 		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
+		// TODO: we also need to make sure, that this fn returns voltages to same, zero or similar
+		//  (init is called after sampling, but is the mode correct?)
 	}
 
 	if (mode == MODE_EMULATE)
