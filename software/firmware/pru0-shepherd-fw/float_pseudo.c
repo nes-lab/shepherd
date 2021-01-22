@@ -5,7 +5,7 @@
 #ifdef __GNUC__
 static uint8_t get_left_zero_count(const uint32_t value)
 {
-	/* TODO: there is a ASM-COMMAND for that, LMBD r2, r1, 1 */
+	/* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
 	uint32_t _value = value;
 	uint8_t	count = 32;
 	for (; _value > 0; _value >>= 1) count--;
@@ -26,6 +26,7 @@ static uint32_t min_value(uint32_t value1, uint32_t value2)
 #endif
 
 // TODO: some of these could be a lot faster in asm
+// spruhv7b - sect. 6.4.1.3 describes layout of struct-arguments
 
 /* should be optimal (for c) */
 uint32_t extract_value(const ufloat num1)

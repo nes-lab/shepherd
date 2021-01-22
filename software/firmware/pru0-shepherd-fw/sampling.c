@@ -178,7 +178,7 @@ void sample_dbg_dac(const uint32_t value)
 }
 
 
-void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
+static void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
 {
 	if (activate == 0)
 	{
@@ -210,7 +210,7 @@ void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
 }
 
 
-void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
+static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 {
 	if (activate)
 	{

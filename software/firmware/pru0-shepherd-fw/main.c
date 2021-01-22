@@ -38,7 +38,7 @@ static void send_message(const uint32_t msg_id, const uint32_t value)
 	// TODO: could also be replaced by new msg-system / rp-replacement
 }
 
-uint32_t handle_block_end(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
+static uint32_t handle_block_end(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
 			  struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
 {
 	uint32_t next_buffer_idx;
@@ -77,7 +77,7 @@ uint32_t handle_block_end(volatile struct SharedMem *const shared_mem, struct Ri
 
 // TODO: this system can also be replaced by shared-mem-msg-system, including the send_message() above
 // fn emits a 0 on error, 1 on success
-bool_ft handle_rpmsg(struct RingBuffer *const free_buffers_ptr, const enum ShepherdMode mode,
+static bool_ft handle_rpmsg(struct RingBuffer *const free_buffers_ptr, const enum ShepherdMode mode,
 		 const enum ShepherdState state)
 {
 	struct DEPMsg msg_in;

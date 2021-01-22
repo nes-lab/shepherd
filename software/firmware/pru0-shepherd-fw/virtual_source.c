@@ -29,8 +29,7 @@
  */
 
 /* private FNs */
-static inline ufloat conv_adc_raw_to_nA(uint32_t current_raw);
-
+static inline ufloat conv_adc_raw_to_nA(uint32_t current_raw); // TODO: the first two could also be helpful for sampling
 static inline uint32_t conv_uV_to_dac_raw(ufloat voltage_uV);
 
 static ufloat input_efficiency(uint32_t voltage_uV, uint32_t current_nA);
@@ -53,7 +52,7 @@ static struct VirtSource_Config vs_cfg;
 static struct Calibration_Config cal_cfg;
 #define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)
 
-void vsource_init(const struct VirtSource_Config *const vsc_arg, const struct Calibration_Config *const cal_arg)
+void vsource_init(volatile const struct VirtSource_Config *const vsc_arg, volatile const struct Calibration_Config *const cal_arg)
 {
 	/* Initialize state */
 	cal_cfg = *cal_arg;
