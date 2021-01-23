@@ -3,7 +3,7 @@ SCLK .set 0
 MOSI .set 1
 MISO .set 2
 
-.macro NOP
+.macro NOP ; TODO: this assembler understands a simple NOP, without macro
    MOV r23, r23
 .endm
 

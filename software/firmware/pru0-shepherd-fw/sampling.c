@@ -262,7 +262,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV)); // TODO: write aux more often if needed
 	}
 
-	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
+	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester); // TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
 	ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
 
 	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
