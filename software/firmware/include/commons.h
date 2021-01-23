@@ -98,6 +98,7 @@ struct Calibration_Config {
  * 	_nA-u32 = ~ 4.3 A
  */
 struct VirtSource_Config {
+	uint32_t converter_mode; // enum for  different functionality, TODO: implement
 	/* Direct Reg */
 	uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
 	/* Boost Reg, ie. BQ25504 */
