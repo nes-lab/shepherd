@@ -25,11 +25,14 @@ static uint32_t min_value(uint32_t value1, uint32_t value2)
 }
 #endif
 
-// TODO: some of these could be a lot faster in asm
-// TODO: first step: go back to old format add(value1, shift1, value2, shift2), this seemed to be much faster. test later in real world condition
-// spruhv7b - sect. 6.4.1.3 describes layout of struct-arguments
-// spruh73q - sect. 4.4.1.3 describes MAC-Unit
-// helpful comment: https://stackoverflow.com/questions/35841428/beaglebone-and-pru-division-and-multiplication
+/* TODO: some of these could be a lot faster in asm
+ *TODO: first step: go back to old format add(value1, shift1, value2, shift2), this seemed to be much faster. test later in real world condition
+ * - asm shows a small mess when using structs (and in general the compiler seems to be quite confused)
+ * - this small lib would be perfect for translating it to asm (no globals, and some special asm-cmds that have no c-equivalent)
+ * spruhv7b - sect. 6.4.1.3 describes layout of struct-arguments
+ * spruh73q - sect. 4.4.1.3 describes MAC-Unit
+ * helpful comment: https://stackoverflow.com/questions/35841428/beaglebone-and-pru-division-and-multiplication
+*/
 
 /* should be optimal (for c) */
 uint32_t extract_value(const ufloat num1)
