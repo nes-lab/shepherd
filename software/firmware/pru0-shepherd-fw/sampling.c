@@ -82,7 +82,7 @@ static inline void sample_harvesting(struct SampleBuffer *const buffer, const ui
 		}
 	}
 
-	/* TODO: also use ch-a of adc, shared_mememory->dac_auxiliary_voltage_mV */
+	/* TODO: also use ch-a of adc, shared_mememory->dac_auxiliary_voltage_raw */
 	//static uint32_t aux_voltage_mV =
 
 	buffer->values_current[sample_idx] = current_adc;
@@ -244,7 +244,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 	GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
 	const enum ShepherdMode mode = shared_mem->shepherd_mode;
-	const uint32_t dac_ch_a_voltage_mV = shared_mem->dac_auxiliary_voltage_mV;
+	const uint32_t dac_ch_a_voltage_raw = shared_mem->dac_auxiliary_voltage_raw & 0xFFFF;
 
 	/* deactivate hw-units when not needed, initialize the other */
 	const bool_ft use_harvester = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
@@ -259,7 +259,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 		/* after DAC-Reset the output is at Zero, fast return CH B to Max to not drain the power-source */
 		/* NOTE: if harvester is not used, dac is currently shut down -> connects power source with 1 Ohm to GND */
 		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
-		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV)); // TODO: write aux more often if needed
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | dac_ch_a_voltage_raw); // TODO: write aux more often if needed
 	}
 
 	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester); // TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
@@ -270,7 +270,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 
 	if (use_emulator)
 	{
-		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | DAC_mV_2_raw(dac_ch_a_voltage_mV));
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | dac_ch_a_voltage_raw);
 		// TODO: we also need to make sure, that this fn returns voltages to same, zero or similar
 		//  (init is called after sampling, but is the mode correct?)
 	}

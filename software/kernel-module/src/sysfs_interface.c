@@ -94,9 +94,9 @@ struct kobj_attr_struct_s attr_mode = {
 	.val_offset = offsetof(struct SharedMem, shepherd_mode)
 };
 struct kobj_attr_struct_s attr_auxiliary_voltage = {
-	.attr = __ATTR(dac_auxiliary_voltage_mV, 0660, sysfs_SharedMem_show,
+	.attr = __ATTR(dac_auxiliary_voltage_raw, 0660, sysfs_SharedMem_show,
 		       sysfs_auxiliary_voltage_store),
-	.val_offset = offsetof(struct SharedMem, dac_auxiliary_voltage_mV)
+	.val_offset = offsetof(struct SharedMem, dac_auxiliary_voltage_raw)
 };
 struct kobj_attr_struct_s attr_calibration_settings = {
 	.attr = __ATTR(calibration_settings, 0660, sysfs_calibration_settings_show,

@@ -164,7 +164,7 @@ struct SharedMem {
 	uint32_t shepherd_mode;
 	/* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
 	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
-	uint32_t dac_auxiliary_voltage_mV;
+	uint32_t dac_auxiliary_voltage_raw;
 	/* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
 	uint32_t mem_base_addr;
 	/* Length of shared area in DDR RAM */
