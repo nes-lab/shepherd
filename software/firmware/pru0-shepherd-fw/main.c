@@ -203,21 +203,30 @@ void main(void)
 	 * shared_mem structure.
 	 * Do this initialization early! The kernel module relies on it.
 	 */
-	volatile struct SharedMem *const shared_mememory = (volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET;
+	volatile struct SharedMem *const shared_memory = (volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET;
 	// Initialize all struct-Members Part A (Part B in Reset Loop)
-	shared_mememory->mem_base_addr = resourceTable.shared_mem.pa;
-	shared_mememory->mem_size = resourceTable.shared_mem.len;
+	shared_memory->mem_base_addr = resourceTable.shared_mem.pa;
+	shared_memory->mem_size = resourceTable.shared_mem.len;
 
-	shared_mememory->n_buffers = RING_SIZE;
-	shared_mememory->samples_per_buffer = ADC_SAMPLES_PER_BUFFER;
-	shared_mememory->buffer_period_ns = BUFFER_PERIOD_NS;
+	shared_memory->n_buffers = RING_SIZE;
+	shared_memory->samples_per_buffer = ADC_SAMPLES_PER_BUFFER;
+	shared_memory->buffer_period_ns = BUFFER_PERIOD_NS;
 
-	shared_mememory->dac_auxiliary_voltage_mV = 0;
-	shared_mememory->shepherd_mode = MODE_HARVEST;
+	shared_memory->dac_auxiliary_voltage_raw = 0;
+	shared_memory->shepherd_state = STATE_IDLE;
+	shared_memory->shepherd_mode = MODE_HARVEST;  // TODO: is this the the error for "wrong state"?
 
-	shared_mememory->next_timestamp_ns = 0;
-	shared_mememory->analog_sample_counter = 0;
+	shared_memory->next_timestamp_ns = 0;
+	shared_memory->analog_sample_counter = 0;
 
+	shared_memory->calibration_settings = (struct Calibration_Config){
+		.adc_current_factor_nA_n8=256, .adc_current_offset_nA=0,
+		.dac_voltage_inv_factor_uV_n20=256, .dac_voltage_offset_uV=0};
+
+	shared_memory->virtsource_settings = (struct VirtSource_Config){ 0 };  // TODO: this should initialize all fields to 0
+
+	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0, .msg_unread=0, .ticks_iep=0, .old_period=0};
+	shared_memory->ctrl_rep = (struct CtrlRepMsg){.identifier=0, .msg_unread=0, .clock_corr=0, .next_timestamp_ns=0};
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
 	 * are used to transfer the actual data between us and the Linux host.
@@ -243,10 +252,10 @@ reset:
 	 ring_init(&free_buffers);
 
 	GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-	sample_init(shared_mememory);
+	sample_init(shared_memory);
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-	shared_mememory->gpio_edges = NULL;
+	shared_memory->gpio_edges = NULL;
 
 	/* Clear all interrupt events */
 	CT_INTC.SICR_bit.STS_CLR_IDX = PRU_PRU_EVT_SAMPLE;
@@ -254,15 +263,15 @@ reset:
 
 	// Initialize struct-Members Part B
 	// Reset Token-System to init-values
-	shared_mememory->cmp0_handled_by_pru0 = 0;
-	shared_mememory->cmp0_handled_by_pru1 = 0;
-	shared_mememory->cmp1_handled_by_pru0 = 0;
-	shared_mememory->cmp1_handled_by_pru1 = 0;
+	shared_memory->cmp0_handled_by_pru0 = 0;
+	shared_memory->cmp0_handled_by_pru1 = 0;
+	shared_memory->cmp1_handled_by_pru0 = 0;
+	shared_memory->cmp1_handled_by_pru1 = 0;
 
-	shared_mememory->shepherd_state = STATE_IDLE;
+	shared_memory->shepherd_state = STATE_IDLE;
 	/* Make sure the mutex is clear */
-	simple_mutex_exit(&shared_mememory->gpio_edges_mutex);
+	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-	event_loop(shared_mememory, &free_buffers, buffers_far);
+	event_loop(shared_memory, &free_buffers, buffers_far);
 	goto reset;
 }
