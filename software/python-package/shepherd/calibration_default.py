@@ -35,52 +35,41 @@ G_DAC_B = 2  # [n]
 M_DAC = 16  # [bit]
 
 
-def current_to_adc(current: float) -> float:
+def adc_current_to_raw(current: float) -> float:
     # voltage on input of adc
     v_adc = G_INST_AMP * R_SHT * current
     # digital value according to ADC gain
     return v_adc * (2 ** M_ADC) / (G_ADC_I * V_REF_ADC)
 
 
-def adc_to_current(i_adc: float) -> float:
+def adc_raw_to_current(i_adc: float) -> float:
     # voltage on input of adc
     v_adc = i_adc * (G_ADC_I * V_REF_ADC) / (2 ** M_ADC)
     # current according to adc value
     return v_adc / (R_SHT * G_INST_AMP)
 
 
-def voltage_to_adc(voltage: float) -> float:
+def adc_voltage_to_raw(voltage: float) -> float:
     # digital value according to ADC gain
     return voltage * (2 ** M_ADC) / (G_ADC_V * V_REF_ADC)
 
 
-def adc_to_voltage(v_adc: float) -> float:
+def adc_raw_to_voltage(v_adc: float) -> float:
     # voltage according to ADC value
     return v_adc * (G_ADC_V * V_REF_ADC) / (2 ** M_ADC)
 
 
-def dac_to_voltage_ch_a(value: float) -> float:
+def dac_ch_a_raw_to_voltage(value: float) -> float:
     return value * (V_REF_DAC * G_DAC_A) / (2 ** M_DAC)
 
 
-def voltage_to_dac_ch_a(voltage: float) -> float:
+def dac_ch_a_voltage_to_raw(voltage: float) -> float:
     return voltage * (2 ** M_DAC) / (V_REF_DAC * G_DAC_A)
 
 
-def dac_to_voltage_ch_b(value: float) -> float:
+def dac_ch_b_raw_to_voltage(value: float) -> float:
     return value * (V_REF_DAC * G_DAC_B) / (2 ** M_DAC)
 
 
-def voltage_to_dac_ch_b(voltage: float) -> float:
+def dac_ch_b_voltage_to_raw(voltage: float) -> float:
     return voltage * (2 ** M_DAC) / (V_REF_DAC * G_DAC_B)
-
-# TODO: code below - just to make legacy code happy:
-
-
-def dac_to_voltage(value: float) -> float:
-    return dac_to_voltage_ch_a(value)
-
-
-def dac_to_current(value: float) -> float:
-    return dac_to_voltage_ch_b(value)
-
