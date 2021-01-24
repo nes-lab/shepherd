@@ -19,6 +19,13 @@ from pathlib import Path
 
 from shepherd import calibration_default
 
+# gain and offset will be normalized to SI-Units, most likely V, A
+# -> general formula is:    si-value = raw_value * gain + offset
+# TODO: emulation has no ADC_voltage
+cal_component_list = ["harvesting", "emulation"]
+cal_channel_list = ["DAC_A", "DAC_B", "ADC_Current", "ADC_Voltage"]
+cal_channel_fn_list = ["dac_ch_a_voltage_to_raw", "dac_ch_b_voltage_to_raw", "adc_current_to_raw", "adc_voltage_to_raw"]
+cal_parameter_list = ["gain", "offset"]
 
 class CalibrationData(object):
     """Represents SHEPHERD calibration data.
@@ -51,15 +58,16 @@ class CalibrationData(object):
         Returns:
             CalibrationData object with extracted calibration data.
         """
-        vals = struct.unpack(">dddddddddddd", bytestr)
+        val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+        values = struct.unpack(">" + val_count * "d", bytestr)  # X double float, big endian
         calib_dict = dict()
         counter = 0
-        for component in ["harvesting", "load", "emulation"]:
+        for component in cal_component_list:
             calib_dict[component] = dict()
-            for channel in ["voltage", "current"]:
+            for channel in cal_channel_list:
                 calib_dict[component][channel] = dict()
-                for parameter in ["gain", "offset"]:
-                    val = float(vals[counter])
+                for parameter in cal_parameter_list:
+                    val = float(values[counter])
                     if np.isnan(val):
                         raise ValueError(
                             f"{ component } { channel } { parameter } not a valid number"
@@ -76,33 +84,17 @@ class CalibrationData(object):
             CalibrationData object with default calibration values.
         """
         calib_dict = dict()
-        for component in ["harvesting", "load"]:
+        for component in cal_component_list:
             calib_dict[component] = dict()
-            for channel in ["voltage", "current"]:
+            for ch_index in range(len(cal_channel_list)):
+                channel = cal_channel_list[ch_index]
+                cal_fn = cal_channel_fn_list[ch_index]
                 calib_dict[component][channel] = dict()
-                offset = getattr(calibration_default, f"{ channel }_to_adc")(0)
-                gain = (
-                    getattr(calibration_default, f"{ channel }_to_adc")(1.0)
-                    - offset
-                )
-                calib_dict[component][channel]["offset"] = -float(
-                    offset
-                ) / float(gain)
-                calib_dict[component][channel]["gain"] = 1.0 / float(gain)
+                offset = getattr(calibration_default, cal_fn)(0)
+                gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)
+                calib_dict[component][channel]["offset"] = -float(offset) / float(gain_inv)
+                calib_dict[component][channel]["gain"] = 1.0 / float(gain_inv)
 
-        calib_dict["emulation"] = dict()
-        for channel in ["voltage", "current"]:
-            calib_dict["emulation"][channel] = dict()
-            offset = getattr(calibration_default, f"dac_to_{ channel }")(0.0)
-            gain = (
-                getattr(calibration_default, f"dac_to_{ channel }")(1.0)
-                - offset
-            )
-            calib_dict["emulation"][channel]["offset"] = -float(offset) / float(
-                gain
-            )
-            calib_dict["emulation"][channel]["gain"] = 1.0 / float(gain)
-        # TODO: this voltage / current thing is not correct anymore
         return cls(calib_dict)
 
     @classmethod
@@ -137,9 +129,9 @@ class CalibrationData(object):
 
         calib_dict = dict()
 
-        for component in ["harvesting", "load", "emulation"]:
+        for component in cal_component_list:
             calib_dict[component] = dict()
-            for channel in ["voltage", "current"]:
+            for channel in cal_channel_list:
                 calib_dict[component][channel] = dict()
                 sample_points = calib_data["measurements"][component][channel]
                 x = np.empty(len(sample_points))
@@ -162,9 +154,9 @@ class CalibrationData(object):
             Byte string representation of calibration values.
         """
         flattened = list()
-        for component in ["harvesting", "load", "emulation"]:
-            for channel in ["voltage", "current"]:
-                for parameter in ["gain", "offset"]:
+        for component in cal_component_list:
+            for channel in cal_channel_list:
+                for parameter in cal_parameter_list:
                     flattened.append(self._data[component][channel][parameter])
-
-        return struct.pack(">dddddddddddd", *flattened)
+        val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+        return struct.pack(">" + val_count * "d", *flattened)
