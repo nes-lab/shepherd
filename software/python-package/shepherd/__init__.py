@@ -80,23 +80,26 @@ class Recorder(ShepherdIO):
     def __enter__(self):
         super().__enter__()
 
+        # TODO: remove
+        """
         if self.harvesting_voltage is not None:
-            self.set_mppt(False)
-            self.set_harvesting_voltage(self.harvesting_voltage)
+            self.set_mppt(False)  
+            self.set_harvesting_voltage(self.harvesting_voltage)  # TODO: remove
         else:
-            self.set_mppt(True)
+            self.set_mppt(True)  # TODO: remove
+        """
 
         # In 'load' mode, the target is supplied from constant voltage reg
         if self.mode == "load":
-            self.set_ldo_voltage(self.ldo_voltage)
+            self.set_aux_target_voltage(self.ldo_voltage)
 
         elif self.mode == "harvesting":
-            self.set_harvester(True)
+            # self.set_harvester(True) # TODO: remove
             if self.ldo_voltage > 0.0:
-                self.set_ldo_voltage(self.ldo_voltage)
+                self.set_aux_target_voltage(self.ldo_voltage)
                 if self.ldo_mode == "pre-charge":
                     time.sleep(1)
-                    self.set_ldo_voltage(False)
+                    self.set_aux_target_voltage(False)
                     logger.debug("Disabling LDO")
 
         # Give the PRU empty buffers to begin with
@@ -146,8 +149,8 @@ class Emulator(ShepherdIO):
         initial_buffers: list,
         calibration_recording: CalibrationData = None,
         calibration_emulation: CalibrationData = None,
-        load: str = "node",
-        ldo_voltage: float = 0.0,
+        load: str = "node",  # TODO: remove or change
+        ldo_voltage: float = 0.0,  # TODO: remove or change
         virtsource: dict = None,
     ):
 
@@ -215,18 +218,18 @@ class Emulator(ShepherdIO):
 
         if self.mode == "virtcap":
             print(self.ldo_voltage)
-            self.set_ldo_voltage(2.55)
+            self.set_aux_target_voltage(2.55)
         elif self.ldo_voltage > 0.0:
             logger.debug(f"Precharging capacitor to {self.ldo_voltage}V")
-            self.set_ldo_voltage(self.ldo_voltage)
+            self.set_aux_target_voltage(self.ldo_voltage)
             time.sleep(1)
-            self.set_ldo_voltage(False)
+            self.set_aux_target_voltage(False)
 
         # Disconnect harvester to avoid leakage in or out of the harvester
-        self.set_harvester(False)
+        # self.set_harvester(False) # TODO: remove
         # We will dynamically generate the reference voltage for the boost
         # converter. This only takes effect if MPPT is disabled.
-        self.set_mppt(False)
+        # self.set_mppt(False) # TODO: remove
 
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
