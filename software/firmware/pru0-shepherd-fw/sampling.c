@@ -27,6 +27,8 @@
 ASSERT(dac_interm, (DAC_V_FACTOR * DAC_MAX_mV) < ((1ull << 32u) - 1u));
 ASSERT(dac_convert, DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL);
 
+static bool_ft link_dac_channels = false;
+
 /* ADS8691 Register Config */
 #define REGISTER_WRITE	(0b11010000u << 24u)
 #define REGISTER_READ	(0b01001000u << 24u)
@@ -108,7 +110,16 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 
 	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
 	const uint32_t voltage_dac = vsource_update(current_adc_raw, input_current_nA, input_voltage_uV);
-	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+
+	if (link_dac_channels)
+	{
+		/* set both channels with same voltage */
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | voltage_dac);
+	}
+	else
+	{
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+	}
 
 	/* write back regulator-state into shared memory buffer */
 	buffer->values_current[sample_idx] = current_adc_raw;
@@ -267,6 +278,9 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 
 	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
 	ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
+
+	/* switch to set both channels with same voltage during sampling, when condition is met (value > 16bit) */
+	link_dac_channels = (shared_mem->dac_auxiliary_voltage_raw > 0xFFFF);
 
 	if (use_emulator)
 	{
