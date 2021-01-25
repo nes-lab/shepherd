@@ -20,9 +20,9 @@ def random_data(len):
 
 
 @pytest.fixture
-def virtcap_settings_yml():
+def virtsource_settings_yml():
     here = Path(__file__).absolute()
-    name = "virtcap_settings.yml"
+    name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         full_config = yaml.safe_load(config_data)
@@ -72,12 +72,12 @@ def emulator(request, shepherd_up, log_reader):
 
 
 @pytest.fixture()
-def virtcap_emulator(request, shepherd_up, log_reader, virtcap_settings_yml):
+def virtsource_emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
     emu = Emulator(
         calibration_recording=log_reader.get_calibration_data(),
         calibration_emulation=CalibrationData.from_default(),
         initial_buffers=log_reader.read_buffers(end=64),
-        virtcap=virtcap_settings_yml,
+        virtsource=virtsource_settings_yml,
     )
     request.addfinalizer(emu.__del__)
     emu.__enter__()
@@ -104,21 +104,21 @@ def test_emulation(log_writer, log_reader, emulator):
 
 
 @pytest.mark.hardware
-def test_virtcap_emulation(log_writer, log_reader, virtcap_emulator):
+def test_virtsource_emulation(log_writer, log_reader, virtsource_emulator):
 
-    virtcap_emulator.start(wait_blocking=False)
-    virtcap_emulator.wait_for_start(15)
+    virtsource_emulator.start(wait_blocking=False)
+    virtsource_emulator.wait_for_start(15)
     for hrvst_buf in log_reader.read_buffers(start=64):
-        idx, load_buf = virtcap_emulator.get_buffer(timeout=1)
+        idx, load_buf = virtsource_emulator.get_buffer(timeout=1)
         log_writer.write_buffer(load_buf)
-        virtcap_emulator.put_buffer(idx, hrvst_buf)
+        virtsource_emulator.put_buffer(idx, hrvst_buf)
 
     for _ in range(64):
-        idx, load_buf = virtcap_emulator.get_buffer(timeout=1)
+        idx, load_buf = virtsource_emulator.get_buffer(timeout=1)
         log_writer.write_buffer(load_buf)
 
     with pytest.raises(ShepherdIOException):
-        idx, load_buf = virtcap_emulator.get_buffer(timeout=1)
+        idx, load_buf = virtsource_emulator.get_buffer(timeout=1)
 
 
 @pytest.mark.hardware
