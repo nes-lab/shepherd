@@ -15,7 +15,7 @@ def virtcap_settings():
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         virtcap_settings = yaml.safe_load(config_data)
-
+    # TODO: this should use the "default - generator"
     def flatten(L):
         if len(L) == 1:
             if type(L[0]) == list:
@@ -36,7 +36,7 @@ def virtcap_settings():
 
 @pytest.fixture()
 def shepherd_running(shepherd_up):
-    sysfs_interface.start()
+    sysfs_interface.set_start()
     sysfs_interface.wait_for_state("running", 5)
 
 
@@ -73,25 +73,25 @@ def test_getters_fail(shepherd_down, attr):
 
 @pytest.mark.hardware
 def test_start(shepherd_up):
-    sysfs_interface.start()
+    sysfs_interface.set_start()
     time.sleep(5)
     assert sysfs_interface.get_state() == "running"
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.start()
+        sysfs_interface.set_start()
 
 
 @pytest.mark.hardware
 def test_wait_for_state(shepherd_up):
-    sysfs_interface.start()
+    sysfs_interface.set_start()
     assert sysfs_interface.wait_for_state("running", 3) < 3
-    sysfs_interface.stop()
+    sysfs_interface.set_stop()
     assert sysfs_interface.wait_for_state("idle", 3) < 3
 
 
 @pytest.mark.hardware
 def test_start_delayed(shepherd_up):
     start_time = time.time() + 5
-    sysfs_interface.start(start_time)
+    sysfs_interface.set_start(start_time)
 
     sysfs_interface.wait_for_state("armed", 1)
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
@@ -100,12 +100,12 @@ def test_start_delayed(shepherd_up):
     sysfs_interface.wait_for_state("running", 3)
 
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.start()
+        sysfs_interface.set_start()
 
 
 @pytest.mark.parametrize("mode", ["harvesting", "load", "emulation"])
 def test_set_mode(shepherd_up, mode):
-    sysfs_interface.set_mode(mode)
+    sysfs_interface.write_mode(mode)
     assert sysfs_interface.get_mode() == mode
 
 
@@ -116,18 +116,18 @@ def test_initial_mode(shepherd_up):
 @pytest.mark.hardware
 def test_set_mode_fail_offline(shepherd_running):
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.set_mode("harvesting")
+        sysfs_interface.write_mode("harvesting")
 
 
 @pytest.mark.hardware
 def test_set_mode_fail_invalid(shepherd_up):
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.set_mode("invalidmode")
+        sysfs_interface.write_mode("invalidmode")
 
 
 @pytest.mark.parametrize("value", [0, 100, 16000])
 def test_harvesting_voltage(shepherd_up, value):
-    sysfs_interface.set_harvesting_voltage(value)
+    sysfs_interface.write_harvesting_voltage(value)
     assert sysfs_interface.get_harvesting_voltage() == value
 
 
@@ -138,9 +138,9 @@ def test_initial_harvesting_voltage(shepherd_up):
 @pytest.mark.hardware
 @pytest.mark.parametrize("mode", ["emulation", "load"])
 def test_harvesting_voltage_fail_mode(shepherd_up, mode):
-    sysfs_interface.set_mode(mode)
+    sysfs_interface.write_mode(mode)
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.set_harvesting_voltage(2 ** 15)
+        sysfs_interface.write_harvesting_voltage(2 ** 15)
 
 
 @pytest.mark.hardware
@@ -151,10 +151,10 @@ def test_calibration_settings(shepherd_up, calibration_settings):
         voltage_gain,
         voltage_offset,
     ) = calibration_settings
-    sysfs_interface.send_calibration_settings(
+    sysfs_interface.write_calibration_settings(
         current_gain, current_offset, voltage_gain, voltage_offset
     )
-    assert sysfs_interface.get_calibration_settings() == (
+    assert sysfs_interface.read_calibration_settings() == (
         current_gain,
         current_offset,
         voltage_gain,
@@ -170,7 +170,7 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
         voltage_gain,
         voltage_offset,
     ) = calibration_settings
-    assert sysfs_interface.get_calibration_settings() == (
+    assert sysfs_interface.read_calibration_settings() == (
         current_gain,
         current_offset,
         voltage_gain,
@@ -180,12 +180,12 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 
 @pytest.mark.hardware
 def test_virtcap_settings(shepherd_up, virtcap_settings):
-    sysfs_interface.send_virtsource_settings(virtcap_settings)
+    sysfs_interface.write_virtsource_settings(virtcap_settings)
     str_values = " ".join(str(i) for i in virtcap_settings)
-    assert sysfs_interface.get_virtcap_settings() == str_values
+    assert sysfs_interface.read_virtsource_settings() == str_values
 
 
 @pytest.mark.hardware
 def test_initial_virtcap_settings(shepherd_up, virtcap_settings):
     str_values = " ".join(str(i) for i in virtcap_settings)
-    assert sysfs_interface.get_virtcap_settings() == str_values
+    assert sysfs_interface.read_virtsource_settings() == str_values  # TODO: will fail,

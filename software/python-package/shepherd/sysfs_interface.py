@@ -16,6 +16,7 @@ import logging
 import time
 import struct
 from pathlib import Path
+from typing import NoReturn
 
 logger = logging.getLogger(__name__)
 sysfs_path = Path("/sys/shepherd")
@@ -37,7 +38,7 @@ attribs = {
 }
 
 
-def wait_for_state(state: str, timeout: float):
+def wait_for_state(state: str, timeout: float) -> NoReturn:
     """Waits until shepherd is in specified state.
 
     Polls the sysfs 'state' attribute until it contains the target state or
@@ -63,7 +64,7 @@ def wait_for_state(state: str, timeout: float):
         time.sleep(0.1)
 
 
-def start(start_time: int = None):
+def set_start(start_time: int = None) -> NoReturn:
     """Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from
@@ -88,7 +89,7 @@ def start(start_time: int = None):
             f.write(f"{ start_time }")
 
 
-def stop():
+def set_stop() -> NoReturn:
     """Stops shepherd.
 
     Writes 'stop' to the 'state' sysfs attribute in order to transition from
@@ -104,7 +105,7 @@ def stop():
         f.write("stop")
 
 
-def set_mode(mode: str):
+def write_mode(mode: str) -> NoReturn:
     """Sets the shepherd mode.
 
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
@@ -125,51 +126,82 @@ def set_mode(mode: str):
         f.write(mode)
 
 
-def send_calibration_settings(
-    current_gain: int, current_offset: int, voltage_gain: int, voltage_offset
-):
+def write_dac_aux_voltage(voltage_raw: int) -> NoReturn:
+    """ Sends the auxiliary voltage (dac channel B) to the PRU core.
+
+    Args:
+        voltage_raw: desired voltage in volt
+    """
+    with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "w") as f:
+        logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
+        f.write(str(voltage_raw))
+
+
+def read_dac_aux_voltage() -> int:
+    """ Reds the auxiliary voltage (dac channel B) to the PRU core.
+
+    Args:
+
+    Returns: voltage as dac_raw
+    """
+    with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "r") as f:
+        settings = f.read().rstrip()
+
+    int_settings = [int(x) for x in settings.split()]
+    return int_settings[0]
+
+
+def write_calibration_settings(adc_current_gain: int, adc_current_offset: int,
+                               dac_voltage_gain: int, dac_voltage_offset: int) -> NoReturn:
     """Sends the calibration settings to the PRU core.
 
-    The virtcap algorithm uses adc measurements of load current.
+    The virtual-source algorithms use adc measurements and dac-output
 
     """
+    if adc_current_gain < 0:
+        logger.warning(f"sending calibration with negative ADC-gain: {adc_current_gain}")
+    if dac_voltage_gain < 0:
+        logger.warning(f"sending calibration with negative DAC-gain: {adc_current_gain}")
+
     with open(str(sysfs_path / "calibration_settings"), "w") as f:
-        output = (
-            f"{current_gain} {current_offset} {voltage_gain} {voltage_offset}"
-        )
+        output = f"{adc_current_gain} {adc_current_offset} \n" \
+                 f"{dac_voltage_gain} {dac_voltage_offset}"
         logger.debug(f"Sending calibration settings: {output}")
         f.write(output)
 
 
-def get_calibration_settings():
-    """Retreive the calibration settings to the PRU core.
+def read_calibration_settings() -> tuple[int,int,int,int]:
+    """Retrieve the calibration settings from the PRU core.
 
-    The virtcap algorithm uses adc measurements of load current.
+    The virtual-source algorithms use adc measurements and dac-output
 
     """
     with open(str(sysfs_path / "calibration_settings"), "r") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
-    return (int_settings[0], int_settings[1], int_settings[2], int_settings[3])
+    return int_settings[0], int_settings[1], int_settings[2], int_settings[3]
 
 
-def send_virtcap_settings(settings: list):
+def write_virtsource_settings(settings: list) -> NoReturn:
     """Sends the virtcap settings to the PRU core.
 
     The virtcap algorithm uses these settings to configure emulation.
 
     """
+    logger.debug(f"Writing virtcap to sysfs_interface, first value is {settings[0]}")
 
-    s = [str(i) for i in settings]
-    output = " ".join(s)
-    logger.debug(f"Writing virtcap to sysfs_interface: {output}")
+    with open(str(sysfs_path / "virtcap_settings"), "w") as file:
+        for setting in settings:
+            if len(setting) == 1:
+                output = str(setting)
+            else:
+                setting = [str(i) for i in setting]
+                output = " ".join(setting)
+        file.write(output + " \n")
 
-    with open(str(sysfs_path / "virtcap_settings"), "w") as f:
-        f.write(output)
 
-
-def get_virtcap_settings():
+def read_virtsource_settings() -> str:
     """Retreive the virtcap settings to the PRU core.
 
     The virtcap algorithm uses these settings to configure emulation.
@@ -181,7 +213,7 @@ def get_virtcap_settings():
     return settings
 
 
-def set_harvesting_voltage(harvesting_voltage: int):
+def write_harvesting_voltage(harvesting_voltage: int) -> NoReturn:
     """Sets the harvesting voltage.
 
     In some cases, it is necessary to fix the harvesting voltage, instead of
