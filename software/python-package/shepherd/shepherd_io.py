@@ -19,6 +19,8 @@ import atexit
 import struct
 import mmap
 import sys
+from typing import NoReturn
+
 import numpy as np
 import collections
 from pathlib import Path
@@ -41,6 +43,15 @@ gpio_pin_nums = {
     "en_hrvst": 23,
     "en_lvl_cnv": 80,
     "adc_rst_pdn": 88,
+}  # TODO: replace by new one
+
+gpio_pin_nums_new = {
+    "target_pwr_sel": 31,
+    "target_io_en": 60,
+    "target_io_sel": 30,
+    "en_shepherd": 23,
+    "wp_memory": 49,
+    "ack_watchdog": 68,
 }
 
 prev_timestamp = 0
@@ -310,7 +321,7 @@ class ShepherdIO(object):
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
 
-            self._set_power(True)
+            self._set_power(True)  # TODO: some work to do here
             self.set_mppt(False)
             self.set_harvester(False)
             self.set_lvl_conv(False)
@@ -321,11 +332,11 @@ class ShepherdIO(object):
 
             # If shepherd hasn't been terminated properly
             if sysfs_interface.get_state() != "idle":
-                sysfs_interface.stop()
+                sysfs_interface.set_stop()
 
             sysfs_interface.wait_for_state("idle", 5)
             logger.debug(f"Switching to '{ self.mode }' mode")
-            sysfs_interface.set_mode(self.mode)
+            sysfs_interface.write_mode(self.mode)
 
             # Open the RPMSG channel provided by rpmsg_pru kernel module
             rpmsg_dev = Path("/dev/rpmsg_pru0")
@@ -420,7 +431,7 @@ class ShepherdIO(object):
             wait_blocking (bool): If true, block until start has completed
         """
         logger.debug(f"asking kernel module for start at {start_time}")
-        sysfs_interface.start(start_time)
+        sysfs_interface.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(1000000)
 
@@ -435,7 +446,7 @@ class ShepherdIO(object):
     def _cleanup(self):
 
         try:
-            sysfs_interface.stop()
+            sysfs_interface.set_stop()
         except Exception as e:
             print(e)
 
@@ -545,7 +556,7 @@ class ShepherdIO(object):
         elif load.lower() == "node":
             self.gpios["load"].write(True)
         else:
-            raise NotImplementedError('Load "{}" not supported'.format(load))
+            raise NotImplementedError(f"Load '{load}' not supported")
 
     def _adc_set_power(self, state: bool):
         """Controls power/reset of shepherd's ADC.
@@ -575,11 +586,44 @@ class ShepherdIO(object):
         """
         if not 0.0 <= voltage <= 4.8:
             raise ValueError("Voltage out of range 0..4.8V")
-        dac_value = calibration_default.voltage_to_dac_ch_a(voltage)
-        sysfs_interface.set_harvesting_voltage(dac_value)
+        dac_value = calibration_default.dac_ch_b_voltage_to_raw(voltage)
+        sysfs_interface.write_harvesting_voltage(dac_value)
         # TODO: adapt
 
-    def send_calibration_settings(self, calibration_settings: CalibrationData):
+    @staticmethod
+    def send_aux_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
+        """ Sends the auxiliary voltage (dac channel B) to the PRU core.
+
+        Args:
+            calibration_settings: dict, TODO: could it be a class-variable?
+            voltage_V: desired voltage in volt
+
+        Returns:
+        """
+        if voltage_V < 0.0:
+            logger.warning(f"sending voltage with negative value: {voltage_V}")
+        if voltage_V > 5.0:
+            logger.warning(f"sending voltage above recommended limit of 5V: {voltage_V}")
+        output = calibration_settings.convert_value_to_raw("emulation", "DAC_B", voltage_V)
+        # TODO: currently only an assumption that it is for emulation, could also be for harvesting
+        # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
+        sysfs_interface.write_dac_aux_voltage(output)
+
+    @staticmethod
+    def get_aux_voltage(calibration_settings: CalibrationData) -> float:
+        """ Sends the auxiliary voltage (dac channel B) to the PRU core.
+
+        Args:
+            calibration_settings: dict with offset/gain
+
+        Returns:
+        """
+        value_raw = sysfs_interface.read_dac_aux_voltage()
+        voltage = calibration_settings.convert_raw_to_value("emulation", "DAC_B", value_raw)
+        return voltage
+
+    @staticmethod
+    def send_calibration_settings(calibration_settings: CalibrationData):
         """Sends calibration settings to PRU core
 
         For virtcap it is required to have the calibration settings.
@@ -588,27 +632,22 @@ class ShepherdIO(object):
             calibration_settings (CalibrationData): Contains the device's
             calibration settings.
         """
-
-        sysfs_interface.send_calibration_settings(
-            int(1 / calibration_settings["load"]["current"]["gain"]),
-            int(
-                calibration_settings["load"]["current"]["offset"]
-                / calibration_settings["load"]["current"]["gain"]
-            ),
-            int(1 / calibration_settings["load"]["voltage"]["gain"]),
-            int(
-                calibration_settings["load"]["voltage"]["offset"]
-                / calibration_settings["load"]["voltage"]["gain"]
-            ),
+        # TODO: this could be more general and only supply the gain/offset-dict to the sysfs
+        sysfs_interface.write_calibration_settings(
+            int(1e9 * (2 ** 8) * calibration_settings["emulation"]["ADC_Current"]["gain"]),
+            int(1e9 * calibration_settings["emulation"]["ADC_Current"]["offset"]),
+            int(1e6 * (2 ** 20) / calibration_settings["emulation"]["DAC_A"]["gain"]),
+            int(1e6 * calibration_settings["emulation"]["DAC_A"]["offset"])
         )
 
-    def send_virtcap_settings(self, virtcap_settings: dict):
-        """Sends virtcap settings to PRU core
-
-        For virtcap it is required to have the virtcap settings.
+    def check_and_complete_virtsource_settings(self, vs_settings: dict) -> dict:
+        """ checks virtual-source-settings for missing values, adds default values to missing ones, checks limits
 
         Args:
-            virtcap_settings (dict): Contains the virtcap settings.
+            vs_settings (dict): Contains the settings for the virtual source.
+
+        Returns:
+            validated and completed settings
         """
 
         def flatten(L):
@@ -623,10 +662,136 @@ class ShepherdIO(object):
                 result = [L[0]] + flatten(L[1:])
             return result
 
-        values = virtcap_settings.values()
-        values = flatten(list(values))
+        def num_check(setting_key: str, default: float, max_value: float = None) -> NoReturn:
+            try:
+                set_value = vs_settings[setting_key]
+            except KeyError:
+                set_value = default
+                logger.warning(f"[virtSource] Setting {setting_key} was not provided, will be set to default = {default}")
+            if (len(set_value) != 1) or (set_value < 0):
+                raise NotImplementedError(f"[virtSource] {setting_key} must a single positive number, but is '{set_value}'")
+            if (max_value is not None) and (set_value > max_value):
+                raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
+            vs_settings[setting_key] = set_value
 
-        sysfs_interface.send_virtcap_settings(values)
+        num_check("converter_mode", 100, 4e9)
+
+        num_check("c_output_uf", 1, 4e6)
+
+        num_check("v_input_boost_threshold_mV", 130, 5000)
+
+        num_check("c_storage_uf", 1000, 4e6)
+        num_check("v_storage_init_mV", 3500, 10000)
+        num_check("v_storage_max_mV", 4200, 10000)
+        num_check("v_storage_leak_nA", 10, 4e9)
+
+        num_check("v_storage_enable_threshold_mV", 3000, 4e6)
+        num_check("v_storage_disable_threshold_mV", 2300, 4e6)
+
+        num_check("interval_check_thresholds_ms", 65, 4e3)
+
+        num_check("v_pwr_good_low_threshold_mV", 2400, 4e6)
+        num_check("v_pwr_good_high_threshold_mV", 5000, 4e6)
+
+        num_check("v_output_mV", 2300, 5000)
+
+        """
+        compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
+        -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
+        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when VCap >= V_out
+
+        Math behind this calculation:
+        Energy-Change Storage Cap   ->  E_new = E_old - E_output
+        with Energy of a Cap 	    -> 	E_x = C_x * V_x^2 / 2
+        combine formulas 		    -> 	C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
+        convert formula to V_new 	->	V_store_new^2 = V_store_old^2 - (C_out / C_store) * V_out^2
+        convert into dV	 	        ->	dV = V_store_new - V_store_old
+        in case of V_cap = V_out 	-> 	dV = V_store_old * (sqrt(1 - C_out / C_store) - 1)
+        -> dV values will be reversed (negated), because dV is always negative (Voltage drop)
+        """
+
+        # first case: storage cap outside of en/dis-thresholds
+        v_old = num_check("v_storage_enable_threshold_mV", 3000, 4e6)
+        if 1:  # TODO: this is boost-buck case, boost-only has v_out = v_old
+            v_out = num_check("v_output_mV", 2300, 4e6)
+        else:
+            v_out = v_old
+        c_store = num_check("c_storage_uf", 1000, 4e6)
+        c_out = num_check("c_output_uf", 1, 4e6)
+        dV_store_en_mV = v_old - pow(pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5)
+        vs_settings["dV_store_en_mV"] = dV_store_en_mV
+
+        # second case: storage cap below v_out (only different for enabled buck)
+        v_en = v_out  # value is either bucks v_out or same dV-Value is calculated a second time
+        dV_store_low_mV = v_en * (1 - pow(1 - c_out / c_store, 0.5))
+        vs_settings["dV_store_low_mV"] = dV_store_low_mV
+
+        # Look up tables
+        setting = "LUT_inp_efficiency_n8"
+        try:
+            values = flatten(vs_settings[setting])
+        except KeyError:
+            values = 12 * 12 * [128]
+            logger.warning(f"[virtSource] Setting {setting} was not provided, will be set to default = {values[0]}")
+        if (len(values) != 12 * 12) or (min(values) < 0) or (max(values > 255)):
+            raise NotImplementedError(f"{setting} must a list of 12*12 values, within range of [0; 255]")
+        vs_settings[setting] = values
+
+        setting = "LUT_output_efficiency_n8"
+        try:
+            values = flatten(vs_settings[setting])
+        except KeyError:
+            values = 12 * [200]
+            logger.warning(f"[virtSource] Setting {setting} was not provided, will be set to default = {values[0]}")
+        if (len(values) != 12) or (min(values) < 0) or (max(values > 255)):
+            raise NotImplementedError(f"{setting} must a list of 12 values, within range of [0; 255]")
+        vs_settings[setting] = values
+        return vs_settings
+
+    def send_virtsource_settings(self, vs_settings: dict) -> NoReturn:
+        """Sends virtsource settings to PRU core
+
+        For virtsource it is required to have the virtsource settings.
+
+        Args:
+            vs_settings (dict): Contains the settings for the virtual source.
+        """
+
+        # add values of virtual-source-struct in correct order and convert to requested unit
+        vs_list = list([])
+        vs_settings = self.check_and_complete_virtsource_settings(vs_settings)
+
+        vs_list.append(int(vs_settings["converter_mode"]))
+
+        vs_list.append(int(vs_settings["c_output_uf"] * 1e3))  # nF
+
+        vs_list.append(int(vs_settings["v_input_boost_threshold_mV"] * 1e3))  # uV
+
+        vs_list.append(int(vs_settings["c_storage_uf"] * 1e3))  # nF
+        vs_list.append(int(vs_settings["v_storage_init_mV"] * 1e3))  # uV
+        vs_list.append(int(vs_settings["v_storage_max_mV"] * 1e3))  # uV
+        vs_list.append(int(vs_settings["v_storage_leak_nA"] * 1))  # nA
+
+        vs_list.append(int(vs_settings["v_storage_enable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(vs_settings["v_storage_disable_threshold_mV"] * 1e3))  # uV
+
+        vs_list.append(int(vs_settings["interval_check_thresholds_ms"] * 1e6))  # ns
+
+        vs_list.append(int(vs_settings["v_pwr_good_low_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(vs_settings["v_pwr_good_high_threshold_mV"] * 1e3))  # uV
+
+        vs_list.append(int(vs_settings["dV_store_en_mV"] * 1e3))  # uV
+
+        vs_list.append(int(vs_settings["v_output_mV"] * 1e3))  # uV
+
+        vs_list.append(int(vs_settings["dV_store_low_mV"] * 1e3))  # uV
+
+        vs_list.append([int(value) for value in vs_settings["LUT_inp_efficiency_n8"]])
+
+        # was n8, is now n10
+        vs_list.append([int((2 ** 18) / value) for value in vs_settings["LUT_output_efficiency_n8"]])
+
+        sysfs_interface.write_virtsource_settings(vs_list)
 
     def _release_buffer(self, index: int):
         """Returns a buffer to the PRU
