@@ -1,5 +1,11 @@
 virtsource:
+  # crosscheck against check_and_complete_virtsource_settings() in shepherd_io.py to see:
+  # - what is required
+  # - the limits and default values
   # NOTE: input can be also float (ie. 2.3e-4), there is no proper int-formatting (like in py 1_000_000)
+
+  # TODO: find a way to process direct, boost, boost + buck, future: IV-Curves as input for same regulator
+  converter_mode: 100
 
   # Direct Reg
   c_output_uf: 10   # final (always last) stage to catch current spikes of target
