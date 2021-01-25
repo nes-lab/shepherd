@@ -372,7 +372,7 @@ class ShepherdIO(object):
         logger.info("exiting analog shepherd_io")
         self._cleanup()
 
-    def _send_msg(self, msg_type: int, value: int):
+    def _send_msg(self, msg_type: int, value: int) -> NoReturn:
         """Sends a formatted message to PRU0 via rpmsg channel.
 
         Args:
@@ -408,7 +408,7 @@ class ShepherdIO(object):
             except BlockingIOError:
                 break
 
-    def start(self, start_time: int = None, wait_blocking: bool = True):
+    def start(self, start_time: int = None, wait_blocking: bool = True) -> NoReturn:
         """Starts sampling either now or at later point in time.
 
         Args:
@@ -418,9 +418,10 @@ class ShepherdIO(object):
         logger.debug(f"asking kernel module for start at {start_time}")
         sysfs_interface.set_start(start_time)
         if wait_blocking:
-            self.wait_for_start(1000000)
+            self.wait_for_start(1_000_000)
 
-    def wait_for_start(self, timeout: float):
+    @staticmethod
+    def wait_for_start(timeout: float) -> NoReturn:
         """Waits until shepherd has started sampling.
 
         Args:
@@ -441,50 +442,52 @@ class ShepherdIO(object):
         if self.rpmsg_fd is not None:
             os.close(self.rpmsg_fd)
 
-        try:
-            self.set_aux_target_voltage(False)
-            # self.ldo.__exit__()  # TODO: remove
-        except Exception as e:
-            print(e)
+        self.set_aux_target_voltage(None, 0.0)
 
         self.set_target_io_level_conv(False)
         self._set_shepherd_pcb_power(False)
         logger.debug("Shepherd is powered down")
 
-    def _set_shepherd_pcb_power(self, state: bool):
-        """Controls state of main power supplies on shepherd cape.
+    def _set_shepherd_pcb_power(self, state: bool) -> NoReturn:
+        """ Controls state of power supplies on shepherd cape.
 
         Args:
             state (bool): True for on, False for off
         """
+        state_str = "enabled" if state else "disabled"
+        logger.debug(f"Set power-supplies of shepherd-pcb to {state_str}")
         self.gpios["en_shepherd"].write(state)
 
-    def select_main_target_power(self, sel_target_a: bool):  # TODO: integrate
+    def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:  # TODO: integrate
+        """ choose which targets gets the supply with current-monitor
 
-    def select_main_target_io(self, sel_target_a: bool):  # TODO: integrate
-
-    def set_aux_target_voltage(self, voltage: float):  # TODO: integrate
-        """Enables or disables the voltage for the second target
-
-        The shepherd cape has two DAC-Channels that each serve as power supply for a target
+        shepherd hw-rev2 has two ports for targets and two separate power supplies,
+        but only one is able to measure current, the other is considered "auxiliary"
 
         Args:
-            voltage (float): Desired output voltage in volt. Providing 0 or
-                False disables the LDO.
+            sel_target_a: True to select A, False for B
         """
-        if not voltage:
-            self.send_aux_voltage()t# self.ldo.set_output(False)  # TODO: remove
-            return
+        # TODO: make sure that switching is NOT done when running
+        target = "A" if sel_target_a else "B"
+        logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
+        self.gpios["target_pwr_sel"].write(sel_target_a)
 
-        logger.debug(f"Setting LDO voltage to {voltage}")
-        # self.ldo.set_voltage(voltage)
-        # self.ldo.set_output(True)
-        # TODO: remove
+    def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:  # TODO: integrate
+        """ choose which targets gets the io-connection (serial, swd, gpio) from beaglebone
 
-    def set_target_io_level_conv(self, state: bool):  # TODO: integrate
+        shepherd hw-rev2 has two ports for targets and can switch independently from power supplies
+
+        Args:
+            sel_target_a: True to select A, False for B
+        """
+        target = "A" if sel_target_a else "B"
+        logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
+        self.gpios["target_io_sel"].write(sel_target_a)
+
+    def set_target_io_level_conv(self, state: bool) -> NoReturn:  # TODO: integrate
         """Enables or disables the GPIO level converter to targets.
 
-        The shepherd cape has bi-directional logic level shifter (LSF0108)
+        The shepherd cape has bi-directional logic level translators (LSF0108)
         for translating UART, GPIO and SWD signals between BeagleBone and target
         voltage levels. This function enables or disables the converter and
         additional switches (NLAS4684) to keep leakage low.
@@ -492,28 +495,42 @@ class ShepherdIO(object):
         Args:
             state (bool): True for enabling converter, False for disabling
         """
+        state_str = "enabled" if state else "disabled"
+        logger.debug(f"Setting target-io level converter to {state_str}")
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
-    def send_aux_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
-        """ Sends the auxiliary voltage (dac channel B) to the PRU core.
+    def set_aux_target_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
+        """ Enables or disables the voltage for the second target
+
+        The shepherd cape has two DAC-Channels that each serve as power supply for a target
 
         Args:
             calibration_settings: dict, TODO: could it be a class-variable?
-            voltage_V: desired voltage in volt
-
-        Returns:
+            voltage_V (float): Desired output voltage in volt. Providing 0 or
+                False disables supply, setting it to True will link it
+                to the other channel
         """
+        if voltage_V is False:
+            voltage_V = 0.0
+        if voltage_V is True:
+            # set value > 16bit and therefore link both adc-channels
+            sysfs_interface.write_dac_aux_voltage(2 ** 20 - 1)
+            return
+
         if voltage_V < 0.0:
             logger.warning(f"sending voltage with negative value: {voltage_V}")
         if voltage_V > 5.0:
             logger.warning(f"sending voltage above recommended limit of 5V: {voltage_V}")
+
         if calibration_settings is None:
             output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
         else:
             output = calibration_settings.convert_value_to_raw("emulation", "DAC_B", voltage_V)
+
         # TODO: currently only an assumption that it is for emulation, could also be for harvesting
         # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
+        logger.debug(f"Setting Voltage of auxiliary Target to {voltage_V}")
         sysfs_interface.write_dac_aux_voltage(output)
 
     @staticmethod
@@ -533,7 +550,7 @@ class ShepherdIO(object):
         return voltage
 
     @staticmethod
-    def send_calibration_settings(calibration_settings: CalibrationData):
+    def send_calibration_settings(calibration_settings: CalibrationData) -> NoReturn:
         """Sends calibration settings to PRU core
 
         For virtcap it is required to have the calibration settings.
@@ -703,7 +720,7 @@ class ShepherdIO(object):
 
         sysfs_interface.write_virtsource_settings(vs_list)
 
-    def _release_buffer(self, index: int):
+    def _release_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU
 
         After reading the content of a buffer and potentially filling it with
@@ -717,7 +734,7 @@ class ShepherdIO(object):
         logger.debug(f"Releasing buffer #{ index } to PRU")
         self._send_msg(commons.MSG_DEP_BUF_FROM_HOST, index)
 
-    def get_buffer(self, timeout: float = 1.0):
+    def get_buffer(self, timeout: float = 1.0) -> NoReturn:
         """Reads a data buffer from shared memory.
 
         Polls the RPMSG channel for a message from PRU0 and, if the message
