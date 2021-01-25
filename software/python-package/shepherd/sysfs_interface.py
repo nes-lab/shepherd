@@ -32,7 +32,6 @@ attribs = {
     "n_buffers": {"path": "n_buffers", "type": int},
     "buffer_period_ns": {"path": "buffer_period_ns", "type": int},
     "samples_per_buffer": {"path": "samples_per_buffer", "type": int},
-    "harvesting_voltage": {"path": "harvesting_voltage", "type": int},
     "mem_address": {"path": "memory/address", "type": int},
     "mem_size": {"path": "memory/size", "type": int},
 }
@@ -170,7 +169,7 @@ def write_calibration_settings(adc_current_gain: int, adc_current_offset: int,
         f.write(output)
 
 
-def read_calibration_settings() -> tuple[int,int,int,int]:
+def read_calibration_settings() -> tuple[int, int, int, int]:
     """Retrieve the calibration settings from the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -211,30 +210,6 @@ def read_virtsource_settings() -> str:
         settings = f.read().rstrip()
 
     return settings
-
-
-def write_harvesting_voltage(harvesting_voltage: int) -> NoReturn:
-    """Sets the harvesting voltage.
-
-    In some cases, it is necessary to fix the harvesting voltage, instead of
-    relying on the built-in MPPT algorithm of the BQ25505. This function allows
-    setting the set point by writing the desired value to the corresponding DAC.
-
-    Args:
-        harvesting_voltage (int): DAC value generating a fixed reference voltage
-            on the reference input of BQ25505
-    """
-    if get_state() != "idle":
-        raise SysfsInterfaceException(
-            f"Cannot set voltage when shepherd state is { get_state() }"
-        )
-    mode = get_mode()
-    if mode != "harvesting":
-        raise SysfsInterfaceException(
-            f"setting of harvesting voltage only possible in 'harvesting' mode"
-        )
-    with open(str(sysfs_path / "harvesting_voltage"), "w") as f:
-        f.write(f"{ harvesting_voltage }")
 
 
 def make_attr_getter(name: str, path: str, attr_type: type):
