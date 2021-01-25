@@ -138,7 +138,7 @@ class Emulator(ShepherdIO):
             Should be one of 'artificial' or 'node'.
         ldo_voltage (float): Pre-charge the capacitor to this voltage before
             starting recording.
-        virtcap (dict): Settings which define the behavior of virtcap emulation
+        virtsource (dict): Settings which define the behavior of virtcap emulation
     """
 
     def __init__(
@@ -148,16 +148,16 @@ class Emulator(ShepherdIO):
         calibration_emulation: CalibrationData = None,
         load: str = "node",
         ldo_voltage: float = 0.0,
-        virtcap: dict = None,
+        virtsource: dict = None,
     ):
 
-        if virtcap is None:
+        if virtsource is None:
             shepherd_mode = "emulation"
-            self.ldo_voltage = ldo_voltage
+            self.ldo_voltage = ldo_voltage  # TODO: does not exist anymore, but can be reconfigured for target B
             super().__init__(shepherd_mode, load)
         else:
             shepherd_mode = "virtcap"
-            self.ldo_voltage = virtcap["dc_output_voltage"] / 1000
+            self.ldo_voltage = virtsource["dc_output_voltage"] / 1000  # TODO: does not exist anymore,
             super().__init__(shepherd_mode, "artificial")
 
         if calibration_emulation is None:
@@ -171,13 +171,13 @@ class Emulator(ShepherdIO):
                 "No recording calibration data provided - using defaults"
             )
 
-        if virtcap != None:
+        if virtsource != None:
             logger.info("Starting virtcap")
             self.send_calibration_settings(calibration_emulation)
-            self.send_virtcap_settings(virtcap)
+            self.send_virtsource_settings(virtsource)
 
         self.transform_coeffs = {"voltage": dict(), "current": dict()}
-        if virtcap != None:
+        if virtsource != None:
             # Values from recording are have their own calibration settings.
             # Values in the virtcap emulation use the emulation calibration
             # settings. Therefore we need to convert the recorded values to use
@@ -525,7 +525,7 @@ def emulate(
             initial_buffers=log_reader.read_buffers(end=64),
             ldo_voltage=ldo_voltage,
             load=load,
-            virtcap=virtcap,
+            virtsource=virtcap,
         )
         stack.enter_context(emu)
 
