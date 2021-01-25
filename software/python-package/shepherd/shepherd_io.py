@@ -36,22 +36,11 @@ logger = logging.getLogger(__name__)
 ID_ERR_TIMEOUT = 100
 
 gpio_pin_nums = {
-    "load": 48,
-    "en_v_anlg": 60,
-    "en_v_fix": 51,
-    "en_mppt": 30,
-    "en_hrvst": 23,
-    "en_lvl_cnv": 80,
-    "adc_rst_pdn": 88,
-}  # TODO: replace by new one
-
-gpio_pin_nums_new = {
     "target_pwr_sel": 31,
     "target_io_en": 60,
     "target_io_sel": 30,
     "en_shepherd": 23,
-    "wp_memory": 49,
-    "ack_watchdog": 68,
+    "ack_watchdog": 68,  # TODO: should be handled by kernel module
 }
 
 prev_timestamp = 0
@@ -321,12 +310,8 @@ class ShepherdIO(object):
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
 
-            self._set_power(True)  # TODO: some work to do here
-            self.set_mppt(False)
-            self.set_harvester(False)
-            self.set_lvl_conv(False)
-
-            self._adc_set_power(True)
+            self._set_shepherd_pcb_power(True)
+            self.set_target_io_level_conv(False)
 
             logger.debug("Shepherd hardware is powered")
 
@@ -370,7 +355,7 @@ class ShepherdIO(object):
             self.shared_mem.__enter__()
 
             logger.debug(f"Setting load to '{ self.load }'")
-            self.set_load(self.load)
+            # self.set_load(self.load) # TODO: remove
 
             # TODO: remove
             # self.ldo.__enter__()
@@ -457,66 +442,38 @@ class ShepherdIO(object):
             os.close(self.rpmsg_fd)
 
         try:
-            self.set_ldo_voltage(False)
+            self.set_aux_target_voltage(False)
             # self.ldo.__exit__()  # TODO: remove
         except Exception as e:
             print(e)
 
-        self.set_mppt(False)
-        self.set_harvester(False)
-        self.set_lvl_conv(False)
-        self._adc_set_power(False)
-        self._set_power(False)
-        logger.debug("Analog shepherd_io is powered down")
+        self.set_target_io_level_conv(False)
+        self._set_shepherd_pcb_power(False)
+        logger.debug("Shepherd is powered down")
 
-    def _set_power(self, state: bool):
-        """Controls state of main analog power supply on shepherd cape.
+    def _set_shepherd_pcb_power(self, state: bool):
+        """Controls state of main power supplies on shepherd cape.
 
         Args:
             state (bool): True for on, False for off
         """
-        self.gpios["en_v_anlg"].write(state)
+        self.gpios["en_shepherd"].write(state)
 
-    def set_mppt(self, state: bool):
-        """Enables or disables Maximum Power Point Tracking of BQ25505
+    def select_main_target_power(self, sel_target_a: bool):  # TODO: integrate
 
-        TI's BQ25505 implements an MPPT algorithm, that dynamically adapts
-        the harvesting voltage according to current conditions. Alternatively,
-        it allows to provide a reference voltage to which it will regulate the
-        harvesting voltage. This is necessary for emulation and can be used to
-        fix harvesting voltage during recording as well.
+    def select_main_target_io(self, sel_target_a: bool):  # TODO: integrate
 
-        Args:
-            state (bool): True for enabling MPPT, False for disabling
-        """
-        self.gpios["en_mppt"].write(not state)
+    def set_aux_target_voltage(self, voltage: float):  # TODO: integrate
+        """Enables or disables the voltage for the second target
 
-    def set_harvester(self, state: bool):
-        """Enables or disables connection to the harvester.
-
-        The harvester is connected to the main power path of the shepherd cape
-        through a MOSFET relay that allows to make or break that connection.
-        This way, we can completely disable the harvester during emulation.
-
-        Args:
-            state (bool): True for enabling harvester, False for disabling
-        """
-        self.gpios["en_hrvst"].write(state)
-
-    def set_ldo_voltage(self, voltage: float):
-        """Enables or disables the constant voltage regulator.
-
-        The shepherd cape has a linear regulator that is connected to the load
-        power path through a diode. This allows to pre-charge the capacitor to
-        a defined value or to supply a sensor node with a fixed voltage. This
-        function allows to enable or disable the output of this regulator.
+        The shepherd cape has two DAC-Channels that each serve as power supply for a target
 
         Args:
             voltage (float): Desired output voltage in volt. Providing 0 or
                 False disables the LDO.
         """
         if not voltage:
-            # self.ldo.set_output(False)  # TODO: remove
+            self.send_aux_voltage()t# self.ldo.set_output(False)  # TODO: remove
             return
 
         logger.debug(f"Setting LDO voltage to {voltage}")
@@ -524,71 +481,18 @@ class ShepherdIO(object):
         # self.ldo.set_output(True)
         # TODO: remove
 
-    def set_lvl_conv(self, state: bool):
-        """Enables or disables the GPIO level converter.
+    def set_target_io_level_conv(self, state: bool):  # TODO: integrate
+        """Enables or disables the GPIO level converter to targets.
 
-        The shepherd cape has a bi-directional logic level shifter (TI TXB0304)
-        for translating UART and SWD signals between BeagleBone and target
-        voltage levels. This function enables or disables the converter.
+        The shepherd cape has bi-directional logic level shifter (LSF0108)
+        for translating UART, GPIO and SWD signals between BeagleBone and target
+        voltage levels. This function enables or disables the converter and
+        additional switches (NLAS4684) to keep leakage low.
 
         Args:
             state (bool): True for enabling converter, False for disabling
         """
-        self.gpios["en_lvl_cnv"].write(state)
-
-    def set_load(self, load: str):
-        """Selects which load is connected to shepherd's output.
-
-        The output of the main power path can be connected either to the
-        on-board 'artificial' load (for recording) or to an attached sensor
-        node (for emulation). This function configures the corresponding
-        hardware switch.
-
-        Args:
-            load (str): The load to connect to the output of shepherd's output.
-            One of 'artificial' or 'node'.
-
-        Raises:
-            NotImplementedError: If load is not 'artificial' or 'node'
-        """
-        if load.lower() == "artificial":
-            self.gpios["load"].write(False)
-        elif load.lower() == "node":
-            self.gpios["load"].write(True)
-        else:
-            raise NotImplementedError(f"Load '{load}' not supported")
-
-    def _adc_set_power(self, state: bool):
-        """Controls power/reset of shepherd's ADC.
-
-        The TI ADS8694 has a power/reset pin, that can be used to power down
-        the device or perform a hardware reset. This function controls the
-        state of the pin.
-
-        Args:
-            state (bool): True for 'on', False for 'off'
-        """
-        self.gpios["adc_rst_pdn"].write(state)
-
-    def set_harvesting_voltage(self, voltage: float):
-        """Sets the reference voltage for the boost converter
-
-        In some cases, it is necessary to fix the harvesting voltage, instead
-        of relying on the built-in MPPT algorithm of the BQ25505. This function
-        allows setting the set point by writing the desired value to the
-        corresponding DAC. Note that the setting only takes effect, if MPPT
-        is disabled (see set_mppt())
-
-        Args:
-            voltage (float): Desired harvesting voltage in volt
-        Raises:
-            ValueError: If requested voltage is out of range
-        """
-        if not 0.0 <= voltage <= 4.8:
-            raise ValueError("Voltage out of range 0..4.8V")
-        dac_value = calibration_default.dac_ch_b_voltage_to_raw(voltage)
-        sysfs_interface.write_harvesting_voltage(dac_value)
-        # TODO: adapt
+        self.gpios["target_io_en"].write(state)
 
     @staticmethod
     def send_aux_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
@@ -604,7 +508,10 @@ class ShepherdIO(object):
             logger.warning(f"sending voltage with negative value: {voltage_V}")
         if voltage_V > 5.0:
             logger.warning(f"sending voltage above recommended limit of 5V: {voltage_V}")
-        output = calibration_settings.convert_value_to_raw("emulation", "DAC_B", voltage_V)
+        if calibration_settings is None:
+            output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
+        else:
+            output = calibration_settings.convert_value_to_raw("emulation", "DAC_B", voltage_V)
         # TODO: currently only an assumption that it is for emulation, could also be for harvesting
         # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
         sysfs_interface.write_dac_aux_voltage(output)
@@ -619,7 +526,10 @@ class ShepherdIO(object):
         Returns:
         """
         value_raw = sysfs_interface.read_dac_aux_voltage()
-        voltage = calibration_settings.convert_raw_to_value("emulation", "DAC_B", value_raw)
+        if calibration_settings is None:
+            voltage = calibration_default.dac_ch_a_raw_to_voltage(value_raw)
+        else:
+            voltage = calibration_settings.convert_raw_to_value("emulation", "DAC_B", value_raw)
         return voltage
 
     @staticmethod
