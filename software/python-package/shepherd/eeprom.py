@@ -17,8 +17,10 @@ import struct
 import logging
 import yaml
 from pathlib import Path
+from periphery import GPIO
 
 from shepherd.calibration import CalibrationData
+from shepherd.shepherd_io import gpio_pin_nums_new
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +119,9 @@ class EEPROM(object):
     shepherd calibration data.
 
     """
+    _write_protect_pin: GPIO = None
 
-    def __init__(self, bus_num: int = 2, address: int = 0x54):
+    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49):
         """Initializes EEPROM by bus number and address.
 
         Args:
@@ -129,6 +132,8 @@ class EEPROM(object):
         self.dev_path = (
             f"/sys/bus/i2c/devices/{ bus_num }" f"-{address:04X}/eeprom"
         )
+        self._write_protect_pin = GPIO(wp_pin, "out")
+        self._write_protect_pin.write(True)
 
     def __enter__(self):
         self.fd = os.open(self.dev_path, os.O_RDWR | os.O_SYNC)
@@ -157,6 +162,7 @@ class EEPROM(object):
         Raises:
             TimeoutError: If write operation times out
         """
+        self._write_protect_pin.write(False)
         os.lseek(self.fd, address, 0)
         try:
             os.write(self.fd, buffer)
@@ -165,6 +171,7 @@ class EEPROM(object):
                 "Timeout writing to EEPROM. Is write protection disabled?"
             )
             raise
+        self._write_protect_pin.write(True)
 
     def __getitem__(self, key):
         """Retrieves attribute from EEPROM.
