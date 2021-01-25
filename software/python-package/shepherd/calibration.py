@@ -27,6 +27,16 @@ cal_channel_list = ["DAC_A", "DAC_B", "ADC_Current", "ADC_Voltage"]
 cal_channel_fn_list = ["dac_ch_a_voltage_to_raw", "dac_ch_b_voltage_to_raw", "adc_current_to_raw", "adc_voltage_to_raw"]
 cal_parameter_list = ["gain", "offset"]
 
+
+# slim alternative to the methods (same name) of CalibrationData
+def convert_raw_to_value(cal_dict: dict, raw: int) -> float:
+    return (float(raw) * cal_dict["gain"]) + cal_dict["offset"]
+
+
+def convert_value_to_raw(cal_dict: dict, value: float) -> int:
+    return int((value - cal_dict["offset"]) / cal_dict["gain"])
+
+
 class CalibrationData(object):
     """Represents SHEPHERD calibration data.
 
@@ -144,6 +154,16 @@ class CalibrationData(object):
                 calib_dict[component][channel]["offset"] = float(intercept)
 
         return cls(calib_dict)
+
+    def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
+        offset = self._data[component][channel]["offset"]
+        gain = self._data[component][channel]["gain"]
+        return (float(raw) * gain) + offset
+
+    def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
+        offset = self._data[component][channel]["offset"]
+        gain = self._data[component][channel]["gain"]
+        return int((value - offset) / gain)
 
     def to_bytestr(self):
         """Serializes calibration data to byte string.
