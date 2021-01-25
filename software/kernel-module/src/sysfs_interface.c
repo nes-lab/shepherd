@@ -391,7 +391,7 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 	return sprintf(
-		buf, "%u %d %u %d",
+		buf, "%u %d \n%u %d \n",
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
@@ -471,7 +471,7 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
     base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset;
     for (i = 0; i < non_lut_size; i += 4)
     {
-        count += sprintf(buf + strlen(buf),"%u ", readl(base_address + i));
+        count += sprintf(buf + strlen(buf),"%u \n", readl(base_address + i));
     }
 
     /* u8 input LUT */
@@ -480,6 +480,7 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
     {
         count += sprintf(buf + strlen(buf),"%u ", readb(base_address + i));
     }
+    count += sprintf(buf + strlen(buf),"\n");
 
     /* u32 output LUT */
     base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
@@ -487,6 +488,7 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
     {
         count += sprintf(buf + strlen(buf),"%u ", readl(base_address + i));
     }
+    count += sprintf(buf + strlen(buf),"\n");
 
 	return count;
 }
