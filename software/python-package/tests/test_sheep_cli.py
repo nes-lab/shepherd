@@ -143,7 +143,7 @@ def test_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
 @pytest.mark.timeout(60)
 def test_virtcap_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
     here = Path(__file__).absolute()
-    name = "virtcap_settings.yml"
+    name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
@@ -171,7 +171,7 @@ def test_virtcap_emulate_wrong_option(
     shepherd_up, cli_runner, tmp_path, data_h5
 ):
     here = Path(__file__).absolute()
-    name = "virtcap_settings.yml"
+    name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(

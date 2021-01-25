@@ -11,7 +11,7 @@ from shepherd.calibration import CalibrationData
 @pytest.fixture
 def virtcap_settings():
     here = Path(__file__).absolute()
-    name = "virtcap_settings.yml"
+    name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         virtcap_settings = yaml.safe_load(config_data)
@@ -180,7 +180,7 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 
 @pytest.mark.hardware
 def test_virtcap_settings(shepherd_up, virtcap_settings):
-    sysfs_interface.send_virtcap_settings(virtcap_settings)
+    sysfs_interface.send_virtsource_settings(virtcap_settings)
     str_values = " ".join(str(i) for i in virtcap_settings)
     assert sysfs_interface.get_virtcap_settings() == str_values
 
