@@ -101,6 +101,10 @@ static inline void sample_harvesting_test(struct SampleBuffer *const buffer, con
 
 static inline void sample_emulation(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
+	// TODO: pru should trigger a new sample here, 2x CS-Toggle
+	//  - acquisition takes 335 ns, conversion ~ 665 ns -> 1 us
+	//  - to not waste time, getting both buffer-values takes 600 ns and P_in could be calculated upfront (1.4 us)
+
 	/* Get input current/voltage from shared memory buffer */
 	const uint32_t input_current_nA = buffer->values_current[sample_idx];
 	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
@@ -183,9 +187,8 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
 void sample_dbg_dac(const uint32_t value)
 {
-	dac_write(SPI_CS_HRV_DAC_PIN, value);
-	dac_write(SPI_CS_EMU_DAC_PIN, value);
-	// TODO: handle both DACs for the moment (one should be turned off)
+	dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_AB_ADDR | (value & 0xFFFF));
+	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | (value & 0xFFFF));
 }
 
 
@@ -261,6 +264,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 	const bool_ft use_harvester = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
 	const bool_ft use_emulator = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
 
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
 	// TODO: init more efficient, can be done all same ICs at the same time (common cs_low)
 	// just init-emulator takes 10.5 us, 5x DAC * 750 ns, 4x ADC x 1440 ns
@@ -276,6 +280,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 	ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester); // TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
 	ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
 
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
 	ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 
@@ -289,6 +294,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 		//  (init is called after sampling, but is the mode correct?)
 	}
 
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	if (mode == MODE_EMULATE)
 	{
 		vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
