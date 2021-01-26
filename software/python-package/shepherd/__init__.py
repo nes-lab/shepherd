@@ -24,7 +24,7 @@ from shepherd.datalog import LogWriter
 from shepherd.datalog import ExceptionRecord
 from shepherd.eeprom import EEPROM
 from shepherd.eeprom import CapeData
-from shepherd.calibration import CalibrationData
+from shepherd.calibration import CalibrationData, cal_channel_list
 from shepherd.shepherd_io import ShepherdIOException
 from shepherd.shepherd_io import ShepherdIO
 from shepherd import commons
@@ -44,85 +44,35 @@ class Recorder(ShepherdIO):
     with kernel module and PRUs.
 
     Args:
-        mode (str): Should be either 'harvesting' to record harvesting data
-            or 'load' to record target consumption data.
-        load (str): Selects, which load should be used for recording.
-            Should be one of 'artificial' or 'node'.
-        harvesting_voltage (float): Fixed reference voltage for boost
-            converter input.
-        ldo_voltage (float): Pre-charge capacitor to this voltage before
-            starting recording.
-        ldo_mode (str): Selects if LDO should just pre-charge capacitor or run
-            continuously.
+        mode (str): Should be 'harvesting' to record harvesting data TODO: extend with sweep, mppt,
+        # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
     """
 
-    def __init__(
-        self,
-        mode: str = "harvesting",
-        load: str = "artificial",
-        harvesting_voltage: float = None,
-        ldo_voltage: float = None,
-        ldo_mode: str = "pre-charge",
-    ):
-        super().__init__(mode, load)
-
-        if ldo_voltage is None:
-            if mode == "load":
-                self.ldo_voltage = 3.0
-            else:
-                self.ldo_voltage = 0.0
-        else:
-            self.ldo_voltage = ldo_voltage
-
-        self.harvesting_voltage = harvesting_voltage
-        self.ldo_mode = ldo_mode
+    def __init__(self, mode: str = "harvesting"):
+        super().__init__(mode)
 
     def __enter__(self):
         super().__enter__()
 
-        # TODO: remove
-        """
-        if self.harvesting_voltage is not None:
-            self.set_mppt(False)  
-            self.set_harvesting_voltage(self.harvesting_voltage)  # TODO: remove
-        else:
-            self.set_mppt(True)  # TODO: remove
-        """
-
-        # In 'load' mode, the target is supplied from constant voltage reg
-        if self.mode == "load":
-            self.set_aux_target_voltage(self.ldo_voltage)
-
-        elif self.mode == "harvesting":
-            # self.set_harvester(True) # TODO: remove
-            if self.ldo_voltage > 0.0:
-                self.set_aux_target_voltage(self.ldo_voltage)
-                if self.ldo_mode == "pre-charge":
-                    time.sleep(1)
-                    self.set_aux_target_voltage(False)
-                    logger.debug("Disabling LDO")
-
         # Give the PRU empty buffers to begin with
         for i in range(self.n_buffers):
             time.sleep(float(self.buffer_period_ns) / 1e9)
-            self.release_buffer(i)
+            self.return_buffer(i)
             logger.debug(f"sent empty buffer {i}")
 
         return self
 
-    def release_buffer(self, index: int):
+    def return_buffer(self, index: int):
         """Returns a buffer to the PRU
 
         After reading the content of a buffer and potentially filling it with
         emulation data, we have to release the buffer to the PRU to avoid it
         running out of buffers.
 
-        TODO: needs better naming like emu.put_buffer() -> to "release memory" is a coined term in programmings languages means
-
         Args:
             index (int): Index of the buffer. 0 <= index < n_buffers
         """
-        self._release_buffer(index)
+        self._return_buffer(index)
 
 
 class Emulator(ShepherdIO):
@@ -133,103 +83,54 @@ class Emulator(ShepherdIO):
     with kernel module and PRUs.
 
     Args:
+        shepherd_mode:
+        initial_buffers: recorded data  # TODO: initial_ is not the best name, is this a yield/generator?
         calibration_recording (CalibrationData): Shepherd calibration data
             belonging to the IV data that is being emulated
         calibration_emulation (CalibrationData): Shepherd calibration data
             belonging to the cape used for emulation
-        load (str): Selects, which load should be used for recording.
-            Should be one of 'artificial' or 'node'.
-        ldo_voltage (float): Pre-charge the capacitor to this voltage before
-            starting recording.
-        virtsource (dict): Settings which define the behavior of virtcap emulation
+        set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
+        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
+        sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
+        aux_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
+        settings_virtsource (dict): Settings which define the behavior of virtcap emulation
     """
 
-    def __init__(
-        self,
-        initial_buffers: list,
-        calibration_recording: CalibrationData = None,
-        calibration_emulation: CalibrationData = None,
-        load: str = "node",  # TODO: remove or change
-        ldo_voltage: float = 0.0,  # TODO: remove or change
-        virtsource: dict = None,
-    ):
+    def __init__(self,
+                 shepherd_mode: str = "emulation",
+                 initial_buffers: list = None,
+                 calibration_recording: CalibrationData = None,  # TODO: make clearer that these is "THE RECORDING"
+                 calibration_emulation: CalibrationData = None,
+                 set_target_io_lvl_conv: bool = False,
+                 sel_target_for_io: bool = True,
+                 sel_target_for_pwr: bool = True,
+                 aux_voltage: float = 0.0,
+                 settings_virtsource: dict = None):
 
-        if virtsource is None:
-            shepherd_mode = "emulation"
-            self.ldo_voltage = ldo_voltage  # TODO: does not exist anymore, but can be reconfigured for target B
-            super().__init__(shepherd_mode, load)
-        else:
-            shepherd_mode = "virtcap"
-            self.ldo_voltage = virtsource["dc_output_voltage"] / 1000  # TODO: does not exist anymore,
-            super().__init__(shepherd_mode, "artificial")
+        super().__init__(shepherd_mode)
+        self._initial_buffers = initial_buffers
 
         if calibration_emulation is None:
             calibration_emulation = CalibrationData.from_default()
-            logger.warning(
-                "No emulation calibration data provided - using defaults"
-            )
+            logger.warning("No emulation calibration data provided - using defaults")
         if calibration_recording is None:
             calibration_recording = CalibrationData.from_default()
-            logger.warning(
-                "No recording calibration data provided - using defaults"
-            )
+            logger.warning("No recording calibration data provided - using defaults")
 
-        if virtsource != None:
-            logger.info("Starting virtcap")
-            self.send_calibration_settings(calibration_emulation)
-            self.send_virtsource_settings(virtsource)
+        self._cal_recording = calibration_recording
+        self._cal_emulation = calibration_emulation
+        self.send_calibration_settings(calibration_emulation)
 
-        self.transform_coeffs = {"voltage": dict(), "current": dict()}
-        if virtsource != None:
-            # Values from recording are have their own calibration settings.
-            # Values in the virtcap emulation use the emulation calibration
-            # settings. Therefore we need to convert the recorded values to use
-            # the same calibration settings as emulation.
-            for channel in ["voltage", "current"]:
-                self.transform_coeffs[channel]["gain"] = (
-                    calibration_recording["harvesting"][channel]["gain"]
-                    / calibration_emulation["load"][channel]["gain"]
-                )
-                self.transform_coeffs[channel]["offset"] = (
-                    calibration_recording["harvesting"][channel]["offset"]
-                    - calibration_emulation["load"][channel]["offset"]
-                ) / calibration_emulation["load"][channel]["gain"]
-        else:
-            # Values from recording are binary ADC values. We have to send binary
-            # DAC values to the DAC for emulation. To directly convert ADC to DAC
-            # values, we precalculate the 'transformation coefficients' based on
-            # calibration data from the recorder and the emulator.
-            for channel in ["voltage", "current"]:
-                self.transform_coeffs[channel]["gain"] = (
-                    calibration_recording["harvesting"][channel]["gain"]
-                    * calibration_emulation["emulation"][channel]["gain"]
-                )
-                self.transform_coeffs[channel]["offset"] = (
-                    calibration_emulation["emulation"][channel]["gain"]
-                    * calibration_recording["harvesting"][channel]["offset"]
-                    + calibration_emulation["emulation"][channel]["offset"]
-                )
+        self.set_target_io_level_conv(set_target_io_lvl_conv)
+        self.select_main_target_for_io(sel_target_for_io)
+        self.select_main_target_for_power(sel_target_for_pwr)
+        self.set_aux_target_voltage(calibration_emulation, aux_voltage)
 
-        self._initial_buffers = initial_buffers
-        self._calibration_emulation = calibration_emulation
+        settings_virtsource = self.check_and_complete_virtsource_settings(settings_virtsource)
+        self.send_virtsource_settings(settings_virtsource)
 
     def __enter__(self):
         super().__enter__()
-
-        if self.mode == "virtcap":
-            print(self.ldo_voltage)
-            self.set_aux_target_voltage(2.55)
-        elif self.ldo_voltage > 0.0:
-            logger.debug(f"Precharging capacitor to {self.ldo_voltage}V")
-            self.set_aux_target_voltage(self.ldo_voltage)
-            time.sleep(1)
-            self.set_aux_target_voltage(False)
-
-        # Disconnect harvester to avoid leakage in or out of the harvester
-        # self.set_harvester(False) # TODO: remove
-        # We will dynamically generate the reference voltage for the boost
-        # converter. This only takes effect if MPPT is disabled.
-        # self.set_mppt(False) # TODO: remove
 
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
@@ -242,21 +143,17 @@ class Emulator(ShepherdIO):
 
         ts_start = time.time()
 
-        # Convert binary ADC recordings to binary DAC values
-        voltage_transformed = (
-            buffer.voltage * self.transform_coeffs["voltage"]["gain"]
-            + self.transform_coeffs["voltage"]["offset"]
-        ).astype("u4")
+        v_gain = 1e6 * self._cal_recording["harvest"]["voltage"]["gain"]
+        v_offset = 1e6 * self._cal_recording["harvest"]["voltage"]["offset"]
+        i_gain = 1e9 * self._cal_recording["harvest"]["current"]["gain"]
+        i_offset = 1e9 * self._cal_recording["harvest"]["current"]["offset"]
 
-        current_transformed = (
-            buffer.current * self.transform_coeffs["current"]["gain"]
-            + self.transform_coeffs["current"]["offset"]
-        ).astype("u4")
+        # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
+        voltage_transformed = (buffer.voltage * v_gain + v_offset).astype("u4")
+        current_transformed = (buffer.current * i_gain + i_offset).astype("u4")
 
-        self.shared_mem.write_buffer(
-            index, voltage_transformed, current_transformed
-        )
-        self._release_buffer(index)
+        self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
+        self._return_buffer(index)
 
         logger.debug(
             (
@@ -277,7 +174,7 @@ class ShepherdDebug(ShepherdIO):
     """
 
     def __init__(self):
-        super().__init__("debug", "artificial")
+        super().__init__("debug")
 
     def adc_read(self, channel: str):
         """Reads value from specified ADC channel.
@@ -449,7 +346,7 @@ def record(
                     raise
 
             log_writer.write_buffer(buf)
-            recorder.release_buffer(idx)
+            recorder.return_buffer(idx)
 
 
 def emulate(
@@ -528,7 +425,7 @@ def emulate(
             initial_buffers=log_reader.read_buffers(end=64),
             ldo_voltage=ldo_voltage,
             load=load,
-            virtsource=virtcap,
+            settings_virtsource=virtcap,
         )
         stack.enter_context(emu)
 
