@@ -1,23 +1,29 @@
 node: serial number
 calibration:
   emulation:
-    current:
-      gain: 4934456.47714108
-      offset: 3145.7172879384743
-    voltage:
+    dac_voltage_a:
       gain: 87380.98224767964
       offset: 0.038835992134409025
+    dac_voltage_b:
+      gain: 87380.98224767964
+      offset: 0.038835992134409025
+    adc_current:
+      gain: 3.822167808088151e-07
+      offset: -0.050097855530474036
+    adc_voltage:
+      gain: 1.953125e-05
+      offset: 0.0
   harvesting:
-    current:
+    dac_voltage_a:
+      gain: 87380.98224767964
+      offset: 0.038835992134409025
+    dac_voltage_b:
+      gain: 87380.98224767964
+      offset: 0.038835992134409025
+    adc_current:
       gain: 3.822167808088151e-07
       offset: -0.050097855530474036
-    voltage:
+    adc_voltage:
       gain: 1.953125e-05
       offset: 0.0
-  load:
-    current:
-      gain: 3.822167808088151e-07
-      offset: -0.050097855530474036
-    voltage:
-      gain: 1.953125e-05
-      offset: 0.0
+    # TODO: the values already seemed wrong before, redo with real values

@@ -2,35 +2,45 @@
 node: serial number
 measurements:
   harvesting:
-    voltage:
+    dac_voltage_a:
+      - reference: 25000
+        measured: 0.286103
+      - reference: 250000
+        measured: 2.861034
+    dac_voltage_b:
+      - reference: 4000
+        measured: 0.000173126
+      - reference: 250000
+        measured: 0.050026641
+    adc_voltage:
       - reference: 1.0
         measured: 51200
       - reference: 3.0
         measured: 153600
-    current:
-      - reference: 10e-6
-        measured: 131098
-      - reference: 10e-3
-        measured: 157235
-  load:
-    voltage:
-      - reference: 1.0
-        measured: 51200
-      - reference: 3.0
-        measured: 153600
-    current:
+    adc_current:
       - reference: 10e-6
         measured: 131098
       - reference: 10e-3
         measured: 157235
   emulation:
-    voltage:
+    dac_voltage_a:
       - reference: 25000
         measured: 0.286103
       - reference: 250000
         measured: 2.861034
-    current:
+    dac_voltage_b:
       - reference: 4000
         measured: 0.000173126
       - reference: 250000
         measured: 0.050026641
+    adc_voltage:
+      - reference: 1.0
+        measured: 51200
+      - reference: 3.0
+        measured: 153600
+    adc_current:
+      - reference: 10e-6
+        measured: 131098
+      - reference: 10e-3
+        measured: 157235
+        # TODO: replace with actual values, these are just faked
