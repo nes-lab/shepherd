@@ -10,6 +10,8 @@ Relies on systemd service.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+from typing import NoReturn
+from threading import Event, Thread
 
 import dbus
 import time
@@ -18,6 +20,16 @@ import os
 from periphery import GPIO
 
 logger = logging.getLogger(__name__)
+
+
+def call_repeatedly(interval, func, *args):
+    stopped = Event()
+
+    def loop():
+        while not stopped.wait(interval): # the first call is in `interval` secs
+            func(*args)
+    Thread(target=loop).start()
+    return stopped.set
 
 
 class Launcher(object):
@@ -35,17 +47,21 @@ class Launcher(object):
         self,
         pin_button: int = 65,
         pin_led: int = 22,
+        pin_ack_watchdog: int = 68,
         service_name: str = "shepherd",
     ):
         self.pin_button = pin_button
         self.pin_led = pin_led
+        self.pin_ack_watchdog = pin_ack_watchdog
         self.service_name = service_name
 
     def __enter__(self):
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
+        self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
         self.gpio_button.edge = "falling"
         logger.debug("configured gpio")
+        self.cancel_wd_timer = call_repeatedly(interval=600, func=self.ack_watchdog)
 
         sysbus = dbus.SystemBus()
         systemd1 = sysbus.get_object(
@@ -69,7 +85,7 @@ class Launcher(object):
         self.gpio_led.close()
         self.gpio_button.close()
 
-    def run(self):
+    def run(self) -> NoReturn:
         """Infinite loop waiting for button presses.
 
         Waits for falling edge on configured button pin. On detection of the
@@ -94,7 +110,7 @@ class Launcher(object):
             self.set_service(not self.get_state())
             time.sleep(10)
 
-    def get_state(self, timeout: float = 10):
+    def get_state(self, timeout: float = 10) -> bool:
         """Queries systemd for state of shepherd service.
 
         Args:
@@ -127,11 +143,11 @@ class Launcher(object):
             return False
         raise Exception(f"Unknown state { systemd_state }")
 
-    def set_service(self, requested_state: str):
+    def set_service(self, requested_state: bool):
         """Changes state of shepherd service.
 
         Args:
-            requested_state (str): Target state of service
+            requested_state (bool): Target state of service
         """
         active_state = self.get_state()
 
@@ -155,8 +171,8 @@ class Launcher(object):
 
         return new_state
 
-    def initiate_shutdown(self, timeout: int = 5):
-        """Initiates system shutdown.
+    def initiate_shutdown(self, timeout: int = 5) -> NoReturn:
+        """ Initiates system shutdown.
 
         Args:
             timeout (int): Number of seconds to wait before powering off
@@ -178,3 +194,13 @@ class Launcher(object):
         os.sync()
         logger.info("shutting down now")
         self.manager.PowerOff()
+
+    def ack_watchdog(self) -> NoReturn:
+        """ prevent system-reset from watchdog
+        hw-rev2 has a watchdog that can turn on the BB every ~60 min
+
+        """
+        self.gpio_ack_watchdog.write(True)
+        time.sleep(0.002)
+        self.gpio_ack_watchdog.write(False)
+        logger.debug("Signaled ACK to Watchdog")
