@@ -9,7 +9,7 @@ Provides main API functionality for recording and emulation with shepherd.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-
+import datetime
 import logging
 import time
 import sys
@@ -92,7 +92,7 @@ class Emulator(ShepherdIO):
         set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
         sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
-        aux_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
+        aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
         settings_virtsource (dict): Settings which define the behavior of virtcap emulation
     """
 
@@ -104,7 +104,7 @@ class Emulator(ShepherdIO):
                  set_target_io_lvl_conv: bool = False,
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
-                 aux_voltage: float = 0.0,
+                 aux_target_voltage: float = 0.0,
                  settings_virtsource: dict = None):
 
         super().__init__(shepherd_mode)
@@ -124,7 +124,7 @@ class Emulator(ShepherdIO):
         self.set_target_io_level_conv(set_target_io_lvl_conv)
         self.select_main_target_for_io(sel_target_for_io)
         self.select_main_target_for_power(sel_target_for_pwr)
-        self.set_aux_target_voltage(calibration_emulation, aux_voltage)
+        self.set_aux_target_voltage(calibration_emulation, aux_target_voltage)
 
         settings_virtsource = self.check_and_complete_virtsource_settings(settings_virtsource)
         self.send_virtsource_settings(settings_virtsource)
@@ -185,14 +185,12 @@ class ShepherdDebug(ShepherdIO):
         Returns:
             Binary ADC value read from corresponding channel
         """
-        if channel.lower() == "v_in":
+        if channel.lower() in ["hrv_a_in", "hrv_i_in", "a_in", "i_in"]:
             channel_no = 0
-        elif channel.lower() == "v_out":
+        elif channel.lower() in ["hrv_v_in", "v_in"]:
             channel_no = 1
-        elif channel.lower() in ["a_in", "i_in"]:
+        elif channel.lower() in ["emu", "emu_a_out", "emu_i_out", "a_out", "i_out"]:
             channel_no = 2
-        elif channel.lower() in ["a_out", "i_out"]:
-            channel_no = 3
         else:
             raise ValueError(f"ADC channel { channel } unknown")
 
@@ -209,75 +207,43 @@ class ShepherdDebug(ShepherdIO):
 
         return value
 
-    def dac_write(self, channel: str, value: int):
-        """Writes value to specified DAC channel
+    def dac_write(self, value: int):
+        """Writes value to specified DAC channel, DAC8562
 
         Args:
-            channel (str): Specifies the channel to write to, e.g., 'current'
-                for current channel or 'v' for voltage channel
-            value (int): Binary DAC value to be sent to corresponding channel
+            value (int): 16 bit raw DAC value to be sent to corresponding channel
         """
-        # For a mapping of DAC channel to command refer to TI DAC8562T
-        # datasheet Table 17
-        if channel.lower() in ["current", "i", "a"]:
-            dac_command = value
-        elif channel.lower() in ["voltage", "v"]:
-            # The DAC 'voltage' channel is on channel B
-            dac_command = value | (1 << 16)
-        else:
-            raise ValueError(f"DAC channel { channel } unknown")
-
-        self._send_msg(commons.MSG_DEP_DBG_DAC, dac_command)
+        self._send_msg(commons.MSG_DEP_DBG_DAC, value & ((1 << 16) - 1))
 
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
 
 
 def record(
-    output: Path,
+    output_path: Path,
     mode: str = "harvesting",
-    length: float = None,
-    force: bool = False,
+    duration: float = None,
+    force_overwrite: bool = False,
     no_calib: bool = False,
-    harvesting_voltage: float = None,
-    load: str = "artificial",
-    ldo_voltage: float = None,
-    ldo_mode: str = "pre-charge",
     start_time: float = None,
     warn_only: bool = False,
 ):
     """Starts recording.
 
     Args:
-        output (Path): Path of hdf5 file where IV measurements should be
+        output_path (Path): Path of hdf5 file where IV measurements should be
             stored
         mode (str): 'harvesting' for recording harvesting data, 'load' for
             recording load consumption data.
-        length (float): Maximum time duration of emulation in seconds
-        force (bool): True to overwrite existing file under output path,
+        duration (float): Maximum time duration of emulation in seconds
+        force_overwrite (bool): True to overwrite existing file under output path,
             False to store under different name
         no_calib (bool): True to use default calibration values, False to
             read calibration data from EEPROM
-        harvesting_voltage (float): Sets a fixed reference voltage for the
-            input of the boost converter. Alternative to MPPT algorithm.
-        load (str): Type of load. 'artificial' for dummy, 'node' for sensor
-            node
-        ldo_voltage (bool): True to pre-charge capacitor before starting
-            emulation
-        ldo_mode (str): Selects if LDO should just pre-charge capacitor or run
-            continuously.
         start_time (float): Desired start time of emulation in unix epoch time
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
-
-    if not output.is_absolute():
-        raise ValueError("Output must be absolute path")
-    if output.is_dir():
-        store_path = output / "rec.h5"
-    else:
-        store_path = output
-
     if no_calib:
         calib = CalibrationData.from_default()
     else:
@@ -291,15 +257,22 @@ def record(
             logger.warning("Couldn't read calibration from EEPROM (FS). Falling back to default values.")
             calib = CalibrationData.from_default()
 
-    recorder = Recorder(
-        mode=mode,
-        load=load,
-        harvesting_voltage=harvesting_voltage,
-        ldo_voltage=ldo_voltage,
-        ldo_mode=ldo_mode,
-    )
+    if start_time is None:
+        start_time = time.time() + 15
+
+    if not output_path.is_absolute():
+        raise ValueError("Output must be absolute path")
+    if output_path.is_dir():
+        timestamp = datetime.datetime.fromtimestamp(start_time)
+        timestamp = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
+        store_path = output_path / f"rec_{timestamp}.h5"
+    else:
+        store_path = output_path
+
+
+    recorder = Recorder(mode=mode)
     log_writer = LogWriter(
-        store_path=store_path, calibration_data=calib, mode=mode, force=force
+        store_path=store_path, calibration_data=calib, mode=mode, force=force_overwrite
     )
     with ExitStack() as stack:
 
@@ -311,11 +284,9 @@ def record(
         log_writer["hostname"] = res.stdout
 
         recorder.start(start_time, wait_blocking=False)
-        if start_time is None:
-            recorder.wait_for_start(15)
-        else:
-            logger.info(f"waiting {start_time - time.time():.2f}s until start")
-            recorder.wait_for_start(start_time - time.time() + 15)
+
+        logger.info(f"waiting {start_time - time.time():.2f}s until start")
+        recorder.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
 
@@ -326,10 +297,10 @@ def record(
         signal.signal(signal.SIGTERM, exit_gracefully)
         signal.signal(signal.SIGINT, exit_gracefully)
 
-        if length is None:
+        if duration is None:
             ts_end = sys.float_info.max
         else:
-            ts_end = time.time() + length
+            ts_end = time.time() + duration
 
         while time.time() < ts_end:
             try:
@@ -350,35 +321,37 @@ def record(
 
 
 def emulate(
-    input: Path,
-    output: Path = None,
-    length: float = None,
-    force: bool = False,
-    no_calib: bool = False,
-    load: str = "artificial",
-    ldo_voltage: float = None,
-    start_time: float = None,
-    virtcap: dict = None,
-    warn_only: bool = False,
+        input_path: Path,
+        output_path: Path = None,
+        duration: float = None,
+        force_overwrite: bool = False,
+        no_calib: bool = False,
+        start_time: float = None,
+        set_target_io_lvl_conv: bool = False,
+        sel_target_for_io: bool = True,
+        sel_target_for_pwr: bool = True,
+        aux_target_voltage: float = 0.0,
+        settings_virtsource: dict = None,
+        warn_only: bool = False,
 ):
     """Starts emulation.
 
     Args:
-        input (Path): path of hdf5 file containing recorded
+        input_path (Path): path of hdf5 file containing recorded
             harvesting data
-        output (Path): Path of hdf5 file where load measurements should
+        output_path (Path): Path of hdf5 file where load measurements should
             be stored
-        length (float): Maximum time duration of emulation in seconds
-        force (bool): True to overwrite existing file under output,
+        duration (float): Maximum time duration of emulation in seconds
+        force_overwrite (bool): True to overwrite existing file under output,
             False to store under different name
         no_calib (bool): True to use default calibration values, False to
             read calibration data from EEPROM
-        load (str): Type of load. 'artificial' for dummy, 'node' for sensor
-            node
-        ldo_voltage (float): Pre-charge capacitor to this voltage before
-            starting emulation
         start_time (float): Desired start time of emulation in unix epoch time
-        virtcap (dict): Settings which define the behavior of virtcap emulation
+        set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
+        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
+        sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
+        aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
+        settings_virtsource (dict): Settings which define the behavior of virtcap emulation
         warn_only (bool): Set true to continue emulation after recoverable
             error
     """
@@ -396,45 +369,51 @@ def emulate(
             logger.warning("Couldn't read calibration from EEPROM (FS). Falling back to default values.")
             calib = CalibrationData.from_default()
 
-    if output is not None:
-        if not output.is_absolute():
+    if start_time is None:
+        start_time = time.time() + 15
+
+    if output_path is not None:
+        if not output_path.is_absolute():
             raise ValueError("Output must be absolute path")
-        if output.is_dir():
-            store_path = output / "rec.h5"
+        if output_path.is_dir():
+            timestamp = datetime.datetime.fromtimestamp(start_time)
+            timestamp = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
+            store_path = output_path / f"emu_{timestamp}.h5"
         else:
-            store_path = output
+            store_path = output_path
 
         log_writer = LogWriter(
             store_path=store_path,
-            force=force,
-            mode="load",
+            force=force_overwrite,
+            mode="emulation",
             calibration_data=calib,
         )
 
-    log_reader = LogReader(input, 10_000)
+    log_reader = LogReader(input_path, 10_000)
 
     with ExitStack() as stack:
-        if output is not None:
+        if output_path is not None:
             stack.enter_context(log_writer)
 
         stack.enter_context(log_reader)
 
         emu = Emulator(
+            shepherd_mode="emulation",
+            initial_buffers=log_reader.read_buffers(end=64),
             calibration_recording=log_reader.get_calibration_data(),
             calibration_emulation=calib,
-            initial_buffers=log_reader.read_buffers(end=64),
-            ldo_voltage=ldo_voltage,
-            load=load,
-            settings_virtsource=virtcap,
+            set_target_io_lvl_conv=set_target_io_lvl_conv,
+            sel_target_for_io=sel_target_for_io,
+            sel_target_for_pwr=sel_target_for_pwr,
+            aux_target_voltage=aux_target_voltage,
+            settings_virtsource=settings_virtsource,
         )
         stack.enter_context(emu)
 
         emu.start(start_time, wait_blocking=False)
-        if start_time is None:
-            emu.wait_for_start(15)
-        else:
-            logger.info(f"waiting {start_time - time.time():.2f}s until start")
-            emu.wait_for_start(start_time - time.time() + 15)
+
+        logger.info(f"waiting {start_time - time.time():.2f}s until start")
+        emu.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
 
@@ -445,10 +424,10 @@ def emulate(
         signal.signal(signal.SIGTERM, exit_gracefully)
         signal.signal(signal.SIGINT, exit_gracefully)
 
-        if length is None:
+        if duration is None:
             ts_end = sys.float_info.max
         else:
-            ts_end = time.time() + length
+            ts_end = time.time() + duration
 
         for hrvst_buf in log_reader.read_buffers(start=64):
             try:
@@ -457,18 +436,15 @@ def emulate(
                 logger.error(
                     f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
                 )
-                if output is not None:
-                    err_rec = ExceptionRecord(
-                        int(time.time() * 1e9), str(e), e.value
-                    )
-                    log_writer.write_exception(err_rec)
 
+                err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
+                if output_path is not None:
+                    log_writer.write_exception(err_rec)
                 if not warn_only:
                     raise
 
-            if output is not None:
+            if output_path is not None:
                 log_writer.write_buffer(load_buf)
-
             emu.put_buffer(idx, hrvst_buf)
 
             if time.time() > ts_end:
@@ -478,7 +454,7 @@ def emulate(
         while True:
             try:
                 idx, load_buf = emu.get_buffer(timeout=1)
-                if output is not None:
+                if output_path is not None:
                     log_writer.write_buffer(load_buf)
             except ShepherdIOException as e:
                 # We're done when the PRU has processed all emulation data buffers
