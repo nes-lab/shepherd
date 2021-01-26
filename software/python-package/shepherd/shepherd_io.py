@@ -163,7 +163,7 @@ class SharedMem(object):
         self.mapped_mem.close()
         os.close(self.devmem_fd)
 
-    def read_buffer(self, index: int):
+    def read_buffer(self, index: int) -> DataBuffer:
         """Extracts buffer from shared memory.
 
         Extracts data from buffer with given index from the shared memory area
@@ -252,7 +252,7 @@ class SharedMem(object):
 
         return DataBuffer(voltage, current, buffer_timestamp, gpio_edges)
 
-    def write_buffer(self, index, voltage, current):
+    def write_buffer(self, index, voltage, current) -> NoReturn:
 
         buffer_offset = self.buffer_size * index
         # Seek buffer location in memory and skip 12B header
@@ -285,21 +285,17 @@ class ShepherdIO(object):
 
         return new_class
 
-    def __init__(self, mode: str, load: str = "artificial"):
+    def __init__(self, mode: str):
         """Initializes relevant variables.
 
         Args:
             mode (str): Shepherd mode, one of 'harvesting', 'load', 'emulation', 'virtcap'
-            load (str): Which load to use, one of 'artificial', 'node'
         """
 
         self.rpmsg_fd = None
         self.mode = mode
         self.gpios = dict()
-        self.load = load
         self.shared_mem = None
-
-        # self.ldo = const_reg.VariableLDO() # TODO: remove
 
     def __del__(self):
         ShepherdIO._instance = None
@@ -353,13 +349,6 @@ class ShepherdIO(object):
             )
 
             self.shared_mem.__enter__()
-
-            logger.debug(f"Setting load to '{ self.load }'")
-            # self.set_load(self.load) # TODO: remove
-
-            # TODO: remove
-            # self.ldo.__enter__()
-            # self.set_ldo_voltage(False)
 
         except Exception:
             self._cleanup()
@@ -720,7 +709,7 @@ class ShepherdIO(object):
 
         sysfs_interface.write_virtsource_settings(vs_list)
 
-    def _release_buffer(self, index: int) -> NoReturn:
+    def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU
 
         After reading the content of a buffer and potentially filling it with
