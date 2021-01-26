@@ -40,7 +40,6 @@ gpio_pin_nums = {
     "target_io_en": 60,
     "target_io_sel": 30,
     "en_shepherd": 23,
-    "ack_watchdog": 68,  # TODO: should be handled by kernel module
 }
 
 prev_timestamp = 0
@@ -190,9 +189,11 @@ class SharedMem(object):
             f"Got buffer #{ index } with len {n_samples} and timestamp {buffer_timestamp}"
         )
 
-        # sanity-check of received timestamp
+        # sanity-check of received timestamp, TODO: python knows the duration between timestamps
         global prev_timestamp
         diff_ms = round((buffer_timestamp - prev_timestamp) / 1e6, 3) if (prev_timestamp > 0) else 100
+        if buffer_timestamp == 0:
+            logger.error(f"ZERO      timestamp detected after recv it from PRU")
         if diff_ms < 0:
             logger.error(f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
         if diff_ms < 95:
@@ -308,6 +309,9 @@ class ShepherdIO(object):
 
             self._set_shepherd_pcb_power(True)
             self.set_target_io_level_conv(False)
+            # select Target A as main target for current-monitored power and IO
+            self.select_main_target_for_power(True)
+            self.select_main_target_for_io(True)
 
             logger.debug("Shepherd hardware is powered")
 
@@ -397,7 +401,7 @@ class ShepherdIO(object):
             except BlockingIOError:
                 break
 
-    def start(self, start_time: int = None, wait_blocking: bool = True) -> NoReturn:
+    def start(self, start_time: float = None, wait_blocking: bool = True) -> NoReturn:
         """Starts sampling either now or at later point in time.
 
         Args:
@@ -405,7 +409,7 @@ class ShepherdIO(object):
             wait_blocking (bool): If true, block until start has completed
         """
         logger.debug(f"asking kernel module for start at {start_time}")
-        sysfs_interface.set_start(start_time)
+        sysfs_interface.set_start(int(start_time))
         if wait_blocking:
             self.wait_for_start(1_000_000)
 
@@ -447,7 +451,7 @@ class ShepherdIO(object):
         logger.debug(f"Set power-supplies of shepherd-pcb to {state_str}")
         self.gpios["en_shepherd"].write(state)
 
-    def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:  # TODO: integrate
+    def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:
         """ choose which targets gets the supply with current-monitor, True = Target A, False = Target B
 
         shepherd hw-rev2 has two ports for targets and two separate power supplies,
@@ -463,7 +467,7 @@ class ShepherdIO(object):
         logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
         self.gpios["target_pwr_sel"].write(sel_target_a)
 
-    def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:  # TODO: integrate
+    def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
         """ choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
 
         shepherd hw-rev2 has two ports for targets and can switch independently from power supplies
@@ -477,7 +481,7 @@ class ShepherdIO(object):
         logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
         self.gpios["target_io_sel"].write(sel_target_a)
 
-    def set_target_io_level_conv(self, state: bool) -> NoReturn:  # TODO: integrate
+    def set_target_io_level_conv(self, state: bool) -> NoReturn:
         """Enables or disables the GPIO level converter to targets.
 
         The shepherd cape has bi-directional logic level translators (LSF0108)
@@ -501,7 +505,7 @@ class ShepherdIO(object):
         The shepherd cape has two DAC-Channels that each serve as power supply for a target
 
         Args:
-            calibration_settings: dict, TODO: could it be a class-variable?
+            calibration_settings: dict, TODO: should it be a class-variable?
             voltage_V (float): Desired output voltage in volt. Providing 0 or
                 False disables supply, setting it to True will link it
                 to the other channel
