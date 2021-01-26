@@ -44,7 +44,7 @@ def pytest_addoption(parser):
         help="run fake hardware tests",
     )
     parser.addoption(
-        "--eeprom-wp",  # TODO: this could be made clearer -> name suggests wp is active when using it
+        "--eeprom-write",
         action="store_true",
         default=False,
         help="run tests that require to disable eeprom write protect",
@@ -54,9 +54,7 @@ def pytest_addoption(parser):
 def pytest_collection_modifyitems(config, items):
     skip_fake = pytest.mark.skip(reason="need --fake option to run")
     skip_real = pytest.mark.skip(reason="selected fake hardware only")
-    skip_eeprom_wp = pytest.mark.skip(
-        reason="requires --eprom-wp option to run"
-    )
+    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option to run")
     skip_missing_hardware = pytest.mark.skip(reason="no hardware to test on")
     real_hardware = check_beagleboard()
 
@@ -68,8 +66,8 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_real)
         if "fake_hardware" in item.keywords and not config.getoption("--fake"):
             item.add_marker(skip_fake)
-        if "eeprom_wp" in item.keywords and not config.getoption("--eeprom-wp"):
-            item.add_marker(skip_eeprom_wp)
+        if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
+            item.add_marker(skip_eeprom_write)
 
 
 @pytest.fixture()
@@ -84,6 +82,9 @@ def shepherd_up(fake_hardware, shepherd_down):
             ("/sys/kernel/shepherd/memory/size", "1"),
             ("/sys/kernel/shepherd/samples_per_buffer", "1"),
             ("/sys/kernel/shepherd/buffer_period_ns", "1"),
+            ("/sys/kernel/shepherd/dac_auxiliary_voltage_raw", "0"),
+            ("/sys/kernel/shepherd/calibration_settings", "0"),
+            ("/sys/kernel/shepherd/virtsource_settings", "0"),
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
