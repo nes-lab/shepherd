@@ -525,7 +525,7 @@ class ShepherdIO(object):
         if calibration_settings is None:
             output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
         else:
-            output = calibration_settings.convert_value_to_raw("emulation", "DAC_B", voltage_V)
+            output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage_V)
 
         # TODO: currently only an assumption that it is for emulation, could also be for harvesting
         # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
@@ -545,7 +545,7 @@ class ShepherdIO(object):
         if calibration_settings is None:
             voltage = calibration_default.dac_ch_a_raw_to_voltage(value_raw)
         else:
-            voltage = calibration_settings.convert_raw_to_value("emulation", "DAC_B", value_raw)
+            voltage = calibration_settings.convert_raw_to_value("emulation", "dac_voltage_b", value_raw)
         return voltage
 
     @staticmethod
@@ -560,10 +560,10 @@ class ShepherdIO(object):
         """
         # TODO: this could be more general and only supply the gain/offset-dict to the sysfs
         sysfs_interface.write_calibration_settings(
-            int(1e9 * (2 ** 8) * calibration_settings["emulation"]["ADC_Current"]["gain"]),
-            int(1e9 * calibration_settings["emulation"]["ADC_Current"]["offset"]),
-            int(1e6 * (2 ** 20) / calibration_settings["emulation"]["DAC_A"]["gain"]),
-            int(1e6 * calibration_settings["emulation"]["DAC_A"]["offset"])
+            int(1e9 * (2 ** 8) * calibration_settings["emulation"]["adc_current"]["gain"]),
+            int(1e9 * calibration_settings["emulation"]["adc_current"]["offset"]),
+            int(1e6 * (2 ** 20) / calibration_settings["emulation"]["dac_voltage_a"]["gain"]),
+            int(1e6 * calibration_settings["emulation"]["dac_voltage_a"]["offset"])
         )
 
     def check_and_complete_virtsource_settings(self, vs_settings: dict) -> dict:

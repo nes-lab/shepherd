@@ -23,7 +23,7 @@ from shepherd import calibration_default
 # -> general formula is:    si-value = raw_value * gain + offset
 # TODO: emulation has no ADC_voltage
 cal_component_list = ["harvesting", "emulation"]
-cal_channel_list = ["DAC_A", "DAC_B", "ADC_Current", "ADC_Voltage"]
+cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
 cal_channel_fn_list = ["dac_ch_a_voltage_to_raw", "dac_ch_b_voltage_to_raw", "adc_current_to_raw", "adc_voltage_to_raw"]
 cal_parameter_list = ["gain", "offset"]
 
