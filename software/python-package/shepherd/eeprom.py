@@ -15,12 +15,13 @@ through Linux I2C device driver.
 import os
 import struct
 import logging
+from typing import NoReturn
+
 import yaml
 from pathlib import Path
 from periphery import GPIO
 
 from shepherd.calibration import CalibrationData
-from shepherd.shepherd_io import gpio_pin_nums_new
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class CapeData(object):
         return cls(data)
 
     @classmethod
-    def from_yaml(cls, filename: Path):
+    def from_yaml(cls, filename: Path) -> NoReturn:
         """Build the object from a yaml file
 
         Args:
@@ -142,7 +143,7 @@ class EEPROM(object):
     def __exit__(self, *args):
         os.close(self.fd)
 
-    def _read(self, address: int, n_bytes: int):
+    def _read(self, address: int, n_bytes: int) -> bytes:
         """Reads a given number of bytes from given address.
 
         Args:
@@ -152,7 +153,7 @@ class EEPROM(object):
         os.lseek(self.fd, address, 0)
         return os.read(self.fd, n_bytes)
 
-    def _write(self, address: int, buffer: bytes):
+    def _write(self, address: int, buffer: bytes) -> NoReturn:
         """Writes binary data from byte buffer to given address.
 
         Args:
@@ -232,7 +233,7 @@ class EEPROM(object):
         else:
             self._write(eeprom_format[key]["offset"], value)
 
-    def write_cape_data(self, cape_data: CapeData):
+    def write_cape_data(self, cape_data: CapeData) -> NoReturn:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:
@@ -241,7 +242,7 @@ class EEPROM(object):
         for key, value in cape_data.items():
             self[key] = value
 
-    def read_cape_data(self):
+    def read_cape_data(self) -> CapeData:
         """Reads and returns BeagleBone cape data from EEPROM
 
         Returns:
@@ -252,7 +253,7 @@ class EEPROM(object):
             data[key] = self[key]
         return CapeData(data)
 
-    def write_calibration(self, calibration_data: CalibrationData):
+    def write_calibration(self, calibration_data: CalibrationData) -> NoReturn:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:
@@ -263,7 +264,7 @@ class EEPROM(object):
             calibration_data_format["offset"], calibration_data.to_bytestr()
         )
 
-    def read_calibration(self):
+    def read_calibration(self) -> CalibrationData:
         """Reads and returns shepherd calibration data from EEPROM
 
         Returns:
