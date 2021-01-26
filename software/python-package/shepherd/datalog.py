@@ -13,6 +13,8 @@ HDF5 files.
 
 import logging
 import time
+from typing import NoReturn
+
 import numpy as np
 from pathlib import Path
 import h5py
@@ -20,7 +22,7 @@ from itertools import product
 from collections import defaultdict
 from collections import namedtuple
 
-from shepherd.calibration import CalibrationData
+from shepherd.calibration import CalibrationData, cal_channel_list, cal_parameter_list
 from shepherd.shepherd_io import DataBuffer
 from shepherd.shepherd_io import GPIOEdges
 
@@ -148,12 +150,8 @@ class LogWriter(object):
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
         # Refer to shepherd/calibration.py for the format of calibration data
-        for variable, attr in product(
-            ["voltage", "current"], ["gain", "offset"]
-        ):
-            self.data_grp[variable].attrs[attr] = self.calibration_data[
-                self.mode
-            ][variable][attr]
+        for variable, attr in product(cal_channel_list, cal_parameter_list):
+            self.data_grp[variable].attrs[attr] = self.calibration_data[self.mode][variable][attr]
 
         # Create group for exception logs
         self.log_grp = self._h5file.create_group("log")
@@ -203,7 +201,7 @@ class LogWriter(object):
         self._h5file.flush()
         self._h5file.close()
 
-    def write_buffer(self, buffer: DataBuffer):
+    def write_buffer(self, buffer: DataBuffer) -> NoReturn:
         """Writes data from buffer to file.
         
         Args:
@@ -237,7 +235,7 @@ class LogWriter(object):
                 gpio_current_length:
             ] = buffer.gpio_edges.values
 
-    def write_exception(self, exception: ExceptionRecord):
+    def write_exception(self, exception: ExceptionRecord) -> NoReturn:
         """Writes an exception to the hdf5 file.
 
         Args:
@@ -309,7 +307,7 @@ class LogReader(object):
             )
             yield db
 
-    def get_calibration_data(self):
+    def get_calibration_data(self) -> CalibrationData:
         """Reads calibration data from hdf5 file.
 
         Returns:
@@ -317,7 +315,7 @@ class LogReader(object):
         """
         nested_dict = lambda: defaultdict(nested_dict)
         calib = nested_dict()
-        for var, attr in product(["voltage", "current"], ["gain", "offset"]):
+        for var, attr in product(cal_channel_list, cal_parameter_list):
 
             calib["harvesting"][var][attr] = self._h5file["data"][var].attrs[
                 attr
