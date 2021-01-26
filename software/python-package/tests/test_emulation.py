@@ -77,7 +77,7 @@ def virtsource_emulator(request, shepherd_up, log_reader, virtsource_settings_ym
         calibration_recording=log_reader.get_calibration_data(),
         calibration_emulation=CalibrationData.from_default(),
         initial_buffers=log_reader.read_buffers(end=64),
-        virtsource=virtsource_settings_yml,
+        settings_virtsource=virtsource_settings_yml,
     )
     request.addfinalizer(emu.__del__)
     emu.__enter__()
@@ -126,10 +126,10 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
     d = tmp_path / "rec.h5"
     start_time = int(time.time() + 15)
     emulate(
-        input=data_h5,
-        output=d,
-        length=None,
-        force=True,
+        input_path=data_h5,
+        output_path=d,
+        duration=None,
+        force_overwrite=True,
         no_calib=True,
         load="artificial",
         ldo_voltage=2.5,

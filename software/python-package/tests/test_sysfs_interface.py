@@ -127,12 +127,12 @@ def test_set_mode_fail_invalid(shepherd_up):
 
 @pytest.mark.parametrize("value", [0, 100, 16000])
 def test_harvesting_voltage(shepherd_up, value):
-    sysfs_interface.write_harvesting_voltage(value)
-    assert sysfs_interface.get_harvesting_voltage() == value
+    sysfs_interface.write_harvesting_voltage(value)  # TODO: remove, replace with read_dac_aux_voltage()
+    assert sysfs_interface.get_harvesting_voltage() == value   # TODO: remove
 
 
 def test_initial_harvesting_voltage(shepherd_up):
-    assert sysfs_interface.get_harvesting_voltage() == 0
+    assert sysfs_interface.get_harvesting_voltage() == 0   # TODO: remove
 
 
 @pytest.mark.hardware
@@ -140,7 +140,7 @@ def test_initial_harvesting_voltage(shepherd_up):
 def test_harvesting_voltage_fail_mode(shepherd_up, mode):
     sysfs_interface.write_mode(mode)
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.write_harvesting_voltage(2 ** 15)
+        sysfs_interface.write_harvesting_voltage(2 ** 15)    # TODO: remove, replace with read_dac_aux_voltage
 
 
 @pytest.mark.hardware

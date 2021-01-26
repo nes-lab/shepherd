@@ -53,7 +53,7 @@ def test_recorder(log_writer, recorder):
     for _ in range(100):
         idx, buf = recorder.get_buffer()
         log_writer.write_buffer(buf)
-        recorder.release_buffer(idx)
+        recorder.return_buffer(idx)
 
 
 @pytest.mark.hardware
@@ -62,10 +62,10 @@ def test_record_fn(tmp_path, shepherd_up):
     d = tmp_path / "rec.h5"
     start_time = int(time.time() + 10)
     record(
-        output=d,
+        output_path=d,
         mode="harvesting",
-        length=10,
-        force=True,
+        duration=10,
+        force_overwrite=True,
         no_calib=True,
         harvesting_voltage=None,
         load="artificial",
