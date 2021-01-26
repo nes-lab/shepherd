@@ -289,7 +289,7 @@ class ShepherdIO(object):
         """Initializes relevant variables.
 
         Args:
-            mode (str): Shepherd mode, one of 'harvesting', 'load', 'emulation', 'virtcap'
+            mode (str): Shepherd mode, one of 'harvesting', 'emulation', 'harvesting-test', 'emulation-test'
         """
 
         self.rpmsg_fd = None
@@ -448,7 +448,7 @@ class ShepherdIO(object):
         self.gpios["en_shepherd"].write(state)
 
     def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:  # TODO: integrate
-        """ choose which targets gets the supply with current-monitor
+        """ choose which targets gets the supply with current-monitor, True = Target A, False = Target B
 
         shepherd hw-rev2 has two ports for targets and two separate power supplies,
         but only one is able to measure current, the other is considered "auxiliary"
@@ -457,18 +457,22 @@ class ShepherdIO(object):
             sel_target_a: True to select A, False for B
         """
         # TODO: make sure that switching is NOT done when running
+        if sel_target_a is None:
+            sel_target_a = False
         target = "A" if sel_target_a else "B"
         logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
         self.gpios["target_pwr_sel"].write(sel_target_a)
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:  # TODO: integrate
-        """ choose which targets gets the io-connection (serial, swd, gpio) from beaglebone
+        """ choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
 
         shepherd hw-rev2 has two ports for targets and can switch independently from power supplies
 
         Args:
             sel_target_a: True to select A, False for B
         """
+        if sel_target_a is None:
+            sel_target_a = False
         target = "A" if sel_target_a else "B"
         logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
         self.gpios["target_io_sel"].write(sel_target_a)
@@ -484,6 +488,8 @@ class ShepherdIO(object):
         Args:
             state (bool): True for enabling converter, False for disabling
         """
+        if state is None:
+            state = False
         state_str = "enabled" if state else "disabled"
         logger.debug(f"Setting target-io level converter to {state_str}")
         self.gpios["target_io_en"].write(state)
@@ -589,6 +595,9 @@ class ShepherdIO(object):
             if (max_value is not None) and (set_value > max_value):
                 raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
             vs_settings[setting_key] = set_value
+
+        if vs_settings is None:
+            vs_settings = dict()
 
         num_check("converter_mode", 100, 4e9)
 
