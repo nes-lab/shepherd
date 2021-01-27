@@ -262,6 +262,187 @@ class SharedMem(object):
         self.mapped_mem.write(current)
 
 
+class VirtualSourceData(object):
+    """
+    Container for VS Settings, Data will be checked and completed
+    - settings will be created from default values when omitted
+    - internal settings are derived from existing values (PRU has no FPU, so it is done here)
+    - settings can be exported in required format
+    """
+    vss: dict = None
+
+    def __init__(self, vs_settings: dict = None):
+        """ Container for VS Settings, Data will be checked and completed
+
+        Args:
+            vs_settings: if omitted, the data is generated from default values
+        """
+        if vs_settings is None:
+            vs_settings = dict()
+        elif isinstance(vs_settings, VirtualSourceData):
+            self.vss = vs_settings.vss
+        elif isinstance(vs_settings, dict):
+            self.vss = vs_settings
+        else:
+            raise NotImplementedError(f"VirtualSourceData was instantiated with {type(vs_settings)}, can't be handled")
+        self.check_and_complete()
+
+    def get_as_dict(self) -> dict:
+        """ offers a checked and completed version of the settings
+
+        Returns:
+            internal settings container
+        """
+        return self.vss
+
+    def get_as_list(self) -> list:
+        """ multi-level dict is flattened, good for testing
+
+        Returns:
+            1D-Content
+        """
+        return self._flatten_dict_list(self.vss)
+
+    def export_for_sysfs(self) -> list:
+        """ prepares virtsource settings for PRU core (a lot of unit-conversions)
+
+        The current emulator in PRU relies on the virtsource settings.
+        This Fn add values in correct order and convert to requested unit
+
+        Returns:
+            int-list (2nd level for LUTs) that can be feed into sysFS
+        """
+        vs_list = list([])
+
+        vs_list.append(int(self.vss["converter_mode"]))
+
+        vs_list.append(int(self.vss["c_output_uf"] * 1e3))  # nF
+
+        vs_list.append(int(self.vss["v_input_boost_threshold_mV"] * 1e3))  # uV
+
+        vs_list.append(int(self.vss["c_storage_uf"] * 1e3))  # nF
+        vs_list.append(int(self.vss["v_storage_init_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["v_storage_max_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["v_storage_leak_nA"] * 1))  # nA
+
+        vs_list.append(int(self.vss["v_storage_enable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["v_storage_disable_threshold_mV"] * 1e3))  # uV
+
+        vs_list.append(int(self.vss["interval_check_thresholds_ms"] * 1e6))  # ns
+
+        vs_list.append(int(self.vss["v_pwr_good_low_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["v_pwr_good_high_threshold_mV"] * 1e3))  # uV
+
+        vs_list.append(int(self.vss["dV_store_en_mV"] * 1e3))  # uV
+
+        vs_list.append(int(self.vss["v_output_mV"] * 1e3))  # uV
+
+        vs_list.append(int(self.vss["dV_store_low_mV"] * 1e3))  # uV
+
+        vs_list.append([int(value) for value in self.vss["LUT_inp_efficiency_n8"]])
+
+        # was n8, is now n10
+        vs_list.append([int((2 ** 18) / value) for value in self.vss["LUT_output_efficiency_n8"]])
+        return vs_list
+
+    def add_enable_voltage_drop(self) -> NoReturn:
+        """
+        compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
+        -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
+        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when VCap >= V_out
+
+        Math behind this calculation:
+        Energy-Change Storage Cap   ->  E_new = E_old - E_output
+        with Energy of a Cap 	    -> 	E_x = C_x * V_x^2 / 2
+        combine formulas 		    -> 	C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
+        convert formula to V_new 	->	V_store_new^2 = V_store_old^2 - (C_out / C_store) * V_out^2
+        convert into dV	 	        ->	dV = V_store_new - V_store_old
+        in case of V_cap = V_out 	-> 	dV = V_store_old * (sqrt(1 - C_out / C_store) - 1)
+        -> dV values will be reversed (negated), because dV is always negative (Voltage drop)
+        """
+
+        # first case: storage cap outside of en/dis-thresholds
+        v_old = self.vss["v_storage_enable_threshold_mV"]
+        if 1:  # TODO: this is boost-buck case, boost-only has v_out = v_old
+            v_out = self.vss["v_output_mV"]
+        else:
+            v_out = v_old
+        c_store = self.vss["c_storage_uf"]
+        c_out = self.vss["c_output_uf"]
+        self.vss["dV_store_en_mV"] = v_old - pow(pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5)
+
+        # second case: storage cap below v_out (only different for enabled buck), enable when >= v_out
+        # v_enable is either bucks v_out or same dV-Value is calculated a second time
+        self.vss["dV_store_low_mV"] = v_out * (1 - pow(1 - c_out / c_store, 0.5))
+
+    def check_and_complete(self) -> NoReturn:
+        """ checks virtual-source-settings for present values, adds default values to missing ones, checks limits
+
+        """
+        self._check_num("converter_mode", 100, 4e9)
+
+        self._check_num("c_output_uf", 1, 4e6)
+
+        self._check_num("v_input_boost_threshold_mV", 130, 5000)
+
+        self._check_num("c_storage_uf", 1000, 4e6)
+        self._check_num("v_storage_init_mV", 3500, 10000)
+        self._check_num("v_storage_max_mV", 4200, 10000)
+        self._check_num("v_storage_leak_nA", 10, 4e9)
+
+        self._check_num("v_storage_enable_threshold_mV", 3000, 4e6)
+        self._check_num("v_storage_disable_threshold_mV", 2300, 4e6)
+
+        self._check_num("interval_check_thresholds_ms", 65, 4e3)
+
+        self._check_num("v_pwr_good_low_threshold_mV", 2400, 4e6)
+        self._check_num("v_pwr_good_high_threshold_mV", 5000, 4e6)
+
+        self._check_num("v_output_mV", 2300, 5000)
+
+        self.add_enable_voltage_drop()
+        self._check_num("dV_store_en_mV", 0, 4e6)
+        self._check_num("dV_store_low_mV", 0, 4e6)
+
+        # Look up tables
+        self._check_list("LUT_inp_efficiency_n8", 12 * 12 * [128], 255)
+        self._check_list("LUT_output_efficiency_n8", 12 * [200], 255)
+
+    def _flatten_dict_list(self, dl):
+        if len(dl) == 1:
+            if type(dl[0]) == list:
+                result = self._flatten_dict_list(dl[0])
+            else:
+                result = dl
+        elif type(dl[0]) == list:
+            result = self._flatten_dict_list(dl[0]) + self._flatten_dict_list(dl[1:])
+        else:
+            result = [dl[0]] + self._flatten_dict_list(dl[1:])
+        return result
+
+    def _check_num(self, setting_key: str, default: float, max_value: float = None) -> NoReturn:
+        try:
+            set_value = self.vss[setting_key]
+        except KeyError:
+            set_value = default
+            logger.warning(f"[virtSource] Setting {setting_key} was not provided, will be set to default = {default}")
+        if (len(set_value) != 1) or (set_value < 0):
+            raise NotImplementedError(f"[virtSource] {setting_key} must a single positive number, but is '{set_value}'")
+        if (max_value is not None) and (set_value > max_value):
+            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
+        self.vss[setting_key] = set_value
+
+    def _check_list(self, settings_key: str, default: list, max_value: float = 255) -> NoReturn:
+        try:
+            values = self._flatten_dict_list(self.vss[settings_key])
+        except KeyError:
+            values = default
+            logger.warning(f"[virtSource] Setting {settings_key} was not provided, will be set to default = {values[0]}")
+        if (len(values) != len(default)) or (min(values) < 0) or (max(values) > 255):
+            raise NotImplementedError(f"{settings_key} must a list of {len(default)} values, within range of [0; {max_value}]")
+        self.vss[settings_key] = values
+
+
 class ShepherdIO(object):
     """Generic ShepherdIO interface.
 
@@ -566,161 +747,19 @@ class ShepherdIO(object):
             int(1e6 * calibration_settings["emulation"]["dac_voltage_a"]["offset"])
         )
 
-    def check_and_complete_virtsource_settings(self, vs_settings: dict) -> dict:
-        """ checks virtual-source-settings for missing values, adds default values to missing ones, checks limits
+    def send_virtsource_settings(self, vs_settings: VirtualSourceData) -> NoReturn:
+        """ Sends virtsource settings to PRU core
+            looks like a dumb one-liner but is needed by the child-classes
 
         Args:
-            vs_settings (dict): Contains the settings for the virtual source.
-
-        Returns:
-            validated and completed settings
+            vs_settings: Contains the settings for the virtual source.
         """
-
-        def flatten(L):
-            if len(L) == 1:
-                if type(L[0]) == list:
-                    result = flatten(L[0])
-                else:
-                    result = L
-            elif type(L[0]) == list:
-                result = flatten(L[0]) + flatten(L[1:])
-            else:
-                result = [L[0]] + flatten(L[1:])
-            return result
-
-        def num_check(setting_key: str, default: float, max_value: float = None) -> NoReturn:
-            try:
-                set_value = vs_settings[setting_key]
-            except KeyError:
-                set_value = default
-                logger.warning(f"[virtSource] Setting {setting_key} was not provided, will be set to default = {default}")
-            if (len(set_value) != 1) or (set_value < 0):
-                raise NotImplementedError(f"[virtSource] {setting_key} must a single positive number, but is '{set_value}'")
-            if (max_value is not None) and (set_value > max_value):
-                raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
-            vs_settings[setting_key] = set_value
-
         if vs_settings is None:
-            vs_settings = dict()
-
-        num_check("converter_mode", 100, 4e9)
-
-        num_check("c_output_uf", 1, 4e6)
-
-        num_check("v_input_boost_threshold_mV", 130, 5000)
-
-        num_check("c_storage_uf", 1000, 4e6)
-        num_check("v_storage_init_mV", 3500, 10000)
-        num_check("v_storage_max_mV", 4200, 10000)
-        num_check("v_storage_leak_nA", 10, 4e9)
-
-        num_check("v_storage_enable_threshold_mV", 3000, 4e6)
-        num_check("v_storage_disable_threshold_mV", 2300, 4e6)
-
-        num_check("interval_check_thresholds_ms", 65, 4e3)
-
-        num_check("v_pwr_good_low_threshold_mV", 2400, 4e6)
-        num_check("v_pwr_good_high_threshold_mV", 5000, 4e6)
-
-        num_check("v_output_mV", 2300, 5000)
-
-        """
-        compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
-        -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
-        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when VCap >= V_out
-
-        Math behind this calculation:
-        Energy-Change Storage Cap   ->  E_new = E_old - E_output
-        with Energy of a Cap 	    -> 	E_x = C_x * V_x^2 / 2
-        combine formulas 		    -> 	C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
-        convert formula to V_new 	->	V_store_new^2 = V_store_old^2 - (C_out / C_store) * V_out^2
-        convert into dV	 	        ->	dV = V_store_new - V_store_old
-        in case of V_cap = V_out 	-> 	dV = V_store_old * (sqrt(1 - C_out / C_store) - 1)
-        -> dV values will be reversed (negated), because dV is always negative (Voltage drop)
-        """
-
-        # first case: storage cap outside of en/dis-thresholds
-        v_old = num_check("v_storage_enable_threshold_mV", 3000, 4e6)
-        if 1:  # TODO: this is boost-buck case, boost-only has v_out = v_old
-            v_out = num_check("v_output_mV", 2300, 4e6)
-        else:
-            v_out = v_old
-        c_store = num_check("c_storage_uf", 1000, 4e6)
-        c_out = num_check("c_output_uf", 1, 4e6)
-        dV_store_en_mV = v_old - pow(pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5)
-        vs_settings["dV_store_en_mV"] = dV_store_en_mV
-
-        # second case: storage cap below v_out (only different for enabled buck)
-        v_en = v_out  # value is either bucks v_out or same dV-Value is calculated a second time
-        dV_store_low_mV = v_en * (1 - pow(1 - c_out / c_store, 0.5))
-        vs_settings["dV_store_low_mV"] = dV_store_low_mV
-
-        # Look up tables
-        setting = "LUT_inp_efficiency_n8"
-        try:
-            values = flatten(vs_settings[setting])
-        except KeyError:
-            values = 12 * 12 * [128]
-            logger.warning(f"[virtSource] Setting {setting} was not provided, will be set to default = {values[0]}")
-        if (len(values) != 12 * 12) or (min(values) < 0) or (max(values > 255)):
-            raise NotImplementedError(f"{setting} must a list of 12*12 values, within range of [0; 255]")
-        vs_settings[setting] = values
-
-        setting = "LUT_output_efficiency_n8"
-        try:
-            values = flatten(vs_settings[setting])
-        except KeyError:
-            values = 12 * [200]
-            logger.warning(f"[virtSource] Setting {setting} was not provided, will be set to default = {values[0]}")
-        if (len(values) != 12) or (min(values) < 0) or (max(values > 255)):
-            raise NotImplementedError(f"{setting} must a list of 12 values, within range of [0; 255]")
-        vs_settings[setting] = values
-        return vs_settings
-
-    def send_virtsource_settings(self, vs_settings: dict) -> NoReturn:
-        """Sends virtsource settings to PRU core
-
-        For virtsource it is required to have the virtsource settings.
-
-        Args:
-            vs_settings (dict): Contains the settings for the virtual source.
-        """
-
-        # add values of virtual-source-struct in correct order and convert to requested unit
-        vs_list = list([])
-        vs_settings = self.check_and_complete_virtsource_settings(vs_settings)
-
-        vs_list.append(int(vs_settings["converter_mode"]))
-
-        vs_list.append(int(vs_settings["c_output_uf"] * 1e3))  # nF
-
-        vs_list.append(int(vs_settings["v_input_boost_threshold_mV"] * 1e3))  # uV
-
-        vs_list.append(int(vs_settings["c_storage_uf"] * 1e3))  # nF
-        vs_list.append(int(vs_settings["v_storage_init_mV"] * 1e3))  # uV
-        vs_list.append(int(vs_settings["v_storage_max_mV"] * 1e3))  # uV
-        vs_list.append(int(vs_settings["v_storage_leak_nA"] * 1))  # nA
-
-        vs_list.append(int(vs_settings["v_storage_enable_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(vs_settings["v_storage_disable_threshold_mV"] * 1e3))  # uV
-
-        vs_list.append(int(vs_settings["interval_check_thresholds_ms"] * 1e6))  # ns
-
-        vs_list.append(int(vs_settings["v_pwr_good_low_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(vs_settings["v_pwr_good_high_threshold_mV"] * 1e3))  # uV
-
-        vs_list.append(int(vs_settings["dV_store_en_mV"] * 1e3))  # uV
-
-        vs_list.append(int(vs_settings["v_output_mV"] * 1e3))  # uV
-
-        vs_list.append(int(vs_settings["dV_store_low_mV"] * 1e3))  # uV
-
-        vs_list.append([int(value) for value in vs_settings["LUT_inp_efficiency_n8"]])
-
-        # was n8, is now n10
-        vs_list.append([int((2 ** 18) / value) for value in vs_settings["LUT_output_efficiency_n8"]])
-
-        sysfs_interface.write_virtsource_settings(vs_list)
+            vs_settings = VirtualSourceData()
+        if vs_settings is dict:
+            vs_settings = VirtualSourceData(vs_settings)
+        values = vs_settings.export_for_sysfs()
+        sysfs_interface.write_virtsource_settings(values)
 
     def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU
