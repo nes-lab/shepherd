@@ -25,7 +25,7 @@ from shepherd.datalog import ExceptionRecord
 from shepherd.eeprom import EEPROM
 from shepherd.eeprom import CapeData
 from shepherd.calibration import CalibrationData, cal_channel_list
-from shepherd.shepherd_io import ShepherdIOException
+from shepherd.shepherd_io import ShepherdIOException, VirtualSourceData
 from shepherd.shepherd_io import ShepherdIO
 from shepherd import commons
 from shepherd import sysfs_interface
@@ -105,7 +105,7 @@ class Emulator(ShepherdIO):
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
                  aux_target_voltage: float = 0.0,
-                 settings_virtsource: dict = None):
+                 settings_virtsource: VirtualSourceData = None):
 
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
@@ -126,7 +126,6 @@ class Emulator(ShepherdIO):
         self.select_main_target_for_power(sel_target_for_pwr)
         self.set_aux_target_voltage(calibration_emulation, aux_target_voltage)
 
-        settings_virtsource = self.check_and_complete_virtsource_settings(settings_virtsource)
         self.send_virtsource_settings(settings_virtsource)
 
     def __enter__(self):
@@ -331,7 +330,7 @@ def emulate(
         sel_target_for_io: bool = True,
         sel_target_for_pwr: bool = True,
         aux_target_voltage: float = 0.0,
-        settings_virtsource: dict = None,
+        settings_virtsource: VirtualSourceData = None,
         warn_only: bool = False,
 ):
     """Starts emulation.
@@ -351,7 +350,7 @@ def emulate(
         sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
         aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
-        settings_virtsource (dict): Settings which define the behavior of virtcap emulation
+        settings_virtsource (VirtualSourceData): Settings which define the behavior of virtsource emulation
         warn_only (bool): Set true to continue emulation after recoverable
             error
     """

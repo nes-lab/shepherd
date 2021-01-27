@@ -183,9 +183,9 @@ def read_calibration_settings() -> tuple[int, int, int, int]:
 
 
 def write_virtsource_settings(settings: list) -> NoReturn:
-    """Sends the virtcap settings to the PRU core.
+    """Sends the virtual-source settings to the PRU core.
 
-    The virtcap algorithm uses these settings to configure emulation.
+    The virtual-source algorithm uses these settings to configure emulation.
 
     """
     logger.debug(f"Writing virtcap to sysfs_interface, first value is {settings[0]}")
