@@ -100,6 +100,7 @@ class CalibrationData(object):
                 channel = cal_channel_list[ch_index]
                 cal_fn = cal_channel_fn_list[ch_index]
                 calib_dict[component][channel] = dict()
+                # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(calibration_default, cal_fn)(0)
                 gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)
                 calib_dict[component][channel]["offset"] = -float(offset) / float(gain_inv)

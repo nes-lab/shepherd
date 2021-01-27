@@ -53,7 +53,7 @@ class CapeData(object):
         self.data = data
 
     @classmethod
-    def from_values(cls, serial_number: str, version: str = "00A0"):
+    def from_values(cls, serial_number: str, version: str = "00B0"):
         """Build the object from defaults and user-provided values
 
         Args:
