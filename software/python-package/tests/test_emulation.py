@@ -5,7 +5,7 @@ import h5py
 import time
 import yaml
 
-from shepherd.shepherd_io import DataBuffer
+from shepherd.shepherd_io import DataBuffer, VirtualSourceData
 
 from shepherd import LogWriter
 from shepherd import LogReader
@@ -26,7 +26,7 @@ def virtsource_settings_yml():
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         full_config = yaml.safe_load(config_data)
-    return full_config["virtcap"]
+    return full_config["virtsource"]
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def log_writer(tmp_path):
     with LogWriter(
         force=True,
         store_path=tmp_path / "test.h5",
-        mode="load",
+        mode="emulation",
         calibration_data=calib,
     ) as lw:
         yield lw
@@ -73,11 +73,12 @@ def emulator(request, shepherd_up, log_reader):
 
 @pytest.fixture()
 def virtsource_emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
+    vs_settings = VirtualSourceData(virtsource_settings_yml)
     emu = Emulator(
         calibration_recording=log_reader.get_calibration_data(),
         calibration_emulation=CalibrationData.from_default(),
         initial_buffers=log_reader.read_buffers(end=64),
-        settings_virtsource=virtsource_settings_yml,
+        settings_virtsource=vs_settings,
     )
     request.addfinalizer(emu.__del__)
     emu.__enter__()
@@ -131,9 +132,11 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         duration=None,
         force_overwrite=True,
         no_calib=True,
-        load="artificial",
-        ldo_voltage=2.5,
         start_time=start_time,
+        set_target_io_lvl_conv=True,
+        sel_target_for_io=True,
+        sel_target_for_pwr=True,
+        aux_target_voltage=2.5,
     )
 
     with h5py.File(d, "r+") as hf_load, h5py.File(data_h5) as hf_hrvst:

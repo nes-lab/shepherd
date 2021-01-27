@@ -6,9 +6,10 @@ from pathlib import Path
 import h5py
 from itertools import product
 
-from shepherd import LogReader
+from shepherd import LogReader, cal_channel_list
 from shepherd import LogWriter
 from shepherd import CalibrationData
+from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
 from shepherd.datalog import GPIOEdges
@@ -45,7 +46,7 @@ def calibration_data():
     return cd
 
 
-@pytest.mark.parametrize("mode", ["load", "harvesting"])
+@pytest.mark.parametrize("mode", ["harvesting"])
 def test_create_logwriter(mode, tmp_path, calibration_data):
     d = tmp_path / f"{ mode }.h5"
     h = LogWriter(store_path=d, calibration_data=calibration_data, mode=mode)
@@ -76,7 +77,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     assert new_stat.st_mtime > stat.st_mtime
 
 
-@pytest.mark.parametrize("mode", ["load", "harvesting"])
+@pytest.mark.parametrize("mode", ["harvesting"])
 def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
     with LogWriter(
@@ -94,7 +95,7 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
             assert all(written["data"][variable][:] == ref_var)
 
 
-@pytest.mark.parametrize("mode", ["load", "harvesting"])
+@pytest.mark.parametrize("mode", ["harvesting"])
 def test_calibration_logging(mode, tmp_path, calibration_data):
     d = tmp_path / "recording.h5"
     with LogWriter(
@@ -104,9 +105,7 @@ def test_calibration_logging(mode, tmp_path, calibration_data):
 
     h5store = h5py.File(d, "r")
 
-    for channel, parameter in product(
-        ["voltage", "current"], ["gain", "offset"]
-    ):
+    for channel, parameter in product(cal_channel_list, cal_parameter_list):
         assert (
             h5store["data"][channel].attrs[parameter]
             == calibration_data["load"][channel][parameter]

@@ -4,17 +4,17 @@ import time
 from pathlib import Path
 import yaml
 
-from shepherd import sysfs_interface
+from shepherd import sysfs_interface, ShepherdIO
 from shepherd.calibration import CalibrationData
 
 
 @pytest.fixture
-def virtcap_settings():
+def virtsource_settings():
     here = Path(__file__).absolute()
     name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
-        virtcap_settings = yaml.safe_load(config_data)
+        virtsource_settings = yaml.safe_load(config_data)
     # TODO: this should use the "default - generator"
     def flatten(L):
         if len(L) == 1:
@@ -28,7 +28,8 @@ def virtcap_settings():
             result = [L[0]] + flatten(L[1:])
         return result
 
-    values = virtcap_settings["virtcap"].values()
+    values = virtsource_settings["virtcap"].values()
+    values = ShepherdIO("emulation").check_and_complete_virtsource_settings(values)
     values = flatten(list(values))
 
     return values
@@ -179,13 +180,13 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 
 
 @pytest.mark.hardware
-def test_virtcap_settings(shepherd_up, virtcap_settings):
-    sysfs_interface.write_virtsource_settings(virtcap_settings)
-    str_values = " ".join(str(i) for i in virtcap_settings)
+def test_virtcap_settings(shepherd_up, virtsource_settings):
+    sysfs_interface.write_virtsource_settings(virtsource_settings)
+    str_values = " ".join(str(i) for i in virtsource_settings)
     assert sysfs_interface.read_virtsource_settings() == str_values
 
 
 @pytest.mark.hardware
-def test_initial_virtcap_settings(shepherd_up, virtcap_settings):
-    str_values = " ".join(str(i) for i in virtcap_settings)
+def test_initial_virtcap_settings(shepherd_up, virtsource_settings):
+    str_values = " ".join(str(i) for i in virtsource_settings)
     assert sysfs_interface.read_virtsource_settings() == str_values  # TODO: will fail,

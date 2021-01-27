@@ -4,6 +4,7 @@ from pathlib import Path
 from shepherd import EEPROM
 from shepherd import CapeData
 from shepherd import CalibrationData
+from shepherd.calibration import cal_parameter_list, cal_channel_list, cal_component_list
 
 
 @pytest.fixture()
@@ -126,9 +127,9 @@ def test_read_capedata(eeprom_with_data, data_example):
 def test_write_calibration(eeprom_retained, data_calibration):
     eeprom_retained.write_calibration(data_calibration)
     calib_restored = eeprom_retained.read_calibration()
-    for component in ["harvesting", "load", "emulation"]:
-        for channel in ["voltage", "current"]:
-            for parameter in ["gain", "offset"]:
+    for component in cal_component_list:
+        for channel in cal_channel_list:
+            for parameter in cal_parameter_list:
                 assert (
                     calib_restored[component][channel][parameter]
                     == data_calibration[component][channel][parameter]
@@ -139,9 +140,9 @@ def test_write_calibration(eeprom_retained, data_calibration):
 @pytest.mark.hardware
 def test_read_calibration(eeprom_with_calibration, data_calibration):
     calib_restored = eeprom_with_calibration.read_calibration()
-    for component in ["harvesting", "load", "emulation"]:
-        for channel in ["voltage", "current"]:
-            for parameter in ["gain", "offset"]:
+    for component in cal_component_list:
+        for channel in cal_channel_list:
+            for parameter in cal_parameter_list:
                 assert (
                     calib_restored[component][channel][parameter]
                     == data_calibration[component][channel][parameter]

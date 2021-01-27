@@ -10,7 +10,7 @@ from shepherd import record
 from shepherd import CalibrationData
 
 
-@pytest.fixture(params=["harvesting", "load"])
+@pytest.fixture(params=["harvesting"])
 def mode(request):
     return request.param
 
@@ -67,10 +67,6 @@ def test_record_fn(tmp_path, shepherd_up):
         duration=10,
         force_overwrite=True,
         no_calib=True,
-        harvesting_voltage=None,
-        load="artificial",
-        ldo_voltage=2.5,
-        ldo_mode="continuous",
         start_time=start_time,
     )
 
