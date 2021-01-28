@@ -36,7 +36,7 @@ def yamlprovider(file_path, cmd_name):
     return full_config
 
 
-def find_consensus_time(group):
+def find_consensus_time(group):  # TODO: adapt whole script to hw-rev2
     """Finds a start time in the future when all nodes should start service
 
     In order to run synchronously, all nodes should start at the same time.

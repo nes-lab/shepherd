@@ -87,6 +87,7 @@ def test_set_mode(shepherd_up, mode):
     assert sysfs_interface.get_mode() == mode
 
 
+# TODO: is this not tested?
 def test_initial_mode(shepherd_up):
     assert sysfs_interface.get_mode() == "harvesting"
 
@@ -115,7 +116,7 @@ def test_dac_aux_voltage_raw(shepherd_up, value):
     sysfs_interface.write_dac_aux_voltage_raw(value)
     assert sysfs_interface.read_dac_aux_voltage_raw() == value
 
-
+# TODO: is this not tested?
 def test_initial_aux_voltage(shepherd_up):
     assert sysfs_interface.read_dac_aux_voltage_raw() == 0
 
@@ -132,13 +133,13 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 
 
 @pytest.mark.hardware
-def test_virtcap_settings(shepherd_up, virtsource_settings):
+def test_virtsource_settings(shepherd_up, virtsource_settings):
     sysfs_interface.write_virtsource_settings(virtsource_settings)
     values_1d = flatten_dict_list(virtsource_settings)
     assert sysfs_interface.read_virtsource_settings() == values_1d
 
 
 @pytest.mark.hardware
-def test_initial_virtcap_settings(shepherd_up, virtsource_settings):
+def test_initial_virtsource_settings(shepherd_up, virtsource_settings):
     values_1d = flatten_dict_list(virtsource_settings)
     assert sysfs_interface.read_virtsource_settings() == values_1d
