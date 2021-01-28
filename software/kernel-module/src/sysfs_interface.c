@@ -339,7 +339,7 @@ static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj,
 		       tmp);
 		writel(tmp, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
-		pru_comm_set_state(STATE_RESET);
+		pru_comm_set_state(STATE_RESET); // TODO: really needed?
 		return count;
 	}
 
@@ -402,14 +402,14 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 						struct kobj_attribute *attr,
 						const char *buffer, size_t count)
 {
-    const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE  * 1;
-    const uint32_t out_lut_size = LUT_SIZE * 4;
+    const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE  * 1u;
+    const uint32_t out_lut_size = LUT_SIZE * 4u;
     const uint32_t non_lut_size = sizeof(struct VirtSource_Config) - inp_lut_size - out_lut_size;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
-    void __iomem * base_address = 0; /* TODO: should be  void __iomem * */
+    void __iomem * base_address = 0u;
 	int buf_pos = 0;
     int value_length;
-	uint32_t i = 0;
+	uint32_t i = 0u;
 
 	if (pru_comm_get_state() != STATE_IDLE)
 		return -EBUSY;
@@ -461,8 +461,8 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
     const uint32_t out_lut_size = LUT_SIZE * 4u;
     const uint32_t non_lut_size = sizeof(struct VirtSource_Config) - inp_lut_size - out_lut_size;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
-    void __iomem * base_address = 0;
-    uint32_t i = 0;
+    void __iomem * base_address = 0u;
+    uint32_t i = 0u;
     int count = 0;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
