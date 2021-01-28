@@ -4,8 +4,9 @@ import time
 from pathlib import Path
 import yaml
 
-from shepherd import sysfs_interface, ShepherdIO
+from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData
 from shepherd.calibration import CalibrationData
+from shepherd.shepherd_io import flatten_dict_list
 
 
 @pytest.fixture
@@ -14,25 +15,11 @@ def virtsource_settings():
     name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
-        virtsource_settings = yaml.safe_load(config_data)
-    # TODO: this should use the "default - generator"
-    def flatten(L):
-        if len(L) == 1:
-            if type(L[0]) == list:
-                result = flatten(L[0])
-            else:
-                result = L
-        elif type(L[0]) == list:
-            result = flatten(L[0]) + flatten(L[1:])
-        else:
-            result = [L[0]] + flatten(L[1:])
-        return result
+        vs_dict = yaml.safe_load(config_data)["virtcap"]
 
-    values = virtsource_settings["virtcap"].values()
-    values = ShepherdIO("emulation").check_and_complete_virtsource_settings(values)
-    values = flatten(list(values))
-
-    return values
+    vs_set = VirtualSourceData(vs_dict)
+    vs_list = vs_set.export_for_sysfs()
+    return vs_list
 
 
 @pytest.fixture()
@@ -44,17 +31,7 @@ def shepherd_running(shepherd_up):
 @pytest.fixture()
 def calibration_settings():
     calibration_emulation = CalibrationData.from_default()
-    current_gain = int(1 / calibration_emulation["load"]["current"]["gain"])
-    current_offset = int(
-        calibration_emulation["load"]["current"]["offset"]
-        / calibration_emulation["load"]["current"]["gain"]
-    )
-    voltage_gain = int(1 / calibration_emulation["load"]["voltage"]["gain"])
-    voltage_offset = int(
-        calibration_emulation["load"]["voltage"]["offset"]
-        / calibration_emulation["load"]["voltage"]["gain"]
-    )
-    return current_gain, current_offset, voltage_gain, voltage_offset
+    return calibration_emulation.export_for_sysfs()
 
 
 @pytest.mark.hardware
@@ -91,7 +68,7 @@ def test_wait_for_state(shepherd_up):
 
 @pytest.mark.hardware
 def test_start_delayed(shepherd_up):
-    start_time = time.time() + 5
+    start_time = int(time.time() + 5)
     sysfs_interface.set_start(start_time)
 
     sysfs_interface.wait_for_state("armed", 1)
@@ -104,7 +81,7 @@ def test_start_delayed(shepherd_up):
         sysfs_interface.set_start()
 
 
-@pytest.mark.parametrize("mode", ["harvesting", "load", "emulation"])
+@pytest.mark.parametrize("mode", ["harvesting", "emulation"])
 def test_set_mode(shepherd_up, mode):
     sysfs_interface.write_mode(mode)
     assert sysfs_interface.get_mode() == mode
@@ -126,67 +103,42 @@ def test_set_mode_fail_invalid(shepherd_up):
         sysfs_interface.write_mode("invalidmode")
 
 
+@pytest.mark.parametrize("value", [0, 0.1, 3.2])
+def test_dac_aux_voltage(shepherd_up, value):
+    cal_set = CalibrationData.from_default()
+    sysfs_interface.write_dac_aux_voltage(cal_set, value)
+    assert sysfs_interface.read_dac_aux_voltage(cal_set) == value
+
+
 @pytest.mark.parametrize("value", [0, 100, 16000])
-def test_harvesting_voltage(shepherd_up, value):
-    sysfs_interface.write_harvesting_voltage(value)  # TODO: remove, replace with read_dac_aux_voltage()
-    assert sysfs_interface.get_harvesting_voltage() == value   # TODO: remove
+def test_dac_aux_voltage_raw(shepherd_up, value):
+    sysfs_interface.write_dac_aux_voltage_raw(value)
+    assert sysfs_interface.read_dac_aux_voltage_raw() == value
 
 
-def test_initial_harvesting_voltage(shepherd_up):
-    assert sysfs_interface.get_harvesting_voltage() == 0   # TODO: remove
-
-
-@pytest.mark.hardware
-@pytest.mark.parametrize("mode", ["emulation", "load"])
-def test_harvesting_voltage_fail_mode(shepherd_up, mode):
-    sysfs_interface.write_mode(mode)
-    with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.write_harvesting_voltage(2 ** 15)    # TODO: remove, replace with read_dac_aux_voltage
+def test_initial_aux_voltage(shepherd_up):
+    assert sysfs_interface.read_dac_aux_voltage_raw() == 0
 
 
 @pytest.mark.hardware
 def test_calibration_settings(shepherd_up, calibration_settings):
-    (
-        current_gain,
-        current_offset,
-        voltage_gain,
-        voltage_offset,
-    ) = calibration_settings
-    sysfs_interface.write_calibration_settings(
-        current_gain, current_offset, voltage_gain, voltage_offset
-    )
-    assert sysfs_interface.read_calibration_settings() == (
-        current_gain,
-        current_offset,
-        voltage_gain,
-        voltage_offset,
-    )
+    sysfs_interface.write_calibration_settings(calibration_settings)
+    assert sysfs_interface.read_calibration_settings() == calibration_settings
 
 
 @pytest.mark.hardware
 def test_initial_calibration_settings(shepherd_up, calibration_settings):
-    (
-        current_gain,
-        current_offset,
-        voltage_gain,
-        voltage_offset,
-    ) = calibration_settings
-    assert sysfs_interface.read_calibration_settings() == (
-        current_gain,
-        current_offset,
-        voltage_gain,
-        voltage_offset,
-    )
+    assert sysfs_interface.read_calibration_settings() == calibration_settings
 
 
 @pytest.mark.hardware
 def test_virtcap_settings(shepherd_up, virtsource_settings):
     sysfs_interface.write_virtsource_settings(virtsource_settings)
-    str_values = " ".join(str(i) for i in virtsource_settings)
-    assert sysfs_interface.read_virtsource_settings() == str_values
+    values_1d = flatten_dict_list(virtsource_settings)
+    assert sysfs_interface.read_virtsource_settings() == values_1d
 
 
 @pytest.mark.hardware
 def test_initial_virtcap_settings(shepherd_up, virtsource_settings):
-    str_values = " ".join(str(i) for i in virtsource_settings)
-    assert sysfs_interface.read_virtsource_settings() == str_values  # TODO: will fail,
+    values_1d = flatten_dict_list(virtsource_settings)
+    assert sysfs_interface.read_virtsource_settings() == values_1d
