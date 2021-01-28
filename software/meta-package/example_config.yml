@@ -2,10 +2,8 @@
 # copy and name it config.yml.
 command: record
 parameters:
-  no_calib: false
-  force: false
-  ldo_voltage: 2.0 # TODO: does not exist in this form anymore
-  load: artificial # TODO: does not exist in this form anymore
   mode: harvesting
-  output: /var/shepherd/recordings
+  output_path: /var/shepherd/recordings
+  no_calib: false
+  force_overwrite: false
 verbose: 2

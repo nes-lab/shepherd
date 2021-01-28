@@ -18,7 +18,8 @@ import struct
 from pathlib import Path
 from typing import NoReturn
 
-from shepherd import CalibrationData, calibration_default
+from shepherd.calibration import CalibrationData
+from shepherd import calibration_default
 
 logger = logging.getLogger(__name__)
 sysfs_path = Path("/sys/shepherd")
@@ -113,7 +114,7 @@ def write_mode(mode: str) -> NoReturn:
     attribute.
 
     Args:
-        mode (str): Target mode. Must be one of harvesting, load, emulation
+        mode (str): Target mode. Must be one of harvesting, emulation or debug
     """
     if mode not in ["harvesting", "harvesting (test)", "emulation", "emulation (test)", "debug"]:  # TODO: what is with "None"? should be centralized
         raise SysfsInterfaceException("invalid value for mode")
@@ -199,7 +200,7 @@ def read_dac_aux_voltage_raw() -> int:
     return int_settings[0]
 
 
-def write_calibration_settings(cal_pru: dict[str, int]) -> NoReturn:
+def write_calibration_settings(cal_pru: dict) -> NoReturn:  # more precise dict[str, int], trouble with py3.6
     """Sends the calibration settings to the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -217,7 +218,7 @@ def write_calibration_settings(cal_pru: dict[str, int]) -> NoReturn:
         f.write(output)
 
 
-def read_calibration_settings() -> dict[str, int]:
+def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble with py3.6
     """Retrieve the calibration settings from the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -250,7 +251,7 @@ def write_virtsource_settings(settings: list) -> NoReturn:
         file.write(output + " \n")
 
 
-def read_virtsource_settings() -> list[int]:
+def read_virtsource_settings() -> list:
     """Retreive the virtcap settings to the PRU core.
 
     The virtcap algorithm uses these settings to configure emulation.

@@ -29,11 +29,11 @@ cal_parameter_list = ["gain", "offset"]
 
 
 # slim alternative to the methods (same name) of CalibrationData
-def convert_raw_to_value(cal_dict: dict[str, int], raw: int) -> float:
+def convert_raw_to_value(cal_dict: dict, raw: int) -> float:  # more precise dict[str, int], trouble with py3.6
     return (float(raw) * cal_dict["gain"]) + cal_dict["offset"]
 
 
-def convert_value_to_raw(cal_dict: dict[str, int], value: float) -> int:
+def convert_value_to_raw(cal_dict: dict, value: float) -> int:  # more precise dict[str, int], trouble with py3.6
     return int((value - cal_dict["offset"]) / cal_dict["gain"])
 
 
@@ -47,7 +47,7 @@ class CalibrationData(object):
         calib_dict (dict): Dictionary containing calibration data.
     """
 
-    def __init__(self, calib_dict: dict[str, dict]):
+    def __init__(self, calib_dict: dict):
         self._data = calib_dict
 
     def __getitem__(self, key: str):
@@ -182,7 +182,7 @@ class CalibrationData(object):
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         return struct.pack(">" + val_count * "d", *flattened)
 
-    def export_for_sysfs(self) -> dict[str, int]:
+    def export_for_sysfs(self) -> dict:  # more precise dict[str, int], trouble with py3.6
         cal_set = dict()
         cal_set["adc_gain"] = int(1e9 * (2 ** 8) * self._data["emulation"]["adc_current"]["gain"])
         cal_set["adc_offset"] = int(1e9 * (2 ** 0) * self._data["emulation"]["adc_current"]["offset"])

@@ -28,7 +28,6 @@ from periphery import GPIO
 
 from shepherd import sysfs_interface
 from shepherd import commons
-from shepherd import calibration_default
 from shepherd.calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
@@ -54,11 +53,11 @@ def flatten_dict_list(dl) -> list:
         1D list
     """
     if len(dl) == 1:
-        if type(dl[0]) == list:
+        if isinstance(dl[0], list):
             result = flatten_dict_list(dl[0])
         else:
             result = dl
-    elif type(dl[0]) == list:
+    elif isinstance(dl[0], list):
         result = flatten_dict_list(dl[0]) + flatten_dict_list(dl[1:])
     else:
         result = [dl[0]] + flatten_dict_list(dl[1:])
@@ -315,7 +314,7 @@ class VirtualSourceData(object):
         """
         return self.vss
 
-    def get_as_list(self) -> list[float]:
+    def get_as_list(self) -> list:
         """ multi-level dict is flattened, good for testing
 
         Returns:
@@ -323,7 +322,7 @@ class VirtualSourceData(object):
         """
         return flatten_dict_list(self.vss)
 
-    def export_for_sysfs(self) -> list[int]:
+    def export_for_sysfs(self) -> list:
         """ prepares virtsource settings for PRU core (a lot of unit-conversions)
 
         The current emulator in PRU relies on the virtsource settings.
@@ -500,8 +499,8 @@ class ShepherdIO(object):
             self._set_shepherd_pcb_power(True)
             self.set_target_io_level_conv(False)
             # select Target A as main target for current-monitored power and IO
-            self.select_main_target_for_power(True)
-            self.select_main_target_for_io(True)
+            #self.select_main_target_for_power(True)  TODO: is done in emulator
+            #self.select_main_target_for_io(True)
 
             logger.debug("Shepherd hardware is powered")
 
@@ -657,7 +656,7 @@ class ShepherdIO(object):
             # Target A is Default
             sel_target_a = True
         target = "A" if sel_target_a else "B"
-        logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
+        logger.debug(f"Set routing for supply with current-monitor to target {target}")
         self.gpios["target_pwr_sel"].write(sel_target_a)
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
@@ -672,7 +671,7 @@ class ShepherdIO(object):
             # Target A is Default
             sel_target_a = True
         target = "A" if sel_target_a else "B"
-        logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
+        logger.debug(f"Set routing for IO to Target {target}")
         self.gpios["target_io_sel"].write(sel_target_a)
 
     def set_target_io_level_conv(self, state: bool) -> NoReturn:
@@ -689,7 +688,7 @@ class ShepherdIO(object):
         if state is None:
             state = False
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Setting target-io level converter to {state_str}")
+        logger.debug(f"Set target-io level converter to {state_str}")
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
@@ -704,7 +703,7 @@ class ShepherdIO(object):
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        logger.debug(f"Setting Voltage of auxiliary Target to {voltage}")
+        logger.debug(f"Set voltage of auxiliary Target to {voltage}")
         sysfs_interface.write_dac_aux_voltage(cal_settings, voltage)
 
     @staticmethod
@@ -756,7 +755,7 @@ class ShepherdIO(object):
             index (int): Index of the buffer. 0 <= index < n_buffers
         """
 
-        logger.debug(f"Releasing buffer #{ index } to PRU")
+        logger.debug(f"return buffer #{ index } to PRU")
         self._send_msg(commons.MSG_DEP_BUF_FROM_HOST, index)
 
     def get_buffer(self, timeout: float = 1.0) -> NoReturn:

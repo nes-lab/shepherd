@@ -44,7 +44,7 @@ def data_h5(tmp_path):
 def log_writer(tmp_path):
     calib = CalibrationData.from_default()
     with LogWriter(
-        force=True,
+        force_overwrite=True,
         store_path=tmp_path / "test.h5",
         mode="emulation",
         calibration_data=calib,
@@ -92,16 +92,16 @@ def test_emulation(log_writer, log_reader, emulator):
     emulator.start(wait_blocking=False)
     emulator.wait_for_start(15)
     for hrvst_buf in log_reader.read_buffers(start=64):
-        idx, load_buf = emulator.get_buffer(timeout=1)
-        log_writer.write_buffer(load_buf)
-        emulator.put_buffer(idx, hrvst_buf)
+        idx, emu_buf = emulator.get_buffer(timeout=1)
+        log_writer.write_buffer(emu_buf)
+        emulator.return_buffer(idx, hrvst_buf)
 
     for _ in range(64):
-        idx, load_buf = emulator.get_buffer(timeout=1)
-        log_writer.write_buffer(load_buf)
+        idx, emu_buf = emulator.get_buffer(timeout=1)
+        log_writer.write_buffer(emu_buf)
 
     with pytest.raises(ShepherdIOException):
-        idx, load_buf = emulator.get_buffer(timeout=1)
+        idx, emu_buf = emulator.get_buffer(timeout=1)
 
 
 @pytest.mark.hardware
@@ -110,16 +110,16 @@ def test_virtsource_emulation(log_writer, log_reader, virtsource_emulator):
     virtsource_emulator.start(wait_blocking=False)
     virtsource_emulator.wait_for_start(15)
     for hrvst_buf in log_reader.read_buffers(start=64):
-        idx, load_buf = virtsource_emulator.get_buffer(timeout=1)
-        log_writer.write_buffer(load_buf)
-        virtsource_emulator.put_buffer(idx, hrvst_buf)
+        idx, emu_buf = virtsource_emulator.get_buffer(timeout=1)
+        log_writer.write_buffer(emu_buf)
+        virtsource_emulator.return_buffer(idx, hrvst_buf)
 
     for _ in range(64):
-        idx, load_buf = virtsource_emulator.get_buffer(timeout=1)
-        log_writer.write_buffer(load_buf)
+        idx, emu_buf = virtsource_emulator.get_buffer(timeout=1)
+        log_writer.write_buffer(emu_buf)
 
     with pytest.raises(ShepherdIOException):
-        idx, load_buf = virtsource_emulator.get_buffer(timeout=1)
+        idx, emu_buf = virtsource_emulator.get_buffer(timeout=1)
 
 
 @pytest.mark.hardware
@@ -139,9 +139,9 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         aux_target_voltage=2.5,
     )
 
-    with h5py.File(d, "r+") as hf_load, h5py.File(data_h5) as hf_hrvst:
+    with h5py.File(d, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
         assert (
-            hf_load["data"]["time"].shape[0]
+            hf_emu["data"]["time"].shape[0]
             == hf_hrvst["data"]["time"].shape[0]
         )
-        assert hf_load["data"]["time"][0] == start_time * 10**9
+        assert hf_emu["data"]["time"][0] == start_time * 10**9

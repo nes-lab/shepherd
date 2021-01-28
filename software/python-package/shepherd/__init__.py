@@ -19,14 +19,16 @@ from contextlib import ExitStack
 import invoke
 import signal
 
+from shepherd.shepherd_io import ShepherdIO
+from shepherd.shepherd_io import VirtualSourceData
+from shepherd.shepherd_io import ShepherdIOException
 from shepherd.datalog import LogReader
 from shepherd.datalog import LogWriter
 from shepherd.datalog import ExceptionRecord
 from shepherd.eeprom import EEPROM
 from shepherd.eeprom import CapeData
-from shepherd.calibration import CalibrationData, cal_channel_list
-from shepherd.shepherd_io import ShepherdIOException, VirtualSourceData
-from shepherd.shepherd_io import ShepherdIO
+from shepherd.calibration import CalibrationData
+from shepherd.calibration import cal_channel_list
 from shepherd import commons
 from shepherd import sysfs_interface
 
@@ -56,7 +58,8 @@ class Recorder(ShepherdIO):
 
         # Give the PRU empty buffers to begin with
         for i in range(self.n_buffers):
-            time.sleep(float(self.buffer_period_ns) / 1e9)
+            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
+            # TODO: why is it throttled?, rpmsg gets checked every 10us, test faster
             self.return_buffer(i)
             logger.debug(f"sent empty buffer {i}")
 
@@ -133,12 +136,13 @@ class Emulator(ShepherdIO):
 
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
-            time.sleep(float(self.buffer_period_ns) / 1e9)
-            self.put_buffer(idx, buffer)
+            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
+            # TODO: why is it throttled?, rpmsg gets checked every 10us, test faster
+            self.return_buffer(idx, buffer)
 
         return self
 
-    def put_buffer(self, index, buffer):
+    def return_buffer(self, index, buffer):
 
         ts_start = time.time()
 
@@ -180,7 +184,7 @@ class ShepherdDebug(ShepherdIO):
 
         Args:
             channel (str): Specifies the channel to read from, e.g., 'v_in' for
-                harvesting voltage or 'i_out' for load current
+                harvesting voltage or 'i_out' for current
         Returns:
             Binary ADC value read from corresponding channel
         """
@@ -232,8 +236,7 @@ def record(
     Args:
         output_path (Path): Path of hdf5 file where IV measurements should be
             stored
-        mode (str): 'harvesting' for recording harvesting data, 'load' for
-            recording load consumption data.
+        mode (str): 'harvesting' for recording harvesting data
         duration (float): Maximum time duration of emulation in seconds
         force_overwrite (bool): True to overwrite existing file under output path,
             False to store under different name
@@ -271,7 +274,7 @@ def record(
 
     recorder = Recorder(mode=mode)
     log_writer = LogWriter(
-        store_path=store_path, calibration_data=calib, mode=mode, force=force_overwrite
+        store_path=store_path, calibration_data=calib, mode=mode, force_overwrite=force_overwrite
     )
     with ExitStack() as stack:
 
@@ -338,7 +341,7 @@ def emulate(
     Args:
         input_path (Path): path of hdf5 file containing recorded
             harvesting data
-        output_path (Path): Path of hdf5 file where load measurements should
+        output_path (Path): Path of hdf5 file where power measurements should
             be stored
         duration (float): Maximum time duration of emulation in seconds
         force_overwrite (bool): True to overwrite existing file under output,
@@ -383,10 +386,17 @@ def emulate(
 
         log_writer = LogWriter(
             store_path=store_path,
-            force=force_overwrite,
+            force_overwrite=force_overwrite,
             mode="emulation",
             calibration_data=calib,
         )
+
+    if input_path is str:
+        input_path = Path(input_path)
+    if input_path is None:
+        raise ValueError("No Input-File configured for emulation")
+    if not input_path.exists():
+        raise ValueError("Input-File does not exist")
 
     log_reader = LogReader(input_path, 10_000)
 
@@ -430,7 +440,7 @@ def emulate(
 
         for hrvst_buf in log_reader.read_buffers(start=64):
             try:
-                idx, load_buf = emu.get_buffer(timeout=1)
+                idx, emu_buf = emu.get_buffer(timeout=1)
             except ShepherdIOException as e:
                 logger.error(
                     f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
@@ -443,8 +453,8 @@ def emulate(
                     raise
 
             if output_path is not None:
-                log_writer.write_buffer(load_buf)
-            emu.put_buffer(idx, hrvst_buf)
+                log_writer.write_buffer(emu_buf)
+            emu.return_buffer(idx, hrvst_buf)
 
             if time.time() > ts_end:
                 break
@@ -452,9 +462,9 @@ def emulate(
         # Read all remaining buffers from PRU
         while True:
             try:
-                idx, load_buf = emu.get_buffer(timeout=1)
+                idx, emu_buf = emu.get_buffer(timeout=1)
                 if output_path is not None:
-                    log_writer.write_buffer(load_buf)
+                    log_writer.write_buffer(emu_buf)
             except ShepherdIOException as e:
                 # We're done when the PRU has processed all emulation data buffers
                 if e.id == commons.MSG_DEP_ERR_NOFREEBUF:

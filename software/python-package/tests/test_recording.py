@@ -21,7 +21,7 @@ def log_writer(tmp_path, mode):
     with LogWriter(
         mode=mode,
         calibration_data=calib,
-        force=True,
+        force_overwrite=True,
         store_path=tmp_path / "test.h5",
     ) as lw:
         yield lw

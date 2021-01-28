@@ -55,7 +55,7 @@ class LogWriter(object):
             values. We need calibration data in order to convert to physical
             units later.
         mode (str): Indicates if this is data from recording or emulation
-        force (bool): Overwrite existing file with the same name
+        force_overwrite (bool): Overwrite existing file with the same name
         samples_per_buffer (int): Number of samples contained in a single
             shepherd buffer
         buffer_period_ns (int): Duration of a single shepherd buffer in
@@ -74,11 +74,11 @@ class LogWriter(object):
         store_path: Path,
         calibration_data: CalibrationData,
         mode: str = "harvesting",
-        force: bool = False,
+        force_overwrite: bool = False,
         samples_per_buffer: int = 10_000,
         buffer_period_ns: int = 100_000_000,
     ):
-        if force or not store_path.exists():
+        if force_overwrite or not store_path.exists():
             self.store_path = store_path
         else:
             base_dir = store_path.resolve().parents[0]
@@ -103,14 +103,14 @@ class LogWriter(object):
         setup this structure, i.e. creating the right groups with corresponding
         data types. We will store 3 types of data in a LogWriter database: The
         actual IV samples recorded either from the harvester (during recording)
-        or the load (during emulation). Any log messages, that can be used to
+        or the target (during emulation). Any log messages, that can be used to
         store relevant events or tag some parts of the recorded data. And lastly
         the state of the GPIO pins.
 
         """
         self._h5file = h5py.File(self.store_path, "w")
 
-        # Store the mode in order to allow user to differentiate harvesting vs load data
+        # Store the mode in order to allow user to differentiate harvesting vs emulation data
         self._h5file.attrs.__setitem__("mode", self.mode)
 
         # Store voltage and current samples in the data group

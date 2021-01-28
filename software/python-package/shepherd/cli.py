@@ -45,7 +45,7 @@ logger.addHandler(consoleHandler)
 # TODO: --length -l is now --duration -d -> correct docs
 # TODO: --virtsource replaces vcap
 # TODO: the options get repeated all the time, is it possible to define them upfront and just include them where needed?
-
+# TODO: ditch sudo, add user to allow sys_fs-access and other things
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
     logger.info(f"reading config from {file_path}")
@@ -110,14 +110,14 @@ def run(command, parameters: Dict, verbose):
         raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with alpha-version of click-lib)")
 
     if command == "record":
-        if "output" in parameters.keys():
-            parameters["output"] = Path(parameters["output"])
+        if "output_path" in parameters.keys():
+            parameters["output_path"] = Path(parameters["output_path"])
         run_record(**parameters)
     elif command == "emulate":
         if "output" in parameters.keys():
-            parameters["output"] = Path(parameters["output"])
+            parameters["output_path"] = Path(parameters["output_path"])
         if "input" in parameters.keys():
-            parameters["input"] = Path(parameters["input"])
+            parameters["input_path"] = Path(parameters["input_path"])
         run_emulate(**parameters)
     else:
         raise click.BadParameter(f"command {command} not supported")
@@ -144,13 +144,13 @@ def record(
     warn_only,
 ):
     run_record(
-        Path(output),
-        mode,
-        duration,
-        force,
-        no_calib,
-        start_time,
-        warn_only,
+        output_path=Path(output),
+        mode=mode,
+        duration=duration,
+        force_overwrite=force,
+        no_calib=no_calib,
+        start_time=start_time,
+        warn_only=warn_only,
     )
 
 
@@ -159,7 +159,7 @@ def record(
 )
 @click.argument("input", type=click.Path(exists=True))
 @click.option("--output", "-o", type=click.Path(),
-              help="Dir or file path for storing the load consumption data")
+              help="Dir or file path for storing the power consumption data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
@@ -195,18 +195,18 @@ def emulate(
         pl_store = Path(output)
 
     run_emulate(
-        input,
-        pl_store,
-        duration,
-        force,
-        no_calib,
-        start_time,
-        enable_target_io,
-        sel_target_a_for_io,
-        sel_target_a_for_pwr,
-        aux_target_voltage,
-        virtsource,
-        warn_only,
+        input_path=input,
+        output_path=pl_store,
+        duration=duration,
+        force_overwrite=force,
+        no_calib=no_calib,
+        start_time=start_time,
+        set_target_io_lvl_conv=enable_target_io,
+        sel_target_for_io=sel_target_a_for_io,
+        sel_target_for_pwr=sel_target_a_for_pwr,
+        aux_target_voltage=aux_target_voltage,
+        settings_virtsource=virtsource,
+        warn_only=warn_only,
     )
 
 
