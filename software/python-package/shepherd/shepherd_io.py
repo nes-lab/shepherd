@@ -45,6 +45,26 @@ gpio_pin_nums = {
 prev_timestamp = 0
 
 
+def flatten_dict_list(dl) -> list:
+    """ small helper FN to convert (multi-dimensional) dicts or lists to 1D list
+
+    Args:
+        dl: (multi-dimensional) dicts or lists
+    Returns:
+        1D list
+    """
+    if len(dl) == 1:
+        if type(dl[0]) == list:
+            result = flatten_dict_list(dl[0])
+        else:
+            result = dl
+    elif type(dl[0]) == list:
+        result = flatten_dict_list(dl[0]) + flatten_dict_list(dl[1:])
+    else:
+        result = [dl[0]] + flatten_dict_list(dl[1:])
+    return result
+
+
 class ShepherdIOException(Exception):
     def __init__(self, message: str, id: int = 0, value: int = 0):
         super().__init__(message)
@@ -295,7 +315,7 @@ class VirtualSourceData(object):
         """
         return self.vss
 
-    def get_as_list(self) -> list:
+    def get_as_list(self) -> list[float]:
         """ multi-level dict is flattened, good for testing
 
         Returns:
@@ -303,7 +323,7 @@ class VirtualSourceData(object):
         """
         return self._flatten_dict_list(self.vss)
 
-    def export_for_sysfs(self) -> list:
+    def export_for_sysfs(self) -> list[int]:
         """ prepares virtsource settings for PRU core (a lot of unit-conversions)
 
         The current emulator in PRU relies on the virtsource settings.
@@ -377,7 +397,7 @@ class VirtualSourceData(object):
 
     def check_and_complete(self) -> NoReturn:
         """ checks virtual-source-settings for present values, adds default values to missing ones, checks limits
-
+        TODO: fill with values from real BQ-IC
         """
         self._check_num("converter_mode", 100, 4e9)
 
@@ -404,21 +424,9 @@ class VirtualSourceData(object):
         self._check_num("dV_store_en_mV", 0, 4e6)
         self._check_num("dV_store_low_mV", 0, 4e6)
 
-        # Look up tables
-        self._check_list("LUT_inp_efficiency_n8", 12 * 12 * [128], 255)
+        # Look up tables, TODO: test if order in PRU-2d-array is maintained,
+        self._check_list("LUT_inp_efficiency_n8", 12 * [12 * [128]], 255)
         self._check_list("LUT_output_efficiency_n8", 12 * [200], 255)
-
-    def _flatten_dict_list(self, dl):
-        if len(dl) == 1:
-            if type(dl[0]) == list:
-                result = self._flatten_dict_list(dl[0])
-            else:
-                result = dl
-        elif type(dl[0]) == list:
-            result = self._flatten_dict_list(dl[0]) + self._flatten_dict_list(dl[1:])
-        else:
-            result = [dl[0]] + self._flatten_dict_list(dl[1:])
-        return result
 
     def _check_num(self, setting_key: str, default: float, max_value: float = None) -> NoReturn:
         try:
@@ -433,8 +441,9 @@ class VirtualSourceData(object):
         self.vss[setting_key] = set_value
 
     def _check_list(self, settings_key: str, default: list, max_value: float = 255) -> NoReturn:
+        default = flatten_dict_list(default)
         try:
-            values = self._flatten_dict_list(self.vss[settings_key])
+            values = flatten_dict_list(self.vss[settings_key])
         except KeyError:
             values = default
             logger.warning(f"[virtSource] Setting {settings_key} was not provided, will be set to default = {values[0]}")
@@ -680,72 +689,43 @@ class ShepherdIO(object):
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
-    def set_aux_target_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
+    def set_aux_target_voltage(cal_settings: CalibrationData, voltage: float) -> NoReturn:
         """ Enables or disables the voltage for the second target
 
         The shepherd cape has two DAC-Channels that each serve as power supply for a target
 
         Args:
-            calibration_settings: dict, TODO: should it be a class-variable?
-            voltage_V (float): Desired output voltage in volt. Providing 0 or
+            cal_settings: CalibrationData, TODO: should it be a class-variable?
+            voltage (float): Desired output voltage in volt. Providing 0 or
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        if voltage_V is False:
-            voltage_V = 0.0
-        if voltage_V is True:
-            # set value > 16bit and therefore link both adc-channels
-            sysfs_interface.write_dac_aux_voltage(2 ** 20 - 1)
-            return
-
-        if voltage_V < 0.0:
-            logger.warning(f"sending voltage with negative value: {voltage_V}")
-        if voltage_V > 5.0:
-            logger.warning(f"sending voltage above recommended limit of 5V: {voltage_V}")
-
-        if calibration_settings is None:
-            output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
-        else:
-            output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage_V)
-
-        # TODO: currently only an assumption that it is for emulation, could also be for harvesting
-        # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
-        logger.debug(f"Setting Voltage of auxiliary Target to {voltage_V}")
-        sysfs_interface.write_dac_aux_voltage(output)
+        logger.debug(f"Setting Voltage of auxiliary Target to {voltage}")
+        sysfs_interface.write_dac_aux_voltage(cal_settings, voltage)
 
     @staticmethod
-    def get_aux_voltage(calibration_settings: CalibrationData) -> float:
-        """ Sends the auxiliary voltage (dac channel B) to the PRU core.
+    def get_aux_voltage(cal_settings: CalibrationData) -> float:
+        """ Reads the auxiliary voltage (dac channel B) from the PRU core.
 
         Args:
-            calibration_settings: dict with offset/gain
+            cal_settings: dict with offset/gain
 
         Returns:
+            aux voltage
         """
-        value_raw = sysfs_interface.read_dac_aux_voltage()
-        if calibration_settings is None:
-            voltage = calibration_default.dac_ch_a_raw_to_voltage(value_raw)
-        else:
-            voltage = calibration_settings.convert_raw_to_value("emulation", "dac_voltage_b", value_raw)
-        return voltage
+        return sysfs_interface.read_dac_aux_voltage(cal_settings)
 
     @staticmethod
-    def send_calibration_settings(calibration_settings: CalibrationData) -> NoReturn:
+    def send_calibration_settings(cal_settings: CalibrationData) -> NoReturn:
         """Sends calibration settings to PRU core
 
         For virtcap it is required to have the calibration settings.
 
         Args:
-            calibration_settings (CalibrationData): Contains the device's
+            cal_settings (CalibrationData): Contains the device's
             calibration settings.
         """
-        # TODO: this could be more general and only supply the gain/offset-dict to the sysfs
-        sysfs_interface.write_calibration_settings(
-            int(1e9 * (2 ** 8) * calibration_settings["emulation"]["adc_current"]["gain"]),
-            int(1e9 * calibration_settings["emulation"]["adc_current"]["offset"]),
-            int(1e6 * (2 ** 20) / calibration_settings["emulation"]["dac_voltage_a"]["gain"]),
-            int(1e6 * calibration_settings["emulation"]["dac_voltage_a"]["offset"])
-        )
+        sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
 
     def send_virtsource_settings(self, vs_settings: VirtualSourceData) -> NoReturn:
         """ Sends virtsource settings to PRU core
@@ -756,7 +736,7 @@ class ShepherdIO(object):
         """
         if vs_settings is None:
             vs_settings = VirtualSourceData()
-        if vs_settings is dict:
+        if isinstance(vs_settings, dict):
             vs_settings = VirtualSourceData(vs_settings)
         values = vs_settings.export_for_sysfs()
         sysfs_interface.write_virtsource_settings(values)

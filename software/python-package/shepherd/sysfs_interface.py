@@ -18,6 +18,8 @@ import struct
 from pathlib import Path
 from typing import NoReturn
 
+from shepherd import CalibrationData, calibration_default
+
 logger = logging.getLogger(__name__)
 sysfs_path = Path("/sys/shepherd")
 
@@ -113,7 +115,7 @@ def write_mode(mode: str) -> NoReturn:
     Args:
         mode (str): Target mode. Must be one of harvesting, load, emulation
     """
-    if mode not in ["harvesting", "load", "emulation", "virtcap", "debug"]:
+    if mode not in ["harvesting", "harvesting (test)", "emulation", "emulation (test)", "debug"]:  # TODO: what is with "None"? should be centralized
         raise SysfsInterfaceException("invalid value for mode")
     if get_state() != "idle":
         raise SysfsInterfaceException(
@@ -125,7 +127,35 @@ def write_mode(mode: str) -> NoReturn:
         f.write(mode)
 
 
-def write_dac_aux_voltage(voltage_raw: int) -> NoReturn:
+def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
+    """ Sends the auxiliary voltage (dac channel B) to the PRU core.
+
+    Args:
+        voltage_V: desired voltage in volt
+    """
+    if voltage_V is False:
+        voltage_V = 0.0
+    if voltage_V is True:
+        # set value > 16bit and therefore link both adc-channels
+        write_dac_aux_voltage_raw(2 ** 20 - 1)
+        return
+
+    if voltage_V < 0.0:
+        logger.warning(f"sending voltage with negative value: {voltage_V}")
+    if voltage_V > 5.0:
+        logger.warning(f"sending voltage above recommended limit of 5V: {voltage_V}")
+
+    if calibration_settings is None:
+        output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
+    else:
+        output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage_V)
+
+    # TODO: currently only an assumption that it is for emulation, could also be for harvesting
+    # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
+    write_dac_aux_voltage_raw(output)
+
+
+def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
     """ Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
@@ -136,8 +166,25 @@ def write_dac_aux_voltage(voltage_raw: int) -> NoReturn:
         f.write(str(voltage_raw))
 
 
-def read_dac_aux_voltage() -> int:
-    """ Reds the auxiliary voltage (dac channel B) to the PRU core.
+def read_dac_aux_voltage(cal_settings: CalibrationData) -> float:
+    """ Reads the auxiliary voltage (dac channel B) from the PRU core.
+
+    Args:
+        cal_settings: dict with offset/gain
+
+    Returns:
+        aux voltage
+    """
+    value_raw = read_dac_aux_voltage_raw()
+    if cal_settings is None:
+        voltage = calibration_default.dac_ch_a_raw_to_voltage(value_raw)
+    else:
+        voltage = cal_settings.convert_raw_to_value("emulation", "dac_voltage_b", value_raw)
+    return voltage
+
+
+def read_dac_aux_voltage_raw() -> int:
+    """ Reads the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
 
@@ -150,26 +197,25 @@ def read_dac_aux_voltage() -> int:
     return int_settings[0]
 
 
-def write_calibration_settings(adc_current_gain: int, adc_current_offset: int,
-                               dac_voltage_gain: int, dac_voltage_offset: int) -> NoReturn:
+def write_calibration_settings(cal_pru: dict[str, int]) -> NoReturn:
     """Sends the calibration settings to the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    if adc_current_gain < 0:
-        logger.warning(f"sending calibration with negative ADC-gain: {adc_current_gain}")
-    if dac_voltage_gain < 0:
-        logger.warning(f"sending calibration with negative DAC-gain: {adc_current_gain}")
+    if cal_pru['adc_gain'] < 0:
+        logger.warning(f"sending calibration with negative ADC-gain: {cal_pru['adc_gain']}")
+    if cal_pru['dac_gain'] < 0:
+        logger.warning(f"sending calibration with negative DAC-gain: {cal_pru['dac_gain']}")
 
     with open(str(sysfs_path / "calibration_settings"), "w") as f:
-        output = f"{adc_current_gain} {adc_current_offset} \n" \
-                 f"{dac_voltage_gain} {dac_voltage_offset}"
+        output = f"{cal_pru['adc_gain']} {cal_pru['adc_offset']} \n" \
+                 f"{cal_pru['dac_gain']} {cal_pru['dac_offset']}"
         logger.debug(f"Sending calibration settings: {output}")
         f.write(output)
 
 
-def read_calibration_settings() -> tuple[int, int, int, int]:
+def read_calibration_settings() -> dict[str, int]:
     """Retrieve the calibration settings from the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -179,7 +225,9 @@ def read_calibration_settings() -> tuple[int, int, int, int]:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
-    return int_settings[0], int_settings[1], int_settings[2], int_settings[3]
+    cal_pru = {"adc_gain": int_settings[0], "adc_offset": int_settings[1],
+               "dac_gain": int_settings[2], "dac_offset": int_settings[3]}
+    return cal_pru
 
 
 def write_virtsource_settings(settings: list) -> NoReturn:
@@ -200,7 +248,7 @@ def write_virtsource_settings(settings: list) -> NoReturn:
         file.write(output + " \n")
 
 
-def read_virtsource_settings() -> str:
+def read_virtsource_settings() -> list[int]:
     """Retreive the virtcap settings to the PRU core.
 
     The virtcap algorithm uses these settings to configure emulation.
@@ -208,8 +256,8 @@ def read_virtsource_settings() -> str:
     """
     with open(str(sysfs_path / "virtcap_settings"), "r") as f:
         settings = f.read().rstrip()
-
-    return settings
+    int_settings = [int(x) for x in settings.split()]
+    return int_settings
 
 
 def make_attr_getter(name: str, path: str, attr_type: type):
