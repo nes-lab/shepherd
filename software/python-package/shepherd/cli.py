@@ -42,6 +42,10 @@ consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
+# TODO: --length -l is now --duration -d -> correct docs
+# TODO: --virtsource replaces vcap
+# TODO: the options get repeated all the time, is it possible to define them upfront and just include them where needed?
+
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
     logger.info(f"reading config from {file_path}")
