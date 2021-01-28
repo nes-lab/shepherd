@@ -321,7 +321,7 @@ class VirtualSourceData(object):
         Returns:
             1D-Content
         """
-        return self._flatten_dict_list(self.vss)
+        return flatten_dict_list(self.vss)
 
     def export_for_sysfs(self) -> list[int]:
         """ prepares virtsource settings for PRU core (a lot of unit-conversions)
@@ -650,9 +650,12 @@ class ShepherdIO(object):
         Args:
             sel_target_a: True to select A, False for B
         """
-        # TODO: make sure that switching is NOT done when running
+        current_state = sysfs_interface.get_state()
+        if current_state != "idle":
+            raise ShepherdIOException(f"Can't switch target-power when shepherd is {current_state}")
         if sel_target_a is None:
-            sel_target_a = False
+            # Target A is Default
+            sel_target_a = True
         target = "A" if sel_target_a else "B"
         logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
         self.gpios["target_pwr_sel"].write(sel_target_a)
@@ -666,7 +669,8 @@ class ShepherdIO(object):
             sel_target_a: True to select A, False for B
         """
         if sel_target_a is None:
-            sel_target_a = False
+            # Target A is Default
+            sel_target_a = True
         target = "A" if sel_target_a else "B"
         logger.debug(f"Setting Power-Routing for supply with current-monitor to Target {target}")
         self.gpios["target_io_sel"].write(sel_target_a)

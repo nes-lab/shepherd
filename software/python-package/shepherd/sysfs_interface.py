@@ -141,9 +141,9 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
         return
 
     if voltage_V < 0.0:
-        logger.warning(f"sending voltage with negative value: {voltage_V}")
+        raise SysfsInterfaceException(f"sending voltage with negative value: {voltage_V}")
     if voltage_V > 5.0:
-        logger.warning(f"sending voltage above recommended limit of 5V: {voltage_V}")
+        raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage_V}")
 
     if calibration_settings is None:
         output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
@@ -161,6 +161,8 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
     Args:
         voltage_raw: desired voltage in volt
     """
+    if voltage_raw >= (2**16):
+        raise SysfsInterfaceException(f"sending raw-voltage above possible limit of 16bit-value")
     with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "w") as f:
         logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
         f.write(str(voltage_raw))
@@ -204,9 +206,9 @@ def write_calibration_settings(cal_pru: dict[str, int]) -> NoReturn:
 
     """
     if cal_pru['adc_gain'] < 0:
-        logger.warning(f"sending calibration with negative ADC-gain: {cal_pru['adc_gain']}")
+        raise SysfsInterfaceException(f"sending calibration with negative ADC-gain: {cal_pru['adc_gain']}")
     if cal_pru['dac_gain'] < 0:
-        logger.warning(f"sending calibration with negative DAC-gain: {cal_pru['dac_gain']}")
+        raise SysfsInterfaceException(f"sending calibration with negative DAC-gain: {cal_pru['dac_gain']}")
 
     with open(str(sysfs_path / "calibration_settings"), "w") as f:
         output = f"{cal_pru['adc_gain']} {cal_pru['adc_offset']} \n" \
@@ -236,9 +238,9 @@ def write_virtsource_settings(settings: list) -> NoReturn:
     The virtual-source algorithm uses these settings to configure emulation.
 
     """
-    logger.debug(f"Writing virtcap to sysfs_interface, first value is {settings[0]}")
+    logger.debug(f"Writing virtsource to sysfs_interface, first value is {settings[0]}")
 
-    with open(str(sysfs_path / "virtcap_settings"), "w") as file:
+    with open(str(sysfs_path / "virtsource_settings"), "w") as file:
         for setting in settings:
             if len(setting) == 1:
                 output = str(setting)
@@ -254,7 +256,7 @@ def read_virtsource_settings() -> list[int]:
     The virtcap algorithm uses these settings to configure emulation.
 
     """
-    with open(str(sysfs_path / "virtcap_settings"), "r") as f:
+    with open(str(sysfs_path / "virtsource_settings"), "r") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings
