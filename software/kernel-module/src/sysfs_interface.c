@@ -293,8 +293,8 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 			return -EINVAL;
 
 		mode = MODE_HARVEST;
-	} else if (strncmp(buf, "harvesting (test)", 4) == 0) {
-		if ((count < 4) || (count > 5))
+	} else if (strncmp(buf, "harvesting (test)", 17) == 0) {
+		if ((count < 17) || (count > 18))
 			return -EINVAL;
 
 		mode = MODE_HARVEST_TEST;
@@ -303,8 +303,8 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 			return -EINVAL;
 
 		mode = MODE_EMULATE;
-	} else if (strncmp(buf, "emulation (test)", 7) == 0) {
-		if ((count < 7) || (count > 8))
+	} else if (strncmp(buf, "emulation (test)", 16) == 0) {
+		if ((count < 16) || (count > 17))
 			return -EINVAL;
 
 		mode = MODE_EMULATE_TEST;
@@ -360,7 +360,8 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 
 	if (sscanf(buf,"%u %d %u %d",
 	        &tmp.adc_current_factor_nA_n8, &tmp.adc_current_offset_nA,
-	        &tmp.dac_voltage_inv_factor_uV_n20, &tmp.dac_voltage_offset_uV) == 4) {
+	        &tmp.dac_voltage_inv_factor_uV_n20, &tmp.dac_voltage_offset_uV) == 4)
+	{
 		printk(KERN_INFO
 		       "shprd: Setting ADC-Current calibration settings. Current gain: %d, current offset: %d\n",
 		       tmp.adc_current_factor_nA_n8, tmp.adc_current_offset_nA);
@@ -370,7 +371,7 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 		       tmp.dac_voltage_inv_factor_uV_n20, tmp.dac_voltage_offset_uV);
 
 		writel(tmp.adc_current_factor_nA_n8,
-		       pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
 		writel(tmp.adc_current_offset_nA,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
 		writel(tmp.dac_voltage_inv_factor_uV_n20,
@@ -392,7 +393,7 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj,
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 	return sprintf(
 		buf, "%u %d \n%u %d \n",
-		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset),
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12));
@@ -406,9 +407,8 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
     const uint32_t out_lut_size = LUT_SIZE * 4u;
     const uint32_t non_lut_size = sizeof(struct VirtSource_Config) - inp_lut_size - out_lut_size;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
-    void __iomem * base_address = 0u;
+    uint32_t mem_offset = 0u;
 	int buf_pos = 0;
-    int value_length;
 	uint32_t i = 0u;
 
 	if (pru_comm_get_state() != STATE_IDLE)
@@ -417,38 +417,37 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
 	/* u32 beginning of struct */
-	base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset;
+    mem_offset = kobj_attr_wrapped->val_offset;
 	for (i = 0; i < non_lut_size; i += 4)
 	{
-		uint32_t value_found;
-		int ret = sscanf(&buffer[buf_pos],"%u%n",&value_found,&value_length);
+		uint32_t value_retrieved, value_length;
+		int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved,&value_length);
         buf_pos += value_length;
 		if (ret != 1) return -EINVAL;
-		writel(value_found, base_address + i);
+		writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
 	}
 
     /* u8 input LUT */
-    base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset + non_lut_size;
+    mem_offset = kobj_attr_wrapped->val_offset + non_lut_size;
     for (i = 0; i < inp_lut_size; i += 1)
     {
-        uint32_t value_found;
-        int ret = sscanf(&buffer[buf_pos],"%u%n",&value_found,&value_length);
+        uint32_t value_retrieved, value_length;
+        int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved,&value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
-        if (value_found > 255) printk(KERN_WARNING "shprd: virtSource-Parsing got a u8-value out of bound\n");
-        writeb((uint8_t)value_found, base_address + i);
-
+        if (value_retrieved > 255) printk(KERN_WARNING "shprd: virtSource-Parsing got a u8-value out of bound\n");
+        writeb((uint8_t)value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
     /* u32 output LUT */
-    base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
+    mem_offset = kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
     for (i = 0; i < out_lut_size; i += 4)
     {
-        uint32_t value_found;
-        int ret = sscanf(&buffer[buf_pos],"%u%n",&value_found,&value_length);
+        uint32_t value_retrieved, value_length;
+        int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved,&value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
-        writel(value_found, base_address + i);
+        writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
 	return count;
@@ -461,32 +460,32 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
     const uint32_t out_lut_size = LUT_SIZE * 4u;
     const uint32_t non_lut_size = sizeof(struct VirtSource_Config) - inp_lut_size - out_lut_size;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
-    void __iomem * base_address = 0u;
+    uint32_t mem_offset = 0u;
     uint32_t i = 0u;
     int count = 0;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
     /* u32 beginning of struct */
-    base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset;
+    mem_offset = kobj_attr_wrapped->val_offset;
     for (i = 0; i < non_lut_size; i += 4)
     {
-        count += sprintf(buf + strlen(buf),"%u \n", readl(base_address + i));
+        count += sprintf(buf + strlen(buf),"%u \n", readl(pru_shared_mem_io + mem_offset + i));
     }
 
     /* u8 input LUT */
-    base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset + non_lut_size;
+    mem_offset = kobj_attr_wrapped->val_offset + non_lut_size;
     for (i = 0; i < inp_lut_size; i += 1)
     {
-        count += sprintf(buf + strlen(buf),"%u ", readb(base_address + i));
+        count += sprintf(buf + strlen(buf),"%u ", readb(pru_shared_mem_io + mem_offset + i));
     }
     count += sprintf(buf + strlen(buf),"\n");
 
     /* u32 output LUT */
-    base_address = pru_shared_mem_io + kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
+    mem_offset = kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
     for (i = 0; i < out_lut_size; i += 4)
     {
-        count += sprintf(buf + strlen(buf),"%u ", readl(base_address + i));
+        count += sprintf(buf + strlen(buf),"%u ", readl(pru_shared_mem_io + mem_offset + i));
     }
     count += sprintf(buf + strlen(buf),"\n");
 
