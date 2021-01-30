@@ -190,7 +190,6 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	int64_t ns_iep_to_wrap;
 	int32_t clock_corr;
 	uint64_t ns_per_tick;
-    int64_t diff_timestamp;
 
 	/*
      * Based on the previous IEP timer period and the nominal timer period
@@ -220,7 +219,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	/* for plausibility-check, in case the sync-algo produces jumps */
 	if (prev_timestamp_ns > 0)
     {
-        diff_timestamp = div_s64(next_timestamp_ns - prev_timestamp_ns, 1000000u);
+        int64_t diff_timestamp = div_s64(next_timestamp_ns - prev_timestamp_ns, 1000000u);
         if (diff_timestamp < 0)
             printk(KERN_ERR "shprd: KMod = backwards timestamp-jump detected \n");
         else if (diff_timestamp < 95)
