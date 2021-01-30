@@ -220,13 +220,13 @@ void main(void)
 	shared_memory->analog_sample_counter = 0;
 
 	shared_memory->calibration_settings = (struct Calibration_Config){
-		.adc_current_factor_nA_n8=256, .adc_current_offset_nA=0,
-		.dac_voltage_inv_factor_uV_n20=256, .dac_voltage_offset_uV=0};
+		.adc_current_factor_nA_n8=256u, .adc_current_offset_nA=0,
+		.dac_voltage_inv_factor_uV_n20=256u, .dac_voltage_offset_uV=0};
 
-	shared_memory->virtsource_settings = (struct VirtSource_Config){ 0 };  // TODO: this should initialize all fields to 0
+	//shared_memory->virtsource_settings = (struct VirtSource_Config){ 0 };  // TODO: this should initialize all fields to 0, deactivated for now, could have killed the pru
 
-	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0, .msg_unread=0, .ticks_iep=0, .old_period=0};
-	shared_memory->ctrl_rep = (struct CtrlRepMsg){.identifier=0, .msg_unread=0, .clock_corr=0, .next_timestamp_ns=0};
+	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u, .old_period=0u};
+	shared_memory->ctrl_rep = (struct CtrlRepMsg){.identifier=0u, .msg_unread=0u, .clock_corr=0, .next_timestamp_ns=0u};
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
 	 * are used to transfer the actual data between us and the Linux host.
@@ -249,7 +249,7 @@ void main(void)
 #endif
 
 reset:
-	 ring_init(&free_buffers);
+	ring_init(&free_buffers);
 
 	GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 	sample_init(shared_memory);

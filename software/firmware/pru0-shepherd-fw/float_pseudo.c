@@ -180,7 +180,7 @@ ufloat mul(ufloat num1, ufloat num2)
 	uint8_t lezec1 = get_left_zero_count(num1.value);
 	uint8_t lezec2 = get_left_zero_count(num2.value);
 	num1.shift += num2.shift;
-	while ((lezec1 + lezec2) < 32u)  // TODO: runs not optimal, but ok for a prototype
+	while ((lezec1 + lezec2) < 32)  // TODO: runs not optimal, but ok for a prototype
 	{
 		num1.shift += 4;
 		if (lezec1 < lezec2)

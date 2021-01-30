@@ -257,7 +257,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 	GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
 	GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-	const enum ShepherdMode mode = shared_mem->shepherd_mode;
+	const enum ShepherdMode mode = (enum ShepherdMode)shared_mem->shepherd_mode;
 	const uint32_t dac_ch_a_voltage_raw = shared_mem->dac_auxiliary_voltage_raw & 0xFFFF;
 
 	/* deactivate hw-units when not needed, initialize the other */
