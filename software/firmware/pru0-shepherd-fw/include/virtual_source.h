@@ -8,6 +8,8 @@
 void vsource_init(volatile const struct VirtSource_Config *vsc_arg, volatile const struct Calibration_Config *cal_arg);
 uint32_t vsource_update(uint32_t current_adc_raw, uint32_t input_current_nA, uint32_t input_voltage_uV);
 
+void vsource_struct_init(volatile struct VirtSource_Config * vsc_arg);
+
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC
  * - (optional) current-value in buffer is used as a limiter (power to target shuts down if it is drawing to much)

@@ -52,6 +52,41 @@ static struct VirtSource_Config vs_cfg;
 static struct Calibration_Config cal_cfg;
 #define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)
 
+void vsource_struct_init(volatile struct VirtSource_Config *const vsc_arg)
+{
+	/* this init is nonsense, but testable for byteorder and proper values */
+	uint32_t i32 = 0u;
+	vsc_arg->converter_mode = i32++;
+
+	vsc_arg->C_output_nF = i32++;
+	vsc_arg->V_inp_boost_threshold_uV = i32++;
+	vsc_arg->C_storage_nF = i32++;
+	vsc_arg->V_storage_init_uV = i32++;
+	vsc_arg->V_storage_max_uV = i32++;
+	vsc_arg->I_storage_leak_nA = i32++;
+	vsc_arg->V_storage_enable_threshold_uV = i32++;
+	vsc_arg->V_storage_disable_threshold_uV = i32++;
+	vsc_arg->interval_check_thresholds_ns = i32++;
+	vsc_arg->V_pwr_good_low_threshold_uV = i32++;
+	vsc_arg->V_pwr_good_high_threshold_uV = i32++;
+	vsc_arg->dV_stor_en_thrs_uV = i32++;
+
+	vsc_arg->V_output_uV = i32++;
+	vsc_arg->dV_stor_low_uV = i32++;
+
+	uint8_t i8A = 0u;
+	uint8_t i8B = 0u;
+	for (uint32_t inner = 0u; inner < LUT_SIZE; inner++)
+	{
+		for (uint32_t outer = 0u; outer < LUT_SIZE; outer++)
+		{
+			vsc_arg->LUT_inp_efficiency_n8[inner][outer] = i8A++;
+		}
+		vsc_arg->LUT_out_inv_efficiency_n10[inner] = i8B++;
+	}
+}
+
+
 void vsource_init(volatile const struct VirtSource_Config *const vsc_arg, volatile const struct Calibration_Config *const cal_arg)
 {
 	/* Initialize state */
