@@ -64,7 +64,7 @@ CFLAGS += --hardware_mac=on #               use Multiply and Accumulate Unit (no
 CFLAGS += --c99 #                           C-Standard
 CFLAGS += --float_operations_allowed=none # usage of FP results in compile-error
 CFLAGS += --fp_mode=relaxed
-#CFLAGS += --symdebug:none #                 debug symbols -> remove
+CFLAGS += --symdebug:none #                 debug symbols -> remove
 CFLAGS += --plain_char=unsigned    #        explicit define underlying datatype for char
 CFLAGS += --obj_directory=$(GEN_DIR)
 CFLAGS += --pp_directory=$(GEN_DIR)
