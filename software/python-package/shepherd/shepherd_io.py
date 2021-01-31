@@ -29,6 +29,7 @@ from periphery import GPIO
 from shepherd import sysfs_interface
 from shepherd import commons
 from shepherd.calibration import CalibrationData
+from shepherd.sysfs_interface import SysfsInterfaceException
 
 logger = logging.getLogger(__name__)
 
@@ -613,12 +614,15 @@ class ShepherdIO(object):
 
     def _cleanup(self):
 
-        try:
-            sysfs_interface.set_stop()
-        except Exception as e:
-            print(e)
-
-        sysfs_interface.wait_for_state("idle", 2.0)
+        while sysfs_interface.get_state() != "idle":
+            try:
+                sysfs_interface.set_stop()
+            except Exception as e:
+                print(e)
+            try:
+               sysfs_interface.wait_for_state("idle", 3.0)
+            except SysfsInterfaceException:
+                logger.warning("ExitRoutine - send stop-command and waiting for PRU to go to idle")
         self.set_aux_target_voltage(None, 0.0)
 
         if self.shared_mem is not None:

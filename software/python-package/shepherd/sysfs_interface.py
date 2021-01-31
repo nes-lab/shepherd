@@ -66,6 +66,7 @@ def wait_for_state(state: str, timeout: float) -> NoReturn:
                     f"state is { current_state }"
                 )
             )
+            # TODO: does it really need an exception?
         time.sleep(0.1)
 
 
