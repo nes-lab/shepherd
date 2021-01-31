@@ -22,7 +22,11 @@ from itertools import product
 from collections import defaultdict
 from collections import namedtuple
 
-from shepherd.calibration import CalibrationData, cal_channel_list, cal_parameter_list
+from shepherd.calibration import CalibrationData
+from shepherd.calibration import cal_channel_harvest_dict
+from shepherd.calibration import cal_channel_emulation_dict
+from shepherd.calibration import cal_parameter_list
+
 from shepherd.shepherd_io import DataBuffer
 from shepherd.shepherd_io import GPIOEdges
 
@@ -150,10 +154,9 @@ class LogWriter(object):
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
         # Refer to shepherd/calibration.py for the format of calibration data
-        cal_channels = ["adc_current","adc_voltage"] if self.mode is "harvesting" else ["adc_current", "dac_voltage_b"]
-        # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
-            cal_channel = cal_channels[0] if channel is "current" else cal_channels[1]
+            # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
+            cal_channel = cal_channel_harvest_dict[channel] if self.mode is "harvesting" else cal_channel_emulation_dict[channel]
             self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][cal_channel][parameter]
 
         # Create group for exception logs
@@ -305,7 +308,7 @@ class LogReader(object):
             logger.debug(
                 (
                     f"Reading datablock with {self.samples_per_buffer} samples "
-                    f"from netcdf took { time.time()-ts_start }"
+                    f"from netcdf took { round(1e3 * (time.time()-ts_start), 2) } ms"
                 )
             )
             yield db
@@ -317,10 +320,8 @@ class LogReader(object):
             Calibration data as CalibrationData object
         """
         nested_dict = lambda: defaultdict(nested_dict)
-        calib = nested_dict()
-        for var, attr in product(cal_channel_list, cal_parameter_list):
-
-            calib["harvesting"][var][attr] = self._h5file["data"][var].attrs[
-                attr
-            ]
+        calib = CalibrationData.from_default()
+        for channel, parameter in product(["current", "voltage"], cal_parameter_list):
+            cal_channel = cal_channel_harvest_dict[channel]
+            calib._data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(calib)
