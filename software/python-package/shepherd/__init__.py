@@ -96,7 +96,7 @@ class Emulator(ShepherdIO):
         sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
         aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
-        settings_virtsource (dict): Settings which define the behavior of virtcap emulation
+        settings_virtsource (dict): Settings which define the behavior of virtual source emulation
     """
 
     def __init__(self,

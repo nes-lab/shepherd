@@ -252,9 +252,9 @@ def write_virtsource_settings(settings: list) -> NoReturn:
 
 
 def read_virtsource_settings() -> list:
-    """Retreive the virtcap settings to the PRU core.
+    """Retreive the virtual source settings from the PRU core.
 
-    The virtcap algorithm uses these settings to configure emulation.
+    The virtsource algorithm uses these settings to configure emulation.
 
     """
     with open(str(sysfs_path / "virtsource_settings"), "r") as f:

@@ -368,7 +368,7 @@ class VirtualSourceData(object):
         """
         compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
         -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
-        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when VCap >= V_out
+        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when V_Cap >= V_out
 
         Math behind this calculation:
         Energy-Change Storage Cap   ->  E_new = E_old - E_output
@@ -722,7 +722,7 @@ class ShepherdIO(object):
     def send_calibration_settings(cal_settings: CalibrationData) -> NoReturn:
         """Sends calibration settings to PRU core
 
-        For virtcap it is required to have the calibration settings.
+        For the virtual source it is required to have the calibration settings.
 
         Args:
             cal_settings (CalibrationData): Contains the device's

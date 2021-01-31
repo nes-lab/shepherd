@@ -15,7 +15,7 @@ def virtsource_settings():
     name = "example_virtsource_settings.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
-        vs_dict = yaml.safe_load(config_data)["virtcap"]
+        vs_dict = yaml.safe_load(config_data)["virtsource"]
 
     vs_set = VirtualSourceData(vs_dict)
     vs_list = vs_set.export_for_sysfs()

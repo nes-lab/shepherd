@@ -27,7 +27,7 @@ from pathlib import Path
 import click_config_file
 from periphery import GPIO
 
-from shepherd import LogWriter
+from shepherd import LogWriter, sysfs_interface
 from shepherd import LogReader
 from shepherd import record as run_record
 from shepherd import emulate as run_emulate
@@ -43,7 +43,7 @@ logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
 # TODO: --length -l is now --duration -d -> correct docs
-# TODO: --virtsource replaces vcap
+# TODO: --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
 # TODO: the options get repeated all the time, is it possible to define them upfront and just include them where needed?
 # TODO: ditch sudo, add user to allow sys_fs-access and other things
 
@@ -73,19 +73,25 @@ def cli(ctx, verbose):
 @cli.command(short_help="Turns auxiliary target power supply on or off")
 @click.option("--on/--off", default=True)
 @click.option("--voltage", type=float, help="Aux-Target supply voltage")
-def aux_target_power(on: bool, voltage: float):
+@click.option("--aux_sel_target_a/--aux_sel_target_b", default=True,
+              help="Choose (main)Target that gets connected to virtual Source")
+def aux_target_power(on: bool, voltage: float, sel_target_for_aux: bool):
     if not voltage:
         voltage = 3.0
     else:
         if not on:
             raise click.UsageError(
-                "Can't set voltage, when LDO is switched off"
+                "Can't set voltage, when Shepherd is switched off"
             )
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
-    raise click.UsageError("this FN is currently not available")
-    # TODO: change to aux sys-fs, but it needs a shepherd_io(), and it needs to stay on
+    for pin_name in ["target_pwr_sel"]:
+        pin = GPIO(gpio_pin_nums[pin_name], "out")
+        pin.write(not sel_target_for_aux)
+    cal = CalibrationData.from_default()
+    sysfs_interface.write_dac_aux_voltage(cal, voltage)
+    # NOTE: this FN needs persistent IO, (old GPIO-Lib)
 
 
 @cli.command(

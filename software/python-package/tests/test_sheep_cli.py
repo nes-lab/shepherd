@@ -49,7 +49,7 @@ def test_record(shepherd_up, cli_runner, tmp_path):
     assert res.exit_code == 0
     assert store.exists()
 
-# TODO: activate when still used, currently not properly implemented
+# TODO: activate when still used, currently not properly implemented, (watch out for remaining LDO appearances)
 """ 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
@@ -165,7 +165,7 @@ def test_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, data_
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_virtcap_emulate_wrong_option(
+def test_virtsource_emulate_wrong_option(
     shepherd_up, cli_runner, tmp_path, data_h5
 ):
     here = Path(__file__).absolute()
@@ -179,7 +179,7 @@ def test_virtcap_emulate_wrong_option(
             "emulate",
             "-d",
             "10",
-            "--virtcap",
+            "--virtWrong",
             f"{str(file_path)}",
             "-o",
             f"{str(store)}",
