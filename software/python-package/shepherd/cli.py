@@ -128,9 +128,9 @@ def run(command, parameters: Dict, verbose):
             parameters["output_path"] = Path(parameters["output_path"])
         run_record(**parameters)
     elif command == "emulate":
-        if "output" in parameters.keys():
+        if "output_path" in parameters.keys():
             parameters["output_path"] = Path(parameters["output_path"])
-        if "input" in parameters.keys():
+        if "input_path" in parameters.keys():
             parameters["input_path"] = Path(parameters["input_path"])
         run_emulate(**parameters)
     else:
