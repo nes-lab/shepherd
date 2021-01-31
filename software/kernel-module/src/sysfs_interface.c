@@ -237,7 +237,7 @@ static ssize_t sysfs_state_store(struct kobject *kobj,
 		getnstimeofday(&ts_now);
 		if (tmp < ts_now.tv_sec + 1)
 			return -EINVAL;
-		printk(KERN_INFO "shprd: Setting ts_start to %d", tmp);
+		printk(KERN_INFO "shprd: Setting start-timestamp to %d", tmp);
 		pru_comm_set_state(STATE_ARMED);
 		pru_comm_schedule_delayed_start(tmp);
 		return count;
@@ -317,7 +317,7 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 		return -EINVAL;
 
 	writel(mode, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
-	printk(KERN_INFO "shprd: new mode: %d", mode);
+	printk(KERN_INFO "shprd: new mode = %d (%s)", mode, buf);
 	pru_comm_set_state(STATE_RESET);
 	return count;
 }
