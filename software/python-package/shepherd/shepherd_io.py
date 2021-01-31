@@ -162,7 +162,7 @@ class SharedMem(object):
             + commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
         )
 
-        logger.debug(f"Individual buffer size: { self.buffer_size }B")
+        logger.debug(f"Individual buffer size:\t{ self.buffer_size } byte")
 
     def __enter__(self):
         self.devmem_fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
@@ -524,18 +524,18 @@ class ShepherdIO(object):
             mem_size = sysfs_interface.get_mem_size()
 
             logger.debug(
-                f"Shared memory address: {mem_address:08X} size: {mem_size}"
+                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"
             )
 
             # Ask PRU for size of individual buffers
             samples_per_buffer = sysfs_interface.get_samples_per_buffer()
-            logger.debug(f"Samples per buffer: { samples_per_buffer }")
+            logger.debug(f"Samples per buffer: \t{ samples_per_buffer }")
 
             self.n_buffers = sysfs_interface.get_n_buffers()
-            logger.debug(f"Number of buffers: { self.n_buffers }")
+            logger.debug(f"Number of buffers: \t{ self.n_buffers }")
 
             self.buffer_period_ns = sysfs_interface.get_buffer_period_ns()
-            logger.debug(f"Buffer period: { self.buffer_period_ns }ns")
+            logger.debug(f"Buffer period: \t\t{ self.buffer_period_ns } ns")
 
             self.shared_mem = SharedMem(
                 mem_address, mem_size, self.n_buffers, samples_per_buffer
@@ -597,7 +597,7 @@ class ShepherdIO(object):
             start_time (int): Desired start time in unix time
             wait_blocking (bool): If true, block until start has completed
         """
-        logger.debug(f"asking kernel module for start at {start_time}")
+        logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
         sysfs_interface.set_start(int(start_time))
         if wait_blocking:
             self.wait_for_start(1_000_000)
@@ -618,17 +618,18 @@ class ShepherdIO(object):
         except Exception as e:
             print(e)
 
+        sysfs_interface.wait_for_state("idle", 2.0)
+        self.set_aux_target_voltage(None, 0.0)
+
         if self.shared_mem is not None:
             self.shared_mem.__exit__()
 
         if self.rpmsg_fd is not None:
             os.close(self.rpmsg_fd)
 
-        self.set_aux_target_voltage(None, 0.0)
-
         self.set_target_io_level_conv(False)
         self._set_shepherd_pcb_power(False)
-        logger.debug("Shepherd is powered down")
+        logger.debug("Shepherd hardware is powered down")
 
     def _set_shepherd_pcb_power(self, state: bool) -> NoReturn:
         """ Controls state of power supplies on shepherd cape.

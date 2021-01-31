@@ -58,7 +58,7 @@ class Recorder(ShepherdIO):
 
         # Give the PRU empty buffers to begin with
         for i in range(self.n_buffers):
-            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
+            time.sleep(0.3 * float(self.buffer_period_ns) / 1e9)
             # TODO: why is it throttled?, rpmsg gets checked every 10us, test faster
             self.return_buffer(i)
             logger.debug(f"sent empty buffer {i}")
@@ -136,7 +136,7 @@ class Emulator(ShepherdIO):
 
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
-            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
+            time.sleep(0.5 * float(self.buffer_period_ns) / 1e9)
             # TODO: why is it throttled?, rpmsg gets checked every 10us, test faster
             self.return_buffer(idx, buffer)
 

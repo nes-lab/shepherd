@@ -95,7 +95,7 @@ def set_start(start_time: int = None) -> NoReturn:
 
 
 def set_stop() -> NoReturn:
-    """Stops shepherd.
+    """ Stops shepherd.
 
     Writes 'stop' to the 'state' sysfs attribute in order to transition from
     any state to 'idle'.
@@ -111,7 +111,7 @@ def set_stop() -> NoReturn:
 
 
 def write_mode(mode: str) -> NoReturn:
-    """Sets the shepherd mode.
+    """ Sets the shepherd mode.
 
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
     attribute.
