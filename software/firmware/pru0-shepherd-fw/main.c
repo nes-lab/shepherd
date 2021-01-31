@@ -65,6 +65,15 @@ static uint32_t handle_block_end(volatile struct SharedMem *const shared_mem, st
 		next_buffer->timestamp_ns = shared_mem->next_timestamp_ns;
 		shared_mem->gpio_edges = &next_buffer->gpio_edges;
 		shared_mem->gpio_edges->idx = 0;
+
+		if (shared_mem->next_timestamp_ns == 0)
+		{
+			/* debug-output for a wrong timestamp */
+			GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			GPIO_TOGGLE(DEBUG_PIN0_MASK);
+			GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			GPIO_TOGGLE(DEBUG_PIN0_MASK);
+		}
 	} else {
 		next_buffer_idx = NO_BUFFER;
 		shared_mem->gpio_edges = NULL;

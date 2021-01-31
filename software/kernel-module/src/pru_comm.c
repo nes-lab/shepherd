@@ -154,7 +154,7 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
     ctrl_reply->msg_unread = 0u;
     memcpy_toio(pru_shared_mem_io + offset_msg, ctrl_reply, sizeof(struct CtrlRepMsg));
 
-    /* activate message */
+    /* activate message with unread-token */
     writeb(1u, pru_shared_mem_io + offset_unread);
     return status;
 }
