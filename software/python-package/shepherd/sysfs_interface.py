@@ -214,6 +214,7 @@ def write_calibration_settings(cal_pru: dict) -> NoReturn:  # more precise dict[
         raise SysfsInterfaceException(f"sending calibration with negative ADC-gain: {cal_pru['adc_gain']}")
     if cal_pru['dac_gain'] < 0:
         raise SysfsInterfaceException(f"sending calibration with negative DAC-gain: {cal_pru['dac_gain']}")
+    wait_for_state("idle", 3.0)
 
     with open(str(sysfs_path / "calibration_settings"), "w") as f:
         output = f"{cal_pru['adc_gain']} {cal_pru['adc_offset']} \n" \
@@ -245,14 +246,20 @@ def write_virtsource_settings(settings: list) -> NoReturn:
     """
     logger.debug(f"Writing virtsource to sysfs_interface, first value is {settings[0]}")
 
+    output = str("")
+    for setting in settings:
+        if isinstance(setting, int):
+            output += f"{setting} \n"
+        elif isinstance(setting, list):
+            setting = [str(i) for i in setting]
+            output += " ".join(setting) + " \n"
+        else:
+            raise SysfsInterfaceException(f"virtSource value {setting} has wrong type ({type(setting)})")
+
+    wait_for_state("idle", 3.0)
+
     with open(str(sysfs_path / "virtsource_settings"), "w") as file:
-        for setting in settings:
-            if len(setting) == 1:
-                output = str(setting)
-            else:
-                setting = [str(i) for i in setting]
-                output = " ".join(setting)
-        file.write(output + " \n")
+        file.write(output)
 
 
 def read_virtsource_settings() -> list:
