@@ -63,7 +63,7 @@
 #define SIZE_CARVEOUT	(RING_SIZE * sizeof(struct SampleBuffer))
 
 // pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= 64 * (8 + 4 + 2*10000*4 + 4 + 8*16384 + 2*16384))];
+extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= 64 * (8 + 4 + 2*4*10000 + 4 + 8*16384 + 2*16384))];
 
 /* Mapping sysevts to a channel. Each pair contains a sysevt, channel. */
 struct ch_map pru_intc_map[] = {

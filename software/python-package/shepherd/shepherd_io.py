@@ -151,17 +151,18 @@ class SharedMem(object):
 
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
-            # Header: 8B timestamp + 4B size
-            12
-            # Actual IV data, 4B for each current and voltage
+            # Header: 64 bit timestamp + 32 bit counter
+            8 + 4 +
+            # Actual IV data, 32 bit for each current and voltage
             + 2 * 4 * self.samples_per_buffer
             # GPIO edge count
             + 4
-            # 8B timestamp per GPIO event
+            # 64 bit timestamp per GPIO event
             + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-            # 1B GPIO state per GPIO event
-            + commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
-        )
+            # 16 bit GPIO state per GPIO event
+            + 2 * commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
+        )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
+        # TODO: put number in shared-mem
 
         logger.debug(f"Individual buffer size:\t{ self.buffer_size } byte")
 
