@@ -150,8 +150,11 @@ class LogWriter(object):
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
         # Refer to shepherd/calibration.py for the format of calibration data
-        for variable, attr in product(cal_channel_list, cal_parameter_list):
-            self.data_grp[variable].attrs[attr] = self.calibration_data[self.mode][variable][attr]
+        cal_channels = ["adc_current","adc_voltage"] if self.mode is "harvesting" else ["adc_current", "dac_voltage_b"]
+        # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
+        for channel, parameter in product(["current", "voltage"], cal_parameter_list):
+            cal_channel = cal_channels[0] if channel is "current" else cal_channels[1]
+            self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][cal_channel][parameter]
 
         # Create group for exception logs
         self.log_grp = self._h5file.create_group("log")
