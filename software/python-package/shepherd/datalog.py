@@ -209,30 +209,30 @@ class LogWriter(object):
         """
 
         # First, we have to resize the corresponding datasets
-        current_length = self.data_grp["time"].shape[0]
-        new_length = current_length + len(buffer)
+        old_set_length = self.data_grp["time"].shape[0]
+        new_set_length = old_set_length + len(buffer)
 
-        self.data_grp["time"].resize((new_length,))
-        self.data_grp["time"][current_length:] = (
+        self.data_grp["time"].resize((new_set_length,))
+        self.data_grp["time"][old_set_length:] = (
             buffer.timestamp_ns
             + self.sampling_interval * np.arange(len(buffer))
         )
 
         for variable in ["voltage", "current"]:
-            self.data_grp[variable].resize((new_length,))
-            self.data_grp[variable][current_length:] = getattr(buffer, variable)
+            self.data_grp[variable].resize((new_set_length,))
+            self.data_grp[variable][old_set_length:] = getattr(buffer, variable)
 
         if len(buffer.gpio_edges) > 0:
-            gpio_current_length = self.gpio_grp["time"].shape[0]
-            gpio_new_length = gpio_current_length + len(buffer.gpio_edges)
+            gpio_old_set_length = self.gpio_grp["time"].shape[0]
+            gpio_new_set_length = gpio_old_set_length + len(buffer.gpio_edges)
 
-            self.gpio_grp["time"].resize((gpio_new_length,))
-            self.gpio_grp["value"].resize((gpio_new_length,))
+            self.gpio_grp["time"].resize((gpio_new_set_length,))
+            self.gpio_grp["value"].resize((gpio_new_set_length,))
             self.gpio_grp["time"][
-                gpio_current_length:
+                gpio_old_set_length:
             ] = buffer.gpio_edges.timestamps_ns
             self.gpio_grp["value"][
-                gpio_current_length:
+                gpio_old_set_length:
             ] = buffer.gpio_edges.values
 
     def write_exception(self, exception: ExceptionRecord) -> NoReturn:
@@ -241,13 +241,13 @@ class LogWriter(object):
         Args:
             exception (ExceptionRecord): The exception to be logged
         """
-        current_length = self.log_grp["time"].shape[0]
-        self.log_grp["time"].resize((current_length + 1,))
-        self.log_grp["time"][current_length] = exception.timestamp
-        self.log_grp["value"].resize((current_length + 1,))
-        self.log_grp["value"][current_length] = exception.value
-        self.log_grp["message"].resize((current_length + 1,))
-        self.log_grp["message"][current_length] = exception.message
+        dataset_length = self.log_grp["time"].shape[0]
+        self.log_grp["time"].resize((dataset_length + 1,))
+        self.log_grp["time"][dataset_length] = exception.timestamp
+        self.log_grp["value"].resize((dataset_length + 1,))
+        self.log_grp["value"][dataset_length] = exception.value
+        self.log_grp["message"].resize((dataset_length + 1,))
+        self.log_grp["message"][dataset_length] = exception.message
 
     def __setitem__(self, key, item):
         """Offer a convenient interface to store any relevant key-value data"""

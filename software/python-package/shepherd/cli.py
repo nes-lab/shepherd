@@ -58,7 +58,15 @@ def yamlprovider(file_path: str, cmd_name) -> Dict:
 @click.option("-v", "--verbose", count=True, default=1)
 @click.pass_context
 def cli(ctx, verbose):
-    "Shepherd: Synchronized Energy Harvesting Emulator and Recorder"
+    """ Shepherd: Synchronized Energy Harvesting Emulator and Recorder
+
+    Args:
+        ctx:
+        verbose:
+
+    Returns:
+
+    """
 
     if verbose == 0:
         logger.setLevel(logging.ERROR)
@@ -132,8 +140,8 @@ def run(command, parameters: Dict, verbose):
 @cli.command(short_help="Record data")
 @click.option("--output", "-o", type=click.Path(), default="/var/shepherd/recordings",
     help="Dir or file path for resulting hdf5 file",)
-@click.option("--mode", type=click.Choice(["harvesting", "harvest_test"]), default="harvesting",
-    help="Record 'harvesting' or 'harvest_test_function' data")
+@click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
+    help="Record 'harvesting' or 'harvesting_test'-function data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")

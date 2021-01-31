@@ -29,6 +29,9 @@ class SysfsInterfaceException(Exception):
     pass
 
 
+# TODO: what is with "None"?
+shepherd_modes = ["harvesting", "harvesting_test", "emulation", "emulation_test", "debug"]
+
 attribs = {
     "mode": {"path": "mode", "type": str},
     "state": {"path": "state", "type": str},
@@ -116,7 +119,7 @@ def write_mode(mode: str) -> NoReturn:
     Args:
         mode (str): Target mode. Must be one of harvesting, emulation or debug
     """
-    if mode not in ["harvesting", "harvesting (test)", "emulation", "emulation (test)", "debug"]:  # TODO: what is with "None"? should be centralized
+    if mode not in shepherd_modes:
         raise SysfsInterfaceException("invalid value for mode")
     if get_state() != "idle":
         raise SysfsInterfaceException(

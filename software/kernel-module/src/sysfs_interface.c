@@ -259,11 +259,11 @@ static ssize_t sysfs_mode_show(struct kobject *kobj,
 	case MODE_HARVEST:
 		return sprintf(buf, "harvesting");
 	case MODE_HARVEST_TEST:
-		return sprintf(buf, "harvesting (test)");
+		return sprintf(buf, "harvesting_test");
 	case MODE_EMULATE:
 		return sprintf(buf, "emulation");
 	case MODE_EMULATE_TEST:
-		return sprintf(buf, "emulation (test)"); // TODO: adapt modes to pru-changes
+		return sprintf(buf, "emulation_test"); // TODO: adapt modes to pru-changes
 	case MODE_DEBUG:
 		return sprintf(buf, "debug");
     case MODE_NONE:
@@ -293,8 +293,8 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 			return -EINVAL;
 
 		mode = MODE_HARVEST;
-	} else if (strncmp(buf, "harvesting (test)", 17) == 0) {
-		if ((count < 17) || (count > 18))
+	} else if (strncmp(buf, "harvesting_test", 15) == 0) {
+		if ((count < 15) || (count > 16))
 			return -EINVAL;
 
 		mode = MODE_HARVEST_TEST;
@@ -303,8 +303,8 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 			return -EINVAL;
 
 		mode = MODE_EMULATE;
-	} else if (strncmp(buf, "emulation (test)", 16) == 0) {
-		if ((count < 16) || (count > 17))
+	} else if (strncmp(buf, "emulation_test", 14) == 0) {
+		if ((count < 14) || (count > 15))
 			return -EINVAL;
 
 		mode = MODE_EMULATE_TEST;

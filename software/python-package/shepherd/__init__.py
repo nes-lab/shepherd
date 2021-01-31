@@ -46,7 +46,7 @@ class Recorder(ShepherdIO):
     with kernel module and PRUs.
 
     Args:
-        mode (str): Should be 'harvesting' to record harvesting data TODO: extend with sweep, mppt,
+        mode (str): Should be 'harvesting' to record harvesting data TODO: extend with iv-curve-sweep, mppt,
         # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
     """
 
@@ -146,10 +146,10 @@ class Emulator(ShepherdIO):
 
         ts_start = time.time()
 
-        v_gain = 1e6 * self._cal_recording["harvest"]["voltage"]["gain"]
-        v_offset = 1e6 * self._cal_recording["harvest"]["voltage"]["offset"]
-        i_gain = 1e9 * self._cal_recording["harvest"]["current"]["gain"]
-        i_offset = 1e9 * self._cal_recording["harvest"]["current"]["offset"]
+        v_gain = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["gain"]
+        v_offset = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["offset"]
+        i_gain = 1e9 * self._cal_recording["harvesting"]["adc_current"]["gain"]
+        i_offset = 1e9 * self._cal_recording["harvesting"]["adc_current"]["offset"]
 
         # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
         voltage_transformed = (buffer.voltage * v_gain + v_offset).astype("u4")
@@ -336,11 +336,10 @@ def emulate(
         settings_virtsource: VirtualSourceData = None,
         warn_only: bool = False,
 ):
-    """Starts emulation.
+    """ Starts emulation.
 
     Args:
-        input_path (Path): path of hdf5 file containing recorded
-            harvesting data
+        input_path (Path): path of hdf5 file containing recorded harvesting data
         output_path (Path): Path of hdf5 file where power measurements should
             be stored
         duration (float): Maximum time duration of emulation in seconds

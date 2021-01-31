@@ -479,7 +479,7 @@ class ShepherdIO(object):
         """Initializes relevant variables.
 
         Args:
-            mode (str): Shepherd mode, one of 'harvesting', 'emulation', 'harvesting-test', 'emulation-test'
+            mode (str): Shepherd mode, see sysfs_interface for more
         """
 
         self.rpmsg_fd = None
@@ -520,11 +520,11 @@ class ShepherdIO(object):
 
             # Ask PRU for base address of shared mem (reserved with remoteproc)
             mem_address = sysfs_interface.get_mem_address()
-            # Ask PRU for length of shared memory (reserved with remoteproc)
+            # Ask PRU for size of shared memory (reserved with remoteproc)
             mem_size = sysfs_interface.get_mem_size()
 
             logger.debug(
-                f"Shared memory address: {mem_address:08X} length: {mem_size}"
+                f"Shared memory address: {mem_address:08X} size: {mem_size}"
             )
 
             # Ask PRU for size of individual buffers
