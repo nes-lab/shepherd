@@ -52,7 +52,7 @@ int pru_recvd(void *data, unsigned int len)
 		rpmsg_pru_send(&ctrl_rep, sizeof(struct CtrlRepMsg));
 		break;
 	default:
-		printk(KERN_INFO "shprd: PRU-RPMSG = %s\n", msg);
+		printk(KERN_INFO "shprd: PRU-RPMSG = %s [state=%d]\n", msg, pru_comm_get_state());
         reset_prev_timestamp(); /* not correct place, but there is no sync-restart-detection yet */
 	}
 	return 0;
