@@ -299,7 +299,7 @@ class VirtualSourceData(object):
             vs_settings: if omitted, the data is generated from default values
         """
         if vs_settings is None:
-            vs_settings = dict()
+            self.vss = dict()
         elif isinstance(vs_settings, VirtualSourceData):
             self.vss = vs_settings.vss
         elif isinstance(vs_settings, dict):
@@ -435,7 +435,7 @@ class VirtualSourceData(object):
         except KeyError:
             set_value = default
             logger.warning(f"[virtSource] Setting {setting_key} was not provided, will be set to default = {default}")
-        if (len(set_value) != 1) or (set_value < 0):
+        if not (isinstance(set_value, int) or isinstance(set_value, float)) or (set_value < 0):
             raise NotImplementedError(f"[virtSource] {setting_key} must a single positive number, but is '{set_value}'")
         if (max_value is not None) and (set_value > max_value):
             raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
@@ -500,9 +500,6 @@ class ShepherdIO(object):
 
             self._set_shepherd_pcb_power(True)
             self.set_target_io_level_conv(False)
-            # select Target A as main target for current-monitored power and IO
-            #self.select_main_target_for_power(True)  TODO: is done in emulator
-            #self.select_main_target_for_io(True)
 
             logger.debug("Shepherd hardware is powered")
 
@@ -623,7 +620,7 @@ class ShepherdIO(object):
             try:
                sysfs_interface.wait_for_state("idle", 3.0)
             except SysfsInterfaceException:
-                logger.warning("ExitRoutine - send stop-command and waiting for PRU to go to idle")
+                logger.warning("CleanupRoutine - send stop-command and waiting for PRU to go to idle")
         self.set_aux_target_voltage(None, 0.0)
 
         if self.shared_mem is not None:
@@ -662,7 +659,7 @@ class ShepherdIO(object):
             # Target A is Default
             sel_target_a = True
         target = "A" if sel_target_a else "B"
-        logger.debug(f"Set routing for supply with current-monitor to target {target}")
+        logger.debug(f"Set routing for (main) supply with current-monitor to target {target}")
         self.gpios["target_pwr_sel"].write(sel_target_a)
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
@@ -709,7 +706,7 @@ class ShepherdIO(object):
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        logger.debug(f"Set voltage of auxiliary Target to {voltage}")
+        logger.debug(f"Set voltage of supply for auxiliary Target to {voltage}")
         sysfs_interface.write_dac_aux_voltage(cal_settings, voltage)
 
     @staticmethod

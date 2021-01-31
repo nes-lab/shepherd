@@ -58,8 +58,7 @@ class Recorder(ShepherdIO):
 
         # Give the PRU empty buffers to begin with
         for i in range(self.n_buffers):
-            time.sleep(0.3 * float(self.buffer_period_ns) / 1e9)
-            # TODO: why is it throttled?, rpmsg gets checked every 10us, test faster
+            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
             self.return_buffer(i)
             logger.debug(f"sent empty buffer {i}")
 
@@ -122,22 +121,28 @@ class Emulator(ShepherdIO):
 
         self._cal_recording = calibration_recording
         self._cal_emulation = calibration_emulation
-        self.send_calibration_settings(calibration_emulation)
+        self._settings_virtsource = settings_virtsource
 
-        self.set_target_io_level_conv(set_target_io_lvl_conv)
-        self.select_main_target_for_io(sel_target_for_io)
-        self.select_main_target_for_power(sel_target_for_pwr)
-        self.set_aux_target_voltage(calibration_emulation, aux_target_voltage)
-
-        self.send_virtsource_settings(settings_virtsource)
+        self._set_target_io_lvl_conv = set_target_io_lvl_conv
+        self._sel_target_for_io = sel_target_for_io
+        self._sel_target_for_pwr = sel_target_for_pwr
+        self._aux_target_voltage = aux_target_voltage
 
     def __enter__(self):
         super().__enter__()
 
+        self.send_calibration_settings(self._cal_emulation)
+
+        self.set_target_io_level_conv(self._set_target_io_lvl_conv)
+        self.select_main_target_for_io(self._sel_target_for_io)
+        self.select_main_target_for_power(self._sel_target_for_pwr)
+        self.set_aux_target_voltage(self._cal_emulation, self._aux_target_voltage)
+
+        self.send_virtsource_settings(self._settings_virtsource)
+
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
-            time.sleep(0.5 * float(self.buffer_period_ns) / 1e9)
-            # TODO: why is it throttled?, rpmsg gets checked every 10us, test faster
+            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
             self.return_buffer(idx, buffer)
 
         return self
@@ -161,7 +166,7 @@ class Emulator(ShepherdIO):
         logger.debug(
             (
                 f"Returning buffer #{ index } to PRU took "
-                f"{ time.time()-ts_start }"
+                f"{ round(1e3 * (time.time()-ts_start), 2) } ms"
             )
         )
 

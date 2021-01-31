@@ -450,7 +450,7 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
         writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
-    printk(KERN_INFO "shprd: Setting new Virtual Source Config");
+    printk(KERN_INFO "shprd: Setting Virtual Source Config");
 
 	return count;
 }
