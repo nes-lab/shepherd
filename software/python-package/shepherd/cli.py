@@ -122,7 +122,7 @@ def run(command, parameters: Dict, verbose):
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with alpha-version of click-lib)")
-
+    # TODO: test input parameters before - crashes because of wrong lines are ugly
     if command == "record":
         if "output_path" in parameters.keys():
             parameters["output_path"] = Path(parameters["output_path"])
