@@ -262,7 +262,7 @@ void sample_init(volatile const struct SharedMem *const shared_mem)
 
 	/* deactivate hw-units when not needed, initialize the other */
 	const bool_ft use_harvester = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
-	const bool_ft use_emulator = (mode == MODE_HARVEST) || (mode == MODE_HARVEST_TEST) || (mode == MODE_DEBUG);
+	const bool_ft use_emulator = (mode == MODE_EMULATE) || (mode == MODE_EMULATE_TEST) || (mode == MODE_DEBUG);
 
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
