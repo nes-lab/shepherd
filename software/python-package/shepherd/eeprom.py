@@ -273,4 +273,9 @@ class EEPROM(object):
         data = self._read(
             calibration_data_format["offset"], calibration_data_format["size"]
         )
-        return CalibrationData.from_bytestr(data)
+        try:
+            cal = CalibrationData.from_bytestr(data)
+        except struct.error:
+            cal = CalibrationData.from_default()
+            logger.warning("EEPROM seems to have no usable data - will set calibration from default-values")
+        return cal
