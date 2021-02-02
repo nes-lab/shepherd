@@ -119,6 +119,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem,
 	if ((shared_mem->shepherd_state != STATE_RUNNING) ||
 	    (shared_mem->gpio_edges == NULL)) {
 		prev_gpio_status = 0x00;
+		shared_mem->gpio_pin_state = read_r31() & GPIO_MASK;
 		return;
 	}
 
@@ -250,7 +251,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			if (sync_state == WAIT_HOST_INT)    sync_state = REQUEST_PENDING;
 			else if (sync_state == IDLE)        sync_state = WAIT_IEP_WRAP;
 			else {
-				fault_handler(shared_mem->shepherd_state,"Wrong state at host interrupt");
+				fault_handler(shared_mem->shepherd_state,"Wrong sync-state at host interrupt");
 				return 0;
 			}
 			DEBUG_EVENT_STATE_0;
@@ -278,7 +279,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			if (sync_state == WAIT_IEP_WRAP)    sync_state = REQUEST_PENDING;
 			else if (sync_state == IDLE)        sync_state = WAIT_HOST_INT;
 			else {
-				fault_handler(shared_mem->shepherd_state, "Wrong state at timer wrap");
+				fault_handler(shared_mem->shepherd_state, "Wrong sync-state at timer wrap");
 				return 0;
 			}
 
