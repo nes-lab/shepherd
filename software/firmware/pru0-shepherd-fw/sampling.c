@@ -187,8 +187,10 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
 void sample_dbg_dac(const uint32_t value)
 {
-	dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_AB_ADDR | (value & 0xFFFF));
-	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | (value & 0xFFFF));
+	if (value & (1u << 20u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
+	if (value & (1u << 21u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
+	if (value & (1u << 22u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
+	if (value & (1u << 23u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
 }
 
 

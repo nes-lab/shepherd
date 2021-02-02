@@ -107,7 +107,7 @@ class Emulator(ShepherdIO):
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
                  aux_target_voltage: float = 0.0,
-                 settings_virtsource: VirtualSourceData = None):
+                 settings_virtsource: VirtualSourceData = None) -> object:
 
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
@@ -204,24 +204,52 @@ class ShepherdDebug(ShepherdIO):
 
         self._send_msg(commons.MSG_DEP_DBG_ADC, channel_no)
 
-        msg_type, value = self._get_msg()
+        msg_type, value = self._get_msg(3.0)
         if msg_type != commons.MSG_DEP_DBG_ADC:
             raise ShepherdIOException(
                 (
                     f"Expected msg type { commons.MSG_DEP_DBG_ADC } "
-                    f"got { msg_type }[{ value }]"
+                    f"got t{ msg_type } v{ value }"
                 )
             )
 
         return value
 
-    def dac_write(self, value: int):
+    def gpi_read(self) -> int:
+        """ issues a pru-read of the gpio-registers that monitor target-communication
+
+        Returns: an int with the corresponding bits set
+            #define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
+            #define TARGET_GPIO1            BIT_SHIFT(P8_46) // r31_01
+            #define TARGET_GPIO2            BIT_SHIFT(P8_43) // r31_02
+            #define TARGET_GPIO3            BIT_SHIFT(P8_44) // r31_03
+            #define TARGET_UART_TX          BIT_SHIFT(P8_41) // r31_04
+            #define TARGET_UART_RX          BIT_SHIFT(P8_42) // r31_05
+            #define TARGET_SWD_CLK          BIT_SHIFT(P8_39) // r31_06
+            #define TARGET_SWD_IO           BIT_SHIFT(P8_40) // r31_07
+            #define TARGET_BAT_OK           BIT_SHIFT(P8_27) // r31_08
+            #define TARGET_GPIO4            BIT_SHIFT(P8_29) // r31_09
+        """
+        self._send_msg(commons.MSG_DEP_DBG_GPI, 0)
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DEP_DBG_GPI:
+            raise ShepherdIOException(
+                    f"Expected msg type { commons.MSG_DEP_DBG_GPI } "
+                    f"got type { msg_type } val { value }"
+                    )
+        return value
+
+    def dac_write(self, channels: int, value: int):
         """Writes value to specified DAC channel, DAC8562
 
         Args:
+            channels: 4 lower bits of int-num control b0: harvest-ch-a, b1: harv-ch-b, b2: emulation-ch-a, b3: emu-ch-b
             value (int): 16 bit raw DAC value to be sent to corresponding channel
         """
-        self._send_msg(commons.MSG_DEP_DBG_DAC, value & ((1 << 16) - 1))
+        channels = (int(channels) & ((1 << 4) - 1)) << 20
+        value = int(value) & ((1 << 16) - 1)
+        message = channels | value
+        self._send_msg(commons.MSG_DEP_DBG_DAC, message)
 
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
