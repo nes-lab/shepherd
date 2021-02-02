@@ -28,6 +28,7 @@ adc_readwrite:
 adc_io_loop_head:
     loop adc_io_loop_end, r20 ; start hw-assisted loop (zero overhead)
     SUB r20, r20, 1 ; decrement shiftloop counter
+    NOP ; TODO: only temporary - due to trouble to receive data
     QBBC adc_io_mosi_clr, r15, r20
 adc_io_mosi_set:
     SET r30, r21, MOSI ; Set SCLK Low, MOSI high
@@ -38,6 +39,7 @@ adc_io_mosi_clr:
 adc_io_loop_mid:
     NOP
     NOP
+    NOP ; TODO: only temporary - due to trouble to receive data
     SET r30, r30, SCLK ; Set SCLK high
     QBBC adc_io_miso_clr, r31, MISO
 adc_io_miso_set:
@@ -62,9 +64,13 @@ adc_fastread:
 
 adc_readloop_head: ; 5 - 6 ticks, depending on input, TODO: 1 NOP to spare, 50 MHz would be possible
     loop adc_loop_end, r20 ; start hw-assisted loop (zero overhead)
+    NOP ; TODO: only temporary - due to trouble to receive data
+    NOP ; TODO: only temporary - due to trouble to receive data
     CLR r30, r30, SCLK ; Set SCLK low
     SUB r20, r20, 1 ; decrement shiftloop counter
     NOP
+    NOP ; TODO: only temporary - due to trouble to receive data
+    NOP ; TODO: only temporary - due to trouble to receive data
     SET r30, r30, SCLK ; Set SCLK High
     QBBC adc_loop_end, r31, MISO
 adc_miso_set:
