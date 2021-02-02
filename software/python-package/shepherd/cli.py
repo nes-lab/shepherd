@@ -363,5 +363,56 @@ def launcher(led, button):
         lnch.run()
 
 
+@cli.command(short_help="runs a series of routines to test all shepherd-functionality")
+def demo_functions():
+    adc_channels = [  # combination of debug channel name, cal_component, cal_channel
+        ("hrv_i_in", "harvesting", "adc_current"),
+        ("hrv_v_in", "harvesting", "adc_voltage"),
+        ("emu_i_out", "emulation", "adc_current"),]
+    dac_voltages = [0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.5, 5.0, 0.0, 5.0]
+    dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
+        [1, 0, "harvesting", "dac_voltage_a"],
+        [2, 4, "harvesting", "dac_voltage_b"],
+        [4, 8, "emulation", "dac_voltage_a"],
+        [8, 12, "emulation", "dac_voltage_b"],]
+    shepherd_io = ShepherdDebug()
+    shepherd_io.__enter__()
+    time.sleep(1)
+    logger.debug("Initialized shepherd debug interface")
+    cal = CalibrationData.from_default()
+    shepherd_io.set_target_io_level_conv(True)
+    shepherd_io.select_main_target_for_io(True)
+    shepherd_io.select_main_target_for_power(True)
+    shepherd_io.start()
+
+    try:
+        while True:
+
+            # TODO: set real GPIO, build class
+
+            dac_voltages_set = list([])
+            for c_index in range(len(dac_channels)):
+                dbg_ch, v_index, cal_comp, cal_ch = tuple(dac_channels[c_index])
+                # run through preset voltage-steps, each dac on it's own index
+                dac_voltages_set.append(dac_voltages[v_index])
+                voltage_raw = cal.convert_value_to_raw(cal_comp, cal_ch, dac_voltages[v_index])
+                shepherd_io.dac_write(dbg_ch, voltage_raw)
+                #print(f"Wrote DAC {dbg_ch} the value {voltage_raw}")
+                dac_channels[c_index][1] = (v_index + 1) if (v_index != len(dac_voltages) - 1) else 0
+
+            adc_voltages = list([])
+            for dbg_ch, cal_comp, cal_ch in adc_channels:
+                value_raw = shepherd_io.adc_read(dbg_ch)
+                print(f"Read ADC {dbg_ch} the value {value_raw} for {cal_comp}, {cal_ch}")
+                value_si = cal.convert_raw_to_value(cal_comp, cal_ch, value_raw) * 1e3
+                adc_voltages.append(round(value_si, 3))
+
+            gpi_state = shepherd_io.gpi_read()
+            print(f"DBG: DACs {dac_voltages_set}, \tADCs \t{adc_voltages}, \tGPIO {bin(gpi_state)}")
+            time.sleep(1.0)
+    except ValueError:
+        shepherd_io._cleanup()
+
+
 if __name__ == "__main__":
     cli()
