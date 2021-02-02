@@ -31,7 +31,8 @@ enum DEPMsgID {
 	MSG_DEP_ERR_NOFREEBUF = 5u,
 	MSG_DEP_DBG_PRINT = 6u,
 	MSG_DEP_DBG_ADC = 0xF0u,
-	MSG_DEP_DBG_DAC = 0xF1u
+	MSG_DEP_DBG_DAC = 0xF1u,
+	MSG_DEP_DBG_GPI = 0xF2u
 };
 
 /* Message IDs used in Synchronization Protocol between PRU1 and kernel module */
@@ -188,6 +189,8 @@ struct SharedMem {
 	uint64_t next_timestamp_ns;
 	/* Protects write access to below gpio_edges structure */
 	simple_mutex_t gpio_edges_mutex;
+	/* internal gpio-register from PRU1 (for PRU1, debug), only updated when not running */
+	uint32_t gpio_pin_state;
 	/**
 	* Pointer to gpio_edges structure in current buffer. Only PRU0 knows about
 	* which is the current buffer, but PRU1 is sampling GPIOs. Therefore PRU0

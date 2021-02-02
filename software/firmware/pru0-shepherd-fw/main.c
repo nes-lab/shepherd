@@ -87,7 +87,7 @@ static uint32_t handle_block_end(volatile struct SharedMem *const shared_mem, st
 // TODO: this system can also be replaced by shared-mem-msg-system, including the send_message() above
 // fn emits a 0 on error, 1 on success
 static bool_ft handle_rpmsg(struct RingBuffer *const free_buffers_ptr, const enum ShepherdMode mode,
-		 const enum ShepherdState state)
+		 const enum ShepherdState state, const uint32_t gpio_pin_state)
 {
 	struct DEPMsg msg_in;
 
@@ -110,6 +110,10 @@ static bool_ft handle_rpmsg(struct RingBuffer *const free_buffers_ptr, const enu
 
 		case MSG_DEP_DBG_DAC:
 			sample_dbg_dac(msg_in.value);
+			return 1U;
+
+		case MSG_DEP_DBG_GPI:
+			send_message(MSG_DEP_DBG_GPI, gpio_pin_state);
 			return 1U;
 
 		default:
@@ -189,8 +193,9 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			else {
 				//GPIO_ON(DEBUG_PIN0_MASK);
 				handle_rpmsg(free_buffers_ptr,
-				(enum ShepherdMode)shared_mem->shepherd_mode,
-				(enum ShepherdState)shared_mem->shepherd_state);
+					     (enum ShepherdMode)shared_mem->shepherd_mode,
+					     (enum ShepherdState)shared_mem->shepherd_state,
+					     shared_mem->gpio_pin_state);
                 		//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 
