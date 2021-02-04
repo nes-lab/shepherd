@@ -37,6 +37,7 @@ from shepherd import CapeData
 from shepherd import ShepherdDebug
 from shepherd.shepherd_io import gpio_pin_nums
 from shepherd.launcher import Launcher
+from shepherd.target_io import TargetIO
 
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd")
@@ -382,28 +383,36 @@ def demo_functions():
     cal = CalibrationData.from_default()
     shepherd_io.set_target_io_level_conv(True)
     shepherd_io.select_main_target_for_io(True)
-    shepherd_io.select_main_target_for_power(True)
+    shepherd_io.select_main_target_for_power(False)
     shepherd_io.start()
-
+    target_gpio = TargetIO()
+    index_gpio = 0
     try:
         while True:
 
-            # TODO: set real GPIO, build class
+            # set real GPIO
+            for index in range(target_gpio.pin_count):
+                target_gpio.one_high(index)
+                time.sleep(0.010)
 
+            # set DACs
             dac_voltages_set = list([])
             for c_index in range(len(dac_channels)):
                 dbg_ch, v_index, cal_comp, cal_ch = tuple(dac_channels[c_index])
                 # run through preset voltage-steps, each dac on it's own index
+                if dbg_ch == 1:
+                    v_index = len(dac_voltages) - 1
                 dac_voltages_set.append(dac_voltages[v_index])
                 voltage_raw = cal.convert_value_to_raw(cal_comp, cal_ch, dac_voltages[v_index])
                 shepherd_io.dac_write(dbg_ch, voltage_raw)
-                #print(f"Wrote DAC {dbg_ch} the value {voltage_raw}")
+                # print(f"Wrote DAC {dbg_ch} the value {voltage_raw}")
                 dac_channels[c_index][1] = (v_index + 1) if (v_index != len(dac_voltages) - 1) else 0
 
+            # read ADCs
             adc_voltages = list([])
             for dbg_ch, cal_comp, cal_ch in adc_channels:
                 value_raw = shepherd_io.adc_read(dbg_ch)
-                print(f"Read ADC {dbg_ch} the value {value_raw} for {cal_comp}, {cal_ch}")
+                # print(f"Read ADC {dbg_ch} the value {value_raw} for {cal_comp}, {cal_ch}")
                 value_si = cal.convert_raw_to_value(cal_comp, cal_ch, value_raw) * 1e3
                 adc_voltages.append(round(value_si, 3))
 
