@@ -656,7 +656,7 @@ class ShepherdIO(object):
         """
         current_state = sysfs_interface.get_state()
         if current_state != "idle":
-            raise ShepherdIOException(f"Can't switch target-power when shepherd is {current_state}")
+            raise ShepherdIOException(f"Can't switch target-power when shepherd-state is {current_state}")
         if sel_target_a is None:
             # Target A is Default
             sel_target_a = True

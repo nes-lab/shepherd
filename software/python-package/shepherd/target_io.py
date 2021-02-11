@@ -12,14 +12,14 @@ All IO is auto-directional, low-power, and good for several MBit
 """
 from periphery import GPIO
 
-target_pin_nums = {
+target_pin_nums = {  # pin-order from target-connector
     "gpio0": 26,
     "gpio1": 27,
     "gpio2": 46,
     "gpio3": 47,
     "gpio4": 61,
-    "uart_rx": 14,
     "uart_tx": 15,
+    "uart_rx": 14,
     "swd_clk": 5,
     "swd_io": 4,
 }
