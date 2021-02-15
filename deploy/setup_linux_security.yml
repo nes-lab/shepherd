@@ -25,7 +25,7 @@
       - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 1m'}
       - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 3'}
       - {regex: '^.*PermitRootLogin.*$', line: 'PermitRootLogin no'}
-      - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'}
+#      - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # TODO: disabled for debug
       - {regex: '^.*PermitEmptyPasswords.*$', line: 'PermitEmptyPasswords no'}
       - {regex: '^.*UsePAM.*$', line: 'UsePAM yes'}
       - {regex: '^.*PubkeyAuthentication.*$', line: 'PubkeyAuthentication yes'}
@@ -39,7 +39,7 @@
       - {regex: '^.*HostKeyAlgorithms.*$', line: 'HostKeyAlgorithms -ecda-sha2*,ecdsa-sha2*'}
       - {regex: '^.*Ciphers.*$', line: 'Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr'}
       - {regex: '^.*MACs.*$', line: 'MACs -umac-64*,hmac-sha1*,hmac-sha2-256,hmac-sha2-512,umac-128@open*'}
-
+    # TODO: x11Forwarding is twice in file, one yes and one no
 
   - name: CFG - Install custom SSDd-Banner for Login
     copy:
