@@ -38,6 +38,8 @@ static ufloat output_efficiency(uint32_t current);
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
 	/* Boost converter */
+	ufloat P_inp_pW;
+	ufloat P_out_pW;
 	ufloat dt_us_per_C_nF;
 	ufloat V_store_uV;
 	uint32_t interval_check_thrs_sample;
@@ -95,6 +97,9 @@ void vsource_init(volatile const struct VirtSource_Config *const vsc_arg, volati
 
 	/* Boost Reg */
 	vss.dt_us_per_C_nF = div((ufloat){.value=dt_us_const, .shift=0}, (ufloat){.value=vs_cfg.C_storage_nF, .shift=0});
+	/* Power-flow in and out of system */
+	vss.P_inp_pW = (ufloat){.value = 0, .shift = 0};
+	vss.P_out_pW = (ufloat){.value = 0, .shift = 0};
 	/* container for the stored energy: */
 	vss.V_store_uV = (ufloat){.value = vs_cfg.V_storage_init_uV, .shift = 0};
 
@@ -129,89 +134,73 @@ void vsource_init(volatile const struct VirtSource_Config *const vsc_arg, volati
 	// TODO: add tests for valid ranges
 }
 
-uint32_t vsource_update(const uint32_t current_adc_raw, const uint32_t input_current_nA,
-		       const uint32_t input_voltage_uV)
+// TODO: explain design goals and limitations... why does the code looks that way
+/* Math behind this Converter
+ * Individual drains / sources -> 	P_x = I_x * V_x * eta_x  (eta is efficiency)
+ * Power in and out of Converter -> 	P = P_in - P_out
+ * Current in storage cap -> 		I = P / V_cap
+ * voltage change for Cap -> 		dV = I * dt / C
+ * voltage of storage cap -> 		V += dV
+ *
+ */
+
+void vsource_calc_inp_power(const uint32_t input_current_nA, const uint32_t input_voltage_uV)
 {
-	// TODO: explain design goals and limitations... why does the code looks that way
-	/* Math behind this Converter
-	 * Individual drains / sources -> 	P_x = I_x * V_x * eta_x  (eta is efficiency)
-	 * Power in and out of Converter -> 	P = P_in - P_out
-	 * Current in storage cap -> 		I = P / V_cap
-	 * voltage change for Cap -> 		dV = I * dt / C
-	 * voltage of storage cap -> 		V += dV
-	 *
-	 */
-	static uint32_t part_switch = 1;
-	if (part_switch == 1)
-	{
-		part_switch = 2;
-		GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		/* BOOST, Calculate current flowing into the storage capacitor */
-
-		ufloat V_inp_uV = { .value = 0u, .shift = 0 };
-		/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
-		if (input_voltage_uV >= vs_cfg.V_inp_boost_threshold_uV)
-			V_inp_uV.value = input_voltage_uV;
-		/* limit input voltage when higher then voltage of storage cap, TODO: is this also in 65ms interval? */
-		if (compare_gt(V_inp_uV, vss.V_store_uV))
-			V_inp_uV = vss.V_store_uV;
-
-		const ufloat eta_inp = input_efficiency(input_voltage_uV, input_current_nA);
-		ufloat P_inp_pW;
-		P_inp_pW = mul(V_inp_uV, (ufloat){ .value = input_current_nA, .shift = 0 });
-		P_inp_pW = mul(P_inp_pW, eta_inp);
-		GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		return 1;
-	}
-	else if (part_switch == 2)
-	{
-		part_switch = 3;
-		GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		/* BUCK, Calculate current flowing out of the storage capacitor*/
-		const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-		const ufloat eta_inv_out = output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
-		const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vs_cfg.I_storage_leak_nA, .shift=0}); // TODO: re-enable
-		ufloat P_out_pW;
-		P_out_pW = mul(I_out_nA, vss.V_out_uV);
-		P_out_pW = mul(P_out_pW, eta_inv_out);
-		P_out_pW = add(P_out_pW, dP_leak_pW); // TODO: re-enable
-		GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		return 1;
-	}
-	else if (part_switch == 3)
-	{
-		ufloat P_inp_pW = {.value = 5, .shift = 0};
-		ufloat P_out_pW = {.value = 7, .shift = 3};
-		part_switch = 4;
-		GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		/* Sum up Power and calculate new Capacitor Voltage
-		 * NOTE: slightly more complex code due to uint -> the only downside to ufloat
-		 */
-		ufloat P_sum_pW; //
-		ufloat I_cStor_nA;
-		ufloat dV_cStor_uV;
-		if (compare_gt(P_inp_pW, P_out_pW))
-		{
-			P_sum_pW = sub(P_inp_pW, P_out_pW);
-			I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
-			dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
-			vss.V_store_uV = add(vss.V_store_uV, dV_cStor_uV);
-		}
-		else
-		{
-			P_sum_pW = sub(P_out_pW, P_inp_pW);
-			I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
-			dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
-			vss.V_store_uV = sub(vss.V_store_uV, dV_cStor_uV);
-		}
-
-		GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		return 1;
-	}
-
-	part_switch = 1;
+	/* BOOST, Calculate current flowing into the storage capacitor */
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	ufloat V_inp_uV = { .value = 0u, .shift = 0 };
+	/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
+	if (input_voltage_uV >= vs_cfg.V_inp_boost_threshold_uV)
+		V_inp_uV.value = input_voltage_uV;
+	/* limit input voltage when higher then voltage of storage cap, TODO: is this also in 65ms interval? */
+	if (compare_gt(V_inp_uV, vss.V_store_uV))
+		V_inp_uV = vss.V_store_uV;
 
+	const ufloat eta_inp = input_efficiency(input_voltage_uV, input_current_nA);
+	vss.P_inp_pW = mul(V_inp_uV, (ufloat){ .value = input_current_nA, .shift = 0 });
+	vss.P_inp_pW = mul(vss.P_inp_pW, eta_inp);
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+}
+
+void vsource_calc_out_power(const uint32_t current_adc_raw)
+{
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	/* BUCK, Calculate current flowing out of the storage capacitor*/
+	const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
+	const ufloat eta_inv_out = output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
+	const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vs_cfg.I_storage_leak_nA, .shift=0}); // TODO: re-enable
+	vss.P_out_pW = mul(I_out_nA, vss.V_out_uV);
+	vss.P_out_pW = mul(vss.P_out_pW, eta_inv_out);
+	vss.P_out_pW = add(vss.P_out_pW, dP_leak_pW); // TODO: re-enable
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+}
+
+void vsource_update_capacitor(void)
+{
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	/* Sum up Power and calculate new Capacitor Voltage
+	 * NOTE: slightly more complex code due to uint -> the only downside to ufloat
+	 */
+	ufloat P_sum_pW; //
+	ufloat I_cStor_nA;
+	ufloat dV_cStor_uV;
+	if (compare_gt(vss.P_inp_pW, vss.P_out_pW)) {
+		P_sum_pW = sub(vss.P_inp_pW, vss.P_out_pW);
+		I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
+		dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
+		vss.V_store_uV = add(vss.V_store_uV, dV_cStor_uV);
+	} else {
+		P_sum_pW = sub(vss.P_out_pW, vss.P_inp_pW);
+		I_cStor_nA = div(P_sum_pW, vss.V_store_uV);
+		dV_cStor_uV = mul(I_cStor_nA, vss.dt_us_per_C_nF);
+		vss.V_store_uV = sub(vss.V_store_uV, dV_cStor_uV);
+	}
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+}
+
+uint32_t vsource_update_buckboost(void)
+{
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
 	if (compare_gt(vss.V_store_uV, (ufloat){.value = vs_cfg.V_storage_max_uV, .shift = 0}))
 	{
@@ -295,4 +284,34 @@ static ufloat output_efficiency(const uint32_t current)
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
 	/* TODO: could interpolate here between 2 values, if there is space for overhead */
 	return (ufloat){.value = vs_cfg.LUT_out_inv_efficiency_n10[pos_c], .shift = -10};
+}
+
+void set_input_power_pW(const uint32_t P_pW)
+{
+	vss.P_inp_pW = (ufloat){.value = P_pW, .shift = 0};
+}
+
+void set_output_power_pW(const uint32_t P_pW)
+{
+	vss.P_out_pW = (ufloat){.value = P_pW, .shift = 0};
+}
+
+void set_storage_Capacitor_uV(const uint32_t C_uV)
+{
+	vss.V_store_uV = (ufloat){.value = C_uV, .shift = 0};
+}
+
+uint32_t get_input_power_pW(void)
+{
+	return extract_value(vss.P_inp_pW);
+}
+
+uint32_t get_output_power_pW(void)
+{
+	return extract_value(vss.P_out_pW);
+}
+
+uint32_t get_storage_Capacitor_uV(void)
+{
+	return extract_value(vss.V_store_uV);
 }

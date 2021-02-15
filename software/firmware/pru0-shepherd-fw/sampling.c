@@ -108,12 +108,16 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	/* Get input current/voltage from shared memory buffer */
 	const uint32_t input_current_nA = buffer->values_current[sample_idx];
 	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
+	//vsource_calc_inp_power(input_current_nA, input_voltage_uV);
 
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
+	//vsource_calc_out_power(current_adc_raw);
+
+	vsource_update_capacitor();
 
 	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
-	const uint32_t voltage_dac = vsource_update(current_adc_raw, input_current_nA, input_voltage_uV);
+	const uint32_t voltage_dac = vsource_update_buckboost();
 
 	if (link_dac_channels)
 	{
