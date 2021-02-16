@@ -366,6 +366,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 						dist_comp_value = samples_remain / n_comp; // automatically "floor"-rounded
 					}
 					//dist_comp_count = 0;
+
 					iep_set_cmp_val(IEP_CMP0, block_period);
 					sync_state = IDLE;
 					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
