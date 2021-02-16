@@ -126,13 +126,13 @@ enum hrtimer_restart timer_callback(struct hrtimer *timer_for_restart)
 	if (ns_over_wrap > (wrapped_timer->timer_period_ns / 2)) {
 		ns_sys_to_wrap =
 			((int64_t)ns_over_wrap - wrapped_timer->timer_period_ns)
-                    * (((uint64_t)1)<<32u);
+                    * (((uint64_t)1)<<30u);
 		next_timestamp_ns = now_ns_system - ns_over_wrap +
 				    2 * wrapped_timer->timer_period_ns;
 		ns_now_until_trigger =
 			2 * wrapped_timer->timer_period_ns - ns_over_wrap;
 	} else {
-		ns_sys_to_wrap = ((int64_t)ns_over_wrap) * (((uint64_t)1)<<32u);
+		ns_sys_to_wrap = ((int64_t)ns_over_wrap) * (((uint64_t)1)<<30u);
 		next_timestamp_ns = now_ns_system - ns_over_wrap +
 				    wrapped_timer->timer_period_ns;
 		ns_now_until_trigger =
@@ -194,9 +194,9 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	/*
      * Based on the previous IEP timer period and the nominal timer period
      * we can estimate the real nanoseconds passing per tick
-     * We operate on fixed point arithmetics by shifting by 32 bit
+     * We operate on fixed point arithmetics by shifting by 30 bit
      */
-	ns_per_tick = div_u64(((uint64_t)trigger_timer.timer_period_ns << 32u),
+	ns_per_tick = div_u64(((uint64_t)trigger_timer.timer_period_ns << 30u),
 			      ctrl_req->old_period);
 
 	/*
@@ -204,16 +204,14 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      * negative, if interrupt happened before wrap, positive after
      */
 	ns_iep_to_wrap = ((int64_t)ctrl_req->ticks_iep) * ns_per_tick;
-    /* YES, following 31 is correct, if ns_iep is over the half it is shorter to go the other direction */
-	if (ns_iep_to_wrap > ((uint64_t)trigger_timer.timer_period_ns << 31u))
-
+    /* YES, following 29 is correct, if ns_iep is over the half it is shorter to go the other direction */
+	if (ns_iep_to_wrap > ((uint64_t)trigger_timer.timer_period_ns << 29u))
 	{
-		ns_iep_to_wrap = ns_iep_to_wrap - ((uint64_t)trigger_timer.timer_period_ns << 32u);
+		ns_iep_to_wrap = ns_iep_to_wrap - ((uint64_t)trigger_timer.timer_period_ns << 30u);
 	}
 
 	/* Difference between system clock and IEP clock phase */
-	// TODO: using "(int64_t)((uint64_t)1)<<32u)" leads to div0 ?!?
-	sync_data->err = div_s64(ns_iep_to_wrap - ns_sys_to_wrap, 0x00010000ul);
+	sync_data->err = div_s64(ns_iep_to_wrap - ns_sys_to_wrap, 1ul<<30u);
 	sync_data->err_sum += sync_data->err;
 
 	/* This is the actual PI controller equation, TODO: unit of clock_corr is ticks not ns */
