@@ -323,7 +323,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			/* Forward sample timer based on current sample_period*/
 			uint32_t next_cmp_val = last_analog_sample_ticks + analog_sample_period;
 			/* If we are in compensation phase add one */
-			if ((n_comp > 0) && (dist_comp_count++ >= dist_comp_value)) {
+			if ((n_comp > 0) && (++dist_comp_count >= dist_comp_value)) {
 				next_cmp_val += 1;
 				n_comp--;
 				dist_comp_count = 0;
@@ -354,7 +354,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 					// determine resulting new sample period, n_comp is the remainder of the division
 					const uint32_t block_period_remain = (block_period - iep_get_cmp_val(IEP_CMP1));
 					const uint32_t samples_remain = (ADC_SAMPLES_PER_BUFFER - (shared_mem->analog_sample_counter));
-					if (block_period_remain > block_period) // indicator for a
+					if (block_period_remain > block_period) // indicator for an invalid operation
 					{
 						n_comp = 0;
 						dist_comp_value = 0xFFFFFFFF;
@@ -363,10 +363,9 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 					{
 						analog_sample_period = block_period_remain / samples_remain;
 						n_comp = block_period_remain - (analog_sample_period * samples_remain);
-						dist_comp_value = samples_remain / n_comp; // automatically "floor"-rounded
+						if (n_comp) 	dist_comp_value = samples_remain / n_comp; // automatically "floor"-rounded
+						else 		dist_comp_value = 0xFFFFFFFF;
 					}
-					//dist_comp_count = 0;
-
 					iep_set_cmp_val(IEP_CMP0, block_period);
 					sync_state = IDLE;
 					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
