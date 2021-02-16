@@ -204,7 +204,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      * negative, if interrupt happened before wrap, positive after
      */
 	ns_iep_to_wrap = ((int64_t)ctrl_req->ticks_iep) * ns_per_tick;
-	if (ns_iep_to_wrap > ((uint64_t)trigger_timer.timer_period_ns << 31)) {
+	if (ns_iep_to_wrap > ((uint64_t)trigger_timer.timer_period_ns << 32)) {
 		ns_iep_to_wrap = ns_iep_to_wrap - ((uint64_t)trigger_timer.timer_period_ns << 32);
 	}
 
