@@ -326,10 +326,9 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			if ((n_comp > 0) & (dist_comp_count++ >= dist_comp_value)) {
 				next_cmp_val += 1;
 				n_comp--;
-				dist_comp_count = 1;
+				dist_comp_count = 0;
 				// TODO: test more advanced algo that spreads the n_comp more even (req. 1 more division, see below "dist_comp_value=")
 			}
-			else dist_comp_count = 0;
 			// handle edge-case: check if next compare-value is behind auto-reset of cmp0
 			const uint32_t timer_cmp0_value = iep_get_cmp_val(IEP_CMP0); // read costs 12 Cycles
 			if (next_cmp_val > timer_cmp0_value) next_cmp_val -= timer_cmp0_value;
@@ -358,7 +357,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 					if (block_period_remain > block_period)
 					{
 						n_comp = 0;
-						dist_comp_value = samples_remain;
+						dist_comp_value = 0xFFFFFFFF;
 					}
 					else
 					{
@@ -366,7 +365,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 						n_comp = block_period_remain - (analog_sample_period * samples_remain);
 						dist_comp_value = samples_remain / n_comp; // automatically "floor"-rounded
 					}
-
+					dist_comp_count = 0;
 					iep_set_cmp_val(IEP_CMP0, block_period);
 					sync_state = IDLE;
 					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
