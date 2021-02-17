@@ -148,11 +148,11 @@ struct CtrlRepMsg {
 	/* Alignment with memory, (bytes)mod4 */
 	uint8_t reserved0[2];
 	/* Actual Content of message */
-	uint32_t buffer_block_period;
-	uint32_t analog_sample_period;
-	uint32_t compensation_steps;
-	uint32_t compensation_distance;
-	uint64_t next_timestamp_ns;
+	uint32_t buffer_block_period;   // corrected ticks that equal 100ms
+	uint32_t analog_sample_period;  // ~ 10 us
+	uint32_t compensation_steps;    // remainder of buffer_block/sample_count = sample_period
+	uint32_t compensation_distance; // tells how often a comp_step will by applied
+	uint64_t next_timestamp_ns;     // start of next buffer block
 } __attribute__((packed));
 
 /* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
