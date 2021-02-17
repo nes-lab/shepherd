@@ -17,17 +17,14 @@ void reset_prev_timestamp(void)
     prev_timestamp_ns = 0;
 }
 
-static enum hrtimer_restart timer_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
-
-/* We wrap the timer to pass arguments to the callback function */
-static struct hrtimer_wrap_s {
-	uint32_t timer_period_ns;
-	struct hrtimer hr_timer;
-} trigger_timer;
+static uint32_t trigger_loop_period_ns = 100000000; /* just initial value to avoid div0 */
 
 /* Timer to trigger fast synch_loop */
+struct hrtimer trigger_loop_timer;
 struct hrtimer synch_loop_timer;
+
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 const static unsigned int timer_steps_ns[] = {
         20000000u, 20000000u,
@@ -40,7 +37,7 @@ const static size_t timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_
 
 int sync_exit(void)
 {
-	hrtimer_cancel(&trigger_timer.hr_timer);
+	hrtimer_cancel(&trigger_loop_timer);
 	hrtimer_cancel(&synch_loop_timer);
 	kfree(sync_data);
 
@@ -64,10 +61,11 @@ int sync_init(uint32_t timer_period_ns)
     now_ns_system = (uint64_t)timespec_to_ns(&ts_now);
 
 	/* timer for trigger, TODO: this needs better naming, make clear what it does */
-	trigger_timer.timer_period_ns = timer_period_ns; /* 100 ms */
+	trigger_loop_period_ns = timer_period_ns; /* 100 ms */
+    //printk(KERN_INFO "shprd: KMod - new timer_period_ns = %u\n", trigger_loop_period_ns);
 
-	hrtimer_init(&trigger_timer.hr_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-	trigger_timer.hr_timer.function = &timer_callback;
+    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    trigger_loop_timer.function = &trigger_loop_callback;
 
     /* timer for Synch-Loop */
     hrtimer_init(&synch_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -79,7 +77,7 @@ int sync_init(uint32_t timer_period_ns)
 	else
 		ns_now_until_trigger = timer_period_ns - ns_over_wrap;
 
-	hrtimer_start(&trigger_timer.hr_timer,
+	hrtimer_start(&trigger_loop_timer,
 		      ns_to_ktime(now_ns_system + ns_now_until_trigger),
 		      HRTIMER_MODE_ABS);
 
@@ -98,17 +96,12 @@ int sync_reset(void)
 	return 0;
 }
 
-enum hrtimer_restart timer_callback(struct hrtimer *timer_for_restart)
+enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
 	struct timespec ts_now;
 	uint64_t now_ns_system;
 	uint32_t ns_over_wrap;
 	uint64_t ns_now_until_trigger;
-
-	struct hrtimer_wrap_s *wrapped_timer;
-
-	wrapped_timer = container_of(timer_for_restart, struct hrtimer_wrap_s,
-				     hr_timer);
 
 	/* Raise Interrupt on PRU, telling it to timestamp IEP */
 	pru_comm_trigger(HOST_PRU_EVT_TIMESTAMP);
@@ -121,22 +114,21 @@ enum hrtimer_restart timer_callback(struct hrtimer *timer_for_restart)
      * Get distance of system clock from timer wrap.
      * Is negative, when interrupt happened before wrap, positive when after
      */
-	div_u64_rem(now_ns_system, wrapped_timer->timer_period_ns,
+	div_u64_rem(now_ns_system, trigger_loop_period_ns,
 		    &ns_over_wrap);
-	if (ns_over_wrap > (wrapped_timer->timer_period_ns / 2)) {
+	if (ns_over_wrap > (trigger_loop_period_ns / 2)) {
 		ns_sys_to_wrap =
-			((int64_t)ns_over_wrap - wrapped_timer->timer_period_ns)
-                    * (((uint64_t)1)<<30u);
+			((int64_t)ns_over_wrap - trigger_loop_period_ns);
 		next_timestamp_ns = now_ns_system - ns_over_wrap +
-				    2 * wrapped_timer->timer_period_ns;
+				    2 * trigger_loop_period_ns;
 		ns_now_until_trigger =
-			2 * wrapped_timer->timer_period_ns - ns_over_wrap;
+			2 * trigger_loop_period_ns - ns_over_wrap;
 	} else {
-		ns_sys_to_wrap = ((int64_t)ns_over_wrap) * (((uint64_t)1)<<30u);
+		ns_sys_to_wrap = ((int64_t)ns_over_wrap);
 		next_timestamp_ns = now_ns_system - ns_over_wrap +
-				    wrapped_timer->timer_period_ns;
+                trigger_loop_period_ns;
 		ns_now_until_trigger =
-			wrapped_timer->timer_period_ns - ns_over_wrap;
+                trigger_loop_period_ns - ns_over_wrap;
 	}
 
 	hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
@@ -196,7 +188,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      * we can estimate the real nanoseconds passing per tick
      * We operate on fixed point arithmetics by shifting by 30 bit
      */
-	ns_per_tick = div_u64(((uint64_t)trigger_timer.timer_period_ns << 30u),
+	ns_per_tick = div_u64(((uint64_t)trigger_loop_period_ns << 30u),
 			      ctrl_req->old_period);
 
 	/*
@@ -205,19 +197,28 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      */
 	ns_iep_to_wrap = ((int64_t)ctrl_req->ticks_iep) * ns_per_tick;
     /* YES, following 29 is correct, if ns_iep is over the half it is shorter to go the other direction */
-	if (ns_iep_to_wrap > ((uint64_t)trigger_timer.timer_period_ns << 29u))
+	if (ns_iep_to_wrap > ((uint64_t)trigger_loop_period_ns << 29u))
 	{
-		ns_iep_to_wrap = ns_iep_to_wrap - ((uint64_t)trigger_timer.timer_period_ns << 30u);
+		ns_iep_to_wrap -= ((uint64_t)trigger_loop_period_ns << 30u);
 	}
 
 	/* Difference between system clock and IEP clock phase */
-	sync_data->err = div_s64(ns_iep_to_wrap - ns_sys_to_wrap, 1ul<<30u);
+	sync_data->err = div_s64(ns_iep_to_wrap, 1ul<<30u) - ns_sys_to_wrap; // TODO: could save some divs
 	sync_data->err_sum += sync_data->err;
 
-	/* This is the actual PI controller equation, TODO: unit of clock_corr is ticks not ns */
-	clock_corr =
-		div_s64(sync_data->err, 32) + div_s64(sync_data->err_sum, 128);
-
+	/* This is the actual PI controller equation, TODO: unit of clock_corr is ticks not ns
+	 * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
+	 * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
+	 * */
+	clock_corr = (int32_t)(div_s64(sync_data->err, 100) + div_s64(sync_data->err_sum, 300));
+    /*
+    printk(KERN_ERR "shprd: KMod - error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, old_period=%u, corr=%d\n",
+            sync_data->err,
+            div_s64(ns_iep_to_wrap, 1ul<<30u),
+            ns_sys_to_wrap,
+            sync_data->err_sum,
+            ctrl_req->old_period, clock_corr);
+    */
 	/* for plausibility-check, in case the sync-algo produces jumps */
 	if (prev_timestamp_ns > 0)
     {
