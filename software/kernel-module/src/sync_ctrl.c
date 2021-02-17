@@ -211,24 +211,24 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	sync_data->err = div_s64(ns_iep_to_wrap, 1ul<<30u) - ns_sys_to_wrap; // TODO: could save some divs
 	sync_data->err_sum += sync_data->err;
 
-	/* This is the actual PI controller equation, TODO: unit of clock_corr is ticks not ns
+	/* This is the actual PI controller equation,
+	 * NOTE: unit of clock_corr is ticks, but input is based on nanosec
 	 * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
 	 * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
 	 * */
-    clock_corr = (int32_t)(div_s64(sync_data->err, 100) + div_s64(sync_data->err_sum, 300));
-    /*
-    printk(KERN_ERR "shprd: KMod - error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, old_period=%u, corr=%d\n",
-            sync_data->err,
-            div_s64(ns_iep_to_wrap, 1ul<<30u),
-            ns_sys_to_wrap,
-            sync_data->err_sum,
-            ctrl_req->old_period, clock_corr);
-    */
+    sync_data->clock_corr = (int32_t)(div_s64(sync_data->err, 100) + div_s64(sync_data->err_sum, 300));
+    if (0)
+    {
+        printk(KERN_ERR "shprd: KMod - error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, old_period=%u, corr=%d\n",
+                sync_data->err,
+                div_s64(ns_iep_to_wrap, 1ul<<30u),
+                ns_sys_to_wrap,
+                sync_data->err_sum,
+                ctrl_req->old_period,
+                sync_data->clock_corr);
+    }
 
-    // TODO: dirty prototype for now
-    sync_data->clock_corr = clock_corr;
-    //if (clock_corr > TIMER_BASE_PERIOD / 10) sync_data->clock_corr = TIMER_BASE_PERIOD / 10;
-    //if (clock_corr < -(int32_t)(TIMER_BASE_PERIOD / 10)) sync_data->clock_corr = -(int32_t)(TIMER_BASE_PERIOD / 10);
+    /* determine corrected loop_ticks for next buffer_block */
     ctrl_rep->buffer_block_period = TIMER_BASE_PERIOD + sync_data->clock_corr;
     ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
     ctrl_rep->compensation_steps = ctrl_rep->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * ctrl_rep->analog_sample_period);
@@ -241,7 +241,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
         ctrl_rep->compensation_distance = (ADC_SAMPLES_PER_BUFFER / ctrl_rep->compensation_steps);
     }
 
-    if (++info_count > 200)
+    if ((1) && ++info_count > 200) /* prints every 20s when enabled */
     {
         printk(KERN_INFO
         "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, comp_d=%u, corr=%d, last_peri=%u\n",
