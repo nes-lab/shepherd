@@ -176,13 +176,18 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     return HRTIMER_RESTART;
 }
 
+#define BUFFER_PERIOD_NS    	(100000000U)
+#define ADC_SAMPLES_PER_BUFFER  (10000U)
+#define TIMER_TICK_NS           (5U)
+#define TIMER_BASE_PERIOD   	(BUFFER_PERIOD_NS / TIMER_TICK_NS)
+#define SAMPLE_INTERVAL_NS  	(BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
+static uint32_t info_count = 0;
 
 int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const ctrl_req)
 {
 	int64_t ns_iep_to_wrap;
-	int32_t clock_corr;
 	uint64_t ns_per_tick;
-
+    int32_t clock_corr;
 	/*
      * Based on the previous IEP timer period and the nominal timer period
      * we can estimate the real nanoseconds passing per tick
@@ -210,7 +215,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	 * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
 	 * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
 	 * */
-	clock_corr = (int32_t)(div_s64(sync_data->err, 100) + div_s64(sync_data->err_sum, 300));
+    clock_corr = (int32_t)(div_s64(sync_data->err, 70) + div_s64(sync_data->err_sum, 300));
     /*
     printk(KERN_ERR "shprd: KMod - error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, old_period=%u, corr=%d\n",
             sync_data->err,
@@ -219,23 +224,49 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
             sync_data->err_sum,
             ctrl_req->old_period, clock_corr);
     */
+
+    // TODO: dirty prototype for now
+    sync_data->clock_corr = clock_corr;
+    //if (clock_corr > TIMER_BASE_PERIOD / 10) sync_data->clock_corr = TIMER_BASE_PERIOD / 10;
+    //if (clock_corr < -(int32_t)(TIMER_BASE_PERIOD / 10)) sync_data->clock_corr = -(int32_t)(TIMER_BASE_PERIOD / 10);
+    ctrl_rep->buffer_block_period = TIMER_BASE_PERIOD + sync_data->clock_corr;
+    ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
+    ctrl_rep->compensation_steps = ctrl_rep->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * ctrl_rep->analog_sample_period);
+    if (ctrl_rep->compensation_steps == 0)
+    {
+        ctrl_rep->compensation_distance = 0xFFFFFFFFu;
+    }
+    else
+    {
+        ctrl_rep->compensation_distance = (ADC_SAMPLES_PER_BUFFER / ctrl_rep->compensation_steps);
+    }
+
+    if (++info_count > 200)
+    {
+        printk(KERN_INFO
+        "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, comp_d=%u, corr=%d, last_peri=%u\n",
+                ctrl_rep->buffer_block_period,
+                ctrl_rep->analog_sample_period,
+                ctrl_rep->compensation_steps,
+                ctrl_rep->compensation_distance,
+                clock_corr,
+                ctrl_req->old_period);
+        info_count = 0;
+    }
+
 	/* for plausibility-check, in case the sync-algo produces jumps */
 	if (prev_timestamp_ns > 0)
     {
         int64_t diff_timestamp = div_s64(next_timestamp_ns - prev_timestamp_ns, 1000000u);
         if (diff_timestamp < 0)
-            printk(KERN_ERR "shprd: KMod = backwards timestamp-jump detected \n");
+            printk(KERN_ERR "shprd.k: backwards timestamp-jump detected \n");
         else if (diff_timestamp < 95)
-            printk(KERN_ERR "shprd: KMod = too small timestamp-jump detected\n");
+            printk(KERN_ERR "shprd.k: too small timestamp-jump detected\n");
         else if (diff_timestamp > 105)
-            printk(KERN_ERR "shprd: KMod = forwards timestamp-jump detected\n");
+            printk(KERN_ERR "shprd.k: forwards timestamp-jump detected\n");
     }
     prev_timestamp_ns = next_timestamp_ns;
 
-	sync_data->clock_corr = clock_corr;
-
-    /* fill msg */
-    ctrl_rep->clock_corr = clock_corr;
     ctrl_rep->next_timestamp_ns = next_timestamp_ns;
 
 	return 0;

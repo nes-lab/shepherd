@@ -241,7 +241,14 @@ void main(void)
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
 	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u, .old_period=0u};
-	shared_memory->ctrl_rep = (struct CtrlRepMsg){.identifier=0u, .msg_unread=0u, .clock_corr=0, .next_timestamp_ns=0u};
+	shared_memory->ctrl_rep = (struct CtrlRepMsg){
+		.identifier=0u,
+		.msg_unread=0u,
+		.buffer_block_period=TIMER_BASE_PERIOD,
+		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
+		.compensation_steps=0,
+		.compensation_distance=0xFFFFFFFFu,
+		.next_timestamp_ns=0u};
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
 	 * are used to transfer the actual data between us and the Linux host.
