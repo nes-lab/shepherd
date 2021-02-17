@@ -38,7 +38,7 @@ static void send_message(const uint32_t msg_id, const uint32_t value)
 	// TODO: could also be replaced by new msg-system / rp-replacement
 }
 
-static uint32_t handle_block_end(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
+static uint32_t handle_block_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
 			  struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
 {
 	uint32_t next_buffer_idx;
@@ -136,7 +136,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		struct SampleBuffer *const buffers_far)
 {
 	uint32_t sample_buf_idx = NO_BUFFER;
-	uint32_t analog_sample_idx = 0; // usually one behind counter, needed for stopping emulation during debug
+	//uint32_t analog_sample_idx = 0; // usually one behind counter, needed for stopping emulation during debug
 	enum ShepherdMode shepherd_mode = (enum ShepherdMode)shared_mem->shepherd_mode;
 
 	while (1)
@@ -145,28 +145,19 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		// edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
 		const uint32_t iep_tmr_cmp_sts = iep_get_tmr_cmp_sts(); // 12 cycles, 60 ns
 
-		// this stack ensures low overhead to event loop AND full buffer before switching
-		if ((shared_mem->cmp0_handled_by_pru0 == 0) && (iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP0_MASK) || (shared_mem->cmp0_handled_by_pru1 == 1)))
-		{
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
-			shared_mem->cmp0_handled_by_pru0 = 1;
-			shared_mem->analog_sample_counter = 0;
-			analog_sample_idx = 0;
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
-		}
-
 		// pru0 manages the irq, but pru0 reacts to it directly -> less jitter
-		if ((shared_mem->cmp1_handled_by_pru0 == 0) && (iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP1_MASK) || (shared_mem->cmp1_handled_by_pru1 == 1)))
+		if ((shared_mem->cmp1_handled_by_pru0 == 0) && ((shared_mem->cmp1_handled_by_pru1 == 1) || iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP1_MASK)))
 		{
 			shared_mem->cmp1_handled_by_pru0 = 1;
-			shared_mem->analog_sample_counter++;
+			//shared_mem->analog_sample_counter++;
 
 			/* The actual sampling takes place here */
-			if ((sample_buf_idx != NO_BUFFER) && (analog_sample_idx < ADC_SAMPLES_PER_BUFFER))
+			//if ((sample_buf_idx != NO_BUFFER) && (analog_sample_idx < ADC_SAMPLES_PER_BUFFER))
+			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
 				GPIO_ON(DEBUG_PIN0_MASK);
-				sample(buffers_far + sample_buf_idx, analog_sample_idx, shepherd_mode);
-				analog_sample_idx = shared_mem->analog_sample_counter;
+				sample(buffers_far + sample_buf_idx, shared_mem->analog_sample_counter, shepherd_mode);
+				//analog_sample_idx = shared_mem->analog_sample_counter;
 				GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 			else
@@ -174,6 +165,8 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				// even if offline, this should simulate a (short) sampling-action
 				__delay_cycles(4000 / 5);
 			}
+
+			shared_mem->analog_sample_counter++;
 
 			if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
 			{
@@ -185,7 +178,9 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				if ((shared_mem->shepherd_state == STATE_RUNNING) &&
 				    (shared_mem->shepherd_mode != MODE_DEBUG))
 				{
-					sample_buf_idx = handle_block_end(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, analog_sample_idx);
+					//sample_buf_idx = handle_block_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, analog_sample_idx);
+					sample_buf_idx = handle_block_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, shared_mem->analog_sample_counter);
+					shared_mem->analog_sample_counter = 0;
 					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
 			}
@@ -198,10 +193,17 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 					     shared_mem->gpio_pin_state);
                 		//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
+		}
 
-#if SPI_SYS_TEST_EN // TODO: Test-Area
-		sys_adc_readwrite(DEBUG_PIN0_MASK, shared_mem->analog_sample_counter);
-#endif
+		// this stack ensures low overhead to event loop AND full buffer before switching
+		if ((shared_mem->cmp0_handled_by_pru0 == 0) && ((shared_mem->cmp0_handled_by_pru1 == 1) || iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP0_MASK)))
+		{
+			GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			shared_mem->cmp0_handled_by_pru0 = 1;
+			if (shared_mem->analog_sample_counter > 1)
+				shared_mem->analog_sample_counter = 1;
+			//analog_sample_idx = 0;
+			GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		}
 	}
 }
