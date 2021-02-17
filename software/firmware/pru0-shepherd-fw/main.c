@@ -136,7 +136,6 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		struct SampleBuffer *const buffers_far)
 {
 	uint32_t sample_buf_idx = NO_BUFFER;
-	//uint32_t analog_sample_idx = 0; // usually one behind counter, needed for stopping emulation during debug
 	enum ShepherdMode shepherd_mode = (enum ShepherdMode)shared_mem->shepherd_mode;
 
 	while (1)
@@ -149,20 +148,17 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		if ((shared_mem->cmp1_handled_by_pru0 == 0) && ((shared_mem->cmp1_handled_by_pru1 == 1) || iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP1_MASK)))
 		{
 			shared_mem->cmp1_handled_by_pru0 = 1;
-			//shared_mem->analog_sample_counter++;
 
 			/* The actual sampling takes place here */
-			//if ((sample_buf_idx != NO_BUFFER) && (analog_sample_idx < ADC_SAMPLES_PER_BUFFER))
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
 				GPIO_ON(DEBUG_PIN0_MASK);
 				sample(buffers_far + sample_buf_idx, shared_mem->analog_sample_counter, shepherd_mode);
-				//analog_sample_idx = shared_mem->analog_sample_counter;
 				GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 			else
 			{
-				// even if offline, this should simulate a (short) sampling-action
+				/* even if offline, the routine should simulate a (short) sampling-action */
 				__delay_cycles(4000 / 5);
 			}
 
@@ -202,7 +198,6 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			shared_mem->cmp0_handled_by_pru0 = 1;
 			if (shared_mem->analog_sample_counter > 1)
 				shared_mem->analog_sample_counter = 1;
-			//analog_sample_idx = 0;
 			GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		}
 	}
