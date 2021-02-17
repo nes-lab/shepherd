@@ -346,9 +346,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 		if (iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP1_MASK))
 		{
 			shared_mem->cmp1_handled_by_pru1 = 1;
-			// Relict from previous INTC-System -> TODO: Remove if safe
-			if (INTC_CHECK_EVENT(PRU_PRU_EVT_SAMPLE)) INTC_CLEAR_EVENT(PRU_PRU_EVT_SAMPLE);
-			if (INTC_CHECK_EVENT(PRU_PRU_EVT_BLOCK_END)) INTC_CLEAR_EVENT(PRU_PRU_EVT_BLOCK_END);
 
 			/* Important: We have to clear the interrupt here, to avoid missing interrupts */
 			iep_clear_evt_cmp(IEP_CMP1);

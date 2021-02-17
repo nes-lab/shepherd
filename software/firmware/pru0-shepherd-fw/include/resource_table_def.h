@@ -67,8 +67,6 @@ extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= 64 * (8 + 4 + 2*4*10000 + 4 +
 
 /* Mapping sysevts to a channel. Each pair contains a sysevt, channel. */
 struct ch_map pru_intc_map[] = {
-	{ PRU_PRU_EVT_SAMPLE, 1 }, // Interrupt for sync from ARM host
-	{ PRU_PRU_EVT_BLOCK_END, 1 }, // Interrupt for sync from ARM host
 	{ 16, 3 }
 };
 

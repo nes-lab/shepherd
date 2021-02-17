@@ -261,11 +261,6 @@ void main(void)
 
 	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-
-	/* Enable interrupts from PRU1 */
-	CT_INTC.EISR_bit.EN_SET_IDX = PRU_PRU_EVT_SAMPLE;
-	CT_INTC.EISR_bit.EN_SET_IDX = PRU_PRU_EVT_BLOCK_END;
-
 	rpmsg_init("rpmsg-pru");
 
 #if SPI_SYS_TEST_EN // TODO: Test-Area
@@ -280,10 +275,6 @@ reset:
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
 	shared_memory->gpio_edges = NULL;
-
-	/* Clear all interrupt events */
-	CT_INTC.SICR_bit.STS_CLR_IDX = PRU_PRU_EVT_SAMPLE;
-	CT_INTC.SICR_bit.STS_CLR_IDX = PRU_PRU_EVT_BLOCK_END;
 
 	// Initialize struct-Members Part B
 	// Reset Token-System to init-values

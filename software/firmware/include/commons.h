@@ -7,15 +7,9 @@
 #include "shepherd_config.h"
 #include "stdint_fast.h"
 
-
-#define HOST_PRU_EVT_TIMESTAMP          20U
-
-#define PRU_PRU_EVT_SAMPLE              30U
-#define PRU_PRU_EVT_BLOCK_END           31U	// TODO: can be removed, after trigger-replacement
-
-#define PRU_SHARED_MEM_STRUCT_OFFSET    0x10000u
-
-#define MAX_GPIO_EVT_PER_BUFFER         16384U
+#define HOST_PRU_EVT_TIMESTAMP          (20u)
+#define PRU_SHARED_MEM_STRUCT_OFFSET    (0x10000u)
+#define MAX_GPIO_EVT_PER_BUFFER         (16384u)
 
 // Test data-containers and constants with pseudo-assertion with zero cost (if expression evaluates to 0 this causes a div0
 // NOTE: name => alphanum without spaces and without ""
