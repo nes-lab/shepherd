@@ -284,12 +284,13 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			/* Take timestamp of IEP */
 			ctrl_req.ticks_iep = iep_get_cnt_val();
-			DEBUG_EVENT_STATE_1;
+			DEBUG_EVENT_STATE_2;
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
 			/* Prepare and send control request to Linux host */
-			ctrl_req.old_period = iep_get_cmp_val(IEP_CMP0);
+			//ctrl_req.old_period = iep_get_cmp_val(IEP_CMP0);
+			ctrl_req.old_period = buffer_block_period;
 
 			if (sync_state == WAIT_HOST_INT)    sync_state = REQUEST_PENDING;
 			else if (sync_state == IDLE)        sync_state = WAIT_IEP_WRAP;
@@ -316,8 +317,8 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			/* reset values for clock compensation */
 			analog_sample_period = ctrl_rep.analog_sample_period;
-			//iep_set_cmp_val(IEP_CMP1, analog_sample_period); TODO: not perfect
-			if (iep_get_cmp_val(IEP_CMP1) > iep_get_cmp_val(IEP_CMP0)) iep_set_cmp_val(IEP_CMP1, analog_sample_period);
+			iep_set_cmp_val(IEP_CMP1, 0); //TODO: not perfect
+			//if (iep_get_cmp_val(IEP_CMP1) > iep_get_cmp_val(IEP_CMP0)) iep_set_cmp_val(IEP_CMP1, analog_sample_period);
 
 			iep_enable_evt_cmp(IEP_CMP1);
 
@@ -351,7 +352,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			/* Important: We have to clear the interrupt here, to avoid missing interrupts */
 			iep_clear_evt_cmp(IEP_CMP1);
-
+			DEBUG_EVENT_STATE_1;
 			// Update Timer-Values
 			last_analog_sample_ticks = iep_get_cmp_val(IEP_CMP1);
 			/* Forward sample timer based on current analog_sample_period*/
@@ -363,46 +364,15 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				compensation_dist_count = 0;
 			}
 			// handle edge-case: check if next compare-value is behind auto-reset of cmp0
-			const uint32_t timer_cmp0_value = iep_get_cmp_val(IEP_CMP0); // read costs 12 Cycles, TODO: replace by buffer_block_period
-			if (next_cmp_val > timer_cmp0_value) next_cmp_val -= timer_cmp0_value;
+			if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period;
 			iep_set_cmp_val(IEP_CMP1, next_cmp_val);
-
 
 			/* If we are waiting for a reply from Linux kernel module */
 			if (sync_state == REPLY_PENDING)
 			{
-				DEBUG_EVENT_STATE_3;
+				//DEBUG_EVENT_STATE_1;
 				if (receive_control_reply(shared_mem, &ctrl_rep) > 0)
 				{
-					/* TODO: now done by kernel_module
-					uint32_t buffer_block_period;
-					// The new timer period is the base period plus the correction calculated by the controller
-					if (ctrl_rep.clock_corr > (int32_t)(TIMER_BASE_PERIOD / 10))
-						buffer_block_period = TIMER_BASE_PERIOD + TIMER_BASE_PERIOD / 10;
-					else if (ctrl_rep.clock_corr < -(int32_t)(TIMER_BASE_PERIOD / 10))
-						buffer_block_period = TIMER_BASE_PERIOD - TIMER_BASE_PERIOD / 10;
-					else
-						buffer_block_period = TIMER_BASE_PERIOD + ctrl_rep.clock_corr;
-
-					// determine resulting new sample period, compensation_steps is the remainder of the division
-					const uint32_t block_period_remain = (buffer_block_period - iep_get_cmp_val(IEP_CMP1));
-					const uint32_t samples_remain = (ADC_SAMPLES_PER_BUFFER - (shared_mem->analog_sample_counter));
-					if (block_period_remain > buffer_block_period) // indicator for an invalid operation
-					{
-						compensation_steps = 0;
-						compensation_distance = 0xFFFFFFFF;
-					}
-					else
-					{
-						analog_sample_period = block_period_remain / samples_remain;
-						compensation_steps = block_period_remain - (analog_sample_period * samples_remain);
-						if (compensation_steps)
-							compensation_distance = samples_remain / compensation_steps; // automatically "floor"-rounded
-						else
-							compensation_distance = 0xFFFFFFFF;
-					}
-					iep_set_cmp_val(IEP_CMP0, buffer_block_period);
-					*/
 					sync_state = IDLE;
 					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
 				}
@@ -413,13 +383,13 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				// To stay consistent with timing throw away a possible pre-received Replies (otherwise that +1 can stay in the system forever)
 				if (receive_control_reply(shared_mem, &ctrl_rep) > 0)
 				{
-					sync_state = IDLE;
 					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
 				}
 				// send request
 				send_control_request(shared_mem, &ctrl_req);
 				sync_state = REPLY_PENDING;
 			}
+			DEBUG_EVENT_STATE_0;
 			//continue; // for more regular gpio-sampling
 		}
 
