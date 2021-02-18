@@ -91,8 +91,6 @@ struct CtrlReqMsg {
 	uint8_t reserved[2];
 	/* Number of ticks passed on the PRU's IEP timer */
 	uint32_t ticks_iep;
-	/* Previous buffer period in IEP ticks */
-	uint32_t old_period;
 } __attribute__((packed));
 
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */

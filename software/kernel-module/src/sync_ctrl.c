@@ -6,7 +6,7 @@
 #include "sync_ctrl.h"
 #include "pru_comm.h"
 
-struct sync_data_s *sync_data;
+
 
 static int64_t ns_sys_to_wrap;
 static uint64_t next_timestamp_ns;
@@ -35,6 +35,16 @@ const static unsigned int timer_steps_ns[] = {
 const static size_t timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
 //static unsigned int step_pos = 0;
 
+// Sync-Routine - TODO: take these from pru-sharedmem
+#define BUFFER_PERIOD_NS    	(100000000U) // TODO: there is already: trigger_loop_period_ns
+#define ADC_SAMPLES_PER_BUFFER  (10000U)
+#define TIMER_TICK_NS           (5U)
+#define TIMER_BASE_PERIOD   	(BUFFER_PERIOD_NS / TIMER_TICK_NS)
+#define SAMPLE_INTERVAL_NS  	(BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
+static uint32_t info_count = 0;
+struct sync_data_s *sync_data;
+
+
 int sync_exit(void)
 {
 	hrtimer_cancel(&trigger_loop_timer);
@@ -62,7 +72,7 @@ int sync_init(uint32_t timer_period_ns)
 
 	/* timer for trigger, TODO: this needs better naming, make clear what it does */
 	trigger_loop_period_ns = timer_period_ns; /* 100 ms */
-    //printk(KERN_INFO "shprd: KMod - new timer_period_ns = %u\n", trigger_loop_period_ns);
+    //printk(KERN_INFO "shprd.k: new timer_period_ns = %u\n", trigger_loop_period_ns);
 
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     trigger_loop_timer.function = &trigger_loop_callback;
@@ -90,9 +100,10 @@ int sync_init(uint32_t timer_period_ns)
 
 int sync_reset(void)
 {
-	sync_data->err_sum = 0;
-	sync_data->err = 0;
+    sync_data->error = 0;
+	sync_data->error_sum = 0;
 	sync_data->clock_corr = 0;
+    sync_data->previous_period = TIMER_BASE_PERIOD;
 	return 0;
 }
 
@@ -116,19 +127,16 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
      */
 	div_u64_rem(now_ns_system, trigger_loop_period_ns,
 		    &ns_over_wrap);
-	if (ns_over_wrap > (trigger_loop_period_ns / 2)) {
-		ns_sys_to_wrap =
-			((int64_t)ns_over_wrap - trigger_loop_period_ns);
-		next_timestamp_ns = now_ns_system - ns_over_wrap +
-				    2 * trigger_loop_period_ns;
-		ns_now_until_trigger =
-			2 * trigger_loop_period_ns - ns_over_wrap;
-	} else {
+	if (ns_over_wrap > (trigger_loop_period_ns / 2))
+	{
+		ns_sys_to_wrap = ((int64_t)ns_over_wrap - trigger_loop_period_ns);
+		next_timestamp_ns = now_ns_system - ns_over_wrap + 2 * trigger_loop_period_ns;
+		ns_now_until_trigger = 2 * trigger_loop_period_ns - ns_over_wrap;
+	} else
+	    {
 		ns_sys_to_wrap = ((int64_t)ns_over_wrap);
-		next_timestamp_ns = now_ns_system - ns_over_wrap +
-                trigger_loop_period_ns;
-		ns_now_until_trigger =
-                trigger_loop_period_ns - ns_over_wrap;
+		next_timestamp_ns = now_ns_system - ns_over_wrap + trigger_loop_period_ns;
+		ns_now_until_trigger = trigger_loop_period_ns - ns_over_wrap;
 	}
 
 	hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
@@ -176,13 +184,6 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     return HRTIMER_RESTART;
 }
 
-// TODO: take these from pru-sharedmem
-#define BUFFER_PERIOD_NS    	(100000000U)
-#define ADC_SAMPLES_PER_BUFFER  (10000U)
-#define TIMER_TICK_NS           (5U)
-#define TIMER_BASE_PERIOD   	(BUFFER_PERIOD_NS / TIMER_TICK_NS)
-#define SAMPLE_INTERVAL_NS  	(BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
-static uint32_t info_count = 0;
 
 int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const ctrl_req)
 {
@@ -195,42 +196,43 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      * We operate on fixed point arithmetics by shifting by 30 bit
      */
 	ns_per_tick = div_u64(((uint64_t)trigger_loop_period_ns << 30u),
-			      ctrl_req->old_period);
+            sync_data->previous_period);
 
 	/*
      * Get distance of IEP clock at interrupt from timer wrap
      * negative, if interrupt happened before wrap, positive after
      */
 	ns_iep_to_wrap = ((int64_t)ctrl_req->ticks_iep) * ns_per_tick;
-    /* YES, following 29 is correct, if ns_iep is over the half it is shorter to go the other direction */
+    /* YES, 29 in next line is correct, if ns_iep is over the half it is shorter to go the other direction */
 	if (ns_iep_to_wrap > ((uint64_t)trigger_loop_period_ns << 29u))
 	{
 		ns_iep_to_wrap -= ((uint64_t)trigger_loop_period_ns << 30u);
 	}
 
 	/* Difference between system clock and IEP clock phase */
-	sync_data->err = div_s64(ns_iep_to_wrap, 1ul<<30u) - ns_sys_to_wrap; // TODO: could save some divs
-	sync_data->err_sum += sync_data->err;
+	sync_data->error = div_s64(ns_iep_to_wrap, 1ul<<30u) - ns_sys_to_wrap; // TODO: could save some divs
+	sync_data->error_sum += sync_data->error;
 
 	/* This is the actual PI controller equation,
 	 * NOTE: unit of clock_corr is ticks, but input is based on nanosec
 	 * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
 	 * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
 	 * */
-    sync_data->clock_corr = (int32_t)(div_s64(sync_data->err, 100) + div_s64(sync_data->err_sum, 300));
+    sync_data->clock_corr = (int32_t)(div_s64(sync_data->error, 100) + div_s64(sync_data->error_sum, 300));
     if (0)
     {
-        printk(KERN_ERR "shprd: KMod - error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, old_period=%u, corr=%d\n",
-                sync_data->err,
+        printk(KERN_ERR "shprd.kM: error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, prev_period=%u, corr=%d\n",
+                sync_data->error,
                 div_s64(ns_iep_to_wrap, 1ul<<30u),
                 ns_sys_to_wrap,
-                sync_data->err_sum,
-                ctrl_req->old_period,
+                sync_data->error_sum,
+                sync_data->previous_period,
                 sync_data->clock_corr);
     }
 
     /* determine corrected loop_ticks for next buffer_block */
     ctrl_rep->buffer_block_period = TIMER_BASE_PERIOD + sync_data->clock_corr;
+    sync_data->previous_period = ctrl_rep->buffer_block_period;
     ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
     ctrl_rep->compensation_steps = ctrl_rep->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * ctrl_rep->analog_sample_period);
     if (ctrl_rep->compensation_steps == 0)
@@ -245,13 +247,13 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     if ((1) && ++info_count > 200) /* val = 200 prints every 20s when enabled */
     {
         printk(KERN_INFO
-        "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, comp_d=%u, corr=%d, last_peri=%u\n",
+        "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, comp_d=%u, corr=%d, prev_peri=%u\n",
                 ctrl_rep->buffer_block_period,
                 ctrl_rep->analog_sample_period,
                 ctrl_rep->compensation_steps,
                 ctrl_rep->compensation_distance,
                 sync_data->clock_corr,
-                ctrl_req->old_period);
+                sync_data->previous_period);
         info_count = 0;
     }
 
