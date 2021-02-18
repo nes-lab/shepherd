@@ -241,23 +241,14 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     sync_data->previous_period = ctrl_rep->buffer_block_period;
     ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
     ctrl_rep->compensation_steps = ctrl_rep->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * ctrl_rep->analog_sample_period);
-    if (ctrl_rep->compensation_steps == 0)
-    {
-        ctrl_rep->compensation_distance = 0xFFFFFFFFu;
-    }
-    else
-    {
-        ctrl_rep->compensation_distance = (ADC_SAMPLES_PER_BUFFER / ctrl_rep->compensation_steps);
-    }
 
     if ((1) && ++info_count > 200) /* val = 200 prints every 20s when enabled */
     {
         printk(KERN_INFO
-        "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, comp_d=%u, corr=%d, prev_peri=%u\n",
+        "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, corr=%d, prev_peri=%u\n",
                 ctrl_rep->buffer_block_period,
                 ctrl_rep->analog_sample_period,
                 ctrl_rep->compensation_steps,
-                ctrl_rep->compensation_distance,
                 sync_data->clock_corr,
                 sync_data->previous_period);
         info_count = 0;
