@@ -113,9 +113,12 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 	uint64_t now_ns_system;
 	uint32_t ns_over_wrap;
 	uint64_t ns_now_until_trigger;
-	// add pretrigger, because current design aims directly for busy pru_timer_wrap
-	// (50% chance that pru takes a worthless counter-reading after wrap)
-	static const uint32_t ns_pre_trigger = 105000;
+	/*
+	* add pretrigger, because design aimed directly for busy pru_timer_wrap
+	* (50% chance that pru takes a less meaningful counter-reading after wrap)
+    * 1 ms + 5 us, this should be enough time for the ping-pong to complete before timer_wrap
+    */
+	static const uint32_t ns_pre_trigger = 1005000;
 
 	/* Raise Interrupt on PRU, telling it to timestamp IEP */
 	pru_comm_trigger(HOST_PRU_EVT_TIMESTAMP);
@@ -131,8 +134,9 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 	div_u64_rem(now_ns_system, trigger_loop_period_ns, &ns_over_wrap);
 	if (ns_over_wrap > (trigger_loop_period_ns / 2))
 	{
-		ns_sys_to_wrap = ((int64_t)ns_over_wrap - trigger_loop_period_ns);
-		next_timestamp_ns = now_ns_system + 2 * trigger_loop_period_ns - ns_over_wrap;
+		/* normal use case (from now on) - marks beginning of next buffer*/
+	    ns_sys_to_wrap = ((int64_t)ns_over_wrap - trigger_loop_period_ns);
+		next_timestamp_ns = now_ns_system + 1 * trigger_loop_period_ns - ns_over_wrap;
 		ns_now_until_trigger = 2 * trigger_loop_period_ns - ns_over_wrap - ns_pre_trigger;
 	} else
 	    {

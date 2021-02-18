@@ -292,7 +292,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			}
 			send_control_request(shared_mem, &ctrl_req);
 			DEBUG_EVENT_STATE_0;
-			//continue;  // for more regular gpio-sampling
+			continue;  // for more regular gpio-sampling
 		}
 
 		// take a snapshot of current triggers -> ensures prioritized handling
@@ -348,7 +348,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				compensation_dist_count = 0;
 			}
 			// handle edge-case: check if next compare-value is behind auto-reset of cmp0
-			if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period;
+			if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period; // TODO: should never happen, could be considered a fault
 			iep_set_cmp_val(IEP_CMP1, next_cmp_val);
 
 			/* If we are waiting for a reply from Linux kernel module */
@@ -358,7 +358,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
 			}
 			DEBUG_EVENT_STATE_0;
-			//continue; // for more regular gpio-sampling
+			continue; // for more regular gpio-sampling
 		}
 
 		// cleanup of cmp-tokens
