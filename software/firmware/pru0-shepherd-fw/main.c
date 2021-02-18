@@ -238,7 +238,7 @@ void main(void)
 
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
-	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u, .old_period=0u};
+	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u};
 	shared_memory->ctrl_rep = (struct CtrlRepMsg){
 		.identifier=0u,
 		.msg_unread=0u,

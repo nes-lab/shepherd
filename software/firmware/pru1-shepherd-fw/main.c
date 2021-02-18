@@ -288,10 +288,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
-			/* Prepare and send control request to Linux host */
-			ctrl_req.old_period = buffer_block_period;
-			// TODO: could be removed, because kernel controls the block period
-
 			if (sync_state == WAIT_HOST_INT)    sync_state = REQUEST_PENDING;
 			else if (sync_state == IDLE)        sync_state = WAIT_IEP_WRAP;
 			else {
