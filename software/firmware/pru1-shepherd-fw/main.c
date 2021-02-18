@@ -53,9 +53,6 @@ TODO: new order for hw-rev2.1, also adapt device tree (gpio2/3 switches with swd
 
 enum SyncState {
 	IDLE,
-	WAIT_IEP_WRAP,
-	WAIT_HOST_INT,
-	REQUEST_PENDING,
 	REPLY_PENDING
 };
 
@@ -288,12 +285,12 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
-			if (sync_state == WAIT_HOST_INT)    sync_state = REQUEST_PENDING;
-			else if (sync_state == IDLE)        sync_state = WAIT_IEP_WRAP;
+			if (sync_state == IDLE)    sync_state = REPLY_PENDING;
 			else {
-				fault_handler(shared_mem->shepherd_state,"Wrong sync-state at host interrupt");
+				fault_handler(shared_mem->shepherd_state,"Sync not idle at host interrupt");
 				return 0;
 			}
+			send_control_request(shared_mem, &ctrl_req);
 			DEBUG_EVENT_STATE_0;
 			//continue;  // for more regular gpio-sampling
 		}
@@ -324,12 +321,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			/* more maintenance */
 			last_analog_sample_ticks = 0;
-			if (sync_state == WAIT_IEP_WRAP)    sync_state = REQUEST_PENDING;
-			else if (sync_state == IDLE)        sync_state = WAIT_HOST_INT;
-			else {
-				fault_handler(shared_mem->shepherd_state, "Wrong sync-state at timer wrap");
-				return 0;
-			}
 
 			/* With wrap, we'll use next timestamp as base for GPIO timestamps */
 			current_timestamp_ns = shared_mem->next_timestamp_ns;
@@ -361,26 +352,10 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			iep_set_cmp_val(IEP_CMP1, next_cmp_val);
 
 			/* If we are waiting for a reply from Linux kernel module */
-			if (sync_state == REPLY_PENDING)
+			if (receive_control_reply(shared_mem, &ctrl_rep) > 0)
 			{
-				//DEBUG_EVENT_STATE_1;
-				if (receive_control_reply(shared_mem, &ctrl_rep) > 0)
-				{
-					sync_state = IDLE;
-					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
-				}
-				DEBUG_EVENT_STATE_0;
-			}
-			else if (sync_state == REQUEST_PENDING)
-			{
-				// To stay consistent with timing throw away a possible pre-received Replies (otherwise that +1 can stay in the system forever)
-				if (receive_control_reply(shared_mem, &ctrl_rep) > 0)
-				{
-					shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
-				}
-				// send request
-				send_control_request(shared_mem, &ctrl_req);
-				sync_state = REPLY_PENDING;
+				sync_state = IDLE;
+				shared_mem->next_timestamp_ns = ctrl_rep.next_timestamp_ns;
 			}
 			DEBUG_EVENT_STATE_0;
 			//continue; // for more regular gpio-sampling
