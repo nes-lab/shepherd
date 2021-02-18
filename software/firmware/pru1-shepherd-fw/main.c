@@ -349,7 +349,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				compensation_counter -= ADC_SAMPLES_PER_BUFFER;
 			}
 			// handle edge-case: check if next compare-value is behind auto-reset of cmp0
-			if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period; // TODO: should never happen, could be considered a fault
+			//if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period; // TODO: should never happen, could be considered a fault
 			iep_set_cmp_val(IEP_CMP1, next_cmp_val);
 
 			/* If we are waiting for a reply from Linux kernel module */
