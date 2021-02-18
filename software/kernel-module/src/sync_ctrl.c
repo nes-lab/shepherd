@@ -113,30 +113,32 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 	uint64_t now_ns_system;
 	uint32_t ns_over_wrap;
 	uint64_t ns_now_until_trigger;
+	// add pretrigger, because current design aims directly for busy pru_timer_wrap
+	// (50% chance that pru takes a worthless counter-reading after wrap)
+	static const uint32_t ns_pre_trigger = 105000;
 
 	/* Raise Interrupt on PRU, telling it to timestamp IEP */
 	pru_comm_trigger(HOST_PRU_EVT_TIMESTAMP);
+
 	/* Timestamp system clock */
 	getnstimeofday(&ts_now);
-
 	now_ns_system = (uint64_t)timespec_to_ns(&ts_now);
 
 	/*
      * Get distance of system clock from timer wrap.
      * Is negative, when interrupt happened before wrap, positive when after
      */
-	div_u64_rem(now_ns_system, trigger_loop_period_ns,
-		    &ns_over_wrap);
+	div_u64_rem(now_ns_system, trigger_loop_period_ns, &ns_over_wrap);
 	if (ns_over_wrap > (trigger_loop_period_ns / 2))
 	{
 		ns_sys_to_wrap = ((int64_t)ns_over_wrap - trigger_loop_period_ns);
-		next_timestamp_ns = now_ns_system - ns_over_wrap + 2 * trigger_loop_period_ns;
-		ns_now_until_trigger = 2 * trigger_loop_period_ns - ns_over_wrap;
+		next_timestamp_ns = now_ns_system + 2 * trigger_loop_period_ns - ns_over_wrap;
+		ns_now_until_trigger = 2 * trigger_loop_period_ns - ns_over_wrap - ns_pre_trigger;
 	} else
 	    {
 		ns_sys_to_wrap = ((int64_t)ns_over_wrap);
-		next_timestamp_ns = now_ns_system - ns_over_wrap + trigger_loop_period_ns;
-		ns_now_until_trigger = trigger_loop_period_ns - ns_over_wrap;
+		next_timestamp_ns = now_ns_system + trigger_loop_period_ns - ns_over_wrap;
+		ns_now_until_trigger = trigger_loop_period_ns - ns_over_wrap - ns_pre_trigger;
 	}
 
 	hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
