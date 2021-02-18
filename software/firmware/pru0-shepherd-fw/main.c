@@ -245,7 +245,6 @@ void main(void)
 		.buffer_block_period=TIMER_BASE_PERIOD,
 		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps=0,
-		.compensation_distance=0xFFFFFFFFu,
 		.next_timestamp_ns=0u};
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that

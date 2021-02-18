@@ -226,7 +226,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 		.buffer_block_period = TIMER_BASE_PERIOD,
 		.analog_sample_period = TIMER_BASE_PERIOD / ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps = 0u,
-		.compensation_distance = 0xFFFFFFFFu
 	};
 
 	/* This tracks our local state, allowing to execute actions at the right time */
@@ -241,8 +240,8 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	/*
 	 * holds distribution of the compensation periods (every x samples the period is increased by 1)
 	 */
-	uint32_t compensation_distance = ctrl_rep.compensation_distance;
-	uint32_t compensation_dist_count = 0u;
+	uint32_t compensation_counter = 0u;
+	uint32_t compensation_increment = 0u;
 
 	/* Our initial guess of the sampling period based on nominal timer period */
 	uint32_t analog_sample_period = ctrl_rep.analog_sample_period;
@@ -281,7 +280,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			/* Take timestamp of IEP */
 			ctrl_req.ticks_iep = iep_get_cnt_val();
-			DEBUG_EVENT_STATE_2;
+			//DEBUG_EVENT_STATE_2;
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
@@ -302,7 +301,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 		/*  [Event 2] Timer compare 0 handle -> trigger for buffer swap on pru0 */
 		if (iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP0_MASK))
 		{
-			DEBUG_EVENT_STATE_2;
+			//DEBUG_EVENT_STATE_2;
 			shared_mem->cmp0_handled_by_pru1 = 1;
 
 			/* Clear Timer Compare 0 */
@@ -313,7 +312,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			iep_enable_evt_cmp(IEP_CMP1);
 			analog_sample_period = ctrl_rep.analog_sample_period;
 			compensation_steps = ctrl_rep.compensation_steps;
-			compensation_distance = ctrl_rep.compensation_distance;
+			compensation_increment = ctrl_rep.compensation_steps;
 
 			/* update main-loop */
 			buffer_block_period = ctrl_rep.buffer_block_period;
@@ -341,11 +340,13 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			last_analog_sample_ticks = iep_get_cmp_val(IEP_CMP1);
 			/* Forward sample timer based on current analog_sample_period*/
 			uint32_t next_cmp_val = last_analog_sample_ticks + analog_sample_period;
+			compensation_counter += compensation_increment; // fixed point magic
 			/* If we are in compensation phase add one */
-			if ((++compensation_dist_count >= compensation_distance) && (compensation_steps > 0)) {
+			if ((compensation_counter >= ADC_SAMPLES_PER_BUFFER) && (compensation_steps > 0)) {
+				DEBUG_EVENT_STATE_3;
 				next_cmp_val += 1;
 				compensation_steps--;
-				compensation_dist_count = 0;
+				compensation_counter -= ADC_SAMPLES_PER_BUFFER;
 			}
 			// handle edge-case: check if next compare-value is behind auto-reset of cmp0
 			if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period; // TODO: should never happen, could be considered a fault
