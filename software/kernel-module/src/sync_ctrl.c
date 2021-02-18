@@ -224,7 +224,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	 * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
 	 * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
 	 * */
-    sync_data->clock_corr = (int32_t)(div_s64(sync_data->error, 100) + div_s64(sync_data->error_sum, 300));
+    sync_data->clock_corr = (int32_t)(div_s64(sync_data->error, 120) + div_s64(sync_data->error_sum, 400));
     if (0)
     {
         printk(KERN_ERR "shprd.kM: error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, prev_period=%u, corr=%d\n",
