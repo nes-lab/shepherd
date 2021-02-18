@@ -196,6 +196,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		{
 			GPIO_TOGGLE(DEBUG_PIN1_MASK);
 			shared_mem->cmp0_handled_by_pru0 = 1;
+			// TODO: a buffer swap could be done here, but then would the first sample not be on timer=0
 			if (shared_mem->analog_sample_counter > 1)
 				shared_mem->analog_sample_counter = 1;
 			GPIO_TOGGLE(DEBUG_PIN1_MASK);

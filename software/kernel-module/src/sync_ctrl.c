@@ -176,6 +176,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     return HRTIMER_RESTART;
 }
 
+// TODO: take these from pru-sharedmem
 #define BUFFER_PERIOD_NS    	(100000000U)
 #define ADC_SAMPLES_PER_BUFFER  (10000U)
 #define TIMER_TICK_NS           (5U)
@@ -187,7 +188,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 {
 	int64_t ns_iep_to_wrap;
 	uint64_t ns_per_tick;
-    int32_t clock_corr;
+
 	/*
      * Based on the previous IEP timer period and the nominal timer period
      * we can estimate the real nanoseconds passing per tick
@@ -241,7 +242,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
         ctrl_rep->compensation_distance = (ADC_SAMPLES_PER_BUFFER / ctrl_rep->compensation_steps);
     }
 
-    if ((1) && ++info_count > 200) /* prints every 20s when enabled */
+    if ((1) && ++info_count > 200) /* val = 200 prints every 20s when enabled */
     {
         printk(KERN_INFO
         "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, comp_d=%u, corr=%d, last_peri=%u\n",
@@ -249,7 +250,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
                 ctrl_rep->analog_sample_period,
                 ctrl_rep->compensation_steps,
                 ctrl_rep->compensation_distance,
-                clock_corr,
+                sync_data->clock_corr,
                 ctrl_req->old_period);
         info_count = 0;
     }
