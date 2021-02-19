@@ -265,7 +265,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 	while (1)
 	{
-
 		#if DEBUG_LOOP_EN
 		debug_loop_delays(shared_mem->shepherd_state);
 		#endif
@@ -294,18 +293,12 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			continue;  // for more regular gpio-sampling
 		}
 
-		// take a snapshot of current triggers -> ensures prioritized handling
-		// edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
-		const uint32_t iep_tmr_cmp_sts = iep_get_tmr_cmp_sts();
-
 		/*  [Event 2] Timer compare 0 handle -> trigger for buffer swap on pru0 */
-		if (iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP0_MASK))
+		if (shared_mem->cmp0_handled_by_pru0)
 		{
 			DEBUG_EVENT_STATE_2;
-			shared_mem->cmp0_handled_by_pru1 = 1;
-
-			/* Clear Timer Compare 0 */
-			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
+			// hand-back of cmp-token
+			shared_mem->cmp0_handled_by_pru0 = 0;
 
 			/* update clock compensation of sample-trigger */
 			iep_set_cmp_val(IEP_CMP1, 0);
@@ -330,13 +323,12 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 		}
 
 		/* [Event 3] Timer compare 1 handle -> trigger for analog sample on pru0 */
-		if (iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP1_MASK))
+		if (shared_mem->cmp1_handled_by_pru0)
 		{
-			shared_mem->cmp1_handled_by_pru1 = 1;
-
-			/* Important: We have to clear the interrupt here, to avoid missing interrupts */
-			iep_clear_evt_cmp(IEP_CMP1);
 			DEBUG_EVENT_STATE_1;
+			// hand-back of cmp-token
+			shared_mem->cmp1_handled_by_pru0 = 0;
+
 			// Update Timer-Values
 			last_analog_sample_ticks = iep_get_cmp_val(IEP_CMP1);
 			/* Forward sample timer based on current analog_sample_period*/
@@ -348,8 +340,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				compensation_steps--;
 				compensation_counter -= ADC_SAMPLES_PER_BUFFER;
 			}
-			// handle edge-case: check if next compare-value is behind auto-reset of cmp0
-			//if (next_cmp_val > buffer_block_period) next_cmp_val = buffer_block_period; // TODO: should never happen, could be considered a fault
 			iep_set_cmp_val(IEP_CMP1, next_cmp_val);
 
 			/* If we are waiting for a reply from Linux kernel module */
@@ -360,19 +350,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			}
 			DEBUG_EVENT_STATE_0;
 			continue; // for more regular gpio-sampling
-		}
-
-		// cleanup of cmp-tokens
-		if ((shared_mem->cmp0_handled_by_pru0 != 0) && (shared_mem->cmp0_handled_by_pru1 != 0))
-		{
-			shared_mem->cmp0_handled_by_pru0 = 0;
-			shared_mem->cmp0_handled_by_pru1 = 0;
-		}
-
-		if ((shared_mem->cmp1_handled_by_pru0 != 0) && (shared_mem->cmp1_handled_by_pru1 != 0))
-		{
-			shared_mem->cmp1_handled_by_pru0 = 0;
-			shared_mem->cmp1_handled_by_pru1 = 0;
 		}
 	}
 }

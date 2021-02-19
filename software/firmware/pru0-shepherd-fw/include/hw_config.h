@@ -15,6 +15,8 @@
 #define SPI_CS_EMU_ADC_PIN	(P9_42B)
 #define SPI_CS_EMU_ADC_MASK	BIT_SHIFT(SPI_CS_EMU_ADC_PIN)
 
+#define SPI_CS_ADCs_MASK	(SPI_CS_HRV_V_ADC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_EMU_ADC_MASK)
+
 // Pins now share correct mapping with SPI1-HW-Module
 #define SPI_SCLK_MASK		BIT_SHIFT(P9_31)
 #define SPI_MOSI_MASK		BIT_SHIFT(P9_29)

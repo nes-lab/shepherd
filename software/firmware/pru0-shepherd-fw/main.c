@@ -137,18 +137,35 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 {
 	uint32_t sample_buf_idx = NO_BUFFER;
 	enum ShepherdMode shepherd_mode = (enum ShepherdMode)shared_mem->shepherd_mode;
+	uint32_t iep_tmr_cmp_sts = 0;
 
 	while (1)
 	{
-		// take a snapshot of current triggers -> ensures prioritized handling
+		// take a snapshot of current triggers until something happens -> ensures prioritized handling
 		// edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
-		const uint32_t iep_tmr_cmp_sts = iep_get_tmr_cmp_sts(); // 12 cycles, 60 ns
+		while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // 12 cycles, 60 ns
+		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
+		{
+			// Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
+			// TODO: look at asm-code, is there still potential for optimization?
+			GPIO_OFF(SPI_CS_ADCs_MASK);
+			shared_mem->cmp1_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
+			/* Clear Timer Compare 1 */
+			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
+			__delay_cycles(100 / 5); // determine minimal low for starting sample
+			GPIO_ON(SPI_CS_ADCs_MASK);
+		}
+
+		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
+		{
+			shared_mem->cmp0_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
+			/* Clear Timer Compare 0 */
+			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
+		}
 
 		// pru0 manages the irq, but pru0 reacts to it directly -> less jitter
-		if ((shared_mem->cmp1_handled_by_pru0 == 0) && ((shared_mem->cmp1_handled_by_pru1 == 1) || iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP1_MASK)))
+		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
-			shared_mem->cmp1_handled_by_pru0 = 1;
-
 			/* The actual sampling takes place here */
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
@@ -192,11 +209,11 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		}
 
 		// this stack ensures low overhead to event loop AND full buffer before switching
-		if ((shared_mem->cmp0_handled_by_pru0 == 0) && ((shared_mem->cmp0_handled_by_pru1 == 1) || iep_check_evt_cmp_fast(iep_tmr_cmp_sts, IEP_CMP0_MASK)))
+		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
 		{
 			GPIO_TOGGLE(DEBUG_PIN1_MASK);
-			shared_mem->cmp0_handled_by_pru0 = 1;
-			// TODO: a buffer swap could be done here, but then would the first sample not be on timer=0
+			// TODO: a buffer swap should be done here, but then would the first sample not be on timer=0
+			// TODO: prepare: accelerate buffer_swap and harden pre-trigger, then this routine can come before the actual sampling
 			if (shared_mem->analog_sample_counter > 1)
 				shared_mem->analog_sample_counter = 1;
 			GPIO_TOGGLE(DEBUG_PIN1_MASK);
