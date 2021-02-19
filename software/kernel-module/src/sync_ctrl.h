@@ -44,7 +44,9 @@ int sync_loop(struct CtrlRepMsg *ctrl_rep, const struct CtrlReqMsg *ctrl_req);
  * allow users to track state.
  */
 struct sync_data_s {
-    int64_t error;
+    int64_t error_now;
+    int64_t error_pre;
+    int64_t error_dif;
 	int64_t error_sum;
 	int32_t clock_corr;
     uint32_t previous_period;

@@ -100,7 +100,9 @@ int sync_init(uint32_t timer_period_ns)
 
 int sync_reset(void)
 {
-    sync_data->error = 0;
+    sync_data->error_now = 0;
+    sync_data->error_pre = 0;
+    sync_data->error_dif = 0;
 	sync_data->error_sum = 0;
 	sync_data->clock_corr = 0;
     sync_data->previous_period = TIMER_BASE_PERIOD;
@@ -195,6 +197,8 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 {
 	int64_t ns_iep_to_wrap;
 	uint64_t ns_per_tick;
+	static int32_t th_switch = 0;
+	static uint32_t enable_pi = 1;
 
 	/*
      * Based on the previous IEP timer period and the nominal timer period
@@ -209,26 +213,50 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      * negative, if interrupt happened before wrap, positive after
      */
 	ns_iep_to_wrap = ((int64_t)ctrl_req->ticks_iep) * ns_per_tick;
-    /* YES, 29 in next line is correct, if ns_iep is over the half it is shorter to go the other direction */
+    /* 29 in next line is correct, if ns_iep is over the half it is shorter to go the other direction */
 	if (ns_iep_to_wrap > ((uint64_t)trigger_loop_period_ns << 29u))
 	{
 		ns_iep_to_wrap -= ((uint64_t)trigger_loop_period_ns << 30u);
 	}
 
 	/* Difference between system clock and IEP clock phase */
-	sync_data->error = div_s64(ns_iep_to_wrap, 1ul<<30u) - ns_sys_to_wrap; // TODO: could save some divs
-	sync_data->error_sum += sync_data->error;
+	sync_data->error_pre = sync_data->error_now; // TODO: new D (of PID) is not in sysfs yet
+	sync_data->error_now = div_s64(ns_iep_to_wrap, 1ul<<30u) - ns_sys_to_wrap; // TODO: could save some divs
+    sync_data->error_dif = sync_data->error_now - sync_data->error_pre;
+    sync_data->error_sum += sync_data->error_now; // integral should be behind controller, because current P-value is twice in calculation
 
-	/* This is the actual PI controller equation,
-	 * NOTE: unit of clock_corr is ticks, but input is based on nanosec
-	 * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
-	 * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
-	 * */
-    sync_data->clock_corr = (int32_t)(div_s64(sync_data->error, 120) + div_s64(sync_data->error_sum, 400));
+    if ((sync_data->error_now < +1000) && (sync_data->error_now > -1000))
+    {
+        if (th_switch > 100) enable_pi = 0;
+        else th_switch++;
+    }
+    else
+    {
+        th_switch = 0;
+        enable_pi = 1;
+    }
+
+    if (enable_pi)
+    {
+        /* This is the actual PI controller equation,
+         * NOTE: unit of clock_corr is ticks, but input is based on nanosec
+         * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
+         * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
+         * */
+        sync_data->clock_corr = (int32_t)(div_s64(sync_data->error_now, 128) + div_s64(sync_data->error_sum, 256));
+    }
+    else
+    {
+        // use small increments once error is small enough
+        if ((sync_data->error_now > 0) && (sync_data->error_dif > 0)) sync_data->clock_corr++;
+        if ((sync_data->error_now < 0) && (sync_data->error_dif < 0)) sync_data->clock_corr--;
+    }
+
+
     if (0)
     {
         printk(KERN_ERR "shprd.kM: error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, prev_period=%u, corr=%d\n",
-                sync_data->error,
+                sync_data->error_now,
                 div_s64(ns_iep_to_wrap, 1ul<<30u),
                 ns_sys_to_wrap,
                 sync_data->error_sum,
@@ -242,15 +270,17 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
     ctrl_rep->compensation_steps = ctrl_rep->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * ctrl_rep->analog_sample_period);
 
-    if ((1) && ++info_count > 200) /* val = 200 prints every 20s when enabled */
+    if ((1) && ++info_count >= 200) /* val = 200 prints every 20s when enabled */
     {
         printk(KERN_INFO
-        "shprd.k: buf_period=%u, as_period=%u, comp_n=%u, corr=%d, prev_peri=%u\n",
+        "shprd.k: p_buf=%u, p_as=%u, n_comp=%u, p_prev=%u, e_pid=%lld/%lld/%u\n",
                 ctrl_rep->buffer_block_period,
                 ctrl_rep->analog_sample_period,
                 ctrl_rep->compensation_steps,
-                sync_data->clock_corr,
-                sync_data->previous_period);
+                sync_data->previous_period,
+                sync_data->error_now,
+                sync_data->error_sum,
+                enable_pi);
         info_count = 0;
     }
 

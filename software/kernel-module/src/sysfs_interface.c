@@ -168,7 +168,7 @@ static ssize_t sysfs_SharedMem_show(struct kobject *kobj,
 static ssize_t sysfs_sync_error_show(struct kobject *kobj,
 				     struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%lld", sync_data->error);
+	return sprintf(buf, "%lld", sync_data->error_now);
 }
 
 static ssize_t sysfs_sync_error_sum_show(struct kobject *kobj,
