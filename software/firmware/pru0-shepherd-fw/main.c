@@ -143,19 +143,17 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 	{
 		// take a snapshot of current triggers until something happens -> ensures prioritized handling
 		// edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
-		while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // 12 cycles, 60 ns
+		while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // read iep-reg -> 12 cycles, 60 ns
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
 			// Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
 			// TODO: look at asm-code, is there still potential for optimization?
 			GPIO_OFF(SPI_CS_ADCs_MASK);
-			shared_mem->cmp1_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
-			/* Clear Timer Compare 1 */
-			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 			__delay_cycles(100 / 5); // determine minimal low for starting sample
 			GPIO_ON(SPI_CS_ADCs_MASK);
 		}
 
+		// TODO: this design looks silly, but this relaxes a current racing-condition on pru1 -> event2 must be called before event3!
 		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
 		{
 			shared_mem->cmp0_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
@@ -166,6 +164,11 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		// pru0 manages the irq, but pru0 reacts to it directly -> less jitter
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
+			shared_mem->cmp1_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
+			/* Clear Timer Compare 1 */
+			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
+
+
 			/* The actual sampling takes place here */
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
