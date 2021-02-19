@@ -228,7 +228,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     if ((sync_data->error_now < +1000) && (sync_data->error_now > -1000))
     {
         if (th_switch > 100) enable_pi = 0;
-        else th_switch++;
+        //else th_switch++; // disable for now
     }
     else
     {
