@@ -230,8 +230,8 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
      * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
      * */
     sync_data->clock_corr = (int32_t)(div_s64(sync_data->error_now, 64) + div_s64(sync_data->error_sum, 128));
-    if (sync_data->clock_corr > +50000) sync_data->clock_corr = +50000
-    if (sync_data->clock_corr < -50000) sync_data->clock_corr = -50000
+    if (sync_data->clock_corr > +80000) sync_data->clock_corr = +80000;
+    if (sync_data->clock_corr < -80000) sync_data->clock_corr = -80000;
 
     if (0)
     {
@@ -253,14 +253,14 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     if ((1) && ++info_count >= 200) /* val = 200 prints every 20s when enabled */
     {
         printk(KERN_INFO
-        "shprd.k: p_buf=%u, p_as=%u, n_comp=%u, p_prev=%u, e_pid=%lld/%lld/%u\n",
+        "shprd.k: p_buf=%u, p_as=%u, n_comp=%u, p_prev=%u, e_pid=%lld/%lld/%lld\n",
                 ctrl_rep->buffer_block_period,
                 ctrl_rep->analog_sample_period,
                 ctrl_rep->compensation_steps,
                 sync_data->previous_period,
                 sync_data->error_now,
                 sync_data->error_sum,
-                enable_pi);
+                sync_data->error_dif);
         info_count = 0;
     }
 
