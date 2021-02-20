@@ -197,8 +197,6 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 {
 	int64_t ns_iep_to_wrap;
 	uint64_t ns_per_tick;
-	static int32_t th_switch = 0;
-	static uint32_t enable_pi = 1;
 
 	/*
      * Based on the previous IEP timer period and the nominal timer period
@@ -225,33 +223,15 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     sync_data->error_dif = sync_data->error_now - sync_data->error_pre;
     sync_data->error_sum += sync_data->error_now; // integral should be behind controller, because current P-value is twice in calculation
 
-    if ((sync_data->error_now < +1000) && (sync_data->error_now > -1000))
-    {
-        if (th_switch > 100) enable_pi = 0;
-        //else th_switch++; // disable for now
-    }
-    else
-    {
-        th_switch = 0;
-        enable_pi = 1;
-    }
-
-    if (enable_pi)
-    {
-        /* This is the actual PI controller equation,
-         * NOTE: unit of clock_corr is ticks, but input is based on nanosec
-         * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
-         * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
-         * */
-        sync_data->clock_corr = (int32_t)(div_s64(sync_data->error_now, 128) + div_s64(sync_data->error_sum, 256));
-    }
-    else
-    {
-        // use small increments once error is small enough
-        if ((sync_data->error_now > 0) && (sync_data->error_dif > 0)) sync_data->clock_corr++;
-        if ((sync_data->error_now < 0) && (sync_data->error_dif < 0)) sync_data->clock_corr--;
-    }
-
+    /* This is the actual PI controller equation,
+     * NOTE1: unit of clock_corr in pru is ticks, but input is based on nanosec
+     * NOTE2: traces show, that quantization noise could be a problem. example: K-value of 127, divided by 128 will still be 0, ringing is around ~ +-150
+     * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359
+     * current parameters:          P=1/100,I=1/300, correction settled at ~1332 with values from 1330 to 1335
+     * */
+    sync_data->clock_corr = (int32_t)(div_s64(sync_data->error_now, 64) + div_s64(sync_data->error_sum, 128));
+    if (sync_data->clock_corr > +50000) sync_data->clock_corr = +50000
+    if (sync_data->clock_corr < -50000) sync_data->clock_corr = -50000
 
     if (0)
     {
