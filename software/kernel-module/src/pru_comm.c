@@ -117,18 +117,19 @@ unsigned int pru_comm_get_buffer_period_ns(void)
 		     offsetof(struct SharedMem, buffer_period_ns));
 }
 
+
 unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
 {
     uint32_t offset_msg;
     uint32_t offset_unread;
 
-    offset_msg = offsetof(struct SharedMem, ctrl_req);
-    offset_unread = offsetof(struct SharedMem, ctrl_req) + offsetof(struct CtrlReqMsg, msg_unread);
+    offset_msg = offsetof(struct SharedMem, pru1_msg_ctrl_req);
+    offset_unread = offsetof(struct SharedMem, pru1_msg_ctrl_req) + offsetof(struct CtrlReqMsg, msg_unread);
 
     /* testing for unread-msg-token */
     if (readb(pru_shared_mem_io + offset_unread) >= 1u)
     {
-        /* if unread, then continue to copy request */
+        /* if unread, then continue to copy request, TODO: also check for ID*/
         memcpy_fromio(ctrl_request, pru_shared_mem_io + offset_msg, sizeof(struct CtrlReqMsg));
         /* mark as read */
         writeb(0u, pru_shared_mem_io + offset_unread);
@@ -138,21 +139,104 @@ unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
 }
 
 
-
 unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
 {
     unsigned char status;
     uint32_t offset_msg;
     uint32_t offset_unread;
 
-    offset_msg = offsetof(struct SharedMem, ctrl_rep);
-    offset_unread = offsetof(struct SharedMem, ctrl_rep) + offsetof(struct CtrlRepMsg, msg_unread);
+    offset_msg = offsetof(struct SharedMem, pru1_msg_ctrl_rep);
+    offset_unread = offsetof(struct SharedMem, pru1_msg_ctrl_rep) + offsetof(struct CtrlRepMsg, msg_unread);
     status = readb(pru_shared_mem_io + offset_unread) == 0u;
 
     /* first update payload in memory */
-    ctrl_reply->identifier = MSG_SYNC_CTRL_REP;
+    ctrl_reply->identifier = MSG_TO_PRU;
     ctrl_reply->msg_unread = 0u;
     memcpy_toio(pru_shared_mem_io + offset_msg, ctrl_reply, sizeof(struct CtrlRepMsg));
+
+    /* activate message with unread-token */
+    writeb(1u, pru_shared_mem_io + offset_unread);
+    return status;
+}
+
+
+unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg_container)
+{
+    uint32_t offset_msg;
+    uint32_t offset_unread;
+
+    offset_msg = offsetof(struct SharedMem, pru0_msg_error);
+    offset_unread = offsetof(struct SharedMem, pru0_msg_error) + offsetof(struct ProtoMsg, msg_unread);
+
+    /* testing for unread-msg-token */
+    if (readb(pru_shared_mem_io + offset_unread) >= 1u)
+    {
+        /* if unread, then continue to copy request, TODO: also check for ID */
+        memcpy_fromio(msg_container, pru_shared_mem_io + offset_msg, sizeof(struct ProtoMsg));
+        /* mark as read */
+        writeb(0u, pru_shared_mem_io + offset_unread);
+        return 1;
+    }
+    return 0;
+}
+
+
+unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg_container)
+{
+    uint32_t offset_msg;
+    uint32_t offset_unread;
+
+    offset_msg = offsetof(struct SharedMem, pru1_msg_error);
+    offset_unread = offsetof(struct SharedMem, pru1_msg_error) + offsetof(struct ProtoMsg, msg_unread);
+
+    /* testing for unread-msg-token */
+    if (readb(pru_shared_mem_io + offset_unread) >= 1u)
+    {
+        /* if unread, then continue to copy request, TODO: also check for ID */
+        memcpy_fromio(msg_container, pru_shared_mem_io + offset_msg, sizeof(struct ProtoMsg));
+        /* mark as read */
+        writeb(0u, pru_shared_mem_io + offset_unread);
+        return 1;
+    }
+    return 0;
+}
+
+
+unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container)
+{
+    uint32_t offset_msg;
+    uint32_t offset_unread;
+
+    offset_msg = offsetof(struct SharedMem, pru0_msg_outbox);
+    offset_unread = offsetof(struct SharedMem, pru0_msg_outbox) + offsetof(struct ProtoMsg, msg_unread);
+
+    /* testing for unread-msg-token */
+    if (readb(pru_shared_mem_io + offset_unread) >= 1u)
+    {
+        /* if unread, then continue to copy request, TODO: also check for ID*/
+        memcpy_fromio(msg_container, pru_shared_mem_io + offset_msg, sizeof(struct ProtoMsg));
+        /* mark as read */
+        writeb(0u, pru_shared_mem_io + offset_unread);
+        return 1;
+    }
+    return 0;
+}
+
+
+unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container)
+{
+    unsigned char status;
+    uint32_t offset_msg;
+    uint32_t offset_unread;
+
+    offset_msg = offsetof(struct SharedMem, pru0_msg_inbox);
+    offset_unread = offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, msg_unread);
+    status = readb(pru_shared_mem_io + offset_unread) == 0u;
+
+    /* first update payload in memory */
+    msg_container->msg_id = MSG_TO_PRU;
+    msg_container->msg_unread = 0u;
+    memcpy_toio(pru_shared_mem_io + offset_msg, msg_container, sizeof(struct ProtoMsg));
 
     /* activate message with unread-token */
     writeb(1u, pru_shared_mem_io + offset_unread);

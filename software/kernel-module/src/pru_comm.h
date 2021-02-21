@@ -93,5 +93,14 @@ unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request);
  */
 unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply);
 
+/*
+ * COM-System between kernel module and PRU0
+ * @param msg_container is a ProtoMsg
+ * @return success = 1, error = 0
+ */
+unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container);
+unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container);
 
+unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg_container);
+unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg_container);
 #endif /* PRU_COMM_H_ */
