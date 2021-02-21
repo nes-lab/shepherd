@@ -65,10 +65,14 @@ extern void dac_write(uint32_t cs_pin, uint32_t val);
 static inline void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* reference algorithm */
-	static const uint8_ft SETTLE_INC = 5; /* NOTE: ADC sampled at last CS-Rising-Edge (prev. sample) */
+
+	static const uint8_ft SETTLE_INC = 5;
+	/* NOTE: ADC sampled at last CS-Rising-Edge (new pretrigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	__delay_cycles(800 / 5);
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
 	const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* just a simple algorithm that sets 75% of open circuit voltage_adc  */
 	if (sample_idx <= SETTLE_INC)
 	{
@@ -108,7 +112,7 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	/* Get input current/voltage from shared memory buffer */
 	const uint32_t input_current_nA = buffer->values_current[sample_idx];
 	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
-	//vsource_calc_inp_power(input_current_nA, input_voltage_uV);
+	vsource_calc_inp_power(input_current_nA, input_voltage_uV);
 
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
@@ -172,6 +176,8 @@ void sample(struct SampleBuffer *const current_buffer_far, const uint32_t sample
 uint32_t sample_dbg_adc(const uint32_t channel_num)
 {
 	uint32_t result;
+	/* NOTE: ADC sampled at last CS-Rising-Edge (new pretrigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	__delay_cycles(1000 / 5);
 
 	switch (channel_num)
 	{
