@@ -41,15 +41,15 @@ struct shepherd_platform_data {
 int pru_recvd(void *data, unsigned int len)
 {
 	char *msg;
-	struct CtrlRepMsg ctrl_rep;
+	//struct CtrlRepMsg ctrl_rep; // TODO: overhaul whole routine
 	msg = (char *)(data);
 
 	switch (msg[0]) {
-	case MSG_SYNC_CTRL_REQ:
+	case MSG_TO_KERNEL:
 		/* Run the clock synchronization control loop */
-		sync_loop(&ctrl_rep, (struct CtrlReqMsg *)data);
+		//sync_loop(&ctrl_rep, (struct CtrlReqMsg *)data);
 		/* Send the result back as RPMSG */
-		rpmsg_pru_send(&ctrl_rep, sizeof(struct CtrlRepMsg));
+		//rpmsg_pru_send(&ctrl_rep, sizeof(struct CtrlRepMsg));
 		break;
 	default:
 		printk(KERN_INFO "shprd.pru: %s [state=%d]\n", msg, pru_comm_get_state());
