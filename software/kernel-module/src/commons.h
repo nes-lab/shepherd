@@ -11,7 +11,27 @@
 /* The SharedMem struct resides at the beginning of the PRUs shared memory */
 #define PRU_SHARED_MEM_STRUCT_OFFSET    (0x10000)
 
-enum SyncMsgID { MSG_SYNC_CTRL_REQ = 0x55, MSG_SYNC_CTRL_REP = 0xAA };
+/* Message content description used to distinguish messages for PRU0 */
+enum MsgType {
+    MSG_NONE = 0u,
+    MSG_BUF_FROM_HOST = 1u,
+    MSG_BUF_FROM_PRU = 2u,
+    // ERROR
+    MSG_ERROR = 0xE0u,
+    MSG_ERR_MEMCORRUPTION = 0xE1u,
+    MSG_ERR_BACKPRESSURE = 0xE2u,
+    MSG_ERR_INCMPLT = 0xE3u,
+    MSG_ERR_INVLDCMD = 0xE4u,
+    MSG_ERR_NOFREEBUF = 0xE5u,
+    MSG_ERR_TIMESTAMP = 0xE6u,
+    // DEBUG
+    MSG_DBG_ADC = 0xF0u,
+    MSG_DBG_DAC = 0xF1u,
+    MSG_DBG_GPI = 0xF2u,
+    MSG_DBG_PRINT = 0xF6u
+};
+
+enum MsgID { MSG_TO_KERNEL = 0x55, MSG_TO_PRU = 0xAA };
 
 enum ShepherdMode {
 	MODE_HARVEST,
@@ -81,6 +101,22 @@ struct VirtSource_Config {
     uint32_t LUT_out_inv_efficiency_n10[LUT_SIZE]; // depending on output_current, n10 means value = 2^10 / eta,
 } __attribute__((packed));
 
+
+/* Format of Message-Protocol between PRU0 Kernel Module */
+struct ProtoMsg {
+    /* Identifier => Canary, This is used to identify memory corruption */
+    uint8_t msg_id;
+    /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
+    uint8_t msg_unread;
+    /* content description used to distinguish messages */
+    uint8_t msg_type;
+    /* Alignment with memory, (bytes)mod4 */
+    uint8_t reserved[1];
+    /* Actual Content of message */
+    uint32_t value;
+} __attribute__((packed));
+
+
 /* Control request message sent from PRU1 to this kernel module */
 struct CtrlReqMsg {
     /* Identifier => Canary, This is used to identify memory corruption */
@@ -133,9 +169,13 @@ struct SharedMem {
 	struct Calibration_Config calibration_settings;
 	/* This structure defines all settings of virtual source emulation*/
 	struct VirtSource_Config virtsource_settings;
-	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
-	struct CtrlReqMsg ctrl_req;
-	struct CtrlRepMsg ctrl_rep;
+	/* replacement Msg-System for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
+    struct ProtoMsg pru0_msg_inbox;
+    struct ProtoMsg pru0_msg_outbox;
+    struct ProtoMsg pru0_msg_error;
+    struct CtrlReqMsg pru1_msg_ctrl_req;
+    struct CtrlRepMsg pru1_msg_ctrl_rep;
+    struct ProtoMsg   pru1_msg_error;
 } __attribute__((packed));
 
 #endif /* __COMMONS_H_ */
