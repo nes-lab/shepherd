@@ -32,7 +32,7 @@ enum MsgType {
 	MSG_DBG_ADC = 0xF0u,
 	MSG_DBG_DAC = 0xF1u,
 	MSG_DBG_GPI = 0xF2u,
-	MSG_DBG_PRINT = 0xF6u,
+	MSG_DBG_PRINT = 0xF6u
 };
 
 /* Message IDs used in Mem-Protocol between PRUs and kernel module */
@@ -139,7 +139,7 @@ struct ProtoMsg {
 	uint32_t value;
 } __attribute__((packed));
 
-/* Control request message sent from PRU1 to this kernel module */
+/* Control request message sent from PRU1 to this kernel module, TODO: replace by protoMsg*/
 struct CtrlReqMsg {
 	/* Identifier => Canary, This is used to identify memory corruption */
 	uint8_t identifier;
@@ -189,11 +189,12 @@ struct SharedMem {
 	/* This structure defines all settings of virtual source emulation*/
 	struct VirtSource_Config virtsource_settings;
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
-	struct CtrlReqMsg ctrl_req;
-	struct CtrlRepMsg ctrl_rep;
 	struct ProtoMsg pru0_msg_inbox;
 	struct ProtoMsg pru0_msg_outbox;
 	struct ProtoMsg pru0_msg_error;
+	struct CtrlReqMsg pru1_msg_ctrl_req;
+	struct CtrlRepMsg pru1_msg_ctrl_rep;
+	struct ProtoMsg   pru1_msg_error;
 	/* NOTE: End of region (also) controlled by kernel module */
 
 	/* Used to exchange timestamp of next buffer between PRU1 and PRU0 */

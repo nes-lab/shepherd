@@ -11,9 +11,9 @@
 
 #include "stdint_fast.h"
 #include "gpio.h"
-#include "intc.h"
+#include "intc.h"  // TODO: should be safe to remove
 #include "resource_table_def.h"
-#include "rpmsg.h"
+#include "rpmsg.h" // TODO: should be safe to remove
 #include "simple_lock.h"
 
 #include "commons.h"
@@ -127,8 +127,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 }
 
 
-static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr e mode,
-		 const enum ShepherdState state, const uint32_t gpio_pin_state)
+static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr)
 {
 	struct ProtoMsg msg_in;
 
@@ -295,14 +294,15 @@ void main(void)
 
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
-	shared_memory->ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u};
-	shared_memory->ctrl_rep = (struct CtrlRepMsg){
+	shared_memory->pru1_msg_ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u};
+	shared_memory->pru1_msg_ctrl_rep = (struct CtrlRepMsg){
 		.identifier=0u,
 		.msg_unread=0u,
 		.buffer_block_period=TIMER_BASE_PERIOD,
 		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps=0,
 		.next_timestamp_ns=0u};
+	shared_memory->pru1_msg_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
 
 	shared_memory->pru0_msg_outbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
 	shared_memory->pru0_msg_inbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
