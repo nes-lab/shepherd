@@ -28,7 +28,7 @@ int sync_reset(void);
  * Our task is to copy that clock to the PRU's IEP. For this purpose, we run
  * a Linux hrtimer, that expires on the corresponding wrap of the Linux
  * CLOCK_REALTIME and we immediately trigger an interrupt on the PRU. The PRU
- * sends us its own phase via RPMSG. The goal of this function is to calculate
+ * sends us its own phase. The goal of this function is to calculate
  * a 'correction factor' that is added to the IEP's frequency, such that the
  * difference between the phase of our clock and the IEP's is minimized.
  *

@@ -6,8 +6,6 @@
 #include "sync_ctrl.h"
 #include "pru_comm.h"
 
-
-
 static int64_t ns_sys_to_wrap;
 static uint64_t next_timestamp_ns;
 static uint64_t prev_timestamp_ns = 0; 	/* for plausibility-check */
@@ -23,7 +21,7 @@ static uint32_t trigger_loop_period_ns = 100000000; /* just initial value to avo
 
 /* Timer to trigger fast synch_loop */
 struct hrtimer trigger_loop_timer;
-struct hrtimer synch_loop_timer;
+struct hrtimer sync_loop_timer;
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 const static unsigned int timer_steps_ns[] = {
@@ -48,7 +46,7 @@ struct sync_data_s *sync_data;
 int sync_exit(void)
 {
 	hrtimer_cancel(&trigger_loop_timer);
-	hrtimer_cancel(&synch_loop_timer);
+	hrtimer_cancel(&sync_loop_timer);
 	kfree(sync_data);
 
 	return 0;
@@ -78,8 +76,8 @@ int sync_init(uint32_t timer_period_ns)
     trigger_loop_timer.function = &trigger_loop_callback;
 
     /* timer for Synch-Loop */
-    hrtimer_init(&synch_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    synch_loop_timer.function = &sync_loop_callback;
+    hrtimer_init(&sync_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    sync_loop_timer.function = &sync_loop_callback;
 
 	div_u64_rem(now_ns_system, timer_period_ns, &ns_over_wrap);
 	if (ns_over_wrap > (timer_period_ns / 2))
@@ -91,7 +89,7 @@ int sync_init(uint32_t timer_period_ns)
 		      ns_to_ktime(now_ns_system + ns_now_until_trigger),
 		      HRTIMER_MODE_ABS);
 
-    hrtimer_start(&synch_loop_timer,
+    hrtimer_start(&sync_loop_timer,
             ns_to_ktime(now_ns_system + 1000000),
             HRTIMER_MODE_ABS);
 
@@ -165,10 +163,10 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
 
     if (pru_comm_get_ctrl_request(&ctrl_req))
     {
-        if (ctrl_req.identifier != MSG_SYNC_CTRL_REQ)
+        if (ctrl_req.identifier != MSG_TO_KERNEL)
         {
             /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd: Kernel Recv_CtrlRequest -> mem corruption?\n");
+            printk(KERN_ERR "shprd.k: Recv_CtrlRequest -> mem corruption?\n");
         }
 
         sync_loop(&ctrl_rep, &ctrl_req);
@@ -176,7 +174,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
         if (!pru_comm_send_ctrl_reply(&ctrl_rep))
         {
             /* Error occurs if PRU was not able to handle previous message in time */
-            printk(KERN_WARNING "shprd: Kernel Send_CtrlResponse -> back-pressure\n");
+            printk(KERN_WARNING "shprd.k: Send_CtrlResponse -> back-pressure\n");
         }
 
         /* resetting to longest sleep period */
@@ -185,7 +183,6 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
 
     hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
             ns_to_ktime(timer_steps_ns[step_pos])); /* variable sleep cycle */
-    /* TODO: ktime_get() seems a proper replacement for "timespec_to_ktime(ts_now)" */
 
     if (step_pos < timer_steps_ns_size - 1) step_pos++;
 
@@ -235,7 +232,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 
     if (0)
     {
-        printk(KERN_ERR "shprd.kM: error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, prev_period=%u, corr=%d\n",
+        printk(KERN_ERR "shprd.k: error=%lld, ns_iep=%lld, ns_sys=%lld, errsum=%lld, prev_period=%u, corr=%d\n",
                 sync_data->error_now,
                 div_s64(ns_iep_to_wrap, 1ul<<30u),
                 ns_sys_to_wrap,
