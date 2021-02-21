@@ -15,22 +15,28 @@
 // NOTE: name => alphanum without spaces and without ""
 #define ASSERT(name, expression) 	extern uint32_t assert_name[1/(expression)]
 
-/* Message IDs used in Data Exchange Protocol between PRU0 and user space */
-enum DEPMsgID {
-	MSG_DEP_ERROR = 0u,
-	MSG_DEP_BUF_FROM_HOST = 1u,
-	MSG_DEP_BUF_FROM_PRU = 2u,
-	MSG_DEP_ERR_INCMPLT = 3u,
-	MSG_DEP_ERR_INVLDCMD = 4u,
-	MSG_DEP_ERR_NOFREEBUF = 5u,
-	MSG_DEP_DBG_PRINT = 6u,
-	MSG_DEP_DBG_ADC = 0xF0u,
-	MSG_DEP_DBG_DAC = 0xF1u,
-	MSG_DEP_DBG_GPI = 0xF2u
+/* Message content description used to distinguish messages for PRU0 */
+enum MsgType {
+	MSG_NONE = 0u,
+	MSG_BUF_FROM_HOST = 1u,
+	MSG_BUF_FROM_PRU = 2u,
+	// ERROR
+	MSG_ERROR = 0xE0u,
+	MSG_ERR_MEMCORRUPTION = 0xE1u,
+	MSG_ERR_BACKPRESSURE = 0xE2u,
+	MSG_ERR_INCMPLT = 0xE3u,
+	MSG_ERR_INVLDCMD = 0xE4u,
+	MSG_ERR_NOFREEBUF = 0xE5u,
+	MSG_ERR_TIMESTAMP = 0xE6u,
+	// DEBUG
+	MSG_DBG_ADC = 0xF0u,
+	MSG_DBG_DAC = 0xF1u,
+	MSG_DBG_GPI = 0xF2u,
+	MSG_DBG_PRINT = 0xF6u,
 };
 
-/* Message IDs used in Synchronization Protocol between PRU1 and kernel module */
-enum SyncMsgID { MSG_SYNC_CTRL_REQ = 0x55, MSG_SYNC_CTRL_REP = 0xAA };
+/* Message IDs used in Mem-Protocol between PRUs and kernel module */
+enum MsgID { MSG_TO_KERNEL = 0x55, MSG_TO_PRU = 0xAA };
 
 enum ShepherdMode {
 	MODE_HARVEST,
@@ -119,9 +125,17 @@ struct VirtSource_Config {
 // pseudo-assertion to test for correct struct-size, zero cost
 extern uint32_t CHECK_VIRTSOURCE[1/((sizeof(struct VirtSource_Config) & 0x03u) == 0x00u)];
 
-/* Format of RPMSG used in Data Exchange Protocol between PRU0 and user space */
-struct DEPMsg {
+/* Format of Message-Protocol between PRU0 Kernel Module */
+struct ProtoMsg {
+	/* Identifier => Canary, This is used to identify memory corruption */
+	uint8_t msg_id;
+	/* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
+	uint8_t msg_unread;
+	/* content description used to distinguish messages */
 	uint32_t msg_type;
+	/* Alignment with memory, (bytes)mod4 */
+	uint8_t reserved[1];
+	/* Actual Content of message */
 	uint32_t value;
 } __attribute__((packed));
 
@@ -129,7 +143,7 @@ struct DEPMsg {
 struct CtrlReqMsg {
 	/* Identifier => Canary, This is used to identify memory corruption */
 	uint8_t identifier;
-	/* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
+	/* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
 	uint8_t msg_unread;
 	/* Alignment with memory, (bytes)mod4 */
 	uint8_t reserved[2];
@@ -177,6 +191,9 @@ struct SharedMem {
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
 	struct CtrlRepMsg ctrl_rep;
+	struct ProtoMsg pru0_inbox;
+	struct ProtoMsg pru0_outbox;
+	struct ProtoMsg pru0_error;
 	/* NOTE: End of region (also) controlled by kernel module */
 
 	/* Used to exchange timestamp of next buffer between PRU1 and PRU0 */

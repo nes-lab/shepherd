@@ -31,14 +31,55 @@
 #include "spi_transfer_sys.h"
 #endif
 
-static void send_message(const uint32_t msg_id, const uint32_t value)
+// alternative message channel specially dedicated for errors
+static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	const struct DEPMsg msg_out = { .msg_type= msg_id, .value = value};
-	rpmsg_putraw((void *)&msg_out, sizeof(struct DEPMsg));
-	// TODO: could also be replaced by new msg-system / rp-replacement
+	//if (shared_mem->pru0_error.msg_unread == 0) // do not care, newest error wins
+	{
+		shared_mem->pru0_error.msg_type = type;
+		shared_mem->pru0_error.value = value;
+		shared_mem->pru0_error.msg_id = MSG_TO_KERNEL;
+		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
+		shared_mem->pru0_error.msg_unread = 1u;
+	}
 }
 
-static uint32_t handle_block_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
+// send returns a 1 on success
+static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
+{
+	if (shared_mem->pru0_outbox.msg_unread == 0)
+	{
+		shared_mem->pru0_outbox.msg_type = type;
+		shared_mem->pru0_outbox.value = value;
+		shared_mem->pru0_outbox.msg_id = MSG_TO_KERNEL;
+		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
+		shared_mem->pru0_outbox.msg_unread = 1u;
+		return 1;
+	}
+	/* Error occurs if kernel was not able to handle previous message in time */
+	emit_error(shared_mem, MSG_ERR_BACKPRESSURE, 0);
+	return 0;
+}
+
+// only one central hub should receive, because a message is only handed out once
+static bool_ft receive_message(volatile struct SharedMem *const shared_mem, struct ProtoMsg *const msg_container)
+{
+	if (shared_mem->pru0_inbox.msg_unread >= 1)
+	{
+		if (shared_mem->pru0_inbox.msg_id == MSG_TO_PRU)
+		{
+			*msg_container = shared_mem->pru0_inbox;
+			shared_mem->pru0_inbox.msg_unread = 0;
+			return 1;
+		}
+		// send mem_corruption warning
+		emit_error(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
+	}
+	return 0;
+}
+
+
+static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
 			  struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
 {
 	uint32_t next_buffer_idx;
@@ -47,12 +88,16 @@ static uint32_t handle_block_swap(volatile struct SharedMem *const shared_mem, s
 	/* If we currently have a valid buffer, return it to host */
 	// NOTE1: this must come first or else python-backend gets confused
 	// NOTE2: was in mutex-state before, but it does not need to, only blocks gpio-sampling / pru1 (80% of workload is in this fn)
-	if (current_buffer_idx != NO_BUFFER) {
+	// TODO: it should be in mutex...
+	if (current_buffer_idx != NO_BUFFER)
+	{
 		if (analog_sample_idx != ADC_SAMPLES_PER_BUFFER) // TODO: could be removed in future, not possible anymore
-			send_message(MSG_DEP_ERR_INCMPLT, analog_sample_idx);
+		{
+			emit_error(shared_mem, MSG_ERR_INCMPLT, analog_sample_idx);
+		}
 
 		(buffers_far + current_buffer_idx)->len = analog_sample_idx;
-		send_message(MSG_DEP_BUF_FROM_PRU, current_buffer_idx);
+		send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx);
 	}
 
 	/* Lock access to gpio_edges structure to avoid inconsistency */
@@ -62,70 +107,62 @@ static uint32_t handle_block_swap(volatile struct SharedMem *const shared_mem, s
 	if (ring_get(free_buffers_ptr, &tmp_idx) > 0) {
 		next_buffer_idx = (uint32_t)tmp_idx;
         	struct SampleBuffer *const next_buffer = buffers_far + next_buffer_idx;
-		next_buffer->timestamp_ns = shared_mem->next_timestamp_ns;
+		next_buffer->timestamp_ns = shared_mem->next_timestamp_ns; // TODO: where does next timestamp come from?
 		shared_mem->gpio_edges = &next_buffer->gpio_edges;
 		shared_mem->gpio_edges->idx = 0;
 
 		if (shared_mem->next_timestamp_ns == 0)
 		{
 			/* debug-output for a wrong timestamp */
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
-			GPIO_TOGGLE(DEBUG_PIN0_MASK);
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
-			GPIO_TOGGLE(DEBUG_PIN0_MASK);
+			emit_error(shared_mem, MSG_ERR_TIMESTAMP, 0);
 		}
 	} else {
 		next_buffer_idx = NO_BUFFER;
 		shared_mem->gpio_edges = NULL;
-		send_message(MSG_DEP_ERR_NOFREEBUF, 0);
+		emit_error(shared_mem, MSG_ERR_NOFREEBUF, 0);
 	}
 	simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 
 	return next_buffer_idx;
 }
 
-// TODO: this system can also be replaced by shared-mem-msg-system, including the send_message() above
-// fn emits a 0 on error, 1 on success
-static bool_ft handle_rpmsg(struct RingBuffer *const free_buffers_ptr, const enum ShepherdMode mode,
+
+static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr e mode,
 		 const enum ShepherdState state, const uint32_t gpio_pin_state)
 {
-	struct DEPMsg msg_in;
+	struct ProtoMsg msg_in;
 
-	/*
-	 * TI's implementation of RPMSG on the PRU triggers the same interrupt
-	 * line when sending a message that is used to signal the reception of
-	 * the message. We therefore need to check the length of the potential
-	 * message
-	 */
-	if (rpmsg_get((void *)&msg_in) != sizeof(struct DEPMsg))
-		return 1U;
+	if (receive_message(shared_mem, &msg_in) == 0)
+		return 1u;
 
-	if ((mode == MODE_DEBUG) && (state == STATE_RUNNING)) {
-        uint32_t res;
+	if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
+	{
+        	uint32_t res;
 		switch (msg_in.msg_type) {
-		case MSG_DEP_DBG_ADC:
+		case MSG_DBG_ADC:
 			res = sample_dbg_adc(msg_in.value);
-			send_message(MSG_DEP_DBG_ADC, res);
-			return 1U;
+			send_message(shared_mem, MSG_DBG_ADC, res);
+			return 1u;
 
-		case MSG_DEP_DBG_DAC:
+		case MSG_DBG_DAC:
 			sample_dbg_dac(msg_in.value);
-			return 1U;
+			return 1u;
 
-		case MSG_DEP_DBG_GPI:
-			send_message(MSG_DEP_DBG_GPI, gpio_pin_state);
+		case MSG_DBG_GPI:
+			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state);
 			return 1U;
 
 		default:
-			send_message(MSG_DEP_ERR_INVLDCMD, msg_in.msg_type);
+			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.msg_type);
 			return 0U;
 		}
-	} else {
-		if (msg_in.msg_type == MSG_DEP_BUF_FROM_HOST) {
+	} else
+	{
+		if (msg_in.msg_type == MSG_BUF_FROM_HOST) {
 			ring_put(free_buffers_ptr, (uint8_t)msg_in.value);
 			return 1U;
 		} else {
-			send_message(MSG_DEP_ERR_INVLDCMD, msg_in.msg_type);
+			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.msg_type);
 			return 0U;
 		}
 	}
@@ -149,8 +186,10 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			// Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
 			// TODO: look at asm-code, is there still potential for optimization?
 			GPIO_OFF(SPI_CS_ADCs_MASK);
-			__delay_cycles(100 / 5); // determine minimal low for starting sample
+			// determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
+			__delay_cycles(100 / 5);
 			GPIO_ON(SPI_CS_ADCs_MASK);
+			// TODO: make sure that 1 us passes before trying to get that value
 		}
 
 		// TODO: this design looks silly, but this relaxes a current racing-condition on pru1 -> event2 must be called before event3!
@@ -194,20 +233,18 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				if ((shared_mem->shepherd_state == STATE_RUNNING) &&
 				    (shared_mem->shepherd_mode != MODE_DEBUG))
 				{
-					//sample_buf_idx = handle_block_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, analog_sample_idx);
-					sample_buf_idx = handle_block_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, shared_mem->analog_sample_counter);
+					//sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, analog_sample_idx);
+					sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
+									    shared_mem->analog_sample_counter);
 					shared_mem->analog_sample_counter = 0;
 					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
 			}
 			/* We only handle rpmsg comms if we're not at the last sample */
 			else {
-				//GPIO_ON(DEBUG_PIN0_MASK);
-				handle_rpmsg(free_buffers_ptr,
-					     (enum ShepherdMode)shared_mem->shepherd_mode,
-					     (enum ShepherdState)shared_mem->shepherd_state,
-					     shared_mem->gpio_pin_state);
-                		//GPIO_OFF(DEBUG_PIN0_MASK);
+				GPIO_ON(DEBUG_PIN0_MASK);
+				handle_kernel_com(shared_mem, free_buffers_ptr);
+                		GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 		}
 
@@ -266,6 +303,11 @@ void main(void)
 		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps=0,
 		.next_timestamp_ns=0u};
+
+	shared_memory->pru0_outbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru0_inbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru0_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
 	 * are used to transfer the actual data between us and the Linux host.
@@ -276,11 +318,7 @@ void main(void)
 
 	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-	rpmsg_init("rpmsg-pru");
-
-#if SPI_SYS_TEST_EN // TODO: Test-Area
-	sys_spi_init();
-#endif
+	rpmsg_init("rpmsg-pru"); // TODO: can be removed
 
 reset:
 	ring_init(&free_buffers);

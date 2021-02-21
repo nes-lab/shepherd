@@ -78,13 +78,14 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 {
 	if (shared_mem->ctrl_rep.msg_unread >= 1)
 	{
-		if (shared_mem->ctrl_rep.identifier != MSG_SYNC_CTRL_REP)
+		if (shared_mem->ctrl_rep.identifier != MSG_TO_PRU)
 		{
 			/* Error occurs if something writes over boundaries */
 			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> mem corruption?");
 		}
 		*ctrl_rep = shared_mem->ctrl_rep; // TODO: faster to copy only the needed 2 uint32
 		shared_mem->ctrl_rep.msg_unread = 0;
+		// TODO: move this to kernel
 		if (ctrl_rep->buffer_block_period > TIMER_BASE_PERIOD + (TIMER_BASE_PERIOD>>3))
 		{
 			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> buffer_block_period too high");
@@ -111,13 +112,13 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 }
 
 // send emits a 1 on success
-// ctrl_req: (future opt.) needs to have special config set: identifier=MSG_SYNC_CTRL_REQ and msg_unread=1
+// ctrl_req: (future opt.) needs to have special config set: identifier=MSG_TO_KERNEL and msg_unread=1
 static inline bool_ft send_control_request(volatile struct SharedMem *const shared_mem, const struct CtrlReqMsg *const ctrl_req)
 {
 	if (shared_mem->ctrl_req.msg_unread == 0)
 	{
 		shared_mem->ctrl_req = *ctrl_req;
-		shared_mem->ctrl_req.identifier = MSG_SYNC_CTRL_REQ; // TODO: is better done in request from argument
+		shared_mem->ctrl_req.identifier = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->ctrl_req.msg_unread = 1u;
 		return 1;
@@ -221,7 +222,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	uint32_t last_analog_sample_ticks = 0;
 
 	/* Prepare message that will be received and sent to Linux kernel module */
-	struct CtrlReqMsg ctrl_req = { .identifier = MSG_SYNC_CTRL_REQ, .msg_unread = 1 };
+	struct CtrlReqMsg ctrl_req = { .identifier = MSG_TO_KERNEL, .msg_unread = 1 };
 	struct CtrlRepMsg ctrl_rep = {
 		.buffer_block_period = TIMER_BASE_PERIOD,
 		.analog_sample_period = TIMER_BASE_PERIOD / ADC_SAMPLES_PER_BUFFER,
