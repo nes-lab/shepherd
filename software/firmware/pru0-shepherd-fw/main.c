@@ -34,26 +34,26 @@
 // alternative message channel specially dedicated for errors
 static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	//if (shared_mem->pru0_error.msg_unread == 0) // do not care, newest error wins
+	//if (shared_mem->pru0_msg_error.msg_unread == 0) // do not care, newest error wins
 	{
-		shared_mem->pru0_error.msg_type = type;
-		shared_mem->pru0_error.value = value;
-		shared_mem->pru0_error.msg_id = MSG_TO_KERNEL;
+		shared_mem->pru0_msg_error.msg_type = type;
+		shared_mem->pru0_msg_error.value = value;
+		shared_mem->pru0_msg_error.msg_id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-		shared_mem->pru0_error.msg_unread = 1u;
+		shared_mem->pru0_msg_error.msg_unread = 1u;
 	}
 }
 
 // send returns a 1 on success
 static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	if (shared_mem->pru0_outbox.msg_unread == 0)
+	if (shared_mem->pru0_msg_outbox.msg_unread == 0)
 	{
-		shared_mem->pru0_outbox.msg_type = type;
-		shared_mem->pru0_outbox.value = value;
-		shared_mem->pru0_outbox.msg_id = MSG_TO_KERNEL;
+		shared_mem->pru0_msg_outbox.msg_type = type;
+		shared_mem->pru0_msg_outbox.value = value;
+		shared_mem->pru0_msg_outbox.msg_id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-		shared_mem->pru0_outbox.msg_unread = 1u;
+		shared_mem->pru0_msg_outbox.msg_unread = 1u;
 		return 1;
 	}
 	/* Error occurs if kernel was not able to handle previous message in time */
@@ -64,12 +64,12 @@ static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum Ms
 // only one central hub should receive, because a message is only handed out once
 static bool_ft receive_message(volatile struct SharedMem *const shared_mem, struct ProtoMsg *const msg_container)
 {
-	if (shared_mem->pru0_inbox.msg_unread >= 1)
+	if (shared_mem->pru0_msg_inbox.msg_unread >= 1)
 	{
-		if (shared_mem->pru0_inbox.msg_id == MSG_TO_PRU)
+		if (shared_mem->pru0_msg_inbox.msg_id == MSG_TO_PRU)
 		{
-			*msg_container = shared_mem->pru0_inbox;
-			shared_mem->pru0_inbox.msg_unread = 0;
+			*msg_container = shared_mem->pru0_msg_inbox;
+			shared_mem->pru0_msg_inbox.msg_unread = 0;
 			return 1;
 		}
 		// send mem_corruption warning
@@ -195,7 +195,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		// TODO: this design looks silly, but this relaxes a current racing-condition on pru1 -> event2 must be called before event3!
 		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
 		{
-			shared_mem->cmp0_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
+			shared_mem->cmp0_trigger_for_pru1 = 1;
 			/* Clear Timer Compare 0 */
 			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
 		}
@@ -203,7 +203,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		// pru0 manages the irq, but pru0 reacts to it directly -> less jitter
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
-			shared_mem->cmp1_handled_by_pru0 = 1; // TODO: better name: cmp1_relay_trigger, cross relay
+			shared_mem->cmp1_trigger_for_pru1 = 1;
 			/* Clear Timer Compare 1 */
 			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
@@ -304,9 +304,9 @@ void main(void)
 		.compensation_steps=0,
 		.next_timestamp_ns=0u};
 
-	shared_memory->pru0_outbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
-	shared_memory->pru0_inbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
-	shared_memory->pru0_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru0_msg_outbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru0_msg_inbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru0_msg_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
 
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
@@ -331,10 +331,8 @@ reset:
 
 	// Initialize struct-Members Part B
 	// Reset Token-System to init-values
-	shared_memory->cmp0_handled_by_pru0 = 0;
-	shared_memory->cmp0_handled_by_pru1 = 0;
-	shared_memory->cmp1_handled_by_pru0 = 0;
-	shared_memory->cmp1_handled_by_pru1 = 0;
+	shared_memory->cmp0_trigger_for_pru1 = 0;
+	shared_memory->cmp1_trigger_for_pru1 = 0;
 
 	shared_memory->shepherd_state = STATE_IDLE;
 	/* Make sure the mutex is clear */

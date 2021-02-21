@@ -295,11 +295,11 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 		}
 
 		/*  [Event 2] Timer compare 0 handle -> trigger for buffer swap on pru0 */
-		if (shared_mem->cmp0_handled_by_pru0)
+		if (shared_mem->cmp0_trigger_for_pru1)
 		{
 			DEBUG_EVENT_STATE_2;
 			// hand-back of cmp-token
-			shared_mem->cmp0_handled_by_pru0 = 0;
+			shared_mem->cmp0_trigger_for_pru1 = 0;
 
 			/* update clock compensation of sample-trigger */
 			iep_set_cmp_val(IEP_CMP1, 0);
@@ -324,11 +324,11 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 		}
 
 		/* [Event 3] Timer compare 1 handle -> trigger for analog sample on pru0 */
-		if (shared_mem->cmp1_handled_by_pru0)
+		if (shared_mem->cmp1_trigger_for_pru1)
 		{
 			DEBUG_EVENT_STATE_1;
 			// hand-back of cmp-token
-			shared_mem->cmp1_handled_by_pru0 = 0;
+			shared_mem->cmp1_trigger_for_pru1 = 0;
 
 			// Update Timer-Values
 			last_analog_sample_ticks = iep_get_cmp_val(IEP_CMP1);

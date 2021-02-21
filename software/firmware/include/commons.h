@@ -132,7 +132,7 @@ struct ProtoMsg {
 	/* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
 	uint8_t msg_unread;
 	/* content description used to distinguish messages */
-	uint32_t msg_type;
+	uint8_t msg_type;
 	/* Alignment with memory, (bytes)mod4 */
 	uint8_t reserved[1];
 	/* Actual Content of message */
@@ -191,9 +191,9 @@ struct SharedMem {
 	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
 	struct CtrlReqMsg ctrl_req;
 	struct CtrlRepMsg ctrl_rep;
-	struct ProtoMsg pru0_inbox;
-	struct ProtoMsg pru0_outbox;
-	struct ProtoMsg pru0_error;
+	struct ProtoMsg pru0_msg_inbox;
+	struct ProtoMsg pru0_msg_outbox;
+	struct ProtoMsg pru0_msg_error;
 	/* NOTE: End of region (also) controlled by kernel module */
 
 	/* Used to exchange timestamp of next buffer between PRU1 and PRU0 */
@@ -211,10 +211,8 @@ struct SharedMem {
 	/* Counter for ADC-Samples, updated by PRU0, also needed (non-writing) by PRU1 for some timing-calculations */
 	uint32_t analog_sample_counter;
 	/* Token system to ensure both PRUs can share interrupts */
-	bool_ft cmp0_handled_by_pru0;
-	bool_ft cmp0_handled_by_pru1;
-	bool_ft cmp1_handled_by_pru0;
-	bool_ft cmp1_handled_by_pru1;
+	bool_ft cmp0_trigger_for_pru1;
+	bool_ft cmp1_trigger_for_pru1;
 } __attribute__((packed));
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000);
