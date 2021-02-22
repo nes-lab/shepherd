@@ -120,11 +120,8 @@ unsigned int pru_comm_get_buffer_period_ns(void)
 
 unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
 {
-    uint32_t offset_msg;
-    uint32_t offset_unread;
-
-    offset_msg = offsetof(struct SharedMem, pru1_msg_ctrl_req);
-    offset_unread = offsetof(struct SharedMem, pru1_msg_ctrl_req) + offsetof(struct CtrlReqMsg, msg_unread);
+    static const uint32_t offset_msg = offsetof(struct SharedMem, pru1_msg_ctrl_req);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct CtrlReqMsg, msg_unread);
 
     /* testing for unread-msg-token */
     if (readb(pru_shared_mem_io + offset_unread) >= 1u)
@@ -141,13 +138,9 @@ unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request)
 
 unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
 {
-    unsigned char status;
-    uint32_t offset_msg;
-    uint32_t offset_unread;
-
-    offset_msg = offsetof(struct SharedMem, pru1_msg_ctrl_rep);
-    offset_unread = offsetof(struct SharedMem, pru1_msg_ctrl_rep) + offsetof(struct CtrlRepMsg, msg_unread);
-    status = readb(pru_shared_mem_io + offset_unread) == 0u;
+    static const uint32_t offset_msg = offsetof(struct SharedMem, pru1_msg_ctrl_rep);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct CtrlRepMsg, msg_unread);
+    const unsigned char status = readb(pru_shared_mem_io + offset_unread) == 0u;
 
     /* first update payload in memory */
     ctrl_reply->identifier = MSG_TO_PRU;
@@ -162,11 +155,8 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply)
 
 unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg_container)
 {
-    uint32_t offset_msg;
-    uint32_t offset_unread;
-
-    offset_msg = offsetof(struct SharedMem, pru0_msg_error);
-    offset_unread = offsetof(struct SharedMem, pru0_msg_error) + offsetof(struct ProtoMsg, msg_unread);
+    static const uint32_t offset_msg = offsetof(struct SharedMem, pru0_msg_error);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct ProtoMsg, msg_unread);
 
     /* testing for unread-msg-token */
     if (readb(pru_shared_mem_io + offset_unread) >= 1u)
@@ -183,11 +173,8 @@ unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg_container)
 
 unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg_container)
 {
-    uint32_t offset_msg;
-    uint32_t offset_unread;
-
-    offset_msg = offsetof(struct SharedMem, pru1_msg_error);
-    offset_unread = offsetof(struct SharedMem, pru1_msg_error) + offsetof(struct ProtoMsg, msg_unread);
+    static const uint32_t offset_msg = offsetof(struct SharedMem, pru1_msg_error);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct ProtoMsg, msg_unread);
 
     /* testing for unread-msg-token */
     if (readb(pru_shared_mem_io + offset_unread) >= 1u)
@@ -204,11 +191,8 @@ unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg_container)
 
 unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container)
 {
-    uint32_t offset_msg;
-    uint32_t offset_unread;
-
-    offset_msg = offsetof(struct SharedMem, pru0_msg_outbox);
-    offset_unread = offsetof(struct SharedMem, pru0_msg_outbox) + offsetof(struct ProtoMsg, msg_unread);
+    static const uint32_t offset_msg = offsetof(struct SharedMem, pru0_msg_outbox);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct ProtoMsg, msg_unread);
 
     /* testing for unread-msg-token */
     if (readb(pru_shared_mem_io + offset_unread) >= 1u)
@@ -225,13 +209,9 @@ unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container)
 
 unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container)
 {
-    unsigned char status;
-    uint32_t offset_msg;
-    uint32_t offset_unread;
-
-    offset_msg = offsetof(struct SharedMem, pru0_msg_inbox);
-    offset_unread = offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, msg_unread);
-    status = readb(pru_shared_mem_io + offset_unread) == 0u;
+    static const uint32_t offset_msg = offsetof(struct SharedMem, pru0_msg_inbox);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct ProtoMsg, msg_unread);
+    const unsigned char status = readb(pru_shared_mem_io + offset_unread) == 0u;
 
     /* first update payload in memory */
     msg_container->msg_id = MSG_TO_PRU;
@@ -245,6 +225,6 @@ unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container)
 
 unsigned char pru0_comm_check_send_status(void)
 {
-    uint32_t offset_unread = offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, msg_unread);
+    static const uint32_t offset_unread = offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, msg_unread);
     return readb(pru_shared_mem_io + offset_unread) == 0u;
 }
