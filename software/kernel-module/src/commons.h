@@ -1,5 +1,7 @@
 #ifndef __COMMONS_H_
 #define __COMMONS_H_
+#include <linux/types.h>
+
 // NOTE: a Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**
