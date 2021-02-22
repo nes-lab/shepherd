@@ -10,7 +10,7 @@ static int64_t ns_sys_to_wrap;
 static uint64_t next_timestamp_ns;
 static uint64_t prev_timestamp_ns = 0; 	/* for plausibility-check */
 
-void reset_prev_timestamp(void)
+void reset_prev_timestamp(void) // TODO: not needed anymore^, // TODO: there was this reset when a string-message came in per rpmsg
 {
     prev_timestamp_ns = 0;
 }

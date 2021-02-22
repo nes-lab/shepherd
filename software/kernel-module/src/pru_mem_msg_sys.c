@@ -19,6 +19,8 @@ static void ring_init(struct RingBuffer *const buf)
 
 void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
+    while(buf->mutex) {};
+    buf->mutex=1;
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
@@ -29,15 +31,18 @@ void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element
     {
         if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
     }
+    buf->mutex=0;
 }
 
 uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if(buf->active == 0) return 0;
-
+    while(buf->mutex) {};
+    buf->mutex=1;
     *element = buf->ring[buf->start];
     if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
+    buf->mutex=0;
     return 1;
 }
 
@@ -115,45 +120,60 @@ enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart)
 
     do
     {
-        if (pru0_comm_receive_msg(&pru_msg)) had_work=2;
-        else if (pru0_comm_receive_error(&pru_msg)) had_work=4;
-        else if (pru1_comm_receive_error(&pru_msg)) had_work=5;
+        if (pru0_comm_receive_msg(&pru_msg)) had_work = 2;
+        else if (pru0_comm_receive_error(&pru_msg)) had_work = 4;
+        else if (pru1_comm_receive_error(&pru_msg)) had_work = 5;
         else continue;
 
-        switch (pru_msg.msg_type)
+        if (pru_msg.msg_type<0xC0)
         {
-            case MSG_BUF_FROM_PRU:
-            case MSG_DBG_ADC:
-            case MSG_DBG_DAC:
-            case MSG_DBG_GPI:
-            case MSG_DBG_PRINT:
-                ring_put(&msg_ringbuf_from_pru, &pru_msg);
-                /* these are all handled in userspace and will be passed by sys-fs */
+            ring_put(&msg_ringbuf_from_pru, &pru_msg);
+        }
+        else
+        {
+            switch (pru_msg.msg_type) // TODO: move over to py, just keep ringbuffer-overflow here
+            {
+            case MSG_STATUS_RESTARTING_SYNC_ROUTINE:
+                printk(KERN_INFO
+                "shprd.pru%c: (re)starting sync routine.. (val=%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERROR:
-                printk(KERN_ERR "shprd.pru%c: general error (val=%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: general error (val=%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_MEMCORRUPTION:
-                printk(KERN_ERR "shprd.pru%c: msg.id from kernel is faulty -> mem corruption? (val=%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: msg.id from kernel is faulty -> mem corruption? (val=%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_BACKPRESSURE:
-                printk(KERN_ERR "shprd.pru%c: msg-buffer to kernel was still full -> backpressure (val=%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: msg-buffer to kernel was still full -> backpressure (val=%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_INCMPLT:
-                printk(KERN_ERR "shprd.pru%c: sample-buffer not full (fill=%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: sample-buffer not full (fill=%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_INVLDCMD:
-                printk(KERN_ERR "shprd.pru%c: received invalid command / msg-type (%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: received invalid command / msg-type (%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_NOFREEBUF:
-                printk(KERN_ERR "shprd.pru%c: ringbuffer is depleted - no free buffer (val=%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: ringbuffer is depleted - no free buffer (val=%u)\n", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_TIMESTAMP:
-                printk(KERN_ERR "shprd.pru%c: received timestamp is faulty (val=%u)\n", had_work&1, pru_msg.value);
+                printk(KERN_ERR
+                "shprd.pru%c: received timestamp is faulty (val=%u)\n", had_work & 1, pru_msg.value);
+                break;
+            case MSG_ERR_SYNC_STATE_NOT_IDLE:
+                printk(KERN_ERR
+                "shprd.pru%c: Sync not idle at host interrupt (val=%u)\n", had_work & 1, pru_msg.value);
                 break;
             default:
-                printk(KERN_ERR "shprd.k: received invalid command / msg-type (%hhu) from pru%c\n", pru_msg.msg_type, had_work&1);
-                // TODO: it seems more reasonable to just handle errors here and everything else goes to sys-fs (less complexity here)
+                /* these are all handled in userspace and will be passed by sys-fs */
+                printk(KERN_ERR
+                "shprd.k: received invalid command / msg-type (%hhu) from pru%c\n", pru_msg.msg_type, had_work & 1);
+            }
         }
 
         /* resetting to shortest sleep period */

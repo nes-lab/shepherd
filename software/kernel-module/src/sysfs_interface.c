@@ -534,6 +534,10 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
     {
         count += sprintf(buf + strlen(buf),"%hhu %u", pru_msg.msg_type, pru_msg.value);
     }
+    else
+    {
+        count += sprintf(buf + strlen(buf),"%hhu ", 0x00u);
+    }
     return count;
 }
 
