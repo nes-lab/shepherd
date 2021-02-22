@@ -554,18 +554,17 @@ class ShepherdIO(object):
         self._cleanup()
 
     def _send_msg(self, msg_type: int, value: int) -> NoReturn:
-        """Sends a formatted message to PRU0 via rpmsg channel.
+        """Sends a formatted message to PRU0.
 
         Args:
             msg_type (int): Indicates type of message, must be one of the agreed
                 message types part of the data exchange protocol
             value (int): Actual content of the message
         """
-        msg = struct.pack("=ii", msg_type, value)
-        os.write(self.rpmsg_fd, msg)
+        sysfs_interface.write_pru_msg(msg_type, value)
 
     def _get_msg(self, timeout: float = 0.5):
-        """Tries to retrieve formatted message from PRU0 via rpmsg channel.
+        """Tries to retrieve formatted message from PRU0.
 
         Args:
             timeout (float): Maximum number of seconds to wait for a message
@@ -574,19 +573,18 @@ class ShepherdIO(object):
         ts_end = time.time() + timeout
         while time.time() < ts_end:
             try:
-                rep = os.read(self.rpmsg_fd, 8)
-                return struct.unpack("=ii", rep)
-            except BlockingIOError:
+                return sysfs_interface.read_pru_msg()
+            except SysfsInterfaceException:
                 time.sleep(0.1)
                 continue
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
 
     def _flush_msgs(self):
-        """Flushes rpmsg channel by reading all available bytes."""
+        """Flushes msg_channel by reading all available bytes."""
         while True:
             try:
-                os.read(self.rpmsg_fd, 1)
-            except BlockingIOError:
+                sysfs_interface.read_pru_msg()
+            except SysfsInterfaceException:
                 break
 
     def start(self, start_time: float = None, wait_blocking: bool = True) -> NoReturn:
