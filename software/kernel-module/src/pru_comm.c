@@ -242,3 +242,9 @@ unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container)
     writeb(1u, pru_shared_mem_io + offset_unread);
     return status;
 }
+
+unsigned char pru0_comm_check_send_status(void)
+{
+    uint32_t offset_unread = offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, msg_unread);
+    return readb(pru_shared_mem_io + offset_unread) == 0u;
+}

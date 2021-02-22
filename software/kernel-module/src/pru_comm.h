@@ -1,5 +1,6 @@
 #ifndef PRU_COMM_H_
 #define PRU_COMM_H_
+#include "commons.h"
 
 /**
  * Initializes communication between our kernel module and the PRUs.
@@ -98,9 +99,15 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply);
  * @param msg_container is a ProtoMsg
  * @return success = 1, error = 0
  */
-unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container);
-unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container);
-
 unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg_container);
 unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg_container);
+
+unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container);
+unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container);
+/*
+ * send_status -> returns 1 if last sent msg was received and buffer is free to fill, 0 otherwise
+ */
+unsigned char pru0_comm_check_send_status(void);
+
+
 #endif /* PRU_COMM_H_ */

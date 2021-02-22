@@ -7,6 +7,7 @@
 #include "sysfs_interface.h"
 #include "pru_comm.h"
 #include "sync_ctrl.h"
+#include "pru_mem_msg_sys.h"
 
 int schedule_start(unsigned int start_time_second);
 
@@ -60,6 +61,14 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf);
 
+static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj,
+        struct kobj_attribute *attr,
+        const char *buffer, size_t count);
+
+static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
+        struct kobj_attribute *attr, char *buffer);
+
+
 struct kobj_attr_struct_s {
 	struct kobj_attribute attr;
 	unsigned int val_offset;
@@ -108,6 +117,11 @@ struct kobj_attr_struct_s attr_virtsource_settings = {
 		       sysfs_virtsource_settings_store),
 	.val_offset = offsetof(struct SharedMem, virtsource_settings)
 };
+struct kobj_attr_struct_s attr_pru_msg_system_settings = {
+        .attr = __ATTR(pru_msg_system, 0660, sysfs_pru_msg_system_show,
+                sysfs_pru_msg_system_store),
+        .val_offset = 0
+};
 
 struct kobj_attribute attr_sync_error =
 	__ATTR(error, 0660, sysfs_sync_error_show, NULL);
@@ -126,6 +140,7 @@ static struct attribute *pru_attrs[] = {
 	&attr_auxiliary_voltage.attr.attr,
 	&attr_calibration_settings.attr.attr,
 	&attr_virtsource_settings.attr.attr,
+	&attr_pru_msg_system_settings.attr.attr,
 	NULL,
 };
 
@@ -493,6 +508,35 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 
 	return count;
 }
+
+static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj,
+        struct kobj_attribute *attr,
+        const char *buffer, size_t count)
+{
+    struct ProtoMsg pru_msg;
+
+    if (sscanf(buffer,"%hhu %u",&pru_msg.msg_type, &pru_msg.value) != 0)
+    {
+        put_msg_to_pru(&pru_msg);
+        return count;
+    }
+
+    return -EINVAL;
+}
+
+static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
+        struct kobj_attribute *attr, char *buf)
+{
+    int count = 0;
+    struct ProtoMsg pru_msg;
+
+    if (get_msg_from_pru(&pru_msg))
+    {
+        count += sprintf(buf + strlen(buf),"%hhu %u", pru_msg.msg_type, pru_msg.value);
+    }
+    return count;
+}
+
 
 int sysfs_interface_init(void)
 {
