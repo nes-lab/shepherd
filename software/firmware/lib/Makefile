@@ -43,7 +43,7 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_DIR := $(notdir $(patsubst %/,%,$(dir $(MKFILE_PATH))))
 
 LINKER_COMMAND_FILE=$(BASE_PATH)/lib/AM335x_PRU.cmd
-LIBS= --library=${PRU_SUPPORT}/lib/rpmsg_lib.lib --library=libc.a
+LIBS= --library=libc.a
 # NOTE: libc.a will be replaced during compile-time by fitting run-time-system (RTS) -> rtspruv3.lib
 
 INCLUDE += --include_path=${PRU_SUPPORT}/include
