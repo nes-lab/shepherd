@@ -9,7 +9,6 @@
 #include <linux/of.h>
 #include <linux/of_device.h>
 
-#include "rpmsg_pru.h"
 #include "sync_ctrl.h"
 #include "pru_comm.h"
 #include "sysfs_interface.h"
@@ -18,7 +17,6 @@
 #define MODULE_NAME "shepherd"
 MODULE_SOFTDEP("pre: pruss");
 MODULE_SOFTDEP("pre: remoteproc");
-MODULE_SOFTDEP("pre: rpmsg_pru");
 
 static const struct of_device_id shepherd_dt_ids[] = {
 	{
@@ -31,34 +29,6 @@ MODULE_DEVICE_TABLE(of, shepherd_dt_ids);
 struct shepherd_platform_data {
 	struct rproc *rproc_prus[2];
 };
-
-/*
- * Handler for incoming RPMSG messages from PRU1. We only expect one type of
- * message, which is the control request, i.e. PRU1 asking us to run the PI
- * controller and send back the resulting clock correction factor. On reception
- * of any other message, we print it to kernel console. This way, PRU1 can
- * send arbitrary messages to user space
- */
-int pru_recvd(void *data, unsigned int len)
-{
-	char *msg;
-	//struct CtrlRepMsg ctrl_rep; // TODO: overhaul whole routine
-	msg = (char *)(data);
-
-	switch (msg[0]) {
-	case MSG_TO_KERNEL:
-		/* Run the clock synchronization control loop */
-		//sync_loop(&ctrl_rep, (struct CtrlReqMsg *)data);
-		/* Send the result back as RPMSG */
-		//rpmsg_pru_send(&ctrl_rep, sizeof(struct CtrlRepMsg));
-		break;
-	default:
-		printk(KERN_INFO "shprd.pru: %s [state=%d]\n", msg, pru_comm_get_state());
-        reset_prev_timestamp(); /* not correct place, but there is no sync-restart-detection yet */
-	}
-	return 0;
-}
-
 
 /*
  * get the two prus from the pruss-device-tree-node and save the pointers for common use.
@@ -145,7 +115,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 		return -EPROBE_DEFER;
 	}
 
-	/* Boot the two PRU cores with the corresponding the shepherd firmware */
+	/* Boot the two PRU cores with the corresponding shepherd firmware */
 	for (i = 0; i < 2; i++) {
 		if (pdata->rproc_prus[i]->state == RPROC_RUNNING)
 			rproc_shutdown(pdata->rproc_prus[i]);
@@ -166,12 +136,6 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 	pru_comm_init();
     mem_msg_sys_init();
 
-	/* Initialize RPMSG and register the 'received' callback function */
-	if ((ret = rpmsg_pru_init(NULL, NULL, pru_recvd))) {
-		return ret;
-	} /* TODO: remove parts of subsystem if new system is in place */
-
-
 	/* Initialize synchronization mechanism between PRU1 and our clock */
 	sync_init(pru_comm_get_buffer_period_ns());
 
@@ -190,7 +154,6 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 	pru_comm_exit();
 	mem_msg_sys_exit();
 	sync_exit();
-	rpmsg_pru_exit();
 
 	if (pdata != NULL) {
 		rproc_shutdown(pdata->rproc_prus[0]);
@@ -224,4 +187,4 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kai Geissdoerfer");
 MODULE_DESCRIPTION("Shepherd time synchronization kernel module");
 MODULE_VERSION("0.2.6");
-MODULE_ALIAS("rpmsg:rpmsg-shprd");
+MODULE_ALIAS("rpmsg:rpmsg-shprd"); // TODO: is this still needed?
