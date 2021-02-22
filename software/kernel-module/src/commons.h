@@ -18,6 +18,13 @@ enum MsgType {
     MSG_NONE = 0u,
     MSG_BUF_FROM_HOST = 1u,
     MSG_BUF_FROM_PRU = 2u,
+    // DEBUG
+    MSG_DBG_ADC = 0xA0u,
+    MSG_DBG_DAC = 0xA1u,
+    MSG_DBG_GPI = 0xA2u,
+    MSG_DBG_PRINT = 0xA6u,
+    // STATUS
+    MSG_STATUS_RESTARTING_SYNC_ROUTINE = 0xC0,
     // ERROR
     MSG_ERROR = 0xE0u,
     MSG_ERR_MEMCORRUPTION = 0xE1u,
@@ -26,11 +33,7 @@ enum MsgType {
     MSG_ERR_INVLDCMD = 0xE4u,
     MSG_ERR_NOFREEBUF = 0xE5u,
     MSG_ERR_TIMESTAMP = 0xE6u,
-    // DEBUG
-    MSG_DBG_ADC = 0xF0u,
-    MSG_DBG_DAC = 0xF1u,
-    MSG_DBG_GPI = 0xF2u,
-    MSG_DBG_PRINT = 0xF6u
+    MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7u
 };
 
 enum MsgID { MSG_TO_KERNEL = 0x55, MSG_TO_PRU = 0xAA };
