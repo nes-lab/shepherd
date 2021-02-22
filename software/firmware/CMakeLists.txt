@@ -64,8 +64,6 @@ set(HDR_SHARED
 
 set(SRC_LIB
         ${CMAKE_CURRENT_LIST_DIR}/lib/src/iep.c
-        ${CMAKE_CURRENT_LIST_DIR}/lib/src/printf.c
-        ${CMAKE_CURRENT_LIST_DIR}/lib/src/rpmsg.c
         ${CMAKE_CURRENT_LIST_DIR}/lib/src/simple_lock.c
         ${CMAKE_CURRENT_LIST_DIR}/lib/src/spi_transfer_sys.c
         )
@@ -73,8 +71,6 @@ set(HDR_LIB
         ${CMAKE_CURRENT_LIST_DIR}/lib/include/gpio.h
         ${CMAKE_CURRENT_LIST_DIR}/lib/include/iep.h
         ${CMAKE_CURRENT_LIST_DIR}/lib/include/intc.h
-        ${CMAKE_CURRENT_LIST_DIR}/lib/include/printf.h
-        ${CMAKE_CURRENT_LIST_DIR}/lib/include/rpmsg.h
         ${CMAKE_CURRENT_LIST_DIR}/lib/include/simple_lock.h
         ${CMAKE_CURRENT_LIST_DIR}/lib/include/spi_transfer_sys.h
         ${CMAKE_CURRENT_LIST_DIR}/lib/include/stdint_fast.h

@@ -9,8 +9,6 @@ INCLUDE = --include_path=./include --include_path=../include
 
 SOURCES = $(notdir $(wildcard ./*.c))
 # also add external files (./lib/src/)
-SOURCES += printf.c
-SOURCES += rpmsg.c
 SOURCES += iep.c
 SOURCES += simple_lock.c
 
