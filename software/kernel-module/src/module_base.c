@@ -13,6 +13,7 @@
 #include "sync_ctrl.h"
 #include "pru_comm.h"
 #include "sysfs_interface.h"
+#include "pru_mem_msg_sys.h"
 
 #define MODULE_NAME "shepherd"
 MODULE_SOFTDEP("pre: pruss");
@@ -163,6 +164,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 	msleep(500);
 	/* Initialize shared memory and PRU interrupt controller */
 	pru_comm_init();
+    mem_msg_sys_init();
 
 	/* Initialize RPMSG and register the 'received' callback function */
 	if ((ret = rpmsg_pru_init(NULL, NULL, pru_recvd))) {
@@ -186,6 +188,7 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 	pdata = pdev->dev.platform_data;
 	sysfs_interface_exit();
 	pru_comm_exit();
+	mem_msg_sys_exit();
 	sync_exit();
 	rpmsg_pru_exit();
 

@@ -118,7 +118,7 @@ struct kobj_attr_struct_s attr_virtsource_settings = {
 	.val_offset = offsetof(struct SharedMem, virtsource_settings)
 };
 struct kobj_attr_struct_s attr_pru_msg_system_settings = {
-        .attr = __ATTR(pru_msg_system, 0660, sysfs_pru_msg_system_show,
+        .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show,
                 sysfs_pru_msg_system_store),
         .val_offset = 0
 };
