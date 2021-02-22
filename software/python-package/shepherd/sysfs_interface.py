@@ -276,13 +276,10 @@ def read_virtsource_settings() -> list:
 
 def write_pru_msg(msg_type: int, value: int) -> NoReturn:
     """
-
     Args:
         msg_type:
         value:
-
     Returns:
-
     """
     if (not isinstance(msg_type, int)) or (not isinstance(value, int)):
         raise SysfsInterfaceException(f"pru_msg-fields have invalid type, "
@@ -298,9 +295,7 @@ def write_pru_msg(msg_type: int, value: int) -> NoReturn:
 
 def read_pru_msg() -> tuple:
     """
-
     Returns:
-
     """
     with open(str(sysfs_path / "pru_msg_box"), "r") as f:
         message = f.read().rstrip()

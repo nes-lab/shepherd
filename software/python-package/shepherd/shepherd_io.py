@@ -483,8 +483,6 @@ class ShepherdIO(object):
         Args:
             mode (str): Shepherd mode, see sysfs_interface for more
         """
-
-        self.rpmsg_fd = None
         self.mode = mode
         self.gpios = dict()
         self.shared_mem = None
@@ -511,10 +509,7 @@ class ShepherdIO(object):
             logger.debug(f"Switching to '{ self.mode }' mode")
             sysfs_interface.write_mode(self.mode)
 
-            # Open the RPMSG channel provided by rpmsg_pru kernel module
-            rpmsg_dev = Path("/dev/rpmsg_pru0")
-            self.rpmsg_fd = os.open(str(rpmsg_dev), os.O_RDWR | os.O_SYNC)
-            os.set_blocking(self.rpmsg_fd, False)
+            # clean up msg-channel provided by kernel module
             self._flush_msgs()
 
             # Ask PRU for base address of shared mem (reserved with remoteproc)
@@ -625,9 +620,6 @@ class ShepherdIO(object):
 
         if self.shared_mem is not None:
             self.shared_mem.__exit__()
-
-        if self.rpmsg_fd is not None:
-            os.close(self.rpmsg_fd)
 
         self.set_target_io_level_conv(False)
         self._set_shepherd_pcb_power(False)
@@ -759,38 +751,39 @@ class ShepherdIO(object):
         """
 
         logger.debug(f"return buffer #{ index } to PRU")
-        self._send_msg(commons.MSG_DEP_BUF_FROM_HOST, index)
+        self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
     def get_buffer(self, timeout: float = 1.0) -> NoReturn:
         """Reads a data buffer from shared memory.
 
-        Polls the RPMSG channel for a message from PRU0 and, if the message
+        Polls the msg-channel for a message from PRU0 and, if the message
         points to a filled buffer in memory, returns the data in the
         corresponding memory location as DataBuffer.
 
         Args:
             timeout (float): Time in seconds that should be waited for an
-                incoming RPMSG
+                incoming msg
         Returns:
             Index and content of corresponding data buffer
         Raises:
-            TimeoutException: If no message is received on RPMSG within
+            TimeoutException: If no message is received within
                 specified timeout
 
         """
         while True:
             msg_type, value = self._get_msg(timeout)
             logger.debug(f"received msg type {msg_type}")
-            if msg_type == commons.MSG_DEP_DBG_PRINT:
-                logger.info(f"Received print: {value}")
-                continue
 
-            elif msg_type == commons.MSG_DEP_BUF_FROM_PRU:
+            if msg_type == commons.MSG_BUF_FROM_PRU:
                 logger.debug(f"Retrieving buffer { value } from shared memory")
                 buf = self.shared_mem.read_buffer(value)
                 return value, buf
 
-            elif msg_type == commons.MSG_DEP_ERR_INCMPLT:
+            elif msg_type == commons.MSG_DBG_PRINT:
+                logger.info(f"Received print: {value}")
+                continue
+
+            elif msg_type == commons.MSG_DEP_ERR_INCMPLT:  # TODO: errors are currently not handed to userspace
                 raise ShepherdIOException(
                     "Got incomplete buffer", commons.MSG_DEP_ERR_INCMPLT, value
                 )
@@ -810,7 +803,7 @@ class ShepherdIO(object):
             else:
                 raise ShepherdIOException(
                     (
-                        f"Expected msg type { commons.MSG_DEP_BUF_FROM_PRU } "
+                        f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
                         f"got { msg_type }[{ value }]"
                     )
                 )

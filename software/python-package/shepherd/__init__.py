@@ -202,17 +202,14 @@ class ShepherdDebug(ShepherdIO):
         else:
             raise ValueError(f"ADC channel { channel } unknown")
 
-        self._send_msg(commons.MSG_DEP_DBG_ADC, channel_no)
+        self._send_msg(commons.MSG_DBG_ADC, channel_no)
 
         msg_type, value = self._get_msg(3.0)
-        if msg_type != commons.MSG_DEP_DBG_ADC:
+        if msg_type != commons.MSG_DBG_ADC:
             raise ShepherdIOException(
-                (
-                    f"Expected msg type { commons.MSG_DEP_DBG_ADC } "
+                    f"Expected msg type { commons.MSG_DBG_ADC } "
                     f"got t{ msg_type } v{ value }"
-                )
-            )
-
+                    )
         return value
 
     def gpi_read(self) -> int:
@@ -230,11 +227,11 @@ class ShepherdDebug(ShepherdIO):
             #define TARGET_BAT_OK           BIT_SHIFT(P8_27) // r31_08
             #define TARGET_GPIO4            BIT_SHIFT(P8_29) // r31_09
         """
-        self._send_msg(commons.MSG_DEP_DBG_GPI, 0)
+        self._send_msg(commons.MSG_DBG_GPI, 0)
         msg_type, value = self._get_msg()
-        if msg_type != commons.MSG_DEP_DBG_GPI:
+        if msg_type != commons.MSG_DBG_GPI:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DEP_DBG_GPI } "
+                    f"Expected msg type { commons.MSG_DBG_GPI } "
                     f"got type { msg_type } val { value }"
                     )
         return value
@@ -249,7 +246,7 @@ class ShepherdDebug(ShepherdIO):
         channels = (int(channels) & ((1 << 4) - 1)) << 20
         value = int(value) & ((1 << 16) - 1)
         message = channels | value
-        self._send_msg(commons.MSG_DEP_DBG_DAC, message)
+        self._send_msg(commons.MSG_DBG_DAC, message)
 
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
