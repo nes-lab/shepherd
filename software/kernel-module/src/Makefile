@@ -7,6 +7,7 @@ $(TARGET)-objs += sync_ctrl.o
 $(TARGET)-objs += pru_comm.o
 $(TARGET)-objs += sysfs_interface.o
 $(TARGET)-objs += rpmsg_pru.o
+$(TARGET)-objs += pru_mem_msg_sys.o
 $(TARGET)-objs += module_base.o
 
 ccflags-y=-I$(src)/../common
