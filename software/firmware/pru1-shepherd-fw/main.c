@@ -6,10 +6,10 @@
 #include <pru_iep.h>
 #include <gpio.h>
 
-#include "rpmsg.h"
 #include "iep.h"
 #include "intc.h"
 
+#include "resource_table.h"
 #include "commons.h"
 #include "shepherd_config.h"
 #include "stdint_fast.h"
@@ -17,7 +17,6 @@
 
 /* The Arm to Host interrupt for the timestamp event is mapped to Host interrupt 0 -> Bit 30 (see resource_table.h) */
 #define HOST_INT_TIMESTAMP_MASK (1U << 30U)
-#define PRU_INT_MASK 		(1U << 31U)
 
 // both pins have a LED
 #define DEBUG_PIN0_MASK 	BIT_SHIFT(P8_28)
@@ -56,20 +55,35 @@ enum SyncState {
 	REPLY_PENDING
 };
 
+// alternative message channel specially dedicated for errors
+static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
+{
+	//if (shared_mem->pru0_msg_error.msg_unread == 0) // do not care, newest error wins
+	{
+		shared_mem->pru1_msg_error.msg_type = type;
+		shared_mem->pru1_msg_error.value = value;
+		shared_mem->pru1_msg_error.msg_id = MSG_TO_KERNEL;
+		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
+		shared_mem->pru1_msg_error.msg_unread = 1u;
+	}
+	if (type >= 0xE0)
+		__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms
+}
+
 //static void fault_handler(const uint32_t shepherd_state, const char * err_msg) // TODO: use when pssp gets changed,
 // TODO: replace by pru0-error-msg-system
-static void fault_handler(const uint32_t shepherd_state, char * err_msg)
+static void fault_handler(volatile struct SharedMem *const shared_mem, enum MsgType err_msg)
 {
 	/* If shepherd is not running, we can recover from the fault */
-	if (shepherd_state != STATE_RUNNING)
+	if (shared_mem->shepherd_state != STATE_RUNNING)
 	{
-		printf(err_msg);
+		emit_error(shared_mem, err_msg, 0);
 		return;
 	}
 
 	while (true)
 	{
-		printf(err_msg);
+		emit_error(shared_mem, err_msg, 0);
 		__delay_cycles(2000000000U);
 	}
 }
@@ -82,30 +96,30 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 		if (shared_mem->pru1_msg_ctrl_rep.identifier != MSG_TO_PRU)
 		{
 			/* Error occurs if something writes over boundaries */
-			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> mem corruption?");
+			fault_handler(shared_mem, MSG_ERR_MEMCORRUPTION);
 		}
 		*ctrl_rep = shared_mem->pru1_msg_ctrl_rep; // TODO: faster to copy only the needed 2 uint32
 		shared_mem->pru1_msg_ctrl_rep.msg_unread = 0;
 		// TODO: move this to kernel
 		if (ctrl_rep->buffer_block_period > TIMER_BASE_PERIOD + (TIMER_BASE_PERIOD>>3))
 		{
-			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> buffer_block_period too high");
+			fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> buffer_block_period too high");
 		}
 		if (ctrl_rep->buffer_block_period < TIMER_BASE_PERIOD - (TIMER_BASE_PERIOD>>3))
 		{
-			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> buffer_block_period too low");
+			fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> buffer_block_period too low");
 		}
 		if (ctrl_rep->analog_sample_period > 2100)
 		{
-			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> analog_sample_period too high");
+			fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> analog_sample_period too high");
 		}
 		if (ctrl_rep->analog_sample_period < 1900)
 		{
-			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> analog_sample_period too low");
+			fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> analog_sample_period too low");
 		}
 		if (ctrl_rep->compensation_steps > ADC_SAMPLES_PER_BUFFER)
 		{
-			fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> compensation_steps too high");
+			fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> compensation_steps too high");
 		}
 		return 1;
 	}
@@ -125,7 +139,7 @@ static inline bool_ft send_control_request(volatile struct SharedMem *const shar
 		return 1;
 	}
 	/* Error occurs if PRU was not able to handle previous message in time */
-	fault_handler(shared_mem->shepherd_state, "Send_CtrlReq -> back-pressure");
+	fault_handler(shared_mem, MSG_ERR_BACKPRESSURE);
 	return 0;
 }
 
@@ -186,7 +200,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem,
 }
 
 
-/*
+/* TODO: update comments, seem outdated
  * The firmware for synchronization/sample timing is based on a simple
  * event loop. There are three events: 1) Interrupt from Linux kernel module
  * 2) Local IEP timer wrapped 3) Local IEP timer compare for sampling
@@ -287,7 +301,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			if (sync_state == IDLE)    sync_state = REPLY_PENDING;
 			else {
-				fault_handler(shared_mem->shepherd_state,"Sync not idle at host interrupt");
+				fault_handler(shared_mem, MSG_ERR_SYNC_STATE_NOT_IDLE);
 				return 0;
 			}
 			send_control_request(shared_mem, &ctrl_req);
@@ -364,14 +378,11 @@ void main(void)
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	DEBUG_STATE_0;
 
-	rpmsg_init("rpmsg-shprd");
-	__delay_cycles(1000);
-
 	/* Enable 'timestamp' interrupt from ARM host */
 	CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
 
 reset:
-	printf("(re)starting sync routine..");
+	emit_error(shared_mememory, MSG_STATUS_RESTARTING_SYNC_ROUTINE, 0); // TODO: rename
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_mememory->gpio_edges_mutex);
 

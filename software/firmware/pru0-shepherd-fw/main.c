@@ -13,7 +13,6 @@
 #include "gpio.h"
 #include "intc.h"  // TODO: should be safe to remove
 #include "resource_table_def.h"
-#include "rpmsg.h" // TODO: should be safe to remove
 #include "simple_lock.h"
 
 #include "commons.h"
@@ -32,6 +31,7 @@
 #endif
 
 // alternative message channel specially dedicated for errors
+// TODO: also used for status,
 static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
 	//if (shared_mem->pru0_msg_error.msg_unread == 0) // do not care, newest error wins
@@ -42,6 +42,8 @@ static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru0_msg_error.msg_unread = 1u;
 	}
+	if (type >= 0xE0)
+		__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms
 }
 
 // send returns a 1 on success
@@ -318,7 +320,6 @@ void main(void)
 
 	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-	rpmsg_init("rpmsg-pru"); // TODO: can be removed
 
 reset:
 	ring_init(&free_buffers);
