@@ -124,11 +124,11 @@ def test_virtsource_emulation(log_writer, log_reader, virtsource_emulator):
 
 @pytest.mark.hardware
 def test_emulate_fn(tmp_path, data_h5, shepherd_up):
-    d = tmp_path / "rec.h5"
+    output = tmp_path / "rec.h5"
     start_time = int(time.time() + 15)
     emulate(
         input_path=data_h5,
-        output_path=d,
+        output_path=output,
         duration=None,
         force_overwrite=True,
         no_calib=True,
@@ -139,7 +139,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         aux_target_voltage=2.5,
     )
 
-    with h5py.File(d, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
         assert (
             hf_emu["data"]["time"].shape[0]
             == hf_hrvst["data"]["time"].shape[0]
