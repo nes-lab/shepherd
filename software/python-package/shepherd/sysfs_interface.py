@@ -70,8 +70,8 @@ def wait_for_state(state: str, timeout: float) -> NoReturn:
         time.sleep(0.1)
 
 
-def set_start(start_time: int = None) -> NoReturn:
-    """Starts shepherd.
+def set_start(start_time: float = None) -> NoReturn:
+    """ Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from
     'idle' to 'running' state. Optionally allows to start at a later point in
@@ -88,11 +88,14 @@ def set_start(start_time: int = None) -> NoReturn:
         )
 
     with open(str(sysfs_path / "state"), "w") as f:
-        if start_time is None:
+        if isinstance(start_time, float):
+            start_time = int(start_time)
+        if isinstance(start_time, int):
+            logger.debug(f"writing start-time = {start_time} to sysfs")
+            f.write(f"{start_time}")
+        else:  # unknown type
             logger.debug(f"writing 'start' to sysfs")
             f.write("start")
-        else:
-            f.write(f"{ start_time }")
 
 
 def set_stop() -> NoReturn:
@@ -103,9 +106,7 @@ def set_stop() -> NoReturn:
     """
     current_state = get_state()
     if current_state != "running":
-        raise SysfsInterfaceException(
-            f"Cannot stop from state { current_state }"
-        )
+        raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
 
     with open(str(sysfs_path / "state"), "w") as f:
         f.write("stop")

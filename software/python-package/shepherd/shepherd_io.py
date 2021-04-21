@@ -152,7 +152,7 @@ class SharedMem(object):
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
             # Header: 64 bit timestamp + 32 bit counter
-            8 + 4 +
+            8 + 4
             # Actual IV data, 32 bit for each current and voltage
             + 2 * 4 * self.samples_per_buffer
             # GPIO edge count
@@ -591,7 +591,6 @@ class ShepherdIO(object):
         """
         if isinstance(start_time, float):
             logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
-            start_time = int(start_time)
         sysfs_interface.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(1_000_000)
@@ -750,7 +749,7 @@ class ShepherdIO(object):
             index (int): Index of the buffer. 0 <= index < n_buffers
         """
 
-        logger.debug(f"return buffer #{ index } to PRU")
+        logger.debug(f"Returning buffer #{ index } to PRU")
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
     def get_buffer(self, timeout: float = 1.0) -> NoReturn:
