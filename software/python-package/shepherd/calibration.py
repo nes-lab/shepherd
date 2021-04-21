@@ -155,7 +155,7 @@ class CalibrationData(object):
                     x[i] = point["measured"]
                     y[i] = point["reference"]
                 slope, intercept, _, _, _ = stats.linregress(x, y)
-                calib_dict[component][channel]["gain"] = float(slope)   # TODO: possibly wrong after all the changes
+                calib_dict[component][channel]["gain"] = float(slope)   # TODO: possibly wrong after all the changes, TEST
                 calib_dict[component][channel]["offset"] = float(intercept)
 
         return cls(calib_dict)

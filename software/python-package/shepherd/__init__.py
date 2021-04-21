@@ -107,7 +107,7 @@ class Emulator(ShepherdIO):
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
                  aux_target_voltage: float = 0.0,
-                 settings_virtsource: VirtualSourceData = None) -> object:
+                 settings_virtsource: VirtualSourceData = None):
 
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
@@ -317,7 +317,7 @@ def record(
 
         recorder.start(start_time, wait_blocking=False)
 
-        logger.info(f"waiting {start_time - time.time():.2f}s until start")
+        logger.info(f"waiting {start_time - time.time():.2f} s until start")
         recorder.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -450,7 +450,7 @@ def emulate(
 
         emu.start(start_time, wait_blocking=False)
 
-        logger.info(f"waiting {start_time - time.time():.2f}s until start")
+        logger.info(f"waiting {start_time - time.time():.2f} s until start")
         emu.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -483,6 +483,7 @@ def emulate(
 
             if output_path is not None:
                 log_writer.write_buffer(emu_buf)
+
             emu.return_buffer(idx, hrvst_buf)
 
             if time.time() > ts_end:

@@ -14,9 +14,9 @@ given the digital code in the DAC.
 """
 
 # both current channels have a 0.1 % shunt resistance of
-R_SHT = 1.00  # [ohm]
+R_SHT = 10.0  # [ohm]
 # the instrumentation amplifiers are configured for gain of
-G_INST_AMP = 100 # [n]
+G_INST_AMP = 10  # [n]
 # we use the ADC's internal reference with
 V_REF_ADC = 4.096  # [V]
 # range of current channels is
@@ -44,7 +44,7 @@ def adc_current_to_raw(current: float) -> int:
 
 def adc_raw_to_current(i_adc: int) -> float:
     # voltage on input of adc
-    v_adc = i_adc * (G_ADC_I * V_REF_ADC) / (2 ** M_ADC)
+    v_adc = float(i_adc) * (G_ADC_I * V_REF_ADC) / (2 ** M_ADC)
     # current according to adc value
     return v_adc / (R_SHT * G_INST_AMP)
 
@@ -56,7 +56,7 @@ def adc_voltage_to_raw(voltage: float) -> int:
 
 def adc_raw_to_voltage(v_adc: int) -> float:
     # voltage according to ADC value
-    return v_adc * (G_ADC_V * V_REF_ADC) / (2 ** M_ADC)
+    return float(v_adc) * (G_ADC_V * V_REF_ADC) / (2 ** M_ADC)
 
 
 def dac_ch_a_voltage_to_raw(voltage: float) -> int:
@@ -64,7 +64,7 @@ def dac_ch_a_voltage_to_raw(voltage: float) -> int:
 
 
 def dac_ch_a_raw_to_voltage(value: int) -> float:
-    return value * (V_REF_DAC * G_DAC_A) / (2 ** M_DAC)
+    return float(value) * (V_REF_DAC * G_DAC_A) / (2 ** M_DAC)
 
 
 def dac_ch_b_voltage_to_raw(voltage: float) -> int:
@@ -72,4 +72,4 @@ def dac_ch_b_voltage_to_raw(voltage: float) -> int:
 
 
 def dac_ch_b_raw_to_voltage(value: int) -> float:
-    return value * (V_REF_DAC * G_DAC_B) / (2 ** M_DAC)
+    return float(value) * (V_REF_DAC * G_DAC_B) / (2 ** M_DAC)
