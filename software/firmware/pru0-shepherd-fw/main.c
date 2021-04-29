@@ -4,14 +4,12 @@
 
 #include <pru_cfg.h>
 #include <pru_iep.h>
-#include <pru_intc.h>
 #include <rsc_types.h>
 
 #include "iep.h"
 
 #include "stdint_fast.h"
 #include "gpio.h"
-#include "intc.h"  // TODO: should be safe to remove
 #include "resource_table_def.h"
 #include "simple_lock.h"
 
@@ -23,12 +21,7 @@
 #include "virtual_source.h"
 
 /* Used to signal an invalid buffer index */
-#define NO_BUFFER 0xFFFFFFFF
-
-#define SPI_SYS_TEST_EN     0
-#if SPI_SYS_TEST_EN > 0 // NOTE: code is currently in extended pssp (not mainline)
-#include "spi_transfer_sys.h"
-#endif
+#define NO_BUFFER 	(0xFFFFFFFF)
 
 // alternative message channel specially dedicated for errors
 // TODO: also used for status,
@@ -90,7 +83,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	/* If we currently have a valid buffer, return it to host */
 	// NOTE1: this must come first or else python-backend gets confused
 	// NOTE2: was in mutex-state before, but it does not need to, only blocks gpio-sampling / pru1 (80% of workload is in this fn)
-	// TODO: it should be in mutex...
+	// TODO: this section should be in mutex...
 	if (current_buffer_idx != NO_BUFFER)
 	{
 		if (analog_sample_idx != ADC_SAMPLES_PER_BUFFER) // TODO: could be removed in future, not possible anymore
@@ -201,7 +194,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
 		}
 
-		// pru0 manages the irq, but pru0 reacts to it directly -> less jitter
+		// pru1 manages the irq, but pru0 reacts to it directly -> less jitter
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
 			shared_mem->cmp1_trigger_for_pru1 = 1;
@@ -241,7 +234,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
 			}
-			/* We only handle rpmsg comms if we're not at the last sample */
+			/* only handle kernel-communications if this is not the last sample */
 			else {
 				GPIO_ON(DEBUG_PIN0_MASK);
 				handle_kernel_com(shared_mem, free_buffers_ptr);
