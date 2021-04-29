@@ -17,6 +17,7 @@
 
 /* The Arm to Host interrupt for the timestamp event is mapped to Host interrupt 0 -> Bit 30 (see resource_table.h) */
 #define HOST_INT_TIMESTAMP_MASK (1U << 30U)
+// TODO: is bit r31.31 still important?
 
 // both pins have a LED
 #define DEBUG_PIN0_MASK 	BIT_SHIFT(P8_28)
@@ -126,7 +127,7 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 	return 0;
 }
 
-// send emits a 1 on success
+// emits a 1 on success
 // pru1_msg_ctrl_req: (future opt.) needs to have special config set: identifier=MSG_TO_KERNEL and msg_unread=1
 static inline bool_ft send_control_request(volatile struct SharedMem *const shared_mem, const struct CtrlReqMsg *const ctrl_req)
 {
@@ -291,7 +292,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 		/* [Event1] Check for timer interrupt from Linux host */
 		if (read_r31() & HOST_INT_TIMESTAMP_MASK) {
-			if (!INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) continue;
+			if (!INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) continue; // TODO: do we need to reset something here?
 
 			/* Take timestamp of IEP */
 			ctrl_req.ticks_iep = iep_get_cnt_val();
