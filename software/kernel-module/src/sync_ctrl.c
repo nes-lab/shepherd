@@ -19,7 +19,7 @@ static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_rest
 static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
 static uint32_t trigger_loop_period_ns = 100000000; /* just initial value to avoid div0 */
 
-/* Timer to trigger fast synch_loop */
+/* Timer to trigger fast sync_loop */
 struct hrtimer trigger_loop_timer;
 struct hrtimer sync_loop_timer;
 
@@ -41,7 +41,6 @@ const static size_t timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_
 #define SAMPLE_INTERVAL_NS  	(BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
 static uint32_t info_count = 0;
 struct sync_data_s *sync_data;
-
 
 int sync_exit(void)
 {
@@ -75,7 +74,7 @@ int sync_init(uint32_t timer_period_ns)
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     trigger_loop_timer.function = &trigger_loop_callback;
 
-    /* timer for Synch-Loop */
+    /* timer for Sync-Loop */
     hrtimer_init(&sync_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     sync_loop_timer.function = &sync_loop_callback;
 
@@ -114,7 +113,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 	uint32_t ns_over_wrap;
 	uint64_t ns_now_until_trigger;
 	/*
-	* add pretrigger, because design aimed directly for busy pru_timer_wrap
+	* add pre-trigger, because design previously aimed directly for busy pru_timer_wrap
 	* (50% chance that pru takes a less meaningful counter-reading after wrap)
     * 1 ms + 5 us, this should be enough time for the ping-pong to complete before timer_wrap
     */
@@ -220,7 +219,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     sync_data->error_dif = sync_data->error_now - sync_data->error_pre;
     sync_data->error_sum += sync_data->error_now; // integral should be behind controller, because current P-value is twice in calculation
 
-    /* This is the actual PI controller equation,
+    /* This is the actual PI controller equation
      * NOTE1: unit of clock_corr in pru is ticks, but input is based on nanosec
      * NOTE2: traces show, that quantization noise could be a problem. example: K-value of 127, divided by 128 will still be 0, ringing is around ~ +-150
      * previous parameters were:    P=1/32, I=1/128, correction settled at ~1340 with values from 1321 to 1359

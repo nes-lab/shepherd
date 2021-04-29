@@ -88,7 +88,7 @@ unsigned int pru_comm_get_buffer_period_ns(void);
  */
 unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request);
 /**
- * Sends Ctrl-Messages to PRU1
+ * Sends Ctrl-Messages to PRU1, error occurs on send when previous msg was not yet received (will be overwritten)
  * @param ctrl_reply
  * @return success = 1, error = 0
  */
@@ -96,6 +96,7 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply);
 
 /*
  * COM-System between kernel module and PRU0
+ * ERROR occurs on send when previous msg was not yet received (will be overwritten)
  * @param msg_container is a ProtoMsg
  * @return success = 1, error = 0
  */
