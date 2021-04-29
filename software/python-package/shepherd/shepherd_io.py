@@ -499,7 +499,7 @@ class ShepherdIO(object):
             self._set_shepherd_pcb_power(True)
             self.set_target_io_level_conv(False)
 
-            logger.debug("Shepherd hardware is powered")
+            logger.debug("Shepherd hardware is powered up")
 
             # If shepherd hasn't been terminated properly
             if sysfs_interface.get_state() != "idle":
