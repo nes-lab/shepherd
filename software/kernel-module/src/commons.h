@@ -2,7 +2,7 @@
 #define __COMMONS_H_
 #include <linux/types.h>
 
-// NOTE: a Copy of this definition-file exists for the pru-firmware (copy changes by hand)
+// NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**
  * These are the system events that we use to signal events to the PRUs.
@@ -113,7 +113,7 @@ struct ProtoMsg {
     uint8_t msg_id;
     /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
     uint8_t msg_unread;
-    /* content description used to distinguish messages */
+    /* content description used to distinguish messages, see enum MsgType */
     uint8_t msg_type;
     /* Alignment with memory, (bytes)mod4 */
     uint8_t reserved[1];
