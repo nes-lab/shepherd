@@ -45,6 +45,7 @@
 /* List of system events in TRM Table 4.22 */
 struct ch_map pru_intc_map[] = {
 	{ HOST_PRU_EVT_TIMESTAMP, 0 }, // Ext int for sync from ARM host
+	{ 18, 2 }, // Ext int for sync from ARM host
 };
 
 struct my_resource_table {
@@ -81,7 +82,7 @@ struct my_resource_table resourceTable = {
                            maps to host interrupt 0 */
                         0,
                         HOST_UNUSED,
-			HOST_UNUSED,
+			2,
                         HOST_UNUSED,
                         HOST_UNUSED,
                         HOST_UNUSED,
