@@ -51,6 +51,8 @@ TODO: new order for hw-rev2.1, also adapt device tree (gpio2/3 switches with swd
 */
 
 
+#define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
+
 enum SyncState {
 	IDLE,
 	REPLY_PENDING
@@ -121,6 +123,31 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 		if (ctrl_rep->compensation_steps > ADC_SAMPLES_PER_BUFFER)
 		{
 			fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> compensation_steps too high");
+		}
+
+		*ctrl_rep = shared_mem->ctrl_rep; // TODO: faster to copy only the needed 2 uint32
+		shared_mem->ctrl_rep.msg_unread = 0;
+
+		if (SANITY_CHECKS)
+		{
+			/* sanity-check of vars */
+			static uint64_t prev_timestamp_ns = 0;
+			if ((ctrl_rep->buffer_block_period > TIMER_BASE_PERIOD + 80000) || (ctrl_rep->buffer_block_period < TIMER_BASE_PERIOD - 80000))
+				fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> buffer_block_period out of limits");
+			if ((ctrl_rep->analog_sample_period > SAMPLE_PERIOD + 10) || (ctrl_rep->buffer_block_period < SAMPLE_PERIOD - 10))
+				fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> analog_sample_period out of limits");
+			const uint64_t time_diff = ctrl_rep->next_timestamp_ns - prev_timestamp_ns;
+			if ((time_diff != BUFFER_PERIOD_NS) && (prev_timestamp_ns > 0)) {
+				if (ctrl_rep->next_timestamp_ns == 0)
+					fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> next_timestamp_ns is zero");
+				else if (time_diff > BUFFER_PERIOD_NS + 5000000)
+					fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> next_timestamp_ns is > 105 ms");
+				else if (time_diff < BUFFER_PERIOD_NS - 5000000)
+					fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> next_timestamp_ns is < 95 ms");
+				else
+					fault_handler(shared_mem->shepherd_state, "Recv_CtrlReply -> timestamp-jump was not 100 ms");
+			}
+			prev_timestamp_ns = ctrl_rep->next_timestamp_ns;
 		}
 		return 1;
 	}
