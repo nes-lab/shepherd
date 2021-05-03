@@ -8,6 +8,8 @@ struct my_resource_table {
 
 	uint32_t offset[2]; /* Should match 'num' in actual definition */
 
+	/* intc definition */
+	struct fw_rsc_custom pru_ints;
 	/* mem-resource definition */
 	struct fw_rsc_carveout shared_mem;
 };
