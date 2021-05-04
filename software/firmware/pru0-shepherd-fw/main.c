@@ -4,12 +4,14 @@
 
 #include <pru_cfg.h>
 #include <pru_iep.h>
+#include <pru_intc.h> // TODO: test to find panic-culprit
 #include <rsc_types.h>
 
 #include "iep.h"
 
 #include "stdint_fast.h"
 #include "gpio.h"
+#include "intc.h"
 #include "resource_table_def.h"
 #include "simple_lock.h"
 
@@ -27,7 +29,7 @@
 // TODO: also used for status,
 static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	//if (shared_mem->pru0_msg_error.msg_unread == 0) // do not care, newest error wins
+	if ((shared_mem->pru0_msg_error.msg_unread == 0) && (shared_mem->pru0_msg_error.msg_type != type)) // do not care, newest error wins
 	{
 		shared_mem->pru0_msg_error.msg_type = type;
 		shared_mem->pru0_msg_error.value = value;
@@ -36,7 +38,8 @@ static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType
 		shared_mem->pru0_msg_error.msg_unread = 1u;
 	}
 	if (type >= 0xE0)
-		__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms
+		__delay_cycles(100U/TIMER_TICK_NS); // 100 ns
+		//__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms // TODO: reduce blocking behaviour for now
 }
 
 // send returns a 1 on success
@@ -292,7 +295,7 @@ void main(void)
 		.msg_unread=0u,
 		.buffer_block_period=TIMER_BASE_PERIOD,
 		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
-		.compensation_steps=0,
+		.compensation_steps=0u,
 		.next_timestamp_ns=0u};
 	shared_memory->pru1_msg_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
 

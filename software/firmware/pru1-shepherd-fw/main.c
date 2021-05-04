@@ -25,6 +25,8 @@
 
 #define GPIO_MASK		(0x03FF)
 
+#define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
+
 /* overview for current pin-mirroring
 #define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
 #define TARGET_GPIO1            BIT_SHIFT(P8_46) // r31_01
@@ -50,9 +52,6 @@ TODO: new order for hw-rev2.1, also adapt device tree (gpio2/3 switches with swd
 #define TARGET_BAT_OK           BIT_SHIFT(P8_29) // r31_09
 */
 
-
-#define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
-
 enum SyncState {
 	IDLE,
 	REPLY_PENDING
@@ -61,7 +60,7 @@ enum SyncState {
 // alternative message channel specially dedicated for errors
 static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	//if (shared_mem->pru0_msg_error.msg_unread == 0) // do not care, newest error wins
+	if ((shared_mem->pru1_msg_error.msg_unread == 0) && (shared_mem->pru1_msg_error.msg_type != type)) // do not care, newest error wins
 	{
 		shared_mem->pru1_msg_error.msg_type = type;
 		shared_mem->pru1_msg_error.value = value;
@@ -70,11 +69,10 @@ static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType
 		shared_mem->pru1_msg_error.msg_unread = 1u;
 	}
 	if (type >= 0xE0)
-		__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms
+		__delay_cycles(100u/TIMER_TICK_NS); // 100 ns
+		//__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms // TODO: reduce blocking behaviour for now
 }
 
-//static void fault_handler(const uint32_t shepherd_state, const char * err_msg) // TODO: use when pssp gets changed,
-// TODO: replace by pru0-error-msg-system
 static void fault_handler(volatile struct SharedMem *const shared_mem, enum MsgType err_msg)
 {
 	/* If shepherd is not running, we can recover from the fault */
@@ -84,7 +82,7 @@ static void fault_handler(volatile struct SharedMem *const shared_mem, enum MsgT
 		return;
 	}
 
-	while (true)
+	while (false) // TODO: reduce blocking behaviour for now
 	{
 		emit_error(shared_mem, err_msg, 0);
 		__delay_cycles(2000000000U);
@@ -203,7 +201,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem, const
 
 		simple_mutex_enter(&shared_mem->gpio_edges_mutex);
 		shared_mem->gpio_edges->timestamp_ns[cIDX] = gpio_timestamp_ns;
-		shared_mem->gpio_edges->bitmask[cIDX] = (uint8_t)gpio_status;
+		shared_mem->gpio_edges->bitmask[cIDX] = (uint16_t)gpio_status;
 		shared_mem->gpio_edges->idx = cIDX + 1;
 		simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 	}
@@ -359,7 +357,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			last_analog_sample_ticks = iep_get_cmp_val(IEP_CMP1);
 			if (last_analog_sample_ticks > 0) // this assumes sample0 taken on cmp1==0
 			{
-				shared_mem->last_sample_timestamp_ns += SAMPLE_INTERVAL_NS;
+				shared_mem->last_sample_timestamp_ns += SAMPLE_INTERVAL_NS; // TODO: should be directly done on pru0 (noncritical)
 			}
 
 			/* Forward sample timer based on current analog_sample_period*/
@@ -392,6 +390,8 @@ void main(void)
     	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	DEBUG_STATE_0;
+
+	__delay_cycles(1000);
 
 	/* Enable 'timestamp' interrupt from ARM host */
 	CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
