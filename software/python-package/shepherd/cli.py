@@ -27,11 +27,12 @@ from pathlib import Path
 import click_config_file
 from periphery import GPIO
 
-from shepherd import LogWriter, sysfs_interface
-from shepherd import LogReader
+from shepherd.datalog import LogWriter
+from shepherd.datalog import LogReader
+from shepherd import sysfs_interface
 from shepherd import record as run_record
 from shepherd import emulate as run_emulate
-from shepherd import CalibrationData
+from shepherd.calibration import CalibrationData
 from shepherd import EEPROM
 from shepherd import CapeData
 from shepherd import ShepherdDebug
@@ -44,9 +45,11 @@ logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
 # TODO: --length -l is now --duration -d -> correct docs
+# TODO: --input --output is now --output_path -> correct docs
 # TODO: --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
 # TODO: the options get repeated all the time, is it possible to define them upfront and just include them where needed?
 # TODO: ditch sudo, add user to allow sys_fs-access and other things
+
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
     logger.info(f"reading config from {file_path}")
@@ -123,6 +126,7 @@ def run(command, parameters: Dict, verbose):
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with alpha-version of click-lib)")
+
     # TODO: test input parameters before - crashes because of wrong lines are ugly
     if command == "record":
         if "output_path" in parameters.keys():
@@ -138,31 +142,31 @@ def run(command, parameters: Dict, verbose):
         raise click.BadParameter(f"command {command} not supported")
 
 
-@cli.command(short_help="Record data")
-@click.option("--output", "-o", type=click.Path(), default="/var/shepherd/recordings",
+@cli.command(short_help="Record IV data")
+@click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings",
     help="Dir or file path for resulting hdf5 file",)
 @click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
     help="Record 'harvesting' or 'harvesting_test'-function data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
-@click.option("--force", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
 @click.option("--start-time", "-s", type=float,
     help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def record(
-    output,
+    output_path,
     mode,
     duration,
-    force,
+    force_overwrite,
     no_calib,
     start_time,
     warn_only,
 ):
     run_record(
-        output_path=Path(output),
+        output_path=Path(output_path),
         mode=mode,
         duration=duration,
-        force_overwrite=force,
+        force_overwrite=force_overwrite,
         no_calib=no_calib,
         start_time=start_time,
         warn_only=warn_only,
@@ -172,11 +176,11 @@ def record(
 @cli.command(
     short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data"
 )
-@click.argument("input", type=click.Path(exists=True))
-@click.option("--output", "-o", type=click.Path(),
+@click.argument("input_path", type=click.Path(exists=True))
+@click.option("--output_path", "-o", type=click.Path(),
               help="Dir or file path for storing the power consumption data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
-@click.option("--force", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
 @click.option("--start-time", type=float, help="Desired start time in unix epoch time")
 @click.option("--enable_io/--disable_io", default=True,
@@ -191,10 +195,10 @@ def record(
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def emulate(
-    input,
-    output,
+    input_path,
+    output_path,
     duration,
-    force,
+    force_overwrite,
     no_calib,
     start_time,
     enable_target_io,
@@ -204,16 +208,16 @@ def emulate(
     virtsource,
     warn_only,
 ):
-    if output is None:
+    if output_path is None:
         pl_store = None
     else:
-        pl_store = Path(output)
+        pl_store = Path(output_path)
 
     run_emulate(
         input_path=Path(input_path),
         output_path=pl_store,
         duration=duration,
-        force_overwrite=force,
+        force_overwrite=force_overwrite,
         no_calib=no_calib,
         start_time=start_time,
         set_target_io_lvl_conv=enable_target_io,
@@ -280,18 +284,10 @@ def write(infofile, version, serial_number, calibfile, no_calib):
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
-@click.option(
-    "--infofile",
-    "-i",
-    type=click.Path(),
-    help="If provided, cape info data is dumped to this file",
-)
-@click.option(
-    "--calibfile",
-    "-c",
-    type=click.Path(),
-    help="If provided, calibration data is dumped to this file",
-)
+@click.option("--infofile", "-i", type=click.Path(),
+    help="If provided, cape info data is dumped to this file")
+@click.option("--calibfile", "-c", type=click.Path(),
+    help="If provided, calibration data is dumped to this file")
 def read(infofile, calibfile):
 
     with EEPROM() as eeprom:
@@ -315,18 +311,14 @@ def read(infofile, calibfile):
     short_help="Convert calibration measurements to calibration data, where FILENAME is YAML-formatted file containing calibration measurements"
 )
 @click.argument("filename", type=click.Path(exists=True))
-@click.option(
-    "--output",
-    "-o",
-    type=click.Path(),
-    help="Path to resulting YAML-formatted calibration data file",
-)
-def make(filename, output):
+@click.option("--output_path", "-o", type=click.Path(),
+    help="Path to resulting YAML-formatted calibration data file")
+def make(filename, output_path):
     cd = CalibrationData.from_measurements(filename)
-    if output is None:
+    if output_path is None:
         print(repr(cd))
     else:
-        with open(output, "w") as f:
+        with open(output_path, "w") as f:
             f.write(repr(cd))
 
 
