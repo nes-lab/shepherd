@@ -32,10 +32,10 @@ int sync_reset(void);
  * a 'correction factor' that is added to the IEP's frequency, such that the
  * difference between the phase of our clock and the IEP's is minimized.
  *
- * @param ctrl_rep Buffer to store the result of the control loop
- * @param ctrl_req Control request that was received from PRU0
+ * @param sync_reply fresh values for next 100ms-window
+ * @param sync_rqst timed iep-counter-value that was received from PRU0
  */
-int sync_loop(struct CtrlRepMsg *ctrl_rep, const struct CtrlReqMsg *ctrl_req);
+int sync_loop(struct SyncMsg *sync_reply, const struct ProtoMsg *sync_rqst);
 
 /**
  * Synchronization data structure

@@ -26,17 +26,16 @@
 #define NO_BUFFER 	(0xFFFFFFFF)
 
 // alternative message channel specially dedicated for errors
-// TODO: also used for status,
-static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
+static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
 	// do not care for sent-status, newest error wins IF different from previous
-	if (!((shared_mem->pru1_msg_error.msg_type == type) && (shared_mem->pru1_msg_error.value == value)))
+	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value == value)))
 	{
-		shared_mem->pru0_msg_error.msg_type = type;
+		shared_mem->pru0_msg_error.type = type;
 		shared_mem->pru0_msg_error.value = value;
-		shared_mem->pru0_msg_error.msg_id = MSG_TO_KERNEL;
+		shared_mem->pru0_msg_error.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-		shared_mem->pru0_msg_error.msg_unread = 1u;
+		shared_mem->pru0_msg_error.unread = 1u;
 	}
 	if (type >= 0xE0) __delay_cycles(200U/TIMER_TICK_NS); // 200 ns
 }
@@ -44,33 +43,33 @@ static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType
 // send returns a 1 on success
 static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	if (shared_mem->pru0_msg_outbox.msg_unread == 0)
+	if (shared_mem->pru0_msg_outbox.unread == 0)
 	{
-		shared_mem->pru0_msg_outbox.msg_type = type;
+		shared_mem->pru0_msg_outbox.type = type;
 		shared_mem->pru0_msg_outbox.value = value;
-		shared_mem->pru0_msg_outbox.msg_id = MSG_TO_KERNEL;
+		shared_mem->pru0_msg_outbox.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-		shared_mem->pru0_msg_outbox.msg_unread = 1u;
+		shared_mem->pru0_msg_outbox.unread = 1u;
 		return 1;
 	}
 	/* Error occurs if kernel was not able to handle previous message in time */
-	emit_error(shared_mem, MSG_ERR_BACKPRESSURE, 0);
+	send_status(shared_mem, MSG_ERR_BACKPRESSURE, 0);
 	return 0;
 }
 
 // only one central hub should receive, because a message is only handed out once
 static bool_ft receive_message(volatile struct SharedMem *const shared_mem, struct ProtoMsg *const msg_container)
 {
-	if (shared_mem->pru0_msg_inbox.msg_unread >= 1)
+	if (shared_mem->pru0_msg_inbox.unread >= 1)
 	{
-		if (shared_mem->pru0_msg_inbox.msg_id == MSG_TO_PRU)
+		if (shared_mem->pru0_msg_inbox.id == MSG_TO_PRU)
 		{
 			*msg_container = shared_mem->pru0_msg_inbox;
-			shared_mem->pru0_msg_inbox.msg_unread = 0;
+			shared_mem->pru0_msg_inbox.unread = 0;
 			return 1;
 		}
 		// send mem_corruption warning
-		emit_error(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
+		send_status(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
 	}
 	return 0;
 }
@@ -90,7 +89,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	{
 		if (analog_sample_idx != ADC_SAMPLES_PER_BUFFER) // TODO: could be removed in future, not possible anymore
 		{
-			emit_error(shared_mem, MSG_ERR_INCMPLT, analog_sample_idx);
+			send_status(shared_mem, MSG_ERR_INCMPLT, analog_sample_idx);
 		}
 
 		(buffers_far + current_buffer_idx)->len = analog_sample_idx;
@@ -112,12 +111,12 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 		if (shared_mem->next_buffer_timestamp_ns == 0)
 		{
 			/* debug-output for a wrong timestamp */
-			emit_error(shared_mem, MSG_ERR_TIMESTAMP, 0);
+			send_status(shared_mem, MSG_ERR_TIMESTAMP, 0);
 		}
 	} else {
 		next_buffer_idx = NO_BUFFER;
 		shared_mem->gpio_edges = NULL;
-		emit_error(shared_mem, MSG_ERR_NOFREEBUF, 0);
+		send_status(shared_mem, MSG_ERR_NOFREEBUF, 0);
 	}
 	simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 
@@ -135,7 +134,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 	if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
 	{
         	uint32_t res;
-		switch (msg_in.msg_type) {
+		switch (msg_in.type) {
 		case MSG_DBG_ADC:
 			res = sample_dbg_adc(msg_in.value);
 			send_message(shared_mem, MSG_DBG_ADC, res);
@@ -150,22 +149,22 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1U;
 
 		default:
-			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.msg_type);
+			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type);
 			return 0U;
 		}
 	} else
 	{
-		if (msg_in.msg_type == MSG_BUF_FROM_HOST) {
+		if (msg_in.type == MSG_BUF_FROM_HOST) {
 			ring_put(free_buffers_ptr, (uint8_t)msg_in.value);
 			return 1U;
-		} else if ((msg_in.msg_type == MSG_TEST) && (msg_in.value == 1)) {
+		} else if ((msg_in.type == MSG_TEST) && (msg_in.value == 1)) {
 			// pipeline-test for msg-system
 			send_message(shared_mem,MSG_TEST, msg_in.value);
-		} else if ((msg_in.msg_type == MSG_TEST) && (msg_in.value == 2)) {
+		} else if ((msg_in.type == MSG_TEST) && (msg_in.value == 2)) {
 			// pipeline-test for msg-system
-			emit_error(shared_mem,MSG_TEST, msg_in.value);
+			send_status(shared_mem, MSG_TEST, msg_in.value);
 		} else {
-			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.msg_type);
+			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type);
 			return 0U;
 		}
 	}
@@ -294,20 +293,20 @@ void main(void)
 
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
-	shared_memory->pru1_msg_ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .msg_type=MSG_NONE, .ticks_iep=0u};
-	shared_memory->pru1_msg_ctrl_rep = (struct CtrlRepMsg){
-		.identifier=0u,
-		.msg_unread=0u,
-		.msg_type=MSG_NONE,
+	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value=0u};
+	shared_memory->pru1_sync_inbox = (struct SyncMsg){
+		.id =0u,
+		.unread =0u,
+		.type =MSG_NONE,
 		.buffer_block_period=TIMER_BASE_PERIOD,
 		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps=0u,
 		.next_timestamp_ns=0u};
-	shared_memory->pru1_msg_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru1_msg_error = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
 
-	shared_memory->pru0_msg_outbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
-	shared_memory->pru0_msg_inbox = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
-	shared_memory->pru0_msg_error = (struct ProtoMsg){.msg_id=0u, .msg_unread=0u, .msg_type=MSG_NONE};
+	shared_memory->pru0_msg_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
+	shared_memory->pru0_msg_inbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
+	shared_memory->pru0_msg_error = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
 
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
@@ -321,7 +320,7 @@ void main(void)
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
 reset:
-	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 0);
+	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 100);
 
 	ring_init(&free_buffers);
 

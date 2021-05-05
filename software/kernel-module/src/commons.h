@@ -36,6 +36,7 @@ enum MsgType {
     MSG_ERR_NOFREEBUF = 0xE5u,
     MSG_ERR_TIMESTAMP = 0xE6u,
     MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7u,
+    MSG_ERR_VALUE = 0xE8u,
     // Routines
     MSG_TEST = 0xEAu,
     MSG_SYNC = 0xEBu
@@ -115,11 +116,11 @@ struct VirtSource_Config {
 /* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg {
     /* Identifier => Canary, This is used to identify memory corruption */
-    uint8_t msg_id;
+    uint8_t id;
     /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
-    uint8_t msg_unread;
+    uint8_t unread;
     /* content description used to distinguish messages, see enum MsgType */
-    uint8_t msg_type;
+    uint8_t type;
     /* Alignment with memory, (bytes)mod4 */
     uint8_t reserved[1];
     /* Actual Content of message */
@@ -127,28 +128,14 @@ struct ProtoMsg {
 } __attribute__((packed));
 
 
-/* Control request message sent from PRU1 to this kernel module, TODO: replace by protoMsg*/
-struct CtrlReqMsg {
-    /* Identifier => Canary, This is used to identify memory corruption */
-    uint8_t identifier;
-    /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
-    uint8_t msg_unread;
-    /* content description used to distinguish messages, see enum MsgType */
-    uint8_t msg_type; // not needed, but it does not hurt
-    /* Alignment with memory, (bytes)mod4 */
-    uint8_t reserved[1];
-    /* Number of ticks passed on the PRU's IEP timer */
-    uint32_t ticks_iep;
-} __attribute__((packed));
-
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
-struct CtrlRepMsg {
+struct SyncMsg {
     /* Identifier => Canary, This is used to identify memory corruption */
-    uint8_t identifier;
+    uint8_t id;
     /* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
-    uint8_t msg_unread;
+    uint8_t unread;
     /* content description used to distinguish messages, see enum MsgType */
-    uint8_t msg_type; // only needed for debug
+    uint8_t type; // only needed for debug
     /* Alignment with memory, (bytes)mod4 */
     uint8_t reserved0[1];
     /* Actual Content of message */
@@ -187,9 +174,9 @@ struct SharedMem {
     struct ProtoMsg pru0_msg_inbox;
     struct ProtoMsg pru0_msg_outbox;
     struct ProtoMsg pru0_msg_error;
-    struct CtrlReqMsg pru1_msg_ctrl_req;
-    struct CtrlRepMsg pru1_msg_ctrl_rep;
-    struct ProtoMsg   pru1_msg_error;
+    struct SyncMsg  pru1_sync_inbox;
+    struct ProtoMsg pru1_sync_outbox;
+    struct ProtoMsg pru1_msg_error;
 } __attribute__((packed));
 
 #endif /* __COMMONS_H_ */

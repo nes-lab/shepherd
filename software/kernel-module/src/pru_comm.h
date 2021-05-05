@@ -82,17 +82,17 @@ int pru_comm_set_state(enum ShepherdState state);
 unsigned int pru_comm_get_buffer_period_ns(void);
 
 /**
- * Receives Ctrl-Messages from PRU1
- * @param ctrl_request
+ * Receives Sync-Messages from PRU1
+ * @param msg
  * @return success = 1, error = 0
  */
-unsigned char pru_comm_get_ctrl_request(struct CtrlReqMsg *const ctrl_request);
+unsigned char pru1_comm_receive_sync_request(struct ProtoMsg *const msg);
 /**
- * Sends Ctrl-Messages to PRU1, error occurs on send when previous msg was not yet received (will be overwritten)
- * @param ctrl_reply
+ * Sends Sync-Messages to PRU1, error occurs on send when previous msg was not yet received (will be overwritten)
+ * @param msg
  * @return success = 1, error = 0
  */
-unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply);
+unsigned char pru1_comm_send_sync_reply(struct SyncMsg *const msg);
 
 /*
  * COM-System between kernel module and PRU0
@@ -100,11 +100,11 @@ unsigned char pru_comm_send_ctrl_reply(struct CtrlRepMsg *const ctrl_reply);
  * @param msg_container is a ProtoMsg
  * @return success = 1, error = 0
  */
-unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg_container);
-unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg_container);
+unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg);
+unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg);
 
-unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg_container);
-unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg_container);
+unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg);
+unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg);
 /*
  * send_status -> returns 1 if last sent msg was received and buffer is free to fill, 0 otherwise
  */

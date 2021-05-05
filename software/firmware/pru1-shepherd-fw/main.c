@@ -47,87 +47,70 @@ enum SyncState {
 };
 
 // alternative message channel specially dedicated for errors
-static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
+static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
 	// do not care for sent-status, newest error wins IF different from previous
-	if (!((shared_mem->pru1_msg_error.msg_type == type) && (shared_mem->pru1_msg_error.value == value)))
+	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value == value)))
 	{
-		shared_mem->pru1_msg_error.msg_type = type;
+		shared_mem->pru1_msg_error.type = type;
 		shared_mem->pru1_msg_error.value = value;
-		shared_mem->pru1_msg_error.msg_id = MSG_TO_KERNEL;
+		shared_mem->pru1_msg_error.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-		shared_mem->pru1_msg_error.msg_unread = 1u;
+		shared_mem->pru1_msg_error.unread = 1u;
 	}
 	if (type >= 0xE0) __delay_cycles(200u/TIMER_TICK_NS); // 200 ns
 }
 
-// TODO: this handler seems obsolete
-static void fault_handler(volatile struct SharedMem *const shared_mem, enum MsgType err_msg)
+
+static inline bool_ft receive_sync_reply(volatile struct SharedMem *const shared_mem, struct SyncMsg *const msg)
 {
-	/* If shepherd is not running, we can recover from the fault */
-	if (shared_mem->shepherd_state != STATE_RUNNING)
+	if (shared_mem->pru1_sync_inbox.unread >= 1)
 	{
-		emit_error(shared_mem, err_msg, 0);
-		return;
-	}
-
-	while (false) // TODO: reduce blocking behaviour for now
-	{
-		emit_error(shared_mem, err_msg, 0);
-		__delay_cycles(2000000000U);
-	}
-}
-
-
-static inline bool_ft receive_control_reply(volatile struct SharedMem *const shared_mem, struct CtrlRepMsg *const ctrl_rep)
-{
-	if (shared_mem->pru1_msg_ctrl_rep.msg_unread >= 1)
-	{
-		if (shared_mem->pru1_msg_ctrl_rep.identifier != MSG_TO_PRU)
+		if (shared_mem->pru1_sync_inbox.id != MSG_TO_PRU)
 		{
 			/* Error occurs if something writes over boundaries */
-			fault_handler(shared_mem, MSG_ERR_MEMCORRUPTION);
+			send_status(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
 			return 0;
 		}
-		*ctrl_rep = shared_mem->pru1_msg_ctrl_rep; // TODO: faster to copy only the needed 2 uint32
-		shared_mem->pru1_msg_ctrl_rep.msg_unread = 0;
+		*msg = shared_mem->pru1_sync_inbox; // TODO: faster to copy only the needed 2 uint32
+		shared_mem->pru1_sync_inbox.unread = 0;
 
-		if (SANITY_CHECKS) {
-			// TODO: move this to kernel
-			if (ctrl_rep->buffer_block_period > TIMER_BASE_PERIOD + (TIMER_BASE_PERIOD >> 3)) {
-				fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> buffer_block_period too high");
-			}
-			if (ctrl_rep->buffer_block_period < TIMER_BASE_PERIOD - (TIMER_BASE_PERIOD >> 3)) {
-				fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> buffer_block_period too low");
-			}
-			if (ctrl_rep->analog_sample_period > SAMPLE_PERIOD + 100) {
-				fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> analog_sample_period too high");
-			}
-			if (ctrl_rep->analog_sample_period < SAMPLE_PERIOD - 100) {
-				fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> analog_sample_period too low");
-			}
-			if (ctrl_rep->compensation_steps > ADC_SAMPLES_PER_BUFFER) {
-				fault_handler(shared_mem, MSG_ERROR); //"Recv_CtrlReply -> compensation_steps too high");
-			}
-
-			static uint64_t prev_timestamp_ns = 0;
-			const uint64_t time_diff = ctrl_rep->next_timestamp_ns - prev_timestamp_ns;
-			prev_timestamp_ns = ctrl_rep->next_timestamp_ns;
-			if ((time_diff != BUFFER_PERIOD_NS) && (prev_timestamp_ns > 0)) {
-				if (ctrl_rep->next_timestamp_ns == 0)
-					fault_handler(shared_mem, MSG_ERROR); // "Recv_CtrlReply -> next_timestamp_ns is zero");
-				else if (time_diff > BUFFER_PERIOD_NS + 5000000)
-					fault_handler(shared_mem, MSG_ERROR); // "Recv_CtrlReply -> next_timestamp_ns is > 105 ms");
-				else if (time_diff < BUFFER_PERIOD_NS - 5000000)
-					fault_handler(shared_mem, MSG_ERROR); // "Recv_CtrlReply -> next_timestamp_ns is < 95 ms");
-				else
-					fault_handler(shared_mem, MSG_ERROR); // "Recv_CtrlReply -> timestamp-jump was not 100 ms");
-			}
+#if (SANITY_CHECKS > 0)
+		// TODO: move this to kernel
+		if (msg->buffer_block_period > TIMER_BASE_PERIOD + (TIMER_BASE_PERIOD >> 3)) {
+			send_status(shared_mem, MSG_ERR_VALUE, 11); //"Recv_CtrlReply -> buffer_block_period too high");
 		}
-		if (shared_mem->pru1_msg_ctrl_rep.msg_type == MSG_TEST)
+		if (msg->buffer_block_period < TIMER_BASE_PERIOD - (TIMER_BASE_PERIOD >> 3)) {
+			send_status(shared_mem, MSG_ERR_VALUE, 12); //"Recv_CtrlReply -> buffer_block_period too low");
+		}
+		if (msg->analog_sample_period > SAMPLE_PERIOD + 100) {
+			send_status(shared_mem, MSG_ERR_VALUE, 13); //"Recv_CtrlReply -> analog_sample_period too high");
+		}
+		if (msg->analog_sample_period < SAMPLE_PERIOD - 100) {
+			send_status(shared_mem, MSG_ERR_VALUE, 14); //"Recv_CtrlReply -> analog_sample_period too low");
+		}
+		if (msg->compensation_steps > ADC_SAMPLES_PER_BUFFER) {
+			send_status(shared_mem, MSG_ERR_VALUE, 15); //"Recv_CtrlReply -> compensation_steps too high");
+		}
+
+		static uint64_t prev_timestamp_ns = 0;
+		const uint64_t time_diff = msg->next_timestamp_ns - prev_timestamp_ns;
+		prev_timestamp_ns = msg->next_timestamp_ns;
+		if ((time_diff != BUFFER_PERIOD_NS) && (prev_timestamp_ns > 0)) {
+			if (msg->next_timestamp_ns == 0)
+				send_status(shared_mem, MSG_ERR_VALUE, 16); // "Recv_CtrlReply -> next_timestamp_ns is zero");
+			else if (time_diff > BUFFER_PERIOD_NS + 5000000)
+				send_status(shared_mem, MSG_ERR_VALUE, 17); // "Recv_CtrlReply -> next_timestamp_ns is > 105 ms");
+			else if (time_diff < BUFFER_PERIOD_NS - 5000000)
+				send_status(shared_mem, MSG_ERR_VALUE, 18); // "Recv_CtrlReply -> next_timestamp_ns is < 95 ms");
+			else
+				send_status(shared_mem, MSG_ERR_VALUE, 19); // "Recv_CtrlReply -> timestamp-jump was not 100 ms");
+		}
+#endif
+		if (msg->type == MSG_TEST)
 		{
 			// pipeline-test for msg-system
-			emit_error(shared_mem, MSG_TEST, shared_mem->pru1_msg_ctrl_rep.buffer_block_period);
+			send_status(shared_mem, MSG_TEST, msg->buffer_block_period);
 			return 0;
 		}
 		return 1;
@@ -136,19 +119,19 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 }
 
 // emits a 1 on success
-// pru1_msg_ctrl_req: (future opt.) needs to have special config set: identifier=MSG_TO_KERNEL and msg_unread=1
-static inline bool_ft send_control_request(volatile struct SharedMem *const shared_mem, const struct CtrlReqMsg *const ctrl_req)
+// pru1_sync_outbox: (future opt.) needs to have special config set: identifier=MSG_TO_KERNEL and unread=1
+static inline bool_ft send_sync_request(volatile struct SharedMem *const shared_mem, const struct ProtoMsg *const msg)
 {
-	if (shared_mem->pru1_msg_ctrl_req.msg_unread == 0)
+	if (shared_mem->pru1_sync_outbox.unread == 0)
 	{
-		shared_mem->pru1_msg_ctrl_req = *ctrl_req;
-		shared_mem->pru1_msg_ctrl_req.identifier = MSG_TO_KERNEL;
+		shared_mem->pru1_sync_outbox = *msg;
+		shared_mem->pru1_sync_outbox.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-		shared_mem->pru1_msg_ctrl_req.msg_unread = 1u;
+		shared_mem->pru1_sync_outbox.unread = 1u;
 		return 1;
 	}
 	/* Error occurs if PRU was not able to handle previous message in time */
-	fault_handler(shared_mem, MSG_ERR_BACKPRESSURE);
+	send_status(shared_mem, MSG_ERR_BACKPRESSURE, 0);
 	return 0;
 }
 
@@ -239,8 +222,8 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	uint32_t last_analog_sample_ticks = 0;
 
 	/* Prepare message that will be received and sent to Linux kernel module */
-	struct CtrlReqMsg ctrl_req = { .identifier = MSG_TO_KERNEL, .msg_type = MSG_NONE, .msg_unread = 1 };
-	struct CtrlRepMsg ctrl_rep = {
+	struct ProtoMsg sync_rqst = { .id = MSG_TO_KERNEL, .type = MSG_NONE, .unread = 1 };
+	struct SyncMsg sync_repl = {
 		.buffer_block_period = TIMER_BASE_PERIOD,
 		.analog_sample_period = TIMER_BASE_PERIOD / ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps = 0u,
@@ -254,7 +237,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	* period is increased by 1 in order to compensate for the remainder of the
 	* integer division used to calculate the sampling period.
 	*/
-	uint32_t compensation_steps = ctrl_rep.compensation_steps;
+	uint32_t compensation_steps = sync_repl.compensation_steps;
 	/*
 	 * holds distribution of the compensation periods (every x samples the period is increased by 1)
 	 */
@@ -262,8 +245,8 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	uint32_t compensation_increment = 0u;
 
 	/* Our initial guess of the sampling period based on nominal timer period */
-	uint32_t analog_sample_period = ctrl_rep.analog_sample_period;
-	uint32_t buffer_block_period = ctrl_rep.buffer_block_period;
+	uint32_t analog_sample_period = sync_repl.analog_sample_period;
+	uint32_t buffer_block_period = sync_repl.buffer_block_period;
 
 	/* These are our initial guesses for buffer sample period */
 	iep_set_cmp_val(IEP_CMP0, buffer_block_period);  // 20 MTicks -> 100 ms
@@ -297,17 +280,17 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			if (!INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) continue;
 
 			/* Take timestamp of IEP */
-			ctrl_req.ticks_iep = iep_get_cnt_val();
+			sync_rqst.value = iep_get_cnt_val();
 			DEBUG_EVENT_STATE_2;
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
 			if (sync_state == IDLE)    sync_state = REPLY_PENDING;
 			else {
-				fault_handler(shared_mem, MSG_ERR_SYNC_STATE_NOT_IDLE);
+				send_status(shared_mem, MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state);
 				return 0;
 			}
-			send_control_request(shared_mem, &ctrl_req);
+			send_sync_request(shared_mem, &sync_rqst);
 			DEBUG_EVENT_STATE_0;
 			continue;  // for more regular gpio-sampling
 		}
@@ -322,13 +305,13 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			/* update clock compensation of sample-trigger */
 			iep_set_cmp_val(IEP_CMP1, 0);
 			iep_enable_evt_cmp(IEP_CMP1);
-			analog_sample_period = ctrl_rep.analog_sample_period;
-			compensation_steps = ctrl_rep.compensation_steps;
-			compensation_increment = ctrl_rep.compensation_steps;
+			analog_sample_period = sync_repl.analog_sample_period;
+			compensation_steps = sync_repl.compensation_steps;
+			compensation_increment = sync_repl.compensation_steps;
 			compensation_counter = 0;
 
 			/* update main-loop */
-			buffer_block_period = ctrl_rep.buffer_block_period;
+			buffer_block_period = sync_repl.buffer_block_period;
 			iep_set_cmp_val(IEP_CMP0, buffer_block_period);
 
 			/* more maintenance */
@@ -367,10 +350,10 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			iep_set_cmp_val(IEP_CMP1, next_cmp_val);
 
 			/* If we are waiting for a reply from Linux kernel module */
-			if (receive_control_reply(shared_mem, &ctrl_rep) > 0)
+			if (receive_sync_reply(shared_mem, &sync_repl) > 0)
 			{
 				sync_state = IDLE;
-				shared_mem->next_buffer_timestamp_ns = ctrl_rep.next_timestamp_ns;
+				shared_mem->next_buffer_timestamp_ns = sync_repl.next_timestamp_ns;
 			}
 			DEBUG_EVENT_STATE_0;
 			continue; // for more regular gpio-sampling
@@ -380,25 +363,25 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 void main(void)
 {
-	volatile struct SharedMem *const shared_mememory = (volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET;
+	volatile struct SharedMem *const shared_memory = (volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET;
 
     	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	DEBUG_STATE_0;
 
-	__delay_cycles(1000);
+	__delay_cycles(1000); // TODO: delays in pru and kernel can propably be reduced (ask kai)
 
 	/* Enable 'timestamp' interrupt from ARM host */
 	CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
 
 reset:
-	emit_error(shared_mememory, MSG_STATUS_RESTARTING_ROUTINE, 0);
+	send_status(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 101);
 	/* Make sure the mutex is clear */
-	simple_mutex_exit(&shared_mememory->gpio_edges_mutex);
+	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
 	iep_init();
 	iep_reset();
 
-	event_loop(shared_mememory);
+	event_loop(shared_memory);
 	goto reset;
 }

@@ -161,11 +161,11 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 	return HRTIMER_RESTART;
 }
 
-/* Handler for ctrl-requests from PRU1 */
+/* Handler for sync-requests from PRU1 */
 enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
 {
-    struct CtrlReqMsg ctrl_req;
-    struct CtrlRepMsg ctrl_rep;
+    struct ProtoMsg sync_rqst;
+    struct SyncMsg sync_reply;
     struct timespec ts_now;
     uint64_t ts_now_system_ns;
     static uint64_t ts_last_error_ns = 0;
@@ -175,20 +175,14 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     getnstimeofday(&ts_now);
     ts_now_system_ns = (uint64_t)timespec_to_ns(&ts_now);
 
-    if (pru_comm_get_ctrl_request(&ctrl_req))
+    if (pru1_comm_receive_sync_request(&sync_rqst))
     {
-        if (ctrl_req.identifier != MSG_TO_KERNEL)
-        {
-            /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd.k: Recv_CtrlRequest -> mem corruption?");
-        }
+        sync_loop(&sync_reply, &sync_rqst);
 
-        sync_loop(&ctrl_rep, &ctrl_req);
-
-        if (!pru_comm_send_ctrl_reply(&ctrl_rep))
+        if (!pru1_comm_send_sync_reply(&sync_reply))
         {
             /* Error occurs if PRU was not able to handle previous message in time */
-            printk(KERN_WARNING "shprd.k: Send_CtrlResponse -> back-pressure");
+            printk(KERN_WARNING "shprd.k: Send_SyncResponse -> back-pressure / did overwrite old msg");
         }
 
         /* resetting to longest sleep period */
@@ -198,6 +192,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
             (prev_timestamp_ns + 2*trigger_loop_period_ns < ts_now_system_ns) &&
             (prev_timestamp_ns > 0))
     {
+        // TODO: not working as expected, this should alarm when PRUs are offline
         ts_last_error_ns = ts_now_system_ns;
         printk(KERN_ERR "shprd.k: Faulty behaviour - PRU did not answer to trigger-request in time!");
     }
@@ -211,7 +206,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
 }
 
 
-int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const ctrl_req)
+int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const sync_rqst)
 {
 	uint32_t iep_ts_over_timer_wrap_ns;
 	uint64_t ns_per_tick_n30;   /* n30 means a fixed point shift left by 30 bits */
@@ -226,7 +221,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 	/* Get distance of IEP clock at interrupt from last timer wrap */
 	if (sys_ts_over_timer_wrap_ns > 0u)
     {
-        iep_ts_over_timer_wrap_ns = (uint32_t)((((uint64_t)ctrl_req->ticks_iep) * ns_per_tick_n30)>>30u);
+        iep_ts_over_timer_wrap_ns = (uint32_t)((((uint64_t)sync_rqst->value) * ns_per_tick_n30)>>30u);
     }
 	else
     {
@@ -259,17 +254,17 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     if (sync_data->clock_corr < -80000) sync_data->clock_corr = -80000;
 
     /* determine corrected loop_ticks for next buffer_block */
-    ctrl_rep->msg_type = MSG_SYNC;
-    ctrl_rep->buffer_block_period = TIMER_BASE_PERIOD + sync_data->clock_corr;
-    sync_data->previous_period = ctrl_rep->buffer_block_period;
-    ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
-    ctrl_rep->compensation_steps = ctrl_rep->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * ctrl_rep->analog_sample_period);
+    sync_reply->type = MSG_SYNC;
+    sync_reply->buffer_block_period = TIMER_BASE_PERIOD + sync_data->clock_corr;
+    sync_data->previous_period = sync_reply->buffer_block_period;
+    sync_reply->analog_sample_period = (sync_reply->buffer_block_period / ADC_SAMPLES_PER_BUFFER);
+    sync_reply->compensation_steps = sync_reply->buffer_block_period - (ADC_SAMPLES_PER_BUFFER * sync_reply->analog_sample_period);
 
     if (((sync_data->error_now > 500) || (sync_data->error_now < -500)) && (++info_count >= 100)) /* val = 200 prints every 20s when enabled */
     {
         printk(KERN_INFO "shprd.sync: period=%u, n_comp=%u, er_pid=%lld/%lld/%lld, ns_iep=%u, ns_sys=%u",
-                ctrl_rep->analog_sample_period, // = upper part of buffer_block_period
-                ctrl_rep->compensation_steps,  // = lower part of buffer_block_period
+                sync_reply->analog_sample_period, // = upper part of buffer_block_period
+                sync_reply->compensation_steps,  // = lower part of buffer_block_period
                 sync_data->error_now,
                 sync_data->error_sum,
                 sync_data->error_dif,
@@ -294,12 +289,12 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
             printk(KERN_ERR "shprd.k: zero timestamp detected (sync-loop)");
     }
     prev_timestamp_ns = next_timestamp_ns;
-    ctrl_rep->next_timestamp_ns = next_timestamp_ns;
+    sync_reply->next_timestamp_ns = next_timestamp_ns;
 
-    if ((ctrl_rep->buffer_block_period > TIMER_BASE_PERIOD + 80000) || (ctrl_rep->buffer_block_period < TIMER_BASE_PERIOD - 80000))
-        printk(KERN_ERR "shprd.k: buffer_block_period out of limits (%u instead of ~20M)", ctrl_rep->buffer_block_period);
-    if ((ctrl_rep->analog_sample_period > SAMPLE_PERIOD + 10) || (ctrl_rep->analog_sample_period < SAMPLE_PERIOD - 10))
-        printk(KERN_ERR "shprd.k: analog_sample_period out of limits (%u instead of ~2000)", ctrl_rep->analog_sample_period);
+    if ((sync_reply->buffer_block_period > TIMER_BASE_PERIOD + 80000) || (sync_reply->buffer_block_period < TIMER_BASE_PERIOD - 80000))
+        printk(KERN_ERR "shprd.k: buffer_block_period out of limits (%u instead of ~20M)", sync_reply->buffer_block_period);
+    if ((sync_reply->analog_sample_period > SAMPLE_PERIOD + 10) || (sync_reply->analog_sample_period < SAMPLE_PERIOD - 10))
+        printk(KERN_ERR "shprd.k: analog_sample_period out of limits (%u instead of ~2000)", sync_reply->analog_sample_period);
 
     return 0;
 }
