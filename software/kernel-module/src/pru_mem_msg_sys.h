@@ -2,8 +2,9 @@
 #define SRC_MEM_MSG_PRU_H
 
 #include "commons.h"
+#include <linux/mutex.h>
 
-#define RING_SIZE   64U
+#define RING_SIZE   (64u)
 
 struct RingBuffer
 {
@@ -11,7 +12,7 @@ struct RingBuffer
     uint32_t start; // TODO: these can be smaller, at least in documentation
     uint32_t end;
     uint32_t active;
-    uint8_t  mutex;
+    struct mutex mutex;
 };
 
 void put_msg_to_pru(const struct ProtoMsg *const element);

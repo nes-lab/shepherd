@@ -1,6 +1,8 @@
 #include "pru_comm.h"
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
+#include <linux/delay.h>
+#include <linux/mutex.h>
 
 #include "pru_mem_msg_sys.h"
 
@@ -10,17 +12,18 @@
 struct RingBuffer msg_ringbuf_from_pru;
 struct RingBuffer msg_ringbuf_to_pru;
 
+// TODO: replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
 static void ring_init(struct RingBuffer *const buf)
 {
-    buf->start=0U;
-    buf->end=0U;
-    buf->active=0U;
+    buf->start = 0u;
+    buf->end = 0u;
+    buf->active = 0u;
+    mutex_init(&buf->mutex);
 }
 
 void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
-    while(buf->mutex) {};
-    buf->mutex=1;
+    mutex_lock(&buf->mutex);
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
@@ -31,18 +34,17 @@ void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element
     {
         if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
     }
-    buf->mutex=0;
+    mutex_unlock(&buf->mutex);
 }
 
 uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if(buf->active == 0) return 0;
-    while(buf->mutex) {};
-    buf->mutex=1;
+    mutex_lock(&buf->mutex);
     *element = buf->ring[buf->start];
     if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
-    buf->mutex=0;
+    mutex_unlock(&buf->mutex);
     return 1;
 }
 
@@ -102,13 +104,15 @@ int mem_msg_sys_init(void)
     hrtimer_start(&coordinator_loop_timer,
             ns_to_ktime(now_ns_system + coord_timer_steps_ns[0]),
             HRTIMER_MODE_ABS);
+
+    printk(KERN_INFO "shprd.k: msg-system was initialized");
     return 0;
 }
 
 /***************************************************************/
 /***************************************************************/
 
-enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart)
+static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart)
 {
     struct ProtoMsg pru_msg;
     struct timespec ts_now;
@@ -123,7 +127,11 @@ enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart)
         if (pru0_comm_receive_msg(&pru_msg)) had_work = 2;
         else if (pru0_comm_receive_error(&pru_msg)) had_work = 4;
         else if (pru1_comm_receive_error(&pru_msg)) had_work = 5;
-        else continue;
+        else
+        {
+            had_work = 0;
+            continue;
+        }
 
         if (pru_msg.msg_type<0xC0)
         {
