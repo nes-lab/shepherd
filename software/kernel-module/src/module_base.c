@@ -106,7 +106,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 	int i;
 	int ret = 0;
 
-	printk(KERN_INFO "shprd.k: found shepherd device!!!\n");
+	printk(KERN_INFO "shprd.k: found shepherd device!!!");
 
 	pdata = get_shepherd_platform_data(pdev);
 
@@ -165,7 +165,7 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, NULL);
-	printk(KERN_INFO "shprd.k: module exited from kernel!!!\n");
+	printk(KERN_INFO "shprd.k: module exited from kernel!!!");
 	return 0;
 }
 

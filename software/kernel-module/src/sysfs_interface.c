@@ -450,7 +450,7 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
         int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved,&value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
-        if (value_retrieved > 255) printk(KERN_WARNING "shprd.k: virtSource-Parsing got a u8-value out of bound\n");
+        if (value_retrieved > 255) printk(KERN_WARNING "shprd.k: virtSource-Parsing got a u8-value out of bound");
         writeb((uint8_t)value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
@@ -549,12 +549,12 @@ int sysfs_interface_init(void)
 	kobj_ref = kobject_create_and_add("shepherd", NULL);
 
 	if ((retval = sysfs_create_file(kobj_ref, &attr_state.attr))) {
-		printk(KERN_ERR "shprd.k: Cannot create sysfs state attrib\n");
+		printk(KERN_ERR "shprd.k: Cannot create sysfs state attrib");
 		goto r_sysfs;
 	}
 
 	if ((retval = sysfs_create_group(kobj_ref, &attr_group))) {
-		printk(KERN_ERR "shprd.k: cannot create sysfs attrib group\n");
+		printk(KERN_ERR "shprd.k: cannot create sysfs attrib group");
 		goto r_state;
 	};
 
@@ -562,7 +562,7 @@ int sysfs_interface_init(void)
 
 	if ((retval = sysfs_create_group(kobj_mem_ref, &attr_mem_group))) {
 		printk(KERN_ERR
-		       "shprd.k: cannot create sysfs memory attrib group\n");
+		       "shprd.k: cannot create sysfs memory attrib group");
 		goto r_group;
 	};
 
@@ -570,7 +570,7 @@ int sysfs_interface_init(void)
 
 	if ((retval = sysfs_create_group(kobj_sync_ref, &attr_sync_group))) {
 		printk(KERN_ERR
-		       "shprd.k: cannot create sysfs sync attrib group\n");
+		       "shprd.k: cannot create sysfs sync attrib group");
 		goto r_mem;
 	};
 

@@ -76,7 +76,7 @@ int sync_init(uint32_t timer_period_ns)
 
 	/* timer for trigger, TODO: this needs better naming, make clear what it does */
 	trigger_loop_period_ns = timer_period_ns; /* 100 ms */
-    //printk(KERN_INFO "shprd.k: new timer_period_ns = %u\n", trigger_loop_period_ns);
+    //printk(KERN_INFO "shprd.k: new timer_period_ns = %u", trigger_loop_period_ns);
 
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     trigger_loop_timer.function = &trigger_loop_callback;
@@ -147,7 +147,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
         ns_now_until_trigger = 2 * trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
     } else
     {
-        printk(KERN_ERR "shprd.k: module missed a sync-trigger! -> last timestamp is now probably used twice by PRU\n");
+        printk(KERN_ERR "shprd.k: module missed a sync-trigger! -> last timestamp is now probably used twice by PRU");
         ns_now_until_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
         sys_ts_over_timer_wrap_ns = 0u; /* invalidate this measurement */
 	}
@@ -180,7 +180,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
         if (ctrl_req.identifier != MSG_TO_KERNEL)
         {
             /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd.k: Recv_CtrlRequest -> mem corruption?\n");
+            printk(KERN_ERR "shprd.k: Recv_CtrlRequest -> mem corruption?");
         }
 
         sync_loop(&ctrl_rep, &ctrl_req);
@@ -188,7 +188,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
         if (!pru_comm_send_ctrl_reply(&ctrl_rep))
         {
             /* Error occurs if PRU was not able to handle previous message in time */
-            printk(KERN_WARNING "shprd.k: Send_CtrlResponse -> back-pressure\n");
+            printk(KERN_WARNING "shprd.k: Send_CtrlResponse -> back-pressure");
         }
 
         /* resetting to longest sleep period */
@@ -199,7 +199,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
             (prev_timestamp_ns > 0))
     {
         ts_last_error_ns = ts_now_system_ns;
-        printk(KERN_ERR "shprd.k: Faulty behaviour - PRU did not answer to trigger-request in time! \n");
+        printk(KERN_ERR "shprd.k: Faulty behaviour - PRU did not answer to trigger-request in time!");
     }
 
     hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
@@ -266,7 +266,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
 
     if (((sync_data->error_now > 500) || (sync_data->error_now < -500)) && (++info_count >= 100)) /* val = 200 prints every 20s when enabled */
     {
-        printk(KERN_INFO "shprd.sync: period=%u, n_comp=%u, er_pid=%lld/%lld/%lld, ns_iep=%u, ns_sys=%u\n",
+        printk(KERN_INFO "shprd.sync: period=%u, n_comp=%u, er_pid=%lld/%lld/%lld, ns_iep=%u, ns_sys=%u",
                 ctrl_rep->analog_sample_period, // = upper part of buffer_block_period
                 ctrl_rep->compensation_steps,  // = lower part of buffer_block_period
                 sync_data->error_now,
@@ -275,7 +275,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
                 iep_ts_over_timer_wrap_ns,
                 sys_ts_over_timer_wrap_ns);
         if (info_count > 6600)
-            printk(KERN_INFO "shprd.sync: NOTE - previous message is shown every 10 s when sync-error exceeds a threshold (ONLY normal during startup)\n");
+            printk(KERN_INFO "shprd.sync: NOTE - previous message is shown every 10 s when sync-error exceeds a threshold (ONLY normal during startup)");
         info_count = 0;
     }
 
@@ -284,13 +284,13 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     {
         int64_t diff_timestamp_ms = div_s64((int64_t)next_timestamp_ns - prev_timestamp_ns, 1000000u);
         if (diff_timestamp_ms < 0)
-            printk(KERN_ERR "shprd.k: backwards timestamp-jump detected (sync-loop, %lld ms)\n", diff_timestamp_ms);
+            printk(KERN_ERR "shprd.k: backwards timestamp-jump detected (sync-loop, %lld ms)", diff_timestamp_ms);
         else if (diff_timestamp_ms < 95)
-            printk(KERN_ERR "shprd.k: too small timestamp-jump detected (sync-loop, %lld ms)\n", diff_timestamp_ms);
+            printk(KERN_ERR "shprd.k: too small timestamp-jump detected (sync-loop, %lld ms)", diff_timestamp_ms);
         else if (diff_timestamp_ms > 105)
-            printk(KERN_ERR "shprd.k: forwards timestamp-jump detected (sync-loop, %lld ms)\n", diff_timestamp_ms);
+            printk(KERN_ERR "shprd.k: forwards timestamp-jump detected (sync-loop, %lld ms)", diff_timestamp_ms);
         else if (next_timestamp_ns == 0)
-            printk(KERN_ERR "shprd.k: zero timestamp detected (sync-loop)\n");
+            printk(KERN_ERR "shprd.k: zero timestamp detected (sync-loop)");
     }
     prev_timestamp_ns = next_timestamp_ns;
     ctrl_rep->next_timestamp_ns = next_timestamp_ns;

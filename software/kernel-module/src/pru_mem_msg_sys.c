@@ -12,6 +12,7 @@
 struct RingBuffer msg_ringbuf_from_pru;
 struct RingBuffer msg_ringbuf_to_pru;
 
+// TODO: base msg-system on irqs (there are free ones from rpmsg)
 // TODO: replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
 static void ring_init(struct RingBuffer *const buf)
 {
@@ -143,44 +144,44 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             {
             case MSG_STATUS_RESTARTING_SYNC_ROUTINE:
                 printk(KERN_INFO
-                "shprd.pru%c: (re)starting sync routine.. (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: (re)starting sync routine.. (val=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERROR:
                 printk(KERN_ERR
-                "shprd.pru%c: general error (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: general error (val=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_MEMCORRUPTION:
                 printk(KERN_ERR
-                "shprd.pru%c: msg.id from kernel is faulty -> mem corruption? (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: msg.id from kernel is faulty -> mem corruption? (val=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_BACKPRESSURE:
                 printk(KERN_ERR
-                "shprd.pru%c: msg-buffer to kernel was still full -> backpressure (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: msg-buffer to kernel was still full -> backpressure (val=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_INCMPLT:
                 printk(KERN_ERR
-                "shprd.pru%c: sample-buffer not full (fill=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: sample-buffer not full (fill=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_INVLDCMD:
                 printk(KERN_ERR
-                "shprd.pru%c: received invalid command / msg-type (%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: received invalid command / msg-type (%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_NOFREEBUF:
                 printk(KERN_ERR
-                "shprd.pru%c: ringbuffer is depleted - no free buffer (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: ringbuffer is depleted - no free buffer (val=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_TIMESTAMP:
                 printk(KERN_ERR
-                "shprd.pru%c: received timestamp is faulty (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: received timestamp is faulty (val=%u)", had_work & 1, pru_msg.value);
                 break;
             case MSG_ERR_SYNC_STATE_NOT_IDLE:
                 printk(KERN_ERR
-                "shprd.pru%c: Sync not idle at host interrupt (val=%u)\n", had_work & 1, pru_msg.value);
+                "shprd.pru%c: Sync not idle at host interrupt (val=%u)", had_work & 1, pru_msg.value);
                 break;
             default:
                 /* these are all handled in userspace and will be passed by sys-fs */
                 printk(KERN_ERR
-                "shprd.k: received invalid command / msg-type (%hhu) from pru%c\n", pru_msg.msg_type, had_work & 1);
+                "shprd.k: received invalid command / msg-type (%hhu) from pru%c", pru_msg.msg_type, had_work & 1);
             }
         }
 
