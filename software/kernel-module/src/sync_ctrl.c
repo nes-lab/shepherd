@@ -259,6 +259,7 @@ int sync_loop(struct CtrlRepMsg *const ctrl_rep, const struct CtrlReqMsg *const 
     if (sync_data->clock_corr < -80000) sync_data->clock_corr = -80000;
 
     /* determine corrected loop_ticks for next buffer_block */
+    ctrl_rep->msg_type = MSG_SYNC;
     ctrl_rep->buffer_block_period = TIMER_BASE_PERIOD + sync_data->clock_corr;
     sync_data->previous_period = ctrl_rep->buffer_block_period;
     ctrl_rep->analog_sample_period = (ctrl_rep->buffer_block_period / ADC_SAMPLES_PER_BUFFER);

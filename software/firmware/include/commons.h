@@ -36,7 +36,7 @@ enum MsgType {
 	MSG_DBG_PRINT = 0xA6u,
 	/* KERNELSPACE (enum >=0xC0) */
 	// STATUS
-	MSG_STATUS_RESTARTING_SYNC_ROUTINE = 0xC0,
+	MSG_STATUS_RESTARTING_ROUTINE = 0xC0,
 	// ERROR
 	MSG_ERROR = 0xE0u,
 	MSG_ERR_MEMCORRUPTION = 0xE1u,
@@ -45,7 +45,10 @@ enum MsgType {
 	MSG_ERR_INVLDCMD = 0xE4u,
 	MSG_ERR_NOFREEBUF = 0xE5u,
 	MSG_ERR_TIMESTAMP = 0xE6u,
-	MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7u
+	MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7u,
+	// Routines
+	MSG_TEST = 0xEAu,
+	MSG_SYNC = 0xEBu
 };
 
 /* Message IDs used in Mem-Protocol between PRUs and kernel module */
@@ -158,8 +161,10 @@ struct CtrlReqMsg {
 	uint8_t identifier;
 	/* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
 	uint8_t msg_unread;
+	/* content description used to distinguish messages, see enum MsgType */
+	uint8_t msg_type; // not needed, but it does not hurt
 	/* Alignment with memory, (bytes)mod4 */
-	uint8_t reserved[2];
+	uint8_t reserved[1];
 	/* Number of ticks passed on the PRU's IEP timer */
 	uint32_t ticks_iep;
 } __attribute__((packed));
@@ -170,8 +175,10 @@ struct CtrlRepMsg {
 	uint8_t identifier;
 	/* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
 	uint8_t msg_unread;
+	/* content description used to distinguish messages, see enum MsgType */
+	uint8_t msg_type; // only needed for debug
 	/* Alignment with memory, (bytes)mod4 */
-	uint8_t reserved0[2];
+	uint8_t reserved0[1];
 	/* Actual Content of message */
 	uint32_t buffer_block_period;   // corrected ticks that equal 100ms
 	uint32_t analog_sample_period;  // ~ 10 us

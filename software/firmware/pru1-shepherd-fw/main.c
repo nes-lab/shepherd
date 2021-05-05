@@ -49,7 +49,8 @@ enum SyncState {
 // alternative message channel specially dedicated for errors
 static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	if ((shared_mem->pru1_msg_error.msg_unread == 0) && (shared_mem->pru1_msg_error.msg_type != type)) // do not care, newest error wins
+	// do not care for sent-status, newest error wins IF different from previous
+	if (!((shared_mem->pru1_msg_error.msg_type == type) && (shared_mem->pru1_msg_error.value == value)))
 	{
 		shared_mem->pru1_msg_error.msg_type = type;
 		shared_mem->pru1_msg_error.value = value;
@@ -57,11 +58,10 @@ static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru1_msg_error.msg_unread = 1u;
 	}
-	if (type >= 0xE0)
-		__delay_cycles(100u/TIMER_TICK_NS); // 100 ns
-		//__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms // TODO: reduce blocking behaviour for now
+	if (type >= 0xE0) __delay_cycles(200u/TIMER_TICK_NS); // 200 ns
 }
 
+// TODO: this handler seems obsolete
 static void fault_handler(volatile struct SharedMem *const shared_mem, enum MsgType err_msg)
 {
 	/* If shepherd is not running, we can recover from the fault */
@@ -87,6 +87,7 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 		{
 			/* Error occurs if something writes over boundaries */
 			fault_handler(shared_mem, MSG_ERR_MEMCORRUPTION);
+			return 0;
 		}
 		*ctrl_rep = shared_mem->pru1_msg_ctrl_rep; // TODO: faster to copy only the needed 2 uint32
 		shared_mem->pru1_msg_ctrl_rep.msg_unread = 0;
@@ -123,7 +124,12 @@ static inline bool_ft receive_control_reply(volatile struct SharedMem *const sha
 					fault_handler(shared_mem, MSG_ERROR); // "Recv_CtrlReply -> timestamp-jump was not 100 ms");
 			}
 		}
-
+		if (shared_mem->pru1_msg_ctrl_rep.msg_type == MSG_TEST)
+		{
+			// pipeline-test for msg-system
+			emit_error(shared_mem, MSG_TEST, shared_mem->pru1_msg_ctrl_rep.buffer_block_period);
+			return 0;
+		}
 		return 1;
 	}
 	return 0;
@@ -233,7 +239,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	uint32_t last_analog_sample_ticks = 0;
 
 	/* Prepare message that will be received and sent to Linux kernel module */
-	struct CtrlReqMsg ctrl_req = { .identifier = MSG_TO_KERNEL, .msg_unread = 1 };
+	struct CtrlReqMsg ctrl_req = { .identifier = MSG_TO_KERNEL, .msg_type = MSG_NONE, .msg_unread = 1 };
 	struct CtrlRepMsg ctrl_rep = {
 		.buffer_block_period = TIMER_BASE_PERIOD,
 		.analog_sample_period = TIMER_BASE_PERIOD / ADC_SAMPLES_PER_BUFFER,
@@ -386,7 +392,7 @@ void main(void)
 	CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
 
 reset:
-	emit_error(shared_mememory, MSG_STATUS_RESTARTING_SYNC_ROUTINE, 0); // TODO: rename
+	emit_error(shared_mememory, MSG_STATUS_RESTARTING_ROUTINE, 0);
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_mememory->gpio_edges_mutex);
 

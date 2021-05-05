@@ -29,7 +29,8 @@
 // TODO: also used for status,
 static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	if ((shared_mem->pru0_msg_error.msg_unread == 0) && (shared_mem->pru0_msg_error.msg_type != type)) // do not care, newest error wins
+	// do not care for sent-status, newest error wins IF different from previous
+	if (!((shared_mem->pru1_msg_error.msg_type == type) && (shared_mem->pru1_msg_error.value == value)))
 	{
 		shared_mem->pru0_msg_error.msg_type = type;
 		shared_mem->pru0_msg_error.value = value;
@@ -37,9 +38,7 @@ static void emit_error(volatile struct SharedMem *const shared_mem, enum MsgType
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru0_msg_error.msg_unread = 1u;
 	}
-	if (type >= 0xE0)
-		__delay_cycles(100U/TIMER_TICK_NS); // 100 ns
-		//__delay_cycles(1000000U/TIMER_TICK_NS); // 1 ms // TODO: reduce blocking behaviour for now
+	if (type >= 0xE0) __delay_cycles(200U/TIMER_TICK_NS); // 200 ns
 }
 
 // send returns a 1 on success
@@ -159,6 +158,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		if (msg_in.msg_type == MSG_BUF_FROM_HOST) {
 			ring_put(free_buffers_ptr, (uint8_t)msg_in.value);
 			return 1U;
+		} else if ((msg_in.msg_type == MSG_TEST) && (msg_in.value == 1)) {
+			// pipeline-test for msg-system
+			send_message(shared_mem,MSG_TEST, msg_in.value);
+		} else if ((msg_in.msg_type == MSG_TEST) && (msg_in.value == 2)) {
+			// pipeline-test for msg-system
+			emit_error(shared_mem,MSG_TEST, msg_in.value);
 		} else {
 			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.msg_type);
 			return 0U;
@@ -289,10 +294,11 @@ void main(void)
 
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
-	shared_memory->pru1_msg_ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .ticks_iep=0u};
+	shared_memory->pru1_msg_ctrl_req = (struct CtrlReqMsg){.identifier=0u, .msg_unread=0u, .msg_type=MSG_NONE, .ticks_iep=0u};
 	shared_memory->pru1_msg_ctrl_rep = (struct CtrlRepMsg){
 		.identifier=0u,
 		.msg_unread=0u,
+		.msg_type=MSG_NONE,
 		.buffer_block_period=TIMER_BASE_PERIOD,
 		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
 		.compensation_steps=0u,
@@ -315,6 +321,8 @@ void main(void)
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
 reset:
+	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 0);
+
 	ring_init(&free_buffers);
 
 	GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);

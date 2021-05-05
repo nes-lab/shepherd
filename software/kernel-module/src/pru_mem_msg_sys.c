@@ -88,6 +88,22 @@ int mem_msg_sys_reset(void)
     return 0;
 }
 
+int mem_msg_sys_test(void)
+{
+    struct ProtoMsg msg1;
+    struct CtrlRepMsg msg2;
+    printk(KERN_INFO "shprd.k: testing msg-pipelines between kM and PRUs -> triggering messages for pipeline 1-3");
+    msg1.msg_type = MSG_TEST;
+    msg1.value = 1;
+    put_msg_to_pru(&msg1); // message-pipeline pru0
+    msg1.value = 2;
+    put_msg_to_pru(&msg1); // error-pipeline pru0
+
+    msg2.msg_type = MSG_TEST;
+    msg2.buffer_block_period = 3;
+    pru_comm_send_ctrl_reply(&msg2); // error-pipeline pru1
+}
+
 int mem_msg_sys_init(void)
 {
     struct timespec ts_now;
@@ -107,6 +123,8 @@ int mem_msg_sys_init(void)
             HRTIMER_MODE_ABS);
 
     printk(KERN_INFO "shprd.k: msg-system was initialized");
+    mem_msg_sys_test();
+
     return 0;
 }
 
@@ -142,9 +160,9 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         {
             switch (pru_msg.msg_type) // TODO: move over to py, just keep ringbuffer-overflow here
             {
-            case MSG_STATUS_RESTARTING_SYNC_ROUTINE:
+            case MSG_STATUS_RESTARTING_ROUTINE:
                 printk(KERN_INFO
-                "shprd.pru%u: (re)starting sync routine.. (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: (re)starting main-routine (val=%u)", had_work & 1u, pru_msg.value);
                 break;
             case MSG_ERROR:
                 printk(KERN_ERR
@@ -180,12 +198,12 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                 break;
             case MSG_TEST:
                 printk(KERN_INFO
-                "shprd.pru%u: received test-answer from pipeline %u", had_work & 1u, pru_msg.value);
+                "shprd.k: [test] received answer from pru%u / pipeline %u", had_work & 1u, pru_msg.value);
                 break;
             default:
                 /* these are all handled in userspace and will be passed by sys-fs */
                 printk(KERN_ERR
-                "shprd.k: received invalid command / msg-type (%hhu) from pru%u", pru_msg.msg_type, had_work & 1u);
+                "shprd.k: received invalid command / msg-type (%u) from pru%u", pru_msg.msg_type, had_work & 1u);
             }
         }
 

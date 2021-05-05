@@ -21,5 +21,6 @@ uint8_t get_msg_from_pru(struct ProtoMsg *const element);
 int mem_msg_sys_exit(void);
 int mem_msg_sys_reset(void);
 int mem_msg_sys_init(void);
+int mem_msg_sys_test(void);
 
 #endif //SRC_MEM_MSG_PRU_H
