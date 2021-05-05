@@ -23,23 +23,11 @@
 #define DEBUG_PIN0_MASK 	BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK 	BIT_SHIFT(P8_30)
 
-#define GPIO_MASK		(0x03FF)
+#define GPIO_MASK		(0x03FF) // TODO: currently contains batOk as an input, does that work?
 
 #define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
 
-/* overview for current pin-mirroring
-#define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
-#define TARGET_GPIO1            BIT_SHIFT(P8_46) // r31_01
-#define TARGET_GPIO2            BIT_SHIFT(P8_43) // r31_02
-#define TARGET_GPIO3            BIT_SHIFT(P8_44) // r31_03
-#define TARGET_UART_TX          BIT_SHIFT(P8_41) // r31_04
-#define TARGET_UART_RX          BIT_SHIFT(P8_42) // r31_05
-#define TARGET_SWD_CLK          BIT_SHIFT(P8_39) // r31_06
-#define TARGET_SWD_IO           BIT_SHIFT(P8_40) // r31_07
-#define TARGET_BAT_OK           BIT_SHIFT(P8_27) // r31_08
-#define TARGET_GPIO4            BIT_SHIFT(P8_29) // r31_09
-
-TODO: new order for hw-rev2.1, also adapt device tree (gpio2/3 switches with swd_clk/io AND gpio4 switches with bat-ok)
+/* overview for pin-mirroring - HW-Rev2.1
 #define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
 #define TARGET_GPIO1            BIT_SHIFT(P8_46) // r31_01
 #define TARGET_SWD_CLK          BIT_SHIFT(P8_43) // r31_02
@@ -49,7 +37,8 @@ TODO: new order for hw-rev2.1, also adapt device tree (gpio2/3 switches with swd
 #define TARGET_GPIO2            BIT_SHIFT(P8_39) // r31_06
 #define TARGET_GPIO3            BIT_SHIFT(P8_40) // r31_07
 #define TARGET_GPIO4            BIT_SHIFT(P8_27) // r31_08
-#define TARGET_BAT_OK           BIT_SHIFT(P8_29) // r31_09
+#define TARGET_BAT_OK           BIT_SHIFT(P8_29) // r30_09 -> OUTPUT
+Note: this table is copied (for reference) in __init.py__
 */
 
 enum SyncState {
