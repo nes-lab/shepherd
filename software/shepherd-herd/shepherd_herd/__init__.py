@@ -121,26 +121,14 @@ def start_shepherd(
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
-@click.option(
-    "--inventory",
-    "-i",
-    type=str,
+@click.option("--inventory", "-i", type=str,
     default="inventory/herd.yml",
-    help="List of target hosts as comma-separated string or path to ansible-style yaml file",
-)
-@click.option(
-    "--limit",
-    "-l",
-    type=str,
-    help="Comma-separated list of hosts to limit execution to",
-)
+    help="List of target hosts as comma-separated string or path to ansible-style yaml file")
+@click.option("--limit", "-l", type=str,
+    help="Comma-separated list of hosts to limit execution to")
 @click.option("--user", "-u", type=str, help="User name for login to nodes")
-@click.option(
-    "--key-filename",
-    "-k",
-    type=click.Path(exists=True),
-    help="Path to private ssh key file",
-)
+@click.option("--key-filename", "-k", type=click.Path(exists=True),
+    help="Path to private ssh key file")
 @click.option("-v", "--verbose", count=True, default=2)
 @click.pass_context
 def cli(ctx, inventory, limit, user, key_filename, verbose):
@@ -360,53 +348,15 @@ def reset(ctx):
 
 
 @cli.command(short_help="Records IV data")
-@click.option(
-    "--output_path",
-    "-o",
-    type=click.Path(),
+@click.option("--output_path", "-o", type=click.Path(),
     default="/var/shepherd/recordings",
-    help="Dir or file path for resulting hdf5 file",
-)
-@click.option(
-    "--mode",
-    type=click.Choice(["harvesting", "load"]),
-    default="harvesting",
-    help="Record 'harvesting' or 'load' data",
-)
-@click.option(
-    "--duration", "-d", type=float, help="Duration of recording in seconds"
-)
+    help="Dir or file path for resulting hdf5 file")
+@click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
+    help="Record 'harvesting' or 'harvesting_test'-function data")
+@click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
-@click.option(
-    "--harvesting-voltage",
-    type=float,
-    help="Set fixed reference voltage for harvesting",
-)
-@click.option(
-    "--load",
-    type=click.Choice(["artificial", "node"]),
-    default="artificial",
-    help="Choose artificial or sensor node load",
-)
-@click.option(
-    "--ldo-voltage",
-    "-c",
-    type=float,
-    default=2.1,
-    help="Sets voltage of variable LDO",
-)
-@click.option(
-    "--ldo-mode",
-    type=click.Choice(["pre-charge", "continuous"]),
-    default="pre-charge",
-    help="Select if LDO should just pre-charge capacitor or run continuously",
-)
-@click.option(
-    "--start/--no-start",
-    default=True,
-    help="Start shepherd after uploading config",
-)
+@click.option("--start/--no-start", default=True, help="Start shepherd after uploading config")
 @click.pass_context
 def record(
     ctx,
@@ -415,10 +365,6 @@ def record(
     duration,
     force_overwrite,
     no_calib,
-    harvesting_voltage,
-    load,
-    ldo_voltage,
-    ldo_mode,
     start,
 ):
     fp_output = Path(output_path)
@@ -431,10 +377,6 @@ def record(
         "duration": duration,
         "force_overwrite": force_overwrite,
         "no_calib": no_calib,
-        "harvesting_voltage": harvesting_voltage,
-        "load": load,
-        "ldo_voltage": ldo_voltage,
-        "ldo_mode": ldo_mode,
     }
     configure_shepherd(
         ctx.obj["fab group"],
@@ -451,34 +393,20 @@ def record(
 
 @cli.command(short_help="Emulates IV data read from INPUT hdf5 file")
 @click.argument("input_path", type=click.Path())
-@click.option(
-    "--output_path",
-    "-o",
-    type=click.Path(),
-    help="Dir or file path for resulting hdf5 file with load recordings",
-)
-@click.option(
-    "--duration", "-d", type=float, help="Duration of recording in seconds"
-)
+@click.option("--output_path", "-o", type=click.Path(),
+    help="Dir or file path for resulting hdf5 file with load recordings")
+@click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
-@click.option(
-    "--load",
-    type=click.Choice(["artificial", "node"]),
-    default="node",
-    help="Choose artificial or sensor node load",
-)
-@click.option(
-    "--ldo-voltage",
-    "-c",
-    type=float,
-    default=2.0,
-    help="Pre-charge capacitor before starting recording",
-)
-@click.option(
-    "--virtcap",
-    help="Use virtcap to emulate any energy harvesting power supply chain",
-)
+@click.option("--enable_io/--disable_io", default=True,
+              help="Switch the GPIO level converter to targets on/off")
+@click.option("--io_sel_target_a/--io_sel_target_b", default=True,
+              help="Choose Target that gets connected to IO")
+@click.option("--pwr_sel_target_a/--pwr_sel_target_b", default=True,
+              help="Choose (main)Target that gets connected to virtual Source")
+@click.option("--aux_voltage", type=float,
+              help="Set Voltage of auxiliary Power Source (second target)")
+@click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source")
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 @click.option(
     "--start/--no-start",
@@ -493,9 +421,11 @@ def emulate(
     duration,
     force_overwrite,
     no_calib,
-    load,
-    ldo_voltage,
-    virtcap,
+    enable_target_io,
+    sel_target_a_for_io,
+    sel_target_a_for_pwr,
+    aux_target_voltage,
+    virtsource,
     start,
 ):
 
@@ -508,9 +438,11 @@ def emulate(
         "force_overwrite": force_overwrite,
         "duration": duration,
         "no_calib": no_calib,
-        "ldo_voltage": ldo_voltage,
-        "load": load,
-        "virtcap": virtcap,
+        "set_target_io_lvl_conv": enable_target_io,
+        "sel_target_for_io": sel_target_a_for_io,
+        "sel_target_for_pwr": sel_target_a_for_pwr,
+        "aux_target_voltage": aux_target_voltage,
+        "settings_virtsource": virtsource,
     }
 
     if output_path is not None:
@@ -546,18 +478,10 @@ def stop(ctx):
 @click.argument("filename", type=click.Path())
 @click.argument("outdir", type=click.Path(exists=True))
 @click.option("--rename", "-r", is_flag=True)
-@click.option(
-    "--delete",
-    "-d",
-    is_flag=True,
-    help="Delete the file from the remote filesystem after retrieval",
-)
-@click.option(
-    "--stop",
-    "-s",
-    is_flag=True,
-    help="Stop the on-going recording/emulation process before retrieving the data",
-)
+@click.option("--delete", "-d", is_flag=True,
+    help="Delete the file from the remote filesystem after retrieval")
+@click.option("--stop", "-s", is_flag=True,
+    help="Stop the on-going recording/emulation process before retrieving the data",)
 @click.pass_context
 def retrieve(ctx, filename, outdir, rename, delete, stop):
     if stop:
