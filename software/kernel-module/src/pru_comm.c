@@ -21,7 +21,7 @@ delayed_start_callback(struct hrtimer *timer_for_restart);
 
 int pru_comm_init(void)
 {
-	/* Maps the control registers of the PRU's interrupt controller */
+    /* Maps the control registers of the PRU's interrupt controller */
 	pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
 	/* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
 	pru_shared_mem_io =
@@ -31,6 +31,7 @@ int pru_comm_init(void)
 	hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 	delayed_start_timer.function = &delayed_start_callback;
 
+    printk(KERN_INFO "shprd.k: memory interface was initialized, shared mem @ 0x%p", pru_shared_mem_io);
 	return 0;
 }
 
