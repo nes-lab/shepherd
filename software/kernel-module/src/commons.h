@@ -15,14 +15,16 @@
 
 /* Message content description used to distinguish messages for PRU0 */
 enum MsgType {
-    MSG_NONE = 0u,
-    MSG_BUF_FROM_HOST = 1u,
-    MSG_BUF_FROM_PRU = 2u,
+    /* USERSPACE (enum <0xC0) */
+    MSG_NONE = 0x00u,
+    MSG_BUF_FROM_HOST = 0x01u,
+    MSG_BUF_FROM_PRU = 0x02u,
     // DEBUG
     MSG_DBG_ADC = 0xA0u,
     MSG_DBG_DAC = 0xA1u,
     MSG_DBG_GPI = 0xA2u,
     MSG_DBG_PRINT = 0xA6u,
+    /* KERNELSPACE (enum >=0xC0) */
     // STATUS
     MSG_STATUS_RESTARTING_SYNC_ROUTINE = 0xC0,
     // ERROR
@@ -83,7 +85,7 @@ struct Calibration_Config {
  * 	_nA-u32 = ~ 4.3 A
  */
 struct VirtSource_Config {
-    uint32_t converter_mode; // enum for  different functionality
+    uint32_t converter_mode; // enum for  different functionality, TODO: implement
     /* Direct Reg */
     uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
     /* Boost Reg, ie. BQ25504 */
@@ -103,11 +105,11 @@ struct VirtSource_Config {
     uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
     /* LUTs */
     uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-    uint32_t LUT_out_inv_efficiency_n10[LUT_SIZE]; // depending on output_current, n10 means value = 2^10 / eta,
+    uint32_t LUT_out_inv_efficiency_n10[LUT_SIZE]; // depending on output_current, n8 means normalized to 2^8 => 1/1.0,
 } __attribute__((packed));
 
 
-/* Format of Message-Protocol between PRU0 Kernel Module */
+/* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg {
     /* Identifier => Canary, This is used to identify memory corruption */
     uint8_t msg_id;
@@ -122,31 +124,31 @@ struct ProtoMsg {
 } __attribute__((packed));
 
 
-/* Control request message sent from PRU1 to this kernel module */
+/* Control request message sent from PRU1 to this kernel module, TODO: replace by protoMsg*/
 struct CtrlReqMsg {
     /* Identifier => Canary, This is used to identify memory corruption */
-	uint8_t identifier;
-	/* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
-	uint8_t msg_unread;
+    uint8_t identifier;
+    /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
+    uint8_t msg_unread;
     /* Alignment with memory, (bytes)mod4 */
-	uint8_t reserved[2];
-	/* Number of ticks passed on the PRU's IEP timer */
-	uint32_t ticks_iep;
+    uint8_t reserved[2];
+    /* Number of ticks passed on the PRU's IEP timer */
+    uint32_t ticks_iep;
 } __attribute__((packed));
 
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
 struct CtrlRepMsg {
-	/* Identifier => Canary, This is used to identify memory corruption */
-	uint8_t identifier;
+    /* Identifier => Canary, This is used to identify memory corruption */
+    uint8_t identifier;
     /* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
     uint8_t msg_unread;
     /* Alignment with memory, (bytes)mod4 */
-	uint8_t reserved0[2];
-	/* Actual Content of message */
+    uint8_t reserved0[2];
+    /* Actual Content of message */
     uint32_t buffer_block_period;   // corrected ticks that equal 100ms
     uint32_t analog_sample_period;  // ~ 10 us
     uint32_t compensation_steps;    // remainder of buffer_block/sample_count = sample_period
-	uint64_t next_timestamp_ns;     // start of next buffer block
+    uint64_t next_timestamp_ns;     // start of next buffer block
 } __attribute__((packed));
 
 
@@ -154,27 +156,27 @@ struct CtrlRepMsg {
 extern void __iomem *pru_shared_mem_io;
 
 struct SharedMem {
-	uint32_t shepherd_state;
-	/* Stores the mode, e.g. harvesting or emulation */
-	uint32_t shepherd_mode;
-	/* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
-	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
-	uint32_t dac_auxiliary_voltage_raw;
-	/* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
-	uint32_t mem_base_addr;
-	/* Length of shared area in DDR RAM */
-	uint32_t mem_size;
-	/* Maximum number of buffers stored in the shared DDR RAM area */
-	uint32_t n_buffers;
-	/* Number of IV samples stored per buffer */
-	uint32_t samples_per_buffer;
-	/* The time for sampling samples_per_buffer. Determines sampling rate */
-	uint32_t buffer_period_ns;
-	/* ADC calibration settings */
-	struct Calibration_Config calibration_settings;
-	/* This structure defines all settings of virtual source emulation*/
-	struct VirtSource_Config virtsource_settings;
-	/* replacement Msg-System for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
+    uint32_t shepherd_state;
+    /* Stores the mode, e.g. harvesting or emulation */
+    uint32_t shepherd_mode;
+    /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
+     * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
+    uint32_t dac_auxiliary_voltage_raw;
+    /* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
+    uint32_t mem_base_addr;
+    /* Length of shared area in DDR RAM */
+    uint32_t mem_size;
+    /* Maximum number of buffers stored in the shared DDR RAM area */
+    uint32_t n_buffers;
+    /* Number of IV samples stored per buffer */
+    uint32_t samples_per_buffer;
+    /* The time for sampling samples_per_buffer. Determines sampling rate */
+    uint32_t buffer_period_ns;
+    /* ADC calibration settings */
+    struct Calibration_Config calibration_settings;
+    /* This structure defines all settings of virtual source emulation*/
+    struct VirtSource_Config virtsource_settings;
+    /* replacement Msg-System for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
     struct ProtoMsg pru0_msg_inbox;
     struct ProtoMsg pru0_msg_outbox;
     struct ProtoMsg pru0_msg_error;

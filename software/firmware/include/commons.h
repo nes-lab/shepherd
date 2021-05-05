@@ -58,7 +58,7 @@ enum ShepherdMode {
 	MODE_EMULATE_TEST,
 	MODE_DEBUG,
 	MODE_NONE
-}; // TODO: allow to set "NONE", shutsdown hrv & emu
+}; // TODO: allow to set "NONE", shuts down hrv & emu
 
 enum ShepherdState {
 	STATE_UNKNOWN,
@@ -138,13 +138,13 @@ struct VirtSource_Config {
 // pseudo-assertion to test for correct struct-size, zero cost
 extern uint32_t CHECK_VIRTSOURCE[1/((sizeof(struct VirtSource_Config) & 0x03u) == 0x00u)];
 
-/* Format of Message-Protocol between PRU0 Kernel Module */
+/* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg {
 	/* Identifier => Canary, This is used to identify memory corruption */
 	uint8_t msg_id;
 	/* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
 	uint8_t msg_unread;
-	/* content description used to distinguish messages */
+	/* content description used to distinguish messages, see enum MsgType */
 	uint8_t msg_type;
 	/* Alignment with memory, (bytes)mod4 */
 	uint8_t reserved[1];
@@ -201,7 +201,7 @@ struct SharedMem {
 	struct Calibration_Config calibration_settings;
 	/* This structure defines all settings of virtual source emulation*/
 	struct VirtSource_Config virtsource_settings;
-	/* replacement Msg-System for slow rpmsg (check 640ns, receive 4820ns) */
+	/* replacement Msg-System for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
 	struct ProtoMsg pru0_msg_inbox;
 	struct ProtoMsg pru0_msg_outbox;
 	struct ProtoMsg pru0_msg_error;
