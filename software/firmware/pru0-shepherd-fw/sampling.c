@@ -69,10 +69,10 @@ static inline void sample_harvesting(struct SampleBuffer *const buffer, const ui
 	static const uint8_ft SETTLE_INC = 5;
 	/* NOTE: ADC sampled at last CS-Rising-Edge (new pretrigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
 	__delay_cycles(800 / 5);
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
 	const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* just a simple algorithm that sets 75% of open circuit voltage_adc  */
 	if (sample_idx <= SETTLE_INC)
 	{

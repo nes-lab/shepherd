@@ -271,7 +271,7 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
                 iep_ts_over_timer_wrap_ns,
                 sys_ts_over_timer_wrap_ns);
         if (info_count > 6600)
-            printk(KERN_INFO "shprd.sync: NOTE - previous message is shown every 10 s when sync-error exceeds a threshold (ONLY normal during startup)");
+            printk(KERN_INFO "shprd.sync: NOTE - previous message is shown every 10 s when sync-error exceeds a threshold (normal mainly during startup)");
         info_count = 0;
     }
 

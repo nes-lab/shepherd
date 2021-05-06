@@ -153,6 +153,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		}
 	} else
 	{
+		// most common and important msg first
 		if (msg_in.type == MSG_BUF_FROM_HOST) {
 			ring_put(free_buffers_ptr, (uint8_t)msg_in.value);
 			return 1U;
@@ -164,9 +165,9 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			send_status(shared_mem, MSG_TEST, msg_in.value);
 		} else {
 			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type);
-			return 0U;
 		}
 	}
+	return 0u;
 }
 
 void event_loop(volatile struct SharedMem *const shared_mem,

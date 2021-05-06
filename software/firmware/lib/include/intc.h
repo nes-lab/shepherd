@@ -2,6 +2,7 @@
 #define __INTC_H_
 
 #include "gpio.h"
+#include <pru_intc.h>
 
 /*
  * This triggers the corresponding system event in INTC
