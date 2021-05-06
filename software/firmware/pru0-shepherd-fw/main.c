@@ -4,7 +4,6 @@
 
 #include <pru_cfg.h>
 #include <pru_iep.h>
-#include <pru_intc.h> // TODO: test to find panic-culprit
 #include <rsc_types.h>
 
 #include "iep.h"

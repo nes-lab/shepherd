@@ -44,11 +44,6 @@
 /* Definition for unused interrupts */
 #define HOST_UNUSED     255U
 
-/* Mapping sysevts to a channel. Each pair contains a sysevt, channel. */
-struct ch_map pru_intc_map[] = {
-	{ 16, 3 }
-};
-
 #define SIZE_CARVEOUT	(RING_SIZE * sizeof(struct SampleBuffer))
 
 // pseudo-assertion to test for correct struct-size, zero cost
@@ -59,39 +54,13 @@ extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= 64 * (8 + 4 + 2*4*10000 + 4 +
 struct my_resource_table resourceTable = {
         {
                 1, /* Resource table version: only version 1 is supported by the current driver */
-                2, /* number of entries in the table */
+                1, /* number of entries in the table */
                 { 0U, 0U } /* reserved, must be zero */
         },
         /* offsets to entries */
         {
-		offsetof(struct my_resource_table, pru_ints),
 		offsetof(struct my_resource_table, shared_mem),
         },
-
-	{
-		TYPE_CUSTOM,
-		TYPE_PRU_INTS,
-		sizeof(struct fw_rsc_custom_ints),
-		{
-			/* PRU_INTS version */
-			0x0000,
-			/* Channel-to-host mapping, 255 for unused */
-			HOST_UNUSED,
-			HOST_UNUSED,
-			HOST_UNUSED,
-			3,
-			HOST_UNUSED,
-			HOST_UNUSED,
-			HOST_UNUSED,
-			HOST_UNUSED,
-			HOST_UNUSED,
-			HOST_UNUSED,
-			/* Number of evts being mapped to channels */
-			(sizeof(pru_intc_map) / sizeof(struct ch_map)),
-			/* Pointer to the structure containing mapped events */
-			pru_intc_map,
-		},
-	},
 
         {
 		TYPE_CARVEOUT, 0x0, /* Memory address */
