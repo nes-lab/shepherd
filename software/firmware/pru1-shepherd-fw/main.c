@@ -168,7 +168,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem, const
 
 	if (gpio_diff > 0)
 	{
-		DEBUG_GPIO_STATE_2;
+		DEBUG_GPIO_STATE_3;
 		// local copy reduces reads to far-ram to current minimum
 		const uint32_t cIDX = shared_mem->gpio_edges->idx;
 
