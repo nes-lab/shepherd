@@ -52,6 +52,7 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
 	// do not care for sent-status, newest error wins IF different from previous
 	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value == value)))
 	{
+		shared_mem->pru1_msg_error.unread = 0u;
 		shared_mem->pru1_msg_error.type = type;
 		shared_mem->pru1_msg_error.value = value;
 		shared_mem->pru1_msg_error.id = MSG_TO_KERNEL;
@@ -72,7 +73,15 @@ static inline bool_ft receive_sync_reply(volatile struct SharedMem *const shared
 			send_status(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
 			return 0;
 		}
-		*msg = shared_mem->pru1_sync_inbox; // TODO: faster to copy only the needed 2 uint32
+		if (shared_mem->pru1_sync_inbox.type == MSG_TEST)
+		{
+			// pipeline-test for msg-system
+			shared_mem->pru1_sync_inbox.unread = 0;
+			send_status(shared_mem, MSG_TEST, shared_mem->pru1_sync_inbox.buffer_block_period);
+			return 0;
+		}
+		// NOTE: do not overwrite external msg without thinking twice! sync-routine relies on that content
+		*msg = shared_mem->pru1_sync_inbox; // TODO: faster to copy only the needed payload
 		shared_mem->pru1_sync_inbox.unread = 0;
 
 #if (SANITY_CHECKS > 0)
@@ -107,12 +116,6 @@ static inline bool_ft receive_sync_reply(volatile struct SharedMem *const shared
 				send_status(shared_mem, MSG_ERR_VALUE, 19); // "Recv_CtrlReply -> timestamp-jump was not 100 ms");
 		}
 #endif
-		if (msg->type == MSG_TEST)
-		{
-			// pipeline-test for msg-system
-			send_status(shared_mem, MSG_TEST, msg->buffer_block_period);
-			return 0;
-		}
 		return 1;
 	}
 	return 0;
@@ -222,7 +225,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	uint32_t last_analog_sample_ticks = 0;
 
 	/* Prepare message that will be received and sent to Linux kernel module */
-	struct ProtoMsg sync_rqst = { .id = MSG_TO_KERNEL, .type = MSG_NONE, .unread = 1 };
+	struct ProtoMsg sync_rqst = { .id = MSG_TO_KERNEL, .type = MSG_NONE, .unread = 0u };
 	struct SyncMsg sync_repl = {
 		.buffer_block_period = TIMER_BASE_PERIOD,
 		.analog_sample_period = TIMER_BASE_PERIOD / ADC_SAMPLES_PER_BUFFER,
@@ -281,7 +284,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 			/* Take timestamp of IEP */
 			sync_rqst.value = iep_get_cnt_val();
-			DEBUG_EVENT_STATE_2;
+			DEBUG_EVENT_STATE_3;
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
@@ -292,7 +295,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			}
 			send_sync_request(shared_mem, &sync_rqst);
 			DEBUG_EVENT_STATE_0;
-			continue;  // for more regular gpio-sampling
+			//continue;  // for more regular gpio-sampling
 		}
 
 		/*  [Event 2] Timer compare 0 handle -> trigger for buffer swap on pru0 */
@@ -369,10 +372,12 @@ void main(void)
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	DEBUG_STATE_0;
 
-	__delay_cycles(1000); // TODO: delays in pru and kernel can propably be reduced (ask kai)
-
 	/* Enable 'timestamp' interrupt from ARM host */
 	CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
+
+	/* wait until pru0 is ready */
+	while(shared_memory->cmp0_trigger_for_pru1 == 0u) __delay_cycles(10);
+	shared_memory->cmp0_trigger_for_pru1 = 0u;
 
 reset:
 	send_status(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 101);
