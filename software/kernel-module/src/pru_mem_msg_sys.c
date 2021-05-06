@@ -123,7 +123,7 @@ int mem_msg_sys_init(void)
             ns_to_ktime(now_ns_system + coord_timer_steps_ns[0]),
             HRTIMER_MODE_ABS);
 
-    printk(KERN_INFO "shprd.k: msg-system was initialized");
+    printk(KERN_INFO "shprd.k: msg-system initialized");
     mem_msg_sys_test();
 
     return 0;

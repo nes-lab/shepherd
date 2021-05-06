@@ -31,7 +31,7 @@ int pru_comm_init(void)
 	hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 	delayed_start_timer.function = &delayed_start_callback;
 
-    printk(KERN_INFO "shprd.k: memory interface was initialized, shared mem @ 0x%p", pru_shared_mem_io);
+    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
 	return 0;
 }
 

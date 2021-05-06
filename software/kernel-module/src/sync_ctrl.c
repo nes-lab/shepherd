@@ -97,7 +97,6 @@ int sync_init(uint32_t timer_period_ns)
 	    ns_now_until_trigger = timer_period_ns - ns_over_wrap - ns_pre_trigger;
     }
 
-
 	hrtimer_start(&trigger_loop_timer,
 		      ns_to_ktime(now_ns_system + ns_now_until_trigger),
 		      HRTIMER_MODE_ABS);
@@ -105,6 +104,8 @@ int sync_init(uint32_t timer_period_ns)
     hrtimer_start(&sync_loop_timer,
             ns_to_ktime(now_ns_system + 1000000),
             HRTIMER_MODE_ABS);
+
+    printk(KERN_INFO "shprd.k: sync-system initialized");
 
 	return 0;
 }
