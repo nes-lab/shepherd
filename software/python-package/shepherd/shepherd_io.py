@@ -748,8 +748,6 @@ class ShepherdIO(object):
         Args:
             index (int): Index of the buffer. 0 <= index < n_buffers
         """
-
-        logger.debug(f"Returning buffer #{ index } to PRU")
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
     def get_buffer(self, timeout: float = 1.0) -> NoReturn:
@@ -771,10 +769,10 @@ class ShepherdIO(object):
         """
         while True:
             msg_type, value = self._get_msg(timeout)
-            logger.debug(f"received msg type {msg_type}")
+            # logger.debug(f"received msg type {msg_type}")
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
-                logger.debug(f"Retrieving buffer { value } from shared memory")
+                logger.debug(f"Retrieving buffer #{ value } from shared memory")
                 buf = self.shared_mem.read_buffer(value)
                 return value, buf
 

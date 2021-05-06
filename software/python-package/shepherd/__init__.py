@@ -58,9 +58,8 @@ class Recorder(ShepherdIO):
 
         # Give the PRU empty buffers to begin with
         for i in range(self.n_buffers):
-            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
+            time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)  # could be as low as ~ 10us
             self.return_buffer(i)
-            logger.debug(f"sent empty buffer {i}")
 
         return self
 
@@ -75,6 +74,7 @@ class Recorder(ShepherdIO):
             index (int): Index of the buffer. 0 <= index < n_buffers
         """
         self._return_buffer(index)
+        logger.debug(f"Sent empty buffer #{index} to PRU")
 
 
 class Emulator(ShepherdIO):
@@ -142,7 +142,7 @@ class Emulator(ShepherdIO):
 
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
-            time.sleep(0.2 * float(self.buffer_period_ns) / 1e9)
+            time.sleep(0.1 * float(self.buffer_period_ns) / 1e9) # could be as low as ~ 10us
             self.return_buffer(idx, buffer)
 
         return self
@@ -163,12 +163,8 @@ class Emulator(ShepherdIO):
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         self._return_buffer(index)
 
-        logger.debug(
-            (
-                f"Returning buffer #{ index } to PRU took "
-                f"{ round(1e3 * (time.time()-ts_start), 2) } ms"
-            )
-        )
+        logger.debug(f"Sending empty buffer #{ index } to PRU took "
+                     f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
 
 
 class ShepherdDebug(ShepherdIO):
