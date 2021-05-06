@@ -41,7 +41,7 @@ enum MsgType {
 	MSG_ERROR = 0xE0u,
 	MSG_ERR_MEMCORRUPTION = 0xE1u,
 	MSG_ERR_BACKPRESSURE = 0xE2u,
-	MSG_ERR_INCMPLT = 0xE3u,
+	MSG_ERR_INCMPLT = 0xE3u, /* TODO: could be removed, not possible per design */
 	MSG_ERR_INVLDCMD = 0xE4u,
 	MSG_ERR_NOFREEBUF = 0xE5u,
 	MSG_ERR_TIMESTAMP = 0xE6u,

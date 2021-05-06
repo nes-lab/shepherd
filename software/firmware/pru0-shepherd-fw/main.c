@@ -30,6 +30,7 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
 	// do not care for sent-status, newest error wins IF different from previous
 	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value == value)))
 	{
+		shared_mem->pru0_msg_error.unread = 0u;
 		shared_mem->pru0_msg_error.type = type;
 		shared_mem->pru0_msg_error.value = value;
 		shared_mem->pru0_msg_error.id = MSG_TO_KERNEL;
@@ -79,33 +80,14 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 {
 	uint32_t next_buffer_idx;
 	uint8_t tmp_idx;
+	struct SampleBuffer * next_buffer;
 
-	/* If we currently have a valid buffer, return it to host */
-	// NOTE1: this must come first or else python-backend gets confused
-	// NOTE2: was in mutex-state before, but it does not need to, only blocks gpio-sampling / pru1 (80% of workload is in this fn)
-	// TODO: this section should be in mutex...
-	if (current_buffer_idx != NO_BUFFER)
-	{
-		if (analog_sample_idx != ADC_SAMPLES_PER_BUFFER) // TODO: could be removed in future, not possible anymore
-		{
-			send_status(shared_mem, MSG_ERR_INCMPLT, analog_sample_idx);
-		}
-
-		(buffers_far + current_buffer_idx)->len = analog_sample_idx;
-		send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx);
-	}
-
-	/* Lock access to gpio_edges structure to avoid inconsistency */
-	simple_mutex_enter(&shared_mem->gpio_edges_mutex);
-
-	/* Fetch new buffer from ring */
+	/* Fetch and prepare new buffer from ring */
 	if (ring_get(free_buffers_ptr, &tmp_idx) > 0) {
 		next_buffer_idx = (uint32_t)tmp_idx;
-        	struct SampleBuffer *const next_buffer = buffers_far + next_buffer_idx;
+        	next_buffer = buffers_far + next_buffer_idx;
 		next_buffer->timestamp_ns = shared_mem->next_buffer_timestamp_ns;
 		shared_mem->last_sample_timestamp_ns = shared_mem->next_buffer_timestamp_ns;
-		shared_mem->gpio_edges = &next_buffer->gpio_edges;
-		shared_mem->gpio_edges->idx = 0;
 
 		if (shared_mem->next_buffer_timestamp_ns == 0)
 		{
@@ -114,10 +96,30 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 		}
 	} else {
 		next_buffer_idx = NO_BUFFER;
-		shared_mem->gpio_edges = NULL;
 		send_status(shared_mem, MSG_ERR_NOFREEBUF, 0);
 	}
+
+	/* Lock access to gpio_edges structure to allow swap without inconsistency */
+	simple_mutex_enter(&shared_mem->gpio_edges_mutex);
+
+	if (next_buffer_idx != NO_BUFFER)
+	{
+		shared_mem->gpio_edges = &next_buffer->gpio_edges;
+		shared_mem->gpio_edges->idx = 0;
+	}
+	else
+	{
+		shared_mem->gpio_edges = NULL;
+	}
+
 	simple_mutex_exit(&shared_mem->gpio_edges_mutex);
+
+	/* If we had a valid buffer, return it to host */
+	if (current_buffer_idx != NO_BUFFER)
+	{
+		(buffers_far + current_buffer_idx)->len = analog_sample_idx; // TODO: could be removed in future, not possible by design
+		send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx);
+	}
 
 	return next_buffer_idx;
 }
@@ -182,33 +184,38 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 	{
 		// take a snapshot of current triggers until something happens -> ensures prioritized handling
 		// edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
+		// NOTE: pru1 manages the irq, but pru0 reacts to it directly -> less jitter
 		while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // read iep-reg -> 12 cycles, 60 ns
+
+		// Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
-			// Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
-			// TODO: look at asm-code, is there still potential for optimization?
 			GPIO_OFF(SPI_CS_ADCs_MASK);
 			// determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
 			__delay_cycles(100 / 5);
 			GPIO_ON(SPI_CS_ADCs_MASK);
+			// TODO: look at asm-code, is there still potential for optimization?
 			// TODO: make sure that 1 us passes before trying to get that value
 		}
 
-		// System to ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
+		// Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
 		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
 		{
 			/* Clear Timer Compare 0 and forward it to pru1 */
-			shared_mem->cmp0_trigger_for_pru1 = 1;
+			GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			shared_mem->cmp0_trigger_for_pru1 = 1u;
 			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
+			/* prepare a new buffer-cycle */
+			shared_mem->analog_sample_counter = 0u;
+			GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		}
 
-		// pru1 manages the irq, but pru0 reacts to it directly -> less jitter
+		// Sample, swap buffer and receive messages
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
 			/* Clear Timer Compare 1 and forward it to pru1 */
-			shared_mem->cmp1_trigger_for_pru1 = 1;
+			shared_mem->cmp1_trigger_for_pru1 = 1u;
 			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
-
 
 			/* The actual sampling takes place here */
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
@@ -217,12 +224,10 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				sample(buffers_far + sample_buf_idx, shared_mem->analog_sample_counter, shepherd_mode);
 				GPIO_OFF(DEBUG_PIN0_MASK);
 			}
-
 			shared_mem->analog_sample_counter++;
 
 			if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
 			{
-                		// TODO: this still needs sorting -> buffer-swap must be called even before a buffer is full ... to get a valid buffer
 				/* Did the Linux kernel module ask for reset? */
 				if (shared_mem->shepherd_state == STATE_RESET) return;
 
@@ -230,30 +235,18 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				if ((shared_mem->shepherd_state == STATE_RUNNING) &&
 				    (shared_mem->shepherd_mode != MODE_DEBUG))
 				{
-					//sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx, analog_sample_idx);
 					sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
 									    shared_mem->analog_sample_counter);
-					shared_mem->analog_sample_counter = 0;
 					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
 			}
-			/* only handle kernel-communications if this is not the last sample */
-			else {
+			else
+			{
+				/* only handle kernel-communications if this is not the last sample */
 				GPIO_ON(DEBUG_PIN0_MASK);
 				handle_kernel_com(shared_mem, free_buffers_ptr);
                 		GPIO_OFF(DEBUG_PIN0_MASK);
 			}
-		}
-
-		// this stack ensures low overhead to event loop AND full buffer before switching
-		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
-		{
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
-			// TODO: a buffer swap should be done here, but then would the first sample not be on timer=0
-			// TODO: prepare: accelerate buffer_swap and harden pre-trigger, then this routine can come before the actual sampling
-			if (shared_mem->analog_sample_counter > 1)
-				shared_mem->analog_sample_counter = 1;
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		}
 	}
 }
@@ -270,7 +263,12 @@ void main(void)
 	 * Do this initialization early! The kernel module relies on it.
 	 */
 	volatile struct SharedMem *const shared_memory = (volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET;
-	// Initialize all struct-Members Part A (Part B in Reset Loop)
+
+	// Initialize struct-Members Part A, must come first - this blocks PRU1!
+	shared_memory->cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
+	shared_memory->cmp1_trigger_for_pru1 = 0u;
+
+	// Initialize all struct-Members Part B
 	shared_memory->mem_base_addr = resourceTable.shared_mem.pa;
 	shared_memory->mem_size = resourceTable.shared_mem.len;
 
@@ -278,13 +276,14 @@ void main(void)
 	shared_memory->samples_per_buffer = ADC_SAMPLES_PER_BUFFER;
 	shared_memory->buffer_period_ns = BUFFER_PERIOD_NS;
 
-	shared_memory->dac_auxiliary_voltage_raw = 0;
+	shared_memory->dac_auxiliary_voltage_raw = 0u;
 	shared_memory->shepherd_state = STATE_IDLE;
 	shared_memory->shepherd_mode = MODE_HARVEST;  // TODO: is this the the error for "wrong state"?
 
-	shared_memory->last_sample_timestamp_ns = 0;
-	shared_memory->next_buffer_timestamp_ns = 0;
-	shared_memory->analog_sample_counter = 0;
+	shared_memory->last_sample_timestamp_ns = 0u;
+	shared_memory->next_buffer_timestamp_ns = 0u;
+	shared_memory->analog_sample_counter = 0u;
+	shared_memory->gpio_edges = NULL;
 
 	/* this init is nonsense, but testable for byteorder and proper values */
 	shared_memory->calibration_settings = (struct Calibration_Config){
@@ -293,7 +292,7 @@ void main(void)
 
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
-	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value=0u};
+	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value=TIMER_BASE_PERIOD};
 	shared_memory->pru1_sync_inbox = (struct SyncMsg){
 		.id =0u,
 		.unread =0u,
@@ -319,6 +318,9 @@ void main(void)
 	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
+	/* allow PRU1 to enter event-loop */
+	shared_memory->cmp0_trigger_for_pru1 = 1u;
+
 reset:
 	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 100);
 
@@ -329,11 +331,6 @@ reset:
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
 	shared_memory->gpio_edges = NULL;
-
-	// Initialize struct-Members Part B
-	// Reset Token-System to init-values
-	shared_memory->cmp0_trigger_for_pru1 = 0;
-	shared_memory->cmp1_trigger_for_pru1 = 0;
 
 	shared_memory->shepherd_state = STATE_IDLE;
 	/* Make sure the mutex is clear */

@@ -295,7 +295,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			}
 			send_sync_request(shared_mem, &sync_rqst);
 			DEBUG_EVENT_STATE_0;
-			//continue;  // for more regular gpio-sampling
+			continue;  // for more regular gpio-sampling
 		}
 
 		/*  [Event 2] Timer compare 0 handle -> trigger for buffer swap on pru0 */
