@@ -34,6 +34,8 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
     else
     {
         if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
+        /* fire warning - maybe not the best place to do this - could start an avalanche */
+        printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
     //mutex_unlock(&buf->mutex);
 }
@@ -219,7 +221,6 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 
     if (pru0_comm_check_send_status() && ring_get(&msg_ringbuf_to_pru, &pru_msg))
     {
-        // TODO: a routine for backpressure-detection would be nice to have
         pru0_comm_send_msg(&pru_msg);
         /* resetting to shortest sleep period */
         step_pos = coord_timer_steps_ns_size - 1;
