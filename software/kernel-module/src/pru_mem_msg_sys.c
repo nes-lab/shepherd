@@ -22,9 +22,9 @@ static void ring_init(struct RingBuffer *const buf)
     mutex_init(&buf->mutex);
 }
 
-void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
+static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
-    mutex_lock(&buf->mutex);
+    //mutex_lock(&buf->mutex); // TODO: deactivated for now, test if it solves instability
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
@@ -35,17 +35,17 @@ void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element
     {
         if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
     }
-    mutex_unlock(&buf->mutex);
+    //mutex_unlock(&buf->mutex);
 }
 
-uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
+static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if(buf->active == 0) return 0;
-    mutex_lock(&buf->mutex);
+    //mutex_lock(&buf->mutex);
     *element = buf->ring[buf->start];
     if(++(buf->start) == RING_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
-    mutex_unlock(&buf->mutex);
+    //mutex_unlock(&buf->mutex);
     return 1;
 }
 
@@ -138,11 +138,12 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
     struct timespec ts_now;
     static unsigned int step_pos = 0;
     uint8_t had_work = 0;
+    uint32_t iter;
 
     /* Timestamp system clock */
     getnstimeofday(&ts_now);
 
-    do
+    for (iter = 0; iter < 6; ++iter) /* 3 should be enough, 6 has safety-margin included */
     {
         if (pru0_comm_receive_msg(&pru_msg)) had_work = 2;
         else if (pru0_comm_receive_error(&pru_msg)) had_work = 4;
@@ -150,7 +151,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         else
         {
             had_work = 0;
-            continue;
+            break;
         }
 
         if (pru_msg.type<0xC0)
@@ -215,7 +216,6 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         /* resetting to shortest sleep period */
         step_pos = coord_timer_steps_ns_size - 1;
     }
-    while (had_work > 0);
 
     if (pru0_comm_check_send_status() && ring_get(&msg_ringbuf_to_pru, &pru_msg))
     {

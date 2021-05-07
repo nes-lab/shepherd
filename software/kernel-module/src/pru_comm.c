@@ -210,7 +210,7 @@ unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg)
     /* testing for unread-msg-token */
     if (readb(pru_shared_mem_io + offset_unread) >= 1u)
     {
-        /* if unread, then continue to copy request, TODO: also check for ID*/
+        /* if unread, then continue to copy request */
         memcpy_fromio(msg, pru_shared_mem_io + offset_msg, sizeof(struct ProtoMsg));
         /* mark as read */
         writeb(0u, pru_shared_mem_io + offset_unread);
