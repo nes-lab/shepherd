@@ -136,21 +136,26 @@
     - install
     - python
 
-- name: Install shepherd meta-package
-  synchronize:
-    src: '{{ repo_dir.stdout }}/software/meta-package/{{ item }}'
-    dest: '{{ shepherd_config_path }}'
-    delete: no
-    owner: no
-    group: no
-    rsync_opts:
-      - "--exclude=debian"
+- name: Deploy example configuration
+  template:
+    src: "{{ repo_dir.stdout }}/software/meta-package/{{ item }}"
+    dest: "{{ shepherd_config_path }}"
   with_items:
    - 'example_config_emulation.yml'
    - 'example_config_harvest.yml'
   tags:
     - source-code
     - python
+    - conf
+
+- name: set default configuration to harvest (mainly for launcher)
+  template:
+    src: "{{ repo_dir.stdout }}/software/meta-package/example_config_harvest.yml"
+    dest: "{{ shepherd_config_path }}/config.yml"
+  tags:
+    - source-code
+    - python
+    - conf
 
 - name: Link to shepherd-sheep for compatibility with deb package
   file:
