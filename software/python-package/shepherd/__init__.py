@@ -16,6 +16,8 @@ import sys
 from logging import NullHandler
 from pathlib import Path
 from contextlib import ExitStack
+from typing import NoReturn
+
 import invoke
 import signal
 
@@ -33,6 +35,8 @@ from shepherd import commons
 from shepherd import sysfs_interface
 
 # Set default logging handler to avoid "No handler found" warnings.
+from shepherd.target_io import TargetIO
+
 logging.getLogger(__name__).addHandler(NullHandler())
 
 logger = logging.getLogger(__name__)
@@ -176,9 +180,14 @@ class ShepherdDebug(ShepherdIO):
     a mode, where they accept 'debug messages' that allow to directly interface
     with the ADC and DAC.
     """
+    # offer a default cali for debugging, TODO: maybe also try to read from eeprom
+    _cal: CalibrationData
+    _io: TargetIO
 
     def __init__(self):
         super().__init__("debug")
+        self._cal = CalibrationData.from_default()
+        self._io = TargetIO()
 
     def adc_read(self, channel: str):
         """Reads value from specified ADC channel.
@@ -246,6 +255,45 @@ class ShepherdDebug(ShepherdIO):
 
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
+
+    @staticmethod
+    def is_alive() -> bool:
+        """ feedback-fn for RPC-usage to check for connection
+        :return: True
+        """
+        return True
+
+    # all methods below are wrapper for zerorpc - it seems to have trouble with inheritance and runtime inclusion
+
+    def set_shepherd_state(self, state: bool) -> NoReturn:
+        if state:
+            sysfs_interface.set_start()
+        else:
+            sysfs_interface.set_stop()
+
+    def get_shepherd_state(self) -> bool:
+        return sysfs_interface.get_state()
+
+    def set_shepherd_pcb_power(self, state: bool) -> NoReturn:
+        self._set_shepherd_pcb_power(state)
+
+    def select_target_for_power_tracking(self, sel_a: bool) -> NoReturn:
+        self.select_main_target_for_power(sel_a)
+
+    def select_target_for_io_interface(self, sel_a: bool) -> NoReturn:
+        self.select_main_target_for_io(sel_a)
+
+    def set_io_level_converter(self, state) -> NoReturn:
+        self.set_target_io_level_conv(state)
+
+    def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
+        return self._cal.convert_raw_to_value(component, channel, raw)
+
+    def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
+        return self._cal.convert_value_to_raw(component, channel, value)
+
+    def set_gpio_one_high(self, num: int) -> NoReturn:
+        self._io.one_high(num)
 
 
 def record(
