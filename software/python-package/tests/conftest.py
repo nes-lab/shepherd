@@ -1,3 +1,5 @@
+import gc
+
 import pytest
 import linecache
 import tokenize
@@ -93,6 +95,7 @@ def shepherd_up(fake_hardware, shepherd_down):
         time.sleep(3)
         yield
         subprocess.run(["rmmod", "shepherd"])
+        gc.collect()  # precaution
         time.sleep(3)
 
 
