@@ -154,6 +154,10 @@ class LogWriter(object):
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
         # Refer to shepherd/calibration.py for the format of calibration data
+        if self.mode is "harvesting_test":
+            self.mode = "harvesting"
+        elif self.mode is "emulation_test":
+            self.mode = "emulation"
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
             cal_channel = cal_channel_harvest_dict[channel] if self.mode is "harvesting" else cal_channel_emulation_dict[channel]

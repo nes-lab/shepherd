@@ -43,26 +43,26 @@ attribs = {
 }
 
 
-def wait_for_state(state: str, timeout: float) -> NoReturn:
+def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
     """Waits until shepherd is in specified state.
 
     Polls the sysfs 'state' attribute until it contains the target state or
     until the timeout expires.
 
     Args:
-        state (int): Target state
+        wanted_state (int): Target state
         timeout (float): Timeout in seconds
     """
     ts_start = time.time()
     while True:
         current_state = get_state()
-        if current_state == state:
+        if current_state == wanted_state:
             return time.time() - ts_start
 
         if time.time() - ts_start > timeout:
             raise SysfsInterfaceException(
                 (
-                    f"timed out waiting for state { state } - "
+                    f"timed out waiting for state { wanted_state } - "
                     f"state is { current_state }"
                 )
             )
@@ -107,6 +107,7 @@ def set_stop() -> NoReturn:
     current_state = get_state()
     if current_state != "running":
         raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
+        # TODO: relax conditions if possible, learn to stop from everything
 
     with open(str(sysfs_path / "state"), "w") as f:
         f.write("stop")
@@ -128,7 +129,7 @@ def write_mode(mode: str) -> NoReturn:
             f"Cannot set mode when shepherd is { get_state() }"
         )
 
-    logger.debug(f"mode: {mode}")
+    logger.debug(f"sysfs/mode: '{mode}'")
     with open(str(sysfs_path / "mode"), "w") as f:
         f.write(mode)
 
@@ -139,9 +140,11 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
     Args:
         voltage_V: desired voltage in volt
     """
-    if voltage_V is False:
+    if voltage_V is None:
         voltage_V = 0.0
-    if voltage_V is True:
+    elif voltage_V is False:
+        voltage_V = 0.0
+    elif voltage_V is True:
         # set value > 16bit and therefore link both adc-channels
         write_dac_aux_voltage_raw(2 ** 20 - 1)
         return
@@ -168,7 +171,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
         voltage_raw: desired voltage in volt
     """
     if voltage_raw >= (2**16):
-        raise SysfsInterfaceException(f"sending raw-voltage above possible limit of 16bit-value")
+        logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value")
     with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "w") as f:
         logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
         f.write(str(voltage_raw))
@@ -218,8 +221,8 @@ def write_calibration_settings(cal_pru: dict) -> NoReturn:  # more precise dict[
     wait_for_state("idle", 3.0)
 
     with open(str(sysfs_path / "calibration_settings"), "w") as f:
-        output = f"{cal_pru['adc_gain']} {cal_pru['adc_offset']} \n" \
-                 f"{cal_pru['dac_gain']} {cal_pru['dac_offset']}"
+        output = f"{int(cal_pru['adc_gain'])} {int(cal_pru['adc_offset'])} \n" \
+                 f"{int(cal_pru['dac_gain'])} {int(cal_pru['dac_offset'])}"
         logger.debug(f"Sending calibration settings: {output}")
         f.write(output)
 

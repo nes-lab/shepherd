@@ -19,8 +19,8 @@ import atexit
 import struct
 import mmap
 import sys
+import yaml
 from typing import NoReturn
-
 import numpy as np
 import collections
 from pathlib import Path
@@ -298,6 +298,17 @@ class VirtualSourceData(object):
         Args:
             vs_settings: if omitted, the data is generated from default values
         """
+        # TODO: also handle preconfigured virtsources here, switch by name for now
+        if isinstance(vs_settings, str) and Path(vs_settings).exists():
+            with open(vs_settings, "r") as config_data:
+                vs_settings = yaml.safe_load(config_data)["virtsource"]
+        if isinstance(vs_settings, str) and vs_settings.strip().lower() == "bq25570":
+            raise NotImplementedError(f"VirtualSource was set to {vs_settings}, but it isn't implemented yet")
+        if isinstance(vs_settings, str) and vs_settings.strip().lower() == "bq25504":
+            raise NotImplementedError(f"VirtualSource was set to {vs_settings}, but it isn't implemented yet")
+        if isinstance(vs_settings, str) and vs_settings.strip().lower() == "default":
+            vs_settings = None  # TODO: replace by real default
+
         if vs_settings is None:
             self.vss = dict()
         elif isinstance(vs_settings, VirtualSourceData):
@@ -305,7 +316,7 @@ class VirtualSourceData(object):
         elif isinstance(vs_settings, dict):
             self.vss = vs_settings
         else:
-            raise NotImplementedError(f"VirtualSourceData was instantiated with {type(vs_settings)}, can't be handled")
+            raise NotImplementedError(f"VirtualSourceData was instantiated with '{vs_settings}' of type '{type(vs_settings)}', can't be handled")
         self.check_and_complete()
 
     def get_as_dict(self) -> dict:
@@ -434,9 +445,9 @@ class VirtualSourceData(object):
             set_value = self.vss[setting_key]
         except KeyError:
             set_value = default
-            logger.warning(f"[virtSource] Setting {setting_key} was not provided, will be set to default = {default}")
-        if not (isinstance(set_value, int) or isinstance(set_value, float)) or (set_value < 0):
-            raise NotImplementedError(f"[virtSource] {setting_key} must a single positive number, but is '{set_value}'")
+            logger.debug(f"[virtSource] Setting '{setting_key}' was not provided, will be set to default = {default}")
+        if not isinstance(set_value, (int, float)) or (set_value < 0):
+            raise NotImplementedError(f"[virtSource] '{setting_key}' must a single positive number, but is '{set_value}'")
         if (max_value is not None) and (set_value > max_value):
             raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
         self.vss[setting_key] = set_value
@@ -447,7 +458,7 @@ class VirtualSourceData(object):
             values = flatten_dict_list(self.vss[settings_key])
         except KeyError:
             values = default
-            logger.warning(f"[virtSource] Setting {settings_key} was not provided, will be set to default = {values[0]}")
+            logger.debug(f"[virtSource] Setting {settings_key} was not provided, will be set to default = {values[0]}")
         if (len(values) != len(default)) or (min(values) < 0) or (max(values) > 255):
             raise NotImplementedError(f"{settings_key} must a list of {len(default)} values, within range of [0; {max_value}]")
         self.vss[settings_key] = values
@@ -472,10 +483,9 @@ class ShepherdIO(object):
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)
             ShepherdIO._instance = weakref.ref(new_class)
+            return new_class
         else:
             raise IndexError("ShepherdIO already exists")
-
-        return new_class
 
     def __init__(self, mode: str):
         """Initializes relevant variables.
@@ -506,7 +516,7 @@ class ShepherdIO(object):
                 sysfs_interface.set_stop()
 
             sysfs_interface.wait_for_state("idle", 5)
-            logger.debug(f"Switching to '{ self.mode }' mode")
+            logger.debug(f"Switching to '{ self.mode }'-mode")
             sysfs_interface.write_mode(self.mode)
 
             # clean up msg-channel provided by kernel module
@@ -589,7 +599,7 @@ class ShepherdIO(object):
             start_time (int): Desired start time in unix time
             wait_blocking (bool): If true, block until start has completed
         """
-        if isinstance(start_time, float):
+        if isinstance(start_time, (float, int)):
             logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
         sysfs_interface.set_start(start_time)
         if wait_blocking:
@@ -605,7 +615,7 @@ class ShepherdIO(object):
         sysfs_interface.wait_for_state("running", timeout)
 
     def _cleanup(self):
-
+        logger.debug("ShepherdIO is commanded to power down / cleanup")
         while sysfs_interface.get_state() != "idle":
             try:
                 sysfs_interface.set_stop()
@@ -622,7 +632,7 @@ class ShepherdIO(object):
 
         self.set_target_io_level_conv(False)
         self._set_shepherd_pcb_power(False)
-        logger.debug("Shepherd hardware is powered down")
+        logger.debug("Shepherd hardware is now powered down")
 
     def _set_shepherd_pcb_power(self, state: bool) -> NoReturn:
         """ Controls state of power supplies on shepherd cape.
@@ -733,8 +743,9 @@ class ShepherdIO(object):
         """
         if vs_settings is None:
             vs_settings = VirtualSourceData()
-        if isinstance(vs_settings, dict):
+        else:
             vs_settings = VirtualSourceData(vs_settings)
+
         values = vs_settings.export_for_sysfs()
         sysfs_interface.write_virtsource_settings(values)
 
@@ -777,10 +788,10 @@ class ShepherdIO(object):
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:
-                logger.info(f"Received print: {value}")
+                logger.info(f"Received cmd to print: {value}")
                 continue
 
-            elif msg_type == commons.MSG_DEP_ERR_INCMPLT:  # TODO: errors are currently not handed to userspace
+            elif msg_type == commons.MSG_DEP_ERR_INCMPLT:
                 raise ShepherdIOException(
                     "Got incomplete buffer", commons.MSG_DEP_ERR_INCMPLT, value
                 )
