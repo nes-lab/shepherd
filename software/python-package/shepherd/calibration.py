@@ -188,9 +188,15 @@ class CalibrationData(object):
 
     def export_for_sysfs(self) -> dict:  # more precise dict[str, int], trouble with py3.6
         cal_set = dict()
+        # ADC is calculated in nA (nano-amps), gain is shifted by 8 bit [scaling according to commons.h]
         cal_set["adc_gain"] = int(1e9 * (2 ** 8) * self._data["emulation"]["adc_current"]["gain"])
         cal_set["adc_offset"] = int(1e9 * (2 ** 0) * self._data["emulation"]["adc_current"]["offset"])
-        cal_set["dac_gain"] = int(1e6 * (2 ** 20) / self._data["emulation"]["dac_voltage_a"]["gain"])
+        # DAC is calculated in uV (micro-volts), gain is shifted by 20 bit
+        cal_set["dac_gain"] = int((2 ** 20) / (1e6 * self._data["emulation"]["dac_voltage_a"]["gain"]))
         cal_set["dac_offset"] = int(1e6 * (2 ** 0) * self._data["emulation"]["dac_voltage_a"]["offset"])
+
+        for value in cal_set.values():
+            if value >= 2**31:
+                raise ValueError(f"Number (={value}) exceeds 32bit container, in CalibrationData.export_for_sysfs()")
         return cal_set
 
