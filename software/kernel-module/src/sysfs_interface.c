@@ -303,26 +303,27 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 	if (pru_comm_get_state() != STATE_IDLE)
 		return -EBUSY;
 
-	if (strncmp(buf, "harvesting", 10) == 0) {
+	// note: longer string must come first in case of similar strings (harvesting_test, harvesting)
+    if (strncmp(buf, "harvesting_test", 15) == 0) {
+        if ((count < 15) || (count > 16))
+            return -EINVAL;
+
+        mode = MODE_HARVEST_TEST;
+    } else if (strncmp(buf, "harvesting", 10) == 0) {
 		if ((count < 10) || (count > 11))
 			return -EINVAL;
 
 		mode = MODE_HARVEST;
-	} else if (strncmp(buf, "harvesting_test", 15) == 0) {
-		if ((count < 15) || (count > 16))
-			return -EINVAL;
+    } else if (strncmp(buf, "emulation_test", 14) == 0) {
+        if ((count < 14) || (count > 15))
+            return -EINVAL;
 
-		mode = MODE_HARVEST_TEST;
+        mode = MODE_EMULATE_TEST;
 	} else if (strncmp(buf, "emulation", 9) == 0) {
 		if ((count < 9) || (count > 10))
 			return -EINVAL;
 
 		mode = MODE_EMULATE;
-	} else if (strncmp(buf, "emulation_test", 14) == 0) {
-		if ((count < 14) || (count > 15))
-			return -EINVAL;
-
-		mode = MODE_EMULATE_TEST;
 	} else if (strncmp(buf, "debug", 5) == 0) {
 		if ((count < 5) || (count > 6))
 			return -EINVAL;
