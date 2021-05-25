@@ -68,7 +68,7 @@ def eeprom_with_calibration(eeprom_retained, data_calibration):
 
 def test_from_yaml(data_example_yml):
     data = CapeData.from_yaml(data_example_yml)
-    assert data["serial_number"] == "0119XXXX0001"
+    assert data["serial_number"] == "0521XXXX0001"
 
 
 @pytest.mark.eeprom_write

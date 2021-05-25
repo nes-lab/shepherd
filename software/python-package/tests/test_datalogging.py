@@ -9,7 +9,7 @@ from itertools import product
 from shepherd import LogReader, cal_channel_list
 from shepherd import LogWriter
 from shepherd import CalibrationData
-from shepherd.calibration import cal_parameter_list
+from shepherd.calibration import cal_parameter_list, cal_channel_harvest_dict
 
 from shepherd.shepherd_io import DataBuffer
 from shepherd.datalog import GPIOEdges
@@ -103,12 +103,12 @@ def test_calibration_logging(mode, tmp_path, calibration_data):
     ) as _:
         pass
 
-    h5store = h5py.File(d, "r")
+    h5store = h5py.File(d, "r")  # hint: logReader would be more direct, but less untouched
 
-    for channel, parameter in product(cal_channel_list, cal_parameter_list):
+    for channel_entry, parameter in product(cal_channel_harvest_dict.items(), cal_parameter_list):
         assert (
-            h5store["data"][channel].attrs[parameter]
-            == calibration_data["emulation"][channel][parameter]
+            h5store["data"][channel_entry[0]].attrs[parameter]
+            == calibration_data[mode][channel_entry[1]][parameter]
         )
 
 

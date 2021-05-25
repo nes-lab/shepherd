@@ -10,7 +10,7 @@ from shepherd import record
 from shepherd import CalibrationData
 
 
-@pytest.fixture(params=["harvesting"])
+@pytest.fixture(params=["harvesting"])  # TODO: there is a second mode now
 def mode(request):
     return request.param
 
@@ -29,7 +29,7 @@ def log_writer(tmp_path, mode):
 
 @pytest.fixture()
 def recorder(request, shepherd_up, mode):
-    rec = Recorder(mode=mode)
+    rec = Recorder(shepherd_mode=mode)
     request.addfinalizer(rec.__del__)
     rec.__enter__()
     request.addfinalizer(rec.__exit__)

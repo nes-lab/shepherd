@@ -12,7 +12,7 @@ same test. Either find a solution or put every CLI call in a separate test.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-
+import time
 import pytest
 import click
 import numpy as np
@@ -49,71 +49,106 @@ def test_record(shepherd_up, cli_runner, tmp_path):
     assert res.exit_code == 0
     assert store.exists()
 
-# TODO: activate when still used, currently not properly implemented, (watch out for remaining LDO appearances)
-""" 
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_record_ldo_short(shepherd_up, cli_runner, tmp_path):
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli, ["-vvv", "record", "-d", "10", "-o", f"{str(store)}", "-c", "2.5"]
-    )
-    assert res.exit_code == 0
-    assert store.exists()
-
-
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_record_ldo_explicit(shepherd_up, cli_runner, tmp_path):
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "record",
-            "-d",
-            "10",
-            "-o",
-            f"{str(store)}",
-            "--ldo-voltage",
-            "2.5",
-        ],
-    )
-    assert res.exit_code == 0
-    assert store.exists()
-
-
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_record_ldo_fail(shepherd_up, cli_runner, tmp_path):
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "record",
-            "-d",
-            "10",
-            "-f",
-            "-o",
-            f"{str(store)}",
-            "-c",
-            "-1.0",
-        ],
-    )
-    assert res.exit_code != -1
-"""
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_record_no_calib(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
-        cli, ["-vvv", "record", "-d", "10", "--no-calib", "-o", f"{str(store)}"]
+        cli, ["-vvv",
+              "record",
+              "-d", "10",
+              "--no-calib",
+              "-o", f"{str(store)}"]
     )
 
     assert res.exit_code == 0
     assert store.exists()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_record_harvesting_test(shepherd_up, cli_runner, tmp_path):
+    store = tmp_path / "out.h5"
+    res = cli_runner.invoke(
+        cli, ["-vvv",
+              "record",
+              "--mode", "harvesting_test",
+              "-d", "10",
+              "-o", f"{str(store)}"]
+    )
+
+    assert res.exit_code == 0
+    assert store.exists()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_record_parameters_long(shepherd_up, cli_runner, tmp_path):
+    store = tmp_path / "out.h5"
+    start_time = round(time.time() + 10)
+    res = cli_runner.invoke(
+        cli, ["-vvv",
+              "record",
+              "--mode", "harvesting",
+              "--duration", "10",
+              "--start-time", f"{start_time}",
+              "--force_overwrite",
+              "--no-calib",
+
+              "--warn-only",
+              "--output_path", f"{str(store)}"]
+    )
+
+    assert res.exit_code == 0
+    assert store.exists()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_record_parameters_short(shepherd_up, cli_runner, tmp_path):
+    store = tmp_path / "out.h5"
+    start_time = round(time.time() + 10)
+    res = cli_runner.invoke(
+        cli, ["-vvv",
+              "record",
+              "--mode", "harvesting",
+              "-d", "10",
+              "-s", f"{start_time}",
+              "-f",
+              "--no-warn-only",
+              "-o", f"{str(store)}"]
+    )
+
+    assert res.exit_code == 0
+    assert store.exists()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_record_parameters_minimal(shepherd_up, cli_runner, tmp_path):
+    store = tmp_path / "out.h5"
+    start_time = round(time.time() + 10)
+    res = cli_runner.invoke(
+        cli, [
+              "record",
+              "--mode", "harvesting",
+              "-d", "10",
+              "-o", f"{str(store)}"]
+    )
+
+    assert res.exit_code == 0
+    assert store.exists()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_record_preconfigured(shepherd_up, cli_runner, tmp_path):
+    here = Path(__file__).absolute()
+    name = "example_config_harvest.yml"
+    file_path = here.parent / name
+    res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
+    assert res.exit_code == 0
 
 
 @pytest.mark.hardware
@@ -125,10 +160,8 @@ def test_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
         [
             "-vvv",
             "emulate",
-            "-d",
-            "10",
-            "-o",
-            f"{str(store)}",
+            "-d", "10",
+            "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
     )
@@ -149,18 +182,35 @@ def test_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, data_
         [
             "-vvv",
             "emulate",
-            "-d",
-            "10",
-            "--virtsource",
-            f"{str(file_path)}",
-            "-o",
-            f"{str(store)}",
+            "-d", "10",
+            "--virtsource", f"{str(file_path)}",
+            "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
     )
 
     assert res.exit_code == 0
     assert store.exists()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_emulate_with_bq25570(shepherd_up, cli_runner, tmp_path, data_h5):
+    store = tmp_path / "out.h5"
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "emulate",
+            "-d", "10",
+            "--virtsource", "BQ25570",
+            "-o", f"{str(store)}",
+            f"{str(data_h5)}",
+        ],
+    )
+
+    assert res.exit_code != 0  # TODO: this will emit 0 when controller is implemented
+    # assert store.exists()
 
 
 @pytest.mark.hardware
@@ -177,12 +227,9 @@ def test_virtsource_emulate_wrong_option(
         [
             "-vvv",
             "emulate",
-            "-d",
-            "10",
-            "--virtWrong",
-            f"{str(file_path)}",
-            "-o",
-            f"{str(store)}",
+            "-d", "10",
+            "--virtWrong", f"{str(file_path)}",
+            "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
     )
@@ -198,18 +245,95 @@ def test_emulate_aux_voltage(shepherd_up, cli_runner, tmp_path, data_h5):
         [
             "-vvv",
             "emulate",
-            "-d",
-            "10",
-            "--aux_voltage",
-            "2.5",
-            "-o",
-            f"{str(store)}",
+            "-d", "10",
+            "--aux_voltage", "2.5",
+            "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
     )
     assert res.exit_code == 0
 
-# TODO: test the other new modes, sel_target IO/pwr, set_io_lvl_conv
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
+    store = tmp_path / "out.h5"
+    here = Path(__file__).absolute()
+    name = "example_virtsource_settings.yml"
+    file_path = here.parent / name
+    start_time = round(time.time() + 10)
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "emulate",
+            "--duration", "10",
+            "--start-time", f"{start_time}",
+            "--aux_voltage", "2.5",
+            "--force_overwrite",
+            "--no-calib",
+            "--enable_io",
+            "--io_sel_target_a",
+            "--pwr_sel_target_a",
+            "--warn-only",
+            "--virtsource", f"{file_path}",
+            "--output_path", f"{str(store)}",
+            f"{str(data_h5)}",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5):
+    store = tmp_path / "out.h5"
+    start_time = round(time.time() + 10)
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "emulate",
+            "-d", "10",
+            "-s", f"{start_time}",
+            "--aux_voltage", "2.5",
+            "-f",
+            "--disable_io",
+            "--io_sel_target_b",
+            "--pwr_sel_target_b",
+            "--no-warn-only",
+            "-o", f"{str(store)}",
+            f"{str(data_h5)}",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_h5):
+    store = tmp_path / "out.h5"
+    start_time = round(time.time() + 10)
+    res = cli_runner.invoke(
+        cli,
+        [
+            "emulate",
+            "-o", f"{str(store)}",
+            f"{str(data_h5)}",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_emulate_preconfigured(shepherd_up, cli_runner, tmp_path):
+    here = Path(__file__).absolute()
+    name = "example_config_emulation.yml"
+    file_path = here.parent / name
+    res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
+    assert res.exit_code == 0
+
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
@@ -218,38 +342,12 @@ def test_emulate_aux_voltage_fail(shepherd_up, cli_runner, tmp_path, data_h5):
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv" "emulate",
-            "-d",
-            "10",
-            "--aux_voltage",
-            "5.5",
-            "-o",
-            f"{str(store)}",
+            "-vvv", "emulate",
+            "-d", "10",
+            "--aux_voltage", "5.5",
+            "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
     )
 
     assert res.exit_code != 0
-
-# TODO: activate when still used, currently not properly implemented
-"""
-@pytest.mark.hardware
-def test_targetpower_voltage(shepherd_up, cli_runner):
-    res = cli_runner.invoke(cli, ["-vvv", "targetpower", "--voltage", "2.1"])
-    assert res.exit_code == 0
-
-    res = cli_runner.invoke(
-        cli, ["-vvv", "targetpower", "--on", "--voltage", "3.3"]
-    )
-    assert res.exit_code == 0
-
-    res = cli_runner.invoke(
-        cli, ["-vvv", "targetpower", f"--on", "--voltage", "10"]
-    )
-    assert res.exit_code != 0
-
-    res = cli_runner.invoke(
-        cli, ["-vvv", "targetpower", f"--off", "--voltage", "3.0"]
-    )
-    assert res.exit_code != 0
-"""

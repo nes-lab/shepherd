@@ -59,20 +59,7 @@ def log_reader(data_h5):
 
 
 @pytest.fixture()
-def emulator(request, shepherd_up, log_reader):
-    emu = Emulator(
-        calibration_recording=log_reader.get_calibration_data(),
-        calibration_emulation=CalibrationData.from_default(),
-        initial_buffers=log_reader.read_buffers(end=64),
-    )
-    request.addfinalizer(emu.__del__)
-    emu.__enter__()
-    request.addfinalizer(emu.__exit__)
-    return emu
-
-
-@pytest.fixture()
-def virtsource_emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
+def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
     vs_settings = VirtualSourceData(virtsource_settings_yml)
     emu = Emulator(
         calibration_recording=log_reader.get_calibration_data(),
@@ -105,27 +92,9 @@ def test_emulation(log_writer, log_reader, emulator):
 
 
 @pytest.mark.hardware
-def test_virtsource_emulation(log_writer, log_reader, virtsource_emulator):
-
-    virtsource_emulator.start(wait_blocking=False)
-    virtsource_emulator.wait_for_start(15)
-    for hrvst_buf in log_reader.read_buffers(start=64):
-        idx, emu_buf = virtsource_emulator.get_buffer(timeout=1)
-        log_writer.write_buffer(emu_buf)
-        virtsource_emulator.return_buffer(idx, hrvst_buf)
-
-    for _ in range(64):
-        idx, emu_buf = virtsource_emulator.get_buffer(timeout=1)
-        log_writer.write_buffer(emu_buf)
-
-    with pytest.raises(ShepherdIOException):
-        idx, emu_buf = virtsource_emulator.get_buffer(timeout=1)
-
-
-@pytest.mark.hardware
 def test_emulate_fn(tmp_path, data_h5, shepherd_up):
     output = tmp_path / "rec.h5"
-    start_time = int(time.time() + 15)
+    start_time = round(time.time() + 10)
     emulate(
         input_path=data_h5,
         output_path=output,
