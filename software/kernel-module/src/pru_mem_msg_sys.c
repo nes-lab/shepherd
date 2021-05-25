@@ -162,7 +162,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         }
         else
         {
-            switch (pru_msg.type) // TODO: move over to py, just keep ringbuffer-overflow here
+            switch (pru_msg.type) // TODO: move over to py, just keep ringbuffer-overflow here, handled in shepherd_io.get_buffer()
             {
             case MSG_STATUS_RESTARTING_ROUTINE:
                 printk(KERN_INFO
@@ -181,16 +181,19 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                 "shprd.pru%u: msg-buffer to kernel was still full -> backpressure (val=%u)", had_work & 1u, pru_msg.value);
                 break;
             case MSG_ERR_INCMPLT:
-                printk(KERN_ERR
-                "shprd.pru%u: sample-buffer not full (fill=%u)", had_work & 1u, pru_msg.value);
+                ring_put(&msg_ringbuf_from_pru, &pru_msg);
+                /* printk(KERN_ERR
+                "shprd.pru%u: sample-buffer not full (fill=%u)", had_work & 1u, pru_msg.value); */
                 break;
             case MSG_ERR_INVLDCMD:
-                printk(KERN_ERR
-                "shprd.pru%u: received invalid command / msg-type (%u)", had_work & 1u, pru_msg.value);
+                ring_put(&msg_ringbuf_from_pru, &pru_msg);
+                /* printk(KERN_ERR
+                "shprd.pru%u: received invalid command / msg-type (%u)", had_work & 1u, pru_msg.value); */
                 break;
             case MSG_ERR_NOFREEBUF:
-                printk(KERN_ERR
-                "shprd.pru%u: ringbuffer is depleted - no free buffer (val=%u)", had_work & 1u, pru_msg.value);
+                ring_put(&msg_ringbuf_from_pru, &pru_msg);
+                /* printk(KERN_ERR
+                "shprd.pru%u: ringbuffer is depleted - no free buffer (val=%u)", had_work & 1u, pru_msg.value); */
                 break;
             case MSG_ERR_TIMESTAMP:
                 printk(KERN_ERR
@@ -206,7 +209,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                 break;
             case MSG_TEST:
                 printk(KERN_INFO
-                "shprd.k: [test-success] received answer from pru%u / pipeline %u", had_work & 1u, pru_msg.value);
+                "shprd.k: [test passed] received answer from pru%u / pipeline %u", had_work & 1u, pru_msg.value);
                 break;
             default:
                 /* these are all handled in userspace and will be passed by sys-fs */
