@@ -50,12 +50,13 @@ class Recorder(ShepherdIO):
     with kernel module and PRUs.
 
     Args:
-        mode (str): Should be 'harvesting' to record harvesting data TODO: extend with iv-curve-sweep, mppt,
+        shepherd_mode (str): Should be 'harvesting' to record harvesting data TODO: extend with iv-curve-sweep, mppt,
         # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
     """
 
-    def __init__(self, mode: str = "harvesting"):
-        super().__init__(mode)
+    def __init__(self, shepherd_mode: str = "harvesting"):
+        logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
+        super().__init__(shepherd_mode)
 
     def __enter__(self):
         super().__enter__()
@@ -113,6 +114,7 @@ class Emulator(ShepherdIO):
                  aux_target_voltage: float = 0.0,
                  settings_virtsource: VirtualSourceData = None):
 
+        logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
 
@@ -334,19 +336,19 @@ def record(
             calib = CalibrationData.from_default()
 
     if start_time is None:
-        start_time = time.time() + 15
+        start_time = round(time.time() + 10)
 
     if not output_path.is_absolute():
         output_path = output_path.absolute()
     if output_path.is_dir():
         timestamp = datetime.datetime.fromtimestamp(start_time)
-        timestamp = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
-        store_path = output_path / f"rec_{timestamp}.h5"
+        timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
+        store_path = output_path / f"rec_{timestring}.h5"
     else:
         store_path = output_path
 
 
-    recorder = Recorder(mode=mode)
+    recorder = Recorder(shepherd_mode=mode)
     log_writer = LogWriter(
         store_path=store_path, calibration_data=calib, mode=mode, force_overwrite=force_overwrite
     )
@@ -445,15 +447,27 @@ def emulate(
             calib = CalibrationData.from_default()
 
     if start_time is None:
-        start_time = time.time() + 15
+        start_time = round(time.time() + 10)
+
+    if set_target_io_lvl_conv is None:
+        set_target_io_lvl_conv = True
+
+    if sel_target_for_io is None:
+        sel_target_for_io = True
+
+    if sel_target_for_pwr is None:
+        sel_target_for_pwr = True
+
+    if aux_target_voltage is None:
+        aux_target_voltage = 0.0
 
     if output_path is not None:
         if not output_path.is_absolute():
             output_path = output_path.absolute()
         if output_path.is_dir():
             timestamp = datetime.datetime.fromtimestamp(start_time)
-            timestamp = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
-            store_path = output_path / f"emu_{timestamp}.h5"
+            timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
+            store_path = output_path / f"emu_{timestring}.h5"
         else:
             store_path = output_path
 
