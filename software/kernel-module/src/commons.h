@@ -69,11 +69,11 @@ enum ShepherdState {
  */
 struct Calibration_Config {
     /* Gain of load current adc. It converts current to ADC raw value */
-    uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 => 1.0
+    uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
     /* Offset of load current adc */
     int32_t adc_current_offset_nA;
     /* Gain of DAC. It converts voltage to DAC raw value */
-    uint32_t dac_voltage_inv_factor_uV_n20;
+    uint32_t dac_voltage_inv_factor_uV_n20; // n20 means normalized to 2^20 (representing 1.0)
     /* Offset of load voltage DAC */
     int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
