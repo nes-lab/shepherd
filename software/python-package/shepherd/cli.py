@@ -44,11 +44,13 @@ consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
-# TODO: --length -l is now --duration -d -> correct docs
-# TODO: --input --output is now --output_path -> correct docs
-# TODO: --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
-# TODO: the options get repeated all the time, is it possible to define them upfront and just include them where needed?
-# TODO: ditch sudo, add user to allow sys_fs-access and other things
+# TODO: correct docs
+# --length -l is now --duration -d ->
+# --input --output is now --output_path -> correct docs
+# --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
+#          possible choices: nothing, regulator-name like BQ25570 / BQ25504, path to yaml-config
+# - the options get repeated all the time, is it possible to define them upfront and just include them where needed?
+# - ditch sudo, add user to allow sys_fs-access and other things
 
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
@@ -60,6 +62,7 @@ def yamlprovider(file_path: str, cmd_name) -> Dict:
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
 @click.option("-v", "--verbose", count=True, default=1)
+# TODO: verbose usage is limited with this implementation.
 @click.pass_context
 def cli(ctx, verbose):
     """ Shepherd: Synchronized Energy Harvesting Emulator and Recorder
@@ -67,11 +70,8 @@ def cli(ctx, verbose):
     Args:
         ctx:
         verbose:
-
     Returns:
-
     """
-
     if verbose == 0:
         logger.setLevel(logging.ERROR)
     elif verbose == 1:
@@ -127,7 +127,8 @@ def run(command, parameters: Dict, verbose):
     if not isinstance(parameters, Dict):
         raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with alpha-version of click-lib)")
 
-    # TODO: test input parameters before - crashes because of wrong lines are ugly
+    # TODO: test input parameters before - crashes because of wrong parameters are ugly
+    logger.info(f"CLI did process run()")
     if command == "record":
         if "output_path" in parameters.keys():
             parameters["output_path"] = Path(parameters["output_path"])
@@ -137,6 +138,11 @@ def run(command, parameters: Dict, verbose):
             parameters["output_path"] = Path(parameters["output_path"])
         if "input_path" in parameters.keys():
             parameters["input_path"] = Path(parameters["input_path"])
+        emu_translator = {"enable_io": "set_target_io_lvl_conv", "io_sel_target_a": "sel_target_for_io", "pwr_sel_target_a": "sel_target_for_pwr", "aux_voltage": "aux_target_voltage", "virtsource": "settings_virtsource"}
+        for key, value in emu_translator.items():
+            if key in parameters.keys():
+                parameters[value] = parameters[key]
+                parameters.pop(key)
         run_emulate(**parameters)
     else:
         raise click.BadParameter(f"command {command} not supported")
@@ -182,17 +188,16 @@ def record(
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
-@click.option("--start-time", type=float, help="Desired start time in unix epoch time")
+@click.option("--start-time", "-s", type=float, help="Desired start time in unix epoch time")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
 @click.option("--io_sel_target_a/--io_sel_target_b", default=True,
               help="Choose Target that gets connected to IO")
 @click.option("--pwr_sel_target_a/--pwr_sel_target_b", default=True,
               help="Choose (main)Target that gets connected to virtual Source")
-@click.option("--aux_voltage", type=float,
+@click.option("--aux_voltage", type=float, default=0.0,
               help="Set Voltage of auxiliary Power Source (second target)")
-@click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source")
-@click_config_file.configuration_option(provider=yamlprovider, implicit=False)
+@click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def emulate(
     input_path,
@@ -201,10 +206,10 @@ def emulate(
     force_overwrite,
     no_calib,
     start_time,
-    enable_target_io,
-    sel_target_a_for_io,
-    sel_target_a_for_pwr,
-    aux_target_voltage,
+    enable_io,
+    io_sel_target_a,
+    pwr_sel_target_a,
+    aux_voltage,
     virtsource,
     warn_only,
 ):
@@ -220,10 +225,10 @@ def emulate(
         force_overwrite=force_overwrite,
         no_calib=no_calib,
         start_time=start_time,
-        set_target_io_lvl_conv=enable_target_io,
-        sel_target_for_io=sel_target_a_for_io,
-        sel_target_for_pwr=sel_target_a_for_pwr,
-        aux_target_voltage=aux_target_voltage,
+        set_target_io_lvl_conv=enable_io,
+        sel_target_for_io=io_sel_target_a,
+        sel_target_for_pwr=pwr_sel_target_a,
+        aux_target_voltage=aux_voltage,
         settings_virtsource=virtsource,
         warn_only=warn_only,
     )
