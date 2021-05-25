@@ -78,13 +78,13 @@ void vsource_struct_init(volatile struct VirtSource_Config *const vsc_arg)
 
 	uint8_t i8A = 0u;
 	uint8_t i8B = 0u;
-	for (uint32_t inner = 0u; inner < LUT_SIZE; inner++)
+	for (uint32_t outer = 0u; outer < LUT_SIZE; outer++)
 	{
-		for (uint32_t outer = 0u; outer < LUT_SIZE; outer++)
+		for (uint32_t inner = 0u; inner < LUT_SIZE; inner++)
 		{
-			vsc_arg->LUT_inp_efficiency_n8[inner][outer] = i8A++;
+			vsc_arg->LUT_inp_efficiency_n8[outer][inner] = i8A++;
 		}
-		vsc_arg->LUT_out_inv_efficiency_n10[inner] = i8B++;
+		vsc_arg->LUT_out_inv_efficiency_n10[outer] = i8B++;
 	}
 }
 
