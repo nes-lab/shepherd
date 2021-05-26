@@ -81,7 +81,7 @@ def test_start_delayed(shepherd_up):
         sysfs_interface.set_start()
 
 
-@pytest.mark.parametrize("mode", ["harvesting", "emulation"])
+@pytest.mark.parametrize("mode", ["harvesting", "harvesting_test", "emulation", "emulation_test"])
 def test_set_mode(shepherd_up, mode):
     sysfs_interface.write_mode(mode)
     assert sysfs_interface.get_mode() == mode
