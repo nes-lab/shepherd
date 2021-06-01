@@ -106,13 +106,16 @@
 
 - name: Install shepherd meta-package
   synchronize:
-    src: '{{ repo_dir.stdout }}/software/meta-package/'
+    src: '{{ repo_dir.stdout }}/software/meta-package/{{ item }}'
     dest: '{{ shepherd_config_path }}'
-    delete: yes
+    delete: no
     owner: no
     group: no
     rsync_opts:
       - "--exclude=debian"
+  with_items:
+   - 'example_config_emulation.yml'
+   - 'example_config_harvest.yml'
   tags:
     - source-code
     - python
