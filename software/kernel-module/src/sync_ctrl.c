@@ -222,7 +222,7 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
 	/* Get distance of IEP clock at interrupt from last timer wrap */
 	if (sys_ts_over_timer_wrap_ns > 0u)
     {
-        iep_ts_over_timer_wrap_ns = (uint32_t)((((uint64_t)sync_rqst->value) * ns_per_tick_n30)>>30u);
+        iep_ts_over_timer_wrap_ns = (uint32_t)((((uint64_t)sync_rqst->value[0]) * ns_per_tick_n30)>>30u);
     }
 	else
     {

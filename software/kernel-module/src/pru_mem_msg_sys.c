@@ -96,9 +96,9 @@ int mem_msg_sys_test(void)
     struct SyncMsg  msg2;
     printk(KERN_INFO "shprd.k: test msg-pipelines between kM and PRUs -> triggering roundtrip-messages for pipeline 1-3");
     msg1.type = MSG_TEST;
-    msg1.value = 1;
+    msg1.value[0] = 1;
     put_msg_to_pru(&msg1); // message-pipeline pru0
-    msg1.value = 2;
+    msg1.value[0] = 2;
     put_msg_to_pru(&msg1); // error-pipeline pru0
 
     msg2.type = MSG_TEST;
@@ -166,50 +166,50 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             {
             case MSG_STATUS_RESTARTING_ROUTINE:
                 printk(KERN_INFO
-                "shprd.pru%u: (re)starting main-routine (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: (re)starting main-routine (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERROR:
                 printk(KERN_ERR
-                "shprd.pru%u: general error (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: general error (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERR_MEMCORRUPTION:
                 printk(KERN_ERR
-                "shprd.pru%u: msg.id from kernel is faulty -> mem corruption? (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: msg.id from kernel is faulty -> mem corruption? (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERR_BACKPRESSURE:
                 printk(KERN_ERR
-                "shprd.pru%u: msg-buffer to kernel was still full -> backpressure (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: msg-buffer to kernel was still full -> backpressure (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERR_INCMPLT:
                 ring_put(&msg_ringbuf_from_pru, &pru_msg);
                 /* printk(KERN_ERR
-                "shprd.pru%u: sample-buffer not full (fill=%u)", had_work & 1u, pru_msg.value); */
+                "shprd.pru%u: sample-buffer not full (fill=%u)", had_work & 1u, pru_msg.value[0]); */
                 break;
             case MSG_ERR_INVLDCMD:
                 ring_put(&msg_ringbuf_from_pru, &pru_msg);
                 /* printk(KERN_ERR
-                "shprd.pru%u: received invalid command / msg-type (%u)", had_work & 1u, pru_msg.value); */
+                "shprd.pru%u: received invalid command / msg-type (%u)", had_work & 1u, pru_msg.value[0]); */
                 break;
             case MSG_ERR_NOFREEBUF:
                 ring_put(&msg_ringbuf_from_pru, &pru_msg);
                 /* printk(KERN_ERR
-                "shprd.pru%u: ringbuffer is depleted - no free buffer (val=%u)", had_work & 1u, pru_msg.value); */
+                "shprd.pru%u: ringbuffer is depleted - no free buffer (val=%u)", had_work & 1u, pru_msg.value[0]); */
                 break;
             case MSG_ERR_TIMESTAMP:
                 printk(KERN_ERR
-                "shprd.pru%u: received timestamp is faulty (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: received timestamp is faulty (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERR_SYNC_STATE_NOT_IDLE:
                 printk(KERN_ERR
-                "shprd.pru%u: Sync not idle at host interrupt (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: Sync not idle at host interrupt (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERR_VALUE:
                 printk(KERN_ERR
-                "shprd.pru%u: content of msg failed test (val=%u)", had_work & 1u, pru_msg.value);
+                "shprd.pru%u: content of msg failed test (val=%u)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_TEST:
                 printk(KERN_INFO
-                "shprd.k: [test passed] received answer from pru%u / pipeline %u", had_work & 1u, pru_msg.value);
+                "shprd.k: [test passed] received answer from pru%u / pipeline %u", had_work & 1u, pru_msg.value[0]);
                 break;
             default:
                 /* these are all handled in userspace and will be passed by sys-fs */

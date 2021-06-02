@@ -278,23 +278,29 @@ def read_virtsource_settings() -> list:
     return int_settings
 
 
-def write_pru_msg(msg_type: int, value: int) -> NoReturn:
+def write_pru_msg(msg_type: int, values: list) -> NoReturn:
     """
     Args:
         msg_type:
-        value:
+        value1:
+        value2:
     Returns:
     """
-    if (not isinstance(msg_type, int)) or (not isinstance(value, int)):
-        raise SysfsInterfaceException(f"pru_msg-fields have invalid type, "
-            f"expected u8 for type (={type(msg_type)}) and u32 for value (={type(value)})")
+    if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255) :
+        raise SysfsInterfaceException(f"pru_msg-type has invalid type, "
+            f"expected u8 for type (={type(msg_type)}) and content (={msg_type})")
 
-    if (msg_type < 0) or (msg_type > 255) or (value < 0) or (value >= 2**32):
-        raise SysfsInterfaceException(f"pru_msg-fields out of bound, "
-            f"expected u8 for type (={msg_type}) and u32 for value (={value})")
+    if not isinstance(values, list):
+        # catch all single ints and floats
+        values = [int(values), 0]
+
+    for value in values:
+        if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
+            raise SysfsInterfaceException(f"pru_msg-value has invalid type, "
+                                          f"expected u32 for type (={type(value)}) and content (={value})")
 
     with open(str(sysfs_path / "pru_msg_box"), "w") as file:
-        file.write(f"{msg_type} {value}")
+        file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
 def read_pru_msg() -> tuple:

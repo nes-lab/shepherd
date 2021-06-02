@@ -28,11 +28,11 @@
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
 	// do not care for sent-status, newest error wins IF different from previous
-	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value == value)))
+	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value[0] == value)))
 	{
 		shared_mem->pru0_msg_error.unread = 0u;
 		shared_mem->pru0_msg_error.type = type;
-		shared_mem->pru0_msg_error.value = value;
+		shared_mem->pru0_msg_error.value[0] = value;
 		shared_mem->pru0_msg_error.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru0_msg_error.unread = 1u;
@@ -46,7 +46,7 @@ static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum Ms
 	if (shared_mem->pru0_msg_outbox.unread == 0)
 	{
 		shared_mem->pru0_msg_outbox.type = type;
-		shared_mem->pru0_msg_outbox.value = value;
+		shared_mem->pru0_msg_outbox.value[0] = value;
 		shared_mem->pru0_msg_outbox.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru0_msg_outbox.unread = 1u;
@@ -137,12 +137,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
         	uint32_t res;
 		switch (msg_in.type) {
 		case MSG_DBG_ADC:
-			res = sample_dbg_adc(msg_in.value);
+			res = sample_dbg_adc(msg_in.value[0]);
 			send_message(shared_mem, MSG_DBG_ADC, res);
 			return 1u;
 
 		case MSG_DBG_DAC:
-			sample_dbg_dac(msg_in.value);
+			sample_dbg_dac(msg_in.value[0]);
 			return 1u;
 
 		case MSG_DBG_GPI:
@@ -157,14 +157,14 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 	{
 		// most common and important msg first
 		if (msg_in.type == MSG_BUF_FROM_HOST) {
-			ring_put(free_buffers_ptr, (uint8_t)msg_in.value);
+			ring_put(free_buffers_ptr, (uint8_t)msg_in.value[0]);
 			return 1U;
-		} else if ((msg_in.type == MSG_TEST) && (msg_in.value == 1)) {
+		} else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 1)) {
 			// pipeline-test for msg-system
-			send_message(shared_mem,MSG_TEST, msg_in.value);
-		} else if ((msg_in.type == MSG_TEST) && (msg_in.value == 2)) {
+			send_message(shared_mem,MSG_TEST, msg_in.value[0]);
+		} else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 2)) {
 			// pipeline-test for msg-system
-			send_status(shared_mem, MSG_TEST, msg_in.value);
+			send_status(shared_mem, MSG_TEST, msg_in.value[0]);
 		} else {
 			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type);
 		}
@@ -292,7 +292,7 @@ void main(void)
 
 	vsource_struct_init(&shared_memory->virtsource_settings);
 
-	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value=TIMER_BASE_PERIOD};
+	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value[0]=TIMER_BASE_PERIOD};
 	shared_memory->pru1_sync_inbox = (struct SyncMsg){
 		.id =0u,
 		.unread =0u,

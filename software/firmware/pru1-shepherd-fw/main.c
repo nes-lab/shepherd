@@ -50,11 +50,11 @@ enum SyncState {
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
 	// do not care for sent-status, newest error wins IF different from previous
-	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value == value)))
+	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value[0] == value)))
 	{
 		shared_mem->pru1_msg_error.unread = 0u;
 		shared_mem->pru1_msg_error.type = type;
-		shared_mem->pru1_msg_error.value = value;
+		shared_mem->pru1_msg_error.value[0] = value;
 		shared_mem->pru1_msg_error.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru1_msg_error.unread = 1u;
@@ -283,7 +283,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			if (!INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) continue;
 
 			/* Take timestamp of IEP */
-			sync_rqst.value = iep_get_cnt_val();
+			sync_rqst.value[0] = iep_get_cnt_val();
 			DEBUG_EVENT_STATE_3;
 			/* Clear interrupt */
 			INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);

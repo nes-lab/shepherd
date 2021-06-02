@@ -124,7 +124,7 @@ struct ProtoMsg {
     /* Alignment with memory, (bytes)mod4 */
     uint8_t reserved[1];
     /* Actual Content of message */
-    uint32_t value;
+    uint32_t value[2];
 } __attribute__((packed));
 
 
