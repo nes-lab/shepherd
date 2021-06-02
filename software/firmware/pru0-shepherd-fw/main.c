@@ -41,12 +41,13 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
 }
 
 // send returns a 1 on success
-static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
+static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value1, const uint32_t value2)
 {
 	if (shared_mem->pru0_msg_outbox.unread == 0)
 	{
 		shared_mem->pru0_msg_outbox.type = type;
-		shared_mem->pru0_msg_outbox.value[0] = value;
+		shared_mem->pru0_msg_outbox.value[0] = value1;
+		shared_mem->pru0_msg_outbox.value[1] = value2;
 		shared_mem->pru0_msg_outbox.id = MSG_TO_KERNEL;
 		// NOTE: always make sure that the unread-flag is activated AFTER payload is copied
 		shared_mem->pru0_msg_outbox.unread = 1u;
@@ -118,7 +119,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	if (current_buffer_idx != NO_BUFFER)
 	{
 		(buffers_far + current_buffer_idx)->len = analog_sample_idx; // TODO: could be removed in future, not possible by design
-		send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx);
+		send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx, 0);
 	}
 
 	return next_buffer_idx;
@@ -138,7 +139,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		switch (msg_in.type) {
 		case MSG_DBG_ADC:
 			res = sample_dbg_adc(msg_in.value[0]);
-			send_message(shared_mem, MSG_DBG_ADC, res);
+			send_message(shared_mem, MSG_DBG_ADC, res, 0);
 			return 1u;
 
 		case MSG_DBG_DAC:
@@ -146,11 +147,35 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1u;
 
 		case MSG_DBG_GPI:
-			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state);
+			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
 			return 1U;
 
+		case MSG_DBG_VSOURCE_P_INP:
+			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, get_input_power_pW(), 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_P_OUT:
+			vsource_calc_out_power(msg_in.value[0]);
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, get_output_power_pW(), 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_V_CAP:
+			vsource_update_capacitor();
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, get_storage_Capacitor_uV(), 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_V_OUT:
+			res = vsource_update_buckboost();
+			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_INIT:
+			vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
+			return 1u;
+
 		default:
-			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type);
+			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type, 0);
 			return 0U;
 		}
 	} else
@@ -161,12 +186,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1U;
 		} else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 1)) {
 			// pipeline-test for msg-system
-			send_message(shared_mem,MSG_TEST, msg_in.value[0]);
+			send_message(shared_mem,MSG_TEST, msg_in.value[0], 0);
 		} else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 2)) {
 			// pipeline-test for msg-system
 			send_status(shared_mem, MSG_TEST, msg_in.value[0]);
 		} else {
-			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type);
+			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type, 0);
 		}
 	}
 	return 0u;
@@ -322,7 +347,7 @@ void main(void)
 	shared_memory->cmp0_trigger_for_pru1 = 1u;
 
 reset:
-	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 100);
+	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 100, 0);
 
 	ring_init(&free_buffers);
 
