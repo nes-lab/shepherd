@@ -22,7 +22,7 @@ import invoke
 import signal
 
 from shepherd.shepherd_io import ShepherdIO
-from shepherd.shepherd_io import VirtualSourceData
+from shepherd.virtual_source_data import VirtualSourceData
 from shepherd.shepherd_io import ShepherdIOException
 from shepherd.datalog import LogReader
 from shepherd.datalog import LogWriter
