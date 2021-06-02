@@ -5,7 +5,7 @@ shepherd.shepherd_io
 ~~~~~
 Interface layer, abstracting low-level functionality provided by PRUs and
 kernel module. User-space part of the double-buffered data exchange protocol.
-
+TODO: these files are getting to big, ~ 1000 LOC, refactor into class_X.py
 
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
@@ -375,7 +375,7 @@ class VirtualSourceData(object):
         vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_inp_efficiency_n10"]])
 
         # is now n10 -> resulting value for PRU is inverted,
-        vs_list.append([int((2 ** 20) / value) for value in self.vss["LUT_output_efficiency_n10"]])
+        vs_list.append([int((2 ** 20) / value) if (value > 0) else 1 for value in self.vss["LUT_output_efficiency_n10"]])
         return vs_list
 
     def add_enable_voltage_drop(self) -> NoReturn:
