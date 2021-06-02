@@ -64,7 +64,7 @@ def find_consensus_time(group):
 
         # We need to estimate a future point in time such that all nodes are ready
         ts_start = ts_max + 20 + 2 * len(group)
-    return ts_start
+    return int(ts_start), float(ts_start - ts_nows[0])
 
 
 def configure_shepherd(
@@ -94,6 +94,8 @@ def configure_shepherd(
     config_yml = yaml.dump(
         config_dict, default_flow_style=False, sort_keys=False
     )
+    
+    logger.debug(f"Rolling out the following config:\n\n{config_yml}")
 
     for cnx in group:
         res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
@@ -436,6 +438,11 @@ def record(
         "ldo_voltage": ldo_voltage,
         "ldo_mode": ldo_mode,
     }
+    
+    if start:
+        ts_start, delay = find_consensus_time(ctx.obj["fab group"])
+        parameter_dict["start_time"] = ts_start
+    
     configure_shepherd(
         ctx.obj["fab group"],
         "record",
@@ -443,9 +450,9 @@ def record(
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
     )
+    
     if start:
-        ts_start = find_consensus_time(ctx.obj["fab group"])
-        logger.debug(f"Scheduling start of shepherd at {ts_start}")
+        logger.debug(f"Scheduling start of shepherd at {ts_start} (in ~ {delay} s)")
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -514,6 +521,10 @@ def emulate(
 
         parameter_dict["output_path"] = str(fp_output)
 
+    if start:
+        ts_start, delay = find_consensus_time(ctx.obj["fab group"])
+        parameter_dict["start_time"] = ts_start
+
     configure_shepherd(
         ctx.obj["fab group"],
         "emulate",
@@ -521,9 +532,9 @@ def emulate(
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
     )
+    
     if start:
-        ts_start = find_consensus_time(ctx.obj["fab group"])
-        logger.debug(f"Scheduling start of shepherd at {ts_start}")
+        logger.debug(f"Scheduling start of shepherd at {ts_start} (in ~ {delay} s)")
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -539,19 +550,12 @@ def stop(ctx):
 )
 @click.argument("filename", type=click.Path())
 @click.argument("outdir", type=click.Path(exists=True))
-@click.option("--rename", "-r", is_flag=True)
-@click.option(
-    "--delete",
-    "-d",
-    is_flag=True,
-    help="Delete the file from the remote filesystem after retrieval",
-)
-@click.option(
-    "--stop",
-    "-s",
-    is_flag=True,
-    help="Stop the on-going recording/emulation process before retrieving the data",
-)
+@click.option("--rename", "-r", is_flag=True, 
+    help="Add current timestamp to measurement file")
+@click.option("--delete", "-d", is_flag=True,
+    help="Delete the file from the remote filesystem after retrieval")
+@click.option("--stop", "-s", is_flag=True,
+    help="Stop the on-going recording/emulation process before retrieving the data",)
 @click.pass_context
 def retrieve(ctx, filename, outdir, rename, delete, stop):
     if stop:
