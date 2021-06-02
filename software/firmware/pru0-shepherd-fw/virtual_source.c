@@ -33,7 +33,7 @@ static inline ufloat conv_adc_raw_to_nA(uint32_t current_raw); // TODO: the firs
 static inline uint32_t conv_uV_to_dac_raw(ufloat voltage_uV);
 
 static ufloat input_efficiency(uint32_t voltage_uV, uint32_t current_nA);
-static ufloat output_efficiency(uint32_t current);
+static ufloat get_output_efficiency(const uint32_t current);
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
@@ -152,7 +152,7 @@ void vsource_calc_inp_power(const uint32_t input_current_nA, const uint32_t inpu
 	/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
 	if (input_voltage_uV >= vs_cfg.V_inp_boost_threshold_uV)
 		V_inp_uV.value = input_voltage_uV;
-	/* limit input voltage when higher then voltage of storage cap, TODO: is this also in 65ms interval? */
+	/* limit input voltage when higher than voltage of storage cap, TODO: is this also in 65ms interval? */
 	if (compare_gt(V_inp_uV, vss.V_store_uV))
 		V_inp_uV = vss.V_store_uV;
 
@@ -167,7 +167,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
 	const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-	const ufloat eta_inv_out = output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
+	const ufloat eta_inv_out = get_output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
 	const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vs_cfg.I_storage_leak_nA, .shift=0}); // TODO: re-enable
 	vss.P_out_pW = mul(I_out_nA, vss.V_out_uV);
 	vss.P_out_pW = mul(vss.P_out_pW, eta_inv_out);
@@ -278,7 +278,7 @@ static ufloat input_efficiency(const uint32_t voltage_uV, const uint32_t current
 }
 
 // TODO: fix input to take SI-units
-static ufloat output_efficiency(const uint32_t current)
+static ufloat get_output_efficiency(const uint32_t current)
 {
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
