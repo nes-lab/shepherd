@@ -19,28 +19,29 @@ virtsource:
   v_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
   v_storage_disable_threshold_mV: 2300 # -> target gets disconnected
   interval_check_thresholds_ms: 65.0  # some BQs check every 65 ms if output should be disconnected
-  LUT_inp_efficiency_n8[12][12]: [
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-    [ 128,128,128,128,128,128,128,128,128,128,128,128 ],
-  ]# depending on inp_voltage, inp_current, (cap voltage), TODO: 50% for now
-  # n8 means normalized to 2^8 - 1 = 1.0
+  LUT_inp_efficiency_n10[12][12]: [
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
+  ]# depending on inp_voltage, inp_current, (cap voltage), TODO: 50% for now, 512 / 1024
+  # n10 means normalized to 2^10 = 1.0 (so there is no real 1 in 10 bit resolution)
+  # NOTE: these will be reduced to internal 8bit for now
   # TODO: LUT could be accessed by highest bit-position of "1" in depending index/input. 12 bit should suffice for 8192 int
   v_pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
   v_pwr_good_high_threshold_mV: 5000
 
   # Buck Boost, ie. BQ25570)
   v_output_mV: 2300
-  LUT_output_efficiency_n8[12]: [200,200,200,200,200,200,200,200,200,200,200,200]
-  # depending on output_current
+  LUT_output_efficiency_n10[12]: [819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819]
+  # depending on output_current, currently set to ~ 80 % = 819 / 1024
 
   # TODO: test all 3 separate regulators, can be checked against returning voltage

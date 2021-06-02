@@ -371,10 +371,11 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["dV_store_low_mV"] * 1e3))  # uV
 
-        vs_list.append([int(value) for value in self.vss["LUT_inp_efficiency_n8"]])
+        # reduce resolution from n10 to n8 to fit in container
+        vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_inp_efficiency_n10"]])
 
-        # was n8, is now n10
-        vs_list.append([int((2 ** 18) / value) for value in self.vss["LUT_output_efficiency_n8"]])
+        # is now n10 -> resulting value for PRU is inverted,
+        vs_list.append([int((2 ** 20) / value) for value in self.vss["LUT_output_efficiency_n10"]])
         return vs_list
 
     def add_enable_voltage_drop(self) -> NoReturn:
@@ -437,8 +438,8 @@ class VirtualSourceData(object):
         self._check_num("dV_store_low_mV", 0, 4e6)
 
         # Look up tables, TODO: test if order in PRU-2d-array is maintained,
-        self._check_list("LUT_inp_efficiency_n8", 12 * [12 * [128]], 255)
-        self._check_list("LUT_output_efficiency_n8", 12 * [200], 255)
+        self._check_list("LUT_inp_efficiency_n10", 12 * [12 * [512]], 1023)
+        self._check_list("LUT_output_efficiency_n8", 12 * [819], 1023)
 
     def _check_num(self, setting_key: str, default: float, max_value: float = None) -> NoReturn:
         try:
@@ -452,14 +453,14 @@ class VirtualSourceData(object):
             raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
         self.vss[setting_key] = set_value
 
-    def _check_list(self, settings_key: str, default: list, max_value: float = 255) -> NoReturn:
+    def _check_list(self, settings_key: str, default: list, max_value: float = 1023) -> NoReturn:
         default = flatten_dict_list(default)
         try:
             values = flatten_dict_list(self.vss[settings_key])
         except KeyError:
             values = default
             logger.debug(f"[virtSource] Setting {settings_key} was not provided, will be set to default = {values[0]}")
-        if (len(values) != len(default)) or (min(values) < 0) or (max(values) > 255):
+        if (len(values) != len(default)) or (min(values) < 0) or (max(values) > max_value):
             raise NotImplementedError(f"{settings_key} must a list of {len(default)} values, within range of [0; {max_value}]")
         self.vss[settings_key] = values
 
