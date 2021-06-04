@@ -214,8 +214,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg(3.0)
         if msg_type != commons.MSG_DBG_ADC:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DBG_ADC } "
-                    f"got t{ msg_type } v{ value }"
+                    f"Expected msg type { hex(commons.MSG_DBG_ADC) } "
+                    f"got t{ hex(msg_type) } v{ value }"
                     )
         return value
 
@@ -238,8 +238,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_GPI:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DBG_GPI } "
-                    f"got type { msg_type } val { value }"
+                    f"Expected msg type { hex(commons.MSG_DBG_GPI) } "
+                    f"got type { hex(msg_type) } val { value }"
                     )
         return value
 
@@ -269,7 +269,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DBG_VSOURCE_P_INP }, got type { msg_type } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, got type { hex(msg_type) } val { value }")
         return value  # P_inp_pW
 
     def vsource_calc_out_power(self, current_adc_raw: int) -> int:
@@ -277,7 +277,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DBG_VSOURCE_P_OUT }, got type { msg_type } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, got type { hex(msg_type) } val { value }")
         return value  # P_out_pW
 
     def vsource_update_capacitor(self) -> int:
@@ -285,7 +285,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DBG_VSOURCE_V_CAP }, got type { msg_type } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, got type { hex(msg_type) } val { value }")
         return value  # V_store_uV
 
     def vsource_update_buckboost(self) -> int:
@@ -293,7 +293,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
             raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_DBG_VSOURCE_V_OUT }, got type { msg_type } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, got type { hex(msg_type) } val { value }")
         return value  # V_out_dac_raw
 
     @staticmethod
