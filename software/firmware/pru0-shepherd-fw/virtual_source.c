@@ -32,8 +32,8 @@
 static inline ufloat conv_adc_raw_to_nA(uint32_t current_raw); // TODO: the first two could also be helpful for sampling
 static inline uint32_t conv_uV_to_dac_raw(ufloat voltage_uV);
 
-static ufloat input_efficiency(uint32_t voltage_uV, uint32_t current_nA);
-static ufloat get_output_efficiency(const uint32_t current);
+static ufloat get_input_efficiency(const uint32_t voltage_uV, const uint32_t current_nA);
+static ufloat get_output_inv_efficiency(const uint32_t current);
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
@@ -136,7 +136,8 @@ void vsource_init(volatile const struct VirtSource_Config *const vsc_arg, volati
 
 // TODO: explain design goals and limitations... why does the code looks that way
 /* Math behind this Converter
- * Individual drains / sources -> 	P_x = I_x * V_x * eta_x  (eta is efficiency)
+ * Individual drains / sources -> 	P_x = I_x * V_x
+ * Efficiency 				eta_x = P_out_x / P_in_x  -> P_out_x = P_in_x * eta_x
  * Power in and out of Converter -> 	P = P_in - P_out
  * Current in storage cap -> 		I = P / V_cap
  * voltage change for Cap -> 		dV = I * dt / C
@@ -144,7 +145,7 @@ void vsource_init(volatile const struct VirtSource_Config *const vsc_arg, volati
  *
  */
 
-void vsource_calc_inp_power(const uint32_t input_current_nA, const uint32_t input_voltage_uV)
+void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t input_current_nA)
 {
 	/* BOOST, Calculate current flowing into the storage capacitor */
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
@@ -156,7 +157,7 @@ void vsource_calc_inp_power(const uint32_t input_current_nA, const uint32_t inpu
 	if (compare_gt(V_inp_uV, vss.V_store_uV))
 		V_inp_uV = vss.V_store_uV;
 
-	const ufloat eta_inp = input_efficiency(input_voltage_uV, input_current_nA);
+	const ufloat eta_inp = get_input_efficiency(input_voltage_uV, input_current_nA);
 	vss.P_inp_pW = mul(V_inp_uV, (ufloat){ .value = input_current_nA, .shift = 0 });
 	vss.P_inp_pW = mul(vss.P_inp_pW, eta_inp);
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
@@ -167,7 +168,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
 	const ufloat I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-	const ufloat eta_inv_out = get_output_efficiency(current_adc_raw); // TODO: wrong input, should be nA
+	const ufloat eta_inv_out = get_output_inv_efficiency(current_adc_raw); // TODO: wrong input, should be nA
 	const ufloat dP_leak_pW = mul(vss.V_store_uV, (ufloat){.value=vs_cfg.I_storage_leak_nA, .shift=0}); // TODO: re-enable
 	vss.P_out_pW = mul(I_out_nA, vss.V_out_uV);
 	vss.P_out_pW = mul(vss.P_out_pW, eta_inv_out);
@@ -267,9 +268,9 @@ static inline uint32_t conv_uV_to_dac_raw(const ufloat voltage_uV)
 	return extract_value(voltage_raw);
 }
 
-static ufloat input_efficiency(const uint32_t voltage_uV, const uint32_t current_nA)
+static ufloat get_input_efficiency(const uint32_t voltage_uV, const uint32_t current_nA)
 {
-	uint8_t pos_v = 32 - get_left_zero_count(voltage_uV>>10);
+	uint8_t pos_v = 32 - get_left_zero_count(voltage_uV>>10);  // TODO: determine 
 	uint8_t pos_c = 32 - get_left_zero_count(current_nA>>10);
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
@@ -278,7 +279,7 @@ static ufloat input_efficiency(const uint32_t voltage_uV, const uint32_t current
 }
 
 // TODO: fix input to take SI-units
-static ufloat get_output_efficiency(const uint32_t current)
+static ufloat get_output_inv_efficiency(const uint32_t current)
 {
 	uint8_t pos_c = 32 - get_left_zero_count(current);
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;

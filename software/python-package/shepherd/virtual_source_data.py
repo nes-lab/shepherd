@@ -43,6 +43,8 @@ class VirtualSourceData(object):
         """
         # TODO: also handle preconfigured virtsources here, switch by name for now
         if isinstance(vs_settings, str) and Path(vs_settings).exists():
+            vs_settings = Path(vs_settings)
+        if isinstance(vs_settings, Path) and vs_settings.exists():
             with open(vs_settings, "r") as config_data:
                 vs_settings = yaml.safe_load(config_data)["virtsource"]
         if isinstance(vs_settings, str) and vs_settings.strip().lower() == "bq25570":
@@ -118,9 +120,9 @@ class VirtualSourceData(object):
         # reduce resolution from n10 to n8 to fit in container
         vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_inp_efficiency_n10"]])
 
-        # is now n10 -> resulting value for PRU is inverted,
+        # is now n10 -> resulting value for PRU is inverted, so 2^20 / value
         vs_list.append(
-            [int((2 ** 20) / value) if (value > 0) else 1 for value in self.vss["LUT_output_efficiency_n10"]])
+            [int((2 ** 20) / value) if (value > 0) else (2 ** 20) for value in self.vss["LUT_output_efficiency_n10"]])
         return vs_list
 
     def add_enable_voltage_drop(self) -> NoReturn:
@@ -184,7 +186,7 @@ class VirtualSourceData(object):
 
         # Look up tables, TODO: test if order in PRU-2d-array is maintained,
         self._check_list("LUT_inp_efficiency_n10", 12 * [12 * [512]], 1023)
-        self._check_list("LUT_output_efficiency_n8", 12 * [819], 1023)
+        self._check_list("LUT_output_efficiency_n10", 12 * [819], 1023)
 
     def _check_num(self, setting_key: str, default: float, max_value: float = None) -> NoReturn:
         try:

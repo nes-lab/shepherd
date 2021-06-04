@@ -261,11 +261,14 @@ class ShepherdDebug(ShepherdIO):
     def vsource_init(self, vs_settings, cal_settings):
         self.send_virtsource_settings(vs_settings)
         self.send_calibration_settings(cal_settings)
+        time.sleep(0.5)
+        # print(sysfs_interface.read_virtsource_settings())
+        # print(sysfs_interface.read_calibration_settings())
         self._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
         self._get_msg()  # no data, just a confirmation
 
-    def vsource_calc_inp_power(self, input_current_nA: int, input_voltage_uV: int) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_current_nA), int(input_voltage_uV)])
+    def vsource_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_voltage_uV), int(input_current_nA)])
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
             raise ShepherdIOException(

@@ -112,7 +112,7 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	/* Get input current/voltage from shared memory buffer */
 	const uint32_t input_current_nA = buffer->values_current[sample_idx];
 	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
-	vsource_calc_inp_power(input_current_nA, input_voltage_uV);
+	vsource_calc_inp_power(input_voltage_uV, input_current_nA);
 
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);

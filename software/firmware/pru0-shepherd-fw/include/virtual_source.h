@@ -7,7 +7,7 @@
 
 void vsource_init(volatile const struct VirtSource_Config *vsc_arg, volatile const struct Calibration_Config *cal_arg);
 
-void vsource_calc_inp_power(uint32_t input_current_nA, uint32_t input_voltage_uV);
+void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void vsource_calc_out_power(uint32_t current_adc_raw);
 void vsource_update_capacitor(void);
 uint32_t vsource_update_buckboost(void);

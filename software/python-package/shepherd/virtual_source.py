@@ -69,23 +69,22 @@ class VirtualSource(object):
         self.vsc["dV_stor_low_uV"] = values[14]
 
         # LUTs
-        LUT1_END = 15+LUT_SIZE*LUT_SIZE
-        LUT2_END = LUT1_END + LUT_SIZE
-        self.vsc["LUT_inp_efficiency_n8"] = values[15:LUT1_END]  # depending on inp_voltage, inp_current, (cap voltage),
-        self.vsc["LUT_inv_output_efficiency_n10"] = values[LUT1_END:LUT2_END]  # depending on output_current
+        # NOTE: config sets input_n10 but the list transmits n8 (for PRU)
+        self.vsc["LUT_inp_efficiency_n8"] = values[15]  # depending on inp_voltage, inp_current, (cap voltage),
+        self.vsc["LUT_out_inv_efficiency_n10"] = values[16]  # depending on output_current
 
         # boost internal state
         self.vsc["P_inp_pW"] = 0.0
         self.vsc["P_out_pW"] = 0.0
         self.vsc["dt_us_per_C_nF"] = SAMPLE_INTERVAL_NS / (1000 * self.vsc["C_storage_nF"])
 
-        self.vsc["internal_check_thrs_sample"] = self.vsc["interval_check_thresholds_ns"] / SAMPLE_INTERVAL_NS
+        self.vsc["interval_check_thrs_sample"] = self.vsc["interval_check_thresholds_ns"] / SAMPLE_INTERVAL_NS
         self.vsc["V_store_uV"] = self.vsc["V_storage_init_uV"]
         # buck internal state
         self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
         self.vsc["V_out_dac_raw"] = 1023  # TODO: unimplemented
 
-    def calc_inp_power(self, input_current_nA: int, input_voltage_uV: int) -> int:
+    def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
 
         V_inp_uV = 0
         if input_voltage_uV > self.vsc["V_inp_boost_threshold_uV"]:
@@ -93,14 +92,14 @@ class VirtualSource(object):
         if V_inp_uV > self.vsc["V_store_uV"]:
             V_inp_uV = self.vsc["V_store_uV"]
 
-        eta_inp = self.get_input_efficieny(input_voltage_uV, input_current_nA)
+        eta_inp = self.get_input_efficiency(input_voltage_uV, input_current_nA)
         self.vsc["P_inp_pW"] = V_inp_uV * input_current_nA * eta_inp
         return self.vsc["P_inp_pW"]  # return NOT original, added for easier testing
 
     def calc_out_power(self, current_adc_raw) -> int:
 
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
-        eta_inv_out = self.get_output_efficiency(current_adc_raw)
+        eta_inv_out = self.get_output_inv_efficiency(current_adc_raw)
         dP_leak_pW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
         self.vsc["P_out_pW"] = I_out_nA * self.vsc["V_out_uV"] * eta_inv_out + dP_leak_pW
         return self.vsc["P_out_pW"]  # return NOT original, added for easier testing
@@ -136,22 +135,23 @@ class VirtualSource(object):
 
         return self.vsc["V_out_dac_raw"] if is_outputting else 0
 
-    def conf_adc_raw_to_nA(self, current_raw: int) -> float:
+    def conv_adc_raw_to_nA(self, current_raw: int) -> float:
         return self.cal.convert_raw_to_value("emulation", "adc_current", current_raw) * (10 ** 9)
 
     def conv_uV_to_dac_raw(self, voltage_uV: int) -> int:
         return self.cal.convert_value_to_raw("emulation", "dac_voltage_b", float(voltage_uV) / (10 ** 6))
 
     def get_input_efficiency(self, voltage_uV: int, current_nA: int) -> float:
-        pos_v = int(round(math.log2(voltage_uV)))
-        pos_c = int(round(math.log2(current_nA)))
-        for value in pos_v, pos_c:
-            if value >= self.vsc["LUT_size"]:
-                value = self.vsc["LUT_size"] - 1
-        return self.vsc["LUT_inp_efficiency_n8"][pos_v * self.vsc["LUT_size"] * pos_c] / (2 ** 8)
+        pos_v = int(round(math.log2(voltage_uV))) if voltage_uV > 0 else 0  # TODO: round is wrong
+        pos_c = int(round(math.log2(current_nA))) if current_nA > 0 else 0
+        if pos_v >= self.vsc["LUT_size"]:
+            pos_v = self.vsc["LUT_size"] - 1
+        if pos_c >= self.vsc["LUT_size"]:
+            pos_c = self.vsc["LUT_size"] - 1
+        return self.vsc["LUT_inp_efficiency_n8"][pos_v * self.vsc["LUT_size"] + pos_c] / (2 ** 8)
 
-    def get_output_efficiency(self, current) -> float:
-        pos_c = int(round(math.log2(current)))
+    def get_output_inv_efficiency(self, current) -> float:
+        pos_c = int(round(math.log2(current))) if current > 0 else 0  # TODO: round is wrong
         if pos_c >= self.vsc["LUT_size"]:
             pos_c = self.vsc["LUT_size"] - 1
         return self.vsc["LUT_out_inv_efficiency_n10"][pos_c] / (2 ** 10)
