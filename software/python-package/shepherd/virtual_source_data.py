@@ -92,26 +92,26 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["converter_mode"]))
 
-        vs_list.append(int(self.vss["c_output_uf"] * 1e3))  # nF
+        vs_list.append(int(self.vss["C_output_uF"] * 1e3))  # nF
 
-        vs_list.append(int(self.vss["v_input_boost_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_input_boost_threshold_mV"] * 1e3))  # uV
 
-        vs_list.append(int(self.vss["c_storage_uf"] * 1e3))  # nF
-        vs_list.append(int(self.vss["v_storage_init_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["v_storage_max_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["v_storage_leak_nA"] * 1))  # nA
+        vs_list.append(int(self.vss["C_storage_uF"] * 1e3))  # nF
+        vs_list.append(int(self.vss["V_storage_init_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_storage_max_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["I_storage_leak_nA"] * 1))  # nA
 
-        vs_list.append(int(self.vss["v_storage_enable_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["v_storage_disable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_storage_enable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_storage_disable_threshold_mV"] * 1e3))  # uV
 
         vs_list.append(int(self.vss["interval_check_thresholds_ms"] * 1e6))  # ns
 
-        vs_list.append(int(self.vss["v_pwr_good_low_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["v_pwr_good_high_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_pwr_good_low_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_pwr_good_high_threshold_mV"] * 1e3))  # uV
 
         vs_list.append(int(self.vss["dV_store_en_mV"] * 1e3))  # uV
 
-        vs_list.append(int(self.vss["v_output_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_output_mV"] * 1e3))  # uV
 
         vs_list.append(int(self.vss["dV_store_low_mV"] * 1e3))  # uV
 
@@ -140,13 +140,13 @@ class VirtualSourceData(object):
         """
 
         # first case: storage cap outside of en/dis-thresholds
-        v_old = self.vss["v_storage_enable_threshold_mV"]
+        v_old = self.vss["V_storage_enable_threshold_mV"]
         if 1:  # TODO: this is boost-buck case, boost-only has v_out = v_old
-            v_out = self.vss["v_output_mV"]
+            v_out = self.vss["V_output_mV"]
         else:
             v_out = v_old
-        c_store = self.vss["c_storage_uf"]
-        c_out = self.vss["c_output_uf"]
+        c_store = self.vss["C_storage_uF"]
+        c_out = self.vss["C_output_uF"]
         self.vss["dV_store_en_mV"] = v_old - pow(pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5)
 
         # second case: storage cap below v_out (only different for enabled buck), enable when >= v_out
@@ -159,24 +159,24 @@ class VirtualSourceData(object):
         """
         self._check_num("converter_mode", 100, 4e9)
 
-        self._check_num("c_output_uf", 1, 4e6)
+        self._check_num("C_output_uF", 1, 4e6)
 
-        self._check_num("v_input_boost_threshold_mV", 130, 5000)
+        self._check_num("V_input_boost_threshold_mV", 130, 5000)
 
-        self._check_num("c_storage_uf", 1000, 4e6)
-        self._check_num("v_storage_init_mV", 3500, 10000)
-        self._check_num("v_storage_max_mV", 4200, 10000)
-        self._check_num("v_storage_leak_nA", 10, 4e9)
+        self._check_num("C_storage_uF", 1000, 4e6)
+        self._check_num("V_storage_init_mV", 3500, 10000)
+        self._check_num("V_storage_max_mV", 4200, 10000)
+        self._check_num("I_storage_leak_nA", 10, 4e9)
 
-        self._check_num("v_storage_enable_threshold_mV", 3000, 4e6)
-        self._check_num("v_storage_disable_threshold_mV", 2300, 4e6)
+        self._check_num("V_storage_enable_threshold_mV", 3000, 4e6)
+        self._check_num("V_storage_disable_threshold_mV", 2300, 4e6)
 
         self._check_num("interval_check_thresholds_ms", 65, 4e3)
 
-        self._check_num("v_pwr_good_low_threshold_mV", 2400, 4e6)
-        self._check_num("v_pwr_good_high_threshold_mV", 5000, 4e6)
+        self._check_num("V_pwr_good_low_threshold_mV", 2400, 4e6)
+        self._check_num("V_pwr_good_high_threshold_mV", 5000, 4e6)
 
-        self._check_num("v_output_mV", 2300, 5000)
+        self._check_num("V_output_mV", 2300, 5000)
 
         self.add_enable_voltage_drop()
         self._check_num("dV_store_en_mV", 0, 4e6)

@@ -8,16 +8,16 @@ virtsource:
   converter_mode: 100
 
   # Direct Reg
-  c_output_uf: 10   # final (always last) stage to catch current spikes of target
+  C_output_uF: 10   # final (always last) stage to catch current spikes of target
 
   # Boost Reg, ie. BQ25504
-  v_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-  c_storage_uf: 1000
-  v_storage_init_mV: 3500 # allow a proper / fast startup
-  v_storage_max_mV:  4200 # -> boost shuts off
-  v_storage_leak_nA: 9
-  v_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
-  v_storage_disable_threshold_mV: 2300 # -> target gets disconnected
+  V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
+  C_storage_uF: 1000
+  V_storage_init_mV: 3500 # allow a proper / fast startup
+  V_storage_max_mV:  4200 # -> boost shuts off
+  I_storage_leak_nA: 9
+  V_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
+  V_storage_disable_threshold_mV: 2300 # -> target gets disconnected
   interval_check_thresholds_ms: 65.0  # some BQs check every 65 ms if output should be disconnected
   LUT_inp_efficiency_n10[12][12]: [
     [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
@@ -36,11 +36,11 @@ virtsource:
   # n10 means normalized to 2^10 = 1.0 (so there is no real 1 in 10 bit resolution)
   # NOTE: these will be reduced to internal 8bit for now
   # TODO: LUT could be accessed by highest bit-position of "1" in depending index/input. 12 bit should suffice for 8192 int
-  v_pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
-  v_pwr_good_high_threshold_mV: 5000
+  V_pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
+  V_pwr_good_high_threshold_mV: 5000
 
   # Buck Boost, ie. BQ25570)
-  v_output_mV: 2300
+  V_output_mV: 2000
   LUT_output_efficiency_n10[12]: [819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819]
   # depending on output_current, currently set to ~ 80 % = 819 / 1024
 
