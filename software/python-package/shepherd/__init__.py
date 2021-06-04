@@ -258,6 +258,44 @@ class ShepherdDebug(ShepherdIO):
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
 
+    def vsource_init(self, vs_settings, cal_settings):
+        self.send_virtsource_settings(vs_settings)
+        self.send_calibration_settings(cal_settings)
+        self._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
+        self._get_msg()  # no data, just a confirmation
+
+    def vsource_calc_inp_power(self, input_current_nA: int, input_voltage_uV: int) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_current_nA), int(input_voltage_uV)])
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
+            raise ShepherdIOException(
+                    f"Expected msg type { commons.MSG_DBG_VSOURCE_P_INP }, got type { msg_type } val { value }")
+        return value  # P_inp_pW
+
+    def vsource_calc_out_power(self, current_adc_raw: int) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_P_OUT, int(current_adc_raw))
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
+            raise ShepherdIOException(
+                    f"Expected msg type { commons.MSG_DBG_VSOURCE_P_OUT }, got type { msg_type } val { value }")
+        return value  # P_out_pW
+
+    def vsource_update_capacitor(self) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
+            raise ShepherdIOException(
+                    f"Expected msg type { commons.MSG_DBG_VSOURCE_V_CAP }, got type { msg_type } val { value }")
+        return value  # V_store_uV
+
+    def vsource_update_buckboost(self) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
+            raise ShepherdIOException(
+                    f"Expected msg type { commons.MSG_DBG_VSOURCE_V_OUT }, got type { msg_type } val { value }")
+        return value  # V_out_dac_raw
+
     @staticmethod
     def is_alive() -> bool:
         """ feedback-fn for RPC-usage to check for connection

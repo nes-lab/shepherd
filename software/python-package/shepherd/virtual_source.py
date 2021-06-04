@@ -6,6 +6,7 @@ import math
 sample_count = 0
 is_outputting = False
 
+
 class VirtualSource(object):
     """
     this is ported py-version of the pru-code, goals:
@@ -18,11 +19,14 @@ class VirtualSource(object):
     vsc = dict()
     cal = CalibrationData.from_default()
 
-    def __init__(self, vs_settings):
+    def __init__(self, vs_settings, cal_setting):
         """
 
         :param vs_settings: YAML-Path, dict, or regulator-name
         """
+        if cal_setting is not None:
+            self.cal = cal_setting
+
         # NOTE:
         #  - yaml is based on nA, mV, ms, uF
         #  - c-code and py-copy is using nA, uV, ns, nF, pW
@@ -48,7 +52,7 @@ class VirtualSource(object):
         self.vsc["V_storage_init_uV"] = values[4]  # allow a proper / fast startup
         self.vsc["V_storage_max_uV"] = values[5]  # -> boost shuts off
 
-        self.vsc["V_storage_leak_nA"] = values[6]
+        self.vsc["I_storage_leak_nA"] = values[6]
 
         self.vsc["V_storage_enable_threshold_uV"] = values[7]  # -> target gets connected (hysteresis-combo with next value)
         self.vsc["V_storage_disable_threshold_uV"] = values[8]  # -> target gets disconnected
@@ -81,7 +85,7 @@ class VirtualSource(object):
         self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
         self.vsc["V_out_dac_raw"] = 1023  # TODO: unimplemented
 
-    def calc_inp_power(self, input_current_nA: int, input_voltage_uV) -> NoReturn:
+    def calc_inp_power(self, input_current_nA: int, input_voltage_uV: int) -> int:
 
         V_inp_uV = 0
         if input_voltage_uV > self.vsc["V_inp_boost_threshold_uV"]:
@@ -91,20 +95,23 @@ class VirtualSource(object):
 
         eta_inp = self.get_input_efficieny(input_voltage_uV, input_current_nA)
         self.vsc["P_inp_pW"] = V_inp_uV * input_current_nA * eta_inp
+        return self.vsc["P_inp_pW"]  # return NOT original, added for easier testing
 
-    def calc_out_power(self, current_adc_raw):
+    def calc_out_power(self, current_adc_raw) -> int:
 
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
         eta_inv_out = self.get_output_efficiency(current_adc_raw)
         dP_leak_pW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
         self.vsc["P_out_pW"] = I_out_nA * self.vsc["V_out_uV"] * eta_inv_out + dP_leak_pW
+        return self.vsc["P_out_pW"]  # return NOT original, added for easier testing
 
-    def update_capacitor(self):
+    def update_capacitor(self) -> int:
 
         P_sum_pW = self.vsc["P_inp_pW"] - self.vsc["P_out_pW"]
         I_cStor_nA = P_sum_pW / self.vsc["V_store_uV"]
         dV_cStor_uV = I_cStor_nA * self.vsc["dt_us_per_C_nF"]
         self.vsc["V_store_uV"] = self.vsc["V_store_uV"] + dV_cStor_uV
+        return self.vsc["V_store_uV"]  # return NOT original, added for easier testing
 
     def update_buckboost(self) -> int:
         global sample_count, is_outputting
