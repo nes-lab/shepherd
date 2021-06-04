@@ -312,7 +312,7 @@ def read_pru_msg() -> tuple:
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
         raise SysfsInterfaceException(f"pru_msg was too short")
-    return msg_parts[0], msg_parts[1]
+    return msg_parts[0], msg_parts[1]  # TODO: can be widened to two type + 2 values, not needed currently
 
 
 def make_attr_getter(name: str, path: str, attr_type: type):

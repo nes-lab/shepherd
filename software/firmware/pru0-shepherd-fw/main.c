@@ -162,7 +162,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_V_CAP:
 			vsource_update_capacitor();
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, get_storage_Capacitor_uV(), 0);
+			send_message(shared_mem, MSG_DBG_VSOURCE_V_CAP, get_storage_Capacitor_uV(), 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_OUT:
@@ -172,6 +172,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_INIT:
 			vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
+			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
 			return 1u;
 
 		default:

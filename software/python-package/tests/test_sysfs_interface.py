@@ -6,7 +6,7 @@ import yaml
 
 from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData
 from shepherd.calibration import CalibrationData
-from shepherd.shepherd_io import flatten_dict_list
+from shepherd.virtual_source_data import flatten_dict_list
 
 
 @pytest.fixture
