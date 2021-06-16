@@ -217,7 +217,7 @@ class ShepherdDebug(ShepherdIO):
                     f"Expected msg type { hex(commons.MSG_DBG_ADC) } "
                     f"got t{ hex(msg_type) } v{ value }"
                     )
-        return value
+        return value[0]
 
     def gpi_read(self) -> int:
         """ issues a pru-read of the gpio-registers that monitor target-communication
@@ -241,7 +241,10 @@ class ShepherdDebug(ShepherdIO):
                     f"Expected msg type { hex(commons.MSG_DBG_GPI) } "
                     f"got type { hex(msg_type) } val { value }"
                     )
-        return value
+        return value[0]
+
+    def gp_set_batok(self, value: int):
+        self._send_msg(commons.MSG_DBG_GP_BATOK, value)
 
     def dac_write(self, channels: int, value: int):
         """Writes value to specified DAC channel, DAC8562
@@ -262,10 +265,14 @@ class ShepherdDebug(ShepherdIO):
         self.send_virtsource_settings(vs_settings)
         self.send_calibration_settings(cal_settings)
         time.sleep(0.5)
+        self.start()
         # print(sysfs_interface.read_virtsource_settings())
         # print(sysfs_interface.read_calibration_settings())
         self._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
-        self._get_msg()  # no data, just a confirmation
+        msg_type, value = self._get_msg()  # no data, just a confirmation
+        if msg_type != commons.MSG_DBG_VSOURCE_INIT:
+            raise ShepherdIOException(
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, got type { hex(msg_type) } val { value }")
 
     def vsource_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_voltage_uV), int(input_current_nA)])
@@ -273,7 +280,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, got type { hex(msg_type) } val { value }")
-        return value  # P_inp_pW
+        return value[0]  # P_inp_pW
 
     def vsource_calc_out_power(self, current_adc_raw: int) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_P_OUT, int(current_adc_raw))
@@ -281,7 +288,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, got type { hex(msg_type) } val { value }")
-        return value  # P_out_pW
+        return value[0]  # P_out_pW
 
     def vsource_update_capacitor(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
@@ -289,7 +296,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, got type { hex(msg_type) } val { value }")
-        return value  # V_store_uV
+        return value[0]  # V_store_uV
 
     def vsource_update_buckboost(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
@@ -297,7 +304,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, got type { hex(msg_type) } val { value }")
-        return value  # V_out_dac_raw
+        return value[0]  # V_out_dac_raw
 
     @staticmethod
     def is_alive() -> bool:

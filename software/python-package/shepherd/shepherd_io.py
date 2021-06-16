@@ -580,6 +580,7 @@ class ShepherdIO(object):
         """
         while True:
             msg_type, value = self._get_msg(timeout)
+            value = value[0]
             # logger.debug(f"received msg type {msg_type}")
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
