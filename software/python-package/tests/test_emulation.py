@@ -7,7 +7,7 @@ import yaml
 
 from shepherd.shepherd_io import DataBuffer, VirtualSourceData
 
-from shepherd import LogWriter
+from shepherd import LogWriter, ShepherdDebug
 from shepherd import LogReader
 from shepherd import Emulator
 from shepherd import emulate
@@ -114,3 +114,40 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
             == hf_hrvst["data"]["time"].shape[0]
         )
         assert hf_emu["data"]["time"][0] == start_time * 10**9
+
+@pytest.mark.hardware
+def test_target_pins(shepherd_up):
+    shepherd_io = ShepherdDebug()
+    shepherd_io.select_main_target_for_power(sel_target_a=True)
+
+    dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
+        [1, "harvesting", "dac_voltage_a", "Harvester VSimBuf"],
+        [2, "harvesting", "dac_voltage_b", "Harvester VMatching"],
+        [4, "emulation", "dac_voltage_a", "Emulator Rail A"],
+        [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
+
+    gpio_channels = [0, 1,  2,   3,   4, 7, 8]  # 6, 7 can only be used when UART is free
+    pru_responses = [1, 2, 64, 128, 256, 4, 8]  # corresponding to 2^num of r31_num
+
+    for channel in [2, 3]:
+        dac_cfg = dac_channels[channel]
+        value_raw = shepherd_io.convert_value_to_raw(dac_cfg[1], dac_cfg[2], 2.0)
+        shepherd_io.dac_write(dac_cfg[0], value_raw)
+
+    shepherd_io.set_target_io_level_conv(True)
+
+    shepherd_io.select_main_target_for_io(sel_target_a=True)
+
+    for index in range(len(gpio_channels)):
+        shepherd_io.set_gpio_one_high(gpio_channels[index])
+        response = shepherd_io.gpi_read()
+        assert response == pru_responses[index]
+
+    shepherd_io.select_main_target_for_io(sel_target_a=False)
+
+    for index in range(len(gpio_channels)):
+        shepherd_io.set_gpio_one_high(gpio_channels[index])
+        response = shepherd_io.gpi_read()
+        assert response == pru_responses[index]
+
+    # TODO: could add a loopback for uart, but extra hardware is needed for that
