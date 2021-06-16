@@ -20,7 +20,7 @@ def include(filename):
 # Basic Window Callbacks
 ###############################
 
-refresh_interval = 1  # s
+refresh_interval = 0.25  # s
 refresh_next = 0
 
 def program_start_callback(sender, data) -> NoReturn:
@@ -65,6 +65,7 @@ def update_gui_elements() -> NoReturn:
         configure_item(f"value_raw_adc{iter}", enabled=host_state)
         configure_item(f"value_mSI_adc{iter}", enabled=host_state)
     configure_item("gpio_input", enabled=host_state)
+    configure_item("gpio_BAT_OK", enabled=host_state)
     configure_item("gpio_output", enabled=host_state)
 
 
@@ -239,6 +240,11 @@ def gpio_callback(sender, data) -> NoReturn:
     shepherd_io.set_gpio_one_high(value)
     gpio_refresh()
 
+def gpio_batok_callback(sender, data) -> NoReturn:
+    global shepherd_io
+    value = get_value(sender)
+    shepherd_io.gp_set_batok(value)
+    gpio_refresh()
 
 
 """

@@ -47,8 +47,7 @@ def main():
         add_same_line(spacing=5)
         add_input_int("refresh_value",
                        tip="set refresh rate of read-out",
-                       #before="Refresh Rate44",
-                       default_value=1,
+                       default_value=round(1/refresh_interval),
                        label="",
                        width=120,
                        callback=refresh_rate_callback,
@@ -160,8 +159,8 @@ def main():
         add_text("text_section_gpio",
                  default_value="GPIO-Control")
         add_spacing(count=1)
-        add_text(f"text_A_gpio{iter}", default_value="Set One")
-        add_same_line(spacing=10)
+        add_text("text_A_gpio", default_value="Set One")
+        add_same_line(spacing=35)
         add_radio_button("gpio_input",
                          items=gpio_channels,
                          callback=gpio_callback,
@@ -169,14 +168,22 @@ def main():
                          default_value=len(gpio_channels)-1)
 
         add_spacing(count=1)
-        add_text(f"text_A_gpio{iter}", default_value="Readout")
-        add_same_line(spacing=10)
+        add_text("text_B_gpio", default_value="PRU Input")
+        add_same_line(spacing=16)
         add_input_text(f"gpio_output",
                        default_value="0",
                        readonly=True,
                        label="",
                        width=200)
 
+        add_spacing(count=2)
+        add_text("text_C_gpio", default_value="PRU Output")
+        add_same_line(spacing=10)
+        add_checkbox("gpio_BAT_OK",
+                     label="BAT_OK",
+                     default_value=False,
+                     callback=gpio_batok_callback,
+                     )
 
 if __name__ == '__main__':
     main()
