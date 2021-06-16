@@ -17,7 +17,6 @@ def debug_shepherd(request, shepherd_up):
     deb.__enter__()
     request.addfinalizer(deb.__exit__)
     deb.vsource_init(vss, cal)
-    deb.start()
     return deb
 
 
@@ -59,8 +58,8 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     i_inp_nA = int(I_inp_A * 10 ** 9)
     n_samples = int(dt_s / reference_vss["t_sample_s"])
     print(f"CHARGE - feeding I = {I_inp_A} A, V = {V_inp_V} V into vSource with {n_samples} steps")
-    print(f" PInp = {debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)} pW")
     print(f" VCap = {debug_shepherd.vsource_update_capacitor()} uV")
+    print(f" PInp = {debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)} pW")
 
     for iter in range(n_samples):
         debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)
@@ -96,8 +95,8 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     n_samples = int(dt_s / reference_vss["t_sample_s"])
 
     print(f"DRAIN - feeding I = {I_out_A} A as {I_out_adc_raw} raw into vSource with {n_samples} steps")
-    print(f" POut = {debug_shepherd.vsource_calc_out_power(I_out_adc_raw)} pW")
     print(f" VCap = {debug_shepherd.vsource_update_capacitor()} uV")
+    print(f" POut = {debug_shepherd.vsource_calc_out_power(I_out_adc_raw)} pW")
     print(f" VOut = {debug_shepherd.vsource_update_buckboost()} raw")
 
     for iter in range(n_samples):
