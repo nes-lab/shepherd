@@ -33,6 +33,7 @@ enum MsgType {
 	MSG_DBG_ADC = 0xA0u,
 	MSG_DBG_DAC = 0xA1u,
 	MSG_DBG_GPI = 0xA2u,
+	MSG_DBG_GP_BATOK = 0xA3u,
 	MSG_DBG_PRINT = 0xA6u,
 	MSG_DBG_VSOURCE_P_INP = 0xA8,
 	MSG_DBG_VSOURCE_P_OUT = 0xA9,
@@ -227,6 +228,9 @@ struct SharedMem {
 	/* Token system to ensure both PRUs can share interrupts */
 	bool_ft cmp0_trigger_for_pru1;
 	bool_ft cmp1_trigger_for_pru1;
+	/* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
+	bool_ft batok_trigger_for_pru1;
+	bool_ft batok_pin_value;
 } __attribute__((packed));
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000);

@@ -23,6 +23,8 @@
 #define DEBUG_PIN0_MASK 	BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK 	BIT_SHIFT(P8_30)
 
+#define GPIO_BATOK 		BIT_SHIFT(P8_29)
+
 #define GPIO_MASK		(0x03FF) // TODO: currently contains batOk as an input, does that work?
 
 #define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
@@ -360,6 +362,13 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			}
 			DEBUG_EVENT_STATE_0;
 			continue; // for more regular gpio-sampling
+		}
+
+		if (shared_mem->batok_trigger_for_pru1)
+		{
+			if (shared_mem->batok_pin_value) GPIO_ON(GPIO_BATOK);
+			else				 GPIO_OFF(GPIO_BATOK);
+			shared_mem->batok_trigger_for_pru1 = false;
 		}
 	}
 }

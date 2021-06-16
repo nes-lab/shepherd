@@ -75,6 +75,12 @@ static bool_ft receive_message(volatile struct SharedMem *const shared_mem, stru
 	return 0;
 }
 
+static void set_batok_pin(volatile struct SharedMem *const shared_mem, bool_ft value)
+{
+	shared_mem->batok_pin_value = value;
+	shared_mem->batok_trigger_for_pru1 = true;
+}
+
 
 static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
 			  struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
@@ -148,6 +154,10 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_GPI:
 			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
+			return 1U;
+
+		case MSG_DBG_GP_BATOK:
+			set_batok_pin(shared_mem, msg_in.value[0] > 0);
 			return 1U;
 
 		case MSG_DBG_VSOURCE_P_INP:
