@@ -183,13 +183,14 @@ class ShepherdDebug(ShepherdIO):
     with the ADC and DAC.
     """
     # offer a default cali for debugging, TODO: maybe also try to read from eeprom
-    _cal: CalibrationData
-    _io: TargetIO
+    _cal: CalibrationData = None
+    _io: TargetIO = None
 
-    def __init__(self):
+    def __init__(self, use_io: bool = True):
         super().__init__("debug")
         self._cal = CalibrationData.from_default()
-        self._io = TargetIO()
+        if use_io:
+            self._io = TargetIO()
 
     def adc_read(self, channel: str):
         """Reads value from specified ADC channel.
@@ -343,7 +344,10 @@ class ShepherdDebug(ShepherdIO):
         return self._cal.convert_value_to_raw(component, channel, value)
 
     def set_gpio_one_high(self, num: int) -> NoReturn:
-        self._io.one_high(num)
+        if not (self._io is None):
+            self._io.one_high(num)
+        else:
+            logger.debug(f"Error: IO is not enabled in this shepherd-debug-instance")
 
 
 def record(
