@@ -82,25 +82,29 @@ def cli(ctx, verbose):
         logger.setLevel(logging.DEBUG)
 
 
-@cli.command(short_help="Turns auxiliary target power supply on or off")
+@cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
 @click.option("--on/--off", default=True)
-@click.option("--voltage", type=float, help="Aux-Target supply voltage")
-@click.option("--aux_sel_target_a/--aux_sel_target_b", default=True,
+@click.option("--voltage", type=float, default=3.0, help="Target supply voltage")
+@click.option("--gpio_pass/--gpio_omit", type=bool, default=True, help="Route UART, Programmer-Pins and other GPIO to this target")
+@click.option("--sel_a/--sel_b", default=True,
               help="Choose (main)Target that gets connected to virtual Source")
-def aux_target_power(on: bool, voltage: float, sel_target_for_aux: bool):
-    if not voltage:
-        voltage = 3.0
-    else:
-        if not on:
-            raise click.UsageError(
-                "Can't set voltage, when Shepherd is switched off"
-            )
+def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
+    if not on:
+        voltage = 0.0
+    # TODO: output would be nicer when this uses shepherdDebug as base
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(not sel_target_for_aux)
+        #pin.write(not sel_a)  # switched because rail A is AUX, TODO: unswitched for HWv2.1r0
+        pin.write(sel_a)  # switched because rail A is AUX, TODO: unswitched for HWv2.1r0
+    for pin_name in ["target_io_sel"]:
+        pin = GPIO(gpio_pin_nums[pin_name], "out")
+        pin.write(sel_a)
+    for pin_name in ["target_io_en"]:
+        pin = GPIO(gpio_pin_nums[pin_name], "out")
+        pin.write(gpio_pass)
     cal = CalibrationData.from_default()
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)
