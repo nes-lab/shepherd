@@ -209,6 +209,8 @@ static ssize_t sysfs_state_show(struct kobject *kobj,
 		return sprintf(buf, "armed");
 	case STATE_RUNNING:
 		return sprintf(buf, "running");
+    case STATE_RESET:
+        return sprintf(buf, "reset");
 	case STATE_FAULT:
 		return sprintf(buf, "fault");
 	default:
