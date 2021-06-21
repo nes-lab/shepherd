@@ -244,13 +244,16 @@ def run(ctx, command, sudo):
     default=False,
     help="Enable/disable power and debug access to the target",
 )
+@click.option("--voltage", "-v", type=float, default=3.0, help="Target supply voltage")
+@click.option("--sel_a/--sel_b", default=True,
+              help="Choose (main)Target that gets connected to virtual Source")
 @click.pass_context
-def target(ctx, port, on):
+def target(ctx, port, on, voltage, sel_a):
     ctx.obj["openocd_telnet_port"] = port
-
+    sel_target = "sel_a" if sel_a else "sel_b"
     if on or ctx.invoked_subcommand:
         for cnx in ctx.obj["fab group"]:
-            cnx.sudo("shepherd-sheep targetpower --on", hide=True)
+            cnx.sudo(f"shepherd-sheep targetpower --on --voltage {voltage} --{sel_target}", hide=True)
             start_openocd(cnx, ctx.obj["hostnames"][cnx.host])
     else:
         for cnx in ctx.obj["fab group"]:
