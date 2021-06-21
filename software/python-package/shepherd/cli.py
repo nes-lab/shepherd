@@ -84,7 +84,7 @@ def cli(ctx, verbose):
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
 @click.option("--on/--off", default=True)
-@click.option("--voltage", type=float, default=3.0, help="Target supply voltage")
+@click.option("--voltage", "-v", type=float, default=3.0, help="Target supply voltage")
 @click.option("--gpio_pass/--gpio_omit", type=bool, default=True, help="Route UART, Programmer-Pins and other GPIO to this target")
 @click.option("--sel_a/--sel_b", default=True,
               help="Choose (main)Target that gets connected to virtual Source")
@@ -95,18 +95,27 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
+        logger.info(f"Shepherd-State \t= {'enabled' if on else 'disabled'}")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         #pin.write(not sel_a)  # switched because rail A is AUX, TODO: unswitched for HWv2.1r0
         pin.write(sel_a)  # switched because rail A is AUX, TODO: unswitched for HWv2.1r0
+        logger.info(f"Select Target \t= {'A' if sel_a else 'B'}")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(sel_a)
     for pin_name in ["target_io_en"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(gpio_pass)
+        logger.info(f"IO passing \t= {'enabled' if gpio_pass else 'disabled'}")
     cal = CalibrationData.from_default()
+    logger.info(f"Target Voltage \t= {voltage} V")
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
+    sysfs_interface.set_stop(force=True)  # forces idle
+    sysfs_interface.wait_for_state("idle", 3)
+    sysfs_interface.write_mode("emulation")
+    sysfs_interface.set_stop(force=True)  # forces reset
+    logger.info(f"Re-Initialized PRU to finalize settings")
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)
 
 
