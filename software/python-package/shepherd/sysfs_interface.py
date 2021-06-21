@@ -98,16 +98,17 @@ def set_start(start_time: float = None) -> NoReturn:
             f.write("start")
 
 
-def set_stop() -> NoReturn:
+def set_stop(force: bool = False) -> NoReturn:
     """ Stops shepherd.
 
     Writes 'stop' to the 'state' sysfs attribute in order to transition from
     any state to 'idle'.
     """
-    current_state = get_state()
-    if current_state != "running":
-        raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
-        # TODO: relax conditions if possible, learn to stop from everything
+    if not force:
+        current_state = get_state()
+        if current_state != "running":
+            raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
+            # TODO: relax conditions if possible, learn to stop from everything
 
     with open(str(sysfs_path / "state"), "w") as f:
         f.write("stop")
