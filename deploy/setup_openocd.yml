@@ -1,0 +1,50 @@
+---
+- name: Install and configure special bitbanging version of openOCD for target-programming
+  hosts: all
+  become: true
+
+  tasks:
+
+  # TODO: easiest current option to later install special version of openOCD (this step will not install it -> copy config and service by hand)
+  - name: Add shepherd repository to aptitude
+    apt_repository:
+      repo: deb [trusted=yes] https://shepherd.nes-lab.org debian/
+      state: present
+
+  - name: Install modded openOCD-version
+    apt:
+      name: shepherd-openocd
+      state: latest
+      update_cache: yes
+
+  - name: Get full path of repository
+    local_action: 'shell realpath {{ playbook_dir }}/..'
+    register: repo_dir
+    become: no
+
+  - name: Add pin-config for shepherd-hw v2.1
+    copy:
+      src: '{{ repo_dir.stdout }}/software/openocd/shepherd.cfg'
+      dest: '/usr/share/openocd/scripts/interface/shepherd.cfg'
+
+  - name: Add systemd services
+    copy:
+      src: '{{ repo_dir.stdout }}/software/openocd/debian/{{ item }}.service'
+      dest: '/etc/systemd/system/{{ item }}.service'
+    with_items:
+     - shepherd-openocd
+    tags:
+      - install
+      - systemd
+
+  - name: Register systemd services
+    systemd:
+      name: '{{ item.name }}'
+      state: stopped
+      enabled: '{{ item.enabled }}'
+      daemon_reload: yes
+    with_items:
+     - { name: shepherd-openocd, enabled: no}
+    tags:
+      - install
+      - systemd
