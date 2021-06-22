@@ -241,7 +241,7 @@ def run(ctx, command, sudo):
 )
 @click.option(
     "--on/--off",
-    default=False,
+    default=True,
     help="Enable/disable power and debug access to the target",
 )
 @click.option("--voltage", "-v", type=float, default=3.0, help="Target supply voltage")
@@ -253,12 +253,12 @@ def target(ctx, port, on, voltage, sel_a):
     sel_target = "sel_a" if sel_a else "sel_b"
     if on or ctx.invoked_subcommand:
         for cnx in ctx.obj["fab group"]:
-            cnx.sudo(f"shepherd-sheep targetpower --on --voltage {voltage} --{sel_target}", hide=True)
+            cnx.sudo(f"shepherd-sheep target-power --on --voltage {voltage} --{sel_target}", hide=True)
             start_openocd(cnx, ctx.obj["hostnames"][cnx.host])
     else:
         for cnx in ctx.obj["fab group"]:
             cnx.sudo("systemctl stop shepherd-openocd")
-            cnx.sudo("shepherd-sheep targetpower --off", hide=True)
+            cnx.sudo("shepherd-sheep target-power --off", hide=True)
 
 
 @target.resultcallback()
@@ -267,7 +267,7 @@ def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
         for cnx in ctx.obj["fab group"]:
             cnx.sudo("systemctl stop shepherd-openocd")
-            cnx.sudo("shepherd-sheep targetpower --off", hide=True)
+            cnx.sudo("shepherd-sheep target-power --off", hide=True)
 
 
 def start_openocd(cnx, hostname, timeout=30):
