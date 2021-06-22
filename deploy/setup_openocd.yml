@@ -22,6 +22,7 @@
     register: repo_dir
     become: no
 
+  # TODO: beaglebone.cfg also contains a pin-config! maybe deactivate it
   - name: Add pin-config for shepherd-hw v2.1
     copy:
       src: '{{ repo_dir.stdout }}/software/openocd/shepherd.cfg'
