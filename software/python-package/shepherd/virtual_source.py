@@ -69,7 +69,7 @@ class VirtualSource(object):
         self.vsc["dV_stor_low_uV"] = values[14]
 
         # LUTs
-        # NOTE: config sets input_n10 but the list transmits n8 (for PRU)
+        # NOTE: config sets input_n10 but the list transmits n8 (to PRU)
         self.vsc["LUT_inp_efficiency_n8"] = values[15]  # depending on inp_voltage, inp_current, (cap voltage),
         self.vsc["LUT_out_inv_efficiency_n10"] = values[16]  # depending on output_current
 

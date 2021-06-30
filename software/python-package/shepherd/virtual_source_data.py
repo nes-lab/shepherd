@@ -118,7 +118,7 @@ class VirtualSourceData(object):
         vs_list.append(int(self.vss["dV_store_low_mV"] * 1e3))  # uV
 
         # reduce resolution from n10 to n8 to fit in container
-        vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_inp_efficiency_n10"]])
+        vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_input_efficiency_n10"]])
 
         # is now n10 -> resulting value for PRU is inverted, so 2^20 / value
         vs_list.append(
@@ -185,7 +185,7 @@ class VirtualSourceData(object):
         self._check_num("dV_store_low_mV", 0, 4e6)
 
         # Look up tables, TODO: test if order in PRU-2d-array is maintained,
-        self._check_list("LUT_inp_efficiency_n10", 12 * [12 * [512]], 1023)
+        self._check_list("LUT_input_efficiency_n10", 12 * [12 * [512]], 1023)
         self._check_list("LUT_output_efficiency_n10", 12 * [819], 1023)
 
     def _check_num(self, setting_key: str, default: float, max_value: float = None) -> NoReturn:

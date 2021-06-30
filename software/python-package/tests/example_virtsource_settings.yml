@@ -19,7 +19,7 @@ virtsource:
   V_storage_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
   V_storage_disable_threshold_mV: 2300 # -> target gets disconnected
   interval_check_thresholds_ms: 65.0  # some BQs check every 65 ms if output should be disconnected
-  LUT_inp_efficiency_n10[12][12]: [
+  LUT_input_efficiency_n10[12][12]: [
     [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
     [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
     [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
