@@ -50,6 +50,9 @@
         "P9_12", /* 	target_io_EN */
         "P9_13", /* 	target_Pwr_SEL */
 
+        "P9_14", /*     EN_Recorder */
+        "P9_16", /*     EN_Emulator */
+
         "P9_17", /* 	target_swd_clk */
         "P9_18", /* 	target_swd_io */
 
@@ -65,10 +68,6 @@
 
         "P9_41", /* 	pru0 SPI_CS_ADC1_REC */
         "P9_42", /* 	pru0 SPI_CS_ADC_EMU */
-
-        // Target UART
-        "P9_24", /* 	target_uart_tx */ // UART1, TODO: just a test,
-        "P9_26", /* 	target_uart_rx */
 
         /* Realtime Units */
         "pru0",
@@ -145,6 +144,9 @@
             P9_12(MUX_MODE7)                // gpio1[28]
             P9_13(MUX_MODE7)                // gpio0[31]
 
+            P9_14(MUX_MODE7)                // gpio1[18], 50
+            P9_16(MUX_MODE7)                // gpio1[19], 51
+
             P9_17(MUX_MODE7 | RX_ACTIVE)    // gpio0[5], swd_clk, TODO: test with rx enabled
             P9_18(MUX_MODE7 | RX_ACTIVE)    // gpio0[4], swd_io
 
@@ -162,8 +164,8 @@
             P9_42B(MUX_MODE5)               // pr1_pru0_pru_r30_4
 
             // just for tests, does not hinder uart-module from loading
-            P9_24(MUX_MODE7 | RX_ACTIVE)    // usually uart1
-            P9_26(MUX_MODE7 | RX_ACTIVE)    // usually uart1
+            //P9_24(MUX_MODE7 | RX_ACTIVE)    // usually uart1
+            //P9_26(MUX_MODE7 | RX_ACTIVE)    // usually uart1
 
             >;
          };
