@@ -61,6 +61,9 @@ class Recorder(ShepherdIO):
     def __enter__(self):
         super().__enter__()
 
+        self.set_power_state_emulator(False)
+        self.set_power_state_recorder(True)
+
         # Give the PRU empty buffers to begin with
         for i in range(self.n_buffers):
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)  # could be as low as ~ 10us
@@ -136,6 +139,9 @@ class Emulator(ShepherdIO):
 
     def __enter__(self):
         super().__enter__()
+
+        self.set_power_state_recorder(False)
+        self.set_power_state_emulator(True)
 
         self.send_calibration_settings(self._cal_emulation)
 
@@ -327,6 +333,12 @@ class ShepherdDebug(ShepherdIO):
 
     def set_shepherd_pcb_power(self, state: bool) -> NoReturn:
         self._set_shepherd_pcb_power(state)
+
+    def set_power_recorder(self, state: bool) -> NoReturn:
+        self.set_power_state_recorder(state)
+
+    def set_power_emulator(self, state: bool) -> NoReturn:
+        self.set_power_state_emulator(state)
 
     def select_target_for_power_tracking(self, sel_a: bool) -> NoReturn:
         self.select_main_target_for_power(sel_a)

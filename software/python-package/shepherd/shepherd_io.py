@@ -41,6 +41,8 @@ gpio_pin_nums = {
     "target_io_en": 60,
     "target_io_sel": 30,
     "en_shepherd": 23,
+    "en_recorder": 50,
+    "en_emulator": 51,
 }
 
 prev_timestamp = 0
@@ -443,6 +445,16 @@ class ShepherdIO(object):
         state_str = "enabled" if state else "disabled"
         logger.debug(f"Set power-supplies of shepherd-pcb to {state_str}")
         self.gpios["en_shepherd"].write(state)
+
+    def set_power_state_recorder(self, state: bool) -> NoReturn:
+        state_str = "enabled" if state else "disabled"
+        logger.debug(f"Set Recorder of shepherd-pcb to {state_str}")
+        self.gpios["en_recorder"].write(state)
+
+    def set_power_state_emulator(self, state: bool) -> NoReturn:
+        state_str = "enabled" if state else "disabled"
+        logger.debug(f"Set Emulator of shepherd-pcb to {state_str}")
+        self.gpios["en_emulator"].write(state)
 
     def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:
         """ choose which targets gets the supply with current-monitor, True = Target A, False = Target B
