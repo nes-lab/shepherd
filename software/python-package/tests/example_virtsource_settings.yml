@@ -39,7 +39,7 @@ virtsource:
   V_pwr_good_low_threshold_mV: 2400 # range where target is informed by output-pin
   V_pwr_good_high_threshold_mV: 5000
 
-  # Buck Boost, ie. BQ25570)
+  # Buck Boost, ie. BQ25570
   V_output_mV: 2000
   LUT_output_efficiency_n10[12]: [819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819]
   # depending on output_current, currently set to ~ 80 % = 819 / 1024

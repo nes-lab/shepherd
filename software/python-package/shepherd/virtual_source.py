@@ -3,7 +3,7 @@ from shepherd import VirtualSourceData, CalibrationData
 import math
 
 # NOTE: DO NOT OPTIMIZE -> stay close to original code-base
-sample_count = 0
+sample_count = 0xFFFFFFF0
 is_outputting = False
 
 
@@ -29,7 +29,7 @@ class VirtualSource(object):
 
         # NOTE:
         #  - yaml is based on nA, mV, ms, uF
-        #  - c-code and py-copy is using nA, uV, ns, nF, pW
+        #  - c-code and py-copy is using nA, uV, ns, nF, fW
         vs_settings = VirtualSourceData(vs_settings)
         values = vs_settings.export_for_sysfs()
 
@@ -74,64 +74,76 @@ class VirtualSource(object):
         self.vsc["LUT_out_inv_efficiency_n10"] = values[16]  # depending on output_current
 
         # boost internal state
-        self.vsc["P_inp_pW"] = 0.0
-        self.vsc["P_out_pW"] = 0.0
+        self.vsc["P_inp_fW"] = 0.0
+        self.vsc["P_out_fW"] = 0.0
         self.vsc["dt_us_per_C_nF"] = SAMPLE_INTERVAL_NS / (1000 * self.vsc["C_storage_nF"])
 
         self.vsc["interval_check_thrs_sample"] = self.vsc["interval_check_thresholds_ns"] / SAMPLE_INTERVAL_NS
         self.vsc["V_store_uV"] = self.vsc["V_storage_init_uV"]
         # buck internal state
+        self.vsc["has_buck"] = True  # todo: derive from config
         self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
-        self.vsc["V_out_dac_raw"] = 1023  # TODO: unimplemented
+        self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_uV"])
 
     def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
 
         V_inp_uV = 0
-        if input_voltage_uV > self.vsc["V_inp_boost_threshold_uV"]:
+        if input_voltage_uV >= self.vsc["V_inp_boost_threshold_uV"]:
             V_inp_uV = input_voltage_uV
         if V_inp_uV > self.vsc["V_store_uV"]:
             V_inp_uV = self.vsc["V_store_uV"]
 
         eta_inp = self.get_input_efficiency(input_voltage_uV, input_current_nA)
-        self.vsc["P_inp_pW"] = V_inp_uV * input_current_nA * eta_inp
-        return self.vsc["P_inp_pW"]  # return NOT original, added for easier testing
+        self.vsc["P_inp_fW"] = V_inp_uV * input_current_nA * eta_inp
+        return round(self.vsc["P_inp_fW"])  # return NOT original, added for easier testing
 
     def calc_out_power(self, current_adc_raw) -> int:
 
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
-        eta_inv_out = self.get_output_inv_efficiency(current_adc_raw)
-        dP_leak_pW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
-        self.vsc["P_out_pW"] = I_out_nA * self.vsc["V_out_uV"] * eta_inv_out + dP_leak_pW
-        return self.vsc["P_out_pW"]  # return NOT original, added for easier testing
+        if self.vsc["has_buck"]:
+            eta_inv_out = self.get_output_inv_efficiency(current_adc_raw)
+        else:
+            eta_inv_out = 1023
+
+        dP_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
+        self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_uV"] * eta_inv_out + dP_leak_fW
+        return round(self.vsc["P_out_fW"])  # return NOT original, added for easier testing
 
     def update_capacitor(self) -> int:
 
-        P_sum_pW = self.vsc["P_inp_pW"] - self.vsc["P_out_pW"]
-        I_cStor_nA = P_sum_pW / self.vsc["V_store_uV"]
+        P_sum_fW = self.vsc["P_inp_fW"] - self.vsc["P_out_fW"]
+        I_cStor_nA = P_sum_fW / self.vsc["V_store_uV"]
         dV_cStor_uV = I_cStor_nA * self.vsc["dt_us_per_C_nF"]
         self.vsc["V_store_uV"] = self.vsc["V_store_uV"] + dV_cStor_uV
-        return self.vsc["V_store_uV"]  # return NOT original, added for easier testing
+        return round(self.vsc["V_store_uV"])  # return NOT original, added for easier testing
 
-    def update_buckboost(self) -> int:
+    def update_boostbuck(self) -> int:
         global sample_count, is_outputting
 
         if self.vsc["V_store_uV"] > self.vsc["V_storage_max_uV"]:
             self.vsc["V_store_uV"] = self.vsc["V_storage_max_uV"]
 
         sample_count += 1
-        if sample_count == self.vsc["interval_check_thrs_sample"]:
+        if sample_count >= self.vsc["interval_check_thrs_sample"]:
             sample_count = 0
             if is_outputting:
                 if (self.vsc["V_store_uV"] < self.vsc["V_out_uV"]) or \
-                        (self.vsc["V_store_uV"] < self.vsc["V_storage_disable_threshold_uV"]):
+                        (self.vsc["V_store_uV"] <= self.vsc["V_storage_disable_threshold_uV"]):
                     is_outputting = False
+                    self.vsc["V_out_uV"] = 0
             else:
-                if self.vsc["V_store_uV"] > self.vsc["V_out_uV"]:
+                if self.vsc["V_store_uV"] >= self.vsc["V_out_uV"]:
                     is_outputting = True
                     self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_stor_low_uV"]
-                if self.vsc["V_store_uV"] > self.vsc["V_storage_disable_threshold_uV"]:
+                    self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
+                elif self.vsc["V_store_uV"] >= self.vsc["V_storage_disable_threshold_uV"]:
                     is_outputting = True
                     self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_stor_en_thrs_uV"]
+                    self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
+
+        if not self.vsc["has_buck"]:
+            self.vsc["V_out_uV"] = self.vsc["V_store_uV"]
+            self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_uV"])
 
         return self.vsc["V_out_dac_raw"] if is_outputting else 0
 
@@ -156,20 +168,20 @@ class VirtualSource(object):
             pos_c = self.vsc["LUT_size"] - 1
         return self.vsc["LUT_out_inv_efficiency_n10"][pos_c] / (2 ** 10)
 
-    def set_input_power_pW(self, value):
-        self.vsc["P_inp_pW"] = value
+    def set_input_power_fW(self, value):
+        self.vsc["P_inp_fW"] = value
 
-    def set_output_power_pW(self, value):
-        self.vsc["P_out_pW"] = value
+    def set_output_power_fW(self, value):
+        self.vsc["P_out_fW"] = value
 
     def set_storage_Capacitor_uV(self, value):
         self.vsc["V_store_uV"] = value
 
-    def get_input_power_pW(self, value):
-        return self.vsc["P_inp_pW"]
+    def get_input_power_fW(self, value):
+        return self.vsc["P_inp_fW"]
 
-    def get_output_power_pW(self, value):
-        return self.vsc["P_out_pW"]
+    def get_output_power_fW(self, value):
+        return self.vsc["P_out_fW"]
 
     def get_storage_Capacitor_uV(self, value):
         return self.vsc["V_store_uV"]
