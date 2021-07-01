@@ -58,12 +58,15 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     i_inp_nA = int(I_inp_A * 10 ** 9)
     n_samples = int(dt_s / reference_vss["t_sample_s"])
     print(f"CHARGE - feeding I = {I_inp_A} A, V = {V_inp_V} V into vSource with {n_samples} steps")
-    print(f" VCap = {debug_shepherd.vsource_update_capacitor()} uV")
-    print(f" PInp = {debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)} pW")
+    print(f" PRU VCap = {debug_shepherd.vsource_update_capacitor()} uV")
+    print(f" PRU PInp = {debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)} fW")
+    print(f" Py  VCap = {py_vsource.update_capacitor()} uV")
+    print(f" Py  PInp = {py_vsource.calc_inp_power(v_inp_uV, i_inp_nA)} fW")
 
     for iter in range(n_samples):
-        debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)
-        debug_shepherd.vsource_update_capacitor()
+        #debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)
+        #debug_shepherd.vsource_update_capacitor()
+        debug_shepherd.vsource_charge(v_inp_uV, i_inp_nA)  # combines above 2 FNs
         py_vsource.calc_inp_power(v_inp_uV, i_inp_nA)
         py_vsource.update_capacitor()
 
@@ -77,6 +80,7 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     print(f"CHARGE - VCap goal = {V_cap_V} V, py = {V_cap_py_V} V (dev={deviation_py} %), pru = {V_cap_pru_V} V (dev={deviation_pru} %)")
     assert deviation_py < 1.0  # %
     assert deviation_pru < 2.0  # % TODO: compare pru relative to py
+    assert 0
 
 
 @pytest.mark.hardware
@@ -95,27 +99,31 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     n_samples = int(dt_s / reference_vss["t_sample_s"])
 
     print(f"DRAIN - feeding I = {I_out_A} A as {I_out_adc_raw} raw into vSource with {n_samples} steps")
-    print(f" VCap = {debug_shepherd.vsource_update_capacitor()} uV")
-    print(f" POut = {debug_shepherd.vsource_calc_out_power(I_out_adc_raw)} pW")
-    print(f" VOut = {debug_shepherd.vsource_update_buckboost()} raw")
+    print(f" PRU VCap = {debug_shepherd.vsource_update_capacitor()} uV")
+    print(f" PRU POut = {debug_shepherd.vsource_calc_out_power(I_out_adc_raw)} fW")
+    print(f" PRU VOut = {debug_shepherd.vsource_update_boostbuck()} raw")
+    print(f" Py  VCap = {py_vsource.update_capacitor()} uV")
+    print(f" Py  POut = {py_vsource.calc_out_power(I_out_adc_raw)} fW")
+    print(f" Py  VOut = {py_vsource.update_boostbuck()} raw")
 
     for iter in range(n_samples):
-        #debug_shepherd.vsource_calc_out_power(I_out_adc_raw)
-        #debug_shepherd.vsource_update_capacitor()
-        fb1 = 1  # debug_shepherd.vsource_update_buckboost()
+        # debug_shepherd.vsource_calc_out_power(I_out_adc_raw)
+        # debug_shepherd.vsource_update_capacitor()
+        # fb1 = debug_shepherd.vsource_update_buckboost()
+        fb1 = debug_shepherd.vsource_drain(I_out_adc_raw)  # combines the 3 FNs
         py_vsource.calc_out_power(I_out_adc_raw)
         py_vsource.update_capacitor()
-        fb2 = py_vsource.update_buckboost()
-        #if (fb1 < 1) or (fb2 < 1):
-        #    I_out_adc_raw = 0
+        fb2 = py_vsource.update_boostbuck()
+        if (fb1 < 1) or (fb2 < 1):
+            print(f"Stopped Drain-loop after {iter}/{n_samples} samples ({round(100*iter/n_samples)} %), because output was disabled")
+            break
 
-
-    #debug_shepherd.vsource_calc_out_power(0)
+    debug_shepherd.vsource_calc_out_power(0)
     V_cap_pru_V = float(debug_shepherd.vsource_update_capacitor()) * 10**-6
-    V_out_pru_raw = debug_shepherd.vsource_update_buckboost()
+    V_out_pru_raw = debug_shepherd.vsource_update_boostbuck()
     py_vsource.calc_out_power(0)
     V_cap_py_V = float(py_vsource.update_capacitor()) * 10**-6
-    V_out_py_raw = py_vsource.update_buckboost()
+    V_out_py_raw = py_vsource.update_boostbuck()
 
     deviation_pru = round(100*abs(V_cap_pru_V/reference_vss["V_storage_disable_threshold_V"] - 1), 3)  # %
     deviation_py = round(100*abs(V_cap_py_V/reference_vss["V_storage_disable_threshold_V"] - 1), 3)  # %
@@ -125,5 +133,6 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     assert deviation_pru < 40.0  # % TODO: compare pru relative to py
     assert V_out_pru_raw < 1
     assert V_out_py_raw < 1
+    assert 0
 
 # TODO: add IO-Test with very small values
