@@ -287,7 +287,15 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, got type { hex(msg_type) } val { value }")
-        return value[0]  # P_inp_pW
+        return value[0]*(2**32) + value[1]  # P_inp_pW
+
+    def vsource_charge(self, input_voltage_uV: int, input_current_nA: int) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_CHARGE, [int(input_voltage_uV), int(input_current_nA)])
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_VSOURCE_CHARGE:
+            raise ShepherdIOException(
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, got type { hex(msg_type) } val { value }")
+        return value[0]  # V_store_uV
 
     def vsource_calc_out_power(self, current_adc_raw: int) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_P_OUT, int(current_adc_raw))
@@ -295,7 +303,15 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, got type { hex(msg_type) } val { value }")
-        return value[0]  # P_out_pW
+        return value[0]*(2**32) + value[1]  # P_out_pW
+
+    def vsource_drain(self, current_adc_raw: int) -> int:
+        self._send_msg(commons.MSG_DBG_VSOURCE_DRAIN, int(current_adc_raw))
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_VSOURCE_DRAIN:
+            raise ShepherdIOException(
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, got type { hex(msg_type) } val { value }")
+        return value[0]  # V_out_dac_raw
 
     def vsource_update_capacitor(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
@@ -305,7 +321,7 @@ class ShepherdDebug(ShepherdIO):
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, got type { hex(msg_type) } val { value }")
         return value[0]  # V_store_uV
 
-    def vsource_update_buckboost(self) -> int:
+    def vsource_update_boostbuck(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
