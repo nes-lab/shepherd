@@ -102,8 +102,7 @@ add_executable(PRU0
         ${CMAKE_CURRENT_SOURCE_DIR}/pru0-shepherd-fw/main.c
         lib/include/sys_gpio.h lib/src/spi_transfer_sys.c
         lib/include/spi_transfer_sys.h
-        pru0-shepherd-fw/float_pseudo.c
-        pru0-shepherd-fw/include/float_pseudo.h)
+        )
 
 target_sources(PRU0
         PUBLIC
