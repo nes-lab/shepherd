@@ -121,7 +121,7 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	vsource_update_capacitor();
 
 	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
-	const uint32_t voltage_dac = vsource_update_buckboost();
+	const uint32_t voltage_dac = vsource_update_boostbuck();
 
 	if (link_dac_channels)
 	{
