@@ -6,7 +6,6 @@
 #include "hw_config.h"
 #include "stdint_fast.h"
 #include "virtual_source.h"
-#include "float_pseudo.h"
 
 /* ---------------------------------------------------------------------
  * Virtual Source, TODO: update description
@@ -44,6 +43,7 @@ struct VirtSource_State {
 	uint64_t V_store_uV_n32;
 	uint32_t interval_check_thrs_sample;
 	/* Buck converter */
+	bool_ft  has_buck;
 	uint32_t V_out_uV;
 	uint32_t V_out_dac_raw;
 };
@@ -108,6 +108,8 @@ void vsource_init(volatile struct VirtSource_Config *const vsc_arg, volatile str
 	vss.interval_check_thrs_sample = vs_cfg->interval_check_thresholds_ns / SAMPLE_INTERVAL_NS;
 
 	/* Buck Boost */
+	vss.has_buck = true;  // TODO: derive from config
+
 	vss.V_out_uV = vs_cfg->V_output_uV;
 
 	vss.V_out_dac_raw = conv_uV_to_dac_raw(vs_cfg->V_output_uV);
@@ -157,7 +159,7 @@ void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t inpu
 	if (input_voltage_uV >= vs_cfg->V_inp_boost_threshold_uV)
 		V_inp_uV_value = input_voltage_uV;
 	/* limit input voltage when higher than voltage of storage cap, TODO: is this also in 65ms interval? */
-	if (V_inp_uV_value > vss.V_store_uV_n32)
+	if (V_inp_uV_value > (vss.V_store_uV_n32 >> 32))
 	{
 		V_inp_uV_value = vss.V_store_uV_n32;
 	}
@@ -174,16 +176,15 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 {
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
-
-	const uint32_t eta_inv_out_n10 = get_output_inv_efficiency_n10(current_adc_raw); // TODO: wrong input, should be nA
-
+	uint32_t eta_inv_out_n10 = 1023;
+	if (vss.has_buck)
+	{
+		eta_inv_out_n10 = get_output_inv_efficiency_n10(current_adc_raw); // TODO: wrong input, should be nA
+	}
 	const uint32_t dP_leak_fW = vss.V_store_uV_n32 * vs_cfg->I_storage_leak_nA;
-
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-	//const uint8_t headroom = get_left_zero_count(eta_inv_out_n10) + get_left_zero_count(I_out_nA) + get_left_zero_count(vss.V_out_uV);
+
 	vss.P_out_fW_n8 = (((uint64_t)(eta_inv_out_n10 * vss.V_out_uV) * I_out_nA ) >> 2) + dP_leak_fW;
-	//if (headroom < 3*32 - 31) vss.P_out_fW_n8 = 0xFFFFFFFF;
-	//if (get_left_zero_count(dP_leak_fW) < 1) vss.P_out_fW_n8 = 0xFFFFFFFF;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
@@ -205,13 +206,13 @@ void vsource_update_capacitor(void)
 }
 
 // TODO: not optimized
-uint32_t vsource_update_buckboost(void)
+uint32_t vsource_update_boostbuck(void)
 {
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	uint32_t V_store_uV = vss.V_store_uV_n32 >> 32;
 
 	// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
-	if ((vss.V_store_uV_n32 >> 32) > vs_cfg->V_storage_max_uV)
+	if (V_store_uV > vs_cfg->V_storage_max_uV)
 	{
 		vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_max_uV)<<32;
 		V_store_uV = vs_cfg->V_storage_max_uV;
@@ -229,7 +230,7 @@ uint32_t vsource_update_buckboost(void)
 			if ((V_store_uV < vss.V_out_uV) | (V_store_uV <= vs_cfg->V_storage_disable_threshold_uV))
 			{
 				is_outputting = false;
-				vss.V_out_uV = 0;
+				vss.V_out_uV = 0u;
 			}
 		}
 		else
@@ -241,7 +242,7 @@ uint32_t vsource_update_buckboost(void)
 				vss.V_store_uV_n32 -= ((uint64_t)vs_cfg->dV_stor_low_uV) << 32; // todo: what is that? why substract twice?
 				vss.V_out_uV = vs_cfg->V_output_uV;
 			}
-			if (V_store_uV >= vs_cfg->V_storage_enable_threshold_uV)
+			else if (V_store_uV >= vs_cfg->V_storage_enable_threshold_uV)
 			{
 				is_outputting = true;
 				vss.V_store_uV_n32 -= ((uint64_t)vs_cfg->dV_stor_en_thrs_uV) << 32;
@@ -255,6 +256,11 @@ uint32_t vsource_update_buckboost(void)
 	ufloat V_pwr_good_low_thrs_uV; // range where target is informed by output-pin
 	ufloat V_pwr_good_high_thrs_uV;
 	*/
+	if (!vss.has_buck)
+	{
+		vss.V_out_uV = vss.V_store_uV_n32 >> 32;
+		vss.V_out_dac_raw = conv_uV_to_dac_raw(vss.V_out_uV);
+	}
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* output proper voltage to dac */
 	if (is_outputting)	return vss.V_out_dac_raw;
