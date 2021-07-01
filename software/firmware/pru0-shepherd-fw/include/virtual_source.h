@@ -5,20 +5,23 @@
 #include "commons.h"
 #include "float_pseudo.h"
 
-void vsource_init(volatile const struct VirtSource_Config *vsc_arg, volatile const struct Calibration_Config *cal_arg);
+void vsource_init(volatile struct VirtSource_Config *vsc_arg, volatile struct Calibration_Config *cal_arg);
 
 void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void vsource_calc_out_power(uint32_t current_adc_raw);
 void vsource_update_capacitor(void);
 uint32_t vsource_update_buckboost(void);
 
-void vsource_struct_init(volatile struct VirtSource_Config * vsc_arg);
+uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t current_nA);
+uint32_t get_output_inv_efficiency_n10(const uint32_t current);
 
-void set_input_power_pW(uint32_t P_pW);
-void set_output_power_pW(uint32_t P_pW);
+void vsource_struct_init_testable(volatile struct VirtSource_Config *constvsc_arg);
+
+void set_input_power_fW(const uint32_t P_fW);
+void set_output_power_fW(const uint32_t P_fW);
 void set_storage_Capacitor_uV(uint32_t C_uV);
-uint32_t get_input_power_pW(void);
-uint32_t get_output_power_pW(void);
+uint64_t get_input_power_fW(void);
+uint64_t get_output_power_fW(void);
 uint32_t get_storage_Capacitor_uV(void);
 
 
