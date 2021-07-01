@@ -162,12 +162,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_P_INP:
 			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, get_input_power_pW(), 0);
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_input_power_fW()>>32) , (uint32_t)get_input_power_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_P_OUT:
 			vsource_calc_out_power(msg_in.value[0]);
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, get_output_power_pW(), 0);
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t)(get_output_power_fW()>>32), (uint32_t)get_output_power_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_CAP:
@@ -176,13 +176,26 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_OUT:
-			res = vsource_update_buckboost();
+			res = vsource_update_boostbuck();
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_INIT:
 			vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
 			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_CHARGE:
+			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
+			vsource_update_capacitor();
+			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_storage_Capacitor_uV(), 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_DRAIN:
+			vsource_calc_out_power(msg_in.value[0]);
+			vsource_update_capacitor();
+			res = vsource_update_boostbuck();
+			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, res, 0);
 			return 1u;
 
 		default:
@@ -326,7 +339,7 @@ void main(void)
 		.adc_current_factor_nA_n8=255u, .adc_current_offset_nA=-1,
 		.dac_voltage_inv_factor_uV_n20=254u, .dac_voltage_offset_uV=-2};
 
-	vsource_struct_init(&shared_memory->virtsource_settings);
+	vsource_struct_init_testable(&shared_memory->virtsource_settings);
 
 	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value[0]=TIMER_BASE_PERIOD};
 	shared_memory->pru1_sync_inbox = (struct SyncMsg){
