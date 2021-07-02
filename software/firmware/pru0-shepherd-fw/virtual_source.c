@@ -222,16 +222,10 @@ uint32_t vsource_update_boostbuck(void)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	uint32_t V_store_uV = vss.V_store_uV_n32 >> 32;
 
-	// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
-	if (V_store_uV > vs_cfg->V_storage_max_uV)
-	{
-		vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_max_uV)<<32;
-		V_store_uV = vs_cfg->V_storage_max_uV;
-	}
-
 	/* connect or disconnect output on certain events */
 	static uint32_t sample_count = 0xFFFFFFF0;
 	static bool_ft is_outputting = false;
+	static bool_ft power_good = true;
 
 	if (++sample_count >= vss.interval_check_thrs_sample)
 	{
@@ -260,25 +254,27 @@ uint32_t vsource_update_boostbuck(void)
 				vss.V_out_dac_uV = vs_cfg->V_output_uV;
 			}
 		}
+
+		/* emulate power-good-signal */
+		if (power_good)
+		{
+			if ((vss.V_store_uV_n32 >> 32) <= vs_cfg->V_pwr_good_disable_threshold_uV)
+			{
+				power_good = false;
+			}
+		}
+		else
+		{
+			if ((vss.V_store_uV_n32 >> 32) >= vs_cfg->V_pwr_good_enable_threshold_uV)
+			{
+				power_good = true;
+			}
+		}
+		/* TODO: pin is on other PRU */
 	}
 
-	/* emulate power-good-signal */
-	static bool_ft power_good = true;
-	if (power_good)
-	{
-		if ((vss.V_store_uV_n32 >> 32) <= vs_cfg->V_pwr_good_disable_threshold_uV)
-		{
-			power_good = false;
-		}
-	}
-	else
-	{
-		if ((vss.V_store_uV_n32 >> 32) >= vs_cfg->V_pwr_good_enable_threshold_uV)
-		{
-			power_good = false;
-		}
-	}
-	/* TODO: pin is on other PRU */
+
+
 
 	if (!vss.has_buck)
 	{

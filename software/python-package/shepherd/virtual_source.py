@@ -200,13 +200,13 @@ class VirtualSource(object):
     def set_storage_Capacitor_uV(self, value):
         self.vsc["V_store_uV"] = value
 
-    def get_input_power_fW(self, value):
+    def get_input_power_fW(self):
         return self.vsc["P_inp_fW"]
 
-    def get_output_power_fW(self, value):
+    def get_output_power_fW(self):
         return self.vsc["P_out_fW"]
 
-    def get_storage_Capacitor_uV(self, value):
+    def get_storage_Capacitor_uV(self):
         return self.vsc["V_store_uV"]
 
     def get_power_good(self):

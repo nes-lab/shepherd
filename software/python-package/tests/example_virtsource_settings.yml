@@ -9,6 +9,7 @@ virtsource:
 
   # Direct Reg
   C_output_uF: 10   # final (always last) stage to catch current spikes of target
+  # TODO: improve documentation for this: this is for specific target, and it should be nF
 
   # Boost Reg, ie. BQ25504
   V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
@@ -18,7 +19,7 @@ virtsource:
   I_storage_leak_nA: 9
   V_storage_enable_threshold_mV: 2600 # -> target gets connected (hysteresis-combo with next value)
   V_storage_disable_threshold_mV: 2300 # -> target gets disconnected
-  interval_check_thresholds_ms: 65.0  # some BQs check every 65 ms if output should be disconnected
+  interval_check_thresholds_ms: 64.0  # some BQs check every 64 ms if output should be disconnected
   LUT_input_efficiency_n10[12][12]: [
     [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
     [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
@@ -36,8 +37,9 @@ virtsource:
   # n10 means normalized to 2^10 = 1.0 (so there is no real 1 in 10 bit resolution)
   # NOTE: these will be reduced to internal 8bit for now
   # TODO: LUT could be accessed by highest bit-position of "1" in depending index/input. 12 bit should suffice for 8192 int
-  V_pwr_good_disable_threshold_mV: 2400 # target is informed by pwr-good output-pin (hysteresis)
-  V_pwr_good_enable_threshold_mV: 3000
+  V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good output-pin (hysteresis)
+  V_pwr_good_disable_threshold_mV: 2400
+
 
   # Buck Boost, ie. BQ25570
   V_output_mV: 2000
