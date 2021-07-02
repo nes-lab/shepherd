@@ -11,13 +11,10 @@ void vsource_calc_out_power(uint32_t current_adc_raw);
 void vsource_update_capacitor(void);
 uint32_t vsource_update_boostbuck(void);
 
-uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t current_nA);
-uint32_t get_output_inv_efficiency_n4(const uint32_t current_nA);
-
 void vsource_struct_init_testable(volatile struct VirtSource_Config *constvsc_arg);
 
-void set_input_power_fW(const uint32_t P_fW);
-void set_output_power_fW(const uint32_t P_fW);
+void set_input_power_fW(uint32_t P_fW);
+void set_output_power_fW(uint32_t P_fW);
 void set_storage_Capacitor_uV(uint32_t C_uV);
 uint64_t get_input_power_fW(void);
 uint64_t get_output_power_fW(void);

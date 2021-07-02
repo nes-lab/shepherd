@@ -31,8 +31,58 @@
 static inline uint32_t conv_adc_raw_to_nA(uint32_t current_raw); // TODO: the first two could also be helpful for sampling
 static inline uint32_t conv_uV_to_dac_raw(uint32_t voltage_uV);
 
-//static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
-//static uint32_t get_output_inv_efficiency_n4(uint32_t current);
+static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
+static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
+
+#ifdef __GNUC__
+static uint8_t get_left_zero_count(const uint32_t value)
+{
+	/* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
+	uint32_t _value = value;
+	uint8_t	count = 32;
+	for (; _value > 0; _value >>= 1) count--;
+	return count;
+}
+
+static uint32_t max_value(uint32_t value1, uint32_t value2)
+{
+	if (value1 > value2) return value1;
+	else return value2;
+}
+
+static uint32_t min_value(uint32_t value1, uint32_t value2)
+{
+	if (value1 < value2) return value1;
+	else return value2;
+}
+#else
+/* use from asm-file */
+extern inline uint8_t get_left_zero_count(uint32_t value);
+extern inline uint32_t max_value(uint32_t value1, uint32_t value2);
+extern inline uint32_t min_value(uint32_t value1, uint32_t value2);
+#endif
+
+static uint64_t udiv(const uint64_t value1, const uint32_t value2)
+{
+	const uint8_t lzc2 = get_left_zero_count(value2) + 32u;
+	uint64_t v2_sub = ((uint64_t)value2) << lzc2;
+	uint64_t v2_add = ((uint64_t)1u) << lzc2;
+	uint64_t v1_rem = value1;
+	uint64_t v3 = 0u;
+	//while (min_value(v2_sub, v1_rem))
+	while (v2_sub)
+	{
+		if (v1_rem >= v2_sub)
+		{
+			v1_rem -= v2_sub;
+			v3 += v2_add;
+		}
+		v2_sub >>= 1u;
+		v2_add >>= 1u;
+	}
+	return v3;
+}
+
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
@@ -236,7 +286,8 @@ void vsource_update_capacitor(void)
 	const uint32_t V_store_uV = vss.V_store_uV_n32 >> 32u;
 	const uint64_t P_inp_fW_n4 = vss.P_inp_fW_n8 >> 4u;
 	if (P_inp_fW_n4 > vss.P_out_fW_n4) {
-		const uint64_t I_cStor_nA_n4 = (P_inp_fW_n4 - vss.P_out_fW_n4)/V_store_uV;
+		const uint64_t I_cStor_nA_n4 = (P_inp_fW_n4 - vss.P_out_fW_n4) / V_store_uV;
+		//const uint64_t I_cStor_nA_n4 = udiv((P_inp_fW_n4 - vss.P_out_fW_n4), V_store_uV);
 		vss.V_store_uV_n32 += (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
 
 		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
@@ -245,7 +296,7 @@ void vsource_update_capacitor(void)
 			vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_max_uV) << 32u;
 		}
 	} else {
-		const uint64_t I_cStor_nA_n4 = (vss.P_out_fW_n4 - P_inp_fW_n4)/V_store_uV;
+		const uint64_t I_cStor_nA_n4 = (vss.P_out_fW_n4 - P_inp_fW_n4) / V_store_uV;
 		vss.V_store_uV_n32 -= (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
 		// check for underflow and possible div0
 		if ((V_store_uV < (vss.V_store_uV_n32 >> 32u)) || (vss.V_store_uV_n32 <= 0xFFFFFFFF))

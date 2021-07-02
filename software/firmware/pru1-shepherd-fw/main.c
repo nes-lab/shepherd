@@ -240,7 +240,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	/*
 	* This holds the number of 'compensation' periods, where the sampling
 	* period is increased by 1 in order to compensate for the remainder of the
-	* integer division used to calculate the sampling period.
+	* integer udiv used to calculate the sampling period.
 	*/
 	uint32_t compensation_steps = sync_repl.compensation_steps;
 	/*
