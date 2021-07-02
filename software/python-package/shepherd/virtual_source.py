@@ -59,8 +59,8 @@ class VirtualSource(object):
 
         self.vsc["interval_check_thresholds_ns"] = values[9]  # some BQs check every 65 ms if output should be disconnected
 
-        self.vsc["V_pwr_good_low_threshold_uV"] = values[10]  # range where target is informed by output-pin
-        self.vsc["V_pwr_good_high_threshold_uV"] = values[11]
+        self.vsc["V_pwr_good_disable_threshold_uV"] = values[10]  # range where target is informed by output-pin
+        self.vsc["V_pwr_good_enable_threshold_uV"] = values[11]
 
         self.vsc["dV_stor_en_thrs_uV"] = values[12]
 
@@ -81,11 +81,20 @@ class VirtualSource(object):
         self.vsc["interval_check_thrs_sample"] = self.vsc["interval_check_thresholds_ns"] / SAMPLE_INTERVAL_NS
         self.vsc["V_store_uV"] = self.vsc["V_storage_init_uV"]
         # buck internal state
-        self.vsc["has_buck"] = True  # todo: derive from config
-        self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
-        self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_uV"])
+        self.vsc["has_buck"] = int(self.vsc["converter_mode"]) & 0b10
+        self.vsc["V_out_dac_uV"] = self.vsc["V_output_uV"]
+        self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_dac_uV"])
+        self.vsc["power_good"] = True
 
     def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
+        if input_voltage_uV < 0:
+            input_voltage_uV = 0
+        elif input_voltage_uV > 5e6:
+            input_voltage_uV = 5e6  # 5 V
+        if input_current_nA < 0:
+            input_current_nA = 0
+        elif input_current_nA > 50e6:
+            input_current_nA = 50e6  # 50 mA
 
         V_inp_uV = 0
         if input_voltage_uV >= self.vsc["V_inp_boost_threshold_uV"]:
@@ -97,7 +106,11 @@ class VirtualSource(object):
         self.vsc["P_inp_fW"] = V_inp_uV * input_current_nA * eta_inp
         return round(self.vsc["P_inp_fW"])  # return NOT original, added for easier testing
 
-    def calc_out_power(self, current_adc_raw) -> int:
+    def calc_out_power(self, current_adc_raw: int) -> int:
+        if current_adc_raw < 0:
+            current_adc_raw = 0
+        elif current_adc_raw >= (2 ** 18):
+            current_adc_raw = (2 ** 18) - 1
 
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
         if self.vsc["has_buck"]:
@@ -106,7 +119,7 @@ class VirtualSource(object):
             eta_inv_out = 1023
 
         dP_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
-        self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_uV"] * eta_inv_out + dP_leak_fW
+        self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_dac_uV"] * eta_inv_out + dP_leak_fW
         return round(self.vsc["P_out_fW"])  # return NOT original, added for easier testing
 
     def update_capacitor(self) -> int:
@@ -115,24 +128,27 @@ class VirtualSource(object):
         I_cStor_nA = P_sum_fW / self.vsc["V_store_uV"]
         dV_cStor_uV = I_cStor_nA * self.vsc["dt_us_per_C_nF"]
         self.vsc["V_store_uV"] = self.vsc["V_store_uV"] + dV_cStor_uV
+
+        if self.vsc["V_store_uV"] > self.vsc["V_storage_max_uV"]:
+            self.vsc["V_store_uV"] = self.vsc["V_storage_max_uV"]
+        elif self.vsc["V_store_uV"] < 1:
+            self.vsc["V_store_uV"] = 1
+
         return round(self.vsc["V_store_uV"])  # return NOT original, added for easier testing
 
     def update_boostbuck(self) -> int:
         global sample_count, is_outputting
 
-        if self.vsc["V_store_uV"] > self.vsc["V_storage_max_uV"]:
-            self.vsc["V_store_uV"] = self.vsc["V_storage_max_uV"]
-
         sample_count += 1
         if sample_count >= self.vsc["interval_check_thrs_sample"]:
             sample_count = 0
             if is_outputting:
-                if (self.vsc["V_store_uV"] < self.vsc["V_out_uV"]) or \
+                if (self.vsc["V_store_uV"] < self.vsc["V_output_uV"]) or \
                         (self.vsc["V_store_uV"] <= self.vsc["V_storage_disable_threshold_uV"]):
                     is_outputting = False
-                    self.vsc["V_out_uV"] = 0
+                    self.vsc["V_out_dac_uV"] = 0
             else:
-                if self.vsc["V_store_uV"] >= self.vsc["V_out_uV"]:
+                if self.vsc["V_store_uV"] >= self.vsc["V_output_uV"]:
                     is_outputting = True
                     self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_stor_low_uV"]
                     self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
@@ -144,6 +160,13 @@ class VirtualSource(object):
         if not self.vsc["has_buck"]:
             self.vsc["V_out_uV"] = self.vsc["V_store_uV"]
             self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_uV"])
+
+        if self.vsc["power_good"]:
+            if self.vsc["V_store_uV"] <= self.vsc["V_pwr_good_disable_threshold_uV"]:
+                self.vsc["power_good"] = False
+        else:
+            if self.vsc["V_store_uV"] >= self.vsc["V_pwr_good_disable_threshold_uV"]:
+                self.vsc["power_good"] = True
 
         return self.vsc["V_out_dac_raw"] if is_outputting else 0
 
@@ -185,3 +208,6 @@ class VirtualSource(object):
 
     def get_storage_Capacitor_uV(self, value):
         return self.vsc["V_store_uV"]
+
+    def get_power_good(self):
+        return self.vsc["power_good"]

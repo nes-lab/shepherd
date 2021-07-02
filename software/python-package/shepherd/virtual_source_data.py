@@ -108,8 +108,8 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["interval_check_thresholds_ms"] * 1e6))  # ns
 
-        vs_list.append(int(self.vss["V_pwr_good_low_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["V_pwr_good_high_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3))  # uV
 
         vs_list.append(int(self.vss["dV_store_en_mV"] * 1e3))  # uV
 
@@ -170,13 +170,13 @@ class VirtualSourceData(object):
         self._check_num("V_storage_max_mV", 4200, 10000)
         self._check_num("I_storage_leak_nA", 10, 4e9)
 
-        self._check_num("V_storage_enable_threshold_mV", 3000, 4e6)
-        self._check_num("V_storage_disable_threshold_mV", 2300, 4e6)
+        self._check_num("V_storage_enable_threshold_mV", 3000, 5000)
+        self._check_num("V_storage_disable_threshold_mV", 2300, 5000)
 
         self._check_num("interval_check_thresholds_ms", 65, 4e3)
 
-        self._check_num("V_pwr_good_low_threshold_mV", 2400, 4e6)
-        self._check_num("V_pwr_good_high_threshold_mV", 5000, 4e6)
+        self._check_num("V_pwr_good_disable_threshold_mV", 2400, 5000)
+        self._check_num("V_pwr_good_enable_threshold_mV", 3000, 5000)
 
         self._check_num("V_output_mV", 2300, 5000)
 

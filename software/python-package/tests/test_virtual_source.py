@@ -32,8 +32,8 @@ def py_vsource():
 def reference_vss():
     vss = dict()
     # keep in sync with "example_virtsource_settings.yml"
-    vss["C_storage_F"] = 1 * (10 ** -3)
-    vss["V_storage_V"] = 3.5
+    vss["C_storage_F"] = 47 * (10 ** -6)
+    vss["V_storage_V"] = 3.0
     vss["t_sample_s"] = 10 * (10 ** -6)
     vss["eta_in"] = 0.5
     vss["eta_out"] = 0.8

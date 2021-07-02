@@ -107,8 +107,8 @@ struct VirtSource_Config {
     uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
     uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
     uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
-    uint32_t V_pwr_good_low_threshold_uV; // range where target is informed by output-pin
-    uint32_t V_pwr_good_high_threshold_uV;
+    uint32_t V_pwr_good_disable_threshold_uV; // target is informed by pwr-good output-pin (hysteresis)
+    uint32_t V_pwr_good_enable_threshold_uV;
     uint32_t dV_stor_en_thrs_uV; // compensate C_out, for disable state when V_store < V_store_enable/disable_threshold_uV
     /* Buck Boost, ie. BQ25570) */
     uint32_t V_output_uV;

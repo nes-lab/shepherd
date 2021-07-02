@@ -44,7 +44,7 @@ struct VirtSource_State {
 	uint32_t interval_check_thrs_sample;
 	/* Buck converter */
 	bool_ft  has_buck;
-	uint32_t V_out_uV;
+	uint32_t V_out_dac_uV;
 	uint32_t V_out_dac_raw;
 };
 
@@ -69,8 +69,8 @@ void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_a
 	vsc_arg->V_storage_enable_threshold_uV = i32++;
 	vsc_arg->V_storage_disable_threshold_uV = i32++;
 	vsc_arg->interval_check_thresholds_ns = i32++;
-	vsc_arg->V_pwr_good_low_threshold_uV = i32++;
-	vsc_arg->V_pwr_good_high_threshold_uV = i32++;
+	vsc_arg->V_pwr_good_disable_threshold_uV = i32++;
+	vsc_arg->V_pwr_good_enable_threshold_uV = i32++;
 	vsc_arg->dV_stor_en_thrs_uV = i32++;
 
 	vsc_arg->V_output_uV = i32++;
@@ -110,7 +110,7 @@ void vsource_init(volatile struct VirtSource_Config *const vsc_arg, volatile str
 	/* Buck Boost */
 	vss.has_buck = true;  // TODO: derive from config
 
-	vss.V_out_uV = vs_cfg->V_output_uV;
+	vss.V_out_dac_uV = vs_cfg->V_output_uV;
 
 	vss.V_out_dac_raw = conv_uV_to_dac_raw(vs_cfg->V_output_uV);
 
@@ -128,7 +128,7 @@ void vsource_init(volatile struct VirtSource_Config *const vsc_arg, volatile str
 	 */
 	/*
 	const ufloat V_old_sq_uV = mul0(vs_cfg.V_storage_enable_threshold_uV, 0, vs_cfg.V_storage_enable_threshold_uV, 0);
-	const ufloat V_out_sq_uV = mul2(vss.V_out_uV, vss.V_out_uV);
+	const ufloat V_out_sq_uV = mul2(vss.V_out_dac_uV, vss.V_out_dac_uV);
 	const ufloat cap_ratio   = div0(vs_cfg.C_output_nF, 0, vs_cfg.C_storage_nF, 0);
 	const ufloat V_new_sq_uV = sub2(V_old_sq_uV, mul2(cap_ratio, V_out_sq_uV));
 	GPIO_ON(DEBUG_PIN1_MASK);
@@ -156,11 +156,12 @@ void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t inpu
 	uint32_t V_inp_uV_value = 0u;
 
 	/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
-	if (input_voltage_uV >= vs_cfg->V_inp_boost_threshold_uV)
+	if (input_voltage_uV >= vs_cfg->V_inp_boost_threshold_uV) {
 		V_inp_uV_value = input_voltage_uV;
+	}
+
 	/* limit input voltage when higher than voltage of storage cap, TODO: is this also in 65ms interval? */
-	if (V_inp_uV_value > (vss.V_store_uV_n32 >> 32))
-	{
+	if (V_inp_uV_value > (vss.V_store_uV_n32 >> 32)) {
 		V_inp_uV_value = vss.V_store_uV_n32;
 	}
 
@@ -184,7 +185,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	const uint32_t dP_leak_fW = vss.V_store_uV_n32 * vs_cfg->I_storage_leak_nA;
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
 
-	vss.P_out_fW_n8 = (((uint64_t)(eta_inv_out_n10 * vss.V_out_uV) * I_out_nA ) >> 2) + dP_leak_fW;
+	vss.P_out_fW_n8 = (((uint64_t)(eta_inv_out_n10 * vss.V_out_dac_uV) * I_out_nA ) >> 2) + dP_leak_fW;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
@@ -198,9 +199,19 @@ void vsource_update_capacitor(void)
 	if (vss.P_inp_fW_n8 > vss.P_out_fW_n8) {
 		const uint64_t I_cStor_nA_n8 = (vss.P_inp_fW_n8 - vss.P_out_fW_n8)/V_store_uV;
 		vss.V_store_uV_n32 += (vss.dt_us_per_C_nF_n24 * I_cStor_nA_n8); // = dV_cStor_uV
+
+		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
+		if ((vss.V_store_uV_n32 >> 32) > vs_cfg->V_storage_max_uV)
+		{
+			vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_max_uV)<<32;
+		}
 	} else {
 		const uint64_t I_cStor_nA_n8 = (vss.P_out_fW_n8 - vss.P_inp_fW_n8)/V_store_uV;
 		vss.V_store_uV_n32 -= (vss.dt_us_per_C_nF_n24 * I_cStor_nA_n8); // = dV_cStor_uV
+		if (V_store_uV < (vss.V_store_uV_n32 >> 32) | vss.V_store_uV_n32 <= 0xFFFFFFFF)
+		{
+			vss.V_store_uV_n32 = (uint64_t)1 << 32;
+		}
 	}
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
@@ -227,39 +238,52 @@ uint32_t vsource_update_boostbuck(void)
 		sample_count = 0;
 		if (is_outputting)
 		{
-			if ((V_store_uV < vss.V_out_uV) | (V_store_uV <= vs_cfg->V_storage_disable_threshold_uV))
+			if ((V_store_uV < vs_cfg->V_output_uV) | (V_store_uV <= vs_cfg->V_storage_disable_threshold_uV))
 			{
 				is_outputting = false;
-				vss.V_out_uV = 0u;
+				vss.V_out_dac_uV = 0u;
 			}
 		}
 		else
 		{
 			/* fast charge virtual output-cap */
-			if (V_store_uV >= vss.V_out_uV)
+			if (V_store_uV >= vs_cfg->V_output_uV)
 			{
 				is_outputting = true;
 				vss.V_store_uV_n32 -= ((uint64_t)vs_cfg->dV_stor_low_uV) << 32; // todo: what is that? why substract twice?
-				vss.V_out_uV = vs_cfg->V_output_uV;
+				vss.V_out_dac_uV = vs_cfg->V_output_uV;
 			}
 			else if (V_store_uV >= vs_cfg->V_storage_enable_threshold_uV)
 			{
 				is_outputting = true;
 				vss.V_store_uV_n32 -= ((uint64_t)vs_cfg->dV_stor_en_thrs_uV) << 32;
-				vss.V_out_uV = vs_cfg->V_output_uV;
+				vss.V_out_dac_uV = vs_cfg->V_output_uV;
 			}
 		}
 	}
 
 	/* emulate power-good-signal */
-	/* TODO: pin is on other PRU
-	ufloat V_pwr_good_low_thrs_uV; // range where target is informed by output-pin
-	ufloat V_pwr_good_high_thrs_uV;
-	*/
+	static bool_ft power_good = true;
+	if (power_good)
+	{
+		if ((vss.V_store_uV_n32 >> 32) <= vs_cfg->V_pwr_good_disable_threshold_uV)
+		{
+			power_good = false;
+		}
+	}
+	else
+	{
+		if ((vss.V_store_uV_n32 >> 32) >= vs_cfg->V_pwr_good_enable_threshold_uV)
+		{
+			power_good = false;
+		}
+	}
+	/* TODO: pin is on other PRU */
+
 	if (!vss.has_buck)
 	{
-		vss.V_out_uV = vss.V_store_uV_n32 >> 32;
-		vss.V_out_dac_raw = conv_uV_to_dac_raw(vss.V_out_uV);
+		vss.V_out_dac_uV = vss.V_store_uV_n32 >> 32;
+		vss.V_out_dac_raw = conv_uV_to_dac_raw(vss.V_out_dac_uV);
 	}
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* output proper voltage to dac */
