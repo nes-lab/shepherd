@@ -3,9 +3,6 @@ from shepherd import VirtualSourceData, CalibrationData
 import math
 
 # NOTE: DO NOT OPTIMIZE -> stay close to original code-base
-sample_count = 0xFFFFFFF0
-is_outputting = False
-
 
 class VirtualSource(object):
     """
@@ -80,11 +77,31 @@ class VirtualSource(object):
 
         self.vsc["interval_check_thrs_sample"] = self.vsc["interval_check_thresholds_ns"] / SAMPLE_INTERVAL_NS
         self.vsc["V_store_uV"] = self.vsc["V_storage_init_uV"]
+
         # buck internal state
         self.vsc["has_buck"] = int(self.vsc["converter_mode"]) & 0b10
         self.vsc["V_out_dac_uV"] = self.vsc["V_output_uV"]
         self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_dac_uV"])
         self.vsc["power_good"] = True
+        self.vsc["sample_count"] = 0xFFFFFFF0
+        self.vsc["is_outputting"] = True
+
+        # define hysteresis-thresholds
+        if self.vsc["has_buck"]:
+            if self.vsc["V_storage_enable_threshold_uV"] > self.vsc["V_output_uV"]:
+                self.vsc["output_enable_threshold_uV"] = self.vsc["V_storage_enable_threshold_uV"]
+                self.vsc["dV_output_enable_uV"] = self.vsc["dV_stor_en_thrs_uV"]
+            else:
+                self.vsc["output_enable_threshold_uV"] = self.vsc["V_output_uV"] + self.vsc["dV_stor_low_uV"]
+                self.vsc["dV_output_enable_uV"] = self.vsc["dV_stor_low_uV"]
+            if self.vsc["V_storage_disable_threshold_uV"] > self.vsc["V_output_uV"]:
+                self.vsc["output_disable_threshold_uV"] = self.vsc["V_storage_disable_threshold_uV"]
+            else:
+                self.vsc["output_disable_threshold_uV"] = self.vsc["V_output_uV"]
+        else:
+            self.vsc["output_enable_threshold_uV"] = self.vsc["V_storage_enable_threshold_uV"]
+            self.vsc["output_disable_threshold_uV"] = self.vsc["V_storage_disable_threshold_uV"]
+            self.vsc["dV_output_enable_uV"] = self.vsc["dV_stor_en_thrs_uV"]
 
     def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         if input_voltage_uV < 0:
@@ -109,14 +126,14 @@ class VirtualSource(object):
     def calc_out_power(self, current_adc_raw: int) -> int:
         if current_adc_raw < 0:
             current_adc_raw = 0
-        elif current_adc_raw >= (2 ** 18):
+        elif current_adc_raw >= (2 ** 18) - 1:
             current_adc_raw = (2 ** 18) - 1
 
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
         if self.vsc["has_buck"]:
             eta_inv_out = self.get_output_inv_efficiency(current_adc_raw)
         else:
-            eta_inv_out = 1023
+            eta_inv_out = 1
 
         dP_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
         self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_dac_uV"] * eta_inv_out + dP_leak_fW
@@ -137,38 +154,35 @@ class VirtualSource(object):
         return round(self.vsc["V_store_uV"])  # return NOT original, added for easier testing
 
     def update_boostbuck(self) -> int:
-        global sample_count, is_outputting
 
-        sample_count += 1
-        if sample_count >= self.vsc["interval_check_thrs_sample"]:
-            sample_count = 0
-            if is_outputting:
-                if (self.vsc["V_store_uV"] < self.vsc["V_output_uV"]) or \
-                        (self.vsc["V_store_uV"] <= self.vsc["V_storage_disable_threshold_uV"]):
-                    is_outputting = False
-                    self.vsc["V_out_dac_uV"] = 0
+        self.vsc["sample_count"] += 1
+        if self.vsc["sample_count"] >= self.vsc["interval_check_thrs_sample"]:
+            self.vsc["sample_count"] = 0
+            if self.vsc["is_outputting"]:
+                if self.vsc["V_store_uV"] < self.vsc["output_disable_threshold_uV"]:
+                    self.vsc["is_outputting"] = False
             else:
-                if self.vsc["V_store_uV"] >= self.vsc["V_output_uV"]:
-                    is_outputting = True
-                    self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_stor_low_uV"]
-                    self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
-                elif self.vsc["V_store_uV"] >= self.vsc["V_storage_disable_threshold_uV"]:
-                    is_outputting = True
-                    self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_stor_en_thrs_uV"]
-                    self.vsc["V_out_uV"] = self.vsc["V_output_uV"]
+                if self.vsc["V_store_uV"] >= self.vsc["output_enable_threshold_uV"]:
+                    self.vsc["is_outputting"] = True
+                    self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_output_enable_uV"]
+            # emulate power-good-signal
+            if self.vsc["power_good"]:
+                if self.vsc["V_store_uV"] <= self.vsc["V_pwr_good_disable_threshold_uV"]:
+                    self.vsc["power_good"] = False
+            else:
+                if self.vsc["V_store_uV"] >= self.vsc["V_pwr_good_enable_threshold_uV"]:
+                    self.vsc["power_good"] = True
 
-        if not self.vsc["has_buck"]:
-            self.vsc["V_out_uV"] = self.vsc["V_store_uV"]
-            self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_uV"])
-
-        if self.vsc["power_good"]:
-            if self.vsc["V_store_uV"] <= self.vsc["V_pwr_good_disable_threshold_uV"]:
-                self.vsc["power_good"] = False
+        if self.vsc["is_outputting"]:
+            if ((not self.vsc["has_buck"]) or (self.vsc["V_store_uV"] < self.vsc["V_out_dac_uV"])):
+                self.vsc["V_out_dac_uV"] = self.vsc["V_store_uV"]
+            else:
+                self.vsc["V_out_dac_uV"] = self.vsc["V_output_uV"]
+            self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_dac_uV"])
         else:
-            if self.vsc["V_store_uV"] >= self.vsc["V_pwr_good_disable_threshold_uV"]:
-                self.vsc["power_good"] = True
-
-        return self.vsc["V_out_dac_raw"] if is_outputting else 0
+            self.vsc["V_out_dac_uV"] = 0
+            self.vsc["V_out_dac_raw"] = 0
+        return self.vsc["V_out_dac_raw"] if self.vsc["is_outputting"] else 0
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:
         return self.cal.convert_raw_to_value("emulation", "adc_current", current_raw) * (10 ** 9)

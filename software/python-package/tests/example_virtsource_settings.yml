@@ -13,7 +13,7 @@ virtsource:
 
   # Boost Reg, ie. BQ25504
   V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-  C_storage_uF: 47
+  C_storage_uF: 100
   V_storage_init_mV: 3000 # allow a proper / fast startup
   V_storage_max_mV:  3600 # -> boost shuts off
   I_storage_leak_nA: 9
