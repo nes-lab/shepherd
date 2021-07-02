@@ -32,7 +32,7 @@ def py_vsource():
 def reference_vss():
     vss = dict()
     # keep in sync with "example_virtsource_settings.yml"
-    vss["C_storage_F"] = 47 * (10 ** -6)
+    vss["C_storage_F"] = 100 * (10 ** -6)
     vss["V_storage_V"] = 3.0
     vss["t_sample_s"] = 10 * (10 ** -6)
     vss["eta_in"] = 0.5
@@ -46,7 +46,7 @@ def reference_vss():
 @pytest.mark.hardware
 def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSource, reference_vss):
     # set desired end-voltage of storage-cap:
-    V_cap_V = 4.000
+    V_cap_V = 3.500
     dt_s = 0.100
     V_inp_V = 1.0
     dV_cap_V = V_cap_V - reference_vss["V_storage_V"]
@@ -64,9 +64,7 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     print(f" Py  PInp = {py_vsource.calc_inp_power(v_inp_uV, i_inp_nA)} fW")
 
     for iter in range(n_samples):
-        #debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)
-        #debug_shepherd.vsource_update_capacitor()
-        debug_shepherd.vsource_charge(v_inp_uV, i_inp_nA)  # combines above 2 FNs
+        debug_shepherd.vsource_charge(v_inp_uV, i_inp_nA)  # combines P_in, P_out, V_cap, state_update
         py_vsource.calc_inp_power(v_inp_uV, i_inp_nA)
         py_vsource.update_capacitor()
 
@@ -86,7 +84,7 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
 @pytest.mark.hardware
 def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSource, reference_vss):
     # set desired end-voltage of storage-cap - low enough to disable output
-    V_cap_V = 2.200
+    V_cap_V = 2.300
     dt_s = 1.00
 
     dV_cap_V = V_cap_V - reference_vss["V_storage_V"]
@@ -107,14 +105,11 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     print(f" Py  VOut = {py_vsource.update_boostbuck()} raw")
 
     for iter in range(n_samples):
-        # debug_shepherd.vsource_calc_out_power(I_out_adc_raw)
-        # debug_shepherd.vsource_update_capacitor()
-        # fb1 = debug_shepherd.vsource_update_buckboost()
-        fb1 = debug_shepherd.vsource_drain(I_out_adc_raw)  # combines the 3 FNs
+        v_cap, v_raw1 = debug_shepherd.vsource_drain(I_out_adc_raw)  # combines P_in, P_out, V_cap, state_update
         py_vsource.calc_out_power(I_out_adc_raw)
         py_vsource.update_capacitor()
-        fb2 = py_vsource.update_boostbuck()
-        if (fb1 < 1) or (fb2 < 1):
+        v_raw2 = py_vsource.update_boostbuck()
+        if (v_raw1 < 1) or (v_raw2 < 1):
             print(f"Stopped Drain-loop after {iter}/{n_samples} samples ({round(100*iter/n_samples)} %), because output was disabled")
             break
 

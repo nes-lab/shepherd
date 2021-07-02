@@ -8,7 +8,7 @@ virtsource:
   converter_mode: 3 # activate features: bit0=boost (currently not evaluated), bit1=buck
 
   # Direct Reg
-  C_output_uF: 10   # final (always last) stage to catch current spikes of target
+  C_output_uF: 1   # final (always last) stage to catch current spikes of target
   # TODO: improve documentation for this: this is for specific target, and it should be nF
 
   # Boost Reg, ie. BQ25504

@@ -145,7 +145,7 @@ struct VirtSource_Config {
 	uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
 	/* LUTs */
 	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-	uint32_t LUT_out_inv_efficiency_n10[LUT_SIZE]; // depending on output_current, inv_n10 means normalized to inverted 2^10 => 1/1024,
+	uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n10 means normalized to inverted 2^10 => 1/1024,
 } __attribute__((packed));
 
 // pseudo-assertion to test for correct struct-size, zero cost

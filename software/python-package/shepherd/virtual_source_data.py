@@ -120,9 +120,9 @@ class VirtualSourceData(object):
         # reduce resolution from n10 to n8 to fit in container
         vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_input_efficiency_n10"]])
 
-        # is now n10 -> resulting value for PRU is inverted, so 2^20 / value
+        # is now n4 -> resulting value for PRU is inverted, so 2^14 / value
         vs_list.append(
-            [int((2 ** 20) / value) if (value > 0) else (2 ** 20) for value in self.vss["LUT_output_efficiency_n10"]])
+            [int((2 ** (4+10)) / value) if (value > 0) else (2 ** (4+10)) for value in self.vss["LUT_output_efficiency_n10"]])
         return vs_list
 
     def add_enable_voltage_drop(self) -> NoReturn:

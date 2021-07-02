@@ -68,7 +68,7 @@ class VirtualSource(object):
         # LUTs
         # NOTE: config sets input_n10 but the list transmits n8 (to PRU)
         self.vsc["LUT_inp_efficiency_n8"] = values[15]  # depending on inp_voltage, inp_current, (cap voltage),
-        self.vsc["LUT_out_inv_efficiency_n10"] = values[16]  # depending on output_current
+        self.vsc["LUT_out_inv_efficiency_n4"] = values[16]  # depending on output_current
 
         # boost internal state
         self.vsc["P_inp_fW"] = 0.0
@@ -113,34 +113,33 @@ class VirtualSource(object):
         elif input_current_nA > 50e6:
             input_current_nA = 50e6  # 50 mA
 
-        V_inp_uV = 0
+        V_input_uV = 0
         if input_voltage_uV >= self.vsc["V_inp_boost_threshold_uV"]:
-            V_inp_uV = input_voltage_uV
-        if V_inp_uV > self.vsc["V_store_uV"]:
-            V_inp_uV = self.vsc["V_store_uV"]
+            V_input_uV = input_voltage_uV
+        if V_input_uV > self.vsc["V_store_uV"]:
+            V_input_uV = self.vsc["V_store_uV"]
 
-        eta_inp = self.get_input_efficiency(input_voltage_uV, input_current_nA)
-        self.vsc["P_inp_fW"] = V_inp_uV * input_current_nA * eta_inp
+        eta_inp = self.get_input_efficiency(V_input_uV, input_current_nA)
+        self.vsc["P_inp_fW"] = V_input_uV * input_current_nA * eta_inp
         return round(self.vsc["P_inp_fW"])  # return NOT original, added for easier testing
 
     def calc_out_power(self, current_adc_raw: int) -> int:
         if current_adc_raw < 0:
             current_adc_raw = 0
-        elif current_adc_raw >= (2 ** 18) - 1:
+        elif current_adc_raw >= (2 ** 18):
             current_adc_raw = (2 ** 18) - 1
 
+        dP_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
         if self.vsc["has_buck"]:
-            eta_inv_out = self.get_output_inv_efficiency(current_adc_raw)
+            eta_inv_out = self.get_output_inv_efficiency(I_out_nA)
         else:
             eta_inv_out = 1
 
-        dP_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
         self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_dac_uV"] * eta_inv_out + dP_leak_fW
         return round(self.vsc["P_out_fW"])  # return NOT original, added for easier testing
 
     def update_capacitor(self) -> int:
-
         P_sum_fW = self.vsc["P_inp_fW"] - self.vsc["P_out_fW"]
         I_cStor_nA = P_sum_fW / self.vsc["V_store_uV"]
         dV_cStor_uV = I_cStor_nA * self.vsc["dt_us_per_C_nF"]
@@ -199,11 +198,11 @@ class VirtualSource(object):
             pos_c = self.vsc["LUT_size"] - 1
         return self.vsc["LUT_inp_efficiency_n8"][pos_v * self.vsc["LUT_size"] + pos_c] / (2 ** 8)
 
-    def get_output_inv_efficiency(self, current) -> float:
-        pos_c = int(round(math.log2(current))) if current > 0 else 0  # TODO: round is wrong
+    def get_output_inv_efficiency(self, current_nA) -> float:
+        pos_c = int(round(math.log2(current_nA))) if current_nA > 0 else 0  # TODO: round is wrong
         if pos_c >= self.vsc["LUT_size"]:
             pos_c = self.vsc["LUT_size"] - 1
-        return self.vsc["LUT_out_inv_efficiency_n10"][pos_c] / (2 ** 10)
+        return self.vsc["LUT_out_inv_efficiency_n4"][pos_c] / (2 ** 4)
 
     def set_input_power_fW(self, value):
         self.vsc["P_inp_fW"] = value
