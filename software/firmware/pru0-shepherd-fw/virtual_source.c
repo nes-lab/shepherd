@@ -64,23 +64,47 @@ extern inline uint32_t min_value(uint32_t value1, uint32_t value2);
 
 static uint64_t udiv(const uint64_t value1, const uint32_t value2)
 {
-	const uint8_t lzc2 = get_left_zero_count(value2) + 32u;
+	const uint8_t lzc2 = get_left_zero_count(value2) + 31u;
 	uint64_t v2_sub = ((uint64_t)value2) << lzc2;
-	uint64_t v2_add = ((uint64_t)1u) << lzc2;
+	uint64_t v2_add = ((uint64_t)1ull) << lzc2;
 	uint64_t v1_rem = value1;
-	uint64_t v3 = 0u;
+	uint64_t v3 = 0ull;
 	//while (min_value(v2_sub, v1_rem))
-	while (v2_sub)
+	while (v2_sub >= 1)
 	{
 		if (v1_rem >= v2_sub)
 		{
-			v1_rem -= v2_sub;
+			v1_rem = v1_rem - v2_sub;
 			v3 += v2_add;
 		}
 		v2_sub >>= 1u;
 		v2_add >>= 1u;
 	}
 	return v3;
+}
+
+#define DIV_SHIFT 	(17u) // 2^17 as uV is ~ 131 mV
+#define DIV_LUT_SIZE 	(39u)
+
+/* LUT
+ * Generation:
+ * - entry[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10) / n
+ * - leave out first (div0)
+ * - largest Entry[38] is 5.12 V
+ */
+static const uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] =
+	{1023, 512, 341, 256, 205, 171, 146, 128,
+	  114, 102,  93,  85,  79,  73,  68,  64,
+	   60,  57,  54,  51,  49,  47,  45,  43,
+	   41,  39,  38,  37,  35,  34,  33,  32,
+	   31,  30,  29,  28,  28,  27,  26};
+
+static inline uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
+{
+	uint8_t lut_pos = (voltage_uV >> DIV_SHIFT) - 1u;
+	if (lut_pos >= DIV_LUT_SIZE)
+		lut_pos = DIV_LUT_SIZE - 1u;
+	return ((power_fW_n4 >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u;
 }
 
 
@@ -265,15 +289,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
 	const uint64_t dP_leak_fW_n4 = (vss.V_store_uV_n32 >> 28u) * vs_cfg->I_storage_leak_nA;
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-	uint32_t eta_inv_out_n4 = 1u << 4u;
-	// TODO: n10 results in max 20 bit number, eta_min=1/1024, eta_inv_max = 1024/eta_min
-	// TODO: leaves room for 44 bit power (18mW) -> Not enough, we need 50mA/5V=250mW, better 1 W
-	// TODO: this implies eta_inv_out_n4, but this has still to be shifted
-	if (vss.has_buck)
-	{
-		eta_inv_out_n4 = get_output_inv_efficiency_n4(I_out_nA); // TODO: wrong input, should be nA
-	}
-
+	const uint32_t eta_inv_out_n4 = get_output_inv_efficiency_n4(I_out_nA) ? (vss.has_buck) : 1u << 4u;
 	vss.P_out_fW_n4 = ((uint64_t)(eta_inv_out_n4 * vss.V_out_dac_uV) * I_out_nA ) + dP_leak_fW_n4;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
@@ -286,22 +302,27 @@ void vsource_update_capacitor(void)
 	const uint32_t V_store_uV = vss.V_store_uV_n32 >> 32u;
 	const uint64_t P_inp_fW_n4 = vss.P_inp_fW_n8 >> 4u;
 	if (P_inp_fW_n4 > vss.P_out_fW_n4) {
-		const uint64_t I_cStor_nA_n4 = (P_inp_fW_n4 - vss.P_out_fW_n4) / V_store_uV;
-		//const uint64_t I_cStor_nA_n4 = udiv((P_inp_fW_n4 - vss.P_out_fW_n4), V_store_uV);
-		vss.V_store_uV_n32 += (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
+		//const uint64_t I_cStor_nA_n4 = (P_inp_fW_n4 - vss.P_out_fW_n4) / V_store_uV;
+		//const uint64_t I_cStor_nA_n4 = div_uV_n4((P_inp_fW_n4 - vss.P_out_fW_n4), V_store_uV);
+		//vss.V_store_uV_n32 += (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
+
+		uint8_ft lut_pos = (V_store_uV >> DIV_SHIFT) - 1u;
+		if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
+		vss.V_store_uV_n32 +=  vss.dt_us_per_C_nF_n28 * ((((P_inp_fW_n4 - vss.P_out_fW_n4) >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u);
 
 		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
-		if ((vss.V_store_uV_n32 >> 32u) > vs_cfg->V_storage_max_uV)
+		if ((uint32_t)(vss.V_store_uV_n32 >> 32u) > vs_cfg->V_storage_max_uV)
 		{
 			vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_max_uV) << 32u;
 		}
 	} else {
-		const uint64_t I_cStor_nA_n4 = (vss.P_out_fW_n4 - P_inp_fW_n4) / V_store_uV;
+		//const uint64_t I_cStor_nA_n4 = (vss.P_out_fW_n4 - P_inp_fW_n4) / V_store_uV;
+		const uint64_t I_cStor_nA_n4 = div_uV_n4((vss.P_out_fW_n4 - P_inp_fW_n4), V_store_uV);
 		vss.V_store_uV_n32 -= (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
 		// check for underflow and possible div0
-		if ((V_store_uV < (vss.V_store_uV_n32 >> 32u)) || (vss.V_store_uV_n32 <= 0xFFFFFFFF))
+		if ((V_store_uV < (vss.V_store_uV_n32 >> 32u)) || (vss.V_store_uV_n32 <= 0xFFFFFFFFu))
 		{
-			vss.V_store_uV_n32 = ((uint64_t)1) << 32u;
+			vss.V_store_uV_n32 = ((uint64_t)1u) << 32u;
 		}
 	}
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
