@@ -39,7 +39,7 @@ virtsource:
   # TODO: LUT could be accessed by highest bit-position of "1" in depending index/input. 12 bit should suffice for 8192 int
   V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good output-pin (hysteresis)
   V_pwr_good_disable_threshold_mV: 2400
-  immediate_pwr_good_signal: 1  # 1: emulate schmitt-trigger, 0: stay in interval for checking thresholds
+  immediate_pwr_good_signal: 0  # 1: emulate schmitt-trigger, 0: stay in interval for checking thresholds
 
 
   # Buck Boost, ie. BQ25570

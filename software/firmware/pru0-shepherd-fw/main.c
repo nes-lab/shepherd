@@ -124,6 +124,41 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	return next_buffer_idx;
 }
 
+uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
+{
+	const uint64_t f2 = factor + ((uint64_t)(factor) << 32);
+	const uint64_t f3 = factor - 10;
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	uint64_t result = 0;
+	if (mode == 1)
+	{
+		const uint32_t r32 = factor * factor;
+		result = r32;
+	}									// ~ 28 ns, limits 0..65535
+	else if (mode == 2)	result = factor * factor; 			// ~ 34 ns, limits 0..65535
+	else if (mode == 3)	result = (uint64_t)factor * factor; 		// ~ 42 ns, limits 0..65535 -> wrong behaviour!!!
+	else if (mode == 4)	result = factor * (uint64_t)factor; 		// ~ 48 ns, limits 0..(2^32-1) -> works fine?
+	else if (mode == 5)	result = (uint64_t)factor * (uint64_t)factor; 	// ~ 54 ns, limits 0..(2^32-1)
+	else if (mode == 5)	result = ((uint64_t)factor)*((uint64_t)factor); // ~ 54 ns, limits 0..(2^32-1)
+	else if (mode == 11)	result = factor * f2;				// ~ 3000 - 4800 - 6400 ns, limits 0..(2^32-1) -> time depends on size (4, 16, 32 bit)
+	else if (mode == 12)	result = f2 * factor;				// same as above
+	else if (mode == 13)	result = f2*f2;					// same as above
+	else if (mode == 14)	result = mul64(f2,f2);				//
+	else if (mode == 21)	result = factor + f2;				// ~ 84 ns, limits 0..(2^31-1) or (2^63-1)
+	else if (mode == 22)	result = f2 + factor;				// ~ 90 ns, limits 0..(2^31-1) or (2^63-1)
+	else if (mode == 23)	result = f2 + f3;				// ~ 92 ns, limits 0..(2^31-1) or (2^63-1)
+	else if (mode == 24)	result = f2 + 1111ull;				// ~ 102 ns, overflow at 2^32
+	else if (mode == 25)	result = 1111ull + f2;				// ~ 110 ns, overflow at 2^32
+	else if (mode == 26)	result = f2 + (uint64_t)1111u;			//
+	else if (mode == 31)	result = factor - f3;				// ~ 100 ns, limits 0..(2^32-1)
+	else if (mode == 32)	result = f2 - factor;				// ~ 104 ns, limits 0..(2^64-1)
+	else if (mode == 33)	result = f2 - f3;				// same
+	else if (mode == 41)	result = ((uint64_t)(factor) << 32u);		// ~ 128 ns, limit (2^32-1)
+	else if (mode == 42)	result = (f2 >> 32u);				// ~ 128 ns, also works
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	return result;
+}
+
 
 static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr)
 {
@@ -135,6 +170,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 	if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
 	{
         	uint32_t res;
+        	uint64_t res64;
 		switch (msg_in.type) {
 		case MSG_DBG_ADC:
 			res = sample_dbg_adc(msg_in.value[0]);
@@ -192,6 +228,11 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			vsource_update_capacitor();
 			res = vsource_update_boostbuck(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_storage_Capacitor_uV(), res);
+			return 1u;
+
+		case MSG_DBG_FN_TESTS:
+			res64 = debug_math_fns(msg_in.value[0], msg_in.value[1]);
+			send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t)(res64>>32), (uint32_t)res64);
 			return 1u;
 
 		default:

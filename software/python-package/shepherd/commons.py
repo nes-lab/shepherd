@@ -28,6 +28,7 @@ MSG_DBG_VSOURCE_V_OUT = 0xAB
 MSG_DBG_VSOURCE_INIT = 0xAC
 MSG_DBG_VSOURCE_CHARGE = 0xAD
 MSG_DBG_VSOURCE_DRAIN = 0xAE
+MSG_DBG_FN_TESTS = 0xAF
 
 # TODO: currently handled and filtered in kernel, should be in _get_msg()
 MSG_DEP_ERR_INCMPLT = 0xE3

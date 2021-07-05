@@ -268,6 +268,14 @@ class ShepherdDebug(ShepherdIO):
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
 
+    def dbg_fn_test(self, factor: int, mode: int) -> int:
+        self._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
+        msg_type, value = self._get_msg()
+        if msg_type != commons.MSG_DBG_FN_TESTS:
+            raise ShepherdIOException(
+                    f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, got type { hex(msg_type) } val { value }")
+        return value[0]*(2**32) + value[1]  # P_out_pW
+
     def vsource_init(self, vs_settings, cal_settings):
         self.send_virtsource_settings(vs_settings)
         self.send_calibration_settings(cal_settings)

@@ -22,6 +22,8 @@ uint32_t get_storage_Capacitor_uV(void);
 
 void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
+uint64_t mul64(uint64_t factor1, uint64_t factor2);
+
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC
  * - (optional) current-value in buffer is used as a limiter (power to target shuts down if it is drawing to much)
