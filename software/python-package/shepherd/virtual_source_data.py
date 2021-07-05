@@ -110,6 +110,7 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["immediate_pwr_good_signal"]))  # bool
 
         vs_list.append(int(self.vss["dV_store_en_mV"] * 1e3))  # uV
 
@@ -177,6 +178,7 @@ class VirtualSourceData(object):
 
         self._check_num("V_pwr_good_disable_threshold_mV", 2400, 5000)
         self._check_num("V_pwr_good_enable_threshold_mV", 3000, 5000)
+        self._check_num("immediate_pwr_good_signal", 0, 1)
 
         self._check_num("V_output_mV", 2300, 5000)
 

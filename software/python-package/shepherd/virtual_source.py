@@ -58,17 +58,18 @@ class VirtualSource(object):
 
         self.vsc["V_pwr_good_disable_threshold_uV"] = values[10]  # range where target is informed by output-pin
         self.vsc["V_pwr_good_enable_threshold_uV"] = values[11]
+        self.vsc["immediate_pwr_good_signal"] = values[12]
 
-        self.vsc["dV_stor_en_thrs_uV"] = values[12]
+        self.vsc["dV_stor_en_thrs_uV"] = values[13]
 
         # Buck Boost, ie. BQ25570)
-        self.vsc["V_output_uV"] = values[13]
-        self.vsc["dV_stor_low_uV"] = values[14]
+        self.vsc["V_output_uV"] = values[14]
+        self.vsc["dV_stor_low_uV"] = values[15]
 
         # LUTs
         # NOTE: config sets input_n10 but the list transmits n8 (to PRU)
-        self.vsc["LUT_inp_efficiency_n8"] = values[15]  # depending on inp_voltage, inp_current, (cap voltage),
-        self.vsc["LUT_out_inv_efficiency_n4"] = values[16]  # depending on output_current
+        self.vsc["LUT_inp_efficiency_n8"] = values[16]  # depending on inp_voltage, inp_current, (cap voltage),
+        self.vsc["LUT_out_inv_efficiency_n4"] = values[17]  # depending on output_current
 
         # boost internal state
         self.vsc["P_inp_fW"] = 0.0
@@ -155,7 +156,9 @@ class VirtualSource(object):
     def update_boostbuck(self) -> int:
 
         self.vsc["sample_count"] += 1
-        if self.vsc["sample_count"] >= self.vsc["interval_check_thrs_sample"]:
+        check_thresholds = self.vsc["sample_count"] >= self.vsc["interval_check_thrs_sample"]
+
+        if check_thresholds:
             self.vsc["sample_count"] = 0
             if self.vsc["is_outputting"]:
                 if self.vsc["V_store_uV"] < self.vsc["output_disable_threshold_uV"]:
@@ -164,6 +167,8 @@ class VirtualSource(object):
                 if self.vsc["V_store_uV"] >= self.vsc["output_enable_threshold_uV"]:
                     self.vsc["is_outputting"] = True
                     self.vsc["V_store_uV"] = self.vsc["V_store_uV"] - self.vsc["dV_output_enable_uV"]
+
+        if check_thresholds or self.vsc["immediate_pwr_good_signal"]:
             # emulate power-good-signal
             if self.vsc["power_good"]:
                 if self.vsc["V_store_uV"] <= self.vsc["V_pwr_good_disable_threshold_uV"]:

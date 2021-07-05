@@ -149,6 +149,7 @@ void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_a
 	vsc_arg->interval_check_thresholds_ns = i32++;
 	vsc_arg->V_pwr_good_disable_threshold_uV = i32++;
 	vsc_arg->V_pwr_good_enable_threshold_uV = i32++;
+	vsc_arg->immediate_pwr_good_signal = i32++;
 	vsc_arg->dV_stor_en_thrs_uV = i32++;
 
 	vsc_arg->V_output_uV = i32++;
@@ -351,27 +352,24 @@ uint32_t vsource_update_boostbuck(void)
 	static uint32_t sample_count = 0xFFFFFFF0;
 	static bool_ft is_outputting = true;
 	static bool_ft power_good = true;
+	const bool_ft check_thresholds = (++sample_count >= vss.interval_check_thrs_sample);
 
-	if (++sample_count >= vss.interval_check_thrs_sample)
-	{
+	if (check_thresholds) {
 		sample_count = 0;
-		if (is_outputting)
-		{
-			if (vss.V_store_uV_n32 < vss.output_disable_threshold_uV_n32)
-			{
+		if (is_outputting) {
+			if (vss.V_store_uV_n32 < vss.output_disable_threshold_uV_n32) {
 				is_outputting = false;
 			}
-		}
-		else
-		{
-			if (vss.V_store_uV_n32 >= vss.output_enable_threshold_uV_n32)
-			{
+		} else {
+			if (vss.V_store_uV_n32 >= vss.output_enable_threshold_uV_n32) {
 				is_outputting = true;
 				/* fast charge external virtual output-cap */
 				vss.V_store_uV_n32 -= vss.dV_output_enable_uV_n32;
 			}
 		}
+	}
 
+	if (check_thresholds || vs_cfg->immediate_pwr_good_signal) {
 		/* emulate power-good-signal */
 		if (power_good)
 		{
@@ -404,7 +402,7 @@ uint32_t vsource_update_boostbuck(void)
 	}
 	else
 	{
-		vss.V_out_dac_uV = 2u;
+		vss.V_out_dac_uV = 2u; /* needs to be higher or equal min(V_store_uV) to avoid jitter on low voltages */
 		vss.V_out_dac_raw = 0u;
 	}
 
