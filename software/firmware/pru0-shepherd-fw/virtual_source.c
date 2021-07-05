@@ -281,7 +281,7 @@ void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t inpu
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
-void vsource_calc_out_power(const uint32_t current_adc_raw)
+void vsource_calc_out_power2(const uint32_t current_adc_raw)
 {
 	// info input: current is max 50 mA => 26 bit
 	// info output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
@@ -293,6 +293,20 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	vss.P_out_fW_n4 = ((uint64_t)(eta_inv_out_n4 * vss.V_out_dac_uV) * I_out_nA ) + dP_leak_fW_n4;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
+
+void vsource_calc_out_power(const uint32_t current_adc_raw)
+{
+	// info input: current is max 50 mA => 26 bit
+	// info output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	/* BUCK, Calculate current flowing out of the storage capacitor*/
+	const uint32_t dP_leak_fW_n4 = (vss.V_store_uV_n32 >> 28u) * vs_cfg->I_storage_leak_nA;
+	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
+	const uint32_t eta_inv_out_n4 = get_output_inv_efficiency_n4(I_out_nA) ? (vss.has_buck) : 1u << 4u;
+	vss.P_out_fW_n4 = ((uint64_t)(eta_inv_out_n4 * vss.V_out_dac_uV) * I_out_nA );
+	vss.P_out_fW_n4 += dP_leak_fW_n4;
+	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+} // TODO: test u32 * u32, u64 * u32, u32 * u64, u64 * u64
 
 void vsource_update_capacitor(void)
 {
@@ -378,7 +392,7 @@ uint32_t vsource_update_boostbuck(void)
 
 	if (is_outputting)
 	{
-		if (!vss.has_buck || ((vss.V_store_uV_n32 >> 32u) < vss.V_out_dac_uV))
+		if (!vss.has_buck || ((vss.V_store_uV_n32 >> 32u) <= vss.V_out_dac_uV))
 		{
 			vss.V_out_dac_uV = vss.V_store_uV_n32 >> 32u;
 		}
@@ -390,7 +404,7 @@ uint32_t vsource_update_boostbuck(void)
 	}
 	else
 	{
-		vss.V_out_dac_uV = 0u;
+		vss.V_out_dac_uV = 2u;
 		vss.V_out_dac_raw = 0u;
 	}
 

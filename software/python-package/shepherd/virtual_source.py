@@ -173,13 +173,13 @@ class VirtualSource(object):
                     self.vsc["power_good"] = True
 
         if self.vsc["is_outputting"]:
-            if ((not self.vsc["has_buck"]) or (self.vsc["V_store_uV"] < self.vsc["V_out_dac_uV"])):
+            if ((not self.vsc["has_buck"]) or (self.vsc["V_store_uV"] <= self.vsc["V_out_dac_uV"])):
                 self.vsc["V_out_dac_uV"] = self.vsc["V_store_uV"]
             else:
                 self.vsc["V_out_dac_uV"] = self.vsc["V_output_uV"]
             self.vsc["V_out_dac_raw"] = self.conv_uV_to_dac_raw(self.vsc["V_out_dac_uV"])
         else:
-            self.vsc["V_out_dac_uV"] = 0
+            self.vsc["V_out_dac_uV"] = 2
             self.vsc["V_out_dac_raw"] = 0
         return self.vsc["V_out_dac_raw"] if self.vsc["is_outputting"] else 0
 
