@@ -104,7 +104,7 @@ static inline uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t volt
 	uint8_t lut_pos = (voltage_uV >> DIV_SHIFT);
 	if (lut_pos >= DIV_LUT_SIZE)
 		lut_pos = DIV_LUT_SIZE - 1u;
-	return ((power_fW_n4 >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u;
+	return mul64((power_fW_n4 >> 10u), LUT_div_uV_n27[lut_pos]) >> 17u;
 }
 
 inline uint64_t mul64(const uint64_t factor1, const uint64_t factor2)
@@ -307,10 +307,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	const uint64_t dP_leak_fW_n4 = (uint64_t)vs_cfg->I_storage_leak_nA * (uint64_t)V_store_uV_n4;
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
 	const uint32_t eta_inv_out_n4 = get_output_inv_efficiency_n4(I_out_nA) ? (vss.has_buck) : 1u << 4u;
-	//vss.P_out_fW_n4 = (((uint64_t)(eta_inv_out_n4 * (vss.V_out_dac_uV>>6u)) * (uint64_t)I_out_nA) << 6u) + dP_leak_fW_n4;
-	const uint32_t V_out_eta_p2 = eta_inv_out_n4 * (vss.V_out_dac_uV>>6u); // 14 + 23 bit = 37 bit
-	vss.P_out_fW_n4 = ((uint64_t)V_out_eta_p2 * (uint64_t)I_out_nA) << 6u;
-	vss.P_out_fW_n4 += dP_leak_fW_n4;
+	vss.P_out_fW_n4 = mul64(mul64(eta_inv_out_n4, vss.V_out_dac_uV), I_out_nA) + dP_leak_fW_n4;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
@@ -322,14 +319,8 @@ void vsource_update_capacitor(void)
 	const uint32_t V_store_uV = vss.V_store_uV_n32 >> 32u;
 	const uint64_t P_inp_fW_n4 = vss.P_inp_fW_n8 >> 4u;
 	if (P_inp_fW_n4 > vss.P_out_fW_n4) {
-		//const uint64_t I_cStor_nA_n4 = (P_inp_fW_n4 - vss.P_out_fW_n4) / V_store_uV;
-		//const uint64_t I_cStor_nA_n4 = div_uV_n4((P_inp_fW_n4 - vss.P_out_fW_n4), V_store_uV);
-		//vss.V_store_uV_n32 += (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
-
-		uint8_ft lut_pos = (V_store_uV >> DIV_SHIFT);
-		if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
-		//vss.V_store_uV_n32 +=  vss.dt_us_per_C_nF_n28 * ((((P_inp_fW_n4 - vss.P_out_fW_n4) >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u);
-		vss.V_store_uV_n32 +=  ((uint64_t)(vss.dt_us_per_C_nF_n28 * LUT_div_uV_n27[lut_pos]) * (uint64_t)((P_inp_fW_n4 - vss.P_out_fW_n4) >> 10u)) >> 17u;
+		const uint64_t I_cStor_nA_n4 = div_uV_n4(P_inp_fW_n4 - vss.P_out_fW_n4, V_store_uV);
+		vss.V_store_uV_n32 += mul64(vss.dt_us_per_C_nF_n28, I_cStor_nA_n4); // = dV_cStor_uV_n32
 
 		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
 		if ((uint32_t)(vss.V_store_uV_n32 >> 32u) > vs_cfg->V_storage_max_uV)
@@ -337,12 +328,8 @@ void vsource_update_capacitor(void)
 			vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_max_uV) << 32u;
 		}
 	} else {
-		//const uint64_t I_cStor_nA_n4 = (vss.P_out_fW_n4 - P_inp_fW_n4) / V_store_uV;
-		//const uint64_t I_cStor_nA_n4 = div_uV_n4((vss.P_out_fW_n4 - P_inp_fW_n4), V_store_uV);
-		//vss.V_store_uV_n32 -= (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
-		uint8_ft lut_pos = (V_store_uV >> DIV_SHIFT);
-		if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
-		vss.V_store_uV_n32 -=  ((uint64_t)(vss.dt_us_per_C_nF_n28 * LUT_div_uV_n27[lut_pos]) * (uint64_t)((vss.P_out_fW_n4 - P_inp_fW_n4) >> 10u)) >> 17u;
+		const uint64_t I_cStor_nA_n4 = div_uV_n4(vss.P_out_fW_n4 - P_inp_fW_n4, V_store_uV);
+		vss.V_store_uV_n32 -= mul64(vss.dt_us_per_C_nF_n28, I_cStor_nA_n4); // = dV_cStor_uV_n32
 
 		// check for underflow and possible div0
 		if ((V_store_uV < (vss.V_store_uV_n32 >> 32u)) || (vss.V_store_uV_n32 <= 0xFFFFFFFFu))
