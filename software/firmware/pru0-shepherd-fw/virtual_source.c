@@ -84,27 +84,40 @@ static uint64_t udiv(const uint64_t value1, const uint32_t value2)
 }
 
 #define DIV_SHIFT 	(17u) // 2^17 as uV is ~ 131 mV
-#define DIV_LUT_SIZE 	(39u)
+#define DIV_LUT_SIZE 	(40u)
 
 /* LUT
  * Generation:
- * - entry[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10) / n
- * - leave out first (div0)
+ * - entry[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10) / (n + 0.5)
+ * - limit first to 1023
  * - largest Entry[38] is 5.12 V
  */
 static const uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] =
-	{1023, 512, 341, 256, 205, 171, 146, 128,
-	  114, 102,  93,  85,  79,  73,  68,  64,
-	   60,  57,  54,  51,  49,  47,  45,  43,
-	   41,  39,  38,  37,  35,  34,  33,  32,
-	   31,  30,  29,  28,  28,  27,  26};
+	{1023, 683, 410, 293, 228, 186, 158, 137,
+	  120, 108,  98,  89,  82,  76,  71,  66,
+	   62,  59,  55,  53,  50,  48,  46,  44,
+	   42,  40,  39,  37,  36,  35,  34,  33,
+	   32,  31,  30,  29,  28,  27,  27,  26};
 
 static inline uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 {
-	uint8_t lut_pos = (voltage_uV >> DIV_SHIFT) - 1u;
+	uint8_t lut_pos = (voltage_uV >> DIV_SHIFT);
 	if (lut_pos >= DIV_LUT_SIZE)
 		lut_pos = DIV_LUT_SIZE - 1u;
 	return ((power_fW_n4 >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u;
+}
+
+inline uint64_t mul64(const uint64_t factor1, const uint64_t factor2)
+{
+	const uint32_t f1H = factor1 >> 32u;
+	const uint32_t f1L = (uint32_t)factor1;
+	const uint32_t f2H = factor2 >> 32u;
+	const uint32_t f2L = (uint32_t)factor2;
+	uint64_t product = (uint64_t)f1L * (uint64_t)f2L;
+	product += ((uint64_t)f1L * (uint64_t)f2H) << 32u;
+	product += ((uint64_t)f1H * (uint64_t)f2L) << 32u;
+	//product += ((uint64_t)f2H * (uint64_t)f2H) << 64u;
+	return product;
 }
 
 
@@ -175,7 +188,7 @@ void vsource_init(volatile struct VirtSource_Config *const vsc_arg, volatile str
 	vs_cfg = vsc_arg; // TODO: can be changed to pointer again, has same performance
 
 	/* Boost Reg */
-	vss.dt_us_per_C_nF_n28 = (dt_us_const << 28u) / vs_cfg->C_storage_nF;  // TODO: put that in python
+	vss.dt_us_per_C_nF_n28 = (dt_us_const << 28u) / vs_cfg->C_storage_nF;  // TODO: put that in python, dividend has ~ 31.32 bits
 
 	/* Power-flow in and out of system */
 	vss.P_inp_fW_n8 = 0u;
@@ -278,36 +291,28 @@ void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t inpu
 	}
 
 	const uint32_t eta_inp_n8 = get_input_efficiency_n8(V_input_uV, input_current_nA);
-	vss.P_inp_fW_n8 = (uint64_t)(eta_inp_n8 * V_input_uV) * input_current_nA;
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
-}
-
-void vsource_calc_out_power2(const uint32_t current_adc_raw)
-{
-	// info input: current is max 50 mA => 26 bit
-	// info output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
-	/* BUCK, Calculate current flowing out of the storage capacitor*/
-	const uint64_t dP_leak_fW_n4 = (vss.V_store_uV_n32 >> 28u) * vs_cfg->I_storage_leak_nA;
-	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-	const uint32_t eta_inv_out_n4 = get_output_inv_efficiency_n4(I_out_nA) ? (vss.has_buck) : 1u << 4u;
-	vss.P_out_fW_n4 = ((uint64_t)(eta_inv_out_n4 * vss.V_out_dac_uV) * I_out_nA ) + dP_leak_fW_n4;
+	vss.P_inp_fW_n8 = (uint64_t)(eta_inp_n8 * V_input_uV) * (uint64_t)input_current_nA;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
 void vsource_calc_out_power(const uint32_t current_adc_raw)
 {
-	// info input: current is max 50 mA => 26 bit
-	// info output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
+	// input: current is max 50 mA => 26 bit
+	// states: voltage is 23 bit,
+	// output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
+	// algo: had to
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
-	const uint32_t dP_leak_fW_n4 = (vss.V_store_uV_n32 >> 28u) * vs_cfg->I_storage_leak_nA;
+	const uint32_t V_store_uV_n4 = (vss.V_store_uV_n32 >> 28u);
+	const uint64_t dP_leak_fW_n4 = (uint64_t)vs_cfg->I_storage_leak_nA * (uint64_t)V_store_uV_n4;
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
 	const uint32_t eta_inv_out_n4 = get_output_inv_efficiency_n4(I_out_nA) ? (vss.has_buck) : 1u << 4u;
-	vss.P_out_fW_n4 = ((uint64_t)(eta_inv_out_n4 * vss.V_out_dac_uV) * I_out_nA );
+	//vss.P_out_fW_n4 = (((uint64_t)(eta_inv_out_n4 * (vss.V_out_dac_uV>>6u)) * (uint64_t)I_out_nA) << 6u) + dP_leak_fW_n4;
+	const uint32_t V_out_eta_p2 = eta_inv_out_n4 * (vss.V_out_dac_uV>>6u); // 14 + 23 bit = 37 bit
+	vss.P_out_fW_n4 = ((uint64_t)V_out_eta_p2 * (uint64_t)I_out_nA) << 6u;
 	vss.P_out_fW_n4 += dP_leak_fW_n4;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
-} // TODO: test u32 * u32, u64 * u32, u32 * u64, u64 * u64
+}
 
 void vsource_update_capacitor(void)
 {
@@ -321,9 +326,10 @@ void vsource_update_capacitor(void)
 		//const uint64_t I_cStor_nA_n4 = div_uV_n4((P_inp_fW_n4 - vss.P_out_fW_n4), V_store_uV);
 		//vss.V_store_uV_n32 += (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
 
-		uint8_ft lut_pos = (V_store_uV >> DIV_SHIFT) - 1u;
+		uint8_ft lut_pos = (V_store_uV >> DIV_SHIFT);
 		if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
-		vss.V_store_uV_n32 +=  vss.dt_us_per_C_nF_n28 * ((((P_inp_fW_n4 - vss.P_out_fW_n4) >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u);
+		//vss.V_store_uV_n32 +=  vss.dt_us_per_C_nF_n28 * ((((P_inp_fW_n4 - vss.P_out_fW_n4) >> 10u) * LUT_div_uV_n27[lut_pos]) >> 17u);
+		vss.V_store_uV_n32 +=  ((uint64_t)(vss.dt_us_per_C_nF_n28 * LUT_div_uV_n27[lut_pos]) * (uint64_t)((P_inp_fW_n4 - vss.P_out_fW_n4) >> 10u)) >> 17u;
 
 		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
 		if ((uint32_t)(vss.V_store_uV_n32 >> 32u) > vs_cfg->V_storage_max_uV)
@@ -332,8 +338,12 @@ void vsource_update_capacitor(void)
 		}
 	} else {
 		//const uint64_t I_cStor_nA_n4 = (vss.P_out_fW_n4 - P_inp_fW_n4) / V_store_uV;
-		const uint64_t I_cStor_nA_n4 = div_uV_n4((vss.P_out_fW_n4 - P_inp_fW_n4), V_store_uV);
-		vss.V_store_uV_n32 -= (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
+		//const uint64_t I_cStor_nA_n4 = div_uV_n4((vss.P_out_fW_n4 - P_inp_fW_n4), V_store_uV);
+		//vss.V_store_uV_n32 -= (vss.dt_us_per_C_nF_n28 * I_cStor_nA_n4); // = dV_cStor_uV_n32
+		uint8_ft lut_pos = (V_store_uV >> DIV_SHIFT);
+		if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
+		vss.V_store_uV_n32 -=  ((uint64_t)(vss.dt_us_per_C_nF_n28 * LUT_div_uV_n27[lut_pos]) * (uint64_t)((vss.P_out_fW_n4 - P_inp_fW_n4) >> 10u)) >> 17u;
+
 		// check for underflow and possible div0
 		if ((V_store_uV < (vss.V_store_uV_n32 >> 32u)) || (vss.V_store_uV_n32 <= 0xFFFFFFFFu))
 		{
@@ -418,13 +428,17 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 // (previous) TODO: unsafe conversion -> n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
 static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-	return ((uint32_t)(((uint64_t)current_raw * cal_cfg->adc_current_factor_nA_n8) >> 8u) - cal_cfg->adc_current_offset_nA);
+	const uint64_t I_nA_n8 = (uint64_t)current_raw * (uint64_t)cal_cfg->adc_current_factor_nA_n8;
+	const uint32_t I_nA = I_nA_n8 >> 8u;
+	if (I_nA > cal_cfg->adc_current_offset_nA)
+		return (I_nA - cal_cfg->adc_current_offset_nA);
+	else	return 0;
 }
 
 // safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
 static inline uint32_t conv_uV_to_dac_raw(const uint32_t voltage_uV)
 {
-	return (((uint64_t)(voltage_uV - cal_cfg->dac_voltage_offset_uV) * cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u);
+	return (((uint64_t)(voltage_uV - cal_cfg->dac_voltage_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u);
 }
 
 // TODO: global /nonstatic for tests
