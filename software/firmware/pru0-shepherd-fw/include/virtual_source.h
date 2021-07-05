@@ -9,7 +9,7 @@ void vsource_init(volatile struct VirtSource_Config *vsc_arg, volatile struct Ca
 void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void vsource_calc_out_power(uint32_t current_adc_raw);
 void vsource_update_capacitor(void);
-uint32_t vsource_update_boostbuck(void);
+uint32_t vsource_update_boostbuck(volatile struct SharedMem * shared_mem);
 
 void vsource_struct_init_testable(volatile struct VirtSource_Config *constvsc_arg);
 
@@ -20,6 +20,7 @@ uint64_t get_input_power_fW(void);
 uint64_t get_output_power_fW(void);
 uint32_t get_storage_Capacitor_uV(void);
 
+void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC

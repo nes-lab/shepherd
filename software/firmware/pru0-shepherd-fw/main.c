@@ -75,13 +75,6 @@ static bool_ft receive_message(volatile struct SharedMem *const shared_mem, stru
 	return 0;
 }
 
-static void set_batok_pin(volatile struct SharedMem *const shared_mem, bool_ft value)
-{
-	shared_mem->batok_pin_value = value;
-	shared_mem->batok_trigger_for_pru1 = true;
-}
-
-
 static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
 			  struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
 {
@@ -176,7 +169,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_OUT:
-			res = vsource_update_boostbuck();
+			res = vsource_update_boostbuck(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
 			return 1u;
 
@@ -187,15 +180,18 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_CHARGE:
 			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
+			vsource_calc_out_power(0);
 			vsource_update_capacitor();
-			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_storage_Capacitor_uV(), 0);
+			res = vsource_update_boostbuck(shared_mem);
+			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_storage_Capacitor_uV(), res);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_DRAIN:
+			vsource_calc_inp_power(0u, 0u);
 			vsource_calc_out_power(msg_in.value[0]);
 			vsource_update_capacitor();
-			res = vsource_update_boostbuck();
-			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, res, 0);
+			res = vsource_update_boostbuck(shared_mem);
+			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_storage_Capacitor_uV(), res);
 			return 1u;
 
 		default:
@@ -251,12 +247,12 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
 		{
 			/* Clear Timer Compare 0 and forward it to pru1 */
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 			shared_mem->cmp0_trigger_for_pru1 = 1u;
 			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
 			/* prepare a new buffer-cycle */
 			shared_mem->analog_sample_counter = 0u;
-			GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 		}
 
 		// Sample, swap buffer and receive messages
@@ -270,7 +266,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
 				GPIO_ON(DEBUG_PIN0_MASK);
-				sample(buffers_far + sample_buf_idx, shared_mem->analog_sample_counter, shepherd_mode);
+				sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
 				GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 			shared_mem->analog_sample_counter++;
@@ -286,7 +282,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				{
 					sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
 									    shared_mem->analog_sample_counter);
-					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
+					//GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
 			}
 			else

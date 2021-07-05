@@ -103,25 +103,25 @@ static inline void sample_harvesting_test(struct SampleBuffer *const buffer, con
 }
 
 
-static inline void sample_emulation(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static inline void sample_emulation(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
 {
 	// TODO: pru should trigger a new sample here, 2x CS-Toggle
 	//  - acquisition takes 335 ns, conversion ~ 665 ns -> 1 us
 	//  - to not waste time, getting both buffer-values takes 600 ns and P_in could be calculated upfront (1.4 us)
 
 	/* Get input current/voltage from shared memory buffer */
-	const uint32_t input_current_nA = buffer->values_current[sample_idx];
-	const uint32_t input_voltage_uV = buffer->values_voltage[sample_idx];
+	const uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
+	const uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
 	vsource_calc_inp_power(input_voltage_uV, input_current_nA);
 
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
-	//vsource_calc_out_power(current_adc_raw);
+	vsource_calc_out_power(current_adc_raw);
 
 	vsource_update_capacitor();
 
 	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
-	const uint32_t voltage_dac = vsource_update_boostbuck();
+	const uint32_t voltage_dac = vsource_update_boostbuck(shared_mem);
 
 	if (link_dac_channels)
 	{
@@ -134,8 +134,8 @@ static inline void sample_emulation(struct SampleBuffer *const buffer, const uin
 	}
 
 	/* write back regulator-state into shared memory buffer */
-	buffer->values_current[sample_idx] = current_adc_raw;
-	buffer->values_voltage[sample_idx] = voltage_dac;
+	buffer->values_current[shared_mem->analog_sample_counter] = current_adc_raw;
+	buffer->values_voltage[shared_mem->analog_sample_counter] = voltage_dac;
 }
 
 
@@ -150,22 +150,22 @@ static inline void sample_emulation_test(struct SampleBuffer *const buffer, cons
 }
 
 
-void sample(struct SampleBuffer *const current_buffer_far, const uint32_t sample_idx,
+void sample(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const current_buffer_far,
 	    const enum ShepherdMode mode)
-{
+{ // ->analog_sample_counter
 	switch (mode) // reordered to prioritize longer routines
 	{
 	case MODE_EMULATE: // ~ ## ns
-		sample_emulation(current_buffer_far, sample_idx);
+		sample_emulation(shared_mem, current_buffer_far);
 		break;
 	case MODE_EMULATE_TEST: // ~ ## ns, TODO: test timing for new revision
-		sample_emulation_test(current_buffer_far, sample_idx);
+		sample_emulation_test(current_buffer_far, shared_mem->analog_sample_counter);
 		break;
 	case MODE_HARVEST: // ~ ## ns
-		sample_harvesting(current_buffer_far, sample_idx);
+		sample_harvesting(current_buffer_far, shared_mem->analog_sample_counter);
 		break;
 	case MODE_HARVEST_TEST: // ~ ## ns
-		sample_harvesting_test(current_buffer_far, sample_idx);
+		sample_harvesting_test(current_buffer_far, shared_mem->analog_sample_counter);
 		break;
 	default:
 	    break;

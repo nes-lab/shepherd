@@ -344,7 +344,7 @@ void vsource_update_capacitor(void)
 }
 
 // TODO: not optimized
-uint32_t vsource_update_boostbuck(void)
+uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 {
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 
@@ -385,7 +385,7 @@ uint32_t vsource_update_boostbuck(void)
 				power_good = true;
 			}
 		}
-		/* TODO: pin is on other PRU */
+		set_batok_pin(shared_mem, power_good);
 	}
 
 	if (is_outputting)
@@ -475,4 +475,10 @@ uint64_t get_output_power_fW(void)
 uint32_t get_storage_Capacitor_uV(void)
 {
 	return (uint32_t)(vss.V_store_uV_n32 >> 32u);
+}
+
+void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
+{
+	shared_mem->batok_pin_value = value;
+	shared_mem->batok_trigger_for_pru1 = true;
 }
