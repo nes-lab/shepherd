@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "commons.h"
 
-void vsource_init(volatile struct VirtSource_Config *vsc_arg, volatile struct Calibration_Config *cal_arg);
+void vsource_init(const volatile struct VirtSource_Config *vsc_arg, const volatile struct Calibration_Config *cal_arg);
 
 void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void vsource_calc_out_power(uint32_t current_adc_raw);
@@ -22,7 +22,8 @@ uint32_t get_storage_Capacitor_uV(void);
 
 void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
-uint64_t mul64(uint64_t factor1, uint64_t factor2);
+uint64_t mul64(uint64_t value1, uint64_t value2);
+uint64_t add64(uint64_t value1, uint64_t value2);
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC

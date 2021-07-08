@@ -262,7 +262,7 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 
 // harvest-init takes 	32'800 ns ATM
 // emulator-init takes
-void sample_init(volatile const struct SharedMem *const shared_mem)
+void sample_init(const volatile struct SharedMem *const shared_mem)
 {
 	/* Chip-Select signals are active low */
 	GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
