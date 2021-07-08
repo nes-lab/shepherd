@@ -56,8 +56,9 @@ class VirtualSource(object):
 
         self.vsc["interval_check_thresholds_ns"] = values[9]  # some BQs check every 65 ms if output should be disconnected
 
-        self.vsc["V_pwr_good_disable_threshold_uV"] = values[10]  # range where target is informed by output-pin
-        self.vsc["V_pwr_good_enable_threshold_uV"] = values[11]
+        self.vsc["V_pwr_good_enable_threshold_uV"] = values[11]  # range where target is informed by output-pin
+        self.vsc["V_pwr_good_disable_threshold_uV"] = values[10]
+
         self.vsc["immediate_pwr_good_signal"] = values[12]
 
         self.vsc["dV_stor_en_thrs_uV"] = values[13]
@@ -104,6 +105,9 @@ class VirtualSource(object):
             self.vsc["output_disable_threshold_uV"] = self.vsc["V_storage_disable_threshold_uV"]
             self.vsc["dV_output_enable_uV"] = self.vsc["dV_stor_en_thrs_uV"]
 
+        if self.vsc["dV_output_enable_uV"] > self.vsc["output_enable_threshold_uV"]:
+            self.vsc["output_enable_threshold_uV"] = self.vsc["dV_output_enable_uV"]
+
     def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         if input_voltage_uV < 0:
             input_voltage_uV = 0
@@ -130,14 +134,14 @@ class VirtualSource(object):
         elif current_adc_raw >= (2 ** 18):
             current_adc_raw = (2 ** 18) - 1
 
-        dP_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
+        P_leak_fW = self.vsc["V_store_uV"] * self.vsc["I_storage_leak_nA"]
         I_out_nA = self.conv_adc_raw_to_nA(current_adc_raw)
         if self.vsc["has_buck"]:
             eta_inv_out = self.get_output_inv_efficiency(I_out_nA)
         else:
             eta_inv_out = 1
 
-        self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_dac_uV"] * eta_inv_out + dP_leak_fW
+        self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_dac_uV"] * eta_inv_out + P_leak_fW
         return round(self.vsc["P_out_fW"])  # return NOT original, added for easier testing
 
     def update_capacitor(self) -> int:

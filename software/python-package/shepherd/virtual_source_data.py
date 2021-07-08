@@ -108,8 +108,8 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["interval_check_thresholds_ms"] * 1e6))  # ns
 
-        vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["immediate_pwr_good_signal"]))  # bool
 
         vs_list.append(int(self.vss["dV_store_en_mV"] * 1e3))  # uV
@@ -122,8 +122,7 @@ class VirtualSourceData(object):
         vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_input_efficiency_n10"]])
 
         # is now n4 -> resulting value for PRU is inverted, so 2^14 / value
-        vs_list.append(
-            [int((2 ** (4+10)) / value) if (value > 0) else (2 ** (4+10)) for value in self.vss["LUT_output_efficiency_n10"]])
+        vs_list.append([int((2**14) / value) if (value > 0) else int(2**4) for value in self.vss["LUT_output_efficiency_n10"]])
         return vs_list
 
     def add_enable_voltage_drop(self) -> NoReturn:
@@ -176,8 +175,8 @@ class VirtualSourceData(object):
 
         self._check_num("interval_check_thresholds_ms", 65, 4e3)
 
-        self._check_num("V_pwr_good_disable_threshold_mV", 2400, 5000)
         self._check_num("V_pwr_good_enable_threshold_mV", 3000, 5000)
+        self._check_num("V_pwr_good_disable_threshold_mV", 2400, 5000)
         self._check_num("immediate_pwr_good_signal", 0, 1)
 
         self._check_num("V_output_mV", 2300, 5000)

@@ -109,8 +109,8 @@ struct VirtSource_Config {
     uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
     uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
     uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
-    uint32_t V_pwr_good_disable_threshold_uV; // target is informed by pwr-good output-pin (hysteresis)
-    uint32_t V_pwr_good_enable_threshold_uV;
+    uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good output-pin (hysteresis)
+    uint32_t V_pwr_good_disable_threshold_uV;
     uint32_t immediate_pwr_good_signal; // bool, 1: emulate schmitt-trigger, 0: stay in interval for checking thresholds
     uint32_t dV_stor_en_thrs_uV; // compensate C_out, for disable state when V_store < V_store_enable/disable_threshold_uV
     /* Buck Boost, ie. BQ25570) */
@@ -118,7 +118,7 @@ struct VirtSource_Config {
     uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
     /* LUTs */
     uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current
+    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n10 means normalized to inverted 2^10 => 1/1024,
 } __attribute__((packed));
 
 
