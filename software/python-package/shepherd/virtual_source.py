@@ -30,10 +30,6 @@ class VirtualSource(object):
         vs_settings = VirtualSourceData(vs_settings)
         values = vs_settings.export_for_sysfs()
 
-        # CONSTs, TODO: bring to commons (datalog can probably benefit as well)
-        ADC_SAMPLES_PER_BUFFER = 10000
-        BUFFER_PERIOD_NS = 100000000
-        SAMPLE_INTERVAL_NS = (BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
         LUT_SIZE = 12
         self.vsc["LUT_size"] = LUT_SIZE
 
