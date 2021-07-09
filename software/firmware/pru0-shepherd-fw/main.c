@@ -124,9 +124,10 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	return next_buffer_idx;
 }
 
+extern uint32_t get_num_size_as_bits(uint32_t value);
 uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 {
-	const uint64_t f2 = factor + ((uint64_t)(factor) << 32);
+	const uint64_t f2 = (uint64_t)factor + ((uint64_t)(factor) << 32u);
 	const uint64_t f3 = factor - 10;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	uint64_t result = 0;
@@ -144,17 +145,25 @@ uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 	else if (mode == 12)	result = f2 * factor;				// same as above
 	else if (mode == 13)	result = f2*f2;					// same as above
 	else if (mode == 14)	result = mul64(f2,f2);				//
+	else if (mode == 15)	result = mul64(factor,f2);			//
+	else if (mode == 16)	result = mul64(f2,factor);			//
+	else if (mode == 17)	result = mul64((uint64_t)factor,f2);		//
+	else if (mode == 18)	result = mul64(f2,(uint64_t)factor);		//
 	else if (mode == 21)	result = factor + f2;				// ~ 84 ns, limits 0..(2^31-1) or (2^63-1)
 	else if (mode == 22)	result = f2 + factor;				// ~ 90 ns, limits 0..(2^31-1) or (2^63-1)
 	else if (mode == 23)	result = f2 + f3;				// ~ 92 ns, limits 0..(2^31-1) or (2^63-1)
 	else if (mode == 24)	result = f2 + 1111ull;				// ~ 102 ns, overflow at 2^32
 	else if (mode == 25)	result = 1111ull + f2;				// ~ 110 ns, overflow at 2^32
 	else if (mode == 26)	result = f2 + (uint64_t)1111u;			//
+	else if (mode == 27)	result = add64(f2, f3);				//
+	else if (mode == 28)	result = add64(factor, f3);			//
+	else if (mode == 29)	result = add64(f3, factor);			//
 	else if (mode == 31)	result = factor - f3;				// ~ 100 ns, limits 0..(2^32-1)
 	else if (mode == 32)	result = f2 - factor;				// ~ 104 ns, limits 0..(2^64-1)
 	else if (mode == 33)	result = f2 - f3;				// same
 	else if (mode == 41)	result = ((uint64_t)(factor) << 32u);		// ~ 128 ns, limit (2^32-1)
 	else if (mode == 42)	result = (f2 >> 32u);				// ~ 128 ns, also works
+	else if (mode == 51)	result = get_num_size_as_bits(factor);		//
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	return result;
 }
@@ -191,12 +200,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_P_INP:
 			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_input_power_fW()>>32) , (uint32_t)get_input_power_fW());
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_input_power_fW()>>32u) , (uint32_t)get_input_power_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_P_OUT:
 			vsource_calc_out_power(msg_in.value[0]);
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t)(get_output_power_fW()>>32), (uint32_t)get_output_power_fW());
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t)(get_output_power_fW()>>32u), (uint32_t)get_output_power_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_CAP:
@@ -216,7 +225,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_CHARGE:
 			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-			vsource_calc_out_power(0);
+			vsource_calc_out_power(0u);
 			vsource_update_capacitor();
 			res = vsource_update_boostbuck(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_storage_Capacitor_uV(), res);
@@ -232,7 +241,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_FN_TESTS:
 			res64 = debug_math_fns(msg_in.value[0], msg_in.value[1]);
-			send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t)(res64>>32), (uint32_t)res64);
+			send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t)(res64>>32u), (uint32_t)res64);
 			return 1u;
 
 		default:
