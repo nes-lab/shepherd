@@ -159,25 +159,25 @@ class VirtualSourceData(object):
         """ checks virtual-source-settings for present values, adds default values to missing ones, checks limits
         TODO: fill with values from real BQ-IC
         """
-        self._check_num("converter_mode", 100, 4e9)
+        self._check_num("converter_mode", 3, 4e9)
 
         self._check_num("C_output_uF", 1, 4e6)
 
         self._check_num("V_input_boost_threshold_mV", 130, 5000)
 
-        self._check_num("C_storage_uF", 1000, 4e6)
-        self._check_num("V_storage_init_mV", 3500, 10000)
+        self._check_num("C_storage_uF", 22, 4e6)
+        self._check_num("V_storage_init_mV", 3000, 10000)
         self._check_num("V_storage_max_mV", 4200, 10000)
         self._check_num("I_storage_leak_nA", 10, 4e9)
 
-        self._check_num("V_storage_enable_threshold_mV", 3000, 5000)
-        self._check_num("V_storage_disable_threshold_mV", 2300, 5000)
+        self._check_num("V_storage_enable_threshold_mV", 2400, 5000)
+        self._check_num("V_storage_disable_threshold_mV", 2000, 5000)
 
         self._check_num("interval_check_thresholds_ms", 65, 4e3)
 
-        self._check_num("V_pwr_good_enable_threshold_mV", 3000, 5000)
+        self._check_num("V_pwr_good_enable_threshold_mV", 2800, 5000)
         self._check_num("V_pwr_good_disable_threshold_mV", 2400, 5000)
-        self._check_num("immediate_pwr_good_signal", 0, 1)
+        self._check_num("immediate_pwr_good_signal", 1, 1)
 
         self._check_num("V_output_mV", 2300, 5000)
 
