@@ -45,7 +45,7 @@ class VirtualSource(object):
 
         # boost regulator
         self.vsc["V_inp_boost_threshold_uV"] = values[2]  # min input-voltage for the boost converter to work
-        self.vsc["C_storage_nF"] = values[3]
+        self.vsc["Constant_us_per_nF"] = values[3] / (2**28)
         self.vsc["V_storage_init_uV"] = values[4]  # allow a proper / fast startup
         self.vsc["V_storage_max_uV"] = values[5]  # -> boost shuts off
 
@@ -54,7 +54,7 @@ class VirtualSource(object):
         self.vsc["V_storage_enable_threshold_uV"] = values[7]  # -> target gets connected (hysteresis-combo with next value)
         self.vsc["V_storage_disable_threshold_uV"] = values[8]  # -> target gets disconnected
 
-        self.vsc["interval_check_thresholds_ns"] = values[9]  # some BQs check every 65 ms if output should be disconnected
+        self.vsc["interval_check_thresholds_n"] = values[9]  # some BQs check every 65 ms if output should be disconnected
 
         self.vsc["V_pwr_good_enable_threshold_uV"] = values[11]  # range where target is informed by output-pin
         self.vsc["V_pwr_good_disable_threshold_uV"] = values[10]
@@ -75,9 +75,7 @@ class VirtualSource(object):
         # boost internal state
         self.vsc["P_inp_fW"] = 0.0
         self.vsc["P_out_fW"] = 0.0
-        self.vsc["dt_us_per_C_nF"] = SAMPLE_INTERVAL_NS / (1000 * self.vsc["C_storage_nF"])
 
-        self.vsc["interval_check_thrs_sample"] = self.vsc["interval_check_thresholds_ns"] / SAMPLE_INTERVAL_NS
         self.vsc["V_store_uV"] = self.vsc["V_storage_init_uV"]
 
         # buck internal state
@@ -147,7 +145,7 @@ class VirtualSource(object):
     def update_capacitor(self) -> int:
         P_sum_fW = self.vsc["P_inp_fW"] - self.vsc["P_out_fW"]
         I_cStor_nA = P_sum_fW / self.vsc["V_store_uV"]
-        dV_cStor_uV = I_cStor_nA * self.vsc["dt_us_per_C_nF"]
+        dV_cStor_uV = I_cStor_nA * self.vsc["Constant_us_per_nF"]
         self.vsc["V_store_uV"] = self.vsc["V_store_uV"] + dV_cStor_uV
 
         if self.vsc["V_store_uV"] > self.vsc["V_storage_max_uV"]:
@@ -160,7 +158,7 @@ class VirtualSource(object):
     def update_boostbuck(self) -> int:
 
         self.vsc["sample_count"] += 1
-        check_thresholds = self.vsc["sample_count"] >= self.vsc["interval_check_thrs_sample"]
+        check_thresholds = self.vsc["sample_count"] >= self.vsc["interval_check_thresholds_n"]
 
         if check_thresholds:
             self.vsc["sample_count"] = 0
