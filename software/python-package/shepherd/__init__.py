@@ -143,18 +143,19 @@ class Emulator(ShepherdIO):
         self.set_power_state_recorder(False)
         self.set_power_state_emulator(True)
 
+        self.send_virtsource_settings(self._settings_virtsource)
         self.send_calibration_settings(self._cal_emulation)
+        sysfs_interface.set_stop(force=True)  # forces reset
+        sysfs_interface.wait_for_state("idle", 3)
 
         self.set_target_io_level_conv(self._set_target_io_lvl_conv)
         self.select_main_target_for_io(self._sel_target_for_io)
         self.select_main_target_for_power(self._sel_target_for_pwr)
         self.set_aux_target_voltage(self._cal_emulation, self._aux_target_voltage)
 
-        self.send_virtsource_settings(self._settings_virtsource)
-
         # Preload emulator with some data
         for idx, buffer in enumerate(self._initial_buffers):
-            time.sleep(0.1 * float(self.buffer_period_ns) / 1e9) # could be as low as ~ 10us
+            time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)  # could be as low as ~ 10us
             self.return_buffer(idx, buffer)
 
         return self
