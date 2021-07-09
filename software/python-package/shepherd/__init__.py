@@ -199,6 +199,13 @@ class ShepherdDebug(ShepherdIO):
         if use_io:
             self._io = TargetIO()
 
+    def __enter__(self):
+        super().__enter__()
+        self.set_power_state_recorder(True)
+        self.set_power_state_emulator(True)
+        sysfs_interface.set_stop(force=True)  # forces idle
+        sysfs_interface.wait_for_state("idle", 3)
+
     def adc_read(self, channel: str):
         """Reads value from specified ADC channel.
 
