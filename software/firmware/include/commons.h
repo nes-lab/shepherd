@@ -131,13 +131,13 @@ struct VirtSource_Config {
 	uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
 	/* Boost Reg, ie. BQ25504 */
 	uint32_t V_inp_boost_threshold_uV; // min input-voltage for the boost converter to work
-	uint32_t C_storage_nF;
+	uint32_t Constant_us_per_nF_n28;
 	uint32_t V_storage_init_uV; // allow a proper / fast startup
 	uint32_t V_storage_max_uV;  // -> boost shuts off
 	uint32_t I_storage_leak_nA; // TODO: ESR could also be considered
 	uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
 	uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
-	uint32_t interval_check_thresholds_ns; // some BQs check every 65 ms if output should be disconnected
+	uint32_t interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
 	uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good output-pin (hysteresis)
 	uint32_t V_pwr_good_disable_threshold_uV;
 	uint32_t immediate_pwr_good_signal; // bool, 1: emulate schmitt-trigger, 0: stay in interval for checking thresholds

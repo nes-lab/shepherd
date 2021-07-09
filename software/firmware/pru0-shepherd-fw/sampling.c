@@ -113,7 +113,7 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 	const uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
 	const uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
 	vsource_calc_inp_power(input_voltage_uV, input_current_nA);
-
+	//__delay_cycles(200 / 5); // fill up to 1000 ns since adc-trigger (if needed) -> current design takes 1400 ns
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
 	vsource_calc_out_power(current_adc_raw);
@@ -131,6 +131,7 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 	else
 	{
 		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_storage_Capacitor_raw()); // TODO: only for debug
 	}
 
 	/* write back regulator-state into shared memory buffer */

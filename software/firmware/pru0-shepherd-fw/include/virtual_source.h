@@ -19,11 +19,13 @@ void set_storage_Capacitor_uV(uint32_t C_uV);
 uint64_t get_input_power_fW(void);
 uint64_t get_output_power_fW(void);
 uint32_t get_storage_Capacitor_uV(void);
+uint32_t get_storage_Capacitor_raw(void);
 
 void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
 uint64_t mul64(uint64_t value1, uint64_t value2);
 uint64_t add64(uint64_t value1, uint64_t value2);
+uint64_t sub64(uint64_t value1, uint64_t value2);
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC

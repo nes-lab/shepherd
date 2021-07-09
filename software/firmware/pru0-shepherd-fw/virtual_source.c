@@ -79,7 +79,7 @@ static const uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] =
 	   42,  40,  39,  37,  36,  35,  34,  33,
 	   32,  31,  30,  29,  28,  27,  27,  26};
 
-static inline uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
+static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 {
 	uint8_t lut_pos = (voltage_uV >> DIV_SHIFT);
 	if (lut_pos >= DIV_LUT_SIZE)
@@ -103,9 +103,9 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
 	//const uint64_t product4 = ((uint64_t)f2H * (uint64_t)f2H); // << 64u
 	// check for possible overflow - return max
 	uint8_ft f1bits = get_num_size_as_bits(f1H);
-	if (f1bits == 0u) f1bits += get_num_size_as_bits(f1L);
+	if (f1bits == 0u) f1bits = get_num_size_as_bits(f1L);
 	uint8_ft f2bits = get_num_size_as_bits(f2H);
-	if (f2bits == 0u) f2bits += get_num_size_as_bits(f2L);
+	if (f2bits == 0u) f2bits = get_num_size_as_bits(f2L);
 	if ((f1bits + f2bits) <= 64u) 	return product; // simple approximation, not 100% correct, but cheap
 	else 				return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
 }
@@ -117,15 +117,19 @@ uint64_t add64(const uint64_t value1, const uint64_t value2)
 	else 					return sum;
 }
 
+uint64_t sub64(const uint64_t value1, const uint64_t value2)
+{
+	if (value1 > value2) return (value1 - value2);
+	else return 0ull;
+}
+
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
 	/* Boost converter */
 	uint64_t P_inp_fW_n8;
 	uint64_t P_out_fW_n4;
-	uint32_t dt_us_per_C_nF_n28;
 	uint64_t V_store_uV_n32;
-	uint32_t interval_check_thrs_sample;
 	/* Buck converter */
 	bool_ft  has_buck;
 	uint32_t V_out_dac_uV;
@@ -134,12 +138,13 @@ struct VirtSource_State {
 	uint64_t output_enable_threshold_uV_n32;
 	uint64_t output_disable_threshold_uV_n32;
 	uint64_t dV_output_enable_uV_n32;
+	bool_ft power_good;
 };
 
 /* (local) global vars to access in update function */
 static struct VirtSource_State vss;
 static const volatile struct VirtSource_Config * vs_cfg;
-static const volatile struct Calibration_Config * cal_cfg;
+static volatile struct Calibration_Config * cal_cfg;
 #define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)  // = 10
 
 void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_arg)
@@ -150,13 +155,13 @@ void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_a
 
 	vsc_arg->C_output_nF = i32++;
 	vsc_arg->V_inp_boost_threshold_uV = i32++;
-	vsc_arg->C_storage_nF = i32++;
+	vsc_arg->Constant_us_per_nF_n28 = i32++;
 	vsc_arg->V_storage_init_uV = i32++;
 	vsc_arg->V_storage_max_uV = i32++;
 	vsc_arg->I_storage_leak_nA = i32++;
 	vsc_arg->V_storage_enable_threshold_uV = i32++;
 	vsc_arg->V_storage_disable_threshold_uV = i32++;
-	vsc_arg->interval_check_thresholds_ns = i32++;
+	vsc_arg->interval_check_thresholds_n = i32++;
 	vsc_arg->V_pwr_good_enable_threshold_uV = i32++;
 	vsc_arg->V_pwr_good_disable_threshold_uV = i32++;
 	vsc_arg->immediate_pwr_good_signal = i32++;
@@ -182,27 +187,23 @@ void vsource_init(const volatile struct VirtSource_Config *const vsc_arg, const 
 {
 	/* Initialize state */
 	cal_cfg = cal_arg;
+	cal_cfg->adc_current_offset_nA += 2900000u; // TODO: only debug!!!!
 	vs_cfg = vsc_arg; // TODO: can be changed to pointer again, has same performance
 
-	/* Boost Reg */
-	vss.dt_us_per_C_nF_n28 = (dt_us_const << 28u) / vs_cfg->C_storage_nF;  // TODO: put that in python, dividend has ~ 31.32 bits
-
 	/* Power-flow in and out of system */
-	vss.P_inp_fW_n8 = 0u;
-	vss.P_out_fW_n4 = 0u;
+	vss.P_inp_fW_n8 = 0ull;
+	vss.P_out_fW_n4 = 0ull;
 	/* container for the stored energy: */
 	vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_init_uV) << 32u;
 
-	/* Check Output-Limits every n Samples: */
-	vss.interval_check_thrs_sample = vs_cfg->interval_check_thresholds_ns / SAMPLE_INTERVAL_NS;
-
 	/* Buck Boost */
-	vss.has_buck = vs_cfg->converter_mode & 0b10;
+	vss.has_buck = (vs_cfg->converter_mode & 0b10) > 0;
 	// TODO: make boost also optional
 
 	vss.V_out_dac_uV = vs_cfg->V_output_uV;
 
 	vss.V_out_dac_raw = conv_uV_to_dac_raw(vs_cfg->V_output_uV);
+	vss.power_good = true;
 
 	/* hysteresis-thresholds */
 	if (vss.has_buck)
@@ -320,9 +321,11 @@ void vsource_update_capacitor(void)
 	 */
 	const uint32_t V_store_uV = vss.V_store_uV_n32 >> 32u;
 	const uint64_t P_inp_fW_n4 = vss.P_inp_fW_n8 >> 4u;
+	// avoid mixing in signed datatypes
 	if (P_inp_fW_n4 > vss.P_out_fW_n4) {
 		const uint64_t I_cStor_nA_n4 = div_uV_n4(P_inp_fW_n4 - vss.P_out_fW_n4, V_store_uV);
-		vss.V_store_uV_n32 += mul64(vss.dt_us_per_C_nF_n28, I_cStor_nA_n4); // = dV_cStor_uV_n32
+		const uint64_t dV_cStor_uV_n32 = mul64(vs_cfg->Constant_us_per_nF_n28, I_cStor_nA_n4);
+		vss.V_store_uV_n32 = add64(vss.V_store_uV_n32, dV_cStor_uV_n32);
 
 		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
 		if ((uint32_t)(vss.V_store_uV_n32 >> 32u) > vs_cfg->V_storage_max_uV)
@@ -331,10 +334,11 @@ void vsource_update_capacitor(void)
 		}
 	} else {
 		const uint64_t I_cStor_nA_n4 = div_uV_n4(vss.P_out_fW_n4 - P_inp_fW_n4, V_store_uV);
-		vss.V_store_uV_n32 -= mul64(vss.dt_us_per_C_nF_n28, I_cStor_nA_n4); // = dV_cStor_uV_n32
+		const uint64_t dV_cStor_uV_n32 = mul64(vs_cfg->Constant_us_per_nF_n28, I_cStor_nA_n4);
+		vss.V_store_uV_n32 = sub64(vss.V_store_uV_n32, dV_cStor_uV_n32);
 
-		// check for underflow and possible div0
-		if ((V_store_uV < (vss.V_store_uV_n32 >> 32u)) || (vss.V_store_uV_n32 <= 0xFFFFFFFFull))
+		// avoid and possible div0
+		if ((uint32_t)(vss.V_store_uV_n32 >> 32u) < 1u)
 		{
 			vss.V_store_uV_n32 = ((uint64_t)1ull) << 32u;
 		}
@@ -348,10 +352,9 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 
 	/* connect or disconnect output on certain events */
-	static uint32_t sample_count = 0xFFFFFFF0;
+	static uint32_t sample_count = 0xFFFFFFF0u;
 	static bool_ft is_outputting = true;
-	static bool_ft power_good = true;
-	const bool_ft check_thresholds = (++sample_count >= vss.interval_check_thrs_sample);
+	const bool_ft check_thresholds = (++sample_count >= vs_cfg->interval_check_thresholds_n);
 
 	if (check_thresholds) {
 		sample_count = 0;
@@ -363,35 +366,37 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 			if (vss.V_store_uV_n32 >= vss.output_enable_threshold_uV_n32) {
 				is_outputting = true;
 				/* fast charge external virtual output-cap */
-				vss.V_store_uV_n32 -= vss.dV_output_enable_uV_n32;
+				vss.V_store_uV_n32 = sub64(vss.V_store_uV_n32, vss.dV_output_enable_uV_n32);
 			}
 		}
 	}
 
+	const uint32_t V_store_uV = (uint32_t)(vss.V_store_uV_n32 >> 32u);
+
 	if (check_thresholds || vs_cfg->immediate_pwr_good_signal) {
 		/* emulate power-good-signal */
-		if (power_good)
+		if (vss.power_good)
 		{
-			if ((vss.V_store_uV_n32 >> 32u) <= vs_cfg->V_pwr_good_disable_threshold_uV)
+			if (V_store_uV <= vs_cfg->V_pwr_good_disable_threshold_uV)
 			{
-				power_good = false;
+				vss.power_good = false;
 			}
 		}
 		else
 		{
-			if ((vss.V_store_uV_n32 >> 32u) >= vs_cfg->V_pwr_good_enable_threshold_uV)
+			if (V_store_uV >= vs_cfg->V_pwr_good_enable_threshold_uV)
 			{
-				power_good = true;
+				vss.power_good = true;
 			}
 		}
-		set_batok_pin(shared_mem, power_good);
+		set_batok_pin(shared_mem, vss.power_good);
 	}
 
 	if (is_outputting)
 	{
-		if (!vss.has_buck || ((vss.V_store_uV_n32 >> 32u) <= vss.V_out_dac_uV))
+		if ((vss.has_buck == false) || (V_store_uV <= vss.V_out_dac_uV))
 		{
-			vss.V_out_dac_uV = vss.V_store_uV_n32 >> 32u;
+			vss.V_out_dac_uV = V_store_uV;
 		}
 		else
 		{
@@ -416,7 +421,7 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 // Note: n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
 static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-	const uint32_t I_nA = ((uint64_t)current_raw * (uint64_t)cal_cfg->adc_current_factor_nA_n8) >> 8u;
+	const uint32_t I_nA = (uint32_t)(((uint64_t)current_raw * (uint64_t)cal_cfg->adc_current_factor_nA_n8) >> 8u);
 	// avoid mixing signed and unsigned OPs
 	if (cal_cfg->adc_current_offset_nA >= 0)
 	{
@@ -447,7 +452,6 @@ static inline uint32_t conv_uV_to_dac_raw(const uint32_t voltage_uV)
 		const uint32_t dac_offset_uV = - cal_cfg->dac_voltage_offset_uV;
 		return ((uint64_t)(voltage_uV + dac_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u;
 	}
-
 }
 
 // TODO: global /nonstatic for tests
@@ -499,6 +503,12 @@ uint32_t get_storage_Capacitor_uV(void)
 {
 	return (uint32_t)(vss.V_store_uV_n32 >> 32u);
 }
+
+uint32_t get_storage_Capacitor_raw(void)
+{
+	return conv_uV_to_dac_raw((uint32_t)(vss.V_store_uV_n32 >> 32u));
+}
+
 
 void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
 {
