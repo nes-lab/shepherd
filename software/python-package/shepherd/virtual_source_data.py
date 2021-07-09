@@ -100,7 +100,7 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["V_input_boost_threshold_mV"] * 1e3))  # uV
 
-        vs_list.append(int(self.vss["constant_us_per_nF_n28"] * 1e3))  # us/nF = us*V / nA*s
+        vs_list.append(int(self.vss["constant_us_per_nF_n28"]))  # us/nF = us*V / nA*s
         vs_list.append(int(self.vss["V_storage_init_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["V_storage_max_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["I_storage_leak_nA"] * 1))  # nA
