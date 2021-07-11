@@ -485,13 +485,16 @@ class ShepherdIO(object):
         """
         current_state = sysfs_interface.get_state()
         if current_state != "idle":
-            raise ShepherdIOException(f"Can't switch target-power when shepherd-state is {current_state}")
+            self.reinitialize_prus()
         if sel_target_a is None:
             # Target A is Default
             sel_target_a = True
         target = "A" if sel_target_a else "B"
         logger.debug(f"Set routing for (main) supply with current-monitor to target {target}")
         self.gpios["target_pwr_sel"].write(sel_target_a)
+        if current_state != "idle":
+            self.start(wait_blocking=True)
+
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
         """ choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B

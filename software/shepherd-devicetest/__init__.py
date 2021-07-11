@@ -76,7 +76,7 @@ def main():
                          items=["Target A", "Target B"],
                          default_value=1,
                          callback=target_power_callback, show=True,
-                         tip="Change only possible with shepherd state not running")
+                         tip="Change is also triggering a shepherd state change / pru re-init / reset")
         add_same_line(spacing=30)
         add_text("text_section_routing_C", default_value="Target IO")
         add_same_line(spacing=5)

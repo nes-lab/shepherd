@@ -50,7 +50,7 @@ def update_gui_elements() -> NoReturn:
     configure_item("refresh_value", enabled=host_state)
     configure_item("shepherd_pwr", enabled=host_state)
     configure_item("shepherd_state", enabled=host_state)
-    configure_item("target_pwr", enabled=host_state and not shepherd_state)
+    configure_item("target_pwr", enabled=host_state)  # and not shepherd_state
     configure_item("target_io", enabled=host_state)
     configure_item("io_lvl_converter", enabled=host_state)
 
@@ -211,7 +211,6 @@ def dac_raw_callback(sender, data) -> NoReturn:
     value_si = round(value_si * 10**3, 3)
     set_value(f"value_mV_dac{data[0]}", value_si)
     shepherd_io.dac_write(dac_cfg[0], value_raw)
-    time.sleep(0.1)
 
 
 def dac_val_callback(sender, data) -> NoReturn:
