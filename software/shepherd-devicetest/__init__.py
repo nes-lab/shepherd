@@ -66,15 +66,17 @@ def main():
         add_same_line(spacing=5)
         add_radio_button("shepherd_state",
                          items=["Stop", "Running"],
-                         default_value=1,
-                         callback=shepherd_state_callback, show=True)
+                         default_value=int(shepherd_state),
+                         callback=shepherd_state_callback, show=True,
+                         tip="Sets PRU-Loops to idle or running")
         add_same_line(spacing=30)
         add_text("text_section_routing_B", default_value="Target Power")
         add_same_line(spacing=5)
         add_radio_button("target_pwr",
                          items=["Target A", "Target B"],
                          default_value=1,
-                         callback=target_power_callback, show=True)
+                         callback=target_power_callback, show=True,
+                         tip="Change only possible with shepherd state not running")
         add_same_line(spacing=30)
         add_text("text_section_routing_C", default_value="Target IO")
         add_same_line(spacing=5)
@@ -88,7 +90,31 @@ def main():
         add_radio_button("io_lvl_converter",
                          items=["Disabled", "Enabled"],
                          default_value=0,
-                         callback=io_level_converter_callback, show=True)
+                         callback=io_level_converter_callback, show=True,
+                         tip="pass through signals from beaglebone to targets")
+
+        add_spacing(count=5)
+        add_text("text_section_sub", default_value="Control-Logic")
+
+        add_checkbox("gpio_nRes_REC_ADC",
+                     tip="Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
+                     label="Enable Rec-ADC",
+                     default_value=True,
+                     callback=set_power_state_recoder,
+                     )
+        add_same_line(spacing=5)
+        add_checkbox("gpio_nRes_EMU_ADC",
+                     tip="Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
+                     label="Enable Emu-ADC",
+                     default_value=True,
+                     callback=set_power_state_emulator,
+                     )
+        add_same_line(spacing=15)
+        add_button("button_reinit_prus",
+                   label="Re-Init PRUs",
+                   tip="Applies newly received states and configures Cape-ICs",
+                   width=130,
+                   callback=reinitialize_prus)
 
 
         add_spacing(count=5)
@@ -105,7 +131,7 @@ def main():
             add_text(f"textA_dac{iter}", default_value="Voltage:")
             add_same_line(spacing=5)
             add_slider_int(f"value_raw_dac{iter}",
-                           tip="set raw value for dac (ctrl+click for manual input)",
+                           tip="set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI",
                            #before="Voltage",
                            label="raw",
                            width=450,

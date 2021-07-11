@@ -416,6 +416,10 @@ class ShepherdIO(object):
         """
         sysfs_interface.wait_for_state("running", timeout)
 
+    def reinitialize_prus(self) -> NoReturn:
+        sysfs_interface.set_stop(force=True)  # forces idle
+        sysfs_interface.wait_for_state("idle", 3)
+
     def _cleanup(self):
         logger.debug("ShepherdIO is commanded to power down / cleanup")
         while sysfs_interface.get_state() != "idle":
@@ -447,11 +451,25 @@ class ShepherdIO(object):
         self.gpios["en_shepherd"].write(state)
 
     def set_power_state_recorder(self, state: bool) -> NoReturn:
+        """
+        triggered pin is currently connected to ADCs reset-line
+        NOTE: this might be extended to DAC as well
+
+        :param state: bool, enable to get ADC out of reset
+        :return:
+        """
         state_str = "enabled" if state else "disabled"
         logger.debug(f"Set Recorder of shepherd-pcb to {state_str}")
         self.gpios["en_recorder"].write(state)
 
     def set_power_state_emulator(self, state: bool) -> NoReturn:
+        """
+        triggered pin is currently connected to ADCs reset-line
+        NOTE: this might be extended to DAC as well
+
+        :param state: bool, enable to get ADC out of reset
+        :return:
+        """
         state_str = "enabled" if state else "disabled"
         logger.debug(f"Set Emulator of shepherd-pcb to {state_str}")
         self.gpios["en_emulator"].write(state)
@@ -539,6 +557,7 @@ class ShepherdIO(object):
         """Sends calibration settings to PRU core
 
         For the virtual source it is required to have the calibration settings.
+        Note: to apply these settings the pru has to do a re-init (reset)
 
         Args:
             cal_settings (CalibrationData): Contains the device's
@@ -548,7 +567,8 @@ class ShepherdIO(object):
 
     def send_virtsource_settings(self, vs_settings: VirtualSourceData) -> NoReturn:
         """ Sends virtsource settings to PRU core
-            looks like a dumb one-liner but is needed by the child-classes
+            looks like a simple one-liner but is needed by the child-classes
+            Note: to apply these settings the pru has to do a re-init (reset)
 
         Args:
             vs_settings: Contains the settings for the virtual source.

@@ -36,7 +36,7 @@ def window_refresh_callback(sender, data) -> NoReturn:
 
     refresh_next = ts + refresh_interval
     global shepherd_io
-    if shepherd_io is not None:
+    if (shepherd_io is not None) and (shepherd_state is True):
         gpio_refresh()
         adc_refresh()
 
@@ -53,6 +53,10 @@ def update_gui_elements() -> NoReturn:
     configure_item("target_pwr", enabled=host_state and not shepherd_state)
     configure_item("target_io", enabled=host_state)
     configure_item("io_lvl_converter", enabled=host_state)
+
+    configure_item("gpio_nRes_REC_ADC", enabled=host_state)
+    configure_item("gpio_nRes_EMU_ADC", enabled=host_state)
+    configure_item("button_reinit_prus", enabled=host_state)
     # TODO: more items
     for iter in range(len(dac_channels)):
         dac_state = get_value(f"en_dac{iter}") and host_state
@@ -82,6 +86,7 @@ def refresh_rate_callback(sender, data) -> NoReturn:
 
 shepherd_io = None
 shepherd_cal = None
+shepherd_state = True
 
 
 def connect_to_node(host: str):
@@ -136,9 +141,9 @@ def shepherd_power_callback(sender, data) -> NoReturn:
 
 
 def shepherd_state_callback(sender, data) -> NoReturn:
-    global shepherd_io
-    state = get_value(sender) >= 1
-    shepherd_io.set_shepherd_state(state)
+    global shepherd_io, shepherd_state
+    shepherd_state = get_value(sender) >= 1
+    shepherd_io.set_shepherd_state(shepherd_state)
     update_gui_elements()
 
 
@@ -158,6 +163,24 @@ def io_level_converter_callback(sender, data) -> NoReturn:
     global shepherd_io
     state = get_value(sender) >= 1
     shepherd_io.set_io_level_converter(state)
+
+
+def set_power_state_emulator(sender, data) -> NoReturn:
+    global shepherd_io
+    state = get_value(sender) >= 1
+    shepherd_io.set_power_state_emulator(state)
+
+
+def set_power_state_recoder(sender, data) -> NoReturn:
+    global shepherd_io
+    state = get_value(sender) >= 1
+    shepherd_io.set_power_state_recoder(state)
+
+
+def reinitialize_prus(sender, data) -> NoReturn:
+    global shepherd_io, shepherd_state
+    shepherd_io.reinitialize_prus()
+    shepherd_io.set_shepherd_state(shepherd_state)
 
 #################################
 # DAC functionality
@@ -188,6 +211,7 @@ def dac_raw_callback(sender, data) -> NoReturn:
     value_si = round(value_si * 10**3, 3)
     set_value(f"value_mV_dac{data[0]}", value_si)
     shepherd_io.dac_write(dac_cfg[0], value_raw)
+    time.sleep(0.1)
 
 
 def dac_val_callback(sender, data) -> NoReturn:
@@ -276,13 +300,6 @@ _set_shepherd_pcb_power
 """
 
 
-
-
-
-
-
-
-
 def filter_update_callback(sender, data) -> NoReturn:
     print("filter_update_callback")
     # update_table()
@@ -294,9 +311,6 @@ def update_buttons() -> NoReturn:
 
 def update_button_callback(sender, data) -> NoReturn:
     print("update_button_callback")
-
-
-
 
 
 def save_button_callback(sender, data) -> NoReturn:

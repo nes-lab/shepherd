@@ -145,8 +145,7 @@ class Emulator(ShepherdIO):
 
         self.send_virtsource_settings(self._settings_virtsource)
         self.send_calibration_settings(self._cal_emulation)
-        sysfs_interface.set_stop(force=True)  # forces reset
-        sysfs_interface.wait_for_state("idle", 3)
+        self.reinitialize_prus()
 
         self.set_target_io_level_conv(self._set_target_io_lvl_conv)
         self.select_main_target_for_io(self._sel_target_for_io)
@@ -201,10 +200,9 @@ class ShepherdDebug(ShepherdIO):
 
     def __enter__(self):
         super().__enter__()
-        self.set_power_state_recorder(True)
-        self.set_power_state_emulator(True)
-        sysfs_interface.set_stop(force=True)  # forces idle
-        sysfs_interface.wait_for_state("idle", 3)
+        super().set_power_state_recorder(True)
+        super().set_power_state_emulator(True)
+        super().reinitialize_prus()
 
     def adc_read(self, channel: str):
         """Reads value from specified ADC channel.
@@ -392,6 +390,15 @@ class ShepherdDebug(ShepherdIO):
             self._io.one_high(num)
         else:
             logger.debug(f"Error: IO is not enabled in this shepherd-debug-instance")
+
+    def set_power_state_emulator(self, state: bool) -> NoReturn:
+        super().set_power_state_emulator(state)
+
+    def set_power_state_recorder(self, state: bool) -> NoReturn:
+        super().set_power_state_recorder(state)
+
+    def reinitialize_prus(self) -> NoReturn:
+        super().reinitialize_prus()
 
 
 def record(
