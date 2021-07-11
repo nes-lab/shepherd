@@ -15,37 +15,49 @@ from sklearn.linear_model import LinearRegression
 V_REF_DAC = 2.5
 G_DAC_A = 1.0
 G_DAC_V = 2.0
+M_DAC = 16
 
 INSTR_HRVST = """
 ---------- Harvesting calibration -------------
-Connect SMU channel B hi to P1-2 and lo to P1-1.
-Connect a 90-120 Ohm resistor between JP2-2 and GND.
-"""
+- Short P6-3 and P6-4 (Current Sink and Voltage-Measurement of Harvest-Port)
+- Connect SMU Channel A/B Lo to GND (P6-2, P8-1/2)
+- Connect SMU Channel A Hi to P6-1 (SimBuf)
+- Connect SMU Channel B Hi to P6-3/4
 
-INSTR_LOAD = """
-------------- Load calibration ----------------
-Connect SMU channel A hi to JP1-2 and lo to GND.
-Connect a 91 Ohm resistor between P2-1 and P2-2.
+WARNING: old Code - not for new v2-Capes
+
 """
 
 INSTR_EMU = """
 ---------------------- Emulation calibration -----------------------
-Connect SMU channel B lo to JP2-2 and hi to GND via a 91 Ohm resistor.
-Connect SMU channel A hi to JP2-1 and lo to GND.
-Mount a storage capelet with a 100uF-220uF capacitor
-Connect a jumper between JP1-1 and JP1-2
+- remove targets from target-ports
+- Connect SMU channel A Lo to P10-1 (Target-A GND)
+- Connect SMU channel A Hi to P10-2 (Target-A Voltage)
+- Connect SMU channel B Lo to P11-1 (Target-B GND)
+- Connect SMU channel B Hi to P11-2 (Target-B Voltage)
+
 """
+
+
+def convert_dac_voltage_to_raw(value_V: float) -> int:
+    return int((value_V * (2 ** M_DAC)) / (G_DAC_V * V_REF_DAC))
 
 
 def measurements_to_calibration(measurements):
 
     calib_dict = dict()
 
-    for component in ["harvesting", "load", "emulation"]:
+    for component in ["harvesting", "emulation"]:
         calib_dict[component] = dict()
-        for channel in ["voltage", "current"]:
+        for channel in ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]:
             calib_dict[component][channel] = dict()
-            sample_points = measurements[component][channel]
+            try:
+                sample_points = measurements[component][channel]
+            except KeyError:
+                calib_dict[component][channel]["gain"] = 1.0
+                calib_dict[component][channel]["offset"] = 0
+                print(f"NOTE: skipping '{component} - {channel}', because no data was found")
+                continue
             x = np.empty(len(sample_points))
             y = np.empty(len(sample_points))
             for i, point in enumerate(sample_points):
@@ -62,7 +74,7 @@ def measurements_to_calibration(measurements):
 
 def measure_current(rpc_client, smu_channel, adc_channel):
 
-    values = [0.00001, 0.0001, 0.001, 0.01, 0.025]
+    values = [0.00001, 0.0001, 0.001, 0.01, 0.02, 0.04]
     rpc_client.dac_write("current", 0)
     rpc_client.dac_write("voltage", 0)
 
@@ -87,7 +99,7 @@ def measure_current(rpc_client, smu_channel, adc_channel):
 
 def measure_voltage(rpc_client, smu_channel, adc_channel):
 
-    values = [0.1, 0.5, 1.0, 2.0, 2.8, 3.0]
+    values = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
     rpc_client.dac_write("current", 0)
     rpc_client.dac_write("voltage", 0)
 
@@ -109,67 +121,58 @@ def measure_voltage(rpc_client, smu_channel, adc_channel):
     return results
 
 
-def emulate_current(rpc_client, smu_channel):
+def meas_emulator_current(rpc_client, smu_channel):
 
-    values = [
-        int(val)
-        for val in [100, 500, 800, 1000, 2500, 5000, 2 ** 14, 2 ** 16 - 512]
-    ]
-    rpc_client.set_harvester(False)
-    rpc_client.dac_write("voltage", 0)
+    currents_A = [0, -1e-6, -1e-5, -1e-4, -1e-3, -5e-3, -1e-2, -2e-2, -3e-2, -4e-2]
 
-    smu_channel.configure_vsource(range=0.001)
-    smu_channel.set_voltage(0.0, ilimit=0.03)
+    # write both dac-channels of emulator
+    rpc_client.dac_write(0b1100, convert_dac_voltage_to_raw(2.5))
+
+    smu_channel.configure_isource(range=0.050)
+    smu_channel.set_current(0.000, vlimit=3.0)
     smu_channel.set_output(True)
+
     results = list()
-    for i, val in enumerate(values):
-        rpc_client.dac_write("current", val)
+    for current_A in currents_A:
+        current_A = 0.5 * current_A  # TODO: only for current hw rev 2.1r0
+        smu_channel.set_current(current_A, vlimit=3.0)
 
         time.sleep(0.25)
 
-        meas = smu_channel.measure_current(range=0.03, nplc=2.0)
-        # The current source is non-linear in the lowest region, because it is
-        # designed to guarantee zero current output. Thus, a small DAC value
-        # would theoretically lead to a negative current. Due to the output
-        # stage of the source, this leads to zero output for inputs below
-        # around 800. All values that fall into this region need to be
-        # dismissed for calibration as they would distort the otherwise linear
-        # relation
-        if meas < 1e-6:
-            continue
+        adc_current = rpc_client.adc_read("emu")
+        # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
+        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=1.0)
 
-        results.append({"reference": val, "measured": meas})
-        print(f"ref: {val} meas: {meas*1000:.4f}mA")
+        results.append({"reference": current_A, "measured": adc_current})
+        print(f"  ref: {current_A} A, meas: {adc_current} raw, voltage: {smu_voltage:.4f} V (SMU)")
 
     smu_channel.set_output(False)
     return results
 
 
-def emulate_voltage(rpc_client, smu_channel):
+def meas_emulator_voltage(rpc_client, smu_channel):
 
-    voltages = np.linspace(0.3, 2.8, 10)
+    voltages = np.linspace(0.3, 4.8, 16)
 
-    values = [int(val) for val in (voltages / G_DAC_V / V_REF_DAC) * (2 ** 16)]
+    values = [convert_dac_voltage_to_raw(val) for val in voltages]
 
-    rpc_client.dac_write("A", 0)
-    rpc_client.set_mppt(False)
-    rpc_client.set_load("artificial")
-    rpc_client.set_ldo_voltage(3.0)
+    # write both dac-channels of emulator
+    rpc_client.dac_write(0b1100, 0)
 
     smu_channel.configure_isource(range=0.001)
     smu_channel.set_current(0.0005, vlimit=5.0)
     smu_channel.set_output(True)
 
     results = list()
-    for val in values:
-        rpc_client.dac_write("V", val)
+    for iter, val in enumerate(values):
+        rpc_client.dac_write(0b1100, val)
 
         time.sleep(0.5)
 
-        meas = smu_channel.measure_voltage(range=3.0, nplc=1.0)
+        meas = smu_channel.measure_voltage(range=5.0, nplc=1.0)
 
         results.append({"reference": val, "measured": meas})
-        print(f"ref: {val} meas: {meas}V")
+        print(f"  ref: {val} raw, {voltages[iter]:.3f} V; meas: {meas} V")
 
     smu_channel.set_output(False)
     return results
@@ -182,39 +185,42 @@ def cli():
 
 @cli.command()
 @click.argument("host", type=str)
-@click.option("--user", "-u", type=str, default="joe")
+@click.option("--user", "-u", type=str, default="joe", help="Host Username")
+@click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
 @click.option("--outfile", "-o", type=click.Path())
 @click.option("--smu-ip", type=str, default="192.168.1.108")
 @click.option("--all", "all_", is_flag=True)
 @click.option("--harvesting", is_flag=True)
-@click.option("--load", is_flag=True)
 @click.option("--emulation", is_flag=True)
-def measure(host, user, outfile, smu_ip, all_, harvesting, load, emulation):
+def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
 
     if all_:
-        if harvesting or load or emulation:
+        if harvesting or emulation:
             raise click.UsageError("Either provide --all or individual flags")
 
         harvesting = True
-        load = True
         emulation = True
-    if not any([all_, harvesting, load, emulation]):
+    if not any([all_, harvesting, emulation]):
         harvesting = True
-        load = True
         emulation = True
+
+    if password is not None:
+        fabric_args = {"password": password}
+    else:
+        fabric_args = {}
 
     rpc_client = zerorpc.Client(timeout=60, heartbeat=20)
     measurement_dict = dict()
 
-    with SMU.ethernet_device(smu_ip) as smu, Connection(host, user=user) as cnx:
+    with SMU.ethernet_device(smu_ip) as smu, Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
+        # TODO: enable 4 Port Mode if possible
         res = cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
+        #time.sleep(4)
         rpc_client.connect(f"tcp://{ host }:4242")
 
         if harvesting:
-
             click.echo(INSTR_HRVST)
-            usr_conf = click.confirm("Everything setup?")
-
+            usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
                 measurement_dict["harvesting"] = {
                     "voltage": list(),
@@ -229,37 +235,27 @@ def measure(host, user, outfile, smu_ip, all_, harvesting, load, emulation):
                 )
                 rpc_client.set_harvester(False)
 
-        if load:
-            click.echo(INSTR_LOAD)
-            usr_conf = click.confirm("Everything setup?")
-
-            if usr_conf:
-                measurement_dict["load"] = {
-                    "voltage": list(),
-                    "current": list(),
-                }
-                rpc_client.set_load("node")
-                measurement_dict["load"]["current"] = measure_current(
-                    rpc_client, smu.A, "A_OUT"
-                )
-                measurement_dict["load"]["voltage"] = measure_voltage(
-                    rpc_client, smu.A, "V_OUT"
-                )
-
         if emulation:
             click.echo(INSTR_EMU)
-            usr_conf = click.confirm("Everything setup?")
+            usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
                 measurement_dict["emulation"] = {
-                    "voltage": list(),
-                    "current": list(),
+                    "dac_voltage_a": list(),
+                    "dac_voltage_b": list(),
+                    "adc_current": list(),
+                    "adc_voltage": list(),  # not existing currently
                 }
-                measurement_dict["emulation"]["current"] = emulate_current(
-                    rpc_client, smu.B
-                )
-                measurement_dict["emulation"]["voltage"] = emulate_voltage(
-                    rpc_client, smu.A
-                )
+                # targetB-Port will get the monitored dac-channel-b
+                rpc_client.select_target_for_power_tracking(False)
+
+                print(f"Measurement - Emulation - Current - ADC A") # TODO: switched channels, only correct for hw-rev2.1r0
+                measurement_dict["emulation"]["adc_current"] = meas_emulator_current(rpc_client, smu.A)
+                print(f"Measurement - Emulation - Current - ADC B")
+                measurement_dict["emulation"]["adc_voltage"] = meas_emulator_current(rpc_client, smu.B)
+                print(f"Measurement - Emulation - Voltage - DAC A")
+                measurement_dict["emulation"]["dac_voltage_a"] = meas_emulator_voltage(rpc_client, smu.A)
+                print(f"Measurement - Emulation - Voltage - DAC B")
+                measurement_dict["emulation"]["dac_voltage_b"] = meas_emulator_voltage(rpc_client, smu.B)
 
         out_dict = {"node": host, "measurements": measurement_dict}
         res = cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
