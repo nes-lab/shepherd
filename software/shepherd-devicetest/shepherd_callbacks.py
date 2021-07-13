@@ -186,11 +186,13 @@ def reinitialize_prus(sender, data) -> NoReturn:
 # DAC functionality
 #################################
 
+
 dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
     [1, "harvesting", "dac_voltage_a", "Harvester VSimBuf"],
     [2, "harvesting", "dac_voltage_b", "Harvester VMatching"],
     [4, "emulation", "dac_voltage_a", "Emulator Rail A"],
     [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
+
 
 def dac_en_callback(sender, data) -> NoReturn:
     global shepherd_io, dac_channels
