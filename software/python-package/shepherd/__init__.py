@@ -109,7 +109,7 @@ class Emulator(ShepherdIO):
     def __init__(self,
                  shepherd_mode: str = "emulation",
                  initial_buffers: list = None,
-                 calibration_recording: CalibrationData = None,  # TODO: make clearer that these is "THE RECORDING"
+                 calibration_recording: CalibrationData = None,  # TODO: make clearer that this is "THE RECORDING"
                  calibration_emulation: CalibrationData = None,
                  set_target_io_lvl_conv: bool = False,
                  sel_target_for_io: bool = True,
@@ -194,9 +194,20 @@ class ShepherdDebug(ShepherdIO):
 
     def __init__(self, use_io: bool = True):
         super().__init__("debug")
-        self._cal = CalibrationData.from_default()
+
         if use_io:
             self._io = TargetIO()
+
+        try:
+            with EEPROM() as eeprom:
+                eeprom.read_cape_data()
+                self._cal = eeprom.read_calibration()
+        except ValueError:
+            logger.warning("Couldn't read calibration from EEPROM (Val). Falling back to default values.")
+            self._cal = CalibrationData.from_default()
+        except FileNotFoundError:
+            logger.warning("Couldn't read calibration from EEPROM (FS). Falling back to default values.")
+            self._cal = CalibrationData.from_default()
 
     def __enter__(self):
         super().__enter__()
