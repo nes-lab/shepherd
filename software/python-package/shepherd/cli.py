@@ -258,10 +258,10 @@ def eeprom():
 @eeprom.command(short_help="Write data to EEPROM")
 @click.option("--infofile", "-i", type=click.Path(exists=True),
     help="YAML-formatted file with cape info")
-@click.option("--version", "-v", type=str, default="00A0",
-    help="Cape version number, e.g. 00A0")
+@click.option("--version", "-v", type=str, default="22A0",
+    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
 @click.option("--serial_number", "-s", type=str,
-    help="Cape serial number, e.g. 3219AAAA0001")
+    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--calibfile", "-c", type=click.Path(exists=True),
     help="YAML-formatted file with calibration data")
 @click.option("--no-calib", is_flag=True, help="Use default calibration data")
