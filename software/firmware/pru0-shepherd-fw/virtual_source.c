@@ -144,7 +144,7 @@ struct VirtSource_State {
 /* (local) global vars to access in update function */
 static struct VirtSource_State vss;
 static const volatile struct VirtSource_Config * vs_cfg;
-static volatile struct Calibration_Config * cal_cfg;
+static const volatile struct Calibration_Config * cal_cfg;
 #define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)  // = 10
 
 void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_arg)
@@ -187,7 +187,6 @@ void vsource_init(const volatile struct VirtSource_Config *const vsc_arg, const 
 {
 	/* Initialize state */
 	cal_cfg = cal_arg;
-	cal_cfg->adc_current_offset_nA += 2900000u; // TODO: only debug!!!!
 	vs_cfg = vsc_arg; // TODO: can be changed to pointer again, has same performance
 
 	/* Power-flow in and out of system */
