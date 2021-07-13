@@ -36,7 +36,7 @@ eeprom_format = {
 }
 
 # The shepherd calibration data is stored in binary format
-calibration_data_format = {"offset": 512, "size": 96, "type": "binary"}
+calibration_data_format = {"offset": 512, "size": 128, "type": "binary"}
 
 
 class CapeData(object):
@@ -260,9 +260,11 @@ class EEPROM(object):
             calibration_data (CalibrationData): Calibration data that is going
                 to be stored in EEPROM
         """
+        data_serialized = calibration_data.to_bytestr()
+        if len(data_serialized) != calibration_data_format["size"]:
+            raise ValueError(f"WriteCal: data-size is wrong! expected = {calibration_data_format['size']} bytes, but got {len(data_serialized)}")
         self._write(
-            calibration_data_format["offset"], calibration_data.to_bytestr()
-        )
+            calibration_data_format["offset"], data_serialized)
 
     def read_calibration(self) -> CalibrationData:
         """Reads and returns shepherd calibration data from EEPROM
