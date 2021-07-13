@@ -14,9 +14,9 @@ given the digital code in the DAC.
 """
 
 # both current channels have a 0.1 % shunt resistance of
-R_SHT = 10.0  # [ohm]
+R_SHT = 2.0  # [ohm]
 # the instrumentation amplifiers are configured for gain of
-G_INST_AMP = 10  # [n]
+G_INST_AMP = 48  # [n]
 # we use the ADC's internal reference with
 V_REF_ADC = 4.096  # [V]
 # range of current channels is
