@@ -99,7 +99,7 @@ def measure_current(rpc_client, smu_channel, adc_channel):
 
 def measure_voltage(rpc_client, smu_channel, adc_channel):
 
-    values = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
+    values = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
     rpc_client.dac_write("current", 0)
     rpc_client.dac_write("voltage", 0)
 
@@ -123,7 +123,7 @@ def measure_voltage(rpc_client, smu_channel, adc_channel):
 
 def meas_emulator_current(rpc_client, smu_channel):
 
-    currents_A = [0, 1e-6, 1e-5, 1e-4, 1e-3, 5e-3, 1e-2, 2e-2, 3e-2, 4e-2]
+    currents_A = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 10e-3]
 
     # write both dac-channels of emulator
     dac_voltage = 2.5
@@ -136,7 +136,6 @@ def meas_emulator_current(rpc_client, smu_channel):
 
     results = list()
     for current_A in currents_A:
-        current_A = 0.5 * current_A  # TODO: only for current hw rev 2.1r0
         smu_channel.set_current(-current_A, vlimit=3.0)  # negative current, because smu acts as a drain
 
         time.sleep(0.25)
@@ -154,7 +153,7 @@ def meas_emulator_current(rpc_client, smu_channel):
 
 def meas_emulator_voltage(rpc_client, smu_channel):
 
-    voltages = np.linspace(0.3, 4.8, 16)
+    voltages = np.linspace(0.3, 2.5, 12)
 
     values = [convert_dac_voltage_to_raw(val) for val in voltages]
 
@@ -173,7 +172,7 @@ def meas_emulator_voltage(rpc_client, smu_channel):
 
         meas = smu_channel.measure_voltage(range=5.0, nplc=1.0)
 
-        results.append({"reference_si": val, "shepherd_raw": meas})
+        results.append({"reference_si": meas, "shepherd_raw": val})
         print(f"  shepherd: {voltages[iter]:.3f} V ({val} raw); reference: {meas} V")
 
     smu_channel.set_output(False)
