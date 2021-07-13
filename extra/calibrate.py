@@ -54,15 +54,15 @@ def measurements_to_calibration(measurements):
             try:
                 sample_points = measurements[component][channel]
             except KeyError:
-                calib_dict[component][channel]["gain"] = 1.0
-                calib_dict[component][channel]["offset"] = 0
+                calib_dict[component][channel]["gain"] = float(1.0)
+                calib_dict[component][channel]["offset"] = float(0.0)
                 print(f"NOTE: skipping '{component} - {channel}', because no data was found")
                 continue
             x = np.empty(len(sample_points))
             y = np.empty(len(sample_points))
             for i, point in enumerate(sample_points):
-                x[i] = point["measured"]
-                y[i] = point["reference"]
+                x[i] = point["shepherd_raw"]
+                y[i] = point["reference_si"]
             WLS = LinearRegression()
             WLS.fit(x.reshape(-1, 1), y.reshape(-1, 1), sample_weight=1.0 / x)
             intercept = WLS.intercept_
@@ -89,7 +89,7 @@ def measure_current(rpc_client, smu_channel, adc_channel):
         for i in range(10):
             meas[i] = rpc_client.adc_read(adc_channel)
         meas_avg = float(np.mean(meas))
-        results.append({"reference": val, "measured": meas_avg})
+        results.append({"reference_si": val, "shepherd_raw": meas_avg})
         print(f"ref: {val*1000:.4f}mA meas: {meas_avg}")
 
         smu_channel.set_output(False)
@@ -114,7 +114,7 @@ def measure_voltage(rpc_client, smu_channel, adc_channel):
             meas[i] = rpc_client.adc_read(adc_channel)
 
         meas_avg = float(np.mean(meas))
-        results.append({"reference": val, "measured": meas_avg})
+        results.append({"reference_si": val, "shepherd_raw": meas_avg})
         print(f"ref: {val}V meas: {meas_avg}")
 
         smu_channel.set_output(False)
@@ -123,10 +123,12 @@ def measure_voltage(rpc_client, smu_channel, adc_channel):
 
 def meas_emulator_current(rpc_client, smu_channel):
 
-    currents_A = [0, -1e-6, -1e-5, -1e-4, -1e-3, -5e-3, -1e-2, -2e-2, -3e-2, -4e-2]
+    currents_A = [0, 1e-6, 1e-5, 1e-4, 1e-3, 5e-3, 1e-2, 2e-2, 3e-2, 4e-2]
 
     # write both dac-channels of emulator
-    rpc_client.dac_write(0b1100, convert_dac_voltage_to_raw(2.5))
+    dac_voltage = 2.5
+    print(f" -> setting dac-voltage to {dac_voltage} V")
+    rpc_client.dac_write(0b1100, convert_dac_voltage_to_raw(dac_voltage))
 
     smu_channel.configure_isource(range=0.050)
     smu_channel.set_current(0.000, vlimit=3.0)
@@ -135,16 +137,16 @@ def meas_emulator_current(rpc_client, smu_channel):
     results = list()
     for current_A in currents_A:
         current_A = 0.5 * current_A  # TODO: only for current hw rev 2.1r0
-        smu_channel.set_current(current_A, vlimit=3.0)
+        smu_channel.set_current(-current_A, vlimit=3.0)  # negative current, because smu acts as a drain
 
         time.sleep(0.25)
 
-        adc_current = rpc_client.adc_read("emu")
+        adc_current_raw = rpc_client.adc_read("emu")
         # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
         smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=1.0)
 
-        results.append({"reference": current_A, "measured": adc_current})
-        print(f"  ref: {current_A} A, meas: {adc_current} raw, voltage: {smu_voltage:.4f} V (SMU)")
+        results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
+        print(f"  reference: {current_A} A @ {smu_voltage:.4f} V; shepherd: {adc_current_raw} raw")
 
     smu_channel.set_output(False)
     return results
@@ -171,11 +173,17 @@ def meas_emulator_voltage(rpc_client, smu_channel):
 
         meas = smu_channel.measure_voltage(range=5.0, nplc=1.0)
 
-        results.append({"reference": val, "measured": meas})
-        print(f"  ref: {val} raw, {voltages[iter]:.3f} V; meas: {meas} V")
+        results.append({"reference_si": val, "shepherd_raw": meas})
+        print(f"  shepherd: {voltages[iter]:.3f} V ({val} raw); reference: {meas} V")
 
     smu_channel.set_output(False)
     return results
+
+
+def measurement_dynamic(values: list, dict_val: str = "shepherd_raw") -> float:
+    value_min = min([value[dict_val] for value in values])
+    value_max = max([value[dict_val] for value in values])
+    return (value_max / value_min)
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
@@ -187,7 +195,7 @@ def cli():
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe", help="Host Username")
 @click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
-@click.option("--outfile", "-o", type=click.Path())
+@click.option("--outfile", "-o", type=click.Path(), help="save file, if no filename is provided the hostname will be used")
 @click.option("--smu-ip", type=str, default="192.168.1.108")
 @click.option("--all", "all_", is_flag=True)
 @click.option("--harvesting", is_flag=True)
@@ -245,16 +253,31 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                     "adc_current": list(),
                     "adc_voltage": list(),  # not existing currently
                 }
+
+                # TODO: hw-rev2.1r0 has switched channels, this code unswitches if needed
+                print(f"Measurement - Emulation - Current - ADC Channel A - Target A")
+                # targetA-Port will get the monitored dac-channel-b
+                rpc_client.select_target_for_power_tracking(True)
+                meas_a = meas_emulator_current(rpc_client, smu.A)
+                meas_b = meas_emulator_current(rpc_client, smu.B)
+                if measurement_dynamic(meas_a) > measurement_dynamic(meas_b):
+                    measurement_dict["emulation"]["adc_current"] = meas_a
+                else:
+                    measurement_dict["emulation"]["adc_current"] = meas_b
+
+                print(f"Measurement - Emulation - Current - ADC Channel A - Target B")
                 # targetB-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(False)
+                meas_a = meas_emulator_current(rpc_client, smu.A)
+                meas_b = meas_emulator_current(rpc_client, smu.B)
+                if measurement_dynamic(meas_a) > measurement_dynamic(meas_b):
+                    measurement_dict["emulation"]["adc_voltage"] = meas_a
+                else:
+                    measurement_dict["emulation"]["adc_voltage"] = meas_b
 
-                print(f"Measurement - Emulation - Current - ADC A") # TODO: switched channels, only correct for hw-rev2.1r0
-                measurement_dict["emulation"]["adc_current"] = meas_emulator_current(rpc_client, smu.A)
-                print(f"Measurement - Emulation - Current - ADC B")
-                measurement_dict["emulation"]["adc_voltage"] = meas_emulator_current(rpc_client, smu.B)
-                print(f"Measurement - Emulation - Voltage - DAC A")
+                print(f"Measurement - Emulation - Voltage - DAC Channel A")
                 measurement_dict["emulation"]["dac_voltage_a"] = meas_emulator_voltage(rpc_client, smu.A)
-                print(f"Measurement - Emulation - Voltage - DAC B")
+                print(f"Measurement - Emulation - Voltage - DAC Channel B")
                 measurement_dict["emulation"]["dac_voltage_b"] = meas_emulator_voltage(rpc_client, smu.B)
 
         out_dict = {"node": host, "measurements": measurement_dict}
@@ -290,10 +313,13 @@ def convert(infile, outfile):
 @click.argument("host", type=str)
 @click.option("--calibfile", "-c", type=click.Path(exists=True))
 @click.option("--measurementfile", "-m", type=click.Path(exists=True))
-@click.option("--version", "-v", type=str, default="00A0")
-@click.option("--serial_number", "-s", type=str, required=True)
+@click.option("--version", "-v", type=str, default="22A0",
+    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
+@click.option("--serial_number", "-s", type=str, required=True,
+    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--user", "-u", type=str, default="joe")
-def write(host, calibfile, measurementfile, version, serial_number, user):
+@click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
+def write(host, calibfile, measurementfile, version, serial_number, user, password):
 
     if calibfile is None:
         if measurementfile is None:
@@ -329,9 +355,14 @@ def write(host, calibfile, measurementfile, version, serial_number, user):
             ),
             abort=True,
         )
-    with Connection(host, user=user) as cnx:
+
+    if password is not None:
+        fabric_args = {"password": password}
+    else:
+        fabric_args = {}
+
+    with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
         cnx.put(calibfile, "/tmp/calib.yml")
-        usr_conf = click.confirm("Write-protection disabled?", abort=True)
         cnx.sudo(
             (
                 f"shepherd-sheep eeprom write -v { version } -s {serial_number}"
@@ -346,9 +377,15 @@ def write(host, calibfile, measurementfile, version, serial_number, user):
 @cli.command()
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe")
-def read(host, user):
+@click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
+def read(host, user, password):
 
-    with Connection(host, user=user) as cnx:
+    if password is not None:
+        fabric_args = {"password": password}
+    else:
+        fabric_args = {}
+
+    with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
         click.echo("----------EEPROM READ------------")
         cnx.sudo("shepherd-sheep eeprom read")
         click.echo("---------------------------------")
