@@ -192,8 +192,8 @@ class CalibrationData(object):
         cal_set["adc_gain"] = int(1e9 * (2 ** 8) * self._data["emulation"]["adc_current"]["gain"])
         cal_set["adc_offset"] = int(1e9 * (2 ** 0) * self._data["emulation"]["adc_current"]["offset"])
         # DAC is calculated in uV (micro-volts), gain is shifted by 20 bit
-        cal_set["dac_gain"] = int((2 ** 20) / (1e6 * self._data["emulation"]["dac_voltage_a"]["gain"]))
-        cal_set["dac_offset"] = int(1e6 * (2 ** 0) * self._data["emulation"]["dac_voltage_a"]["offset"])
+        cal_set["dac_gain"] = int((2 ** 20) / (1e6 * self._data["emulation"]["dac_voltage_b"]["gain"]))
+        cal_set["dac_offset"] = int(1e6 * (2 ** 0) * self._data["emulation"]["dac_voltage_b"]["offset"])
 
         for value in cal_set.values():
             if value >= 2**31:
