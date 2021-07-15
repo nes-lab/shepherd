@@ -4,12 +4,16 @@
 command: emulate
 parameters:
   input_path: /var/shepherd/recordings/rec.h5
+  # output_path:
+  # - providing a directory -> file is named emu_timestamp.h5
+  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> emu#num.h5
   output_path: /var/shepherd/recordings
-  virtsource: BQ25570
+  virtsource: BQ25570  # provide path, name or default
   force_overwrite: false
-  no_calib: true
+  no_calib: false
   enable_io: true
   io_sel_target_a: true
   pwr_sel_target_a: true
   aux_voltage: 3.3
+  uart_baudrate: 9600  # set None to disable uart-logging for target
 verbose: 3

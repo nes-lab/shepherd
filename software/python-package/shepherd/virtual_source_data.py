@@ -96,6 +96,8 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["converter_mode"]))
 
+        vs_list.append(int(self.vss["interval_startup_disabled_drain_ms"] * 1e3 / SAMPLE_INTERVAL_US))  # n, samples
+
         vs_list.append(int(self.vss["C_output_uF"] * 1e3))  # nF
 
         vs_list.append(int(self.vss["V_input_boost_threshold_mV"] * 1e3))  # uV
@@ -120,11 +122,11 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["dV_store_low_mV"] * 1e3))  # uV
 
-        # reduce resolution from n10 to n8 to fit in container
-        vs_list.append([int(value / (2 ** 2)) for value in self.vss["LUT_input_efficiency_n10"]])
+        # reduce resolution to n8 to fit in container
+        vs_list.append([min(255, int(256 * value)) if (value > 0) else 0 for value in self.vss["LUT_input_efficiency"]])
 
         # is now n4 -> resulting value for PRU is inverted, so 2^14 / value
-        vs_list.append([int((2**14) / value) if (value > 0) else int(2**4) for value in self.vss["LUT_output_efficiency_n10"]])
+        vs_list.append([min((2**14), int((2**4) / value)) if (value > 0) else int(2**14) for value in self.vss["LUT_output_efficiency"]])
         return vs_list
 
     def add_enable_voltage_drop(self) -> NoReturn:
@@ -171,6 +173,7 @@ class VirtualSourceData(object):
         TODO: add min-value
         """
         self._check_num("converter_mode", 3, 4e9)
+        self._check_num("interval_startup_disabled_drain_ms", 10, 10000)
 
         self._check_num("C_output_uF", 1, 4e6)
 
@@ -199,8 +202,8 @@ class VirtualSourceData(object):
         self._check_num("constant_us_per_nF_n28", 122016, 4.29e9)
 
         # Look up tables, TODO: test if order in PRU-2d-array is maintained,
-        self._check_list("LUT_input_efficiency_n10", 12 * [12 * [512]], 1023)
-        self._check_list("LUT_output_efficiency_n10", 12 * [819], 1023)
+        self._check_list("LUT_input_efficiency", 12 * [12 * [0.500]], 1.0)
+        self._check_list("LUT_output_efficiency", 12 * [0.800], 1.0)
 
     def _check_num(self, setting_key: str, default: float, max_value: float = None) -> NoReturn:
         try:

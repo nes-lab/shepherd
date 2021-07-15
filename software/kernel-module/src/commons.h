@@ -98,6 +98,7 @@ struct Calibration_Config {
  */
 struct VirtSource_Config {
     uint32_t converter_mode; // enum for  different functionality, TODO: implement
+    uint32_t interval_startup_disabled_drain_n; // allow target to power up and go to sleep
     /* Direct Reg */
     uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
     /* Boost Reg, ie. BQ25504 */

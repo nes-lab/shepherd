@@ -35,38 +35,39 @@ class VirtualSource(object):
 
         # generate a new dict from raw_list (that is intended for PRU / sys_fs, see commons.h)
         self.vsc["converter_mode"] = values[0]
+        self.vsc["interval_startup_disabled_drain_n"] = values[1]
 
         # direct regulator
-        self.vsc["C_output_nF"] = values[1]  # final (always last) stage to catch current spikes of target
+        self.vsc["C_output_nF"] = values[2]  # final (always last) stage to catch current spikes of target
 
         # boost regulator
-        self.vsc["V_inp_boost_threshold_uV"] = values[2]  # min input-voltage for the boost converter to work
-        self.vsc["Constant_us_per_nF"] = values[3] / (2**28)
-        self.vsc["V_storage_init_uV"] = values[4]  # allow a proper / fast startup
-        self.vsc["V_storage_max_uV"] = values[5]  # -> boost shuts off
+        self.vsc["V_inp_boost_threshold_uV"] = values[3]  # min input-voltage for the boost converter to work
+        self.vsc["Constant_us_per_nF"] = values[4] / (2**28)
+        self.vsc["V_storage_init_uV"] = values[5]  # allow a proper / fast startup
+        self.vsc["V_storage_max_uV"] = values[6]  # -> boost shuts off
 
-        self.vsc["I_storage_leak_nA"] = values[6]
+        self.vsc["I_storage_leak_nA"] = values[7]
 
-        self.vsc["V_storage_enable_threshold_uV"] = values[7]  # -> target gets connected (hysteresis-combo with next value)
-        self.vsc["V_storage_disable_threshold_uV"] = values[8]  # -> target gets disconnected
+        self.vsc["V_storage_enable_threshold_uV"] = values[8]  # -> target gets connected (hysteresis-combo with next value)
+        self.vsc["V_storage_disable_threshold_uV"] = values[9]  # -> target gets disconnected
 
-        self.vsc["interval_check_thresholds_n"] = values[9]  # some BQs check every 65 ms if output should be disconnected
+        self.vsc["interval_check_thresholds_n"] = values[10]  # some BQs check every 65 ms if output should be disconnected
 
         self.vsc["V_pwr_good_enable_threshold_uV"] = values[11]  # range where target is informed by output-pin
-        self.vsc["V_pwr_good_disable_threshold_uV"] = values[10]
+        self.vsc["V_pwr_good_disable_threshold_uV"] = values[12]
 
-        self.vsc["immediate_pwr_good_signal"] = values[12]
+        self.vsc["immediate_pwr_good_signal"] = values[13]
 
-        self.vsc["dV_stor_en_thrs_uV"] = values[13]
+        self.vsc["dV_stor_en_thrs_uV"] = values[14]
 
         # Buck Boost, ie. BQ25570)
-        self.vsc["V_output_uV"] = values[14]
-        self.vsc["dV_stor_low_uV"] = values[15]
+        self.vsc["V_output_uV"] = values[15]
+        self.vsc["dV_stor_low_uV"] = values[16]
 
         # LUTs
         # NOTE: config sets input_n10 but the list transmits n8 (to PRU)
-        self.vsc["LUT_inp_efficiency_n8"] = values[16]  # depending on inp_voltage, inp_current, (cap voltage),
-        self.vsc["LUT_out_inv_efficiency_n4"] = values[17]  # depending on output_current
+        self.vsc["LUT_inp_efficiency_n8"] = values[17]  # depending on inp_voltage, inp_current, (cap voltage),
+        self.vsc["LUT_out_inv_efficiency_n4"] = values[18]  # depending on output_current
 
         # boost internal state
         self.vsc["P_inp_fW"] = 0.0
@@ -136,6 +137,11 @@ class VirtualSource(object):
             eta_inv_out = 1
 
         self.vsc["P_out_fW"] = I_out_nA * self.vsc["V_out_dac_uV"] * eta_inv_out + P_leak_fW
+
+        if self.vsc["interval_startup_disabled_drain_n"] > 0:
+            self.vsc["interval_startup_disabled_drain_n"] -= 1
+            self.vsc["P_out_fW"] = 0
+
         return round(self.vsc["P_out_fW"])  # return NOT original, added for easier testing
 
     def update_capacitor(self) -> int:

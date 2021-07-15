@@ -126,6 +126,7 @@ uint64_t sub64(const uint64_t value1, const uint64_t value2)
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
+	uint32_t interval_startup_disabled_drain_n;
 	/* Boost converter */
 	uint64_t P_inp_fW_n8;
 	uint64_t P_out_fW_n4;
@@ -162,6 +163,7 @@ void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_a
 	vsc_arg->V_storage_enable_threshold_uV = i32++;
 	vsc_arg->V_storage_disable_threshold_uV = i32++;
 	vsc_arg->interval_check_thresholds_n = i32++;
+	vsc_arg->interval_startup_disabled_drain_n = i32++;
 	vsc_arg->V_pwr_good_enable_threshold_uV = i32++;
 	vsc_arg->V_pwr_good_disable_threshold_uV = i32++;
 	vsc_arg->immediate_pwr_good_signal = i32++;
@@ -192,6 +194,8 @@ void vsource_init(const volatile struct VirtSource_Config *const vsc_arg, const 
 	/* Power-flow in and out of system */
 	vss.P_inp_fW_n8 = 0ull;
 	vss.P_out_fW_n4 = 0ull;
+	vss.interval_startup_disabled_drain_n = vsc_arg->interval_startup_disabled_drain_n;
+
 	/* container for the stored energy: */
 	vss.V_store_uV_n32 = ((uint64_t)vs_cfg->V_storage_init_uV) << 32u;
 
@@ -310,6 +314,13 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
 	const uint32_t eta_inv_out_n4 = (vss.has_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
 	vss.P_out_fW_n4 = add64(mul64((uint64_t)eta_inv_out_n4 * (uint64_t)vss.V_out_dac_uV, I_out_nA), P_leak_fW_n4);
+
+	// allows target to initialize and go to sleep
+	if (vss.interval_startup_disabled_drain_n > 0u)
+	{
+		vss.interval_startup_disabled_drain_n--;
+		vss.P_out_fW_n4 = 0u;
+	}
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 

@@ -6,6 +6,7 @@ virtsource:
 
   # TODO: find a way to process direct, boost, boost + buck, future: IV-Curves as input for same regulator
   converter_mode: 3 # activate features: bit0=boost (currently not evaluated), bit1=buck
+  interval_startup_disabled_drain_ms: 0
 
   # Direct Reg
   C_output_uF: 1   # final (always last) stage to catch current spikes of target
@@ -20,22 +21,21 @@ virtsource:
   V_storage_enable_threshold_mV: 2600 # -> target gets connected (hysteresis-combo with next value)
   V_storage_disable_threshold_mV: 2300 # -> target gets disconnected
   interval_check_thresholds_ms: 64.0  # some BQs check every 64 ms if output should be disconnected
-  LUT_input_efficiency_n10[12][12]: [
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-    [  512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512 ],
-  ]# depending on inp_voltage, inp_current, (cap voltage), TODO: 50% for now, 512 / 1024
-  # n10 means normalized to 2^10 = 1.0 (so there is no real 1 in 10 bit resolution)
-  # NOTE: these will be reduced to internal 8bit for now
+  LUT_input_efficiency: [
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+  ]# array[12][12] depending on inp_voltage, inp_current, (cap voltage), TODO: 50% for now
+  # NOTE: these will be reduced to internal 8bit for now, 1.0 represented by 255
   # TODO: LUT could be accessed by highest bit-position of "1" in depending index/input. 12 bit should suffice for 8192 int
   V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good output-pin (hysteresis)
   V_pwr_good_disable_threshold_mV: 2400
@@ -44,7 +44,7 @@ virtsource:
 
   # Buck Boost, ie. BQ25570
   V_output_mV: 2000
-  LUT_output_efficiency_n10[12]: [819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819, 819]
-  # depending on output_current, currently set to ~ 80 % = 819 / 1024
+  LUT_output_efficiency: [0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80]
+  # array[12] depending on output_current, currently set to ~ 80 %
 
   # TODO: test all 3 separate regulators, can be checked against returning voltage
