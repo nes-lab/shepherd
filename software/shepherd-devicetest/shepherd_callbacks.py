@@ -240,7 +240,7 @@ def adc_refresh() -> NoReturn:
         adc_cfg = adc_channels[iter]
         value_raw = shepherd_io.adc_read(adc_cfg[0])
         value_si = shepherd_io.convert_raw_to_value(adc_cfg[1], adc_cfg[2], value_raw)
-        value_si = round(value_si * 10**3, 3)
+        value_si = round(value_si * 10**3, 4)
         set_value(f"value_raw_adc{iter}", str(value_raw))
         set_value(f"value_mSI_adc{iter}", str(value_si))
 

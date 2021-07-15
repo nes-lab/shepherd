@@ -211,6 +211,7 @@ def record(
 @click.option("--aux_voltage", type=float, default=0.0,
               help="Set Voltage of auxiliary Power Source (second target)")
 @click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
+@click.option("--uart_baudrate", "-b", default=None, type=int, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def emulate(
     input_path,
@@ -224,6 +225,7 @@ def emulate(
     pwr_sel_target_a,
     aux_voltage,
     virtsource,
+    uart_baudrate,
     warn_only,
 ):
     if output_path is None:
@@ -243,6 +245,7 @@ def emulate(
         sel_target_for_pwr=pwr_sel_target_a,
         aux_target_voltage=aux_voltage,
         settings_virtsource=virtsource,
+        uart_baudrate=uart_baudrate,
         warn_only=warn_only,
     )
 
