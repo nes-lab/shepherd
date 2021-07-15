@@ -123,7 +123,8 @@ def measure_voltage(rpc_client, smu_channel, adc_channel):
 
 def meas_emulator_current(rpc_client, smu_channel):
 
-    currents_A = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 10e-3]
+    #currents_A = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 10e-3]
+    currents_A = [0.0, 10e-3]
 
     # write both dac-channels of emulator
     dac_voltage = 2.5
@@ -140,7 +141,11 @@ def meas_emulator_current(rpc_client, smu_channel):
 
         time.sleep(0.25)
 
-        adc_current_raw = rpc_client.adc_read("emu")
+        meas = np.empty(1000)
+        for i in range(1000):
+            meas[i] = rpc_client.adc_read("emu")
+        adc_current_raw = float(np.mean(meas))
+
         # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
         smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=1.0)
 
