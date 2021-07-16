@@ -85,7 +85,6 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     assert deviation_pyt < 10.0  # %
     assert deviation_pru < 10.0  # %
     assert deviation_rel < 1.0  # %
-    assert 0
 
 
 @pytest.mark.hardware
@@ -143,6 +142,6 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     assert deviation_rel < 1.0  # %
     assert V_out_pru_raw < 1  # output disabled
     assert V_out_py_raw < 1
-    assert 0
 
-# TODO: add IO-Test with very small values
+
+# TODO: add IO-Test with very small and very large values
