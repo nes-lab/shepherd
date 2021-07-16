@@ -366,8 +366,16 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 		if (shared_mem->batok_trigger_for_pru1)
 		{
-			if (shared_mem->batok_pin_value) GPIO_ON(GPIO_BATOK);
-			else				 GPIO_OFF(GPIO_BATOK);
+			if (shared_mem->batok_pin_value)
+			{
+				GPIO_ON(GPIO_BATOK);
+				DEBUG_PGOOD_STATE_1;
+			}
+			else
+			{
+				GPIO_OFF(GPIO_BATOK);
+				DEBUG_PGOOD_STATE_0;
+			}
 			shared_mem->batok_trigger_for_pru1 = false;
 		}
 	}
