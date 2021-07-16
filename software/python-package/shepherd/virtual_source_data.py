@@ -64,7 +64,7 @@ class VirtualSourceData(object):
             self.vss = vs_settings
         else:
             raise NotImplementedError(
-                f"VirtualSourceData was instantiated with '{vs_settings}' of type '{type(vs_settings)}', can't be handled")
+                f"VirtualSourceData {type(vs_settings)}'{vs_settings}' could not be handled. In case of file-path -> does it exist?")
         self.check_and_complete()
 
     def get_as_dict(self) -> dict:
@@ -182,12 +182,12 @@ class VirtualSourceData(object):
         self._check_num("C_storage_uF", 22, 4e6)
         self._check_num("V_storage_init_mV", 3000, 10000)
         self._check_num("V_storage_max_mV", 4200, 10000)
-        self._check_num("I_storage_leak_nA", 10, 4e9)
+        self._check_num("I_storage_leak_nA", 8, 4e9)
 
         self._check_num("V_storage_enable_threshold_mV", 2400, 5000)
         self._check_num("V_storage_disable_threshold_mV", 2000, 5000)
 
-        self._check_num("interval_check_thresholds_ms", 65, 4e3)
+        self._check_num("interval_check_thresholds_ms", 64, 4e3)
 
         self._check_num("V_pwr_good_enable_threshold_mV", 2800, 5000)
         self._check_num("V_pwr_good_disable_threshold_mV", 2400, 5000)
