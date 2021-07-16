@@ -315,9 +315,9 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			/* The actual sampling takes place here */
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
-				GPIO_ON(DEBUG_PIN0_MASK);
+				//GPIO_ON(DEBUG_PIN0_MASK);
 				sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
-				GPIO_OFF(DEBUG_PIN0_MASK);
+				//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 			shared_mem->analog_sample_counter++;
 
@@ -332,15 +332,15 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				{
 					sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
 									    shared_mem->analog_sample_counter);
-					//GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
+					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
 			}
 			else
 			{
 				/* only handle kernel-communications if this is not the last sample */
-				GPIO_ON(DEBUG_PIN0_MASK);
+				//GPIO_ON(DEBUG_PIN0_MASK);
 				handle_kernel_com(shared_mem, free_buffers_ptr);
-                		GPIO_OFF(DEBUG_PIN0_MASK);
+                		//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 		}
 	}
