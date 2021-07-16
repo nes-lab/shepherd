@@ -284,7 +284,7 @@ void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t inpu
 	// info output: with eta beeing 8 bit in size, there is 56 bit headroom for P = U*I = ~ 72 W
 	// NOTE: p_inp_fW could be calculated in python, even with efficiency-interpolation -> hand voltage and power to pru
 	/* BOOST, Calculate current flowing into the storage capacitor */
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	uint32_t V_input_uV = 0u;
 
 	/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
@@ -299,7 +299,7 @@ void vsource_calc_inp_power(const uint32_t input_voltage_uV, const uint32_t inpu
 
 	const uint32_t eta_inp_n8 = get_input_efficiency_n8(V_input_uV, input_current_nA);
 	vss.P_inp_fW_n8 = mul64((uint64_t)eta_inp_n8 * (uint64_t)V_input_uV, input_current_nA);
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
 void vsource_calc_out_power(const uint32_t current_adc_raw)
@@ -307,7 +307,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	// input: current is max 50 mA => 26 bit
 	// states: voltage is 23 bit,
 	// output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* BUCK, Calculate current flowing out of the storage capacitor*/
 	const uint64_t V_store_uV_n4 = (vss.V_store_uV_n32 >> 28u);
 	const uint64_t P_leak_fW_n4 = mul64(vs_cfg->I_storage_leak_nA, V_store_uV_n4);
@@ -321,12 +321,12 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 		vss.interval_startup_disabled_drain_n--;
 		vss.P_out_fW_n4 = 0u;
 	}
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
 void vsource_update_capacitor(void)
 {
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* Sum up Power and calculate new Capacitor Voltage
 	 */
 	const uint32_t V_store_uV = vss.V_store_uV_n32 >> 32u;
@@ -353,13 +353,13 @@ void vsource_update_capacitor(void)
 			vss.V_store_uV_n32 = ((uint64_t)1ull) << 32u;
 		}
 	}
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
 // TODO: not optimized
 uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 {
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 
 	/* connect or disconnect output on certain events */
 	static uint32_t sample_count = 0xFFFFFFF0u;
@@ -402,7 +402,7 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 		set_batok_pin(shared_mem, vss.power_good);
 	}
 
-	if (is_outputting)
+	if (is_outputting || (vss.interval_startup_disabled_drain_n > 0))
 	{
 		if ((vss.has_buck == false) || (V_store_uV <= vss.V_out_dac_uV))
 		{
@@ -420,7 +420,7 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 		vss.V_out_dac_raw = 0u;
 	}
 
-	GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* output proper voltage to dac */
 	return vss.V_out_dac_raw;
 }
@@ -431,18 +431,28 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 // Note: n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
 static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 {
+	static uint32_t negative_residue = 0; // TODO: new undocumented feature to compensate for noise around 0 - current uint-design cuts away
 	const uint32_t I_nA = (uint32_t)(((uint64_t)current_raw * (uint64_t)cal_cfg->adc_current_factor_nA_n8) >> 8u);
 	// avoid mixing signed and unsigned OPs
 	if (cal_cfg->adc_current_offset_nA >= 0)
 	{
 		const uint32_t adc_offset_nA = cal_cfg->adc_current_offset_nA;
-		if (I_nA > adc_offset_nA) 	return (I_nA - adc_offset_nA);
-		else 			 	return 0u;
+		return add64(I_nA, adc_offset_nA);
 	}
 	else
 	{
-		const uint32_t adc_offset_nA = - cal_cfg->adc_current_offset_nA;
-		return add64(I_nA, adc_offset_nA);
+		const uint32_t adc_offset_nA = - cal_cfg->adc_current_offset_nA + negative_residue;
+
+		if (I_nA > adc_offset_nA)
+		{
+			return (I_nA - adc_offset_nA);
+		}
+		else
+		{
+			negative_residue = adc_offset_nA - I_nA;
+			if (negative_residue > (1u<<30u)) negative_residue = (1u<<30u);
+			return 0u;
+		}
 	}
 }
 
