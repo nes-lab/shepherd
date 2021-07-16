@@ -98,8 +98,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
         logger.info(f"Shepherd-State \t= {'enabled' if on else 'disabled'}")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        #pin.write(not sel_a)  # switched because rail A is AUX, TODO: unswitched for HWv2.1r0
-        pin.write(sel_a)  # switched because rail A is AUX, TODO: unswitched for HWv2.1r0
+        pin.write(not sel_a)  # switched because rail A is AUX
         logger.info(f"Select Target \t= {'A' if sel_a else 'B'}")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")

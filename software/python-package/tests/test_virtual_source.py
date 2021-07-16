@@ -71,13 +71,20 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     debug_shepherd.vsource_calc_inp_power(0, 0)
     V_cap_pru_V = float(debug_shepherd.vsource_update_capacitor()) * 10**-6
     py_vsource.calc_inp_power(0, 0)
-    V_cap_py_V = float(py_vsource.update_capacitor()) * 10**-6
+    V_cap_pyt_V = float(py_vsource.update_capacitor()) * 10**-6
 
-    deviation_pru = round(100*abs(V_cap_pru_V/V_cap_V - 1), 3)  # %
-    deviation_py = round(100*abs(V_cap_py_V/V_cap_V - 1), 3)  # %
-    print(f"CHARGE - VCap goal = {V_cap_V} V, py = {V_cap_py_V} V (dev={deviation_py} %), pru = {V_cap_pru_V} V (dev={deviation_pru} %)")
-    assert deviation_py < 1.0  # %
-    assert deviation_pru < 2.0  # % TODO: compare pru relative to py
+    dVCap_pru = V_cap_pru_V - reference_vss["V_storage_V"]
+    dVCap_pyt = V_cap_pyt_V - reference_vss["V_storage_V"]
+    deviation_pru = round(100*abs(dVCap_pru/dV_cap_V - 1), 3)  # %
+    deviation_pyt = round(100*abs(dVCap_pyt/dV_cap_V - 1), 3)  # %
+    deviation_rel = round(100*abs(dVCap_pru/dVCap_pyt - 1), 3)  # %
+    print(f"CHARGE - VCap goal = {V_cap_V} V, "
+          f"py = {V_cap_pyt_V} V (dev={deviation_pyt} %), "
+          f"pru = {V_cap_pru_V} V (dev={deviation_pru} %), "
+          f"dev_rel = {deviation_rel} %")
+    assert deviation_pyt < 10.0  # %
+    assert deviation_pru < 10.0  # %
+    assert deviation_rel < 1.0  # %
     assert 0
 
 
@@ -117,16 +124,24 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     V_cap_pru_V = float(debug_shepherd.vsource_update_capacitor()) * 10**-6
     V_out_pru_raw = debug_shepherd.vsource_update_boostbuck()
     py_vsource.calc_out_power(0)
-    V_cap_py_V = float(py_vsource.update_capacitor()) * 10**-6
+    V_cap_pyt_V = float(py_vsource.update_capacitor()) * 10**-6
     V_out_py_raw = py_vsource.update_boostbuck()
 
-    deviation_pru = round(100*abs(V_cap_pru_V/reference_vss["V_storage_disable_threshold_V"] - 1), 3)  # %
-    deviation_py = round(100*abs(V_cap_py_V/reference_vss["V_storage_disable_threshold_V"] - 1), 3)  # %
-    print(f"DRAIN - VCap goal = {V_cap_V} V, py = {V_cap_py_V} V (dev={deviation_py} %), pru = {V_cap_pru_V} V (dev={deviation_pru} %)")
+    dVCap_ref = reference_vss["V_storage_V"] - reference_vss["V_storage_disable_threshold_V"]
+    dVCap_pru = reference_vss["V_storage_V"] - V_cap_pru_V
+    dVCap_pyt = reference_vss["V_storage_V"] - V_cap_pyt_V
+    deviation_pru = round(100*abs(dVCap_pru / dVCap_ref - 1), 3)  # %
+    deviation_pyt = round(100*abs(dVCap_pyt / dVCap_ref - 1), 3)  # %
+    deviation_rel = round(100*abs(dVCap_pyt / dVCap_pru - 1), 3)  # %
+    print(f"DRAIN - VCap goal = {V_cap_V} V, "
+          f"pyt = {V_cap_pyt_V} V (dev={deviation_pyt} %), "
+          f"pru = {V_cap_pru_V} V (dev={deviation_pru} %), "
+          f"dev_rel = {deviation_rel} %")
     print(f"DRAIN - VOut goal = 0 n, py = {V_out_py_raw} n, pru = {V_out_pru_raw} n")
-    assert deviation_py < 40.0  # %
-    assert deviation_pru < 40.0  # % TODO: compare pru relative to py
-    assert V_out_pru_raw < 1
+    assert deviation_pyt < 3.0  # %
+    assert deviation_pru < 3.0  # %
+    assert deviation_rel < 1.0  # %
+    assert V_out_pru_raw < 1  # output disabled
     assert V_out_py_raw < 1
     assert 0
 

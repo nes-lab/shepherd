@@ -401,6 +401,7 @@ reset:
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
+	DEBUG_STATE_0;
 	iep_init();
 	iep_reset();
 
