@@ -450,7 +450,7 @@ static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 		else
 		{
 			negative_residue = adc_offset_nA - I_nA;
-			if (negative_residue > (1u<<30u)) negative_residue = (1u<<30u);
+			if (negative_residue > (1u<<12u)) negative_residue = (1u<<12u);
 			return 0u;
 		}
 	}
