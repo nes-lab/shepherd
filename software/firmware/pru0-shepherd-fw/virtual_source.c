@@ -429,9 +429,12 @@ uint32_t vsource_update_boostbuck(volatile struct SharedMem *const shared_mem)
 /* bring values into adc domain with -> voltage_uV = adc_value * gain_factor + offset
  * original definition in: https://github.com/geissdoerfer/shepherd/blob/master/docs/user/data_format.rst */
 // Note: n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
+#define NOISE_ESTIMATE_nA   (2000u)
+#define RESIDUE_SIZE_FACTOR (30u)
+#define RESIDUE_MAX_nA      (NOISE_ESTIMATE_nA * RESIDUE_SIZE_FACTOR)
 static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-	static uint32_t negative_residue = 0; // TODO: new undocumented feature to compensate for noise around 0 - current uint-design cuts away
+	static uint32_t negative_residue_nA = 0; // TODO: new undocumented feature to compensate for noise around 0 - current uint-design cuts away negative part, so mean() is biased
 	const uint32_t I_nA = (uint32_t)(((uint64_t)current_raw * (uint64_t)cal_cfg->adc_current_factor_nA_n8) >> 8u);
 	// avoid mixing signed and unsigned OPs
 	if (cal_cfg->adc_current_offset_nA >= 0)
@@ -441,7 +444,7 @@ static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 	}
 	else
 	{
-		const uint32_t adc_offset_nA = - cal_cfg->adc_current_offset_nA + negative_residue;
+		const uint32_t adc_offset_nA = - cal_cfg->adc_current_offset_nA + negative_residue_nA;
 
 		if (I_nA > adc_offset_nA)
 		{
@@ -449,8 +452,8 @@ static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 		}
 		else
 		{
-			negative_residue = adc_offset_nA - I_nA;
-			if (negative_residue > (1u<<12u)) negative_residue = (1u<<12u);
+			negative_residue_nA = adc_offset_nA - I_nA;
+			if (negative_residue_nA > RESIDUE_MAX_nA) negative_residue_nA = RESIDUE_MAX_nA;
 			return 0u;
 		}
 	}
