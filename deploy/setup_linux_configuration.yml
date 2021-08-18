@@ -18,6 +18,8 @@
     non_essential_packages_e: ['seeed-modules-*', 'rtl8723bu-*', 'rtl8821cu-*', 'can-utils', 'libasound*']
     non_essential_packages_f: ['ti-sgx-*', 'eject', 'iw', 'vpdma-*', 'libx11*', 'rfkill']
     # todo: vpdma maybe my fault, manual install, there is much more cluttering up the system,
+    # - initramfs-* seems to be unused
+    # ubuntu 21.04 seems to have no linux-headers/image-4.15, vpdma-*,
 
   vars_prompt:
     # these can be also passed as argument:  -e "update_kernel=True" -> automatically skips these prompts
@@ -89,31 +91,37 @@
 
   # keep non_essential_pckgs in divided steps for now, better debug
   - name: APT - Uninstall non-essential Packages (Part A)
+    ignore_errors: yes
     apt:
       name: "{{ non_essential_packages_a }}"
       state: absent
       purge: yes
   - name: APT - Uninstall non-essential Packages (Part B)
+    ignore_errors: yes
     apt:
       name: "{{ non_essential_packages_b }}"
       state: absent
       purge: yes
   - name: APT - Uninstall non-essential Packages (Part C)
+    ignore_errors: yes
     apt:
       name: "{{ non_essential_packages_c }}"
       state: absent
       purge: yes 
   - name: APT - Uninstall non-essential Packages (Part D)
+    ignore_errors: yes
     apt:
       name: "{{ non_essential_packages_d }}"
       state: absent
       purge: yes
   - name: APT - Uninstall non-essential Packages (Part E)
+    ignore_errors: yes
     apt:
       name: "{{ non_essential_packages_e }}"
       state: absent
       purge: yes
   - name: APT - Uninstall non-essential Packages (Part F)
+    ignore_errors: yes
     apt:
       name: "{{ non_essential_packages_f }}"
       state: absent

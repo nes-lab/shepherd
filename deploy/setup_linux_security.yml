@@ -13,7 +13,7 @@
       remove: yes
       state: absent
 
-  - name: CFG - Improve SSDd-Security
+  - name: CFG - Improve SSHd-Security
     lineinfile:
       dest: /etc/ssh/sshd_config
       regexp: "{{ item.regex }}"
@@ -41,7 +41,7 @@
       - {regex: '^.*MACs.*$', line: 'MACs -umac-64*,hmac-sha1*,hmac-sha2-256,hmac-sha2-512,umac-128@open*'}
     # TODO: x11Forwarding is twice in file, one yes and one no
 
-  - name: CFG - Install custom SSDd-Banner for Login
+  - name: CFG - Install custom SSHd-Banner for Login
     copy:
       src: '{{ playbook_dir }}/sshd_banner.text'
       dest: '/etc/issue.net'
