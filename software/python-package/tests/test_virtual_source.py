@@ -60,18 +60,18 @@ def test_vsource_add_charge(debug_shepherd: ShepherdDebug, py_vsource: VirtualSo
     print(f"CHARGE - feeding I = {I_inp_A} A, V = {V_inp_V} V into vSource with {n_samples} steps")
     print(f" PRU VCap = {debug_shepherd.vsource_update_capacitor()} uV")
     print(f" PRU PInp = {debug_shepherd.vsource_calc_inp_power(v_inp_uV, i_inp_nA)} fW")
-    print(f" Py  VCap = {py_vsource.update_capacitor()} uV")
+    print(f" Py  VCap = {py_vsource.update_cap_storage()} uV")
     print(f" Py  PInp = {py_vsource.calc_inp_power(v_inp_uV, i_inp_nA)} fW")
 
     for iter in range(n_samples):
         debug_shepherd.vsource_charge(v_inp_uV, i_inp_nA)  # combines P_in, P_out, V_cap, state_update
         py_vsource.calc_inp_power(v_inp_uV, i_inp_nA)
-        py_vsource.update_capacitor()
+        py_vsource.update_cap_storage()
 
     debug_shepherd.vsource_calc_inp_power(0, 0)
     V_cap_pru_V = float(debug_shepherd.vsource_update_capacitor()) * 10**-6
     py_vsource.calc_inp_power(0, 0)
-    V_cap_pyt_V = float(py_vsource.update_capacitor()) * 10**-6
+    V_cap_pyt_V = float(py_vsource.update_cap_storage()) * 10 ** -6
 
     dVCap_pru = V_cap_pru_V - reference_vss["V_storage_V"]
     dVCap_pyt = V_cap_pyt_V - reference_vss["V_storage_V"]
@@ -106,15 +106,15 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     print(f" PRU VCap = {debug_shepherd.vsource_update_capacitor()} uV")
     print(f" PRU POut = {debug_shepherd.vsource_calc_out_power(I_out_adc_raw)} fW")
     print(f" PRU VOut = {debug_shepherd.vsource_update_boostbuck()} raw")
-    print(f" Py  VCap = {py_vsource.update_capacitor()} uV")
+    print(f" Py  VCap = {py_vsource.update_cap_storage()} uV")
     print(f" Py  POut = {py_vsource.calc_out_power(I_out_adc_raw)} fW")
-    print(f" Py  VOut = {py_vsource.update_boostbuck()} raw")
+    print(f" Py  VOut = {py_vsource.update_states_and_output()} raw")
 
     for iter in range(n_samples):
         v_cap, v_raw1 = debug_shepherd.vsource_drain(I_out_adc_raw)  # combines P_in, P_out, V_cap, state_update
         py_vsource.calc_out_power(I_out_adc_raw)
-        py_vsource.update_capacitor()
-        v_raw2 = py_vsource.update_boostbuck()
+        py_vsource.update_cap_storage()
+        v_raw2 = py_vsource.update_states_and_output()
         if (v_raw1 < 1) or (v_raw2 < 1):
             print(f"Stopped Drain-loop after {iter}/{n_samples} samples ({round(100*iter/n_samples)} %), because output was disabled")
             break
@@ -123,8 +123,8 @@ def test_vsource_drain_charge(debug_shepherd: ShepherdDebug, py_vsource: Virtual
     V_cap_pru_V = float(debug_shepherd.vsource_update_capacitor()) * 10**-6
     V_out_pru_raw = debug_shepherd.vsource_update_boostbuck()
     py_vsource.calc_out_power(0)
-    V_cap_pyt_V = float(py_vsource.update_capacitor()) * 10**-6
-    V_out_py_raw = py_vsource.update_boostbuck()
+    V_cap_pyt_V = float(py_vsource.update_cap_storage()) * 10 ** -6
+    V_out_py_raw = py_vsource.update_states_and_output()
 
     dVCap_ref = reference_vss["V_storage_V"] - reference_vss["V_storage_disable_threshold_V"]
     dVCap_pru = reference_vss["V_storage_V"] - V_cap_pru_V
