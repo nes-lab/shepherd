@@ -118,10 +118,10 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
 	vsource_calc_out_power(current_adc_raw);
 
-	vsource_update_capacitor();
+	vsource_update_cap_storage();
 
 	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
-	const uint32_t voltage_dac = vsource_update_boostbuck(shared_mem);
+	const uint32_t voltage_dac = vsource_update_states_and_output(shared_mem);
 
 	if (link_dac_channels)
 	{
@@ -131,12 +131,21 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 	else
 	{
 		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
-		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_storage_Capacitor_raw()); // TODO: only for debug
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_V_intermediate_raw()); // TODO: only for debug
 	}
 
 	/* write back regulator-state into shared memory buffer */
-	buffer->values_current[shared_mem->analog_sample_counter] = current_adc_raw;
-	buffer->values_voltage[shared_mem->analog_sample_counter] = voltage_dac;
+	if (get_state_log_intermediate())
+	{
+		buffer->values_current[shared_mem->analog_sample_counter] = get_I_mid_out_nA();
+		buffer->values_voltage[shared_mem->analog_sample_counter] = get_V_intermediate_uV();
+	}
+	else
+	{
+		buffer->values_current[shared_mem->analog_sample_counter] = current_adc_raw;
+		buffer->values_voltage[shared_mem->analog_sample_counter] = voltage_dac;
+	}
+
 }
 
 

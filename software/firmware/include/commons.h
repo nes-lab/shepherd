@@ -121,34 +121,46 @@ struct Calibration_Config {
  * more complex regulators use vars in their section and above
  * NOTE: sys-FS-FNs currently uses 4 byte steps for transfer, so struct must be (size)mod4=0
  * Container-sizes with SI-Units:
- * 	_nF-u32 = ~ 4.3 F
+ * 	_nF-u32 = ~ 4.294 F
  * 	_uV-u32 = 4294 V
- * 	_nA-u32 = ~ 4.3 A
+ * 	_nA-u32 = ~ 4.294 A
  */
 struct VirtSource_Config {
-	uint32_t converter_mode; // enum for  different functionality, TODO: implement
-	uint32_t interval_startup_disabled_drain_n; // allow target to power up and go to sleep
-	/* Direct Reg */
-	uint32_t C_output_nF; // (final stage) to compensate for (hard to detect) enable-current-surge of real capacitors
-	/* Boost Reg, ie. BQ25504 */
-	uint32_t V_inp_boost_threshold_uV; // min input-voltage for the boost converter to work
+	/* General Reg Config */
+	uint32_t converter_mode; // bitmask to alter functionality
+	uint32_t interval_startup_delay_drain_n; // allow target to power up and go to sleep
+
+	uint32_t V_input_max_uV;
+	uint32_t I_input_max_nA;  // limits input-power
+	uint32_t V_input_drop_uV; // simulate possible diode
+
 	uint32_t Constant_us_per_nF_n28;
-	uint32_t V_storage_init_uV; // allow a proper / fast startup
-	uint32_t V_storage_max_uV;  // -> boost shuts off
-	uint32_t I_storage_leak_nA; // TODO: ESR could also be considered
-	uint32_t V_storage_enable_threshold_uV;  // -> target gets connected (hysteresis-combo with next value)
-	uint32_t V_storage_disable_threshold_uV; // -> target gets disconnected
+	uint32_t V_intermediate_init_uV; // allow a proper / fast startup
+	uint32_t I_intermediate_leak_nA; // TODO: ESR could also be considered
+
+	uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
+	uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
+	uint32_t dV_enable_output_uV; // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
 	uint32_t interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
-	uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good output-pin (hysteresis)
+
+	uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good-pin (hysteresis)
 	uint32_t V_pwr_good_disable_threshold_uV;
-	uint32_t immediate_pwr_good_signal; // bool, 1: emulate schmitt-trigger, 0: stay in interval for checking thresholds
-	uint32_t dV_stor_en_thrs_uV; // compensate C_out, for disable state when V_store < V_store_enable/disable_threshold_uV
-	/* Buck Boost, ie. BQ25570) */
+	uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
+
+	/* Boost Reg */
+	uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
+	uint32_t V_intermediate_max_uV;  // -> boost shuts off
+
+	/* Buck Reg */
 	uint32_t V_output_uV;
-	uint32_t dV_stor_low_uV; // compensate C_out, for disable state when V_store < V_out
+	uint32_t V_buck_drop_uV; // simulate dropout-voltage or diode
+
 	/* LUTs */
+	uint32_t LUT_input_V_min_log2_uV; // only u8 needed
+	uint32_t LUT_input_I_min_log2_nA; // only u8 needed
+	uint32_t LUT_output_I_min_log2_nA; // only u8 needed
 	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-	uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n10 means normalized to inverted 2^10 => 1/1024,
+	uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
 } __attribute__((packed));
 
 // pseudo-assertion to test for correct struct-size, zero cost

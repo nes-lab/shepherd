@@ -200,21 +200,21 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 		case MSG_DBG_VSOURCE_P_INP:
 			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_input_power_fW()>>32u) , (uint32_t)get_input_power_fW());
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_P_input_fW()>>32u) , (uint32_t)get_P_input_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_P_OUT:
 			vsource_calc_out_power(msg_in.value[0]);
-			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t)(get_output_power_fW()>>32u), (uint32_t)get_output_power_fW());
+			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t)(get_P_output_fW()>>32u), (uint32_t)get_P_output_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_CAP:
-			vsource_update_capacitor();
-			send_message(shared_mem, MSG_DBG_VSOURCE_V_CAP, get_storage_Capacitor_uV(), 0);
+			vsource_update_cap_storage();
+			send_message(shared_mem, MSG_DBG_VSOURCE_V_CAP, get_V_intermediate_uV(), 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_OUT:
-			res = vsource_update_boostbuck(shared_mem);
+			res = vsource_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
 			return 1u;
 
@@ -226,17 +226,17 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		case MSG_DBG_VSOURCE_CHARGE:
 			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
 			vsource_calc_out_power(0u);
-			vsource_update_capacitor();
-			res = vsource_update_boostbuck(shared_mem);
-			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_storage_Capacitor_uV(), res);
+			vsource_update_cap_storage();
+			res = vsource_update_states_and_output(shared_mem);
+			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_V_intermediate_uV(), res);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_DRAIN:
 			vsource_calc_inp_power(0u, 0u);
 			vsource_calc_out_power(msg_in.value[0]);
-			vsource_update_capacitor();
-			res = vsource_update_boostbuck(shared_mem);
-			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_storage_Capacitor_uV(), res);
+			vsource_update_cap_storage();
+			res = vsource_update_states_and_output(shared_mem);
+			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
 			return 1u;
 
 		case MSG_DBG_FN_TESTS:

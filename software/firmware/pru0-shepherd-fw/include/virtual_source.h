@@ -8,18 +8,20 @@ void vsource_init(const volatile struct VirtSource_Config *vsc_arg, const volati
 
 void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void vsource_calc_out_power(uint32_t current_adc_raw);
-void vsource_update_capacitor(void);
-uint32_t vsource_update_boostbuck(volatile struct SharedMem * shared_mem);
+void vsource_update_cap_storage(void);
+uint32_t vsource_update_states_and_output(volatile struct SharedMem *constshared_mem);
 
 void vsource_struct_init_testable(volatile struct VirtSource_Config *constvsc_arg);
 
-void set_input_power_fW(uint32_t P_fW);
-void set_output_power_fW(uint32_t P_fW);
-void set_storage_Capacitor_uV(uint32_t C_uV);
-uint64_t get_input_power_fW(void);
-uint64_t get_output_power_fW(void);
-uint32_t get_storage_Capacitor_uV(void);
-uint32_t get_storage_Capacitor_raw(void);
+void set_P_input_fW(const uint32_t P_fW);
+void set_P_output_fW(const uint32_t P_fW);
+void set_V_intermediate_uV(const uint32_t C_uV);
+uint64_t get_P_input_fW(void);
+uint64_t get_P_output_fW(void);
+uint32_t get_V_intermediate_uV(void);
+uint32_t get_V_intermediate_raw(void);
+uint32_t get_I_mid_out_nA(void);
+bool_ft get_state_log_intermediate(void);
 
 void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
@@ -41,7 +43,7 @@ uint64_t sub64(uint64_t value1, uint64_t value2);
  * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
  * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
  * - target / output disconnect check is only every 65 ms
- * - TODO: to disable set V_storage_max_uV to 0
+ * - TODO: to disable set V_intermediate_max_uV to 0
  * - input voltage can not be higher than cap_voltage and will be limited by algo
  * - the power point setting will be handled in pyPackage and work with IV-Curves
  */
