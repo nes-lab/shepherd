@@ -55,7 +55,7 @@ class LogWriter(object):
     """Stores data coming from PRU's in HDF5 format
 
     Args:
-        store_path (str): Name of the HDF5 file that data will be written to
+        store_path (Path): Name of the HDF5 file that data will be written to
         calibration_data (CalibrationData): Data is written as raw ADC
             values. We need calibration data in order to convert to physical
             units later.
@@ -77,13 +77,16 @@ class LogWriter(object):
     sys_log_last_ns = 0
 
     def __init__(
-        self,
-        store_path: Path,
-        calibration_data: CalibrationData,
-        mode: str = "harvesting",
-        force_overwrite: bool = False,
-        samples_per_buffer: int = 10_000,
-        buffer_period_ns: int = 100_000_000,
+            self,
+            store_path: Path,
+            calibration_data: CalibrationData,
+            mode: str = "harvesting",
+            force_overwrite: bool = False,
+            samples_per_buffer: int = 10_000,
+            buffer_period_ns: int = 100_000_000,
+            skip_voltage: bool = False,
+            skip_current: bool = False,
+            skip_gpio: bool = False,
     ):
         if force_overwrite or not store_path.exists():
             self.store_path = store_path
@@ -102,6 +105,9 @@ class LogWriter(object):
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
         self.sampling_interval = int(buffer_period_ns / samples_per_buffer)
+        self.write_voltage = not skip_voltage
+        self.write_current = not skip_current
+        self.write_gpio = not skip_gpio
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -157,13 +163,13 @@ class LogWriter(object):
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
         # Refer to shepherd/calibration.py for the format of calibration data
-        if self.mode is "harvesting_test":
+        if self.mode == "harvesting_test":
             self.mode = "harvesting"
-        elif self.mode is "emulation_test":
+        elif self.mode == "emulation_test":
             self.mode = "emulation"
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
-            cal_channel = cal_channel_harvest_dict[channel] if self.mode is "harvesting" else cal_channel_emulation_dict[channel]
+            cal_channel = cal_channel_harvest_dict[channel] if (self.mode == "harvesting") else cal_channel_emulation_dict[channel]
             self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][cal_channel][parameter]
 
         # Create group for exception logs
@@ -289,22 +295,22 @@ class LogWriter(object):
             + self.sampling_interval * np.arange(len(buffer))
         )
 
-        for variable in ["voltage", "current"]:
-            self.data_grp[variable].resize((new_set_length,))
-            self.data_grp[variable][old_set_length:] = getattr(buffer, variable)
+        if self.write_voltage:
+            self.data_grp["voltage"].resize((new_set_length,))
+            self.data_grp["voltage"][old_set_length:] = buffer.voltage
 
-        if len(buffer.gpio_edges) > 0:
+        if self.write_current:
+            self.data_grp["current"].resize((new_set_length,))
+            self.data_grp["current"][old_set_length:] = buffer.current
+
+        if self.write_gpio and (len(buffer.gpio_edges) > 0):
             gpio_old_set_length = self.gpio_grp["time"].shape[0]
             gpio_new_set_length = gpio_old_set_length + len(buffer.gpio_edges)
 
             self.gpio_grp["time"].resize((gpio_new_set_length,))
             self.gpio_grp["value"].resize((gpio_new_set_length,))
-            self.gpio_grp["time"][
-                gpio_old_set_length:
-            ] = buffer.gpio_edges.timestamps_ns
-            self.gpio_grp["value"][
-                gpio_old_set_length:
-            ] = buffer.gpio_edges.values
+            self.gpio_grp["time"][gpio_old_set_length:] = buffer.gpio_edges.timestamps_ns
+            self.gpio_grp["value"][gpio_old_set_length:] = buffer.gpio_edges.values
 
         #self.log_sys_stats()  # TODO: takes too long to gather data
 

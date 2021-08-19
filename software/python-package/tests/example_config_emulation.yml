@@ -11,9 +11,12 @@ parameters:
   virtsource: default  # provide path, name or default
   force_overwrite: true
   no_calib: true
-  enable_io: true
+  enable_io: true # regarding io level translators
   io_sel_target_a: true
   pwr_sel_target_a: true
   aux_voltage: 3.3
   uart_baudrate: 9600 # set None to disable uart-logging for target
+  skip_log_voltage: false
+  skip_log_current: false
+  skip_log_gpio: false
 verbose: 3

@@ -212,6 +212,9 @@ def record(
 @click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
 @click.option("--uart_baudrate", "-b", default=None, type=int, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
+@click.option("--skip_log_voltage", is_flag=True, help="reduce file-size by omitting voltage-logging")
+@click.option("--skip_log_current", is_flag=True, help="reduce file-size by omitting current-logging")
+@click.option("--skip_log_gpio", is_flag=True, help="reduce file-size by omitting gpio-logging")
 def emulate(
     input_path,
     output_path,
@@ -226,6 +229,7 @@ def emulate(
     virtsource,
     uart_baudrate,
     warn_only,
+        skip_log_voltage, skip_log_current, skip_log_gpio,
 ):
     if output_path is None:
         pl_store = None
@@ -246,6 +250,9 @@ def emulate(
         settings_virtsource=virtsource,
         uart_baudrate=uart_baudrate,
         warn_only=warn_only,
+        skip_log_voltage=skip_log_voltage,
+        skip_log_current=skip_log_current,
+        skip_log_gpio=skip_log_gpio
     )
 
 

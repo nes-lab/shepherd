@@ -528,6 +528,9 @@ def emulate(
         settings_virtsource: VirtualSourceData = None,
         uart_baudrate: int = None,
         warn_only: bool = False,
+        skip_log_voltage: bool = False,
+        skip_log_current: bool = False,
+        skip_log_gpio: bool = False,
 ):
     """ Starts emulation.
 
@@ -546,8 +549,10 @@ def emulate(
         sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
         aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
         settings_virtsource (VirtualSourceData): Settings which define the behavior of virtsource emulation
-        warn_only (bool): Set true to continue emulation after recoverable
-            error
+        warn_only (bool): Set true to continue emulation after recoverable error
+        :param skip_log_voltage: reduce file-size by omitting this log
+        :param skip_log_gpio: reduce file-size by omitting this log
+        :param skip_log_current: reduce file-size by omitting this log
     """
 
     if no_calib:
@@ -593,6 +598,9 @@ def emulate(
             force_overwrite=force_overwrite,
             mode="emulation",
             calibration_data=calib,
+            skip_voltage=skip_log_voltage,
+            skip_current=skip_log_current,
+            skip_gpio=skip_log_gpio
         )
 
     if isinstance(input_path, str):
