@@ -127,17 +127,17 @@ uint64_t sub64(const uint64_t value1, const uint64_t value2)
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
 	uint32_t interval_startup_disabled_drain_n;
-	bool_ft  no_storage;
+	bool_ft  enable_storage;
 	uint32_t V_input_uV;
 
 	/* Boost converter */
-	bool_ft  has_boost;
-	bool_ft  log_v_mid;
+	bool_ft enable_boost;
+	bool_ft enable_log_mid;
 	uint64_t P_inp_fW_n8;
 	uint64_t P_out_fW_n4;
 	uint64_t V_mid_uV_n32;
 	/* Buck converter */
-	bool_ft  has_buck;
+	bool_ft enable_buck;
 	uint32_t V_out_dac_uV;
 	uint32_t V_out_dac_raw;
 	/* hysteresis */
@@ -216,10 +216,10 @@ void vsource_init(const volatile struct VirtSource_Config *const vsc_arg, const 
 	vss.V_mid_uV_n32 = ((uint64_t)vs_cfg->V_intermediate_init_uV) << 32u;
 
 	/* Buck Boost */
-	vss.no_storage = (vs_cfg->converter_mode & 0b0001) > 0;
-	vss.has_boost = (vs_cfg->converter_mode & 0b0010) > 0;
-	vss.has_buck = (vs_cfg->converter_mode & 0b0100) > 0;
-	vss.log_v_mid = (vs_cfg->converter_mode & 0b1000) > 0;
+	vss.enable_storage = (vs_cfg->converter_mode & 0b0001) > 0;
+	vss.enable_boost = (vs_cfg->converter_mode & 0b0010) > 0;
+	vss.enable_buck = (vs_cfg->converter_mode & 0b0100) > 0;
+	vss.enable_log_mid = (vs_cfg->converter_mode & 0b1000) > 0;
 
 	vss.V_out_dac_uV = vs_cfg->V_output_uV;
 	vss.V_out_dac_raw = conv_uV_to_dac_raw(vs_cfg->V_output_uV);
@@ -296,7 +296,9 @@ void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA
 		input_current_nA = vs_cfg->I_input_max_nA;
 	}
 
-	if (vss.has_boost)
+	vss.V_input_uV = input_voltage_uV;
+
+	if (vss.enable_boost)
 	{
 		/* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
 		if (input_voltage_uV < vs_cfg->V_input_boost_threshold_uV) {
@@ -308,19 +310,20 @@ void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA
 			input_voltage_uV = (uint32_t)(vss.V_mid_uV_n32 >> 32u);
 		}
 	}
-	else if (vss.no_storage)
+	else if (vss.enable_storage == false)
 	{
+		// direct connection
 		vss.V_mid_uV_n32 = (uint64_t)input_voltage_uV << 32u;
+		input_voltage_uV = 0u;
 	}
 	else
 	{
-		// mode for diode & cap-charging
-		vss.V_input_uV = input_voltage_uV;
+		// mode for diode & charging cap
 		const uint32_t V_mid_uV = (vss.V_mid_uV_n32 >> 32u);
 		input_voltage_uV = (input_voltage_uV > V_mid_uV) ? (input_voltage_uV - V_mid_uV) : (0u);
 	}
 
-	const uint32_t eta_inp_n8 = (vss.has_buck) ? get_input_efficiency_n8(input_voltage_uV, input_current_nA) : (1u << 8u);
+	const uint32_t eta_inp_n8 = (vss.enable_buck) ? get_input_efficiency_n8(input_voltage_uV, input_current_nA) : (1u << 8u);
 	vss.P_inp_fW_n8 = mul64((uint64_t)eta_inp_n8 * (uint64_t)input_voltage_uV, input_current_nA);
 
 	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
@@ -336,7 +339,7 @@ void vsource_calc_out_power(const uint32_t current_adc_raw)
 	const uint64_t V_mid_uV_n4 = (vss.V_mid_uV_n32 >> 28u);
 	const uint64_t P_leak_fW_n4 = mul64(vs_cfg->I_intermediate_leak_nA, V_mid_uV_n4);
 	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
-	const uint32_t eta_inv_out_n4 = (vss.has_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
+	const uint32_t eta_inv_out_n4 = (vss.enable_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
 	vss.P_out_fW_n4 = add64(mul64((uint64_t)eta_inv_out_n4 * (uint64_t)vss.V_out_dac_uV, I_out_nA), P_leak_fW_n4);
 
 	// allows target to initialize and go to sleep
@@ -353,34 +356,35 @@ void vsource_update_cap_storage(void)
 	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* Sum up Power and calculate new Capacitor Voltage
 	 */
-	if (vss.no_storage) return;
-	const uint32_t V_mid_uV = vss.V_mid_uV_n32 >> 32u;
-	const uint64_t P_inp_fW_n4 = vss.P_inp_fW_n8 >> 4u;
-	// avoid mixing in signed data-types -> slows pru and reduces resolution
-	if (P_inp_fW_n4 > vss.P_out_fW_n4) {
-		const uint64_t I_mid_nA_n4 = div_uV_n4(P_inp_fW_n4 - vss.P_out_fW_n4, V_mid_uV);
-		const uint64_t dV_mid_uV_n32 = mul64(vs_cfg->Constant_us_per_nF_n28, I_mid_nA_n4);
-		vss.V_mid_uV_n32 = add64(vss.V_mid_uV_n32, dV_mid_uV_n32);
+	if (vss.enable_storage)
+	{
+		uint32_t V_mid_uV = vss.V_mid_uV_n32 >> 32u;
+		if (V_mid_uV < 1u) V_mid_uV = 1u;  // avoid and possible div0
+		const uint64_t P_inp_fW_n4 = vss.P_inp_fW_n8 >> 4u;
+		// avoid mixing in signed data-types -> slows pru and reduces resolution
+		if (P_inp_fW_n4 > vss.P_out_fW_n4) {
+			const uint64_t I_mid_nA_n4 = div_uV_n4(P_inp_fW_n4 - vss.P_out_fW_n4, V_mid_uV);
+			const uint64_t dV_mid_uV_n32 = mul64(vs_cfg->Constant_us_per_nF_n28, I_mid_nA_n4);
+			vss.V_mid_uV_n32 = add64(vss.V_mid_uV_n32, dV_mid_uV_n32);
+		} else {
+			const uint64_t I_mid_nA_n4 = div_uV_n4(vss.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
+			const uint64_t dV_mid_uV_n32 = mul64(vs_cfg->Constant_us_per_nF_n28, I_mid_nA_n4);
+			vss.V_mid_uV_n32 = sub64(vss.V_mid_uV_n32, dV_mid_uV_n32);
+		}
+	}
 
-		// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
-		if ((uint32_t)(vss.V_mid_uV_n32 >> 32u) > vs_cfg->V_intermediate_max_uV)
-		{
-			vss.V_mid_uV_n32 = ((uint64_t)vs_cfg->V_intermediate_max_uV) << 32u;
-		}
-		if (!vss.has_boost && (uint32_t)(vss.V_mid_uV_n32 >> 32u) > vss.V_input_uV)
-		{
-			vss.V_mid_uV_n32 = ((uint64_t)vss.V_input_uV) << 32u;
-		}
-	} else {
-		const uint64_t I_mid_nA_n4 = div_uV_n4(vss.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
-		const uint64_t dV_mid_uV_n32 = mul64(vs_cfg->Constant_us_per_nF_n28, I_mid_nA_n4);
-		vss.V_mid_uV_n32 = sub64(vss.V_mid_uV_n32, dV_mid_uV_n32);
-
-		// avoid and possible div0
-		if ((uint32_t)(vss.V_mid_uV_n32 >> 32u) < 1u)
-		{
-			vss.V_mid_uV_n32 = ((uint64_t)1ull) << 32u;
-		}
+	// Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
+	if ((uint32_t)(vss.V_mid_uV_n32 >> 32u) > vs_cfg->V_intermediate_max_uV)
+	{
+		vss.V_mid_uV_n32 = ((uint64_t)vs_cfg->V_intermediate_max_uV) << 32u;
+	}
+	if ((vss.enable_boost == false) && (vss.P_inp_fW_n8 > 0u) && (uint32_t)(vss.V_mid_uV_n32 >> 32u) > vss.V_input_uV)
+	{
+		vss.V_mid_uV_n32 = ((uint64_t)vss.V_input_uV) << 32u;
+	}
+	if ((uint32_t)(vss.V_mid_uV_n32 >> 32u) < 1u)
+	{
+		vss.V_mid_uV_n32 = (uint64_t)1u <<  32u;
 	}
 	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
@@ -425,7 +429,7 @@ uint32_t vsource_update_states_and_output(volatile struct SharedMem *const share
 		{
 			if (V_mid_uV >= vs_cfg->V_pwr_good_enable_threshold_uV)
 			{
-				vss.power_good = true;
+				vss.power_good = is_outputting;
 			}
 		}
 		set_batok_pin(shared_mem, vss.power_good);
@@ -433,9 +437,9 @@ uint32_t vsource_update_states_and_output(volatile struct SharedMem *const share
 
 	if (is_outputting || (vss.interval_startup_disabled_drain_n > 0))
 	{
-		if ((vss.has_buck == false) || (V_mid_uV <= vss.V_out_dac_uV + vs_cfg->V_buck_drop_uV))
+		if ((vss.enable_buck == false) || (V_mid_uV <= vs_cfg->V_output_uV + vs_cfg->V_buck_drop_uV))
 		{
-			vss.V_out_dac_uV = (V_mid_uV > vs_cfg->V_buck_drop_uV) ? V_mid_uV - vs_cfg->V_buck_drop_uV : 2u;
+			vss.V_out_dac_uV = (V_mid_uV > vs_cfg->V_buck_drop_uV) ? V_mid_uV - vs_cfg->V_buck_drop_uV : 0u;
 		}
 		else
 		{
@@ -445,7 +449,7 @@ uint32_t vsource_update_states_and_output(volatile struct SharedMem *const share
 	}
 	else
 	{
-		vss.V_out_dac_uV = 2u; /* needs to be higher or equal min(V_mid_uV) to avoid jitter on low voltages */
+		vss.V_out_dac_uV = 0u; /* needs to be higher or equal min(V_mid_uV) to avoid jitter on low voltages */
 		vss.V_out_dac_raw = 0u;
 	}
 
@@ -492,25 +496,27 @@ static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 // safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
 static inline uint32_t conv_uV_to_dac_raw(const uint32_t voltage_uV)
 {
+	uint32_t dac_raw = 0u;
 	// return (((uint64_t)(voltage_uV - cal_cfg->dac_voltage_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u);
 	// avoid mixing signed and unsigned OPs
 	if (cal_cfg->dac_voltage_offset_uV >= 0)
 	{
 		const uint32_t dac_offset_uV = cal_cfg->dac_voltage_offset_uV;
-		if (voltage_uV > dac_offset_uV)	return ((uint64_t)(voltage_uV - dac_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u;
-		else 				return 0u;
+		if (voltage_uV > dac_offset_uV)	dac_raw = ((uint64_t)(voltage_uV - dac_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u;
+		// else dac_raw = 0u;
 	}
 	else
 	{
 		const uint32_t dac_offset_uV = - cal_cfg->dac_voltage_offset_uV;
-		return ((uint64_t)(voltage_uV + dac_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u;
+		dac_raw = ((uint64_t)(voltage_uV + dac_offset_uV) * (uint64_t)cal_cfg->dac_voltage_inv_factor_uV_n20) >> 20u;
 	}
+	return (dac_raw > 0xFFFFu) ? 0xFFFFu : dac_raw;
 }
 
 // TODO: global /nonstatic for tests
 uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t current_nA)
 {
-	uint8_t pos_v = msb_position(voltage_uV >> vs_cfg->LUT_input_V_min_log2_uV);
+	uint8_t pos_v = voltage_uV >> vs_cfg->LUT_input_V_min_log2_uV; // V-Scale is Linear!
 	uint8_t pos_c = msb_position(current_nA >> vs_cfg->LUT_input_I_min_log2_nA);
 	if (pos_v >= LUT_SIZE) pos_v = LUT_SIZE - 1;
 	if (pos_c >= LUT_SIZE) pos_c = LUT_SIZE - 1;
@@ -575,5 +581,5 @@ uint32_t get_I_mid_out_nA(void)
 
 bool_ft get_state_log_intermediate(void)
 {
-	return vss.log_v_mid;
+	return vss.enable_log_mid;
 }
