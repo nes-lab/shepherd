@@ -23,7 +23,7 @@ virtsource:
 
   V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
   V_pwr_good_disable_threshold_mV: 2400
-  immediate_pwr_good_signal: 0  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
+  immediate_pwr_good_signal: false  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
 
   C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
 
@@ -44,7 +44,7 @@ virtsource:
     [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
     [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
     [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
-  ] # input-array[12][12] depending on array[log(inp_voltage)][log(inp_current)], influence of cap-voltage is not implemented
+  ] # input-array[12][12] depending on array[inp_voltage][log(inp_current)], influence of cap-voltage is not implemented
   LUT_input_V_min_log2_uV: 7 # 2^7 = 128 uV -> array[0] is for inputs < 128 uV
   LUT_input_I_min_log2_nA: 8 # 2^8 = 256 nA -> array[0] is for inputs < 256 nA
 
@@ -66,9 +66,9 @@ virtsource:
   # - for clarity: rows are current, columns are voltage -> first row is array[V=0][:]
   # NOTE 2:
   # - input -> these 0..1-values will be transformed to 8bit internally, 1.0 represented by 255
-  # - output -> values are transformed to 2^14/value
+  # - output -> values are transformed to 2^4/value (inverse)
   # NOTE 3:
-  # - distances between these 12 values in each dimension are not linear but log2-Scale
+  # - distances between these 12 values in current-dimension are not linear but log2-Scale
   # - Input Values smaller than Min-Limits below are directed to array[0]
   # - array[1] is used for inputs from limit to 2*limit and so on
   # - for limit V_min_log2_uV = 0 the range equals: array[0] is for < 1 uV, array[1] is for 1 uV, array[2] is for 2-3 uV, ... ,  array[12] is for >= 2048 uV
