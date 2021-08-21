@@ -43,18 +43,22 @@ class VirtualSourceData(object):
         Args:
             vs_settings: if omitted, the data is generated from default values
         """
-        # TODO: also handle preconfigured virtsources here, switch by name for now
+        vs_defs = Path("./virtual_source_defs.yml")
+        with open(vs_defs, "r") as def_data:
+            self.vs_defines = yaml.safe_load(def_data)["virtsources"]
+        self.vs_inheritance = list()
+
         if isinstance(vs_settings, str) and Path(vs_settings).exists():
             vs_settings = Path(vs_settings)
         if isinstance(vs_settings, Path) and vs_settings.exists():
             with open(vs_settings, "r") as config_data:
                 vs_settings = yaml.safe_load(config_data)["virtsource"]
-        if isinstance(vs_settings, str) and vs_settings.strip().lower() == "bq25570":
-            raise NotImplementedError(f"VirtualSource was set to {vs_settings}, but it isn't implemented yet")
-        if isinstance(vs_settings, str) and vs_settings.strip().lower() == "bq25504":
-            raise NotImplementedError(f"VirtualSource was set to {vs_settings}, but it isn't implemented yet")
-        if isinstance(vs_settings, str) and vs_settings.strip().lower() == "default":
-            vs_settings = None  # TODO: replace by real default
+        if isinstance(vs_settings, str):
+            if vs_settings in self.vs_defines:
+                self.vs_inheritance.append(vs_settings)
+                vs_settings = self.vs_defines[vs_settings]
+            else:
+                raise NotImplementedError(f"VirtualSource was set to '{vs_settings}', but definition missing in 'virtual_source_defs.yml'")
 
         if vs_settings is None:
             self.vss = dict()
@@ -113,7 +117,7 @@ class VirtualSourceData(object):
 
         vs_list.append(int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["immediate_pwr_good_signal"]))  # bool
+        vs_list.append(int(self.vss["immediate_pwr_good_signal"] > 0))  # bool
 
         # Boost
         vs_list.append(int(self.vss["V_input_boost_threshold_mV"] * 1e3))  # uV
@@ -146,10 +150,10 @@ class VirtualSourceData(object):
         """
         # assembles bitmask from discrete values
         self.vss["converter_mode"] = 0
-        disable_storage = self.vss["C_output_uF"] == 0
-        self.vss["converter_mode"] += 1 if (disable_storage == 0) else 0
-        enable_boost = self.vss["enable_boost"] and (self.vss["C_output_uF"] > 0)
-        self.vss["converter_mode"] += 2 if (enable_boost > 0) else 0
+        enable_storage = self.vss["C_intermediate_uF"] > 0
+        self.vss["converter_mode"] += 1 if enable_storage else 0
+        enable_boost = self.vss["enable_boost"] and enable_storage
+        self.vss["converter_mode"] += 2 if enable_boost else 0
         self.vss["converter_mode"] += 4 if (self.vss["enable_buck"] > 0) else 0
         self.vss["converter_mode"] += 8 if (self.vss["log_intermediate_voltage"] > 0) else 0
 
@@ -176,15 +180,19 @@ class VirtualSourceData(object):
         v_out = self.vss["V_output_mV"]
         c_store = self.vss["C_intermediate_uF"]
         c_out = self.vss["C_output_uF"]
-        # first case: storage cap outside of en/dis-thresholds
-        dV_output_en_thrs_mV = v_old - pow(pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5)
+        if c_store > 0 and c_out > 0:
+            # first case: storage cap outside of en/dis-thresholds
+            dV_output_en_thrs_mV = v_old - pow(pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5)
 
-        # second case: storage cap below v_out (only different for enabled buck), enable when >= v_out
-        # v_enable is either bucks v_out or same dV-Value is calculated a second time
-        dV_output_imed_low_mV = v_out * (1 - pow(1 - c_out / c_store, 0.5))
+            # second case: storage cap below v_out (only different for enabled buck), enable when >= v_out
+            # v_enable is either bucks v_out or same dV-Value is calculated a second time
+            dV_output_imed_low_mV = v_out * (1 - pow(1 - c_out / c_store, 0.5))
+        else:
+            dV_output_en_thrs_mV = 0
+            dV_output_imed_low_mV = 0
 
         # decide which hysteresis-thresholds to use for buck-regulator
-        if self.vss["has_buck"] > 0:
+        if self.vss["enable_buck"] > 0:
             V_pre_output_mV = self.vss["V_output_mV"] + self.vss["V_buck_drop_mV"]
 
             if self.vss["V_intermediate_enable_threshold_mV"] > V_pre_output_mV:
@@ -204,85 +212,104 @@ class VirtualSourceData(object):
             self.vss["V_enable_output_threshold_mV"] = self.vss["V_intermediate_enable_threshold_mV"]
             self.vss["V_disable_output_threshold_mV"] = self.vss["V_intermediate_disable_threshold_mV"]
 
-    def check_and_complete(self) -> NoReturn:
+    def check_and_complete(self, debug: bool = True) -> NoReturn:
         """ checks virtual-source-settings for present values, adds default values to missing ones, checks limits
-        TODO: fill with values from real BQ-IC
-        TODO: join with export-FN, this saves listing all vars twice
         """
-        # TODO: act on converter Base
+        if "converter_base" in self.vss:
+            base_name = self.vss["converter_base"]
+        else:
+            base_name = "neutral"
+
+        if base_name in self.vs_inheritance:
+            raise ValueError(f"[virtSource] loop detected in 'converter_base'-inheritance-system @ last entry of {self.vs_inheritance}")
+        else:
+            self.vs_inheritance.append(base_name)
+
+        if base_name == "neutral":
+            # root of recursive completion
+            self.vss_base = self.vs_defines[base_name]
+        elif base_name in self.vs_defines:
+            vss_stash = self.vss
+            self.vss = self.vs_defines[base_name]
+            self.check_and_complete(debug=False)
+            logger.debug(f"[virtSource] config set was completed with '{base_name}'-base")
+            self.vss_base = self.vss
+            self.vss = vss_stash
+        else:
+            raise NotImplementedError(f"[virtSource] converter base '{base_name}' is unknown to system")
 
         # General
-        self._check_num("log_intermediate_voltage", 0, 0, 4e9)
-        self._check_num("interval_startup_delay_drain_ms", 10, 0, 10000)
+        self._check_num("log_intermediate_voltage", 4.29e9)
+        self._check_num("interval_startup_delay_drain_ms", 10000)
 
-        self._check_num("V_input_max_mV", 4e6, 0, 4e6)
-        self._check_num("I_input_max_mA", 4e3, 0, 4e3)
-        self._check_num("V_input_drop_mV", 0, 0, 4e6)
+        self._check_num("V_input_max_mV", 4.29e6)
+        self._check_num("I_input_max_mA", 4.29e3)
+        self._check_num("V_input_drop_mV", 4.29e6)
 
-        self._check_num("C_intermediate_uF", 22, 0, 4e6)
-        self._check_num("I_intermediate_leak_nA", 8, 0, 4e9)
-        self._check_num("V_intermediate_init_mV", 3000, 0, 10000)
+        self._check_num("C_intermediate_uF", 4.29e6)
+        self._check_num("I_intermediate_leak_nA", 4.29e9)
+        self._check_num("V_intermediate_init_mV", 10000)
 
-        self._check_num("V_pwr_good_enable_threshold_mV", 2800, 0, 5000)
-        self._check_num("V_pwr_good_disable_threshold_mV", 2400, 0, 5000)
-        self._check_num("immediate_pwr_good_signal", 1, 0, 1)
+        self._check_num("V_pwr_good_enable_threshold_mV", 10000)
+        self._check_num("V_pwr_good_disable_threshold_mV", 10000)
+        self._check_num("immediate_pwr_good_signal", 4.29e9)
 
-        self._check_num("C_output_uF", 1, 0, 4e6)
+        self._check_num("C_output_uF", 4.29e6)
 
         # Boost
-        self._check_num("enable_boost", 0, 0, 4e9)
-        self._check_num("V_input_boost_threshold_mV", 130, 0, 5000)
-        self._check_num("V_intermediate_max_mV", 4200, 0, 10000)
+        self._check_num("enable_boost", 4.29e9)
+        self._check_num("V_input_boost_threshold_mV", 10000)
+        self._check_num("V_intermediate_max_mV", 10000)
 
-        self._check_list("LUT_input_efficiency", 12 * [12 * [0.500]], 0.0, 1.0)
-        self._check_num("LUT_input_V_min_log2_uV", 0, 0, 20)
-        self._check_num("LUT_input_I_min_log2_nA", 0, 0, 20)
+        self._check_list("LUT_input_efficiency", 1.0)
+        self._check_num("LUT_input_V_min_log2_uV", 20)  # TODO: name could confuse
+        self._check_num("LUT_input_I_min_log2_nA", 20)
 
         # Buck
-        self._check_num("enable_buck", 0, 0, 4e9)
-        self._check_num("V_output_mV", 2300, 0, 5000)
-        self._check_num("V_buck_drop_mV", 0, 0, 5000)
+        self._check_num("enable_buck", 4.29e9)
+        self._check_num("V_output_mV", 5000)
+        self._check_num("V_buck_drop_mV", 5000)
 
-        self._check_num("V_intermediate_enable_threshold_mV", 2400, 0, 5000)
-        self._check_num("V_intermediate_disable_threshold_mV", 2000, 0, 5000)
-        self._check_num("interval_check_thresholds_ms", 64, 0, 4e3)
+        self._check_num("V_intermediate_enable_threshold_mV", 10000)
+        self._check_num("V_intermediate_disable_threshold_mV", 10000)
+        self._check_num("interval_check_thresholds_ms", 4.29e3)
 
-        self._check_list("LUT_output_efficiency", 12 * [0.800], 0.0, 1.0)
-        self._check_num("LUT_output_I_min_log2_nA", 0, 0, 20)
+        self._check_list("LUT_output_efficiency", 1.0)
+        self._check_num("LUT_output_I_min_log2_nA", 20)
 
         # internal
         self.calculate_internal_states()
-        self._check_num("dV_enable_output_mV", 0, 0, 4e6)
-        self._check_num("V_enable_output_threshold_mV", 0, 0, 4e6)
-        self._check_num("V_disable_output_threshold_mV", 0, 0, 4e6)
-        self._check_num("Constant_us_per_nF_n28", 122016, 0, 4.29e9)
+        self._check_num("dV_enable_output_mV", 4.29e6)
+        self._check_num("V_enable_output_threshold_mV", 4.29e6)
+        self._check_num("V_disable_output_threshold_mV", 4.29e6)
+        self._check_num("Constant_us_per_nF_n28", 4.29e9)
 
-    def _check_num(self, setting_key: str, default: float, min_value: float = None, max_value: float = None) -> NoReturn:
+    def _check_num(self, setting_key: str, max_value: float = None) -> NoReturn:
         try:
             set_value = self.vss[setting_key]
         except KeyError:
-            set_value = default
-            logger.debug(f"[virtSource] Setting '{setting_key}' was not provided, will be set to default = {default}")
+            set_value = self.vss_base[setting_key]
+            logger.debug(f"[virtSource] Setting '{setting_key}' was not provided, will be set to default = {set_value}")
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
                 f"[virtSource] '{setting_key}' must a single positive number, but is '{set_value}'")
-        if (min_value is not None) and (set_value > min_value):
-            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be bigger than {min_value}")
+        if set_value < 0:
+            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be >= 0")
         if (max_value is not None) and (set_value > max_value):
-            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be smaller than {max_value}")
+            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be <= {max_value}")
         self.vss[setting_key] = set_value
 
-    def _check_list(self, settings_key: str, default: list, min_value: float = 0, max_value: float = 1023) -> NoReturn:
-        default = flatten_dict_list(default)
+    def _check_list(self, setting_key: str, max_value: float = 1023) -> NoReturn:
+        default = flatten_dict_list(self.vss_base[setting_key])
         try:
-            values = flatten_dict_list(self.vss[settings_key])
+            values = flatten_dict_list(self.vss[setting_key])
         except KeyError:
             values = default
-            logger.debug(f"[virtSource] Setting {settings_key} was not provided, will be set to default = {values[0]}")
-        if (len(values) != len(default)) or (min(values) < min_value) or (max(values) > max_value):
+            logger.debug(f"[virtSource] Setting {setting_key} was not provided, will be set to default = {values[0]}")
+        if (len(values) != len(default)) or (min(values) < 0) or (max(values) > max_value):
             raise NotImplementedError(
-                f"[virtSource] {settings_key} must a list of {len(default)} values, within range of [{min_value}; {max_value}]")
-        self.vss[settings_key] = values
+                f"[virtSource] {setting_key} must a list of {len(default)} values, within range of [{0}; {max_value}]")
+        self.vss[setting_key] = values
 
     def get_state_log_intermediate(self):
         return self.vss["log_intermediate_voltage"] > 0
