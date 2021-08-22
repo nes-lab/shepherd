@@ -8,8 +8,8 @@ virtsources:
 
     interval_startup_delay_drain_ms: 0
 
-    V_input_max_mV: 4.2e+6
-    I_input_max_mA: 4.2e+3
+    V_input_max_mV: 10000
+    I_input_max_mA: 4200
     V_input_drop_mV: 0.0  # simulate input-diode
 
     C_intermediate_uF: 0.0  # primary storage-Cap

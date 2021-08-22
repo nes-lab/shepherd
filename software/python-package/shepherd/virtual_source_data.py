@@ -242,11 +242,11 @@ class VirtualSourceData(object):
         self._check_num("log_intermediate_voltage", 4.29e9)
         self._check_num("interval_startup_delay_drain_ms", 10000)
 
-        self._check_num("V_input_max_mV", 4.29e6)
+        self._check_num("V_input_max_mV", 10e3)
         self._check_num("I_input_max_mA", 4.29e3)
         self._check_num("V_input_drop_mV", 4.29e6)
 
-        self._check_num("C_intermediate_uF", 4.29e6)
+        self._check_num("C_intermediate_uF", 100e3)
         self._check_num("I_intermediate_leak_nA", 4.29e9)
         self._check_num("V_intermediate_init_mV", 10000)
 
@@ -262,7 +262,7 @@ class VirtualSourceData(object):
         self._check_num("V_intermediate_max_mV", 10000)
 
         self._check_list("LUT_input_efficiency", 1.0)
-        self._check_num("LUT_input_V_min_log2_uV", 20)  # TODO: name could confuse
+        self._check_num("LUT_input_V_min_log2_uV", 20)  # TODO: naming could confuse
         self._check_num("LUT_input_I_min_log2_nA", 20)
 
         # Buck
