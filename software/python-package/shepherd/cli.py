@@ -368,8 +368,8 @@ def rpc(port):
         shepherd_io.__exit__()
         sys.exit(0)
 
-    gevent.signal(signal.SIGTERM, stop_server)
-    gevent.signal(signal.SIGINT, stop_server)
+    gevent.signal_handler(signal.SIGTERM, stop_server)
+    gevent.signal_handler(signal.SIGINT, stop_server)
 
     shepherd_io.start()
     logger.info("Started shepherd debug interface")
