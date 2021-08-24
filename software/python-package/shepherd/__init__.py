@@ -18,6 +18,10 @@ from logging import NullHandler
 from pathlib import Path
 from contextlib import ExitStack
 from typing import NoReturn
+import msgpack
+import msgpack_numpy
+
+import numpy
 import serial
 
 import invoke
@@ -235,13 +239,13 @@ class ShepherdDebug(ShepherdIO):
         else:
             raise ValueError(f"ADC channel { channel } unknown")
 
-        self._send_msg(commons.MSG_DBG_ADC, channel_no)
+        super()._send_msg(commons.MSG_DBG_ADC, channel_no)
 
         msg_type, value = self._get_msg(3.0)
         if msg_type != commons.MSG_DBG_ADC:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_ADC) } "
-                    f"got t{ hex(msg_type) } v{ value }"
+                    f"Expected msg type { hex(commons.MSG_DBG_ADC) }, "
+                    f"but got type={ hex(msg_type) } val={ value }"
                     )
         return value[0]
 
@@ -260,17 +264,17 @@ class ShepherdDebug(ShepherdIO):
             #define TARGET_GPIO4            BIT_SHIFT(P8_27) // r31_08
             Note: this table is a Copy (for reference) from pru1/main.c
         """
-        self._send_msg(commons.MSG_DBG_GPI, 0)
+        super()._send_msg(commons.MSG_DBG_GPI, 0)
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_GPI:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_GPI) } "
-                    f"got type { hex(msg_type) } val { value }"
+                    f"Expected msg type { hex(commons.MSG_DBG_GPI) }, "
+                    f"but got type={ hex(msg_type) } val={ value }"
                     )
         return value[0]
 
     def gp_set_batok(self, value: int):
-        self._send_msg(commons.MSG_DBG_GP_BATOK, value)
+        super()._send_msg(commons.MSG_DBG_GP_BATOK, value)
 
     def dac_write(self, channels: int, value: int):
         """Writes value to specified DAC channel, DAC8562
@@ -282,38 +286,38 @@ class ShepherdDebug(ShepherdIO):
         channels = (int(channels) & ((1 << 4) - 1)) << 20
         value = int(value) & ((1 << 16) - 1)
         message = channels | value
-        self._send_msg(commons.MSG_DBG_DAC, message)
+        super()._send_msg(commons.MSG_DBG_DAC, message)
 
     def get_buffer(self, timeout=None):
         raise NotImplementedError("Method not implemented for debugging mode")
 
     def dbg_fn_test(self, factor: int, mode: int) -> int:
-        self._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
+        super()._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_FN_TESTS:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]*(2**32) + value[1]  # P_out_pW
 
     def vsource_init(self, vs_settings, cal_settings):
-        self.send_virtsource_settings(vs_settings)
-        self.send_calibration_settings(cal_settings)
+        super().send_virtsource_settings(vs_settings)
+        super().send_calibration_settings(cal_settings)
         time.sleep(0.5)
-        self.start()
+        super().start()
         # print(sysfs_interface.read_virtsource_settings())
         # print(sysfs_interface.read_calibration_settings())
-        self._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
-        msg_type, value = self._get_msg()  # no data, just a confirmation
+        super()._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
+        msg_type, value = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSOURCE_INIT:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, but got type={ hex(msg_type) } val={ value }")
 
     def vsource_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_voltage_uV), int(input_current_nA)])
+        super()._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_voltage_uV), int(input_current_nA)])
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]*(2**32) + value[1]  # P_inp_pW
 
     def vsource_charge(self, input_voltage_uV: int, input_current_nA: int) -> (int, int):
@@ -321,7 +325,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_CHARGE:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, but got type={ hex(msg_type) } val={ value }")
         return value[0], value[1]  # V_store_uV, V_out_dac_raw
 
     def vsource_calc_out_power(self, current_adc_raw: int) -> int:
@@ -329,7 +333,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]*(2**32) + value[1]  # P_out_pW
 
     def vsource_drain(self, current_adc_raw: int) -> (int, int):
@@ -337,7 +341,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_DRAIN:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, but got type={ hex(msg_type) } val={ value }")
         return value[0], value[1]  # V_store_uV, V_out_dac_raw
 
     def vsource_update_capacitor(self) -> int:
@@ -345,7 +349,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]  # V_store_uV
 
     def vsource_update_boostbuck(self) -> int:
@@ -353,7 +357,7 @@ class ShepherdDebug(ShepherdIO):
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
             raise ShepherdIOException(
-                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, got type { hex(msg_type) } val { value }")
+                    f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]  # V_out_dac_raw
 
     @staticmethod
@@ -412,6 +416,37 @@ class ShepherdDebug(ShepherdIO):
 
     def reinitialize_prus(self) -> NoReturn:
         super().reinitialize_prus()
+
+    def set_aux_target_voltage_raw(self, voltage_raw) -> NoReturn:
+        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw)
+
+    def switch_shepherd_mode(self, mode: str) -> str:
+        mode_old = sysfs_interface.get_mode()
+        sysfs_interface.write_mode(mode, force=True)
+        super().reinitialize_prus()
+        if "debug" in mode:
+            super().start(wait_blocking=True)
+        return mode_old
+
+    def sample_emu_cal(self, length_n_buffers: int = 10) :
+        length_n_buffers = int(min(max(length_n_buffers, 1), 60))
+
+        super().reinitialize_prus()
+        time.sleep(0.1)
+        for i in range(length_n_buffers+2):  # Fill FIFO
+            time.sleep(0.02)
+            super()._return_buffer(i)
+        time.sleep(0.1)
+
+        base_array = numpy.empty([0], dtype="=u4")
+        super().start(wait_blocking=True)
+        time.sleep(0.1)
+        for i in range(length_n_buffers):  # get Data
+            idx, emu_buf = super().get_buffer(timeout=1)
+            base_array = numpy.hstack((base_array, emu_buf.current))
+            #super()._return_buffer(idx)
+        super().reinitialize_prus()
+        return msgpack.packb(base_array, default=msgpack_numpy.encode)  # zeroRPC / msgpack can not handle numpy-data without this
 
 
 def record(

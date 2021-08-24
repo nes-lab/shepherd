@@ -13,6 +13,7 @@ requirements = [
     "h5py",
     "psutil",
     "pyserial",
+    "msgpack", "msgpack-numpy"
 ]
 
 # We are installing the DBUS module to build the docs, but the C libraries
