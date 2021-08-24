@@ -70,6 +70,7 @@ enum ShepherdMode {
 	MODE_HARVEST_TEST,
 	MODE_EMULATE,
 	MODE_EMULATE_TEST,
+	MODE_EMULATE_CAL,
 	MODE_DEBUG,
 	MODE_NONE
 }; // TODO: allow to set "NONE", shuts down hrv & emu

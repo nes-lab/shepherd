@@ -281,6 +281,8 @@ static ssize_t sysfs_mode_show(struct kobject *kobj,
 		return sprintf(buf, "emulation");
 	case MODE_EMULATE_TEST:
 		return sprintf(buf, "emulation_test"); // TODO: adapt modes to pru-changes
+    case MODE_EMULATE_CAL:
+        return sprintf(buf, "emulation_cal");
 	case MODE_DEBUG:
 		return sprintf(buf, "debug");
     case MODE_NONE:
@@ -321,6 +323,11 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
             return -EINVAL;
 
         mode = MODE_EMULATE_TEST;
+    } else if (strncmp(buf, "emulation_cal", 13) == 0) {
+        if ((count < 13) || (count > 14))
+            return -EINVAL;
+
+        mode = MODE_EMULATE_CAL;
 	} else if (strncmp(buf, "emulation", 9) == 0) {
 		if ((count < 9) || (count > 10))
 			return -EINVAL;
