@@ -297,7 +297,7 @@ class ShepherdIO(object):
         """
         self.mode = mode
         self.gpios = dict()
-        self.shared_mem = None
+        self.shared_mem: SharedMem = None
 
     def __del__(self):
         ShepherdIO._instance = None
@@ -314,10 +314,7 @@ class ShepherdIO(object):
             logger.debug("Shepherd hardware is powered up")
 
             # If shepherd hasn't been terminated properly
-            if sysfs_interface.get_state() != "idle":
-                sysfs_interface.set_stop()
-
-            sysfs_interface.wait_for_state("idle", 5)
+            self.reinitialize_prus()
             logger.debug(f"Switching to '{ self.mode }'-mode")
             sysfs_interface.write_mode(self.mode)
 
@@ -418,13 +415,13 @@ class ShepherdIO(object):
 
     def reinitialize_prus(self) -> NoReturn:
         sysfs_interface.set_stop(force=True)  # forces idle
-        sysfs_interface.wait_for_state("idle", 3)
+        sysfs_interface.wait_for_state("idle", 5)
 
     def _cleanup(self):
         logger.debug("ShepherdIO is commanded to power down / cleanup")
         while sysfs_interface.get_state() != "idle":
             try:
-                sysfs_interface.set_stop()
+                sysfs_interface.set_stop(force=True)
             except Exception as e:
                 print(e)
             try:

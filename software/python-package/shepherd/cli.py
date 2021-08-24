@@ -110,9 +110,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     cal = CalibrationData.from_default()
     logger.info(f"Target Voltage \t= {voltage} V")
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
-    sysfs_interface.set_stop(force=True)  # forces idle
-    sysfs_interface.wait_for_state("idle", 3)
-    sysfs_interface.write_mode("emulation")
+    sysfs_interface.write_mode("emulation", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
     logger.info(f"Re-Initialized PRU to finalize settings")
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)

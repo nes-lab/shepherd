@@ -30,7 +30,7 @@ class SysfsInterfaceException(Exception):
 
 
 # TODO: what is with "None"?
-shepherd_modes = ["harvesting", "harvesting_test", "emulation", "emulation_test", "debug"]
+shepherd_modes = ["harvesting", "harvesting_test", "emulation", "emulation_test", "emulation_cal", "debug"]
 
 attribs = {
     "mode": {"path": "mode", "type": str},
@@ -108,13 +108,12 @@ def set_stop(force: bool = False) -> NoReturn:
         current_state = get_state()
         if current_state != "running":
             raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
-            # TODO: relax conditions if possible, learn to stop from everything
 
     with open(str(sysfs_path / "state"), "w") as f:
         f.write("stop")
 
 
-def write_mode(mode: str) -> NoReturn:
+def write_mode(mode: str, force: bool = False) -> NoReturn:
     """ Sets the shepherd mode.
 
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
@@ -125,10 +124,12 @@ def write_mode(mode: str) -> NoReturn:
     """
     if mode not in shepherd_modes:
         raise SysfsInterfaceException("invalid value for mode")
-    if get_state() != "idle":
-        raise SysfsInterfaceException(
-            f"Cannot set mode when shepherd is { get_state() }"
-        )
+    if force:
+        set_stop(force=True)
+        wait_for_state("idle", 5)
+    else:
+        if get_state() != "idle":
+            raise SysfsInterfaceException(f"Cannot set mode when shepherd is { get_state() }")
 
     logger.debug(f"sysfs/mode: '{mode}'")
     with open(str(sysfs_path / "mode"), "w") as f:
@@ -172,7 +173,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
         voltage_raw: desired voltage in volt
     """
     if voltage_raw >= (2**16):
-        logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value")
+        logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value -> this will link both channels")
     with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "w") as f:
         logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
         f.write(str(voltage_raw))
