@@ -114,8 +114,8 @@ def meas_emulator_setpoint(rpc_client, smu_channel, voltage_V, current_A):
 
     # write both dac-channels of emulator
     rpc_client.set_aux_target_voltage_raw(2 ** 20 + convert_dac_voltage_to_raw(voltage_V))
-    time.sleep(0.5)
-
+    time.sleep(0.1)
+    rpc_client.sample_emu_cal(1)  # seems to solve some readout-errors at start
     meas_enc = rpc_client.sample_emu_cal(10)
     meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
     adc_current_raw = float(np.mean(meas_rec))
@@ -207,7 +207,8 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                 }
 
                 voltages = [0.0, 0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
-                currents = [0e-3, 1e-6, 5e-6, 10e-6, 50e-6, 100e-6, 500e-6, 1e-3, 5e-3, 10e-3, 15e-3, 20e-3, 25e-3, 30e-3, 35e-3, 40e-3, 45e-3]
+                currents = [20e-3]
+                #currents = [0e-3, 1e-6, 5e-6, 10e-6, 50e-6, 100e-6, 500e-6, 1e-3, 5e-3, 10e-3, 15e-3, 20e-3, 25e-3, 30e-3, 35e-3, 40e-3, 45e-3]
                 mode_old = rpc_client.switch_shepherd_mode("emulation_cal")
 
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target A")
