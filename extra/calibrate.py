@@ -11,6 +11,8 @@ from scipy import stats
 from fabric import Connection
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+import msgpack
+import msgpack_numpy
 
 V_REF_DAC = 2.5
 G_DAC_A = 1.0
@@ -156,6 +158,43 @@ def meas_emulator_current(rpc_client, smu_channel):
     return results
 
 
+def meas_emulator_current_v2(rpc_client, smu_channel):
+
+    #currents_A = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 10e-3]
+    currents_A = [0.0, 10e-3]
+
+    # write both dac-channels of emulator
+    mode_old = rpc_client.switch_shepherd_mode("emulation_cal")
+
+    dac_voltage = 2.5
+    print(f" -> setting dac-voltage to {dac_voltage} V")
+    rpc_client.set_aux_target_voltage_raw(2 ** 20 + convert_dac_voltage_to_raw(dac_voltage))
+
+    smu_channel.configure_isource(range=0.050)
+    smu_channel.set_current(0.000, vlimit=3.0)
+    smu_channel.set_output(True)
+
+    results = list()
+    for current_A in currents_A:
+        smu_channel.set_current(-current_A, vlimit=3.0)  # negative current, because smu acts as a drain
+
+        time.sleep(0.25)
+
+        meas_enc = rpc_client.sample_emu_cal(10)  # captures # buffers
+        meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
+        adc_current_raw = float(np.mean(meas_rec))
+
+        # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
+        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=1.0)
+
+        results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
+        print(f"  reference: {current_A} A @ {smu_voltage:.4f} V; shepherd: {adc_current_raw} raw")
+
+    smu_channel.set_output(False)
+    rpc_client.switch_shepherd_mode(mode_old)
+    return results
+
+
 def meas_emulator_voltage(rpc_client, smu_channel):
 
     voltages = np.linspace(0.3, 2.5, 12)
@@ -187,7 +226,7 @@ def meas_emulator_voltage(rpc_client, smu_channel):
 def measurement_dynamic(values: list, dict_val: str = "shepherd_raw") -> float:
     value_min = min([value[dict_val] for value in values])
     value_max = max([value[dict_val] for value in values])
-    return (value_max / value_min)
+    return value_max - value_min
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
@@ -262,8 +301,8 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
-                meas_a = meas_emulator_current(rpc_client, smu.A)
-                meas_b = meas_emulator_current(rpc_client, smu.B)
+                meas_a = meas_emulator_current_v2(rpc_client, smu.A)
+                meas_b = meas_emulator_current_v2(rpc_client, smu.B)
                 if measurement_dynamic(meas_a) > measurement_dynamic(meas_b):
                     measurement_dict["emulation"]["adc_current"] = meas_a
                 else:
@@ -271,14 +310,15 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
 
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target B")
                 # targetB-Port will get the monitored dac-channel-b
-                rpc_client.select_target_for_power_tracking(False)
-                meas_a = meas_emulator_current(rpc_client, smu.A)
-                meas_b = meas_emulator_current(rpc_client, smu.B)
+                rpc_client.select_target_for_power_tracking(True)
+                meas_a = meas_emulator_current_v2(rpc_client, smu.A)
+                meas_b = meas_emulator_current_v2(rpc_client, smu.B)
                 if measurement_dynamic(meas_a) > measurement_dynamic(meas_b):
                     measurement_dict["emulation"]["adc_voltage"] = meas_a
                 else:
                     measurement_dict["emulation"]["adc_voltage"] = meas_b
 
+                #rpc_client.select_target_for_power_tracking(False)
                 print(f"Measurement - Emulation - Voltage - DAC Channel A")
                 measurement_dict["emulation"]["dac_voltage_a"] = meas_emulator_voltage(rpc_client, smu.A)
                 print(f"Measurement - Emulation - Voltage - DAC Channel B")
