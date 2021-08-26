@@ -10,8 +10,7 @@ remotely.
 :license: MIT, see LICENSE for more details.
 """
 import os
-from dearpygui.core import *
-from dearpygui.simple import *
+import dearpygui.dearpygui as dpg
 from past.builtins import execfile
 from shepherd_callbacks import *
 
@@ -19,119 +18,125 @@ from shepherd_callbacks import *
 
 
 def main():
+    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing some pieces, or proper doc) -> also add back tooltips
+    #dpg.set_main_window_title(title="Shepherd Testing and Debug Tool")
+    #dpg.set_main_window_size(1000, 600)
 
-    set_main_window_title(title="Shepherd Testing and Debug Tool")
-    set_main_window_size(1000, 600)
-    set_render_callback(callback=window_refresh_callback)
-    set_theme(theme="Gold")  # fav: Purple, Gold, Light
-    set_start_callback(callback=program_start_callback)
+    #dpg.set_render_callback(callback=window_refresh_callback)
+    #dpg.set_viewport_resize_callback(callback=window_refresh_callback)
+    #dpg.set_viewport_title(title="Shepherd Testing and Debug Tool (((VIEWPORT)))")
+    #dpg.set_theme(theme="Gold")  # fav: Purple, Gold, Light
+    dpg.set_start_callback(callback=program_start_callback)
 
-    with window("main"):
+    with dpg.window(id="main", label="Shepherd Testing and Debug Tool", width=1000, height=600):
 
-        add_input_text("host_name",
-                       tip="enter name or IP of host",
+        dpg.add_input_text(id="host_name",
+                       #tip="enter name or IP of host",
                        default_value="sheep0",
                        hint="", label="",
                        width=120,
                        )
 
-        add_same_line(spacing=10)
-        add_button("button_disconnect",
+        dpg.add_same_line(spacing=10)
+        dpg.add_button(id="button_disconnect",
                    label="Connect",
-                   tip="Connect or Disconnects to Node",
+                   #tip="Connect or Disconnects to Node",
                    width=150,
                    callback=connect_button_callback)
 
-        add_same_line(spacing=50)
-        add_text("text_section_refresh", default_value="Refresh Rate:")
-        add_same_line(spacing=5)
-        add_input_int("refresh_value",
-                       tip="set refresh rate of read-out",
+        dpg.add_same_line(spacing=50)
+        dpg.add_text(id="text_section_refresh", default_value="Refresh Rate:")
+        dpg.add_same_line(spacing=5)
+        dpg.add_input_int(id="refresh_value",
+                       #tip="set refresh rate of read-out",
                        default_value=round(1/refresh_interval),
                        label="",
                        width=120,
                        callback=refresh_rate_callback,
                        )
 
-        add_spacing(count=5)
-        add_text("text_section_routing", default_value="Routing")
-        add_text("text_section_routing_A", default_value="Board Power")
-        add_same_line(spacing=5)
-        add_radio_button("shepherd_pwr",
-                         items=["Disabled", "Enabled"],
-                         default_value=1,
+        dpg.add_spacing(count=5)
+        dpg.add_text(id="text_section_routing", default_value="Routing")
+        dpg.add_text(id="text_section_routing_A", default_value="Board Power")
+        dpg.add_same_line(spacing=5)
+        dpg.add_radio_button(id="shepherd_pwr",
+                         items=[*able_dict],
+                         default_value=[*able_dict][1],
                          callback=shepherd_power_callback, show=True)
-        add_same_line(spacing=30)
-        add_text("text_section_routing_E", default_value="Shepherd State")
-        add_same_line(spacing=5)
-        add_radio_button("shepherd_state",
-                         items=["Stop", "Running"],
-                         default_value=int(shepherd_state),
+        dpg.add_same_line(spacing=30)
+        dpg.add_text(id="text_section_routing_E", default_value="Shepherd State")
+        dpg.add_same_line(spacing=5)
+        dpg.add_radio_button(id="shepherd_state",
+                         items=[*state_dict],
+                         default_value=[*state_dict][1],
                          callback=shepherd_state_callback, show=True,
-                         tip="Sets PRU-Loops to idle or running")
-        add_same_line(spacing=30)
-        add_text("text_section_routing_B", default_value="Target Power")
-        add_same_line(spacing=5)
-        add_radio_button("target_pwr",
-                         items=["Target A", "Target B"],
-                         default_value=1,
+                         #tip="Sets PRU-Loops to idle or running"
+                        )
+        dpg.add_same_line(spacing=30)
+        dpg.add_text(id="text_section_routing_B", default_value="Target Power")
+        dpg.add_same_line(spacing=5)
+        dpg.add_radio_button(id="target_pwr",
+                         items=[*target_dict],
+                         default_value=[*target_dict][0],
                          callback=target_power_callback, show=True,
-                         tip="Change is also triggering a shepherd state change / pru re-init / reset")
-        add_same_line(spacing=30)
-        add_text("text_section_routing_C", default_value="Target IO")
-        add_same_line(spacing=5)
-        add_radio_button("target_io",
-                         items=["Target A", "Target B"],
-                         default_value=1,
+                         #tip="Change is also triggering a shepherd state change / pru re-init / reset"
+                             )
+        dpg.add_same_line(spacing=30)
+        dpg.add_text(id="text_section_routing_C", default_value="Target IO")
+        dpg.add_same_line(spacing=5)
+        dpg.add_radio_button(id="target_io",
+                         items=[*target_dict],
+                         default_value=[*target_dict][0],
                          callback=target_io_callback, show=True)
-        add_same_line(spacing=30)
-        add_text("text_section_routing_D", default_value="IO Lvl-Conv")
-        add_same_line(spacing=5)
-        add_radio_button("io_lvl_converter",
-                         items=["Disabled", "Enabled"],
-                         default_value=0,
+        dpg.add_same_line(spacing=30)
+        dpg.add_text(id="text_section_routing_D", default_value="IO Lvl-Conv")
+        dpg.add_same_line(spacing=5)
+        dpg.add_radio_button(id="io_lvl_converter",
+                         items=[*able_dict],
+                         default_value=[*able_dict][0],
                          callback=io_level_converter_callback, show=True,
-                         tip="pass through signals from beaglebone to targets")
+                         #tip="pass through signals from beaglebone to targets"
+                             )
 
-        add_spacing(count=5)
-        add_text("text_section_sub", default_value="Control-Logic")
+        dpg.add_spacing(count=5)
+        dpg.add_text(id="text_section_sub", default_value="Control-Logic")
 
-        add_checkbox("gpio_nRes_REC_ADC",
-                     tip="Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
+        dpg.add_checkbox(id="gpio_nRes_REC_ADC",
+                     #tip="Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
                      label="Enable Rec-ADC",
                      default_value=True,
                      callback=set_power_state_recoder,
                      )
-        add_same_line(spacing=5)
-        add_checkbox("gpio_nRes_EMU_ADC",
-                     tip="Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
+        dpg.add_same_line(spacing=5)
+        dpg.add_checkbox(id="gpio_nRes_EMU_ADC",
+                     #tip="Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
                      label="Enable Emu-ADC",
                      default_value=True,
                      callback=set_power_state_emulator,
                      )
-        add_same_line(spacing=15)
-        add_button("button_reinit_prus",
+        dpg.add_same_line(spacing=15)
+        dpg.add_button(id="button_reinit_prus",
                    label="Re-Init PRUs",
-                   tip="Applies newly received states and configures Cape-ICs",
+                   #tip="Applies newly received states and configures Cape-ICs",
                    width=130,
                    callback=reinitialize_prus)
 
 
-        add_spacing(count=5)
-        add_text("text_section_dac", default_value="DAC-Control")
+        dpg.add_spacing(count=5)
+        dpg.add_text(id="text_section_dac", default_value="DAC-Control")
 
         for iter in range(len(dac_channels)):
-            add_spacing(count=1)
-            add_checkbox(f"en_dac{iter}",
+            dpg.add_spacing(count=1)
+            dpg.add_checkbox(id=f"en_dac{iter}",
                          label="En DAC " + str(iter),
                          default_value=True,
                          callback=dac_en_callback,
-                         callback_data=[iter])
-            add_same_line(spacing=20)
-            add_text(f"textA_dac{iter}", default_value="Voltage:")
-            add_same_line(spacing=5)
-            add_slider_int(f"value_raw_dac{iter}",
-                           tip="set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI",
+                         user_data=iter)
+            dpg.add_same_line(spacing=20)
+            dpg.add_text(id=f"textA_dac{iter}", default_value="Voltage:")
+            dpg.add_same_line(spacing=5)
+            dpg.add_slider_int(id=f"value_raw_dac{iter}",
+                           #tip="set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI",
                            #before="Voltage",
                            label="raw",
                            width=450,
@@ -140,9 +145,9 @@ def main():
                            max_value=((1 << 16) - 1),
                            clamped=True,
                            callback=dac_raw_callback,
-                           callback_data=[iter])
-            add_same_line(spacing=10)
-            add_input_float(f"value_mV_dac{iter}",
+                           user_data=iter)
+            dpg.add_same_line(spacing=10)
+            dpg.add_input_float(id=f"value_mV_dac{iter}",
                             min_value=0.0,
                             max_value=5000.0,
                             min_clamped=True,
@@ -153,59 +158,59 @@ def main():
                             before="",
                             label="mV",
                             callback=dac_val_callback,
-                            callback_data=[iter])
-            add_same_line(spacing=10)
-            add_text(f"textB_dac{iter}", default_value=dac_channels[iter][3])
+                            user_data=iter)
+            dpg.add_same_line(spacing=10)
+            dpg.add_text(id=f"textB_dac{iter}", default_value=dac_channels[iter][3])
 
-        add_spacing(count=5)
-        add_text("text_section_adc",
+        dpg.add_spacing(count=5)
+        dpg.add_text(id="text_section_adc",
                  default_value="ADC-Readout")
 
         for iter in range(len(adc_channels)):
-            add_spacing(count=1)
-            add_text(f"text_A_adc{iter}", default_value=f"ADC{iter} - " + adc_channels[iter][3])
-            add_same_line(spacing=20)
-            add_text(f"text_B_adc{iter}", default_value="raw")
-            add_same_line(spacing=5)
-            add_input_text(f"value_raw_adc{iter}",
+            dpg.add_spacing(count=1)
+            dpg.add_text(id=f"text_A_adc{iter}", default_value=f"ADC{iter} - " + adc_channels[iter][3])
+            dpg.add_same_line(spacing=20)
+            dpg.add_text(id=f"text_B_adc{iter}", default_value="raw")
+            dpg.add_same_line(spacing=5)
+            dpg.add_input_text(id=f"value_raw_adc{iter}",
                            default_value="0",
                            readonly=True,
                            label="",
                            width=200)
-            add_same_line(spacing=20)
-            add_text(f"text_C_adc{iter}", default_value="SI")
-            add_same_line(spacing=5)
-            add_input_text(f"value_mSI_adc{iter}",
+            dpg.add_same_line(spacing=20)
+            dpg.add_text(id=f"text_C_adc{iter}", default_value="SI")
+            dpg.add_same_line(spacing=5)
+            dpg.add_input_text(id=f"value_mSI_adc{iter}",
                            default_value="0",
                            readonly=True,
                            label="",
                            width=200)
 
-        add_spacing(count=5)
-        add_text("text_section_gpio",
+        dpg.add_spacing(count=5)
+        dpg.add_text(id="text_section_gpio",
                  default_value="GPIO-Control")
-        add_spacing(count=1)
-        add_text("text_A_gpio", default_value="Set One")
-        add_same_line(spacing=35)
-        add_radio_button("gpio_input",
+        dpg.add_spacing(count=1)
+        dpg.add_text(id="text_A_gpio", default_value="Set One")
+        dpg.add_same_line(spacing=35)
+        dpg.add_radio_button(id="gpio_input",
                          items=gpio_channels,
                          callback=gpio_callback,
                          horizontal=True,
                          default_value=len(gpio_channels)-1)
 
-        add_spacing(count=1)
-        add_text("text_B_gpio", default_value="PRU Input")
-        add_same_line(spacing=16)
-        add_input_text(f"gpio_output",
+        dpg.add_spacing(count=1)
+        dpg.add_text(id="text_B_gpio", default_value="PRU Input")
+        dpg.add_same_line(spacing=16)
+        dpg.add_input_text(id=f"gpio_output",
                        default_value="0",
                        readonly=True,
                        label="",
                        width=200)
 
-        add_spacing(count=2)
-        add_text("text_C_gpio", default_value="PRU Output")
-        add_same_line(spacing=10)
-        add_checkbox("gpio_BAT_OK",
+        dpg.add_spacing(count=2)
+        dpg.add_text(id="text_C_gpio", default_value="PRU Output")
+        dpg.add_same_line(spacing=10)
+        dpg.add_checkbox(id="gpio_BAT_OK",
                      label="BAT_OK",
                      default_value=False,
                      callback=gpio_batok_callback,
@@ -213,5 +218,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-    start_dearpygui(primary_window="main")
-    stop_dearpygui()
+    dpg.set_primary_window("main", True)
+    dpg.start_dearpygui()
+    dpg.stop_dearpygui()
