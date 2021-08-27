@@ -206,17 +206,16 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                     "adc_voltage": list(),  # not existing currently
                 }
 
-                voltages = [0.0, 0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
-                currents = [20e-3]
-                #currents = [0e-3, 1e-6, 5e-6, 10e-6, 50e-6, 100e-6, 500e-6, 1e-3, 5e-3, 10e-3, 15e-3, 20e-3, 25e-3, 30e-3, 35e-3, 40e-3, 45e-3]
+                voltages_V = [0.0, 0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
+                currents_A = [0e-3, 1e-6, 5e-6, 10e-6, 50e-6, 100e-6, 500e-6, 1e-3, 5e-3, 10e-3, 15e-3, 20e-3, 25e-3, 30e-3, 35e-3, 40e-3, 45e-3]
                 mode_old = rpc_client.switch_shepherd_mode("emulation_cal")
 
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
 
-                results_a = np.zeros([6, len(voltages) * len(currents)], dtype=object)
-                for index, (current, voltage) in enumerate(itertools.product(currents, voltages)):
+                results_a = np.zeros([6, len(voltages_V) * len(currents_A)], dtype=object)
+                for index, (current, voltage) in enumerate(itertools.product(currents_A, voltages_V)):
                     cdata, v_meas, c_set = meas_emulator_setpoint(rpc_client, smu.A, voltage, current)
                     results_a[0][index] = voltage
                     results_a[1][index] = convert_dac_voltage_to_raw(voltage)
@@ -225,12 +224,13 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                     results_a[4][index] = cdata
                     results_a[5][index] = c_set
 
-
+                voltages_V = np.linspace(0.1, 4.5, 45)
+                currents_A = [20e-3]
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target B")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(False)
-                results_b = np.zeros([6, len(voltages) * len(currents)], dtype=object)
-                for index, (current, voltage) in enumerate(itertools.product(currents, voltages)):
+                results_b = np.zeros([6, len(voltages_V) * len(currents_A)], dtype=object)
+                for index, (current, voltage) in enumerate(itertools.product(currents_A, voltages_V)):
                     cdata, v_meas, c_set = meas_emulator_setpoint(rpc_client, smu.B, voltage, current)
                     results_b[0][index] = voltage
                     results_b[1][index] = convert_dac_voltage_to_raw(voltage)

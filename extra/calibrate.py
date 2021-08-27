@@ -125,62 +125,25 @@ def measure_voltage(rpc_client, smu_channel, adc_channel):
 
 def meas_emulator_current(rpc_client, smu_channel):
 
-    #currents_A = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 10e-3]
-    currents_A = [0.0, 10e-3]
+    sm_currents_A = [0.0, 10e-3]
+    dac_voltage_V = 2.5
 
-    # write both dac-channels of emulator
-    dac_voltage = 2.5
-    print(f" -> setting dac-voltage to {dac_voltage} V")
-    rpc_client.dac_write(0b1100, convert_dac_voltage_to_raw(dac_voltage))
-
-    smu_channel.configure_isource(range=0.050)
-    smu_channel.set_current(0.000, vlimit=3.0)
-    smu_channel.set_output(True)
-
-    results = list()
-    for current_A in currents_A:
-        smu_channel.set_current(-current_A, vlimit=3.0)  # negative current, because smu acts as a drain
-
-        time.sleep(0.25)
-
-        meas = np.empty(1000)
-        for i in range(1000):
-            meas[i] = rpc_client.adc_read("emu")
-        adc_current_raw = float(np.mean(meas))
-
-        # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
-        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=1.0)
-
-        results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
-        print(f"  reference: {current_A} A @ {smu_voltage:.4f} V; shepherd: {adc_current_raw} raw")
-
-    smu_channel.set_output(False)
-    return results
-
-
-def meas_emulator_current_v2(rpc_client, smu_channel):
-
-    #currents_A = [0.0, 1e-6, 1e-5, 1e-4, 1e-3, 2e-3, 4e-3, 6e-3, 8e-3, 10e-3]
-    currents_A = [0.0, 10e-3]
-
-    # write both dac-channels of emulator
     mode_old = rpc_client.switch_shepherd_mode("emulation_cal")
-
-    dac_voltage = 2.5
-    print(f" -> setting dac-voltage to {dac_voltage} V")
-    rpc_client.set_aux_target_voltage_raw(2 ** 20 + convert_dac_voltage_to_raw(dac_voltage))
+    print(f" -> setting dac-voltage to {dac_voltage_V} V")
+    # write both dac-channels of emulator
+    rpc_client.set_aux_target_voltage_raw(2 ** 20 + convert_dac_voltage_to_raw(dac_voltage_V))
 
     smu_channel.configure_isource(range=0.050)
     smu_channel.set_current(0.000, vlimit=3.0)
     smu_channel.set_output(True)
 
     results = list()
-    for current_A in currents_A:
+    for current_A in sm_currents_A:
         smu_channel.set_current(-current_A, vlimit=3.0)  # negative current, because smu acts as a drain
+        time.sleep(0.5)
+        rpc_client.sample_emu_cal(2)  # flush previous buffers (just to be safe)
 
-        time.sleep(0.25)
-
-        meas_enc = rpc_client.sample_emu_cal(10)  # captures # buffers
+        meas_enc = rpc_client.sample_emu_cal(40)  # captures # buffers
         meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
         adc_current_raw = float(np.mean(meas_rec))
 
@@ -211,10 +174,13 @@ def meas_emulator_voltage(rpc_client, smu_channel):
     results = list()
     for iter, val in enumerate(values):
         rpc_client.dac_write(0b1100, val)
-
         time.sleep(0.5)
-
-        meas = smu_channel.measure_voltage(range=5.0, nplc=1.0)
+        smu_channel.measure_voltage(range=5.0, nplc=1.0)
+        meas_series = list([])
+        for index in range(30):
+            meas_series.append(smu_channel.measure_voltage(range=5.0, nplc=1.0))
+            time.sleep(0.01)
+        meas = float(np.mean(meas_series))
 
         results.append({"reference_si": meas, "shepherd_raw": val})
         print(f"  shepherd: {voltages[iter]:.3f} V ({val} raw); reference: {meas} V")
@@ -301,8 +267,8 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
-                meas_a = meas_emulator_current_v2(rpc_client, smu.A)
-                meas_b = meas_emulator_current_v2(rpc_client, smu.B)
+                meas_a = meas_emulator_current(rpc_client, smu.A)
+                meas_b = meas_emulator_current(rpc_client, smu.B)
                 if measurement_dynamic(meas_a) > measurement_dynamic(meas_b):
                     measurement_dict["emulation"]["adc_current"] = meas_a
                 else:
@@ -311,8 +277,8 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                 print(f"Measurement - Emulation - Current - ADC Channel A - Target B")
                 # targetB-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
-                meas_a = meas_emulator_current_v2(rpc_client, smu.A)
-                meas_b = meas_emulator_current_v2(rpc_client, smu.B)
+                meas_a = meas_emulator_current(rpc_client, smu.A)
+                meas_b = meas_emulator_current(rpc_client, smu.B)
                 if measurement_dynamic(meas_a) > measurement_dynamic(meas_b):
                     measurement_dict["emulation"]["adc_voltage"] = meas_a
                 else:
