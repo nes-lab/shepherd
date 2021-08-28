@@ -14,6 +14,7 @@ file_list = ["profile_emu_00_maiden_v22",
              "profile_emu_05_R8_ShortLoop",
              "profile_emu_06_ch1_200R_x0uF",
              "profile_emu_06_ch1_200R_x1uF",
+             "profile_emu_11_baseline_fullmod",
              ]
 cgain = 1
 coffset = 0

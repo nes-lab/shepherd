@@ -108,6 +108,9 @@ class LogWriter(object):
         self.write_voltage = not skip_voltage
         self.write_current = not skip_current
         self.write_gpio = not skip_gpio
+        logger.debug(f"Set log-writing for voltage:     {'enabled' if self.write_voltage else 'disabled'}")
+        logger.debug(f"Set log-writing for current:     {'enabled' if self.write_current else 'disabled'}")
+        logger.debug(f"Set log-writing for gpio:        {'enabled' if self.write_gpio else 'disabled'}")
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
