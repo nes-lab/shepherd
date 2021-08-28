@@ -152,3 +152,5 @@ virtsources:
 
   BQ25570-Schmitt:
     converter_base: BQ25570s
+  default:
+    converter_base: BQ25570s

@@ -147,7 +147,7 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
     elif voltage_V is False:
         voltage_V = 0.0
     elif voltage_V is True:
-        # set value > 16bit and therefore link both adc-channels
+        # set value > 16bit (during pru-reset) and therefore link both adc-channels
         write_dac_aux_voltage_raw(2 ** 20 - 1)
         return
 

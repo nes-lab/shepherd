@@ -8,7 +8,9 @@ parameters:
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> emu#num.h5
   output_path: /var/shepherd/recordings/emu_test.h5
   duration: 10
-  virtsource: default  # provide path, name or default
+  virtsource: # provide path, name (ie. default, BQ25570) or parameters
+    converter_base: BQ25570
+    V_output_mV: 3300
   force_overwrite: true
   no_calib: true
   enable_io: true # regarding io level translators
