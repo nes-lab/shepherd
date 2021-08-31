@@ -1,10 +1,8 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 from pathlib import Path
 import click
-from scipy.signal import decimate
 import downsampling
 
 
@@ -55,7 +53,7 @@ def cli(directory, filename, sampling_rate, limit):
 
     ds_factor = int(100000 / sampling_rate)
     f, axes = plt.subplots(2, 1, sharex=True)
-    f.suptitle(f"Voltage and current @ {sampling_rate}Hz")
+    f.suptitle(f"Voltage and current @ {sampling_rate} Hz")
 
     if directory is None:
         hdf_file = Path(filename)

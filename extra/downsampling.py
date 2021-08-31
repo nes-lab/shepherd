@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import h5py
 from scipy import signal
@@ -6,34 +7,30 @@ from scipy import signal
 def downsample_signal(
     dataset: h5py.Dataset, ds_factor: int, block_len: int = None
 ):
-    # 8th order chebyshev filter for downsampling
-    flt = signal.iirfilter(
-        N=8,
-        Wn=1 / ds_factor,
-        btype="lowpass",
-        output="sos",
-        ftype="cheby1",
-        rp=3,
-    )
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.decimate.html
+    ds_factor_max = 12  # iir restriction
+    ds_factor_list = list([])
+    while ds_factor > ds_factor_max:
+        ds_factor_list.append(ds_factor_max)
+        ds_factor = int(ds_factor / ds_factor_max)
+    ds_factor_list.append(ds_factor)
 
     if block_len is None:
-        # Aim for 100 blocks
-        n_blocks = 100
+        n_blocks = 100  # Aim for 100 blocks
         block_len = int(len(dataset) / n_blocks)
     else:
         n_blocks = int(len(dataset) / block_len)
 
-    # filter state
-    z = np.zeros((flt.shape[0], 2))
+    block_ds_len = copy.deepcopy(block_len)
+    for ds_factor_local in ds_factor_list:
+        block_ds_len = round(block_ds_len / ds_factor_local)
 
-    block_ds_len = int(block_len / ds_factor)
     sig_ds = np.empty((block_ds_len * n_blocks,))
     for i in range(n_blocks):
-        y, z = signal.sosfilt(
-            flt, dataset[i * block_len : (i + 1) * block_len], zi=z
-        )
-
-        sig_ds[i * block_ds_len : (i + 1) * block_ds_len] = y[::ds_factor]
+        sig_block = dataset[i * block_len : (i + 1) * block_len]
+        for ds_factor_local in ds_factor_list:
+            sig_block = signal.decimate(sig_block[:], q=ds_factor_local, ftype="iir")
+        sig_ds[i * block_ds_len: (i + 1) * block_ds_len] = sig_block[:]
         print(f"block {i+1}/{n_blocks} done")
     return sig_ds
 
