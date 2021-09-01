@@ -2,7 +2,7 @@
 # copy and name it config.yml.
 command: emulate
 parameters:
-  input_path: /var/shepherd/recordings/rec_test.h5
+  input_path: /var/shepherd/recordings/hrv_test.h5
   # output_path:
   # - providing a directory -> file is named emu_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> emu#num.h5

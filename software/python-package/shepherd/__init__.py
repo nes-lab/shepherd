@@ -494,7 +494,7 @@ def record(
     if output_path.is_dir():
         timestamp = datetime.datetime.fromtimestamp(start_time)
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")  # closest to ISO 8601, avoid ":"
-        store_path = output_path / f"rec_{timestring}.h5"
+        store_path = output_path / f"hrv_{timestring}.h5"
     else:
         store_path = output_path
 
@@ -533,7 +533,7 @@ def record(
 
         while time.time() < ts_end:
             try:
-                idx, buf = recorder.get_buffer()
+                idx, hrv_buf = recorder.get_buffer()
             except ShepherdIOException as e:
                 logger.error(
                     f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
@@ -545,7 +545,7 @@ def record(
                 if not warn_only:
                     raise
 
-            log_writer.write_buffer(buf)
+            log_writer.write_buffer(hrv_buf)
             recorder.return_buffer(idx)
 
 

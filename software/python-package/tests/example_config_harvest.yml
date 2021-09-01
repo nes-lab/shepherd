@@ -6,9 +6,9 @@ parameters:
   duration: 10
   no_calib: true
   # output_path:
-  # - providing a directory -> file is named rec_timestamp.h5
-  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> rec#num.h5
-  output_path: /var/shepherd/recordings/rec_test.h5
+  # - providing a directory -> file is named hrv_timestamp.h5
+  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
+  output_path: /var/shepherd/recordings/hrv_test.h5
   force_overwrite: true
 verbose: 2
 

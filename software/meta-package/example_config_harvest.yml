@@ -5,8 +5,8 @@ command: record
 parameters:
   mode: harvesting
   # output_path:
-  # - providing a directory -> file is named rec_timestamp.h5
-  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> rec#num.h5
+  # - providing a directory -> file is named hrv_timestamp.h5
+  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
   output_path: /var/shepherd/recordings
   no_calib: false
   force_overwrite: false
