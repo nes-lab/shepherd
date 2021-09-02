@@ -565,7 +565,7 @@ class ShepherdIO(object):
         """
         sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
 
-    def send_virtsource_settings(self, vs_settings: VirtualSourceData) -> NoReturn:
+    def send_virtsource_settings(self, vs_settings: VirtualSourceData, log_intermediate_voltage: bool = None) -> NoReturn:
         """ Sends virtsource settings to PRU core
             looks like a simple one-liner but is needed by the child-classes
             Note: to apply these settings the pru has to do a re-init (reset)
@@ -574,9 +574,9 @@ class ShepherdIO(object):
             vs_settings: Contains the settings for the virtual source.
         """
         if vs_settings is None:
-            vs_settings = VirtualSourceData()
+            vs_settings = VirtualSourceData(log_intermediate_voltage=log_intermediate_voltage)
         else:
-            vs_settings = VirtualSourceData(vs_settings)
+            vs_settings = VirtualSourceData(vs_settings, log_intermediate_voltage)
 
         values = vs_settings.export_for_sysfs()
         sysfs_interface.write_virtsource_settings(values)

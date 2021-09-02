@@ -121,7 +121,9 @@ class Emulator(ShepherdIO):
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
                  aux_target_voltage: float = 0.0,
-                 settings_virtsource: VirtualSourceData = None):
+                 settings_virtsource: VirtualSourceData = None,
+                 log_intermediate_voltage: bool = None,
+                 ):
 
         logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
         super().__init__(shepherd_mode)
@@ -137,6 +139,7 @@ class Emulator(ShepherdIO):
         self._cal_recording = calibration_recording
         self._cal_emulation = calibration_emulation
         self._settings_virtsource = settings_virtsource
+        self._log_intermediate_voltage = log_intermediate_voltage
 
         self._set_target_io_lvl_conv = set_target_io_lvl_conv
         self._sel_target_for_io = sel_target_for_io
@@ -149,7 +152,7 @@ class Emulator(ShepherdIO):
         self.set_power_state_recorder(False)
         self.set_power_state_emulator(True)
 
-        self.send_virtsource_settings(self._settings_virtsource)
+        self.send_virtsource_settings(self._settings_virtsource, self._log_intermediate_voltage)
         self.send_calibration_settings(self._cal_emulation)
         self.reinitialize_prus()
 
@@ -561,6 +564,7 @@ def emulate(
         sel_target_for_pwr: bool = True,
         aux_target_voltage: float = 0.0,
         settings_virtsource: VirtualSourceData = None,
+        log_intermediate_voltage: bool = None,
         uart_baudrate: int = None,
         warn_only: bool = False,
         skip_log_voltage: bool = False,
@@ -663,6 +667,7 @@ def emulate(
             sel_target_for_pwr=sel_target_for_pwr,
             aux_target_voltage=aux_target_voltage,
             settings_virtsource=settings_virtsource,
+            log_intermediate_voltage=log_intermediate_voltage,
         )
         stack.enter_context(emu)
 

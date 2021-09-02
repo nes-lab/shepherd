@@ -16,7 +16,7 @@ parameters:
   enable_io: true # regarding io level translators
   io_sel_target_a: true
   pwr_sel_target_a: true
-  aux_voltage: 3.3
+  aux_voltage: 3.3 # set None to disable (0 V), 0-4.5 for specific const voltage, "mid" will output intermediate voltage (vsource storage cap), true or "main" to mirror main target voltage
   uart_baudrate: 9600 # set None to disable uart-logging for target
   skip_log_voltage: false
   skip_log_current: false

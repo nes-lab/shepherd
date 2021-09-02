@@ -206,27 +206,31 @@ def record(
 @click.option("--pwr_sel_target_a/--pwr_sel_target_b", default=True,
               help="Choose (main)Target that gets connected to virtual Source")
 @click.option("--aux_voltage", default=0.0,
-              help="Set Voltage of auxiliary Power Source (second target). Set 0-4.5 for specific Voltage, 'mid' for intermediate voltage (storage cap), True or 'main' to mirror main target channel")
+              help="Set Voltage of auxiliary Power Source (second target). \n"
+                   "- set 0-4.5 for specific const voltage, \n"
+                   "- 'mid' for intermediate voltage (vsource storage cap), \n"
+                   "- True or 'main' to mirror main target voltage")
 @click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
 @click.option("--uart_baudrate", "-b", default=None, type=int, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 @click.option("--skip_log_voltage", is_flag=True, help="reduce file-size by omitting voltage-logging")
 @click.option("--skip_log_current", is_flag=True, help="reduce file-size by omitting current-logging")
 @click.option("--skip_log_gpio", is_flag=True, help="reduce file-size by omitting gpio-logging")
+@click.option("--log_mid_voltage", is_flag=True, help="record / log virtual intermediate (cap-)voltage and -current (out) instead of output-voltage and -current")
 def emulate(
-    input_path,
-    output_path,
-    duration,
-    force_overwrite,
-    no_calib,
-    start_time,
-    enable_io,
-    io_sel_target_a,
-    pwr_sel_target_a,
-    aux_voltage,
-    virtsource,
-    uart_baudrate,
-    warn_only,
+        input_path,
+        output_path,
+        duration,
+        force_overwrite,
+        no_calib,
+        start_time,
+        enable_io,
+        io_sel_target_a,
+        pwr_sel_target_a,
+        aux_voltage,
+        virtsource,
+        uart_baudrate,
+        warn_only,
         skip_log_voltage, skip_log_current, skip_log_gpio,
 ):
     if output_path is None:
@@ -246,6 +250,7 @@ def emulate(
         sel_target_for_pwr=pwr_sel_target_a,
         aux_target_voltage=aux_voltage,
         settings_virtsource=virtsource,
+        log_intermediate_voltage=log_mid_voltage,
         uart_baudrate=uart_baudrate,
         warn_only=warn_only,
         skip_log_voltage=skip_log_voltage,

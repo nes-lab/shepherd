@@ -166,7 +166,6 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
         output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage_V)
 
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
-    # TODO: fn would be smoother if it contained the offset/gain-dict of the cal-data. but this requires a general FN for conversion
     write_dac_aux_voltage_raw(output)
 
 
