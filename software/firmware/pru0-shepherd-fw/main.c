@@ -380,6 +380,11 @@ void main(void)
 	shared_memory->analog_sample_counter = 0u;
 	shared_memory->gpio_edges = NULL;
 
+	shared_memory->gpio_pin_state = 0u;
+
+	shared_memory->batok_trigger_for_pru1 = false;
+	shared_memory->batok_pin_value = false;
+
 	/* this init is nonsense, but testable for byteorder and proper values */
 	shared_memory->calibration_settings = (struct Calibration_Config){
 		.adc_current_factor_nA_n8=255u, .adc_current_offset_nA=-1,
@@ -426,6 +431,7 @@ reset:
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
 	shared_memory->gpio_edges = NULL;
+	shared_memory->vsource_skip_gpio_logging = false;
 
 	shared_memory->shepherd_state = STATE_IDLE;
 	/* Make sure the mutex is clear */
