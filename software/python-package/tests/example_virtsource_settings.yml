@@ -75,5 +75,3 @@ virtsource:
   # - Input Values smaller than Min-Limits below are directed to array[0]
   # - array[1] is used for inputs from limit to 2*limit and so on
   # - for limit V_min_log2_uV = 0 the range equals: array[0] is for < 1 uV, array[1] is for 1 uV, array[2] is for 2-3 uV, ... ,  array[12] is for >= 2048 uV
-
-  # TODO: test all 3 separate regulators, can be checked against returning voltage
