@@ -27,7 +27,8 @@
 ASSERT(dac_interm, (DAC_V_FACTOR * DAC_MAX_mV) < ((1ull << 32u) - 1u));
 ASSERT(dac_convert, DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL);
 
-static bool_ft link_dac_channels = false;
+static bool_ft dac_aux_link_to_main = false;
+static bool_ft dac_aux_link_to_mid = false;
 
 /* ADS8691 Register Config */
 #define REGISTER_WRITE	(0b11010000u << 24u)
@@ -67,7 +68,7 @@ static inline void sample_harvesting(struct SampleBuffer *const buffer, const ui
 	/* reference algorithm */
 
 	static const uint8_ft SETTLE_INC = 5;
-	/* NOTE: ADC sampled at last CS-Rising-Edge (new pretrigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	/* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
 	__delay_cycles(800 / 5);
 	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
@@ -106,33 +107,31 @@ static inline void sample_harvesting_test(struct SampleBuffer *const buffer, con
 
 static inline void sample_emulation(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
 {
-	// TODO: pru should trigger a new sample here, 2x CS-Toggle
-	//  - acquisition takes 335 ns, conversion ~ 665 ns -> 1 us
-	//  - to not waste time, getting both buffer-values takes 600 ns and P_in could be calculated upfront (1.4 us)
+    /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+    //__delay_cycles(200 / 5); // current design takes 1400 ns
 
 	/* Get input current/voltage from shared memory buffer */
 	const uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
 	const uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
 	vsource_calc_inp_power(input_voltage_uV, input_current_nA);
-	//__delay_cycles(200 / 5); // fill up to 1000 ns since adc-trigger (if needed) -> current design takes 1400 ns
+
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
 	vsource_calc_out_power(current_adc_raw);
 
 	vsource_update_cap_storage();
 
-	/* TODO: algo expects already "cleaned"/ calibrated value from buffer */
 	const uint32_t voltage_dac = vsource_update_states_and_output(shared_mem);
 
-	if (link_dac_channels)
+    dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+
+	if (dac_aux_link_to_main) /* set both channels with same voltage */
 	{
-		/* set both channels with same voltage */
-		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | voltage_dac);
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | voltage_dac);
 	}
-	else
+	else if (dac_aux_link_to_mid)
 	{
-		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
-		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_V_intermediate_raw()); // TODO: only for debug
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_V_intermediate_raw());
 	}
 
 	/* write back regulator-state into shared memory buffer */
@@ -146,7 +145,6 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 		buffer->values_current[shared_mem->analog_sample_counter] = current_adc_raw;
 		buffer->values_voltage[shared_mem->analog_sample_counter] = voltage_dac;
 	}
-
 }
 
 
@@ -319,12 +317,13 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 	dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
 	ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 
-	/* switch to set both channels with same voltage during sampling, when condition is met (value > 16bit) */
-	link_dac_channels = (shared_mem->dac_auxiliary_voltage_raw > 0xFFFF);
+	/* switch to set behaviour of aux-channel (dac A) */
+	dac_aux_link_to_main = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
+    dac_aux_link_to_mid = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
 
 	if (use_emulator)
 	{
-		const uint32_t address = link_dac_channels ? DAC_CH_AB_ADDR : DAC_CH_A_ADDR;
+		const uint32_t address = dac_aux_link_to_main ? DAC_CH_AB_ADDR : DAC_CH_A_ADDR;
 		dac_write(SPI_CS_EMU_DAC_PIN, address | dac_ch_a_voltage_raw);
 		// TODO: we also need to make sure, that this fn returns voltages to same, zero or similar
 		//  (init is called after sampling, but is the mode correct?)
