@@ -250,8 +250,8 @@ struct SharedMem {
 	bool_ft cmp0_trigger_for_pru1;
 	bool_ft cmp1_trigger_for_pru1;
 	/* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-	bool_ft batok_trigger_for_pru1;
-	bool_ft batok_pin_value;
+	bool_ft vsource_batok_trigger_for_pru1;
+	bool_ft vsource_batok_pin_value;
 	/* Trigger to control sampling of gpios */
 	bool_ft vsource_skip_gpio_logging;
 } __attribute__((packed));

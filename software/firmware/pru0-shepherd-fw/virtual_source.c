@@ -575,8 +575,8 @@ uint32_t get_V_intermediate_raw(void)
 
 void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
 {
-	shared_mem->batok_pin_value = value;
-	shared_mem->batok_trigger_for_pru1 = true;
+	shared_mem->vsource_batok_pin_value = value;
+	shared_mem->vsource_batok_trigger_for_pru1 = true;
 }
 
 uint32_t get_I_mid_out_nA(void)

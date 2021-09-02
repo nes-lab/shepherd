@@ -382,8 +382,8 @@ void main(void)
 
 	shared_memory->gpio_pin_state = 0u;
 
-	shared_memory->batok_trigger_for_pru1 = false;
-	shared_memory->batok_pin_value = false;
+	shared_memory->vsource_batok_trigger_for_pru1 = false;
+	shared_memory->vsource_batok_pin_value = false;
 
 	/* this init is nonsense, but testable for byteorder and proper values */
 	shared_memory->calibration_settings = (struct Calibration_Config){
