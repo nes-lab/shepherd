@@ -146,9 +146,13 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
         voltage_V = 0.0
     elif voltage_V is False:
         voltage_V = 0.0
-    elif voltage_V is True:
-        # set value > 16bit (during pru-reset) and therefore link both adc-channels
-        write_dac_aux_voltage_raw(2 ** 20 - 1)
+    elif (voltage_V is True) or (isinstance(voltage_V, str) and "main" in voltage_V.lower()):
+        # set bit 20 (during pru-reset) and therefore link both adc-channels
+        write_dac_aux_voltage_raw(2 ** 20)
+        return
+    elif isinstance(voltage_V, str) and "mid" in voltage_V.lower():
+        # set bit 21 (during pru-reset) and therefore output intermediate (storage cap) voltage on second channel
+        write_dac_aux_voltage_raw(2 ** 21)
         return
 
     if voltage_V < 0.0:
