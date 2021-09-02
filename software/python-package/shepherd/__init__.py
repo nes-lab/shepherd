@@ -338,7 +338,7 @@ class ShepherdDebug(ShepherdIO):
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, but got type={ hex(msg_type) } val={ value }")
         return value[0], value[1]  # V_store_uV, V_out_dac_raw
 
-    def vsource_update_capacitor(self) -> int:
+    def vsource_update_cap_storage(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
@@ -346,7 +346,7 @@ class ShepherdDebug(ShepherdIO):
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]  # V_store_uV
 
-    def vsource_update_boostbuck(self) -> int:
+    def vsource_update_states_and_output(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
         msg_type, value = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
