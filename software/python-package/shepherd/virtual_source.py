@@ -55,20 +55,22 @@ class VirtualSource(object):
         self.vsc["V_pwr_good_disable_threshold_uV"] = values[13]
         self.vsc["immediate_pwr_good_signal"] = values[14]
 
+        self.vsc["V_output_log_gpio_threshold_uV"] = values[15]
+
         # boost regulator
-        self.vsc["V_input_boost_threshold_uV"] = values[15]  # min input-voltage for the boost converter to work
-        self.vsc["V_intermediate_max_uV"] = values[16]  # -> boost shuts off
+        self.vsc["V_input_boost_threshold_uV"] = values[16]  # min input-voltage for the boost converter to work
+        self.vsc["V_intermediate_max_uV"] = values[17]  # -> boost shuts off
 
         # Buck Boost, ie. BQ25570)
-        self.vsc["V_output_uV"] = values[17]
-        self.vsc["V_buck_drop_uV"] = values[18]
+        self.vsc["V_output_uV"] = values[18]
+        self.vsc["V_buck_drop_uV"] = values[19]
 
         # LUTs
-        self.vsc["LUT_input_V_min_log2_uV"] = values[19]
-        self.vsc["LUT_input_I_min_log2_nA"] = values[20]
-        self.vsc["LUT_output_I_min_log2_nA"] = values[21]
-        self.vsc["LUT_inp_efficiency_n8"] = values[22]  # depending on inp_voltage, inp_current, (cap voltage),
-        self.vsc["LUT_out_inv_efficiency_n4"] = values[23]  # depending on output_current
+        self.vsc["LUT_input_V_min_log2_uV"] = values[20]
+        self.vsc["LUT_input_I_min_log2_nA"] = values[21]
+        self.vsc["LUT_output_I_min_log2_nA"] = values[22]
+        self.vsc["LUT_inp_efficiency_n8"] = values[23]  # depending on inp_voltage, inp_current, (cap voltage),
+        self.vsc["LUT_out_inv_efficiency_n4"] = values[24]  # depending on output_current
 
         # boost internal state
         self.vsc["V_input_uV"] = 0.0
@@ -95,6 +97,8 @@ class VirtualSource(object):
         # pulled from update_states_and_output() due to easier static init
         self.vsc["sample_count"] = 0xFFFFFFF0
         self.vsc["is_outputting"] = True
+
+        self.vsc["vsource_skip_gpio_logging"] = False
 
     def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         if input_voltage_uV < 0:
@@ -215,6 +219,8 @@ class VirtualSource(object):
         else:
             self.vsc["V_out_dac_uV"] = 0
             self.vsc["V_out_dac_raw"] = 0
+
+        self.vsc["vsource_skip_gpio_logging"] = (self.vsc["V_out_dac_uV"] < self.vsc["V_output_log_gpio_threshold_uV"])
         return self.vsc["V_out_dac_raw"]
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:
@@ -273,3 +279,6 @@ class VirtualSource(object):
 
     def get_state_log_intermediate(self) -> bool:
         return self.vsc["enable_log_mid"]
+
+    def get_state_log_gpio(self) -> bool:
+        return self.vsc["vsource_skip_gpio_logging"]

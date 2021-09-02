@@ -107,7 +107,7 @@ class LogWriter(object):
         self.sampling_interval = int(buffer_period_ns / samples_per_buffer)
         self.write_voltage = not skip_voltage
         self.write_current = not skip_current
-        self.write_gpio = not skip_gpio
+        self.write_gpio = (not skip_gpio) and ("emulat" in mode)
         logger.debug(f"Set log-writing for voltage:     {'enabled' if self.write_voltage else 'disabled'}")
         logger.debug(f"Set log-writing for current:     {'enabled' if self.write_current else 'disabled'}")
         logger.debug(f"Set log-writing for gpio:        {'enabled' if self.write_gpio else 'disabled'}")

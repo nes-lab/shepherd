@@ -119,6 +119,8 @@ struct VirtSource_Config {
     uint32_t V_pwr_good_disable_threshold_uV;
     uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
 
+    uint32_t V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
+
     /* Boost Reg */
     uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
     uint32_t V_intermediate_max_uV;  // -> boost shuts off

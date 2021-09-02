@@ -177,6 +177,8 @@ void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_a
 	vsc_arg->V_pwr_good_disable_threshold_uV = i32++;
 	vsc_arg->immediate_pwr_good_signal = i32++;
 
+	vsc_arg->V_output_log_gpio_threshold_uV = i32++;
+
 	vsc_arg->V_input_boost_threshold_uV = i32++;
 	vsc_arg->V_intermediate_max_uV = i32++;
 
@@ -452,6 +454,9 @@ uint32_t vsource_update_states_and_output(volatile struct SharedMem *const share
 		vss.V_out_dac_uV = 0u; /* needs to be higher or equal min(V_mid_uV) to avoid jitter on low voltages */
 		vss.V_out_dac_raw = 0u;
 	}
+
+	// helps to prevent jitter-noise in gpio-traces
+	shared_mem->vsource_skip_gpio_logging = (vss.V_out_dac_uV < vs_cfg->V_output_log_gpio_threshold_uV);
 
 	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	/* output proper voltage to dac */

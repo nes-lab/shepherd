@@ -37,7 +37,7 @@ class VirtualSourceData(object):
     """
     vss: dict = None
 
-    def __init__(self, vs_settings: dict = None):
+    def __init__(self, vs_settings: dict = None, log_intermediate_voltage: bool = False):
         """ Container for VS Settings, Data will be checked and completed
 
         Args:
@@ -69,6 +69,10 @@ class VirtualSourceData(object):
         else:
             raise NotImplementedError(
                 f"VirtualSourceData {type(vs_settings)}'{vs_settings}' could not be handled. In case of file-path -> does it exist?")
+
+        if log_intermediate_voltage is not None:
+            self.vss["log_intermediate_voltage"] = log_intermediate_voltage
+
         self.check_and_complete()
 
     def get_as_dict(self) -> dict:
@@ -118,6 +122,8 @@ class VirtualSourceData(object):
         vs_list.append(int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["immediate_pwr_good_signal"] > 0))  # bool
+
+        vs_list.append(int(self.vss["V_output_log_gpio_threshold_mV"] * 1e3))  # uV
 
         # Boost
         vs_list.append(int(self.vss["V_input_boost_threshold_mV"] * 1e3))  # uV
@@ -256,6 +262,8 @@ class VirtualSourceData(object):
         self._check_num("immediate_pwr_good_signal", 4.29e9, verbose=verbose)
 
         self._check_num("C_output_uF", 4.29e6, verbose=verbose)
+
+        self._check_num("V_output_log_gpio_threshold_mV", 4.29e6, verbose=verbose)
 
         # Boost
         self._check_num("enable_boost", 4.29e9, verbose=verbose)

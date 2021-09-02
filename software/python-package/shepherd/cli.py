@@ -205,8 +205,8 @@ def record(
               help="Choose Target that gets connected to IO")
 @click.option("--pwr_sel_target_a/--pwr_sel_target_b", default=True,
               help="Choose (main)Target that gets connected to virtual Source")
-@click.option("--aux_voltage", type=float, default=0.0,
-              help="Set Voltage of auxiliary Power Source (second target)")
+@click.option("--aux_voltage", default=0.0,
+              help="Set Voltage of auxiliary Power Source (second target). Set 0-4.5 for specific Voltage, 'mid' for intermediate voltage (storage cap), True or 'main' to mirror main target channel")
 @click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
 @click.option("--uart_baudrate", "-b", default=None, type=int, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")

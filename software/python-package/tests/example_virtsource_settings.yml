@@ -27,6 +27,9 @@ virtsource:
 
   C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
 
+  # Extra
+  V_output_log_gpio_threshold_mV: 1400  # min voltage needed to enable recording changes in gpio-bank
+
   # Boost Regulator, ie. BQ25504
   V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
   V_intermediate_max_mV:  3600 # -> boost shuts off harvesting

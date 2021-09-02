@@ -162,6 +162,10 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem, const
 		shared_mem->gpio_pin_state = read_r31() & GPIO_MASK;
 		return;
 	}
+	else if (shared_mem->vsource_skip_gpio_logging)
+	{
+		return;
+	}
 
 	const uint32_t gpio_status = read_r31() & GPIO_MASK;
 	const uint32_t gpio_diff = gpio_status ^ prev_gpio_status;
