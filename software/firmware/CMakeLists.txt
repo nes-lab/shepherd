@@ -99,9 +99,17 @@ set(HDR_SUP
 
 # add the executable
 add_executable(PRU0
+        ${HDR_SUP}
+        ${HDR_LIB}
+        ${HDR_SHARED}
+        ${SRC_SUP}
+        ${SRC_LIB}
         ${CMAKE_CURRENT_SOURCE_DIR}/pru0-shepherd-fw/main.c
-        lib/include/sys_gpio.h lib/src/spi_transfer_sys.c
+        lib/include/sys_gpio.h
+        lib/src/spi_transfer_sys.c
         lib/include/spi_transfer_sys.h
+        ${HDR_PRU0}
+        ${SRC_PRU0}
         )
 
 target_sources(PRU0
@@ -142,8 +150,9 @@ set(TEMPEPE
         )
 
 add_executable(PRU1
-        ${HEADERS}
+        ${HDR}
         ${CMAKE_CURRENT_LIST_DIR}/pru1-shepherd-fw/main.c
+        ${CMAKE_CURRENT_LIST_DIR}/pru1-shepherd-fw/include/debug_routines.h
         ${CMAKE_CURRENT_LIST_DIR}/pru1-shepherd-fw/include/resource_table.h
         ${SOURCE}
         ${HEADERS}
@@ -175,5 +184,5 @@ include_directories(
         ${CMAKE_CURRENT_LIST_DIR}/include
         )
 
-target_include_directories(PRU0 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include)
-target_include_directories(PRU1 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pru1-shepherd-fw/include)
+target_include_directories(PRU0 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw/include ${CMAKE_CURRENT_LIST_DIR}/pru0-shepherd-fw)
+target_include_directories(PRU1 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pru1-shepherd-fw/include ${CMAKE_CURRENT_LIST_DIR}/pru1-shepherd-fw)
