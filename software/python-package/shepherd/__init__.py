@@ -256,16 +256,7 @@ class ShepherdDebug(ShepherdIO):
         """ issues a pru-read of the gpio-registers that monitor target-communication
 
         Returns: an int with the corresponding bits set
-            #define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
-            #define TARGET_GPIO1            BIT_SHIFT(P8_46) // r31_01
-            #define TARGET_SWD_CLK          BIT_SHIFT(P8_43) // r31_02
-            #define TARGET_SWD_IO           BIT_SHIFT(P8_44) // r31_03
-            #define TARGET_UART_TX          BIT_SHIFT(P8_41) // r31_04
-            #define TARGET_UART_RX          BIT_SHIFT(P8_42) // r31_05
-            #define TARGET_GPIO2            BIT_SHIFT(P8_39) // r31_06
-            #define TARGET_GPIO3            BIT_SHIFT(P8_40) // r31_07
-            #define TARGET_GPIO4            BIT_SHIFT(P8_27) // r31_08
-            Note: this table is a Copy (for reference) from pru1/main.c
+                -> see bit-definition in commons.py
         """
         super()._send_msg(commons.MSG_DBG_GPI, 0)
         msg_type, value = self._get_msg()

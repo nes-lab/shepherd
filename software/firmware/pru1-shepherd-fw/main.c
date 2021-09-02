@@ -30,17 +30,20 @@
 #define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
 
 /* overview for pin-mirroring - HW-Rev2.1
-#define TARGET_GPIO0            BIT_SHIFT(P8_45) // r31_00
-#define TARGET_GPIO1            BIT_SHIFT(P8_46) // r31_01
-#define TARGET_SWD_CLK          BIT_SHIFT(P8_43) // r31_02
-#define TARGET_SWD_IO           BIT_SHIFT(P8_44) // r31_03
-#define TARGET_UART_TX          BIT_SHIFT(P8_41) // r31_04
-#define TARGET_UART_RX          BIT_SHIFT(P8_42) // r31_05
-#define TARGET_GPIO2            BIT_SHIFT(P8_39) // r31_06
-#define TARGET_GPIO3            BIT_SHIFT(P8_40) // r31_07
-#define TARGET_GPIO4            BIT_SHIFT(P8_27) // r31_08
-#define TARGET_BAT_OK           BIT_SHIFT(P8_29) // r30_09 -> OUTPUT
-Note: this table is copied (for reference) in __init.py__
+
+pru_reg     name            linux_pin
+r31_00      TARGET_GPIO0    P8_45
+r31_01      TARGET_GPIO1    P8_46
+r31_02      TARGET_SWD_CLK  P8_43
+r31_03      TARGET_SWD_IO   P8_44
+r31_04      TARGET_UART_TX  P8_41
+r31_05      TARGET_UART_RX  P8_42
+r31_06      TARGET_GPIO2    P8_39
+r31_07      TARGET_GPIO3    P8_40
+r31_08      TARGET_GPIO4    P8_27
+r30_09/out  TARGET_BAT_OK   P8_29
+
+Note: this table is copied (for hdf5-reference) in commons.py
 */
 
 enum SyncState {

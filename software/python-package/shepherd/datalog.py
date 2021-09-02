@@ -30,6 +30,7 @@ from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
 from shepherd.shepherd_io import GPIOEdges
+from shepherd.commons import GPIO_LOG_BIT_POSITIONS
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +216,7 @@ class LogWriter(object):
             compression=LogWriter.compression_algo,
             #compression_opts=LogWriter.compression_level,
         )
+        self.gpio_grp["value"].attrs["unit"] = GPIO_LOG_BIT_POSITIONS
 
         # Create UART-Logger
         self.uart_grp = self._h5file.create_group("uart")
