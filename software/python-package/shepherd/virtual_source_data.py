@@ -37,38 +37,38 @@ class VirtualSourceData(object):
     """
     vss: dict = None
 
-    def __init__(self, vs_settings: dict = None, log_intermediate_voltage: bool = False):
+    def __init__(self, vs_setting: dict = None, log_intermediate_voltage: bool = False):
         """ Container for VS Settings, Data will be checked and completed
 
         Args:
-            vs_settings: if omitted, the data is generated from default values
+            vs_setting: if omitted, the data is generated from default values
         """
         vs_defs = Path(__file__).parent.resolve()/"virtual_source_defs.yml"
         with open(vs_defs, "r") as def_data:
-            self.vs_defines = yaml.safe_load(def_data)["virtsources"]
+            self.vs_configs = yaml.safe_load(def_data)["virtsources"]
         self.vs_inheritance = list()
 
-        if isinstance(vs_settings, str) and Path(vs_settings).exists():
-            vs_settings = Path(vs_settings)
-        if isinstance(vs_settings, Path) and vs_settings.exists():
-            with open(vs_settings, "r") as config_data:
-                vs_settings = yaml.safe_load(config_data)["virtsource"]
-        if isinstance(vs_settings, str):
-            if vs_settings in self.vs_defines:
-                self.vs_inheritance.append(vs_settings)
-                vs_settings = self.vs_defines[vs_settings]
+        if isinstance(vs_setting, str) and Path(vs_setting).exists():
+            vs_setting = Path(vs_setting)
+        if isinstance(vs_setting, Path) and vs_setting.exists():  # TODO: not perfect - better also check for ".yml", same above
+            with open(vs_setting, "r") as config_data:
+                vs_setting = yaml.safe_load(config_data)["virtsource"]
+        if isinstance(vs_setting, str):
+            if vs_setting in self.vs_configs:
+                self.vs_inheritance.append(vs_setting)
+                vs_setting = self.vs_configs[vs_setting]
             else:
-                raise NotImplementedError(f"VirtualSource was set to '{vs_settings}', but definition missing in 'virtual_source_defs.yml'")
+                raise NotImplementedError(f"VirtualSource was set to '{vs_setting}', but definition missing in 'virtual_source_defs.yml'")
 
-        if vs_settings is None:
+        if vs_setting is None:
             self.vss = dict()
-        elif isinstance(vs_settings, VirtualSourceData):
-            self.vss = vs_settings.vss
-        elif isinstance(vs_settings, dict):
-            self.vss = vs_settings
+        elif isinstance(vs_setting, VirtualSourceData):
+            self.vss = vs_setting.vss
+        elif isinstance(vs_setting, dict):
+            self.vss = vs_setting
         else:
             raise NotImplementedError(
-                f"VirtualSourceData {type(vs_settings)}'{vs_settings}' could not be handled. In case of file-path -> does it exist?")
+                f"VirtualSourceData {type(vs_setting)}'{vs_setting}' could not be handled. In case of file-path -> does it exist?")
 
         if log_intermediate_voltage is not None:
             self.vss["log_intermediate_voltage"] = log_intermediate_voltage
@@ -197,6 +197,12 @@ class VirtualSourceData(object):
             dV_output_en_thrs_mV = 0
             dV_output_imed_low_mV = 0
 
+        # protect from complex solutions (non valid input combinations)
+        if not (isinstance(dV_output_en_thrs_mV, (int, float)) and (dV_output_en_thrs_mV >= 0)):
+            dV_output_en_thrs_mV = 0
+        if not (isinstance(dV_output_imed_low_mV, (int, float)) and (dV_output_imed_low_mV >= 0)):
+            dV_output_imed_low_mV = 0
+
         # decide which hysteresis-thresholds to use for buck-regulator
         if self.vss["enable_buck"] > 0:
             V_pre_output_mV = self.vss["V_output_mV"] + self.vss["V_buck_drop_mV"]
@@ -233,11 +239,11 @@ class VirtualSourceData(object):
 
         if base_name == "neutral":
             # root of recursive completion
-            self.vss_base = self.vs_defines[base_name]
+            self.vss_base = self.vs_configs[base_name]
             logger.debug(f"[virtSource] Config-Set was initialized with '{base_name}'-base")
-        elif base_name in self.vs_defines:
+        elif base_name in self.vs_configs:
             vss_stash = self.vss
-            self.vss = self.vs_defines[base_name]
+            self.vss = self.vs_configs[base_name]
             self.check_and_complete(verbose=False)
             logger.debug(f"[virtSource] Config-Set was completed with '{base_name}'-base")
             self.vss_base = self.vss
