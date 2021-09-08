@@ -298,13 +298,15 @@ class ShepherdDebug(ShepherdIO):
         super().send_calibration_settings(cal_settings)
         time.sleep(0.5)
         super().start()
-        # print(sysfs_interface.read_virtsource_settings())
-        # print(sysfs_interface.read_calibration_settings())
         super()._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
         msg_type, value = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSOURCE_INIT:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, but got type={ hex(msg_type) } val={ value }")
+        # TEST-SIMPLIFICATION - code below is not part of pru-code
+        self.P_in_fW: float = 0
+        self.P_out_fW: float = 0
+        self.cal = cal_settings
 
     def vsource_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         super()._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_voltage_uV), int(input_current_nA)])
@@ -353,6 +355,18 @@ class ShepherdDebug(ShepherdIO):
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, but got type={ hex(msg_type) } val={ value }")
         return value[0]  # V_out_dac_raw
+
+    # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
+    def iterate(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
+        self.vsource_calc_inp_power(V_in_uV, A_in_nA)
+        A_out_raw = self.cal.convert_value_to_raw("emulation", "adc_current", A_out_nA * 10**-9)
+        self.vsource_calc_out_power(A_out_raw)
+        self.vsource_update_cap_storage()
+        V_out_raw = self.vsource_update_states_and_output()
+        V_out_uV = self.cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10**6
+        self.P_in_fW += V_in_uV * A_in_nA
+        self.P_out_fW += V_out_uV * A_out_nA
+        return V_out_uV
 
     @staticmethod
     def is_alive() -> bool:
