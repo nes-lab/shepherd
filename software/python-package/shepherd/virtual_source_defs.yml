@@ -16,12 +16,12 @@ virtsources:
     V_intermediate_init_mV: 3000 # allow a proper / fast startup
     I_intermediate_leak_nA: 0.0
 
-    V_intermediate_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
-    V_intermediate_disable_threshold_mV: 2000 # -> target gets disconnected
+    V_intermediate_enable_threshold_mV: 1 # -> target gets connected (hysteresis-combo with next value)
+    V_intermediate_disable_threshold_mV: 0 # -> target gets disconnected
     interval_check_thresholds_ms: 0.0  # some BQs check every 64 ms if output should be disconnected
 
-    V_pwr_good_enable_threshold_mV: 3000 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
-    V_pwr_good_disable_threshold_mV: 2500
+    V_pwr_good_enable_threshold_mV: 2800 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
+    V_pwr_good_disable_threshold_mV: 2200
     immediate_pwr_good_signal: true  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
 
     C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
@@ -128,7 +128,7 @@ virtsources:
     I_intermediate_leak_nA: 0.0
 
     V_intermediate_enable_threshold_mV: 3000 # -> target gets connected (hysteresis-combo with next value)
-    V_intermediate_disable_threshold_mV: 2000 # -> target gets disconnected
+    V_intermediate_disable_threshold_mV: 2400 # -> target gets disconnected
     interval_check_thresholds_ms: 64.0  # some BQs check every 64 ms if output should be disconnected
 
     V_pwr_good_enable_threshold_mV: 3000 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
