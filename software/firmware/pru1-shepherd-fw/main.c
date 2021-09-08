@@ -25,7 +25,9 @@
 
 #define GPIO_BATOK 		BIT_SHIFT(P8_29)
 
-#define GPIO_MASK		(0x03FF) // TODO: currently contains batOk as an input, does that work?
+#define GPIO_MASK		(0x03FF) \
+ // TODO: currently contains batOk as an input, does that work?
+// workaround: splice in shared_mem->vsource_batok_pin_value
 
 #define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
 

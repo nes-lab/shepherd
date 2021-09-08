@@ -68,12 +68,13 @@ extern inline uint32_t min_value(uint32_t value1, uint32_t value2);
 
 /* LUT
  * Generation:
- * - entry[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10u) / (n + 0.5)
- * - limit first to 1023
- * - largest Entry[39] is 5.11 V
+ * - array[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10u) / (n + 0.5)
+ * - limit array[0] to 1023 -> not needed anymore due to mult with overflow-protection, instead overprovision
+ * - largest value array[39] is 5.11 V
+ * python: LUT = [(2**10)/(n + 0.5) for n in range(40)]
  */
 static const uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] =
-	{1023, 683, 410, 293, 228, 186, 158, 137,
+	{16383, 683, 410, 293, 228, 186, 158, 137,
 	  120, 108,  98,  89,  82,  76,  71,  66,
 	   62,  59,  55,  53,  50,  48,  46,  44,
 	   42,  40,  39,  37,  36,  35,  34,  33,
@@ -315,7 +316,7 @@ void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA
 	else if (vss.enable_storage == false)
 	{
 		// direct connection
-		vss.V_mid_uV_n32 = (uint64_t)input_voltage_uV << 32u;
+		vss.V_mid_uV_n32 = ((uint64_t)input_voltage_uV) << 32u;
 		input_voltage_uV = 0u;
 	}
 	else
