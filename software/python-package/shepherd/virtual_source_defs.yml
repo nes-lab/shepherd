@@ -11,6 +11,7 @@ virtsources:
     V_input_max_mV: 10000
     I_input_max_mA: 4200
     V_input_drop_mV: 0.0  # simulate input-diode
+    R_input_mOhm: 0.0 # resistance only active with disabled boost
 
     C_intermediate_uF: 0.0  # primary storage-Cap
     V_intermediate_init_mV: 3000 # allow a proper / fast startup
@@ -64,7 +65,17 @@ virtsources:
   diode+capacitor:
     converter_base: neutral
     V_input_drop_mV: 300  # simulate input-diode
-    C_intermediate_uF: 33  # primary storage-Cap
+    C_intermediate_uF: 10  # primary storage-Cap
+
+  dio_cap: # simpler naming
+    converter_base: diode+capacitor
+
+  diode+resistor+capacitor:
+    converter_base: diode+capacitor
+    R_input_mOhm: 10000
+
+  dio_res_cap: # simpler naming
+    converter_base: diode+resistor+capacitor
 
   BQ25504:
     converter_base: neutral # to complete undefined vars

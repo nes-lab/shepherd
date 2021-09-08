@@ -363,7 +363,7 @@ class ShepherdDebug(ShepherdIO):
         self.vsource_calc_out_power(A_out_raw)
         self.vsource_update_cap_storage()
         V_out_raw = self.vsource_update_states_and_output()
-        V_out_uV = self.cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10**6
+        V_out_uV = int(self.cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10**6)
         self.P_in_fW += V_in_uV * A_in_nA
         self.P_out_fW += V_out_uV * A_out_nA
         return V_out_uV

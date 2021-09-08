@@ -109,6 +109,7 @@ class VirtualSourceData(object):
         vs_list.append(int(self.vss["V_input_max_mV"] * 1e3))  # uV
         vs_list.append(int(self.vss["I_input_max_mA"] * 1e6))  # nA
         vs_list.append(int(self.vss["V_input_drop_mV"] * 1e3))  # uV
+        vs_list.append(int(self.vss["Constant_1k_per_Ohm"] * 1))  # 1/mOhm
 
         vs_list.append(int(self.vss["Constant_us_per_nF_n28"]))  # us/nF = us*V / nA*s
         vs_list.append(int(self.vss["V_intermediate_init_mV"] * 1e3))  # uV
@@ -167,6 +168,10 @@ class VirtualSourceData(object):
         # dV[uV] = constant[us/nF] * current[nA] = constant[us*V/nAs] * current[nA]
         C_storage_uF = max(self.vss["C_intermediate_uF"], 0.001)
         self.vss["Constant_us_per_nF_n28"] = (SAMPLE_INTERVAL_US * (2**28)) / (1000 * C_storage_uF)
+
+        # inverse resistance constant
+        R_input_mOhm = max(self.vss["R_input_mOhm"], 0.001)
+        self.vss["Constant_1k_per_Ohm"] = max(10**6 / R_input_mOhm, 1)
 
         """
         compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
@@ -258,6 +263,7 @@ class VirtualSourceData(object):
         self._check_num("V_input_max_mV", 10e3, verbose=verbose)
         self._check_num("I_input_max_mA", 4.29e3, verbose=verbose)
         self._check_num("V_input_drop_mV", 4.29e6, verbose=verbose)
+        self._check_num("R_input_mOhm", 4.29e6, verbose=verbose)
 
         self._check_num("C_intermediate_uF", 100e3, verbose=verbose)
         self._check_num("I_intermediate_leak_nA", 4.29e9, verbose=verbose)
@@ -292,12 +298,13 @@ class VirtualSourceData(object):
         self._check_list("LUT_output_efficiency", 1.0, verbose=verbose)
         self._check_num("LUT_output_I_min_log2_nA", 20, verbose=verbose)
 
-        # internal
+        # internal / derived parameters
         self.calculate_internal_states()
         self._check_num("dV_enable_output_mV", 4.29e6, verbose=verbose)
         self._check_num("V_enable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("V_disable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("Constant_us_per_nF_n28", 4.29e9, verbose=verbose)
+        self._check_num("Constant_1k_per_Ohm", 4.29e9, verbose=verbose)
 
     def _check_num(self, setting_key: str, max_value: float = None, verbose: bool = True) -> NoReturn:
         try:

@@ -124,6 +124,14 @@ uint64_t sub64(const uint64_t value1, const uint64_t value2)
 	else return 0ull;
 }
 
+uint32_t mul32(const uint32_t value1, const uint32_t value2)
+{
+	uint64_t product = (uint64_t)value1 * (uint64_t)value2;
+	// check for possible overflow - return max
+	uint8_ft vbits = get_num_size_as_bits(product);
+	if (vbits <= 32u)	return (uint32_t)product;
+	else 			return (uint32_t)(0xFFFFFFFFu);
+}
 
 /* data-structure that hold the state - variables for direct use */
 struct VirtSource_State {
@@ -164,6 +172,7 @@ void vsource_struct_init_testable(volatile struct VirtSource_Config *const vsc_a
 	vsc_arg->V_input_max_uV = i32++;
 	vsc_arg->I_input_max_nA = i32++;
 	vsc_arg->V_input_drop_uV = i32++;
+	vsc_arg->Constant_1k_per_Ohm = i32++;
 
 	vsc_arg->Constant_us_per_nF_n28 = i32++;
 	vsc_arg->V_intermediate_init_uV = i32++;
@@ -321,9 +330,15 @@ void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA
 	}
 	else
 	{
-		// mode for diode & charging cap
+		// mode for input-diode, resistor & storage-cap
 		const uint32_t V_mid_uV = (vss.V_mid_uV_n32 >> 32u);
-		input_voltage_uV = (input_voltage_uV > V_mid_uV) ? (input_voltage_uV - V_mid_uV) : (0u);
+		if (input_voltage_uV > V_mid_uV)
+		{
+			const uint32_t I_max_nA = mul32((input_voltage_uV - V_mid_uV), vs_cfg->Constant_1k_per_Ohm);
+			if (input_current_nA > I_max_nA) input_current_nA = I_max_nA;
+			input_voltage_uV = V_mid_uV;
+		}
+		else 	input_voltage_uV = 0u;
 	}
 
 	const uint32_t eta_inp_n8 = (vss.enable_buck) ? get_input_efficiency_n8(input_voltage_uV, input_current_nA) : (1u << 8u);

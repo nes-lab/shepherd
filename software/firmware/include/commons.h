@@ -134,10 +134,11 @@ struct VirtSource_Config {
 	uint32_t V_input_max_uV;
 	uint32_t I_input_max_nA;  // limits input-power
 	uint32_t V_input_drop_uV; // simulate possible diode
+	uint32_t Constant_1k_per_Ohm; // resistance only active with disabled boost
 
 	uint32_t Constant_us_per_nF_n28;
 	uint32_t V_intermediate_init_uV; // allow a proper / fast startup
-	uint32_t I_intermediate_leak_nA; // TODO: ESR could also be considered
+	uint32_t I_intermediate_leak_nA;
 
 	uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
 	uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
