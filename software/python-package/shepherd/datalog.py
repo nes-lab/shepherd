@@ -276,6 +276,8 @@ class LogWriter(object):
             maxshape=(None,),
         )
 
+        # TODO: activate loggers, add logger for timesync, also document name of node
+
         return self
 
     def __exit__(self, *exc):
