@@ -541,7 +541,7 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
                 f"{ctx.obj['hostnames'][cnx.host]} to local {local_path}"
             )
         )
-        cnx.get(filepath, local=local_path)
+        cnx.get(filepath, local=Path(local_path))
         if delete:
             logger.info(
                 f"deleting {filepath} from remote {ctx.obj['hostnames'][cnx.host]}"
