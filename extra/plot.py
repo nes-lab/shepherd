@@ -52,10 +52,10 @@ def downsample(
 
     for i in range(n_blocks):
         slice_src = dataset[i * block_len : (i + 1) * block_len]
-        # TODO: converting data to physical units would be more efficient after downsampling
         if is_time:
             y = slice_src[::ds_factor][:block_ds_len].astype(float) * 1e-9
         else:
+            # most efficient way: filter, downsample, convert to physical units
             y, z = signal.sosfilt(flt, slice_src, zi=z)
             y = y[::ds_factor][:block_ds_len] * gain + offset
             y[y < 0] = 0
@@ -114,6 +114,7 @@ def cli(directory, filename, sampling_rate, limit):
     f.suptitle(f"Voltage and current @ {sampling_rate} Hz")
 
     if directory is None:
+        # Note: This is just a special case of the code below and could also be integrated there
         hdf_file = Path(filename)
         if not hdf_file.exists():
             raise click.FileError(str(hdf_file), hint="File not found")
