@@ -49,3 +49,10 @@
     tags:
       - install
       - systemd
+
+  - name: Slow down Programming Clock-Speed (needed for hw v2.2)
+    lineinfile:
+      path: /usr/share/openocd/scripts/interface/beaglebone.cfg
+      state: present
+      regexp: '^am335x_gpio_speed_coeffs'
+      line: 'am335x_gpio_speed_coeffs 500000 320' # raise coeff from 230k to 500k
