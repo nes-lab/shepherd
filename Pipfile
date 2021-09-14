@@ -13,7 +13,6 @@ bump2version = "*"
 shepherd = {editable = true,path = "./software/python-package"}
 shepherd-herd = {editable = true,path = "./software/shepherd-herd"}
 sphinx = "*"
-ansible = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
 matplotlib = "*"
@@ -24,6 +23,8 @@ scipy = "*"
 scikit-learn = "*"
 fabric = "*"
 pyyaml = "*"
+ansible = "*"
+dearpygui = "*"
 
 [pipenv]
 allow_prereleases = true
