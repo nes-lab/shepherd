@@ -21,7 +21,7 @@
 
 // Test data-containers and constants with pseudo-assertion with zero cost (if expression evaluates to 0 this causes a div0
 // NOTE: name => alphanum without spaces and without ""
-#define ASSERT(name, expression) 	extern uint32_t assert_name[1/(expression)]
+#define ASSERT(assert_name, expression) 	extern uint32_t assert_name[1/(expression)]
 
 /* Message content description used to distinguish messages for PRU0 */
 enum MsgType {
@@ -87,7 +87,7 @@ enum ShepherdState {
 struct GPIOEdges {
 	uint32_t idx;
 	uint64_t timestamp_ns[MAX_GPIO_EVT_PER_BUFFER];
-    uint16_t  bitmask[MAX_GPIO_EVT_PER_BUFFER];
+	uint16_t  bitmask[MAX_GPIO_EVT_PER_BUFFER];
 } __attribute__((packed));
 
 struct SampleBuffer {

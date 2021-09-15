@@ -9,7 +9,7 @@
 struct RingBuffer
 {
     struct ProtoMsg ring[RING_SIZE];
-    uint32_t start; // TODO: these can be smaller, at least in documentation
+    uint32_t start; // TODO: these can be smaller (like u8), at least in documentation
     uint32_t end;
     uint32_t active;
     struct mutex mutex;
