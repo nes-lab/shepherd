@@ -277,6 +277,7 @@ class EEPROM(object):
         )
         try:
             cal = CalibrationData.from_bytestr(data)
+            logger.debug("EEPROM provided calibration-settings")
         except struct.error:
             cal = CalibrationData.from_default()
             logger.warning("EEPROM seems to have no usable data - will set calibration from default-values")

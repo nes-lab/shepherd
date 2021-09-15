@@ -71,6 +71,7 @@ class Recorder(ShepherdIO):
         self.set_power_state_recorder(True)
 
         # Give the PRU empty buffers to begin with
+        time.sleep(1)
         for i in range(self.n_buffers):
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)  # could be as low as ~ 10us
             self.return_buffer(i)
@@ -161,7 +162,8 @@ class Emulator(ShepherdIO):
         self.select_main_target_for_power(self._sel_target_for_pwr)
         self.set_aux_target_voltage(self._cal_emulation, self._aux_target_voltage)
 
-        # Preload emulator with some data
+        # Preload emulator with data
+        time.sleep(1)
         for idx, buffer in enumerate(self._initial_buffers):
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)  # could be as low as ~ 10us
             self.return_buffer(idx, buffer)
@@ -184,7 +186,7 @@ class Emulator(ShepherdIO):
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         self._return_buffer(index)
 
-        logger.debug(f"Sending empty buffer #{ index } to PRU took "
+        logger.debug(f"Sending emu-buffer #{ index } to PRU took "
                      f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
 
 
@@ -579,24 +581,28 @@ def emulate(
     """ Starts emulation.
 
     Args:
-        input_path (Path): path of hdf5 file containing recorded harvesting data
-        output_path (Path): Path of hdf5 file where power measurements should
-            be stored
-        duration (float): Maximum time duration of emulation in seconds
-        force_overwrite (bool): True to overwrite existing file under output,
+        :param input_path: [Path] of hdf5 file containing recorded harvesting data
+        :param output_path: [Path] of hdf5 file where power measurements should be stored
+        :param duration: [float] Maximum time duration of emulation in seconds
+        :param force_overwrite: [bool] True to overwrite existing file under output,
             False to store under different name
-        no_calib (bool): True to use default calibration values, False to
+        :param no_calib: [bool] True to use default calibration values, False to
             read calibration data from EEPROM
-        start_time (float): Desired start time of emulation in unix epoch time
-        set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
-        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
-        sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
-        aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
-        settings_virtsource (VirtualSourceData): Settings which define the behavior of virtsource emulation
-        warn_only (bool): Set true to continue emulation after recoverable error
-        :param skip_log_voltage: reduce file-size by omitting this log
-        :param skip_log_gpio: reduce file-size by omitting this log
-        :param skip_log_current: reduce file-size by omitting this log
+        :param start_time: [float] Desired start time of emulation in unix epoch time
+        :param set_target_io_lvl_conv: [bool] Enables or disables the GPIO level converter to targets.
+        :param sel_target_for_io: [bool] choose which targets gets the io-connection
+            (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
+        :param sel_target_for_pwr: [bool] choose which targets gets the supply with current-monitor,
+            True = Target A, False = Target B
+        :param aux_target_voltage: Sets, Enables or disables the voltage for the second target,
+            0.0 or False for Disable, True for linking it to voltage of other Target
+        :param settings_virtsource: [VirtualSourceData] Settings which define the behavior of VS emulation
+        :param uart_baudrate: [int] setting a value to non-zero will activate uart-logging
+        :param log_intermediate_voltage: [bool] do log intermediate node instead of output
+        :param warn_only: [bool] Set true to continue emulation after recoverable error
+        :param skip_log_voltage: [bool] reduce file-size by omitting this log
+        :param skip_log_gpio: [bool] reduce file-size by omitting this log
+        :param skip_log_current: [bool] reduce file-size by omitting this log
     """
 
     if no_calib:

@@ -140,7 +140,8 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
     """ Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
-        voltage_V: desired voltage in volt
+        :param voltage_V: desired voltage in volt
+        :param calibration_settings: optional set to convert volt to raw
     """
     if voltage_V is None:
         voltage_V = 0.0
@@ -165,6 +166,7 @@ def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: floa
     else:
         output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage_V)
 
+    logger.debug(f"Set voltage of supply for auxiliary Target to {voltage_V} V (raw={output})")
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
     write_dac_aux_voltage_raw(output)
 
@@ -173,7 +175,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
     """ Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
-        voltage_raw: desired voltage in volt
+        voltage_raw: desired voltage as raw int for DAC
     """
     if voltage_raw >= (2**16):
         logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value -> this will link both channels")
@@ -291,7 +293,7 @@ def write_pru_msg(msg_type: int, values: list) -> NoReturn:
         value2:
     Returns:
     """
-    if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255) :
+    if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255):
         raise SysfsInterfaceException(f"pru_msg-type has invalid type, "
             f"expected u8 for type (={type(msg_type)}) and content (={msg_type})")
 

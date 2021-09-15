@@ -168,7 +168,7 @@ class CalibrationData(object):
     def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
         offset = self._data[component][channel]["offset"]
         gain = self._data[component][channel]["gain"]
-        return int((value - offset) / gain)
+        return max(int((value - offset) / gain), 0)
 
     def to_bytestr(self):
         """Serializes calibration data to byte string.

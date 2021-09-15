@@ -45,8 +45,6 @@ gpio_pin_nums = {
     "en_emulator": 51,
 }
 
-prev_timestamp = 0
-
 
 class ShepherdIOException(Exception):
     def __init__(self, message: str, id: int = 0, value: int = 0):
@@ -128,6 +126,7 @@ class SharedMem(object):
         self.size = size
         self.n_buffers = n_buffers
         self.samples_per_buffer = samples_per_buffer
+        self.prev_timestamp: int = 0
 
         self.mapped_mem = None
         self.devmem_fd = None
@@ -181,7 +180,7 @@ class SharedMem(object):
         # The buffers are organized as an array in shared memory
         # buffer i starts at i * buffersize
         buffer_offset = index * self.buffer_size
-        logger.debug(f"Seeking 0x{index * self.buffer_size:04X}")
+        #logger.debug(f"Seeking 0x{index * self.buffer_size:04X}")
         self.mapped_mem.seek(buffer_offset)
 
         # Read the header consisting of 12 (4 + 8 Bytes)
@@ -190,21 +189,22 @@ class SharedMem(object):
         # First two values are number of samples and 64 bit timestamp
         n_samples, buffer_timestamp = struct.unpack("=LQ", header)
         logger.debug(
-            f"Got buffer #{ index } with len {n_samples} and timestamp {buffer_timestamp}"
+            f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
+            f"with len {n_samples} and timestamp {buffer_timestamp}"
         )
 
-        # sanity-check of received timestamp, TODO: python knows the duration between timestamps
-        global prev_timestamp
-        diff_ms = round((buffer_timestamp - prev_timestamp) / 1e6, 3) if (prev_timestamp > 0) else 100
-        if buffer_timestamp == 0:
-            logger.error(f"ZERO      timestamp detected after recv it from PRU")
-        if diff_ms < 0:
-            logger.error(f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
-        if diff_ms < 95:
-            logger.error(f"TOO SMALL timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
-        if diff_ms > 105:
-            logger.error(f"FORWARDS  timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
-        prev_timestamp = buffer_timestamp
+        # sanity-check of received timestamp, TODO: python knows the desired duration between timestamps
+        if self.prev_timestamp > 0:
+            diff_ms = round((buffer_timestamp - self.prev_timestamp) / 1e6, 3)
+            if buffer_timestamp == 0:
+                logger.error(f"ZERO      timestamp detected after recv it from PRU")
+            if diff_ms < 0:
+                logger.error(f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
+            elif diff_ms < 95:
+                logger.error(f"TOO SMALL timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
+            elif diff_ms > 105:
+                logger.error(f"FORWARDS  timestamp-jump detected after recv it from PRU -> {diff_ms} ms")
+        self.prev_timestamp = buffer_timestamp
 
         # Each buffer contains (n=) samples_per_buffer values. We have 2 variables
         # (voltage and current), thus samples_per_buffer/2 samples per variable
@@ -537,7 +537,6 @@ class ShepherdIO(object):
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        logger.debug(f"Set voltage of supply for auxiliary Target to {voltage}")
         sysfs_interface.write_dac_aux_voltage(cal_settings, voltage)
 
     @staticmethod
@@ -616,8 +615,10 @@ class ShepherdIO(object):
             # logger.debug(f"received msg type {msg_type}")
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
-                logger.debug(f"Retrieving buffer #{ value } from shared memory")
+                ts_start = time.time()
                 buf = self.shared_mem.read_buffer(value)
+                logger.debug(f"Processing buffer #{ value } from shared memory took "
+                             f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:
@@ -637,7 +638,7 @@ class ShepherdIO(object):
                 )
             elif msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
                 raise ShepherdIOException(
-                    "PRU ran out of buffers",
+                    f"PRU ran out of buffers",
                     commons.MSG_DEP_ERR_NOFREEBUF,
                     value,
                 )

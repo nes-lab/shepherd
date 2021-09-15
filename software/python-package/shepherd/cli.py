@@ -232,6 +232,7 @@ def emulate(
         uart_baudrate,
         warn_only,
         skip_log_voltage, skip_log_current, skip_log_gpio,
+        log_mid_voltage
 ):
     if output_path is None:
         pl_store = None

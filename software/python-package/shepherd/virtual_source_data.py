@@ -246,6 +246,7 @@ class VirtualSourceData(object):
             # root of recursive completion
             self.vss_base = self.vs_configs[base_name]
             logger.debug(f"[virtSource] Config-Set was initialized with '{base_name}'-base")
+            verbose = False
         elif base_name in self.vs_configs:
             vss_stash = self.vss
             self.vss = self.vs_configs[base_name]
@@ -312,7 +313,7 @@ class VirtualSourceData(object):
         except KeyError:
             set_value = self.vss_base[setting_key]
             if verbose:
-                logger.debug(f"[virtSource] parameter '{setting_key}' was not provided, will be set to default = {set_value}")
+                logger.debug(f"[virtSource] '{setting_key}' not provided, will be set to inherited value = {set_value}")
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
                 f"[virtSource] '{setting_key}' must a single positive number, but is '{set_value}'")
@@ -329,7 +330,7 @@ class VirtualSourceData(object):
         except KeyError:
             values = default
             if verbose:
-                logger.debug(f"[virtSource] parameter '{setting_key}' was not provided, will be set to default = {values[0]}")
+                logger.debug(f"[virtSource] '{setting_key}' not provided, will be set to inherited value = {values[0]}")
         if (len(values) != len(default)) or (min(values) < 0) or (max(values) > max_value):
             raise NotImplementedError(
                 f"[virtSource] {setting_key} must a list of {len(default)} values, within range of [{0}; {max_value}]")

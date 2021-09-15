@@ -44,7 +44,7 @@ def data_h5(tmp_path):
 def test_record(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
-        cli, ["-vvv", "record", "-d", "10", "-o", f"{str(store)}"]
+        cli, ["-vvv", "record", "-f", "-d", "10", "-o", f"{str(store)}"]
     )
     assert res.exit_code == 0
     assert store.exists()
@@ -58,6 +58,7 @@ def test_record_no_calib(shepherd_up, cli_runner, tmp_path):
         cli, ["-vvv",
               "record",
               "-d", "10",
+              "--force_overwrite",
               "--no-calib",
               "-o", f"{str(store)}"]
     )
@@ -74,6 +75,7 @@ def test_record_harvesting_test(shepherd_up, cli_runner, tmp_path):
         cli, ["-vvv",
               "record",
               "--mode", "harvesting_test",
+              "--force_overwrite",
               "-d", "10",
               "-o", f"{str(store)}"]
     )
@@ -95,7 +97,6 @@ def test_record_parameters_long(shepherd_up, cli_runner, tmp_path):
               "--start-time", f"{start_time}",
               "--force_overwrite",
               "--no-calib",
-
               "--warn-only",
               "--output_path", f"{str(store)}"]
     )
@@ -133,6 +134,7 @@ def test_record_parameters_minimal(shepherd_up, cli_runner, tmp_path):
         cli, [
               "record",
               "--mode", "harvesting",
+              "-f",
               "-d", "10",
               "-o", f"{str(store)}"]
     )
@@ -161,6 +163,7 @@ def test_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
             "-vvv",
             "emulate",
             "-d", "10",
+            "--force_overwrite",
             "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
@@ -183,6 +186,7 @@ def test_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, data_
             "-vvv",
             "emulate",
             "-d", "10",
+            "--force_overwrite",
             "--virtsource", f"{str(file_path)}",
             "-o", f"{str(store)}",
             f"{str(data_h5)}",
@@ -203,14 +207,15 @@ def test_emulate_with_bq25570(shepherd_up, cli_runner, tmp_path, data_h5):
             "-vvv",
             "emulate",
             "-d", "10",
+            "--force_overwrite",
             "--virtsource", "BQ25570",
             "-o", f"{str(store)}",
             f"{str(data_h5)}",
         ],
     )
 
-    assert res.exit_code != 0  # TODO: this will emit 0 when controller is implemented
-    # assert store.exists()
+    assert res.exit_code == 0
+    assert store.exists()
 
 
 @pytest.mark.hardware
@@ -278,6 +283,11 @@ def test_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
             "--warn-only",
             "--virtsource", f"{file_path}",
             "--output_path", f"{str(store)}",
+            "--uart_baudrate", "9600",
+            "--log_mid_voltage",
+            "--skip_log_voltage",
+            "--skip_log_current",
+            "--skip_log_gpio",
             f"{str(data_h5)}",
         ],
     )

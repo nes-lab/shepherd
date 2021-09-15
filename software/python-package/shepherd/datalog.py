@@ -429,7 +429,7 @@ class LogReader(object):
             logger.debug(
                 (
                     f"Reading datablock with {self.samples_per_buffer} samples "
-                    f"from netcdf took { round(1e3 * (time.time()-ts_start), 2) } ms"
+                    f"from file took { round(1e3 * (time.time()-ts_start), 2) } ms"
                 )
             )
             yield db

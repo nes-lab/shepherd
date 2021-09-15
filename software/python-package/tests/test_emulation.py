@@ -106,6 +106,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         sel_target_for_io=True,
         sel_target_for_pwr=True,
         aux_target_voltage=2.5,
+        settings_virtsource="direct",
     )
 
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
@@ -118,6 +119,8 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
 @pytest.mark.hardware
 def test_target_pins(shepherd_up):
     shepherd_io = ShepherdDebug()
+    shepherd_io.__enter__()
+    shepherd_io.start()
     shepherd_io.select_main_target_for_power(sel_target_a=True)
 
     dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
@@ -126,8 +129,8 @@ def test_target_pins(shepherd_up):
         [4, "emulation", "dac_voltage_a", "Emulator Rail A"],
         [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
 
-    gpio_channels = [0, 1,  2,   3,   4, 7, 8]  # 6, 7 can only be used when UART is free
-    pru_responses = [1, 2, 64, 128, 256, 4, 8]  # corresponding to 2^num of r31_num
+    gpio_channels = [0, 1, 2, 3, 4, 7, 8]  # 5&6 are UART, can only be used when free, 7&8 are SWD
+    pru_responses = [0, 1, 6, 7, 8, 2, 3]  # corresponding to r31_num (and later 2^num)
 
     for channel in [2, 3]:
         dac_cfg = dac_channels[channel]
@@ -140,14 +143,14 @@ def test_target_pins(shepherd_up):
 
     for index in range(len(gpio_channels)):
         shepherd_io.set_gpio_one_high(gpio_channels[index])
-        response = shepherd_io.gpi_read()
-        assert response == pru_responses[index]
+        response = int(shepherd_io.gpi_read())
+        assert response & (2**pru_responses[index])
 
     shepherd_io.select_main_target_for_io(sel_target_a=False)
 
     for index in range(len(gpio_channels)):
         shepherd_io.set_gpio_one_high(gpio_channels[index])
-        response = shepherd_io.gpi_read()
-        assert response == pru_responses[index]
+        response = int(shepherd_io.gpi_read())
+        assert response & (2**pru_responses[index])
 
     # TODO: could add a loopback for uart, but extra hardware is needed for that
