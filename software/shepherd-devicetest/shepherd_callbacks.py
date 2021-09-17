@@ -40,9 +40,10 @@ def window_refresh_callback(sender, data) -> NoReturn:
 
 
 def update_gui_elements() -> NoReturn:
-    global shepherd_io, shepherd_state
+    # TODO: DPG 0.8.x has trouble disabling items - it does not work - and text-elements even panic
+    global shepherd_io, shepherd_state, state_dict
     host_state = shepherd_io is not None
-    shepherd_state = able_dict[dpg.get_value("shepherd_state")]
+    shepherd_state = state_dict[dpg.get_value("shepherd_state")]
     dpg.configure_item("host_name", enabled=not host_state)
     dpg.configure_item("button_disconnect", label="Disconnect from Host" if host_state else "Connect to Host")
     dpg.configure_item("refresh_value", enabled=host_state)
@@ -59,8 +60,8 @@ def update_gui_elements() -> NoReturn:
     for iter in range(len(dac_channels)):
         dac_state = dpg.get_value(f"en_dac{iter}") and host_state
         dpg.configure_item(f"en_dac{iter}", enabled=host_state)
-        dpg.configure_item(f"textA_dac{iter}", enabled=dac_state)
-        dpg.configure_item(f"textB_dac{iter}", enabled=dac_state)
+        #dpg.configure_item(f"textA_dac{iter}", enabled=dac_state)  #
+        #dpg.configure_item(f"textB_dac{iter}", enabled=dac_state)
         dpg.configure_item(f"value_raw_dac{iter}", enabled=dac_state)
         dpg.configure_item(f"value_mV_dac{iter}", enabled=dac_state)
     for iter in range(len(adc_channels)):
@@ -130,36 +131,38 @@ def connect_button_callback(sender, element_data, user_data) -> NoReturn:
 # Board (Power)-Routing
 #################################
 
+
 state_dict = {"Stop": False, "Running": True}
 able_dict = {"Disabled": False, "Enabled": True}
-target_dict = {"Target A": True, "Target B": False}
+tgt_dict = {"Target A": True, "Target B": False}
+
 
 def shepherd_power_callback(sender, element_data, user_data) -> NoReturn:
-    global shepherd_io
+    global shepherd_io, able_dict
     shepherd_io.set_shepherd_pcb_power(able_dict[element_data])
 
 
 def shepherd_state_callback(sender, element_data, user_data) -> NoReturn:
-    global shepherd_io, shepherd_state
+    global shepherd_io, shepherd_state, state_dict
     shepherd_state = state_dict[element_data]
     shepherd_io.set_shepherd_state(shepherd_state)
     update_gui_elements()
 
 
 def target_power_callback(sender, element_data, user_data) -> NoReturn:
-    global shepherd_io
-    sel_a = target_dict[element_data]
+    global shepherd_io, tgt_dict
+    sel_a = tgt_dict[element_data]
     shepherd_io.select_target_for_power_tracking(sel_a)
 
 
 def target_io_callback(sender, element_data, user_data) -> NoReturn:
-    global shepherd_io
-    sel_a = target_dict[element_data]
+    global shepherd_io, tgt_dict
+    sel_a = tgt_dict[element_data]
     shepherd_io.select_target_for_io_interface(sel_a)
 
 
 def io_level_converter_callback(sender, element_data, user_data) -> NoReturn:
-    global shepherd_io
+    global shepherd_io, able_dict
     state = able_dict[element_data]
     shepherd_io.set_io_level_converter(state)
 

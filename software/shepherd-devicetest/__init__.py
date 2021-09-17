@@ -10,7 +10,6 @@ remotely.
 :license: MIT, see LICENSE for more details.
 """
 import os
-import dearpygui.dearpygui as dpg
 from past.builtins import execfile
 from shepherd_callbacks import *
 
@@ -18,15 +17,6 @@ from shepherd_callbacks import *
 
 
 def main():
-    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing some pieces, or proper doc) -> also add back tooltips
-    #dpg.set_main_window_title(title="Shepherd Testing and Debug Tool")
-    #dpg.set_main_window_size(1000, 600)
-
-    #dpg.set_render_callback(callback=window_refresh_callback)
-    #dpg.set_viewport_resize_callback(callback=window_refresh_callback)
-    #dpg.set_viewport_title(title="Shepherd Testing and Debug Tool (((VIEWPORT)))")
-    #dpg.set_theme(theme="Gold")  # fav: Purple, Gold, Light
-    dpg.set_start_callback(callback=program_start_callback)
 
     with dpg.window(id="main", label="Shepherd Testing and Debug Tool", width=1000, height=600):
 
@@ -76,8 +66,8 @@ def main():
         dpg.add_text(id="text_section_routing_B", default_value="Target Power")
         dpg.add_same_line(spacing=5)
         dpg.add_radio_button(id="target_pwr",
-                         items=[*target_dict],
-                         default_value=[*target_dict][0],
+                         items=[*tgt_dict],
+                         default_value=[*tgt_dict][0],
                          callback=target_power_callback, show=True,
                          #tip="Change is also triggering a shepherd state change / pru re-init / reset"
                              )
@@ -85,8 +75,8 @@ def main():
         dpg.add_text(id="text_section_routing_C", default_value="Target IO")
         dpg.add_same_line(spacing=5)
         dpg.add_radio_button(id="target_io",
-                         items=[*target_dict],
-                         default_value=[*target_dict][0],
+                         items=[*tgt_dict],
+                         default_value=[*tgt_dict][0],
                          callback=target_io_callback, show=True)
         dpg.add_same_line(spacing=30)
         dpg.add_text(id="text_section_routing_D", default_value="IO Lvl-Conv")
@@ -215,6 +205,17 @@ def main():
                      default_value=False,
                      callback=gpio_batok_callback,
                      )
+
+    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing some pieces, or proper doc) -> also add back tooltips
+    #dpg.set_main_window_title(title="Shepherd Testing and Debug Tool")
+    #dpg.set_main_window_size(1000, 600)
+
+    #dpg.set_render_callback(callback=window_refresh_callback)
+    #dpg.set_viewport_resize_callback(callback=window_refresh_callback)
+    #dpg.set_viewport_title(title="Shepherd Testing and Debug Tool (((VIEWPORT)))")
+    #dpg.set_theme(theme="Gold")  # fav: Purple, Gold, Light
+    dpg.set_start_callback(callback=program_start_callback)
+
 
 if __name__ == '__main__':
     main()
