@@ -24,10 +24,9 @@
 #define DEBUG_PIN1_MASK 	BIT_SHIFT(P8_30)
 
 #define GPIO_BATOK 		BIT_SHIFT(P8_29)
+#define GPIO_BATOK_POS		(9u)
 
-#define GPIO_MASK		(0x03FF) \
- // TODO: currently contains batOk as an input, does that work?
-// workaround: splice in shared_mem->vsource_batok_pin_value
+#define GPIO_MASK		(0x03FF)
 
 #define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
 
@@ -172,7 +171,9 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem, const
 		return;
 	}
 
-	const uint32_t gpio_status = read_r31() & GPIO_MASK;
+	// batOK is on r30 (output), but that does not mean it is in R31
+	// -> workaround: splice in shared_mem->vsource_batok_pin_value
+	const uint32_t gpio_status = (read_r31() | (shared_mem->vsource_batok_pin_value << GPIO_BATOK_POS)) & GPIO_MASK;
 	const uint32_t gpio_diff = gpio_status ^ prev_gpio_status;
 
 	prev_gpio_status = gpio_status;
