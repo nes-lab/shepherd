@@ -238,7 +238,7 @@ class SharedMem(object):
         # Read the number of gpio events in the buffer
         (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
         if n_gpio_events > 0:
-            logger.info(f"Buffer contains {n_gpio_events} gpio events")
+            logger.debug(f"Buffer contains {n_gpio_events} gpio events")
 
         gpio_ts_offset = gpio_struct_offset + 4
         gpio_timestamps_ns = np.frombuffer(

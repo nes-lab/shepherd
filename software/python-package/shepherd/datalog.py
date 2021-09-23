@@ -12,6 +12,8 @@ HDF5 files.
 """
 
 import logging
+import subprocess
+import threading
 import time
 from typing import NoReturn
 
@@ -22,6 +24,7 @@ from itertools import product
 from collections import defaultdict
 from collections import namedtuple
 import psutil as psutil
+import serial
 
 from shepherd.calibration import CalibrationData
 from shepherd.calibration import cal_channel_harvest_dict
@@ -73,9 +76,12 @@ class LogWriter(object):
     # - gzip: good compression, moderate speed, select level from 1-9, default is 4
     # - lzf: low to moderate compression, very fast, no options
     compression_level = 1
-    compression_algo = "lzf"
+    compression_algo = None #"lzf"
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
     sys_log_last_ns = 0
+    dmesg_mon_t = None
+    ptp4l_mon_t = None
+    uart_mon_t = None
 
     def __init__(
             self,
@@ -97,12 +103,17 @@ class LogWriter(object):
                 base_dir / store_path.stem, store_path.suffix
             )
             logger.warning(
-                (
                     f"File {str(store_path)} already exists.. "
                     f"storing under {str(self.store_path)} instead"
-                )
             )
-        self.mode = mode
+        # Refer to shepherd/calibration.py for the format of calibration data
+        if mode == "harvesting_test":
+            self.mode = "harvesting"
+        elif mode == "emulation_test":
+            self.mode = "emulation"
+        else:
+            self.mode = mode
+
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
         self.sampling_interval = int(buffer_period_ns / samples_per_buffer)
@@ -130,22 +141,18 @@ class LogWriter(object):
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
         self._h5file.attrs.__setitem__("mode", self.mode)
 
-        # Store voltage and current samples in the data group
+        # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
-        # Timestamps in ns are stored as 8 Byte unsigned integer
         self.data_grp.create_dataset(
             "time",
             (0,),
             dtype="u8",
             maxshape=(None,),
-            # This makes writing more efficient, see HDF5 docs
-            chunks=self.chunk_shape,
+            chunks=self.chunk_shape,  # This makes writing more efficient, see HDF5 docs
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
-        self.data_grp["time"].attrs["unit"] = f"system time in nano seconds"
-
-        # Both current and voltage are stored as 4 Byte unsigned int
+        self.data_grp["time"].attrs["unit"] = "ns"
+        self.data_grp["time"].attrs["description"] = "system time [ns]"
         self.data_grp.create_dataset(
             "current",
             (0,),
@@ -153,9 +160,9 @@ class LogWriter(object):
             maxshape=(None,),
             chunks=self.chunk_shape,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
         self.data_grp["current"].attrs["unit"] = "A"
+        self.data_grp["current"].attrs["description"] = "current [A] = value * gain + offset"
         self.data_grp.create_dataset(
             "voltage",
             (0,),
@@ -163,39 +170,14 @@ class LogWriter(object):
             maxshape=(None,),
             chunks=self.chunk_shape,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
-        # Refer to shepherd/calibration.py for the format of calibration data
-        if self.mode == "harvesting_test":
-            self.mode = "harvesting"
-        elif self.mode == "emulation_test":
-            self.mode = "emulation"
+        self.data_grp["voltage"].attrs["description"] = "voltage [V] = value * gain + offset"
+
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
             cal_channel = cal_channel_harvest_dict[channel] if (self.mode == "harvesting") else cal_channel_emulation_dict[channel]
             self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][cal_channel][parameter]
-
-        # Create group for exception logs
-        self.log_grp = self._h5file.create_group("log")
-        self.log_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=self.chunk_shape,
-            compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
-        )
-        self.log_grp["time"].attrs["unit"] = f"system time in nano seconds"
-        # Every log entry consists of a timestamp, a message and a value
-        self.log_grp.create_dataset(
-            "message",
-            (0,),
-            dtype=h5py.special_dtype(vlen=str),
-            maxshape=(None,),
-        )
-        self.log_grp.create_dataset("value", (0,), dtype="u4", maxshape=(None,))
 
         # Create group for gpio data
         self.gpio_grp = self._h5file.create_group("gpio")
@@ -204,85 +186,142 @@ class LogWriter(object):
             (0,),
             dtype="u8",
             maxshape=(None,),
+            chunks=True,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
-        self.gpio_grp["time"].attrs["unit"] = f"system time in nano seconds"
+        self.gpio_grp["time"].attrs["unit"] = f"ns"
+        self.gpio_grp["time"].attrs["description"] = "system time [ns]"
         self.gpio_grp.create_dataset(
             "value",
             (0,),
             dtype="u2",
             maxshape=(None,),
+            chunks=True,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
-        self.gpio_grp["value"].attrs["unit"] = GPIO_LOG_BIT_POSITIONS
+        self.gpio_grp["value"].attrs["unit"] = "n"
+        self.gpio_grp["value"].attrs["description"] = GPIO_LOG_BIT_POSITIONS
 
-        # Create UART-Logger
+        # Create group for exception logs, entry consists of a timestamp, a message and a value
+        self.xcpt_grp = self._h5file.create_group("exceptions")
+        self.xcpt_grp.create_dataset(
+            "time",
+            (0,),
+            dtype="u8",
+            maxshape=(None,),
+            chunks=True,
+            compression=LogWriter.compression_algo,
+        )
+        self.xcpt_grp["time"].attrs["unit"] = "ns"
+        self.xcpt_grp["time"].attrs["description"] = "system time [ns]"
+        self.xcpt_grp.create_dataset(
+            "message",
+            (0,),
+            dtype=h5py.special_dtype(vlen=str),
+            maxshape=(None,),
+            chunks=True,
+        )
+        self.xcpt_grp.create_dataset("value", (0,), dtype="u4", maxshape=(None,), chunks=True)
+        self.gpio_grp["value"].attrs["unit"] = "n"
+
+        # UART-Logger
         self.uart_grp = self._h5file.create_group("uart")
         self.uart_grp.create_dataset(
             "time",
             (0,),
             dtype="u8",
             maxshape=(None,),
-            chunks=self.chunk_shape,
+            chunks=True,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
-        self.uart_grp["time"].attrs["unit"] = f"system time in nano seconds"
+        self.uart_grp["time"].attrs["unit"] = f"ns"
+        self.uart_grp["time"].attrs["description"] = "system time [ns]"
+
         # Every log entry consists of a timestamp and a message
         self.uart_grp.create_dataset(
             "message",
             (0,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
+            chunks=True,
         )
-        #self.uart_grp["message"].attrs["unit"] = f"raw bytes, numpy.void"
+        self.uart_grp["message"].attrs["description"] = f"raw ascii-bytes"
 
         # Create sys-Logger
-        self.sys_grp = self._h5file.create_group("system")
-        self.sys_grp.create_dataset(
+        self.sysutil_grp = self._h5file.create_group("sysutil")
+        self.sysutil_grp.create_dataset(
             "time",
             (0,),
             dtype="u8",
             maxshape=(None,),
-            chunks=self.chunk_shape,  # TODO: chunk_shape is probably not useful here (similar for above cases)
+            chunks=True,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
-        self.sys_grp["time"].attrs["unit"] = "system time in nano seconds"
-        self.sys_grp.create_dataset("cpu_util", (0,), dtype="u1", maxshape=(None,))
-        self.sys_grp["cpu_util"].attrs["unit"] = "%"
-        self.sys_grp.create_dataset("ram_util", (0,), dtype="u1", maxshape=(None,))
-        self.sys_grp["ram_util"].attrs["unit"] = "%"
+        self.sysutil_grp["time"].attrs["unit"] = "ns"
+        self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
+        self.sysutil_grp.create_dataset("cpu", (0,), dtype="u1", maxshape=(None,), chunks=True, )
+        self.sysutil_grp["cpu"].attrs["unit"] = "%"
+        self.sysutil_grp["cpu"].attrs["description"] = "cpu_util [%]"
+        self.sysutil_grp.create_dataset("ram", (0, 2), dtype="u1", maxshape=(None, 2), chunks=True, )
+        self.sysutil_grp["ram"].attrs["unit"] = "%"
+        self.sysutil_grp["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
+        self.sysutil_grp.create_dataset("io", (0, 4), dtype="u8", maxshape=(None, 4), chunks=True, )
+        self.sysutil_grp["io"].attrs["unit"] = "n"
+        self.sysutil_grp["io"].attrs["description"] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
+        self.sysutil_grp.create_dataset("net", (0, 2), dtype="u8", maxshape=(None, 2), chunks=True, )
+        self.sysutil_grp["net"].attrs["unit"] = "n"
+        self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
 
-        # Create dmesg-Logger
+        # Create dmesg-Logger -> consists of a timestamp and a message
         self.dmesg_grp = self._h5file.create_group("dmesg")
         self.dmesg_grp.create_dataset(
             "time",
             (0,),
             dtype="u8",
             maxshape=(None,),
-            chunks=self.chunk_shape,
+            chunks=True,
             compression=LogWriter.compression_algo,
-            #compression_opts=LogWriter.compression_level,
         )
-        self.dmesg_grp["time"].attrs["unit"] = f"system time in nano seconds"
-        # Every log entry consists of a timestamp and a message
+        self.dmesg_grp["time"].attrs["unit"] = "ns"
+        self.dmesg_grp["time"].attrs["description"] = "system time [ns]"
         self.dmesg_grp.create_dataset(
             "message",
             (0,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
+            chunks=True,
         )
 
-        # TODO: activate loggers, add logger for timesync, also document name of node
-
+        # Create timesync-Logger
+        self.timesync_grp = self._h5file.create_group("timesync")
+        self.timesync_grp.create_dataset(
+            "time",
+            (0,),
+            dtype="u8",
+            maxshape=(None,),
+            chunks=True,
+        )
+        self.timesync_grp["time"].attrs["unit"] = "ns"
+        self.timesync_grp["time"].attrs["description"] = "system time [ns]"
+        self.timesync_grp.create_dataset("value", (0, 3), dtype="i8", maxshape=(None, 3), chunks=True)
+        self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
+        self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
+        h5_structure_printer(self._h5file)  # TODO: just for debug
         return self
 
     def __exit__(self, *exc):
-        logger.info("flushing and closing hdf5 file")
+        if self.dmesg_mon_t is not None:
+            logger.info(f"[LogWriter] Terminate Dmesg-Monitor, {self.dmesg_grp['time'].shape[0]} entries")
+            self.dmesg_mon_t = None
+        if self.ptp4l_mon_t is not None:
+            logger.info(f"[LogWriter] Terminate PTP4L-Monitor, {self.timesync_grp['time'].shape[0]} entries")
+            self.ptp4l_mon_t = None
+        if self.uart_mon_t is not None:
+            logger.info(f"[LogWriter] Terminate UART-Monitor, {self.uart_grp['time'].shape[0]} entries")
+            self.uart_mon_t = None
+        logger.info(f"[LogWriter] flushing hdf5 file, iv_data has {self.data_grp['time'].shape[0]} entries, gpio = {self.gpio_grp['time'].shape[0]}")
         self._h5file.flush()
+        logger.info("[LogWriter] closing  hdf5 file")
         self._h5file.close()
 
     def write_buffer(self, buffer: DataBuffer) -> NoReturn:
@@ -319,62 +358,132 @@ class LogWriter(object):
             self.gpio_grp["time"][gpio_old_set_length:] = buffer.gpio_edges.timestamps_ns
             self.gpio_grp["value"][gpio_old_set_length:] = buffer.gpio_edges.values
 
-        #self.log_sys_stats()  # TODO: takes too long to gather data
+        self.log_sys_stats()
 
     def write_exception(self, exception: ExceptionRecord) -> NoReturn:
         """ Writes an exception to the hdf5 file.
-
+            TODO: use this fn to log exceptions, redirect logger.error() ?
+            TODO: there is a concrete ShepherdIOException(Exception)
         Args:
             exception (ExceptionRecord): The exception to be logged
         """
-        dataset_length = self.log_grp["time"].shape[0]
-        self.log_grp["time"].resize((dataset_length + 1,))
-        self.log_grp["time"][dataset_length] = exception.timestamp
-        self.log_grp["value"].resize((dataset_length + 1,))
-        self.log_grp["value"][dataset_length] = exception.value
-        self.log_grp["message"].resize((dataset_length + 1,))
-        self.log_grp["message"][dataset_length] = exception.message
-
-    def log_uart(self, uart_rx: str) -> NoReturn:
-        """ Writes incoming UART Transmissions into hdf5 file
-
-        :param uart_rx: text-string
-        :return: none
-        """
-        dataset_length = self.uart_grp["time"].shape[0]
-        self.uart_grp["time"].resize((dataset_length + 1,))
-        self.uart_grp["time"][dataset_length] = int(time.time()) * (10 ** 9)
-        self.uart_grp["message"].resize((dataset_length + 1,))
-        self.uart_grp["message"][dataset_length] = uart_rx  #np.void(uart_rx)
+        dataset_length = self.xcpt_grp["time"].shape[0]
+        self.xcpt_grp["time"].resize((dataset_length + 1,))
+        self.xcpt_grp["time"][dataset_length] = exception.timestamp
+        self.xcpt_grp["value"].resize((dataset_length + 1,))
+        self.xcpt_grp["value"][dataset_length] = exception.value
+        self.xcpt_grp["message"].resize((dataset_length + 1,))
+        self.xcpt_grp["message"][dataset_length] = exception.message
 
     def log_sys_stats(self) -> NoReturn:
         """ captures state of system in a fixed intervall
-
+            takes ~ 58 ms on BBG
         :return: none
         """
-        ts_now_ns = int(time.time()) * (10 ** 9)
+        ts_now_ns = int(time.time() * (10 ** 9))
         if ts_now_ns >= (self.sys_log_last_ns + self.sys_log_intervall_ns):
             self.sys_log_last_ns = ts_now_ns
-            dataset_length = self.sys_grp["time"].shape[0]
-            self.sys_grp["time"].resize((dataset_length + 1,))
-            self.sys_grp["time"][dataset_length] = ts_now_ns
-            self.sys_grp["cpu_util"].resize((dataset_length + 1,))
-            self.sys_grp["cpu_util"][dataset_length] = int(round(psutil.cpu_percent(1)))
-            self.sys_grp["ram_util"].resize((dataset_length + 1,))
-            self.sys_grp["ram_util"][dataset_length] = int(round(psutil.virtual_memory()[2]))
-            # TODO: add ioUtil  https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
-            # TODO: add NetUtil https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters
-            # TODO: add temp https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
-            # TODO: add sync-state (pru-deviation)
-            # TODO: add dmesg syslog /var/log/syslog or /kernlog
-            '''
-            result_dmesg = subprocess.Popen(['dmesg', '--follow'], stdout=subprocess.PIPE)
-            if result_dmesg.poll() != '':
+            dataset_length = self.sysutil_grp["time"].shape[0]
+            self.sysutil_grp["time"].resize((dataset_length + 1,))
+            self.sysutil_grp["time"][dataset_length] = ts_now_ns
+
+            # CPU https://psutil.readthedocs.io/en/latest/#cpu
+            self.sysutil_grp["cpu"].resize((dataset_length + 1,))
+            self.sysutil_grp["cpu"][dataset_length] = int(round(psutil.cpu_percent(0)))
+
+            # Memory https://psutil.readthedocs.io/en/latest/#memory
+            self.sysutil_grp["ram"].resize((dataset_length + 1, 2))
+            mem_stat = psutil.virtual_memory()[0:3]
+            self.sysutil_grp["ram"][dataset_length, 0:2] = [int(100 * mem_stat[1] / mem_stat[0]), int(mem_stat[2])]
+
+            # IO https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
+            self.sysutil_grp["io"].resize((dataset_length + 1, 4))
+            self.sysutil_grp["io"][dataset_length, :] = psutil.disk_io_counters()[0:4]  # TODO: should be delta
+
+            # Network https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters
+            self.sysutil_grp["net"].resize((dataset_length + 1, 2))
+            self.sysutil_grp["net"][dataset_length, :] = psutil.net_io_counters()[0:2]  # TODO: should be delta
+
+            # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
+            #logger.debug(f"sysLog took {round(time.time() * 10**3 - ts_now_ns / 10**6, 2)} ms")
+
+    def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
+        self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
+        self.dmesg_mon_t.start()
+        self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
+        self.ptp4l_mon_t.start()
+        self.uart_mon_t = threading.Thread(target=self.monitor_uart, args=(uart_baudrate,), daemon=True)
+        self.uart_mon_t.start()
+
+    def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> NoReturn:
+        # TODO: TEST - Not final, goal: raw bytes in hdf5
+        # - uart is bytes-type -> storing in hdf5 is hard, tried 'S' and opaque-type -> failed with errors
+        # - converting is producing ValueError on certain chars, errors="backslashreplace" does not help
+        # TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        if not isinstance(baudrate, int) or baudrate == 0:
+            return
+        uart_path = '/dev/ttyO1'
+        logger.debug(f"Will start UART-Monitor for target on '{uart_path}' @ {baudrate} baud")
+        try:
+            # open serial as non-exclusive
+            with serial.Serial(uart_path, baudrate, timeout=0) as uart:
+                while True:
+                    if uart.in_waiting > 0:
+                        output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace('\x00', '')
+                        if len(output) > 0:
+                            dataset_length = self.uart_grp["time"].shape[0]
+                            self.uart_grp["time"].resize((dataset_length + 1,))
+                            self.uart_grp["time"][dataset_length] = int(time.time()) * (10 ** 9)
+                            self.uart_grp["message"].resize((dataset_length + 1,))
+                            self.uart_grp["message"][dataset_length] = output  # np.void(uart_rx)
+                    time.sleep(poll_intervall)
+        except ValueError as e:
+            logger.error(
+                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{uart_path}' with baudrate={baudrate} -> will skip logging")
+        except serial.SerialException as e:
+            logger.error(
+                f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{uart_path}' to target -> will skip logging")
+
+    def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
+        # var1: ['dmesg', '--follow'] -> not enough control
+        cmd_dmesg = ['sudo', 'journalctl', '--dmesg', '--follow', f'--lines={backlog}', '--output=short-precise']
+        proc_dmesg = subprocess.Popen(cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True)
+        for line in iter(proc_dmesg.stdout.readline, ""):
+            line = str(line).strip()[:128]
+            try:
+                dataset_length = self.dmesg_grp["time"].shape[0]
                 self.dmesg_grp["time"].resize((dataset_length + 1,))
-                self.dmesg_grp["time"][dataset_length] = ts_now_ns
+                self.dmesg_grp["time"][dataset_length] = int(time.time() * (10 ** 9))
                 self.dmesg_grp["message"].resize((dataset_length + 1,))
-                self.dmesg_grp["message"][dataset_length] = result_dmesg
-            '''
+                self.dmesg_grp["message"][dataset_length] = line
+            except OSError:
+                logger.error(f"[DmesgMonitor] Caught a Write Error for Line: [{type(line)}] {line}")
+            time.sleep(poll_intervall)  # rate limiter
+        logger.debug(f"[DmesgMonitor] ended itself")
+
+    def monitor_ptp4l(self, poll_intervall: float = 0.25):
+        # example: Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
+        cmd_ptp4l = ['sudo', 'journalctl', '--unit=ptp4l', '--follow', '--lines=1', '--output=short-precise']  # for client
+        proc_ptp4l = subprocess.Popen(cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True)
+
+        for line in iter(proc_ptp4l.stdout.readline, ""):
+            try:
+                words = str(line).split()
+                i_start = words.index("offset")
+                values = [int(words[i_start + 1]), int(words[i_start + 4]), int(words[i_start + 7])]
+            except ValueError:
+                continue
+            try:
+                dataset_length = self.timesync_grp["time"].shape[0]
+                self.timesync_grp["time"].resize((dataset_length + 1,))
+                self.timesync_grp["time"][dataset_length] = int(time.time() * (10 ** 9))
+                self.timesync_grp["values"].resize((dataset_length + 1, 3))
+                self.timesync_grp["values"][dataset_length, :] = values[0:3]
+            except OSError:
+                logger.error(f"[PTP4lMonitor] Caught a Write Error for Line: [{type(line)}] {line}")
+            time.sleep(poll_intervall)  # rate limiter
+        logger.debug(f"[PTP4lMonitor] ended itself")
+
 
     def __setitem__(self, key, item):
         """Offer a convenient interface to store any relevant key-value data"""
@@ -446,3 +555,13 @@ class LogReader(object):
             cal_channel = cal_channel_harvest_dict[channel]
             calib._data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(calib)
+
+
+def h5_structure_printer(file: h5py.File) -> NoReturn:
+    for group in file.keys():
+        h5grp = file.get(group)
+        logger.debug(f"[H5File] Group [{group}] Items: {h5grp.items()}")
+        for dataset in h5grp.keys():
+            h5ds = h5grp.get(dataset)
+            logger.debug(f"[H5File] Group [{group}], Dataset [{dataset}] - Chunks={h5ds.chunks}, compression={h5ds.compression}, ")
+

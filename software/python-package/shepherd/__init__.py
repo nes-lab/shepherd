@@ -20,10 +20,7 @@ from contextlib import ExitStack
 from typing import NoReturn
 import msgpack
 import msgpack_numpy
-
 import numpy
-import serial
-
 import invoke
 import signal
 
@@ -521,6 +518,7 @@ def record(
         # in_stream has to be disabled to avoid trouble with pytest
         res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
         log_writer["hostname"] = res.stdout
+        log_writer.start_monitors()
 
         recorder.start(start_time, wait_blocking=False)
 
@@ -665,6 +663,7 @@ def emulate(
     with ExitStack() as stack:
         if output_path is not None:
             stack.enter_context(log_writer)
+            log_writer.start_monitors(uart_baudrate)
 
         stack.enter_context(log_reader)
 
@@ -681,13 +680,6 @@ def emulate(
             log_intermediate_voltage=log_intermediate_voltage,
         )
         stack.enter_context(emu)
-
-        if (output_path is not None) and isinstance(uart_baudrate, int):
-            uart_mon_p = multiprocessing.Process(target=uart_monitor, args=(uart_baudrate, log_writer))
-            uart_mon_p.start()
-        else:
-            uart_mon_p = None
-
         emu.start(start_time, wait_blocking=False)
 
         logger.info(f"waiting {start_time - time.time():.2f} s until start")
@@ -696,8 +688,6 @@ def emulate(
         logger.info("shepherd started!")
 
         def exit_gracefully(signum, frame):
-            if uart_mon_p is not None:
-                uart_mon_p.terminate()
             stack.close()
             sys.exit(0)
 
@@ -744,27 +734,3 @@ def emulate(
                 else:
                     if not warn_only:
                         raise
-
-
-# TODO: TEST - Not final, goal: raw bytes in hdf5
-# - uart is bytes-type -> storing in hdf5 is hard, tried 'S' and opaque-type -> failed with errors
-# - converting is producing ValueError on certain chars, errors="backslashreplace" does not help
-# TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
-
-def uart_monitor(baudrate: int, datalog: LogWriter) -> NoReturn:
-    uart_path = '/dev/ttyO1'
-    sleep_s = 0.01
-    logger.debug(f"Will start UART-Monitor for target on '{uart_path}' @ {baudrate} baud")
-    try:
-        # open serial as non-exclusive
-        with serial.Serial(uart_path, baudrate, timeout=0) as uart:
-            while True:
-                if uart.in_waiting > 0:
-                    output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace('\x00', '')
-                    datalog.log_uart(output)
-                time.sleep(sleep_s)
-    except ValueError as e:
-        logger.error(f"PySerial ValueError '{e}' - couldn't configure serial-port '{uart_path}' with baudrate={baudrate} -> will skip logging")
-    except serial.SerialException as e:
-        logger.error(f"pySerial SerialException '{e} - Couldn't open Serial-Port '{uart_path}' to target -> will skip logging")
-
