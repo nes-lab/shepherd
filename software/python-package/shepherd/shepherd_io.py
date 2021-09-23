@@ -165,7 +165,7 @@ class SharedMem(object):
         self.mapped_mem.close()
         os.close(self.devmem_fd)
 
-    def read_buffer(self, index: int) -> DataBuffer:
+    def read_buffer(self, index: int, verbose: bool = False) -> DataBuffer:
         """Extracts buffer from shared memory.
 
         Extracts data from buffer with given index from the shared memory area
@@ -188,10 +188,11 @@ class SharedMem(object):
 
         # First two values are number of samples and 64 bit timestamp
         n_samples, buffer_timestamp = struct.unpack("=LQ", header)
-        logger.debug(
-            f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
-            f"with len {n_samples} and timestamp {buffer_timestamp}"
-        )
+        if verbose:
+            logger.debug(
+                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
+                f"with len {n_samples} and timestamp {buffer_timestamp}"
+            )
 
         # sanity-check of received timestamp, TODO: python knows the desired duration between timestamps
         if self.prev_timestamp > 0:
@@ -237,8 +238,8 @@ class SharedMem(object):
         self.mapped_mem.seek(gpio_struct_offset)
         # Read the number of gpio events in the buffer
         (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
-        if n_gpio_events > 0:
-            logger.debug(f"Buffer contains {n_gpio_events} gpio events")
+        #if n_gpio_events > 0:
+        #    logger.debug(f"Buffer contains {n_gpio_events} gpio events")
 
         gpio_ts_offset = gpio_struct_offset + 4
         gpio_timestamps_ns = np.frombuffer(
@@ -592,7 +593,7 @@ class ShepherdIO(object):
         """
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
-    def get_buffer(self, timeout: float = 1.0) -> NoReturn:
+    def get_buffer(self, timeout: float = 1.0, verbose: bool = False) -> NoReturn:
         """Reads a data buffer from shared memory.
 
         Polls the msg-channel for a message from PRU0 and, if the message
@@ -600,14 +601,14 @@ class ShepherdIO(object):
         corresponding memory location as DataBuffer.
 
         Args:
-            timeout (float): Time in seconds that should be waited for an
+            :param timeout: (float) Time in seconds that should be waited for an
                 incoming msg
+            :param verbose: (bool) more debug output
         Returns:
             Index and content of corresponding data buffer
         Raises:
             TimeoutException: If no message is received within
                 specified timeout
-
         """
         while True:
             msg_type, value = self._get_msg(timeout)
@@ -616,9 +617,10 @@ class ShepherdIO(object):
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
                 ts_start = time.time()
-                buf = self.shared_mem.read_buffer(value)
-                logger.debug(f"Processing buffer #{ value } from shared memory took "
-                             f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
+                buf = self.shared_mem.read_buffer(value, verbose)
+                if verbose:
+                    logger.debug(f"Processing buffer #{ value } from shared memory took "
+                                 f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:

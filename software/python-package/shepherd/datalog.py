@@ -526,21 +526,22 @@ class LogReader(object):
                 self._h5file["data"]["time"].shape[0] / self.samples_per_buffer
             )
         logger.debug(f"Reading blocks from { start } to { end } from log")
+        verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
 
         for i in range(start, end):
-            ts_start = time.time()
+            if verbose:
+                ts_start = time.time()
             idx_start = i * self.samples_per_buffer
             idx_end = (i + 1) * self.samples_per_buffer
             db = DataBuffer(
                 voltage=self.ds_voltage[idx_start:idx_end],
                 current=self.ds_current[idx_start:idx_end],
             )
-            logger.debug(
-                (
-                    f"Reading datablock with {self.samples_per_buffer} samples "
-                    f"from file took { round(1e3 * (time.time()-ts_start), 2) } ms"
+            if verbose:
+                logger.debug(
+                        f"Reading datablock with {self.samples_per_buffer} samples "
+                        f"from file took { round(1e3 * (time.time()-ts_start), 2) } ms"
                 )
-            )
             yield db
 
     def get_calibration_data(self) -> CalibrationData:
@@ -558,6 +559,7 @@ class LogReader(object):
 
 
 def h5_structure_printer(file: h5py.File) -> NoReturn:
+    # TODO: more recursive with levels, use hasattr(obj, "attribute")
     for group in file.keys():
         h5grp = file.get(group)
         logger.debug(f"[H5File] Group [{group}] Items: {h5grp.items()}")

@@ -11,7 +11,6 @@ Provides main API functionality for recording and emulation with shepherd.
 """
 import datetime
 import logging
-import multiprocessing
 import time
 import sys
 from logging import NullHandler
@@ -167,9 +166,9 @@ class Emulator(ShepherdIO):
 
         return self
 
-    def return_buffer(self, index, buffer):
-
-        ts_start = time.time()
+    def return_buffer(self, index, buffer, verbose: bool = False):
+        if verbose:
+            ts_start = time.time()
 
         v_gain = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["gain"]
         v_offset = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["offset"]
@@ -182,9 +181,9 @@ class Emulator(ShepherdIO):
 
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         self._return_buffer(index)
-
-        logger.debug(f"Sending emu-buffer #{ index } to PRU took "
-                     f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
+        if verbose:
+            logger.debug(f"Sending emu-buffer #{ index } to PRU took "
+                         f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
 
 
 class ShepherdDebug(ShepherdIO):
@@ -505,11 +504,12 @@ def record(
     else:
         store_path = output_path
 
-
     recorder = Recorder(shepherd_mode=mode)
     log_writer = LogWriter(
         store_path=store_path, calibration_data=calib, mode=mode, force_overwrite=force_overwrite
     )
+    verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
+
     with ExitStack() as stack:
 
         stack.enter_context(recorder)
@@ -541,7 +541,7 @@ def record(
 
         while time.time() < ts_end:
             try:
-                idx, hrv_buf = recorder.get_buffer()
+                idx, hrv_buf = recorder.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
                 logger.error(
                     f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
@@ -659,6 +659,7 @@ def emulate(
         raise ValueError("Input-File does not exist")
 
     log_reader = LogReader(input_path, 10_000)
+    verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
 
     with ExitStack() as stack:
         if output_path is not None:
@@ -701,7 +702,7 @@ def emulate(
 
         for hrvst_buf in log_reader.read_buffers(start=64):
             try:
-                idx, emu_buf = emu.get_buffer(timeout=1)
+                idx, emu_buf = emu.get_buffer(timeout=1, verbose=verbose)
             except ShepherdIOException as e:
                 logger.error(
                     f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
@@ -716,7 +717,7 @@ def emulate(
             if output_path is not None:
                 log_writer.write_buffer(emu_buf)
 
-            emu.return_buffer(idx, hrvst_buf)
+            emu.return_buffer(idx, hrvst_buf, verbose)
 
             if time.time() > ts_end:
                 break
@@ -724,7 +725,7 @@ def emulate(
         # Read all remaining buffers from PRU
         while True:
             try:
-                idx, emu_buf = emu.get_buffer(timeout=1)
+                idx, emu_buf = emu.get_buffer(timeout=1, verbose=verbose)
                 if output_path is not None:
                     log_writer.write_buffer(emu_buf)
             except ShepherdIOException as e:
