@@ -42,7 +42,9 @@ from shepherd.target_io import TargetIO
 logging.getLogger(__name__).addHandler(NullHandler())
 
 logger = logging.getLogger(__name__)
-
+logging._srcfile = None
+logging.logThreads = 0
+logging.logProcesses = 0
 
 class Recorder(ShepherdIO):
     """API for recording data with shepherd.
@@ -143,6 +145,11 @@ class Emulator(ShepherdIO):
         self._sel_target_for_pwr = sel_target_for_pwr
         self._aux_target_voltage = aux_target_voltage
 
+        self._v_gain = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["gain"]
+        self._v_offset = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["offset"]
+        self._i_gain = 1e9 * self._cal_recording["harvesting"]["adc_current"]["gain"]
+        self._i_offset = 1e9 * self._cal_recording["harvesting"]["adc_current"]["offset"]
+
     def __enter__(self):
         super().__enter__()
 
@@ -170,14 +177,9 @@ class Emulator(ShepherdIO):
         if verbose:
             ts_start = time.time()
 
-        v_gain = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["gain"]
-        v_offset = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["offset"]
-        i_gain = 1e9 * self._cal_recording["harvesting"]["adc_current"]["gain"]
-        i_offset = 1e9 * self._cal_recording["harvesting"]["adc_current"]["offset"]
-
         # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        voltage_transformed = (buffer.voltage * v_gain + v_offset).astype("u4")
-        current_transformed = (buffer.current * i_gain + i_offset).astype("u4")
+        voltage_transformed = (buffer.voltage * self._v_gain + self._v_offset).astype("u4")
+        current_transformed = (buffer.current * self._i_gain + self._i_offset).astype("u4")
 
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         self._return_buffer(index)

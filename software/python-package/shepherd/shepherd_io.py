@@ -123,9 +123,9 @@ class SharedMem(object):
             samples_per_buffer (int): Number of IV samples per buffer
         """
         self.address = address
-        self.size = size
-        self.n_buffers = n_buffers
-        self.samples_per_buffer = samples_per_buffer
+        self.size = int(size)
+        self.n_buffers = int(n_buffers)
+        self.samples_per_buffer = int(samples_per_buffer)
         self.prev_timestamp: int = 0
 
         self.mapped_mem = None
@@ -145,6 +145,12 @@ class SharedMem(object):
             + 2 * commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
         )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
         # TODO: put number in shared-mem
+
+        self.voltage_offset = 12
+        self.current_offset = 12 + 1 * 4 * self.samples_per_buffer
+        self.gpiostr_offset = 12 + 2 * 4 * self.samples_per_buffer
+        self.gpio_ts_offset = self.gpiostr_offset + 4
+        self.gpio_vl_offset = self.gpiostr_offset + 4 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
 
         logger.debug(f"Individual buffer size:\t{ self.buffer_size } byte")
 
@@ -178,16 +184,12 @@ class SharedMem(object):
             DataBuffer object pointing to extracted data
         """
         # The buffers are organized as an array in shared memory
-        # buffer i starts at i * buffersize
         buffer_offset = index * self.buffer_size
-        #logger.debug(f"Seeking 0x{index * self.buffer_size:04X}")
         self.mapped_mem.seek(buffer_offset)
 
         # Read the header consisting of 12 (4 + 8 Bytes)
-        header = self.mapped_mem.read(12)
-
         # First two values are number of samples and 64 bit timestamp
-        n_samples, buffer_timestamp = struct.unpack("=LQ", header)
+        n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
         if verbose:
             logger.debug(
                 f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
@@ -196,7 +198,7 @@ class SharedMem(object):
 
         # sanity-check of received timestamp, TODO: python knows the desired duration between timestamps
         if self.prev_timestamp > 0:
-            diff_ms = round((buffer_timestamp - self.prev_timestamp) / 1e6, 3)
+            diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6
             if buffer_timestamp == 0:
                 logger.error(f"ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
@@ -209,56 +211,43 @@ class SharedMem(object):
 
         # Each buffer contains (n=) samples_per_buffer values. We have 2 variables
         # (voltage and current), thus samples_per_buffer/2 samples per variable
-        # TODO: this is a hardcoded struct with lots of magic numbers. also: why calculate sub-offsets every time?
-
-        voltage_offset = buffer_offset + 12
         voltage = np.frombuffer(
             self.mapped_mem,
             "=u4",
             count=self.samples_per_buffer,
-            offset=voltage_offset,
+            offset=buffer_offset + self.voltage_offset,
         )
-
-        current_offset = voltage_offset + 4 * self.samples_per_buffer
         current = np.frombuffer(
             self.mapped_mem,
             "=u4",
             count=self.samples_per_buffer,
-            offset=current_offset,
+            offset=buffer_offset + self.current_offset,
         )
 
-        gpio_struct_offset = (
-            buffer_offset
-            + 12  # header
-            + 2
-            * 4
-            * self.samples_per_buffer  # current and voltage samples (4B)
-        )
-        # Jump over header and all sampled data
-        self.mapped_mem.seek(gpio_struct_offset)
         # Read the number of gpio events in the buffer
+        self.mapped_mem.seek(buffer_offset + self.gpiostr_offset)
         (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
         #if n_gpio_events > 0:
         #    logger.debug(f"Buffer contains {n_gpio_events} gpio events")
 
-        gpio_ts_offset = gpio_struct_offset + 4
         gpio_timestamps_ns = np.frombuffer(
-            self.mapped_mem, "=u8", count=n_gpio_events, offset=gpio_ts_offset
+            self.mapped_mem,
+            "=u8",
+            count=n_gpio_events,
+            offset=buffer_offset + self.gpio_ts_offset
         )
-        gpio_values_offset = (
-            gpio_ts_offset + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-        )
+
         gpio_values = np.frombuffer(
             self.mapped_mem,
             "=u2",
             count=n_gpio_events,
-            offset=gpio_values_offset,
+            offset=buffer_offset + self.gpio_vl_offset,
         )
         gpio_edges = GPIOEdges(gpio_timestamps_ns, gpio_values)
 
         return DataBuffer(voltage, current, buffer_timestamp, gpio_edges)
 
-    def write_buffer(self, index, voltage, current) -> NoReturn:
+    def write_buffer(self, index: int, voltage, current) -> NoReturn:
 
         buffer_offset = self.buffer_size * index
         # Seek buffer location in memory and skip 12B header
@@ -332,8 +321,8 @@ class ShepherdIO(object):
             )
 
             # Ask PRU for size of individual buffers
-            samples_per_buffer = sysfs_interface.get_samples_per_buffer()
-            logger.debug(f"Samples per buffer: \t{ samples_per_buffer }")
+            self.samples_per_buffer = sysfs_interface.get_samples_per_buffer()
+            logger.debug(f"Samples per buffer: \t{ self.samples_per_buffer }")
 
             self.n_buffers = sysfs_interface.get_n_buffers()
             logger.debug(f"Number of buffers: \t{ self.n_buffers }")
@@ -342,7 +331,7 @@ class ShepherdIO(object):
             logger.debug(f"Buffer period: \t\t{ self.buffer_period_ns } ns")
 
             self.shared_mem = SharedMem(
-                mem_address, mem_size, self.n_buffers, samples_per_buffer
+                mem_address, mem_size, self.n_buffers, self.samples_per_buffer
             )
 
             self.shared_mem.__enter__()
@@ -593,7 +582,7 @@ class ShepherdIO(object):
         """
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
-    def get_buffer(self, timeout: float = 1.0, verbose: bool = False) -> NoReturn:
+    def get_buffer(self, timeout: float = 1.0, verbose: bool = False):
         """Reads a data buffer from shared memory.
 
         Polls the msg-channel for a message from PRU0 and, if the message

@@ -45,6 +45,7 @@ ExceptionRecord = namedtuple(
     "ExceptionRecord", ["timestamp", "message", "value"]
 )
 
+monitors_end = threading.Event()
 
 def unique_path(base_path: str, suffix: str):
     counter = 0
@@ -76,7 +77,7 @@ class LogWriter(object):
     # - gzip: good compression, moderate speed, select level from 1-9, default is 4
     # - lzf: low to moderate compression, very fast, no options
     compression_level = 1
-    compression_algo = None #"lzf"
+    compression_algo = "lzf"
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
     sys_log_last_ns = 0
     dmesg_mon_t = None
@@ -116,13 +117,16 @@ class LogWriter(object):
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
-        self.sampling_interval = int(buffer_period_ns / samples_per_buffer)
+        self.sampling_interval = int(buffer_period_ns // samples_per_buffer)
+        self.buffer_timeseries = self.sampling_interval * np.arange(samples_per_buffer).astype("u8")
         self.write_voltage = not skip_voltage
         self.write_current = not skip_current
         self.write_gpio = (not skip_gpio) and ("emulat" in mode)
         logger.debug(f"Set log-writing for voltage:     {'enabled' if self.write_voltage else 'disabled'}")
         logger.debug(f"Set log-writing for current:     {'enabled' if self.write_current else 'disabled'}")
         logger.debug(f"Set log-writing for gpio:        {'enabled' if self.write_gpio else 'disabled'}")
+
+
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -150,6 +154,7 @@ class LogWriter(object):
             maxshape=(None,),
             chunks=self.chunk_shape,  # This makes writing more efficient, see HDF5 docs
             compression=LogWriter.compression_algo,
+            # TODO: add filter-step, offset is static 10_000
         )
         self.data_grp["time"].attrs["unit"] = "ns"
         self.data_grp["time"].attrs["description"] = "system time [ns]"
@@ -300,6 +305,7 @@ class LogWriter(object):
             dtype="u8",
             maxshape=(None,),
             chunks=True,
+            compression=LogWriter.compression_algo,
         )
         self.timesync_grp["time"].attrs["unit"] = "ns"
         self.timesync_grp["time"].attrs["description"] = "system time [ns]"
@@ -310,16 +316,19 @@ class LogWriter(object):
         return self
 
     def __exit__(self, *exc):
+        global monitors_end
+        monitors_end.set()
+        time.sleep(1)  # TODO: should work propably without it
         if self.dmesg_mon_t is not None:
-            logger.info(f"[LogWriter] Terminate Dmesg-Monitor, {self.dmesg_grp['time'].shape[0]} entries")
+            logger.info(f"[LogWriter] Terminate Dmesg-Monitor, entries = {self.dmesg_grp['time'].shape[0]}")
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
-            logger.info(f"[LogWriter] Terminate PTP4L-Monitor, {self.timesync_grp['time'].shape[0]} entries")
+            logger.info(f"[LogWriter] Terminate PTP4L-Monitor, entries = {self.timesync_grp['time'].shape[0]}")
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
-            logger.info(f"[LogWriter] Terminate UART-Monitor, {self.uart_grp['time'].shape[0]} entries")
+            logger.info(f"[LogWriter] Terminate UART-Monitor, entries = {self.uart_grp['time'].shape[0]}")
             self.uart_mon_t = None
-        logger.info(f"[LogWriter] flushing hdf5 file, iv_data has {self.data_grp['time'].shape[0]} entries, gpio = {self.gpio_grp['time'].shape[0]}")
+        logger.info(f"[LogWriter] flushing hdf5 file, entries iv_data = {self.data_grp['time'].shape[0]}, gpio = {self.gpio_grp['time'].shape[0]}")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
         self._h5file.close()
@@ -337,8 +346,7 @@ class LogWriter(object):
 
         self.data_grp["time"].resize((new_set_length,))
         self.data_grp["time"][old_set_length:] = (
-            buffer.timestamp_ns
-            + self.sampling_interval * np.arange(len(buffer))
+            self.buffer_timeseries + buffer.timestamp_ns
         )
 
         if self.write_voltage:
@@ -422,12 +430,16 @@ class LogWriter(object):
         # TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
         if not isinstance(baudrate, int) or baudrate == 0:
             return
+        global monitors_end
         uart_path = '/dev/ttyO1'
         logger.debug(f"Will start UART-Monitor for target on '{uart_path}' @ {baudrate} baud")
+        tevent = threading.Event()
         try:
             # open serial as non-exclusive
             with serial.Serial(uart_path, baudrate, timeout=0) as uart:
                 while True:
+                    if monitors_end.is_set():
+                        break
                     if uart.in_waiting > 0:
                         output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace('\x00', '')
                         if len(output) > 0:
@@ -436,19 +448,24 @@ class LogWriter(object):
                             self.uart_grp["time"][dataset_length] = int(time.time()) * (10 ** 9)
                             self.uart_grp["message"].resize((dataset_length + 1,))
                             self.uart_grp["message"][dataset_length] = output  # np.void(uart_rx)
-                    time.sleep(poll_intervall)
+                    tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
                 f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{uart_path}' with baudrate={baudrate} -> will skip logging")
         except serial.SerialException as e:
             logger.error(
                 f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{uart_path}' to target -> will skip logging")
+        logger.debug(f"[UartMonitor] ended itself")
 
     def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
         # var1: ['dmesg', '--follow'] -> not enough control
+        global monitors_end
         cmd_dmesg = ['sudo', 'journalctl', '--dmesg', '--follow', f'--lines={backlog}', '--output=short-precise']
         proc_dmesg = subprocess.Popen(cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True)
+        tevent = threading.Event()
         for line in iter(proc_dmesg.stdout.readline, ""):
+            if monitors_end.is_set():
+                break
             line = str(line).strip()[:128]
             try:
                 dataset_length = self.dmesg_grp["time"].shape[0]
@@ -458,15 +475,18 @@ class LogWriter(object):
                 self.dmesg_grp["message"][dataset_length] = line
             except OSError:
                 logger.error(f"[DmesgMonitor] Caught a Write Error for Line: [{type(line)}] {line}")
-            time.sleep(poll_intervall)  # rate limiter
+            tevent.wait(poll_intervall)  # rate limiter
         logger.debug(f"[DmesgMonitor] ended itself")
 
     def monitor_ptp4l(self, poll_intervall: float = 0.25):
         # example: Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
+        global monitors_end
         cmd_ptp4l = ['sudo', 'journalctl', '--unit=ptp4l', '--follow', '--lines=1', '--output=short-precise']  # for client
         proc_ptp4l = subprocess.Popen(cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True)
-
+        tevent = threading.Event()
         for line in iter(proc_ptp4l.stdout.readline, ""):
+            if monitors_end:
+                break
             try:
                 words = str(line).split()
                 i_start = words.index("offset")
@@ -481,9 +501,8 @@ class LogWriter(object):
                 self.timesync_grp["values"][dataset_length, :] = values[0:3]
             except OSError:
                 logger.error(f"[PTP4lMonitor] Caught a Write Error for Line: [{type(line)}] {line}")
-            time.sleep(poll_intervall)  # rate limiter
+            tevent.wait(poll_intervall)  # rate limiter
         logger.debug(f"[PTP4lMonitor] ended itself")
-
 
     def __setitem__(self, key, item):
         """Offer a convenient interface to store any relevant key-value data"""
