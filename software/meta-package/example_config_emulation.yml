@@ -23,4 +23,4 @@ parameters:
   skip_log_voltage: false
   skip_log_current: false
   skip_log_gpio: false
-verbose: 3
+verbose: 2 # serious performance impact for value > 2
