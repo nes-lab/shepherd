@@ -46,7 +46,7 @@ class VirtualSourceData(object):
         vs_defs = Path(__file__).parent.resolve()/"virtual_source_defs.yml"
         with open(vs_defs, "r") as def_data:
             self.vs_configs = yaml.safe_load(def_data)["virtsources"]
-        self.vs_inheritance = list()
+        self.vs_inheritance = []
 
         if isinstance(vs_setting, str) and Path(vs_setting).exists():
             vs_setting = Path(vs_setting)
@@ -61,7 +61,7 @@ class VirtualSourceData(object):
                 raise NotImplementedError(f"VirtualSource was set to '{vs_setting}', but definition missing in 'virtual_source_defs.yml'")
 
         if vs_setting is None:
-            self.vss = dict()
+            self.vss = {}
         elif isinstance(vs_setting, VirtualSourceData):
             self.vss = vs_setting.vss
         elif isinstance(vs_setting, dict):
@@ -100,7 +100,7 @@ class VirtualSourceData(object):
         Returns:
             int-list (2nd level for LUTs) that can be feed into sysFS
         """
-        vs_list = list([])
+        vs_list = []
 
         # General
         vs_list.append(int(self.vss["converter_mode"]))

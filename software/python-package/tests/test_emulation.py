@@ -141,16 +141,16 @@ def test_target_pins(shepherd_up):
 
     shepherd_io.select_main_target_for_io(sel_target_a=True)
 
-    for index in range(len(gpio_channels)):
-        shepherd_io.set_gpio_one_high(gpio_channels[index])
+    for io_index, io_channel in enumerate(gpio_channels):
+        shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
-        assert response & (2**pru_responses[index])
+        assert response & (2**pru_responses[io_index])
 
     shepherd_io.select_main_target_for_io(sel_target_a=False)
 
-    for index in range(len(gpio_channels)):
-        shepherd_io.set_gpio_one_high(gpio_channels[index])
+    for io_index, io_channel in enumerate(gpio_channels):
+        shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
-        assert response & (2**pru_responses[index])
+        assert response & (2**pru_responses[io_index])
 
     # TODO: could add a loopback for uart, but extra hardware is needed for that

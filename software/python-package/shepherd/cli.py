@@ -119,7 +119,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 @cli.command(
     short_help="Runs a command with given parameters. Mainly for use with config file.")
 @click.option("--command", default="record", type=click.Choice(["record", "emulate"]))
-@click.option("--parameters", default=dict())
+@click.option("--parameters", default={})
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 @click.option("-v", "--verbose", count=True)
 def run(command, parameters: Dict, verbose):
@@ -210,7 +210,7 @@ def record(
                    "- set 0-4.5 for specific const voltage, \n"
                    "- 'mid' for intermediate voltage (vsource storage cap), \n"
                    "- True or 'main' to mirror main target voltage")
-@click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
+@click.option("--virtsource", default={}, help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
 @click.option("--uart_baudrate", "-b", default=None, type=int, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 @click.option("--skip_log_voltage", is_flag=True, help="reduce file-size by omitting voltage-logging")

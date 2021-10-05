@@ -27,8 +27,8 @@ target_pin_nums = {  # pin-order from target-connector
 
 class TargetIO(object):
 
-    gpios = dict()
-    pin_names = list([])
+    gpios = {}
+    pin_names = []
     pin_count = 0
 
     def __init__(self):

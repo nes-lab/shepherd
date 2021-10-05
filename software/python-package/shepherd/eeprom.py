@@ -98,7 +98,7 @@ class CapeData(object):
         return self.data[key]
 
     def __repr__(self):
-        print_dict = dict()
+        print_dict = {}
         for key in self.keys():
             if eeprom_format[key]["type"] in ["ascii", "str"]:
                 print_dict[key] = self[key]
@@ -248,7 +248,7 @@ class EEPROM(object):
         Returns:
             CapeData object containing data extracted from EEPROM
         """
-        data = dict()
+        data = {}
         for key in eeprom_format.keys():
             data[key] = self[key]
         return CapeData(data)

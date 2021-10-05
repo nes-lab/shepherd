@@ -13,7 +13,7 @@ class VirtualSource(object):
 
     """
 
-    vsc = dict()
+    vsc = {}
     cal = CalibrationData.from_default()
 
     def __init__(self, vs_settings, cal_setting):

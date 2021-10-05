@@ -286,7 +286,7 @@ class ShepherdIO(object):
             mode (str): Shepherd mode, see sysfs_interface for more
         """
         self.mode = mode
-        self.gpios = dict()
+        self.gpios = {}
         self.shared_mem: SharedMem = None
 
     def __del__(self):
@@ -294,7 +294,6 @@ class ShepherdIO(object):
 
     def __enter__(self):
         try:
-
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
 
@@ -347,15 +346,15 @@ class ShepherdIO(object):
         logger.info("exiting analog shepherd_io")
         self._cleanup()
 
-    def _send_msg(self, msg_type: int, value: int) -> NoReturn:
+    def _send_msg(self, msg_type: int, values: list) -> NoReturn:
         """Sends a formatted message to PRU0.
 
         Args:
             msg_type (int): Indicates type of message, must be one of the agreed
                 message types part of the data exchange protocol
-            value (int): Actual content of the message
+            values (int): Actual content of the message
         """
-        sysfs_interface.write_pru_msg(msg_type, value)
+        sysfs_interface.write_pru_msg(msg_type, values)
 
     def _get_msg(self, timeout: float = 0.5):
         """Tries to retrieve formatted message from PRU0.

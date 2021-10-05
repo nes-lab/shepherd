@@ -150,9 +150,10 @@ def test_virtsource_settings(shepherd_up, virtsource_settings):
 @pytest.mark.hardware
 def test_initial_virtsource_settings(shepherd_up):
     # NOTE: initial config is set in main() of pru0
-    vsource_settings = list([])
-    vsource_settings.append(list(range(24)))
-    vsource_settings.append(list(range(12*12)))
-    vsource_settings.append(list(range(12)))
+    vsource_settings = [
+        list(range(24)),
+        list(range(12 * 12)),
+        list(range(12))
+    ]
     values_1d = flatten_dict_list(vsource_settings)
     assert sysfs_interface.read_virtsource_settings() == values_1d

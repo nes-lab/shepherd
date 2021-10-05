@@ -51,16 +51,17 @@ def pyt_vsource(vs_config, cal_config):
 
 @pytest.fixture
 def reference_vss():
-    vss = dict()
     # keep in sync with "example_virtsource_settings.yml"
-    vss["C_intermediate_uF"] = 100 * (10**0)
-    vss["V_intermediate_mV"] = 3000
-    vss["eta_in"] = 0.5
-    vss["eta_out"] = 0.8
-    vss["I_intermediate_leak_nA"] = 9 * (10**0)
-    vss["V_intermediate_disable_threshold_mV"] = 2300
-    vss["V_output_mV"] = 2000
-    vss["t_sample_s"] = 10 * (10**-6)
+    vss = {
+        "C_intermediate_uF": 100 * (10 ** 0),
+        "V_intermediate_mV": 3000,
+        "eta_in": 0.5,
+        "eta_out": 0.8,
+        "I_intermediate_leak_nA": 9 * (10 ** 0),
+        "V_intermediate_disable_threshold_mV": 2300,
+        "V_output_mV": 2000,
+        "t_sample_s": 10 * (10 ** -6)
+    }
     return vss
 
 

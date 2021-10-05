@@ -74,12 +74,12 @@ class CalibrationData(object):
         """
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         values = struct.unpack(">" + val_count * "d", bytestr)  # X double float, big endian
-        calib_dict = dict()
+        calib_dict = {}
         counter = 0
         for component in cal_component_list:
-            calib_dict[component] = dict()
+            calib_dict[component] = {}
             for channel in cal_channel_list:
-                calib_dict[component][channel] = dict()
+                calib_dict[component][channel] = {}
                 for parameter in cal_parameter_list:
                     val = float(values[counter])
                     if np.isnan(val):
@@ -97,18 +97,19 @@ class CalibrationData(object):
         Returns:
             CalibrationData object with default calibration values.
         """
-        calib_dict = dict()
+        calib_dict = {}
         for component in cal_component_list:
-            calib_dict[component] = dict()
-            for ch_index in range(len(cal_channel_list)):
-                channel = cal_channel_list[ch_index]
+            calib_dict[component] = {}
+            for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
-                calib_dict[component][channel] = dict()
+
                 # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(calibration_default, cal_fn)(0)
                 gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)
-                calib_dict[component][channel]["offset"] = -float(offset) / float(gain_inv)
-                calib_dict[component][channel]["gain"] = 1.0 / float(gain_inv)
+                calib_dict[component][channel] = {
+                    "offset": -float(offset) / float(gain_inv),
+                    "gain": 1.0 / float(gain_inv),
+                }
 
         return cls(calib_dict)
 
@@ -142,12 +143,11 @@ class CalibrationData(object):
         with open(filename, "r") as stream:
             calib_data = yaml.safe_load(stream)
 
-        calib_dict = dict()
+        calib_dict = {}
 
         for component in cal_component_list:
-            calib_dict[component] = dict()
+            calib_dict[component] = {}
             for channel in cal_channel_list:
-                calib_dict[component][channel] = dict()
                 sample_points = calib_data["measurements"][component][channel]
                 x = np.empty(len(sample_points))
                 y = np.empty(len(sample_points))
@@ -155,8 +155,10 @@ class CalibrationData(object):
                     x[i] = point["measured"]
                     y[i] = point["reference"]
                 slope, intercept, _, _, _ = stats.linregress(x, y)
-                calib_dict[component][channel]["gain"] = float(slope)   # TODO: possibly wrong after all the changes, TEST
-                calib_dict[component][channel]["offset"] = float(intercept)
+                calib_dict[component][channel] = {
+                    "gain": float(slope),   # TODO: possibly wrong after all the changes, TEST
+                    "offset": float(intercept),
+                }
 
         return cls(calib_dict)
 
@@ -178,7 +180,7 @@ class CalibrationData(object):
         Returns:
             Byte string representation of calibration values.
         """
-        flattened = list()
+        flattened = []
         for component in cal_component_list:
             for channel in cal_channel_list:
                 for parameter in cal_parameter_list:
@@ -187,13 +189,14 @@ class CalibrationData(object):
         return struct.pack(">" + val_count * "d", *flattened)
 
     def export_for_sysfs(self) -> dict:  # more precise dict[str, int], trouble with py3.6
-        cal_set = dict()
-        # ADC is calculated in nA (nano-amps), gain is shifted by 8 bit [scaling according to commons.h]
-        cal_set["adc_gain"] = int(1e9 * (2 ** 8) * self._data["emulation"]["adc_current"]["gain"])
-        cal_set["adc_offset"] = int(1e9 * (2 ** 0) * self._data["emulation"]["adc_current"]["offset"])
-        # DAC is calculated in uV (micro-volts), gain is shifted by 20 bit
-        cal_set["dac_gain"] = int((2 ** 20) / (1e6 * self._data["emulation"]["dac_voltage_b"]["gain"]))
-        cal_set["dac_offset"] = int(1e6 * (2 ** 0) * self._data["emulation"]["dac_voltage_b"]["offset"])
+        cal_set = {
+            # ADC is calculated in nA (nano-amps), gain is shifted by 8 bit [scaling according to commons.h]
+            "adc_gain": int(1e9 * (2 ** 8) * self._data["emulation"]["adc_current"]["gain"]),
+            "adc_offset": int(1e9 * (2 ** 0) * self._data["emulation"]["adc_current"]["offset"]),
+            # DAC is calculated in uV (micro-volts), gain is shifted by 20 bit
+            "dac_gain": int((2 ** 20) / (1e6 * self._data["emulation"]["dac_voltage_b"]["gain"])),
+            "dac_offset": int(1e6 * (2 ** 0) * self._data["emulation"]["dac_voltage_b"]["offset"]),
+        }
 
         for value in cal_set.values():
             if value >= 2**31:
