@@ -91,7 +91,7 @@ def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
     print(f" Py  VCap = {pyt_vsource.update_cap_storage()} uV")
     print(f" Py  PInp = {pyt_vsource.calc_inp_power(V_inp_uV, I_inp_nA)} fW")
 
-    for iter in range(n_samples):
+    for _ in range(n_samples):
         pru_vsource.vsource_charge(V_inp_uV, I_inp_nA)  # combines P_in, P_out, V_cap, state_update
         pyt_vsource.calc_inp_power(V_inp_uV, I_inp_nA)
         pyt_vsource.update_cap_storage()
@@ -139,13 +139,13 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
     print(f" Py  POut = {pyt_vsource.calc_out_power(I_out_adc_raw)} fW")
     print(f" Py  VOut = {pyt_vsource.update_states_and_output()} raw")
 
-    for iter in range(n_samples):
+    for index in range(n_samples):
         v_cap, v_raw1 = pru_vsource.vsource_drain(I_out_adc_raw)  # combines P_in, P_out, V_cap, state_update
         pyt_vsource.calc_out_power(I_out_adc_raw)
         pyt_vsource.update_cap_storage()
         v_raw2 = pyt_vsource.update_states_and_output()
         if (v_raw1 < 1) or (v_raw2 < 1):
-            print(f"Stopped Drain-loop after {iter}/{n_samples} samples ({round(100*iter/n_samples)} %), because output was disabled")
+            print(f"Stopped Drain-loop after {index}/{n_samples} samples ({round(100*index/n_samples)} %), because output was disabled")
             break
 
     pru_vsource.vsource_calc_out_power(0)
@@ -182,7 +182,6 @@ def test_vsource_direct(pru_vsource, pyt_vsource):
         print(f"DirectSRC - Inp = {voltage_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV")
         assert difference_percent(V_pru_mV, voltage_mV, 50) < 3
         assert difference_percent(V_pyt_mV, voltage_mV, 50) < 3
-
 
 
 @pytest.mark.hardware
@@ -229,7 +228,7 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     # feed 200 mA -> fast charging cap
     A_in_nA = 2 * 10 ** 8
     for V_in_mV in voltages_mV:
-        for iter in range(100):
+        for _ in range(100):
             V_pru_mV = pru_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
             V_pyt_mV = pyt_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
         V_postDiode_mV = max(V_in_mV - 300, 0)  # diode drop voltage
@@ -242,14 +241,14 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     V_in_uV = 3 * 10**6
     A_in_nA = 5 * 10**6
     A_out_nA = 2 * A_in_nA
-    for iter in range(100):
+    for _ in range(100):
         V_pru_mV = pru_vsource.iterate(V_in_uV, A_in_nA, A_out_nA) * 10**-3
         V_pyt_mV = pyt_vsource.iterate(V_in_uV, A_in_nA, A_out_nA) * 10**-3
 
     V_settle_mV = (V_in_uV * 10**-3 - 300) / 2
     print(f"DiodeCap Drain in=5mA,out=10mA - Inp = {V_in_uV/10**3} mV, Settle = {V_settle_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV")
-    #assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
-    #assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
+    # assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
+    # assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
     assert pyt_vsource.P_in_fW >= pyt_vsource.P_out_fW
     assert pru_vsource.P_in_fW >= pru_vsource.P_out_fW
 

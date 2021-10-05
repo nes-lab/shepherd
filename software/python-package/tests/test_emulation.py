@@ -42,12 +42,12 @@ def data_h5(tmp_path):
 
 @pytest.fixture()
 def log_writer(tmp_path):
-    calib = CalibrationData.from_default()
+    cal = CalibrationData.from_default()
     with LogWriter(
         force_overwrite=True,
         store_path=tmp_path / "test.h5",
         mode="emulation",
-        calibration_data=calib,
+        calibration_data=cal,
     ) as lw:
         yield lw
 
@@ -100,7 +100,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         output_path=output,
         duration=None,
         force_overwrite=True,
-        no_calib=True,
+        default_cal=True,
         start_time=start_time,
         set_target_io_lvl_conv=True,
         sel_target_for_io=True,

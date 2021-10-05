@@ -4,6 +4,7 @@ import math
 
 # NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
+
 class VirtualSource(object):
     """
     this is ported py-version of the pru-code, goals:

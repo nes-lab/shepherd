@@ -79,7 +79,7 @@ class CapeData(object):
         """Build the object from a yaml file
 
         Args:
-            filename (pathlib.Path): Name of the yaml file. Should contain all
+            filename (Path): Name of the yaml file. Should contain all
                 required properties
 
         """

@@ -35,14 +35,14 @@ def calibration_settings():
 
 
 @pytest.mark.hardware
-@pytest.mark.parametrize("attr", sysfs_interface.attribs.keys())
+@pytest.mark.parametrize("attr", sysfs_interface.attribs)
 def test_getters(shepherd_up, attr):
     method_to_call = getattr(sysfs_interface, f"get_{ attr }")
-    assert method_to_call() != None
+    assert method_to_call() is not None
 
 
 @pytest.mark.hardware
-@pytest.mark.parametrize("attr", sysfs_interface.attribs.keys())
+@pytest.mark.parametrize("attr", sysfs_interface.attribs)
 def test_getters_fail(shepherd_down, attr):
     method_to_call = getattr(sysfs_interface, f"get_{ attr }")
     with pytest.raises(FileNotFoundError):
@@ -117,6 +117,7 @@ def test_dac_aux_voltage(shepherd_up, value):
 def test_dac_aux_voltage_raw(shepherd_up, value):
     sysfs_interface.write_dac_aux_voltage_raw(value)
     assert sysfs_interface.read_dac_aux_voltage_raw() == value
+
 
 # TODO: is this not tested?
 def test_initial_aux_voltage(shepherd_up):

@@ -7,43 +7,42 @@ from shepherd import CalibrationData
 @pytest.fixture
 def data_meas_example_yml():
     here = Path(__file__).absolute()
-    name = "example_calib_meas.yml"
+    name = "example_cal_meas.yml"
     return here.parent / name
 
 
 @pytest.fixture
 def data_example_yml():
     here = Path(__file__).absolute()
-    name = "example_calib.yml"
+    name = "example_cal.yml"
     return here.parent / name
 
 
 @pytest.fixture()
-def default_calib():
-    calib = CalibrationData.from_default()
-    return calib
+def default_cal():
+    return CalibrationData.from_default()
 
 
 @pytest.fixture()
-def default_bytestr(default_calib):
-    return default_calib.to_bytestr()
+def default_bytestr(default_cal):
+    return default_cal.to_bytestr()
 
 
 def test_from_default():
-    calib = CalibrationData.from_default()
+    cal = CalibrationData.from_default()
 
 
 def test_from_yaml(data_example_yml):
-    calib = CalibrationData.from_yaml(data_example_yml)
+    cal = CalibrationData.from_yaml(data_example_yml)
 
 
 def test_from_measurements(data_meas_example_yml):
-    calib = CalibrationData.from_measurements(data_meas_example_yml)
+    cal = CalibrationData.from_measurements(data_meas_example_yml)
 
 
-def test_to_bytestr(default_calib):
-    default_calib.to_bytestr()
+def test_to_bytestr(default_cal):
+    default_cal.to_bytestr()
 
 
 def test_from_bytestr(default_bytestr):
-    calib = CalibrationData.from_bytestr(default_bytestr)
+    cal = CalibrationData.from_bytestr(default_bytestr)

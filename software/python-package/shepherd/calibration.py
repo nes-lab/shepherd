@@ -48,11 +48,11 @@ class CalibrationData(object):
     to read and write calibration data.
 
     Args:
-        calib_dict (dict): Dictionary containing calibration data.
+        cal_dict (dict): Dictionary containing calibration data.
     """
 
-    def __init__(self, calib_dict: dict):
-        self.data = calib_dict
+    def __init__(self, cal_dict: dict):
+        self.data = cal_dict
 
     def __getitem__(self, key: str):
         return self.data[key]
@@ -61,34 +61,34 @@ class CalibrationData(object):
         return yaml.dump(self.data, default_flow_style=False)
 
     @classmethod
-    def from_bytestr(cls, bytestr: bytes):
+    def from_bytestr(cls, data: bytes):
         """Instantiates calibration data based on byte string.
 
         This is mainly used to deserialize data read from an EEPROM memory.
 
         Args:
-            bytestr: Byte string containing calibration data.
+            data: Byte string containing calibration data.
         
         Returns:
             CalibrationData object with extracted calibration data.
         """
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
-        values = struct.unpack(">" + val_count * "d", bytestr)  # X double float, big endian
-        calib_dict = {}
+        values = struct.unpack(">" + val_count * "d", data)  # X double float, big endian
+        cal_dict = {}
         counter = 0
         for component in cal_component_list:
-            calib_dict[component] = {}
+            cal_dict[component] = {}
             for channel in cal_channel_list:
-                calib_dict[component][channel] = {}
+                cal_dict[component][channel] = {}
                 for parameter in cal_parameter_list:
                     val = float(values[counter])
                     if np.isnan(val):
                         raise ValueError(
                             f"{ component } { channel } { parameter } not a valid number"
                         )
-                    calib_dict[component][channel][parameter] = val
+                    cal_dict[component][channel][parameter] = val
                     counter += 1
-        return cls(calib_dict)
+        return cls(cal_dict)
 
     @classmethod
     def from_default(cls):
@@ -97,21 +97,21 @@ class CalibrationData(object):
         Returns:
             CalibrationData object with default calibration values.
         """
-        calib_dict = {}
+        cal_dict = {}
         for component in cal_component_list:
-            calib_dict[component] = {}
+            cal_dict[component] = {}
             for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
 
                 # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(calibration_default, cal_fn)(0)
                 gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)
-                calib_dict[component][channel] = {
+                cal_dict[component][channel] = {
                     "offset": -float(offset) / float(gain_inv),
                     "gain": 1.0 / float(gain_inv),
                 }
 
-        return cls(calib_dict)
+        return cls(cal_dict)
 
     @classmethod
     def from_yaml(cls, filename: Path):
@@ -141,26 +141,26 @@ class CalibrationData(object):
             CalibrationData object with extracted calibration data.
         """
         with open(filename, "r") as stream:
-            calib_data = yaml.safe_load(stream)
+            cal_data = yaml.safe_load(stream)
 
-        calib_dict = {}
+        cal_dict = {}
 
         for component in cal_component_list:
-            calib_dict[component] = {}
+            cal_dict[component] = {}
             for channel in cal_channel_list:
-                sample_points = calib_data["measurements"][component][channel]
+                sample_points = cal_data["measurements"][component][channel]
                 x = np.empty(len(sample_points))
                 y = np.empty(len(sample_points))
                 for i, point in enumerate(sample_points):
                     x[i] = point["measured"]
                     y[i] = point["reference"]
                 slope, intercept, _, _, _ = stats.linregress(x, y)
-                calib_dict[component][channel] = {
+                cal_dict[component][channel] = {
                     "gain": float(slope),   # TODO: possibly wrong after all the changes, TEST
                     "offset": float(intercept),
                 }
 
-        return cls(calib_dict)
+        return cls(cal_dict)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
         offset = self.data[component][channel]["offset"]

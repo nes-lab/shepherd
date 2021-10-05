@@ -389,7 +389,7 @@ class ShepherdDebug(ShepherdIO):
             sysfs_interface.set_stop()
 
     @staticmethod
-    def get_shepherd_state() -> bool:
+    def get_shepherd_state() -> str:
         return sysfs_interface.get_state()
 
     def set_shepherd_pcb_power(self, state: bool) -> NoReturn:
@@ -463,8 +463,8 @@ class ShepherdDebug(ShepherdIO):
         return msgpack.packb(base_array, default=msgpack_numpy.encode)  # zeroRPC / msgpack can not handle numpy-data without this
 
 
-def retrieve_calibration(no_calib: bool = False) -> CalibrationData:
-    if no_calib:
+def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
+    if use_default_cal:
         return CalibrationData.from_default()
     else:
         try:
@@ -483,7 +483,7 @@ def record(
     mode: str = "harvesting",
     duration: float = None,
     force_overwrite: bool = False,
-    no_calib: bool = False,
+    default_cal: bool = False,
     start_time: float = None,
     warn_only: bool = False,
 ):
@@ -496,13 +496,13 @@ def record(
         duration (float): Maximum time duration of emulation in seconds
         force_overwrite (bool): True to overwrite existing file under output path,
             False to store under different name
-        no_calib (bool): True to use default calibration values, False to
+        default_cal (bool): True to use default calibration values, False to
             read calibration data from EEPROM
         start_time (float): Desired start time of emulation in unix epoch time
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
-    calib = retrieve_calibration(no_calib)
+    calib = retrieve_calibration(default_cal)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -574,7 +574,7 @@ def emulate(
         output_path: Path = None,
         duration: float = None,
         force_overwrite: bool = False,
-        no_calib: bool = False,
+        default_cal: bool = False,
         start_time: float = None,
         set_target_io_lvl_conv: bool = False,
         sel_target_for_io: bool = True,
@@ -596,7 +596,7 @@ def emulate(
         :param duration: [float] Maximum time duration of emulation in seconds
         :param force_overwrite: [bool] True to overwrite existing file under output,
             False to store under different name
-        :param no_calib: [bool] True to use default calibration values, False to
+        :param default_cal: [bool] True to use default calibration values, False to
             read calibration data from EEPROM
         :param start_time: [float] Desired start time of emulation in unix epoch time
         :param set_target_io_lvl_conv: [bool] Enables or disables the GPIO level converter to targets.
@@ -614,7 +614,7 @@ def emulate(
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
     """
-    calib = retrieve_calibration(no_calib)
+    cal = retrieve_calibration(default_cal)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -645,7 +645,7 @@ def emulate(
             store_path=store_path,
             force_overwrite=force_overwrite,
             mode="emulation",
-            calibration_data=calib,
+            calibration_data=cal,
             skip_voltage=skip_log_voltage,
             skip_current=skip_log_current,
             skip_gpio=skip_log_gpio
@@ -672,7 +672,7 @@ def emulate(
             shepherd_mode="emulation",
             initial_buffers=log_reader.read_buffers(end=FIFO_BUFFER_SIZE),
             calibration_recording=log_reader.get_calibration_data(),
-            calibration_emulation=calib,
+            calibration_emulation=cal,
             set_target_io_lvl_conv=set_target_io_lvl_conv,
             sel_target_for_io=sel_target_for_io,
             sel_target_for_pwr=sel_target_for_pwr,

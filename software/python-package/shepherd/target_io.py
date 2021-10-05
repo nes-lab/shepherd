@@ -44,9 +44,5 @@ class TargetIO(object):
         self.pin_count = len(self.pin_names)
 
     def one_high(self, num: int):
-        for index in range(self.pin_count ):
+        for index in range(self.pin_count):
             self.gpios[self.pin_names[index]].write(index == num)
-
-
-
-

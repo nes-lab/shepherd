@@ -360,7 +360,7 @@ def reset(ctx):
     help="Record 'harvesting' or 'harvesting_test'-function data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--no-calib", is_flag=True, help="Use default calibration values")
+@click.option("--default-cal", is_flag=True, help="Use default calibration values")
 @click.option("--start/--no-start", default=True, help="Start shepherd after uploading config")
 @click.pass_context
 def record(
@@ -369,7 +369,7 @@ def record(
     mode,
     duration,
     force_overwrite,
-    no_calib,
+    default_cal,
     start,
 ):
     fp_output = Path(output_path)
@@ -381,7 +381,7 @@ def record(
         "mode": mode,
         "duration": duration,
         "force_overwrite": force_overwrite,
-        "no_calib": no_calib,
+        "default_cal": default_cal,
     }
     
     if start:
@@ -407,7 +407,7 @@ def record(
     help="Dir or file path for resulting hdf5 file with load recordings")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--no-calib", is_flag=True, help="Use default calibration values")
+@click.option("--default-cal", is_flag=True, help="Use default calibration values")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
 @click.option("--io_sel_target_a/--io_sel_target_b", default=True,
@@ -430,7 +430,7 @@ def emulate(
     output_path,
     duration,
     force_overwrite,
-    no_calib,
+    default_cal,
     enable_target_io,
     sel_target_a_for_io,
     sel_target_a_for_pwr,
@@ -447,7 +447,7 @@ def emulate(
         "input_path": str(fp_input),
         "force_overwrite": force_overwrite,
         "duration": duration,
-        "no_calib": no_calib,
+        "default_cal": default_cal,
         "set_target_io_lvl_conv": enable_target_io,
         "sel_target_for_io": sel_target_a_for_io,
         "sel_target_for_pwr": sel_target_a_for_pwr,

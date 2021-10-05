@@ -26,7 +26,7 @@ def call_repeatedly(interval, func, *args):
     stopped = Event()
 
     def loop():
-        while not stopped.wait(interval): # the first call is in `interval` secs
+        while not stopped.wait(interval):  # the first call is in `interval` secs
             func(*args)
     Thread(target=loop).start()
     return stopped.set
@@ -63,8 +63,8 @@ class Launcher(object):
         logger.debug("configured gpio")
         self.cancel_wd_timer = call_repeatedly(interval=600, func=self.ack_watchdog)
 
-        sysbus = dbus.SystemBus()
-        systemd1 = sysbus.get_object(
+        sys_bus = dbus.SystemBus()
+        systemd1 = sys_bus.get_object(
             "org.freedesktop.systemd1", "/org/freedesktop/systemd1"
         )
         self.manager = dbus.Interface(
@@ -74,7 +74,7 @@ class Launcher(object):
         shepherd_object = self.manager.LoadUnit(
             f"{ self.service_name }.service"
         )
-        self.shepherd_proxy = sysbus.get_object(
+        self.shepherd_proxy = sys_bus.get_object(
             "org.freedesktop.systemd1", str(shepherd_object)
         )
         logger.debug("configured dbus for systemd")
@@ -132,7 +132,6 @@ class Launcher(object):
             )
             if systemd_state in ["deactivating", "activating"]:
                 time.sleep(0.1)
-                continue
             else:
                 break
             if time.time() > ts_end:

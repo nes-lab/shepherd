@@ -172,8 +172,8 @@ class SharedMem(object):
         Extracts data from buffer with given index from the shared memory area
         in RAM.
 
-        Args:
-            index (int): Buffer index. 0 <= index < n_buffers
+        :param index: (int): Buffer index. 0 <= index < n_buffers
+        :param verbose:
 
         Returns:
             DataBuffer object pointing to extracted data
@@ -222,8 +222,6 @@ class SharedMem(object):
         # Read the number of gpio events in the buffer
         self.mapped_mem.seek(buffer_offset + self.gpiostr_offset)
         (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
-        #if n_gpio_events > 0:
-        #    logger.debug(f"Buffer contains {n_gpio_events} gpio events")
 
         gpio_timestamps_ns = np.frombuffer(
             self.mapped_mem,
@@ -412,7 +410,7 @@ class ShepherdIO(object):
             except Exception as e:
                 print(e)
             try:
-               sysfs_interface.wait_for_state("idle", 3.0)
+                sysfs_interface.wait_for_state("idle", 3.0)
             except SysfsInterfaceException:
                 logger.warning("CleanupRoutine - send stop-command and waiting for PRU to go to idle")
         self.set_aux_target_voltage(None, 0.0)
@@ -478,7 +476,6 @@ class ShepherdIO(object):
         self.gpios["target_pwr_sel"].write(sel_target_a)
         if current_state != "idle":
             self.start(wait_blocking=True)
-
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
         """ choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
@@ -551,13 +548,14 @@ class ShepherdIO(object):
         """
         sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
 
-    def send_virtsource_settings(self, vs_settings: VirtualSourceData, log_intermediate_voltage: bool = None) -> NoReturn:
+    @staticmethod
+    def send_virtsource_settings(vs_settings: VirtualSourceData, log_intermediate_voltage: bool = None) -> NoReturn:
         """ Sends virtsource settings to PRU core
             looks like a simple one-liner but is needed by the child-classes
             Note: to apply these settings the pru has to do a re-init (reset)
 
-        Args:
-            vs_settings: Contains the settings for the virtual source.
+            :param vs_settings: Contains the settings for the virtual source.
+            :param log_intermediate_voltage: monitor capacitor, useful when output is const
         """
         if vs_settings is None:
             vs_settings = VirtualSourceData(log_intermediate_voltage=log_intermediate_voltage)

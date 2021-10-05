@@ -546,11 +546,11 @@ class LogReader(object):
         Returns:
             Calibration data as CalibrationData object
         """
-        calib = CalibrationData.from_default()
+        cal = CalibrationData.from_default()
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             cal_channel = cal_channel_harvest_dict[channel]
-            calib.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
-        return CalibrationData(calib)
+            cal.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
+        return CalibrationData(cal)
 
 
 def h5_structure_printer(file: h5py.File) -> NoReturn:

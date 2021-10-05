@@ -52,14 +52,14 @@ def test_record(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_record_no_calib(shepherd_up, cli_runner, tmp_path):
+def test_record_no_cal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli, ["-vvv",
               "record",
               "-d", "10",
               "--force_overwrite",
-              "--no-calib",
+              "--default-cal",
               "-o", f"{str(store)}"]
     )
 
@@ -96,7 +96,7 @@ def test_record_parameters_long(shepherd_up, cli_runner, tmp_path):
               "--duration", "10",
               "--start-time", f"{start_time}",
               "--force_overwrite",
-              "--no-calib",
+              "--default-cal",
               "--warn-only",
               "--output_path", f"{str(store)}"]
     )
@@ -276,7 +276,7 @@ def test_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
             "--start-time", f"{start_time}",
             "--aux_voltage", "2.5",
             "--force_overwrite",
-            "--no-calib",
+            "--default-cal",
             "--enable_io",
             "--io_sel_target_a",
             "--pwr_sel_target_a",

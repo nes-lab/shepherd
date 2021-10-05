@@ -17,10 +17,10 @@ def mode(request):
 
 @pytest.fixture()
 def log_writer(tmp_path, mode):
-    calib = CalibrationData.from_default()
+    cal = CalibrationData.from_default()
     with LogWriter(
         mode=mode,
-        calibration_data=calib,
+        calibration_data=cal,
         force_overwrite=True,
         store_path=tmp_path / "test.h5",
     ) as lw:
@@ -66,7 +66,7 @@ def test_record_fn(tmp_path, shepherd_up):
         mode="harvesting",
         duration=10,
         force_overwrite=True,
-        no_calib=True,
+        default_cal=True,
         start_time=start_time,
     )
 
@@ -79,4 +79,3 @@ def test_record_fn(tmp_path, shepherd_up):
         diff_series = time_series[1:] - time_series[:-1]
         unique = np.unique(diff_series)
         assert len(unique) == 1
-

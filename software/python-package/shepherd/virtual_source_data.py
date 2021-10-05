@@ -1,4 +1,4 @@
-from typing import NoReturn
+from typing import NoReturn, Union
 from pathlib import Path
 import yaml
 import logging
@@ -37,7 +37,7 @@ class VirtualSourceData(object):
     """
     vss: dict = None
 
-    def __init__(self, vs_setting: dict = None, log_intermediate_voltage: bool = False):
+    def __init__(self, vs_setting: Union[dict, str, Path] = None, log_intermediate_voltage: bool = False):
         """ Container for VS Settings, Data will be checked and completed
 
         Args:
@@ -46,6 +46,7 @@ class VirtualSourceData(object):
         vs_defs = Path(__file__).parent.resolve()/"virtual_source_defs.yml"
         with open(vs_defs, "r") as def_data:
             self.vs_configs = yaml.safe_load(def_data)["virtsources"]
+            self.vss_base = self.vs_configs["neutral"]
         self.vs_inheritance = []
 
         if isinstance(vs_setting, str) and Path(vs_setting).exists():
@@ -227,24 +228,24 @@ class VirtualSourceData(object):
             base_name = "neutral"
 
         if base_name in self.vs_inheritance:
-            raise ValueError(f"[virtSource] loop detected in 'converter_base'-inheritance-system @ last entry of {self.vs_inheritance}")
+            raise ValueError(f"[vsource] loop detected in 'converter_base'-inheritance-system @ last entry of {self.vs_inheritance}")
         else:
             self.vs_inheritance.append(base_name)
 
         if base_name == "neutral":
             # root of recursive completion
             self.vss_base = self.vs_configs[base_name]
-            logger.debug(f"[virtSource] Config-Set was initialized with '{base_name}'-base")
+            logger.debug(f"[vsource] Config-Set was initialized with '{base_name}'-base")
             verbose = False
         elif base_name in self.vs_configs:
             vss_stash = self.vss
             self.vss = self.vs_configs[base_name]
             self.check_and_complete(verbose=False)
-            logger.debug(f"[virtSource] Config-Set was completed with '{base_name}'-base")
+            logger.debug(f"[vsource] Config-Set was completed with '{base_name}'-base")
             self.vss_base = self.vss
             self.vss = vss_stash
         else:
-            raise NotImplementedError(f"[virtSource] converter base '{base_name}' is unknown to system")
+            raise NotImplementedError(f"[vsource] converter base '{base_name}' is unknown to system")
 
         # General
         self._check_num("log_intermediate_voltage", 4.29e9, verbose=verbose)
@@ -302,14 +303,14 @@ class VirtualSourceData(object):
         except KeyError:
             set_value = self.vss_base[setting_key]
             if verbose:
-                logger.debug(f"[virtSource] '{setting_key}' not provided, will be set to inherited value = {set_value}")
+                logger.debug(f"[vsource] '{setting_key}' not provided, will be set to inherited value = {set_value}")
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"[virtSource] '{setting_key}' must a single positive number, but is '{set_value}'")
+                f"[vsource] '{setting_key}' must a single positive number, but is '{set_value}'")
         if set_value < 0:
-            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be >= 0")
+            raise NotImplementedError(f"[vsource] {setting_key} = {set_value} must be >= 0")
         if (max_value is not None) and (set_value > max_value):
-            raise NotImplementedError(f"[virtSource] {setting_key} = {set_value} must be <= {max_value}")
+            raise NotImplementedError(f"[vsource] {setting_key} = {set_value} must be <= {max_value}")
         self.vss[setting_key] = set_value
 
     def _check_list(self, setting_key: str, max_value: float = 1023, verbose: bool = True) -> NoReturn:
@@ -319,10 +320,10 @@ class VirtualSourceData(object):
         except KeyError:
             values = default
             if verbose:
-                logger.debug(f"[virtSource] '{setting_key}' not provided, will be set to inherited value = {values[0]}")
+                logger.debug(f"[vsource] '{setting_key}' not provided, will be set to inherited value = {values[0]}")
         if (len(values) != len(default)) or (min(values) < 0) or (max(values) > max_value):
             raise NotImplementedError(
-                f"[virtSource] {setting_key} must a list of {len(default)} values, within range of [{0}; {max_value}]")
+                f"[vsource] {setting_key} must a list of {len(default)} values, within range of [{0}; {max_value}]")
         self.vss[setting_key] = values
 
     def get_state_log_intermediate(self):

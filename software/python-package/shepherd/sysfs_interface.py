@@ -10,8 +10,6 @@ provided by the shepherd kernel module
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-
-import sys
 import logging
 import time
 from pathlib import Path
@@ -30,16 +28,6 @@ class SysfsInterfaceException(Exception):
 
 # TODO: what is with "None"?
 shepherd_modes = ["harvesting", "harvesting_test", "emulation", "emulation_test", "emulation_cal", "debug"]
-
-attribs = {
-    "mode": {"path": "mode", "type": str},
-    "state": {"path": "state", "type": str},
-    "n_buffers": {"path": "n_buffers", "type": int},
-    "buffer_period_ns": {"path": "buffer_period_ns", "type": int},
-    "samples_per_buffer": {"path": "samples_per_buffer", "type": int},
-    "mem_address": {"path": "memory/address", "type": int},
-    "mem_size": {"path": "memory/size", "type": int},
-}
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
@@ -118,8 +106,8 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
     attribute.
 
-    Args:
-        mode (str): Target mode. Must be one of harvesting, emulation or debug
+    :param mode: (str) Target mode. Must be one of harvesting, emulation or debug
+    :param force:
     """
     if mode not in shepherd_modes:
         raise SysfsInterfaceException("invalid value for mode")
@@ -135,37 +123,37 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
         f.write(mode)
 
 
-def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage_V: float) -> NoReturn:
+def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage: float) -> NoReturn:
     """ Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
-        :param voltage_V: desired voltage in volt
+        :param voltage: desired voltage in volt
         :param calibration_settings: optional set to convert volt to raw
     """
-    if voltage_V is None:
-        voltage_V = 0.0
-    elif voltage_V is False:
-        voltage_V = 0.0
-    elif (voltage_V is True) or (isinstance(voltage_V, str) and "main" in voltage_V.lower()):
+    if voltage is None:
+        voltage = 0.0
+    elif voltage is False:
+        voltage = 0.0
+    elif (voltage is True) or (isinstance(voltage, str) and "main" in voltage.lower()):
         # set bit 20 (during pru-reset) and therefore link both adc-channels
         write_dac_aux_voltage_raw(2 ** 20)
         return
-    elif isinstance(voltage_V, str) and "mid" in voltage_V.lower():
+    elif isinstance(voltage, str) and "mid" in voltage.lower():
         # set bit 21 (during pru-reset) and therefore output intermediate (storage cap) voltage on second channel
         write_dac_aux_voltage_raw(2 ** 21)
         return
 
-    if voltage_V < 0.0:
-        raise SysfsInterfaceException(f"sending voltage with negative value: {voltage_V}")
-    if voltage_V > 5.0:
-        raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage_V}")
+    if voltage < 0.0:
+        raise SysfsInterfaceException(f"sending voltage with negative value: {voltage}")
+    if voltage > 5.0:
+        raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage}")
 
     if calibration_settings is None:
-        output = calibration_default.dac_ch_b_voltage_to_raw(voltage_V)
+        output = calibration_default.dac_ch_b_voltage_to_raw(voltage)
     else:
-        output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage_V)
+        output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage)
 
-    logger.debug(f"Set voltage of supply for auxiliary Target to {voltage_V} V (raw={output})")
+    logger.debug(f"Set voltage of supply for auxiliary Target to {voltage} V (raw={output})")
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
     write_dac_aux_voltage_raw(output)
 
@@ -264,7 +252,7 @@ def write_virtsource_settings(settings: list) -> NoReturn:
             setting = [str(i) for i in setting]
             output += " ".join(setting) + " \n"
         else:
-            raise SysfsInterfaceException(f"virtSource value {setting} has wrong type ({type(setting)})")
+            raise SysfsInterfaceException(f"virtsource value {setting} has wrong type ({type(setting)})")
 
     wait_for_state("idle", 3.0)
 
@@ -273,7 +261,7 @@ def write_virtsource_settings(settings: list) -> NoReturn:
 
 
 def read_virtsource_settings() -> list:
-    """Retreive the virtual source settings from the PRU core.
+    """Retrieve the virtual source settings from the PRU core.
 
     The virtsource algorithm uses these settings to configure emulation.
 
@@ -291,11 +279,14 @@ def write_pru_msg(msg_type: int, values: list) -> NoReturn:
     """
     if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255):
         raise SysfsInterfaceException(f"pru_msg-type has invalid type, "
-            f"expected u8 for type (={type(msg_type)}) and content (={msg_type})")
+                                      f"expected u8 for type (={type(msg_type)}) "
+                                      f"and content (={msg_type})")
 
-    if not isinstance(values, list):
+    if isinstance(values, (int, float)):
         # catch all single ints and floats
         values = [int(values), 0]
+    elif not isinstance(values, list):
+        raise ValueError(f"Outgoing msg to pru should have been list but is {values}")
 
     for value in values:
         if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
@@ -318,28 +309,40 @@ def read_pru_msg() -> tuple:
     return msg_parts[0], msg_parts[1:]  # TODO: can be widened to two type + 2 values, not needed currently
 
 
-def make_attr_getter(name: str, path: str, attr_type: type):
-    """Instantiates a getter function for a sysfs attribute.
-
-    To avoid hard-coding getter functions for all sysfs attributes, this
-    function generates a getter function that also handles casting to the
-    corresponding type
-
-    Args:
-        name (str): Name of the attribute
-        path (str): Relative path of the attribute with respect to root
-            shepherd sysfs path
-        attr_type(type): Type of attribute, e.g. int or str
-    """
-
-    def _function():
-        with open(str(sysfs_path / path), "r") as f:
-            return attr_type(f.read().rstrip())
-
-    return _function
+attribs = ["mode", "state", "n_buffers", "buffer_period_ns",
+           "samples_per_buffer", "mem_address", "mem_size"]
 
 
-# Automatically create getter for all attributes in props
-for name, props in attribs.items():
-    fun = make_attr_getter(name, props["path"], props["type"])
-    setattr(sys.modules[__name__], f"get_{ name }", fun)
+def get_mode() -> str:
+    with open(str(sysfs_path / "mode"), "r") as f:
+        return str(f.read().rstrip())
+
+
+def get_state() -> str:
+    with open(str(sysfs_path / "state"), "r") as f:
+        return str(f.read().rstrip())
+
+
+def get_n_buffers() -> int:
+    with open(str(sysfs_path / "n_buffers"), "r") as f:
+        return int(f.read().rstrip())
+
+
+def get_buffer_period_ns() -> int:
+    with open(str(sysfs_path / "buffer_period_ns"), "r") as f:
+        return int(f.read().rstrip())
+
+
+def get_samples_per_buffer() -> int:
+    with open(str(sysfs_path / "samples_per_buffer"), "r") as f:
+        return int(f.read().rstrip())
+
+
+def get_mem_address() -> int:
+    with open(str(sysfs_path / "memory/address"), "r") as f:
+        return int(f.read().rstrip())
+
+
+def get_mem_size() -> int:
+    with open(str(sysfs_path / "memory/size"), "r") as f:
+        return int(f.read().rstrip())

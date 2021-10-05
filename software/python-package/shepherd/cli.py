@@ -155,7 +155,7 @@ def run(command, parameters: Dict, verbose):
               help="Record 'harvesting' or 'harvesting_test'-function data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--no-calib", is_flag=True, help="Use default calibration values")
+@click.option("--default-cal", is_flag=True, help="Use default calibration values")
 @click.option("--start-time", "-s", type=float,
               help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
@@ -164,7 +164,7 @@ def record(
     mode,
     duration,
     force_overwrite,
-    no_calib,
+    default_cal,
     start_time,
     warn_only,
 ):
@@ -173,7 +173,7 @@ def record(
         mode=mode,
         duration=duration,
         force_overwrite=force_overwrite,
-        no_calib=no_calib,
+        default_cal=default_cal,
         start_time=start_time,
         warn_only=warn_only,
     )
@@ -187,7 +187,7 @@ def record(
               help="Dir or file path for storing the power consumption data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--no-calib", is_flag=True, help="Use default calibration values")
+@click.option("--default-cal", is_flag=True, help="Use default calibration values")
 @click.option("--start-time", "-s", type=float, help="Desired start time in unix epoch time")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
@@ -212,7 +212,7 @@ def emulate(
         output_path,
         duration,
         force_overwrite,
-        no_calib,
+        default_cal,
         start_time,
         enable_io,
         io_sel_target_a,
@@ -234,7 +234,7 @@ def emulate(
         output_path=pl_store,
         duration=duration,
         force_overwrite=force_overwrite,
-        no_calib=no_calib,
+        default_cal=default_cal,
         start_time=start_time,
         set_target_io_lvl_conv=enable_io,
         sel_target_for_io=io_sel_target_a,
@@ -265,10 +265,10 @@ def eeprom():
               help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
 @click.option("--serial_number", "-s", type=str,
               help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
-@click.option("--calibfile", "-c", type=click.Path(exists=True),
+@click.option("--cal-file", "-c", type=click.Path(exists=True),
               help="YAML-formatted file with calibration data")
-@click.option("--no-calib", is_flag=True, help="Use default calibration data")
-def write(infofile, version, serial_number, calibfile, no_calib):
+@click.option("--default-cal", is_flag=True, help="Use default calibration data (skip eeprom)")
+def write(infofile, version, serial_number, cal_file, default_cal):
     if infofile is not None:
         if serial_number is not None or version is not None:
             raise click.UsageError(
@@ -287,28 +287,28 @@ def write(infofile, version, serial_number, calibfile, no_calib):
         with EEPROM() as storage:
             storage.write_cape_data(cape_data)
 
-    if calibfile is not None:
-        if no_calib:
-            raise click.UsageError("--no-calib and --calibfile are mutually exclusive")
-        calib = CalibrationData.from_yaml(calibfile)
+    if cal_file is not None:
+        if default_cal:
+            raise click.UsageError("--default-cal and --cal-file are mutually exclusive")
+        cal = CalibrationData.from_yaml(cal_file)
         with EEPROM() as storage:
-            storage.write_calibration(calib)
-    if no_calib:
-        calib = CalibrationData.from_default()
+            storage.write_calibration(cal)
+    if default_cal:
+        cal = CalibrationData.from_default()
         with EEPROM() as storage:
-            storage.write_calibration(calib)
+            storage.write_calibration(cal)
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
 @click.option("--infofile", "-i", type=click.Path(),
               help="If provided, cape info data is dumped to this file")
-@click.option("--calibfile", "-c", type=click.Path(),
+@click.option("--cal-file", "-c", type=click.Path(),
               help="If provided, calibration data is dumped to this file")
-def read(infofile, calibfile):
+def read(infofile, cal_file):
 
     with EEPROM() as storage:
         cape_data = storage.read_cape_data()
-        calib = storage.read_calibration()
+        cal = storage.read_calibration()
 
     if infofile:
         with open(infofile, "w") as f:
@@ -316,11 +316,11 @@ def read(infofile, calibfile):
     else:
         print(repr(cape_data))
 
-    if calibfile:
-        with open(calibfile, "w") as f:
-            f.write(repr(calib))
+    if cal_file:
+        with open(cal_file, "w") as f:
+            f.write(repr(cal))
     else:
-        print(repr(calib))
+        print(repr(cal))
 
 
 @eeprom.command(
@@ -369,8 +369,8 @@ def rpc(port):
 @click.option("--led", "-l", type=int, default=22)
 @click.option("--button", "-b", type=int, default=65)
 def launcher(led, button):
-    with Launcher(button, led) as lnch:
-        lnch.run()
+    with Launcher(button, led) as launch:
+        launch.run()
 
 
 if __name__ == "__main__":
