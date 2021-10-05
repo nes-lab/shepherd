@@ -52,22 +52,22 @@ class CalibrationData(object):
     """
 
     def __init__(self, calib_dict: dict):
-        self._data = calib_dict
+        self.data = calib_dict
 
     def __getitem__(self, key: str):
-        return self._data[key]
+        return self.data[key]
 
     def __repr__(self):
-        return yaml.dump(self._data, default_flow_style=False)
+        return yaml.dump(self.data, default_flow_style=False)
 
     @classmethod
-    def from_bytestr(cls, bytestr: str):
+    def from_bytestr(cls, bytestr: bytes):
         """Instantiates calibration data based on byte string.
 
         This is mainly used to deserialize data read from an EEPROM memory.
 
         Args:
-            bytestr (str): Byte string containing calibration data.
+            bytestr: Byte string containing calibration data.
         
         Returns:
             CalibrationData object with extracted calibration data.
@@ -163,13 +163,13 @@ class CalibrationData(object):
         return cls(calib_dict)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
-        offset = self._data[component][channel]["offset"]
-        gain = self._data[component][channel]["gain"]
+        offset = self.data[component][channel]["offset"]
+        gain = self.data[component][channel]["gain"]
         return (float(raw) * gain) + offset
 
     def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
-        offset = self._data[component][channel]["offset"]
-        gain = self._data[component][channel]["gain"]
+        offset = self.data[component][channel]["offset"]
+        gain = self.data[component][channel]["gain"]
         return max(int((value - offset) / gain), 0)
 
     def to_bytestr(self):
@@ -184,22 +184,21 @@ class CalibrationData(object):
         for component in cal_component_list:
             for channel in cal_channel_list:
                 for parameter in cal_parameter_list:
-                    flattened.append(self._data[component][channel][parameter])
+                    flattened.append(self.data[component][channel][parameter])
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         return struct.pack(">" + val_count * "d", *flattened)
 
     def export_for_sysfs(self) -> dict:  # more precise dict[str, int], trouble with py3.6
         cal_set = {
             # ADC is calculated in nA (nano-amps), gain is shifted by 8 bit [scaling according to commons.h]
-            "adc_gain": int(1e9 * (2 ** 8) * self._data["emulation"]["adc_current"]["gain"]),
-            "adc_offset": int(1e9 * (2 ** 0) * self._data["emulation"]["adc_current"]["offset"]),
+            "adc_gain": int(1e9 * (2 ** 8) * self.data["emulation"]["adc_current"]["gain"]),
+            "adc_offset": int(1e9 * (2 ** 0) * self.data["emulation"]["adc_current"]["offset"]),
             # DAC is calculated in uV (micro-volts), gain is shifted by 20 bit
-            "dac_gain": int((2 ** 20) / (1e6 * self._data["emulation"]["dac_voltage_b"]["gain"])),
-            "dac_offset": int(1e6 * (2 ** 0) * self._data["emulation"]["dac_voltage_b"]["offset"]),
+            "dac_gain": int((2 ** 20) / (1e6 * self.data["emulation"]["dac_voltage_b"]["gain"])),
+            "dac_offset": int(1e6 * (2 ** 0) * self.data["emulation"]["dac_voltage_b"]["offset"]),
         }
 
         for value in cal_set.values():
             if value >= 2**31:
                 raise ValueError(f"Number (={value}) exceeds 32bit container, in CalibrationData.export_for_sysfs()")
         return cal_set
-

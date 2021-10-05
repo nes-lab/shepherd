@@ -15,15 +15,10 @@ import os
 import weakref
 import logging
 import time
-import atexit
 import struct
 import mmap
-import sys
-
-from typing import NoReturn
+from typing import NoReturn, Union
 import numpy as np
-import collections
-
 from periphery import GPIO
 
 from shepherd import sysfs_interface
@@ -47,9 +42,9 @@ gpio_pin_nums = {
 
 
 class ShepherdIOException(Exception):
-    def __init__(self, message: str, id: int = 0, value: int = 0):
+    def __init__(self, message: str, id_num: int = 0, value: int = 0):
         super().__init__(message)
-        self.id = id
+        self.id_num = id_num
         self.value = value
 
 
@@ -346,7 +341,8 @@ class ShepherdIO(object):
         logger.info("exiting analog shepherd_io")
         self._cleanup()
 
-    def _send_msg(self, msg_type: int, values: list) -> NoReturn:
+    @staticmethod
+    def _send_msg(msg_type: int, values: Union[int, list]) -> NoReturn:
         """Sends a formatted message to PRU0.
 
         Args:
@@ -356,7 +352,8 @@ class ShepherdIO(object):
         """
         sysfs_interface.write_pru_msg(msg_type, values)
 
-    def _get_msg(self, timeout: float = 0.5):
+    @staticmethod
+    def _get_msg(timeout: float = 0.5):
         """Tries to retrieve formatted message from PRU0.
 
         Args:
@@ -372,7 +369,8 @@ class ShepherdIO(object):
                 continue
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
 
-    def _flush_msgs(self):
+    @staticmethod
+    def _flush_msgs():
         """Flushes msg_channel by reading all available bytes."""
         while True:
             try:

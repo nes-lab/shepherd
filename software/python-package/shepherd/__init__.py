@@ -47,6 +47,7 @@ logging._srcfile = None
 logging.logThreads = 0
 logging.logProcesses = 0
 
+
 class Recorder(ShepherdIO):
     """API for recording data with shepherd.
 
@@ -201,6 +202,8 @@ class ShepherdDebug(ShepherdIO):
     # offer a default cali for debugging, TODO: maybe also try to read from eeprom
     _cal: CalibrationData = None
     _io: TargetIO = None
+    P_in_fW: float = 0.0
+    P_out_fW: float = 0.0
 
     def __init__(self, use_io: bool = True):
         super().__init__("debug")
@@ -209,9 +212,9 @@ class ShepherdDebug(ShepherdIO):
             self._io = TargetIO()
 
         try:
-            with EEPROM() as eeprom:
-                eeprom.read_cape_data()
-                self._cal = eeprom.read_calibration()
+            with EEPROM() as storage:
+                storage.read_cape_data()
+                self._cal = storage.read_calibration()
         except ValueError:
             logger.warning("Couldn't read calibration from EEPROM (Val). Falling back to default values.")
             self._cal = CalibrationData.from_default()
@@ -305,9 +308,9 @@ class ShepherdDebug(ShepherdIO):
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, but got type={ hex(msg_type) } val={ value }")
         # TEST-SIMPLIFICATION - code below is not part of pru-code
-        self.P_in_fW: float = 0
-        self.P_out_fW: float = 0
-        self.cal = cal_settings
+        self.P_in_fW = 0.0
+        self.P_out_fW = 0.0
+        self._cal = cal_settings
 
     def vsource_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         super()._send_msg(commons.MSG_DBG_VSOURCE_P_INP, [int(input_voltage_uV), int(input_current_nA)])
@@ -360,11 +363,11 @@ class ShepherdDebug(ShepherdIO):
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
     def iterate(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
         self.vsource_calc_inp_power(V_in_uV, A_in_nA)
-        A_out_raw = self.cal.convert_value_to_raw("emulation", "adc_current", A_out_nA * 10**-9)
+        A_out_raw = self._cal.convert_value_to_raw("emulation", "adc_current", A_out_nA * 10**-9)
         self.vsource_calc_out_power(A_out_raw)
         self.vsource_update_cap_storage()
         V_out_raw = self.vsource_update_states_and_output()
-        V_out_uV = int(self.cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10**6)
+        V_out_uV = int(self._cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10**6)
         self.P_in_fW += V_in_uV * A_in_nA
         self.P_out_fW += V_out_uV * A_out_nA
         return V_out_uV
@@ -378,13 +381,15 @@ class ShepherdDebug(ShepherdIO):
 
     # all methods below are wrapper for zerorpc - it seems to have trouble with inheritance and runtime inclusion
 
-    def set_shepherd_state(self, state: bool) -> NoReturn:
+    @staticmethod
+    def set_shepherd_state(state: bool) -> NoReturn:
         if state:
             sysfs_interface.set_start()
         else:
             sysfs_interface.set_stop()
 
-    def get_shepherd_state(self) -> bool:
+    @staticmethod
+    def get_shepherd_state() -> bool:
         return sysfs_interface.get_state()
 
     def set_shepherd_pcb_power(self, state: bool) -> NoReturn:
@@ -426,7 +431,8 @@ class ShepherdDebug(ShepherdIO):
     def reinitialize_prus(self) -> NoReturn:
         super().reinitialize_prus()
 
-    def set_aux_target_voltage_raw(self, voltage_raw) -> NoReturn:
+    @staticmethod
+    def set_aux_target_voltage_raw(voltage_raw) -> NoReturn:
         sysfs_interface.write_dac_aux_voltage_raw(voltage_raw)
 
     def switch_shepherd_mode(self, mode: str) -> str:
@@ -437,7 +443,7 @@ class ShepherdDebug(ShepherdIO):
             super().start(wait_blocking=True)
         return mode_old
 
-    def sample_emu_cal(self, length_n_buffers: int = 10) :
+    def sample_emu_cal(self, length_n_buffers: int = 10):
         length_n_buffers = int(min(max(length_n_buffers, 1), 60))
 
         super().reinitialize_prus()
@@ -453,9 +459,23 @@ class ShepherdDebug(ShepherdIO):
         for i in range(length_n_buffers):  # get Data
             idx, emu_buf = super().get_buffer(timeout=1)
             base_array = numpy.hstack((base_array, emu_buf.current))
-            #super()._return_buffer(idx)
         super().reinitialize_prus()
         return msgpack.packb(base_array, default=msgpack_numpy.encode)  # zeroRPC / msgpack can not handle numpy-data without this
+
+
+def retrieve_calibration(no_calib: bool = False) -> CalibrationData:
+    if no_calib:
+        return CalibrationData.from_default()
+    else:
+        try:
+            with EEPROM() as storage:
+                return storage.read_calibration()
+        except ValueError:
+            logger.warning("Couldn't read calibration from EEPROM (ValueError). Falling back to default values.")
+            return CalibrationData.from_default()
+        except FileNotFoundError:
+            logger.warning("Couldn't read calibration from EEPROM (FileNotFoundError). Falling back to default values.")
+            return CalibrationData.from_default()
 
 
 def record(
@@ -482,18 +502,7 @@ def record(
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
-    if no_calib:
-        calib = CalibrationData.from_default()
-    else:
-        try:
-            with EEPROM() as eeprom:
-                calib = eeprom.read_calibration()
-        except ValueError:
-            logger.warning("Couldn't read calibration from EEPROM (Val). Falling back to default values.")
-            calib = CalibrationData.from_default()
-        except FileNotFoundError:
-            logger.warning("Couldn't read calibration from EEPROM (FS). Falling back to default values.")
-            calib = CalibrationData.from_default()
+    calib = retrieve_calibration(no_calib)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -530,7 +539,7 @@ def record(
 
         logger.info("shepherd started!")
 
-        def exit_gracefully(signum, frame):
+        def exit_gracefully(*args):
             stack.close()
             sys.exit(0)
 
@@ -605,19 +614,7 @@ def emulate(
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
     """
-
-    if no_calib:
-        calib = CalibrationData.from_default()
-    else:
-        try:
-            with EEPROM() as eeprom:
-                calib = eeprom.read_calibration()
-        except ValueError:
-            logger.warning("Couldn't read calibration from EEPROM (Val). Falling back to default values.")
-            calib = CalibrationData.from_default()
-        except FileNotFoundError:
-            logger.warning("Couldn't read calibration from EEPROM (FS). Falling back to default values.")
-            calib = CalibrationData.from_default()
+    calib = retrieve_calibration(no_calib)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -691,7 +688,7 @@ def emulate(
 
         logger.info("shepherd started!")
 
-        def exit_gracefully(signum, frame):
+        def exit_gracefully(*args):
             stack.close()
             sys.exit(0)
 

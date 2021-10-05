@@ -14,7 +14,6 @@ provided by the shepherd kernel module
 import sys
 import logging
 import time
-import struct
 from pathlib import Path
 from typing import NoReturn
 
@@ -287,11 +286,8 @@ def read_virtsource_settings() -> list:
 
 def write_pru_msg(msg_type: int, values: list) -> NoReturn:
     """
-    Args:
-        msg_type:
-        value1:
-        value2:
-    Returns:
+    :param msg_type:
+    :param values:
     """
     if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255):
         raise SysfsInterfaceException(f"pru_msg-type has invalid type, "

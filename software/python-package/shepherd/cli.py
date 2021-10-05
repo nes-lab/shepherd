@@ -14,21 +14,16 @@ from typing import Dict
 
 import click
 import time
-import pathlib
 import logging
 import sys
 import signal
 import zerorpc
 import gevent
 import yaml
-from contextlib import ExitStack
-import invoke
 from pathlib import Path
 import click_config_file
 from periphery import GPIO
 
-from shepherd.datalog import LogWriter
-from shepherd.datalog import LogReader
 from shepherd import sysfs_interface
 from shepherd import record as run_record
 from shepherd import emulate as run_emulate
@@ -38,7 +33,6 @@ from shepherd import CapeData
 from shepherd import ShepherdDebug
 from shepherd.shepherd_io import gpio_pin_nums
 from shepherd.launcher import Launcher
-from shepherd.target_io import TargetIO
 
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd")
@@ -54,24 +48,13 @@ logger.addHandler(consoleHandler)
 
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
-    logger.info(f"reading config from {file_path}")
+    logger.info(f"reading config from {file_path}, cmd={cmd_name}")
     with open(file_path, "r") as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
-@click.option("-v", "--verbose", count=True, default=1)
-# TODO: verbose usage is limited with this implementation.
-@click.pass_context
-def cli(ctx, verbose):
-    """ Shepherd: Synchronized Energy Harvesting Emulator and Recorder
-
-    Args:
-        ctx:
-        verbose:
-    Returns:
-    """
+def config_logger(verbose: int):
     if verbose == 0:
         logger.setLevel(logging.ERROR)
     elif verbose == 1:
@@ -80,6 +63,21 @@ def cli(ctx, verbose):
         logger.setLevel(logging.INFO)
     elif verbose > 2:
         logger.setLevel(logging.DEBUG)
+
+
+@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
+@click.option("-v", "--verbose", count=True, default=1)
+# TODO: verbose usage is limited with this implementation.
+@click.pass_context
+def cli(ctx, verbose: int):
+    """ Shepherd: Synchronized Energy Harvesting Emulator and Recorder
+
+    Args:
+        ctx:
+        verbose:
+    Returns:
+    """
+    config_logger(verbose)
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
@@ -124,15 +122,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 @click.option("-v", "--verbose", count=True)
 def run(command, parameters: Dict, verbose):
 
-    if verbose is not None:
-        if verbose == 0:
-            logger.setLevel(logging.ERROR)
-        elif verbose == 1:
-            logger.setLevel(logging.WARNING)
-        elif verbose == 2:
-            logger.setLevel(logging.INFO)
-        elif verbose > 2:
-            logger.setLevel(logging.DEBUG)
+    config_logger(verbose)
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with alpha-version of click-lib)")
@@ -160,14 +150,14 @@ def run(command, parameters: Dict, verbose):
 
 @cli.command(short_help="Record IV data")
 @click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings",
-    help="Dir or file path for resulting hdf5 file",)
+              help="Dir or file path for resulting hdf5 file",)
 @click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
-    help="Record 'harvesting' or 'harvesting_test'-function data")
+              help="Record 'harvesting' or 'harvesting_test'-function data")
 @click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--no-calib", is_flag=True, help="Use default calibration values")
 @click.option("--start-time", "-s", type=float,
-    help="Desired start time in unix epoch time",)
+              help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def record(
     output_path,
@@ -270,13 +260,13 @@ def eeprom():
 
 @eeprom.command(short_help="Write data to EEPROM")
 @click.option("--infofile", "-i", type=click.Path(exists=True),
-    help="YAML-formatted file with cape info")
+              help="YAML-formatted file with cape info")
 @click.option("--version", "-v", type=str, default="22A0",
-    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
+              help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
 @click.option("--serial_number", "-s", type=str,
-    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
+              help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--calibfile", "-c", type=click.Path(exists=True),
-    help="YAML-formatted file with calibration data")
+              help="YAML-formatted file with calibration data")
 @click.option("--no-calib", is_flag=True, help="Use default calibration data")
 def write(infofile, version, serial_number, calibfile, no_calib):
     if infofile is not None:
@@ -288,42 +278,37 @@ def write(infofile, version, serial_number, calibfile, no_calib):
                 )
             )
         cape_data = CapeData.from_yaml(infofile)
-        with EEPROM() as eeprom:
-            eeprom.write_cape_data(cape_data)
+        with EEPROM() as storage:
+            storage.write_cape_data(cape_data)
     elif serial_number is not None or version is not None:
         if version is None or serial_number is None:
-            raise click.UsageError(
-                ("--version and --serial_number are required")
-            )
+            raise click.UsageError("--version and --serial_number are required")
         cape_data = CapeData.from_values(serial_number, version)
-        with EEPROM() as eeprom:
-            eeprom.write_cape_data(cape_data)
+        with EEPROM() as storage:
+            storage.write_cape_data(cape_data)
 
     if calibfile is not None:
         if no_calib:
-            raise click.UsageError(
-                "--no-calib and --calibfile are mutually exclusive"
-            )
+            raise click.UsageError("--no-calib and --calibfile are mutually exclusive")
         calib = CalibrationData.from_yaml(calibfile)
-        with EEPROM() as eeprom:
-            cape_data = eeprom.write_calibration(calib)
+        with EEPROM() as storage:
+            storage.write_calibration(calib)
     if no_calib:
         calib = CalibrationData.from_default()
-
-        with EEPROM() as eeprom:
-            eeprom.write_calibration(calib)
+        with EEPROM() as storage:
+            storage.write_calibration(calib)
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
 @click.option("--infofile", "-i", type=click.Path(),
-    help="If provided, cape info data is dumped to this file")
+              help="If provided, cape info data is dumped to this file")
 @click.option("--calibfile", "-c", type=click.Path(),
-    help="If provided, calibration data is dumped to this file")
+              help="If provided, calibration data is dumped to this file")
 def read(infofile, calibfile):
 
-    with EEPROM() as eeprom:
-        cape_data = eeprom.read_cape_data()
-        calib = eeprom.read_calibration()
+    with EEPROM() as storage:
+        cape_data = storage.read_cape_data()
+        calib = storage.read_calibration()
 
     if infofile:
         with open(infofile, "w") as f:
@@ -343,7 +328,7 @@ def read(infofile, calibfile):
 )
 @click.argument("filename", type=click.Path(exists=True))
 @click.option("--output_path", "-o", type=click.Path(),
-    help="Path to resulting YAML-formatted calibration data file")
+              help="Path to resulting YAML-formatted calibration data file")
 def make(filename, output_path):
     cd = CalibrationData.from_measurements(filename)
     if output_path is None:

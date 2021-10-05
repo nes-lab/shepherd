@@ -100,51 +100,40 @@ class VirtualSourceData(object):
         Returns:
             int-list (2nd level for LUTs) that can be feed into sysFS
         """
-        vs_list = []
-
-        # General
-        vs_list.append(int(self.vss["converter_mode"]))
-        vs_list.append(int(self.vss["interval_startup_delay_drain_ms"] * 1e3 / SAMPLE_INTERVAL_US))  # n, samples
-
-        vs_list.append(int(self.vss["V_input_max_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["I_input_max_mA"] * 1e6))  # nA
-        vs_list.append(int(self.vss["V_input_drop_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["Constant_1k_per_Ohm"] * 1))  # 1/mOhm
-
-        vs_list.append(int(self.vss["Constant_us_per_nF_n28"]))  # us/nF = us*V / nA*s
-        vs_list.append(int(self.vss["V_intermediate_init_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["I_intermediate_leak_nA"] * 1))  # nA
-
-        vs_list.append(int(self.vss["V_enable_output_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["V_disable_output_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["dV_enable_output_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["interval_check_thresholds_ms"] * 1e3 / SAMPLE_INTERVAL_US))  # n, samples
-
-        vs_list.append(int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["immediate_pwr_good_signal"] > 0))  # bool
-
-        vs_list.append(int(self.vss["V_output_log_gpio_threshold_mV"] * 1e3))  # uV
-
-        # Boost
-        vs_list.append(int(self.vss["V_input_boost_threshold_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["V_intermediate_max_mV"] * 1e3))  # uV
-
-        # Buck
-        vs_list.append(int(self.vss["V_output_mV"] * 1e3))  # uV
-        vs_list.append(int(self.vss["V_buck_drop_mV"] * 1e3))  # uV
-
-        # LUTs
-        vs_list.append(int(self.vss["LUT_input_V_min_log2_uV"]))  #
-        vs_list.append(int(self.vss["LUT_input_I_min_log2_nA"]))  #
-        vs_list.append(int(self.vss["LUT_output_I_min_log2_nA"]))  #
-
-        # reduce resolution to n8 to fit in container
-        vs_list.append([min(255, int(256 * value)) if (value > 0) else 0 for value in self.vss["LUT_input_efficiency"]])
-
-        # is now n4 -> resulting value for PRU is inverted, so 2^4 / value, inv-max = 2^14 for min-value = 1/1024
-        vs_list.append([min((2**14), int((2**4) / value)) if (value > 0) else int(2**14) for value in self.vss["LUT_output_efficiency"]])
-        return vs_list
+        return [
+            # General
+            int(self.vss["converter_mode"]),
+            int(self.vss["interval_startup_delay_drain_ms"] * 1e3 / SAMPLE_INTERVAL_US),  # n, samples
+            int(self.vss["V_input_max_mV"] * 1e3),  # uV
+            int(self.vss["I_input_max_mA"] * 1e6),  # nA
+            int(self.vss["V_input_drop_mV"] * 1e3),  # uV
+            int(self.vss["Constant_1k_per_Ohm"] * 1),  # 1/mOhm
+            int(self.vss["Constant_us_per_nF_n28"]),  # us/nF = us*V / nA*s
+            int(self.vss["V_intermediate_init_mV"] * 1e3),  # uV
+            int(self.vss["I_intermediate_leak_nA"] * 1),  # nA
+            int(self.vss["V_enable_output_threshold_mV"] * 1e3),  # uV
+            int(self.vss["V_disable_output_threshold_mV"] * 1e3),  # uV
+            int(self.vss["dV_enable_output_mV"] * 1e3),  # uV
+            int(self.vss["interval_check_thresholds_ms"] * 1e3 / SAMPLE_INTERVAL_US),  # n, samples
+            int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3),  # uV
+            int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3),  # uV
+            int(self.vss["immediate_pwr_good_signal"] > 0),  # bool
+            int(self.vss["V_output_log_gpio_threshold_mV"] * 1e3),  # uV
+            # Boost
+            int(self.vss["V_input_boost_threshold_mV"] * 1e3),  # uV
+            int(self.vss["V_intermediate_max_mV"] * 1e3),  # uV
+            # Buck
+            int(self.vss["V_output_mV"] * 1e3),  # uV
+            int(self.vss["V_buck_drop_mV"] * 1e3),  # uV
+            # LUTs
+            int(self.vss["LUT_input_V_min_log2_uV"]),  #
+            int(self.vss["LUT_input_I_min_log2_nA"]),  #
+            int(self.vss["LUT_output_I_min_log2_nA"]),  #
+            # reduce resolution to n8 to fit in container
+            [min(255, int(256 * value)) if (value > 0) else 0 for value in self.vss["LUT_input_efficiency"]],
+            # is now n4 -> resulting value for PRU is inverted, so 2^4 / value, inv-max = 2^14 for min-value = 1/1024
+            [min((2**14), int((2**4) / value)) if (value > 0) else int(2**14) for value in self.vss["LUT_output_efficiency"]],
+        ]
 
     def calculate_internal_states(self) -> NoReturn:
         """

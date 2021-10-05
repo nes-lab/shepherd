@@ -15,13 +15,12 @@ import logging
 import subprocess
 import threading
 import time
-from typing import NoReturn
+from typing import NoReturn, Union
 
 import numpy as np
 from pathlib import Path
 import h5py
 from itertools import product
-from collections import defaultdict
 from collections import namedtuple
 import psutil as psutil
 import serial
@@ -32,7 +31,6 @@ from shepherd.calibration import cal_channel_emulation_dict
 from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
-from shepherd.shepherd_io import GPIOEdges
 from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US
 
 logger = logging.getLogger(__name__)
@@ -59,13 +57,26 @@ h5_drivers = {h5py.h5fd.CORE: "CORE",
               }
 
 
-def unique_path(base_path: str, suffix: str):
+def unique_path(base_path: Union[str, Path], suffix: str):
     counter = 0
     while True:
         path = base_path.with_suffix(f".{ counter }{ suffix }")
         if not path.exists():
             return path
         counter += 1
+
+
+def add_dataset_time(grp: h5py.Group, chunks: Union[bool, tuple] = True) -> NoReturn:
+    grp.create_dataset(
+        "time",
+        (0,),
+        dtype="u8",
+        maxshape=(None,),
+        chunks=chunks,
+        compression=LogWriter.compression_algo,
+    )
+    grp["time"].attrs["unit"] = f"ns"
+    grp["time"].attrs["description"] = "system time [ns]"
 
 
 class LogWriter(object):
@@ -88,7 +99,6 @@ class LogWriter(object):
     # choose lossless compression filter
     # - gzip: good compression, moderate speed, select level from 1-9, default is 4
     # - lzf: low to moderate compression, very fast, no options
-    compression_level = 1
     compression_algo = "lzf"
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
     sys_log_last_ns = 0
@@ -139,6 +149,10 @@ class LogWriter(object):
         logger.debug(f"Set log-writing for current:     {'enabled' if self.write_current else 'disabled'}")
         logger.debug(f"Set log-writing for gpio:        {'enabled' if self.write_gpio else 'disabled'}")
 
+        # initial sysutil-reading and delta-history
+        self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
+        self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
+
     def __enter__(self):
         """Initializes the structure of the HDF5 file
 
@@ -163,25 +177,16 @@ class LogWriter(object):
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
-        self.data_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=self.chunk_shape,
-            compression=LogWriter.compression_algo,
-            # TODO: add filter-step, delta-offset is static 10_000 ns
-            # TODO: time-dataset should be replaced - it is not the real time, but just a post-calculated sequence
-        )
-        self.data_grp["time"].attrs["unit"] = "ns"
-        self.data_grp["time"].attrs["description"] = "system time [ns]"
+        # TODO: add filter-step, delta-offset is static 10_000 ns
+        # TODO: time-dataset should be replaced - it is not the real time, but just a post-calculated sequence
+        add_dataset_time(self.data_grp, self.chunk_shape)
         self.data_grp.create_dataset(
             "current",
             (0,),
             dtype="u4",
             maxshape=(None,),
             chunks=self.chunk_shape,
-            compression=LogWriter.compression_algo,
+            compression=self.compression_algo,
         )
         self.data_grp["current"].attrs["unit"] = "A"
         self.data_grp["current"].attrs["description"] = "current [A] = value * gain + offset"
@@ -203,16 +208,7 @@ class LogWriter(object):
 
         # Create group for gpio data
         self.gpio_grp = self._h5file.create_group("gpio")
-        self.gpio_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
-        self.gpio_grp["time"].attrs["unit"] = f"ns"
-        self.gpio_grp["time"].attrs["description"] = "system time [ns]"
+        add_dataset_time(self.gpio_grp)
         self.gpio_grp.create_dataset(
             "value",
             (0,),
@@ -226,16 +222,7 @@ class LogWriter(object):
 
         # Create group for exception logs, entry consists of a timestamp, a message and a value
         self.xcpt_grp = self._h5file.create_group("exceptions")
-        self.xcpt_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
-        self.xcpt_grp["time"].attrs["unit"] = "ns"
-        self.xcpt_grp["time"].attrs["description"] = "system time [ns]"
+        add_dataset_time(self.xcpt_grp)
         self.xcpt_grp.create_dataset(
             "message",
             (0,),
@@ -248,17 +235,7 @@ class LogWriter(object):
 
         # UART-Logger
         self.uart_grp = self._h5file.create_group("uart")
-        self.uart_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
-        self.uart_grp["time"].attrs["unit"] = f"ns"
-        self.uart_grp["time"].attrs["description"] = "system time [ns]"
-
+        add_dataset_time(self.uart_grp)
         # Every log entry consists of a timestamp and a message
         self.uart_grp.create_dataset(
             "message",
@@ -271,14 +248,8 @@ class LogWriter(object):
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
-        self.sysutil_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
+        add_dataset_time(self.sysutil_grp)
+
         self.sysutil_grp["time"].attrs["unit"] = "ns"
         self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
         self.sysutil_grp.create_dataset("cpu", (0,), dtype="u1", maxshape=(None,), chunks=True, )
@@ -293,23 +264,11 @@ class LogWriter(object):
         self.sysutil_grp.create_dataset("net", (0, 2), dtype="u8", maxshape=(None, 2), chunks=True, )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
-        # initial sysutil-reading and delta-history
-        self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
-        self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
         self.log_sys_stats()
 
         # Create dmesg-Logger -> consists of a timestamp and a message
         self.dmesg_grp = self._h5file.create_group("dmesg")
-        self.dmesg_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
-        self.dmesg_grp["time"].attrs["unit"] = "ns"
-        self.dmesg_grp["time"].attrs["description"] = "system time [ns]"
+        add_dataset_time(self.dmesg_grp)
         self.dmesg_grp.create_dataset(
             "message",
             (0,),
@@ -320,16 +279,7 @@ class LogWriter(object):
 
         # Create timesync-Logger
         self.timesync_grp = self._h5file.create_group("timesync")
-        self.timesync_grp.create_dataset(
-            "time",
-            (0,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
-        self.timesync_grp["time"].attrs["unit"] = "ns"
-        self.timesync_grp["time"].attrs["description"] = "system time [ns]"
+        add_dataset_time(self.timesync_grp)
         self.timesync_grp.create_dataset("value", (0, 3), dtype="i8", maxshape=(None, 3), chunks=True)
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
@@ -439,7 +389,6 @@ class LogWriter(object):
             self.sysutil_nw_last = sysutil_nw_now
 
             # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
-            #logger.debug(f"sysLog took {round(time.time() * 10**3 - ts_now_ns / 10**6, 2)} ms")
 
     def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
         self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
@@ -597,11 +546,10 @@ class LogReader(object):
         Returns:
             Calibration data as CalibrationData object
         """
-        nested_dict = lambda: defaultdict(nested_dict)
         calib = CalibrationData.from_default()
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             cal_channel = cal_channel_harvest_dict[channel]
-            calib._data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
+            calib.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(calib)
 
 
@@ -613,4 +561,3 @@ def h5_structure_printer(file: h5py.File) -> NoReturn:
         for dataset in h5grp.keys():
             h5ds = h5grp.get(dataset)
             logger.debug(f"[H5File] Group [{group}], Dataset [{dataset}] - Chunks={h5ds.chunks}, compression={h5ds.compression}, ")
-

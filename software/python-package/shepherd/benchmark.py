@@ -5,8 +5,10 @@ from shepherd.cli import consoleHandler
 logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
+
 def generate_rec_data():
     print("None")
+
 
 @click.command()
 @click.option("--duration", "-d", type=float, default=180, help="Duration of recording in seconds")
