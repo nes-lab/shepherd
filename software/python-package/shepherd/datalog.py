@@ -33,7 +33,7 @@ from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
 from shepherd.shepherd_io import GPIOEdges
-from shepherd.commons import GPIO_LOG_BIT_POSITIONS
+from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,18 @@ ExceptionRecord = namedtuple(
 )
 
 monitors_end = threading.Event()
+
+
+h5_drivers = {h5py.h5fd.CORE: "CORE",
+              h5py.h5fd.FAMILY: "FAMILY",
+              h5py.h5fd.fileobj_driver: "fileobj_driver",
+              h5py.h5fd.LOG: "LOG",
+              h5py.h5fd.MULTI: "MULTI",
+              h5py.h5fd.SEC2: "SEC2",
+              h5py.h5fd.STDIO: "STDIO",
+              h5py.h5fd.WINDOWS: "WINDOWS",
+              }
+
 
 def unique_path(base_path: str, suffix: str):
     counter = 0
@@ -98,6 +110,7 @@ class LogWriter(object):
     ):
         if force_overwrite or not store_path.exists():
             self.store_path = store_path
+            logger.info(f"Storing data under '{str(self.store_path)}'")
         else:
             base_dir = store_path.resolve().parents[0]
             self.store_path = unique_path(
@@ -126,8 +139,6 @@ class LogWriter(object):
         logger.debug(f"Set log-writing for current:     {'enabled' if self.write_current else 'disabled'}")
         logger.debug(f"Set log-writing for gpio:        {'enabled' if self.write_gpio else 'disabled'}")
 
-
-
     def __enter__(self):
         """Initializes the structure of the HDF5 file
 
@@ -142,6 +153,11 @@ class LogWriter(object):
         """
         self._h5file = h5py.File(self.store_path, "w")
 
+        # show key parameters for h5-performance
+        settings = list(self._h5file.id.get_access_plist().get_cache())
+        driver = h5_drivers[self._h5file.id.get_access_plist().get_driver()]
+        logger.debug(f"H5Py: driver={driver}, cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
+
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
         self._h5file.attrs.__setitem__("mode", self.mode)
 
@@ -152,9 +168,10 @@ class LogWriter(object):
             (0,),
             dtype="u8",
             maxshape=(None,),
-            chunks=self.chunk_shape,  # This makes writing more efficient, see HDF5 docs
+            chunks=self.chunk_shape,
             compression=LogWriter.compression_algo,
-            # TODO: add filter-step, offset is static 10_000
+            # TODO: add filter-step, delta-offset is static 10_000 ns
+            # TODO: time-dataset should be replaced - it is not the real time, but just a post-calculated sequence
         )
         self.data_grp["time"].attrs["unit"] = "ns"
         self.data_grp["time"].attrs["description"] = "system time [ns]"
@@ -227,7 +244,7 @@ class LogWriter(object):
             chunks=True,
         )
         self.xcpt_grp.create_dataset("value", (0,), dtype="u4", maxshape=(None,), chunks=True)
-        self.gpio_grp["value"].attrs["unit"] = "n"
+        self.xcpt_grp["value"].attrs["unit"] = "n"
 
         # UART-Logger
         self.uart_grp = self._h5file.create_group("uart")
@@ -276,6 +293,10 @@ class LogWriter(object):
         self.sysutil_grp.create_dataset("net", (0, 2), dtype="u8", maxshape=(None, 2), chunks=True, )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
+        # initial sysutil-reading and delta-history
+        self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
+        self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
+        self.log_sys_stats()
 
         # Create dmesg-Logger -> consists of a timestamp and a message
         self.dmesg_grp = self._h5file.create_group("dmesg")
@@ -312,7 +333,7 @@ class LogWriter(object):
         self.timesync_grp.create_dataset("value", (0, 3), dtype="i8", maxshape=(None, 3), chunks=True)
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
-        h5_structure_printer(self._h5file)  # TODO: just for debug
+        # h5_structure_printer(self._h5file)  # TODO: just for debug
         return self
 
     def __exit__(self, *exc):
@@ -320,15 +341,16 @@ class LogWriter(object):
         monitors_end.set()
         time.sleep(1)  # TODO: should work propably without it
         if self.dmesg_mon_t is not None:
-            logger.info(f"[LogWriter] Terminate Dmesg-Monitor, entries = {self.dmesg_grp['time'].shape[0]}")
+            logger.info(f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)")
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
-            logger.info(f"[LogWriter] Terminate PTP4L-Monitor, entries = {self.timesync_grp['time'].shape[0]}")
+            logger.info(f"[LogWriter] terminate PTP4L-Monitor ({self.timesync_grp['time'].shape[0]} entries)")
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
-            logger.info(f"[LogWriter] Terminate UART-Monitor, entries = {self.uart_grp['time'].shape[0]}")
+            logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
-        logger.info(f"[LogWriter] flushing hdf5 file, entries iv_data = {self.data_grp['time'].shape[0]}, gpio = {self.gpio_grp['time'].shape[0]}")
+        runtime = round(self.data_grp['time'].shape[0] * SAMPLE_INTERVAL_US / 1e6, 1)
+        logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-entries)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
         self._h5file.close()
@@ -406,11 +428,15 @@ class LogWriter(object):
 
             # IO https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
             self.sysutil_grp["io"].resize((dataset_length + 1, 4))
-            self.sysutil_grp["io"][dataset_length, :] = psutil.disk_io_counters()[0:4]  # TODO: should be delta
+            sysutil_io_now = np.array(psutil.disk_io_counters()[0:4])
+            self.sysutil_grp["io"][dataset_length, :] = sysutil_io_now - self.sysutil_io_last
+            self.sysutil_io_last = sysutil_io_now
 
             # Network https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters
             self.sysutil_grp["net"].resize((dataset_length + 1, 2))
-            self.sysutil_grp["net"][dataset_length, :] = psutil.net_io_counters()[0:2]  # TODO: should be delta
+            sysutil_nw_now = np.array(psutil.net_io_counters()[0:2])
+            self.sysutil_grp["net"][dataset_length, :] = sysutil_nw_now - self.sysutil_nw_last
+            self.sysutil_nw_last = sysutil_nw_now
 
             # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
             #logger.debug(f"sysLog took {round(time.time() * 10**3 - ts_now_ns / 10**6, 2)} ms")
@@ -525,6 +551,8 @@ class LogReader(object):
         self._h5file = h5py.File(self.store_path, "r")
         self.ds_voltage = self._h5file["data"]["voltage"]
         self.ds_current = self._h5file["data"]["current"]
+        runtime = round(self.ds_voltage.shape[0] * SAMPLE_INTERVAL_US / 1e6, 1)
+        logger.info(f"Reading data from '{str(self.store_path)}', contains {runtime} s")
         return self
 
     def __exit__(self, *exc):
