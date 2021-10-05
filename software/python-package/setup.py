@@ -13,7 +13,7 @@ requirements = [
     "h5py",
     "psutil",
     "pyserial",
-    "yaml",
+    "pyyaml",
     "msgpack",
     "msgpack-numpy",
     "gevent",
