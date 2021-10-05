@@ -120,7 +120,7 @@ class LogWriter(object):
     ):
         if force_overwrite or not store_path.exists():
             self.store_path = store_path
-            logger.info(f"Storing data under '{str(self.store_path)}'")
+            logger.info(f"Storing data under '{self.store_path}'")
         else:
             base_dir = store_path.resolve().parents[0]
             self.store_path = unique_path(
@@ -555,9 +555,9 @@ class LogReader(object):
 
 def h5_structure_printer(file: h5py.File) -> NoReturn:
     # TODO: more recursive with levels, use hasattr(obj, "attribute")
-    for group in file.keys():
+    for group in file:
         h5grp = file.get(group)
         logger.debug(f"[H5File] Group [{group}] Items: {h5grp.items()}")
-        for dataset in h5grp.keys():
+        for dataset in h5grp:
             h5ds = h5grp.get(dataset)
             logger.debug(f"[H5File] Group [{group}], Dataset [{dataset}] - Chunks={h5ds.chunks}, compression={h5ds.compression}, ")

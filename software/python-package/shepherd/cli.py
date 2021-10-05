@@ -130,17 +130,17 @@ def run(command, parameters: Dict, verbose):
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
     logger.info(f"CLI did process run()")
     if command == "record":
-        if "output_path" in parameters.keys():
+        if "output_path" in parameters:
             parameters["output_path"] = Path(parameters["output_path"])
         run_record(**parameters)
     elif command == "emulate":
-        if ("output_path" in parameters.keys()) and (parameters["output_path"] is not None):
+        if ("output_path" in parameters) and (parameters["output_path"] is not None):
             parameters["output_path"] = Path(parameters["output_path"])
-        if "input_path" in parameters.keys():
+        if "input_path" in parameters:
             parameters["input_path"] = Path(parameters["input_path"])
         emu_translator = {"enable_io": "set_target_io_lvl_conv", "io_sel_target_a": "sel_target_for_io", "pwr_sel_target_a": "sel_target_for_pwr", "aux_voltage": "aux_target_voltage", "virtsource": "settings_virtsource"}
         for key, value in emu_translator.items():
-            if key in parameters.keys():
+            if key in parameters:
                 parameters[value] = parameters[key]
                 parameters.pop(key)
         run_emulate(**parameters)

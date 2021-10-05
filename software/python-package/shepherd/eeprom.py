@@ -88,8 +88,8 @@ class CapeData(object):
             yaml_dict = yaml.load(stream)
 
         data.update(yaml_dict)
-        for key in eeprom_format.keys():
-            if key not in data.keys():
+        for key in eeprom_format:
+            if key not in data:
                 raise KeyError(f"Missing { key } from yaml file")
 
         return cls(data)
@@ -99,17 +99,17 @@ class CapeData(object):
 
     def __repr__(self):
         print_dict = {}
-        for key in self.keys():
+        for key in self.data:
             if eeprom_format[key]["type"] in ["ascii", "str"]:
-                print_dict[key] = self[key]
+                print_dict[key] = self.data[key]
         return yaml.dump(print_dict, default_flow_style=False)
 
     def keys(self):
         return self.data.keys()
 
     def items(self):
-        for key in self.keys():
-            yield key, self[key]
+        for key in self.data:
+            yield key, self.data[key]
 
 
 class EEPROM(object):
@@ -183,7 +183,7 @@ class EEPROM(object):
         Raises:
             KeyError: If key is not a valid attribute
         """
-        if key not in eeprom_format.keys():
+        if key not in eeprom_format:
             raise KeyError(f"{ key } is not a valid EEPROM parameter")
         raw_data = self._read(
             eeprom_format[key]["offset"], eeprom_format[key]["size"]
@@ -208,7 +208,7 @@ class EEPROM(object):
             ValueError: If value does not meet specification of corresponding
                 attribute
         """
-        if key not in eeprom_format.keys():
+        if key not in eeprom_format:
             raise KeyError(f"{ key } is not a valid EEPROM parameter")
         if eeprom_format[key]["type"] == "ascii":
             if len(value) != eeprom_format[key]["size"]:
@@ -249,7 +249,7 @@ class EEPROM(object):
             CapeData object containing data extracted from EEPROM
         """
         data = {}
-        for key in eeprom_format.keys():
+        for key in eeprom_format:
             data[key] = self[key]
         return CapeData(data)
 

@@ -102,7 +102,6 @@ class CalibrationData(object):
             cal_dict[component] = {}
             for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
-
                 # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(calibration_default, cal_fn)(0)
                 gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)

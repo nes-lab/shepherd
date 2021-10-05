@@ -118,7 +118,7 @@ def test_write_capedata(eeprom_retained, data_example):
 @pytest.mark.hardware
 def test_read_capedata(eeprom_with_data, data_example):
     cape_data = eeprom_with_data.read_cape_data()
-    for key in data_example.keys():
+    for key in data_example:
         assert data_example[key] == cape_data[key]
 
 
