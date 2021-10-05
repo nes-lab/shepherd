@@ -44,10 +44,10 @@
 /* Definition for unused interrupts */
 #define HOST_UNUSED     255U
 
-#define SIZE_CARVEOUT	(RING_SIZE * sizeof(struct SampleBuffer))
+#define SIZE_CARVEOUT	(FIFO_BUFFER_SIZE * sizeof(struct SampleBuffer))
 
 // pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= 64 * (8 + 4 + 2*4*10000 + 4 + 8*16384 + 2*16384))];
+extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (8 + 4 + 2*4*10000 + 4 + 8*16384 + 2*16384))];
 
 #pragma DATA_SECTION(resourceTable, ".resource_table")
 #pragma RETAIN(resourceTable)

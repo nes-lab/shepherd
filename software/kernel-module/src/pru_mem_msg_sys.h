@@ -4,11 +4,9 @@
 #include "commons.h"
 #include <linux/mutex.h>
 
-#define RING_SIZE   (64u)
-
 struct RingBuffer
 {
-    struct ProtoMsg ring[RING_SIZE];
+    struct ProtoMsg ring[FIFO_BUFFER_SIZE];
     uint32_t start; // TODO: these can be smaller (like u8), at least in documentation
     uint32_t end;
     uint32_t active;

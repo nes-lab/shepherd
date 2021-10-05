@@ -11,7 +11,7 @@ corresponding implementation in `software/firmware/include/commons.h`
 :license: MIT, see LICENSE for more details.
 """
 MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14
-FIFO_BUFFER_SIZE = 64
+FIFO_BUFFER_SIZE = 107   # keep in sync with kernel-module and pru-firmware
 
 ADC_SAMPLES_PER_BUFFER = 10_000
 BUFFER_PERIOD_NS = 100_000_000

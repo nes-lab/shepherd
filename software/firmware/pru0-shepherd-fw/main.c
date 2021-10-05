@@ -367,7 +367,7 @@ void main(void)
 	shared_memory->mem_base_addr = resourceTable.shared_mem.pa;
 	shared_memory->mem_size = resourceTable.shared_mem.len;
 
-	shared_memory->n_buffers = RING_SIZE;
+	shared_memory->n_buffers = FIFO_BUFFER_SIZE;
 	shared_memory->samples_per_buffer = ADC_SAMPLES_PER_BUFFER;
 	shared_memory->buffer_period_ns = BUFFER_PERIOD_NS;
 

@@ -2,12 +2,12 @@
 #define RINGBUFFER_H_
 
 #include "stdint_fast.h"
+#include "commons.h"
 
-#define RING_SIZE   (64U)
 
 struct RingBuffer
 {
-	uint8_t ring[RING_SIZE];
+	uint8_t ring[FIFO_BUFFER_SIZE];
 	uint32_t start; // TODO: these can be smaller, at least in documentation
 	uint32_t end;
 	uint32_t active;

@@ -5,6 +5,11 @@
 // NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**
+ * Length of buffer, must be kept in sync with "commons" in pyPackage, kernel-module, pru-firmware
+ */
+#define FIFO_BUFFER_SIZE (107U)
+
+/**
  * These are the system events that we use to signal events to the PRUs.
  * See the AM335x TRM Table 4-22 for a list of all events
  */
