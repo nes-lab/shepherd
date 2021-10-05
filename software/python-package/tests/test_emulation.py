@@ -7,7 +7,7 @@ import yaml
 
 from shepherd.shepherd_io import DataBuffer, VirtualSourceData
 
-from shepherd import LogWriter, ShepherdDebug
+from shepherd import LogWriter, ShepherdDebug, FIFO_BUFFER_SIZE
 from shepherd import LogReader
 from shepherd import Emulator
 from shepherd import emulate
@@ -64,7 +64,7 @@ def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
     emu = Emulator(
         calibration_recording=log_reader.get_calibration_data(),
         calibration_emulation=CalibrationData.from_default(),
-        initial_buffers=log_reader.read_buffers(end=64),
+        initial_buffers=log_reader.read_buffers(end=FIFO_BUFFER_SIZE),
         settings_virtsource=vs_settings,
     )
     request.addfinalizer(emu.__del__)
@@ -78,12 +78,12 @@ def test_emulation(log_writer, log_reader, emulator):
 
     emulator.start(wait_blocking=False)
     emulator.wait_for_start(15)
-    for hrvst_buf in log_reader.read_buffers(start=64):
+    for hrvst_buf in log_reader.read_buffers(start=FIFO_BUFFER_SIZE):
         idx, emu_buf = emulator.get_buffer(timeout=1)
         log_writer.write_buffer(emu_buf)
         emulator.return_buffer(idx, hrvst_buf)
 
-    for _ in range(64):
+    for _ in range(FIFO_BUFFER_SIZE):
         idx, emu_buf = emulator.get_buffer(timeout=1)
         log_writer.write_buffer(emu_buf)
 

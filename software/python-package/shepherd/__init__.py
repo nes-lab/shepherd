@@ -23,6 +23,7 @@ import numpy
 import invoke
 import signal
 
+from shepherd.commons import FIFO_BUFFER_SIZE
 from shepherd.shepherd_io import ShepherdIO
 from shepherd.virtual_source_data import VirtualSourceData
 from shepherd.shepherd_io import ShepherdIOException
@@ -546,7 +547,7 @@ def record(
                 idx, hrv_buf = recorder.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
                 logger.error(
-                    f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
+                    f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
                 )
                 err_rec = ExceptionRecord(
                     int(time.time() * 1e9), str(e), e.value
@@ -672,7 +673,7 @@ def emulate(
 
         emu = Emulator(
             shepherd_mode="emulation",
-            initial_buffers=log_reader.read_buffers(end=64),
+            initial_buffers=log_reader.read_buffers(end=FIFO_BUFFER_SIZE),
             calibration_recording=log_reader.get_calibration_data(),
             calibration_emulation=calib,
             set_target_io_lvl_conv=set_target_io_lvl_conv,
@@ -702,12 +703,12 @@ def emulate(
         else:
             ts_end = time.time() + duration
 
-        for hrvst_buf in log_reader.read_buffers(start=64):
+        for hrvst_buf in log_reader.read_buffers(start=FIFO_BUFFER_SIZE):
             try:
                 idx, emu_buf = emu.get_buffer(timeout=1, verbose=verbose)
             except ShepherdIOException as e:
                 logger.error(
-                    f"ShepherdIOException(ID={e.id}, val={e.value}): {str(e)}"
+                    f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
                 )
 
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
@@ -732,7 +733,7 @@ def emulate(
                     log_writer.write_buffer(emu_buf)
             except ShepherdIOException as e:
                 # We're done when the PRU has processed all emulation data buffers
-                if e.id == commons.MSG_DEP_ERR_NOFREEBUF:
+                if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
                     break
                 else:
                     if not warn_only:
