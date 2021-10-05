@@ -12,7 +12,7 @@ parameters:
     converter_base: BQ25570
     V_output_mV: 3300
   force_overwrite: true
-  no_calib: true
+  default_cal: False
   enable_io: true # regarding io level translators
   io_sel_target_a: true
   pwr_sel_target_a: true
@@ -21,4 +21,4 @@ parameters:
   skip_log_voltage: false
   skip_log_current: false
   skip_log_gpio: false
-verbose: 3
+verbose: 2
