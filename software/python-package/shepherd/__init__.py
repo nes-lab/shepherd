@@ -282,7 +282,7 @@ class ShepherdDebug(ShepherdIO):
         message = channels | value
         super()._send_msg(commons.MSG_DBG_DAC, message)
 
-    def get_buffer(self, timeout=None):
+    def get_buffer(self, timeout: float = None, verbose: bool = False):
         raise NotImplementedError("Method not implemented for debugging mode")
 
     def dbg_fn_test(self, factor: int, mode: int) -> int:
