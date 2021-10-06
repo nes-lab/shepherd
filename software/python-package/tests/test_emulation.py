@@ -79,16 +79,16 @@ def test_emulation(log_writer, log_reader, emulator):
     emulator.start(wait_blocking=False)
     emulator.wait_for_start(15)
     for hrvst_buf in log_reader.read_buffers(start=FIFO_BUFFER_SIZE):
-        idx, emu_buf = emulator.get_buffer(timeout=1)
+        idx, emu_buf = emulator.get_buffer()
         log_writer.write_buffer(emu_buf)
         emulator.return_buffer(idx, hrvst_buf)
 
     for _ in range(FIFO_BUFFER_SIZE):
-        idx, emu_buf = emulator.get_buffer(timeout=1)
+        idx, emu_buf = emulator.get_buffer()
         log_writer.write_buffer(emu_buf)
 
     with pytest.raises(ShepherdIOException):
-        idx, emu_buf = emulator.get_buffer(timeout=1)
+        idx, emu_buf = emulator.get_buffer()
 
 
 @pytest.mark.hardware

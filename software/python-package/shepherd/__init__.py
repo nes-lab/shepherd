@@ -248,7 +248,7 @@ class ShepherdDebug(ShepherdIO):
 
         super()._send_msg(commons.MSG_DBG_ADC, channel_no)
 
-        msg_type, value = self._get_msg(3.0)
+        msg_type, value = self._get_msg(30)
         if msg_type != commons.MSG_DBG_ADC:
             raise ShepherdIOException(
                     f"Expected msg type { hex(commons.MSG_DBG_ADC) }, "
@@ -286,7 +286,7 @@ class ShepherdDebug(ShepherdIO):
         message = channels | value
         super()._send_msg(commons.MSG_DBG_DAC, message)
 
-    def get_buffer(self, timeout: float = None, verbose: bool = False):
+    def get_buffer(self, timeout_n: float = None, verbose: bool = False):
         raise NotImplementedError("Method not implemented for debugging mode")
 
     def dbg_fn_test(self, factor: int, mode: int) -> int:
@@ -457,7 +457,7 @@ class ShepherdDebug(ShepherdIO):
         super().start(wait_blocking=True)
         time.sleep(0.1)
         for i in range(length_n_buffers):  # get Data
-            idx, emu_buf = super().get_buffer(timeout=1)
+            idx, emu_buf = super().get_buffer()
             base_array = numpy.hstack((base_array, emu_buf.current))
         super().reinitialize_prus()
         return msgpack.packb(base_array, default=msgpack_numpy.encode)  # zeroRPC / msgpack can not handle numpy-data without this
@@ -656,7 +656,7 @@ def emulate(
     if input_path is None:
         raise ValueError("No Input-File configured for emulation")
     if not input_path.exists():
-        raise ValueError("Input-File does not exist")
+        raise ValueError(f"Input-File does not exist ({input_path})")
 
     log_reader = LogReader(input_path, 10_000)
     verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
@@ -664,7 +664,7 @@ def emulate(
     with ExitStack() as stack:
         if output_path is not None:
             stack.enter_context(log_writer)
-            log_writer.start_monitors(uart_baudrate)
+            # log_writer.start_monitors(uart_baudrate)
 
         stack.enter_context(log_reader)
 
@@ -702,7 +702,7 @@ def emulate(
 
         for hrvst_buf in log_reader.read_buffers(start=FIFO_BUFFER_SIZE):
             try:
-                idx, emu_buf = emu.get_buffer(timeout=1, verbose=verbose)
+                idx, emu_buf = emu.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
                 logger.error(
                     f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
@@ -725,7 +725,7 @@ def emulate(
         # Read all remaining buffers from PRU
         while True:
             try:
-                idx, emu_buf = emu.get_buffer(timeout=1, verbose=verbose)
+                idx, emu_buf = emu.get_buffer(verbose=verbose)
                 if output_path is not None:
                     log_writer.write_buffer(emu_buf)
             except ShepherdIOException as e:

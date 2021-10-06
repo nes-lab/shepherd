@@ -260,8 +260,9 @@ class ShepherdIO(object):
     Emulator (see __init__.py).
     """
 
-    # This is part of the singleton implementation
+    # This _instance-element is part of the singleton implementation
     _instance = None
+    _buffer_period = 0.1  # placeholder
 
     def __new__(cls, *args, **kwds):
         """Implements singleton class."""
@@ -320,7 +321,8 @@ class ShepherdIO(object):
             logger.debug(f"Number of buffers: \t{ self.n_buffers }")
 
             self.buffer_period_ns = sysfs_interface.get_buffer_period_ns()
-            logger.debug(f"Buffer period: \t\t{ self.buffer_period_ns } ns")
+            self._buffer_period = self.buffer_period_ns / 1e9
+            logger.debug(f"Buffer period: \t\t{ self._buffer_period } s")
 
             self.shared_mem = SharedMem(
                 mem_address, mem_size, self.n_buffers, self.samples_per_buffer
@@ -350,20 +352,18 @@ class ShepherdIO(object):
         """
         sysfs_interface.write_pru_msg(msg_type, values)
 
-    @staticmethod
-    def _get_msg(timeout: float = 0.5):
+    def _get_msg(self, timeout_n: int = 5):
         """Tries to retrieve formatted message from PRU0.
 
         Args:
-            timeout (float): Maximum number of seconds to wait for a message
+            timeout_n (int): Maximum number of buffer_periods to wait for a message
                 before raising timeout exception
         """
-        ts_end = time.time() + timeout
-        while time.time() < ts_end:
+        for _ in range(timeout_n):
             try:
                 return sysfs_interface.read_pru_msg()
             except SysfsInterfaceException:
-                time.sleep(0.1)
+                time.sleep(self._buffer_period)
                 continue
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
 
@@ -577,7 +577,7 @@ class ShepherdIO(object):
         """
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
-    def get_buffer(self, timeout: float = 1.0, verbose: bool = False):
+    def get_buffer(self, timeout_n: int = 10, verbose: bool = False):
         """Reads a data buffer from shared memory.
 
         Polls the msg-channel for a message from PRU0 and, if the message
@@ -585,7 +585,7 @@ class ShepherdIO(object):
         corresponding memory location as DataBuffer.
 
         Args:
-            :param timeout: (float) Time in seconds that should be waited for an
+            :param timeout_n: (int) Time in buffer_periods that should be waited for an
                 incoming msg
             :param verbose: (bool) more debug output
         Returns:
@@ -595,7 +595,7 @@ class ShepherdIO(object):
                 specified timeout
         """
         while True:
-            msg_type, value = self._get_msg(timeout)
+            msg_type, value = self._get_msg(timeout_n)
             value = value[0]
             # logger.debug(f"received msg type {msg_type}")
 

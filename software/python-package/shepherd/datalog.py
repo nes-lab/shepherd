@@ -528,7 +528,7 @@ class LogReader(object):
             if verbose:
                 ts_start = time.time()
             idx_start = i * self.samples_per_buffer
-            idx_end = (i + 1) * self.samples_per_buffer
+            idx_end = idx_start + self.samples_per_buffer
             db = DataBuffer(
                 voltage=self.ds_voltage[idx_start:idx_end],
                 current=self.ds_current[idx_start:idx_end],

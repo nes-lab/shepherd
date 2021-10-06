@@ -48,12 +48,10 @@ def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
 
         if time.time() - ts_start > timeout:
             raise SysfsInterfaceException(
-                (
                     f"timed out waiting for state { wanted_state } - "
                     f"state is { current_state }"
-                )
             )
-            # TODO: does it really need an exception?
+
         time.sleep(0.1)
 
 
