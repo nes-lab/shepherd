@@ -307,7 +307,8 @@ class LogWriter(object):
     def __exit__(self, *exc):
         global monitors_end
         monitors_end.set()
-
+        time.sleep(1)  # TODO: should work propably without it
+        
         # meantime: trim over-provisioned parts
         self.data_grp["time"].resize((self.data_pos if self._write_current or self._write_voltage else 0,))
         self.data_grp["voltage"].resize((self.data_pos if self._write_voltage else 0,))
@@ -326,9 +327,9 @@ class LogWriter(object):
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
         self.xcpt_grp["message"].resize((self.xcpt_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
-        self.timesync_grp["message"].resize((self.timesync_pos,))
+        self.timesync_grp["value"].resize((self.timesync_pos,))
 
-        time.sleep(1)  # TODO: should work propably without it
+
         if self.dmesg_mon_t is not None:
             logger.info(f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)")
             self.dmesg_mon_t = None
