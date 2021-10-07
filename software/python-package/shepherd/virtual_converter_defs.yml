@@ -1,0 +1,58 @@
+virtconverters:
+  # info:
+  # - compendium of all parameters & description
+  # - base for neutral fallback values if provided yml is sparse
+  # - -> it is encouraged to omit redundant parameters
+  # TODO: data-source documents if ivcurve was measured and stores window size
+
+  neutral:
+    # algorithm is missing deliberately
+    window_size: 250
+    voltage_mV: 2500
+    voltage_min_mV: 0
+    voltage_max_mV: 5000
+    setpoint_n: 0.70
+    interval_ms: 100
+    duration_ms: 0.1
+
+  cv: # constant voltage
+    algorithm: cv
+    voltage_mV: 2000
+
+  ivcurve: # triangle-wave (zig zag)
+    algorithm: ivcurve
+    window_size: 250
+    voltage_min_mV: 0
+    voltage_max_mV: 5000
+    # todo: also switch for sawtooth as alternative?
+
+  mppt_voc: # open circuit voltage for solar
+    algorithm: mppt_voc
+    setpoint_n: 0.76
+    interval_ms: 100     # between measurements
+    duration_ms: 0.1     # of measurement
+
+  mppt_bq: # mppt of TI BQ-Converters for solar
+    algorithm: mppt_voc
+    setpoint_n: 0.76
+    interval_ms: 16000  # between measurements
+    duration_ms: 256    # of measurement
+
+  mppt_bqt: # mppt of TI BQ-Converters for thermoelectric
+    algorithm: mppt_voc
+    setpoint_n: 0.50
+    interval_ms: 16000  # between measurements
+    duration_ms: 256    # of measurement
+
+  mppt_po: # perturbe & observe
+    algorithm: mppt_po
+    voltage_min_mV: 0
+    voltage_max_mV: 5000
+    voltage_step_mV: 20
+    interval_ms: 100    # between steps
+
+  mppt_opt: # power-optimum in sliding window of iv-curves
+    algorithm: mppt_opt
+    window_size: 250 # for iv-curves
+    voltage_min_mV: 0
+    voltage_max_mV: 5000
