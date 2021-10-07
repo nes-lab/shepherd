@@ -26,7 +26,7 @@ class VirtualSource(object):
             self.cal = cal_setting
 
         # NOTE:
-        #  - yaml is based on nA, mV, ms, uF
+        #  - yaml is based on si-units like nA, mV, ms, uF
         #  - c-code and py-copy is using nA, uV, ns, nF, fW
         vs_settings = VirtualSourceData(vs_settings)
         values = vs_settings.export_for_sysfs()

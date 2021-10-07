@@ -1,4 +1,9 @@
 virtsources:
+  # info:
+  # - compendium of all parameters & description
+  # - base for neutral fallback values if provided yml is sparse
+  # - -> it is encouraged to omit redundant parameters
+
   neutral:
     # General Config
     #converter_base: neutral  # to complete undefined vars

@@ -35,7 +35,7 @@ class VirtualSourceData(object):
     - internal settings are derived from existing values (PRU has no FPU, so it is done here)
     - settings can be exported in required format
     """
-    vss: dict = None
+    vss: dict = {}
 
     def __init__(self, vs_setting: Union[dict, str, Path] = None, log_intermediate_voltage: bool = False):
         """ Container for VS Settings, Data will be checked and completed
@@ -43,8 +43,9 @@ class VirtualSourceData(object):
         Args:
             vs_setting: if omitted, the data is generated from default values
         """
-        vs_defs = Path(__file__).parent.resolve()/"virtual_source_defs.yml"
-        with open(vs_defs, "r") as def_data:
+        def_file = "virtual_source_defs.yml"
+        def_path = Path(__file__).parent.resolve()/def_file
+        with open(def_path, "r") as def_data:
             self.vs_configs = yaml.safe_load(def_data)["virtsources"]
             self.vss_base = self.vs_configs["neutral"]
         self.vs_inheritance = []
@@ -59,7 +60,7 @@ class VirtualSourceData(object):
                 self.vs_inheritance.append(vs_setting)
                 vs_setting = self.vs_configs[vs_setting]
             else:
-                raise NotImplementedError(f"VirtualSource was set to '{vs_setting}', but definition missing in 'virtual_source_defs.yml'")
+                raise NotImplementedError(f"VirtualSource was set to '{vs_setting}', but definition missing in '{def_file}'")
 
         if vs_setting is None:
             self.vss = {}
@@ -76,7 +77,7 @@ class VirtualSourceData(object):
 
         self.check_and_complete()
 
-    def get_as_dict(self) -> dict:
+    def get_as_dict(self) -> dict:  # TODO: remove?
         """ offers a checked and completed version of the settings
 
         Returns:
@@ -84,7 +85,7 @@ class VirtualSourceData(object):
         """
         return self.vss
 
-    def get_as_list(self) -> list:
+    def get_as_list(self) -> list:  # TODO: remove?
         """ multi-level dict is flattened, good for testing
 
         Returns:
