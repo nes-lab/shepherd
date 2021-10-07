@@ -31,7 +31,7 @@ from shepherd.calibration import cal_channel_emulation_dict
 from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
-from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US
+from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US, MAX_GPIO_EVT_PER_BUFFER, ADC_SAMPLES_PER_BUFFER
 
 logger = logging.getLogger(__name__)
 
@@ -66,10 +66,10 @@ def unique_path(base_path: Union[str, Path], suffix: str):
         counter += 1
 
 
-def add_dataset_time(grp: h5py.Group, chunks: Union[bool, tuple] = True) -> NoReturn:
+def add_dataset_time(grp: h5py.Group, length: int, chunks: Union[bool, tuple] = True) -> NoReturn:
     grp.create_dataset(
         "time",
-        (0,),
+        (length,),
         dtype="u8",
         maxshape=(None,),
         chunks=chunks,
@@ -142,16 +142,35 @@ class LogWriter(object):
         self.chunk_shape = (samples_per_buffer,)
         self.sampling_interval = int(buffer_period_ns // samples_per_buffer)
         self.buffer_timeseries = self.sampling_interval * np.arange(samples_per_buffer).astype("u8")
-        self.write_voltage = not skip_voltage
-        self.write_current = not skip_current
-        self.write_gpio = (not skip_gpio) and ("emulat" in mode)
-        logger.debug(f"Set log-writing for voltage:     {'enabled' if self.write_voltage else 'disabled'}")
-        logger.debug(f"Set log-writing for current:     {'enabled' if self.write_current else 'disabled'}")
-        logger.debug(f"Set log-writing for gpio:        {'enabled' if self.write_gpio else 'disabled'}")
+        self._write_voltage = not skip_voltage
+        self._write_current = not skip_current
+        self._write_gpio = (not skip_gpio) and ("emulat" in mode)
+        logger.debug(f"Set log-writing for voltage:     {'enabled' if self._write_voltage else 'disabled'}")
+        logger.debug(f"Set log-writing for current:     {'enabled' if self._write_current else 'disabled'}")
+        logger.debug(f"Set log-writing for gpio:        {'enabled' if self._write_gpio else 'disabled'}")
 
         # initial sysutil-reading and delta-history
         self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
         self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
+        # todo: test-implementation, inc by chunk-size where needed! gpio chunks can be max_gpio...
+        # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
+        # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
+        inc_duration = int(100)
+        inc_length = int(inc_duration * 10**6 // SAMPLE_INTERVAL_US)
+        self.data_pos = 0
+        self.data_inc = inc_length
+        self.gpio_pos = 0
+        self.gpio_inc = MAX_GPIO_EVT_PER_BUFFER
+        self.sysutil_pos = 0
+        self.sysutil_inc = inc_duration + 20
+        self.uart_pos = 0
+        self.uart_inc = 100
+        self.dmesg_pos = 0
+        self.dmesg_inc = 100
+        self.xcpt_pos = 0
+        self.xcpt_inc = 100
+        self.timesync_pos = 0
+        self.timesync_inc = inc_duration + 20
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -179,10 +198,10 @@ class LogWriter(object):
         self.data_grp = self._h5file.create_group("data")
         # TODO: add filter-step, delta-offset is static 10_000 ns
         # TODO: time-dataset should be replaced - it is not the real time, but just a post-calculated sequence
-        add_dataset_time(self.data_grp, self.chunk_shape)
+        add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(
             "current",
-            (0,),
+            (self.data_inc,),
             dtype="u4",
             maxshape=(None,),
             chunks=self.chunk_shape,
@@ -192,7 +211,7 @@ class LogWriter(object):
         self.data_grp["current"].attrs["description"] = "current [A] = value * gain + offset"
         self.data_grp.create_dataset(
             "voltage",
-            (0,),
+            (self.data_inc,),
             dtype="u4",
             maxshape=(None,),
             chunks=self.chunk_shape,
@@ -208,10 +227,10 @@ class LogWriter(object):
 
         # Create group for gpio data
         self.gpio_grp = self._h5file.create_group("gpio")
-        add_dataset_time(self.gpio_grp)
+        add_dataset_time(self.gpio_grp, self.gpio_inc)
         self.gpio_grp.create_dataset(
             "value",
-            (0,),
+            (self.gpio_inc,),
             dtype="u2",
             maxshape=(None,),
             chunks=True,
@@ -222,10 +241,10 @@ class LogWriter(object):
 
         # Create group for exception logs, entry consists of a timestamp, a message and a value
         self.xcpt_grp = self._h5file.create_group("exceptions")
-        add_dataset_time(self.xcpt_grp)
+        add_dataset_time(self.xcpt_grp, self.xcpt_inc)
         self.xcpt_grp.create_dataset(
             "message",
-            (0,),
+            (self.xcpt_inc,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=True,
@@ -235,11 +254,11 @@ class LogWriter(object):
 
         # UART-Logger
         self.uart_grp = self._h5file.create_group("uart")
-        add_dataset_time(self.uart_grp)
+        add_dataset_time(self.uart_grp, self.uart_inc)
         # Every log entry consists of a timestamp and a message
         self.uart_grp.create_dataset(
             "message",
-            (0,),
+            (self.uart_inc,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
             chunks=True,
@@ -248,30 +267,29 @@ class LogWriter(object):
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
-        add_dataset_time(self.sysutil_grp)
-
+        add_dataset_time(self.sysutil_grp, self.sysutil_inc)
         self.sysutil_grp["time"].attrs["unit"] = "ns"
         self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
-        self.sysutil_grp.create_dataset("cpu", (0,), dtype="u1", maxshape=(None,), chunks=True, )
+        self.sysutil_grp.create_dataset("cpu", (self.sysutil_inc,), dtype="u1", maxshape=(None,), chunks=True, )
         self.sysutil_grp["cpu"].attrs["unit"] = "%"
         self.sysutil_grp["cpu"].attrs["description"] = "cpu_util [%]"
-        self.sysutil_grp.create_dataset("ram", (0, 2), dtype="u1", maxshape=(None, 2), chunks=True, )
+        self.sysutil_grp.create_dataset("ram", (self.sysutil_inc, 2), dtype="u1", maxshape=(None, 2), chunks=True, )
         self.sysutil_grp["ram"].attrs["unit"] = "%"
         self.sysutil_grp["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
-        self.sysutil_grp.create_dataset("io", (0, 4), dtype="u8", maxshape=(None, 4), chunks=True, )
+        self.sysutil_grp.create_dataset("io", (self.sysutil_inc, 4), dtype="u8", maxshape=(None, 4), chunks=True, )
         self.sysutil_grp["io"].attrs["unit"] = "n"
         self.sysutil_grp["io"].attrs["description"] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
-        self.sysutil_grp.create_dataset("net", (0, 2), dtype="u8", maxshape=(None, 2), chunks=True, )
+        self.sysutil_grp.create_dataset("net", (self.sysutil_inc, 2), dtype="u8", maxshape=(None, 2), chunks=True, )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
         self.log_sys_stats()
 
         # Create dmesg-Logger -> consists of a timestamp and a message
         self.dmesg_grp = self._h5file.create_group("dmesg")
-        add_dataset_time(self.dmesg_grp)
+        add_dataset_time(self.dmesg_grp, self.dmesg_inc)
         self.dmesg_grp.create_dataset(
             "message",
-            (0,),
+            (self.dmesg_inc,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=True,
@@ -279,8 +297,8 @@ class LogWriter(object):
 
         # Create timesync-Logger
         self.timesync_grp = self._h5file.create_group("timesync")
-        add_dataset_time(self.timesync_grp)
-        self.timesync_grp.create_dataset("value", (0, 3), dtype="i8", maxshape=(None, 3), chunks=True)
+        add_dataset_time(self.timesync_grp, self.timesync_inc)
+        self.timesync_grp.create_dataset("value", (self.timesync_inc, 3), dtype="i8", maxshape=(None, 3), chunks=True)
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
         # h5_structure_printer(self._h5file)  # TODO: just for debug
@@ -289,6 +307,27 @@ class LogWriter(object):
     def __exit__(self, *exc):
         global monitors_end
         monitors_end.set()
+
+        # meantime: trim over-provisioned parts
+        self.data_grp["time"].resize((self.data_pos if self._write_current or self._write_voltage else 0,))
+        self.data_grp["voltage"].resize((self.data_pos if self._write_voltage else 0,))
+        self.data_grp["current"].resize((self.data_pos if self._write_current else 0,))
+        self.gpio_grp["time"].resize((self.gpio_pos if self._write_gpio else 0,))
+        self.gpio_grp["value"].resize((self.gpio_pos if self._write_gpio else 0,))
+        self.sysutil_grp["time"].resize((self.sysutil_pos,))
+        self.sysutil_grp["cpu"].resize((self.sysutil_pos,))
+        self.sysutil_grp["ram"].resize((self.sysutil_pos, 2))
+        self.sysutil_grp["io"].resize((self.sysutil_pos, 4))
+        self.sysutil_grp["net"].resize((self.sysutil_pos, 2))
+        self.uart_grp["time"].resize((self.uart_pos,))
+        self.uart_grp["message"].resize((self.uart_pos,))
+        self.dmesg_grp["time"].resize((self.dmesg_pos,))
+        self.dmesg_grp["message"].resize((self.dmesg_pos,))
+        self.xcpt_grp["time"].resize((self.xcpt_pos,))
+        self.xcpt_grp["message"].resize((self.xcpt_pos,))
+        self.timesync_grp["time"].resize((self.timesync_pos,))
+        self.timesync_grp["message"].resize((self.timesync_pos,))
+
         time.sleep(1)  # TODO: should work propably without it
         if self.dmesg_mon_t is not None:
             logger.info(f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)")
@@ -313,30 +352,37 @@ class LogWriter(object):
         """
 
         # First, we have to resize the corresponding datasets
-        old_set_length = self.data_grp["time"].shape[0]
-        new_set_length = old_set_length + len(buffer)
+        data_end_pos = self.data_pos + len(buffer)
+        data_length = self.data_grp["time"].shape[0]
+        if data_end_pos >= data_length:
+            data_length += self.data_inc
+            self.data_grp["time"].resize((data_length,))
+            self.data_grp["voltage"].resize((data_length if self._write_voltage else 0,))
+            self.data_grp["current"].resize((data_length if self._write_current else 0,))
 
-        self.data_grp["time"].resize((new_set_length,))
-        self.data_grp["time"][old_set_length:] = (
-            self.buffer_timeseries + buffer.timestamp_ns
-        )
+        if self._write_voltage:
+            self.data_grp["voltage"][self.data_pos:data_end_pos] = buffer.voltage
 
-        if self.write_voltage:
-            self.data_grp["voltage"].resize((new_set_length,))
-            self.data_grp["voltage"][old_set_length:] = buffer.voltage
+        if self._write_current:
+            self.data_grp["current"][self.data_pos:data_end_pos] = buffer.current
 
-        if self.write_current:
-            self.data_grp["current"].resize((new_set_length,))
-            self.data_grp["current"][old_set_length:] = buffer.current
+        if self._write_voltage or self._write_current:
+            self.data_grp["time"][self.data_pos:data_end_pos] = (
+                self.buffer_timeseries + buffer.timestamp_ns
+            )
+            self.data_pos = data_end_pos
 
-        if self.write_gpio and (len(buffer.gpio_edges) > 0):
-            gpio_old_set_length = self.gpio_grp["time"].shape[0]
-            gpio_new_set_length = gpio_old_set_length + len(buffer.gpio_edges)
-
-            self.gpio_grp["time"].resize((gpio_new_set_length,))
-            self.gpio_grp["value"].resize((gpio_new_set_length,))
-            self.gpio_grp["time"][gpio_old_set_length:] = buffer.gpio_edges.timestamps_ns
-            self.gpio_grp["value"][gpio_old_set_length:] = buffer.gpio_edges.values
+        len_edges = len(buffer.gpio_edges)
+        if self._write_gpio and (len_edges > 0):
+            gpio_new_pos = self.gpio_pos + len_edges
+            data_length = self.gpio_grp["time"].shape[0]
+            if gpio_new_pos >= data_length:
+                data_length += self.gpio_inc
+                self.gpio_grp["time"].resize((data_length,))
+                self.gpio_grp["value"].resize((data_length,))
+            self.gpio_grp["time"][self.gpio_pos:gpio_new_pos] = buffer.gpio_edges.timestamps_ns
+            self.gpio_grp["value"][self.gpio_pos:gpio_new_pos] = buffer.gpio_edges.values
+            self.gpio_pos = gpio_new_pos
 
         self.log_sys_stats()
 
@@ -347,47 +393,43 @@ class LogWriter(object):
         Args:
             exception (ExceptionRecord): The exception to be logged
         """
-        dataset_length = self.xcpt_grp["time"].shape[0]
-        self.xcpt_grp["time"].resize((dataset_length + 1,))
-        self.xcpt_grp["time"][dataset_length] = exception.timestamp
-        self.xcpt_grp["value"].resize((dataset_length + 1,))
-        self.xcpt_grp["value"][dataset_length] = exception.value
-        self.xcpt_grp["message"].resize((dataset_length + 1,))
-        self.xcpt_grp["message"][dataset_length] = exception.message
+        if self.xcpt_pos >= self.xcpt_grp["time"].shape[0]:
+            data_length = self.xcpt_grp["time"].shape[0] + self.xcpt_inc
+            self.xcpt_grp["time"].resize((data_length,))
+            self.xcpt_grp["value"].resize((data_length,))
+            self.xcpt_grp["message"].resize((data_length,))
+        self.xcpt_grp["time"][self.xcpt_pos] = exception.timestamp
+        self.xcpt_grp["value"][self.xcpt_pos] = exception.value
+        self.xcpt_grp["message"][self.xcpt_pos] = exception.message
+        self.xcpt_pos += 1
 
     def log_sys_stats(self) -> NoReturn:
         """ captures state of system in a fixed intervall
-            takes ~ 58 ms on BBG
+            https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
         ts_now_ns = int(time.time() * (10 ** 9))
         if ts_now_ns >= (self.sys_log_last_ns + self.sys_log_intervall_ns):
+            data_length = self.sysutil_grp["time"].shape[0]
+            if self.sysutil_pos >= data_length:
+                data_length += self.sysutil_inc
+                self.sysutil_grp["time"].resize((data_length,))
+                self.sysutil_grp["cpu"].resize((data_length,))
+                self.sysutil_grp["ram"].resize((data_length, 2))
+                self.sysutil_grp["io"].resize((data_length, 4))
+                self.sysutil_grp["net"].resize((data_length, 2))
             self.sys_log_last_ns = ts_now_ns
-            dataset_length = self.sysutil_grp["time"].shape[0]
-            self.sysutil_grp["time"].resize((dataset_length + 1,))
-            self.sysutil_grp["time"][dataset_length] = ts_now_ns
-
-            # CPU https://psutil.readthedocs.io/en/latest/#cpu
-            self.sysutil_grp["cpu"].resize((dataset_length + 1,))
-            self.sysutil_grp["cpu"][dataset_length] = int(round(psutil.cpu_percent(0)))
-
-            # Memory https://psutil.readthedocs.io/en/latest/#memory
-            self.sysutil_grp["ram"].resize((dataset_length + 1, 2))
+            self.sysutil_grp["time"][self.sysutil_pos] = ts_now_ns
+            self.sysutil_grp["cpu"][self.sysutil_pos] = int(round(psutil.cpu_percent(0)))
             mem_stat = psutil.virtual_memory()[0:3]
-            self.sysutil_grp["ram"][dataset_length, 0:2] = [int(100 * mem_stat[1] / mem_stat[0]), int(mem_stat[2])]
-
-            # IO https://psutil.readthedocs.io/en/latest/#psutil.disk_io_counters
-            self.sysutil_grp["io"].resize((dataset_length + 1, 4))
+            self.sysutil_grp["ram"][self.sysutil_pos, 0:2] = [int(100 * mem_stat[1] / mem_stat[0]), int(mem_stat[2])]
             sysutil_io_now = np.array(psutil.disk_io_counters()[0:4])
-            self.sysutil_grp["io"][dataset_length, :] = sysutil_io_now - self.sysutil_io_last
+            self.sysutil_grp["io"][self.sysutil_pos, :] = sysutil_io_now - self.sysutil_io_last
             self.sysutil_io_last = sysutil_io_now
-
-            # Network https://psutil.readthedocs.io/en/latest/#psutil.net_io_counters
-            self.sysutil_grp["net"].resize((dataset_length + 1, 2))
             sysutil_nw_now = np.array(psutil.net_io_counters()[0:2])
-            self.sysutil_grp["net"][dataset_length, :] = sysutil_nw_now - self.sysutil_nw_last
+            self.sysutil_grp["net"][self.sysutil_pos, :] = sysutil_nw_now - self.sysutil_nw_last
             self.sysutil_nw_last = sysutil_nw_now
-
+            self.sysutil_pos += 1
             # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
     def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
@@ -418,7 +460,7 @@ class LogWriter(object):
                     if uart.in_waiting > 0:
                         output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace('\x00', '')
                         if len(output) > 0:
-                            dataset_length = self.uart_grp["time"].shape[0]
+                            dataset_length = self.uart_grp["time"].shape[0] # TODO: convert and test
                             self.uart_grp["time"].resize((dataset_length + 1,))
                             self.uart_grp["time"][dataset_length] = int(time.time()) * (10 ** 9)
                             self.uart_grp["message"].resize((dataset_length + 1,))
@@ -443,7 +485,7 @@ class LogWriter(object):
                 break
             line = str(line).strip()[:128]
             try:
-                dataset_length = self.dmesg_grp["time"].shape[0]
+                dataset_length = self.dmesg_grp["time"].shape[0]  # TODO: convert and test
                 self.dmesg_grp["time"].resize((dataset_length + 1,))
                 self.dmesg_grp["time"][dataset_length] = int(time.time() * (10 ** 9))
                 self.dmesg_grp["message"].resize((dataset_length + 1,))
@@ -469,7 +511,7 @@ class LogWriter(object):
             except ValueError:
                 continue
             try:
-                dataset_length = self.timesync_grp["time"].shape[0]
+                dataset_length = self.timesync_grp["time"].shape[0]  # TODO: convert and test
                 self.timesync_grp["time"].resize((dataset_length + 1,))
                 self.timesync_grp["time"][dataset_length] = int(time.time() * (10 ** 9))
                 self.timesync_grp["values"].resize((dataset_length + 1, 3))
