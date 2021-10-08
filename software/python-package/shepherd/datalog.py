@@ -98,7 +98,8 @@ class LogWriter(object):
 
     # choose lossless compression filter
     # - gzip: good compression, moderate speed, select level from 1-9, default is 4
-    # - lzf: low to moderate compression, very fast, no options
+    # - lzf: low to moderate compression, very fast, no options -> 20 % overhead for half the filesize
+    # NOTE for quick and easy performance improvement: remove compression for monitor-datasets, or even group_value
     compression_algo = "lzf"
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
     sys_log_last_ns = 0
@@ -152,7 +153,7 @@ class LogWriter(object):
         # initial sysutil-reading and delta-history
         self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
         self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
-        # todo: test-implementation, inc by chunk-size where needed! gpio chunks can be max_gpio...
+        # Optimization: allowing larger more effizient resizes (before .resize() was called per element)
         # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
         # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
         inc_duration = int(100)
@@ -162,7 +163,7 @@ class LogWriter(object):
         self.gpio_pos = 0
         self.gpio_inc = MAX_GPIO_EVT_PER_BUFFER
         self.sysutil_pos = 0
-        self.sysutil_inc = inc_duration + 20
+        self.sysutil_inc = inc_duration
         self.uart_pos = 0
         self.uart_inc = 100
         self.dmesg_pos = 0
@@ -170,7 +171,8 @@ class LogWriter(object):
         self.xcpt_pos = 0
         self.xcpt_inc = 100
         self.timesync_pos = 0
-        self.timesync_inc = inc_duration + 20
+        self.timesync_inc = inc_duration
+        # NOTE for possible optimization: align resize with chunk-size -> rely on autochunking -> inc = h5ds.chunks
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -245,7 +247,7 @@ class LogWriter(object):
         self.xcpt_grp.create_dataset(
             "message",
             (self.xcpt_inc,),
-            dtype=h5py.special_dtype(vlen=str),
+            dtype=h5py.special_dtype(vlen=str),  # TODO: switch to string_dtype() (h5py >v3.0)
             maxshape=(None,),
             chunks=True,
         )
@@ -307,8 +309,8 @@ class LogWriter(object):
     def __exit__(self, *exc):
         global monitors_end
         monitors_end.set()
-        time.sleep(1)  # TODO: should work propably without it
-        
+        time.sleep(1)
+
         # meantime: trim over-provisioned parts
         self.data_grp["time"].resize((self.data_pos if self._write_current or self._write_voltage else 0,))
         self.data_grp["voltage"].resize((self.data_pos if self._write_voltage else 0,))
@@ -327,8 +329,7 @@ class LogWriter(object):
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
         self.xcpt_grp["message"].resize((self.xcpt_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
-        self.timesync_grp["value"].resize((self.timesync_pos,))
-
+        self.timesync_grp["value"].resize((self.timesync_pos,3))
 
         if self.dmesg_mon_t is not None:
             logger.info(f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)")
@@ -340,7 +341,7 @@ class LogWriter(object):
             logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
         runtime = round(self.data_grp['time'].shape[0] * SAMPLE_INTERVAL_US / 1e6, 1)
-        logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-entries)")
+        logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
         self._h5file.close()
@@ -461,11 +462,14 @@ class LogWriter(object):
                     if uart.in_waiting > 0:
                         output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace('\x00', '')
                         if len(output) > 0:
-                            dataset_length = self.uart_grp["time"].shape[0] # TODO: convert and test
-                            self.uart_grp["time"].resize((dataset_length + 1,))
-                            self.uart_grp["time"][dataset_length] = int(time.time()) * (10 ** 9)
-                            self.uart_grp["message"].resize((dataset_length + 1,))
-                            self.uart_grp["message"][dataset_length] = output  # np.void(uart_rx)
+                            data_length = self.uart_grp["time"].shape[0]
+                            if self.sysutil_pos >= data_length:
+                                data_length += self.uart_inc
+                                self.uart_grp["time"].resize((data_length,))
+                                self.uart_grp["message"].resize((data_length,))
+                            self.uart_grp["time"][self.uart_pos] = int(time.time()) * (10 ** 9)
+                            self.uart_grp["message"][self.uart_pos] = output  # np.void(uart_rx)
+                            self.uart_pos += 1
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
@@ -486,11 +490,13 @@ class LogWriter(object):
                 break
             line = str(line).strip()[:128]
             try:
-                dataset_length = self.dmesg_grp["time"].shape[0]  # TODO: convert and test
-                self.dmesg_grp["time"].resize((dataset_length + 1,))
-                self.dmesg_grp["time"][dataset_length] = int(time.time() * (10 ** 9))
-                self.dmesg_grp["message"].resize((dataset_length + 1,))
-                self.dmesg_grp["message"][dataset_length] = line
+                data_length = self.dmesg_grp["time"].shape[0]
+                if self.dmesg_pos >= data_length:
+                    data_length += self.dmesg_inc
+                    self.dmesg_grp["time"].resize((data_length,))
+                    self.dmesg_grp["message"].resize((data_length,))
+                self.dmesg_grp["time"][self.dmesg_pos] = int(time.time() * (10 ** 9))
+                self.dmesg_grp["message"][self.dmesg_pos] = line
             except OSError:
                 logger.error(f"[DmesgMonitor] Caught a Write Error for Line: [{type(line)}] {line}")
             tevent.wait(poll_intervall)  # rate limiter
@@ -512,11 +518,13 @@ class LogWriter(object):
             except ValueError:
                 continue
             try:
-                dataset_length = self.timesync_grp["time"].shape[0]  # TODO: convert and test
-                self.timesync_grp["time"].resize((dataset_length + 1,))
-                self.timesync_grp["time"][dataset_length] = int(time.time() * (10 ** 9))
-                self.timesync_grp["values"].resize((dataset_length + 1, 3))
-                self.timesync_grp["values"][dataset_length, :] = values[0:3]
+                data_length = self.timesync_grp["time"].shape[0]
+                if self.timesync_pos > data_length:
+                    data_length += self.timesync_inc
+                    self.timesync_grp["time"].resize((data_length,))
+                    self.timesync_grp["values"].resize((data_length, 3))
+                self.timesync_grp["time"][self.timesync_pos] = int(time.time() * (10 ** 9))
+                self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
             except OSError:
                 logger.error(f"[PTP4lMonitor] Caught a Write Error for Line: [{type(line)}] {line}")
             tevent.wait(poll_intervall)  # rate limiter
