@@ -72,7 +72,7 @@ def set_start(start_time: float = None) -> NoReturn:
             f"Cannot start from state { current_state }"
         )
 
-    with open(str(sysfs_path / "state"), "w") as f:
+    with open(sysfs_path/"state", "w") as f:
         if isinstance(start_time, float):
             start_time = int(start_time)
         if isinstance(start_time, int):
@@ -94,7 +94,7 @@ def set_stop(force: bool = False) -> NoReturn:
         if current_state != "running":
             raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
 
-    with open(str(sysfs_path / "state"), "w") as f:
+    with open(sysfs_path/"state", "w") as f:
         f.write("stop")
 
 
@@ -117,7 +117,7 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
             raise SysfsInterfaceException(f"Cannot set mode when shepherd is { get_state() }")
 
     logger.debug(f"sysfs/mode: '{mode}'")
-    with open(str(sysfs_path / "mode"), "w") as f:
+    with open(sysfs_path/"mode", "w") as f:
         f.write(mode)
 
 
@@ -164,7 +164,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
     """
     if voltage_raw >= (2**16):
         logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value -> this will link both channels")
-    with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "w") as f:
+    with open(sysfs_path/"dac_auxiliary_voltage_raw", "w") as f:
         logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
         f.write(str(voltage_raw))
 
@@ -193,7 +193,7 @@ def read_dac_aux_voltage_raw() -> int:
 
     Returns: voltage as dac_raw
     """
-    with open(str(sysfs_path / "dac_auxiliary_voltage_raw"), "r") as f:
+    with open(sysfs_path/"dac_auxiliary_voltage_raw", "r") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -212,7 +212,7 @@ def write_calibration_settings(cal_pru: dict) -> NoReturn:  # more precise dict[
         raise SysfsInterfaceException(f"sending calibration with negative DAC-gain: {cal_pru['dac_gain']}")
     wait_for_state("idle", 3.0)
 
-    with open(str(sysfs_path / "calibration_settings"), "w") as f:
+    with open(sysfs_path/"calibration_settings", "w") as f:
         output = f"{int(cal_pru['adc_gain'])} {int(cal_pru['adc_offset'])} \n" \
                  f"{int(cal_pru['dac_gain'])} {int(cal_pru['dac_offset'])}"
         logger.debug(f"Sending calibration settings: {output}")
@@ -225,7 +225,7 @@ def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    with open(str(sysfs_path / "calibration_settings"), "r") as f:
+    with open(sysfs_path/"calibration_settings", "r") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -254,7 +254,7 @@ def write_virtsource_settings(settings: list) -> NoReturn:
 
     wait_for_state("idle", 3.0)
 
-    with open(str(sysfs_path / "virtsource_settings"), "w") as file:
+    with open(sysfs_path/"virtsource_settings", "w") as file:
         file.write(output)
 
 
@@ -264,7 +264,7 @@ def read_virtsource_settings() -> list:
     The virtsource algorithm uses these settings to configure emulation.
 
     """
-    with open(str(sysfs_path / "virtsource_settings"), "r") as f:
+    with open(sysfs_path/"virtsource_settings", "r") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings
@@ -291,7 +291,7 @@ def write_pru_msg(msg_type: int, values: list) -> NoReturn:
             raise SysfsInterfaceException(f"pru_msg-value has invalid type, "
                                           f"expected u32 for type (={type(value)}) and content (={value})")
 
-    with open(str(sysfs_path / "pru_msg_box"), "w") as file:
+    with open(sysfs_path/"pru_msg_box", "w") as file:
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
@@ -299,7 +299,7 @@ def read_pru_msg() -> tuple:
     """
     Returns:
     """
-    with open(str(sysfs_path / "pru_msg_box"), "r") as f:
+    with open(sysfs_path/"pru_msg_box", "r") as f:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
@@ -312,35 +312,35 @@ attribs = ["mode", "state", "n_buffers", "buffer_period_ns",
 
 
 def get_mode() -> str:
-    with open(str(sysfs_path / "mode"), "r") as f:
+    with open(sysfs_path/"mode", "r") as f:
         return str(f.read().rstrip())
 
 
 def get_state() -> str:
-    with open(str(sysfs_path / "state"), "r") as f:
+    with open(sysfs_path/"state", "r") as f:
         return str(f.read().rstrip())
 
 
 def get_n_buffers() -> int:
-    with open(str(sysfs_path / "n_buffers"), "r") as f:
+    with open(sysfs_path/"n_buffers", "r") as f:
         return int(f.read().rstrip())
 
 
 def get_buffer_period_ns() -> int:
-    with open(str(sysfs_path / "buffer_period_ns"), "r") as f:
+    with open(sysfs_path/"buffer_period_ns", "r") as f:
         return int(f.read().rstrip())
 
 
 def get_samples_per_buffer() -> int:
-    with open(str(sysfs_path / "samples_per_buffer"), "r") as f:
+    with open(sysfs_path/"samples_per_buffer", "r") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_address() -> int:
-    with open(str(sysfs_path / "memory/address"), "r") as f:
+    with open(sysfs_path/"memory/address", "r") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_size() -> int:
-    with open(str(sysfs_path / "memory/size"), "r") as f:
+    with open(sysfs_path/"memory/size", "r") as f:
         return int(f.read().rstrip())

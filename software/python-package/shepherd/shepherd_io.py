@@ -147,7 +147,7 @@ class SharedMem(object):
         self.gpio_ts_offset = self.gpiostr_offset + 4
         self.gpio_vl_offset = self.gpiostr_offset + 4 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
 
-        logger.debug(f"Individual buffer size:\t{ self.buffer_size } byte")
+        logger.debug(f"SharedMem-buffer size:\t{ self.buffer_size } byte")
 
     def __enter__(self):
         self.devmem_fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
@@ -173,7 +173,7 @@ class SharedMem(object):
         in RAM.
 
         :param index: (int): Buffer index. 0 <= index < n_buffers
-        :param verbose:
+        :param verbose: chatter-prevention, performance-critical computation saver
 
         Returns:
             DataBuffer object pointing to extracted data
@@ -358,6 +358,7 @@ class ShepherdIO(object):
         Args:
             timeout_n (int): Maximum number of buffer_periods to wait for a message
                 before raising timeout exception
+            TODO: cleanest way: sysfs-file with current msg-count
         """
         for _ in range(timeout_n):
             try:
@@ -630,8 +631,6 @@ class ShepherdIO(object):
                 )
             else:
                 raise ShepherdIOException(
-                    (
                         f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
                         f"got { msg_type }[{ value }]"
-                    )
                 )
