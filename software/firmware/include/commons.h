@@ -10,7 +10,7 @@
 /**
  * Length of buffer, must be kept in sync with "commons" in pyPackage, kernel-module, pru-firmware
  */
-#define FIFO_BUFFER_SIZE (107U)
+#define FIFO_BUFFER_SIZE (64U)  // 107 is current max (<10'000 pages)
 
 /**
  * These are the system events that we use to signal events to the PRUs.
