@@ -139,7 +139,7 @@ class SharedMem(object):
             # 16 bit GPIO state per GPIO event
             + 2 * commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
         )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
-        # TODO: put number in shared-mem
+        # TODO: put number in shared-mem or other way around
 
         self.voltage_offset = 12
         self.current_offset = 12 + 1 * 4 * self.samples_per_buffer
@@ -150,7 +150,7 @@ class SharedMem(object):
         logger.debug(f"SharedMem-buffer size:\t{ self.buffer_size } byte")
 
     def __enter__(self):
-        self.devmem_fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
+        self.devmem_fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)  # TODO: could it also be async? might be error-source
 
         self.mapped_mem = mmap.mmap(
             self.devmem_fd,
@@ -179,6 +179,8 @@ class SharedMem(object):
             DataBuffer object pointing to extracted data
         """
         # The buffers are organized as an array in shared memory
+        if not (0 <= index < self.n_buffers):
+            ValueError(f"out of bound access (i={index}), tried reading from SharedMEM-Buffer")
         buffer_offset = index * self.buffer_size
         self.mapped_mem.seek(buffer_offset)
 
@@ -242,6 +244,8 @@ class SharedMem(object):
 
     def write_buffer(self, index: int, voltage, current) -> NoReturn:
 
+        if not (0 <= index < self.n_buffers):
+            ValueError(f"out of bound access (i={index}), tried writing to SharedMEM-Buffer")
         buffer_offset = self.buffer_size * index
         # Seek buffer location in memory and skip 12B header
         self.mapped_mem.seek(buffer_offset + 12)
