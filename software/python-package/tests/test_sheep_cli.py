@@ -24,8 +24,8 @@ from shepherd.shepherd_io import DataBuffer
 from shepherd.cli import cli
 
 
-def random_data(len):
-    return np.random.randint(0, high=2 ** 18, size=len, dtype="u4")
+def random_data(length):
+    return np.random.randint(0, high=2 ** 18, size=length, dtype="u4")
 
 
 @pytest.fixture
@@ -129,7 +129,6 @@ def test_record_parameters_short(shepherd_up, cli_runner, tmp_path):
 @pytest.mark.timeout(60)
 def test_record_parameters_minimal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
-    start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli, [
               "record",
@@ -323,7 +322,6 @@ def test_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5):
 @pytest.mark.timeout(60)
 def test_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_h5):
     store = tmp_path / "out.h5"
-    start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli,
         [

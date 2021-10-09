@@ -29,15 +29,15 @@ def default_bytestr(default_cal):
 
 
 def test_from_default():
-    cal = CalibrationData.from_default()
+    _ = CalibrationData.from_default()
 
 
 def test_from_yaml(data_example_yml):
-    cal = CalibrationData.from_yaml(data_example_yml)
+    _ = CalibrationData.from_yaml(data_example_yml)
 
 
 def test_from_measurements(data_meas_example_yml):
-    cal = CalibrationData.from_measurements(data_meas_example_yml)
+    _ = CalibrationData.from_measurements(data_meas_example_yml)
 
 
 def test_to_bytestr(default_cal):
@@ -45,4 +45,4 @@ def test_to_bytestr(default_cal):
 
 
 def test_from_bytestr(default_bytestr):
-    cal = CalibrationData.from_bytestr(default_bytestr)
+    _ = CalibrationData.from_bytestr(default_bytestr)

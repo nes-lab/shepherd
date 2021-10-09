@@ -77,22 +77,6 @@ class VirtualSourceData(object):
 
         self.check_and_complete()
 
-    def get_as_dict(self) -> dict:  # TODO: remove?
-        """ offers a checked and completed version of the settings
-
-        Returns:
-            internal settings container
-        """
-        return self.vss
-
-    def get_as_list(self) -> list:  # TODO: remove?
-        """ multi-level dict is flattened, good for testing
-
-        Returns:
-            1D-Content
-        """
-        return flatten_dict_list(self.vss)
-
     def export_for_sysfs(self) -> list:
         """ prepares virtsource settings for PRU core (a lot of unit-conversions)
 

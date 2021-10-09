@@ -15,8 +15,8 @@ from shepherd import CalibrationData
 from shepherd import ShepherdIOException
 
 
-def random_data(len):
-    return np.random.randint(0, high=2 ** 18, size=len, dtype="u4")
+def random_data(length):
+    return np.random.randint(0, high=2 ** 18, size=length, dtype="u4")
 
 
 @pytest.fixture
@@ -115,6 +115,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
             == hf_hrvst["data"]["time"].shape[0]
         )
         assert hf_emu["data"]["time"][0] == start_time * 10**9
+
 
 @pytest.mark.hardware
 def test_target_pins(shepherd_up):

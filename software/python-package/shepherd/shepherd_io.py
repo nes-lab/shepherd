@@ -263,6 +263,7 @@ class ShepherdIO(object):
     # This _instance-element is part of the singleton implementation
     _instance = None
     _buffer_period = 0.1  # placeholder
+    shared_mem: SharedMem = None
 
     def __new__(cls, *args, **kwds):
         """Implements singleton class."""
@@ -281,7 +282,6 @@ class ShepherdIO(object):
         """
         self.mode = mode
         self.gpios = {}
-        self.shared_mem: SharedMem = None
 
     def __del__(self):
         ShepherdIO._instance = None
@@ -358,8 +358,8 @@ class ShepherdIO(object):
         Args:
             timeout_n (int): Maximum number of buffer_periods to wait for a message
                 before raising timeout exception
-            TODO: cleanest way: sysfs-file with current msg-count
-        """
+            
+        """  # TODO: cleanest way without exception: ask sysfs-file with current msg-count
         for _ in range(timeout_n):
             try:
                 return sysfs_interface.read_pru_msg()

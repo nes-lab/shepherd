@@ -16,8 +16,8 @@ from shepherd.datalog import GPIOEdges
 from shepherd.datalog import ExceptionRecord
 
 
-def random_data(len):
-    return np.random.randint(0, high=2 ** 18, size=len, dtype="u4")
+def random_data(length):
+    return np.random.randint(0, high=2 ** 18, size=length, dtype="u4")
 
 
 @pytest.fixture()
