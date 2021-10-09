@@ -82,8 +82,8 @@ def cli(ctx, verbose: int):
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
 @click.option("--on/--off", default=True)
-@click.option("--voltage", "-v", type=float, default=3.0, help="Target supply voltage")
-@click.option("--gpio_pass/--gpio_omit", type=bool, default=True, help="Route UART, Programmer-Pins and other GPIO to this target")
+@click.option("--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage")
+@click.option("--gpio_pass/--gpio_omit", type=click.BOOL, default=True, help="Route UART, Programmer-Pins and other GPIO to this target")
 @click.option("--sel_a/--sel_b", default=True,
               help="Choose (main)Target that gets connected to virtual Source")
 def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
@@ -117,15 +117,15 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 @cli.command(
     short_help="Runs a command with given parameters. Mainly for use with config file.")
 @click.option("--command", default="record", type=click.Choice(["record", "emulate"]))
-@click.option("--parameters", default={})
-@click_config_file.configuration_option(provider=yamlprovider, implicit=False)
+@click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option("-v", "--verbose", count=True)
+@click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 def run(command, parameters: Dict, verbose):
 
     config_logger(verbose)
 
     if not isinstance(parameters, Dict):
-        raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with alpha-version of click-lib)")
+        raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with v8-alpha-version of click-lib)")
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
     logger.info(f"CLI did process run()")
@@ -153,10 +153,10 @@ def run(command, parameters: Dict, verbose):
               help="Dir or file path for resulting hdf5 file",)
 @click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
               help="Record 'harvesting' or 'harvesting_test'-function data")
-@click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
+@click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--default-cal", is_flag=True, help="Use default calibration values")
-@click.option("--start-time", "-s", type=float,
+@click.option("--start-time", "-s", type=click.FLOAT,
               help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def record(
@@ -185,10 +185,10 @@ def record(
 @click.argument("input_path", type=click.Path(exists=True))
 @click.option("--output_path", "-o", type=click.Path(),
               help="Dir or file path for storing the power consumption data")
-@click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
+@click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--default-cal", is_flag=True, help="Use default calibration values")
-@click.option("--start-time", "-s", type=float, help="Desired start time in unix epoch time")
+@click.option("--start-time", "-s", type=click.FLOAT, help="Desired start time in unix epoch time")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
 @click.option("--io_sel_target_a/--io_sel_target_b", default=True,
@@ -201,7 +201,7 @@ def record(
                    "- 'mid' for intermediate voltage (vsource storage cap), \n"
                    "- True or 'main' to mirror main target voltage")
 @click.option("--virtsource", default={}, help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
-@click.option("--uart_baudrate", "-b", default=None, type=int, help="Enable UART-Logging for target by setting a baudrate")
+@click.option("--uart_baudrate", "-b", default=None, type=click.INT, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 @click.option("--skip_log_voltage", is_flag=True, help="reduce file-size by omitting voltage-logging")
 @click.option("--skip_log_current", is_flag=True, help="reduce file-size by omitting current-logging")
@@ -261,9 +261,9 @@ def eeprom():
 @eeprom.command(short_help="Write data to EEPROM")
 @click.option("--infofile", "-i", type=click.Path(exists=True),
               help="YAML-formatted file with cape info")
-@click.option("--version", "-v", type=str, default="22A0",
+@click.option("--version", "-v", type=click.STRING, default="22A0",
               help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
-@click.option("--serial_number", "-s", type=str,
+@click.option("--serial_number", "-s", type=click.STRING,
               help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--cal-file", "-c", type=click.Path(exists=True),
               help="YAML-formatted file with calibration data")
@@ -339,7 +339,7 @@ def make(filename, output_path):
 
 
 @cli.command(short_help="Start zerorpc server")
-@click.option("--port", "-p", type=int, default=4242)
+@click.option("--port", "-p", type=click.INT, default=4242)
 def rpc(port):
 
     logger.setLevel(logging.INFO)  # TODO: via argument
@@ -366,8 +366,8 @@ def rpc(port):
 
 
 @cli.command(short_help="Start shepherd launcher")
-@click.option("--led", "-l", type=int, default=22)
-@click.option("--button", "-b", type=int, default=65)
+@click.option("--led", "-l", type=click.INT, default=22)
+@click.option("--button", "-b", type=click.INT, default=65)
 def launcher(led, button):
     with Launcher(button, led) as launch:
         launch.run()

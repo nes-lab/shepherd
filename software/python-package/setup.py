@@ -3,7 +3,7 @@ from setuptools import setup
 
 # Note: there is a second requirement-install-list in ./debian/postinst
 requirements = [
-    "click<8.0.0",
+    "click",
     "click-config-file",
     "numpy",
     "python-periphery<2.0.0",
