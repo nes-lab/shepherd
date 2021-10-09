@@ -31,7 +31,7 @@ from shepherd.calibration import cal_channel_emulation_dict
 from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
-from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US, MAX_GPIO_EVT_PER_BUFFER, ADC_SAMPLES_PER_BUFFER
+from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US, MAX_GPIO_EVT_PER_BUFFER
 
 logger = logging.getLogger(__name__)
 
@@ -121,15 +121,15 @@ class LogWriter(object):
     ):
         if force_overwrite or not store_path.exists():
             self.store_path = store_path
-            logger.info(f"Storing data under '{self.store_path}'")
+            logger.info(f"Storing data to   '{self.store_path}'")
         else:
             base_dir = store_path.resolve().parents[0]
             self.store_path = unique_path(
                 base_dir / store_path.stem, store_path.suffix
             )
             logger.warning(
-                    f"File {str(store_path)} already exists.. "
-                    f"storing under {str(self.store_path)} instead"
+                    f"File {store_path} already exists.. "
+                    f"storing under {self.store_path} instead"
             )
         # Refer to shepherd/calibration.py for the format of calibration data
         if mode == "harvesting_test":
@@ -269,19 +269,19 @@ class LogWriter(object):
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
-        add_dataset_time(self.sysutil_grp, self.sysutil_inc)
+        add_dataset_time(self.sysutil_grp, self.sysutil_inc, (self.sysutil_inc,))
         self.sysutil_grp["time"].attrs["unit"] = "ns"
         self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
-        self.sysutil_grp.create_dataset("cpu", (self.sysutil_inc,), dtype="u1", maxshape=(None,), chunks=True, )
+        self.sysutil_grp.create_dataset("cpu", (self.sysutil_inc,), dtype="u1", maxshape=(None,), chunks=(self.sysutil_inc,), )
         self.sysutil_grp["cpu"].attrs["unit"] = "%"
         self.sysutil_grp["cpu"].attrs["description"] = "cpu_util [%]"
-        self.sysutil_grp.create_dataset("ram", (self.sysutil_inc, 2), dtype="u1", maxshape=(None, 2), chunks=True, )
+        self.sysutil_grp.create_dataset("ram", (self.sysutil_inc, 2), dtype="u1", maxshape=(None, 2), chunks=(self.sysutil_inc, 2), )
         self.sysutil_grp["ram"].attrs["unit"] = "%"
         self.sysutil_grp["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
-        self.sysutil_grp.create_dataset("io", (self.sysutil_inc, 4), dtype="u8", maxshape=(None, 4), chunks=True, )
+        self.sysutil_grp.create_dataset("io", (self.sysutil_inc, 4), dtype="u8", maxshape=(None, 4), chunks=(self.sysutil_inc, 4), )
         self.sysutil_grp["io"].attrs["unit"] = "n"
         self.sysutil_grp["io"].attrs["description"] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
-        self.sysutil_grp.create_dataset("net", (self.sysutil_inc, 2), dtype="u8", maxshape=(None, 2), chunks=True, )
+        self.sysutil_grp.create_dataset("net", (self.sysutil_inc, 2), dtype="u8", maxshape=(None, 2), chunks=(self.sysutil_inc, 2), )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
         self.log_sys_stats()
@@ -329,7 +329,7 @@ class LogWriter(object):
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
         self.xcpt_grp["message"].resize((self.xcpt_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
-        self.timesync_grp["value"].resize((self.timesync_pos,3))
+        self.timesync_grp["value"].resize((self.timesync_pos, 3))
 
         if self.dmesg_mon_t is not None:
             logger.info(f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)")
@@ -414,13 +414,15 @@ class LogWriter(object):
         if ts_now_ns >= (self.sys_log_last_ns + self.sys_log_intervall_ns):
             data_length = self.sysutil_grp["time"].shape[0]
             if self.sysutil_pos >= data_length:
+                # self._h5file.flush()
+                # logger.info(f"flushed output-file @ {data_length} s")
                 data_length += self.sysutil_inc
                 self.sysutil_grp["time"].resize((data_length,))
                 self.sysutil_grp["cpu"].resize((data_length,))
                 self.sysutil_grp["ram"].resize((data_length, 2))
                 self.sysutil_grp["io"].resize((data_length, 4))
                 self.sysutil_grp["net"].resize((data_length, 2))
-            self.sys_log_last_ns = ts_now_ns
+            self.sys_log_last_ns += self.sys_log_intervall_ns
             self.sysutil_grp["time"][self.sysutil_pos] = ts_now_ns
             self.sysutil_grp["cpu"][self.sysutil_pos] = int(round(psutil.cpu_percent(0)))
             mem_stat = psutil.virtual_memory()[0:3]
@@ -552,19 +554,19 @@ class LogReader(object):
         self.ds_voltage = self._h5file["data"]["voltage"]
         self.ds_current = self._h5file["data"]["current"]
         runtime = round(self.ds_voltage.shape[0] * SAMPLE_INTERVAL_US / 1e6, 1)
-        logger.info(f"Reading data from '{str(self.store_path)}', contains {runtime} s")
+        logger.info(f"Reading data from '{self.store_path}', contains {runtime} s")
         return self
 
     def __exit__(self, *exc):
         self._h5file.close()
 
-    def read_buffers(self, start: int = 0, end: int = None):
+    def read_buffers(self, start: int = 0, end: int = None, verbose: bool = False):
         """Reads the specified range of buffers from the hdf5 file.
 
         Args:
-            start (int): Index of first buffer to be read
-            end (int): Index of last buffer to be read
-        
+            :param start: (int): Index of first buffer to be read
+            :param end: (int): Index of last buffer to be read
+            :param verbose: chatter-prevention, performance-critical computation saver
         Yields:
             Buffers between start and end
         """
@@ -572,8 +574,7 @@ class LogReader(object):
             end = int(
                 self._h5file["data"]["time"].shape[0] / self.samples_per_buffer
             )
-        logger.debug(f"Reading blocks from { start } to { end } from log")
-        verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
+        logger.debug(f"Reading blocks from { start } to { end } from source-file")
 
         for i in range(start, end):
             if verbose:
@@ -602,13 +603,3 @@ class LogReader(object):
             cal_channel = cal_channel_harvest_dict[channel]
             cal.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(cal)
-
-
-def h5_structure_printer(file: h5py.File) -> NoReturn:
-    # TODO: more recursive with levels, use hasattr(obj, "attribute")
-    for group in file:
-        h5grp = file.get(group)
-        logger.debug(f"[H5File] Group [{group}] Items: {h5grp.items()}")
-        for dataset in h5grp:
-            h5ds = h5grp.get(dataset)
-            logger.debug(f"[H5File] Group [{group}], Dataset [{dataset}] - Chunks={h5ds.chunks}, compression={h5ds.compression}, ")
