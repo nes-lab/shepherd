@@ -13,7 +13,7 @@ provided by the shepherd kernel module
 import logging
 import time
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, Union
 
 from shepherd.calibration import CalibrationData
 from shepherd import calibration_default
@@ -121,7 +121,7 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
         f.write(mode)
 
 
-def write_dac_aux_voltage(calibration_settings: CalibrationData, voltage: float) -> NoReturn:
+def write_dac_aux_voltage(calibration_settings: Union[CalibrationData, None], voltage: float) -> NoReturn:
     """ Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:

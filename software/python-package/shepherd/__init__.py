@@ -23,7 +23,6 @@ import numpy
 import invoke
 import signal
 
-from shepherd.commons import FIFO_BUFFER_SIZE
 from shepherd.shepherd_io import ShepherdIO
 from shepherd.virtual_source_data import VirtualSourceData
 from shepherd.shepherd_io import ShepherdIOException
@@ -123,7 +122,7 @@ class Emulator(ShepherdIO):
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
                  aux_target_voltage: float = 0.0,
-                 settings_virtsource: VirtualSourceData = None,
+                 settings_virtsource: Union[dict, str, Path, VirtualSourceData] = None,
                  log_intermediate_voltage: bool = None,
                  ):
 
@@ -517,10 +516,16 @@ def record(
     else:
         store_path = output_path
 
+    samples_per_buffer = sysfs_interface.get_samples_per_buffer()
+    samplerate_sps = 10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
+
     recorder = Recorder(shepherd_mode=mode)
-    log_writer = LogWriter(
-        store_path=store_path, calibration_data=calib, mode=mode, force_overwrite=force_overwrite
-    )
+    log_writer = LogWriter(store_path=store_path,
+                           calibration_data=calib,
+                           mode=mode,
+                           force_overwrite=force_overwrite,
+                           samples_per_buffer=samples_per_buffer,
+                           samplerate_sps=samplerate_sps)
     verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
 
     with ExitStack() as stack:
@@ -581,7 +586,7 @@ def emulate(
         sel_target_for_io: bool = True,
         sel_target_for_pwr: bool = True,
         aux_target_voltage: float = 0.0,
-        settings_virtsource: Union[VirtualSourceData, str, Path] = None,
+        settings_virtsource: Union[dict, str, Path, VirtualSourceData] = None,
         log_intermediate_voltage: bool = None,
         uart_baudrate: int = None,
         warn_only: bool = False,
@@ -632,6 +637,9 @@ def emulate(
     if aux_target_voltage is None:
         aux_target_voltage = 0.0
 
+    samples_per_buffer = sysfs_interface.get_samples_per_buffer()
+    samplerate_sps = 10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
+
     if output_path is not None:
         if not output_path.is_absolute():
             output_path = output_path.absolute()
@@ -649,7 +657,9 @@ def emulate(
             calibration_data=cal,
             skip_voltage=skip_log_voltage,
             skip_current=skip_log_current,
-            skip_gpio=skip_log_gpio
+            skip_gpio=skip_log_gpio,
+            samples_per_buffer=samples_per_buffer,
+            samplerate_sps=samplerate_sps
         )
 
     if isinstance(input_path, str):
@@ -659,7 +669,7 @@ def emulate(
     if not input_path.exists():
         raise ValueError(f"Input-File does not exist ({input_path})")
 
-    log_reader = LogReader(input_path, 10_000)
+    log_reader = LogReader(input_path, samples_per_buffer, samplerate_sps)
     verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
 
     with ExitStack() as stack:
@@ -669,9 +679,11 @@ def emulate(
 
         stack.enter_context(log_reader)
 
+        fifo_buffer_size = sysfs_interface.get_n_buffers()
+
         emu = Emulator(
             shepherd_mode="emulation",
-            initial_buffers=log_reader.read_buffers(end=FIFO_BUFFER_SIZE, verbose=verbose),
+            initial_buffers=log_reader.read_buffers(end=fifo_buffer_size, verbose=verbose),
             calibration_recording=log_reader.get_calibration_data(),
             calibration_emulation=cal,
             set_target_io_lvl_conv=set_target_io_lvl_conv,
@@ -700,7 +712,7 @@ def emulate(
         else:
             ts_end = time.time() + duration
 
-        for hrvst_buf in log_reader.read_buffers(start=FIFO_BUFFER_SIZE, verbose=verbose):
+        for hrvst_buf in log_reader.read_buffers(start=fifo_buffer_size, verbose=verbose):
             try:
                 idx, emu_buf = emu.get_buffer(verbose=verbose)
             except ShepherdIOException as e:

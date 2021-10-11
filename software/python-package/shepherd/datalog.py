@@ -31,7 +31,7 @@ from shepherd.calibration import cal_channel_emulation_dict
 from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
-from shepherd.commons import GPIO_LOG_BIT_POSITIONS, SAMPLE_INTERVAL_US, MAX_GPIO_EVT_PER_BUFFER
+from shepherd.commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ class LogWriter(object):
         force_overwrite (bool): Overwrite existing file with the same name
         samples_per_buffer (int): Number of samples contained in a single
             shepherd buffer
-        buffer_period_ns (int): Duration of a single shepherd buffer in
+        samplerate_sps (int): Duration of a single shepherd buffer in
             nanoseconds
 
     """
@@ -114,7 +114,7 @@ class LogWriter(object):
             mode: str = "harvesting",
             force_overwrite: bool = False,
             samples_per_buffer: int = 10_000,
-            buffer_period_ns: int = 100_000_000,
+            samplerate_sps: int = 100_000,
             skip_voltage: bool = False,
             skip_current: bool = False,
             skip_gpio: bool = False,
@@ -141,8 +141,8 @@ class LogWriter(object):
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
-        self.sampling_interval = int(buffer_period_ns // samples_per_buffer)
-        self.buffer_timeseries = self.sampling_interval * np.arange(samples_per_buffer).astype("u8")
+        self.sample_interval_ns = int(10**9 // samplerate_sps)
+        self.buffer_timeseries = self.sample_interval_ns * np.arange(samples_per_buffer).astype("u8")
         self._write_voltage = not skip_voltage
         self._write_current = not skip_current
         self._write_gpio = (not skip_gpio) and ("emulat" in mode)
@@ -157,7 +157,7 @@ class LogWriter(object):
         # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
         # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
         inc_duration = int(100)
-        inc_length = int(inc_duration * 10**6 // SAMPLE_INTERVAL_US)
+        inc_length = int(inc_duration * samplerate_sps)
         self.data_pos = 0
         self.data_inc = inc_length
         self.gpio_pos = 0
@@ -340,7 +340,7 @@ class LogWriter(object):
         if self.uart_mon_t is not None:
             logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
-        runtime = round(self.data_grp['time'].shape[0] * SAMPLE_INTERVAL_US / 1e6, 1)
+        runtime = round(self.data_grp['time'].shape[0] * 10**9 // self.sample_interval_ns, 1)
         logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
@@ -545,15 +545,19 @@ class LogReader(object):
         samples_per_buffer (int): Number of IV samples per buffer
     """
 
-    def __init__(self, store_path: Path, samples_per_buffer: int = 10_000):
+    def __init__(self,
+                 store_path: Path,
+                 samples_per_buffer: int = 10_000,
+                 samplerate_sps: int = 100_000):
         self.store_path = store_path
         self.samples_per_buffer = samples_per_buffer
+        self.samplerate_sps = samplerate_sps
 
     def __enter__(self):
         self._h5file = h5py.File(self.store_path, "r")
         self.ds_voltage = self._h5file["data"]["voltage"]
         self.ds_current = self._h5file["data"]["current"]
-        runtime = round(self.ds_voltage.shape[0] * SAMPLE_INTERVAL_US / 1e6, 1)
+        runtime = round(self.ds_voltage.shape[0] / self.samplerate_sps, 1)
         logger.info(f"Reading data from '{self.store_path}', contains {runtime} s")
         return self
 

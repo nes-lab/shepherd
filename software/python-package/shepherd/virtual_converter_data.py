@@ -3,8 +3,6 @@ from pathlib import Path
 import yaml
 import logging
 
-from shepherd.commons import SAMPLE_INTERVAL_US
-
 logger = logging.getLogger(__name__)
 
 
@@ -14,11 +12,12 @@ class VirtualConverterData(object):
     """
     vcs: dict = {}
 
-    def __init__(self, setting: Union[dict, str, Path]):
+    def __init__(self, setting: Union[dict, str, Path], samplerate_sps: int = 100_000):
         """
 
         :param setting:
         """
+        self.samplerate_sps = samplerate_sps
         def_file = "virtual_converter_defs.yml"
         def_path = Path(__file__).parent.resolve()/def_file
         with open(def_path, "r") as def_data:
@@ -48,23 +47,23 @@ class VirtualConverterData(object):
             raise NotImplementedError(
                 f"VirtualConverterData {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?")
 
-        self.check_and_complete()
+        # self.check_and_complete()
 
-        def export_for_sysfs(self) -> list:
-            """ prepares virtconverter settings for PRU core (a lot of unit-conversions)
+    def export_for_sysfs(self) -> list:
+        """ prepares virtconverter settings for PRU core (a lot of unit-conversions)
 
-            This Fn add values in correct order and convert to requested unit
+        This Fn add values in correct order and convert to requested unit
 
-            Returns:
-                int-list (2nd level for LUTs) that can be feed into sysFS
-            """
-            return [
-                int(self.vss["algorithm"]),
-                int(self.vss["window_size"]),
-                int(self.vss["voltage_mV"] * 1e3),  # uV
-                int(self.vss["voltage_min_mV"] * 1e3),  # uV
-                int(self.vss["voltage_max_mV"] * 1e3),  # uV
-                int(max(0, min(255, self.vss["setpoint_n"] * 256))),  # n8 -> 0..1 is mapped to 0..255
-                int(self.vss["interval_ms"] * 1e3 / SAMPLE_INTERVAL_US),  # n, samples
-                int(self.vss["duration_ms"] * 1e3 / SAMPLE_INTERVAL_US),  # n, samples
-            ]
+        Returns:
+            int-list (2nd level for LUTs) that can be feed into sysFS
+        """
+        return [
+            int(self.vcs["algorithm"]),
+            int(self.vcs["window_size"]),
+            int(self.vcs["voltage_mV"] * 1e3),  # uV
+            int(self.vcs["voltage_min_mV"] * 1e3),  # uV
+            int(self.vcs["voltage_max_mV"] * 1e3),  # uV
+            int(max(0, min(255, self.vcs["setpoint_n"] * 256))),  # n8 -> 0..1 is mapped to 0..255
+            int(self.vcs["interval_ms"] * self.samplerate_sps // 10**3),  # n, samples
+            int(self.vcs["duration_ms"] * self.samplerate_sps // 10**3),  # n, samples
+        ]

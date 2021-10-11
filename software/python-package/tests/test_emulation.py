@@ -7,10 +7,12 @@ import yaml
 
 from shepherd.shepherd_io import DataBuffer, VirtualSourceData
 
-from shepherd import LogWriter, ShepherdDebug, FIFO_BUFFER_SIZE
+from shepherd import ShepherdDebug
+from shepherd import LogWriter
 from shepherd import LogReader
 from shepherd import Emulator
 from shepherd import emulate
+from shepherd import sysfs_interface
 from shepherd import CalibrationData
 from shepherd import ShepherdIOException
 
@@ -61,10 +63,11 @@ def log_reader(data_h5):
 @pytest.fixture()
 def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
     vs_settings = VirtualSourceData(virtsource_settings_yml)
+    fifo_buffer_size = sysfs_interface.get_n_buffers()
     emu = Emulator(
         calibration_recording=log_reader.get_calibration_data(),
         calibration_emulation=CalibrationData.from_default(),
-        initial_buffers=log_reader.read_buffers(end=FIFO_BUFFER_SIZE),
+        initial_buffers=log_reader.read_buffers(end=fifo_buffer_size),
         settings_virtsource=vs_settings,
     )
     request.addfinalizer(emu.__del__)
@@ -75,15 +78,15 @@ def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
 
 @pytest.mark.hardware
 def test_emulation(log_writer, log_reader, emulator):
-
     emulator.start(wait_blocking=False)
+    fifo_buffer_size = sysfs_interface.get_n_buffers()
     emulator.wait_for_start(15)
-    for hrvst_buf in log_reader.read_buffers(start=FIFO_BUFFER_SIZE):
+    for hrvst_buf in log_reader.read_buffers(start=fifo_buffer_size):
         idx, emu_buf = emulator.get_buffer()
         log_writer.write_buffer(emu_buf)
         emulator.return_buffer(idx, hrvst_buf)
 
-    for _ in range(FIFO_BUFFER_SIZE):
+    for _ in range(fifo_buffer_size):
         idx, emu_buf = emulator.get_buffer()
         log_writer.write_buffer(emu_buf)
 

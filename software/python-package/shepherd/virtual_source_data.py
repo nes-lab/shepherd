@@ -3,8 +3,6 @@ from pathlib import Path
 import yaml
 import logging
 
-from shepherd.commons import SAMPLE_INTERVAL_US
-
 logger = logging.getLogger(__name__)
 
 
@@ -37,12 +35,16 @@ class VirtualSourceData(object):
     """
     vss: dict = {}
 
-    def __init__(self, vs_setting: Union[dict, str, Path] = None, log_intermediate_voltage: bool = False):
+    def __init__(self,
+                 vs_setting: Union[dict, str, Path] = None,
+                 log_intermediate_voltage: bool = None,
+                 samplerate_sps: int = 100_000):
         """ Container for VS Settings, Data will be checked and completed
 
         Args:
             vs_setting: if omitted, the data is generated from default values
         """
+        self.samplerate_sps = samplerate_sps
         def_file = "virtual_source_defs.yml"
         def_path = Path(__file__).parent.resolve()/def_file
         with open(def_path, "r") as def_data:
@@ -66,6 +68,7 @@ class VirtualSourceData(object):
             self.vss = {}
         elif isinstance(vs_setting, VirtualSourceData):
             self.vss = vs_setting.vss
+            self.samplerate_sps = vs_setting.samplerate_sps
         elif isinstance(vs_setting, dict):
             self.vss = vs_setting
         else:
@@ -89,7 +92,7 @@ class VirtualSourceData(object):
         return [
             # General
             int(self.vss["converter_mode"]),
-            int(self.vss["interval_startup_delay_drain_ms"] * 1e3 / SAMPLE_INTERVAL_US),  # n, samples
+            int(self.vss["interval_startup_delay_drain_ms"] * self.samplerate_sps // 10**3),  # n, samples
             int(self.vss["V_input_max_mV"] * 1e3),  # uV
             int(self.vss["I_input_max_mA"] * 1e6),  # nA
             int(self.vss["V_input_drop_mV"] * 1e3),  # uV
@@ -100,7 +103,7 @@ class VirtualSourceData(object):
             int(self.vss["V_enable_output_threshold_mV"] * 1e3),  # uV
             int(self.vss["V_disable_output_threshold_mV"] * 1e3),  # uV
             int(self.vss["dV_enable_output_mV"] * 1e3),  # uV
-            int(self.vss["interval_check_thresholds_ms"] * 1e3 / SAMPLE_INTERVAL_US),  # n, samples
+            int(self.vss["interval_check_thresholds_ms"] * self.samplerate_sps // 10**3),  # n, samples
             int(self.vss["V_pwr_good_enable_threshold_mV"] * 1e3),  # uV
             int(self.vss["V_pwr_good_disable_threshold_mV"] * 1e3),  # uV
             int(self.vss["immediate_pwr_good_signal"] > 0),  # bool
@@ -142,7 +145,7 @@ class VirtualSourceData(object):
         # calc constant to convert capacitor-current to Voltage-delta
         # dV[uV] = constant[us/nF] * current[nA] = constant[us*V/nAs] * current[nA]
         C_storage_uF = max(self.vss["C_intermediate_uF"], 0.001)
-        self.vss["Constant_us_per_nF_n28"] = (SAMPLE_INTERVAL_US * (2**28)) / (1000 * C_storage_uF)
+        self.vss["Constant_us_per_nF_n28"] = (10**3 * (2**28)) // (C_storage_uF * self.samplerate_sps)
 
         # inverse resistance constant
         R_input_mOhm = max(self.vss["R_input_mOhm"], 0.001)

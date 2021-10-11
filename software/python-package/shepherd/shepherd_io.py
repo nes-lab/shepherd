@@ -17,6 +17,7 @@ import logging
 import time
 import struct
 import mmap
+from pathlib import Path
 from typing import NoReturn, Union
 import numpy as np
 from periphery import GPIO
@@ -515,7 +516,7 @@ class ShepherdIO(object):
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
-    def set_aux_target_voltage(cal_settings: CalibrationData, voltage: float) -> NoReturn:
+    def set_aux_target_voltage(cal_settings: Union[CalibrationData, None], voltage: float) -> NoReturn:
         """ Enables or disables the voltage for the second target
 
         The shepherd cape has two DAC-Channels that each serve as power supply for a target
@@ -554,7 +555,7 @@ class ShepherdIO(object):
         sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
 
     @staticmethod
-    def send_virtsource_settings(vs_settings: VirtualSourceData, log_intermediate_voltage: bool = None) -> NoReturn:
+    def send_virtsource_settings(vs_settings: Union[dict, str, Path, VirtualSourceData], log_intermediate_voltage: bool = None) -> NoReturn:
         """ Sends virtsource settings to PRU core
             looks like a simple one-liner but is needed by the child-classes
             Note: to apply these settings the pru has to do a re-init (reset)
@@ -562,10 +563,8 @@ class ShepherdIO(object):
             :param vs_settings: Contains the settings for the virtual source.
             :param log_intermediate_voltage: monitor capacitor, useful when output is const
         """
-        if vs_settings is None:
-            vs_settings = VirtualSourceData(log_intermediate_voltage=log_intermediate_voltage)
-        else:
-            vs_settings = VirtualSourceData(vs_settings, log_intermediate_voltage)
+        samplerate_sps = 10**9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
+        vs_settings = VirtualSourceData(vs_settings, log_intermediate_voltage, samplerate_sps)
 
         values = vs_settings.export_for_sysfs()
         sysfs_interface.write_virtsource_settings(values)

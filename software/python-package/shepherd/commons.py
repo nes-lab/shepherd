@@ -10,13 +10,8 @@ corresponding implementation in `software/firmware/include/commons.h`
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14
-FIFO_BUFFER_SIZE = 64   # keep in sync with kernel-module and pru-firmware
+MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14  # TODO: replace by (currently non-existing) sysfs_interface
 
-ADC_SAMPLES_PER_BUFFER = 10_000
-BUFFER_PERIOD_NS = 100_000_000
-SAMPLE_INTERVAL_NS = BUFFER_PERIOD_NS // ADC_SAMPLES_PER_BUFFER
-SAMPLE_INTERVAL_US = SAMPLE_INTERVAL_NS // 1000
 
 MSG_BUF_FROM_HOST = 0x01
 MSG_BUF_FROM_PRU = 0x02
