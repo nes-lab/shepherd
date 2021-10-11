@@ -8,7 +8,7 @@
 #include "stdint_fast.h"
 
 /**
- * Length of buffer, must be kept in sync with "commons" in pyPackage, kernel-module, pru-firmware
+ * Length of buffer for storing harvest & emulation data
  */
 #define FIFO_BUFFER_SIZE (64U)  // 107 is current max (<10'000 pages)
 

@@ -5,9 +5,10 @@
 // NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**
- * Length of buffer, must be kept in sync with "commons" in pyPackage, kernel-module, pru-firmware
+ * Size of msg-fifo - unrelated to fifo-buffer of pru / shared mem that stores harvest & emulation data
+ * this msg-fifo should be at least slightly larger though
  */
-#define FIFO_BUFFER_SIZE (64U)
+#define MSG_FIFO_SIZE (128U)
 
 /**
  * These are the system events that we use to signal events to the PRUs.

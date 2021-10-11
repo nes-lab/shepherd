@@ -6,7 +6,7 @@
 
 struct RingBuffer
 {
-    struct ProtoMsg ring[FIFO_BUFFER_SIZE];
+    struct ProtoMsg ring[MSG_FIFO_SIZE];
     uint32_t start; // TODO: these can be smaller (like u8), at least in documentation
     uint32_t end;
     uint32_t active;

@@ -28,12 +28,12 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
-    if(++(buf->end) == FIFO_BUFFER_SIZE) 	buf->end = 0U;
+    if(++(buf->end) == MSG_FIFO_SIZE) 	buf->end = 0U;
 
-    if (buf->active < FIFO_BUFFER_SIZE)	buf->active++;
+    if (buf->active < MSG_FIFO_SIZE)	buf->active++;
     else
     {
-        if(++(buf->start) == FIFO_BUFFER_SIZE) buf->start = 0U; // fast modulo
+        if(++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
         /* fire warning - maybe not the best place to do this - could start an avalanche */
         printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
@@ -45,7 +45,7 @@ static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const ele
     if(buf->active == 0) return 0;
     //mutex_lock(&buf->mutex);
     *element = buf->ring[buf->start];
-    if(++(buf->start) == FIFO_BUFFER_SIZE) buf->start = 0U; // fast modulo
+    if(++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
     //mutex_unlock(&buf->mutex);
     return 1;
