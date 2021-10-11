@@ -102,7 +102,7 @@ class LogWriter(object):
     # NOTE for quick and easy performance improvement: remove compression for monitor-datasets, or even group_value
     compression_algo = "lzf"
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
-    sys_log_last_ns = 0
+    sys_log_next_ns = 0
     dmesg_mon_t = None
     ptp4l_mon_t = None
     uart_mon_t = None
@@ -284,6 +284,7 @@ class LogWriter(object):
         self.sysutil_grp.create_dataset("net", (self.sysutil_inc, 2), dtype="u8", maxshape=(None, 2), chunks=(self.sysutil_inc, 2), )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
+        self.sys_log_next_ns = int(time.time()) * (10 ** 9)
         self.log_sys_stats()
 
         # Create dmesg-Logger -> consists of a timestamp and a message
@@ -303,7 +304,7 @@ class LogWriter(object):
         self.timesync_grp.create_dataset("value", (self.timesync_inc, 3), dtype="i8", maxshape=(None, 3), chunks=True)
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
-        # h5_structure_printer(self._h5file)  # TODO: just for debug
+
         return self
 
     def __exit__(self, *exc):
@@ -411,7 +412,7 @@ class LogWriter(object):
         :return: none
         """
         ts_now_ns = int(time.time() * (10 ** 9))
-        if ts_now_ns >= (self.sys_log_last_ns + self.sys_log_intervall_ns):
+        if ts_now_ns >= self.sys_log_next_ns:
             data_length = self.sysutil_grp["time"].shape[0]
             if self.sysutil_pos >= data_length:
                 # self._h5file.flush()
@@ -422,7 +423,7 @@ class LogWriter(object):
                 self.sysutil_grp["ram"].resize((data_length, 2))
                 self.sysutil_grp["io"].resize((data_length, 4))
                 self.sysutil_grp["net"].resize((data_length, 2))
-            self.sys_log_last_ns += self.sys_log_intervall_ns
+            self.sys_log_next_ns += self.sys_log_intervall_ns
             self.sysutil_grp["time"][self.sysutil_pos] = ts_now_ns
             self.sysutil_grp["cpu"][self.sysutil_pos] = int(round(psutil.cpu_percent(0)))
             mem_stat = psutil.virtual_memory()[0:3]
