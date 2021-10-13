@@ -200,7 +200,7 @@ def record(
                    "- set 0-4.5 for specific const voltage, \n"
                    "- 'mid' for intermediate voltage (vsource storage cap), \n"
                    "- True or 'main' to mirror main target voltage")
-@click.option("--virtsource", default={}, help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
+@click.option("--virtsource", default="direct", help="Use the desired setting for the virtual source, provide yaml or name like BQ25570")
 @click.option("--uart_baudrate", "-b", default=None, type=click.INT, help="Enable UART-Logging for target by setting a baudrate")
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 @click.option("--skip_log_voltage", is_flag=True, help="reduce file-size by omitting voltage-logging")

@@ -141,6 +141,7 @@ class LogWriter(object):
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
+        self.samplerate_sps = int(samplerate_sps)
         self.sample_interval_ns = int(10**9 // samplerate_sps)
         self.buffer_timeseries = self.sample_interval_ns * np.arange(samples_per_buffer).astype("u8")
         self._write_voltage = not skip_voltage
@@ -251,7 +252,7 @@ class LogWriter(object):
             maxshape=(None,),
             chunks=True,
         )
-        self.xcpt_grp.create_dataset("value", (0,), dtype="u4", maxshape=(None,), chunks=True)
+        self.xcpt_grp.create_dataset("value", (self.xcpt_inc,), dtype="u4", maxshape=(None,), chunks=True)
         self.xcpt_grp["value"].attrs["unit"] = "n"
 
         # UART-Logger
@@ -310,7 +311,7 @@ class LogWriter(object):
     def __exit__(self, *exc):
         global monitors_end
         monitors_end.set()
-        time.sleep(1)
+        time.sleep(0.1)
 
         # meantime: trim over-provisioned parts
         self.data_grp["time"].resize((self.data_pos if self._write_current or self._write_voltage else 0,))
@@ -329,6 +330,7 @@ class LogWriter(object):
         self.dmesg_grp["message"].resize((self.dmesg_pos,))
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
         self.xcpt_grp["message"].resize((self.xcpt_pos,))
+        self.xcpt_grp["value"].resize((self.xcpt_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
         self.timesync_grp["value"].resize((self.timesync_pos, 3))
 
@@ -341,7 +343,7 @@ class LogWriter(object):
         if self.uart_mon_t is not None:
             logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
-        runtime = round(self.data_grp['time'].shape[0] * 10**9 // self.sample_interval_ns, 1)
+        runtime = round(self.data_grp['time'].shape[0] // self.samplerate_sps, 1)
         logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
@@ -424,6 +426,8 @@ class LogWriter(object):
                 self.sysutil_grp["io"].resize((data_length, 4))
                 self.sysutil_grp["net"].resize((data_length, 2))
             self.sys_log_next_ns += self.sys_log_intervall_ns
+            if self.sys_log_next_ns < ts_now_ns:
+                self.sys_log_next_ns = int(time.time()) * (10 ** 9)
             self.sysutil_grp["time"][self.sysutil_pos] = ts_now_ns
             self.sysutil_grp["cpu"][self.sysutil_pos] = int(round(psutil.cpu_percent(0)))
             mem_stat = psutil.virtual_memory()[0:3]
