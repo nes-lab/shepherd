@@ -64,9 +64,17 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj,
         struct kobj_attribute *attr,
         const char *buffer, size_t count);
-
 static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
         struct kobj_attribute *attr, char *buffer);
+
+static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
+        struct kobj_attribute *attr,char *buffer);
+static ssize_t sysfs_programmer_ctrl_show(struct kobject *kobj,
+        struct kobj_attribute *attr,char *buffer);
+static ssize_t sysfs_programmer_fw_store(struct kobject *kobj,
+        struct kobj_attribute *attr,char *buffer);
+static ssize_t sysfs_programmer_fw_show(struct kobject *kobj,
+        struct kobj_attribute *attr,char *buffer);
 
 
 struct kobj_attr_struct_s {
@@ -118,9 +126,20 @@ struct kobj_attr_struct_s attr_virtsource_settings = {
 	.val_offset = offsetof(struct SharedMem, virtsource_settings)
 };
 struct kobj_attr_struct_s attr_pru_msg_system_settings = {
-        .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show,
-                sysfs_pru_msg_system_store),
-        .val_offset = 0
+	.attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show,
+		sysfs_pru_msg_system_store),
+	.val_offset = 0
+};
+
+struct kobj_attr_struct_s attr_programmer_ctrl = {
+	.attr = __ATTR(programmer_ctrl, 0660, sysfs_programmer_ctrl_show,
+		       sysfs_programmer_ctrl_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl)
+};
+struct kobj_attr_struct_s attr_programmer_fw = {
+	.attr = __ATTR(programmer_fw, 0660, sysfs_programmer_fw_show,
+		       sysfs_programmer_fw_store),
+	.val_offset = offsetof(struct ProgrammerFW, data)
 };
 
 struct kobj_attribute attr_sync_error =
@@ -141,6 +160,8 @@ static struct attribute *pru_attrs[] = {
 	&attr_calibration_settings.attr.attr,
 	&attr_virtsource_settings.attr.attr,
 	&attr_pru_msg_system_settings.attr.attr,
+	&attr_programmer_ctrl.attr.attr,
+	&attr_programmer_fw.attr.attr,
 	NULL,
 };
 
@@ -428,11 +449,11 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 						struct kobj_attribute *attr,
 						const char *buffer, size_t count)
 {
-    const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE  * 1u;
-    const uint32_t out_lut_size = LUT_SIZE * 4u;
-    const uint32_t non_lut_size = sizeof(struct VirtSource_Config) - inp_lut_size - out_lut_size;
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t mem_offset = 0u;
+	const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE  * 1u;
+	const uint32_t out_lut_size = LUT_SIZE * 4u;
+	const uint32_t non_lut_size = sizeof(struct VirtSource_Config) - inp_lut_size - out_lut_size;
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t mem_offset = 0u;
 	int buf_pos = 0;
 	uint32_t i = 0u;
 
@@ -551,6 +572,133 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
     return count;
 }
 
+static ssize_t sysfs_programmer_fw_store(struct kobject *kobj,
+					 struct kobj_attribute *attr,
+					 const char *buffer, size_t count)
+{
+    const uint32_t mem_addr = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_base_addr));
+    const uint32_t mem_size = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
+    void __iomem *pru_sample_mem = NULL;
+    struct kobj_attr_struct_s *kobj_attr_wrapped;
+
+    if (pru_comm_get_state() != STATE_IDLE)
+	    return -EBUSY;
+
+    if (count > mem_size)
+	    return -EINVAL;
+
+    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+    pru_sample_mem = ioremap(mem_addr, mem_size);
+
+    printk(KERN_INFO "shprd.k: filling shared mem with firmware for pru-programmer (%u bytes)", count);
+    writel(count, pru_sample_mem);
+    memcpy_toio(pru_sample_mem + kobj_attr_wrapped->val_offset, buffer, count);
+
+    iounmap(pru_sample_mem);
+    return count;
+}
+
+static ssize_t sysfs_programmer_fw_show(struct kobject *kobj,
+					struct kobj_attribute *attr, char *buf)
+{
+    const uint32_t mem_addr = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_base_addr));
+    const uint32_t mem_size = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
+    void __iomem *pru_sample_mem = NULL;
+    uint32_t fw_size;
+    struct kobj_attr_struct_s *kobj_attr_wrapped;
+
+    if (pru_comm_get_state() != STATE_IDLE)
+	    return -EBUSY;
+
+    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+    pru_sample_mem = ioremap(mem_addr, mem_size);
+    fw_size = readl(pru_sample_mem);
+
+    if (fw_size > mem_size)
+	    return -EINVAL;
+
+    printk(KERN_INFO "shprd.k: reading shared mem with firmware for pru-programmer");
+    memcpy_fromio(buf, pru_sample_mem + kobj_attr_wrapped->val_offset, fw_size);
+
+    iounmap(pru_sample_mem);
+    return fw_size;
+}
+
+static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
+					   struct kobj_attribute *attr,
+					   const char *buffer, size_t count)
+{
+	static const uint32_t struct_size = sizeof(struct Programmer_Ctrl);
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t mem_offset;
+	uint32_t mode = 0u;
+	uint32_t start_pos;
+	int buf_pos;
+	uint32_t i;
+
+	if (pru_comm_get_state() != STATE_IDLE)
+		return -EBUSY;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+	if (strncmp(buf, "swd ", 4) == 0) 	mode = 1;
+	else if (strncmp(buf, "sbw ", 4) == 0) 	mode = 2;
+	else if (strncmp(buf, "jtag ", 5) == 0) mode = 3;
+
+	if (mode < 1) return -EINVAL;
+	buf_pos = mode < 3 ? 4u : 5u;
+
+	/* write struct, beginning with 3rd entry (port) */
+	mem_offset = kobj_attr_wrapped->val_offset;
+	start_pos = offsetof(struct Programmer_Ctrl, target_port);
+	for (i = start_pos; i < struct_size; i += 4)
+	{
+		uint32_t value_retrieved, value_length;
+		int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved,&value_length);
+		buf_pos += value_length;
+		if (ret != 1)
+		{
+			// last two pin-configs are optional when using swd or sbw
+			if ((mode < 3) && (i >= offsetof(struct Programmer_Ctrl, pin_o)))
+				value_retrieved = 0u;
+			else 	return -EINVAL;
+		}
+		writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
+	}
+	printk(KERN_INFO "shprd.k: setting struct ProgrammerCtrl");
+
+	start_pos = offsetof(struct Programmer_Ctrl, type);
+	writel(mode, pru_shared_mem_io + mem_offset + start_pos);
+
+	// arming programmer
+	start_pos = offsetof(struct Programmer_Ctrl, unfinished)
+	writel(1u, pru_shared_mem_io + mem_offset + start_pos);
+
+	// TODO: trigger a pru-reset
+	return count;
+}
+
+static ssize_t sysfs_programmer_fw_show(struct kobject *kobj,
+					struct kobj_attribute *attr, char *buf)
+{
+	static const uint32_t struct_size = sizeof(struct Programmer_Ctrl);
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t mem_offset;
+	uint32_t count = 0u;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+	mem_offset = kobj_attr_wrapped->val_offset;
+
+	/* u32 starting at beginning of struct */
+	for (i = 0; i < struct_size; i += 4)
+	{
+		count += sprintf(buf + strlen(buf),
+				 "%u \n",
+				 readl(pru_shared_mem_io + mem_offset + i));
+	}
+
+	printk(KERN_INFO "shprd.k: reading struct ProgrammerCtrl");
+	return count;
+}
 
 int sysfs_interface_init(void)
 {

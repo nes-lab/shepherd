@@ -103,6 +103,27 @@ struct SampleBuffer {
 	struct GPIOEdges gpio_edges;
 } __attribute__((packed));
 
+/* Firmware-container for Programmer in same mem-area as FIFO for Samplebuffer */
+struct ProgrammerFW {
+	uint32_t len;
+	/* variable size array "hack" */
+	/* -> typecast the mem-pointer to this struct */
+	uint32_t data[];
+};
+
+/* Programmer-Control as part of SharedMem-Struct */
+struct Programmer_Ctrl {
+	uint32_t unfinished; 	// flag
+	uint32_t type; 		// 1: swd, 2: sbw, 3: jtag
+	uint32_t target_port;	// reroute pins with analog switch (shepherd2)
+	uint32_t voltage_mV;
+	uint32_t frequency_Hz;
+	uint32_t pin_clk;	// (TCK)
+	uint32_t pin_io;	// just input for JTAG (TDI)
+	uint32_t pin_o;		// output, only for JTAG (TDO)
+	uint32_t pin_m;		// mode, only for JTAG (TMS)
+};
+
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0
  * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256) = 5'000
@@ -228,7 +249,9 @@ struct SharedMem {
 	struct Calibration_Config calibration_settings;
 	/* This structure defines all settings of virtual source emulation*/
 	struct VirtSource_Config virtsource_settings;
-	/* replacement Msg-System for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
+	/* settings for programming-subroutines */
+	struct Programmer_Ctrl programmer_ctrl;
+	/* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
 	struct ProtoMsg pru0_msg_inbox;
 	struct ProtoMsg pru0_msg_outbox;
 	struct ProtoMsg pru0_msg_error;
