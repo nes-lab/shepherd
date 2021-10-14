@@ -8,7 +8,7 @@ from typing import NoReturn
 
 class LogWriter(object):
 
-    compression_algo = None # "lzf"
+    compression = None  # "lzf"
 
     def __init__(
             self,
@@ -19,7 +19,7 @@ class LogWriter(object):
         self.store_path = store_path
         print(f"Storing data to   '{self.store_path}'")
 
-        self.chunk_shape = (samples_per_buffer,)
+        self.chunk_shape = True  # (samples_per_buffer,)
         self.samplerate_sps = int(samplerate_sps)
         self.sample_interval_ns = int(10 ** 9 // samplerate_sps)
         self.buffer_timeseries = self.sample_interval_ns * np.arange(samples_per_buffer).astype("u8")
@@ -40,26 +40,25 @@ class LogWriter(object):
             (self.data_inc,),
             dtype="u8",
             maxshape=(None,),
-            chunks=True, # self.chunk_shape,
-            compression=LogWriter.compression_algo,
+            chunks=self.chunk_shape,
+            compression=LogWriter.compression,
         )
         self.data_grp.create_dataset(
             "current",
             (self.data_inc,),
             dtype="u4",
             maxshape=(None,),
-            chunks=True, #self.chunk_shape,
-            compression=self.compression_algo,
+            chunks=self.chunk_shape,
+            compression=self.compression,
         )
         self.data_grp.create_dataset(
             "voltage",
             (self.data_inc,),
             dtype="u4",
             maxshape=(None,),
-            chunks=True, #self.chunk_shape,
-            compression=LogWriter.compression_algo,
+            chunks=self.chunk_shape,
+            compression=LogWriter.compression,
         )
-
         return self
 
     def __exit__(self, *exc):
@@ -101,9 +100,7 @@ class LogReader(object):
 
     def __enter__(self):
         self._h5file = h5py.File(self.store_path, "r")
-        self.ds_voltage = self._h5file["data"]["voltage"]
-        self.ds_current = self._h5file["data"]["current"]
-        runtime = round(self.ds_voltage.shape[0] / self.samplerate_sps, 1)
+        runtime = round(self._h5file["data"]["time"].shape[0] / self.samplerate_sps, 1)
         print(f"Reading data from '{self.store_path}', contains {runtime} s")
         return self
 
@@ -120,8 +117,8 @@ class LogReader(object):
         for i in range(start, end):
             idx_start = i * self.samples_per_buffer
             idx_end = idx_start + self.samples_per_buffer
-            db = {"voltage": self.ds_voltage[idx_start:idx_end],
-                  "current": self.ds_current[idx_start:idx_end]}
+            db = {"voltage": self._h5file["data"]["voltage"][idx_start:idx_end],
+                  "current": self._h5file["data"]["current"][idx_start:idx_end]}
             yield db
 
 
@@ -152,7 +149,7 @@ if __name__ == "__main__":
     file_emu = benchmark_path / "benchmark_emu.h5"
 
     print(h5py.version.info)
-    print("ram is leaking during processing, not during generation -> only difference: h5py lzf-reading")
+    print("ram is leaking during processing, not during generation")
 
     if not file_rec.exists():
         print("Starting Generating (hdf5 write)")
