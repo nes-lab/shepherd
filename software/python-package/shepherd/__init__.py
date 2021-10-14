@@ -675,7 +675,7 @@ def emulate(
     with ExitStack() as stack:
         if output_path is not None:
             stack.enter_context(log_writer)
-            # log_writer.start_monitors(uart_baudrate)
+            log_writer.start_monitors(uart_baudrate)
 
         stack.enter_context(log_reader)
 

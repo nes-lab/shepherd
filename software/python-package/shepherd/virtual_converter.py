@@ -25,17 +25,18 @@ class VirtualConverter(object):
         vd_setting = VirtualConverterData(vd_setting)
         values = vd_setting.export_for_sysfs()
 
-
-    def ivcurves_to_params(self):
-        static: age_new = age_old = p_max_new = p_max_old = 0, window_size = 250
+    def ivcurves_to_params(self, v: float, c: float):
+        # static:
+        age_new = age_old = p_max_new = p_max_old = 0
+        window_size = 250
 
         p_atm = v * c
-        age_new + +
-        age_old + +
+        age_new += 1
+        age_old += 1
         if p_atm > p_max_new:
             p_max_new = p_atm
             age_new = 0
-        if (age_old > window_size) or (p_max_new >= p_max_current):
+        if (age_old > window_size) or (p_max_new >= p_max_old):
             p_max_old = p_max_new
             age_old = age_new
             p_max_new = 0

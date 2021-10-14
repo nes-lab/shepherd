@@ -343,7 +343,7 @@ class ShepherdIO(object):
         return self
 
     def __exit__(self, *args):
-        logger.info("exiting analog shepherd_io")
+        logger.info("Now exiting ShepherdIO")
         self._cleanup()
 
     @staticmethod
