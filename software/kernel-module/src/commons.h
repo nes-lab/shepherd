@@ -78,15 +78,17 @@ enum ShepherdState {
 
 /* Firmware-container for Programmer in same mem-area as FIFO for Samplebuffer */
 struct ProgrammerFW {
-	uint32_t len;
+	uint32_t signature1; // kernel writes and tests it for 0xDEAD
+	uint32_t signature2; // kernel writes and tests it for 0xD00D
 	/* variable size array "hack" */
 	/* -> typecast the mem-pointer to this struct */
+	uint32_t length;
 	uint32_t data[];
-};
+} __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
-struct Programmer_Ctrl {
-	uint32_t unfinished; 	// flag
+struct ProgrammerCtrl {
+	uint32_t has_work; 	// flag
 	uint32_t type; 		// 1: swd, 2: sbw, 3: jtag
 	uint32_t target_port;	// reroute pins with analog switch (shepherd2)
 	uint32_t voltage_mV;
@@ -95,7 +97,7 @@ struct Programmer_Ctrl {
 	uint32_t pin_io;	// just input for JTAG (TDI)
 	uint32_t pin_o;		// output, only for JTAG (TDO)
 	uint32_t pin_m;		// mode, only for JTAG (TMS)
-};
+} __attribute__((packed));
 
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
@@ -225,7 +227,7 @@ struct SharedMem {
     /* This structure defines all settings of virtual source emulation*/
     struct VirtSource_Config virtsource_settings;
     /* settings for programming-subroutines */
-    struct Programmer_Ctrl programmer_ctrl;
+    struct ProgrammerCtrl programmer_ctrl;
     /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
     struct ProtoMsg pru0_msg_inbox;
     struct ProtoMsg pru0_msg_outbox;

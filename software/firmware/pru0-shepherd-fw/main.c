@@ -20,6 +20,7 @@
 #include "sampling.h"
 #include "shepherd_config.h"
 #include "virtual_source.h"
+#include "programmer.h"
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 	(0xFFFFFFFF)
@@ -269,7 +270,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 
 void event_loop(volatile struct SharedMem *const shared_mem,
 		struct RingBuffer *const free_buffers_ptr,
-		struct SampleBuffer *const buffers_far)
+		struct SampleBuffer *const buffers_far) // TODO: should be volatile, also for programmer and more
 {
 	uint32_t sample_buf_idx = NO_BUFFER;
 	enum ShepherdMode shepherd_mode = (enum ShepherdMode)shared_mem->shepherd_mode;
@@ -392,6 +393,18 @@ void main(void)
 
 	vsource_struct_init_testable(&shared_memory->virtsource_settings);
 
+	/* programmer-subroutine-control: init to safestate */
+	shared_memory->programmer_ctrl = (struct ProgrammerCtrl){
+		.has_work = 0u,
+		.type = 0u,
+		.target_port = 1001u,
+		.voltage_mV = 1002u,
+		.frequency_Hz = 1003u,
+		.pin_clk = 6001u,
+		.pin_io = 6002u,
+		.pin_o = 6003u,
+		.pin_m = 6004u};
+
 	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value[0]=TIMER_BASE_PERIOD};
 	shared_memory->pru1_sync_inbox = (struct SyncMsg){
 		.id =0u,
@@ -437,6 +450,14 @@ reset:
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-	event_loop(shared_memory, &free_buffers, buffers_far);
+	if (shared_memory->programmer_ctrl.has_work)
+	{
+		programmer(shared_memory, buffers_far);
+	}
+	else
+	{
+		event_loop(shared_memory, &free_buffers, buffers_far);
+	}
+
 	goto reset;
 }
