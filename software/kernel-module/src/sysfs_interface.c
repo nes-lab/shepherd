@@ -73,13 +73,6 @@ static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
 static ssize_t sysfs_programmer_ctrl_show(struct kobject *kobj,
 					  struct kobj_attribute *attr,
 					  char *buf);
-static ssize_t sysfs_programmer_fw_store(struct kobject *kobj,
-					 struct kobj_attribute *attr,
-					 const char *buffer, size_t count);
-static ssize_t sysfs_programmer_fw_show(struct kobject *kobj,
-					struct kobj_attribute *attr,
-					char *buffer);
-
 
 struct kobj_attr_struct_s {
 	struct kobj_attribute attr;
@@ -140,11 +133,6 @@ struct kobj_attr_struct_s attr_programmer_ctrl = {
 		       sysfs_programmer_ctrl_store),
 	.val_offset = offsetof(struct SharedMem, programmer_ctrl)
 };
-struct kobj_attr_struct_s attr_programmer_fw = {
-	.attr = __ATTR(programmer_fw, 0660, sysfs_programmer_fw_show,
-		       sysfs_programmer_fw_store),
-	.val_offset = 0
-};
 
 struct kobj_attribute attr_sync_error =
 	__ATTR(error, 0660, sysfs_sync_error_show, NULL);
@@ -165,7 +153,6 @@ static struct attribute *pru_attrs[] = {
 	&attr_virtsource_settings.attr.attr,
 	&attr_pru_msg_system_settings.attr.attr,
 	&attr_programmer_ctrl.attr.attr,
-	&attr_programmer_fw.attr.attr,
 	NULL,
 };
 
@@ -576,92 +563,17 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
     return count;
 }
 
-static ssize_t sysfs_programmer_fw_store(struct kobject *kobj,
-					 struct kobj_attribute *attr,
-					 const char *buffer, size_t count)
-{
-    void *const mem_addr = (void *const)readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_base_addr));
-    const uint32_t mem_size = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
-//void __iomem *pru_sample_mem = NULL;
-    const uint32_t has_todo = readl(pru_shared_mem_io +
-				    offsetof(struct SharedMem, programmer_ctrl) +
-				    offsetof(struct ProgrammerCtrl, has_work));
-
-    if ((pru_comm_get_state() != STATE_IDLE) || (has_todo))
-    {
-	    printk(KERN_INFO "shprd.k: filling shared mem with firmware failed -> pru is busy");
-	    return -EBUSY;
-    }
-    if (count > mem_size)
-    {
-	    printk(KERN_INFO "shprd.k: filling shared mem with firmware failed -> data too large");
-	    return -EINVAL;
-    }
-
-
-//pru_sample_mem = ioremap(mem_addr, mem_size);
-
-    printk(KERN_INFO "shprd.k: filling shared mem with firmware for pru-programmer (%u bytes)", count);
-
-    memcpy_toio(mem_addr + offsetof(struct ProgrammerFW, data), buffer, count);
-    writel(count, mem_addr + offsetof(struct ProgrammerFW, length));
-    writel(0xDEAD, mem_addr + offsetof(struct ProgrammerFW, signature1));
-    writel(0xD00D, mem_addr + offsetof(struct ProgrammerFW, signature2));
-
-// iounmap(pru_sample_mem);
-    return count;
-}
-
-static ssize_t sysfs_programmer_fw_show(struct kobject *kobj,
-					struct kobj_attribute *attr, char *buf)
-{
-    const void * const mem_addr = (void * const)readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_base_addr));
-    const uint32_t mem_size = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
-    void __iomem *pru_sample_mem = NULL;
-    uint32_t fw_size = 0u;
-
-    printk(KERN_INFO "shprd.k: reading shared mem 0x%px, %u bytes", mem_addr, mem_size);
-    if (pru_comm_get_state() != STATE_IDLE)
-    {
-	    printk(KERN_INFO "shprd.k: reading shared mem with firmware for pru-programmer failed -> pru busy");
-	    return -EBUSY;
-    }
-    
-    /*
-    pru_sample_mem = ioremap(mem_addr, mem_size);
-    fw_size = readl(pru_sample_mem + offsetof(struct ProgrammerFW, length));
-    printk(KERN_INFO "shprd.k: reading shared mem, fw_size = %u bytes", fw_size);
-    if ((fw_size > mem_size) ||
-	(0xDEAD != readl(pru_sample_mem + offsetof(struct ProgrammerFW, signature1))) ||
-	(0xD00D != readl(pru_sample_mem + offsetof(struct ProgrammerFW, signature2))))
-    {
-	    printk(KERN_INFO "shprd.k: reading shared mem with firmware for pru-programmer failed");
-	    return -EINVAL;
-    }
-
-    printk(KERN_INFO "shprd.k: reading shared mem with firmware for pru-programmer (%u bytes)", fw_size);
-    memcpy_fromio(buf, pru_sample_mem + offsetof(struct ProgrammerFW, data), fw_size);
-
-    iounmap(pru_sample_mem); */
-    return fw_size;
-}
 
 static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
 					   struct kobj_attribute *attr,
 					   const char *buffer, size_t count)
 {
-	void __iomem *const mem_addr = pru_shared_mem_io + offsetof(struct SharedMem, programmer_ctrl);
-	struct ProgrammerCtrl *const prg_ctrl = (void *const)mem_addr;
+	const uint32_t mem_offset = offsetof(struct SharedMem, programmer_ctrl);
+	struct ProgrammerCtrl *const prg_ctrl = (void *const)(pru_shared_mem_io + mem_offset);
 	static const uint32_t struct_size = sizeof(struct ProgrammerCtrl);
 	uint32_t mode = 0u;
 	int buf_pos;
 	uint32_t i;
-
-	if (pru_comm_get_state() != STATE_IDLE)
-	{
-		printk(KERN_INFO "shprd.k: setting struct ProgrammerCtrl failed -> pru busy");
-		return -EBUSY;
-	}
 
 	if (strncmp(buffer, "swd ", 4) == 0)		mode = 1;
 	else if (strncmp(buffer, "sbw ", 4) == 0)	mode = 2;
@@ -674,8 +586,8 @@ static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
 	}
 	buf_pos = mode < 3 ? 4u : 5u;
 
-	/* write struct, beginning with 3rd entry (port) */
-	for (i = offsetof(struct ProgrammerCtrl, target_port); i < struct_size; i += 4)
+	/* write struct, beginning with 3rd entry (datarate) */
+	for (i = offsetof(struct ProgrammerCtrl, datarate_baud); i < struct_size; i += 4)
 	{
 		uint32_t value_retrieved, value_length;
 		int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved, &value_length);
@@ -691,15 +603,12 @@ static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
 				return -EINVAL;
 			}
 		}
-		writel(value_retrieved, mem_addr + i);
+		writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
 	}
 	printk(KERN_INFO "shprd.k: setting struct ProgrammerCtrl");
-
-	// arming programmer
-	writel(mode, &prg_ctrl->type);
+	// arming programmer as last step
+	writel(mode, &prg_ctrl->protocol);
 	writel(1u, &prg_ctrl->has_work);
-
-	// TODO: trigger a pru-reset
 	return count;
 }
 
