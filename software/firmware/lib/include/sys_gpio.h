@@ -110,7 +110,7 @@ static inline void check_gpio_test()
     // relates external shepherd-button to pru-debug-gpio
     GPIO_OFF(BIT_SHIFT(P8_11));
     const uint32_t gpio_reg = CT_GPIO2.GPIO_DATAIN;
-    // test for shepherd sense-button, P8_34, gpio2[17], 81
+    // test for shepherd sense-button, P8_34, gpio2[17], 81 (shepherd v1)
     if (gpio_reg & (1U << 17U)) GPIO_ON(BIT_SHIFT(P8_11));
     else                        GPIO_OFF(BIT_SHIFT(P8_11));
 }

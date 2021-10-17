@@ -11,6 +11,7 @@ SOURCES = $(notdir $(wildcard ./*.c))
 # also add external files (./lib/src/)
 SOURCES += simple_lock.c
 SOURCES += iep.c
+#SOURCES += sys_gpio.h
 
 ASM_SOURCES = spi_transfer_pru.asm
 ASM_SOURCES += gpio_io_fast.asm
