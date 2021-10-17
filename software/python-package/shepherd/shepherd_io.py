@@ -253,6 +253,16 @@ class SharedMem(object):
         self.mapped_mem.write(voltage)
         self.mapped_mem.write(current)
 
+    def write_firmware(self, data: bytes):
+        if len(data) > self.size:
+            ValueError(f"firmware file is larger than the SharedMEM-Buffer")
+        self.mapped_mem.seek(0)
+        self.mapped_mem.write(0xDEADD00D.to_bytes(4, "big", signed=False))
+        self.mapped_mem.write(0x8BADF00D.to_bytes(4, "big", signed=False))
+        self.mapped_mem.write(len(data).to_bytes(4, "big", signed=False))
+        self.mapped_mem.write(data)
+        logger.debug(f"wrote Firmware-Data to SharedMEM-Buffer (size = {len(data)} bytes)")
+
 
 class ShepherdIO(object):
     """Generic ShepherdIO interface.
@@ -425,6 +435,8 @@ class ShepherdIO(object):
             self.shared_mem.__exit__()
 
         self.set_target_io_level_conv(False)
+        self.set_power_state_emulator(False)
+        self.set_power_state_recorder(False)
         self._set_shepherd_pcb_power(False)
         logger.debug("Shepherd hardware is now powered down")
 

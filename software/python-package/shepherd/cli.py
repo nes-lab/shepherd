@@ -373,5 +373,38 @@ def launcher(led, button):
         launch.run()
 
 
+@cli.command(short_help="Program Target-Controller", context_settings={"ignore_unknown_options": True})
+@click.argument("firmware-file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--sel_a/--sel_b", type=click.BOOL, default=True,
+              help="Choose Target-Port for programming")
+@click.option("--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage")
+@click.option("--speed", "-s", type=click.INT, default=1000, help="Programming-Datarate")
+@click.option("--protocol", "-p", type=click.Choice(["swd", "sbw", "jtag"]), default="swd", help="Programming-Protocol")
+def program(firmware_file, sel_a, voltage, speed, protocol):
+    logger.setLevel(logging.DEBUG)  # TODO: via argument
+    with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
+        sd.set_power_state_emulator(True)
+        sd.select_target_for_io_interface(sel_a=sel_a)
+        sd.set_io_level_converter(True)
+        sd.select_target_for_power_tracking(sel_a=not sel_a)
+
+        cal = CalibrationData.from_default()
+        sysfs_interface.write_dac_aux_voltage(cal, voltage)
+        sd.shared_mem.write_firmware(fw.read())
+
+        ctrl = sysfs_interface.read_programmer_ctrl()
+        logger.debug(f"Programming initialized, pre-ctrl-reg = {ctrl}")
+        sysfs_interface.write_programmer_ctrl(protocol, speed, 24, 25, 26, 27)  # TODO: pins-nums are placeholders
+
+        # force a pru-reset to jump into programming routine
+        sysfs_interface.set_stop(force=True)
+        ctrl = sysfs_interface.read_programmer_ctrl()
+        while ctrl[0] > 0:
+            logger.debug(f"Programming in progress, ctrl-reg = {ctrl})")
+            time.sleep(2)
+            ctrl = sysfs_interface.read_programmer_ctrl()
+        logger.debug(f"Finished Programming, will exit now, ctrl-reg = {ctrl})")
+
+
 if __name__ == "__main__":
     cli()

@@ -307,6 +307,25 @@ def read_pru_msg() -> tuple:
     return msg_parts[0], msg_parts[1:]
 
 
+def write_programmer_ctrl(protocol: str, datarate: int,
+                          pin_clk: int, pin_io: int,
+                          pin_o: int = 0, pin_m: int = 0
+                          ):
+    if ("jtag" in protocol.lower()) and ((pin_o < 1) or (pin_m < 1)):
+        raise SysfsInterfaceException(f"jtag needs 4 pins defined")
+    for parameter in [datarate, pin_clk, pin_io, pin_o, pin_m]:
+        if (parameter < 0) or (parameter >= 2**32):
+            raise SysfsInterfaceException(f"at least one parameter out of u32-bounds, value={parameter}")
+    with open(sysfs_path/"programmer_ctrl", "w") as file:
+        file.write(f"{protocol.lower()} {datarate} {pin_clk} {pin_io} {pin_o} {pin_m}")
+
+
+def read_programmer_ctrl() -> list:
+    with open(sysfs_path/"programmer_ctrl", "r") as file:
+        message = file.read().rstrip()
+    return [int(x) for x in message.split()]
+
+
 attribs = ["mode", "state", "n_buffers", "buffer_period_ns",
            "samples_per_buffer", "mem_address", "mem_size"]
 
