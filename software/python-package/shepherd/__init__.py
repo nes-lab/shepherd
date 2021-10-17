@@ -227,6 +227,7 @@ class ShepherdDebug(ShepherdIO):
         super().set_power_state_recorder(True)
         super().set_power_state_emulator(True)
         super().reinitialize_prus()
+        return self
 
     def adc_read(self, channel: str):
         """Reads value from specified ADC channel.
