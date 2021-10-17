@@ -116,10 +116,8 @@ struct ProgrammerFW {
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
 	uint32_t has_work; 	// flag
-	uint32_t type; 		// 1: swd, 2: sbw, 3: jtag
-	uint32_t target_port;	// reroute pins with analog switch (shepherd2)
-	uint32_t voltage_mV;
-	uint32_t frequency_Hz;
+	uint32_t protocol; 	// 1: swd, 2: sbw, 3: jtag
+	uint32_t datarate_baud;
 	uint32_t pin_clk;	// (TCK)
 	uint32_t pin_io;	// just input for JTAG (TDI)
 	uint32_t pin_o;		// output, only for JTAG (TDO)

@@ -396,14 +396,12 @@ void main(void)
 	/* programmer-subroutine-control: init to safestate */
 	shared_memory->programmer_ctrl = (struct ProgrammerCtrl){
 		.has_work = 0u,
-		.type = 0u,
-		.target_port = 1001u,
-		.voltage_mV = 1002u,
-		.frequency_Hz = 1003u,
-		.pin_clk = 6001u,
-		.pin_io = 6002u,
-		.pin_o = 6003u,
-		.pin_m = 6004u};
+		.protocol = 0u,
+		.datarate_baud = 1000u,
+		.pin_clk = 1001u,
+		.pin_io = 1002u,
+		.pin_o = 1003u,
+		.pin_m = 1004u};
 
 	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value[0]=TIMER_BASE_PERIOD};
 	shared_memory->pru1_sync_inbox = (struct SyncMsg){
