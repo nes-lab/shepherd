@@ -15,7 +15,7 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	const struct ProgrammerFW *const fw = (struct ProgrammerFW *)buffers_far;
 	volatile struct ProgrammerCtrl *const pc = (struct ProgrammerCtrl *)&shared_mem->programmer_ctrl;
 
-	pc->has_work = 0u; // deactivate switch
+	pc->has_work = 0u; // deactivate switch in main()
 	// TODO: just for debug -> mirror fw-struct
 	pc->pin_clk = fw->signature1;
 	pc->pin_io = fw->signature2;
@@ -34,6 +34,7 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	REG_MASK_ON(CT_GPIO0.GPIO_DATAOUT, pin_led_mask);
 	for (uint32_t i = 0; i < 40; i++)
 	{
+		pc->protocol++; // some kind of progress-bar
 		REG_MASK_TOGGLE(CT_GPIO0.GPIO_OE, pin_led_mask);
 		__delay_cycles(100000000 / 5); // 100 ms
 	}
@@ -51,4 +52,5 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	 *	P9_17(MUX_MODE7 | RX_ACTIVE)    // gpio0[5], swd_clk
 	 *	P9_18(MUX_MODE7 | RX_ACTIVE)    // gpio0[4], swd_io
 	 */
+	pc->protocol = 0u; // allow py-interface to exit / power down shepherd
 }

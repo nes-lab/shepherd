@@ -392,18 +392,17 @@ def program(firmware_file, sel_a, voltage, speed, protocol):
         sysfs_interface.write_dac_aux_voltage(cal, voltage)
         sd.shared_mem.write_firmware(fw.read())
 
-        ctrl = sysfs_interface.read_programmer_ctrl()
-        logger.debug(f"Programming initialized, pre-ctrl-reg = {ctrl}")
+        logger.debug(f"Programming initialized, will start now")
         sysfs_interface.write_programmer_ctrl(protocol, speed, 24, 25, 26, 27)  # TODO: pins-nums are placeholders
 
         # force a pru-reset to jump into programming routine
         sysfs_interface.set_stop(force=True)
         ctrl = sysfs_interface.read_programmer_ctrl()
-        while ctrl[0] > 0:
+        while ctrl[1] > 0:
             logger.debug(f"Programming in progress, ctrl-reg = {ctrl})")
-            time.sleep(2)
+            time.sleep(1)
             ctrl = sysfs_interface.read_programmer_ctrl()
-        logger.debug(f"Finished Programming, will exit now, ctrl-reg = {ctrl})")
+        logger.debug(f"Finished Programming!,   ctrl-reg = {ctrl})")
 
 
 if __name__ == "__main__":
