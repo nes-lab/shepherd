@@ -61,6 +61,13 @@ static ssize_t sysfs_virtsource_settings_store(struct kobject *kobj,
 static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf);
 
+static ssize_t sysfs_virtharvester_settings_store(struct kobject *kobj,
+					       struct kobj_attribute *attr,
+					       const char *buf, size_t count);
+
+static ssize_t sysfs_virtharvester_settings_show(struct kobject *kobj,
+					      struct kobj_attribute *attr, char *buf);
+
 static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj,
         struct kobj_attribute *attr,
         const char *buffer, size_t count);
@@ -122,6 +129,11 @@ struct kobj_attr_struct_s attr_virtsource_settings = {
 		       sysfs_virtsource_settings_store),
 	.val_offset = offsetof(struct SharedMem, virtsource_settings)
 };
+struct kobj_attr_struct_s attr_virtharvester_settings = {
+	.attr = __ATTR(virtharvester_settings, 0660, sysfs_virtharvester_settings_show,
+		       sysfs_virtharvester_settings_store),
+	.val_offset = offsetof(struct SharedMem, harvester_settings)
+};
 struct kobj_attr_struct_s attr_pru_msg_system_settings = {
 	.attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show,
 		sysfs_pru_msg_system_store),
@@ -151,6 +163,7 @@ static struct attribute *pru_attrs[] = {
 	&attr_auxiliary_voltage.attr.attr,
 	&attr_calibration_settings.attr.attr,
 	&attr_virtsource_settings.attr.attr,
+	&attr_virtharvester_settings.attr.attr,
 	&attr_pru_msg_system_settings.attr.attr,
 	&attr_programmer_ctrl.attr.attr,
 	NULL,
@@ -527,7 +540,53 @@ static ssize_t sysfs_virtsource_settings_show(struct kobject *kobj,
         count += sprintf(buf + strlen(buf),"%u ", readl(pru_shared_mem_io + mem_offset + i));
     }
     count += sprintf(buf + strlen(buf),"\n");
+    printk(KERN_INFO "shprd.k: reading struct VirtSource_Config");
+    return count;
+}
 
+static ssize_t sysfs_virtharvester_settings_store(struct kobject *kobj,
+					       struct kobj_attribute *attr,
+					       const char *buffer, size_t count)
+{
+	static const uint32_t struct_size = sizeof(struct VirtHarvester_Config);
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t mem_offset = 0u;
+	int buf_pos = 0;
+	uint32_t i = 0u;
+
+	if (pru_comm_get_state() != STATE_IDLE)
+		return -EBUSY;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+	mem_offset = kobj_attr_wrapped->val_offset;
+	for (i = 0; i < struct_size; i += 4)
+	{
+		uint32_t value_retrieved, value_length;
+		int ret = sscanf(&buffer[buf_pos],"%u%n ", &value_retrieved, &value_length);
+		buf_pos += value_length;
+		if (ret != 1) return -EINVAL;
+		writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
+	}
+	printk(KERN_INFO "shprd.k: writing struct VirtHarvester_Config");
+	return count;
+}
+
+static ssize_t sysfs_virtharvester_settings_show(struct kobject *kobj,
+					      struct kobj_attribute *attr, char *buf)
+{
+	static const uint32_t struct_size = sizeof(struct VirtHarvester_Config);
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t mem_offset = 0u;
+	uint32_t i = 0u;
+	int count = 0;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+	mem_offset = kobj_attr_wrapped->val_offset;
+	for (i = 0; i < struct_size; i += 4)
+	{
+		count += sprintf(buf + strlen(buf),"%u \n", readl(pru_shared_mem_io + mem_offset + i));
+	}
+	printk(KERN_INFO "shprd.k: reading struct VirtHarvester_Config");
 	return count;
 }
 
