@@ -20,6 +20,7 @@
 #include "sampling.h"
 #include "shepherd_config.h"
 #include "virtual_source.h"
+#include "virtual_harvester.h"
 #include "programmer.h"
 
 /* Used to signal an invalid buffer index */
@@ -392,6 +393,8 @@ void main(void)
 		.dac_voltage_inv_factor_uV_n20=254u, .dac_voltage_offset_uV=-2};
 
 	vsource_struct_init_testable(&shared_memory->virtsource_settings);
+
+	harvest_struct_init_testable(&shared_memory->harvester_settings);
 
 	/* programmer-subroutine-control: init to safestate */
 	shared_memory->programmer_ctrl = (struct ProgrammerCtrl){

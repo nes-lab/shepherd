@@ -9,9 +9,9 @@ void vsource_init(const volatile struct VirtSource_Config *vsc_arg, const volati
 void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void vsource_calc_out_power(uint32_t current_adc_raw);
 void vsource_update_cap_storage(void);
-uint32_t vsource_update_states_and_output(volatile struct SharedMem *constshared_mem);
+uint32_t vsource_update_states_and_output(volatile struct SharedMem * shared_mem);
 
-void vsource_struct_init_testable(volatile struct VirtSource_Config *constvsc_arg);
+void vsource_struct_init_testable(volatile struct VirtSource_Config * vsc_arg);
 
 void set_P_input_fW(const uint32_t P_fW);
 void set_P_output_fW(const uint32_t P_fW);
