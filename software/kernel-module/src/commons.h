@@ -104,7 +104,7 @@ struct ProgrammerCtrl {
  * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256) = 50'000
  * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
  */
-struct Calibration_Config {
+struct CalibrationConfig {
     /* Gain of load current adc. It converts current to ADC raw value */
     uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
     /* Offset of load current adc */
@@ -117,7 +117,7 @@ struct Calibration_Config {
 
 #define LUT_SIZE	(12)
 
-/* This structure defines all settings of virtual source emulation
+/* This structure defines all settings of virtual converter emulation
  * more complex regulators use vars in their section and above
  * NOTE: sys-FS-FNs currently uses 4 byte steps for transfer, so struct must be (size)mod4=0
  * Container-sizes with SI-Units:
@@ -125,7 +125,7 @@ struct Calibration_Config {
  * 	_uV-u32 = 4294 V
  * 	_nA-u32 = ~ 4.294 A
  */
-struct VirtSource_Config {
+struct ConverterConfig {
     /* General Reg Config */
     uint32_t converter_mode; // bitmask to alter functionality
     uint32_t interval_startup_delay_drain_n; // allow target to power up and go to sleep
@@ -167,7 +167,7 @@ struct VirtSource_Config {
 } __attribute__((packed));
 
 
-struct VirtHarvester_Config{
+struct HarvesterConfig{
 	uint32_t algorithm;
 	uint32_t window_size;
 	uint32_t voltage_uV;
@@ -236,10 +236,10 @@ struct SharedMem {
     /* The time for sampling samples_per_buffer. Determines sampling rate */
     uint32_t buffer_period_ns;
     /* ADC calibration settings */
-    struct Calibration_Config calibration_settings;
-    /* This structure defines all settings of virtual source emulation*/
-    struct VirtSource_Config virtsource_settings;
-    struct VirtHarvester_Config harvester_settings;
+    struct CalibrationConfig calibration_settings;
+    /* This structure defines all settings of virtual converter emulation*/
+    struct ConverterConfig converter_settings;
+    struct HarvesterConfig harvester_settings;
     /* settings for programming-subroutines */
     struct ProgrammerCtrl programmer_ctrl;
     /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
