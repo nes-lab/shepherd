@@ -143,9 +143,9 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 
 @pytest.mark.hardware
 def test_virtsource_settings(shepherd_up, virtsource_settings):
-    sysfs_interface.write_virtsource_settings(virtsource_settings)
+    sysfs_interface.write_virtual_converter_settings(virtsource_settings)
     values_1d = flatten_dict_list(virtsource_settings)
-    assert sysfs_interface.read_virtsource_settings() == values_1d
+    assert sysfs_interface.read_virtual_converter_settings() == values_1d
 
 
 @pytest.mark.hardware
@@ -157,4 +157,4 @@ def test_initial_virtsource_settings(shepherd_up):
         list(range(12))
     ]
     values_1d = flatten_dict_list(vsource_settings)
-    assert sysfs_interface.read_virtsource_settings() == values_1d
+    assert sysfs_interface.read_virtual_converter_settings() == values_1d

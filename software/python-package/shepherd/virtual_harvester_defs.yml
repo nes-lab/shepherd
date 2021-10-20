@@ -1,11 +1,11 @@
-virtconverters:
+harvesters:
   # info:
   # - compendium of all parameters & description
   # - base for neutral fallback values if provided yml is sparse
   # - -> it is encouraged to omit redundant parameters
   # TODO: data-source documents if ivcurve was measured and stores window size
 
-  neutral:  # note: can not be used as a valid recorder
+  neutral:  # note: can not be used as a valid harvester
     window_size: 250
     voltage_mV: 2500
     voltage_min_mV: 0
@@ -35,14 +35,14 @@ virtconverters:
     interval_ms: 100     # between measurements
     duration_ms: 0     # of measurement
 
-  mppt_voc_bq: # mppt of TI BQ-Converters for solar
-    converter_base: mppt_voc
+  mppt_bq: # mppt of TI BQ-Converters for solar
+    base: mppt_voc
     setpoint_n: 0.76
     interval_ms: 16000  # between measurements
     duration_ms: 256    # of measurement
 
-  mppt_voc_bqt: # mppt of TI BQ-Converters for thermoelectric
-    converter_base: mppt_voc
+  mppt_bqt: # mppt of TI BQ-Converters for thermoelectric
+    base: mppt_voc
     setpoint_n: 0.50
     interval_ms: 16000  # between measurements
     duration_ms: 256    # of measurement
@@ -53,6 +53,6 @@ virtconverters:
     voltage_step_mV: 20
     interval_ms: 100    # between steps
 
-  mppt_po_opt: # power-optimum in sliding window of iv-curves
-    converter_base: mppt_po
+  mppt_opt: # power-optimum with very fast PO-Variant
+    base: mppt_po
     interval_ms: 0

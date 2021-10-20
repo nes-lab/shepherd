@@ -35,6 +35,7 @@ class VirtualSourceData(object):
     """
     _config: dict = {}
     _name: str = "vSource"
+    _def_file = "virtual_source_defs.yml"
 
     def __init__(self,
                  setting: Union[dict, str, Path] = None,
@@ -46,8 +47,8 @@ class VirtualSourceData(object):
             setting: if omitted, the data is generated from default values
         """
         self.samplerate_sps = samplerate_sps
-        def_file = "virtual_source_defs.yml"
-        def_path = Path(__file__).parent.resolve()/def_file
+
+        def_path = Path(__file__).parent.resolve()/self._def_file
         with open(def_path, "r") as def_data:
             self._config_defs = yaml.safe_load(def_data)["virtsources"]
             self._config_base = self._config_defs["neutral"]
@@ -58,6 +59,7 @@ class VirtualSourceData(object):
 
         if isinstance(setting, Path) and setting.exists() and \
                 setting.is_file() and setting.suffix in ["yaml", "yml"]:
+            self._inheritance.append(str(setting))
             with open(setting, "r") as config_data:
                 setting = yaml.safe_load(config_data)["virtsource"]
         if isinstance(setting, str):
@@ -65,14 +67,16 @@ class VirtualSourceData(object):
                 self._inheritance.append(setting)
                 setting = self._config_defs[setting]
             else:
-                raise NotImplementedError(f"[{self._name}] was set to '{setting}', but definition missing in '{def_file}'")
+                raise NotImplementedError(f"[{self._name}] was set to '{setting}', but definition missing in '{self._def_file}'")
 
         if setting is None:
             self._config = {}
         elif isinstance(setting, VirtualSourceData):
+            self._inheritance.append(self._name + "-Element")
             self._config = setting._config
             self.samplerate_sps = setting.samplerate_sps
         elif isinstance(setting, dict):
+            self._inheritance.append("parameter-dict")
             self._config = setting
         else:
             raise NotImplementedError(
@@ -82,6 +86,7 @@ class VirtualSourceData(object):
             self._config["log_intermediate_voltage"] = log_intermediate_voltage
 
         self.check_and_complete()
+        logger.debug(f"[{self._name}] initialized with the following inheritance-chain: '{self._inheritance}'")
 
     def export_for_sysfs(self) -> list:
         """ prepares virtsource settings for PRU core (a lot of unit-conversions)
@@ -219,24 +224,26 @@ class VirtualSourceData(object):
             base_name = "neutral"
 
         if base_name in self._inheritance:
-            raise ValueError(f"[{self._name}] loop detected in 'converter_base'-inheritance-system @ last entry of {self._inheritance}")
+            raise ValueError(
+                f"[{self._name}] loop detected in 'base'-inheritance-system @ '{base_name}' already in {self._inheritance}")
         else:
             self._inheritance.append(base_name)
 
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug(f"[{self._name}] Config-Set was initialized with '{base_name}'-base")
             verbose = False
         elif base_name in self._config_defs:
-            vss_stash = self._config
+            config_stash = self._config
             self._config = self._config_defs[base_name]
+            logger.debug(f"[{self._name}] Parameter-Set was completed with '{base_name}'-base")
             self.check_and_complete(verbose=False)
-            logger.debug(f"[{self._name}] Config-Set was completed with '{base_name}'-base")
             self._config_base = self._config
-            self._config = vss_stash
+            self._config = config_stash
         else:
             raise NotImplementedError(f"[{self._name}] converter base '{base_name}' is unknown to system")
+
+        logger.debug(f"[{self._name}] Parameter-Set was completed with '{base_name}'-base")
 
         # General
         self._check_num("log_intermediate_voltage", 4.29e9, verbose=verbose)
@@ -294,14 +301,14 @@ class VirtualSourceData(object):
         except KeyError:
             set_value = self._config_base[setting_key]
             if verbose:
-                logger.debug(f"[{self._name}] '{setting_key}' not provided, will be set to inherited value = {set_value}")
+                logger.debug(f"[{self._name}] '{setting_key}' not provided, set to inherited value = {set_value}")
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
                 f"[{self._name}] '{setting_key}' must a single positive number, but is '{set_value}'")
         if set_value < 0:
-            raise NotImplementedError(f"[{self._name}] {setting_key} = {set_value} must be >= 0")
+            raise NotImplementedError(f"[{self._name}] {setting_key} = {set_value}, but must be >= 0")
         if (max_value is not None) and (set_value > max_value):
-            raise NotImplementedError(f"[{self._name}] {setting_key} = {set_value} must be <= {max_value}")
+            raise NotImplementedError(f"[{self._name}] {setting_key} = {set_value}, but must be <= {max_value}")
         self._config[setting_key] = set_value
 
     def _check_list(self, setting_key: str, max_value: float = 1023, verbose: bool = True) -> NoReturn:

@@ -234,15 +234,15 @@ def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble
     return cal_pru
 
 
-def write_virtsource_settings(settings: list) -> NoReturn:
-    """Sends the virtual-source settings to the PRU core.
+def write_virtual_converter_settings(settings: list) -> NoReturn:
+    """Sends the virtual-converter settings to the PRU core.
 
-    The virtual-source algorithm uses these settings to configure emulation.
+    The pru-algorithm uses these settings to configure emulation.
 
     """
-    logger.debug(f"Writing virtsource to sysfs_interface, first value is {settings[0]}")
+    logger.debug(f"Writing virtual converter to sysfs_interface, first value is {settings[0]}")
 
-    output = str("")
+    output = ""
     for setting in settings:
         if isinstance(setting, int):
             output += f"{setting} \n"
@@ -254,17 +254,48 @@ def write_virtsource_settings(settings: list) -> NoReturn:
 
     wait_for_state("idle", 3.0)
 
-    with open(sysfs_path/"virtsource_settings", "w") as file:
+    with open(sysfs_path/"virtual_converter_settings", "w") as file:
         file.write(output)
 
 
-def read_virtsource_settings() -> list:
-    """Retrieve the virtual source settings from the PRU core.
+def read_virtual_converter_settings() -> list:
+    """Retrieve the virtual-converter settings from the PRU core.
 
-    The virtsource algorithm uses these settings to configure emulation.
+    The pru-algorithm uses these settings to configure emulation.
 
     """
-    with open(sysfs_path/"virtsource_settings", "r") as f:
+    with open(sysfs_path/"virtual_converter_settings", "r") as f:
+        settings = f.read().rstrip()
+    int_settings = [int(x) for x in settings.split()]
+    return int_settings
+
+
+def write_virtual_harvester_settings(settings: list) -> NoReturn:
+    """Sends the settings to the PRU core.
+
+    The pru-algorithm uses these settings to configure emulation.
+
+    """
+    logger.debug(f"Writing virtual harvester to sysfs_interface, first value is {settings[0]}")
+    output = ""
+    for setting in settings:
+        if isinstance(setting, int):
+            output += f"{setting} \n"
+        else:
+            raise SysfsInterfaceException(f"virtual harvester value {setting} has wrong type ({type(setting)})")
+
+    wait_for_state("idle", 3.0)
+    with open(sysfs_path/"virtual_harvester_settings", "w") as file:
+        file.write(output)
+
+
+def read_virtual_harvester_settings() -> list:
+    """Retrieve the settings from the PRU core.
+
+    The  pru-algorithm uses these settings to configure emulation.
+
+    """
+    with open(sysfs_path/"virtual_harvester_settings", "r") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings

@@ -2,7 +2,7 @@ from typing import NoReturn, Union
 from pathlib import Path
 import yaml
 import logging
-from calibration_default import M_DAC
+from shepherd.calibration_default import M_DAC
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +15,14 @@ algorithms = {"neutral": 2**0,
               }
 
 
-class VirtualConverterData(object):
-    """
+class VirtualHarvesterData(object):
+    """ TODO: this class is very similar to virtual_source_data, could share a base-class
 
     """
     _config: dict = {}
-    _name: str = "vConverter"
+    _name: str = "vHarvester"
+    _default: str = "ivcurve"  # fallback in case of "None"-Setting
+    _def_file = "virtual_harvester_defs.yml"
 
     def __init__(self, setting: Union[dict, str, Path], samplerate_sps: int = 100_000):
         """
@@ -28,69 +30,73 @@ class VirtualConverterData(object):
         :param setting:
         """
         self.samplerate_sps = samplerate_sps
-        def_file = "virtual_converter_defs.yml"
-        def_path = Path(__file__).parent.resolve()/def_file
+        def_path = Path(__file__).parent.resolve() / self._def_file
         with open(def_path, "r") as def_data:
-            self._config_defs = yaml.safe_load(def_data)["virtconverters"]
+            self._config_defs = yaml.safe_load(def_data)["harvesters"]
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
 
         if isinstance(setting, str) and Path(setting).exists():
             setting = Path(setting)
-
         if isinstance(setting, Path) and setting.exists() and \
                 setting.is_file() and setting.suffix in ["yaml", "yml"]:
+            self._inheritance.append(str(setting))
             with open(setting, "r") as config_data:
-                setting = yaml.safe_load(config_data)["virtconverter"]
+                setting = yaml.safe_load(config_data)["harvesters"]
         if isinstance(setting, str):
             if setting in self._config_defs:
                 self._inheritance.append(setting)
                 setting = self._config_defs[setting]
             else:
-                raise NotImplementedError(f"[{self._name}] was set to '{setting}', but definition missing in '{def_file}'")
+                raise NotImplementedError(f"[{self._name}] was set to '{setting}', but definition missing in '{self._def_file}'")
 
         if setting is None:
-            self._config = {}
-        elif isinstance(setting, VirtualConverterData):
+            self._inheritance.append(self._default)
+            self._config = self._config_defs[self._default]
+        elif isinstance(setting, VirtualHarvesterData):
+            self._inheritance.append(self._name + "-Element")
             self._config = setting._config
+            self.samplerate_sps = setting.samplerate_sps
         elif isinstance(setting, dict):
+            self._inheritance.append("parameter-dict")
             self._config = setting
         else:
             raise NotImplementedError(
                 f"[{self._name}] {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?")
+
         self.check_and_complete()
+        logger.debug(f"[{self._name}] initialized with the following inheritance-chain: '{self._inheritance}'")
 
     def check_and_complete(self, verbose: bool = True) -> NoReturn:
 
-        if "converter_base" in self._config:
-            base_name = self._config["converter_base"]
+        if "base" in self._config:
+            base_name = self._config["base"]
         else:
             base_name = "neutral"
 
         if base_name in self._inheritance:
-            raise ValueError(f"[{self._name}] loop detected in 'converter_base'-inheritance-system @ last entry of {self._inheritance}")
+            raise ValueError(f"[{self._name}] loop detected in 'base'-inheritance-system @ '{base_name}' already in {self._inheritance}")
         else:
             self._inheritance.append(base_name)
 
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug(f"[{self._name}] Config-Set was initialized with '{base_name}'-base")
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self._config
-            self.vss = self._config_defs[base_name]
+            self._config = self._config_defs[base_name]
+            logger.debug(f"[{self._name}] Parameter-Set was completed with '{base_name}'-base")
             self.check_and_complete(verbose=False)
-            logger.debug(f"[{self._name}] Config-Set was completed with '{base_name}'-base")
             self._config_base = self._config
             self._config = config_stash
         else:
             raise NotImplementedError(f"[{self._name}] converter-base '{base_name}' is unknown to system")
 
-        if not "algorithm_num" in self._config:
-            self._config["algorithm_num"] = 0
-        if base_name in algorithms:
-            self._config["algorithm_num"] += algorithms[base_name]
+        self._config["algorithm_num"] = 0
+        for base in self._inheritance:
+            if base in algorithms:
+                self._config["algorithm_num"] += algorithms[base]
         self._check_num("algorithm_num", verbose=verbose)
 
         self._check_num("window_size", 16, 512, verbose=verbose)
@@ -118,15 +124,15 @@ class VirtualConverterData(object):
         except KeyError:
             set_value = self._config_base[setting_key]
             if verbose:
-                logger.debug(f"[{self._name}] '{setting_key}' not provided, will be set to inherited value = {set_value}")
+                logger.debug(f"[{self._name}] '{setting_key}' not provided, set to inherited value = {set_value}")
         if (min_value is not None) and (set_value < min_value):
+            if verbose:
+                logger.debug(f"[{self._name}] {setting_key} = {set_value}, but must be >= {min_value}")
             set_value = min_value
-            if verbose:
-                logger.debug(f"[{self._name}] {setting_key} = {set_value} must be >= {min_value}")
         if (max_value is not None) and (set_value > max_value):
-            set_value = max_value
             if verbose:
-                logger.debug(f"[{self._name}] {setting_key} = {set_value} must be <= {max_value}")
+                logger.debug(f"[{self._name}] {setting_key} = {set_value}, but must be <= {max_value}")
+            set_value = max_value
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
                 f"[{self._name}] '{setting_key}' must a single positive number, but is '{set_value}'")

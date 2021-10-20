@@ -153,6 +153,8 @@ def run(command, parameters: Dict, verbose):
               help="Dir or file path for resulting hdf5 file",)
 @click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
               help="Record 'harvesting' or 'harvesting_test'-function data")
+@click.option("--harvester", type=str, default=None,
+              help="Choose one of the predefined virtual harvesters")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--default-cal", is_flag=True, help="Use default calibration values")
@@ -162,6 +164,7 @@ def run(command, parameters: Dict, verbose):
 def record(
     output_path,
     mode,
+    harvester,
     duration,
     force_overwrite,
     default_cal,
@@ -171,6 +174,7 @@ def record(
     run_record(
         output_path=Path(output_path),
         mode=mode,
+        harvester=harvester,
         duration=duration,
         force_overwrite=force_overwrite,
         default_cal=default_cal,

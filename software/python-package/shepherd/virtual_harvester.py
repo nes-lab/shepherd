@@ -1,6 +1,8 @@
 from typing import NoReturn
-from shepherd import VirtualConverterData, CalibrationData
 import math
+from virtual_harvester_data import VirtualHarvesterData
+from calibration import CalibrationData
+
 
 # NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
@@ -22,7 +24,7 @@ class VirtualConverter(object):
         # NOTE:
         #  - yaml is based on si-units like nA, mV, ms, uF
         #  - c-code and py-copy is using nA, uV, ns, nF, fW
-        vd_setting = VirtualConverterData(vd_setting)
+        vd_setting = VirtualHarvesterData(vd_setting)
         values = vd_setting.export_for_sysfs()
 
     def ivcurves_to_params(self, v: float, c: float):

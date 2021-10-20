@@ -27,6 +27,7 @@ from shepherd import commons
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_data import VirtualSourceData
 from shepherd.sysfs_interface import SysfsInterfaceException
+from shepherd.virtual_harvester_data import VirtualHarvesterData
 
 logger = logging.getLogger(__name__)
 
@@ -567,19 +568,33 @@ class ShepherdIO(object):
         sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
 
     @staticmethod
-    def send_virtsource_settings(vs_settings: Union[dict, str, Path, VirtualSourceData], log_intermediate_voltage: bool = None) -> NoReturn:
+    def send_virtual_converter_settings(settings: Union[dict, str, Path, VirtualSourceData], log_intermediate_voltage: bool = None) -> NoReturn:
         """ Sends virtsource settings to PRU core
             looks like a simple one-liner but is needed by the child-classes
             Note: to apply these settings the pru has to do a re-init (reset)
 
-            :param vs_settings: Contains the settings for the virtual source.
+            :param settings: Contains the settings for the virtual source.
             :param log_intermediate_voltage: monitor capacitor, useful when output is const
         """
         samplerate_sps = 10**9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
-        vs_settings = VirtualSourceData(vs_settings, log_intermediate_voltage, samplerate_sps)
+        settings = VirtualSourceData(settings, log_intermediate_voltage, samplerate_sps)
 
-        values = vs_settings.export_for_sysfs()
-        sysfs_interface.write_virtsource_settings(values)
+        values = settings.export_for_sysfs()
+        sysfs_interface.write_virtual_converter_settings(values)
+
+    @staticmethod
+    def send_virtual_harvester_settings(settings: Union[dict, str, Path, VirtualHarvesterData]) -> NoReturn:
+        """ Sends virtsource settings to PRU core
+            looks like a simple one-liner but is needed by the child-classes
+            Note: to apply these settings the pru has to do a re-init (reset)
+
+            :param settings: Contains the settings for the virtual source.
+        """
+        samplerate_sps = 10**9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
+        settings = VirtualHarvesterData(settings, samplerate_sps)
+
+        values = settings.export_for_sysfs()
+        sysfs_interface.write_virtual_harvester_settings(values)
 
     def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU

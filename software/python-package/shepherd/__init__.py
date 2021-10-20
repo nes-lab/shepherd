@@ -24,6 +24,7 @@ import invoke
 import signal
 
 from shepherd.shepherd_io import ShepherdIO
+from shepherd.virtual_harvester_data import VirtualHarvesterData
 from shepherd.virtual_source_data import VirtualSourceData
 from shepherd.shepherd_io import ShepherdIOException
 from shepherd.datalog import LogReader
@@ -55,12 +56,17 @@ class Recorder(ShepherdIO):
     with kernel module and PRUs.
 
     Args:
-        shepherd_mode (str): Should be 'harvesting' to record harvesting data TODO: extend with iv-curve-sweep, mppt,
+        shepherd_mode (str): Should be 'harvesting' to record harvesting data
+        harvester: name, path or object to a virtual harvester setting
         # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
     """
 
-    def __init__(self, shepherd_mode: str = "harvesting"):
+    def __init__(self,
+                 shepherd_mode: str = "harvesting",
+                 harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
+                 ):
         logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
+        self._harvester = harvester
         super().__init__(shepherd_mode)
 
     def __enter__(self):
@@ -68,6 +74,7 @@ class Recorder(ShepherdIO):
 
         self.set_power_state_emulator(False)
         self.set_power_state_recorder(True)
+        self.send_virtual_harvester_settings(self._harvester)
 
         # Give the PRU empty buffers to begin with
         time.sleep(1)
@@ -158,7 +165,7 @@ class Emulator(ShepherdIO):
         self.set_power_state_recorder(False)
         self.set_power_state_emulator(True)
 
-        self.send_virtsource_settings(self._settings_virtsource, self._log_intermediate_voltage)
+        self.send_virtual_converter_settings(self._settings_virtsource, self._log_intermediate_voltage)
         self.send_calibration_settings(self._cal_emulation)
         self.reinitialize_prus()
 
@@ -299,7 +306,7 @@ class ShepherdDebug(ShepherdIO):
         return values[0]*(2**32) + values[1]  # P_out_pW
 
     def vsource_init(self, vs_settings, cal_settings):
-        super().send_virtsource_settings(vs_settings)
+        super().send_virtual_converter_settings(vs_settings)
         super().send_calibration_settings(cal_settings)
         time.sleep(0.5)
         super().start()
@@ -483,6 +490,7 @@ def record(
     output_path: Path,
     mode: str = "harvesting",
     duration: float = None,
+    harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
     force_overwrite: bool = False,
     default_cal: bool = False,
     start_time: float = None,
@@ -495,6 +503,7 @@ def record(
             stored
         mode (str): 'harvesting' for recording harvesting data
         duration (float): Maximum time duration of emulation in seconds
+        harvester: name, path or object to a virtual harvester setting
         force_overwrite (bool): True to overwrite existing file under output path,
             False to store under different name
         default_cal (bool): True to use default calibration values, False to
@@ -520,7 +529,8 @@ def record(
     samples_per_buffer = sysfs_interface.get_samples_per_buffer()
     samplerate_sps = 10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
 
-    recorder = Recorder(shepherd_mode=mode)
+    recorder = Recorder(shepherd_mode=mode,
+                        harvester=harvester)
     log_writer = LogWriter(store_path=store_path,
                            calibration_data=calib,
                            mode=mode,
