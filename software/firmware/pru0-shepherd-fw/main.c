@@ -19,7 +19,7 @@
 #include "ringbuffer.h"
 #include "sampling.h"
 #include "shepherd_config.h"
-#include "virtual_source.h"
+#include "virtual_converter.h"
 #include "virtual_harvester.h"
 #include "programmer.h"
 
@@ -201,43 +201,43 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1U;
 
 		case MSG_DBG_VSOURCE_P_INP:
-			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
+			converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
 			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_P_input_fW()>>32u) , (uint32_t)get_P_input_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_P_OUT:
-			vsource_calc_out_power(msg_in.value[0]);
+			converter_calc_out_power(msg_in.value[0]);
 			send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t)(get_P_output_fW()>>32u), (uint32_t)get_P_output_fW());
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_CAP:
-			vsource_update_cap_storage();
+			converter_update_cap_storage();
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_CAP, get_V_intermediate_uV(), 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_V_OUT:
-			res = vsource_update_states_and_output(shared_mem);
+			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_INIT:
-			vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
+			converter_init(&shared_mem->converter_settings, &shared_mem->calibration_settings);
 			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_CHARGE:
-			vsource_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-			vsource_calc_out_power(0u);
-			vsource_update_cap_storage();
-			res = vsource_update_states_and_output(shared_mem);
+			converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
+			converter_calc_out_power(0u);
+			converter_update_cap_storage();
+			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_V_intermediate_uV(), res);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_DRAIN:
-			vsource_calc_inp_power(0u, 0u);
-			vsource_calc_out_power(msg_in.value[0]);
-			vsource_update_cap_storage();
-			res = vsource_update_states_and_output(shared_mem);
+			converter_calc_inp_power(0u, 0u);
+			converter_calc_out_power(msg_in.value[0]);
+			converter_update_cap_storage();
+			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
 			return 1u;
 
@@ -388,13 +388,12 @@ void main(void)
 	shared_memory->vsource_batok_pin_value = false;
 
 	/* this init is nonsense, but testable for byteorder and proper values */
-	shared_memory->calibration_settings = (struct Calibration_Config){
+	shared_memory->calibration_settings = (struct CalibrationConfig){
 		.adc_current_factor_nA_n8=255u, .adc_current_offset_nA=-1,
 		.dac_voltage_inv_factor_uV_n20=254u, .dac_voltage_offset_uV=-2};
 
-	vsource_struct_init_testable(&shared_memory->virtsource_settings);
-
-	harvest_struct_init_testable(&shared_memory->harvester_settings);
+	converter_struct_init(&shared_memory->converter_settings);
+	harvester_struct_init(&shared_memory->harvester_settings);
 
 	/* programmer-subroutine-control: init to safestate */
 	shared_memory->programmer_ctrl = (struct ProgrammerCtrl){

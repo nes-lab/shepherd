@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include "commons.h"
 
-void vsource_init(const volatile struct VirtSource_Config *vsc_arg, const volatile struct Calibration_Config *cal_arg);
+void converter_init(const volatile struct ConverterConfig *config, const volatile struct CalibrationConfig *cal);
 
-void vsource_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
-void vsource_calc_out_power(uint32_t current_adc_raw);
-void vsource_update_cap_storage(void);
-uint32_t vsource_update_states_and_output(volatile struct SharedMem * shared_mem);
+void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
+void converter_calc_out_power(uint32_t current_adc_raw);
+void converter_update_cap_storage(void);
+uint32_t converter_update_states_and_output(volatile struct SharedMem * shared_mem);
 
-void vsource_struct_init_testable(volatile struct VirtSource_Config * vsc_arg);
+void converter_struct_init(volatile struct ConverterConfig * config);
 
 void set_P_input_fW(const uint32_t P_fW);
 void set_P_output_fW(const uint32_t P_fW);

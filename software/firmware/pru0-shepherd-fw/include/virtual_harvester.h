@@ -3,9 +3,9 @@
 
 #include "commons.h"
 
-void harvest_struct_init_testable(volatile struct VirtHarvester_Config * config);
+void harvester_struct_init(volatile struct HarvesterConfig *);
 
-void harvest_initialize(const volatile struct VirtHarvester_Config * config, const volatile struct Calibration_Config * cal);
+void harvester_initialize(const volatile struct HarvesterConfig *, const volatile struct CalibrationConfig *);
 
 
 

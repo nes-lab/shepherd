@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include "virtual_harvester.h"
 
-static const volatile struct VirtHarvester_Config * vha_cfg;
-static const volatile struct Calibration_Config * cal_cfg;
+static const volatile struct HarvesterConfig *cfg;
+static const volatile struct CalibrationConfig *cal;
 
-void harvest_struct_init_testable(volatile struct VirtHarvester_Config *const config)
+void harvester_struct_init(volatile struct HarvesterConfig *const config)
 {
+	/* why? this init is nonsense, but testable for byteorder and proper values */
 	uint32_t ivalue = 200u;
 	config->algorithm = 0u;
 	config->window_size = ivalue++;
@@ -20,10 +21,10 @@ void harvest_struct_init_testable(volatile struct VirtHarvester_Config *const co
 	config->wait_cycles_n = ivalue++;
 }
 
-void harvest_initialize(const volatile struct VirtHarvester_Config *const config, const volatile struct Calibration_Config *const cal)
+void harvester_initialize(const volatile struct HarvesterConfig *const config, const volatile struct CalibrationConfig *const calibration)
 {
-	vha_cfg = config;
-	cal_cfg = cal;
+	cfg = config;
+	cal = calibration;
 
 }
 

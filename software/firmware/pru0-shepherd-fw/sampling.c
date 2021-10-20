@@ -3,7 +3,7 @@
 #include "gpio.h"
 #include "hw_config.h"
 #include "sampling.h"
-#include "virtual_source.h"
+#include "virtual_converter.h"
 
 /* DAC8562 Register Config */
 #define DAC_CH_A_ADDR   (0U << 16U)
@@ -113,15 +113,15 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 	/* Get input current/voltage from shared memory buffer */
 	const uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
 	const uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
-	vsource_calc_inp_power(input_voltage_uV, input_current_nA);
+	converter_calc_inp_power(input_voltage_uV, input_current_nA);
 
 	/* measure current flow */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
-	vsource_calc_out_power(current_adc_raw);
+	converter_calc_out_power(current_adc_raw);
 
-	vsource_update_cap_storage();
+	converter_update_cap_storage();
 
-	const uint32_t voltage_dac = vsource_update_states_and_output(shared_mem);
+	const uint32_t voltage_dac = converter_update_states_and_output(shared_mem);
 
     dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
 
@@ -332,6 +332,6 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	if (mode == MODE_EMULATE)
 	{
-		vsource_init(&shared_mem->virtsource_settings, &shared_mem->calibration_settings);
+		converter_init(&shared_mem->converter_settings, &shared_mem->calibration_settings);
 	}
 }
