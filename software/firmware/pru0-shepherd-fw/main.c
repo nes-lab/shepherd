@@ -22,6 +22,7 @@
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
 #include "programmer.h"
+#include "math64_safe.h"
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 	(0xFFFFFFFF)

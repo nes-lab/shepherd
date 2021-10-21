@@ -6,7 +6,7 @@
 #include "hw_config.h"
 #include "stdint_fast.h"
 #include "virtual_converter.h"
-
+#include "math64_safe.h"
 /* ---------------------------------------------------------------------
  * Virtual Converter, TODO: update description
  *
@@ -34,35 +34,6 @@ static inline uint32_t conv_uV_to_dac_raw(uint32_t voltage_uV);
 static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
 static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
 
-#ifdef __GNUC__
-uint8_ft get_num_size_as_bits(const uint32_t value)
-{
-	/* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
-	uint32_t _value = value;
-	uint8_ft count = 32u;
-	for (; _value > 0u; _value >>= 1u) count--;
-	return count;
-}
-
-static uint32_t max_value(uint32_t value1, uint32_t value2)
-{
-	if (value1 > value2) return value1;
-	else return value2;
-}
-
-static uint32_t min_value(uint32_t value1, uint32_t value2)
-{
-	if (value1 < value2) return value1;
-	else return value2;
-}
-#else
-/* use from asm-file */
-extern uint32_t get_num_size_as_bits(uint32_t value);
-extern uint32_t msb_position(uint32_t value);
-extern inline uint32_t max_value(uint32_t value1, uint32_t value2);
-extern inline uint32_t min_value(uint32_t value1, uint32_t value2);
-#endif
-
 #define DIV_SHIFT 	(17u) // 2^17 as uV is ~ 131 mV
 #define DIV_LUT_SIZE 	(40u)
 
@@ -88,50 +59,7 @@ static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 	return mul64((power_fW_n4 >> 10u), LUT_div_uV_n27[lut_pos]) >> 17u;
 }
 
-/* Faster and more time-constant replacement for uint64-multiplication
- * - native code takes 3 - 7 us per mul, depending on size of number (hints at add-loop)
- * - model-calculation gets much safer with container-boundaries
- */
-uint64_t mul64(const uint64_t value1, const uint64_t value2)
-{
-	const uint32_t f1H = value1 >> 32u;
-	const uint32_t f1L = (uint32_t)value1;
-	const uint32_t f2H = value2 >> 32u;
-	const uint32_t f2L = (uint32_t)value2;
-	uint64_t product = (uint64_t)f1L * (uint64_t)f2L;
-	product += ((uint64_t)f1L * (uint64_t)f2H) << 32u;
-	product += ((uint64_t)f1H * (uint64_t)f2L) << 32u;
-	//const uint64_t product4 = ((uint64_t)f2H * (uint64_t)f2H); // << 64u
-	// check for possible overflow - return max
-	uint8_ft f1bits = get_num_size_as_bits(f1H);
-	if (f1bits == 0u) f1bits = get_num_size_as_bits(f1L);
-	uint8_ft f2bits = get_num_size_as_bits(f2H);
-	if (f2bits == 0u) f2bits = get_num_size_as_bits(f2L);
-	if ((f1bits + f2bits) <= 64u) 	return product; // simple approximation, not 100% correct, but cheap
-	else 				return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
-}
 
-uint64_t add64(const uint64_t value1, const uint64_t value2)
-{
-	const uint64_t sum = value1 + value2;
-	if ((sum < value1) || (sum < value2)) 	return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
-	else 					return sum;
-}
-
-uint64_t sub64(const uint64_t value1, const uint64_t value2)
-{
-	if (value1 > value2) return (value1 - value2);
-	else return 0ull;
-}
-
-uint32_t mul32(const uint32_t value1, const uint32_t value2)
-{
-	uint64_t product = (uint64_t)value1 * (uint64_t)value2;
-	// check for possible overflow - return max
-	uint8_ft vbits = get_num_size_as_bits(product);
-	if (vbits <= 32u)	return (uint32_t)product;
-	else 			return (uint32_t)(0xFFFFFFFFu);
-}
 
 /* data-structure that hold the state - variables for direct use */
 struct ConverterState {
@@ -160,7 +88,6 @@ struct ConverterState {
 static struct ConverterState state;
 static const volatile struct ConverterConfig *cfg;
 static const volatile struct CalibrationConfig *cal;
-#define dt_us_const 	(SAMPLE_INTERVAL_NS / 1000u)  // = 10
 
 void converter_struct_init(volatile struct ConverterConfig *const config)
 {
@@ -487,7 +414,7 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
 #define NOISE_ESTIMATE_nA   (2000u)
 #define RESIDUE_SIZE_FACTOR (30u)
 #define RESIDUE_MAX_nA      (NOISE_ESTIMATE_nA * RESIDUE_SIZE_FACTOR)
-static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
+inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 {
 	static uint32_t negative_residue_nA = 0;
 	const uint32_t I_nA = (uint32_t)(((uint64_t)current_raw * (uint64_t)cal->adc_current_factor_nA_n8) >> 8u);
@@ -515,7 +442,7 @@ static inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
 }
 
 // safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
-static inline uint32_t conv_uV_to_dac_raw(const uint32_t voltage_uV)
+inline uint32_t conv_uV_to_dac_raw(const uint32_t voltage_uV)
 {
 	uint32_t dac_raw = 0u;
 	// return (((uint64_t)(voltage_uV - cal->dac_voltage_offset_uV) * (uint64_t)cal->dac_voltage_inv_factor_uV_n20) >> 20u);
