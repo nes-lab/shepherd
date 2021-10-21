@@ -3,6 +3,7 @@ from pathlib import Path
 import yaml
 import logging
 from shepherd.calibration_default import M_DAC
+from shepherd.calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class VirtualHarvesterData(object):
     _name: str = "vHarvester"
     _default: str = "ivcurve"  # fallback in case of "None"-Setting
     _def_file = "virtual_harvester_defs.yml"
+    _cal = CalibrationData.from_default()
 
     def __init__(self, setting: Union[dict, str, Path], for_emulation: bool = False, samplerate_sps: int = 100_000):
 
@@ -107,7 +109,9 @@ class VirtualHarvesterData(object):
         self._check_num("voltage_mV", 0, 5000, verbose=verbose)
         self._check_num("voltage_min_mV", 0, 5000, verbose=verbose)
         self._check_num("voltage_max_mV", self._config["voltage_min_mV"], 5000, verbose=verbose)
-        self._check_num("current_uA", 0, 50_000, verbose=verbose)
+
+        current_limit_uA = 10**6 * self._cal.convert_raw_to_value("harvesting", "adc_current", 4)
+        self._check_num("current_limit_uA", current_limit_uA, 50_000, verbose=verbose)
 
         v_dynamic_uV = 1000 * (self._config["voltage_max_mV"] - self._config["voltage_min_mV"])
         self._config["voltage_step_uV"] = v_dynamic_uV // self._config["window_size"]
@@ -120,7 +124,10 @@ class VirtualHarvesterData(object):
 
         self._check_num("wait_cycles", 0, 100, verbose=verbose)
 
-        time_min_ms = (1 + self._config["dynamic_bit"]) * (1 + self._config["wait_cycles"]) * 1000 / self.samplerate_sps
+        if "mppt_po" in self._inheritance:
+            time_min_ms = (1 + self._config["wait_cycles"]) * 1000 / self.samplerate_sps
+        else:
+            time_min_ms = (1 + self._config["dynamic_bit"]) * (1 + self._config["wait_cycles"]) * 1000 / self.samplerate_sps
 
         self._check_num("interval_ms", time_min_ms, 1_000_000, verbose=verbose)
         self._check_num("duration_ms", time_min_ms, self._config["interval_ms"], verbose=verbose)
@@ -160,7 +167,7 @@ class VirtualHarvesterData(object):
             int(self._config["voltage_min_mV"] * 1e3),  # uV
             int(self._config["voltage_max_mV"] * 1e3),  # uV
             int(self._config["voltage_step_uV"]),  # uV
-            int(self._config["current_uA"] * 1e3),  # nA
+            int(self._config["current_limit_uA"] * 1e3),  # nA
             int(max(0, min(255, self._config["setpoint_n"] * 256))),  # n8 -> 0..1 is mapped to 0..255
             int(self._config["interval_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples
             int(self._config["duration_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples

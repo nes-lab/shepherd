@@ -123,7 +123,8 @@ static inline void sample_emulation_cal(struct SampleBuffer *const buffer, const
 
 void sample(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const current_buffer_far,
 	    const enum ShepherdMode mode)
-{ // ->analog_sample_counter
+{
+	// ->analog_sample_counter
 	switch (mode) // reordered to prioritize longer routines
 	{
 	case MODE_EMULATE: // ~ ## ns
@@ -271,7 +272,7 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 
 	/* switch to set behaviour of aux-channel (dac A) */
 	dac_aux_link_to_main = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
-    dac_aux_link_to_mid = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
+    	dac_aux_link_to_mid = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
 
 	if (use_emulator)
 	{

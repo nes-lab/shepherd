@@ -7,10 +7,10 @@ harvesters:
 
   neutral:  # note: can not be used as a valid harvester
     window_size: 250
-    voltage_mV: 2500
+    voltage_mV: 2500  # starting-point for some algorithms (mppt_po)
     voltage_min_mV: 0
     voltage_max_mV: 5000
-    current_uA: 0
+    current_limit_uA: 99000   # allows to keep trajectory in special region (or constant current tracking)
     setpoint_n: 0.70
     interval_ms: 100
     duration_ms: 0.1
@@ -20,9 +20,6 @@ harvesters:
 
   cv: # constant voltage
     voltage_mV: 2400
-
-  ci: # constant current (good for recording voc)
-    current_uA: 0 # TODO: could be replace by general mppt_po-version with lo
 
   ivcurve: # sawtooth-wave (zig zag)
     window_size: 250
@@ -35,6 +32,7 @@ harvesters:
     setpoint_n: 0.76
     interval_ms: 100     # between measurements
     duration_ms: 0     # of measurement
+    current_limit_uA: 0  # boundary for detecting open circuit
 
   mppt_bq: # mppt of TI BQ-Converters for solar
     base: mppt_voc
@@ -51,9 +49,14 @@ harvesters:
   mppt_po: # perturbe & observe
     voltage_min_mV: 0
     voltage_max_mV: 5000
-    voltage_step_mV: 20
+    voltage_step_mV: 10
     interval_ms: 100    # between steps
 
   mppt_opt: # power-optimum with very fast PO-Variant
     base: mppt_po
     interval_ms: 0
+
+  ci: # constant current, if possible (good for recording voc)
+    base: mppt_po
+    interval_ms: 0
+    current_uA: 0

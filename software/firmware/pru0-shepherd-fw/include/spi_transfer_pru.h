@@ -13,6 +13,7 @@
 
 #define DAC_MAX_mV	(5000u)
 #define DAC_MAX_VAL	(0xFFFFu)
+#define DAC_M_BIT	(16u)
 #define DAC_V_LSB	(76.2939e-6)
 
 /* DAC Shift OPs */
