@@ -46,10 +46,26 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
 	else 				return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
 }
 
+uint32_t mul32(const uint32_t value1, const uint32_t value2)
+{
+	uint64_t product = (uint64_t)value1 * (uint64_t)value2;
+	// check for possible overflow - return max
+	uint8_ft vbits = get_num_size_as_bits(product);
+	if (vbits <= 32u)	return (uint32_t)product;
+	else 			return (uint32_t)(0xFFFFFFFFu);
+}
+
 uint64_t add64(const uint64_t value1, const uint64_t value2)
 {
 	const uint64_t sum = value1 + value2;
 	if ((sum < value1) || (sum < value2)) 	return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
+	else 					return sum;
+}
+
+uint32_t add32(const uint32_t value1, const uint32_t value2)
+{
+	const uint32_t sum = value1 + value2;
+	if ((sum < value1) || (sum < value2)) 	return (uint32_t)(0xFFFFFFFFu);
 	else 					return sum;
 }
 
@@ -59,11 +75,8 @@ uint64_t sub64(const uint64_t value1, const uint64_t value2)
 	else return 0ull;
 }
 
-uint32_t mul32(const uint32_t value1, const uint32_t value2)
+uint32_t sub32(const uint32_t value1, const uint32_t value2)
 {
-	uint64_t product = (uint64_t)value1 * (uint64_t)value2;
-	// check for possible overflow - return max
-	uint8_ft vbits = get_num_size_as_bits(product);
-	if (vbits <= 32u)	return (uint32_t)product;
-	else 			return (uint32_t)(0xFFFFFFFFu);
+	if (value1 > value2) return (value1 - value2);
+	else return 0u;
 }
