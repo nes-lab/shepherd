@@ -24,11 +24,12 @@ harvesters:
   ci: # constant current (good for recording voc)
     current_uA: 0 # TODO: could be replace by general mppt_po-version with lo
 
-  ivcurve: # triangle-wave (zig zag)
+  ivcurve: # sawtooth-wave (zig zag)
     window_size: 250
     voltage_min_mV: 0
     voltage_max_mV: 5000
-    # todo: also add switch for sawtooth as alternative (to triangle-wave)?
+    # todo: also add switch for sawtooth- vs triangle-wave?
+    # todo: could also include a version with dynamic upper-boundary, varied if voc is reached very early
 
   mppt_voc: # open circuit voltage for solar
     setpoint_n: 0.76

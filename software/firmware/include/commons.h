@@ -199,6 +199,7 @@ struct HarvesterConfig{
 	uint32_t voltage_uV;
 	uint32_t voltage_min_uV;
 	uint32_t voltage_max_uV;
+	uint32_t voltage_step_uV;  // for window-based algo like ivcurve
 	uint32_t current_nA;
 	uint32_t setpoint_n8;
 	uint32_t interval_n;

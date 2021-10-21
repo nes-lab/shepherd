@@ -18,18 +18,19 @@ algorithms = {"neutral": 2**0,
 class VirtualHarvesterData(object):
     """ TODO: this class is very similar to virtual_source_data, could share a base-class
 
+    :param setting:
+    :param for_emulation:
+    :param samplerate_sps:
     """
     _config: dict = {}
     _name: str = "vHarvester"
     _default: str = "ivcurve"  # fallback in case of "None"-Setting
     _def_file = "virtual_harvester_defs.yml"
 
-    def __init__(self, setting: Union[dict, str, Path], samplerate_sps: int = 100_000):
-        """
+    def __init__(self, setting: Union[dict, str, Path], for_emulation: bool = False, samplerate_sps: int = 100_000):
 
-        :param setting:
-        """
         self.samplerate_sps = samplerate_sps
+        self.for_emulation = for_emulation
         def_path = Path(__file__).parent.resolve() / self._def_file
         with open(def_path, "r") as def_data:
             self._config_defs = yaml.safe_load(def_data)["harvesters"]
@@ -57,6 +58,7 @@ class VirtualHarvesterData(object):
             self._inheritance.append(self._name + "-Element")
             self._config = setting._config
             self.samplerate_sps = setting.samplerate_sps
+            self.for_emulation = setting.for_emulation
         elif isinstance(setting, dict):
             self._inheritance.append("parameter-dict")
             self._config = setting
@@ -82,11 +84,12 @@ class VirtualHarvesterData(object):
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
+            logger.debug(f"[{self._name}] Parameter-Set will be completed with '{base_name}'-base")
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self._config
             self._config = self._config_defs[base_name]
-            logger.debug(f"[{self._name}] Parameter-Set was completed with '{base_name}'-base")
+            logger.debug(f"[{self._name}] Parameter-Set will be completed with '{base_name}'-base")
             self.check_and_complete(verbose=False)
             self._config_base = self._config
             self._config = config_stash
@@ -105,6 +108,10 @@ class VirtualHarvesterData(object):
         self._check_num("voltage_min_mV", 0, 5000, verbose=verbose)
         self._check_num("voltage_max_mV", self._config["voltage_min_mV"], 5000, verbose=verbose)
         self._check_num("current_uA", 0, 50_000, verbose=verbose)
+
+        v_dynamic_uV = 1000 * (self._config["voltage_max_mV"] - self._config["voltage_min_mV"])
+        self._config["voltage_step_uV"] = v_dynamic_uV // self._config["window_size"]
+        self._check_num("voltage_step_uV", 1, 1_000_000, verbose=verbose)
 
         self._check_num("setpoint_n", 0, 1, verbose=verbose)
 
@@ -152,6 +159,7 @@ class VirtualHarvesterData(object):
             int(self._config["voltage_mV"] * 1e3),  # uV
             int(self._config["voltage_min_mV"] * 1e3),  # uV
             int(self._config["voltage_max_mV"] * 1e3),  # uV
+            int(self._config["voltage_step_uV"]),  # uV
             int(self._config["current_uA"] * 1e3),  # nA
             int(max(0, min(255, self._config["setpoint_n"] * 256))),  # n8 -> 0..1 is mapped to 0..255
             int(self._config["interval_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples
