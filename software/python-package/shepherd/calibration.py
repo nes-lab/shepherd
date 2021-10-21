@@ -187,7 +187,7 @@ class CalibrationData(object):
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         return struct.pack(">" + val_count * "d", *flattened)
 
-    def export_for_sysfs(self) -> dict:  # more precise dict[str, int], trouble with py3.6
+    def export_for_sysfs(self) -> dict:
         cal_set = {
             # ADC is calculated in nA (nano-amps), gain is shifted by 8 bit [scaling according to commons.h]
             "adc_gain": int(1e9 * (2 ** 8) * self.data["emulation"]["adc_current"]["gain"]),

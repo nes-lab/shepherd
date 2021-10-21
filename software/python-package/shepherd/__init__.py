@@ -41,11 +41,10 @@ from shepherd import sysfs_interface
 from shepherd.target_io import TargetIO
 
 logging.getLogger(__name__).addHandler(NullHandler())
-
 logger = logging.getLogger(__name__)
-logging._srcfile = None
-logging.logThreads = 0
-logging.logProcesses = 0
+#logging._srcfile = None
+#logging.logThreads = 0
+#logging.logProcesses = 0
 
 
 class Recorder(ShepherdIO):

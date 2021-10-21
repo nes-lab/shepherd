@@ -232,18 +232,17 @@ class VirtualSourceData(object):
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
+            logger.debug(f"[{self._name}] Parameter-Set will be completed with '{base_name}'-base")
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self._config
             self._config = self._config_defs[base_name]
-            logger.debug(f"[{self._name}] Parameter-Set was completed with '{base_name}'-base")
+            logger.debug(f"[{self._name}] Parameter-Set will be completed with '{base_name}'-base")
             self.check_and_complete(verbose=False)
             self._config_base = self._config
             self._config = config_stash
         else:
             raise NotImplementedError(f"[{self._name}] converter base '{base_name}' is unknown to system")
-
-        logger.debug(f"[{self._name}] Parameter-Set was completed with '{base_name}'-base")
 
         # General
         self._check_num("log_intermediate_voltage", 4.29e9, verbose=verbose)

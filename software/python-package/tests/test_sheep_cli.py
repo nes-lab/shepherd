@@ -280,14 +280,14 @@ def test_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
             "--io_sel_target_a",
             "--pwr_sel_target_a",
             "--warn-only",
-            "--virtsource", f"{file_path}",
-            "--output_path", f"{str(store)}",
+            "--virtsource", str(file_path),
+            "--output_path", str(store),
             "--uart_baudrate", "9600",
             "--log_mid_voltage",
             "--skip_log_voltage",
             "--skip_log_current",
             "--skip_log_gpio",
-            f"{str(data_h5)}",
+            str(data_h5),
         ],
     )
     assert res.exit_code == 0
@@ -311,8 +311,8 @@ def test_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5):
             "--io_sel_target_b",
             "--pwr_sel_target_b",
             "--no-warn-only",
-            "-o", f"{str(store)}",
-            f"{str(data_h5)}",
+            "-o", str(store),
+            str(data_h5),
         ],
     )
     assert res.exit_code == 0
@@ -326,8 +326,8 @@ def test_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_h5):
         cli,
         [
             "emulate",
-            "-o", f"{str(store)}",
-            f"{str(data_h5)}",
+            "-o", str(store),
+            str(data_h5),
         ],
     )
     assert res.exit_code == 0
