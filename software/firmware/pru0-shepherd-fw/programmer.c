@@ -7,6 +7,17 @@
 #define REG_MASK_ON(pin_reg, pin_mask)		pin_reg |= (pin_mask)
 #define REG_MASK_OFF(pin_reg, pin_mask)		pin_reg &= ~(pin_mask)
 
+void programmer_struct_init(volatile struct ProgrammerCtrl *const ctrl)
+{
+	/* why? this init is (safe) nonsense, but testable for byteorder and proper values */
+	ctrl->has_work = 0u;
+	ctrl->protocol = 0u;
+	ctrl->datarate_baud = 1000u;
+	ctrl->pin_clk = 1001u;
+	ctrl->pin_io = 1002u;
+	ctrl->pin_o = 1003u;
+	ctrl->pin_m = 1004u;
+}
 
 void programmer(volatile struct SharedMem *const shared_mem,
 	        volatile struct SampleBuffer *const buffers_far)

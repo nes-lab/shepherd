@@ -4,6 +4,8 @@
 #include "hw_config.h"
 #include "sampling.h"
 #include "virtual_converter.h"
+#include "virtual_harvester.h"
+#include "calibration.h"
 #include "spi_transfer_pru.h"
 
 static bool_ft dac_aux_link_to_main = false;
@@ -14,13 +16,19 @@ static bool_ft dac_aux_link_to_mid = false;
  * (ie. py-package/shepherd/calibration_default.py)
  */
 
-// TODO: how to refresh adc reading before going into sampling (rising cs-edge)
 static inline void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-	/* reference algorithm */
+	harvester_branches(buffer, sample_idx);
+}
+
+
+static inline void sample_harvesting_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+{
+	/* empty playground for new algorithms to test in parallel with above reference algorithm */
+	/* demo-algorithm: VOC */
 
 	static const uint8_ft SETTLE_INC = 5;
-	/* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	/* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
 	__delay_cycles(800 / 5);
 	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
@@ -49,14 +57,6 @@ static inline void sample_harvesting(struct SampleBuffer *const buffer, const ui
 }
 
 
-static inline void sample_harvesting_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
-{
-	/* empty playground for new algorithms to test in parallel with above reference algorithm */
-	// __delay_cycles(800 / 5);
-	sample_harvesting(buffer, sample_idx);
-}
-
-
 static inline void sample_emulation(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
 {
     /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
@@ -75,7 +75,7 @@ static inline void sample_emulation(volatile struct SharedMem *const shared_mem,
 
 	const uint32_t voltage_dac = converter_update_states_and_output(shared_mem);
 
-    dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+    	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
 
 	if (dac_aux_link_to_main) /* set both channels with same voltage */
 	{
@@ -285,6 +285,13 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	if (mode == MODE_EMULATE)
 	{
-		converter_init(&shared_mem->converter_settings, &shared_mem->calibration_settings);
+		calibration_initialize(&shared_mem->calibration_settings);
+		converter_initialize(&shared_mem->converter_settings);
+		// TODO: probably soon needs harvester init too
+	}
+	else if (mode == MODE_HARVEST)
+	{
+		calibration_initialize(&shared_mem->calibration_settings);
+		harvester_initialize(&shared_mem->harvester_settings);
 	}
 }

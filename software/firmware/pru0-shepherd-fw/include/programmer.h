@@ -3,6 +3,8 @@
 
 #include "commons.h"
 
+void programmer_struct_init(volatile struct ProgrammerCtrl *);
+
 void programmer(volatile struct SharedMem * shared_mem,
 	    volatile struct SampleBuffer * buffers_far);
 

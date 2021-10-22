@@ -7,6 +7,8 @@
 #include "stdint_fast.h"
 #include "virtual_converter.h"
 #include "math64_safe.h"
+#include "calibration.h"
+
 /* ---------------------------------------------------------------------
  * Virtual Converter, TODO: update description
  *
@@ -28,9 +30,6 @@
  */
 
 /* private FNs */
-static inline uint32_t conv_adc_raw_to_nA(uint32_t current_raw); // TODO: the first two could also be helpful for sampling
-static inline uint32_t conv_uV_to_dac_raw(uint32_t voltage_uV);
-
 static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
 static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
 
@@ -60,7 +59,6 @@ static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 }
 
 
-
 /* data-structure that hold the state - variables for direct use */
 struct ConverterState {
 	uint32_t interval_startup_disabled_drain_n;
@@ -87,11 +85,10 @@ struct ConverterState {
 /* (local) global vars to access in update function */
 static struct ConverterState state;
 static const volatile struct ConverterConfig *cfg;
-static const volatile struct CalibrationConfig *cal;
 
 void converter_struct_init(volatile struct ConverterConfig *const config)
 {
-	/* why? this init is nonsense, but testable for byteorder and proper values */
+	/* why? this init is (safe) nonsense, but testable for byteorder and proper values */
 	uint32_t i32 = 0u;
 	config->converter_mode = i32++;
 	config->interval_startup_delay_drain_n = i32++;
@@ -139,11 +136,10 @@ void converter_struct_init(volatile struct ConverterConfig *const config)
 }
 
 
-void converter_init(const volatile struct ConverterConfig *const config, const volatile struct CalibrationConfig *const calibration)
+void converter_initialize(const volatile struct ConverterConfig *const config)
 {
 	/* Initialize state */
-	cal = calibration;
-	cfg = config; // TODO: can be changed to pointer again, has same performance
+	cfg = config;
 
 	/* Power-flow in and out of system */
 	state.V_input_uV = 0u;
@@ -161,7 +157,7 @@ void converter_init(const volatile struct ConverterConfig *const config, const v
 	state.enable_log_mid = (cfg->converter_mode & 0b1000) > 0;
 
 	state.V_out_dac_uV = cfg->V_output_uV;
-	state.V_out_dac_raw = conv_uV_to_dac_raw(cfg->V_output_uV);
+	state.V_out_dac_raw = cal_conv_uV_to_dac_raw(cfg->V_output_uV);
 	state.power_good = true;
 
 	/* prepare hysteresis-thresholds */
@@ -283,7 +279,7 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
 	/* BUCK, Calculate current flowing out of the storage capacitor */
 	const uint64_t V_mid_uV_n4 = (state.V_mid_uV_n32 >> 28u);
 	const uint64_t P_leak_fW_n4 = mul64(cfg->I_intermediate_leak_nA, V_mid_uV_n4);
-	const uint32_t I_out_nA = conv_adc_raw_to_nA(current_adc_raw);
+	const uint32_t I_out_nA = cal_conv_adc_raw_to_nA(current_adc_raw);
 	const uint32_t eta_inv_out_n4 = (state.enable_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
 	state.P_out_fW_n4 = add64(mul64((uint64_t)eta_inv_out_n4 * (uint64_t)state.V_out_dac_uV, I_out_nA), P_leak_fW_n4);
 
@@ -390,7 +386,7 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
 		{
 			state.V_out_dac_uV = cfg->V_output_uV;
 		}
-		state.V_out_dac_raw = conv_uV_to_dac_raw(state.V_out_dac_uV);
+		state.V_out_dac_raw = cal_conv_uV_to_dac_raw(state.V_out_dac_uV);
 	}
 	else
 	{
@@ -406,60 +402,6 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
 	return state.V_out_dac_raw;
 }
 
-
-/* bring values into adc domain with -> voltage_uV = adc_value * gain_factor + offset
- * original definition in: https://github.com/geissdoerfer/shepherd/blob/master/docs/user/data_format.rst */
-// Note: n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor
-// TODO: negative residue compensation, new undocumented feature to compensate for noise around 0 - current uint-design cuts away negative part and leads to biased mean()
-#define NOISE_ESTIMATE_nA   (2000u)
-#define RESIDUE_SIZE_FACTOR (30u)
-#define RESIDUE_MAX_nA      (NOISE_ESTIMATE_nA * RESIDUE_SIZE_FACTOR)
-inline uint32_t conv_adc_raw_to_nA(const uint32_t current_raw)
-{
-	static uint32_t negative_residue_nA = 0;
-	const uint32_t I_nA = (uint32_t)(((uint64_t)current_raw * (uint64_t)cal->adc_current_factor_nA_n8) >> 8u);
-	// avoid mixing signed and unsigned OPs
-	if (cal->adc_current_offset_nA >= 0)
-	{
-		const uint32_t adc_offset_nA = cal->adc_current_offset_nA;
-		return add64(I_nA, adc_offset_nA);
-	}
-	else
-	{
-		const uint32_t adc_offset_nA = -cal->adc_current_offset_nA + negative_residue_nA;
-
-		if (I_nA > adc_offset_nA)
-		{
-			return (I_nA - adc_offset_nA);
-		}
-		else
-		{
-			negative_residue_nA = adc_offset_nA - I_nA;
-			if (negative_residue_nA > RESIDUE_MAX_nA) negative_residue_nA = RESIDUE_MAX_nA;
-			return 0u;
-		}
-	}
-}
-
-// safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
-inline uint32_t conv_uV_to_dac_raw(const uint32_t voltage_uV)
-{
-	uint32_t dac_raw = 0u;
-	// return (((uint64_t)(voltage_uV - cal->dac_voltage_offset_uV) * (uint64_t)cal->dac_voltage_inv_factor_uV_n20) >> 20u);
-	// avoid mixing signed and unsigned OPs
-	if (cal->dac_voltage_offset_uV >= 0)
-	{
-		const uint32_t dac_offset_uV = cal->dac_voltage_offset_uV;
-		if (voltage_uV > dac_offset_uV)	dac_raw = ((uint64_t)(voltage_uV - dac_offset_uV) * (uint64_t)cal->dac_voltage_inv_factor_uV_n20) >> 20u;
-		// else dac_raw = 0u;
-	}
-	else
-	{
-		const uint32_t dac_offset_uV = -cal->dac_voltage_offset_uV;
-		dac_raw = ((uint64_t)(voltage_uV + dac_offset_uV) * (uint64_t)cal->dac_voltage_inv_factor_uV_n20) >> 20u;
-	}
-	return (dac_raw > 0xFFFFu) ? 0xFFFFu : dac_raw;
-}
 
 // TODO: global /nonstatic for tests
 uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t current_nA)
@@ -513,7 +455,7 @@ uint32_t get_V_intermediate_uV(void)
 
 uint32_t get_V_intermediate_raw(void)
 {
-	return conv_uV_to_dac_raw((uint32_t)(state.V_mid_uV_n32 >> 32u));
+	return cal_conv_uV_to_dac_raw((uint32_t)(state.V_mid_uV_n32 >> 32u));
 }
 
 void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)

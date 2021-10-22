@@ -4,14 +4,13 @@
 #include <stdbool.h>
 #include "commons.h"
 
-void converter_init(const volatile struct ConverterConfig *config, const volatile struct CalibrationConfig *cal);
+void converter_struct_init(volatile struct ConverterConfig * config);
+void converter_initialize(const volatile struct ConverterConfig *config);
 
 void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void converter_calc_out_power(uint32_t current_adc_raw);
 void converter_update_cap_storage(void);
 uint32_t converter_update_states_and_output(volatile struct SharedMem * shared_mem);
-
-void converter_struct_init(volatile struct ConverterConfig * config);
 
 void set_P_input_fW(const uint32_t P_fW);
 void set_P_output_fW(const uint32_t P_fW);
@@ -24,7 +23,6 @@ uint32_t get_I_mid_out_nA(void);
 bool_ft get_state_log_intermediate(void);
 
 void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
-
 
 
 /* Direct Connection

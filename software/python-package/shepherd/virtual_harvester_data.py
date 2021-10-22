@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 algorithms = {"neutral": 2**0,
               "ivcurve": 2**4,
               "cv": 2**8,
-              "ci": 2**9,
+              #"ci": 2**9,
               "mppt_voc": 2**12,
               "mppt_po": 2**13,
               }

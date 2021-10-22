@@ -19,6 +19,7 @@
 #include "ringbuffer.h"
 #include "sampling.h"
 #include "shepherd_config.h"
+#include "calibration.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
 #include "programmer.h"
@@ -222,7 +223,9 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1u;
 
 		case MSG_DBG_VSOURCE_INIT:
-			converter_init(&shared_mem->converter_settings, &shared_mem->calibration_settings);
+			calibration_initialize(&shared_mem->calibration_settings);
+			converter_initialize(&shared_mem->converter_settings);
+			harvester_initialize(&shared_mem->harvester_settings);
 			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
 			return 1u;
 
@@ -388,23 +391,12 @@ void main(void)
 	shared_memory->vsource_batok_trigger_for_pru1 = false;
 	shared_memory->vsource_batok_pin_value = false;
 
-	/* this init is nonsense, but testable for byteorder and proper values */
-	shared_memory->calibration_settings = (struct CalibrationConfig){
-		.adc_current_factor_nA_n8=255u, .adc_current_offset_nA=-1,
-		.dac_voltage_inv_factor_uV_n20=254u, .dac_voltage_offset_uV=-2};
-
+	/* this inits are (safe) nonsense, but testable for byteorder and proper values */
+	calibration_struct_init(&shared_memory->calibration_settings);
 	converter_struct_init(&shared_memory->converter_settings);
 	harvester_struct_init(&shared_memory->harvester_settings);
+	programmer_struct_init(&shared_memory->programmer_ctrl);
 
-	/* programmer-subroutine-control: init to safestate */
-	shared_memory->programmer_ctrl = (struct ProgrammerCtrl){
-		.has_work = 0u,
-		.protocol = 0u,
-		.datarate_baud = 1000u,
-		.pin_clk = 1001u,
-		.pin_io = 1002u,
-		.pin_o = 1003u,
-		.pin_m = 1004u};
 
 	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value[0]=TIMER_BASE_PERIOD};
 	shared_memory->pru1_sync_inbox = (struct SyncMsg){
