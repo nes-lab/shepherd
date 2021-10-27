@@ -6,6 +6,7 @@
 struct my_resource_table {
 	struct resource_table base;
 
+	/* offsets to entries */
 	uint32_t offset[1]; /* Should match 'num' in actual definition */
 
 	/* mem-resource definition */

@@ -50,9 +50,10 @@ struct ch_map pru_intc_map[] = {
 struct my_resource_table {
 	struct resource_table base;
 
+	/* offsets to entries */
 	uint32_t offset[1]; /* Should match 'num' in actual definition */
 
-	/* intc definition */
+	/* resource definitions */
 	struct fw_rsc_custom pru_ints;
 };
 
@@ -69,6 +70,7 @@ struct my_resource_table resourceTable = {
                 offsetof(struct my_resource_table, pru_ints),
         },
 
+	/* resource definitions */
         {
                 TYPE_CUSTOM,
                 TYPE_PRU_INTS,

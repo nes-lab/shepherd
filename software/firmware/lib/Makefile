@@ -8,8 +8,8 @@ define CGT_ERROR_BODY
 
 *******************************************************************************
 PRU_CGT environment variable is not set. Examples given:
-(Desktop Linux) export PRU_CGT=/path/to/pru/code/gen/tools/ti-cgt-pru_2.1.2
-(Windows) set PRU_CGT=C:/path/to/pru/code/gen/tools/ti-cgt-pru_2.1.2
+(Desktop Linux) export PRU_CGT=/path/to/pru/code/gen/tools/ti-cgt-pru_#Version
+(Windows) set PRU_CGT=C:/path/to/pru/code/gen/tools/ti-cgt-pru_#Version
 (ARM Linux*) export PRU_CGT=/usr/share/ti/cgt-pru
 
 *ARM Linux also needs to create a symbolic link to the /usr/bin/ directory in
@@ -25,9 +25,9 @@ define SUP_ERROR_BODY
 
 *******************************************************************************
 PRU_SUPPORT environment variable is not set. Examples given:
-(Desktop Linux) export PRU_SUPPORT=/path/to/ti/pru-software-support-package-5.7.0
-(Windows) set PRU_SUPPORT=C:/path/to/ti/pru-software-support-package-5.7.0
-(ARM Linux) export PRU_SUPPORT=/usr/share/ti/pru-software-support-package-5.7.0
+(Desktop Linux) export PRU_SUPPORT=/path/to/ti/pru-software-support-package-#Version
+(Windows) set PRU_SUPPORT=C:/path/to/ti/pru-software-support-package-#Version
+(ARM Linux) export PRU_SUPPORT=/usr/share/ti/pru-software-support-package-#Version
 *******************************************************************************
 
 endef
@@ -84,7 +84,7 @@ CFLAGS += --opt_level=4
 # TODO: with optimization <4 and no debug symbols the firmware does not work (60/54 kB, against 101/92 kB)?!?
 
 # Speed Optimization (short -mf)
-CFLAGS += --opt_for_speed=5
+CFLAGS += --opt_for_speed=3
 # 2, 1, 0 	gradually optimize for size, (lower number means higher risk of performance impact)
 # 3, 4, 5 	gradually optimize for performance (higher num means high risk impacting size)
 # default is 4 (without value), 1 (not specifying command)

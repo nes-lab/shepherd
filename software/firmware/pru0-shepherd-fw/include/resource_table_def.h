@@ -62,6 +62,7 @@ struct my_resource_table resourceTable = {
 		offsetof(struct my_resource_table, shared_mem),
         },
 
+	/* resource entries */
         {
 		TYPE_CARVEOUT, 0x0, /* Memory address */
 		0x0, /* Physical address */

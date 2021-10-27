@@ -13,7 +13,7 @@
 MEMORY
 {
       PAGE 0:
-	PRU_IMEM		: org = 0x00000000 len = 0x00003000  /* 12 kB PRU0 Instruction RAM, TODO: len was 0x2000, unused 0x1fe4, -> .text did not fit anymore */
+	PRU_IMEM		: org = 0x00000000 len = 0x00002000  /* 8 kB PRU0 Instruction RAM */
 
       PAGE 1:
 
@@ -93,4 +93,6 @@ SECTIONS {
 	.fardata	>  PRU_DMEM_0_1, PAGE 1
 
 	.resource_table > PRU_DMEM_0_1, PAGE 1
+
+    //.pru_irq_map (COPY) : { *(.pru_irq_map) }
 }
