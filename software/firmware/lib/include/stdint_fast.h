@@ -13,6 +13,14 @@
 #define uint16_ft   uint32_t
 #define bool_ft     uint32_t
 
+#ifndef false
+#define false (0u)
+#endif
+
+#ifndef true
+#define true (1u)
+#endif
+
 /*
 const uint32_t cuint32_1 = 1;
 const uint16_t cuint16_1 = 1;
