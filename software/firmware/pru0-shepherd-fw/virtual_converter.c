@@ -86,56 +86,6 @@ struct ConverterState {
 static struct ConverterState state;
 static const volatile struct ConverterConfig *cfg;
 
-void converter_struct_init(volatile struct ConverterConfig *const config)
-{
-	/* why? this init is (safe) nonsense, but testable for byteorder and proper values */
-	uint32_t i32 = 0u;
-	config->converter_mode = i32++;
-	config->interval_startup_delay_drain_n = i32++;
-
-	config->V_input_max_uV = i32++;
-	config->I_input_max_nA = i32++;
-	config->V_input_drop_uV = i32++;
-	config->Constant_1k_per_Ohm = i32++;
-
-	config->Constant_us_per_nF_n28 = i32++;
-	config->V_intermediate_init_uV = i32++;
-	config->I_intermediate_leak_nA = i32++;
-
-	config->V_enable_output_threshold_uV = i32++;
-	config->V_disable_output_threshold_uV = i32++;
-	config->dV_enable_output_uV = i32++;
-	config->interval_check_thresholds_n = i32++;
-
-	config->V_pwr_good_enable_threshold_uV = i32++;
-	config->V_pwr_good_disable_threshold_uV = i32++;
-	config->immediate_pwr_good_signal = i32++;
-
-	config->V_output_log_gpio_threshold_uV = i32++;
-
-	config->V_input_boost_threshold_uV = i32++;
-	config->V_intermediate_max_uV = i32++;
-
-	config->V_output_uV = i32++;
-	config->V_buck_drop_uV = i32++;
-
-	config->LUT_input_V_min_log2_uV = i32++;
-	config->LUT_input_I_min_log2_nA = i32++;
-	config->LUT_output_I_min_log2_nA = i32++;
-
-	uint8_t i8A = 0u;
-	uint8_t i8B = 0u;
-	for (uint32_t outer = 0u; outer < LUT_SIZE; outer++)
-	{
-		for (uint32_t inner = 0u; inner < LUT_SIZE; inner++)
-		{
-			config->LUT_inp_efficiency_n8[outer][inner] = i8A++;
-		}
-		config->LUT_out_inv_efficiency_n4[outer] = i8B++;
-	}
-}
-
-
 void converter_initialize(const volatile struct ConverterConfig *const config)
 {
 	/* Initialize state */

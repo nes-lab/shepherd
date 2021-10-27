@@ -4,7 +4,7 @@
 #include "hw_config.h"
 #include "sampling.h"
 #include "virtual_converter.h"
-#include "virtual_harvester.h"
+//#include "virtual_harvester.h"
 #include "calibration.h"
 #include "spi_transfer_pru.h"
 
@@ -16,13 +16,13 @@ static bool_ft dac_aux_link_to_mid = false;
  * (ie. py-package/shepherd/calibration_default.py)
  */
 
-static inline void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void sample_harvesting(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-	harvester_branches(buffer, sample_idx);
+	//harvester_adc(buffer, sample_idx);
 }
 
 
-static inline void sample_harvesting_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void sample_harvesting_test(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/* empty playground for new algorithms to test in parallel with above reference algorithm */
 	/* demo-algorithm: VOC */
@@ -292,6 +292,6 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 	else if (mode == MODE_HARVEST)
 	{
 		calibration_initialize(&shared_mem->calibration_settings);
-		harvester_initialize(&shared_mem->harvester_settings);
+		//harvester_initialize(&shared_mem->harvester_settings);
 	}
 }

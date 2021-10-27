@@ -5,35 +5,40 @@
 #include "math64_safe.h"
 #include "calibration.h"
 
-static const volatile struct HarvesterConfig *cfg;
-
-void harvester_struct_init(volatile struct HarvesterConfig *const config)
-{
-	/* why? this init is (safe) nonsense, but testable for byteorder and proper values */
-	uint32_t ivalue = 200u;
-	config->algorithm = 0u;
-	config->window_size = ivalue++;
-	config->voltage_uV = ivalue++;
-	config->voltage_min_uV = ivalue++;
-	config->voltage_max_uV = ivalue++;
-	config->current_limit_nA = ivalue++;
-	config->setpoint_n8 = ivalue++;
-	config->interval_n = ivalue++;
-	config->duration_n = ivalue++;
-	config->dac_resolution_bit = ivalue++;
-	config->wait_cycles_n = ivalue++;
-}
-
 // internal variables
 static uint32_t voltage_set_uV = 0u;
 
+static uint32_t window_samples = 0u;
+static uint32_t voltage_hold_uV = 0u;
+static uint32_t current_hold_nA = 0u;
+static uint32_t voltage_step_x4_uV = 0u;
+
+static const volatile struct HarvesterConfig *cfg;
+
+static void harvest_adc_cv(struct SampleBuffer *, uint32_t);
+static void harvest_adc_ivcurve(struct SampleBuffer *, uint32_t);
+static void harvest_adc_mppt_voc(struct SampleBuffer *, uint32_t);
+static void harvest_adc_mppt_po(struct SampleBuffer *, uint32_t);
+
+static void harvest_iv_cv(uint32_t * p_voltage_uV, uint32_t * p_current_nA);
+static void harvest_iv_mppt_voc(uint32_t * p_voltage_uV, uint32_t * p_current_nA);
+static void harvest_iv_mppt_po(uint32_t * p_voltage_uV, uint32_t * p_current_nA);
+
+
 void harvester_initialize(const volatile struct HarvesterConfig *const config)
 {
+	// for ADC-Version
 	cfg = config;
 	voltage_set_uV = cfg->voltage_uV;
+
+	// for IV-Curve-Version
+	window_samples = cfg->window_size * (1 + cfg->wait_cycles_n); // TODO: alternatively adapt window_size in py
+	voltage_hold_uV = 0u;
+	current_hold_nA = 0u;
+	voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
 }
 
-void harvester_branches(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+void harvester_adc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	if (cfg->algorithm >= (1u << 13))
 		harvest_adc_mppt_po(buffer, sample_idx);
@@ -43,7 +48,7 @@ void harvester_branches(struct SampleBuffer *const buffer, const uint32_t sample
 		harvest_adc_cv(buffer, sample_idx);
 	else if (cfg->algorithm >= (1u << 4))
 		harvest_adc_ivcurve(buffer, sample_idx);
-	// else send error to system
+	// todo: else send error to system
 }
 
 void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)
@@ -113,7 +118,7 @@ void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t samp
  * 	- search by Divide and Conquer (until predefined resolution limit is reached)
  *	- logs current adc-values except during VOC-Search (values = 0)
  *	- influencing parameters: interval_n, duration_n, setpoint_n8, current_limit_nA, dac_resolution_bit, wait_cycles_n
- *	TODO: algorithm should be easier, see harvester_test() in sampling.c
+ *	TODO: algorithm could probably be easier, see harvester_test() in sampling.c
  */
 	static uint32_t interval_step = 1u << 30u; // deliberately out of bounds
 	static uint32_t settle_steps = 0u;
@@ -221,16 +226,17 @@ void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sampl
 	if (interval_step > cfg->interval_n)
 	{
 		interval_step = 0u;
-		const uint32_t power_raw = mul32(current_adc, voltage_adc);
+		const uint32_t power_raw = mul32(current_adc, voltage_adc); /*
 		const uint32_t current_nA = cal_conv_adc_raw_to_nA(current_adc); // TODO: could be simplified by providing raw-value in cfg
 		if (current_nA > cfg->current_limit_nA)
 		{
 			// TODO: not the best design: better divide power from current tracking!
-			/* current out of bound -> increase voltage */
+			// current out of bound -> increase voltage
 			voltage_set_uV = add32(voltage_set_uV, incr_step_uV);
 			incr_step_uV = mul32(2u, incr_step_uV);
 		}
-		else if (power_raw > power_last_raw)
+		else */
+		if (power_raw > power_last_raw)
 		{
 			/* got higher power -> keep direction, move further */
 			if (incr_direction)
@@ -275,4 +281,116 @@ void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sampl
 
 	buffer->values_current[sample_idx] = current_adc;
 	buffer->values_voltage[sample_idx] = voltage_adc;
+}
+
+void harvester_iv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+{
+	if (cfg->algorithm >= (1u << 13))
+		harvest_iv_mppt_po(p_voltage_uV, p_current_nA);
+	else if (cfg->algorithm >= (1u << 12))
+		harvest_iv_mppt_voc(p_voltage_uV, p_current_nA);
+	else if (cfg->algorithm >= (1u << 8))
+		harvest_iv_cv(p_voltage_uV, p_current_nA);
+	// todo: else send error to system
+}
+
+
+void harvest_iv_cv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+{
+	/* look for wanted constant voltage in an iv-curve-stream
+	 * - influencing parameters: voltage_uV (in init)
+	 * */
+
+	static uint32_t voltage_last_uV = 0u;
+	static uint32_t current_last_nA = 0u;
+	static bool_ft	compare_last = 0u;
+
+	/* find matching voltage with threshold-crossing-detection -> direction of curve is irrelevant */
+	const bool_ft compare_now = *p_voltage_uV < voltage_set_uV;
+	const uint32_t voltage_step = (*p_voltage_uV > voltage_last_uV) ? (*p_voltage_uV - voltage_last_uV) : (voltage_last_uV - *p_voltage_uV);
+
+	if ((compare_now != compare_last) && (voltage_step < voltage_step_x4_uV))
+	{
+		/* a new ConstVoltage was found, take the smaller voltage
+		 * TODO: could also be interpolated if sampling-routine has time to spare */
+		if (voltage_last_uV < *p_voltage_uV)
+		{
+			voltage_hold_uV = voltage_last_uV;
+			current_hold_nA = current_last_nA;
+		}
+		else
+		{
+			voltage_hold_uV = *p_voltage_uV;
+			current_hold_nA = *p_current_nA;
+		}
+	}
+	voltage_last_uV = *p_voltage_uV;
+	current_last_nA = *p_current_nA;
+	compare_last = compare_now;
+
+	/* manipulate the return-value */
+	*p_voltage_uV = voltage_hold_uV;
+	*p_current_nA = current_hold_nA;
+}
+
+void harvest_iv_mppt_voc(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+{
+	/* VOC - working on an iv-curve-stream, without complete curve-memory
+	 * NOTE with no memory, there is a time-gap before CV gets picked up
+	 *  - influencing parameters: interval_n, duration_n, current_limit_nA, voltage_max_uV, setpoint_n8
+	 * 			from init: window_size, wait_cycles_n,
+	 */
+	static uint32_t voc_now = 0u;
+	static uint32_t voc_next = 0u;
+	static uint32_t age_now = 0u;
+	static uint32_t age_next = 0u;
+	static uint32_t interval_step = 1u << 30u;
+
+	/* keep track of time */
+	interval_step = (interval_step >= cfg->interval_n) ? 0u : interval_step + 1u;
+	age_next++;
+	age_now++;
+
+	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or be NOT the best */
+	if ((age_now > window_samples) || (voc_next <= voc_now))
+	{
+		age_now = age_next;
+		voc_now = voc_next;
+		age_next = 0u;
+		voc_next = cfg->voltage_max_uV;
+	}
+
+	/* lookout for new VOC */
+	if ((*p_current_nA < cfg->current_limit_nA) && (*p_voltage_uV <= voc_next))
+	{
+		voc_next = *p_voltage_uV;
+		age_next = 0u;
+	}
+
+	/* underlying cv-algo is doing the rest */
+	harvest_iv_cv(p_voltage_uV, p_current_nA);
+
+	/* emulate VOC Search @ beginning of interval duration */
+	if (interval_step < cfg->duration_n)
+	{
+		/* No Output here, also update wanted const voltage */
+		voltage_set_uV = mul32(voc_now, cfg->setpoint_n8) >> 8u;
+		//p_voltage_uV = 0u;
+		*p_current_nA = 0u;
+	}
+}
+
+void harvest_iv_mppt_po(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+{
+	static uint32_t interval_step = 1u << 30u; // deliberately out of bounds
+	static uint32_t now_voltage_uV = 0u;
+	static uint32_t now_current_nA = 0u;
+	static uint32_t now_power_fW = 0u;
+	static uint32_t now_age_fW = 0u;
+	static uint32_t nxt_voltage_uV = 0u;
+	static uint32_t nxt_current_nA = 0u;
+	static uint32_t nxt_power_fW = 0u;
+	static uint32_t nxt_age_fW = 0u;
+	*p_voltage_uV = 0u;
+	*p_current_nA = 0u;
 }

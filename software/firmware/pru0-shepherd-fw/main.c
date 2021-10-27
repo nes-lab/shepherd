@@ -19,11 +19,10 @@
 #include "ringbuffer.h"
 #include "sampling.h"
 #include "shepherd_config.h"
-#include "calibration.h"
-#include "virtual_converter.h"
-#include "virtual_harvester.h"
-#include "programmer.h"
+//#include "virtual_harvester.h"
 #include "math64_safe.h"
+#include "virtual_converter.h"
+#include "programmer.h"
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 	(0xFFFFFFFF)
@@ -144,7 +143,7 @@ uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 	else if (mode == 3)	result = (uint64_t)factor * factor; 		// ~ 42 ns, limits 0..65535 -> wrong behaviour!!!
 	else if (mode == 4)	result = factor * (uint64_t)factor; 		// ~ 48 ns, limits 0..(2^32-1) -> works fine?
 	else if (mode == 5)	result = (uint64_t)factor * (uint64_t)factor; 	// ~ 54 ns, limits 0..(2^32-1)
-	else if (mode == 5)	result = ((uint64_t)factor)*((uint64_t)factor); // ~ 54 ns, limits 0..(2^32-1)
+	else if (mode == 6)	result = ((uint64_t)factor)*((uint64_t)factor); // ~ 54 ns, limits 0..(2^32-1)
 	else if (mode == 11)	result = factor * f2;				// ~ 3000 - 4800 - 6400 ns, limits 0..(2^32-1) -> time depends on size (4, 16, 32 bit)
 	else if (mode == 12)	result = f2 * factor;				// same as above
 	else if (mode == 13)	result = f2*f2;					// same as above
@@ -222,13 +221,6 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
 			return 1u;
 
-		case MSG_DBG_VSOURCE_INIT:
-			calibration_initialize(&shared_mem->calibration_settings);
-			converter_initialize(&shared_mem->converter_settings);
-			harvester_initialize(&shared_mem->harvester_settings);
-			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
-			return 1u;
-
 		case MSG_DBG_VSOURCE_CHARGE:
 			converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
 			converter_calc_out_power(0u);
@@ -298,6 +290,8 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			// TODO: look at asm-code, is there still potential for optimization?
 			// TODO: make sure that 1 us passes before trying to get that value
 		}
+		// timestamp pru0 to monitor utilization
+		const uint32_t timer_start = iep_get_cnt_val();
 
 		// Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
 		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
@@ -349,6 +343,12 @@ void event_loop(volatile struct SharedMem *const shared_mem,
                 		//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
 		}
+
+		const uint32_t timer_ticks = iep_get_cnt_val() - timer_start;
+		if (timer_ticks > shared_mem->pru0_max_ticks_per_sample)
+		{
+			shared_mem->pru0_max_ticks_per_sample = timer_ticks;
+		}
 	}
 }
 
@@ -391,27 +391,18 @@ void main(void)
 	shared_memory->vsource_batok_trigger_for_pru1 = false;
 	shared_memory->vsource_batok_pin_value = false;
 
-	/* this inits are (safe) nonsense, but testable for byteorder and proper values */
-	calibration_struct_init(&shared_memory->calibration_settings);
-	converter_struct_init(&shared_memory->converter_settings);
-	harvester_struct_init(&shared_memory->harvester_settings);
-	programmer_struct_init(&shared_memory->programmer_ctrl);
+	/* minimal init for these structs to make them safe */
+	shared_memory->converter_settings.converter_mode = 0u;
+	shared_memory->harvester_settings.algorithm = 0u;
+	shared_memory->programmer_ctrl.has_work = 0u;
 
+	shared_memory->pru1_sync_outbox.unread = 0u;
+	shared_memory->pru1_sync_inbox.unread = 0u;
+	shared_memory->pru1_msg_error.unread = 0u;
 
-	shared_memory->pru1_sync_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE, .value[0]=TIMER_BASE_PERIOD};
-	shared_memory->pru1_sync_inbox = (struct SyncMsg){
-		.id =0u,
-		.unread =0u,
-		.type =MSG_NONE,
-		.buffer_block_period=TIMER_BASE_PERIOD,
-		.analog_sample_period=TIMER_BASE_PERIOD/ADC_SAMPLES_PER_BUFFER,
-		.compensation_steps=0u,
-		.next_timestamp_ns=0u};
-	shared_memory->pru1_msg_error = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
-
-	shared_memory->pru0_msg_outbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
-	shared_memory->pru0_msg_inbox = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
-	shared_memory->pru0_msg_error = (struct ProtoMsg){.id =0u, .unread =0u, .type =MSG_NONE};
+	shared_memory->pru0_msg_outbox.unread =0u;
+	shared_memory->pru0_msg_inbox.unread =0u;
+	shared_memory->pru0_msg_error.unread =0u;
 
 	/*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
@@ -428,7 +419,8 @@ void main(void)
 	shared_memory->cmp0_trigger_for_pru1 = 1u;
 
 reset:
-	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 100, 0);
+	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, shared_memory->pru0_max_ticks_per_sample, 0);
+	shared_memory->pru0_max_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
 	ring_init(&free_buffers);
 

@@ -1,10 +1,9 @@
-#pragma once
+#ifndef PRU_FIRMWARE_PRU0_SHEPHERD_FW_CONVERTER_H
+#define PRU_FIRMWARE_PRU0_SHEPHERD_FW_CONVERTER_H
 
 #include <stdint.h>
-#include <stdbool.h>
 #include "commons.h"
 
-void converter_struct_init(volatile struct ConverterConfig * config);
 void converter_initialize(const volatile struct ConverterConfig *config);
 
 void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
@@ -56,3 +55,4 @@ void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
  * - needs IV-curves and feedback to
  * TODO: later
  */
+#endif // PRU_FIRMWARE_PRU0_SHEPHERD_FW_CONVERTER_H

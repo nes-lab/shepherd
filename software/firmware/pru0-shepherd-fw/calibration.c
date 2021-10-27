@@ -3,15 +3,6 @@
 
 static const volatile struct CalibrationConfig *cal;
 
-void calibration_struct_init(volatile struct CalibrationConfig *const config)
-{
-	/* why? this init is (safe) nonsense, but testable for byteorder and proper values */
-	config->adc_current_factor_nA_n8 = 255u;
-	config->adc_current_offset_nA = -1;
-	config->dac_voltage_inv_factor_uV_n20 = 254u;
-	config->dac_voltage_offset_uV = -2;
-}
-
 void calibration_initialize(const volatile struct CalibrationConfig *const config)
 {
 	cal = config;
@@ -25,7 +16,7 @@ void calibration_initialize(const volatile struct CalibrationConfig *const confi
 #define NOISE_ESTIMATE_nA   (2000u)
 #define RESIDUE_SIZE_FACTOR (30u)
 #define RESIDUE_MAX_nA      (NOISE_ESTIMATE_nA * RESIDUE_SIZE_FACTOR)
-inline uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
+uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
 {
 	static uint32_t negative_residue_nA = 0;
 	const uint32_t I_nA = (uint32_t)(((uint64_t)current_raw * (uint64_t)cal->adc_current_factor_nA_n8) >> 8u);
@@ -53,7 +44,7 @@ inline uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
 }
 
 // safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
-inline uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
+uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
 {
 	uint32_t dac_raw = 0u;
 	// return (((uint64_t)(voltage_uV - cal->dac_voltage_offset_uV) * (uint64_t)cal->dac_voltage_inv_factor_uV_n20) >> 20u);
