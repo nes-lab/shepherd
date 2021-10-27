@@ -255,7 +255,7 @@ class SharedMem(object):
         self.mapped_mem.write(current)
 
     def write_firmware(self, data: bytes):
-        if len(data) > self.size:
+        if len(data) > self.size - 3*4:
             ValueError(f"firmware file is larger than the SharedMEM-Buffer")
         self.mapped_mem.seek(0)
         self.mapped_mem.write(struct.pack("=I", 0xDEADD00D))
