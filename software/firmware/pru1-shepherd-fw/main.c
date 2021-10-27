@@ -265,7 +265,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 
 	/* These are our initial guesses for buffer sample period */
 	iep_set_cmp_val(IEP_CMP0, buffer_block_period);  // 20 MTicks -> 100 ms
-	iep_set_cmp_val(IEP_CMP1, analog_sample_period); // 20 kTicks -> 10 us
+	iep_set_cmp_val(IEP_CMP1, analog_sample_period); //  2 kTicks -> 10 us
 
 	iep_enable_evt_cmp(IEP_CMP1);
 	iep_clear_evt_cmp(IEP_CMP0);
