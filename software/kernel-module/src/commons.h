@@ -78,8 +78,8 @@ enum ShepherdState {
 
 /* Firmware-container for Programmer in same mem-area as FIFO for Samplebuffer */
 struct ProgrammerFW {
-	uint32_t signature1; // kernel writes and tests it for 0xDEAD
-	uint32_t signature2; // kernel writes and tests it for 0xD00D
+	uint32_t signature1; // kernel writes and pru tests it for 0xDEADD00D
+	uint32_t signature2; // kernel writes and pru tests it for 0x8BADF00D
 	/* variable size array "hack" */
 	/* -> typecast the mem-pointer to this struct */
 	uint32_t length;
@@ -105,14 +105,14 @@ struct ProgrammerCtrl {
  * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
  */
 struct CalibrationConfig {
-    /* Gain of load current adc. It converts current to ADC raw value */
-    uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
-    /* Offset of load current adc */
-    int32_t adc_current_offset_nA;
-    /* Gain of DAC. It converts voltage to DAC raw value */
-    uint32_t dac_voltage_inv_factor_uV_n20; // n20 means normalized to 2^20 (representing 1.0)
-    /* Offset of load voltage DAC */
-    int32_t dac_voltage_offset_uV;
+	/* Gain of load current adc. It converts current to ADC raw value */
+	uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
+	/* Offset of load current adc */
+	int32_t adc_current_offset_nA;
+	/* Gain of DAC. It converts voltage to DAC raw value */
+	uint32_t dac_voltage_inv_factor_uV_n20; // n20 means normalized to 2^20 (representing 1.0)
+	/* Offset of load voltage DAC */
+	int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
 
 #define LUT_SIZE	(12)
@@ -126,44 +126,44 @@ struct CalibrationConfig {
  * 	_nA-u32 = ~ 4.294 A
  */
 struct ConverterConfig {
-    /* General Reg Config */
-    uint32_t converter_mode; // bitmask to alter functionality
-    uint32_t interval_startup_delay_drain_n; // allow target to power up and go to sleep
+	/* General Reg Config */
+	uint32_t converter_mode; // bitmask to alter functionality
+	uint32_t interval_startup_delay_drain_n; // allow target to power up and go to sleep
 
-    uint32_t V_input_max_uV;
-    uint32_t I_input_max_nA;  // limits input-power
-    uint32_t V_input_drop_uV; // simulate possible diode
-    uint32_t Constant_1k_per_Ohm; // resistance only active with disabled boost
+	uint32_t V_input_max_uV;
+	uint32_t I_input_max_nA;  // limits input-power
+	uint32_t V_input_drop_uV; // simulate possible diode
+	uint32_t Constant_1k_per_Ohm; // resistance only active with disabled boost
 
-    uint32_t Constant_us_per_nF_n28;
-    uint32_t V_intermediate_init_uV; // allow a proper / fast startup
-    uint32_t I_intermediate_leak_nA;
+	uint32_t Constant_us_per_nF_n28;
+	uint32_t V_intermediate_init_uV; // allow a proper / fast startup
+	uint32_t I_intermediate_leak_nA;
 
-    uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
-    uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
-    uint32_t dV_enable_output_uV; // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
-    uint32_t interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
+	uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
+	uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
+	uint32_t dV_enable_output_uV; // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
+	uint32_t interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
 
-    uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good-pin (hysteresis)
-    uint32_t V_pwr_good_disable_threshold_uV;
-    uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
+	uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good-pin (hysteresis)
+	uint32_t V_pwr_good_disable_threshold_uV;
+	uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
 
-    uint32_t V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
+	uint32_t V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
 
-    /* Boost Reg */
-    uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
-    uint32_t V_intermediate_max_uV;  // -> boost shuts off
+	/* Boost Reg */
+	uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
+	uint32_t V_intermediate_max_uV;  // -> boost shuts off
 
-    /* Buck Reg */
-    uint32_t V_output_uV;
-    uint32_t V_buck_drop_uV; // simulate dropout-voltage or diode
+	/* Buck Reg */
+	uint32_t V_output_uV;
+	uint32_t V_buck_drop_uV; // simulate dropout-voltage or diode
 
-    /* LUTs */
-    uint32_t LUT_input_V_min_log2_uV; // only u8 needed
-    uint32_t LUT_input_I_min_log2_nA; // only u8 needed
-    uint32_t LUT_output_I_min_log2_nA; // only u8 needed
-    uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
+	/* LUTs */
+	uint32_t LUT_input_V_min_log2_uV; // only u8 needed
+	uint32_t LUT_input_I_min_log2_nA; // only u8 needed
+	uint32_t LUT_output_I_min_log2_nA; // only u8 needed
+	uint8_t LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
+	uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
 } __attribute__((packed));
 
 
@@ -185,34 +185,34 @@ struct HarvesterConfig{
 
 /* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg {
-    /* Identifier => Canary, This is used to identify memory corruption */
-    uint8_t id;
-    /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
-    uint8_t unread;
-    /* content description used to distinguish messages, see enum MsgType */
-    uint8_t type;
-    /* Alignment with memory, (bytes)mod4 */
-    uint8_t reserved[1];
-    /* Actual Content of message */
-    uint32_t value[2];
+	/* Identifier => Canary, This is used to identify memory corruption */
+	uint8_t id;
+	/* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
+	uint8_t unread;
+	/* content description used to distinguish messages, see enum MsgType */
+	uint8_t type;
+	/* Alignment with memory, (bytes)mod4 */
+	uint8_t reserved[1];
+	/* Actual Content of message */
+	uint32_t value[2];
 } __attribute__((packed));
 
 
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
 struct SyncMsg {
-    /* Identifier => Canary, This is used to identify memory corruption */
-    uint8_t id;
-    /* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
-    uint8_t unread;
-    /* content description used to distinguish messages, see enum MsgType */
-    uint8_t type; // only needed for debug
-    /* Alignment with memory, (bytes)mod4 */
-    uint8_t reserved0[1];
-    /* Actual Content of message */
-    uint32_t buffer_block_period;   // corrected ticks that equal 100ms
-    uint32_t analog_sample_period;  // ~ 10 us
-    uint32_t compensation_steps;    // remainder of buffer_block/sample_count = sample_period
-    uint64_t next_timestamp_ns;     // start of next buffer block
+	/* Identifier => Canary, This is used to identify memory corruption */
+	uint8_t id;
+	/* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
+	uint8_t unread;
+	/* content description used to distinguish messages, see enum MsgType */
+	uint8_t type; // only needed for debug
+	/* Alignment with memory, (bytes)mod4 */
+	uint8_t reserved0[1];
+	/* Actual Content of message */
+	uint32_t buffer_block_period;   // corrected ticks that equal 100ms
+	uint32_t analog_sample_period;  // ~ 10 us
+	uint32_t compensation_steps;    // remainder of buffer_block/sample_count = sample_period
+	uint64_t next_timestamp_ns;     // start of next buffer block
 } __attribute__((packed));
 
 
@@ -220,36 +220,39 @@ struct SyncMsg {
 extern void __iomem *pru_shared_mem_io;
 
 struct SharedMem {
-    uint32_t shepherd_state;
-    /* Stores the mode, e.g. harvesting or emulation */
-    uint32_t shepherd_mode;
-    /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
-     * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
-    uint32_t dac_auxiliary_voltage_raw;
-    /* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
-    uint32_t mem_base_addr;
-    /* Length of shared area in DDR RAM */
-    uint32_t mem_size;
-    /* Maximum number of buffers stored in the shared DDR RAM area */
-    uint32_t n_buffers;
-    /* Number of IV samples stored per buffer */
-    uint32_t samples_per_buffer;
-    /* The time for sampling samples_per_buffer. Determines sampling rate */
-    uint32_t buffer_period_ns;
-    /* ADC calibration settings */
-    struct CalibrationConfig calibration_settings;
-    /* This structure defines all settings of virtual converter emulation*/
-    struct ConverterConfig converter_settings;
-    struct HarvesterConfig harvester_settings;
-    /* settings for programming-subroutines */
-    struct ProgrammerCtrl programmer_ctrl;
-    /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
-    struct ProtoMsg pru0_msg_inbox;
-    struct ProtoMsg pru0_msg_outbox;
-    struct ProtoMsg pru0_msg_error;
-    struct SyncMsg  pru1_sync_inbox;
-    struct ProtoMsg pru1_sync_outbox;
-    struct ProtoMsg pru1_msg_error;
+	uint32_t shepherd_state;
+	/* Stores the mode, e.g. harvesting or emulation */
+	uint32_t shepherd_mode;
+	/* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
+	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
+	uint32_t dac_auxiliary_voltage_raw;
+	/* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
+	uint32_t mem_base_addr;
+	/* Length of shared area in DDR RAM */
+	uint32_t mem_size;
+	/* Maximum number of buffers stored in the shared DDR RAM area */
+	uint32_t n_buffers;
+	/* Number of IV samples stored per buffer */
+	uint32_t samples_per_buffer;
+	/* The time for sampling samples_per_buffer. Determines sampling rate */
+	uint32_t buffer_period_ns;
+	/* active utilization-monitor for PRU0 */
+	uint32_t pru0_max_ticks_per_sample;
+	/* ADC calibration settings */
+	struct CalibrationConfig calibration_settings;
+	/* This structure defines all settings of virtual converter emulation*/
+	struct ConverterConfig converter_settings;
+	struct HarvesterConfig harvester_settings;
+	/* settings for programmer-subroutines */
+	struct ProgrammerCtrl programmer_ctrl;
+	/* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
+	struct ProtoMsg pru0_msg_inbox;
+	struct ProtoMsg pru0_msg_outbox;
+	struct ProtoMsg pru0_msg_error;
+	struct SyncMsg  pru1_sync_inbox;
+	struct ProtoMsg pru1_sync_outbox;
+	struct ProtoMsg pru1_msg_error;
+    	/* NOTE: struct is capped here, following vars are only for PRUs */
 } __attribute__((packed));
 
 #endif /* __COMMONS_H_ */

@@ -105,8 +105,8 @@ struct SampleBuffer {
 
 /* Firmware-container for Programmer in same mem-area as FIFO for Samplebuffer */
 struct ProgrammerFW {
-	uint32_t signature1; // kernel writes and tests it for 0xDEAD
-	uint32_t signature2; // kernel writes and tests it for 0xD00D
+	uint32_t signature1; // kernel writes and pru tests it for 0xDEADD00D
+	uint32_t signature2; // kernel writes and pru tests it for 0x8BADF00D
 	/* variable size array "hack" */
 	/* -> typecast the mem-pointer to this struct */
 	uint32_t length;
@@ -115,7 +115,7 @@ struct ProgrammerFW {
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
-	uint32_t has_work; 	// flag
+	uint32_t has_work; 	// flag, state / Status
 	uint32_t protocol; 	// 1: swd, 2: sbw, 3: jtag
 	uint32_t datarate_baud;
 	uint32_t pin_clk;	// (TCK)
@@ -257,6 +257,8 @@ struct SharedMem {
 	uint32_t samples_per_buffer;
 	/* The time for sampling samples_per_buffer. Determines sampling rate */
 	uint32_t buffer_period_ns;
+	/* active utilization-monitor for PRU0 */
+	uint32_t pru0_max_ticks_per_sample;
 	/* ADC calibration settings */
 	struct CalibrationConfig calibration_settings;
 	/* This structure defines all settings of virtual converter emulation*/
@@ -298,6 +300,6 @@ struct SharedMem {
 	bool_ft vsource_skip_gpio_logging;
 } __attribute__((packed));
 
-ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000);
+ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000); // NOTE: PRUs shared ram should be even 12kb
 
 #endif /* __COMMONS_H_ */

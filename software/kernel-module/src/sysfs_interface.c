@@ -110,8 +110,12 @@ struct kobj_attr_struct_s attr_buffer_period_ns = {
 	.attr = __ATTR(buffer_period_ns, 0660, sysfs_SharedMem_show, NULL),
 	.val_offset = offsetof(struct SharedMem, buffer_period_ns)
 };
+struct kobj_attr_struct_s attr_pru0_utilization_max = {
+	.attr = __ATTR(pru0_utilization_max, 0660, sysfs_SharedMem_show, NULL),
+	.val_offset = offsetof(struct SharedMem, pru0_max_ticks_per_sample)  // TODO: NoneSense, pru0_max_ticks_per_sample
+};
 struct kobj_attr_struct_s attr_mode = {
-	.attr = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store), // TODO: why only "mode" here?
+	.attr = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
 	.val_offset = offsetof(struct SharedMem, shepherd_mode)
 };
 struct kobj_attr_struct_s attr_auxiliary_voltage = {
@@ -159,6 +163,7 @@ static struct attribute *pru_attrs[] = {
 	&attr_n_buffers.attr.attr,
 	&attr_samples_per_buffer.attr.attr,
 	&attr_buffer_period_ns.attr.attr,
+	&attr_pru0_utilization_max.attr.attr,
 	&attr_mode.attr.attr,
 	&attr_auxiliary_voltage.attr.attr,
 	&attr_calibration_settings.attr.attr,
