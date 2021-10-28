@@ -36,15 +36,23 @@ from shepherd.calibration import CalibrationData
 from shepherd.calibration import cal_channel_list
 from shepherd import commons
 from shepherd import sysfs_interface
-
-# Set default logging handler to avoid "No handler found" warnings.
 from shepherd.target_io import TargetIO
 
+# Set default logging handler to avoid "No handler found" warnings.
 logging.getLogger(__name__).addHandler(NullHandler())
 logger = logging.getLogger(__name__)
-#logging._srcfile = None
-#logging.logThreads = 0
-#logging.logProcesses = 0
+verbose_level = 0
+
+
+def get_verbose_level() -> int:
+    global verbose_level
+    return verbose_level
+
+
+def set_verbose_level(value: int) -> NoReturn:
+    # needed to differentiate DEBUG-Modes -> -3 only ON during init, -4 also ON during main-run
+    global verbose_level
+    verbose_level = value
 
 
 class Recorder(ShepherdIO):
@@ -63,9 +71,12 @@ class Recorder(ShepherdIO):
     def __init__(self,
                  shepherd_mode: str = "harvesting",
                  harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
+                 calibration_recording: CalibrationData = None,
                  ):
         logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
         self._harvester = harvester
+        self._calibration = calibration_recording
+        self._calibration.change_component(shepherd_mode)
         super().__init__(shepherd_mode)
 
     def __enter__(self):
@@ -74,6 +85,7 @@ class Recorder(ShepherdIO):
         self.set_power_state_emulator(False)
         self.set_power_state_recorder(True)
         self.send_virtual_harvester_settings(self._harvester)
+        self.send_calibration_settings(self._calibration)
 
         # Give the PRU empty buffers to begin with
         time.sleep(1)
@@ -511,7 +523,7 @@ def record(
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
-    calib = retrieve_calibration(default_cal)
+    cal_data = retrieve_calibration(default_cal)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -529,14 +541,15 @@ def record(
     samplerate_sps = 10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
 
     recorder = Recorder(shepherd_mode=mode,
-                        harvester=harvester)
+                        harvester=harvester,
+                        calibration_recording=cal_data)
     log_writer = LogWriter(store_path=store_path,
-                           calibration_data=calib,
+                           calibration_data=cal_data,
                            mode=mode,
                            force_overwrite=force_overwrite,
                            samples_per_buffer=samples_per_buffer,
                            samplerate_sps=samplerate_sps)
-    verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
+    verbose = get_verbose_level() >= 4  # performance-critical, <4 reduces chatter during main-loop
 
     with ExitStack() as stack:
 
@@ -680,7 +693,7 @@ def emulate(
         raise ValueError(f"Input-File does not exist ({input_path})")
 
     log_reader = LogReader(input_path, samples_per_buffer, samplerate_sps)
-    verbose = logger.isEnabledFor(logging.DEBUG)  # performance-critical
+    verbose = get_verbose_level() >= 4  # performance-critical, <4 reduces chatter during main-loop
 
     with ExitStack() as stack:
         if output_path is not None:

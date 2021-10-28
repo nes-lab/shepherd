@@ -31,6 +31,7 @@ from shepherd.calibration import CalibrationData
 from shepherd import EEPROM
 from shepherd import CapeData
 from shepherd import ShepherdDebug
+from shepherd import set_verbose_level
 from shepherd.shepherd_io import gpio_pin_nums
 from shepherd.launcher import Launcher
 
@@ -55,6 +56,7 @@ def yamlprovider(file_path: str, cmd_name) -> Dict:
 
 
 def config_logger(verbose: int):
+    set_verbose_level(verbose)  # performance-critical, <4 reduces chatter during main-loop
     if verbose == 0:
         logger.setLevel(logging.ERROR)
     elif verbose == 1:
@@ -63,11 +65,15 @@ def config_logger(verbose: int):
         logger.setLevel(logging.INFO)
     elif verbose > 2:
         logger.setLevel(logging.DEBUG)
+    if verbose < 3:
+        # reduce log-overhead when not debugging, also more user-friendly exceptions
+        logging._srcfile = None
+        logging.logThreads = 0
+        logging.logProcesses = 0
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
-@click.option("-v", "--verbose", count=True, default=1)
-# TODO: verbose usage is limited with this implementation.
+@click.option("-v", "--verbose", count=True, default=2)
 @click.pass_context
 def cli(ctx, verbose: int):
     """ Shepherd: Synchronized Energy Harvesting Emulator and Recorder
@@ -346,10 +352,9 @@ def make(filename, output_path):
 @click.option("--port", "-p", type=click.INT, default=4242)
 def rpc(port):
 
-    logger.setLevel(logging.INFO)  # TODO: via argument
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
-    logger.debug("Initialized shepherd debug interface")
+    logger.info("Shepherd Debug Interface: Initialized")
     time.sleep(1)
 
     server = zerorpc.Server(shepherd_io)
@@ -365,7 +370,7 @@ def rpc(port):
     gevent.signal_handler(signal.SIGINT, stop_server)
 
     shepherd_io.start()
-    logger.info("Started shepherd debug interface")
+    logger.info("Shepherd RPC Interface: Started")
     server.run()
 
 
@@ -385,7 +390,7 @@ def launcher(led, button):
 @click.option("--speed", "-s", type=click.INT, default=1000, help="Programming-Datarate")
 @click.option("--protocol", "-p", type=click.Choice(["swd", "sbw", "jtag"]), default="swd", help="Programming-Protocol")
 def program(firmware_file, sel_a, voltage, speed, protocol):
-    logger.setLevel(logging.DEBUG)  # TODO: via argument
+
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sysfs_interface.set_stop(force=True)  # create defined pru-state
         sd.set_power_state_emulator(True)
@@ -397,16 +402,16 @@ def program(firmware_file, sel_a, voltage, speed, protocol):
         sysfs_interface.write_dac_aux_voltage(cal, voltage)
         sd.shared_mem.write_firmware(fw.read())
 
-        logger.debug(f"Programming initialized, will start now")
+        logger.info(f"Programming initialized, will start now")
         sysfs_interface.write_programmer_ctrl(protocol, speed, 24, 25, 26, 27)  # TODO: pins-nums are placeholders
         sysfs_interface.start_programmer()
 
         state = sysfs_interface.check_programmer()
         while state is not "idle":
-            logger.debug(f"Programming in progress, state = {state})")
+            logger.info(f"Programming in progress, state = {state})")
             time.sleep(1)
             state = sysfs_interface.check_programmer()
-        logger.debug(f"Finished Programming!,    ctrl = {sysfs_interface.read_programmer_ctrl()})")
+        logger.info(f"Finished Programming!,    ctrl = {sysfs_interface.read_programmer_ctrl()})")
 
 
 if __name__ == "__main__":
