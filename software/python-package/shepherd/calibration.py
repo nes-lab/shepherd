@@ -53,6 +53,7 @@ class CalibrationData(object):
 
     def __init__(self, cal_dict: dict):
         self.data = cal_dict
+        self._component_default = "emulation"
 
     def __getitem__(self, key: str):
         return self.data[key]
@@ -187,17 +188,25 @@ class CalibrationData(object):
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         return struct.pack(">" + val_count * "d", *flattened)
 
+    def change_component(self, value: str):
+        if not value in cal_component_list:
+            raise ValueError(f"[Cal] change to unknown component (={value}) detected")
+        self._component_default = value
+
     def export_for_sysfs(self) -> dict:
+        comp_data = self.data[self._component_default]
         cal_set = {
-            # ADC is calculated in nA (nano-amps), gain is shifted by 8 bit [scaling according to commons.h]
-            "adc_gain": int(1e9 * (2 ** 8) * self.data["emulation"]["adc_current"]["gain"]),
-            "adc_offset": int(1e9 * (2 ** 0) * self.data["emulation"]["adc_current"]["offset"]),
-            # DAC is calculated in uV (micro-volts), gain is shifted by 20 bit
-            "dac_gain": int((2 ** 20) / (1e6 * self.data["emulation"]["dac_voltage_b"]["gain"])),
-            "dac_offset": int(1e6 * (2 ** 0) * self.data["emulation"]["dac_voltage_b"]["offset"]),
+            # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
+            "adc_gain": int(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
+            "adc_offset": int(1e9 * (2 ** 0) * comp_data["adc_current"]["offset"]),
+            # DAC is handled in uV (micro-volt), gain is shifted by 20 bit
+            "dac_gain": int((2 ** 20) / (1e6 * comp_data["dac_voltage_b"]["gain"])),
+            "dac_offset": int(1e6 * (2 ** 0) * comp_data["dac_voltage_b"]["offset"]),
         }
 
-        for value in cal_set.values():
-            if value >= 2**31:
-                raise ValueError(f"Number (={value}) exceeds 32bit container, in CalibrationData.export_for_sysfs()")
+        for key, value in cal_set.items():
+            if ("gain" in key) and not (0 <= value < 2**32):
+                    raise ValueError(f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()")
+            if ("offset" in key) and not (-2**31 <= value < 2 ** 31):
+                    raise ValueError(f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()")
         return cal_set
