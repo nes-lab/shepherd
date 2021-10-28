@@ -88,13 +88,13 @@ struct ProgrammerFW {
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
-	uint32_t has_work; 	// flag
+	uint32_t state; 	// flag
 	uint32_t protocol; 	// 1: swd, 2: sbw, 3: jtag
-	uint32_t datarate_baud;
-	uint32_t pin_clk;	// (TCK)
-	uint32_t pin_io;	// just input for JTAG (TDI)
-	uint32_t pin_o;		// output, only for JTAG (TDO)
-	uint32_t pin_m;		// mode, only for JTAG (TMS)
+	uint32_t datarate;	// baud
+	uint32_t pin_tck;	// clock-output
+	uint32_t pin_tdio;	// io for swd & sbw, only input for JTAG (TDI)
+	uint32_t pin_tdo;	// data-output, only for JTAG
+	uint32_t pin_tms;	// mode, only for JTAG (TMS)
 } __attribute__((packed));
 
 

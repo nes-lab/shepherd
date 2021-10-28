@@ -14,6 +14,7 @@ int schedule_start(unsigned int start_time_second);
 struct kobject *kobj_ref;
 struct kobject *kobj_mem_ref;
 struct kobject *kobj_sync_ref;
+struct kobject *kobj_prog_ref;
 
 static ssize_t sysfs_sync_error_show(struct kobject *kobj,
 				     struct kobj_attribute *attr, char *buf);
@@ -28,6 +29,10 @@ static ssize_t sysfs_sync_correction_show(struct kobject *kobj,
 
 static ssize_t sysfs_SharedMem_show(struct kobject *kobj,
 				    struct kobj_attribute *attr, char *buf);
+
+static ssize_t sysfs_SharedMem_store(struct kobject *kobj,
+				 struct kobj_attribute *attr, const char *buf,
+				 size_t count);
 
 static ssize_t sysfs_state_show(struct kobject *kobj,
 				struct kobj_attribute *attr, char *buf);
@@ -74,12 +79,18 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj,
 static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
         struct kobj_attribute *attr, char *buffer);
 
-static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
+static ssize_t sysfs_prog_state_store(struct kobject *kobj,
 					   struct kobj_attribute *attr,
 					   const char *buffer, size_t count);
-static ssize_t sysfs_programmer_ctrl_show(struct kobject *kobj,
+static ssize_t sysfs_prog_state_show(struct kobject *kobj,
 					  struct kobj_attribute *attr,
 					  char *buf);
+static ssize_t sysfs_prog_protocol_store(struct kobject *kobj,
+					 struct kobj_attribute *attr,
+					 const char *buffer, size_t count);
+static ssize_t sysfs_prog_protocol_show(struct kobject *kobj,
+					struct kobj_attribute *attr,
+					char *buf);
 
 struct kobj_attr_struct_s {
 	struct kobj_attribute attr;
@@ -112,7 +123,7 @@ struct kobj_attr_struct_s attr_buffer_period_ns = {
 };
 struct kobj_attr_struct_s attr_pru0_utilization_max = {
 	.attr = __ATTR(pru0_utilization_max, 0660, sysfs_SharedMem_show, NULL),
-	.val_offset = offsetof(struct SharedMem, pru0_max_ticks_per_sample)  // TODO: NoneSense, pru0_max_ticks_per_sample
+	.val_offset = offsetof(struct SharedMem, pru0_max_ticks_per_sample)
 };
 struct kobj_attr_struct_s attr_mode = {
 	.attr = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
@@ -144,10 +155,33 @@ struct kobj_attr_struct_s attr_pru_msg_system_settings = {
 	.val_offset = 0
 };
 
-struct kobj_attr_struct_s attr_programmer_ctrl = {
-	.attr = __ATTR(programmer_ctrl, 0660, sysfs_programmer_ctrl_show,
-		       sysfs_programmer_ctrl_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl)
+struct kobj_attr_struct_s attr_prog_state = {
+	.attr = __ATTR(state, 0660, sysfs_prog_state_show, sysfs_prog_state_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, state)
+};
+struct kobj_attr_struct_s attr_prog_protocol = {
+	.attr = __ATTR(protocol, 0660, sysfs_prog_protocol_show, sysfs_prog_protocol_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, protocol)
+};
+struct kobj_attr_struct_s attr_prog_datarate = {
+	.attr = __ATTR(datarate, 0660, sysfs_SharedMem_show, sysfs_SharedMem_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, datarate)
+};
+struct kobj_attr_struct_s attr_prog_pin_tck = {
+	.attr = __ATTR(pin_tck, 0660, sysfs_SharedMem_show, sysfs_SharedMem_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tck)
+};
+struct kobj_attr_struct_s attr_prog_pin_tdio = {
+	.attr = __ATTR(pin_tdio, 0660, sysfs_SharedMem_show, sysfs_SharedMem_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tdio)
+};
+struct kobj_attr_struct_s attr_prog_pin_tdo = {
+	.attr = __ATTR(pin_tdo, 0660, sysfs_SharedMem_show, sysfs_SharedMem_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tdo)
+};
+struct kobj_attr_struct_s attr_prog_pin_tms = {
+	.attr = __ATTR(pin_tms, 0660, sysfs_SharedMem_show, sysfs_SharedMem_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tms)
 };
 
 struct kobj_attribute attr_sync_error =
@@ -170,7 +204,6 @@ static struct attribute *pru_attrs[] = {
 	&attr_virtual_converter_settings.attr.attr,
 	&attr_virtual_harvester_settings.attr.attr,
 	&attr_pru_msg_system_settings.attr.attr,
-	&attr_programmer_ctrl.attr.attr,
 	NULL,
 };
 
@@ -186,6 +219,21 @@ static struct attribute *pru_mem_attrs[] = {
 
 static struct attribute_group attr_mem_group = {
 	.attrs = pru_mem_attrs,
+};
+
+static struct attribute *pru_prog_attrs[] = {
+	&attr_prog_state.attr.attr,
+	&attr_prog_protocol.attr.attr,
+	&attr_prog_datarate.attr.attr,
+	&attr_prog_pin_tck.attr.attr,
+	&attr_prog_pin_tdio.attr.attr,
+	&attr_prog_pin_tdo.attr.attr,
+	&attr_prog_pin_tms.attr.attr,
+	NULL,
+};
+
+static struct attribute_group attr_prog_group = {
+	.attrs = pru_prog_attrs,
 };
 
 static struct attribute *pru_sync_attrs[] = {
@@ -208,6 +256,27 @@ static ssize_t sysfs_SharedMem_show(struct kobject *kobj,
 	return sprintf(
 		buf, "%u",
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset));
+}
+
+static ssize_t sysfs_SharedMem_store(struct kobject *kobj,
+				struct kobj_attribute *attr, const char *buf,
+				size_t count)
+{
+	// can write single u32-values
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t value;
+
+	if (pru_comm_get_state() != STATE_IDLE)
+		return -EBUSY;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+
+	if (sscanf(buf,"%u",&value) != 1)
+	{
+		return -EINVAL;
+	}
+	writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+	return count;
 }
 
 static ssize_t sysfs_sync_error_show(struct kobject *kobj,
@@ -628,68 +697,84 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj,
 }
 
 
-static ssize_t sysfs_programmer_ctrl_store(struct kobject *kobj,
-					   struct kobj_attribute *attr,
-					   const char *buffer, size_t count)
+static ssize_t sysfs_prog_state_show(struct kobject *kobj,
+					   struct kobj_attribute *attr, char *buf)
 {
-	const uint32_t mem_offset = offsetof(struct SharedMem, programmer_ctrl);
-	struct ProgrammerCtrl *const prg_ctrl = (void *const)(pru_shared_mem_io + mem_offset);
-	static const uint32_t struct_size = sizeof(struct ProgrammerCtrl);
-	uint32_t mode = 0u;
-	int buf_pos;
-	uint32_t i;
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (strncmp(buffer, "swd ", 4) == 0)		mode = 1;
-	else if (strncmp(buffer, "sbw ", 4) == 0)	mode = 2;
-	else if (strncmp(buffer, "jtag ", 5) == 0)	mode = 3;
-
-	if (mode < 1)
+	switch (readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset))
 	{
-		printk(KERN_INFO "shprd.k: setting struct ProgrammerCtrl failed -> unknown mode");
-		return -EINVAL;
+	case 0:
+		return sprintf(buf, "idle");
+	case 1:
+		return sprintf(buf, "running");
+	default:
+		return sprintf(buf, "unknown");
 	}
-	buf_pos = mode < 3 ? 4u : 5u;
+}
 
-	/* write struct, beginning with 3rd entry (datarate) */
-	for (i = offsetof(struct ProgrammerCtrl, datarate_baud); i < struct_size; i += 4)
-	{
-		uint32_t value_retrieved, value_length;
-		int ret = sscanf(&buffer[buf_pos],"%u%n ",&value_retrieved, &value_length);
-		buf_pos += value_length;
-		if (ret != 1)
-		{
-			// last two pin-configs are optional when using swd or sbw
-			if ((mode < 3) && (i >= offsetof(struct ProgrammerCtrl, pin_o)))
-				value_retrieved = 0u;
-			else
-			{
-				printk(KERN_INFO "shprd.k: setting struct ProgrammerCtrl failed -> missing parameters");
-				return -EINVAL;
-			}
-		}
-		writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
-	}
-	printk(KERN_INFO "shprd.k: setting struct ProgrammerCtrl");
-	// arming programmer as last step
-	writel(mode, &prg_ctrl->protocol);
-	writel(1u, &prg_ctrl->has_work);
+static ssize_t sysfs_prog_state_store(struct kobject *kobj,
+					 struct kobj_attribute *attr,
+					 const char *buffer, size_t count)
+{
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t value = 0u;
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+
+	if (strncmp(buffer, "start", 4) == 0)		value = 1;
+	else if (strncmp(buffer, "stop", 4) == 0)	value = 0;
+
+	writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 	return count;
 }
 
-static ssize_t sysfs_programmer_ctrl_show(struct kobject *kobj,
+static ssize_t sysfs_prog_protocol_show(struct kobject *kobj,
 					struct kobj_attribute *attr, char *buf)
 {
-	const void __iomem *const mem_addr = pru_shared_mem_io + offsetof(struct SharedMem, programmer_ctrl);
-	static const uint32_t struct_size = sizeof(struct ProgrammerCtrl);
-	uint32_t count = 0u;
-	uint32_t i;
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	for (i = 0; i < struct_size; i += 4)
-		count += sprintf(buf + strlen(buf), "%u \n", readl(mem_addr + i));
+	switch (readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset))
+	{
+	case 1:
+		return sprintf(buf, "swd");
+	case 2:
+		return sprintf(buf, "sbw");
+	case 3:
+		return sprintf(buf, "jtag");
+	default:
+		return sprintf(buf, "unknown");
+	}
+}
 
-	printk(KERN_INFO "shprd.k: reading struct ProgrammerCtrl");
+static ssize_t sysfs_prog_protocol_store(struct kobject *kobj,
+					 struct kobj_attribute *attr,
+					 const char *buffer, size_t count)
+{
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t value = 0u;
+
+	if (pru_comm_get_state() != STATE_IDLE)
+		return -EBUSY;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+
+	if (strncmp(buffer, "swd", 3) == 0)		value = 1;
+	else if (strncmp(buffer, "sbw", 3) == 0)	value = 2;
+	else if (strncmp(buffer, "jtag", 4) == 0)	value = 3;
+
+	if (value < 1)
+	{
+		printk(KERN_INFO "shprd.k: setting programmer-protocol failed -> unknown value");
+		return -EINVAL;
+	}
+
+	writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 	return count;
 }
+
+
 
 int sysfs_interface_init(void)
 {
@@ -723,6 +808,14 @@ int sysfs_interface_init(void)
 		goto r_mem;
 	};
 
+	kobj_prog_ref = kobject_create_and_add("programmer", kobj_ref);
+
+	if ((retval = sysfs_create_group(kobj_prog_ref, &attr_prog_group))) {
+		printk(KERN_ERR
+		       "shprd.k: cannot create sysfs programmer attrib group");
+		goto r_mem;
+	};
+
 	return 0;
 
 r_mem:
@@ -741,6 +834,7 @@ void sysfs_interface_exit(void)
 {
 	sysfs_remove_group(kobj_ref, &attr_group);
 	sysfs_remove_file(kobj_ref, &attr_state.attr);
+	kobject_put(kobj_prog_ref);
 	kobject_put(kobj_sync_ref);
 	kobject_put(kobj_mem_ref);
 	kobject_put(kobj_ref);
