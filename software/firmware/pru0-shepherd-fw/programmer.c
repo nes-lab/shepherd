@@ -14,12 +14,19 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	const struct ProgrammerFW *const fw = (struct ProgrammerFW *)buffers_far;
 	volatile struct ProgrammerCtrl *const pc = (struct ProgrammerCtrl *)&shared_mem->programmer_ctrl;
 
-	pc->has_work = 0u; // deactivate switch in main()
+	if (pc->state != 1u)
+	{
+		/* no valid start-state -> emit error */
+		pc->state = 0xBAAAAAADu;
+		return
+	}
+
+	pc->state = 2u; // switch to init-phase
 	// TODO: just for debug -> mirror fw-struct
-	pc->pin_clk = fw->signature1;
-	pc->pin_io = fw->signature2;
-	pc->pin_o = fw->length;
-	pc->pin_m = fw->data[0];
+	pc->pin_tck = fw->signature1;
+	pc->pin_tdio = fw->signature2;
+	pc->pin_tdo = fw->length;
+	pc->pin_tms = fw->data[0];
 
 	/* check for validity */
 	if (fw->signature1 != 0xDEADD00D) return;
@@ -33,7 +40,7 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	REG_MASK_ON(CT_GPIO0.GPIO_DATAOUT, pin_led_mask);
 	for (uint32_t i = 0; i < 40; i++)
 	{
-		pc->protocol++; // some kind of progress-bar
+		pc->state++; // some kind of progress-bar
 		REG_MASK_TOGGLE(CT_GPIO0.GPIO_OE, pin_led_mask);
 		__delay_cycles(100000000 / 5); // 100 ms
 	}

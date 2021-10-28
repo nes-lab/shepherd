@@ -394,7 +394,8 @@ void main(void)
 	/* minimal init for these structs to make them safe */
 	shared_memory->converter_settings.converter_mode = 0u;
 	shared_memory->harvester_settings.algorithm = 0u;
-	shared_memory->programmer_ctrl.has_work = 0u;
+	shared_memory->programmer_ctrl.state = 0u;
+	shared_memory->programmer_ctrl.protocol = 0u;
 
 	shared_memory->pru1_sync_outbox.unread = 0u;
 	shared_memory->pru1_sync_inbox.unread = 0u;
@@ -435,7 +436,8 @@ reset:
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-	if (shared_memory->programmer_ctrl.has_work)
+	const uint32_t state = shared_memory->programmer_ctrl.state;
+	if (state && (state < 0xBAAAAAADu))
 	{
 		programmer(shared_memory, buffers_far);
 	}

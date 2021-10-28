@@ -387,6 +387,7 @@ def launcher(led, button):
 def program(firmware_file, sel_a, voltage, speed, protocol):
     logger.setLevel(logging.DEBUG)  # TODO: via argument
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
+        sysfs_interface.set_stop(force=True)  # create defined pru-state
         sd.set_power_state_emulator(True)
         sd.select_target_for_io_interface(sel_a=sel_a)
         sd.set_io_level_converter(True)
@@ -398,15 +399,14 @@ def program(firmware_file, sel_a, voltage, speed, protocol):
 
         logger.debug(f"Programming initialized, will start now")
         sysfs_interface.write_programmer_ctrl(protocol, speed, 24, 25, 26, 27)  # TODO: pins-nums are placeholders
+        sysfs_interface.start_programmer()
 
-        # force a pru-reset to jump into programming routine
-        sysfs_interface.set_stop(force=True)
-        ctrl = sysfs_interface.read_programmer_ctrl()
-        while ctrl[1] > 0:
-            logger.debug(f"Programming in progress, ctrl-reg = {ctrl})")
+        state = sysfs_interface.check_programmer()
+        while state is not "idle":
+            logger.debug(f"Programming in progress, state = {state})")
             time.sleep(1)
-            ctrl = sysfs_interface.read_programmer_ctrl()
-        logger.debug(f"Finished Programming!,   ctrl-reg = {ctrl})")
+            state = sysfs_interface.check_programmer()
+        logger.debug(f"Finished Programming!,    ctrl = {sysfs_interface.read_programmer_ctrl()})")
 
 
 if __name__ == "__main__":

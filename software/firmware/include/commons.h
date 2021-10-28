@@ -115,13 +115,13 @@ struct ProgrammerFW {
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
-	uint32_t state; 	// flag, state / Status
+	uint32_t state; 	// flag, 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
 	uint32_t protocol; 	// 1: swd, 2: sbw, 3: jtag
 	uint32_t datarate;	// baud
 	uint32_t pin_tck;	// clock-output
 	uint32_t pin_tdio;	// io for swd & sbw, only input for JTAG (TDI)
 	uint32_t pin_tdo;	// data-output, only for JTAG
-	uint32_t pin_tms;	// mode, only for JTAG (TMS)
+	uint32_t pin_tms;	// mode, only for JTAG
 } __attribute__((packed));
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
