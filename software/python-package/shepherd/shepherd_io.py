@@ -149,7 +149,7 @@ class SharedMem(object):
         self.gpio_ts_offset = self.gpiostr_offset + 4
         self.gpio_vl_offset = self.gpiostr_offset + 4 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
 
-        logger.debug(f"SharedMem-buffer size:\t{ self.buffer_size } byte")
+        logger.debug(f"Size of 1 Buffer:\t{ self.buffer_size } byte")
 
     def __enter__(self):
         self.devmem_fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)  # TODO: could it also be async? might be error-source
@@ -255,14 +255,14 @@ class SharedMem(object):
         self.mapped_mem.write(current)
 
     def write_firmware(self, data: bytes):
-        if len(data) > self.size - 3*4:
+        data_size = len(data)
+        if data_size > self.size:
             ValueError(f"firmware file is larger than the SharedMEM-Buffer")
+        sysfs_interface.write_programmer_datasize(data_size)
         self.mapped_mem.seek(0)
-        self.mapped_mem.write(struct.pack("=I", 0xDEADD00D))
-        self.mapped_mem.write(struct.pack("=I", 0x8BADF00D))
-        self.mapped_mem.write(struct.pack("=I", len(data)))
         self.mapped_mem.write(data)
-        logger.debug(f"wrote Firmware-Data to SharedMEM-Buffer (size = {len(data)} bytes)")
+        logger.debug(f"wrote Firmware-Data to SharedMEM-Buffer (size = {data_size} bytes)")
+        return data_size
 
 
 class ShepherdIO(object):
@@ -404,7 +404,7 @@ class ShepherdIO(object):
             logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
         sysfs_interface.set_start(start_time)
         if wait_blocking:
-            self.wait_for_start(1_000_000)
+            self.wait_for_start(3_000_000)
 
     @staticmethod
     def wait_for_start(timeout: float) -> NoReturn:

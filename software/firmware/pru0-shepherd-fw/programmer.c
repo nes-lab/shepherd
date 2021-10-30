@@ -11,34 +11,24 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	        volatile struct SampleBuffer *const buffers_far)
 {
 	/* create more convinient access to structs */
-	const struct ProgrammerFW *const fw = (struct ProgrammerFW *)buffers_far;
+	const uint32_t *const fw = (uint32_t *)buffers_far;
 	volatile struct ProgrammerCtrl *const pc = (struct ProgrammerCtrl *)&shared_mem->programmer_ctrl;
 
-	if (pc->state != 1u)
-	{
-		/* no valid start-state -> emit error */
-		pc->state = 0xBAAAAAADu;
-		return
-	}
-
 	pc->state = 2u; // switch to init-phase
-	// TODO: just for debug -> mirror fw-struct
-	pc->pin_tck = fw->signature1;
-	pc->pin_tdio = fw->signature2;
-	pc->pin_tdo = fw->length;
-	pc->pin_tms = fw->data[0];
 
 	/* check for validity */
-	if (fw->signature1 != 0xDEADD00D) return;
-	if (fw->signature2 != 0x8BADF00D) return;
-	if (fw->length >= shared_mem->mem_size)	return;
+	if (pc->datasize >= shared_mem->mem_size)
+	{
+		pc->state = 0xBAAAAAADu;
+		return;
+	}
 
 	// demo: blink LED of external button: 8_19, 22, gpio0[22]
 	const uint32_t pin_led_mask = 1u << 22u;
 	const uint32_t gpio_reg_do = CT_GPIO0.GPIO_DATAOUT;
 	const uint32_t gpio_reg_oe = CT_GPIO0.GPIO_OE;
 	REG_MASK_ON(CT_GPIO0.GPIO_DATAOUT, pin_led_mask);
-	for (uint32_t i = 0; i < 40; i++)
+	for (uint32_t i = 0; i < 80; i++)
 	{
 		pc->state++; // some kind of progress-bar
 		REG_MASK_TOGGLE(CT_GPIO0.GPIO_OE, pin_led_mask);
@@ -58,5 +48,5 @@ void programmer(volatile struct SharedMem *const shared_mem,
 	 *	P9_17(MUX_MODE7 | RX_ACTIVE)    // gpio0[5], swd_clk
 	 *	P9_18(MUX_MODE7 | RX_ACTIVE)    // gpio0[4], swd_io
 	 */
-	pc->protocol = 0u; // allow py-interface to exit / power down shepherd
+	pc->state = 0u; // allow py-interface to exit / power down shepherd
 }

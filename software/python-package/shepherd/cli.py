@@ -382,36 +382,40 @@ def launcher(led, button):
         launch.run()
 
 
-@cli.command(short_help="Program Target-Controller", context_settings={"ignore_unknown_options": True})
+@cli.command(short_help="Programmer for Target-Controller", context_settings={"ignore_unknown_options": True})
 @click.argument("firmware-file", type=click.Path(exists=True, dir_okay=False))
 @click.option("--sel_a/--sel_b", type=click.BOOL, default=True,
               help="Choose Target-Port for programming")
 @click.option("--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage")
 @click.option("--speed", "-s", type=click.INT, default=1000, help="Programming-Datarate")
 @click.option("--protocol", "-p", type=click.Choice(["swd", "sbw", "jtag"]), default="swd", help="Programming-Protocol")
-def program(firmware_file, sel_a, voltage, speed, protocol):
+def programmer(firmware_file, sel_a, voltage, speed, protocol):
 
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
-        sysfs_interface.set_stop(force=True)  # create defined pru-state
+        sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)
         sd.select_target_for_io_interface(sel_a=sel_a)
         sd.set_io_level_converter(True)
-        sd.select_target_for_power_tracking(sel_a=not sel_a)
 
         cal = CalibrationData.from_default()
         sysfs_interface.write_dac_aux_voltage(cal, voltage)
-        sd.shared_mem.write_firmware(fw.read())
+        sysfs_interface.wait_for_state("idle", 5)  # switching target may restart pru
 
-        logger.info(f"Programming initialized, will start now")
-        sysfs_interface.write_programmer_ctrl(protocol, speed, 24, 25, 26, 27)  # TODO: pins-nums are placeholders
-        sysfs_interface.start_programmer()
-
+        try:
+            sd.shared_mem.write_firmware(fw.read())
+            sysfs_interface.write_programmer_ctrl(protocol, speed, 24, 25, 26, 27)  # TODO: pins-nums are placeholders
+            logger.info(f"Programmer initialized, will start now")
+            sysfs_interface.start_programmer()
+        except OSError as err:
+            logger.error(f"Failed to initialize Programmer, shepherdState = {sysfs_interface.get_state()}")
+            logger.error(err)
+            return
         state = sysfs_interface.check_programmer()
-        while state is not "idle":
-            logger.info(f"Programming in progress, state = {state})")
+        while state != "idle":
+            logger.info(f"Programming in progress,\tstate = {state}")
             time.sleep(1)
             state = sysfs_interface.check_programmer()
-        logger.info(f"Finished Programming!,    ctrl = {sysfs_interface.read_programmer_ctrl()})")
+        logger.info(f"Finished Programming!,\tctrl = {sysfs_interface.read_programmer_ctrl()})")
 
 
 if __name__ == "__main__":

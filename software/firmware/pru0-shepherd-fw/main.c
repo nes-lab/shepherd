@@ -436,15 +436,10 @@ reset:
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-	const uint32_t state = shared_memory->programmer_ctrl.state;
-	if (state && (state < 0xBAAAAAADu))
-	{
+	if (shared_memory->programmer_ctrl.state == 1)
 		programmer(shared_memory, buffers_far);
-	}
 	else
-	{
 		event_loop(shared_memory, &free_buffers, buffers_far);
-	}
 
 	goto reset;
 }

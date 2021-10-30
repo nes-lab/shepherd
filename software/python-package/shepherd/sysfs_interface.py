@@ -351,9 +351,10 @@ def write_programmer_ctrl(protocol: str, datarate: int,
     for parameter in parameters[1:]:
         if (parameter < 0) or (parameter >= 2**32):
             raise SysfsInterfaceException(f"at least one parameter out of u32-bounds, value={parameter}")
-    for iter, value in enumerate(prog_attribs):
-        with open(sysfs_path / "programmer" / value, "w") as file:
-            file.write(parameters[iter])
+    for iter, attribute in enumerate(prog_attribs):
+        with open(sysfs_path / "programmer" / attribute, "w") as file:
+            logger.debug(f"[sysfs] set programmer/{attribute} = '{parameters[iter]}'")
+            file.write(str(parameters[iter]))
 
 
 def read_programmer_ctrl() -> list:
@@ -362,6 +363,11 @@ def read_programmer_ctrl() -> list:
         with open(sysfs_path/"programmer"/attribute, "r") as file:
             parameters.append(file.read().rstrip())
     return parameters
+
+
+def write_programmer_datasize(value: int) -> NoReturn:
+    with open(sysfs_path / "programmer/datasize", "w") as file:
+        file.write(str(value))
 
 
 def start_programmer() -> NoReturn:

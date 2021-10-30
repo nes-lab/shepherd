@@ -90,6 +90,9 @@ static ssize_t sysfs_prog_protocol_show(struct kobject *kobj,
 static ssize_t sysfs_prog_datarate_store(struct kobject *kobj,
 					 struct kobj_attribute *attr,
 					 const char *buffer, size_t count);
+static ssize_t sysfs_prog_datasize_store(struct kobject *kobj,
+					 struct kobj_attribute *attr,
+					 const char *buffer, size_t count);
 static ssize_t sysfs_prog_pin_store(struct kobject *kobj,
 					 struct kobj_attribute *attr,
 					 const char *buffer, size_t count);
@@ -160,31 +163,35 @@ struct kobj_attr_struct_s attr_pru_msg_system_settings = {
 
 struct kobj_attr_struct_s attr_prog_state = {
 	.attr = __ATTR(state, 0660, sysfs_prog_state_show, sysfs_prog_state_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, state)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, state)
 };
 struct kobj_attr_struct_s attr_prog_protocol = {
 	.attr = __ATTR(protocol, 0660, sysfs_prog_protocol_show, sysfs_prog_protocol_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, protocol)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, protocol)
 };
 struct kobj_attr_struct_s attr_prog_datarate = {
 	.attr = __ATTR(datarate, 0660, sysfs_SharedMem_show, sysfs_prog_datarate_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, datarate)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, datarate)
+};
+struct kobj_attr_struct_s attr_prog_datasize = {
+	.attr = __ATTR(datasize, 0660, sysfs_SharedMem_show, sysfs_prog_datasize_store),
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, datasize)
 };
 struct kobj_attr_struct_s attr_prog_pin_tck = {
 	.attr = __ATTR(pin_tck, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tck)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tck)
 };
 struct kobj_attr_struct_s attr_prog_pin_tdio = {
 	.attr = __ATTR(pin_tdio, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tdio)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tdio)
 };
 struct kobj_attr_struct_s attr_prog_pin_tdo = {
 	.attr = __ATTR(pin_tdo, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tdo)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tdo)
 };
 struct kobj_attr_struct_s attr_prog_pin_tms = {
 	.attr = __ATTR(pin_tms, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-	.val_offset = offsetof(struct SharedMem, programmer_ctrl) +  + offsetof(struct ProgrammerCtrl, pin_tms)
+	.val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tms)
 };
 
 struct kobj_attribute attr_sync_error =
@@ -228,6 +235,7 @@ static struct attribute *pru_prog_attrs[] = {
 	&attr_prog_state.attr.attr,
 	&attr_prog_protocol.attr.attr,
 	&attr_prog_datarate.attr.attr,
+	&attr_prog_datasize.attr.attr,
 	&attr_prog_pin_tck.attr.attr,
 	&attr_prog_pin_tdio.attr.attr,
 	&attr_prog_pin_tdo.attr.attr,
@@ -362,12 +370,12 @@ static ssize_t sysfs_mode_show(struct kobject *kobj,
 		return sprintf(buf, "emulation");
 	case MODE_EMULATE_TEST:
 		return sprintf(buf, "emulation_test"); // TODO: adapt modes to pru-changes
-    case MODE_EMULATE_CAL:
-        return sprintf(buf, "emulation_cal");
+	case MODE_EMULATE_CAL:
+		return sprintf(buf, "emulation_cal");
 	case MODE_DEBUG:
 		return sprintf(buf, "debug");
-    case MODE_NONE:
-        return sprintf(buf, "none");
+	case MODE_NONE:
+		return sprintf(buf, "none");
 	default:
 		return -EINVAL;
 	}
@@ -523,7 +531,7 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject *kobj,
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
 	/* u32 beginning of struct */
-    mem_offset = kobj_attr_wrapped->val_offset;
+	mem_offset = kobj_attr_wrapped->val_offset;
 	for (i = 0; i < non_lut_size; i += 4)
 	{
 		uint32_t value_retrieved, value_length;
@@ -706,10 +714,14 @@ static ssize_t sysfs_prog_state_store(struct kobject *kobj,
 	uint32_t value = 0u;
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (strncmp(buffer, "start", 4) == 0)		value = 1;
-	else if (strncmp(buffer, "stop", 4) == 0)	value = 0;
+	if (strncmp(buffer, "start", 5) == 0)
+		value = 1;
+	else if (strncmp(buffer, "stop", 4) == 0)
+		value = 0;
+	else
+		return -EINVAL;
 
-	if (value && (pru_comm_get_state() != STATE_IDLE))
+	if ((value > 0) && (pru_comm_get_state() != STATE_IDLE))
 		return -EBUSY;
 	// TODO: kernel should test validity of struct (instead of pru) -> best place is here
 
@@ -748,11 +760,13 @@ static ssize_t sysfs_prog_protocol_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (strncmp(buffer, "swd", 3) == 0)		value = 1;
-	else if (strncmp(buffer, "sbw", 3) == 0)	value = 2;
-	else if (strncmp(buffer, "jtag", 4) == 0)	value = 3;
-
-	if (value < 1)
+	if (strncmp(buffer, "swd", 3) == 0)
+		value = 1;
+	else if (strncmp(buffer, "sbw", 3) == 0)
+		value = 2;
+	else if (strncmp(buffer, "jtag", 4) == 0)
+		value = 3;
+	else
 	{
 		printk(KERN_INFO "shprd.k: setting programmer-protocol failed -> unknown value");
 		return -EINVAL;
@@ -774,10 +788,32 @@ static ssize_t sysfs_prog_datarate_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (sscanf(buf,"%u",&value) != 1)
+	if (sscanf(buffer,"%u",&value) != 1)
 		return -EINVAL;
 	if ((value < 1) || (value > 10000000)) // TODO: replace with valid boundaries
-		return -EINVAL
+		return -EINVAL;
+	writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+	return count;
+}
+
+static ssize_t sysfs_prog_datasize_store(struct kobject *kobj,
+					 struct kobj_attribute *attr,
+					 const char *buffer, size_t count)
+{
+	struct kobj_attr_struct_s *kobj_attr_wrapped;
+	uint32_t value;
+	uint32_t value_max;
+
+	if (pru_comm_get_state() != STATE_IDLE)
+		return -EBUSY;
+
+	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+	value_max = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
+
+	if (sscanf(buffer,"%u",&value) != 1)
+		return -EINVAL;
+	if ((value < 1) || (value > value_max))
+		return -EINVAL;
 	writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 	return count;
 }
@@ -794,7 +830,7 @@ static ssize_t sysfs_prog_pin_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (sscanf(buf,"%u",&value) != 1)
+	if (sscanf(buffer,"%u",&value) != 1)
 		return -EINVAL;
 	if (value > 10000) // TODO: replace with proper range-test for valid pin-def
 		return -EINVAL;

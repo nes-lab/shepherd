@@ -76,26 +76,18 @@ enum ShepherdState {
 	STATE_FAULT
 };
 
-/* Firmware-container for Programmer in same mem-area as FIFO for Samplebuffer */
-struct ProgrammerFW {
-	uint32_t signature1; // kernel writes and pru tests it for 0xDEADD00D
-	uint32_t signature2; // kernel writes and pru tests it for 0x8BADF00D
-	/* variable size array "hack" */
-	/* -> typecast the mem-pointer to this struct */
-	uint32_t length;
-	uint32_t data[];
-} __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
-	uint32_t state; 	// flag, 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
+	uint32_t state; 	// 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
 	uint32_t protocol; 	// 1: swd, 2: sbw, 3: jtag
 	uint32_t datarate;	// baud
+	uint32_t datasize;	// bytes
 	uint32_t pin_tck;	// clock-output
 	uint32_t pin_tdio;	// io for swd & sbw, only input for JTAG (TDI)
 	uint32_t pin_tdo;	// data-output, only for JTAG
 	uint32_t pin_tms;	// mode, only for JTAG
-} __attribute__((packed));
+} __attribute__((packed)); // TODO: pin_X can be u8, state/protocol u8,
 
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
