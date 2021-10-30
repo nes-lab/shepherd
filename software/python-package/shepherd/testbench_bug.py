@@ -149,7 +149,7 @@ if __name__ == "__main__":
     file_emu = benchmark_path / "benchmark_emu.h5"
 
     print(h5py.version.info)
-    print("ram is leaking during processing, not during generation")
+    print("ram is leaking during h5df-reading / processing, not during generation")
 
     if not file_rec.exists():
         print("Starting Generating (hdf5 write)")
@@ -161,10 +161,12 @@ if __name__ == "__main__":
     print(f"[GC] cleaned {gc.collect()} obj")
     
 '''
+Update: Solved with h5py3.5.0
+
 Bug / script: 
 - first file-creation with record() works fine, 200 min simulation with stable ~ 33 mb RAM usage 
 - Ram is leaking during reading a previously created file in emulate()
-    - up to ~ 180 mb ram for simulated 200 min duration
+    - from ~ 50 mb to up to ~ 180 mb ram for simulated 200 min duration
 - tracemalloc and molly showed no leaking in the python-code itself
 
 no influence:
@@ -173,13 +175,13 @@ no influence:
 - compression
 
 tested systems: 
-Beaglebone, arm7
+Beaglebone, arm7, ubuntu 19.4 up to 21.4
     - python 3.6, h5py 2.7.1, numpy 1.13.3
     - python 3.9.5, h5py 2.10.0, numpy 1.19.5
     - python 3.9.5, h5py 3.4.0, numpy 1.21.2
-Lenovo W530, Intel x64 CPU
+Lenovo W530, Intel x64 CPU, win10 x64
     - python 3.9.7, h5py 3.4.0, numpy 1.21.2
-AMD Ryzen 5700
+AMD Ryzen 5700, win10 x64
     - python 3.10, h5py 3.4.0, 
         
 Output of h5py.version.info
