@@ -9,7 +9,7 @@ parameters:
   # - providing a directory -> file is named hrv_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
   output_path: /var/shepherd/recordings
-  harvester: mppt_bq
+  harvester: ivcurves
   default_cal: false
   force_overwrite: false
 verbose: 2 # serious performance impact for value > 2

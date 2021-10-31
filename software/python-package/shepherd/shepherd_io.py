@@ -568,7 +568,7 @@ class ShepherdIO(object):
         sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
 
     @staticmethod
-    def send_virtual_converter_settings(settings: Union[dict, str, Path, VirtualSourceData], log_intermediate_voltage: bool = None) -> NoReturn:
+    def send_virtual_converter_settings(settings: VirtualSourceData) -> NoReturn:
         """ Sends virtsource settings to PRU core
             looks like a simple one-liner but is needed by the child-classes
             Note: to apply these settings the pru has to do a re-init (reset)
@@ -576,25 +576,17 @@ class ShepherdIO(object):
             :param settings: Contains the settings for the virtual source.
             :param log_intermediate_voltage: monitor capacitor, useful when output is const
         """
-        samplerate_sps = 10**9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
-        settings = VirtualSourceData(settings, log_intermediate_voltage, samplerate_sps)
-
-        values = settings.export_for_sysfs()
-        sysfs_interface.write_virtual_converter_settings(values)
+        sysfs_interface.write_virtual_converter_settings(settings.export_for_sysfs())
 
     @staticmethod
-    def send_virtual_harvester_settings(settings: Union[dict, str, Path, VirtualHarvesterData]) -> NoReturn:
+    def send_virtual_harvester_settings(settings: VirtualHarvesterData) -> NoReturn:
         """ Sends virtsource settings to PRU core
             looks like a simple one-liner but is needed by the child-classes
             Note: to apply these settings the pru has to do a re-init (reset)
 
             :param settings: Contains the settings for the virtual source.
         """
-        samplerate_sps = 10**9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
-        settings = VirtualHarvesterData(settings, samplerate_sps)
-
-        values = settings.export_for_sysfs()
-        sysfs_interface.write_virtual_harvester_settings(values)
+        sysfs_interface.write_virtual_harvester_settings(settings.export_for_sysfs())
 
     def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU

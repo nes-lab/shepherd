@@ -3,10 +3,9 @@ harvesters:
   # - compendium of all parameters & description
   # - base for neutral fallback values if provided yml is sparse
   # - -> it is encouraged to omit redundant parameters
-  # TODO: data-source documents if ivcurve was measured and stores window size
 
   neutral:  # note: can not be used as a valid harvester
-    window_size: 250
+    window_size: 1
     voltage_mV: 2500  # starting-point for some algorithms (mppt_po)
     voltage_min_mV: 0
     voltage_max_mV: 5000
@@ -18,15 +17,18 @@ harvesters:
     dynamic_bit: 14 # DAC-bit-resolution - dynamic = smallest step
     wait_cycles: 1 # first cycle: ADC-Sampling & DAC-Writing, further steps: waiting
 
-  cv: # constant voltage
-    voltage_mV: 2400
-
-  ivcurve: # sawtooth-wave (zig zag)
+  ivcurve: # sawtooth-wave
     window_size: 250
     voltage_min_mV: 0
     voltage_max_mV: 5000
     # todo: also add switch for sawtooth- vs triangle-wave?
     # todo: could also include a version with dynamic upper-boundary, varied if voc is reached very early
+
+  ivcurves:  # synonyme
+    base: ivcurve
+
+  cv: # constant voltage
+    voltage_mV: 2400
 
   mppt_voc: # open circuit voltage for solar
     setpoint_n: 0.76
@@ -46,6 +48,12 @@ harvesters:
     interval_ms: 16000  # between measurements
     duration_ms: 256    # of measurement
 
+  mppt_bq_solar: # explicit naming
+    base: mppt_bq
+
+  mppt_bq_thermoelectric: # explicit naming
+    base: mppt_bqt
+
   mppt_po: # perturbe & observe
     voltage_min_mV: 0
     voltage_max_mV: 5000
@@ -55,8 +63,3 @@ harvesters:
   mppt_opt: # power-optimum with very fast PO-Variant
     base: mppt_po
     interval_ms: 0
-
-  ci: # constant current, if possible (good for recording voc)
-    base: mppt_po
-    interval_ms: 0
-    current_uA: 0

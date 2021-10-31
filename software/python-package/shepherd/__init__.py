@@ -74,18 +74,19 @@ class Recorder(ShepherdIO):
                  calibration_recording: CalibrationData = None,
                  ):
         logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
-        self._harvester = harvester
-        self._calibration = calibration_recording
-        self._calibration.change_component(shepherd_mode)
+        self.samplerate_sps = 10 ** 9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
+        self.harvester = VirtualHarvesterData(harvester, self.samplerate_sps)
+        self.calibration = calibration_recording
+        self.calibration.change_component(shepherd_mode)
         super().__init__(shepherd_mode)
 
     def __enter__(self):
         super().__enter__()
 
-        self.set_power_state_emulator(False)
-        self.set_power_state_recorder(True)
-        self.send_virtual_harvester_settings(self._harvester)
-        self.send_calibration_settings(self._calibration)
+        super().set_power_state_emulator(False)
+        super().set_power_state_recorder(True)
+        super().send_virtual_harvester_settings(self.harvester)
+        super().send_calibration_settings(self.calibration)
 
         # Give the PRU empty buffers to begin with
         time.sleep(1)
@@ -105,7 +106,7 @@ class Recorder(ShepherdIO):
         :param index: (int) Index of the buffer. 0 <= index < n_buffers
         :param verbose: chatter-prevention, performance-critical computation saver
         """
-        self._return_buffer(index)
+        super()._return_buffer(index)
         if verbose:
             logger.debug(f"Sent empty buffer #{index} to PRU")
 
@@ -142,6 +143,7 @@ class Emulator(ShepherdIO):
                  aux_target_voltage: float = 0.0,
                  settings_virtsource: Union[dict, str, Path, VirtualSourceData] = None,
                  log_intermediate_voltage: bool = None,
+                 harvester_window_size: int = None,
                  ):
 
         logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
@@ -155,35 +157,43 @@ class Emulator(ShepherdIO):
             calibration_recording = CalibrationData.from_default()
             logger.warning("No recording calibration data provided - using defaults")
 
-        self._cal_recording = calibration_recording
-        self._cal_emulation = calibration_emulation
-        self._settings_virtsource = settings_virtsource
-        self._log_intermediate_voltage = log_intermediate_voltage
+        self.cal_recording = calibration_recording
+        self.cal_emulation = calibration_emulation
+        self.samplerate_sps = 10 ** 9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
+        self.converter = VirtualSourceData(settings_virtsource,
+                                           self.samplerate_sps,
+                                           log_intermediate_voltage)
+        self.harvester = VirtualHarvesterData(self.converter.data["harvester"],
+                                              self.samplerate_sps,
+                                              for_emulation=True,
+                                              window_size=harvester_window_size)
 
         self._set_target_io_lvl_conv = set_target_io_lvl_conv
         self._sel_target_for_io = sel_target_for_io
         self._sel_target_for_pwr = sel_target_for_pwr
         self._aux_target_voltage = aux_target_voltage
 
-        self._v_gain = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["gain"]
-        self._v_offset = 1e6 * self._cal_recording["harvesting"]["adc_voltage"]["offset"]
-        self._i_gain = 1e9 * self._cal_recording["harvesting"]["adc_current"]["gain"]
-        self._i_offset = 1e9 * self._cal_recording["harvesting"]["adc_current"]["offset"]
+        self._v_gain = 1e6 * self.cal_recording["harvesting"]["adc_voltage"]["gain"]
+        self._v_offset = 1e6 * self.cal_recording["harvesting"]["adc_voltage"]["offset"]
+        self._i_gain = 1e9 * self.cal_recording["harvesting"]["adc_current"]["gain"]
+        self._i_offset = 1e9 * self.cal_recording["harvesting"]["adc_current"]["offset"]
 
     def __enter__(self):
         super().__enter__()
 
-        self.set_power_state_recorder(False)
-        self.set_power_state_emulator(True)
+        super().set_power_state_recorder(False)
+        super().set_power_state_emulator(True)
 
-        self.send_virtual_converter_settings(self._settings_virtsource, self._log_intermediate_voltage)
-        self.send_calibration_settings(self._cal_emulation)
-        self.reinitialize_prus()
+        super().send_calibration_settings(self.cal_emulation)
+        super().send_virtual_converter_settings(self.converter)
+        super().send_virtual_harvester_settings(self.harvester)
 
-        self.set_target_io_level_conv(self._set_target_io_lvl_conv)
-        self.select_main_target_for_io(self._sel_target_for_io)
-        self.select_main_target_for_power(self._sel_target_for_pwr)
-        self.set_aux_target_voltage(self._cal_emulation, self._aux_target_voltage)
+        super().reinitialize_prus()
+
+        super().set_target_io_level_conv(self._set_target_io_lvl_conv)
+        super().select_main_target_for_io(self._sel_target_for_io)
+        super().select_main_target_for_power(self._sel_target_for_pwr)
+        super().set_aux_target_voltage(self.cal_emulation, self._aux_target_voltage)
 
         # Preload emulator with data
         time.sleep(1)
@@ -202,7 +212,7 @@ class Emulator(ShepherdIO):
         current_transformed = (buffer.current * self._i_gain + self._i_offset).astype("u4")
 
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
-        self._return_buffer(index)
+        super()._return_buffer(index)
         if verbose:
             logger.debug(f"Sending emu-buffer #{ index } to PRU took "
                          f"{ round(1e3 * (time.time()-ts_start), 2) } ms")
@@ -503,7 +513,7 @@ def record(
     duration: float = None,
     harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
     force_overwrite: bool = False,
-    default_cal: bool = False,
+    use_cal_default: bool = False,
     start_time: float = None,
     warn_only: bool = False,
 ):
@@ -517,13 +527,13 @@ def record(
         harvester: name, path or object to a virtual harvester setting
         force_overwrite (bool): True to overwrite existing file under output path,
             False to store under different name
-        default_cal (bool): True to use default calibration values, False to
+        use_cal_default (bool): True to use default calibration values, False to
             read calibration data from EEPROM
         start_time (float): Desired start time of emulation in unix epoch time
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
-    cal_data = retrieve_calibration(default_cal)
+    cal_data = retrieve_calibration(use_cal_default)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -549,16 +559,18 @@ def record(
                            force_overwrite=force_overwrite,
                            samples_per_buffer=samples_per_buffer,
                            samplerate_sps=samplerate_sps)
+
     verbose = get_verbose_level() >= 4  # performance-critical, <4 reduces chatter during main-loop
 
     with ExitStack() as stack:
 
-        stack.enter_context(recorder)
+        stack.enter_context(recorder)   # TODO: these are no real contextmanagers, open with "with", do proper exit
         stack.enter_context(log_writer)
 
         # in_stream has to be disabled to avoid trouble with pytest
         res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
         log_writer["hostname"] = res.stdout
+        log_writer.embed_config(recorder.harvester.data)
         log_writer.start_monitors()
 
         recorder.start(start_time, wait_blocking=False)
@@ -603,7 +615,7 @@ def emulate(
         output_path: Path = None,
         duration: float = None,
         force_overwrite: bool = False,
-        default_cal: bool = False,
+        use_cal_default: bool = False,
         start_time: float = None,
         set_target_io_lvl_conv: bool = False,
         sel_target_for_io: bool = True,
@@ -625,7 +637,7 @@ def emulate(
         :param duration: [float] Maximum time duration of emulation in seconds
         :param force_overwrite: [bool] True to overwrite existing file under output,
             False to store under different name
-        :param default_cal: [bool] True to use default calibration values, False to
+        :param use_cal_default: [bool] True to use default calibration values, False to
             read calibration data from EEPROM
         :param start_time: [float] Desired start time of emulation in unix epoch time
         :param set_target_io_lvl_conv: [bool] Enables or disables the GPIO level converter to targets.
@@ -643,7 +655,7 @@ def emulate(
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
     """
-    cal = retrieve_calibration(default_cal)
+    cal = retrieve_calibration(use_cal_default)
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -697,7 +709,7 @@ def emulate(
 
     with ExitStack() as stack:
         if output_path is not None:
-            stack.enter_context(log_writer)
+            stack.enter_context(log_writer)  # TODO: these are no real contextmanagers, open with "with", do proper exit
             log_writer.start_monitors(uart_baudrate)
 
         stack.enter_context(log_reader)
@@ -715,8 +727,11 @@ def emulate(
             aux_target_voltage=aux_target_voltage,
             settings_virtsource=settings_virtsource,
             log_intermediate_voltage=log_intermediate_voltage,
+            harvester_window_size=log_reader.get_window_size(),
         )
         stack.enter_context(emu)
+        if output_path is not None:
+            log_writer.embed_config(emu.converter.data)
         emu.start(start_time, wait_blocking=False)
         logger.info(f"waiting {start_time - time.time():.2f} s until start")
         emu.wait_for_start(start_time - time.time() + 15)

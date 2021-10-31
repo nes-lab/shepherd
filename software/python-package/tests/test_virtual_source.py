@@ -3,7 +3,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from shepherd import ShepherdDebug, CalibrationData
+from shepherd import ShepherdDebug, CalibrationData, VirtualSourceData
 from shepherd.virtual_source import VirtualSource
 
 
@@ -26,7 +26,7 @@ def vs_config(request):
             vsc = vs_name
     else:
         assert 0
-    return vsc
+    return VirtualSourceData(vsc)
 
 
 @pytest.fixture

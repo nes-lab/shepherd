@@ -183,7 +183,7 @@ def record(
         harvester=harvester,
         duration=duration,
         force_overwrite=force_overwrite,
-        default_cal=default_cal,
+        use_cal_default=default_cal,
         start_time=start_time,
         warn_only=warn_only,
     )
@@ -244,7 +244,7 @@ def emulate(
         output_path=pl_store,
         duration=duration,
         force_overwrite=force_overwrite,
-        default_cal=default_cal,
+        use_cal_default=default_cal,
         start_time=start_time,
         set_target_io_lvl_conv=enable_io,
         sel_target_for_io=io_sel_target_a,

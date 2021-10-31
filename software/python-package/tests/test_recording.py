@@ -66,7 +66,7 @@ def test_record_fn(tmp_path, shepherd_up):
         mode="harvesting",
         duration=10,
         force_overwrite=True,
-        default_cal=True,
+        use_cal_default=True,
         start_time=start_time,
     )
 

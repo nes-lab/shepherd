@@ -103,7 +103,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         output_path=output,
         duration=None,
         force_overwrite=True,
-        default_cal=True,
+        use_cal_default=True,
         start_time=start_time,
         set_target_io_lvl_conv=True,
         sel_target_for_io=True,

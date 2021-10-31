@@ -24,6 +24,7 @@ from itertools import product
 from collections import namedtuple
 import psutil as psutil
 import serial
+import yaml
 
 from shepherd.calibration import CalibrationData
 from shepherd.calibration import cal_channel_harvest_dict
@@ -195,12 +196,13 @@ class LogWriter(object):
         logger.debug(f"H5Py: driver={driver}, cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
 
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
-        self._h5file.attrs.__setitem__("mode", self.mode)
+        self._h5file.attrs["mode"] = self.mode  # TODO: should be part of data-group
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
-        # TODO: add filter-step, delta-offset is static 10_000 ns
-        # TODO: time-dataset should be replaced - it is not the real time, but just a post-calculated sequence
+        # the window_size-attribute > 1 in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
+        self.data_grp.attrs["window_size"] = 1  # will be adjusted by .embed_config()
+
         add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(
             "current",
@@ -307,6 +309,18 @@ class LogWriter(object):
         self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
 
         return self
+
+    def embed_config(self, data: dict) -> NoReturn:
+        """
+        Important Step to get a self-describing Output-File
+        Note: the window_size-attribute > 1 in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
+
+        :param data: from virtual harvester or converter / source
+        :return: None
+        """
+        self.data_grp.attrs["config"] = yaml.dump(data, default_flow_style=False)
+        if "window_size" in data:
+            self.data_grp.attrs["window_size"] = data["window_size"]
 
     def __exit__(self, *exc):
         global monitors_end
@@ -612,3 +626,8 @@ class LogReader(object):
             cal_channel = cal_channel_harvest_dict[channel]
             cal.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(cal)
+
+    def get_window_size(self) -> int:
+        if "window_size" in self._h5file["data"].attrs:
+            return self._h5file["data"].attrs["window_size"]
+        return 1
