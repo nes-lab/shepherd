@@ -15,8 +15,8 @@ static uint32_t voltage_step_x4_uV = 0u;
 
 static const volatile struct HarvesterConfig *cfg;
 
-static void harvest_adc_cv(struct SampleBuffer *, uint32_t);
 static void harvest_adc_ivcurve(struct SampleBuffer *, uint32_t);
+static void harvest_adc_cv(struct SampleBuffer *, uint32_t);
 static void harvest_adc_mppt_voc(struct SampleBuffer *, uint32_t);
 static void harvest_adc_mppt_po(struct SampleBuffer *, uint32_t);
 
@@ -38,7 +38,7 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
 	voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
 }
 
-void harvester_adc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+void harvester_adc_sample(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	if (cfg->algorithm >= (1u << 13))
 		harvest_adc_mppt_po(buffer, sample_idx);
@@ -51,7 +51,7 @@ void harvester_adc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 	// todo: else send error to system
 }
 
-void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 /* 	Set constant voltage and log resulting current
  * 	- ADC and DAC voltage should match but can vary, depending on calibration and load (no closed loop)
@@ -74,7 +74,7 @@ void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx
 	buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 /* 	Record iv-curves
  * 	- by controlling voltage with sawtooth
@@ -112,13 +112,13 @@ void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_t sampl
 	buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 /*	Determine VOC and harvest
  * 	- search by Divide and Conquer (until predefined resolution limit is reached)
  *	- logs current adc-values except during VOC-Search (values = 0)
  *	- influencing parameters: interval_n, duration_n, setpoint_n8, current_limit_nA, dac_resolution_bit, wait_cycles_n
- *	TODO: algorithm could probably be easier, see harvester_test() in sampling.c
+ *	TODO: algorithm could probably be easier, see harvester_voc() below
  */
 	static uint32_t interval_step = 1u << 30u; // deliberately out of bounds
 	static uint32_t settle_steps = 0u;
@@ -203,7 +203,43 @@ void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t samp
 	}
 }
 
-void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+
+static void harvester_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+{
+	/* empty playground for new algorithms to test in parallel with above reference algorithm */
+	/* demo-algorithm: VOC */
+
+	static const uint8_ft SETTLE_INC = 5;
+	/* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	__delay_cycles(800 / 5);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+	const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
+	/* just a simple algorithm that sets 75% of open circuit voltage_adc  */
+	if (sample_idx <= SETTLE_INC)
+	{
+		if (sample_idx == 0)
+		{
+			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
+		}
+		else if (sample_idx == SETTLE_INC)
+		{
+			/* factor = 75 % * 76.2939 uV / 19.5313 uV = ~ 393 / 2048  */
+			const uint32_t voltage_dac = (393u * voltage_adc) >> 11u;
+			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+		}
+	}
+
+	/* TODO: also use ch-a of adc, shared_mememory->dac_auxiliary_voltage_raw */
+	//static uint32_t aux_voltage_mV =
+
+	buffer->values_current[sample_idx] = current_adc;
+	buffer->values_voltage[sample_idx] = voltage_adc;
+}
+
+
+static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	/*	perturbe & observe
 	 * 	- move a voltage step every interval and evaluate power-increase
@@ -283,7 +319,7 @@ void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sampl
 	buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-void harvester_iv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+void harvester_iv_sample(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 {
 	if (cfg->algorithm >= (1u << 13))
 		harvest_iv_mppt_po(p_voltage_uV, p_current_nA);
@@ -295,7 +331,7 @@ void harvester_iv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 }
 
 
-void harvest_iv_cv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+static void harvest_iv_cv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 {
 	/* look for wanted constant voltage in an iv-curve-stream
 	 * - influencing parameters: voltage_uV (in init)
@@ -333,7 +369,7 @@ void harvest_iv_cv(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 	*p_current_nA = current_hold_nA;
 }
 
-void harvest_iv_mppt_voc(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+static void harvest_iv_mppt_voc(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 {
 	/* VOC - working on an iv-curve-stream, without complete curve-memory
 	 * NOTE with no memory, there is a time-gap before CV gets picked up
@@ -380,7 +416,7 @@ void harvest_iv_mppt_voc(uint32_t * const p_voltage_uV, uint32_t * const p_curre
 	}
 }
 
-void harvest_iv_mppt_po(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
+static void harvest_iv_mppt_po(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 {
 	static uint32_t interval_step = 1u << 30u; // deliberately out of bounds
 	static uint32_t now_voltage_uV = 0u;

@@ -7,7 +7,6 @@
 #include <rsc_types.h>
 
 #include "iep.h"
-
 #include "stdint_fast.h"
 #include "gpio.h"
 #include "intc.h"
@@ -19,13 +18,25 @@
 #include "ringbuffer.h"
 #include "sampling.h"
 #include "shepherd_config.h"
-//#include "virtual_harvester.h"
-#include "math64_safe.h"
 #include "virtual_converter.h"
+
+/* PRU0 Feature Compile Inclusion */
+//#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
+#define ENABLE_PROGRAMMER	// reduces firmware by ~800 Byte
+#define ENABLE_VSOURCE_TESTS	// reduces firmware by ~500 Byte
+
+#ifdef ENABLE_DEBUG_MATH_FN
+#include "math64_safe.h"
+#endif
+
+#ifdef  ENABLE_PROGRAMMER
 #include "programmer.h"
+#endif
+
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 	(0xFFFFFFFF)
+
 
 // alternative message channel specially dedicated for errors
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
@@ -127,13 +138,15 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	return next_buffer_idx;
 }
 
+#ifdef ENABLE_DEBUG_MATH_FN
 extern uint32_t get_num_size_as_bits(uint32_t value);
 uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 {
+	uint64_t result = 0;
 	const uint64_t f2 = (uint64_t)factor + ((uint64_t)(factor) << 32u);
 	const uint64_t f3 = factor - 10;
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
-	uint64_t result = 0;
+
 	if (mode == 1)
 	{
 		const uint32_t r32 = factor * factor;
@@ -170,7 +183,7 @@ uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 	GPIO_TOGGLE(DEBUG_PIN1_MASK);
 	return result;
 }
-
+#endif
 
 static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr)
 {
@@ -201,7 +214,8 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			set_batok_pin(shared_mem, msg_in.value[0] > 0);
 			return 1U;
 
-		case MSG_DBG_VSOURCE_P_INP:
+#ifdef ENABLE_VSOURCE_TESTS
+		case MSG_DBG_VSOURCE_P_INP: // TODO: these can be done with normal emulator instantiation
 			converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
 			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_P_input_fW()>>32u) , (uint32_t)get_P_input_fW());
 			return 1u;
@@ -236,11 +250,14 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
 			return 1u;
+#endif //ENABLE_VSOURCE_TESTS
 
+#ifdef ENABLE_DEBUG_MATH_FN
 		case MSG_DBG_FN_TESTS:
 			res64 = debug_math_fns(msg_in.value[0], msg_in.value[1]);
 			send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t)(res64>>32u), (uint32_t)res64);
 			return 1u;
+#endif //ENABLE_DEBUG_MATH_FN
 
 		default:
 			send_message(shared_mem,MSG_ERR_INVLDCMD, msg_in.type, 0);
@@ -436,10 +453,14 @@ reset:
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
+#ifdef ENABLE_PROGRAMMER
 	if (shared_memory->programmer_ctrl.state == 1)
 		programmer(shared_memory, buffers_far);
 	else
 		event_loop(shared_memory, &free_buffers, buffers_far);
+#else
+	event_loop(shared_memory, &free_buffers, buffers_far);
+#endif
 
 	goto reset;
 }
