@@ -27,7 +27,7 @@ class SysfsInterfaceException(Exception):
 
 
 # TODO: what is with "None"?
-shepherd_modes = ["harvesting", "harvesting_test", "emulation", "emulation_test", "emulation_cal", "debug"]
+shepherd_modes = ["harvesting", "emulation", "emulation_cal", "debug"]
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:

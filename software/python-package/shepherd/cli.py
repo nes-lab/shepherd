@@ -157,8 +157,6 @@ def run(command, parameters: Dict, verbose):
 @cli.command(short_help="Record IV data")
 @click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings",
               help="Dir or file path for resulting hdf5 file",)
-@click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
-              help="Record 'harvesting' or 'harvesting_test'-function data")
 @click.option("--harvester", type=str, default=None,
               help="Choose one of the predefined virtual harvesters")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
@@ -179,7 +177,7 @@ def record(
 ):
     run_record(
         output_path=Path(output_path),
-        mode=mode,
+        mode="harvesting",
         harvester=harvester,
         duration=duration,
         force_overwrite=force_overwrite,

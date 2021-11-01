@@ -364,12 +364,8 @@ static ssize_t sysfs_mode_show(struct kobject *kobj,
 	switch (mode) {
 	case MODE_HARVEST:
 		return sprintf(buf, "harvesting");
-	case MODE_HARVEST_TEST:
-		return sprintf(buf, "harvesting_test");
 	case MODE_EMULATE:
 		return sprintf(buf, "emulation");
-	case MODE_EMULATE_TEST:
-		return sprintf(buf, "emulation_test"); // TODO: adapt modes to pru-changes
 	case MODE_EMULATE_CAL:
 		return sprintf(buf, "emulation_cal");
 	case MODE_DEBUG:
@@ -396,27 +392,17 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 	if (pru_comm_get_state() != STATE_IDLE)
 		return -EBUSY;
 
-	// note: longer string must come first in case of similar strings (harvesting_test, harvesting)
-    if (strncmp(buf, "harvesting_test", 15) == 0) {
-        if ((count < 15) || (count > 16))
-            return -EINVAL;
-
-        mode = MODE_HARVEST_TEST;
-    } else if (strncmp(buf, "harvesting", 10) == 0) {
+	// note: longer string must come first in case of similar strings (emulation_cal, emulation)
+     	if (strncmp(buf, "harvesting", 10) == 0) {
 		if ((count < 10) || (count > 11))
 			return -EINVAL;
 
 		mode = MODE_HARVEST;
-    } else if (strncmp(buf, "emulation_test", 14) == 0) {
-        if ((count < 14) || (count > 15))
-            return -EINVAL;
+    	} else if (strncmp(buf, "emulation_cal", 13) == 0) {
+        	if ((count < 13) || (count > 14))
+            		return -EINVAL;
 
-        mode = MODE_EMULATE_TEST;
-    } else if (strncmp(buf, "emulation_cal", 13) == 0) {
-        if ((count < 13) || (count > 14))
-            return -EINVAL;
-
-        mode = MODE_EMULATE_CAL;
+        	mode = MODE_EMULATE_CAL;
 	} else if (strncmp(buf, "emulation", 9) == 0) {
 		if ((count < 9) || (count > 10))
 			return -EINVAL;

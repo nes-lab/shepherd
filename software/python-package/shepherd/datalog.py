@@ -133,12 +133,7 @@ class LogWriter(object):
                     f"storing under {self.store_path} instead"
             )
         # Refer to shepherd/calibration.py for the format of calibration data
-        if mode == "harvesting_test":
-            self.mode = "harvesting"
-        elif mode == "emulation_test":
-            self.mode = "emulation"
-        else:
-            self.mode = mode
+        self.mode = mode
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)

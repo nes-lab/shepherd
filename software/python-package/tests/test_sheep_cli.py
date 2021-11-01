@@ -69,23 +69,6 @@ def test_record_no_cal(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_record_harvesting_test(shepherd_up, cli_runner, tmp_path):
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli, ["-vvv",
-              "record",
-              "--mode", "harvesting_test",
-              "--force_overwrite",
-              "-d", "10",
-              "-o", f"{str(store)}"]
-    )
-
-    assert res.exit_code == 0
-    assert store.exists()
-
-
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
 def test_record_parameters_long(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     start_time = round(time.time() + 10)
