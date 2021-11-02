@@ -7,6 +7,10 @@ from shepherd.calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
 
+# Currently implemented harvesters
+# NOTE: numbers have meaning and will be tested ->
+# - harvesting on "neutral" is not possible
+# - emulation with "ivcurve" or lower is also resulting in Error
 algorithms = {"neutral": 2**0,
               "ivcurve": 2**4,
               "cv": 2**8,
@@ -19,9 +23,10 @@ algorithms = {"neutral": 2**0,
 class VirtualHarvesterData(object):
     """ TODO: this class is very similar to virtual_source_data, could share a base-class
 
-    :param setting:
-    :param for_emulation:
+    :param setting: harvester-config as name, path to yaml or already usable as dict
     :param samplerate_sps:
+    :param for_emulation: unlocks a different kind of algorithms and constraints
+    :param window_samples: complete length of the ivcurve (if applicable) -> steps * (1 + wait_cycles)
     """
     data: dict = {}
     name: str = "vHarvester"
@@ -33,7 +38,7 @@ class VirtualHarvesterData(object):
                  setting: Union[dict, str, Path],
                  samplerate_sps: int = 100_000,
                  for_emulation: bool = False,
-                 window_size: int = None,
+                 window_samples: int = None,
                  ):
 
         self.samplerate_sps = samplerate_sps
@@ -73,13 +78,15 @@ class VirtualHarvesterData(object):
             raise NotImplementedError(
                 f"[{self.name}] {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?")
 
-        if window_size is not None:
-            self.data["window_size"] = window_size
+        if window_samples is not None:
+            self.data["window_samples"] = window_samples
+        else:
+            self.data["window_samples"] = 0
 
-        self.check_and_complete()
+        self._check_and_complete()
         logger.debug(f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'")
 
-    def check_and_complete(self, verbose: bool = True) -> NoReturn:
+    def _check_and_complete(self, verbose: bool = True) -> NoReturn:
 
         if "base" in self.data:
             base_name = self.data["base"]
@@ -100,7 +107,7 @@ class VirtualHarvesterData(object):
             config_stash = self.data
             self.data = self._config_defs[base_name]
             logger.debug(f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base")
-            self.check_and_complete(verbose=False)
+            self._check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
         else:
@@ -132,13 +139,28 @@ class VirtualHarvesterData(object):
 
         self._check_num("wait_cycles", 0, 100, verbose=verbose)
 
+        # factor in timing-constraints
+        window_samples = self.data["window_size"] * (1 + self.data["wait_cycles"])
+
         if "mppt_po" in self._inheritance:
             time_min_ms = (1 + self.data["wait_cycles"]) * 1000 / self.samplerate_sps
         else:
             time_min_ms = (1 + self.data["dynamic_bit"]) * (1 + self.data["wait_cycles"]) * 1000 / self.samplerate_sps
 
+        if self.for_emulation:
+            window_ms = window_samples * 1000 / self.samplerate_sps
+            time_min_ms = max(time_min_ms, window_ms)
+
+        ratio_old = self.data["duration_ms"] / self.data["interval_ms"]
         self._check_num("interval_ms", time_min_ms, 1_000_000, verbose=verbose)
         self._check_num("duration_ms", time_min_ms, self.data["interval_ms"], verbose=verbose)
+        ratio_new = self.data["duration_ms"] / self.data["interval_ms"]
+        if (ratio_new/ratio_old - 1) > 0.1:
+            logger.warning(f"[{self.name}] Ratio between interval & duration have changes more than 10% due to constraints")
+
+        # for proper emulation
+        if self.for_emulation and (window_samples > self.data["window_samples"]):
+            self.data["window_samples"] = window_samples
 
     def _check_num(self, setting_key: str, min_value: float = 0, max_value: float = 2**32-1, verbose: bool = True) -> NoReturn:
         try:
@@ -168,9 +190,14 @@ class VirtualHarvesterData(object):
         Returns:
             int-list (2nd level for LUTs) that can be feed into sysFS
         """
+        if self.for_emulation and self.data["algorithm_num"] <= algorithms["ivcurve"]:
+            raise ValueError(f"Select valid harvest-algorithm for emulation, current usage = {self._inheritance}")
+        elif self.data["algorithm_num"] < algorithms["ivcurve"]:
+            raise ValueError(f"Select valid harvest-algorithm for harvesting, current usage = {self._inheritance}")
+
         return [
             int(self.data["algorithm_num"]),
-            int(self.data["window_size"]),
+            int(self.data["window_samples"] if self.for_emulation else self.data["window_size"]),
             int(self.data["voltage_mV"] * 1e3),  # uV
             int(self.data["voltage_min_mV"] * 1e3),  # uV
             int(self.data["voltage_max_mV"] * 1e3),  # uV

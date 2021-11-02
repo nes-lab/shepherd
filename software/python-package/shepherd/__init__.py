@@ -143,7 +143,7 @@ class Emulator(ShepherdIO):
                  aux_target_voltage: float = 0.0,
                  settings_virtsource: Union[dict, str, Path, VirtualSourceData] = None,
                  log_intermediate_voltage: bool = None,
-                 harvester_window_size: int = None,
+                 harvester_window_samples: int = None,
                  ):
 
         logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
@@ -166,7 +166,7 @@ class Emulator(ShepherdIO):
         self.harvester = VirtualHarvesterData(self.converter.data["harvester"],
                                               self.samplerate_sps,
                                               for_emulation=True,
-                                              window_size=harvester_window_size)
+                                              window_samples=harvester_window_samples)
 
         self._set_target_io_lvl_conv = set_target_io_lvl_conv
         self._sel_target_for_io = sel_target_for_io
@@ -727,7 +727,7 @@ def emulate(
             aux_target_voltage=aux_target_voltage,
             settings_virtsource=settings_virtsource,
             log_intermediate_voltage=log_intermediate_voltage,
-            harvester_window_size=log_reader.get_window_size(),
+            harvester_window_samples=log_reader.get_window_samples(),
         )
         stack.enter_context(emu)
         if output_path is not None:

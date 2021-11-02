@@ -195,8 +195,8 @@ class LogWriter(object):
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
-        # the window_size-attribute > 1 in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
-        self.data_grp.attrs["window_size"] = 1  # will be adjusted by .embed_config()
+        # the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
+        self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
 
         add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(
@@ -308,14 +308,14 @@ class LogWriter(object):
     def embed_config(self, data: dict) -> NoReturn:
         """
         Important Step to get a self-describing Output-File
-        Note: the window_size-attribute > 1 in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
+        Note: the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
 
         :param data: from virtual harvester or converter / source
         :return: None
         """
         self.data_grp.attrs["config"] = yaml.dump(data, default_flow_style=False)
-        if "window_size" in data:
-            self.data_grp.attrs["window_size"] = data["window_size"]
+        if "window_samples" in data:
+            self.data_grp.attrs["window_samples"] = data["window_samples"]
 
     def __exit__(self, *exc):
         global monitors_end
@@ -622,7 +622,7 @@ class LogReader(object):
             cal.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(cal)
 
-    def get_window_size(self) -> int:
-        if "window_size" in self._h5file["data"].attrs:
-            return self._h5file["data"].attrs["window_size"]
-        return 1
+    def get_window_samples(self) -> int:
+        if "window_samples" in self._h5file["data"].attrs:
+            return self._h5file["data"].attrs["window_samples"]
+        return 0
