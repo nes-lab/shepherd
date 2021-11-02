@@ -60,6 +60,6 @@ harvesters:
     voltage_step_mV: 10
     interval_ms: 100    # between steps
 
-  mppt_opt: # power-optimum with very fast PO-Variant
+  mppt_opt: # power-optimum with very fast PO-Variant (harvesting) or special max-pwr-picker (emulator / ivcurve)
     base: mppt_po
     interval_ms: 0

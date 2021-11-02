@@ -11,12 +11,14 @@ logger = logging.getLogger(__name__)
 # NOTE: numbers have meaning and will be tested ->
 # - harvesting on "neutral" is not possible
 # - emulation with "ivcurve" or lower is also resulting in Error
+# - "_opt" has its own algo for emulation, but is only a fast mppt_po for harvesting
 algorithms = {"neutral": 2**0,
               "ivcurve": 2**4,
               "cv": 2**8,
-              #"ci": 2**9,
+              #"ci": 2**9, # is this desired?
               "mppt_voc": 2**12,
               "mppt_po": 2**13,
+              "mppt_opt": 2**14,
               }
 
 
@@ -121,9 +123,9 @@ class VirtualHarvesterData(object):
 
         self._check_num("window_size", 16, 512, verbose=verbose)
 
-        self._check_num("voltage_mV", 0, 5000, verbose=verbose)
         self._check_num("voltage_min_mV", 0, 5000, verbose=verbose)
         self._check_num("voltage_max_mV", self.data["voltage_min_mV"], 5000, verbose=verbose)
+        self._check_num("voltage_mV", self.data["voltage_min_mV"], self.data["voltage_max_mV"], verbose=verbose)
 
         current_limit_uA = 10**6 * self._cal.convert_raw_to_value("harvesting", "adc_current", 4)
         self._check_num("current_limit_uA", current_limit_uA, 50_000, verbose=verbose)

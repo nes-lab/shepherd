@@ -4,9 +4,9 @@
 #include "hw_config.h"
 #include "sampling.h"
 #include "virtual_converter.h"
-#include "virtual_harvester.h"
 #include "calibration.h"
 #include "spi_transfer_pru.h"
+#include "virtual_harvester.h"
 
 static bool_ft dac_aux_link_to_main = false;
 static bool_ft dac_aux_link_to_mid = false;
@@ -18,12 +18,15 @@ static bool_ft dac_aux_link_to_mid = false;
 
 static inline void sample_emulation(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
 {
-    /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
-    //__delay_cycles(200 / 5); // current design takes 1400 ns
+	/* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	//__delay_cycles(200 / 5); // current design takes 1400 ns
 
 	/* Get input current/voltage from shared memory buffer */
-	const uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
-	const uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
+	uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
+	uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
+
+	harvester_iv_sample(&input_voltage_uV, &input_current_nA);
+
 	converter_calc_inp_power(input_voltage_uV, input_current_nA);
 
 	/* measure current flow */
