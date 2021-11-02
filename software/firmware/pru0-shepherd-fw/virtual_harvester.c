@@ -34,12 +34,12 @@ static void harvest_iv_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_
 
 void harvester_initialize(const volatile struct HarvesterConfig *const config)
 {
-	// for ADC-Version
+	// for ADC- and IVCurve-Version
 	cfg = config;
 	voltage_set_uV = cfg->voltage_uV;
 
-	// for IV-Curve-Version, mostly resets if needed
-	window_samples = cfg->window_size; // already adapted in py, samples = window_size * (1 + wait_samples)
+	// for IV-Curve-Version, mostly resets states
+	window_samples = cfg->window_size; // already manipulated in py, samples = window_size * (1 + wait_samples)
 	voltage_hold = 0u;
 	current_hold = 0u;
 	voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
@@ -342,11 +342,12 @@ static void harvest_iv_cv(uint32_t * const p_voltage_uV, uint32_t * const p_curr
 
 	/* find matching voltage with threshold-crossing-detection -> direction of curve is irrelevant */
 	const bool_ft compare_now = *p_voltage_uV < voltage_set_uV;
+	// -> abs()
 	const uint32_t voltage_step = (*p_voltage_uV > voltage_last) ? (*p_voltage_uV - voltage_last) : (voltage_last - *p_voltage_uV);
 
 	if ((compare_now != compare_last) && (voltage_step < voltage_step_x4_uV))
 	{
-		/* a new ConstVoltage was found, take the smaller voltage
+		/* a new ConstVoltage was found, take the smaller / safer voltage
 		 * TODO: could also be interpolated if sampling-routine has time to spare */
 		if (voltage_last < *p_voltage_uV)
 		{
@@ -376,31 +377,31 @@ static void harvest_iv_mppt_voc(uint32_t * const p_voltage_uV, uint32_t * const 
 	 * 		   from init: window_size, (wait_cycles_n), voltage_uV (for cv())
 	 */
 	static uint32_t age_now = 0u, voc_now = 0u;
-	static uint32_t age_next = 0u, voc_next = 0u;
+	static uint32_t age_nxt = 0u, voc_nxt = 0u;
 	static uint32_t interval_step = 1u << 30u; // deliberately out of bound
 
 	/* keep track of time */
 	interval_step = (interval_step >= cfg->interval_n) ? 0u : interval_step + 1u;
-	age_next++;
+	age_nxt++;
 	age_now++;
-
-	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or be NOT the best */
-	if ((age_now > window_samples) || (voc_next <= voc_now))
-	{
-		age_now = age_next;
-		voc_now = voc_next;
-		age_next = 0u;
-		voc_next = cfg->voltage_max_uV;
-	}
 
 	/* lookout for new VOC */
 	if ((*p_current_nA < cfg->current_limit_nA) &&
-	    (*p_voltage_uV <= voc_next) &&
+	    (*p_voltage_uV <= voc_nxt) &&
 	    (*p_voltage_uV >= cfg->voltage_min_uV) &&
 	    (*p_voltage_uV <= cfg->voltage_max_uV))
 	{
-		voc_next = *p_voltage_uV;
-		age_next = 0u;
+		voc_nxt = *p_voltage_uV;
+		age_nxt = 0u;
+	}
+
+	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or be NOT the best */
+	if ((age_now > window_samples) || (voc_nxt <= voc_now))
+	{
+		age_now = age_nxt;
+		voc_now = voc_nxt;
+		age_nxt = 0u;
+		voc_nxt = cfg->voltage_max_uV;
 	}
 
 	/* underlying cv-algo is doing the rest */
@@ -475,7 +476,19 @@ static void harvest_iv_mppt_opt(uint32_t * const p_voltage_uV, uint32_t * const 
 	age_nxt++;
 	age_now++;
 
-	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or be NOT the best */
+	/* search for new max */
+	const uint32_t power_fW = mul32(*p_voltage_uV, *p_current_nA);
+	if ((power_fW >= power_nxt) &&
+	    (*p_voltage_uV >= cfg->voltage_min_uV) &&
+	    (*p_voltage_uV <= cfg->voltage_max_uV))
+	{
+		age_nxt = 0u;
+		power_nxt = power_fW;
+		voltage_nxt = *p_voltage_uV;
+		current_nxt = *p_current_nA;
+	}
+
+	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or NOT be the best */
 	if ((age_now > window_samples) || (power_nxt >= power_now))
 	{
 		age_now = age_nxt;
@@ -487,18 +500,6 @@ static void harvest_iv_mppt_opt(uint32_t * const p_voltage_uV, uint32_t * const 
 		power_nxt = 0u;
 		voltage_nxt = 0u;
 		current_nxt = 0u;
-	}
-
-	/* search for new max */
-	const uint32_t power_fW = mul32(*p_voltage_uV, *p_current_nA);
-	if ((power_fW >= power_nxt) &&
-	    (*p_voltage_uV >= cfg->voltage_min_uV) &&
-	    (*p_voltage_uV <= cfg->voltage_max_uV))
-	{
-		age_nxt = 0u;
-		power_nxt = power_fW;
-		voltage_nxt = *p_voltage_uV;
-		current_nxt = *p_current_nA;
 	}
 
 	/* return current max */
