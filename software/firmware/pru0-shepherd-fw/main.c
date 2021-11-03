@@ -409,6 +409,7 @@ void main(void)
 	shared_memory->vsource_batok_pin_value = false;
 
 	/* minimal init for these structs to make them safe */
+	/* NOTE: more inits are done in kernel */
 	shared_memory->converter_settings.converter_mode = 0u;
 	shared_memory->harvester_settings.algorithm = 0u;
 	shared_memory->programmer_ctrl.state = 0u;

@@ -134,7 +134,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 	msleep(300);
 	/* Initialize shared memory and PRU interrupt controller */
 	pru_comm_init();
-    mem_msg_sys_init();
+    	mem_msg_sys_init();
 
 	/* Initialize synchronization mechanism between PRU1 and our clock */
 	sync_init(pru_comm_get_buffer_period_ns());

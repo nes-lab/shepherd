@@ -3,6 +3,7 @@
 #include <asm/io.h>
 
 #include "commons.h"
+#include "commons_inits.h"
 #include "pru_comm.h"
 
 #define PRU_BASE_ADDR 0x4A300000
@@ -21,17 +22,35 @@ delayed_start_callback(struct hrtimer *timer_for_restart);
 
 int pru_comm_init(void)
 {
-    /* Maps the control registers of the PRU's interrupt controller */
+    	struct SharedMem *shared_mem;
+
+	/* Maps the control registers of the PRU's interrupt controller */
 	pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
 	/* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
 	pru_shared_mem_io =
 		ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_STRUCT_OFFSET,
 			sizeof(struct SharedMem));
 
+	shared_mem = (struct SharedMem *) pru_shared_mem_io;
+
+	shared_mem->calibration_settings = CalibrationConfig_default;
+	shared_mem->converter_settings = ConverterConfig_default;
+	shared_mem->harvester_settings = HarvesterConfig_default;
+
+	shared_mem->programmer_ctrl = ProgrammerCtrl_default;
+
+	shared_mem->pru0_msg_inbox = ProtoMsg_default;
+	shared_mem->pru0_msg_outbox = ProtoMsg_default;
+	shared_mem->pru0_msg_error = ProtoMsg_default;
+
+	shared_mem->pru1_sync_inbox = SyncMsg_default;
+	shared_mem->pru1_sync_outbox = ProtoMsg_default;
+	shared_mem->pru1_msg_error = ProtoMsg_default;
+
 	hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 	delayed_start_timer.function = &delayed_start_callback;
 
-    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
+    	printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
 	return 0;
 }
 
