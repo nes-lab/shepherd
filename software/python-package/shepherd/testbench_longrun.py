@@ -24,7 +24,7 @@ if __name__ == "__main__":
             output_path=file_emu1,
             duration=duration,
             force_overwrite=True,
-            settings_virtsource="BQ25570s",
+            virtsource="BQ25570s",
             skip_log_gpio=True,
             skip_log_current=True,
             skip_log_voltage=True,
@@ -35,4 +35,4 @@ if __name__ == "__main__":
             output_path=file_emu2,
             duration=duration,
             force_overwrite=True,
-            settings_virtsource="BQ25570s",)
+            virtsource="BQ25570s", )

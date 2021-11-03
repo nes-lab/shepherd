@@ -69,7 +69,7 @@ const struct ConverterConfig ConverterConfig_default = {
 				   { 84u, 85u, 86u, 87u, 88u, 89u, 90u, 91u, 92u, 93u, 94u, 95u },
 				   { 96u, 97u, 98u, 99u, 100u, 101u, 102u, 103u, 104u, 105u, 106u, 107u },
 				   { 108u, 109u, 110u, 111u, 112u, 113u, 114u, 115u, 116u, 117u, 118u, 119u },
-				   { 120u, 12cd .1u, 122u, 123u, 124u, 125u, 126u, 127u, 128u, 129u, 130u, 131u },
+				   { 120u, 121u, 122u, 123u, 124u, 125u, 126u, 127u, 128u, 129u, 130u, 131u },
 				   { 132u, 133u, 134u, 135u, 136u, 137u, 138u, 139u, 140u, 141u, 142u, 143u } },
 	.LUT_out_inv_efficiency_n4 = {0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u, 10u, 11u}
 };

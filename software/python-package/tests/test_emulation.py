@@ -68,7 +68,7 @@ def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
         calibration_recording=log_reader.get_calibration_data(),
         calibration_emulation=CalibrationData.from_default(),
         initial_buffers=log_reader.read_buffers(end=fifo_buffer_size),
-        settings_virtsource=vs_settings,
+        virtsource=vs_settings,
     )
     request.addfinalizer(emu.__del__)
     emu.__enter__()
@@ -109,7 +109,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         sel_target_for_io=True,
         sel_target_for_pwr=True,
         aux_target_voltage=2.5,
-        settings_virtsource="direct",
+        virtsource="direct",
     )
 
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:

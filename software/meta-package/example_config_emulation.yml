@@ -15,7 +15,7 @@ parameters:
     V_buck_drop_mV: 0
     V_output_mV: 3000
   force_overwrite: false
-  default_cal: false
+  use_cal_default: false
   enable_io: true
   io_sel_target_a: true
   pwr_sel_target_a: true

@@ -12,7 +12,7 @@ virtsources:
 
     interval_startup_delay_drain_ms: 0
 
-    harvester: mppt_opt # only active if input is "ivcurves"
+    harvester: mppt_opt # harvester only active if input is "ivcurves"
 
     V_input_max_mV: 10000
     I_input_max_mA: 4200
@@ -87,7 +87,7 @@ virtsources:
     converter_base: neutral # to complete undefined vars
     enable_boost: true # if false -> v_intermediate = v_input, output-switch-hysteresis is still usable
     log_intermediate_voltage: false # record virtual intermediate (cap-)voltage and -output-current instead of output-voltage and -current
-    harvester: mppt_bq_solar # only active if input is "ivcurves"
+    harvester: mppt_bq_solar # harvester only active if input is "ivcurves"
 
     V_input_max_mV: 3000
     I_input_max_mA: 100

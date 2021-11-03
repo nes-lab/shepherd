@@ -152,7 +152,7 @@ def test_virtsource_settings(shepherd_up, virtsource_settings):
 def test_initial_virtsource_settings(shepherd_up):
     # NOTE: initial config is set in main() of pru0
     vsource_settings = [
-        list(range(24)),
+        list(range(100, 124)),
         list(range(12 * 12)),
         list(range(12))
     ]

@@ -3,14 +3,13 @@
 # Behaviour: record data until stopped by ctrl+c
 command: record
 parameters:
-  mode: harvesting
-  # duration: 600
+  duration: 20
   # output_path:
   # - providing a directory -> file is named hrv_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
-  output_path: /var/shepherd/recordings
+  output_path: /var/shepherd/recordings/rec.h5
   harvester: ivcurves
-  default_cal: false
+  use_cal_default: true
   force_overwrite: false
 verbose: 2 # serious performance impact for value > 2
 

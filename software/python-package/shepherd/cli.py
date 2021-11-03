@@ -46,7 +46,8 @@ logger.addHandler(consoleHandler)
 #          possible choices: nothing, regulator-name like BQ25570 / BQ25504, path to yaml-config
 # - the options get repeated all the time, is it possible to define them upfront and just include them where needed?
 # - ditch sudo, add user to allow sys_fs-access and other things
-
+# - default-cal -> default_cal
+# - start-time -> start_time
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
     logger.info(f"reading config from {file_path}, cmd={cmd_name}")
@@ -122,7 +123,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 
 @cli.command(
     short_help="Runs a command with given parameters. Mainly for use with config file.")
-@click.option("--command", default="record", type=click.Choice(["record", "emulate"]))
+@click.option("--command", default="record", type=click.Choice(["record", "emulate"])) # TODO: should be harvest, emulate
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option("-v", "--verbose", count=True)
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
@@ -144,7 +145,7 @@ def run(command, parameters: Dict, verbose):
             parameters["output_path"] = Path(parameters["output_path"])
         if "input_path" in parameters:
             parameters["input_path"] = Path(parameters["input_path"])
-        emu_translator = {"enable_io": "set_target_io_lvl_conv", "io_sel_target_a": "sel_target_for_io", "pwr_sel_target_a": "sel_target_for_pwr", "aux_voltage": "aux_target_voltage", "virtsource": "settings_virtsource"}
+        emu_translator = {"enable_io": "set_target_io_lvl_conv", "io_sel_target_a": "sel_target_for_io", "pwr_sel_target_a": "sel_target_for_pwr", "aux_voltage": "aux_target_voltage"}
         for key, value in emu_translator.items():
             if key in parameters:
                 parameters[value] = parameters[key]
@@ -161,13 +162,12 @@ def run(command, parameters: Dict, verbose):
               help="Choose one of the predefined virtual harvesters")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--default-cal", is_flag=True, help="Use default calibration values")
-@click.option("--start-time", "-s", type=click.FLOAT,
+@click.option("--default_cal", is_flag=True, help="Use default calibration values")
+@click.option("--start_time", "-s", type=click.FLOAT,
               help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def record(
     output_path,
-    mode,
     harvester,
     duration,
     force_overwrite,
@@ -195,8 +195,8 @@ def record(
               help="Dir or file path for storing the power consumption data")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--default-cal", is_flag=True, help="Use default calibration values")
-@click.option("--start-time", "-s", type=click.FLOAT, help="Desired start time in unix epoch time")
+@click.option("--default_cal", is_flag=True, help="Use default calibration values")
+@click.option("--start_time", "-s", type=click.FLOAT, help="Desired start time in unix epoch time")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
 @click.option("--io_sel_target_a/--io_sel_target_b", default=True,
@@ -248,7 +248,7 @@ def emulate(
         sel_target_for_io=io_sel_target_a,
         sel_target_for_pwr=pwr_sel_target_a,
         aux_target_voltage=aux_voltage,
-        settings_virtsource=virtsource,
+        virtsource=virtsource,
         log_intermediate_voltage=log_mid_voltage,
         uart_baudrate=uart_baudrate,
         warn_only=warn_only,
@@ -275,7 +275,7 @@ def eeprom():
               help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--cal-file", "-c", type=click.Path(exists=True),
               help="YAML-formatted file with calibration data")
-@click.option("--default-cal", is_flag=True, help="Use default calibration data (skip eeprom)")
+@click.option("--default_cal", is_flag=True, help="Use default calibration data (skip eeprom)")
 def write(infofile, version, serial_number, cal_file, default_cal):
     if infofile is not None:
         if serial_number is not None or version is not None:
@@ -297,7 +297,7 @@ def write(infofile, version, serial_number, cal_file, default_cal):
 
     if cal_file is not None:
         if default_cal:
-            raise click.UsageError("--default-cal and --cal-file are mutually exclusive")
+            raise click.UsageError("--default_cal and --cal-file are mutually exclusive")
         cal = CalibrationData.from_yaml(cal_file)
         with EEPROM() as storage:
             storage.write_calibration(cal)

@@ -146,7 +146,7 @@ def test_key_value_store(tmp_path, calibration_data):
         assert hf.attrs["some string"] == "this is a string"
 
 
-@pytest.mark.timeout(1)
+@pytest.mark.timeout(2)
 def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
     with LogWriter(store_path=d, calibration_data=calibration_data) as log:

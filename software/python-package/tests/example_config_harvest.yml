@@ -2,9 +2,8 @@
 # Instead, make a copy and name it config.yml
 command: record
 parameters:
-  mode: harvesting
   duration: 10
-  default_cal: true
+  use_cal_default: true
   # output_path:
   # - providing a directory -> file is named hrv_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5

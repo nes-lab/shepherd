@@ -32,7 +32,7 @@ class VirtualHarvesterData(object):
     """
     data: dict = {}
     name: str = "vHarvester"
-    _default: str = "ivcurve"  # fallback in case of "None"-Setting
+    _default: str = "ivcurve"  # fallback in case of Setting = None
     _def_file = "virtual_harvester_defs.yml"
     _cal = CalibrationData.from_default()
 
@@ -54,7 +54,7 @@ class VirtualHarvesterData(object):
         if isinstance(setting, str) and Path(setting).exists():
             setting = Path(setting)
         if isinstance(setting, Path) and setting.exists() and \
-                setting.is_file() and setting.suffix in ["yaml", "yml"]:
+                setting.is_file() and setting.suffix in [".yaml", ".yml"]:
             self._inheritance.append(str(setting))
             with open(setting, "r") as config_data:
                 setting = yaml.safe_load(config_data)["harvesters"]
@@ -153,14 +153,18 @@ class VirtualHarvesterData(object):
             window_ms = window_samples * 1000 / self.samplerate_sps
             time_min_ms = max(time_min_ms, window_ms)
 
+        self._check_num("interval_ms", 0.01, 1_000_000, verbose=verbose)  # creates param if missing
+        self._check_num("duration_ms", 0.01, 1_000_000, verbose=verbose)  # creates param if missing
         ratio_old = self.data["duration_ms"] / self.data["interval_ms"]
         self._check_num("interval_ms", time_min_ms, 1_000_000, verbose=verbose)
         self._check_num("duration_ms", time_min_ms, self.data["interval_ms"], verbose=verbose)
         ratio_new = self.data["duration_ms"] / self.data["interval_ms"]
         if (ratio_new/ratio_old - 1) > 0.1:
-            logger.warning(f"[{self.name}] Ratio between interval & duration have changes more than 10% due to constraints")
+            logger.debug(f"[{self.name}] Ratio between interval & duration has changed more than 10% due to constraints, from {ratio_old} to {ratio_new}")
 
         # for proper emulation
+        if "window_samples" not in self.data:
+            self.data["window_samples"] = window_samples
         if self.for_emulation and (window_samples > self.data["window_samples"]):
             self.data["window_samples"] = window_samples
 

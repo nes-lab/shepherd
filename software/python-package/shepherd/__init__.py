@@ -129,7 +129,7 @@ class Emulator(ShepherdIO):
         sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
         aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
-        settings_virtsource (dict): Settings which define the behavior of virtual source emulation
+        virtsource (dict): Settings which define the behavior of virtual source emulation
     """
 
     def __init__(self,
@@ -141,7 +141,7 @@ class Emulator(ShepherdIO):
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
                  aux_target_voltage: float = 0.0,
-                 settings_virtsource: Union[dict, str, Path, VirtualSourceData] = None,
+                 virtsource: Union[dict, str, Path, VirtualSourceData] = None,
                  log_intermediate_voltage: bool = None,
                  harvester_window_samples: int = None,
                  ):
@@ -160,7 +160,7 @@ class Emulator(ShepherdIO):
         self.cal_recording = calibration_recording
         self.cal_emulation = calibration_emulation
         self.samplerate_sps = 10 ** 9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
-        self.converter = VirtualSourceData(settings_virtsource,
+        self.converter = VirtualSourceData(virtsource,
                                            self.samplerate_sps,
                                            log_intermediate_voltage)
         self.harvester = VirtualHarvesterData(self.converter.data["harvester"],
@@ -621,7 +621,7 @@ def emulate(
         sel_target_for_io: bool = True,
         sel_target_for_pwr: bool = True,
         aux_target_voltage: float = 0.0,
-        settings_virtsource: Union[dict, str, Path, VirtualSourceData] = None,
+        virtsource: Union[dict, str, Path, VirtualSourceData] = None,
         log_intermediate_voltage: bool = None,
         uart_baudrate: int = None,
         warn_only: bool = False,
@@ -647,7 +647,7 @@ def emulate(
             True = Target A, False = Target B
         :param aux_target_voltage: Sets, Enables or disables the voltage for the second target,
             0.0 or False for Disable, True for linking it to voltage of other Target
-        :param settings_virtsource: [VirtualSourceData] Settings which define the behavior of VS emulation
+        :param virtsource: [VirtualSourceData] Settings which define the behavior of VS emulation
         :param uart_baudrate: [int] setting a value to non-zero will activate uart-logging
         :param log_intermediate_voltage: [bool] do log intermediate node instead of output
         :param warn_only: [bool] Set true to continue emulation after recoverable error
@@ -725,7 +725,7 @@ def emulate(
             sel_target_for_io=sel_target_for_io,
             sel_target_for_pwr=sel_target_for_pwr,
             aux_target_voltage=aux_target_voltage,
-            settings_virtsource=settings_virtsource,
+            virtsource=virtsource,
             log_intermediate_voltage=log_intermediate_voltage,
             harvester_window_samples=log_reader.get_window_samples(),
         )

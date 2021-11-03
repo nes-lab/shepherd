@@ -63,7 +63,7 @@ class VirtualSourceData(object):
             setting = Path(setting)
 
         if isinstance(setting, Path) and setting.exists() and \
-                setting.is_file() and setting.suffix in ["yaml", "yml"]:
+                setting.is_file() and setting.suffix in [".yaml", ".yml"]:
             self._inheritance.append(str(setting))
             with open(setting, "r") as config_data:
                 setting = yaml.safe_load(config_data)["virtsource"]
@@ -85,7 +85,9 @@ class VirtualSourceData(object):
             self.data = setting
         else:
             raise NotImplementedError(
-                f"[{self.name}] {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?")
+                f"[{self.name}] InputSetting could not be handled. In case of file-path -> does it exist? \n"
+                f"\t type = '{type(setting)}', \n"
+                f"\t content = '{setting}'")
 
         if log_intermediate_voltage is not None:
             self.data["log_intermediate_voltage"] = log_intermediate_voltage
@@ -269,6 +271,9 @@ class VirtualSourceData(object):
         self._check_num("C_output_uF", 4.29e6, verbose=verbose)
 
         self._check_num("V_output_log_gpio_threshold_mV", 4.29e6, verbose=verbose)
+
+        if "harvester" not in self.data and "harvester" in self._config_base:
+            self.data["harvester"] = self._config_base["harvester"]
 
         # Boost
         self._check_num("enable_boost", 4.29e9, verbose=verbose)
