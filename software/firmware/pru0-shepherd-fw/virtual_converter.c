@@ -141,7 +141,8 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
 	GPIO_ON(DEBUG_PIN1_MASK);
 	state.dV_stor_en_uV = sub1r(cfg.V_intermediate_enable_threshold_uV, 0, sqrt_rounded(V_new_sq_uV)); // reversed, because new voltage is lower then old
 	*/
-	// TODO: add tests for valid ranges
+	// TODO: add tests for valid ranges -> not here
+	// TODO: redo unit-test so that normal emulation is used, no special messages anymore (or substantially less)
 }
 
 // TODO: explain design goals and limitations... why does the code looks that way

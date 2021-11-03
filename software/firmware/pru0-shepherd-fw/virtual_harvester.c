@@ -43,7 +43,9 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
 	voltage_hold = 0u;
 	current_hold = 0u;
 	voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
-	// TODO: all static vars in sub-fns could be globals, saves space due to overlaps
+	// TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
+	// TODO: check that ConfigParams are used in SubFns if applicable
+	// TODO: divide lib into IVC and ADC Parts
 }
 
 void harvester_adc_sample(struct SampleBuffer *const buffer, const uint32_t sample_idx)
