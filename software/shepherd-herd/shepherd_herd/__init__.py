@@ -4,7 +4,7 @@
 shepherd_herd
 ~~~~~
 click-based command line utility for controlling a group of shepherd nodes
-remotely through ssh. Provides commands for starting/stopping recording and
+remotely through ssh. Provides commands for starting/stopping harvest and
 emulation, retrieving recordings to the local machine and flashing firmware
 images to target sensor nodes.
 
@@ -81,7 +81,7 @@ def configure_shepherd(
 
     Args:
         group (fabric.Group): Group of fabric hosts on which to start shepherd.
-        command (str): What shepherd is supposed to do. One of 'recording' or 'emulation'.
+        command (str): What shepherd is supposed to do. One of 'harvest' or 'emulation'.
         parameters (dict): Parameters for shepherd-sheep
         hostnames (dict): Dictionary of hostnames corresponding to fabric hosts
         verbose (int): Verbosity for shepherd-sheep
@@ -352,24 +352,24 @@ def reset(ctx):
             logger.info(f"target reset on {ctx.obj['hostnames'][cnx.host]}")
 
 
-@cli.command(short_help="Records IV data")
+@cli.command(short_help="Record IV data from a harvest-source")
 @click.option("--output_path", "-o", type=click.Path(),
-    default="/var/shepherd/recordings",
+    default="/var/shepherd/recordings/",
     help="Dir or file path for resulting hdf5 file")
-@click.option("--mode", type=click.Choice(["harvesting", "harvesting_test"]), default="harvesting",
-    help="Record 'harvesting' or 'harvesting_test'-function data")
-@click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
+@click.option("--harvester", type=str, default=None,
+              help="Choose one of the predefined virtual harvesters")
+@click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--default-cal", is_flag=True, help="Use default calibration values")
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option("--start/--no-start", default=True, help="Start shepherd after uploading config")
 @click.pass_context
-def record(
+def harvest(
     ctx,
     output_path,
-    mode,
+    harvester,
     duration,
     force_overwrite,
-    default_cal,
+    use_cal_default,
     start,
 ):
     fp_output = Path(output_path)
@@ -378,10 +378,10 @@ def record(
 
     parameter_dict = {
         "output_path": str(fp_output),
-        "mode": mode,
+        "harvester": harvester,
         "duration": duration,
         "force_overwrite": force_overwrite,
-        "default_cal": default_cal,
+        "use_cal_default": use_cal_default,
     }
     
     if start:
@@ -390,7 +390,7 @@ def record(
     
     configure_shepherd(
         ctx.obj["fab group"],
-        "record",
+        "harvest",
         parameter_dict,
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
@@ -404,10 +404,11 @@ def record(
 @cli.command(short_help="Emulates IV data read from INPUT hdf5 file")
 @click.argument("input_path", type=click.Path())
 @click.option("--output_path", "-o", type=click.Path(),
+    default="/var/shepherd/recordings/",
     help="Dir or file path for resulting hdf5 file with load recordings")
-@click.option("--duration", "-d", type=float, help="Duration of recording in seconds")
+@click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--default-cal", is_flag=True, help="Use default calibration values")
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
 @click.option("--io_sel_target_a/--io_sel_target_b", default=True,
@@ -430,7 +431,7 @@ def emulate(
     output_path,
     duration,
     force_overwrite,
-    default_cal,
+    use_cal_default,
     enable_target_io,
     sel_target_a_for_io,
     sel_target_a_for_pwr,
@@ -447,7 +448,7 @@ def emulate(
         "input_path": str(fp_input),
         "force_overwrite": force_overwrite,
         "duration": duration,
-        "default_cal": default_cal,
+        "use_cal_default": use_cal_default,
         "set_target_io_lvl_conv": enable_target_io,
         "sel_target_for_io": sel_target_a_for_io,
         "sel_target_for_pwr": sel_target_a_for_pwr,
@@ -496,7 +497,7 @@ def stop(ctx):
 @click.option("--delete", "-d", is_flag=True,
     help="Delete the file from the remote filesystem after retrieval")
 @click.option("--stop", "-s", is_flag=True,
-    help="Stop the on-going recording/emulation process before retrieving the data",)
+    help="Stop the on-going harvest/emulation process before retrieving the data",)
 @click.pass_context
 def retrieve(ctx, filename, outdir, rename, delete, stop):
     if stop:
