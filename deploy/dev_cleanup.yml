@@ -1,0 +1,47 @@
+---
+- name: delete space wasting or forgotten files (WARNING -> includes recordings and firmware ie. for Wifi)
+  hosts: all
+  become: true
+
+  vars_prompt:
+    - name: confirmation
+      prompt: "Do you really want to continue? [YESno]"
+      private: no
+      default: "yes"
+
+  tasks:
+
+  # note: ansible.builtin.file would have been preferred, but it has a problem with wildcards
+  - name: delete Logs and other tmp-files
+    command: "rm -rf {{item}}"
+    with_items:
+      - /var/log/*
+      - /var/lib/apt/lists
+    when: confirmation | bool
+
+  - name: delete recordings
+    command: "rm -rf {{item}}"
+    with_items:
+      - /var/shepherd/recordings/*
+      - /var/shepherd/recordings2/*
+    when: confirmation | bool
+
+  - name: delete firmware
+    command: "rm -rf {{item}}"
+    with_items:
+      - /usr/lib/firmware/netronome
+      - /usr/lib/firmware/qcom
+      - /usr/lib/firmware/amd*
+      - /usr/lib/firmware/intel
+      - /usr/lib/firmware/mellanox
+      - /usr/lib/firmware/liquidio
+      - /usr/lib/firmware/mrvl
+      - /usr/lib/firmware/ath1*
+      - /usr/lib/firmware/nvidia
+      - /usr/lib/firmware/radeon
+      - /usr/lib/firmware/iwlwifi*
+    when: confirmation | bool
+
+  - name: clean apt-cache
+    command: apt clean
+    when: confirmation | bool
