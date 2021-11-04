@@ -19,6 +19,7 @@
 #include "sampling.h"
 #include "shepherd_config.h"
 #include "virtual_converter.h"
+#include "calibration.h"
 
 /* PRU0 Feature Compile Inclusion */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
@@ -233,6 +234,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		case MSG_DBG_VSOURCE_V_OUT:
 			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
+			return 1u;
+
+		case MSG_DBG_VSOURCE_INIT:
+			calibration_initialize(&shared_mem->calibration_settings);
+			converter_initialize(&shared_mem->converter_settings);
+			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
 			return 1u;
 
 		case MSG_DBG_VSOURCE_CHARGE:

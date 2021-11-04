@@ -30,8 +30,8 @@ def shepherd_running(shepherd_up):
 
 @pytest.fixture()
 def calibration_settings():
-    calibration_emulation = CalibrationData.from_default()
-    return calibration_emulation.export_for_sysfs()
+    cal = CalibrationData.from_default()
+    return cal.export_for_sysfs("emulation")
 
 
 @pytest.mark.hardware

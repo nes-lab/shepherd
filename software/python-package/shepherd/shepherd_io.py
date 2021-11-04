@@ -24,7 +24,7 @@ from periphery import GPIO
 
 from shepherd import sysfs_interface
 from shepherd import commons
-from shepherd.calibration import CalibrationData
+from shepherd.calibration import CalibrationData, cal_component_list
 from shepherd.virtual_source_data import VirtualSourceData
 from shepherd.sysfs_interface import SysfsInterfaceException
 from shepherd.virtual_harvester_data import VirtualHarvesterData
@@ -297,6 +297,10 @@ class ShepherdIO(object):
             mode (str): Shepherd mode, see sysfs_interface for more
         """
         self.mode = mode
+        if mode in cal_component_list:
+            self.component = mode
+        else:
+            self.component = "emulation"
         self.gpios = {}
 
     def __del__(self):
@@ -554,8 +558,7 @@ class ShepherdIO(object):
         """
         return sysfs_interface.read_dac_aux_voltage(cal_settings)
 
-    @staticmethod
-    def send_calibration_settings(cal_settings: CalibrationData) -> NoReturn:
+    def send_calibration_settings(self, cal_settings: CalibrationData) -> NoReturn:
         """Sends calibration settings to PRU core
 
         For the virtual source it is required to have the calibration settings.
@@ -565,7 +568,10 @@ class ShepherdIO(object):
             cal_settings (CalibrationData): Contains the device's
             calibration settings.
         """
-        sysfs_interface.write_calibration_settings(cal_settings.export_for_sysfs())
+        if cal_settings is None:
+            cal_settings = CalibrationData.from_default()
+        cal_dict = cal_settings.export_for_sysfs(self.component)
+        sysfs_interface.write_calibration_settings(cal_dict)
 
     @staticmethod
     def send_virtual_converter_settings(settings: VirtualSourceData) -> NoReturn:

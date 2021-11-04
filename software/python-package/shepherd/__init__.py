@@ -71,13 +71,12 @@ class Recorder(ShepherdIO):
     def __init__(self,
                  shepherd_mode: str = "harvesting",
                  harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
-                 calibration_recording: CalibrationData = None,
+                 calibration: CalibrationData = None,
                  ):
         logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
         self.samplerate_sps = 10 ** 9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
         self.harvester = VirtualHarvesterData(harvester, self.samplerate_sps)
-        self.calibration = calibration_recording
-        self.calibration.change_component(shepherd_mode)
+        self.calibration = calibration
         super().__init__(shepherd_mode)
 
     def __enter__(self):
@@ -157,8 +156,7 @@ class Emulator(ShepherdIO):
             calibration_recording = CalibrationData.from_default()
             logger.warning("No recording calibration data provided - using defaults")
 
-        self.cal_recording = calibration_recording
-        self.cal_emulation = calibration_emulation
+        self.calibration = calibration_emulation
         self.samplerate_sps = 10 ** 9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
         self.converter = VirtualSourceData(virtsource,
                                            self.samplerate_sps,
@@ -173,10 +171,10 @@ class Emulator(ShepherdIO):
         self._sel_target_for_pwr = sel_target_for_pwr
         self._aux_target_voltage = aux_target_voltage
 
-        self._v_gain = 1e6 * self.cal_recording["harvesting"]["adc_voltage"]["gain"]
-        self._v_offset = 1e6 * self.cal_recording["harvesting"]["adc_voltage"]["offset"]
-        self._i_gain = 1e9 * self.cal_recording["harvesting"]["adc_current"]["gain"]
-        self._i_offset = 1e9 * self.cal_recording["harvesting"]["adc_current"]["offset"]
+        self._v_gain = 1e6 * calibration_recording["harvesting"]["adc_voltage"]["gain"]
+        self._v_offset = 1e6 * calibration_recording["harvesting"]["adc_voltage"]["offset"]
+        self._i_gain = 1e9 * calibration_recording["harvesting"]["adc_current"]["gain"]
+        self._i_offset = 1e9 * calibration_recording["harvesting"]["adc_current"]["offset"]
 
     def __enter__(self):
         super().__enter__()
@@ -184,7 +182,7 @@ class Emulator(ShepherdIO):
         super().set_power_state_recorder(False)
         super().set_power_state_emulator(True)
 
-        super().send_calibration_settings(self.cal_emulation)
+        super().send_calibration_settings(self.calibration)
         super().send_virtual_converter_settings(self.converter)
         super().send_virtual_harvester_settings(self.harvester)
 
@@ -193,7 +191,7 @@ class Emulator(ShepherdIO):
         super().set_target_io_level_conv(self._set_target_io_lvl_conv)
         super().select_main_target_for_io(self._sel_target_for_io)
         super().select_main_target_for_power(self._sel_target_for_pwr)
-        super().set_aux_target_voltage(self.cal_emulation, self._aux_target_voltage)
+        super().set_aux_target_voltage(self.calibration, self._aux_target_voltage)
 
         # Preload emulator with data
         time.sleep(1)
@@ -509,7 +507,6 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
 
 def record(
     output_path: Path,
-    mode: str = "harvesting",
     duration: float = None,
     harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
     force_overwrite: bool = False,
@@ -522,7 +519,6 @@ def record(
     Args:
         output_path (Path): Path of hdf5 file where IV measurements should be
             stored
-        mode (str): 'harvesting' for recording harvesting data
         duration (float): Maximum time duration of emulation in seconds
         harvester: name, path or object to a virtual harvester setting
         force_overwrite (bool): True to overwrite existing file under output path,
@@ -533,6 +529,7 @@ def record(
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
+    mode = "harvesting"
     cal_data = retrieve_calibration(use_cal_default)
 
     if start_time is None:
@@ -552,7 +549,7 @@ def record(
 
     recorder = Recorder(shepherd_mode=mode,
                         harvester=harvester,
-                        calibration_recording=cal_data)
+                        calibration=cal_data)
     log_writer = LogWriter(store_path=store_path,
                            calibration_data=cal_data,
                            mode=mode,
@@ -655,6 +652,7 @@ def emulate(
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
     """
+    mode = "emulation"
     cal = retrieve_calibration(use_cal_default)
 
     if start_time is None:
@@ -688,7 +686,7 @@ def emulate(
         log_writer = LogWriter(
             store_path=store_path,
             force_overwrite=force_overwrite,
-            mode="emulation",
+            mode=mode,
             calibration_data=cal,
             skip_voltage=skip_log_voltage,
             skip_current=skip_log_current,
@@ -717,7 +715,7 @@ def emulate(
         fifo_buffer_size = sysfs_interface.get_n_buffers()
 
         emu = Emulator(
-            shepherd_mode="emulation",
+            shepherd_mode=mode,
             initial_buffers=log_reader.read_buffers(end=fifo_buffer_size, verbose=verbose),
             calibration_recording=log_reader.get_calibration_data(),
             calibration_emulation=cal,

@@ -30,7 +30,7 @@ def random_data(length):
 
 @pytest.fixture
 def data_h5(tmp_path):
-    store_path = tmp_path / "record_example.h5"
+    store_path = tmp_path / "harvest_example.h5"
     with LogWriter(store_path, CalibrationData.from_default()) as store:
         for i in range(100):
             len_ = 10_000
@@ -41,10 +41,10 @@ def data_h5(tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_record(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
-        cli, ["-vvv", "record", "-f", "-d", "10", "-o", str(store)]
+        cli, ["-vvv", "harvest", "-f", "-d", "10", "-o", str(store)]
     )
     assert res.exit_code == 0
     assert store.exists()
@@ -52,14 +52,14 @@ def test_cli_record(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_record_no_cal(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest_no_cal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli, ["-vvv",
-              "record",
+              "harvest",
               "-d", "10",
               "--force_overwrite",
-              "--default_cal",
+              "--use_cal_default",
               "-o", str(store)]
     )
 
@@ -69,17 +69,16 @@ def test_cli_record_no_cal(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_record_parameters_long(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest_parameters_long(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli, ["-vvv",
-              "record",
-              "--mode", "harvesting",
+              "harvest",
               "--duration", "10",
               "--start_time", f"{start_time}",
               "--force_overwrite",
-              "--default_cal",
+              "--use_cal_default",
               "--warn-only",
               "--output_path", f"{str(store)}"]
     )
@@ -90,13 +89,12 @@ def test_cli_record_parameters_long(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_record_parameters_short(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli, ["-vvv",
-              "record",
-              "--mode", "harvesting",
+              "harvest",
               "-d", "10",
               "-s", f"{start_time}",
               "-f",
@@ -110,12 +108,11 @@ def test_cli_record_parameters_short(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_record_parameters_minimal(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest_parameters_minimal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli, [
-              "record",
-              "--mode", "harvesting",
+              "harvest",
               "-f",
               "-d", "10",
               "-o", str(store)]
@@ -127,13 +124,21 @@ def test_cli_record_parameters_minimal(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_record_preconfigured(shepherd_up, cli_runner, tmp_path):
-    here = Path(__file__).absolute()
-    name = "example_config_harvest.yml"
-    file_path = here.parent / name
+def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path):
+    here = Path(__file__).absolute().parent
+    file_path = here / "example_config_harvest.yml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
-# TODO: also test hrv-config in ../../meta-package/
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_cli_harvest_preconf_metapackage(shepherd_up, cli_runner, tmp_path):
+    here = Path(__file__).absolute().parent
+    file_path = here.parent.parent / "meta-package/example_config_harvest.yml"
+    res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
+    assert res.exit_code == 0
+
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
@@ -158,9 +163,8 @@ def test_cli_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, data_h5):
-    here = Path(__file__).absolute()
-    name = "example_virtsource_settings.yml"
-    file_path = here.parent / name
+    here = Path(__file__).absolute().parent
+    file_path = here / "example_virtsource_settings.yml"
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli,
@@ -205,9 +209,8 @@ def test_cli_emulate_with_bq25570(shepherd_up, cli_runner, tmp_path, data_h5):
 def test_cli_virtsource_emulate_wrong_option(
     shepherd_up, cli_runner, tmp_path, data_h5
 ):
-    here = Path(__file__).absolute()
-    name = "example_virtsource_settings.yml"
-    file_path = here.parent / name
+    here = Path(__file__).absolute().parent
+    file_path = here / "example_virtsource_settings.yml"
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli,
@@ -245,9 +248,8 @@ def test_cli_emulate_aux_voltage(shepherd_up, cli_runner, tmp_path, data_h5):
 @pytest.mark.timeout(60)
 def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
     store = tmp_path / "out.h5"
-    here = Path(__file__).absolute()
-    name = "example_virtsource_settings.yml"
-    file_path = here.parent / name
+    here = Path(__file__).absolute().parent
+    file_path = here / "example_virtsource_settings.yml"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli,
@@ -258,7 +260,7 @@ def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5)
             "--start_time", str(start_time),
             "--aux_voltage", "2.5",
             "--force_overwrite",
-            "--default_cal",
+            "--use_cal_default",
             "--enable_io",
             "--io_sel_target_a",
             "--pwr_sel_target_a",
@@ -319,12 +321,20 @@ def test_cli_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path):
-    here = Path(__file__).absolute()
-    name = "example_config_emulation.yml"
-    file_path = here.parent / name
+    here = Path(__file__).absolute().parent
+    file_path = here / "example_config_emulation.yml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
     assert res.exit_code == 0
-# TODO: also test emu-config in ../../meta-package/
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_cli_emulate_preconf_metapackage(shepherd_up, cli_runner, tmp_path):
+    here = Path(__file__).absolute().parent
+    file_path = here.parent.parent / "meta-package/example_config_emulation.yml"
+    res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
+    assert res.exit_code == 0
+
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
@@ -340,5 +350,4 @@ def test_cli_emulate_aux_voltage_fail(shepherd_up, cli_runner, tmp_path, data_h5
             str(data_h5),
         ],
     )
-
     assert res.exit_code != 0

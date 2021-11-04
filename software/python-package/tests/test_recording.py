@@ -63,7 +63,6 @@ def test_record_fn(tmp_path, shepherd_up):
     start_time = int(time.time() + 10)
     record(
         output_path=output,
-        mode="harvesting",
         duration=10,
         force_overwrite=True,
         use_cal_default=True,

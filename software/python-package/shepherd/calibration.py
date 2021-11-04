@@ -10,7 +10,7 @@ data
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-
+import logging
 import yaml
 import struct
 from scipy import stats
@@ -18,6 +18,8 @@ import numpy as np
 from pathlib import Path
 
 from shepherd import calibration_default
+
+logger = logging.getLogger(__name__)
 
 # gain and offset will be normalized to SI-Units, most likely V, A
 # -> general formula is:    si-value = raw_value * gain + offset
@@ -53,7 +55,6 @@ class CalibrationData(object):
 
     def __init__(self, cal_dict: dict):
         self.data = cal_dict
-        self._component_default = "emulation"
 
     def __getitem__(self, key: str):
         return self.data[key]
@@ -188,13 +189,10 @@ class CalibrationData(object):
         val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         return struct.pack(">" + val_count * "d", *flattened)
 
-    def change_component(self, value: str):
-        if not value in cal_component_list:
-            raise ValueError(f"[Cal] change to unknown component (={value}) detected")
-        self._component_default = value
-
-    def export_for_sysfs(self) -> dict:
-        comp_data = self.data[self._component_default]
+    def export_for_sysfs(self, component: str) -> dict:
+        if component not in cal_component_list:
+            raise ValueError(f"[Cal] change to unknown component (={component}) detected")
+        comp_data = self.data[component]
         cal_set = {
             # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
             "adc_gain": int(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
@@ -205,8 +203,11 @@ class CalibrationData(object):
         }
 
         for key, value in cal_set.items():
+            # TODO: is exception more useful? -> raise ValueError
             if ("gain" in key) and not (0 <= value < 2**32):
-                    raise ValueError(f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()")
-            if ("offset" in key) and not (-2**31 <= value < 2 ** 31):
-                    raise ValueError(f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()")
+                logger.warning(f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()")
+                cal_set[key] = min(max(value, 0), 2**32 - 1)
+            if ("offset" in key) and not (-2**31 <= value < 2**31):
+                logger.warning(f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()")
+                cal_set[key] = min(max(value, -2**31), 2**31 - 1)
         return cal_set

@@ -46,8 +46,10 @@ logger.addHandler(consoleHandler)
 #          possible choices: nothing, regulator-name like BQ25570 / BQ25504, path to yaml-config
 # - the options get repeated all the time, is it possible to define them upfront and just include them where needed?
 # - ditch sudo, add user to allow sys_fs-access and other things
-# - default-cal -> default_cal
+# - default-cal -> use_cal_default
 # - start-time -> start_time
+# - sheep run record -> sheep run harvest, same with sheep record
+
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
     logger.info(f"reading config from {file_path}, cmd={cmd_name}")
@@ -123,7 +125,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 
 @cli.command(
     short_help="Runs a command with given parameters. Mainly for use with config file.")
-@click.option("--command", default="record", type=click.Choice(["record", "emulate"])) # TODO: should be harvest, emulate
+@click.option("--command", default="harvest", type=click.Choice(["harvest", "emulate"]))
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option("-v", "--verbose", count=True)
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
@@ -135,8 +137,8 @@ def run(command, parameters: Dict, verbose):
         raise click.BadParameter(f"parameter-argument is not dict, but {type(parameters)} (last occurred with v8-alpha-version of click-lib)")
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
-    logger.info(f"CLI did process run()")
-    if command == "record":
+    logger.debug(f"CLI did process run()")
+    if command == "harvest":
         if "output_path" in parameters:
             parameters["output_path"] = Path(parameters["output_path"])
         run_record(**parameters)
@@ -152,36 +154,35 @@ def run(command, parameters: Dict, verbose):
                 parameters.pop(key)
         run_emulate(**parameters)
     else:
-        raise click.BadParameter(f"command {command} not supported")
+        raise click.BadParameter(f"command '{command}' not supported")
 
 
-@cli.command(short_help="Record IV data")
-@click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings",
+@cli.command(short_help="Record IV data from a harvest-source")
+@click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings/",
               help="Dir or file path for resulting hdf5 file",)
 @click.option("--harvester", type=str, default=None,
               help="Choose one of the predefined virtual harvesters")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--default_cal", is_flag=True, help="Use default calibration values")
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option("--start_time", "-s", type=click.FLOAT,
               help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
-def record(
+def harvest(
     output_path,
     harvester,
     duration,
     force_overwrite,
-    default_cal,
+    use_cal_default,
     start_time,
     warn_only,
 ):
     run_record(
         output_path=Path(output_path),
-        mode="harvesting",
         harvester=harvester,
         duration=duration,
         force_overwrite=force_overwrite,
-        use_cal_default=default_cal,
+        use_cal_default=use_cal_default,
         start_time=start_time,
         warn_only=warn_only,
     )
@@ -191,11 +192,11 @@ def record(
     short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data"
 )
 @click.argument("input_path", type=click.Path(exists=True))
-@click.option("--output_path", "-o", type=click.Path(),
+@click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings/",
               help="Dir or file path for storing the power consumption data")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--default_cal", is_flag=True, help="Use default calibration values")
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option("--start_time", "-s", type=click.FLOAT, help="Desired start time in unix epoch time")
 @click.option("--enable_io/--disable_io", default=True,
               help="Switch the GPIO level converter to targets on/off")
@@ -220,7 +221,7 @@ def emulate(
         output_path,
         duration,
         force_overwrite,
-        default_cal,
+        use_cal_default,
         start_time,
         enable_io,
         io_sel_target_a,
@@ -242,7 +243,7 @@ def emulate(
         output_path=pl_store,
         duration=duration,
         force_overwrite=force_overwrite,
-        use_cal_default=default_cal,
+        use_cal_default=use_cal_default,
         start_time=start_time,
         set_target_io_lvl_conv=enable_io,
         sel_target_for_io=io_sel_target_a,
@@ -275,8 +276,8 @@ def eeprom():
               help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--cal-file", "-c", type=click.Path(exists=True),
               help="YAML-formatted file with calibration data")
-@click.option("--default_cal", is_flag=True, help="Use default calibration data (skip eeprom)")
-def write(infofile, version, serial_number, cal_file, default_cal):
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration data (skip eeprom)")
+def write(infofile, version, serial_number, cal_file, use_cal_default):
     if infofile is not None:
         if serial_number is not None or version is not None:
             raise click.UsageError(
@@ -296,12 +297,12 @@ def write(infofile, version, serial_number, cal_file, default_cal):
             storage.write_cape_data(cape_data)
 
     if cal_file is not None:
-        if default_cal:
-            raise click.UsageError("--default_cal and --cal-file are mutually exclusive")
+        if use_cal_default:
+            raise click.UsageError("--use_cal_default and --cal-file are mutually exclusive")
         cal = CalibrationData.from_yaml(cal_file)
         with EEPROM() as storage:
             storage.write_calibration(cal)
-    if default_cal:
+    if use_cal_default:
         cal = CalibrationData.from_default()
         with EEPROM() as storage:
             storage.write_calibration(cal)
