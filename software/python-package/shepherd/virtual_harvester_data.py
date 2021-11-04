@@ -177,11 +177,11 @@ class VirtualHarvesterData(object):
                 logger.debug(f"[{self.name}] '{setting_key}' not provided, set to inherited value = {set_value}")
         if (min_value is not None) and (set_value < min_value):
             if verbose:
-                logger.debug(f"[{self.name}] {setting_key} = {set_value}, but must be >= {min_value}")
+                logger.debug(f"[{self.name}] {setting_key} = {set_value}, but must be >= {min_value} -> adjusted")
             set_value = min_value
         if (max_value is not None) and (set_value > max_value):
             if verbose:
-                logger.debug(f"[{self.name}] {setting_key} = {set_value}, but must be <= {max_value}")
+                logger.debug(f"[{self.name}] {setting_key} = {set_value}, but must be <= {max_value} -> adjusted")
             set_value = max_value
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
