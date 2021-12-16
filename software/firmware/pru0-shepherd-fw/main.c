@@ -16,15 +16,31 @@
 #include "commons.h"
 #include "hw_config.h"
 #include "ringbuffer.h"
-#include "sampling.h"
 #include "shepherd_config.h"
-#include "virtual_converter.h"
-#include "calibration.h"
 
-/* PRU0 Feature Compile Inclusion */
+
+/* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
-#define ENABLE_PROGRAMMER	// reduces firmware by ~800 Byte
+//#define ENABLE_PROGRAMMER	// reduces firmware by ~800 Byte (dummy for now)
 #define ENABLE_VSOURCE_TESTS	// reduces firmware by ~500 Byte
+#define ENABLE_SAMPLING		// reduces firmware by ~20 kByte (no smpl, vhrv, vcnv)
+
+/* TODO: granularity not needed for now, later it may allow programmer + emulation (for testbed w/o harvester)
+#define ENABLE_VHARVESTER
+#define ENABLE_VCONVERTER
+#if defined(ENABLE_VHARVESTER) || defined(ENABLE_VCONVERTER)
+#define ENABLE_SAMPLING
+#endif
+*/
+
+#ifdef ENABLE_SAMPLING
+#include "sampling.h"
+#endif
+
+#if defined(ENABLE_SAMPLING) || defined(ENABLE_VSOURCE_TESTS)
+#include "calibration.h"
+#include "virtual_converter.h"
+#endif
 
 #ifdef ENABLE_DEBUG_MATH_FN
 #include "math64_safe.h"
@@ -198,6 +214,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
         	uint32_t res;
         	uint64_t res64;
 		switch (msg_in.type) {
+#ifdef ENABLE_SAMPLING
 		case MSG_DBG_ADC:
 			res = sample_dbg_adc(msg_in.value[0]);
 			send_message(shared_mem, MSG_DBG_ADC, res, 0);
@@ -207,12 +224,13 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			sample_dbg_dac(msg_in.value[0]);
 			return 1u;
 
-		case MSG_DBG_GPI:
-			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
-			return 1U;
-
 		case MSG_DBG_GP_BATOK:
 			set_batok_pin(shared_mem, msg_in.value[0] > 0);
+			return 1U;
+#endif // ENABLE_SAMPLING
+
+		case MSG_DBG_GPI:
+			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
 			return 1U;
 
 #ifdef ENABLE_VSOURCE_TESTS
@@ -257,7 +275,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
 			return 1u;
-#endif //ENABLE_VSOURCE_TESTS
+#endif // ENABLE_VSOURCE_TESTS
 
 #ifdef ENABLE_DEBUG_MATH_FN
 		case MSG_DBG_FN_TESTS:
@@ -337,12 +355,14 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
 			/* The actual sampling takes place here */
+#ifdef ENABLE_SAMPLING
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
 				//GPIO_ON(DEBUG_PIN0_MASK);
 				sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
 				//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
+#endif // ENABLE_SAMPLING
 			shared_mem->analog_sample_counter++;
 
 			if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
@@ -350,6 +370,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				/* Did the Linux kernel module ask for reset? */
 				if (shared_mem->shepherd_state == STATE_RESET) return;
 
+#ifdef ENABLE_SAMPLING
 				/* PRU tries to exchange a full buffer for a fresh one if measurement is running */
 				if ((shared_mem->shepherd_state == STATE_RUNNING) &&
 				    (shared_mem->shepherd_mode != MODE_DEBUG))
@@ -358,6 +379,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 									    shared_mem->analog_sample_counter);
 					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
+#endif // ENABLE_SAMPLING
 			}
 			else
 			{
@@ -450,9 +472,11 @@ reset:
 
 	ring_init(&free_buffers);
 
+#ifdef ENABLE_SAMPLING
 	GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 	sample_init(shared_memory);
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+#endif // ENABLE_SAMPLING
 
 	shared_memory->gpio_edges = NULL;
 	shared_memory->vsource_skip_gpio_logging = false;
