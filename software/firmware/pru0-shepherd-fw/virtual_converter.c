@@ -11,21 +11,6 @@
 
 /* ---------------------------------------------------------------------
  * Virtual Converter, TODO: update description
- *
- * input:
- *    output current: current flowing out of shepherd
- *    output voltage: output voltage of shepherd
- *    input current: current value from recorded trace
- *    input voltage: voltage value from recorded trace
- *
- * output:
- *    toggles shepherd output
- *
- * VirtCap emulates a energy harvesting supply chain storage capacitor and
- * buck/boost converter
- *
- * This code is written as part of the thesis of Boris Blokland
- * Any questions on this code can be send to borisblokland@gmail.com
  * ----------------------------------------------------------------------
  */
 
@@ -36,12 +21,13 @@ static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
 #define DIV_SHIFT 	(17u) // 2^17 as uV is ~ 131 mV
 #define DIV_LUT_SIZE 	(40u)
 
-/* LUT
+/* LUT for faster division
  * Generation:
  * - array[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10u) / (n + 0.5)
  * - limit array[0] to 1023 -> not needed anymore due to mult with overflow-protection, instead overprovision
  * - largest value array[39] is 5.11 V
- * python: LUT = [(2**10)/(n + 0.5) for n in range(40)]
+ * python:
+ *    LUT = [(2**10)/(n + 0.5) for n in range(40)]
  */
 static const uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] =
 	{16383, 683, 410, 293, 228, 186, 158, 137,
@@ -59,7 +45,7 @@ static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 }
 
 
-/* data-structure that hold the state - variables for direct use */
+/* data-structure that hold the state - variables for local / direct use */
 struct ConverterState {
 	uint32_t interval_startup_disabled_drain_n;
 	bool_ft  enable_storage;
