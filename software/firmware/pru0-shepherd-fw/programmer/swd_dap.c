@@ -1,11 +1,11 @@
 #include "programmer/swd_dap.h"
 #include "programmer/transport.h"
 
-static int swd_dp_write(swd_dp_reg_t reg, uint32_t val)
+int swd_dp_write(swd_dp_reg_t reg, uint32_t val)
 {
 	return swd_transport_write(SWD_PORT_DP, reg, val, 5);
 }
-static int swd_dp_read(uint32_t *val, swd_dp_reg_t reg)
+int swd_dp_read(uint32_t *val, swd_dp_reg_t reg)
 {
 	return swd_transport_read(val, SWD_PORT_DP, reg, 5);
 }

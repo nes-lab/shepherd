@@ -7,15 +7,22 @@ FW_NAME = shepherd
 
 INCLUDE = --include_path=./include --include_path=../include
 
+VPATH = ./programmer
+
 SOURCES = $(notdir $(wildcard ./*.c))
+SOURCES += $(notdir $(wildcard ./programmer/*.c))
+
 # also add external files (./lib/src/)
 SOURCES += simple_lock.c
 SOURCES += iep.c
+
 #SOURCES += sys_gpio.h
 
 ASM_SOURCES = spi_transfer_pru.asm
 ASM_SOURCES += gpio_io_fast.asm
 ASM_SOURCES += register_magic.asm
+ASM_SOURCES += var_delay.asm
+
 BASE_PATH ?= ./..
 
 include $(BASE_PATH)/lib/Makefile

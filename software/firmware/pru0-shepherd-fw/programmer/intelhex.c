@@ -1,12 +1,23 @@
 #include "programmer/intelhex.h"
 
-static char *ptr;
+static char *fptr;
 static unsigned int reader_addr;
 static char *reader_file_mem;
 
+typedef enum {
+	IHEX_REC_TYPE_DATA = 0,
+	IHEX_REC_TYPE_EOF = 1,
+	IHEX_REC_TYPE_ESAR = 2,
+	IHEX_REC_TYPE_START = 3,
+	IHEX_REC_TYPE_ELAR = 4,
+	IHEX_REC_TYPE_SLAR = 5
+} ihex_rec_type_t;
+
+enum ihex_error { IHEX_ERR_OK = 0, IHEX_ERR_START = 1, IHEX_ERR_CHECKSUM = 2, IHEX_ERR_END = 3 };
+
 static inline int ihex_init(char *file_mem)
 {
-	ptr = file_mem;
+	fptr = file_mem;
 }
 
 /* converts ascii-encoded hex value to number */
@@ -32,35 +43,35 @@ static int ihex_get_rec(ihex_rec_t *rec)
 {
 	int i;
 
-	if (*(ptr++) != ':')
+	if (*(fptr++) != ':')
 		return -IHEX_ERR_START;
 
-	rec->len = read_byte(&ptr);
+	rec->len = read_byte(&fptr);
 
 	/* next is a 16-bit address */
-	uint8_t addr_h = read_byte(&ptr);
-	uint8_t addr_l = read_byte(&ptr);
+	uint8_t addr_h = read_byte(&fptr);
+	uint8_t addr_l = read_byte(&fptr);
 	rec->address = (addr_h << 8) | addr_l;
 
-	rec->type = read_byte(&ptr);
+	rec->type = read_byte(&fptr);
 
 	/* sum up the bytes for calculating the checksum later */
 	unsigned int counter = rec->len + addr_h + addr_l + rec->type;
 
 	for (i = 0; i < rec->len; i++) {
-		rec->data[i] = read_byte(&ptr);
+		rec->data[i] = read_byte(&fptr);
 		counter += rec->data[i];
 	}
 
-	unsigned int checksum = read_byte(&ptr);
+	unsigned int checksum = read_byte(&fptr);
 	counter += checksum;
 
 	int rc = ((counter & 0xFF) == 0) ? 0 : -2;
 
 	/* end of line can be one or two characters */
-	char lineend = *(ptr++);
+	char lineend = *(fptr++);
 	if (lineend == 0x0D) {
-		if (*(ptr++) == 0x0A)
+		if (*(fptr++) == 0x0A)
 			return rc;
 		return -IHEX_ERR_END;
 	} else if (lineend == 0x0A)
@@ -90,10 +101,11 @@ int ihex_reader_init(char *file_mem)
 {
 	ihex_init(file_mem);
 	reader_addr = 0;
+	return 0;
 }
 
 /* consecutive calls read data from hexfile block by block */
-int ihex_reader_get(ihex_mem_block_t *block)
+ihex_ret_t ihex_reader_get(ihex_mem_block_t *block)
 {
 	int rc;
 	static ihex_rec_t rec;
@@ -105,12 +117,12 @@ int ihex_reader_get(ihex_mem_block_t *block)
 			block->address = reader_addr + rec.address;
 			block->data = rec.data;
 			block->len = rec.len;
-			return 0;
+			return IHEX_RET_OK;
 		} else if (rec.type == IHEX_REC_TYPE_ESAR) {
 			unsigned int segment = ((unsigned int)rec.data[0] << 4) + rec.data[1];
 			reader_addr += segment;
 		} else if (rec.type == IHEX_REC_TYPE_EOF) {
-			return 1;
+			return IHEX_RET_DONE;
 		}
 	}
 }

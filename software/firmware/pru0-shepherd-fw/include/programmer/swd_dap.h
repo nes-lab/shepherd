@@ -22,6 +22,9 @@ typedef enum {
 int swd_ap_init();
 int swd_ap_exit();
 
+int swd_dp_write(swd_dp_reg_t reg, uint32_t val);
+int swd_dp_read(uint32_t *val, swd_dp_reg_t reg);
+
 int swd_ap_write(swd_ap_reg_t reg, uint32_t val);
 int swd_ap_read(uint32_t *val, swd_ap_reg_t reg);
 

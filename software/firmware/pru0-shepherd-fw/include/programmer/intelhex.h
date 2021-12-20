@@ -10,16 +10,7 @@ typedef struct {
 	uint8_t data[256];
 } ihex_rec_t;
 
-typedef enum {
-	IHEX_REC_TYPE_DATA = 0,
-	IHEX_REC_TYPE_EOF = 1,
-	IHEX_REC_TYPE_ESAR = 2,
-	IHEX_REC_TYPE_START = 3,
-	IHEX_REC_TYPE_ELAR = 4,
-	IHEX_REC_TYPE_SLAR = 5
-} ihex_rec_type_t;
-
-enum ihex_error { IHEX_ERR_OK = 0, IHEX_ERR_START = 1, IHEX_ERR_CHECKSUM = 2, IHEX_ERR_END = 3 };
+typedef enum { IHEX_RET_OK = 0, IHEX_RET_DONE = 1 } ihex_ret_t;
 
 typedef struct {
 	uint32_t address;
@@ -28,6 +19,6 @@ typedef struct {
 } ihex_mem_block_t;
 
 int ihex_reader_init(char *file_mem);
-int ihex_reader_get(ihex_mem_block_t *block);
+ihex_ret_t ihex_reader_get(ihex_mem_block_t *block);
 
 #endif /* __PROG_INTELHEX_H_ */

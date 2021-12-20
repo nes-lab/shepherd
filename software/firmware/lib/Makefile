@@ -111,7 +111,7 @@ MAP=$(GEN_DIR)/pru$(PRU_NUM)-$(FW_NAME).map
 
 TARGET_PATH := $(folder_path)$(TARGET)
 
-VPATH = $(BASE_PATH)/lib/src
+VPATH += $(BASE_PATH)/lib/src
 
 # Using .object instead of .obj in order to not conflict with the CCS build process
 OBJECTS=$(patsubst %,$(GEN_DIR)/%,$(SOURCES:.c=.object))
