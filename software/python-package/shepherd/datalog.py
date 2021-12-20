@@ -46,18 +46,6 @@ ExceptionRecord = namedtuple(
 
 monitors_end = threading.Event()
 
-
-h5_drivers = {h5py.h5fd.CORE: "CORE",
-              h5py.h5fd.FAMILY: "FAMILY",
-              h5py.h5fd.fileobj_driver: "fileobj_driver",
-              h5py.h5fd.LOG: "LOG",
-              h5py.h5fd.MULTI: "MULTI",
-              h5py.h5fd.SEC2: "SEC2",
-              h5py.h5fd.STDIO: "STDIO",
-              h5py.h5fd.WINDOWS: "WINDOWS",
-              }
-
-
 def unique_path(base_path: Union[str, Path], suffix: str):
     counter = 0
     while True:
@@ -187,8 +175,7 @@ class LogWriter(object):
 
         # show key parameters for h5-performance
         settings = list(self._h5file.id.get_access_plist().get_cache())
-        driver = h5_drivers[self._h5file.id.get_access_plist().get_driver()]
-        logger.debug(f"H5Py: driver={driver}, cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
+        logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
 
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
         self._h5file.attrs["mode"] = self.mode  # TODO: should be part of data-group
