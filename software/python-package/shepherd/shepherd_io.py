@@ -350,7 +350,8 @@ class ShepherdIO(object):
 
             self.shared_mem.__enter__()
 
-        except Exception:
+        except Exception as xcp:
+            logger.warning(f"ShepherdIO.Init caught an exception ({xcp}) -> exit now")
             self._cleanup()
             raise
 
