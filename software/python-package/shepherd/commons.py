@@ -35,16 +35,16 @@ MSG_DEP_ERR_INVLDCMD = 0xE4
 MSG_DEP_ERR_NOFREEBUF = 0xE5
 
 GPIO_LOG_BIT_POSITIONS = """
-pru_reg     name            linux_pin
-r31_00      TARGET_GPIO0    P8_45
-r31_01      TARGET_GPIO1    P8_46
-r31_02      TARGET_SWD_CLK  P8_43
-r31_03      TARGET_SWD_IO   P8_44
-r31_04      TARGET_UART_TX  P8_41
-r31_05      TARGET_UART_RX  P8_42
-r31_06      TARGET_GPIO2    P8_39
-r31_07      TARGET_GPIO3    P8_40
-r31_08      TARGET_GPIO4    P8_27
-r30_09/out  TARGET_BAT_OK   P8_29
+pru_reg     name            BB_pin	sys_pin
+r31_00      TARGET_GPIO0    P8_45	P8_14, g0[14]
+r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27]
+r31_02      TARGET_GPIO2    P8_43	P8_16, g1[14]
+r31_03      TARGET_GPIO3    P8_44	P8_15, g1[15]
+r31_04      TARGET_GPIO4    P8_41	P8_26, g1[29]
+r31_05      TARGET_GPIO5    P8_42	P8_36, g2[16]
+r31_06      TARGET_GPIO6    P8_39	P8_34, g2[17]
+r31_07      TARGET_UART_RX  P8_40	P9_26, g0[14]
+r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15]
+r30_09/out  TARGET_BAT_OK   P8_29	-
 """
 # Note: this table is copied (for hdf5-reference) from pru1/main.c
