@@ -25,6 +25,7 @@ fabric = "*"
 pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
+schemdraw = "*"
 
 [pipenv]
 allow_prereleases = true
