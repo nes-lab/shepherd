@@ -422,12 +422,6 @@ class ShepherdDebug(ShepherdIO):
     def set_shepherd_pcb_power(self, state: bool) -> NoReturn:
         self._set_shepherd_pcb_power(state)
 
-    def set_power_recorder(self, state: bool) -> NoReturn:
-        self.set_power_state_recorder(state)
-
-    def set_power_emulator(self, state: bool) -> NoReturn:
-        self.set_power_state_emulator(state)
-
     def select_target_for_power_tracking(self, sel_a: bool) -> NoReturn:
         self.select_main_target_for_power(sel_a)
 

@@ -25,28 +25,30 @@ def main():
 
         with dpg.group(horizontal=True):
             dpg.add_input_text(tag="host_name",
-                           #tip="enter name or IP of host",
                            default_value="sheep0",
                            hint="", label="",
-                           width=120,
-                           )
+                           width=120)
+            with dpg.tooltip("host_name"):
+                dpg.add_text("enter name or IP of host")
 
             dpg.add_spacer(width=10)
             dpg.add_button(tag="button_disconnect",
                        label="Connect",
-                       #tip="Connect or Disconnects to Node",
                        width=150,
                        callback=connect_button_callback)
+            with dpg.tooltip("button_disconnect"):
+                dpg.add_text("Connect or Disconnects to Node")
 
             dpg.add_spacer(width=50)
             dpg.add_text(tag="text_section_refresh", default_value="Refresh Rate:")
             dpg.add_spacer(width=5)
             dpg.add_input_int(tag="refresh_value",
-                           #tip="set refresh rate of read-out",
                            default_value=round(1/refresh_interval),
                            label="",
                            width=120,
                            callback=refresh_rate_callback,)
+            with dpg.tooltip("refresh_value"):
+                dpg.add_text("set refresh rate of read-out")
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_routing", default_value="Routing")
@@ -62,17 +64,17 @@ def main():
             dpg.add_radio_button(tag="shepherd_state",
                              items=[*state_dict],
                              default_value=[*state_dict][1],
-                             callback=shepherd_state_callback, show=True,
-                             #tip="Sets PRU-Loops to idle or running"
-                            )
+                             callback=shepherd_state_callback, show=True)
+            with dpg.tooltip("shepherd_state"):
+                dpg.add_text("Sets PRU-Loops to idle or running")
             dpg.add_spacer(width=10)
             dpg.add_text(tag="text_section_routing_B", default_value="Target Power")
             dpg.add_radio_button(tag="target_pwr",
                              items=[*tgt_dict],
                              default_value=[*tgt_dict][0],
-                             callback=target_power_callback, show=True,
-                             #tip="Change is also triggering a shepherd state change / pru re-init / reset"
-                                 )
+                             callback=target_power_callback, show=True)
+            with dpg.tooltip("target_pwr"):
+                dpg.add_text("Change is also triggering a shepherd state change / pru re-init / reset")
             dpg.add_spacer(width=10)
             dpg.add_text(tag="text_section_routing_C", default_value="Target IO")
             dpg.add_radio_button(tag="target_io",
@@ -84,36 +86,36 @@ def main():
             dpg.add_radio_button(tag="io_lvl_converter",
                              items=[*able_dict],
                              default_value=[*able_dict][0],
-                             callback=io_level_converter_callback, show=True,
-                             #tip="pass through signals from beaglebone to targets"
-                                 )
+                             callback=io_level_converter_callback, show=True)
+            with dpg.tooltip("io_lvl_converter"):
+                dpg.add_text("pass through signals from beaglebone to targets")
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_sub", default_value="Control-Logic")
 
         with dpg.group(horizontal=True):
             dpg.add_checkbox(tag="gpio_nRes_REC_ADC",
-                         #tip="Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
                          label="Enable Rec-ADC",
                          default_value=True,
-                         callback=set_power_state_recoder,
-                         )
-
+                         callback=set_power_state_recoder)
+            with dpg.tooltip("gpio_nRes_REC_ADC"):
+                dpg.add_text("Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)")
             dpg.add_spacer(width=5)
+
             dpg.add_checkbox(tag="gpio_nRes_EMU_ADC",
-                         #tip="Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
                          label="Enable Emu-ADC",
                          default_value=True,
-                         callback=set_power_state_emulator,
-                         )
+                         callback=set_power_state_emulator)
+            with dpg.tooltip("gpio_nRes_EMU_ADC"):
+                dpg.add_text("Option to reset this ADC - it has to be configured afterwards (with PRU re-init)")
             dpg.add_spacer(width=15)
+
             dpg.add_button(tag="button_reinit_prus",
                        label="Re-Init PRUs",
-                       #tip="Applies newly received states and configures Cape-ICs",
                        width=130,
                        callback=reinitialize_prus)
-            #dpg.add_tooltip()
-
+            with dpg.tooltip("button_reinit_prus"):
+                dpg.add_text("Applies newly received states and configures Cape-ICs")
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_dac", default_value="DAC-Control")
@@ -129,7 +131,6 @@ def main():
                 dpg.add_spacer(width=10)
                 dpg.add_text(tag=f"textA_dac{iter}", default_value="Voltage:")
                 dpg.add_slider_int(tag=f"value_raw_dac{iter}",
-                               #tip="set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI",
                                label="raw",
                                width=400,
                                default_value=0,
@@ -138,6 +139,8 @@ def main():
                                clamped=True,
                                callback=dac_raw_callback,
                                user_data=iter)
+                with dpg.tooltip(f"value_raw_dac{iter}"):
+                    dpg.add_text("set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI")
                 dpg.add_spacer(width=10)
                 dpg.add_input_float(tag=f"value_mV_dac{iter}",
                                 min_value=0.0,
@@ -215,9 +218,10 @@ def main():
 
     # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing some pieces, or proper doc) -> also add back tooltips
     #dpg.set_render_callback(callback=window_refresh_callback)
-    #dpg.set_viewport_resize_callback(callback=window_refresh_callback)
+    dpg.set_viewport_resize_callback(callback=window_refresh_callback)
     #dpg.set_theme(theme="Gold")  # fav: Purple, Gold, Light
-    dpg.set_frame_callback(frame=0, callback=program_start_callback)
+    dpg.set_frame_callback(frame=1, callback=program_start_callback)
+    dpg.configure_item("refresh_value", enabled=False)
 
 
 if __name__ == '__main__':

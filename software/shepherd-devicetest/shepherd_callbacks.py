@@ -5,6 +5,7 @@ import dearpygui.dearpygui as dpg
 from past.builtins import execfile
 import time
 
+
 def include(filename):
     if os.path.exists(filename):
         execfile(filename)
@@ -20,6 +21,7 @@ def include(filename):
 
 refresh_interval = 0.25  # s
 refresh_next = 0
+
 
 def program_start_callback(sender, data) -> NoReturn:
     update_gui_elements()
@@ -174,13 +176,14 @@ def set_power_state_emulator(sender, en_state, user_data) -> NoReturn:
 
 def set_power_state_recoder(sender, en_state, user_data) -> NoReturn:
     global shepherd_io
-    shepherd_io.set_power_state_recoder(en_state)
+    shepherd_io.set_power_state_recorder(en_state)
 
 
 def reinitialize_prus(sender, element_data, user_data) -> NoReturn:
     global shepherd_io, shepherd_state
     shepherd_io.reinitialize_prus()
     shepherd_io.set_shepherd_state(shepherd_state)
+    print("reinitialized PRUs")
 
 #################################
 # DAC functionality
@@ -194,27 +197,27 @@ dac_channels = [  # combination of debug channel number, voltage_index, cal_comp
     [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
 
 
-def dac_en_callback(sender, en_state, iter) -> NoReturn:
+def dac_en_callback(sender, en_state, user_value) -> NoReturn:
     global shepherd_io, dac_channels
-    value = dpg.get_value(f"value_raw_dac{iter}") if en_state else 0
-    shepherd_io.dac_write(dac_channels[iter], value)
+    value = dpg.get_value(f"value_raw_dac{user_value}") if en_state else 0
+    shepherd_io.dac_write(dac_channels[user_value], value)
     update_gui_elements()
 
 
-def dac_raw_callback(sender, value_raw, iter) -> NoReturn:
+def dac_raw_callback(sender, value_raw, user_value) -> NoReturn:
     global shepherd_io, dac_channels
-    dac_cfg = dac_channels[iter]
+    dac_cfg = dac_channels[user_value]
     value_si = shepherd_io.convert_raw_to_value(dac_cfg[1], dac_cfg[2], value_raw)
     value_si = round(value_si * 10**3, 3)
-    dpg.set_value(f"value_mV_dac{iter[0]}", value_si)
+    dpg.set_value(f"value_mV_dac{user_value}", value_si)
     shepherd_io.dac_write(dac_cfg[0], value_raw)
 
 
-def dac_val_callback(sender, value_mV, iter) -> NoReturn:
+def dac_val_callback(sender, value_mV, user_value) -> NoReturn:
     global shepherd_io, dac_channels
-    dac_cfg = dac_channels[iter]
+    dac_cfg = dac_channels[user_value]
     value_raw = shepherd_io.convert_value_to_raw(dac_cfg[1], dac_cfg[2], value_mV / 1e3)
-    dpg.set_value(f"value_raw_dac{iter}", value_raw)
+    dpg.set_value(f"value_raw_dac{user_value}", value_raw)
     shepherd_io.dac_write(dac_cfg[0], value_raw)
 
 
