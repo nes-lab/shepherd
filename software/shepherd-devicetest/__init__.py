@@ -19,7 +19,7 @@ from shepherd_callbacks import *
 # - id= is now tag=
 
 
-def main():
+def assemble_window():
 
     with dpg.window(tag="main", label="Shepherd Testing and Debug Tool", width=1000, height=600):
 
@@ -140,7 +140,7 @@ def main():
                                callback=dac_raw_callback,
                                user_data=iter)
                 with dpg.tooltip(f"value_raw_dac{iter}"):
-                    dpg.add_text("set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI")
+                    dpg.add_text("set raw value for dac (ctrl+click for manual input)")
                 dpg.add_spacer(width=10)
                 dpg.add_input_float(tag=f"value_mV_dac{iter}",
                                 min_value=0.0,
@@ -216,11 +216,10 @@ def main():
                          callback=gpio_batok_callback,
                          )
 
-    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing some pieces, or proper doc) -> also add back tooltips
-    #dpg.set_render_callback(callback=window_refresh_callback)
-    dpg.set_viewport_resize_callback(callback=window_refresh_callback)
+    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing themes)
     #dpg.set_theme(theme="Gold")  # fav: Purple, Gold, Light
     dpg.set_frame_callback(frame=1, callback=program_start_callback)
+    dpg.set_frame_callback(frame=10, callback=window_refresh_callback)
     dpg.configure_item("refresh_value", enabled=False)
 
 
@@ -229,7 +228,7 @@ if __name__ == '__main__':
     dpg.create_viewport(title="Shepherd Testing and Debug Tool (VP)", width=1000, height=600)
     dpg.setup_dearpygui()
 
-    main()
+    assemble_window()
     dpg.set_primary_window("main", True)
 
     dpg.show_viewport()

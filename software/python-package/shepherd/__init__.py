@@ -452,6 +452,24 @@ class ShepherdDebug(ShepherdIO):
     def reinitialize_prus(self) -> NoReturn:
         super().reinitialize_prus()
 
+    def get_power_state_shepherd(self) -> bool:
+        return self.gpios["en_shepherd"].read()
+
+    def get_power_state_recorder(self) -> bool:
+        return self.gpios["en_recorder"].read()
+
+    def get_power_state_emulator(self) -> bool:
+        return self.gpios["en_emulator"].read()
+
+    def get_main_target_for_power(self) -> bool:
+        return self.gpios["target_pwr_sel"].read()
+
+    def get_main_target_for_io(self) -> bool:
+        return self.gpios["target_io_sel"].read()
+
+    def get_target_io_level_conv(self) -> bool:
+        return self.gpios["target_io_en"].read()
+
     @staticmethod
     def set_aux_target_voltage_raw(voltage_raw) -> NoReturn:
         sysfs_interface.write_dac_aux_voltage_raw(voltage_raw)
