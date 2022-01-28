@@ -166,7 +166,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             {
             case MSG_STATUS_RESTARTING_ROUTINE:
                 printk(KERN_INFO
-                "shprd.pru%u: (re)starting main-routine (val=%u)", had_work & 1u, pru_msg.value[0]);
+                "shprd.pru%u: (re)starting main-routine (util was %u/2000 ticks per loop max)", had_work & 1u, pru_msg.value[0]);
                 break;
             case MSG_ERROR:
                 printk(KERN_ERR
