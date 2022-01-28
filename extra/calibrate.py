@@ -25,6 +25,7 @@ import numpy as np
 import tempfile
 from fabric import Connection
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 import msgpack
 import msgpack_numpy
 import matplotlib.pyplot as plt
@@ -81,14 +82,14 @@ def measurements_to_calibration(measurements):
         for channel in ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]:
             calib_dict[component][channel] = dict()
             if "dac_voltage" in channel:
-                slope = 1.0 / dac_voltage_to_raw(1.0)
+                gain = 1.0 / dac_voltage_to_raw(1.0)
             elif "adc_current" in channel:
-                slope = 1.0 / adc_current_to_raw(1.0)
+                gain = 1.0 / adc_current_to_raw(1.0)
             elif "adc_voltage" in channel:
-                slope = 1.0 / adc_voltage_to_raw(1.0)
+                gain = 1.0 / adc_voltage_to_raw(1.0)
             else:
-                slope = 1.0
-            intercept = 0
+                gain = 1.0
+            offset = 0
             try:
                 sample_points = measurements[component][channel]
                 x = np.empty(len(sample_points))
@@ -98,15 +99,19 @@ def measurements_to_calibration(measurements):
                     y[i] = point["reference_si"]
                 WLS = LinearRegression()
                 WLS.fit(x.reshape(-1, 1), y.reshape(-1, 1), sample_weight=1.0 / x)
-                intercept = WLS.intercept_
-                slope = WLS.coef_[0]
+                offset = float(WLS.intercept_)
+                gain = float(WLS.coef_[0])
+                y2 = [gain * xvalue + offset for xvalue in x]
+                ev = r2_score(y, y2, multioutput="variance_weighted")
             except KeyError:
-                print(f"NOTE: data was not found -> replacing '{component} - {channel}' with default values (gain={slope})")
+                print(f"NOTE: data was not found -> replacing '{component} - {channel}' with default values (gain={gain})")
             except ValueError as e:
-                print(f"NOTE: data was faulty -> replacing '{component} - {channel}' with default values (gain={slope}) [{e}]")
+                print(f"NOTE: data was faulty -> replacing '{component} - {channel}' with default values (gain={gain}) [{e}]")
 
-            calib_dict[component][channel]["gain"] = float(slope)
-            calib_dict[component][channel]["offset"] = float(intercept)
+            if ev < 0.999:
+                print(f"WARNING: Calibration may be faulty -> R² regression score = {ev:.6f} is too low for {component}-{channel}")
+            calib_dict[component][channel]["gain"] = gain
+            calib_dict[component][channel]["offset"] = offset
     return calib_dict
 
 
