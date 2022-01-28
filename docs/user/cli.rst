@@ -28,7 +28,7 @@ To start recording harvesting data using the hardware MPPT algorithm and store i
 
 .. code-block:: bash
 
-    shepherd-herd -i hosts record -f --init-charge
+    shepherd-herd -i hosts harvestor -f --init-charge
 
 To stop recording on a subset of nodes (sheep1 and sheep3 in this example):
 
@@ -41,7 +41,8 @@ Also, instead of using the inventory file option, we specify hosts and ssh user 
 
 .. code-block:: bash
 
-    shepherd-herd -i sheep0,sheep1, -u jane record -d 30 --harvesting-voltage 0.6 -o rec_v_fixed.h5
+    shepherd-herd -i sheep0,sheep1, -u jane harvestor -d 30 --harvesting-voltage 0.6 -o rec_v_fixed.h5
+    TODO: old
 
 To retrieve the recordings from the shepherd nodes and store them locally on your machine under the `recordings/` directory:
 
@@ -67,7 +68,7 @@ Finally, to replay previously recorded data from the file `rec.h5` in the shephe
 
 .. code-block:: bash
 
-    shepherd-herd -i hosts emulate -o load.h5 rec.h5
+    shepherd-herd -i hosts emulator -o load.h5 rec.h5
 
 shepherd-sheep
 --------------

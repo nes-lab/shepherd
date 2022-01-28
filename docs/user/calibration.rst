@@ -3,7 +3,7 @@ Calibration
 
 Data recorded with shepherd are stored in the database as raw binary values, read from the ADC.
 In order to make sense of that data, we need to map the binary values to physical voltage and current values.
-Similarly, for emulation, we need to map phyiscal voltage and current values to binary values that can be fed to the DAC.
+Similarly, for emulation, we need to map physical voltage and current values to binary values that can be fed to the DAC.
 
 This mapping is assumed to be linear.
 For example, to convert a binary value :math:`v_{binary}` to its physical equivalent :math:`v_{physical}`:
@@ -13,7 +13,7 @@ For example, to convert a binary value :math:`v_{binary}` to its physical equiva
     v_{physical} = v_{binary} \cdot gain + offset
 
 
-There are three "channels" and two "variables": harvesting, load and emulation, each with voltage and current.
+There are two "channels" and two "variables": harvesting and emulation, each with voltage and current.
 Thus the complete set of calibration values consists of 12 values.
 When storing recorded data, these values are stored together with the binary data.
 

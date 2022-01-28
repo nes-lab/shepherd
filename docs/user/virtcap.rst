@@ -2,10 +2,10 @@
    :format: latex
 ..
 
-VirtCap
+VirtCap (TODO - Old)
 =======
 
-Emulation
+Emulator
 ---------
 
 In addition to regular emulation, shepherd provides VirtCap.
@@ -20,7 +20,7 @@ Example usage:
 
 .. code-block:: bash
 
-    sepherd-sheep emulate --config virtcap_settings.yml /var/shepherd/recordings/rec.0.h
+    sepherd-sheep emulator --config virtcap_settings.yml /var/shepherd/recordings/rec.0.h
 
 Settings
 --------
