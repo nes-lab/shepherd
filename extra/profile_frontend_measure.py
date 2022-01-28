@@ -53,7 +53,7 @@ def meas_emulator_setpoint(rpc_client, smu_channel, voltage_V, current_A):
     smu_channel.set_output(True)
 
     # write both dac-channels of emulator
-    rpc_client.set_aux_target_voltage_raw(convert_dac_voltage_to_raw(voltage_V), also_main=True)
+    rpc_client.set_aux_target_voltage_raw((2 ** 20) + convert_dac_voltage_to_raw(voltage_V), also_main=True)
     time.sleep(0.2)
     rpc_client.sample_from_pru(3)  # seems to solve some readout-errors at start
     meas_enc = rpc_client.sample_from_pru(10)
