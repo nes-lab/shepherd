@@ -27,6 +27,7 @@ from fabric import Connection
 from sklearn.linear_model import LinearRegression
 import msgpack
 import msgpack_numpy
+import matplotlib.pyplot as plt
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -107,6 +108,40 @@ def measurements_to_calibration(measurements):
             calib_dict[component][channel]["gain"] = float(slope)
             calib_dict[component][channel]["offset"] = float(intercept)
     return calib_dict
+
+
+def plot_calibration(measurements, calibration, file_name):
+    for component in ["harvester", "emulator"]:
+        for channel in ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]:
+            try:
+                sample_points = measurements[component][channel]
+                xp = np.empty(len(sample_points))
+                yp = np.empty(len(sample_points))
+                for i, point in enumerate(sample_points):
+                    xp[i] = point["shepherd_raw"]
+                    yp[i] = point["reference_si"]
+                gain = calibration[component][channel]["gain"]
+                offset = calibration[component][channel]["offset"]
+                xl = [xp[0], xp[-1]]
+                yl = [gain * xlp + offset for xlp in xl]
+            except KeyError:
+                print(f"NOTE: data was not found - will skip plot")
+            except ValueError as e:
+                print(f"NOTE: data was faulty - will skip plot [{e}]")
+
+            fig, ax = plt.subplots()
+            ax.plot(xl, yl, ":", linewidth=2, color='green')
+            ax.scatter(xp, yp, marker='*', color='k')
+            ax.set_xlabel(r'raw value', fontsize=10)
+            ax.set_ylabel(r'SI-Unit', fontsize=10)
+            ax.set_title(f'Calibration-Check for {component} - {channel}')
+            ax.grid(True)
+            fig.set_figwidth(11)
+            fig.set_figheight(10)
+            fig.tight_layout()
+            plt.savefig(Path(file_name).stem + f"_{component}_{channel}.png")
+            plt.close(fig)
+            plt.clf()
 
 
 def meas_harvester_adc_voltage(rpc_client, smu_channel):
@@ -348,12 +383,16 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
 @cli.command()
 @click.argument("infile", type=click.Path(exists=True))
 @click.option("--outfile", "-o", type=click.Path())
-def convert(infile, outfile):
+@click.option("--plot", "-p", is_flag=True, help="generate plots that contain calibration line and data points")
+def convert(infile, outfile, plot: bool):
     with open(infile, "r") as stream:
         in_data = yaml.safe_load(stream)
     measurement_dict = in_data["measurements"]
 
     calib_dict = measurements_to_calibration(measurement_dict)
+
+    if plot:
+        plot_calibration(measurement_dict, calib_dict, infile)
 
     out_dict = {"node": in_data["node"], "calibration": calib_dict}
     res_repr = yaml.dump(out_dict, default_flow_style=False)
