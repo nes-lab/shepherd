@@ -1,7 +1,7 @@
 ---
 node: serial number
 measurements:
-  harvesting:
+  harvestor:
     dac_voltage_a:
       - reference: 25000
         measured: 0.286103
@@ -22,7 +22,7 @@ measurements:
         measured: 131098
       - reference: 10e-3
         measured: 157235
-  emulation:
+  emulator:
     dac_voltage_a:
       - reference: 25000
         measured: 0.286103

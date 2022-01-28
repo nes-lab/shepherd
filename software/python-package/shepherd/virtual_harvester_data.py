@@ -127,7 +127,7 @@ class VirtualHarvesterData(object):
         self._check_num("voltage_max_mV", self.data["voltage_min_mV"], 5000, verbose=verbose)
         self._check_num("voltage_mV", self.data["voltage_min_mV"], self.data["voltage_max_mV"], verbose=verbose)
 
-        current_limit_uA = 10**6 * self._cal.convert_raw_to_value("harvesting", "adc_current", 4)
+        current_limit_uA = 10**6 * self._cal.convert_raw_to_value("harvester", "adc_current", 4)
         self._check_num("current_limit_uA", current_limit_uA, 50_000, verbose=verbose)
 
         v_dynamic_uV = 1000 * (self.data["voltage_max_mV"] - self.data["voltage_min_mV"])
@@ -197,9 +197,9 @@ class VirtualHarvesterData(object):
             int-list (2nd level for LUTs) that can be feed into sysFS
         """
         if self.for_emulation and self.data["algorithm_num"] <= algorithms["ivcurve"]:
-            raise ValueError(f"Select valid harvest-algorithm for emulation, current usage = {self._inheritance}")
+            raise ValueError(f"Select valid harvest-algorithm for emulator, current usage = {self._inheritance}")
         elif self.data["algorithm_num"] < algorithms["ivcurve"]:
-            raise ValueError(f"Select valid harvest-algorithm for harvesting, current usage = {self._inheritance}")
+            raise ValueError(f"Select valid harvest-algorithm for harvester, current usage = {self._inheritance}")
 
         return [
             int(self.data["algorithm_num"]),

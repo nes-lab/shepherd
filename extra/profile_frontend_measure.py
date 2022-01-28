@@ -29,7 +29,7 @@ adict = {"voltage_shp_V": 0,
          }
 
 INSTR_EMU = """
----------------------- Characterize Emulation-Frontend -----------------------
+---------------------- Characterize Emulator-Frontend -----------------------
 - remove targets from target-ports
 - Connect SMU channel A Lo to P10-1 (Target-A GND)
 - Connect SMU channel A Hi to P10-2 (Target-A Voltage)
@@ -53,12 +53,12 @@ def meas_emulator_setpoint(rpc_client, smu_channel, voltage_V, current_A):
     smu_channel.set_output(True)
 
     # write both dac-channels of emulator
-    rpc_client.set_aux_target_voltage_raw(2 ** 20 + convert_dac_voltage_to_raw(voltage_V))
+    rpc_client.set_aux_target_voltage_raw(convert_dac_voltage_to_raw(voltage_V), also_main=True)
     time.sleep(0.2)
-    rpc_client.sample_emu_cal(3)  # seems to solve some readout-errors at start
-    meas_enc = rpc_client.sample_emu_cal(10)
+    rpc_client.sample_from_pru(3)  # seems to solve some readout-errors at start
+    meas_enc = rpc_client.sample_from_pru(10)
     meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
-    adc_current_raw = float(np.mean(meas_rec))
+    adc_current_raw = float(np.mean(meas_rec[0]))
 
     # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
     smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=1.0)
@@ -90,20 +90,20 @@ def cli():
 @click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
 @click.option("--outfile", "-o", type=click.Path(), help="save file, if no filename is provided the hostname will be used")
 @click.option("--smu-ip", type=str, default="192.168.1.108")
-@click.option("--all", "all_", is_flag=True)
-@click.option("--harvesting", is_flag=True)
-@click.option("--emulation", is_flag=True)
-def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
+@click.option("--all", "all_", is_flag=True, help="handle both, harvester and emulator")
+@click.option("--harvester", is_flag=True, help="handle only harvester")
+@click.option("--emulator", is_flag=True, help="handle only emulator")
+def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
 
     if all_:
-        if harvesting or emulation:
+        if harvester or emulator:
             raise click.UsageError("Either provide --all or individual flags")
 
-        harvesting = True
-        emulation = True
-    if not any([all_, harvesting, emulation]):
-        harvesting = True
-        emulation = True
+        harvester = True
+        emulator = True
+    if not any([all_, harvester, emulator]):
+        harvester = True
+        emulator = True
 
     if password is not None:
         fabric_args = {"password": password}
@@ -113,7 +113,7 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
     rpc_client = zerorpc.Client(timeout=60, heartbeat=20)
     measurement_dict = dict()
 
-    if harvesting:
+    if harvester:
         raise click.UsageError("Currently not implemented")
 
     with SMU.ethernet_device(smu_ip) as smu, Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
@@ -122,20 +122,20 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
         #time.sleep(4)
         rpc_client.connect(f"tcp://{ host }:4242")
 
-        if emulation:
+        if emulator:
             click.echo(INSTR_EMU)
             usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
-                measurement_dict["emulation"] = {
+                measurement_dict["emulator"] = {
                     "dac_voltage_a": list(),
                     "dac_voltage_b": list(),
                     "adc_current": list(),
                     "adc_voltage": list(),  # not existing currently
                 }
 
-                mode_old = rpc_client.switch_shepherd_mode("emulation_cal")
+                mode_old = rpc_client.switch_shepherd_mode("emu_adc_read")
 
-                print(f"Measurement - Emulation - Current - ADC Channel A - Target A")
+                print(f"Measurement - Emulator - Current - ADC Channel A - Target A")
                 voltages_V = [0.0, 0.05, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]
                 currents_A = [0e-3, 1e-6, 5e-6, 10e-6, 50e-6, 100e-6, 500e-6,
                               1e-3, 5e-3, 10e-3, 15e-3, 20e-3, 25e-3,
@@ -151,8 +151,7 @@ def measure(host, user, password, outfile, smu_ip, all_, harvesting, emulation):
                     results_a[4][index] = cdata
                     results_a[5][index] = c_set
 
-
-                print(f"Measurement - Emulation - Current - ADC Channel A - Target B")
+                print(f"Measurement - Emulator - Current - ADC Channel A - Target B")
                 voltages_V = np.linspace(0.0, 4.5, 46)
                 currents_A = [20e-3]
                 rpc_client.select_target_for_power_tracking(False) # targetB-Port will get the monitored dac-channel-b

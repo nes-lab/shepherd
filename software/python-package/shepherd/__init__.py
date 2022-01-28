@@ -3,7 +3,7 @@
 """
 shepherd.__init__
 ~~~~~
-Provides main API functionality for recording and emulation with shepherd.
+Provides main API functionality for harvesting and emulating with shepherd.
 
 
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
@@ -63,13 +63,13 @@ class Recorder(ShepherdIO):
     with kernel module and PRUs.
 
     Args:
-        shepherd_mode (str): Should be 'harvesting' to record harvesting data
+        shepherd_mode (str): Should be 'harvester' to record harvesting data
         harvester: name, path or object to a virtual harvester setting
         # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
     """
 
     def __init__(self,
-                 shepherd_mode: str = "harvesting",
+                 shepherd_mode: str = "harvester",
                  harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
                  calibration: CalibrationData = None,
                  ):
@@ -122,7 +122,7 @@ class Emulator(ShepherdIO):
         initial_buffers: recorded data  # TODO: initial_ is not the best name, is this a yield/generator?
         calibration_recording (CalibrationData): Shepherd calibration data
             belonging to the IV data that is being emulated
-        calibration_emulation (CalibrationData): Shepherd calibration data
+        calibration_emulator (CalibrationData): Shepherd calibration data
             belonging to the cape used for emulation
         set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
         sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
@@ -132,10 +132,10 @@ class Emulator(ShepherdIO):
     """
 
     def __init__(self,
-                 shepherd_mode: str = "emulation",
+                 shepherd_mode: str = "emulator",
                  initial_buffers: list = None,
                  calibration_recording: CalibrationData = None,  # TODO: make clearer that this is "THE RECORDING"
-                 calibration_emulation: CalibrationData = None,
+                 calibration_emulator: CalibrationData = None,
                  set_target_io_lvl_conv: bool = False,
                  sel_target_for_io: bool = True,
                  sel_target_for_pwr: bool = True,
@@ -149,14 +149,14 @@ class Emulator(ShepherdIO):
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
 
-        if calibration_emulation is None:
-            calibration_emulation = CalibrationData.from_default()
-            logger.warning("No emulation calibration data provided - using defaults")
+        if calibration_emulator is None:
+            calibration_emulator = CalibrationData.from_default()
+            logger.warning("No calibration data for emulator provided - using defaults")
         if calibration_recording is None:
             calibration_recording = CalibrationData.from_default()
-            logger.warning("No recording calibration data provided - using defaults")
+            logger.warning("No calibration data harvester provided - using defaults")
 
-        self.calibration = calibration_emulation
+        self.calibration = calibration_emulator
         self.samplerate_sps = 10 ** 9 * sysfs_interface.get_samples_per_buffer() // sysfs_interface.get_buffer_period_ns()
         self.converter = VirtualSourceData(virtsource,
                                            self.samplerate_sps,
@@ -171,10 +171,10 @@ class Emulator(ShepherdIO):
         self._sel_target_for_pwr = sel_target_for_pwr
         self._aux_target_voltage = aux_target_voltage
 
-        self._v_gain = 1e6 * calibration_recording["harvesting"]["adc_voltage"]["gain"]
-        self._v_offset = 1e6 * calibration_recording["harvesting"]["adc_voltage"]["offset"]
-        self._i_gain = 1e9 * calibration_recording["harvesting"]["adc_current"]["gain"]
-        self._i_offset = 1e9 * calibration_recording["harvesting"]["adc_current"]["offset"]
+        self._v_gain = 1e6 * calibration_recording["harvester"]["adc_voltage"]["gain"]
+        self._v_offset = 1e6 * calibration_recording["harvester"]["adc_voltage"]["offset"]
+        self._i_gain = 1e9 * calibration_recording["harvester"]["adc_current"]["gain"]
+        self._i_offset = 1e9 * calibration_recording["harvester"]["adc_current"]["offset"]
 
     def __enter__(self):
         super().__enter__()
@@ -305,7 +305,7 @@ class ShepherdDebug(ShepherdIO):
         """Writes value to specified DAC channel, DAC8562
 
         Args:
-            channels: 4 lower bits of int-num control b0: harvest-ch-a, b1: harv-ch-b, b2: emulation-ch-a, b3: emu-ch-b
+            channels: 4 lower bits of int-num control b0: harvester-ch-a, b1: hrv-ch-b, b2: emulator-ch-a, b3: emu-ch-b
             value (int): 16 bit raw DAC value to be sent to corresponding channel
         """
         channels = (int(channels) & ((1 << 4) - 1)) << 20
@@ -390,11 +390,11 @@ class ShepherdDebug(ShepherdIO):
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
     def iterate(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
         self.vsource_calc_inp_power(V_in_uV, A_in_nA)
-        A_out_raw = self._cal.convert_value_to_raw("emulation", "adc_current", A_out_nA * 10**-9)
+        A_out_raw = self._cal.convert_value_to_raw("emulator", "adc_current", A_out_nA * 10**-9)
         self.vsource_calc_out_power(A_out_raw)
         self.vsource_update_cap_storage()
         V_out_raw = self.vsource_update_states_and_output()
-        V_out_uV = int(self._cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10**6)
+        V_out_uV = int(self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw) * 10**6)
         self.P_in_fW += V_in_uV * A_in_nA
         self.P_out_fW += V_out_uV * A_out_nA
         return V_out_uV
@@ -471,8 +471,8 @@ class ShepherdDebug(ShepherdIO):
         return self.gpios["target_io_en"].read()
 
     @staticmethod
-    def set_aux_target_voltage_raw(voltage_raw) -> NoReturn:
-        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw)
+    def set_aux_target_voltage_raw(voltage_raw, also_main: bool = False) -> NoReturn:
+        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw | (int(also_main) << 20))
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()
@@ -482,23 +482,25 @@ class ShepherdDebug(ShepherdIO):
             super().start(wait_blocking=True)
         return mode_old
 
-    def sample_emu_cal(self, length_n_buffers: int = 10):
+    def sample_from_pru(self, length_n_buffers: int = 10):
         length_n_buffers = int(min(max(length_n_buffers, 1), 60))
-
         super().reinitialize_prus()
         time.sleep(0.1)
-        for i in range(length_n_buffers+2):  # Fill FIFO
+        for _i in range(length_n_buffers+2):  # Fill FIFO
             time.sleep(0.02)
-            super()._return_buffer(i)
+            super()._return_buffer(_i)
         time.sleep(0.1)
 
-        base_array = numpy.empty([0], dtype="=u4")
+        c_array = numpy.empty([0], dtype="=u4")
+        v_array = numpy.empty([0], dtype="=u4")
         super().start(wait_blocking=True)
         time.sleep(0.1)
-        for i in range(length_n_buffers):  # get Data
-            idx, emu_buf = super().get_buffer()
-            base_array = numpy.hstack((base_array, emu_buf.current))
+        for _ in range(length_n_buffers):  # get Data
+            idx, _buf = super().get_buffer()
+            c_array = numpy.hstack((c_array, _buf.current))
+            v_array = numpy.hstack((v_array, _buf.voltage))
         super().reinitialize_prus()
+        base_array = numpy.vstack((c_array, v_array))
         return msgpack.packb(base_array, default=msgpack_numpy.encode)  # zeroRPC / msgpack can not handle numpy-data without this
 
 
@@ -517,7 +519,7 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
             return CalibrationData.from_default()
 
 
-def record(
+def run_recorder(
     output_path: Path,
     duration: float = None,
     harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
@@ -541,7 +543,7 @@ def record(
         warn_only (bool): Set true to continue recording after recoverable
             error
     """
-    mode = "harvesting"
+    mode = "harvester"
     cal_data = retrieve_calibration(use_cal_default)
 
     if start_time is None:
@@ -619,7 +621,7 @@ def record(
             recorder.return_buffer(idx, verbose=verbose)
 
 
-def emulate(
+def run_emulator(
         input_path: Path,
         output_path: Path = None,
         duration: float = None,
@@ -638,7 +640,7 @@ def emulate(
         skip_log_current: bool = False,
         skip_log_gpio: bool = False,
 ):
-    """ Starts emulation.
+    """ Starts emulator.
 
     Args:
         :param input_path: [Path] of hdf5 file containing recorded harvesting data
@@ -664,7 +666,7 @@ def emulate(
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
     """
-    mode = "emulation"
+    mode = "emulator"
     cal = retrieve_calibration(use_cal_default)
 
     if start_time is None:
@@ -710,7 +712,7 @@ def emulate(
     if isinstance(input_path, str):
         input_path = Path(input_path)
     if input_path is None:
-        raise ValueError("No Input-File configured for emulation")
+        raise ValueError("No Input-File configured for emulator")
     if not input_path.exists():
         raise ValueError(f"Input-File does not exist ({input_path})")
 
@@ -727,10 +729,10 @@ def emulate(
         fifo_buffer_size = sysfs_interface.get_n_buffers()
 
         emu = Emulator(
-            shepherd_mode=mode,
+            shepherd_mode=mode,  # TODO: this should not be needed anymore
             initial_buffers=log_reader.read_buffers(end=fifo_buffer_size, verbose=verbose),
             calibration_recording=log_reader.get_calibration_data(),
-            calibration_emulation=cal,
+            calibration_emulator=cal,
             set_target_io_lvl_conv=set_target_io_lvl_conv,
             sel_target_for_io=sel_target_for_io,
             sel_target_for_pwr=sel_target_for_pwr,

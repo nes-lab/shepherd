@@ -91,19 +91,19 @@ def cli(infile, outfile, sampling_rate):
                 ds_factor,
                 block_len=100000,
             )
-        for i in range(len(data_downsampled["time"])):
-            timestamp = datetime.utcfromtimestamp(data_downsampled["time"][i])
+        for _i, _val in enumerate(data_downsampled["time"]):
+            timestamp = datetime.utcfromtimestamp(_val)
             csv_file.write(timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f"))
             # Format and write to the csv file
             for var in ["voltage", "current"]:
-                value = data_downsampled[var][i]
+                value = data_downsampled[var][_i]
                 # Write the value to csv
                 csv_file.write(f",{value}")
             # Done with this block - terminate line with \n
             csv_file.write("\n")
-            if i % 1000 == 0:
+            if _i % 1000 == 0:
                 click.echo(
-                    f"written {100 * float(i)/len(data_downsampled['time']):.2f}%"
+                    f"written {100 * float(_i)/len(data_downsampled['time']):.2f}%"
                 )
 
 

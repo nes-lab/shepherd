@@ -1,5 +1,5 @@
 [Unit]
-Description=Recording/Emulation with SHEPHERD
+Description=Harvest/Emulation with SHEPHERD
 
 [Service]
 ExecStart=/usr/bin/shepherd-sheep -vv run --config /etc/shepherd/config.yml

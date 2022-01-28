@@ -44,7 +44,7 @@ def data_h5(tmp_path):
 def test_cli_harvest(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
-        cli, ["-vvv", "harvest", "-f", "-d", "10", "-o", str(store)]
+        cli, ["-vvv", "harvester", "-f", "-d", "10", "-o", str(store)]
     )
     assert res.exit_code == 0
     assert store.exists()
@@ -56,7 +56,7 @@ def test_cli_harvest_no_cal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli, ["-vvv",
-              "harvest",
+              "harvester",
               "-d", "10",
               "--force_overwrite",
               "--use_cal_default",
@@ -74,7 +74,7 @@ def test_cli_harvest_parameters_long(shepherd_up, cli_runner, tmp_path):
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli, ["-vvv",
-              "harvest",
+              "harvester",
               "--duration", "10",
               "--start_time", f"{start_time}",
               "--force_overwrite",
@@ -94,7 +94,7 @@ def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path):
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli, ["-vvv",
-              "harvest",
+              "harvester",
               "-d", "10",
               "-s", f"{start_time}",
               "-f",
@@ -112,7 +112,7 @@ def test_cli_harvest_parameters_minimal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli, [
-              "harvest",
+              "harvester",
               "-f",
               "-d", "10",
               "-o", str(store)]
@@ -126,7 +126,7 @@ def test_cli_harvest_parameters_minimal(shepherd_up, cli_runner, tmp_path):
 @pytest.mark.timeout(60)
 def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path):
     here = Path(__file__).absolute().parent
-    file_path = here / "example_config_harvest.yml"
+    file_path = here / "example_config_harvester.yml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
 
@@ -135,7 +135,7 @@ def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path):
 @pytest.mark.timeout(60)
 def test_cli_harvest_preconf_metapackage(shepherd_up, cli_runner, tmp_path):
     here = Path(__file__).absolute().parent
-    file_path = here.parent.parent / "meta-package/example_config_harvest.yml"
+    file_path = here.parent.parent / "meta-package/example_config_harvester.yml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
 
@@ -148,7 +148,7 @@ def test_cli_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "-d", "10",
             "--force_overwrite",
             "-o", str(store),
@@ -164,13 +164,13 @@ def test_cli_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
 @pytest.mark.timeout(60)
 def test_cli_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, data_h5):
     here = Path(__file__).absolute().parent
-    file_path = here / "example_virtsource_settings.yml"
+    file_path = here / "example_config_virtsource.yml"
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "-d", "10",
             "--force_overwrite",
             "--virtsource", str(file_path),
@@ -191,7 +191,7 @@ def test_cli_emulate_with_bq25570(shepherd_up, cli_runner, tmp_path, data_h5):
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "-d", "10",
             "--force_overwrite",
             "--virtsource", "BQ25570",
@@ -210,13 +210,13 @@ def test_cli_virtsource_emulate_wrong_option(
     shepherd_up, cli_runner, tmp_path, data_h5
 ):
     here = Path(__file__).absolute().parent
-    file_path = here / "example_virtsource_settings.yml"
+    file_path = here / "example_config_virtsource.yml"
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "-d", "10",
             "--virtWrong", str(file_path),
             "-o", str(store),
@@ -234,7 +234,7 @@ def test_cli_emulate_aux_voltage(shepherd_up, cli_runner, tmp_path, data_h5):
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "-d", "10",
             "--aux_voltage", "2.5",
             "-o", str(store),
@@ -249,13 +249,13 @@ def test_cli_emulate_aux_voltage(shepherd_up, cli_runner, tmp_path, data_h5):
 def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
     store = tmp_path / "out.h5"
     here = Path(__file__).absolute().parent
-    file_path = here / "example_virtsource_settings.yml"
+    file_path = here / "example_config_virtsource.yml"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "--duration", "10",
             "--start_time", str(start_time),
             "--aux_voltage", "2.5",
@@ -287,7 +287,7 @@ def test_cli_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5
         cli,
         [
             "-vvv",
-            "emulate",
+            "emulator",
             "-d", "10",
             "-s", str(start_time),
             "--aux_voltage", "2.5",
@@ -310,7 +310,7 @@ def test_cli_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_
     res = cli_runner.invoke(
         cli,
         [
-            "emulate",
+            "emulator",
             "-o", str(store),
             str(data_h5),
         ],
@@ -322,7 +322,7 @@ def test_cli_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_
 @pytest.mark.timeout(60)
 def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path):
     here = Path(__file__).absolute().parent
-    file_path = here / "example_config_emulation.yml"
+    file_path = here / "example_config_emulator.yml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
     assert res.exit_code == 0
 
@@ -331,7 +331,7 @@ def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path):
 @pytest.mark.timeout(60)
 def test_cli_emulate_preconf_metapackage(shepherd_up, cli_runner, tmp_path):
     here = Path(__file__).absolute().parent
-    file_path = here.parent.parent / "meta-package/example_config_emulation.yml"
+    file_path = here.parent.parent / "meta-package/example_config_emulator.yml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
     assert res.exit_code == 0
 
@@ -343,7 +343,7 @@ def test_cli_emulate_aux_voltage_fail(shepherd_up, cli_runner, tmp_path, data_h5
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv", "emulate",
+            "-vvv", "emulator",
             "-d", "10",
             "--aux_voltage", "5.5",
             "-o", str(store),

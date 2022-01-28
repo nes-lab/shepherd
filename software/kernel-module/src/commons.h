@@ -59,9 +59,10 @@ enum MsgType {
 enum MsgID { MSG_TO_KERNEL = 0x55, MSG_TO_PRU = 0xAA };
 
 enum ShepherdMode {
-	MODE_HARVEST,
-	MODE_EMULATE,
-	MODE_EMULATE_CAL,
+	MODE_HARVESTER,
+	MODE_HRV_ADC_READ,
+	MODE_EMULATOR,
+	MODE_EMU_ADC_READ,
 	MODE_DEBUG,
 	MODE_NONE
 };
@@ -108,7 +109,7 @@ struct CalibrationConfig {
 #define LUT_SIZE	(12)
 
 /* This structure defines all settings of virtual converter emulation
- * more complex regulators use vars in their section and above
+ * more complex converters use vars in their section and above
  * NOTE: sys-FS-FNs currently uses 4 byte steps for transfer, so struct must be (size)mod4=0
  * Container-sizes with SI-Units:
  * 	_nF-u32 = ~ 4.294 F
@@ -211,7 +212,7 @@ extern void __iomem *pru_shared_mem_io;
 
 struct SharedMem {
 	uint32_t shepherd_state;
-	/* Stores the mode, e.g. harvesting or emulation */
+	/* Stores the mode, e.g. harvester or emulator */
 	uint32_t shepherd_mode;
 	/* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
 	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */

@@ -1,6 +1,6 @@
 node: serial number
 calibration:
-  emulation:
+  emulator:
     adc_current:
       gain: 2.2290226933177123e-07
       offset: -0.002648948171518746
@@ -13,7 +13,7 @@ calibration:
     dac_voltage_b:
       gain: 7.622474675134939e-05
       offset: 0.001192688694989008
-  harvesting:
+  harvester:
     dac_voltage_a:
       gain: 87380.98224767964
       offset: 0.038835992134409025

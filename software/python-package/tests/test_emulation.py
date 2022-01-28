@@ -11,7 +11,7 @@ from shepherd import ShepherdDebug
 from shepherd import LogWriter
 from shepherd import LogReader
 from shepherd import Emulator
-from shepherd import emulate
+from shepherd import run_emulator
 from shepherd import sysfs_interface
 from shepherd import CalibrationData
 from shepherd import ShepherdIOException
@@ -24,7 +24,7 @@ def random_data(length):
 @pytest.fixture
 def virtsource_settings_yml():
     here = Path(__file__).absolute()
-    name = "example_virtsource_settings.yml"
+    name = "example_config_virtsource.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         full_config = yaml.safe_load(config_data)
@@ -48,7 +48,7 @@ def log_writer(tmp_path):
     with LogWriter(
         force_overwrite=True,
         store_path=tmp_path / "test.h5",
-        mode="emulation",
+        mode="emulator",
         calibration_data=cal,
     ) as lw:
         yield lw
@@ -66,7 +66,7 @@ def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
     fifo_buffer_size = sysfs_interface.get_n_buffers()
     emu = Emulator(
         calibration_recording=log_reader.get_calibration_data(),
-        calibration_emulation=CalibrationData.from_default(),
+        calibration_emulator=CalibrationData.from_default(),
         initial_buffers=log_reader.read_buffers(end=fifo_buffer_size),
         virtsource=vs_settings,
     )
@@ -98,7 +98,7 @@ def test_emulation(log_writer, log_reader, emulator):
 def test_emulate_fn(tmp_path, data_h5, shepherd_up):
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
-    emulate(
+    run_emulator(
         input_path=data_h5,
         output_path=output,
         duration=None,
@@ -128,10 +128,10 @@ def test_target_pins(shepherd_up):
     shepherd_io.select_main_target_for_power(sel_target_a=True)
 
     dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
-        [1, "harvesting", "dac_voltage_a", "Harvester VSimBuf"],
-        [2, "harvesting", "dac_voltage_b", "Harvester VMatching"],
-        [4, "emulation", "dac_voltage_a", "Emulator Rail A"],
-        [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
+        [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
+        [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
+        [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
+        [8, "emulator", "dac_voltage_b", "Emulator Rail B"], ]
 
     gpio_channels = [0, 1, 2, 3, 4, 7, 8]  # 5&6 are UART, can only be used when free, 7&8 are SWD
     pru_responses = [0, 1, 6, 7, 8, 2, 3]  # corresponding to r31_num (and later 2^num)

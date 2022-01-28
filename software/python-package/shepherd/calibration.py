@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__)
 
 # gain and offset will be normalized to SI-Units, most likely V, A
 # -> general formula is:    si-value = raw_value * gain + offset
-# TODO: emulation has no ADC_voltage
-cal_component_list = ["harvesting", "emulation"]
+# TODO: emulator has no ADC_voltage, but uses this slot to store cal-data for target-port B
+cal_component_list = ["harvester", "emulator"]
 cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
 # functions from cal-default.py to convert the channels in cal_channel_list
 cal_channel_fn_list = ["dac_ch_a_voltage_to_raw", "dac_ch_b_voltage_to_raw", "adc_current_to_raw", "adc_voltage_to_raw"]
 # translator-dicts for datalog
-cal_channel_harvest_dict = {"voltage": "adc_voltage", "current": "adc_current"}
-cal_channel_emulation_dict = {"voltage": "dac_voltage_b", "current": "adc_current"}
+cal_channel_hrv_dict = {"voltage": "adc_voltage", "current": "adc_current"}
+cal_channel_emu_dict = {"voltage": "dac_voltage_b", "current": "adc_current"}
 cal_parameter_list = ["gain", "offset"]
 
 

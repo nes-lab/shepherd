@@ -26,8 +26,10 @@ class SysfsInterfaceException(Exception):
     pass
 
 
+# dedicated sampling modes
+# - _adc_read - modes are used per rpc (currently to calibrate the hardware)
 # TODO: what is with "None"?
-shepherd_modes = ["harvesting", "emulation", "emulation_cal", "debug"]
+shepherd_modes = ["harvester", "hrv_adc_read", "emulator", "emu_adc_read", "debug"]
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
@@ -104,7 +106,7 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
     attribute.
 
-    :param mode: (str) Target mode. Must be one of harvesting, emulation or debug
+    :param mode: (str) Target mode. Must be one of harvester, emulator or debug
     :param force:
     """
     if mode not in shepherd_modes:
@@ -149,7 +151,7 @@ def write_dac_aux_voltage(calibration_settings: Union[CalibrationData, None], vo
     if calibration_settings is None:
         output = calibration_default.dac_ch_b_voltage_to_raw(voltage)
     else:
-        output = calibration_settings.convert_value_to_raw("emulation", "dac_voltage_b", voltage)
+        output = calibration_settings.convert_value_to_raw("emulator", "dac_voltage_b", voltage)
 
     logger.debug(f"Set voltage of supply for auxiliary Target to {voltage} V (raw={output})")
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
@@ -163,7 +165,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
         voltage_raw: desired voltage as raw int for DAC
     """
     if voltage_raw >= (2**16):
-        logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value -> this will link both channels")
+        logger.info(f"DAC: sending raw-voltage above possible limit of 16bit-value -> this might trigger commands")
     with open(sysfs_path/"dac_auxiliary_voltage_raw", "w") as f:
         logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
         f.write(str(voltage_raw))
@@ -182,7 +184,7 @@ def read_dac_aux_voltage(cal_settings: CalibrationData) -> float:
     if cal_settings is None:
         voltage = calibration_default.dac_ch_a_raw_to_voltage(value_raw)
     else:
-        voltage = cal_settings.convert_raw_to_value("emulation", "dac_voltage_b", value_raw)
+        voltage = cal_settings.convert_raw_to_value("emulator", "dac_voltage_b", value_raw)
     return voltage
 
 
@@ -237,7 +239,7 @@ def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble
 def write_virtual_converter_settings(settings: list) -> NoReturn:
     """Sends the virtual-converter settings to the PRU core.
 
-    The pru-algorithm uses these settings to configure emulation.
+    The pru-algorithm uses these settings to configure emulator.
 
     """
     logger.debug(f"Writing virtual converter to sysfs_interface, first value is {settings[0]}")
@@ -261,7 +263,7 @@ def write_virtual_converter_settings(settings: list) -> NoReturn:
 def read_virtual_converter_settings() -> list:
     """Retrieve the virtual-converter settings from the PRU core.
 
-    The pru-algorithm uses these settings to configure emulation.
+    The pru-algorithm uses these settings to configure emulator.
 
     """
     with open(sysfs_path/"virtual_converter_settings", "r") as f:
@@ -273,7 +275,7 @@ def read_virtual_converter_settings() -> list:
 def write_virtual_harvester_settings(settings: list) -> NoReturn:
     """Sends the settings to the PRU core.
 
-    The pru-algorithm uses these settings to configure emulation.
+    The pru-algorithm uses these settings to configure emulator.
 
     """
     logger.debug(f"Writing virtual harvester to sysfs_interface, first value is {settings[0]}")
@@ -292,7 +294,7 @@ def write_virtual_harvester_settings(settings: list) -> NoReturn:
 def read_virtual_harvester_settings() -> list:
     """Retrieve the settings from the PRU core.
 
-    The  pru-algorithm uses these settings to configure emulation.
+    The  pru-algorithm uses these settings to configure emulator.
 
     """
     with open(sysfs_path/"virtual_harvester_settings", "r") as f:
@@ -351,10 +353,10 @@ def write_programmer_ctrl(protocol: str, datarate: int,
     for parameter in parameters[1:]:
         if (parameter < 0) or (parameter >= 2**32):
             raise SysfsInterfaceException(f"at least one parameter out of u32-bounds, value={parameter}")
-    for iter, attribute in enumerate(prog_attribs):
+    for _iter, attribute in enumerate(prog_attribs):
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug(f"[sysfs] set programmer/{attribute} = '{parameters[iter]}'")
-            file.write(str(parameters[iter]))
+            logger.debug(f"[sysfs] set programmer/{attribute} = '{parameters[_iter]}'")
+            file.write(str(parameters[_iter]))
 
 
 def read_programmer_ctrl() -> list:

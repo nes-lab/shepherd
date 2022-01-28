@@ -33,7 +33,7 @@ class VirtualSourceData(object):
     - internal settings are derived from existing values (PRU has no FPU, so it is done here)
     - settings can be exported in required format
     - NOTES to naming:
-        - virtual harvester -> used for recording and emulation, contains tools to characterize (ivcurve) and harvest these energy-sources (mppt)
+        - virtual harvester -> used for harvester and emulator, contains tools to characterize (ivcurve) and harvest these energy-sources (mppt)
         - virtual converter -> buck-boost, diode and other converters to supply the target
         - virtual source -> container for harvester + converter
     """
@@ -201,7 +201,7 @@ class VirtualSourceData(object):
         if not (isinstance(dV_output_imed_low_mV, (int, float)) and (dV_output_imed_low_mV >= 0)):
             dV_output_imed_low_mV = 0
 
-        # decide which hysteresis-thresholds to use for buck-regulator
+        # decide which hysteresis-thresholds to use for buck-converter
         if self.data["enable_buck"] > 0:
             V_pre_output_mV = self.data["V_output_mV"] + self.data["V_buck_drop_mV"]
 

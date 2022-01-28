@@ -69,16 +69,16 @@ def update_gui_elements() -> NoReturn:
     dpg.configure_item("gpio_nRes_EMU_ADC", enabled=host_state)
     dpg.configure_item("button_reinit_prus", enabled=host_state)
     # TODO: more items
-    for iter in range(len(dac_channels)):
-        dac_state = dpg.get_value(f"en_dac{iter}") and host_state
-        dpg.configure_item(f"en_dac{iter}", enabled=host_state)
-        #dpg.configure_item(f"textA_dac{iter}", enabled=dac_state)  #
-        #dpg.configure_item(f"textB_dac{iter}", enabled=dac_state)
-        dpg.configure_item(f"value_raw_dac{iter}", enabled=dac_state)
-        dpg.configure_item(f"value_mV_dac{iter}", enabled=dac_state)
-    for iter in range(len(adc_channels)):
-        dpg.configure_item(f"value_raw_adc{iter}", enabled=host_state)
-        dpg.configure_item(f"value_mSI_adc{iter}", enabled=host_state)
+    for _iter, _ in enumerate(dac_channels):
+        dac_state = dpg.get_value(f"en_dac{_iter}") and host_state
+        dpg.configure_item(f"en_dac{_iter}", enabled=host_state)
+        #dpg.configure_item(f"textA_dac{_iter}", enabled=dac_state)  #
+        #dpg.configure_item(f"textB_dac{_iter}", enabled=dac_state)
+        dpg.configure_item(f"value_raw_dac{_iter}", enabled=dac_state)
+        dpg.configure_item(f"value_mV_dac{_iter}", enabled=dac_state)
+    for _iter, _ in enumerate(adc_channels):
+        dpg.configure_item(f"value_raw_adc{_iter}", enabled=host_state)
+        dpg.configure_item(f"value_mSI_adc{_iter}", enabled=host_state)
     dpg.configure_item("gpio_input", enabled=host_state)
     dpg.configure_item("gpio_BAT_OK", enabled=host_state)
     dpg.configure_item("gpio_output", enabled=host_state)
@@ -243,10 +243,10 @@ def reinitialize_prus(sender, element_data, user_data) -> NoReturn:
 
 
 dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
-    [1, "harvesting", "dac_voltage_a", "Harvester VSimBuf"],
-    [2, "harvesting", "dac_voltage_b", "Harvester VMatching"],
-    [4, "emulation", "dac_voltage_a", "Emulator Rail A"],
-    [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
+    [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
+    [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
+    [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
+    [8, "emulator", "dac_voltage_b", "Emulator Rail B"], ]
 
 
 def dac_en_callback(sender, en_state, user_value) -> NoReturn:
@@ -278,20 +278,20 @@ def dac_val_callback(sender, value_mV, user_value) -> NoReturn:
 #################################
 
 adc_channels = [  # combination of debug channel name, cal_component, cal_channel
-    ("hrv_i_in", "harvesting", "adc_current", "Harvester I_in [mA]"),
-    ("hrv_v_in", "harvesting", "adc_voltage", "Harvester V_in [mV]"),
-    ("emu_i_out", "emulation", "adc_current", "Emulator I_out [mA]"), ]
+    ("hrv_i_in", "harvester", "adc_current", "Harvester I_in [mA]"),
+    ("hrv_v_in", "harvester", "adc_voltage", "Harvester V_in [mV]"),
+    ("emu_i_out", "emulator", "adc_current", "Emulator I_out [mA]"), ]
 
 
 def adc_refresh() -> NoReturn:
     global shepherd_io
-    for iter in range(len(adc_channels)):
-        adc_cfg = adc_channels[iter]
+    for _iter, _val in enumerate(adc_channels):
+        adc_cfg = _val
         value_raw = shepherd_io.adc_read(adc_cfg[0])
         value_si = shepherd_io.convert_raw_to_value(adc_cfg[1], adc_cfg[2], value_raw)
         value_si = round(value_si * 10**3, 4)
-        dpg.set_value(f"value_raw_adc{iter}", str(value_raw))
-        dpg.set_value(f"value_mSI_adc{iter}", str(value_si))
+        dpg.set_value(f"value_raw_adc{_iter}", str(value_raw))
+        dpg.set_value(f"value_mSI_adc{_iter}", str(value_si))
 
 
 #################################

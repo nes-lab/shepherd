@@ -141,8 +141,8 @@
     src: "{{ repo_dir.stdout }}/software/meta-package/{{ item }}"
     dest: "{{ shepherd_config_path }}"
   with_items:
-   - 'example_config_emulation.yml'
-   - 'example_config_harvest.yml'
+   - 'example_config_emulator.yml'
+   - 'example_config_harvester.yml'
   tags:
     - source-code
     - python
@@ -150,7 +150,7 @@
 
 - name: set default configuration to harvest (mainly for launcher)
   template:
-    src: "{{ repo_dir.stdout }}/software/meta-package/example_config_harvest.yml"
+    src: "{{ repo_dir.stdout }}/software/meta-package/example_config_harvester.yml"
     dest: "{{ shepherd_config_path }}/config.yml"
   tags:
     - source-code

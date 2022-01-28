@@ -65,9 +65,9 @@ def cal_convert_current_raw_to_V(input):
 def measurements_to_calibration(ref, raw) -> tuple:
     x = np.empty(len(ref))
     y = np.empty(len(raw))
-    for i in range(len(ref)):
-        x[i] = raw[i]
-        y[i] = ref[i]
+    for _i in range(len(ref)):
+        x[_i] = raw[_i]
+        y[_i] = ref[_i]
     WLS = LinearRegression()
     WLS.fit(x.reshape(-1, 1), y.reshape(-1, 1), sample_weight=1.0 / x)
     intercept = WLS.intercept_

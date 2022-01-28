@@ -29,16 +29,16 @@ virtsources:
 
     V_pwr_good_enable_threshold_mV: 2800 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
     V_pwr_good_disable_threshold_mV: 2200
-    immediate_pwr_good_signal: true  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
+    immediate_pwr_good_signal: true  # 1: activate instant schmitt-trigger, 0: stay in interval for checking thresholds
 
     C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
 
     # Extra
     V_output_log_gpio_threshold_mV: 1400  # min voltage needed to enable recording changes in gpio-bank
 
-    # Boost Regulator
+    # Boost Converter
     V_input_boost_threshold_mV: 0.0 # min input-voltage for the boost converter to work
-    V_intermediate_max_mV: 10000 # -> boost shuts off harvesting
+    V_intermediate_max_mV: 10000 # -> boost converter shuts off
 
     LUT_input_efficiency: [
       [ 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00 ], # rows are current -> here a[V=0][:]
@@ -57,7 +57,7 @@ virtsources:
     LUT_input_V_min_log2_uV: 0 # 2^7 = 128 uV -> array[0] is for inputs < 128 uV
     LUT_input_I_min_log2_nA: 0 # 2^8 = 256 nA -> array[0] is for inputs < 256 nA
 
-    # Buck-Regulator
+    # Buck-converter
     V_output_mV: 2400
     V_buck_drop_mV: 0.0  # simulate LDO min voltage differential or output-diode
 
@@ -102,11 +102,11 @@ virtsources:
 
     V_pwr_good_enable_threshold_mV: 2800 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
     V_pwr_good_disable_threshold_mV: 2400
-    immediate_pwr_good_signal: false  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
+    immediate_pwr_good_signal: false  # 1: activate instant schmitt-trigger, 0: stay in interval for checking thresholds
 
-    # Boost Regulator
+    # Boost Converter
     V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-    V_intermediate_max_mV: 3600 # -> boost shuts off harvesting
+    V_intermediate_max_mV: 3600 # -> boost converter shuts off
 
     LUT_input_efficiency: [
       # <8uA  8uA   16uA  32uA  64uA  128uA 256uA 512uA 1mA   2mA   4mA   >8mA
@@ -151,15 +151,15 @@ virtsources:
 
     V_pwr_good_enable_threshold_mV: 3000 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
     V_pwr_good_disable_threshold_mV: 2500
-    immediate_pwr_good_signal: false  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
+    immediate_pwr_good_signal: false  # 1: activate instant schmitt-trigger, 0: stay in interval for checking thresholds
 
     C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
 
-    # Boost Regulator
+    # Boost Converter
     V_input_boost_threshold_mV: 100.0 # min input-voltage for the boost converter to work
-    V_intermediate_max_mV: 5500 # -> boost shuts off harvesting
+    V_intermediate_max_mV: 5500 # -> boost converter shuts off
 
-    # Buck-Regulator
+    # Buck Converter
     V_output_mV: 2200
     V_buck_drop_mV: 200.0  # simulate LDO min voltage differential or output-diode
 

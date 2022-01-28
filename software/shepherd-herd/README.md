@@ -72,5 +72,5 @@ shepherd-herd -i hosts target reset
 Simultaneously start to play back the previously recorded data to the attached sensor nodes and monitor their power consumption and GPIO events:
 
 ```
-shepherd-herd -i hosts emulate -i rec.h5 -o load.h5
+shepherd-herd -i hosts emulator -i rec.h5 -o load.h5
 ```

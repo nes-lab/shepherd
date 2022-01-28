@@ -12,7 +12,7 @@ from shepherd.virtual_source_data import flatten_dict_list
 @pytest.fixture
 def virtsource_settings():
     here = Path(__file__).absolute()
-    name = "example_virtsource_settings.yml"
+    name = "example_config_virtsource.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         vs_dict = yaml.safe_load(config_data)["virtsource"]
@@ -31,7 +31,7 @@ def shepherd_running(shepherd_up):
 @pytest.fixture()
 def calibration_settings():
     cal = CalibrationData.from_default()
-    return cal.export_for_sysfs("emulation")
+    return cal.export_for_sysfs("emulator")
 
 
 @pytest.mark.hardware
@@ -81,7 +81,7 @@ def test_start_delayed(shepherd_up):
         sysfs_interface.set_start()
 
 
-@pytest.mark.parametrize("mode", ["harvesting", "emulation"])
+@pytest.mark.parametrize("mode", ["harvester", "emulator"])
 def test_set_mode(shepherd_up, mode):
     sysfs_interface.write_mode(mode)
     assert sysfs_interface.get_mode() == mode
@@ -90,13 +90,13 @@ def test_set_mode(shepherd_up, mode):
 # TODO: is this not tested?
 def test_initial_mode(shepherd_up):
     # NOTE: initial config is set in main() of pru0
-    assert sysfs_interface.get_mode() == "harvesting"
+    assert sysfs_interface.get_mode() == "harvester"
 
 
 @pytest.mark.hardware
 def test_set_mode_fail_offline(shepherd_running):
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.write_mode("harvesting")
+        sysfs_interface.write_mode("harvester")
 
 
 @pytest.mark.hardware
@@ -108,7 +108,7 @@ def test_set_mode_fail_invalid(shepherd_up):
 @pytest.mark.parametrize("value", [0, 0.1, 3.2])
 def test_dac_aux_voltage(shepherd_up, value):
     cal_set = CalibrationData.from_default()
-    msb_threshold = cal_set.convert_raw_to_value("emulation", "dac_voltage_b", 2)
+    msb_threshold = cal_set.convert_raw_to_value("emulator", "dac_voltage_b", 2)
     sysfs_interface.write_dac_aux_voltage(cal_set, value)
     assert abs(sysfs_interface.read_dac_aux_voltage(cal_set) - value) <= msb_threshold
 

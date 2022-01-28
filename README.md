@@ -85,7 +85,7 @@ ansible-playbook deploy/install.yml -e ptp=true
 Record two minutes of data:
 
 ```
-shepherd-herd record -l 120 -o recording.h5
+shepherd-herd harvester -d 120 -o recording.h5 -a mppt_voc
 ```
 The command starts the recording asynchronously and returns after all nodes have started recording.
 While the nodes are still recording (indicated by blinking of LED 1 and 2), prepare a directory on your local machine:
@@ -105,7 +105,7 @@ For a detailed description of the [HDF5](https://en.wikipedia.org/wiki/Hierarchi
 Finally, replay the previously recorded data to the attached sensor nodes, recording their power consumption:
 
 ```
-shepherd-herd emulate -o consumption.h5 recording.h5
+shepherd-herd emulator -o consumption.h5 recording.h5
 ```
 
 Try `shepherd-herd --help` or check out the documentation [here](https://shepherd-testbed.readthedocs.io/en/latest/user/cli.html#shepherd-herd) for a list of all options.
