@@ -13,11 +13,12 @@ data
 import logging
 import yaml
 import struct
-from scipy import stats
 import numpy as np
 from pathlib import Path
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
 
-from shepherd import calibration_default
+from calibration_default import *
 
 logger = logging.getLogger(__name__)
 
@@ -142,25 +143,47 @@ class CalibrationData(object):
             CalibrationData object with extracted calibration data.
         """
         with open(filename, "r") as stream:
-            cal_data = yaml.safe_load(stream)
+            meas_data = yaml.safe_load(stream)
 
         cal_dict = {}
 
         for component in cal_component_list:
             cal_dict[component] = {}
             for channel in cal_channel_list:
-                sample_points = cal_data["measurements"][component][channel]
-                x = np.empty(len(sample_points))
-                y = np.empty(len(sample_points))
-                for i, point in enumerate(sample_points):
-                    x[i] = point["measured"]
-                    y[i] = point["reference"]
-                slope, intercept, _, _, _ = stats.linregress(x, y)
-                cal_dict[component][channel] = {
-                    "gain": float(slope),   # TODO: possibly wrong after all the changes, TEST
-                    "offset": float(intercept),
-                }
+                cal_dict[component][channel] = dict()
+                if "dac_voltage" in channel:
+                    gain = 1.0 / dac_voltage_to_raw(1.0)
+                elif "adc_current" in channel:
+                    gain = 1.0 / adc_current_to_raw(1.0)
+                elif "adc_voltage" in channel:
+                    gain = 1.0 / adc_voltage_to_raw(1.0)
+                else:
+                    gain = 1.0
+                offset = 0
+                try:
+                    sample_points = meas_data["measurements"][component][channel]
+                    x = np.empty(len(sample_points))
+                    y = np.empty(len(sample_points))
+                    for i, point in enumerate(sample_points):
+                        x[i] = point["shepherd_raw"]
+                        y[i] = point["reference_si"]
+                    WLS = LinearRegression()
+                    WLS.fit(x.reshape(-1, 1), y.reshape(-1, 1), sample_weight=1.0 / x)
+                    offset = float(WLS.intercept_)
+                    gain = float(WLS.coef_[0])
+                    # test quality of regression
+                    y2 = [gain * xvalue + offset for xvalue in x]
+                    ev = r2_score(y, y2, multioutput="variance_weighted")
+                except KeyError:
+                    logger.error(f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})")
+                except ValueError as e:
+                    logger.error(f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]")
 
+                if ev < 0.999:
+                    logger.warning(
+                        f"Calibration may be faulty -> R² regression score = {ev:.6f} is too low for {component}-{channel}")
+                cal_dict[component][channel]["gain"] = gain
+                cal_dict[component][channel]["offset"] = offset
         return cls(cal_dict)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:

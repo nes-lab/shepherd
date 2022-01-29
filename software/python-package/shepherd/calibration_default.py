@@ -27,10 +27,8 @@ G_ADC_V = 1.25  # [gain / V_REF]
 M_ADC = 18  # [bit]
 # DACs use internal reference with
 V_REF_DAC = 2.5  # [V]
-# gain of DAC-CH-A is set to
-G_DAC_A = 2  # [n]
-# gain of DAC-CH-B is set to
-G_DAC_B = 2  # [n]
+# gain of DAC is set to
+G_DAC = 2  # [n]
 # bit resolution of DAC
 M_DAC = 16  # [bit]
 
@@ -59,17 +57,9 @@ def adc_raw_to_voltage(v_adc: int) -> float:
     return float(v_adc) * (G_ADC_V * V_REF_ADC) / (2 ** M_ADC)
 
 
-def dac_ch_a_voltage_to_raw(voltage: float) -> int:
-    return int(voltage * (2 ** M_DAC) / (V_REF_DAC * G_DAC_A))
+def dac_raw_to_voltage(value: int) -> float:
+    return float(value) * (V_REF_DAC * G_DAC) / (2 ** M_DAC)
 
 
-def dac_ch_a_raw_to_voltage(value: int) -> float:
-    return float(value) * (V_REF_DAC * G_DAC_A) / (2 ** M_DAC)
-
-
-def dac_ch_b_voltage_to_raw(voltage: float) -> int:
-    return int(voltage * (2 ** M_DAC) / (V_REF_DAC * G_DAC_B))
-
-
-def dac_ch_b_raw_to_voltage(value: int) -> float:
-    return float(value) * (V_REF_DAC * G_DAC_B) / (2 ** M_DAC)
+def dac_voltage_to_raw(voltage: float) -> int:
+    return int(voltage * (2 ** M_DAC) / (V_REF_DAC * G_DAC))

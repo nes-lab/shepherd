@@ -149,7 +149,7 @@ def write_dac_aux_voltage(calibration_settings: Union[CalibrationData, None], vo
         raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage}")
 
     if calibration_settings is None:
-        output = calibration_default.dac_ch_b_voltage_to_raw(voltage)
+        output = calibration_default.dac_voltage_to_raw(voltage)
     else:
         output = calibration_settings.convert_value_to_raw("emulator", "dac_voltage_b", voltage)
 
@@ -182,7 +182,7 @@ def read_dac_aux_voltage(cal_settings: CalibrationData) -> float:
     """
     value_raw = read_dac_aux_voltage_raw()
     if cal_settings is None:
-        voltage = calibration_default.dac_ch_a_raw_to_voltage(value_raw)
+        voltage = calibration_default.dac_raw_to_voltage(value_raw)
     else:
         voltage = cal_settings.convert_raw_to_value("emulator", "dac_voltage_b", value_raw)
     return voltage

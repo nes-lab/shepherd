@@ -7,7 +7,6 @@ requirements = [
     "click-config-file",
     "numpy",
     "python-periphery<2.0.0",
-    "scipy",
     "zerorpc",
     "invoke",
     "h5py",
@@ -17,6 +16,7 @@ requirements = [
     "msgpack",
     "msgpack-numpy",
     "gevent",
+    "scikit-learn",
 ]
 
 # We are installing the DBUS module to build the docs, but the C libraries

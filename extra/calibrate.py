@@ -24,11 +24,19 @@ import yaml
 import numpy as np
 import tempfile
 from fabric import Connection
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
 import msgpack
 import msgpack_numpy
 import matplotlib.pyplot as plt
+import sys
+import os
+
+script_dir = os.path.dirname(__file__)
+shepherd_dir = os.path.join(script_dir, '..', 'software', 'python-package', 'shepherd')
+sys.path.append(shepherd_dir)
+
+from calibration import CalibrationData
+from calibration_default import *
+
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -47,73 +55,6 @@ INSTR_EMU = """
 - Connect SMU channel B Hi to P11-2 (Target-Port B Voltage)
 """
 
-# TODO: next 25 lines are copied from calibration_default.py
-
-V_REF_DAC = 2.5  # [V]
-G_DAC = 2.0  # [gain / V_REF]
-M_DAC = 16  # [bit]
-
-V_REF_ADC = 4.096  # [V]
-G_ADC = 1.25  # [gain / V_REF]
-M_ADC = 18  # [bit]
-
-R_SHT = 2.0  # [ohm]
-G_INST_AMP = 48  # [n]
-
-
-def adc_current_to_raw(current: float) -> int:
-    v_adc = G_INST_AMP * R_SHT * current
-    return int(v_adc * (2 ** M_ADC) / (G_ADC * V_REF_ADC))
-
-
-def adc_voltage_to_raw(voltage: float) -> int:
-    return int(voltage * (2 ** M_ADC) / (G_ADC * V_REF_ADC))
-
-
-def dac_voltage_to_raw(value_V: float) -> int:
-    return int((value_V * (2 ** M_DAC)) / (G_DAC * V_REF_DAC))
-
-
-def measurements_to_calibration(measurements):
-
-    calib_dict = dict()
-    for component in ["harvester", "emulator"]:
-        calib_dict[component] = dict()
-        for channel in ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]:
-            calib_dict[component][channel] = dict()
-            if "dac_voltage" in channel:
-                gain = 1.0 / dac_voltage_to_raw(1.0)
-            elif "adc_current" in channel:
-                gain = 1.0 / adc_current_to_raw(1.0)
-            elif "adc_voltage" in channel:
-                gain = 1.0 / adc_voltage_to_raw(1.0)
-            else:
-                gain = 1.0
-            offset = 0
-            try:
-                sample_points = measurements[component][channel]
-                x = np.empty(len(sample_points))
-                y = np.empty(len(sample_points))
-                for i, point in enumerate(sample_points):
-                    x[i] = point["shepherd_raw"]
-                    y[i] = point["reference_si"]
-                WLS = LinearRegression()
-                WLS.fit(x.reshape(-1, 1), y.reshape(-1, 1), sample_weight=1.0 / x)
-                offset = float(WLS.intercept_)
-                gain = float(WLS.coef_[0])
-                y2 = [gain * xvalue + offset for xvalue in x]
-                ev = r2_score(y, y2, multioutput="variance_weighted")
-            except KeyError:
-                print(f"NOTE: data was not found -> replacing '{component} - {channel}' with default values (gain={gain})")
-            except ValueError as e:
-                print(f"NOTE: data was faulty -> replacing '{component} - {channel}' with default values (gain={gain}) [{e}]")
-
-            if ev < 0.999:
-                print(f"WARNING: Calibration may be faulty -> R² regression score = {ev:.6f} is too low for {component}-{channel}")
-            calib_dict[component][channel]["gain"] = gain
-            calib_dict[component][channel]["offset"] = offset
-    return calib_dict
-
 
 def plot_calibration(measurements, calibration, file_name):
     for component in ["harvester", "emulator"]:
@@ -131,8 +72,10 @@ def plot_calibration(measurements, calibration, file_name):
                 yl = [gain * xlp + offset for xlp in xl]
             except KeyError:
                 print(f"NOTE: data was not found - will skip plot")
+                continue
             except ValueError as e:
                 print(f"NOTE: data was faulty - will skip plot [{e}]")
+                continue
 
             fig, ax = plt.subplots()
             ax.plot(xl, yl, ":", linewidth=2, color='green')
@@ -388,18 +331,18 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
 @cli.command()
 @click.argument("infile", type=click.Path(exists=True))
 @click.option("--outfile", "-o", type=click.Path())
-@click.option("--plot", "-p", is_flag=True, help="generate plots that contain calibration line and data points")
+@click.option("--plot", "-p", is_flag=True, help="generate plots that contain data points and calibration model")
 def convert(infile, outfile, plot: bool):
     with open(infile, "r") as stream:
-        in_data = yaml.safe_load(stream)
-    measurement_dict = in_data["measurements"]
+        meas_data = yaml.safe_load(stream)
+        meas_dict = meas_data["measurements"]
 
-    calib_dict = measurements_to_calibration(measurement_dict)
+    calib_dict = CalibrationData.from_measurements(infile).data
 
     if plot:
-        plot_calibration(measurement_dict, calib_dict, infile)
+        plot_calibration(meas_dict, calib_dict, infile)
 
-    out_dict = {"node": in_data["node"], "calibration": calib_dict}
+    out_dict = {"node": meas_data["node"], "calibration": calib_dict}
     res_repr = yaml.dump(out_dict, default_flow_style=False)
     if outfile is not None:
         with open(outfile, "w") as f:
