@@ -79,13 +79,16 @@
         "linux-firmware",
         "zlib1g-dev",
         "libjpeg-dev",
-        "python3-numpy",
+        "python3-numpy",    # TODO: rethink apt usage. most of these are easier updatable per pip
         "python3-scipy",
         "python3-zmq",
         "python3-gevent",
         "python3-h5py",
         "python3-pip",
         "python3-virtualenv",
+        "python3-msgpack-numpy",  # copied from debian/control
+        "libdbus-glib-1-dev"      # copied from debian/control
+        "libgirepository1.0-dev"  # copied from debian/control
       ]
     state: present
     update_cache: yes
