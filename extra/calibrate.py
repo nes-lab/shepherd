@@ -3,21 +3,6 @@ import time
 from pathlib import Path
 
 from keithley2600b import SMU
-# TODO: changes to lib
-# - VMeas - allow self._inst.write(f"smu{ self._name }.sense = 1") # 4Wire-Mode
-''' significant changes with 90cm 1mm² cabling
-from
-  smu-reference: 0.0001 A @ 1.0004 V
-  smu-reference: 0.0003 A @ 1.0005 V
-  smu-reference: 0.001 A @ 1.0007 V
-  smu-reference: 0.003 A @ 1.0016 V
-  smu-reference: 0.01 A @ 1.0045 V
-to
-  smu-reference: 0.0003 A @ 1.0003 V
-  smu-reference: 0.001 A @ 1.0003 V
-  smu-reference: 0.003 A @ 1.0003 V
-  smu-reference: 0.01 A @ 1.0004 V
-'''
 import click
 import zerorpc
 import yaml
@@ -28,15 +13,17 @@ import msgpack
 import msgpack_numpy
 import matplotlib.pyplot as plt
 import sys
-import os
 
-script_dir = os.path.dirname(__file__)
-shepherd_dir = os.path.join(script_dir, '..', 'software', 'python-package', 'shepherd')
-sys.path.append(shepherd_dir)
+script_path = Path(__file__).parent
+shepherd_path = script_path.parent.joinpath('software', 'python-package', 'shepherd').resolve()
+sys.path.append(str(shepherd_path))
 
 from calibration import CalibrationData
 from calibration_default import *
 
+# SMU Config-Parameters
+mode_4wire = True
+pwrline_cycles = 10
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -44,6 +31,7 @@ INSTR_HRVST = """
 - Connect SMU Channel A/B Lo to GND (P6-2, P8-1/2)
 - Connect SMU Channel A Hi to P6-1 (SimBuf)
 - Connect SMU Channel B Hi to P6-3/4
+- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results
 """
 
 INSTR_EMU = """
@@ -53,6 +41,7 @@ INSTR_EMU = """
 - Connect SMU channel A Hi to P10-2 (Target-Port A Voltage)
 - Connect SMU channel B Lo to P11-1 (Target-Port B GND)
 - Connect SMU channel B Hi to P11-2 (Target-Port B Voltage)
+- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results
 """
 
 
@@ -114,10 +103,10 @@ def meas_harvester_adc_voltage(rpc_client, smu_channel):
 
         meas_enc = rpc_client.sample_from_pru(40)  # captures # buffers
         meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
-        adc_voltage_raw = float(np.mean(meas_rec[1]))
         adc_current_raw = float(np.mean(meas_rec[0]))
+        adc_voltage_raw = float(np.mean(meas_rec[1]))
         adc_voltage_med = float(np.median(meas_rec[1]))
-        smu_current_mA = 1000 * smu_channel.measure_current(range=smu_current_A, nplc=10)
+        smu_current_mA = 1000 * smu_channel.measure_current(range=smu_current_A, nplc=pwrline_cycles)
 
         results.append({"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw})
         print(f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;"
@@ -153,7 +142,7 @@ def meas_harvester_adc_current(rpc_client, smu_channel):  # TODO: combine with p
         adc_current_med = float(np.median(meas_rec[0]))
 
         # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
-        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=10)
+        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles)
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         print(f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
@@ -189,7 +178,7 @@ def meas_emulator_current(rpc_client, smu_channel):
         adc_current_med = float(np.median(meas_rec[0]))
 
         # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
-        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=10)
+        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles)
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         print(f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
@@ -218,14 +207,14 @@ def meas_dac_voltage(rpc_client, smu_channel, dac_bitmask):
     for _iter, _val in enumerate(voltages_raw):
         rpc_client.dac_write(dac_bitmask, _val)
         time.sleep(0.5)
-        smu_channel.measure_voltage(range=5.0, nplc=10)
+        smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles)
         meas_series = list([])
         for index in range(30):
-            meas_series.append(smu_channel.measure_voltage(range=5.0, nplc=10))
+            meas_series.append(smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles))
             time.sleep(0.01)
         mean = float(np.mean(meas_series))
         medi = float(np.median(meas_series))
-        smu_current_mA = 1000 * smu_channel.measure_current(range=0.01, nplc=10)
+        smu_current_mA = 1000 * smu_channel.measure_current(range=0.01, nplc=pwrline_cycles)
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
         print(f"  shepherd: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"
@@ -277,9 +266,10 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
                 print("Save-File loaded successfully - will extend dataset")
 
     with SMU.ethernet_device(smu_ip) as smu, Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
-        # TODO: enable 4 Port Mode if possible
-        res = cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
+        cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
         rpc_client.connect(f"tcp://{ host }:4242")
+        smu.A.configure_4port_mode(mode_4wire)
+        smu.B.configure_4port_mode(mode_4wire)
 
         if harvester:
             click.echo(INSTR_HRVST)
@@ -353,40 +343,39 @@ def convert(infile, outfile, plot: bool):
 
 @cli.command()
 @click.argument("host", type=str)
-@click.option("--calibfile", "-c", type=click.Path(exists=True))
+@click.option("--calfile", "-c", type=click.Path(exists=True))
 @click.option("--measurementfile", "-m", type=click.Path(exists=True))
 @click.option("--version", "-v", type=str, default="22A0",
-    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
+              help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
 @click.option("--serial_number", "-s", type=str, required=True,
-    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
+              help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
 @click.option("--user", "-u", type=str, default="joe")
 @click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
-def write(host, calibfile, measurementfile, version, serial_number, user, password):
+def write(host, calfile, measurementfile, version, serial_number, user, password):
 
-    if calibfile is None:
+    if calfile is None:
         if measurementfile is None:
             raise click.UsageError(
-                "provide one of calibfile or measurementfile"
+                "provide one of cal-file or measurement-file"
             )
 
         with open(measurementfile, "r") as stream:
             in_measurements = yaml.safe_load(stream)
-        measurement_dict = in_measurements["measurements"]
         in_data = dict()
-        in_data["calibration"] = measurements_to_calibration(measurement_dict)
+        in_data["calibration"] = CalibrationData.from_measurements(measurementfile).data
         in_data["node"] = in_measurements["node"]
         res_repr = yaml.dump(in_data, default_flow_style=False)
         tmp_file = tempfile.NamedTemporaryFile()
-        calibfile = tmp_file.name
-        with open(calibfile, "w") as f:
+        calfile = tmp_file.name
+        with open(calfile, "w") as f:
             f.write(res_repr)
 
     else:
         if measurementfile is not None:
             raise click.UsageError(
-                "provide only one of calibfile or measurementfile"
+                "provide only one of cal-file or measurement-file"
             )
-        with open(calibfile, "r") as stream:
+        with open(calfile, "r") as stream:
             in_data = yaml.safe_load(stream)
 
     if in_data["node"] != host:
@@ -404,7 +393,7 @@ def write(host, calibfile, measurementfile, version, serial_number, user, passwo
         fabric_args = {}
 
     with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
-        cnx.put(calibfile, "/tmp/calib.yml")
+        cnx.put(calfile, "/tmp/calib.yml")
         cnx.sudo(
             (
                 f"shepherd-sheep eeprom write -v { version } -s {serial_number}"
