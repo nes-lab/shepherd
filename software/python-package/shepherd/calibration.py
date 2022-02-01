@@ -15,10 +15,14 @@ import yaml
 import struct
 import numpy as np
 from pathlib import Path
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
+from scipy import stats
 
-from calibration_default import *
+# voodoo to allow loading this file from outside (extras)
+# TODO: underlying problem for loading shepherd is a missing mockup of gpio-module, sysfs and sharedmem
+try:
+    import shepherd.calibration_default as cal_def
+except ModuleNotFoundError:
+    import calibration_default as cal_def
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +32,10 @@ logger = logging.getLogger(__name__)
 cal_component_list = ["harvester", "emulator"]
 cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
 # functions from cal-default.py to convert the channels in cal_channel_list
-cal_channel_fn_list = ["dac_ch_a_voltage_to_raw", "dac_ch_b_voltage_to_raw", "adc_current_to_raw", "adc_voltage_to_raw"]
+cal_channel_fn_list = ["dac_voltage_to_raw",
+                       "dac_voltage_to_raw",
+                       "adc_current_to_raw",
+                       "adc_voltage_to_raw"]
 # translator-dicts for datalog
 cal_channel_hrv_dict = {"voltage": "adc_voltage", "current": "adc_current"}
 cal_channel_emu_dict = {"voltage": "dac_voltage_b", "current": "adc_current"}
@@ -106,8 +113,8 @@ class CalibrationData(object):
             for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
                 # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
-                offset = getattr(calibration_default, cal_fn)(0)
-                gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)
+                offset = getattr(cal_def, cal_fn)(0)
+                gain_inv = (getattr(cal_def, cal_fn)(1.0) - offset)
                 cal_dict[component][channel] = {
                     "offset": -float(offset) / float(gain_inv),
                     "gain": 1.0 / float(gain_inv),
@@ -152,11 +159,11 @@ class CalibrationData(object):
             for channel in cal_channel_list:
                 cal_dict[component][channel] = dict()
                 if "dac_voltage" in channel:
-                    gain = 1.0 / dac_voltage_to_raw(1.0)
+                    gain = 1.0 / cal_def.dac_voltage_to_raw(1.0)
                 elif "adc_current" in channel:
-                    gain = 1.0 / adc_current_to_raw(1.0)
+                    gain = 1.0 / cal_def.adc_current_to_raw(1.0)
                 elif "adc_voltage" in channel:
-                    gain = 1.0 / adc_voltage_to_raw(1.0)
+                    gain = 1.0 / cal_def.adc_voltage_to_raw(1.0)
                 else:
                     gain = 1.0
                 offset = 0
@@ -167,21 +174,18 @@ class CalibrationData(object):
                     for i, point in enumerate(sample_points):
                         x[i] = point["shepherd_raw"]
                         y[i] = point["reference_si"]
-                    WLS = LinearRegression()
-                    WLS.fit(x.reshape(-1, 1), y.reshape(-1, 1), sample_weight=1.0 / x)
-                    offset = float(WLS.intercept_)
-                    gain = float(WLS.coef_[0])
-                    # test quality of regression
-                    y2 = [gain * xvalue + offset for xvalue in x]
-                    ev = r2_score(y, y2, multioutput="variance_weighted")
+                    result = stats.linregress(x, y)
+                    offset = float(result.intercept)
+                    gain = float(result.slope)
+                    rval = result.rvalue  # test quality of regression
                 except KeyError:
                     logger.error(f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})")
                 except ValueError as e:
                     logger.error(f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]")
 
-                if ev < 0.999:
+                if rval < 0.999:
                     logger.warning(
-                        f"Calibration may be faulty -> R² regression score = {ev:.6f} is too low for {component}-{channel}")
+                        f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}")
                 cal_dict[component][channel]["gain"] = gain
                 cal_dict[component][channel]["offset"] = offset
         return cls(cal_dict)

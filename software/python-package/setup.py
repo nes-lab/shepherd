@@ -16,7 +16,7 @@ requirements = [
     "msgpack",
     "msgpack-numpy",
     "gevent",
-    "scikit-learn",
+    "scipy",
 ]
 
 # We are installing the DBUS module to build the docs, but the C libraries
