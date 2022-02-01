@@ -483,18 +483,19 @@ class ShepherdDebug(ShepherdIO):
         return mode_old
 
     def sample_from_pru(self, length_n_buffers: int = 10):
-        length_n_buffers = int(min(max(length_n_buffers, 1), 60))
+        length_n_buffers = int(min(max(length_n_buffers, 1), 55))
         super().reinitialize_prus()
         time.sleep(0.1)
-        for _i in range(length_n_buffers+2):  # Fill FIFO
+        for _i in range(length_n_buffers+4):  # Fill FIFO
             time.sleep(0.02)
             super()._return_buffer(_i)
         time.sleep(0.1)
-
+        super().start(wait_blocking=True)
         c_array = numpy.empty([0], dtype="=u4")
         v_array = numpy.empty([0], dtype="=u4")
-        super().start(wait_blocking=True)
         time.sleep(0.1)
+        for _ in range(2):  # flush first 2 buffers out
+            super().get_buffer()
         for _ in range(length_n_buffers):  # get Data
             idx, _buf = super().get_buffer()
             c_array = numpy.hstack((c_array, _buf.current))
