@@ -476,7 +476,11 @@ class ShepherdDebug(ShepherdIO):
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()
+        super().set_power_state_recorder(False)
+        super().set_power_state_emulator(False)
         sysfs_interface.write_mode(mode, force=True)
+        super().set_power_state_recorder(True)
+        super().set_power_state_emulator(True)
         super().reinitialize_prus()
         if "debug" in mode:
             super().start(wait_blocking=True)
