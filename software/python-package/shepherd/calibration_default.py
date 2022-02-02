@@ -31,6 +31,9 @@ V_REF_DAC = 2.5  # [V]
 G_DAC = 2  # [n]
 # bit resolution of DAC
 M_DAC = 16  # [bit]
+# DERIVED VARIABLES
+RAW_MAX_ADC = 2**M_ADC - 1
+RAW_MAX_DAC = 2**M_DAC - 1
 
 
 def adc_current_to_raw(current: float) -> int:
