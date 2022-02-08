@@ -195,7 +195,7 @@ class CalibrationData(object):
         gain = self.data[component][channel]["gain"]
         raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
         raw = min(max(raw, 0), raw_max)
-        return (float(raw) * gain) + offset
+        return max(float(raw) * gain + offset, 0.0)
 
     def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
         offset = self.data[component][channel]["offset"]

@@ -23,7 +23,7 @@ from calibration_default import *
 
 # SMU Config-Parameters
 mode_4wire = True
-pwrline_cycles = 10
+pwrline_cycles = 16  # .001 to 25 allowed
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -106,7 +106,7 @@ def meas_harvester_adc_voltage(rpc_client, smu_channel):
         adc_current_raw = float(np.mean(meas_rec[0]))
         adc_voltage_raw = float(np.mean(meas_rec[1]))
         adc_voltage_med = float(np.median(meas_rec[1]))
-        smu_current_mA = 1000 * smu_channel.measure_current(range=smu_current_A, nplc=pwrline_cycles)
+        smu_current_mA = 1000 * smu_channel.measure_current(nplc=pwrline_cycles)
 
         results.append({"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw})
         print(f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;"
@@ -142,7 +142,7 @@ def meas_harvester_adc_current(rpc_client, smu_channel):  # TODO: combine with p
         adc_current_med = float(np.median(meas_rec[0]))
 
         # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
-        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles)
+        smu_voltage = smu_channel.measure_voltage(nplc=pwrline_cycles)
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         print(f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
@@ -178,7 +178,7 @@ def meas_emulator_current(rpc_client, smu_channel):
         adc_current_med = float(np.median(meas_rec[0]))
 
         # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
-        smu_voltage = smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles)
+        smu_voltage = smu_channel.measure_voltage(nplc=pwrline_cycles)
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         print(f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
@@ -210,11 +210,11 @@ def meas_dac_voltage(rpc_client, smu_channel, dac_bitmask):
         smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles)
         meas_series = list([])
         for index in range(30):
-            meas_series.append(smu_channel.measure_voltage(range=5.0, nplc=pwrline_cycles))
+            meas_series.append(smu_channel.measure_voltage(nplc=pwrline_cycles))
             time.sleep(0.01)
         mean = float(np.mean(meas_series))
         medi = float(np.median(meas_series))
-        smu_current_mA = 1000 * smu_channel.measure_current(range=0.01, nplc=pwrline_cycles)
+        smu_current_mA = 1000 * smu_channel.measure_current(nplc=pwrline_cycles)
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
         print(f"  shepherd: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"
