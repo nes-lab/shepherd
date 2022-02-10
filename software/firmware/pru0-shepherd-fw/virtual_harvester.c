@@ -15,11 +15,13 @@ static uint32_t voltage_step_x4_uV = 0u;
 
 static const volatile struct HarvesterConfig *cfg;
 
+// to be used with harvester-frontend
 static void harvest_adc_ivcurve(struct SampleBuffer *const, uint32_t);
 static void harvest_adc_cv(struct SampleBuffer *const, uint32_t);
 static void harvest_adc_mppt_voc(struct SampleBuffer *const, uint32_t);
 static void harvest_adc_mppt_po(struct SampleBuffer *const, uint32_t);
 
+// to be used in virtual harvester (part of emulator)
 static void harvest_iv_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 static void harvest_iv_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
@@ -127,16 +129,13 @@ static void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_
 static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 /*	Determine VOC and harvest
- * 	- search by Divide and Conquer (until predefined resolution limit is reached)
- *	- logs current adc-values except during VOC-Search (values = 0)
- *	- influencing parameters: interval_n, duration_n, setpoint_n8, current_limit_nA, dac_resolution_bit, wait_cycles_n
- *	TODO: algorithm could probably be easier, see harvester_voc() below
+ * 	- first part of interval is used for determining the open circuit voltage
+ *	- Determine VOC: set DAC to max voltage -> hrv will settle at open voltage -> wait till end of measurement duration and sample valid voltage
+ *	- influencing parameters: interval_n, duration_n, setpoint_n8, indirectly wait_cycles_n
  *	TODO: include v_min/max
  */
 	static uint32_t interval_step = 1u << 30u; // deliberately out of bounds
-	static uint32_t settle_steps = 0u;
 	static uint32_t voltage_raw = 0u;
-	static uint32_t refinement_pos = 0u;
 
 	/* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
 	/* NOTE: it's in here so this timeslot can be used for calculations later */
@@ -149,106 +148,34 @@ static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32
 
 	if (interval_step == 0)
 	{
-		settle_steps = 0u;
-		voltage_raw = 0u;
-		refinement_pos = (DAC_M_BIT - 1u);
+		/* open the circuit -> voltage will settle */
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
 	}
 
-	if (interval_step < cfg->duration_n)
+	if (interval_step == cfg->duration_n)
 	{
-		/* VOC Search @ beginning of interval duration */
-		if (settle_steps == 0u)
-		{
-			if (refinement_pos > DAC_M_BIT)
-			{
-				/* NOP (after last step) */
-			}
-			if (refinement_pos == DAC_M_BIT)
-			{
-				/* last step, calculate and set setpoint */
-				voltage_raw = mul32(voltage_raw, cfg->setpoint_n8) >> 8u;
-				refinement_pos = 2u * DAC_M_BIT; // deactivate
-			}
-			if (refinement_pos == (DAC_M_BIT - 1u))
-			{
-				/* first step */
-				voltage_raw |= 1u << refinement_pos;
-				refinement_pos--;
-			}
-			else if (refinement_pos >= cfg->dac_resolution_bit)
-			{
-				/* further steps */
-				const uint32_t current_nA = cal_conv_adc_raw_to_nA(current_adc);
-				if (current_nA <= cfg->current_limit_nA)
-				{
-					/* go lower, reverse last addition */
-					voltage_raw &= ~(1u << (refinement_pos + 1u));
-				}
-				/* go higher, halve value */
-				voltage_raw |= 1u << refinement_pos;
-				if (refinement_pos > cfg->dac_resolution_bit)
-				{
-					refinement_pos--; // goto further step
-				}
-				else
-				{
-					refinement_pos = DAC_M_BIT; // goto last step
-				}
-			}
+		/* end of voc-measurement -> lock-in the value */
+		const uint32_t voc_uV = cal_conv_adc_raw_to_uV(voltage_adc);
+		const uint32_t v_set_uV = mul32(voc_uV, cfg->setpoint_n8) >> 8u;
+		const uint32_t v_set_raw = cal_conv_uV_to_dac_raw(v_set_uV);
 
-			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_raw);
-			settle_steps = cfg->wait_cycles_n;
-		}
-		else
-		{
-			settle_steps--;
-		}
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | v_set_raw);
+	}
 
+	if (interval_step <= cfg->duration_n)
+	{
+		/* don't output during voc-measurement */
 		buffer->values_current[sample_idx] = 0u;
 		buffer->values_voltage[sample_idx] = 0u;
 	}
 	else
 	{
+		/* converter-mode at pre-set VOC */
 		buffer->values_current[sample_idx] = current_adc;
 		buffer->values_voltage[sample_idx] = voltage_adc;
 	}
 }
 
-
-static void harvester_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
-{
-	/* empty playground for new algorithms to test in parallel with above reference algorithm */
-	/* demo-algorithm: VOC */
-	// TODO: better alternative to algo above, but not ready to be a plug-in-replacement
-
-	static const uint8_ft SETTLE_INC = 5;
-	/* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
-	__delay_cycles(800 / 5);
-	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
-	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-	const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-	//GPIO_TOGGLE(DEBUG_PIN1_MASK);
-	/* just a simple algorithm that sets 75% of open circuit voltage_adc  */
-	if (sample_idx <= SETTLE_INC)
-	{
-		if (sample_idx == 0)
-		{
-			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
-		}
-		else if (sample_idx == SETTLE_INC)
-		{
-			/* factor = 75 % * 76.2939 uV / 19.5313 uV = ~ 393 / 2048  */
-			const uint32_t voltage_dac = (393u * voltage_adc) >> 11u;
-			dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
-		}
-	}
-
-	/* TODO: also use ch-a of adc, shared_mememory->dac_auxiliary_voltage_raw */
-	//static uint32_t aux_voltage_mV =
-
-	buffer->values_current[sample_idx] = current_adc;
-	buffer->values_voltage[sample_idx] = voltage_adc;
-}
 
 
 static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx)
