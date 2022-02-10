@@ -208,15 +208,18 @@ def write_calibration_settings(cal_pru: dict) -> NoReturn:  # more precise dict[
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    if cal_pru['adc_gain'] < 0:
-        raise SysfsInterfaceException(f"sending calibration with negative ADC-gain: {cal_pru['adc_gain']}")
-    if cal_pru['dac_gain'] < 0:
-        raise SysfsInterfaceException(f"sending calibration with negative DAC-gain: {cal_pru['dac_gain']}")
+    if cal_pru['adc_current_gain'] < 0:
+        raise SysfsInterfaceException(f"sending calibration with negative ADC-C-gain: {cal_pru['adc_current_gain']}")
+    if cal_pru['adc_voltage_gain'] < 0:
+        raise SysfsInterfaceException(f"sending calibration with negative ADC-V-gain: {cal_pru['adc_voltage_gain']}")
+    if cal_pru['dac_voltage_gain'] < 0:
+        raise SysfsInterfaceException(f"sending calibration with negative DAC-gain: {cal_pru['dac_voltage_gain']}")
     wait_for_state("idle", 3.0)
 
     with open(sysfs_path/"calibration_settings", "w") as f:
-        output = f"{int(cal_pru['adc_gain'])} {int(cal_pru['adc_offset'])} \n" \
-                 f"{int(cal_pru['dac_gain'])} {int(cal_pru['dac_offset'])}"
+        output = f"{int(cal_pru['adc_current_gain'])} {int(cal_pru['adc_current_offset'])} \n" \
+                 f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n" \
+                 f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         logger.debug(f"Sending calibration settings: {output}")
         f.write(output)
 

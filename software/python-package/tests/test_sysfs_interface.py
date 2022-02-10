@@ -133,11 +133,13 @@ def test_calibration_settings(shepherd_up, calibration_settings):
 
 @pytest.mark.hardware
 def test_initial_calibration_settings(shepherd_up, calibration_settings):
-    # NOTE: initial config is set in main() of pru0
-    calibration_settings["adc_gain"] = 255
-    calibration_settings["adc_offset"] = -1
-    calibration_settings["dac_gain"] = 254
-    calibration_settings["dac_offset"] = -2
+    # NOTE: initial config is in common_inits.h of kernel-module
+    calibration_settings["adc_current_gain"] = 255
+    calibration_settings["adc_current_offset"] = -1
+    calibration_settings["adc_voltage_gain"] = 254
+    calibration_settings["adc_voltage_offset"] = -2
+    calibration_settings["dac_voltage_gain"] = 253
+    calibration_settings["dac_voltage_offset"] = -3
     assert sysfs_interface.read_calibration_settings() == calibration_settings
 
 

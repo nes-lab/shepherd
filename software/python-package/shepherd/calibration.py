@@ -225,11 +225,14 @@ class CalibrationData(object):
         comp_data = self.data[component]
         cal_set = {
             # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
-            "adc_gain": int(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
-            "adc_offset": int(1e9 * (2 ** 0) * comp_data["adc_current"]["offset"]),
+            "adc_current_gain": int(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
+            "adc_current_offset": int(1e9 * (2 ** 0) * comp_data["adc_current"]["offset"]),
+            # ADC is handled in uV (micro-volt), gain is shifted by 8 bit [scaling according to commons.h]
+            "adc_voltage_gain": int(1e6 * (2 ** 8) * comp_data["adc_voltage"]["gain"]),
+            "adc_voltage_offset": int(1e6 * (2 ** 0) * comp_data["adc_voltage"]["offset"]),
             # DAC is handled in uV (micro-volt), gain is shifted by 20 bit
-            "dac_gain": int((2 ** 20) / (1e6 * comp_data["dac_voltage_b"]["gain"])),
-            "dac_offset": int(1e6 * (2 ** 0) * comp_data["dac_voltage_b"]["offset"]),
+            "dac_voltage_gain": int((2 ** 20) / (1e6 * comp_data["dac_voltage_b"]["gain"])),
+            "dac_voltage_offset": int(1e6 * (2 ** 0) * comp_data["dac_voltage_b"]["offset"]),
         }
 
         for key, value in cal_set.items():

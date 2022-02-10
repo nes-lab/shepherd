@@ -96,13 +96,17 @@ struct ProgrammerCtrl {
  * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
  */
 struct CalibrationConfig {
-	/* Gain of load current adc. It converts current to ADC raw value */
+	/* Gain of current-adc for converting between SI-Unit and raw value */
 	uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
-	/* Offset of load current adc */
+	/* Offset of current-adc */
 	int32_t adc_current_offset_nA;
-	/* Gain of DAC. It converts voltage to DAC raw value */
+	/* Gain of voltage-adc for converting between SI-Unit and raw value */
+	uint32_t adc_voltage_factor_uV_n8; // n8 means normalized to 2^8 (representing 1.0)
+	/* Offset of voltage-adc */
+	int32_t adc_voltage_offset_uV;
+	/* Gain of voltage DAC for converting between SI-Unit and raw value */
 	uint32_t dac_voltage_inv_factor_uV_n20; // n20 means normalized to 2^20 (representing 1.0)
-	/* Offset of load voltage DAC */
+	/* Offset of voltage DAC */
 	int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
 
