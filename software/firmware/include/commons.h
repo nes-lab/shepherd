@@ -194,6 +194,7 @@ struct ConverterConfig {
 
 struct HarvesterConfig{
 	uint32_t algorithm;
+	uint32_t hrv_mode;
 	uint32_t window_size;
 	uint32_t voltage_uV;
 	uint32_t voltage_min_uV;
@@ -203,7 +204,6 @@ struct HarvesterConfig{
 	uint32_t setpoint_n8;
 	uint32_t interval_n;	// between measurements
 	uint32_t duration_n;	// of measurement
-	uint32_t dac_resolution_bit;  // smallest step-size in bit
 	uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
 
