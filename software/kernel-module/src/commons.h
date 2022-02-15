@@ -91,9 +91,12 @@ struct ProgrammerCtrl {
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0
- * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256) = 5'000
- * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256) = 50'000
+ * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256)
+ * 		-> bit-calc: 5V-in-uV = 22.25 bit, 9 extra bits are safe
+ * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256)
+ * 		-> bit-calc: 50mA-in-nA = 25.57 bit, so n8 is overflowing u32 -> keep the multiplication u64!
  * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
+ * 		-> bit-calc:
  */
 struct CalibrationConfig {
 	/* Gain of current-adc for converting between SI-Unit and raw value */
@@ -164,6 +167,7 @@ struct ConverterConfig {
 
 struct HarvesterConfig{
 	uint32_t algorithm;
+	uint32_t hrv_mode;
 	uint32_t window_size;
 	uint32_t voltage_uV;
 	uint32_t voltage_min_uV;
@@ -173,7 +177,6 @@ struct HarvesterConfig{
 	uint32_t setpoint_n8;
 	uint32_t interval_n;	// between measurements
 	uint32_t duration_n;	// of measurement
-	uint32_t dac_resolution_bit;  // smallest step-size in bit
 	uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
 

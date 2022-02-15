@@ -466,7 +466,7 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 
 		printk(KERN_INFO
 		       "shprd: Setting ADC-Voltage calibration config. gain: %d, offset: %d",
-		       tmp.adc_current_factor_nA_n8, tmp.adc_current_offset_nA);
+		       tmp.adc_voltage_factor_uV_n8, tmp.adc_voltage_offset_uV);
 
 		printk(KERN_INFO
 		       "shprd: Setting DAC-Voltage calibration config. gain: %d, offset: %d",
@@ -499,11 +499,13 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 	return sprintf(
-		buf, "%u %d \n%u %d \n",
+		buf, "%u %d \n%u %d \n%u %d \n",
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
-		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12));
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12),
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16),
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20));
 }
 
 static ssize_t sysfs_virtual_converter_settings_store(struct kobject *kobj,
