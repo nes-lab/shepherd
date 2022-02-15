@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 import yaml
 
-from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData
+from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData, VirtualHarvesterData
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_data import flatten_dict_list
 
@@ -20,6 +20,19 @@ def virtsource_settings():
     vs_set = VirtualSourceData(vs_dict)
     vs_list = vs_set.export_for_sysfs()
     return vs_list
+
+
+@pytest.fixture
+def harvester_settings():
+    here = Path(__file__).absolute()
+    name = "example_config_harvester.yml"
+    file_path = here.parent / name
+    with open(file_path, "r") as config_data:
+        hrv_dict = yaml.safe_load(config_data)["parameters"]["harvester"]
+
+    hrv_set = VirtualHarvesterData(hrv_dict)
+    hrv_list = hrv_set.export_for_sysfs()
+    return hrv_list
 
 
 @pytest.fixture()
@@ -141,6 +154,18 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
     calibration_settings["dac_voltage_gain"] = 253
     calibration_settings["dac_voltage_offset"] = -3
     assert sysfs_interface.read_calibration_settings() == calibration_settings
+
+
+@pytest.mark.hardware
+def test_initial_harvester_settings(shepherd_up, harvester_settings):
+    sysfs_interface.write_virtual_harvester_settings(harvester_settings)
+    assert sysfs_interface.read_virtual_harvester_settings() == harvester_settings
+
+
+@pytest.mark.hardware
+def test_initial_harvester_settings(shepherd_up):
+    hrv_list = [0] + list(range(200, 211))
+    assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
 @pytest.mark.hardware

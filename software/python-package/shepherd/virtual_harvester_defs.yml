@@ -11,12 +11,13 @@ harvesters:
     voltage_min_mV: 0
     voltage_max_mV: 5000
     current_limit_uA: 99000   # allows to keep trajectory in special region (or constant current tracking)
+    voltage_step_mV: 1
     # TODO: current limit not used atm?!
     setpoint_n: 0.70
-    interval_ms: 100
-    duration_ms: 0.1
+    interval_ms: 100     # between measurements
+    duration_ms: 0.1     # of measurement
+    rising: true
     # underlying recoder
-    dynamic_bit: 14 # DAC-bit-resolution - dynamic = smallest step
     wait_cycles: 1 # first cycle: ADC-Sampling & DAC-Writing, further steps: waiting
 
   ivcurve: # sawtooth-wave
@@ -24,21 +25,39 @@ harvesters:
     voltage_min_mV: 0
     voltage_max_mV: 5000
     wait_cycles: 1  # results in 200 Hz (= 100kHz /(2*250))
+    rising: false # downward sawtooth seems to have advantages for solar cells
     # todo: also add switch for sawtooth- vs triangle-wave?
     # todo: could also include a version with dynamic upper-boundary, varied if voc is reached very early
-    # todo: allow downward sawtooth by switching min/max and handling them as start, stop
 
   ivcurves:  # synonym
     base: ivcurve
 
+  iv1000:  # name relates to curves per second
+    base: ivcurve
+    window_size: 100
+    wait_cycles: 0
+
+  iv110: # between 50 & 60 Hz line-frequency to avoid standing waves
+    base: ivcurve
+    window_size: 909
+    wait_cycles: 0
+
   cv: # constant voltage
     voltage_mV: 2400
+
+  cv20:
+    base: cv
+    voltage_mV: 2000
+
+  cv33:
+    base: cv
+    voltage_mV: 3300
 
   mppt_voc: # open circuit voltage for solar
     setpoint_n: 0.76
     interval_ms: 100     # between measurements
-    duration_ms: 0     # of measurement
-    current_limit_uA: 0  # boundary for detecting open circuit
+    duration_ms: 1.2     # solar can overshoot when load is removed
+    current_limit_uA: 0  # boundary for detecting open circuit in emulated version (working on IV-Curves)
 
   mppt_bq: # mppt of TI BQ-Converters for solar
     base: mppt_voc
@@ -62,8 +81,9 @@ harvesters:
     voltage_min_mV: 0
     voltage_max_mV: 5000
     voltage_step_mV: 10
-    interval_ms: 100    # between steps
+    interval_ms: 18   # between steps
 
   mppt_opt: # power-optimum with very fast PO-Variant (harvesting) or special max-pwr-picker (emulator / ivcurve)
     base: mppt_po
+    voltage_step_mV: 1
     interval_ms: 0
