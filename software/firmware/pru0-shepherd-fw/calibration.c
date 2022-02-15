@@ -45,16 +45,17 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
 
 uint32_t cal_conv_adc_raw_to_uV(const uint32_t voltage_raw)
 {
-	const uint32_t V_uV = mul64(voltage_raw, cal->adc_voltage_factor_uV_n8) >> 8u;
+	const uint32_t V_uV = mul32(voltage_raw, cal->adc_voltage_factor_uV_n8) >> 8u;
 	// avoid mixing signed and unsigned OPs
 	if (cal->adc_voltage_offset_uV >= 0)
 	{
-		return add32(V_uV, cal->adc_voltage_offset_uV);
+		const uint32_t adc_offset_uV = cal->adc_voltage_offset_uV;
+		return add32(V_uV, adc_offset_uV);
 	}
 	else
 	{
-		const uint32_t adc_offset_uV = -cal->adc_offset_uV;
-		return sub32(V_uV, adc_offset_uV)
+		const uint32_t adc_offset_uV = -cal->adc_voltage_offset_uV;
+		return sub32(V_uV, adc_offset_uV);
 	}
 }
 
@@ -67,8 +68,10 @@ uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
 	if (cal->dac_voltage_offset_uV >= 0)
 	{
 		const uint32_t dac_offset_uV = cal->dac_voltage_offset_uV;
-		if (voltage_uV > dac_offset_uV)	dac_raw = mul64(voltage_uV - dac_offset_uV, cal->dac_voltage_inv_factor_uV_n20) >> 20u;
-		// else dac_raw = 0u;
+		if (voltage_uV > dac_offset_uV)
+			dac_raw = mul64(voltage_uV - dac_offset_uV, cal->dac_voltage_inv_factor_uV_n20) >> 20u;
+		else
+			dac_raw = 0u;
 	}
 	else
 	{

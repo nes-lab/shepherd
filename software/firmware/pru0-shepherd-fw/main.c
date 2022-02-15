@@ -425,7 +425,7 @@ void main(void)
 
 	shared_memory->dac_auxiliary_voltage_raw = 0u;
 	shared_memory->shepherd_state = STATE_IDLE;
-	shared_memory->shepherd_mode = MODE_HARVESTER;  // TODO: is this the the error for "wrong state"?
+	shared_memory->shepherd_mode = MODE_HARVESTER;
 
 	shared_memory->last_sample_timestamp_ns = 0u;
 	shared_memory->next_buffer_timestamp_ns = 0u;
