@@ -87,6 +87,8 @@ class Recorder(ShepherdIO):
         super().send_virtual_harvester_settings(self.harvester)
         super().send_calibration_settings(self.calibration)
 
+        super().reinitialize_prus()  # needed for ADCs
+
         # Give the PRU empty buffers to begin with
         time.sleep(1)
         for i in range(self.n_buffers):
@@ -186,7 +188,7 @@ class Emulator(ShepherdIO):
         super().send_virtual_converter_settings(self.converter)
         super().send_virtual_harvester_settings(self.harvester)
 
-        super().reinitialize_prus()
+        super().reinitialize_prus()  # needed for ADCs
 
         super().set_target_io_level_conv(self._set_target_io_lvl_conv)
         super().select_main_target_for_io(self._sel_target_for_io)

@@ -339,7 +339,7 @@ class LogWriter(object):
         if self.uart_mon_t is not None:
             logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
-        runtime = round(self.data_grp['time'].shape[0] // self.samplerate_sps, 1)
+        runtime = round(self.data_grp['time'].shape[0] / self.samplerate_sps, 1)
         logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
