@@ -25,7 +25,7 @@ This section describes the structure of data recorded with shepherd:
         `-- values
 
 
-The "mode" attribute allows to distinguish between "load" data and "harvesting" data.
+The "mode" attribute allows to distinguish between data from the harvester and emulator.
 
 The data group contains the actual IV data.
 Time stores the time for each sample in nanoseconds.

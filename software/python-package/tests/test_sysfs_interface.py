@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 import yaml
 
-from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData
+from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData, VirtualHarvesterData
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_data import flatten_dict_list
 
@@ -12,7 +12,7 @@ from shepherd.virtual_source_data import flatten_dict_list
 @pytest.fixture
 def virtsource_settings():
     here = Path(__file__).absolute()
-    name = "example_virtsource_settings.yml"
+    name = "example_config_virtsource.yml"
     file_path = here.parent / name
     with open(file_path, "r") as config_data:
         vs_dict = yaml.safe_load(config_data)["virtsource"]
@@ -20,6 +20,19 @@ def virtsource_settings():
     vs_set = VirtualSourceData(vs_dict)
     vs_list = vs_set.export_for_sysfs()
     return vs_list
+
+
+@pytest.fixture
+def harvester_settings():
+    here = Path(__file__).absolute()
+    name = "example_config_harvester.yml"
+    file_path = here.parent / name
+    with open(file_path, "r") as config_data:
+        hrv_dict = yaml.safe_load(config_data)["parameters"]["harvester"]
+
+    hrv_set = VirtualHarvesterData(hrv_dict)
+    hrv_list = hrv_set.export_for_sysfs()
+    return hrv_list
 
 
 @pytest.fixture()
@@ -31,7 +44,7 @@ def shepherd_running(shepherd_up):
 @pytest.fixture()
 def calibration_settings():
     cal = CalibrationData.from_default()
-    return cal.export_for_sysfs("emulation")
+    return cal.export_for_sysfs("emulator")
 
 
 @pytest.mark.hardware
@@ -81,7 +94,7 @@ def test_start_delayed(shepherd_up):
         sysfs_interface.set_start()
 
 
-@pytest.mark.parametrize("mode", ["harvesting", "emulation"])
+@pytest.mark.parametrize("mode", ["harvester", "emulator"])
 def test_set_mode(shepherd_up, mode):
     sysfs_interface.write_mode(mode)
     assert sysfs_interface.get_mode() == mode
@@ -90,13 +103,13 @@ def test_set_mode(shepherd_up, mode):
 # TODO: is this not tested?
 def test_initial_mode(shepherd_up):
     # NOTE: initial config is set in main() of pru0
-    assert sysfs_interface.get_mode() == "harvesting"
+    assert sysfs_interface.get_mode() == "harvester"
 
 
 @pytest.mark.hardware
 def test_set_mode_fail_offline(shepherd_running):
     with pytest.raises(sysfs_interface.SysfsInterfaceException):
-        sysfs_interface.write_mode("harvesting")
+        sysfs_interface.write_mode("harvester")
 
 
 @pytest.mark.hardware
@@ -108,7 +121,7 @@ def test_set_mode_fail_invalid(shepherd_up):
 @pytest.mark.parametrize("value", [0, 0.1, 3.2])
 def test_dac_aux_voltage(shepherd_up, value):
     cal_set = CalibrationData.from_default()
-    msb_threshold = cal_set.convert_raw_to_value("emulation", "dac_voltage_b", 2)
+    msb_threshold = cal_set.convert_raw_to_value("emulator", "dac_voltage_b", 2)
     sysfs_interface.write_dac_aux_voltage(cal_set, value)
     assert abs(sysfs_interface.read_dac_aux_voltage(cal_set) - value) <= msb_threshold
 
@@ -133,12 +146,26 @@ def test_calibration_settings(shepherd_up, calibration_settings):
 
 @pytest.mark.hardware
 def test_initial_calibration_settings(shepherd_up, calibration_settings):
-    # NOTE: initial config is set in main() of pru0
-    calibration_settings["adc_gain"] = 255
-    calibration_settings["adc_offset"] = -1
-    calibration_settings["dac_gain"] = 254
-    calibration_settings["dac_offset"] = -2
+    # NOTE: initial config is in common_inits.h of kernel-module
+    calibration_settings["adc_current_gain"] = 255
+    calibration_settings["adc_current_offset"] = -1
+    calibration_settings["adc_voltage_gain"] = 254
+    calibration_settings["adc_voltage_offset"] = -2
+    calibration_settings["dac_voltage_gain"] = 253
+    calibration_settings["dac_voltage_offset"] = -3
     assert sysfs_interface.read_calibration_settings() == calibration_settings
+
+
+@pytest.mark.hardware
+def test_initial_harvester_settings(shepherd_up, harvester_settings):
+    sysfs_interface.write_virtual_harvester_settings(harvester_settings)
+    assert sysfs_interface.read_virtual_harvester_settings() == harvester_settings
+
+
+@pytest.mark.hardware
+def test_initial_harvester_settings(shepherd_up):
+    hrv_list = [0] + list(range(200, 211))
+    assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
 @pytest.mark.hardware

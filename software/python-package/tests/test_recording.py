@@ -6,11 +6,11 @@ import numpy as np
 
 from shepherd import LogWriter
 from shepherd import Recorder
-from shepherd import record
+from shepherd import run_recorder
 from shepherd import CalibrationData
 
 
-@pytest.fixture(params=["harvesting"])  # TODO: there is a second mode now
+@pytest.fixture(params=["harvester"])  # TODO: there is a second mode now
 def mode(request):
     return request.param
 
@@ -61,7 +61,7 @@ def test_recorder(log_writer, recorder):
 def test_record_fn(tmp_path, shepherd_up):
     output = tmp_path / "rec.h5"
     start_time = int(time.time() + 10)
-    record(
+    run_recorder(
         output_path=output,
         duration=10,
         force_overwrite=True,

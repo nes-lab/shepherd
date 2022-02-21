@@ -1,1 +1,3 @@
-example_config.yml etc/shepherd
+example_config_harvester.yml etc/shepherd
+example_config_emulator.yml etc/shepherd
+example_config_harvester.yml etc/shepherd/config.yml

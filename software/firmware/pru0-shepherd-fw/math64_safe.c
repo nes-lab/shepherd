@@ -29,30 +29,29 @@ uint32_t min_value(uint32_t value1, uint32_t value2)
  */
 uint64_t mul64(const uint64_t value1, const uint64_t value2)
 {
-	const uint32_t f1H = value1 >> 32u;
-	const uint32_t f1L = (uint32_t)value1;
-	const uint32_t f2H = value2 >> 32u;
-	const uint32_t f2L = (uint32_t)value2;
-	uint64_t product = (uint64_t)f1L * (uint64_t)f2L;
-	product += ((uint64_t)f1L * (uint64_t)f2H) << 32u;
-	product += ((uint64_t)f1H * (uint64_t)f2L) << 32u;
-	//const uint64_t product4 = ((uint64_t)f2H * (uint64_t)f2H); // << 64u
+	const uint32_t v1H = value1 >> 32u;
+	const uint32_t v1L = (uint32_t)value1;
+	const uint32_t v2H = value2 >> 32u;
+	const uint32_t v2L = (uint32_t)value2;
+	uint64_t product = (uint64_t)v1L * (uint64_t)v2L;
+	product += ((uint64_t)v1L * (uint64_t)v2H) << 32u;
+	product += ((uint64_t)v1H * (uint64_t)v2L) << 32u;
+	//const uint64_t product4 = ((uint64_t)v2H * (uint64_t)v2H); // << 64u
 	// check for possible overflow - return max
-	uint8_ft f1bits = get_num_size_as_bits(f1H);
-	if (f1bits == 0u) f1bits = get_num_size_as_bits(f1L);
-	uint8_ft f2bits = get_num_size_as_bits(f2H);
-	if (f2bits == 0u) f2bits = get_num_size_as_bits(f2L);
-	if ((f1bits + f2bits) <= 64u) 	return product; // simple approximation, not 100% correct, but cheap
+	uint8_ft v1bits = get_num_size_as_bits(v1H) + 32u;
+	if (v1bits <= 32u) 	v1bits = get_num_size_as_bits(v1L);
+	uint8_ft v2bits = get_num_size_as_bits(v2H) + 32u;
+	if (v2bits <= 32u)	v2bits = get_num_size_as_bits(v2L);
+	if ((v1bits + v2bits) <= 64u) 	return product; // simple approximation, not 100% correct, but cheap
 	else 				return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
 }
 
 uint32_t mul32(const uint32_t value1, const uint32_t value2)
 {
-	uint64_t product = (uint64_t)value1 * (uint64_t)value2;
+	const uint64_t product = (uint64_t)value1 * (uint64_t)value2;
 	// check for possible overflow - return max
-	uint8_ft vbits = get_num_size_as_bits(product);
-	if (vbits <= 32u)	return (uint32_t)product;
-	else 			return (uint32_t)(0xFFFFFFFFu);
+	if (product < 0xFFFFFFFFull)	return (uint32_t)product;
+	else 				return (uint32_t)(0xFFFFFFFFu);
 }
 
 uint64_t add64(const uint64_t value1, const uint64_t value2)

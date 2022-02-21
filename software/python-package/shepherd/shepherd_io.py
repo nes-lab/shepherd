@@ -45,7 +45,7 @@ gpio_pin_nums = {
 
 class ShepherdIOException(Exception):
     def __init__(self, message: str, id_num: int = 0, value: int = 0):
-        super().__init__(message)
+        super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
         self.id_num = id_num
         self.value = value
 
@@ -300,7 +300,7 @@ class ShepherdIO(object):
         if mode in cal_component_list:
             self.component = mode
         else:
-            self.component = "emulation"
+            self.component = "emulator"
         self.gpios = {}
 
     def __del__(self):

@@ -362,12 +362,14 @@ static ssize_t sysfs_mode_show(struct kobject *kobj,
 	mode = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
 	switch (mode) {
-	case MODE_HARVEST:
-		return sprintf(buf, "harvesting");
-	case MODE_EMULATE:
-		return sprintf(buf, "emulation");
-	case MODE_EMULATE_CAL:
-		return sprintf(buf, "emulation_cal");
+	case MODE_HARVESTER:
+		return sprintf(buf, "harvester");
+	case MODE_HRV_ADC_READ:
+		return sprintf(buf, "hrv_adc_read");
+	case MODE_EMULATOR:
+		return sprintf(buf, "emulator");
+	case MODE_EMU_ADC_READ:
+		return sprintf(buf, "emu_adc_read");
 	case MODE_DEBUG:
 		return sprintf(buf, "debug");
 	case MODE_NONE:
@@ -393,25 +395,20 @@ static ssize_t sysfs_mode_store(struct kobject *kobj,
 		return -EBUSY;
 
 	// note: longer string must come first in case of similar strings (emulation_cal, emulation)
-     	if (strncmp(buf, "harvesting", 10) == 0) {
-		if ((count < 10) || (count > 11))
-			return -EINVAL;
-
-		mode = MODE_HARVEST;
-    	} else if (strncmp(buf, "emulation_cal", 13) == 0) {
-        	if ((count < 13) || (count > 14))
-            		return -EINVAL;
-
-        	mode = MODE_EMULATE_CAL;
-	} else if (strncmp(buf, "emulation", 9) == 0) {
-		if ((count < 9) || (count > 10))
-			return -EINVAL;
-
-		mode = MODE_EMULATE;
+	if (strncmp(buf, "harvester", 9) == 0) {
+		if ((count < 9) || (count > 10)) return -EINVAL;
+		mode = MODE_HARVESTER;
+	} else 	if (strncmp(buf, "hrv_adc_read", 12) == 0) {
+		if ((count < 12) || (count > 13)) return -EINVAL;
+		mode = MODE_HRV_ADC_READ;
+	} else if (strncmp(buf, "emulator", 8) == 0) {
+		if ((count < 8) || (count > 9)) return -EINVAL;
+		mode = MODE_EMULATOR;
+	} else if (strncmp(buf, "emu_adc_read", 12) == 0) {
+        	if ((count < 12) || (count > 13)) return -EINVAL;
+        	mode = MODE_EMU_ADC_READ;
 	} else if (strncmp(buf, "debug", 5) == 0) {
-		if ((count < 5) || (count > 6))
-			return -EINVAL;
-
+		if ((count < 5) || (count > 6)) return -EINVAL;
 		mode = MODE_DEBUG;
 	} else
 		return -EINVAL;
@@ -458,26 +455,36 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-	if (sscanf(buf,"%u %d %u %d",
+	if (sscanf(buf,"%u %d %u %d %u %d",
 	        &tmp.adc_current_factor_nA_n8, &tmp.adc_current_offset_nA,
-	        &tmp.dac_voltage_inv_factor_uV_n20, &tmp.dac_voltage_offset_uV) == 4)
+	        &tmp.adc_voltage_factor_uV_n8, &tmp.adc_voltage_offset_uV,
+	        &tmp.dac_voltage_inv_factor_uV_n20, &tmp.dac_voltage_offset_uV) == 6)
 	{
 		printk(KERN_INFO
-		       "shprd: Setting ADC-Current calibration config. Current gain: %d, current offset: %d",
+		       "shprd: Setting ADC-Current calibration config. gain: %d, offset: %d",
 		       tmp.adc_current_factor_nA_n8, tmp.adc_current_offset_nA);
 
 		printk(KERN_INFO
-		       "shprd: Setting DAC-Voltage calibration config. Voltage gain: %d, voltage offset: %d",
+		       "shprd: Setting ADC-Voltage calibration config. gain: %d, offset: %d",
+		       tmp.adc_voltage_factor_uV_n8, tmp.adc_voltage_offset_uV);
+
+		printk(KERN_INFO
+		       "shprd: Setting DAC-Voltage calibration config. gain: %d, offset: %d",
 		       tmp.dac_voltage_inv_factor_uV_n20, tmp.dac_voltage_offset_uV);
 
 		writel(tmp.adc_current_factor_nA_n8,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
 		writel(tmp.adc_current_offset_nA,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
-		writel(tmp.dac_voltage_inv_factor_uV_n20,
+		writel(tmp.adc_voltage_factor_uV_n8,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
-		writel(tmp.dac_voltage_offset_uV,
+		writel(tmp.adc_voltage_offset_uV,
 		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
+		writel(tmp.dac_voltage_inv_factor_uV_n20,
+		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16);
+		writel(tmp.dac_voltage_offset_uV,
+		       pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20);
+		/* TODO: this should copy the struct in one go */
 
 		return count;
 	}
@@ -492,11 +499,13 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj,
 
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 	return sprintf(
-		buf, "%u %d \n%u %d \n",
+		buf, "%u %d \n%u %d \n%u %d \n",
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
 		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
-		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12));
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12),
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16),
+		readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20));
 }
 
 static ssize_t sysfs_virtual_converter_settings_store(struct kobject *kobj,

@@ -220,7 +220,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			send_message(shared_mem, MSG_DBG_ADC, res, 0);
 			return 1u;
 
-		case MSG_DBG_DAC:
+		case MSG_DBG_DAC: // TODO: better name: MSG_CTRL_DAC
 			sample_dbg_dac(msg_in.value[0]);
 			return 1u;
 
@@ -425,7 +425,7 @@ void main(void)
 
 	shared_memory->dac_auxiliary_voltage_raw = 0u;
 	shared_memory->shepherd_state = STATE_IDLE;
-	shared_memory->shepherd_mode = MODE_HARVEST;  // TODO: is this the the error for "wrong state"?
+	shared_memory->shepherd_mode = MODE_HARVESTER;
 
 	shared_memory->last_sample_timestamp_ns = 0u;
 	shared_memory->next_buffer_timestamp_ns = 0u;

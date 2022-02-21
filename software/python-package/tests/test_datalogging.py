@@ -46,7 +46,7 @@ def calibration_data():
     return cd
 
 
-@pytest.mark.parametrize("mode", ["harvesting"])
+@pytest.mark.parametrize("mode", ["harvester"])
 def test_create_logwriter(mode, tmp_path, calibration_data):
     d = tmp_path / f"{ mode }.h5"
     h = LogWriter(store_path=d, calibration_data=calibration_data, mode=mode)
@@ -77,7 +77,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     assert new_stat.st_mtime > stat.st_mtime
 
 
-@pytest.mark.parametrize("mode", ["harvesting"])
+@pytest.mark.parametrize("mode", ["harvester"])
 def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
     with LogWriter(
@@ -95,7 +95,7 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
             assert all(written["data"][variable][:] == ref_var)
 
 
-@pytest.mark.parametrize("mode", ["harvesting"])
+@pytest.mark.parametrize("mode", ["harvester"])
 def test_calibration_logging(mode, tmp_path, calibration_data):
     d = tmp_path / "recording.h5"
     with LogWriter(

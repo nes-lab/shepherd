@@ -71,9 +71,10 @@ enum MsgType {
 enum MsgID { MSG_TO_KERNEL = 0x55, MSG_TO_PRU = 0xAA };
 
 enum ShepherdMode {
-	MODE_HARVEST,
-	MODE_EMULATE,
-	MODE_EMULATE_CAL,
+	MODE_HARVESTER,
+	MODE_HRV_ADC_READ,
+	MODE_EMULATOR,
+	MODE_EMU_ADC_READ,
 	MODE_DEBUG,
 	MODE_NONE
 }; // TODO: allow to set "NONE", shuts down hrv & emu
@@ -117,25 +118,32 @@ struct ProgrammerCtrl {
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0
- * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256) = 5'000
- * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256) = 50'000
+ * ADC: VIn = DOut * 19.5313 uV -> factor for raw-value to calc uV_n8 (*256)
+ * 		-> bit-calc: 5V-in-uV = 22.25 bit, 9 extra bits are safe
+ * 	CIn = DOut * 195.313 nA -> factor for raw-value to calc nA_n8 (*256)
+ * 		-> bit-calc: 50mA-in-nA = 25.57 bit, so n8 is overflowing u32 -> keep the multiplication u64!
  * DAC	VOut = DIn * 76.2939 uV -> inverse factor to get raw_n20-value from uV_n20 = 13'743
+ * 		-> bit-calc:
  */
 struct CalibrationConfig {
-	/* Gain of load current adc. It converts current to ADC raw value */
+	/* Gain of current-adc for converting between SI-Unit and raw value */
 	uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
-	/* Offset of load current adc */
+	/* Offset of current-adc */
 	int32_t adc_current_offset_nA;
-	/* Gain of DAC. It converts voltage to DAC raw value */
+	/* Gain of voltage-adc for converting between SI-Unit and raw value */
+	uint32_t adc_voltage_factor_uV_n8; // n8 means normalized to 2^8 (representing 1.0)
+	/* Offset of voltage-adc */
+	int32_t adc_voltage_offset_uV;
+	/* Gain of voltage DAC for converting between SI-Unit and raw value */
 	uint32_t dac_voltage_inv_factor_uV_n20; // n20 means normalized to 2^20 (representing 1.0)
-	/* Offset of load voltage DAC */
+	/* Offset of voltage DAC */
 	int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
 
 #define LUT_SIZE	(12)
 
 /* This structure defines all settings of virtual converter emulation
- * more complex regulators use vars in their section and above
+ * more complex converters use vars in their section and above
  * NOTE: sys-FS-FNs currently uses 4 byte steps for transfer, so struct must be (size)mod4=0
  * Container-sizes with SI-Units:
  * 	_nF-u32 = ~ 4.294 F
@@ -186,6 +194,7 @@ struct ConverterConfig {
 
 struct HarvesterConfig{
 	uint32_t algorithm;
+	uint32_t hrv_mode;
 	uint32_t window_size;
 	uint32_t voltage_uV;
 	uint32_t voltage_min_uV;
@@ -195,7 +204,6 @@ struct HarvesterConfig{
 	uint32_t setpoint_n8;
 	uint32_t interval_n;	// between measurements
 	uint32_t duration_n;	// of measurement
-	uint32_t dac_resolution_bit;  // smallest step-size in bit
 	uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
 
@@ -233,7 +241,7 @@ struct SyncMsg {
 /* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
 struct SharedMem {
 	uint32_t shepherd_state;
-	/* Stores the mode, e.g. harvesting or emulation */
+	/* Stores the mode, e.g. harvester or emulator */
 	uint32_t shepherd_mode;
 	/* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
 	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */

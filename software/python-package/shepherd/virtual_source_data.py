@@ -33,7 +33,7 @@ class VirtualSourceData(object):
     - internal settings are derived from existing values (PRU has no FPU, so it is done here)
     - settings can be exported in required format
     - NOTES to naming:
-        - virtual harvester -> used for recording and emulation, contains tools to characterize (ivcurve) and harvest these energy-sources (mppt)
+        - virtual harvester -> used for harvester and emulator, contains tools to characterize (ivcurve) and harvest these energy-sources (mppt)
         - virtual converter -> buck-boost, diode and other converters to supply the target
         - virtual source -> container for harvester + converter
     """
@@ -107,36 +107,36 @@ class VirtualSourceData(object):
         return [
             # General
             int(self.data["converter_mode"]),
-            int(self.data["interval_startup_delay_drain_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples
-            int(self.data["V_input_max_mV"] * 1e3),  # uV
-            int(self.data["I_input_max_mA"] * 1e6),  # nA
-            int(self.data["V_input_drop_mV"] * 1e3),  # uV
-            int(self.data["Constant_1k_per_Ohm"] * 1),  # 1/mOhm
-            int(self.data["Constant_us_per_nF_n28"]),  # us/nF = us*V / nA*s
-            int(self.data["V_intermediate_init_mV"] * 1e3),  # uV
-            int(self.data["I_intermediate_leak_nA"] * 1),  # nA
-            int(self.data["V_enable_output_threshold_mV"] * 1e3),  # uV
-            int(self.data["V_disable_output_threshold_mV"] * 1e3),  # uV
-            int(self.data["dV_enable_output_mV"] * 1e3),  # uV
-            int(self.data["interval_check_thresholds_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples
-            int(self.data["V_pwr_good_enable_threshold_mV"] * 1e3),  # uV
-            int(self.data["V_pwr_good_disable_threshold_mV"] * 1e3),  # uV
-            int(self.data["immediate_pwr_good_signal"] > 0),  # bool
-            int(self.data["V_output_log_gpio_threshold_mV"] * 1e3),  # uV
+            round(self.data["interval_startup_delay_drain_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples
+            round(self.data["V_input_max_mV"] * 1e3),  # uV
+            round(self.data["I_input_max_mA"] * 1e6),  # nA
+            round(self.data["V_input_drop_mV"] * 1e3),  # uV
+            round(self.data["Constant_1k_per_Ohm"] * 1),  # 1/mOhm
+            round(self.data["Constant_us_per_nF_n28"]),  # us/nF = us*V / nA*s
+            round(self.data["V_intermediate_init_mV"] * 1e3),  # uV
+            round(self.data["I_intermediate_leak_nA"] * 1),  # nA
+            round(self.data["V_enable_output_threshold_mV"] * 1e3),  # uV
+            round(self.data["V_disable_output_threshold_mV"] * 1e3),  # uV
+            round(self.data["dV_enable_output_mV"] * 1e3),  # uV
+            round(self.data["interval_check_thresholds_ms"] * self.samplerate_sps // 10 ** 3),  # n, samples
+            round(self.data["V_pwr_good_enable_threshold_mV"] * 1e3),  # uV
+            round(self.data["V_pwr_good_disable_threshold_mV"] * 1e3),  # uV
+            round(self.data["immediate_pwr_good_signal"] > 0),  # bool
+            round(self.data["V_output_log_gpio_threshold_mV"] * 1e3),  # uV
             # Boost
-            int(self.data["V_input_boost_threshold_mV"] * 1e3),  # uV
-            int(self.data["V_intermediate_max_mV"] * 1e3),  # uV
+            round(self.data["V_input_boost_threshold_mV"] * 1e3),  # uV
+            round(self.data["V_intermediate_max_mV"] * 1e3),  # uV
             # Buck
-            int(self.data["V_output_mV"] * 1e3),  # uV
-            int(self.data["V_buck_drop_mV"] * 1e3),  # uV
+            round(self.data["V_output_mV"] * 1e3),  # uV
+            round(self.data["V_buck_drop_mV"] * 1e3),  # uV
             # LUTs
-            int(self.data["LUT_input_V_min_log2_uV"]),  #
-            int(self.data["LUT_input_I_min_log2_nA"]),  #
-            int(self.data["LUT_output_I_min_log2_nA"]),  #
+            round(self.data["LUT_input_V_min_log2_uV"]),  #
+            round(self.data["LUT_input_I_min_log2_nA"]),  #
+            round(self.data["LUT_output_I_min_log2_nA"]),  #
             # reduce resolution to n8 to fit in container
-            [min(255, int(256 * value)) if (value > 0) else 0 for value in self.data["LUT_input_efficiency"]],
+            [min(255, round(256 * value)) if (value > 0) else 0 for value in self.data["LUT_input_efficiency"]],
             # is now n4 -> resulting value for PRU is inverted, so 2^4 / value, inv-max = 2^14 for min-value = 1/1024
-            [min((2**14), int((2**4) / value)) if (value > 0) else int(2**14) for value in self.data["LUT_output_efficiency"]],
+            [min((2**14), round((2**4) / value)) if (value > 0) else int(2**14) for value in self.data["LUT_output_efficiency"]],
         ]
 
     def calculate_internal_states(self) -> NoReturn:
@@ -201,7 +201,7 @@ class VirtualSourceData(object):
         if not (isinstance(dV_output_imed_low_mV, (int, float)) and (dV_output_imed_low_mV >= 0)):
             dV_output_imed_low_mV = 0
 
-        # decide which hysteresis-thresholds to use for buck-regulator
+        # decide which hysteresis-thresholds to use for buck-converter
         if self.data["enable_buck"] > 0:
             V_pre_output_mV = self.data["V_output_mV"] + self.data["V_buck_drop_mV"]
 

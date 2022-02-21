@@ -77,7 +77,7 @@ def shepherd_up(fake_hardware, shepherd_down):
     if fake_hardware is not None:
         files = [
             ("/sys/kernel/shepherd/state", "idle"),
-            ("/sys/kernel/shepherd/mode", "harvesting"),
+            ("/sys/kernel/shepherd/mode", "harvester"),
             ("/sys/kernel/shepherd/n_buffers", "1"),
             ("/sys/kernel/shepherd/memory/address", "1"),
             ("/sys/kernel/shepherd/memory/size", "1"),

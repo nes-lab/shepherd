@@ -9,43 +9,35 @@ Some of the values were measured with an early prototype and may not accurately 
 .. table:: Performance specification
 
     +----------------------------+------------------------+----------------------+
-    | Range                      | Harvesting voltage     | 100 mV - 4.8 V       |
+    | Range                      | Harvester voltage      | 0 mV - 4.8 V         |
     +                            +------------------------+----------------------+
-    |                            | Harvesting current     | 0 mA - 25 mA         |
+    |                            | Harvester current      | 0 mA - 50 mA         |
     +                            +------------------------+----------------------+
-    |                            | Load voltage           | 0 V - 4.8 V          |
+    |                            | Emulator voltage       | 0 mV - 4.8 V         |
     +                            +------------------------+----------------------+
-    |                            | Load current           | 0 mA - 25 mA         |
-    +                            +------------------------+----------------------+
-    |                            | Emulation voltage      | 100 mV - 4 V         |
-    +                            +------------------------+----------------------+
-    |                            | Emulation current      | 0 mA - 25 mA         |
+    |                            | Emulator current       | 0 mA - 50 mA         |
     +----------------------------+------------------------+----------------------+
-    | 24h DC Accuracy            | Harvesting voltage     | 19.53 uV +/- 0.01 %  |
+    | 24h DC Accuracy            | Harvester voltage      | 19.53 uV +/- 0.01 %  |
     +                            +------------------------+----------------------+
-    |                            | Harvesting current     | 190 nA +/- 0.07 %    |
+    |                            | Harvester current      | 190 nA +/- 0.07 %    |
     +                            +------------------------+----------------------+
-    |                            | Load voltage           | 19.53 uV +/- 0.01 %  |
+    |                            | Emulator voltage       | 76.3 uV +/- 0.012 %  |
     +                            +------------------------+----------------------+
-    |                            | Load current           | 190 nA +/- 0.01 %    |
-    +                            +------------------------+----------------------+
-    |                            | Emulation voltage      | 76.3 uV +/- 0.012 %  |
-    +                            +------------------------+----------------------+
-    |                            | Emulation current      | 381.4 uA +/- 0.025 % |
+    |                            | Emulator current       | 381.4 uA +/- 0.025 % |
     +----------------------------+------------------------+----------------------+
     | Bandwidth                  | All recording channels | 15 kHz               |
     +----------------------------+------------------------+----------------------+
-    | Risetime                   | Emulation voltage      | 64 ms                |
+    | Risetime                   | Emulator voltage       | 7 us                 |
     +                            +------------------------+----------------------+
-    |                            | Emulation current      | 19.2 us              |
+    |                            | Emulator current       | 19.2 us ??           |
     +----------------------------+------------------------+----------------------+
-    | Max. Burden voltage        | Harvesting recorder    | 50.4 mV              |
-    +                            +------------------------+----------------------+
+    | Max. Burden voltage        | Harvest recorder       | 50.4 mV              |
+    + TODO: still applicable?    +------------------------+----------------------+
     |                            | Load recorder          | 76.1 mV              |
     +----------------------------+------------------------+----------------------+
     | GPIO sampling speed        |                        | 580 kHz - 5 MHz      |
     +----------------------------+------------------------+----------------------+
     | Power consumption          |                        | 345 mA               |
     +----------------------------+------------------------+----------------------+
-    | Max. Synchronization error |                        | < 1.0 us               |
+    | Max. Synchronization error |                        | < 1.0 us             |
     +----------------------------+------------------------+----------------------+

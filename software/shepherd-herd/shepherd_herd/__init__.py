@@ -4,8 +4,8 @@
 shepherd_herd
 ~~~~~
 click-based command line utility for controlling a group of shepherd nodes
-remotely through ssh. Provides commands for starting/stopping harvest and
-emulation, retrieving recordings to the local machine and flashing firmware
+remotely through ssh. Provides commands for starting/stopping harvester and
+emulator, retrieving recordings to the local machine and flashing firmware
 images to target sensor nodes.
 
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
@@ -69,7 +69,7 @@ def find_consensus_time(group):
 
 def configure_shepherd(
     group: Group,
-    command: str,
+    mode: str,
     parameters: dict,
     hostnames: dict,
     verbose: int = 0,
@@ -81,13 +81,13 @@ def configure_shepherd(
 
     Args:
         group (fabric.Group): Group of fabric hosts on which to start shepherd.
-        command (str): What shepherd is supposed to do. One of 'harvest' or 'emulation'.
+        mode (str): What shepherd is supposed to do. One of 'harvester' or 'emulator'.
         parameters (dict): Parameters for shepherd-sheep
         hostnames (dict): Dictionary of hostnames corresponding to fabric hosts
         verbose (int): Verbosity for shepherd-sheep
     """
     config_dict = {
-        "command": command,
+        "mode": mode,
         "verbose": verbose,
         "parameters": parameters,
     }
@@ -356,17 +356,17 @@ def reset(ctx):
 @click.option("--output_path", "-o", type=click.Path(),
     default="/var/shepherd/recordings/",
     help="Dir or file path for resulting hdf5 file")
-@click.option("--harvester", type=str, default=None,
+@click.option("--algorithm", "-a", type=str, default=None,
               help="Choose one of the predefined virtual harvesters")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option("--start/--no-start", default=True, help="Start shepherd after uploading config")
 @click.pass_context
-def harvest(
+def harvester(
     ctx,
     output_path,
-    harvester,
+    algorithm,
     duration,
     force_overwrite,
     use_cal_default,
@@ -378,7 +378,7 @@ def harvest(
 
     parameter_dict = {
         "output_path": str(fp_output),
-        "harvester": harvester,
+        "harvester": algorithm,
         "duration": duration,
         "force_overwrite": force_overwrite,
         "use_cal_default": use_cal_default,
@@ -390,7 +390,7 @@ def harvest(
     
     configure_shepherd(
         ctx.obj["fab group"],
-        "harvest",
+        "harvester",
         parameter_dict,
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
@@ -401,7 +401,7 @@ def harvest(
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
-@cli.command(short_help="Emulates IV data read from INPUT hdf5 file")
+@cli.command(short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data")
 @click.argument("input_path", type=click.Path())
 @click.option("--output_path", "-o", type=click.Path(),
     default="/var/shepherd/recordings/",
@@ -425,7 +425,7 @@ def harvest(
     help="Start shepherd after uploading config",
 )
 @click.pass_context
-def emulate(
+def emulator(
     ctx,
     input_path,
     output_path,
@@ -469,7 +469,7 @@ def emulate(
 
     configure_shepherd(
         ctx.obj["fab group"],
-        "emulate",
+        "emulator",
         parameter_dict,
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
@@ -480,7 +480,7 @@ def emulate(
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
-@cli.command(short_help="Stops any recording/emulation")
+@cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
 def stop(ctx):
     for cnx in ctx.obj["fab group"]:

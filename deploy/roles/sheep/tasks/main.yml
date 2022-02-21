@@ -79,13 +79,16 @@
         "linux-firmware",
         "zlib1g-dev",
         "libjpeg-dev",
-        "python3-numpy",
+        "python3-numpy",    # TODO: rethink apt usage. most of these are easier updatable per pip
         "python3-scipy",
         "python3-zmq",
         "python3-gevent",
         "python3-h5py",
         "python3-pip",
         "python3-virtualenv",
+        "python3-msgpack-numpy",  # copied from debian/control
+        "libdbus-glib-1-dev"      # copied from debian/control
+        "libgirepository1.0-dev"  # copied from debian/control
       ]
     state: present
     update_cache: yes
@@ -141,8 +144,8 @@
     src: "{{ repo_dir.stdout }}/software/meta-package/{{ item }}"
     dest: "{{ shepherd_config_path }}"
   with_items:
-   - 'example_config_emulation.yml'
-   - 'example_config_harvest.yml'
+   - 'example_config_emulator.yml'
+   - 'example_config_harvester.yml'
   tags:
     - source-code
     - python
@@ -150,7 +153,7 @@
 
 - name: set default configuration to harvest (mainly for launcher)
   template:
-    src: "{{ repo_dir.stdout }}/software/meta-package/example_config_harvest.yml"
+    src: "{{ repo_dir.stdout }}/software/meta-package/example_config_harvester.yml"
     dest: "{{ shepherd_config_path }}/config.yml"
   tags:
     - source-code

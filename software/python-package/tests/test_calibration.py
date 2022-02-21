@@ -14,7 +14,7 @@ def data_meas_example_yml():
 @pytest.fixture
 def data_example_yml():
     here = Path(__file__).absolute()
-    name = "example_cal.yml"
+    name = "example_cal_data.yml"
     return here.parent / name
 
 
