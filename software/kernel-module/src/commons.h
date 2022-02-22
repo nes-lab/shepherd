@@ -14,80 +14,71 @@
  * These are the system events that we use to signal events to the PRUs.
  * See the AM335x TRM Table 4-22 for a list of all events
  */
-#define HOST_PRU_EVT_TIMESTAMP          (20)
+#define HOST_PRU_EVT_TIMESTAMP (20)
 
 /* The SharedMem struct resides at the beginning of the PRUs shared memory */
-#define PRU_SHARED_MEM_STRUCT_OFFSET    (0x10000)
+#define PRU_SHARED_MEM_STRUCT_OFFSET (0x10000)
 
 /* Message content description used to distinguish messages for PRU0 */
 enum MsgType {
-    /* USERSPACE (enum <0xC0) */
-    MSG_NONE = 0x00u,
-    MSG_BUF_FROM_HOST = 0x01u,
-    MSG_BUF_FROM_PRU = 0x02u,
-    // DEBUG
-    MSG_DBG_ADC = 0xA0u,
-    MSG_DBG_DAC = 0xA1u,
-    MSG_DBG_GPI = 0xA2u,
-    MSG_DBG_GP_BATOK = 0xA3u,
-    MSG_DBG_PRINT = 0xA6u,
-    MSG_DBG_VSOURCE_P_INP = 0xA8,
-    MSG_DBG_VSOURCE_P_OUT = 0xA9,
-    MSG_DBG_VSOURCE_V_CAP = 0xAA,
-    MSG_DBG_VSOURCE_V_OUT = 0xAB,
-    MSG_DBG_VSOURCE_INIT = 0xAC,
-    MSG_DBG_FN_TESTS = 0xAF,
+	/* USERSPACE (enum <0xC0) */
+	MSG_NONE = 0x00u,
+	MSG_BUF_FROM_HOST = 0x01u,
+	MSG_BUF_FROM_PRU = 0x02u,
+	// DEBUG
+	MSG_DBG_ADC = 0xA0u,
+	MSG_DBG_DAC = 0xA1u,
+	MSG_DBG_GPI = 0xA2u,
+	MSG_DBG_GP_BATOK = 0xA3u,
+	MSG_DBG_PRINT = 0xA6u,
+	MSG_DBG_VSOURCE_P_INP = 0xA8,
+	MSG_DBG_VSOURCE_P_OUT = 0xA9,
+	MSG_DBG_VSOURCE_V_CAP = 0xAA,
+	MSG_DBG_VSOURCE_V_OUT = 0xAB,
+	MSG_DBG_VSOURCE_INIT = 0xAC,
+	MSG_DBG_FN_TESTS = 0xAF,
 
-    /* KERNELSPACE (enum >=0xC0) */
-    // STATUS
-    MSG_STATUS_RESTARTING_ROUTINE = 0xC0,
-    // ERROR
-    MSG_ERROR = 0xE0u,
-    MSG_ERR_MEMCORRUPTION = 0xE1u,
-    MSG_ERR_BACKPRESSURE = 0xE2u,
-    MSG_ERR_INCMPLT = 0xE3u,
-    MSG_ERR_INVLDCMD = 0xE4u,
-    MSG_ERR_NOFREEBUF = 0xE5u,
-    MSG_ERR_TIMESTAMP = 0xE6u,
-    MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7u,
-    MSG_ERR_VALUE = 0xE8u,
-    // Routines
-    MSG_TEST = 0xEAu,
-    MSG_SYNC = 0xEBu
+	/* KERNELSPACE (enum >=0xC0) */
+	// STATUS
+	MSG_STATUS_RESTARTING_ROUTINE = 0xC0,
+	// ERROR
+	MSG_ERROR = 0xE0u,
+	MSG_ERR_MEMCORRUPTION = 0xE1u,
+	MSG_ERR_BACKPRESSURE = 0xE2u,
+	MSG_ERR_INCMPLT = 0xE3u,
+	MSG_ERR_INVLDCMD = 0xE4u,
+	MSG_ERR_NOFREEBUF = 0xE5u,
+	MSG_ERR_TIMESTAMP = 0xE6u,
+	MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7u,
+	MSG_ERR_VALUE = 0xE8u,
+	// Routines
+	MSG_TEST = 0xEAu,
+	MSG_SYNC = 0xEBu
 };
 
 enum MsgID { MSG_TO_KERNEL = 0x55, MSG_TO_PRU = 0xAA };
 
-enum ShepherdMode {
-	MODE_HARVESTER,
-	MODE_HRV_ADC_READ,
-	MODE_EMULATOR,
-	MODE_EMU_ADC_READ,
-	MODE_DEBUG,
-	MODE_NONE
-};
-enum ShepherdState {
-	STATE_UNKNOWN,
-	STATE_IDLE,
-	STATE_ARMED,
-	STATE_RUNNING,
-	STATE_RESET,
-	STATE_FAULT
-};
+enum ShepherdMode { MODE_HARVESTER, MODE_HRV_ADC_READ, MODE_EMULATOR, MODE_EMU_ADC_READ, MODE_DEBUG, MODE_NONE };
+enum ShepherdState { STATE_UNKNOWN, STATE_IDLE, STATE_ARMED, STATE_RUNNING, STATE_RESET, STATE_FAULT };
 
+enum ProgrammerState {
+	PRG_STATE_IDLE = -1,
+	PRG_STATE_STARTING = -2,
+	PRG_STATE_INITIALIZING = -3,
+	PRG_STATE_ERR = -4,
+};
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
-	uint32_t state; 	// 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
-	uint32_t protocol; 	// 1: swd, 2: sbw, 3: jtag
-	uint32_t datarate;	// baud
-	uint32_t datasize;	// bytes
-	uint32_t pin_tck;	// clock-output
-	uint32_t pin_tdio;	// io for swd & sbw, only input for JTAG (TDI)
-	uint32_t pin_tdo;	// data-output, only for JTAG
-	uint32_t pin_tms;	// mode, only for JTAG
+	uint32_t state; // 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
+	uint32_t protocol; // 1: swd, 2: sbw, 3: jtag
+	uint32_t datarate; // baud
+	uint32_t datasize; // bytes
+	uint32_t pin_tck; // clock-output
+	uint32_t pin_tdio; // io for swd & sbw, only input for JTAG (TDI)
+	uint32_t pin_tdo; // data-output, only for JTAG
+	uint32_t pin_tms; // mode, only for JTAG
 } __attribute__((packed)); // TODO: pin_X can be u8, state/protocol u8,
-
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0
@@ -113,7 +104,7 @@ struct CalibrationConfig {
 	int32_t dac_voltage_offset_uV;
 } __attribute__((packed));
 
-#define LUT_SIZE	(12)
+#define LUT_SIZE (12)
 
 /* This structure defines all settings of virtual converter emulation
  * more complex converters use vars in their section and above
@@ -129,7 +120,7 @@ struct ConverterConfig {
 	uint32_t interval_startup_delay_drain_n; // allow target to power up and go to sleep
 
 	uint32_t V_input_max_uV;
-	uint32_t I_input_max_nA;  // limits input-power
+	uint32_t I_input_max_nA; // limits input-power
 	uint32_t V_input_drop_uV; // simulate possible diode
 	uint32_t Constant_1k_per_Ohm; // resistance only active with disabled boost
 
@@ -137,7 +128,7 @@ struct ConverterConfig {
 	uint32_t V_intermediate_init_uV; // allow a proper / fast startup
 	uint32_t I_intermediate_leak_nA;
 
-	uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
+	uint32_t V_enable_output_threshold_uV; // -> output gets connected (hysteresis-combo with next value)
 	uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
 	uint32_t dV_enable_output_uV; // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
 	uint32_t interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
@@ -150,7 +141,7 @@ struct ConverterConfig {
 
 	/* Boost Reg */
 	uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
-	uint32_t V_intermediate_max_uV;  // -> boost shuts off
+	uint32_t V_intermediate_max_uV; // -> boost shuts off
 
 	/* Buck Reg */
 	uint32_t V_output_uV;
@@ -164,22 +155,20 @@ struct ConverterConfig {
 	uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]; // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
 } __attribute__((packed));
 
-
-struct HarvesterConfig{
+struct HarvesterConfig {
 	uint32_t algorithm;
 	uint32_t hrv_mode;
 	uint32_t window_size;
 	uint32_t voltage_uV;
 	uint32_t voltage_min_uV;
 	uint32_t voltage_max_uV;
-	uint32_t voltage_step_uV;  // for window-based algo like ivcurve
-	uint32_t current_limit_nA;   // lower bound to detect zero current
+	uint32_t voltage_step_uV; // for window-based algo like ivcurve
+	uint32_t current_limit_nA; // lower bound to detect zero current
 	uint32_t setpoint_n8;
-	uint32_t interval_n;	// between measurements
-	uint32_t duration_n;	// of measurement
+	uint32_t interval_n; // between measurements
+	uint32_t duration_n; // of measurement
 	uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
-
 
 /* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg {
@@ -195,7 +184,6 @@ struct ProtoMsg {
 	uint32_t value[2];
 } __attribute__((packed));
 
-
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
 struct SyncMsg {
 	/* Identifier => Canary, This is used to identify memory corruption */
@@ -207,12 +195,11 @@ struct SyncMsg {
 	/* Alignment with memory, (bytes)mod4 */
 	uint8_t reserved0[1];
 	/* Actual Content of message */
-	uint32_t buffer_block_period;   // corrected ticks that equal 100ms
-	uint32_t analog_sample_period;  // ~ 10 us
-	uint32_t compensation_steps;    // remainder of buffer_block/sample_count = sample_period
-	uint64_t next_timestamp_ns;     // start of next buffer block
+	uint32_t buffer_block_period; // corrected ticks that equal 100ms
+	uint32_t analog_sample_period; // ~ 10 us
+	uint32_t compensation_steps; // remainder of buffer_block/sample_count = sample_period
+	uint64_t next_timestamp_ns; // start of next buffer block
 } __attribute__((packed));
-
 
 /* This is external to expose some of the attributes through sysfs */
 extern void __iomem *pru_shared_mem_io;
@@ -247,10 +234,10 @@ struct SharedMem {
 	struct ProtoMsg pru0_msg_inbox;
 	struct ProtoMsg pru0_msg_outbox;
 	struct ProtoMsg pru0_msg_error;
-	struct SyncMsg  pru1_sync_inbox;
+	struct SyncMsg pru1_sync_inbox;
 	struct ProtoMsg pru1_sync_outbox;
 	struct ProtoMsg pru1_msg_error;
-    	/* NOTE: struct is capped here, following vars are only for PRUs */
+	/* NOTE: struct is capped here, following vars are only for PRUs */
 } __attribute__((packed));
 
 #endif /* __COMMONS_H_ */
