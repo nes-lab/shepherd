@@ -12,60 +12,61 @@ static struct {
 static void tmsh(void)
 {
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
 }
 
 static void tmsl(void)
 {
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
 }
 
 static void tmsldh(void)
 {
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
 }
 
 static void tdih(void)
 {
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
 }
 
 static void tdil(void)
 {
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
 }
 
 static gpio_state_t tdo_rd(void)
 {
 	gpio_state_t res;
 	sys_gpio_cfg_dir(pins.sbwtdio, GPIO_DIR_IN);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	res = sys_gpio_get(pins.sbwtdio);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
 	sys_gpio_cfg_dir(pins.sbwtdio, GPIO_DIR_OUT);
-	__delay_var_cycles(clk_period_cycles);
 
 	return res;
 }
@@ -73,12 +74,12 @@ static gpio_state_t tdo_rd(void)
 static void tdo_sbw(void)
 {
 	sys_gpio_cfg_dir(pins.sbwtdio, GPIO_DIR_IN);
+	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
 	sys_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
 	sys_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
 	sys_gpio_cfg_dir(pins.sbwtdio, GPIO_DIR_OUT);
-	__delay_var_cycles(clk_period_cycles);
 }
 
 void set_sbwtdio(gpio_state_t state)
@@ -206,7 +207,12 @@ int sbw_transport_init(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsign
 	pins.sbwtck = pin_sbwtck;
 	pins.sbwtdio = pin_sbwtdio;
 
-	clk_period_cycles = F_CPU / f_clk / 2;
+	/*
+	 * Ignore the f_clk parameter and make sure that clock period equals 5 clock cycles at 18Mhz -> 280ns
+	 * This is the value from SLAU320AJ section 2.2.3.1. and works reliably where other values do not work.
+	 * Here, we precalculate the delay cycles w.r.t. the PRU's clock.
+	 */
+	clk_period_cycles = (5 * F_CPU) / 18000000;
 
 	return 0;
 }
