@@ -18,7 +18,7 @@ static struct {
 
 static unsigned int clk_period_cycles;
 
-static inline void iow(gpio_state_t swdio_state)
+static void iow(gpio_state_t swdio_state)
 {
 	hal_gpio_set(pins.swdio, swdio_state);
 	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
@@ -27,7 +27,7 @@ static inline void iow(gpio_state_t swdio_state)
 	__delay_var_cycles(clk_period_cycles);
 }
 
-static inline int ior(void)
+static int ior(void)
 {
 	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
@@ -37,7 +37,7 @@ static inline int ior(void)
 	return ret;
 }
 
-static inline void iotrn(gpio_dir_t dir)
+static void iotrn(gpio_dir_t dir)
 {
 	hal_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
 	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);

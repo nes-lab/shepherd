@@ -17,6 +17,7 @@ typedef struct {
 	fn_read_word_t read;
 	fn_write_word_t write;
 	fn_close_t close;
+	unsigned int word_width;
 } device_driver_t;
 
 extern device_driver_t nrf52_driver;

@@ -162,10 +162,4 @@ static int close(void)
 	return DRV_ERR_OK;
 }
 
-device_driver_t nrf52_driver = {
-	.open = open,
-	.erase = nvm_erase,
-	.write = nvm_write,
-	.close = close,
-	.read = mem_read,
-};
+device_driver_t nrf52_driver = { .open = open, .erase = nvm_erase, .write = nvm_write, .close = close, .read = mem_read, .word_width = 32 };

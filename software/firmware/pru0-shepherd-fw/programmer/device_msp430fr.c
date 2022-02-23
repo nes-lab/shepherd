@@ -618,4 +618,4 @@ static int erase()
 	return DRV_ERR_OK;
 }
 
-device_driver_t msp430fr_driver = { .open = open, .erase = erase, .write = write, .read = read, .close = close };
+device_driver_t msp430fr_driver = { .open = open, .erase = erase, .write = write, .read = read, .close = close, .word_width = 16 };
