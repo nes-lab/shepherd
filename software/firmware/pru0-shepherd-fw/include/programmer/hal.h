@@ -34,4 +34,13 @@ static inline void hal_delay_ns(unsigned int time_ns)
 	__delay_var_cycles(time_ns / 5);
 }
 
+static inline void hal_delay_us(unsigned int time_us)
+{
+	__delay_var_cycles(time_us * 200);
+}
+
+static inline void hal_delay_ms(unsigned int time_ms)
+{
+	__delay_var_cycles(time_ms * 200000);
+}
 #endif /* __PROG_HAL_H_ */

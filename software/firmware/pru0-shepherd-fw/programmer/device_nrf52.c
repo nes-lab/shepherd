@@ -96,7 +96,7 @@ static int nvm_wait(unsigned int retries)
 	return 0;
 }
 
-int nvm_wp_disable(void)
+static int nvm_wp_disable(void)
 {
 	int rc;
 	rc = mem_write(NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, CONFIG), NVMC_CONFIG_WEN_Msk);
@@ -106,12 +106,12 @@ int nvm_wp_disable(void)
 	return nvm_wait(64);
 }
 
-int nvm_wp_enable(void)
+static int nvm_wp_enable(void)
 {
 	return mem_write(NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, CONFIG), 0x0);
 }
 
-int nvm_erase(void)
+static int nvm_erase(void)
 {
 	int rc;
 	if ((rc = nvm_wait(64)))
@@ -123,7 +123,7 @@ int nvm_erase(void)
 	return nvm_wait(1024);
 }
 
-int nvm_write(uint32_t addr, uint32_t data)
+static int nvm_write(uint32_t addr, uint32_t data)
 {
 	int rc;
 	if ((rc = nvm_wait(64)))
@@ -132,7 +132,7 @@ int nvm_write(uint32_t addr, uint32_t data)
 	return mem_write(addr, data);
 }
 
-int open(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk)
+static int open(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk)
 {
 	uint32_t data;
 
@@ -153,7 +153,7 @@ int open(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk)
 	return DRV_ERR_OK;
 }
 
-int close(void)
+static int close(void)
 {
 	nvm_wp_enable();
 	dev_continue();

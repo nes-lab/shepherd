@@ -20,5 +20,6 @@ typedef struct {
 } device_driver_t;
 
 extern device_driver_t nrf52_driver;
+extern device_driver_t msp430fr_driver;
 
 #endif /* __PROG_DEVICE_H_ */
