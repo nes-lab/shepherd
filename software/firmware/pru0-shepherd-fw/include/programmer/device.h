@@ -3,17 +3,22 @@
 
 #include <stdint.h>
 
-int dev_halt(void);
-int dev_continue(void);
-int dev_reset(void);
+typedef enum { DRV_ERR_TIMEOUT = -3, DRV_ERR_VERIFY = -2, DRV_ERR_GENERIC = -1, DRV_ERR_OK = 0, DRV_ERR_PROTECTED = 2 } drv_err_t;
 
-int mem_write(uint32_t addr, uint32_t data);
-int mem_read(uint32_t *data, uint32_t addr);
+typedef int (*fn_open_t)(unsigned int, unsigned int, unsigned int);
+typedef int (*fn_erase_t)(void);
+typedef int (*fn_read_word_t)(uint32_t *dst, uint32_t address);
+typedef int (*fn_write_word_t)(uint32_t address, uint32_t data);
+typedef int (*fn_close_t)(void);
 
-int nvm_wp_disable(void);
-int nvm_wp_enable(void);
+typedef struct {
+	fn_open_t open;
+	fn_erase_t erase;
+	fn_read_word_t read;
+	fn_write_word_t write;
+	fn_close_t close;
+} device_driver_t;
 
-int nvm_write(uint32_t address, uint32_t data);
-int nvm_erase(void);
+extern device_driver_t nrf52_driver;
 
 #endif /* __PROG_DEVICE_H_ */
