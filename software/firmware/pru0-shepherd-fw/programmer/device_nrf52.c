@@ -7,8 +7,6 @@
 #include "programmer/nrf52840.h"
 #include "programmer/nrf52840_bitfields.h"
 
-#include "programmer/hal.h"
-
 int mem_write(uint32_t addr, uint32_t data)
 {
 	int rc;

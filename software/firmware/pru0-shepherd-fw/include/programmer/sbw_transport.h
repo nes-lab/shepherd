@@ -1,7 +1,7 @@
 #ifndef __PROG_SBW_TRANSPORT_H_
 #define __PROG_SBW_TRANSPORT_H_
 
-#include "hal.h"
+#include "sys_gpio.h"
 
 void tmsl_tdil(void);
 void tmsh_tdil(void);

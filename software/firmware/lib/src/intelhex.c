@@ -1,8 +1,7 @@
-#include "programmer/intelhex.h"
+#include "intelhex.h"
 
 static char *fptr;
 static unsigned int reader_addr;
-static char *reader_file_mem;
 
 typedef enum {
 	IHEX_REC_TYPE_DATA = 0,
@@ -15,7 +14,7 @@ typedef enum {
 
 enum ihex_error { IHEX_ERR_OK = 0, IHEX_ERR_START = 1, IHEX_ERR_CHECKSUM = 2, IHEX_ERR_END = 3 };
 
-static inline int ihex_init(char *file_mem)
+static inline void ihex_init(char *file_mem)
 {
 	fptr = file_mem;
 }

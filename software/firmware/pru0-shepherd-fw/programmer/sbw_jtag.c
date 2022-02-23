@@ -1,6 +1,7 @@
 #include <stdint.h>
 
-#include "programmer/hal.h"
+#include "sys_gpio.h"
+#include "delay.h"
 #include "programmer/sbw_jtag.h"
 #include "programmer/sbw_transport.h"
 
@@ -273,24 +274,24 @@ int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY)
 void EntrySequences_RstHigh_SBW()
 {
 	set_sbwtck(GPIO_STATE_LOW);
-	hal_delay_us(800); // delay min 800us - clr SBW controller
+	delay_us(800); // delay min 800us - clr SBW controller
 	set_sbwtck(GPIO_STATE_HIGH);
-	hal_delay_us(50);
+	delay_us(50);
 
 	// SpyBiWire entry sequence
 	// Reset Test logic
 	set_sbwtdio(GPIO_STATE_LOW); // put device in normal operation: Reset = 0
 	set_sbwtck(GPIO_STATE_LOW); // TEST pin = 0
-	hal_delay_ms(1); // wait 1ms (minimum: 100us)
+	delay_ms(1); // wait 1ms (minimum: 100us)
 
 	// SpyBiWire entry sequence
 	set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
-	hal_delay_us(5);
+	delay_us(5);
 	set_sbwtck(GPIO_STATE_HIGH); // TEST pin = 1
-	hal_delay_us(5);
+	delay_us(5);
 	// initial 1 PIN_SBWTCKs to enter sbw-mode
 	set_sbwtck(GPIO_STATE_LOW);
-	hal_delay_us(5);
+	delay_us(5);
 	set_sbwtck(GPIO_STATE_HIGH);
 }
 
@@ -304,24 +305,24 @@ void EntrySequences_RstLow_SBW()
 {
 	set_sbwtck(GPIO_STATE_LOW);
 	set_sbwtdio(GPIO_STATE_LOW); // Added for Low RST
-	hal_delay_us(800); // delay min 800us - clr SBW controller
+	delay_us(800); // delay min 800us - clr SBW controller
 	set_sbwtck(GPIO_STATE_HIGH);
-	hal_delay_us(50);
+	delay_us(50);
 
 	// SpyBiWire entry sequence
 	// Reset Test logic
 	set_sbwtdio(GPIO_STATE_LOW); // put device in normal operation: Reset = 0
 	set_sbwtck(GPIO_STATE_LOW); // TEST pin = 0
-	hal_delay_ms(1); // wait 1ms (minimum: 100us)
+	delay_ms(1); // wait 1ms (minimum: 100us)
 
 	// SpyBiWire entry sequence
 	set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
-	hal_delay_us(5);
+	delay_us(5);
 	set_sbwtck(GPIO_STATE_HIGH); // TEST pin = 1
-	hal_delay_us(5);
+	delay_us(5);
 	// initial 1 PIN_SBWTCKs to enter sbw-mode
 	set_sbwtck(GPIO_STATE_LOW);
-	hal_delay_us(5);
+	delay_us(5);
 	set_sbwtck(GPIO_STATE_HIGH);
 }
 
@@ -376,7 +377,7 @@ uint16_t magicPattern(void)
 void ConnectJTAG()
 {
 	sbw_transport_connect();
-	hal_delay_ms(15);
+	delay_ms(15);
 }
 
 //*****************************************************************************
@@ -387,5 +388,5 @@ void ConnectJTAG()
 void StopJtag(void)
 {
 	sbw_transport_disconnect();
-	hal_delay_ms(15);
+	delay_ms(15);
 }

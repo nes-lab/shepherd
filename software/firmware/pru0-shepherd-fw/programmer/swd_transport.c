@@ -1,6 +1,6 @@
 #include "programmer/swd_transport.h"
-#include "programmer/hal.h"
-#include "var_delay.h"
+#include "sys_gpio.h"
+#include "delay.h"
 
 #define TP_TCV_WIDTH 32
 
@@ -20,31 +20,31 @@ static unsigned int clk_period_cycles;
 
 static void iow(gpio_state_t swdio_state)
 {
-	hal_gpio_set(pins.swdio, swdio_state);
-	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+	sys_gpio_set(pins.swdio, swdio_state);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
-	hal_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
 	__delay_var_cycles(clk_period_cycles);
 }
 
 static int ior(void)
 {
-	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
-	int ret = hal_gpio_read(pins.swdio);
-	hal_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
+	int ret = sys_gpio_get(pins.swdio);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
 	__delay_var_cycles(clk_period_cycles);
 	return ret;
 }
 
 static void iotrn(gpio_dir_t dir)
 {
-	hal_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
-	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+	sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 	__delay_var_cycles(clk_period_cycles);
-	hal_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
 	if (dir == GPIO_DIR_OUT)
-		hal_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
+		sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
 
 	__delay_var_cycles(clk_period_cycles);
 }
@@ -124,7 +124,7 @@ static int transceive(swd_header_t *header, uint32_t *data)
 		iotrn(GPIO_DIR_OUT);
 		rc = data_write(data);
 	}
-	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 	return rc;
 }
 
@@ -157,8 +157,8 @@ int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int r
 
 int transport_reset(void)
 {
-	hal_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
-	hal_gpio_set(pins.swdio, GPIO_STATE_HIGH);
+	sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
+	sys_gpio_set(pins.swdio, GPIO_STATE_HIGH);
 
 	for (int i = 0; i < 56; i++) {
 		iow(1);
@@ -187,20 +187,20 @@ int transport_init(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int
 
 	clk_period_cycles = F_CPU / f_clk / 2;
 
-	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
-	hal_gpio_cfg_dir(pins.swdclk, GPIO_DIR_OUT);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+	sys_gpio_cfg_dir(pins.swdclk, GPIO_DIR_OUT);
 
-	hal_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
+	sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
 
 	return 0;
 }
 
 int transport_release()
 {
-	hal_gpio_cfg_dir(pins.swdclk, GPIO_DIR_IN);
-	hal_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
-	hal_gpio_set(pins.swdio, GPIO_STATE_LOW);
-	hal_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+	sys_gpio_cfg_dir(pins.swdclk, GPIO_DIR_IN);
+	sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
+	sys_gpio_set(pins.swdio, GPIO_STATE_LOW);
+	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 
 	return 0;
 }

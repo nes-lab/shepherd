@@ -15,6 +15,7 @@ SOURCES += $(notdir $(wildcard ./programmer/*.c))
 # also add external files (./lib/src/)
 SOURCES += simple_lock.c
 SOURCES += iep.c
+SOURCES += intelhex.c
 
 #SOURCES += sys_gpio.h
 

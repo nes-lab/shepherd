@@ -52,8 +52,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "delay.h"
+
 #include "programmer/device.h"
-#include "programmer/hal.h"
 #include "programmer/sbw_jtag.h"
 #include "programmer/sbw_transport.h"
 
@@ -171,7 +172,7 @@ static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
 uint16_t ReadMem_430Xv2(uint16_t Format, uint32_t Addr)
 {
 	uint16_t TDOword = 0;
-	hal_delay_ms(1);
+	delay_ms(1);
 	// Check Init State at the beginning
 	IR_Shift(IR_CNTRL_SIG_CAPTURE);
 	if (DR_Shift16(0) & 0x0301) {
@@ -330,7 +331,7 @@ static int GetJtagID(uint16_t *jtag_id)
 		ResetTAP();
 		// shift out JTAG ID
 		*jtag_id = (uint16_t)IR_Shift(IR_CNTRL_SIG_CAPTURE);
-		hal_delay_us(500);
+		delay_us(500);
 		// break if a valid JTAG ID is being returned
 		if ((*jtag_id == JTAG_ID91) || (*jtag_id == JTAG_ID99) || (*jtag_id == JTAG_ID98)) //****************************
 		{
@@ -433,7 +434,7 @@ static int ReleaseDevice_430Xv2(uint32_t Addr)
 		// perform a BOR via JTAG - we loose control of the device then...
 		shiftResult = IR_Shift(IR_TEST_REG);
 		DR_Shift16(0x0200);
-		hal_delay_ms(5); // wait some time before doing any other action
+		delay_ms(5); // wait some time before doing any other action
 		// JTAG control is lost now - GetDevice() needs to be called again to gain
 		// control.
 		break;
@@ -504,13 +505,13 @@ static int DisableMpu_430Xv2(void)
 			}
 			// Apply BOR to reset the device
 			set_sbwtck(GPIO_STATE_HIGH);
-			hal_delay_ms(20);
+			delay_ms(20);
 			set_sbwtck(GPIO_STATE_LOW);
 
 			set_sbwtdio(GPIO_STATE_HIGH);
-			hal_delay_ms(20);
+			delay_ms(20);
 			set_sbwtdio(GPIO_STATE_LOW);
-			hal_delay_ms(20);
+			delay_ms(20);
 
 			// connect to device again, apply entry sequence
 			ConnectJTAG();
