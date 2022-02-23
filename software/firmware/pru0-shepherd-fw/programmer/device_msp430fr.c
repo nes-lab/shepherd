@@ -608,7 +608,6 @@ static int write_verify(unsigned int address, uint16_t data, unsigned int n_retr
 
 static int erase()
 {
-	return DRV_ERR_OK;
 	/* No real erase on FRAM -> emulate FLASH erase */
 	for (unsigned int address = FRAM_LOW; address < FRAM_HIGH; address += 2) {
 		int ret = write_verify(address, 0xFFFF, 5);
@@ -619,4 +618,10 @@ static int erase()
 	return DRV_ERR_OK;
 }
 
-device_driver_t msp430fr_driver = { .open = open, .erase = erase, .write = write, .read = read, .close = close, .word_width = 16 };
+/* FRAM doesn't need erase before write -> just ignore function call */
+static int dummy_erase()
+{
+	return DRV_ERR_OK;
+}
+
+device_driver_t msp430fr_driver = { .open = open, .erase = dummy_erase, .write = write, .read = read, .close = close, .word_width = 16 };
