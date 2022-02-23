@@ -585,11 +585,11 @@ static ssize_t sysfs_prog_protocol_show(struct kobject *kobj, struct kobj_attrib
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
 	switch (readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset)) {
-	case 1:
+	case PRG_PROTOCOL_SWD:
 		return sprintf(buf, "swd");
-	case 2:
+	case PRG_PROTOCOL_SBW:
 		return sprintf(buf, "sbw");
-	case 3:
+	case PRG_PROTOCOL_JTAG:
 		return sprintf(buf, "jtag");
 	default:
 		return sprintf(buf, "unknown");
@@ -607,11 +607,11 @@ static ssize_t sysfs_prog_protocol_store(struct kobject *kobj, struct kobj_attri
 	kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
 	if (strncmp(buffer, "swd", 3) == 0)
-		value = 1;
+		value = PRG_PROTOCOL_SWD;
 	else if (strncmp(buffer, "sbw", 3) == 0)
-		value = 2;
+		value = PRG_PROTOCOL_SBW;
 	else if (strncmp(buffer, "jtag", 4) == 0)
-		value = 3;
+		value = PRG_PROTOCOL_JTAG;
 	else {
 		printk(KERN_INFO "shprd.k: setting programmer-protocol failed -> unknown value");
 		return -EINVAL;

@@ -68,6 +68,12 @@ enum ProgrammerState {
 	PRG_STATE_ERR = -4,
 };
 
+enum ProgrammerProtocol {
+	PRG_PROTOCOL_SWD,
+	PRG_PROTOCOL_SBW,
+	PRG_PROTOCOL_JTAG,
+};
+
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
 	uint32_t state; // 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error

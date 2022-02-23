@@ -88,6 +88,12 @@ enum ProgrammerState {
 	PRG_STATE_ERR = -4,
 };
 
+enum ProgrammerProtocol {
+	PRG_PROTOCOL_SWD,
+	PRG_PROTOCOL_SBW,
+	PRG_PROTOCOL_JTAG,
+};
+
 struct GPIOEdges {
 	uint32_t idx;
 	uint64_t timestamp_ns[MAX_GPIO_EVT_PER_BUFFER];
