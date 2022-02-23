@@ -40,11 +40,10 @@ logger = logging.getLogger(__name__)
 An entry for an exception to be stored together with the data consists of a
 timestamp, a custom message and an arbitrary integer value
 """
-ExceptionRecord = namedtuple(
-    "ExceptionRecord", ["timestamp", "message", "value"]
-)
+ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"])
 
 monitors_end = threading.Event()
+
 
 def unique_path(base_path: Union[str, Path], suffix: str):
     counter = 0
@@ -113,20 +112,15 @@ class LogWriter(object):
             logger.info(f"Storing data to   '{self.store_path}'")
         else:
             base_dir = store_path.resolve().parents[0]
-            self.store_path = unique_path(
-                base_dir / store_path.stem, store_path.suffix
-            )
-            logger.warning(
-                    f"File {store_path} already exists.. "
-                    f"storing under {self.store_path} instead"
-            )
+            self.store_path = unique_path(base_dir / store_path.stem, store_path.suffix)
+            logger.warning(f"File {store_path} already exists.. " f"storing under {self.store_path} instead")
         # Refer to shepherd/calibration.py for the format of calibration data
         self.mode = mode
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
         self.samplerate_sps = int(samplerate_sps)
-        self.sample_interval_ns = int(10**9 // samplerate_sps)
+        self.sample_interval_ns = int(10 ** 9 // samplerate_sps)
         self.buffer_timeseries = self.sample_interval_ns * np.arange(samples_per_buffer).astype("u8")
         self._write_voltage = not skip_voltage
         self._write_current = not skip_current
@@ -257,16 +251,40 @@ class LogWriter(object):
         add_dataset_time(self.sysutil_grp, self.sysutil_inc, (self.sysutil_inc,))
         self.sysutil_grp["time"].attrs["unit"] = "ns"
         self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
-        self.sysutil_grp.create_dataset("cpu", (self.sysutil_inc,), dtype="u1", maxshape=(None,), chunks=(self.sysutil_inc,), )
+        self.sysutil_grp.create_dataset(
+            "cpu",
+            (self.sysutil_inc,),
+            dtype="u1",
+            maxshape=(None,),
+            chunks=(self.sysutil_inc,),
+        )
         self.sysutil_grp["cpu"].attrs["unit"] = "%"
         self.sysutil_grp["cpu"].attrs["description"] = "cpu_util [%]"
-        self.sysutil_grp.create_dataset("ram", (self.sysutil_inc, 2), dtype="u1", maxshape=(None, 2), chunks=(self.sysutil_inc, 2), )
+        self.sysutil_grp.create_dataset(
+            "ram",
+            (self.sysutil_inc, 2),
+            dtype="u1",
+            maxshape=(None, 2),
+            chunks=(self.sysutil_inc, 2),
+        )
         self.sysutil_grp["ram"].attrs["unit"] = "%"
         self.sysutil_grp["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
-        self.sysutil_grp.create_dataset("io", (self.sysutil_inc, 4), dtype="u8", maxshape=(None, 4), chunks=(self.sysutil_inc, 4), )
+        self.sysutil_grp.create_dataset(
+            "io",
+            (self.sysutil_inc, 4),
+            dtype="u8",
+            maxshape=(None, 4),
+            chunks=(self.sysutil_inc, 4),
+        )
         self.sysutil_grp["io"].attrs["unit"] = "n"
         self.sysutil_grp["io"].attrs["description"] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
-        self.sysutil_grp.create_dataset("net", (self.sysutil_inc, 2), dtype="u8", maxshape=(None, 2), chunks=(self.sysutil_inc, 2), )
+        self.sysutil_grp.create_dataset(
+            "net",
+            (self.sysutil_inc, 2),
+            dtype="u8",
+            maxshape=(None, 2),
+            chunks=(self.sysutil_inc, 2),
+        )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
         self.sys_log_next_ns = int(time.time()) * (10 ** 9)
@@ -347,7 +365,7 @@ class LogWriter(object):
 
     def write_buffer(self, buffer: DataBuffer) -> NoReturn:
         """Writes data from buffer to file.
-        
+
         Args:
             buffer (DataBuffer): Buffer containing IV data
         """
@@ -362,15 +380,13 @@ class LogWriter(object):
             self.data_grp["current"].resize((data_length if self._write_current else 0,))
 
         if self._write_voltage:
-            self.data_grp["voltage"][self.data_pos:data_end_pos] = buffer.voltage
+            self.data_grp["voltage"][self.data_pos : data_end_pos] = buffer.voltage
 
         if self._write_current:
-            self.data_grp["current"][self.data_pos:data_end_pos] = buffer.current
+            self.data_grp["current"][self.data_pos : data_end_pos] = buffer.current
 
         if self._write_voltage or self._write_current:
-            self.data_grp["time"][self.data_pos:data_end_pos] = (
-                self.buffer_timeseries + buffer.timestamp_ns
-            )
+            self.data_grp["time"][self.data_pos : data_end_pos] = self.buffer_timeseries + buffer.timestamp_ns
             self.data_pos = data_end_pos
 
         len_edges = len(buffer.gpio_edges)
@@ -381,14 +397,14 @@ class LogWriter(object):
                 data_length += self.gpio_inc
                 self.gpio_grp["time"].resize((data_length,))
                 self.gpio_grp["value"].resize((data_length,))
-            self.gpio_grp["time"][self.gpio_pos:gpio_new_pos] = buffer.gpio_edges.timestamps_ns
-            self.gpio_grp["value"][self.gpio_pos:gpio_new_pos] = buffer.gpio_edges.values
+            self.gpio_grp["time"][self.gpio_pos : gpio_new_pos] = buffer.gpio_edges.timestamps_ns
+            self.gpio_grp["value"][self.gpio_pos : gpio_new_pos] = buffer.gpio_edges.values
             self.gpio_pos = gpio_new_pos
 
         self.log_sys_stats()
 
     def write_exception(self, exception: ExceptionRecord) -> NoReturn:
-        """ Writes an exception to the hdf5 file.
+        """Writes an exception to the hdf5 file.
             TODO: use this fn to log exceptions, redirect logger.error() ?
             TODO: there is a concrete ShepherdIOException(Exception)
         Args:
@@ -405,7 +421,7 @@ class LogWriter(object):
         self.xcpt_pos += 1
 
     def log_sys_stats(self) -> NoReturn:
-        """ captures state of system in a fixed intervall
+        """captures state of system in a fixed intervall
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
@@ -453,7 +469,7 @@ class LogWriter(object):
         if not isinstance(baudrate, int) or baudrate == 0:
             return
         global monitors_end
-        uart_path = '/dev/ttyO1'
+        uart_path = "/dev/ttyO1"
         logger.debug(f"Will start UART-Monitor for target on '{uart_path}' @ {baudrate} baud")
         tevent = threading.Event()
         try:
@@ -463,7 +479,7 @@ class LogWriter(object):
                     if monitors_end.is_set():
                         break
                     if uart.in_waiting > 0:
-                        output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace('\x00', '')
+                        output = uart.read(uart.in_waiting).decode("ascii", errors="replace").replace("\x00", "")
                         if len(output) > 0:
                             data_length = self.uart_grp["time"].shape[0]
                             if self.sysutil_pos >= data_length:
@@ -476,16 +492,16 @@ class LogWriter(object):
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{uart_path}' with baudrate={baudrate} -> will skip logging")
+                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{uart_path}' with baudrate={baudrate} -> will skip logging"
+            )
         except serial.SerialException as e:
-            logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{uart_path}' to target -> will skip logging")
+            logger.error(f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{uart_path}' to target -> will skip logging")
         logger.debug(f"[UartMonitor] ended itself")
 
     def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
         # var1: ['dmesg', '--follow'] -> not enough control
         global monitors_end
-        cmd_dmesg = ['sudo', 'journalctl', '--dmesg', '--follow', f'--lines={backlog}', '--output=short-precise']
+        cmd_dmesg = ["sudo", "journalctl", "--dmesg", "--follow", f"--lines={backlog}", "--output=short-precise"]
         proc_dmesg = subprocess.Popen(cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True)
         tevent = threading.Event()
         for line in iter(proc_dmesg.stdout.readline, ""):
@@ -508,7 +524,7 @@ class LogWriter(object):
     def monitor_ptp4l(self, poll_intervall: float = 0.25):
         # example: Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
         global monitors_end
-        cmd_ptp4l = ['sudo', 'journalctl', '--unit=ptp4l', '--follow', '--lines=1', '--output=short-precise']  # for client
+        cmd_ptp4l = ["sudo", "journalctl", "--unit=ptp4l", "--follow", "--lines=1", "--output=short-precise"]  # for client
         proc_ptp4l = subprocess.Popen(cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True)
         tevent = threading.Event()
         for line in iter(proc_ptp4l.stdout.readline, ""):
@@ -539,17 +555,14 @@ class LogWriter(object):
 
 
 class LogReader(object):
-    """ Sequentially Reads data from HDF5 file.
+    """Sequentially Reads data from HDF5 file.
 
     Args:
         store_path (Path): Path of hdf5 file containing IV data
         samples_per_buffer (int): Number of IV samples per buffer
     """
 
-    def __init__(self,
-                 store_path: Path,
-                 samples_per_buffer: int = 10_000,
-                 samplerate_sps: int = 100_000):
+    def __init__(self, store_path: Path, samples_per_buffer: int = 10_000, samplerate_sps: int = 100_000):
         self.store_path = store_path
         self.samples_per_buffer = samples_per_buffer
         self.samplerate_sps = samplerate_sps
@@ -576,9 +589,7 @@ class LogReader(object):
             Buffers between start and end
         """
         if end is None:
-            end = int(
-                self._h5file["data"]["time"].shape[0] / self.samples_per_buffer
-            )
+            end = int(self._h5file["data"]["time"].shape[0] / self.samples_per_buffer)
         logger.debug(f"Reading blocks from { start } to { end } from source-file")
 
         for i in range(start, end):
@@ -591,10 +602,7 @@ class LogReader(object):
                 current=self.ds_current[idx_start:idx_end],
             )
             if verbose:
-                logger.debug(
-                        f"Reading datablock with {self.samples_per_buffer} samples "
-                        f"from file took { round(1e3 * (time.time()-ts_start), 2) } ms"
-                )
+                logger.debug(f"Reading datablock with {self.samples_per_buffer} samples " f"from file took { round(1e3 * (time.time()-ts_start), 2) } ms")
             yield db
 
     def get_calibration_data(self) -> CalibrationData:
