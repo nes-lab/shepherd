@@ -5,17 +5,20 @@ int dp_write(dp_reg_t reg, uint32_t val)
 {
 	return transport_write(SWD_PORT_DP, reg, val, 5);
 }
+
 int ap_write(ap_reg_t reg, uint32_t val)
 {
 	return transport_write(SWD_PORT_AP, reg, val, 5);
 }
-int dp_read(uint32_t *val, dp_reg_t reg)
+
+int dp_read(uint32_t *dst, dp_reg_t reg)
 {
-	return transport_read(val, SWD_PORT_DP, reg, 5);
+	return transport_read(dst, SWD_PORT_DP, reg, 5);
 }
-int ap_read(uint32_t *val, ap_reg_t reg)
+
+int ap_read(uint32_t *dst, ap_reg_t reg)
 {
-	return transport_read(val, SWD_PORT_AP, reg, 5);
+	return transport_read(dst, SWD_PORT_AP, reg, 5);
 }
 
 int ap_init()
