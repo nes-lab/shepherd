@@ -2,11 +2,22 @@
 #include "sys_gpio.h"
 #include "delay.h"
 
+/* bit width of SWD transfer -> always 32 bit */
 #define TP_TCV_WIDTH 32
 
-typedef enum { SWD_RW_W = 0, SWD_RW_R = 1 } swd_rw_t;
+/* Selects direction of SWD transfer */
+typedef enum {
+	/* Host to target */
+	SWD_RW_W = 0,
+	/* Target to host */
+	SWD_RW_R = 1,
+} swd_rw_t;
 
-typedef enum { SWD_ACK_OK = 0x1, SWD_ACK_WAIT = 0x2, SWD_ACK_FAULT = 0x4 } swd_ack_t;
+typedef enum {
+	SWD_ACK_OK = 0x1,
+	SWD_ACK_WAIT = 0x2,
+	SWD_ACK_FAULT = 0x4,
+} swd_ack_t;
 
 typedef uint8_t swd_header_t;
 static swd_header_t hdr;
@@ -18,6 +29,7 @@ static struct {
 
 static unsigned int clk_period_cycles;
 
+/* SWD write bit routine */
 static void iow(gpio_state_t swdio_state)
 {
 	sys_gpio_set(pins.swdio, swdio_state);
@@ -27,6 +39,7 @@ static void iow(gpio_state_t swdio_state)
 	__delay_var_cycles(clk_period_cycles);
 }
 
+/* SWD read bit routine */
 static int ior(void)
 {
 	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
@@ -37,6 +50,7 @@ static int ior(void)
 	return ret;
 }
 
+/* SWD turn-around cycle: Control is handed over from host to target or vice versa. */
 static void iotrn(gpio_dir_t dir)
 {
 	sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
@@ -49,7 +63,15 @@ static void iotrn(gpio_dir_t dir)
 	__delay_var_cycles(clk_period_cycles);
 }
 
-int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8_t addr)
+/**
+ * Initializes a SWD header according to the given parameters.
+ *
+ * @param header pointer to header structure
+ * @param port selects target port: Debug Port or Memory Access Port
+ * @param rw read or write access
+ * @param addr port address
+ */
+static int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8_t addr)
 {
 	*header = 0x81 | ((addr & 0xC) << 1) | (port << 1) | (rw << 2);
 
@@ -65,6 +87,7 @@ int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8_t addr
 	return 0;
 }
 
+/* Writes a word during host to target phase of SWD transfer */
 static int data_write(uint32_t *data)
 {
 	int parity_cnt = 0;
@@ -82,6 +105,7 @@ static int data_write(uint32_t *data)
 	return 0;
 }
 
+/* Reads a word during target to host phase of SWD transfer */
 static int data_read(uint32_t *data)
 {
 	int parity_cnt = 0;
@@ -98,6 +122,15 @@ static int data_read(uint32_t *data)
 	return 0;
 }
 
+/**
+ * SWD transfer routine. Transfers a word from host to target or vice versa depending
+ * on the settings provided in the header.
+ *
+ * @param header SWD header specifies port, address and direction of transfer
+ * @param data pointer to source or destination of transfer
+ *
+ * @returns result of transfer in terms of SWD acknowledgement
+ */
 static int transceive(swd_header_t *header, uint32_t *data)
 {
 	int i;
@@ -128,13 +161,13 @@ static int transceive(swd_header_t *header, uint32_t *data)
 	return rc;
 }
 
-int transport_read(uint32_t *data, swd_port_t port, uint8_t addr, unsigned int retries)
+int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int retries)
 {
 	int rc;
 	header_init(&hdr, port, SWD_RW_R, addr);
 
 	do {
-		rc = transceive(&hdr, data);
+		rc = transceive(&hdr, dst);
 		if (rc <= 0)
 			return rc;
 		retries--;
