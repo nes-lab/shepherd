@@ -5,10 +5,6 @@
 
 #define SC_ERR_NONE 0
 #define SC_ERR_GENERIC 1
-#define SC_ERR_ET_DCDC_IDCODE 2
-#define SC_ERR_ET_DCDC_DEVID 3
-#define SC_ERR_ET_DCDC_CPU_STATE 4
-#define SC_ERR_ET_DCDC_FLASH_VERI 5
 
 #define STATUS_FUSEBLOWN 6
 #define STATUS_ACTIVE 7
@@ -108,61 +104,73 @@
 #define ERASE_SEGMENT 0xA502 // erase of the selected flash memory segment
 #define MAIN_ERASE 0x1A1A // erase of the FRAM Main memory on FR5xx/FR6xx
 #define TOTAL_ERASE 0x1B1B // erase of the FRAM Main, INFO  & IP protected memory on FR5xx/FR6xx
-#define USER_CODE_ERASE                                                                                                                                        \
-	0x1A1A // erase of the FRAM Main & INFO memory including JTAG lock signature                                                                           \
-		// on FR4xx
-#define STOP_DEVICE 0xA55A
 
-void TCLKstrobes(uint16_t Amount);
+/* Erase of the FRAM Main & INFO memory including JTAG lock signature on FR4xx */
+#define USER_CODE_ERASE 0x1A1A #define STOP_DEVICE 0xA55A
 
-//*****************************************************************************
-//
-//! \brief Read a 32bit value from the JTAG mailbox.
-//! \return uint32_t (32bit value from JTAG mailbox)
-//
-//*****************************************************************************
+/**
+ * Reads a 32bit value from the JTAG mailbox.
+ *
+ * @returns 32bit value from JTAG mailbox
+ */
 int i_ReadJmbOut(void);
 
-//*****************************************************************************
-//
-//! \brief Write a 16bit value into the JTAG mailbox system.
-//! The function timeouts if the mailbox is not empty after a certain number
-//! of retries.
-//! \param[in] uint16_t dataX (data to be shifted into mailbox)
-//
-//*****************************************************************************
+/**
+ * Writes a 16bit value into the JTAG mailbox system. The function timeouts if the mailbox is not
+ * empty after a certain number of retries.
+ *
+ * @param dataX data to be shifted into mailbox
+ */
 int i_WriteJmbIn16(uint16_t dataX);
 
-//*****************************************************************************
-//
-//! \brief Write a 32bit value into the JTAG mailbox system.
-//! The function timeouts if the mailbox is not empty after a certain number
-//! of retries.
-//! \param[in] uint16_t dataX (data to be shifted into mailbox)
-//! \param[in] uint16_t dataY (data to be shifted into mailbox)
-//
-//*****************************************************************************
+/**
+ * Writes a 32bit value into the JTAG mailbox system. The function timeouts if the mailbox
+ * is not empty after a certain number of retries.
+ *
+ * @param dataX data to be shifted into mailbox
+ * @param dataY data to be shifted into mailbox
+ *
+ */
 int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY);
 
+/* Loads a JTAG instruction into the JTAG instruction register (IR) of the target device */
 uint32_t IR_Shift(uint8_t instruction);
+
+/* Loads a 16-bit word into the JTAG data register */
 uint16_t DR_Shift16(uint16_t data);
+
+/* Loads a 20-bit word into the JTAG data register */
 uint32_t DR_Shift20(uint32_t address);
 
+/* Connect the JTAG/SBW Signals and execute delay */
 void ConnectJTAG(void);
+
+/* Stop JTAG/SBW by disabling the pins and executing delay */
 void StopJtag(void);
 
+/**
+ * Applies the sequence to enter SBW mode with reset pin set high. Device starts
+ * executing code.
+ */
 void EntrySequences_RstHigh_SBW();
+/* Applies the sequence to enter SBW mode with reset pin set low. Device halts. */
 void EntrySequences_RstLow_SBW();
 
+/* Resets the TAP controller state machine */
 void ResetTAP(void);
+
+/**
+ * Enables JTAG communication with a target. Use JSBW mode if device is in LPM5 mode.
+ *
+ * @returns JTAG_ID91(0x91) if connection was established successfully, invalid JTAG ID (0x1) otherwise)
+ */
 uint16_t magicPattern(void);
 
-//*****************************************************************************
-//
-//! \brief This function checks if the JTAG lock key is programmed.
-//! \return word (STATUS_OK if fuse is blown, STATUS_ERROR otherwise)
-//
-//*****************************************************************************
+/**
+ *  Checks if the JTAG lock key is programmed.
+ *
+ * @returns SC_ERR_NONE if device is unlocked, SC_ERR_GENERIC if locked
+ */
 int IsLockKeyProgrammed(void);
 
 #endif /* __PROG_SBW_JTAG_H_ */

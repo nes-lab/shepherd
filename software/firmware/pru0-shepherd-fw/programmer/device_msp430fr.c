@@ -29,24 +29,12 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+*/
+
+/*
+ * This file provides device-level access to MSP430FR devices via SBW. The implementation
+ * is based on code provided by TI (slau320 and slaa754).
  */
-
-//******************************************************************************
-// Version history:
-// 1.0 07/17             Initial version. (Nima Eskandari)
-// 1.1 07/17             Added Comments. (Nima Eskandari)
-//----------------------------------------------------------------------------
-//   Designed 2017 by Texas Instruments
-//
-//   Nima Eskandari
-//   Texas Instruments Inc.
-//   August 2017
-//   Built with CCS Version: Code Composer Studio v7
-//******************************************************************************
-
-//*****************************************************************************
-// Spi by wire implementation for MSP430 FRAM device **************************
-//*****************************************************************************
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -78,12 +66,12 @@ typedef struct {
 	uint32_t device_id_ptr;
 } dev_dsc_t;
 
-//*****************************************************************************
-//
-//! \brief Load a given address into the target CPU's program counter (PC).
-//! \param[in] uint32_t Addr (destination address)
-//
-//*****************************************************************************
+/**
+ * Loads a given address into the target CPU's program counter (PC).
+ *
+ * @param Addr destination address
+ *
+ */
 static void SetPC_430Xv2(uint32_t Addr)
 {
 	uint16_t Mova;
@@ -120,14 +108,13 @@ static void SetPC_430Xv2(uint32_t Addr)
 	}
 }
 
-//*****************************************************************************
-//
-//! \brief This function writes one byte/uint16_t at a given address ( <0xA00)
-//! \param[in] uint16_t Format (F_BYTE or F_WORD)
-//! \param[in] uint16_t Addr (Address of data to be written)
-//! \param[in] uint16_t Data (shifted data)
-//
-//*****************************************************************************
+/**
+ * Writes one byte/uint16_t at a given address ( <0xA00)
+ *
+ * @param Format F_BYTE or F_WORD
+ * @param Addr Address of data to be written
+ * @param Data Data to be written
+ */
 static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
 {
 	// Check Init State at the beginning
@@ -161,14 +148,14 @@ static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
 	return SC_ERR_NONE;
 }
 
-//*****************************************************************************
-//
-//! \brief This function reads one byte/word from a given address in memory
-//! \param[in] word Format (F_BYTE or F_WORD)
-//! \param[in] word Addr (address of memory)
-//! \return word (content of the addressed memory location)
-//
-//*****************************************************************************
+/**
+ * Reads one byte/word from a given address in memory
+ *
+ * @param Format F_BYTE or F_WORD
+ * @param Addr Address of data to be written
+ *
+ * @returns Data from device
+ */
 uint16_t ReadMem_430Xv2(uint16_t Format, uint32_t Addr)
 {
 	uint16_t TDOword = 0;
@@ -200,13 +187,11 @@ uint16_t ReadMem_430Xv2(uint16_t Format, uint32_t Addr)
 	return TDOword;
 }
 
-//*****************************************************************************
-//
-//! \brief Function to execute a Power-On Reset (POR) using JTAG CNTRL SIG
-//! register
-//! \return uint16_t (SC_ERR_NONE if target is in Full-Emulation-State
-//! afterwards, SC_ERR_GENERIC otherwise)
-//*****************************************************************************
+/**
+ * Execute a Power-On Reset (POR) using JTAG CNTRL SIG register
+ *
+ * @returns SC_ERR_NONE if target is in Full-Emulation-State afterwards, SC_ERR_GENERIC otherwise
+ */
 static int ExecutePOR_430Xv2(void)
 {
 	// provide one clock cycle to empty the pipe
@@ -274,13 +259,12 @@ static int ExecutePOR_430Xv2(void)
 	return (SC_ERR_GENERIC);
 }
 
-//*****************************************************************************
-//
-//! \brief Function to resync the JTAG connection and execute a Power-On-Reset
-//! \return uint16_t (SC_ERR_NONE if operation was successful, SC_ERR_GENERIC
-//! otherwise)
-//
-//*****************************************************************************
+/**
+ * Resync the JTAG connection and execute a Power-On-Reset
+ *
+ * @returns SC_ERR_NONE if operation was successful, SC_ERR_GENERIC otherwise
+ *
+ */
 static int SyncJtag_AssertPor(void)
 {
 	int i = 0;
@@ -307,13 +291,13 @@ static int SyncJtag_AssertPor(void)
 	return (SC_ERR_NONE);
 }
 
-//*****************************************************************************
-//
-//! \brief Function to determine & compare core identification info
-//! \return uint16_t (SC_ERR_NONE if correct JTAG ID was returned,
-//! SC_ERR_GENERIC otherwise)
-//
-//*****************************************************************************
+/**
+ * Determine & compare core identification info
+ *
+ * @param jtag_id pointer where jtag id is stored
+ *
+ * @returns SC_ERR_NONE if correct JTAG ID was returned, SC_ERR_GENERIC otherwise
+ */
 static int GetJtagID(uint16_t *jtag_id)
 {
 	// uint16_t JtagId = 0;  //initialize JtagId with an invalid value
@@ -367,13 +351,14 @@ static int GetJtagID(uint16_t *jtag_id)
 	}
 }
 
-//*****************************************************************************
-//
-//! \brief Function to determine & compare core identification info (Xv2)
-//! \return word (STATUS_OK if correct JTAG ID was returned, STATUS_ERROR
-//! otherwise)
-//
-//*****************************************************************************
+/**
+ * Determine & compare core identification info (Xv2)
+ *
+ * @param core_id pointer where core id gets stored
+ * @param device_id_ptr pointer where device id pointer gets stored
+ *
+ * @returns STATUS_OK if correct JTAG ID was returned, STATUS_ERROR otherwise
+ */
 static int GetCoreipIdXv2(uint16_t *core_id, uint32_t *device_id_ptr)
 {
 	IR_Shift(IR_COREIP_ID);
@@ -387,15 +372,14 @@ static int GetCoreipIdXv2(uint16_t *core_id, uint32_t *device_id_ptr)
 	return (SC_ERR_NONE);
 }
 
-//*****************************************************************************
-//
-//! \brief Function to take target device under JTAG control. Disables the
-//! target watchdog. Sets the global DEVICE variable as read from the target
-//! device.
-//! \return uint16_t (SC_ERR_GENERIC if fuse is blown, incorrect JTAG ID or
-//! synchronizing time-out; SC_ERR_NONE otherwise)
-//
-//*****************************************************************************
+/**
+ * Takes target device under JTAG control. Disables the target watchdog.
+ * Reads device information.
+ *
+ * @param dsc pointer where device info gets stored
+ *
+ * @returns SC_ERR_GENERIC if fuse is blown, incorrect JTAG ID or synchronizing time-out; SC_ERR_NONE otherwise
+ */
 static int GetDevice_430Xv2(dev_dsc_t *dsc)
 {
 	if (GetJtagID(&dsc->jtag_id) != SC_ERR_NONE) {
@@ -418,13 +402,11 @@ static int GetDevice_430Xv2(dev_dsc_t *dsc)
 	return (SC_ERR_NONE);
 }
 
-//*****************************************************************************
-//
-//! \brief Function to release the target device from JTAG control
-//! \param[in] uint16_t Addr (0xFFFE: Perform Reset, means Load Reset Vector
-//! into PC, otherwise: Load Addr into PC)
-//
-//*****************************************************************************
+/**
+ * Release the target device from JTAG control
+ *
+ * @param Addr 0xFFFE: Perform Reset, means Load Reset Vector into PC, otherwise: Load Addr into PC
+ */
 static int ReleaseDevice_430Xv2(uint32_t Addr)
 {
 	uint16_t shiftResult = 0;
@@ -466,13 +448,11 @@ static int ReleaseDevice_430Xv2(uint32_t Addr)
 	}
 }
 
-//*****************************************************************************
-//
-//! \brief This function disables the Memory Protection Unit (FRAM devices only)
-//! \return uint16_t (SC_ERR_NONE if MPU was disabled successfully,
-//! SC_ERR_GENERIC otherwise)
-//
-//*****************************************************************************
+/**
+ * Disables the Memory Protection Unit (FRAM devices only)
+ *
+ * @returns SC_ERR_NONE if MPU was disabled successfully, SC_ERR_GENERIC otherwise
+ */
 static int DisableMpu_430Xv2(void)
 {
 	if (IR_Shift(IR_CNTRL_SIG_CAPTURE) == JTAG_ID98) {
@@ -540,6 +520,7 @@ static int DisableMpu_430Xv2(void)
 	}
 }
 
+/* Disables access to and communication with the MSP430. After this, the core should be reset and running */
 static int close()
 {
 	ReleaseDevice_430Xv2(V_RESET);
@@ -547,6 +528,15 @@ static int close()
 	return DRV_ERR_OK;
 }
 
+/**
+ * Prepares the MSP430FR for access.
+ *
+ * @param pin_swdclk pin number for SBWTCK signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swdio pin number for SBWTDIO signal. Note: Only supports pins of GPIO port 0.
+ * @param f_clk frequency of SBWTCK signal
+ *
+ * @returns DRV_ERR_OK on success
+ */
 static int open(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsigned int f_clk)
 {
 	dev_dsc_t dsc;
@@ -566,6 +556,13 @@ static int open(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsigned int 
 	return DRV_ERR_OK;
 }
 
+/**
+ * Writes a word to the target memory
+ *
+ * @param target memory address
+ * @param data word to be written
+ *
+ */
 static int write(uint32_t address, uint32_t data)
 {
 #if DISABLE_JTAG_SIGNATURE_WRITE
@@ -579,38 +576,24 @@ static int write(uint32_t address, uint32_t data)
 	return DRV_ERR_OK;
 }
 
+/**
+ * Reads a word from the specified address in memory.
+ *
+ * @param dst pointer to destination
+ * @param addr target memory address
+ */
 static int read(uint32_t *dst, uint32_t address)
 {
 	*dst = (uint32_t)ReadMem_430Xv2(F_WORD, (uint16_t)address);
 	return DRV_ERR_OK;
 }
 
-static int write_verify(unsigned int address, uint16_t data, unsigned int n_retries)
-{
-	int ret;
-	uint32_t read_back;
-	for (unsigned int i = 0; i < n_retries; i++) {
-		ret = write(address, data);
-		if ((ret != DRV_ERR_OK) && (ret != DRV_ERR_PROTECTED)) {
-			ret = DRV_ERR_GENERIC;
-			continue;
-		}
-		read(&read_back, address);
-		if (read_back != data) {
-			ret = DRV_ERR_VERIFY;
-			continue;
-		}
-
-		break;
-	}
-	return ret;
-}
-
+/* Emulates a flash erase by sequentially setting memory to 1s */
 static int erase()
 {
 	/* No real erase on FRAM -> emulate FLASH erase */
 	for (unsigned int address = FRAM_LOW; address < FRAM_HIGH; address += 2) {
-		int ret = write_verify(address, 0xFFFF, 5);
+		int ret = write(address, 0xFFFF);
 
 		if ((ret != DRV_ERR_OK) && (ret != DRV_ERR_PROTECTED))
 			return DRV_ERR_GENERIC;
@@ -624,4 +607,11 @@ static int dummy_erase()
 	return DRV_ERR_OK;
 }
 
-device_driver_t msp430fr_driver = { .open = open, .erase = dummy_erase, .write = write, .read = read, .close = close, .word_width = 16 };
+device_driver_t msp430fr_driver = {
+	.open = open,
+	.erase = dummy_erase,
+	.write = write,
+	.read = read,
+	.close = close,
+	.word_width_bytes = 2,
+};

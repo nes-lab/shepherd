@@ -1,3 +1,43 @@
+/*
+ * Copyright (C) 2016 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *    Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ *    Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the
+ *    distribution.
+ *
+ *    Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+*/
+
+/*
+ * This file provides routines to bring a device under JTAG control, to interface
+ * with the TAP controller state machine and to read and write date from the JTAG
+ * instruction and data registers via SBW. The implementation is based on code
+ * provided by TI (slau320 and slaa754).
+ */
+
 #include <stdint.h>
 
 #include "sys_gpio.h"
@@ -5,11 +45,6 @@
 #include "programmer/sbw_jtag.h"
 #include "programmer/sbw_transport.h"
 
-//*****************************************************************************
-//
-// Reset SBW TAP controller
-//
-//*****************************************************************************
 void ResetTAP(void)
 {
 	// Now fuse is checked, Reset JTAG FSM
@@ -21,12 +56,6 @@ void ResetTAP(void)
 	tmsl_tdih(); // now in Run/Test Idle
 }
 
-//*****************************************************************************
-//
-//! \brief This function checks if the JTAG lock key is programmed.
-//! \return word (STATUS_OK if fuse is blown, STATUS_ERROR otherwise)
-//
-//*****************************************************************************
 int IsLockKeyProgrammed(void)
 {
 	uint16_t i;
@@ -41,12 +70,19 @@ int IsLockKeyProgrammed(void)
 	return (SC_ERR_NONE); // Fuse is not blown
 }
 
-//*****************************************************************************
-//
-// Shift bits
-//
-//*****************************************************************************
-uint32_t AllShifts(uint16_t Format, uint32_t Data)
+/**
+ * Shifts data into and out of the JTAG Data and Instruction register.
+ *
+ * Assumes that the TAP controller is in Shift-DR or Shift-IR state and,
+ * bit by bit, shifts data into and out of the register.
+ *
+ * @param Format specifies length of the transfer
+ * @param Data data to be shifted into the register
+ *
+ * @returns data shifted out of the register
+ *
+ */
+static uint32_t AllShifts(uint16_t Format, uint32_t Data)
 {
 	uint32_t TDOword = 0x00000000;
 	uint32_t MSB = 0x00000000;
@@ -100,11 +136,6 @@ uint32_t AllShifts(uint16_t Format, uint32_t Data)
 	return (TDOword);
 }
 
-//*****************************************************************************
-//
-// IR scan
-//
-//*****************************************************************************
 uint32_t IR_Shift(uint8_t instruction)
 {
 	// JTAG FSM state = Run-Test/Idle
@@ -125,11 +156,6 @@ uint32_t IR_Shift(uint8_t instruction)
 	// JTAG FSM state = Run-Test/Idle
 }
 
-//*****************************************************************************
-//
-// 16 bit DR scan
-//
-//*****************************************************************************
 uint16_t DR_Shift16(uint16_t data)
 {
 	// JTAG FSM state = Run-Test/Idle
@@ -148,11 +174,6 @@ uint16_t DR_Shift16(uint16_t data)
 	// JTAG FSM state = Run-Test/Idle
 }
 
-//*****************************************************************************
-//
-// 20 bit DR scan
-//
-//*****************************************************************************
 uint32_t DR_Shift20(uint32_t address)
 {
 	// JTAG FSM state = Run-Test/Idle
@@ -171,12 +192,6 @@ uint32_t DR_Shift20(uint32_t address)
 	// JTAG FSM state = Run-Test/Idle
 }
 
-//*****************************************************************************
-//
-//! \brief Read a 32bit value from the JTAG mailbox.
-//! \return uint32_t (32bit value from JTAG mailbox)
-//
-//*****************************************************************************
 int i_ReadJmbOut(void)
 {
 	uint16_t sJMBINCTL;
@@ -199,14 +214,6 @@ int i_ReadJmbOut(void)
 	return lJMBOUT;
 }
 
-//*****************************************************************************
-//
-//! \brief Write a 16bit value into the JTAG mailbox system.
-//! The function timeouts if the mailbox is not empty after a certain number
-//! of retries.
-//! \param[in] uint16_t dataX (data to be shifted into mailbox)
-//
-//*****************************************************************************
 int i_WriteJmbIn16(uint16_t dataX)
 {
 	uint16_t sJMBINCTL;
@@ -229,15 +236,6 @@ int i_WriteJmbIn16(uint16_t dataX)
 	return SC_ERR_NONE;
 }
 
-//*****************************************************************************
-//
-//! \brief Write a 32bit value into the JTAG mailbox system.
-//! The function timeouts if the mailbox is not empty after a certain number
-//! of retries.
-//! \param[in] uint16_t dataX (data to be shifted into mailbox)
-//! \param[in] uint16_t dataY (data to be shifted into mailbox)
-//
-//*****************************************************************************
 int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY)
 {
 	uint16_t sJMBINCTL;
@@ -265,12 +263,6 @@ int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY)
 	return SC_ERR_NONE;
 }
 
-//*****************************************************************************
-//
-//! \brief Function to start the JTAG communication - RST line high - device
-//! starts code execution
-//
-//*****************************************************************************
 void EntrySequences_RstHigh_SBW()
 {
 	set_sbwtck(GPIO_STATE_LOW);
@@ -295,12 +287,6 @@ void EntrySequences_RstHigh_SBW()
 	set_sbwtck(GPIO_STATE_HIGH);
 }
 
-//*****************************************************************************
-//
-//! \brief Function to start the SBW communication - RST line low - device do
-//! not start code execution
-//
-//*****************************************************************************
 void EntrySequences_RstLow_SBW()
 {
 	set_sbwtck(GPIO_STATE_LOW);
@@ -326,14 +312,6 @@ void EntrySequences_RstLow_SBW()
 	set_sbwtck(GPIO_STATE_HIGH);
 }
 
-//*****************************************************************************
-//
-//! \brief Function to enable JTAG communication with a target. Use JSBW mode
-//!  if device is in LPM5 mode.
-//! \return word (JTAG_ID91(0x91) if connection was established successfully,
-//! invalid JTAG ID (0x1) otherwise)
-//
-//*****************************************************************************
 uint16_t magicPattern(void)
 {
 	uint16_t deviceJtagID = 0;
@@ -369,22 +347,12 @@ uint16_t magicPattern(void)
 	return 1; // return 1 as an invalid JTAG ID
 }
 
-//*****************************************************************************
-//
-// Connect the JTAG/SBW Signals and execute delay
-//
-//*****************************************************************************
 void ConnectJTAG()
 {
 	sbw_transport_connect();
 	delay_ms(15);
 }
 
-//*****************************************************************************
-//
-// Stop JTAG/SBW by disabling the pins and executing delay
-//
-//*****************************************************************************
 void StopJtag(void)
 {
 	sbw_transport_disconnect();
