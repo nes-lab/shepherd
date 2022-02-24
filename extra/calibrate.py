@@ -252,7 +252,7 @@ def meas_dac_voltage(rpc_client, smu, dac_bitmask):
         smu_current_mA = 1000 * smu.measure.i()
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
-        print(f"  shp-dac: {_val:.3f} V ({_val:.0f} raw);"
+        print(f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"
               f"  SMU-reference: {mean:.6f} V (median = {medi:.6f}); current: {smu_current_mA:.3f} mA")
 
     smu.source.output = smu.OUTPUT_OFF
