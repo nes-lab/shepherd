@@ -76,7 +76,7 @@ enum ProgrammerProtocol {
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
-	uint32_t state; // 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
+	int32_t state; // <0: Programmer state, >0: number of bytes written
 	uint32_t protocol; // 1: swd, 2: sbw, 3: jtag
 	uint32_t datarate; // baud
 	uint32_t datasize; // bytes
