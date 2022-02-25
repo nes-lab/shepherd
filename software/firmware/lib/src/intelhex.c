@@ -40,7 +40,7 @@ static inline uint8_t read_byte(char **ptr)
 /* reads a single record from ihex file in memory */
 static int ihex_get_rec(ihex_rec_t *rec)
 {
-	int i;
+	unsigned int i;
 
 	if (*(fptr++) != ':')
 		return -IHEX_ERR_START;
@@ -77,23 +77,6 @@ static int ihex_get_rec(ihex_rec_t *rec)
 		return rc;
 	else
 		return -IHEX_ERR_END;
-}
-
-static int ihex_get_start_addr(uint32_t *addr, char *file_mem)
-{
-	int rc;
-	ihex_rec_t rec;
-	ihex_init(file_mem);
-	do {
-		if ((rc = ihex_get_rec(&rec)) != 0)
-			return rc;
-	} while (rec.type != IHEX_REC_TYPE_START);
-	unsigned int segment = (rec.data[0] << 8) | rec.data[1];
-	unsigned int offset = (rec.data[2] << 8) | rec.data[3];
-
-	*addr = segment * 16 + offset;
-
-	return 0;
 }
 
 int ihex_reader_init(char *file_mem)
