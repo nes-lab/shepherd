@@ -162,6 +162,23 @@ static int nvm_write(uint32_t dst, uint32_t data)
 }
 
 /**
+ * Verifies a word at the specified address in memory.
+ *
+ * @param addr target memory address
+ * @param data expected memory content
+ */
+static int verify(uint32_t address, uint32_t data)
+{
+	uint32_t read_back;
+	if (mem_read(&read_back, address) != DRV_ERR_OK)
+		return DRV_ERR_GENERIC;
+	if (data == read_back)
+		return DRV_ERR_OK;
+	else
+		return DRV_ERR_VERIFY;
+}
+
+/**
  * Prepares the nRF52 for access. After execution, the core should be reset, halted
  * and ready to receive writes to the non-volatile flash memory.
  *
@@ -206,6 +223,7 @@ device_driver_t nrf52_driver = {
 	.open = open,
 	.erase = nvm_erase,
 	.write = nvm_write,
+	.verify = verify,
 	.close = close,
 	.read = mem_read,
 	.word_width_bytes = 4,

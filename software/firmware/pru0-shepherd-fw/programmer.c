@@ -11,7 +11,6 @@
 /* Writes block from hex file to target via driver */
 int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
 {
-	uint32_t read_back;
 	uint8_t *src = block->data;
 	uint32_t dst = block->address;
 
@@ -22,10 +21,7 @@ int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
 		uint32_t data = *((uint32_t *)src);
 		if (drv->write(dst, data) != DRV_ERR_OK)
 			return -1;
-		/* read back and verify data */
-		if (drv->read(&read_back, dst) != DRV_ERR_OK)
-			return -1;
-		if (read_back != data)
+		if (drv->verify(dst, data) != DRV_ERR_OK)
 			return -2;
 
 		src += drv->word_width_bytes;

@@ -21,6 +21,7 @@ typedef int (*fn_open_t)(unsigned int, unsigned int, unsigned int);
 typedef int (*fn_erase_t)(void);
 typedef int (*fn_read_t)(uint32_t *dst, uint32_t address);
 typedef int (*fn_write_t)(uint32_t address, uint32_t data);
+typedef int (*fn_verify_t)(uint32_t address, uint32_t data);
 typedef int (*fn_close_t)(void);
 
 typedef struct {
@@ -28,6 +29,7 @@ typedef struct {
 	fn_erase_t erase;
 	fn_read_t read;
 	fn_write_t write;
+	fn_verify_t verify;
 	fn_close_t close;
 	/* processor word width */
 	unsigned int word_width_bytes;

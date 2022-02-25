@@ -588,6 +588,23 @@ static int read(uint32_t *dst, uint32_t address)
 	return DRV_ERR_OK;
 }
 
+/**
+ * Verifies a word at the specified address in memory.
+ *
+ * @param addr target memory address
+ * @param data expected memory content
+ */
+static int verify(uint32_t address, uint32_t data)
+{
+	uint32_t read_back;
+	if (read(&read_back, address) != DRV_ERR_OK)
+		return DRV_ERR_GENERIC;
+	if (((uint16_t)data) == ((uint16_t)read_back))
+		return DRV_ERR_OK;
+	else
+		return DRV_ERR_VERIFY;
+}
+
 /* Emulates a flash erase by sequentially setting memory to 1s */
 static int erase()
 {
@@ -612,6 +629,7 @@ device_driver_t msp430fr_driver = {
 	.erase = dummy_erase,
 	.write = write,
 	.read = read,
+	.verify = verify,
 	.close = close,
 	.word_width_bytes = 2,
 };
