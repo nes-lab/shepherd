@@ -467,7 +467,7 @@ def launcher(led, button):
     help="Choose Target-Port for programming",
 )
 @click.option("--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage")
-@click.option("--speed", "-s", type=click.INT, default=1000, help="Programming-Datarate")
+@click.option("--speed", "-s", type=click.INT, default=1000000, help="Programming-Datarate")
 @click.option(
     "--protocol",
     "-p",
