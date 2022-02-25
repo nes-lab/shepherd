@@ -8,7 +8,7 @@
  * */
 
 const struct ProgrammerCtrl ProgrammerCtrl_default = { .state = PRG_STATE_IDLE,
-						       .protocol = PRG_PROTOCOL_SWD,
+						       .target = PRG_TARGET_NRF52,
 						       .datarate = 1000000u,
 						       .datasize = 0u,
 						       .pin_tck = 1001u,

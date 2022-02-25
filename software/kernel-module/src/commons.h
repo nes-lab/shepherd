@@ -62,22 +62,27 @@ enum ShepherdMode { MODE_HARVESTER, MODE_HRV_ADC_READ, MODE_EMULATOR, MODE_EMU_A
 enum ShepherdState { STATE_UNKNOWN, STATE_IDLE, STATE_ARMED, STATE_RUNNING, STATE_RESET, STATE_FAULT };
 
 enum ProgrammerState {
-	PRG_STATE_IDLE = -1,
-	PRG_STATE_STARTING = -2,
-	PRG_STATE_INITIALIZING = -3,
-	PRG_STATE_ERR = -4,
+	PRG_STATE_ERR_GENERIC = -1,
+	PRG_STATE_ERR_OPEN = -2,
+	PRG_STATE_ERR_WRITE = -3,
+	PRG_STATE_ERR_VERIFY = -4,
+	PRG_STATE_ERR_ERASE = -5,
+	PRG_STATE_ERR_PARSE = -6,
+	PRG_STATE_IDLE = -0x70000001,
+	PRG_STATE_STARTING = -0x70000002,
+	PRG_STATE_INITIALIZING = -0x70000003,
 };
 
-enum ProgrammerProtocol {
-	PRG_PROTOCOL_SWD,
-	PRG_PROTOCOL_SBW,
-	PRG_PROTOCOL_JTAG,
+enum ProgrammerTarget {
+	PRG_TARGET_MSP430,
+	PRG_TARGET_NRF52,
 };
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl {
 	int32_t state; // <0: Programmer state, >0: number of bytes written
-	uint32_t protocol; // 1: swd, 2: sbw, 3: jtag
+	/* Target chip to be programmed */
+	uint32_t target;
 	uint32_t datarate; // baud
 	uint32_t datasize; // bytes
 	uint32_t pin_tck; // clock-output

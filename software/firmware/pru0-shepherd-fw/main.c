@@ -447,7 +447,7 @@ void main(void)
 	shared_memory->converter_settings.converter_mode = 0u;
 	shared_memory->harvester_settings.algorithm = 0u;
 	shared_memory->programmer_ctrl.state = PRG_STATE_IDLE;
-	shared_memory->programmer_ctrl.protocol = 0u;
+	shared_memory->programmer_ctrl.target = PRG_TARGET_NRF52;
 
 	shared_memory->pru1_sync_outbox.unread = 0u;
 	shared_memory->pru1_sync_inbox.unread = 0u;
@@ -491,9 +491,9 @@ reset:
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
 #ifdef ENABLE_PROGRAMMER
-	if (shared_memory->programmer_ctrl.state == PRG_STATE_STARTING)
+	if (shared_memory->programmer_ctrl.state == PRG_STATE_STARTING) {
 		programmer(shared_memory, buffers_far);
-	else
+	} else
 		event_loop(shared_memory, &free_buffers, buffers_far);
 #else
 	event_loop(shared_memory, &free_buffers, buffers_far);

@@ -469,13 +469,13 @@ def launcher(led, button):
 @click.option("--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage")
 @click.option("--speed", "-s", type=click.INT, default=1000000, help="Programming-Datarate")
 @click.option(
-    "--protocol",
-    "-p",
-    type=click.Choice(["swd", "sbw", "jtag"]),
-    default="swd",
-    help="Programming-Protocol",
+    "--target",
+    "-t",
+    type=click.Choice(["nrf52", "msp430"]),
+    default="nrf52",
+    help="Target chip",
 )
-def programmer(firmware_file, sel_a, voltage, speed, protocol):
+def programmer(firmware_file, sel_a, voltage, speed, target):
 
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
@@ -489,7 +489,7 @@ def programmer(firmware_file, sel_a, voltage, speed, protocol):
 
         try:
             sd.shared_mem.write_firmware(fw.read())
-            sysfs_interface.write_programmer_ctrl(protocol, speed, 22, 23, 26, 27)  # TODO: pins-nums are placeholders
+            sysfs_interface.write_programmer_ctrl(target, speed, 22, 23, 26, 27)  # TODO: pins-nums are placeholders
             logger.info(f"Programmer initialized, will start now")
             sysfs_interface.start_programmer()
         except OSError as err:

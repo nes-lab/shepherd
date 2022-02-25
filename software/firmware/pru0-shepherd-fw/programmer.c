@@ -20,9 +20,9 @@ int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
 	for (unsigned int i = 0; i < n_words; i++) {
 		uint32_t data = *((uint32_t *)src);
 		if (drv->write(dst, data) != DRV_ERR_OK)
-			return -1;
+			return PRG_STATE_ERR_WRITE;
 		if (drv->verify(dst, data) != DRV_ERR_OK)
-			return -2;
+			return PRG_STATE_ERR_VERIFY;
 
 		src += drv->word_width_bytes;
 		dst += drv->word_width_bytes;
@@ -44,30 +44,30 @@ void programmer(volatile struct SharedMem *const shared_mem, volatile struct Sam
 
 	/* check for validity */
 	if (pc->datasize >= shared_mem->mem_size) {
-		pc->state = PRG_STATE_ERR;
+		pc->state = PRG_STATE_ERR_GENERIC;
 		return;
 	}
 
 #ifdef SWD_SUPPORT
-	if (pc->protocol == PRG_PROTOCOL_SWD)
+	if (pc->target == PRG_TARGET_NRF52)
 		drv = &nrf52_driver;
 #endif
 #ifdef SBW_SUPPORT
-	if (pc->protocol == PRG_PROTOCOL_SBW)
+	if (pc->target == PRG_TARGET_SBW)
 		drv = &msp430fr_driver;
 #endif
 	else {
-		pc->state = PRG_STATE_ERR;
+		pc->state = PRG_STATE_ERR_GENERIC;
 		goto exit;
 	}
 
 	if (drv->open(pc->pin_tck, pc->pin_tdio, pc->datarate) != DRV_ERR_OK) {
-		pc->state = PRG_STATE_ERR;
+		pc->state = PRG_STATE_ERR_OPEN;
 		goto exit;
 	}
 
 	if (drv->erase() != DRV_ERR_OK) {
-		pc->state = PRG_STATE_ERR;
+		pc->state = PRG_STATE_ERR_ERASE;
 		goto exit;
 	}
 
@@ -76,18 +76,19 @@ void programmer(volatile struct SharedMem *const shared_mem, volatile struct Sam
 	/* State specifies number of bytes written to target */
 	pc->state = 0;
 
+	int rc;
 	/* Iterate content of hex file entry by entry */
 	while ((ret = ihex_reader_get(&block)) == 0) {
 		/* Write block data to target device memory */
-		if (write_to_target(drv, &block) != 0) {
-			pc->state = PRG_STATE_ERR;
+		if ((rc = write_to_target(drv, &block)) != 0) {
+			pc->state = rc;
 			goto exit;
 		}
 		/* Show progress by incrementing state by number of bytes written */
 		pc->state += block.len;
 	}
 	if (ret != IHEX_RET_DONE) {
-		pc->state = PRG_STATE_ERR;
+		pc->state = PRG_STATE_ERR_PARSE;
 		goto exit;
 	}
 
