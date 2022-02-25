@@ -540,15 +540,14 @@ static int close()
 static int open(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsigned int f_clk)
 {
 	dev_dsc_t dsc;
-	int ret;
 	sbw_transport_init(pin_sbwtck, pin_sbwtdio, f_clk);
 	sbw_transport_connect();
 
-	if ((ret = GetDevice_430Xv2(&dsc)))
+	if (GetDevice_430Xv2(&dsc) != SC_ERR_NONE)
 		return DRV_ERR_GENERIC;
 
 	/* Disables FRAM write protection */
-	if ((ret = DisableMpu_430Xv2())) {
+	if (DisableMpu_430Xv2() != SC_ERR_NONE) {
 		close();
 		return DRV_ERR_GENERIC;
 	}
@@ -596,10 +595,9 @@ static int read(uint32_t *dst, uint32_t address)
  */
 static int verify(uint32_t address, uint32_t data)
 {
-	uint32_t read_back;
-	if (read(&read_back, address) != DRV_ERR_OK)
-		return DRV_ERR_GENERIC;
-	if (((uint16_t)data) == ((uint16_t)read_back))
+	uint16_t read_back = ReadMem_430Xv2(F_WORD, (uint16_t)address);
+
+	if ((data & 0xFFFF) == read_back)
 		return DRV_ERR_OK;
 	else
 		return DRV_ERR_VERIFY;

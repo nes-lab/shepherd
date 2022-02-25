@@ -27,26 +27,26 @@ static struct {
 	unsigned int swdio;
 } pins;
 
-static unsigned int clk_period_cycles;
+static unsigned int clk_delay_cycles;
 
 /* SWD write bit routine */
 static void iow(gpio_state_t swdio_state)
 {
 	sys_gpio_set(pins.swdio, swdio_state);
 	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
-	__delay_var_cycles(clk_period_cycles);
+	__delay_var_cycles(clk_delay_cycles);
 	sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
+	__delay_var_cycles(clk_delay_cycles);
 }
 
 /* SWD read bit routine */
 static int ior(void)
 {
 	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
-	__delay_var_cycles(clk_period_cycles);
+	__delay_var_cycles(clk_delay_cycles);
 	int ret = sys_gpio_get(pins.swdio);
 	sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
-	__delay_var_cycles(clk_period_cycles);
+	__delay_var_cycles(clk_delay_cycles);
 	return ret;
 }
 
@@ -55,12 +55,12 @@ static void iotrn(gpio_dir_t dir)
 {
 	sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
 	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
-	__delay_var_cycles(clk_period_cycles);
+	__delay_var_cycles(clk_delay_cycles);
 	sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
 	if (dir == GPIO_DIR_OUT)
 		sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
 
-	__delay_var_cycles(clk_period_cycles);
+	__delay_var_cycles(clk_delay_cycles);
 }
 
 /**
@@ -218,7 +218,7 @@ int transport_init(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int
 	pins.swdclk = pin_swdclk;
 	pins.swdio = pin_swdio;
 
-	clk_period_cycles = F_CPU / f_clk / 2;
+	clk_delay_cycles = F_CPU / f_clk / 2;
 
 	sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
 	sys_gpio_cfg_dir(pins.swdclk, GPIO_DIR_OUT);
