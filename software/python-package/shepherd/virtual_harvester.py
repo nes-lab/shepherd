@@ -1,5 +1,5 @@
 from virtual_harvester_data import VirtualHarvesterData
-
+# TODO: rename to _Model
 
 class VirtualHarvester(object):
     """

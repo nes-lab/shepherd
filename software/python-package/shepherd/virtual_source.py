@@ -1,7 +1,7 @@
 from typing import NoReturn
 from shepherd import VirtualSourceData, CalibrationData
 import math
-
+# TODO: rename VirtualSourceModel
 
 class VirtualSource(object):
     """
