@@ -168,7 +168,7 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 {
 	if (activate)
 	{
-		adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | NOT_PWRDOWN);
+		adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | NOT_PWRDOWN | NAP_EN);
 	}
 	else
 	{

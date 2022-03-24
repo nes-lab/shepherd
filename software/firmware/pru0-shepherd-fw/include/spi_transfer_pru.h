@@ -34,9 +34,11 @@ ASSERT(dac_convert, DAC_mV_2_raw(DAC_MAX_mV) <= DAC_MAX_VAL);
 #define WRITE_KEY	(0x69u << 8u)
 #define PWRDOWN		(1u)
 #define NOT_PWRDOWN	(0u)
+#define NAP_EN		(1u << 1u)
 
 #define ADDR_REG_RANGE	(0x14u << 16u)
-#define RANGE_SEL_P125 	(0b00001011u)
+#define RANGE_SEL_P125	(0b00001011u) // only positive
+#define RANGE_SEL_125	(0b00001011u) // +- 1.25 VRef
 
 #define ADC_V_LSB	(19.5313e-6)
 #define ADC_C_LSB	(195.313e-9)
