@@ -1,7 +1,7 @@
 from typing import NoReturn
 from shepherd import VirtualSourceData, CalibrationData
 import math
-
+# TODO: rename VirtualSourceModel
 
 class VirtualSource(object):
     """
@@ -17,7 +17,7 @@ class VirtualSource(object):
     def __init__(self, setting, calibration: CalibrationData):
         """
 
-        :param setting: YAML-Path, dict, or regulator-name
+        :param setting: YAML-Path, dict, or converter-name
         """
         if calibration is not None:
             self._cal = calibration
@@ -55,7 +55,7 @@ class VirtualSource(object):
 
         self.V_output_log_gpio_threshold_uV = values[16]
 
-        # boost regulator
+        # boost converter
         self.V_input_boost_threshold_uV = values[17]  # min input-voltage for the boost converter to work
         self.V_intermediate_max_uV = values[18]  # -> boost shuts off
 
@@ -200,7 +200,7 @@ class VirtualSource(object):
                     self.V_mid_uV -= self.dV_enable_output_uV
 
         if check_thresholds or self.immediate_pwr_good_signal:
-            # emulate power-good-signal
+            # generate power-good-signal
             if self.power_good:
                 if self.V_mid_uV <= self.V_pwr_good_disable_threshold_uV:
                     self.power_good = False
@@ -225,10 +225,10 @@ class VirtualSource(object):
         return self.V_out_dac_raw
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:
-        return self._cal.convert_raw_to_value("emulation", "adc_current", current_raw) * (10 ** 9)
+        return self._cal.convert_raw_to_value("emulator", "adc_current", current_raw) * (10 ** 9)
 
     def conv_uV_to_dac_raw(self, voltage_uV: int) -> int:
-        dac_raw = self._cal.convert_value_to_raw("emulation", "dac_voltage_b", float(voltage_uV) / (10 ** 6))
+        dac_raw = self._cal.convert_value_to_raw("emulator", "dac_voltage_b", float(voltage_uV) / (10 ** 6))
         if dac_raw > (2 ** 16) - 1:
             dac_raw = (2 ** 16) - 1
         return dac_raw
@@ -287,11 +287,11 @@ class VirtualSource(object):
     # TEST-SIMPLIFICATION - code below is not part of pru-code
     def iterate(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
         self.calc_inp_power(V_in_uV, A_in_nA)
-        A_out_raw = self._cal.convert_value_to_raw("emulation", "adc_current", A_out_nA * 10 ** -9)
+        A_out_raw = self._cal.convert_value_to_raw("emulator", "adc_current", A_out_nA * 10 ** -9)
         self.calc_out_power(A_out_raw)
         self.update_cap_storage()
         V_out_raw = self.update_states_and_output()
-        V_out_uV = int(self._cal.convert_raw_to_value("emulation", "dac_voltage_b", V_out_raw) * 10 ** 6)
+        V_out_uV = int(self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw) * 10 ** 6)
         self.P_in_fW += V_in_uV * A_in_nA
         self.P_out_fW += V_out_uV * A_out_nA
         return V_out_uV

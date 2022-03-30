@@ -25,8 +25,8 @@ import click_config_file
 from periphery import GPIO
 
 from shepherd import sysfs_interface
-from shepherd import record as run_record
-from shepherd import emulate as run_emulate
+from shepherd import run_recorder
+from shepherd import run_emulator
 from shepherd.calibration import CalibrationData
 from shepherd import EEPROM
 from shepherd import CapeData
@@ -43,12 +43,14 @@ logger.addHandler(consoleHandler)
 # --length -l is now --duration -d ->
 # --input --output is now --output_path -> correct docs
 # --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
-#          possible choices: nothing, regulator-name like BQ25570 / BQ25504, path to yaml-config
+#          possible choices: nothing, converter-name like BQ25570 / BQ25504, path to yaml-config
+#           -> vSource contains vharvester and vConverter
 # - the options get repeated all the time, is it possible to define them upfront and just include them where needed?
 # - ditch sudo, add user to allow sys_fs-access and other things
 # - default-cal -> use_cal_default
 # - start-time -> start_time
-# - sheep run record -> sheep run harvest, same with sheep record
+# - sheep run record -> sheep run harvester, same with sheep record
+# TODO: clean up internal naming only have harvest/emulate to use harvester/emulator, even the commands should be "sheep harvester config"
 
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
@@ -117,19 +119,19 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     cal = CalibrationData.from_default()
     logger.info(f"Target Voltage \t= {voltage} V")
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
-    sysfs_interface.write_mode("emulation", force=True)
+    sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
     logger.info(f"Re-Initialized PRU to finalize settings")
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)
 
 
 @cli.command(
-    short_help="Runs a command with given parameters. Mainly for use with config file.")
-@click.option("--command", default="harvest", type=click.Choice(["harvest", "emulate"]))
+    short_help="Runs a mode with given parameters. Mainly for use with config file.")
+@click.option("--mode", default="harvester", type=click.Choice(["harvester", "emulator"]))
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option("-v", "--verbose", count=True)
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
-def run(command, parameters: Dict, verbose):
+def run(mode, parameters: Dict, verbose):
 
     config_logger(verbose)
 
@@ -138,11 +140,11 @@ def run(command, parameters: Dict, verbose):
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
     logger.debug(f"CLI did process run()")
-    if command == "harvest":
+    if mode == "harvester":
         if "output_path" in parameters:
             parameters["output_path"] = Path(parameters["output_path"])
-        run_record(**parameters)
-    elif command == "emulate":
+        run_recorder(**parameters)
+    elif mode == "emulator":
         if ("output_path" in parameters) and (parameters["output_path"] is not None):
             parameters["output_path"] = Path(parameters["output_path"])
         if "input_path" in parameters:
@@ -152,15 +154,15 @@ def run(command, parameters: Dict, verbose):
             if key in parameters:
                 parameters[value] = parameters[key]
                 parameters.pop(key)
-        run_emulate(**parameters)
+        run_emulator(**parameters)
     else:
-        raise click.BadParameter(f"command '{command}' not supported")
+        raise click.BadParameter(f"command '{mode}' not supported")
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
 @click.option("--output_path", "-o", type=click.Path(), default="/var/shepherd/recordings/",
               help="Dir or file path for resulting hdf5 file",)
-@click.option("--harvester", type=str, default=None,
+@click.option("--algorithm", "-a", type=str, default=None,
               help="Choose one of the predefined virtual harvesters")
 @click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
@@ -168,18 +170,18 @@ def run(command, parameters: Dict, verbose):
 @click.option("--start_time", "-s", type=click.FLOAT,
               help="Desired start time in unix epoch time",)
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
-def harvest(
+def harvester(
     output_path,
-    harvester,
+    algorithm,
     duration,
     force_overwrite,
     use_cal_default,
     start_time,
     warn_only,
 ):
-    run_record(
+    run_recorder(
         output_path=Path(output_path),
-        harvester=harvester,
+        harvester=algorithm,
         duration=duration,
         force_overwrite=force_overwrite,
         use_cal_default=use_cal_default,
@@ -216,7 +218,7 @@ def harvest(
 @click.option("--skip_log_current", is_flag=True, help="reduce file-size by omitting current-logging")
 @click.option("--skip_log_gpio", is_flag=True, help="reduce file-size by omitting gpio-logging")
 @click.option("--log_mid_voltage", is_flag=True, help="record / log virtual intermediate (cap-)voltage and -current (out) instead of output-voltage and -current")
-def emulate(
+def emulator(
         input_path,
         output_path,
         duration,
@@ -238,7 +240,7 @@ def emulate(
     else:
         pl_store = Path(output_path)
 
-    run_emulate(
+    run_emulator(
         input_path=Path(input_path),
         output_path=pl_store,
         duration=duration,

@@ -19,7 +19,7 @@ def include(filename):
 # Basic Window Callbacks
 ###############################
 
-refresh_interval = 0.25  # s
+refresh_interval = 0.10  # s
 refresh_next = 0
 
 
@@ -28,22 +28,32 @@ def program_start_callback(sender, data) -> NoReturn:
     print("Program started")
 
 
-def window_refresh_callback(sender, data) -> NoReturn:
-    global refresh_next, refresh_interval
-    ts = time.time()
-    if ts < refresh_next:
-        return
+def schedule_refresh() -> NoReturn:
+    global refresh_interval, refresh_next
+    if refresh_next <= dpg.get_frame_count():
+        refresh_next = round(dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate())
+        dpg.set_frame_callback(frame=refresh_next, callback=window_refresh_callback)
 
-    refresh_next = ts + refresh_interval
+
+def window_refresh_callback(sender, data, userdata) -> NoReturn:
     global shepherd_io, shepherd_state
     if (shepherd_io is not None) and (shepherd_state is True):
         gpio_refresh()
         adc_refresh()
+    schedule_refresh()
 
 
 def update_gui_elements() -> NoReturn:
-    # TODO: DPG 0.8.x has trouble disabling items - it does not work - and text-elements even panic
+    # TODO: DPG 0.8.x has trouble disabling items -> no themed feedback
     global shepherd_io, shepherd_state, state_dict
+    if shepherd_io is not None:
+        update_power_state_shepherd()
+        update_power_state_emulator()
+        update_power_state_recorder()
+        update_shepherd_state()
+        update_target_power()
+        update_target_io()
+        update_io_level_state()
     host_state = shepherd_io is not None
     shepherd_state = state_dict[dpg.get_value("shepherd_state")]
     dpg.configure_item("host_name", enabled=not host_state)
@@ -59,19 +69,20 @@ def update_gui_elements() -> NoReturn:
     dpg.configure_item("gpio_nRes_EMU_ADC", enabled=host_state)
     dpg.configure_item("button_reinit_prus", enabled=host_state)
     # TODO: more items
-    for iter in range(len(dac_channels)):
-        dac_state = dpg.get_value(f"en_dac{iter}") and host_state
-        dpg.configure_item(f"en_dac{iter}", enabled=host_state)
-        #dpg.configure_item(f"textA_dac{iter}", enabled=dac_state)  #
-        #dpg.configure_item(f"textB_dac{iter}", enabled=dac_state)
-        dpg.configure_item(f"value_raw_dac{iter}", enabled=dac_state)
-        dpg.configure_item(f"value_mV_dac{iter}", enabled=dac_state)
-    for iter in range(len(adc_channels)):
-        dpg.configure_item(f"value_raw_adc{iter}", enabled=host_state)
-        dpg.configure_item(f"value_mSI_adc{iter}", enabled=host_state)
+    for _iter, _ in enumerate(dac_channels):
+        dac_state = dpg.get_value(f"en_dac{_iter}") and host_state
+        dpg.configure_item(f"en_dac{_iter}", enabled=host_state)
+        #dpg.configure_item(f"textA_dac{_iter}", enabled=dac_state)  #
+        #dpg.configure_item(f"textB_dac{_iter}", enabled=dac_state)
+        dpg.configure_item(f"value_raw_dac{_iter}", enabled=dac_state)
+        dpg.configure_item(f"value_mV_dac{_iter}", enabled=dac_state)
+    for _iter, _ in enumerate(adc_channels):
+        dpg.configure_item(f"value_raw_adc{_iter}", enabled=host_state)
+        dpg.configure_item(f"value_mSI_adc{_iter}", enabled=host_state)
     dpg.configure_item("gpio_input", enabled=host_state)
     dpg.configure_item("gpio_BAT_OK", enabled=host_state)
     dpg.configure_item("gpio_output", enabled=host_state)
+    schedule_refresh()
 
 
 def refresh_rate_callback(sender, element_data, user_data) -> NoReturn:
@@ -135,6 +146,7 @@ def connect_button_callback(sender, element_data, user_data) -> NoReturn:
 
 
 state_dict = {"Stop": False, "Running": True}
+stateTrans_dict = {"stop": "Stop", "idle": "Stop", "running": "Running"}
 able_dict = {"Disabled": False, "Enabled": True}
 tgt_dict = {"Target A": True, "Target B": False}
 
@@ -144,11 +156,22 @@ def shepherd_power_callback(sender, element_data, user_data) -> NoReturn:
     shepherd_io.set_shepherd_pcb_power(able_dict[element_data])
 
 
+def update_power_state_shepherd():
+    global shepherd_io, able_dict
+    value = int(shepherd_io.get_power_state_shepherd())
+    dpg.set_value("shepherd_pwr", list(able_dict.keys())[value])
+
+
 def shepherd_state_callback(sender, element_data, user_data) -> NoReturn:
     global shepherd_io, shepherd_state, state_dict
     shepherd_state = state_dict[element_data]
     shepherd_io.set_shepherd_state(shepherd_state)
     update_gui_elements()
+
+
+def update_shepherd_state():
+    global stateTrans_dict, shepherd_io
+    dpg.set_value("shepherd_state", stateTrans_dict[shepherd_io.get_shepherd_state()])
 
 
 def target_power_callback(sender, element_data, user_data) -> NoReturn:
@@ -157,10 +180,22 @@ def target_power_callback(sender, element_data, user_data) -> NoReturn:
     shepherd_io.select_target_for_power_tracking(sel_a)
 
 
+def update_target_power():
+    global shepherd_io, tgt_dict
+    value = int(not shepherd_io.get_main_target_for_power())
+    dpg.set_value("target_pwr", list(tgt_dict)[value])
+
+
 def target_io_callback(sender, element_data, user_data) -> NoReturn:
     global shepherd_io, tgt_dict
     sel_a = tgt_dict[element_data]
     shepherd_io.select_target_for_io_interface(sel_a)
+
+
+def update_target_io():
+    global shepherd_io, tgt_dict
+    value = int(not shepherd_io.get_main_target_for_io())
+    dpg.set_value("target_io", list(tgt_dict)[value])
 
 
 def io_level_converter_callback(sender, element_data, user_data) -> NoReturn:
@@ -169,9 +204,20 @@ def io_level_converter_callback(sender, element_data, user_data) -> NoReturn:
     shepherd_io.set_io_level_converter(state)
 
 
+def update_io_level_state():
+    global shepherd_io, able_dict
+    value = int(shepherd_io.get_target_io_level_conv())
+    dpg.set_value("io_lvl_converter", list(able_dict.keys())[value])
+
+
 def set_power_state_emulator(sender, en_state, user_data) -> NoReturn:
     global shepherd_io
     shepherd_io.set_power_state_emulator(en_state)
+
+
+def update_power_state_emulator() -> NoReturn:
+    global shepherd_io
+    dpg.set_value("gpio_nRes_EMU_ADC", shepherd_io.get_power_state_emulator())
 
 
 def set_power_state_recoder(sender, en_state, user_data) -> NoReturn:
@@ -179,11 +225,18 @@ def set_power_state_recoder(sender, en_state, user_data) -> NoReturn:
     shepherd_io.set_power_state_recorder(en_state)
 
 
+def update_power_state_recorder() -> NoReturn:
+    global shepherd_io
+    dpg.set_value("gpio_nRes_REC_ADC", shepherd_io.get_power_state_recorder())
+
+
 def reinitialize_prus(sender, element_data, user_data) -> NoReturn:
     global shepherd_io, shepherd_state
     shepherd_io.reinitialize_prus()
     shepherd_io.set_shepherd_state(shepherd_state)
     print("reinitialized PRUs")
+    update_gui_elements()
+
 
 #################################
 # DAC functionality
@@ -191,16 +244,16 @@ def reinitialize_prus(sender, element_data, user_data) -> NoReturn:
 
 
 dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
-    [1, "harvesting", "dac_voltage_a", "Harvester VSimBuf"],
-    [2, "harvesting", "dac_voltage_b", "Harvester VMatching"],
-    [4, "emulation", "dac_voltage_a", "Emulator Rail A"],
-    [8, "emulation", "dac_voltage_b", "Emulator Rail B"], ]
+    [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
+    [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
+    [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
+    [8, "emulator", "dac_voltage_b", "Emulator Rail B"], ]
 
 
 def dac_en_callback(sender, en_state, user_value) -> NoReturn:
     global shepherd_io, dac_channels
     value = dpg.get_value(f"value_raw_dac{user_value}") if en_state else 0
-    shepherd_io.dac_write(dac_channels[user_value], value)
+    shepherd_io.dac_write(dac_channels[user_value][0], value)
     update_gui_elements()
 
 
@@ -226,20 +279,20 @@ def dac_val_callback(sender, value_mV, user_value) -> NoReturn:
 #################################
 
 adc_channels = [  # combination of debug channel name, cal_component, cal_channel
-    ("hrv_i_in", "harvesting", "adc_current", "Harvester I_in [mA]"),
-    ("hrv_v_in", "harvesting", "adc_voltage", "Harvester V_in [mV]"),
-    ("emu_i_out", "emulation", "adc_current", "Emulator I_out [mA]"), ]
+    ("hrv_i_in", "harvester", "adc_current", "Harvester I_in [mA]"),
+    ("hrv_v_in", "harvester", "adc_voltage", "Harvester V_in [mV]"),
+    ("emu_i_out", "emulator", "adc_current", "Emulator I_out [mA]"), ]
 
 
 def adc_refresh() -> NoReturn:
     global shepherd_io
-    for iter in range(len(adc_channels)):
-        adc_cfg = adc_channels[iter]
+    for _iter, _val in enumerate(adc_channels):
+        adc_cfg = _val
         value_raw = shepherd_io.adc_read(adc_cfg[0])
         value_si = shepherd_io.convert_raw_to_value(adc_cfg[1], adc_cfg[2], value_raw)
         value_si = round(value_si * 10**3, 4)
-        dpg.set_value(f"value_raw_adc{iter}", str(value_raw))
-        dpg.set_value(f"value_mSI_adc{iter}", str(value_si))
+        dpg.set_value(f"value_raw_adc{_iter}", str(value_raw))
+        dpg.set_value(f"value_mSI_adc{_iter}", str(value_si))
 
 
 #################################

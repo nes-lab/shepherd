@@ -13,24 +13,32 @@ data
 import logging
 import yaml
 import struct
-from scipy import stats
 import numpy as np
 from pathlib import Path
+from scipy import stats
 
-from shepherd import calibration_default
+# voodoo to allow loading this file from outside (extras)
+# TODO: underlying problem for loading shepherd is a missing mockup of gpio-module, sysfs and sharedmem
+try:
+    import shepherd.calibration_default as cal_def
+except ModuleNotFoundError:
+    import calibration_default as cal_def
 
 logger = logging.getLogger(__name__)
 
 # gain and offset will be normalized to SI-Units, most likely V, A
 # -> general formula is:    si-value = raw_value * gain + offset
-# TODO: emulation has no ADC_voltage
-cal_component_list = ["harvesting", "emulation"]
+# TODO: emulator has no ADC_voltage, but uses this slot to store cal-data for target-port B
+cal_component_list = ["harvester", "emulator"]
 cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
 # functions from cal-default.py to convert the channels in cal_channel_list
-cal_channel_fn_list = ["dac_ch_a_voltage_to_raw", "dac_ch_b_voltage_to_raw", "adc_current_to_raw", "adc_voltage_to_raw"]
+cal_channel_fn_list = ["dac_voltage_to_raw",
+                       "dac_voltage_to_raw",
+                       "adc_current_to_raw",
+                       "adc_voltage_to_raw"]
 # translator-dicts for datalog
-cal_channel_harvest_dict = {"voltage": "adc_voltage", "current": "adc_current"}
-cal_channel_emulation_dict = {"voltage": "dac_voltage_b", "current": "adc_current"}
+cal_channel_hrv_dict = {"voltage": "adc_voltage", "current": "adc_current"}
+cal_channel_emu_dict = {"voltage": "dac_voltage_b", "current": "adc_current"}
 cal_parameter_list = ["gain", "offset"]
 
 
@@ -105,8 +113,8 @@ class CalibrationData(object):
             for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
                 # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
-                offset = getattr(calibration_default, cal_fn)(0)
-                gain_inv = (getattr(calibration_default, cal_fn)(1.0) - offset)
+                offset = getattr(cal_def, cal_fn)(0)
+                gain_inv = (getattr(cal_def, cal_fn)(1.0) - offset)
                 cal_dict[component][channel] = {
                     "offset": -float(offset) / float(gain_inv),
                     "gain": 1.0 / float(gain_inv),
@@ -142,36 +150,58 @@ class CalibrationData(object):
             CalibrationData object with extracted calibration data.
         """
         with open(filename, "r") as stream:
-            cal_data = yaml.safe_load(stream)
+            meas_data = yaml.safe_load(stream)
 
         cal_dict = {}
 
         for component in cal_component_list:
             cal_dict[component] = {}
             for channel in cal_channel_list:
-                sample_points = cal_data["measurements"][component][channel]
-                x = np.empty(len(sample_points))
-                y = np.empty(len(sample_points))
-                for i, point in enumerate(sample_points):
-                    x[i] = point["measured"]
-                    y[i] = point["reference"]
-                slope, intercept, _, _, _ = stats.linregress(x, y)
-                cal_dict[component][channel] = {
-                    "gain": float(slope),   # TODO: possibly wrong after all the changes, TEST
-                    "offset": float(intercept),
-                }
+                cal_dict[component][channel] = dict()
+                if "dac_voltage" in channel:
+                    gain = 1.0 / cal_def.dac_voltage_to_raw(1.0)
+                elif "adc_current" in channel:
+                    gain = 1.0 / cal_def.adc_current_to_raw(1.0)
+                elif "adc_voltage" in channel:
+                    gain = 1.0 / cal_def.adc_voltage_to_raw(1.0)
+                else:
+                    gain = 1.0
+                offset = 0
+                try:
+                    sample_points = meas_data["measurements"][component][channel]
+                    x = np.empty(len(sample_points))
+                    y = np.empty(len(sample_points))
+                    for i, point in enumerate(sample_points):
+                        x[i] = point["shepherd_raw"]
+                        y[i] = point["reference_si"]
+                    result = stats.linregress(x, y)
+                    offset = float(result.intercept)
+                    gain = float(result.slope)
+                    rval = result.rvalue  # test quality of regression
+                except KeyError:
+                    logger.error(f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})")
+                except ValueError as e:
+                    logger.error(f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]")
 
+                if rval < 0.999:
+                    logger.warning(
+                        f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}")
+                cal_dict[component][channel]["gain"] = gain
+                cal_dict[component][channel]["offset"] = offset
         return cls(cal_dict)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
         offset = self.data[component][channel]["offset"]
         gain = self.data[component][channel]["gain"]
-        return (float(raw) * gain) + offset
+        raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
+        raw = min(max(raw, 0), raw_max)
+        return max(float(raw) * gain + offset, 0.0)
 
     def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
         offset = self.data[component][channel]["offset"]
         gain = self.data[component][channel]["gain"]
-        return max(int((value - offset) / gain), 0)
+        raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
+        return min(max(int((value - offset) / gain), 0), raw_max)
 
     def to_bytestr(self):
         """Serializes calibration data to byte string.
@@ -195,11 +225,14 @@ class CalibrationData(object):
         comp_data = self.data[component]
         cal_set = {
             # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
-            "adc_gain": int(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
-            "adc_offset": int(1e9 * (2 ** 0) * comp_data["adc_current"]["offset"]),
+            "adc_current_gain": round(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
+            "adc_current_offset": round(1e9 * (2 ** 0) * comp_data["adc_current"]["offset"]),
+            # ADC is handled in uV (micro-volt), gain is shifted by 8 bit [scaling according to commons.h]
+            "adc_voltage_gain": round(1e6 * (2 ** 8) * comp_data["adc_voltage"]["gain"]),
+            "adc_voltage_offset": round(1e6 * (2 ** 0) * comp_data["adc_voltage"]["offset"]),
             # DAC is handled in uV (micro-volt), gain is shifted by 20 bit
-            "dac_gain": int((2 ** 20) / (1e6 * comp_data["dac_voltage_b"]["gain"])),
-            "dac_offset": int(1e6 * (2 ** 0) * comp_data["dac_voltage_b"]["offset"]),
+            "dac_voltage_gain": round((2 ** 20) / (1e6 * comp_data["dac_voltage_b"]["gain"])),
+            "dac_voltage_offset": round(1e6 * (2 ** 0) * comp_data["dac_voltage_b"]["offset"]),
         }
 
         for key, value in cal_set.items():

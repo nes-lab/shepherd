@@ -4,7 +4,7 @@
 #include "commons.h"
 
 /* Struct-Initializers
- * why? this is (safe) nonsense, but testable for byteorder and proper values
+ * why? this is (safe) nonsense, that is testable for byteorder and proper values
  * */
 
 const struct ProgrammerCtrl ProgrammerCtrl_default = {
@@ -21,8 +21,10 @@ const struct ProgrammerCtrl ProgrammerCtrl_default = {
 const struct CalibrationConfig CalibrationConfig_default = {
 	.adc_current_factor_nA_n8 = 255u,
 	.adc_current_offset_nA = -1,
-	.dac_voltage_inv_factor_uV_n20= 254u,
-	.dac_voltage_offset_uV = -2
+	.adc_voltage_factor_uV_n8 = 254u,
+	.adc_voltage_offset_uV = -2,
+	.dac_voltage_inv_factor_uV_n20= 253u,
+	.dac_voltage_offset_uV = -3
 };
 
 const struct ConverterConfig ConverterConfig_default = {
@@ -76,6 +78,7 @@ const struct ConverterConfig ConverterConfig_default = {
 
 const struct HarvesterConfig HarvesterConfig_default = {
 	.algorithm = 0u,
+	.hrv_mode = 200u,
 	.window_size = 201u,
 	.voltage_uV = 202u,
 	.voltage_min_uV = 203u,
@@ -85,8 +88,7 @@ const struct HarvesterConfig HarvesterConfig_default = {
 	.setpoint_n8 = 207u,
 	.interval_n = 208u,
 	.duration_n = 209u,
-	.dac_resolution_bit = 210u,
-	.wait_cycles_n = 211u
+	.wait_cycles_n = 210u
 };
 
 

@@ -6,9 +6,10 @@ Shepherd is a HW/SW solution and this section describes the key interfaces of th
 Each shepherd node consists of 5 key components:
 
 * The BeagleBone is a Single Board Computer, handling synchronization, data storage and hardware control
-* The shepherd cape contains the harvest- and emulation-circuitry and all other fixed hardware parts
+* The shepherd cape contains the harvester- and emulator-circuitry and all other fixed hardware parts
 * The harvesting capelet connects a harvesting transducer (e.g. solar panel) to the input of the harvest-circuit on the shepherd cape
-* The target capelet connects a sensor node (e.g. a microcontroller with radio) to the emulation-circuit
+* The target capelet connects a sensor node (e.g. a microcontroller with radio) to the emulator-circuit
+
 
 .. figure:: pics/pcb_shepherd_cape_22_soldered.jpg
    :name: fig:cape_soldered

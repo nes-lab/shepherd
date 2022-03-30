@@ -27,8 +27,8 @@ import serial
 import yaml
 
 from shepherd.calibration import CalibrationData
-from shepherd.calibration import cal_channel_harvest_dict
-from shepherd.calibration import cal_channel_emulation_dict
+from shepherd.calibration import cal_channel_hrv_dict
+from shepherd.calibration import cal_channel_emu_dict
 from shepherd.calibration import cal_parameter_list
 
 from shepherd.shepherd_io import DataBuffer
@@ -76,7 +76,7 @@ class LogWriter(object):
         calibration_data (CalibrationData): Data is written as raw ADC
             values. We need calibration data in order to convert to physical
             units later.
-        mode (str): Indicates if this is data from recording or emulation
+        mode (str): Indicates if this is data from harvester or emulator
         force_overwrite (bool): Overwrite existing file with the same name
         samples_per_buffer (int): Number of samples contained in a single
             shepherd buffer
@@ -100,7 +100,7 @@ class LogWriter(object):
             self,
             store_path: Path,
             calibration_data: CalibrationData,
-            mode: str = "harvesting",
+            mode: str = "harvester",
             force_overwrite: bool = False,
             samples_per_buffer: int = 10_000,
             samplerate_sps: int = 100_000,
@@ -209,7 +209,7 @@ class LogWriter(object):
 
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
-            cal_channel = cal_channel_harvest_dict[channel] if (self.mode == "harvesting") else cal_channel_emulation_dict[channel]
+            cal_channel = cal_channel_hrv_dict[channel] if (self.mode == "harvester") else cal_channel_emu_dict[channel]
             self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][cal_channel][parameter]
 
         # Create group for gpio data
@@ -339,7 +339,7 @@ class LogWriter(object):
         if self.uart_mon_t is not None:
             logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
-        runtime = round(self.data_grp['time'].shape[0] // self.samplerate_sps, 1)
+        runtime = round(self.data_grp['time'].shape[0] / self.samplerate_sps, 1)
         logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
@@ -606,7 +606,7 @@ class LogReader(object):
         cal = CalibrationData.from_default()
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             cal_channel = cal_channel_harvest_dict[channel]
-            cal.data["harvesting"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
+            cal.data["harvester"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(cal)
 
     def get_window_samples(self) -> int:

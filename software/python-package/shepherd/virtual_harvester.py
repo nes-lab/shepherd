@@ -1,5 +1,5 @@
 from virtual_harvester_data import VirtualHarvesterData
-
+# TODO: rename to _Model
 
 class VirtualHarvester(object):
     """
@@ -7,7 +7,7 @@ class VirtualHarvester(object):
     - stay close to original code-base
     - offer a comparison for the tests
     - step 1 to a virtualization of emulation
-    NOTE: DO NOT OPTIMIZE -> stay close to original code-base
+    NOTE: DO NOT OPTIMIZE -> stay close to original c-code-base
     """
 
     HRV_IVCURVE = 2**4

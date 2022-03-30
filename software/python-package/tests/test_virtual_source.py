@@ -51,7 +51,7 @@ def pyt_vsource(vs_config, cal_config):
 
 @pytest.fixture
 def reference_vss():
-    # keep in sync with "example_virtsource_settings.yml"
+    # keep in sync with "example_config_virtsource.yml"
     vss = {
         "C_intermediate_uF": 100 * (10 ** 0),
         "V_intermediate_mV": 3000,
@@ -71,7 +71,7 @@ def difference_percent(val1, val2, offset):
 
 
 @pytest.mark.hardware
-@pytest.mark.vs_name("./example_virtsource_settings.yml")
+@pytest.mark.vs_name("./example_config_virtsource.yml")
 def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
     # set desired end-voltage of storage-cap:
     V_cap_mV = 3500
@@ -116,7 +116,7 @@ def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
 
 
 @pytest.mark.hardware
-@pytest.mark.vs_name("./example_virtsource_settings.yml")
+@pytest.mark.vs_name("./example_config_virtsource.yml")
 def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
     # set desired end-voltage of storage-cap - low enough to disable output
     V_cap_mV = 2300
@@ -128,7 +128,7 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
     I_out_nA = P_out_pW / reference_vss["V_output_mV"]
     # prepare fn-parameters
     cal = CalibrationData.from_default()
-    I_out_adc_raw = cal.convert_value_to_raw("emulation", "adc_current", I_out_nA * 10**-9)
+    I_out_adc_raw = cal.convert_value_to_raw("emulator", "adc_current", I_out_nA * 10**-9)
     n_samples = int(dt_s / reference_vss["t_sample_s"])
 
     print(f"DRAIN - feeding I = {I_out_nA} nA as {I_out_adc_raw} raw into vSource with {n_samples} steps")
@@ -254,4 +254,4 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
 
 # TODO: add IO-Test with very small and very large values
 # unit-test low and high power inputs 72W, 1W, 195 nA * 19 uV = 3.7 pW, what is with 1fW?
-# unit test different regulators
+# unit test different converters

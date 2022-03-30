@@ -10,7 +10,7 @@ For a detailed description see our `Paper <https://wwwpub.zih.tu-dresden.de/~mzi
 A *shepherd* instance consists of a group of spatially distributed *shepherd* nodes that are time-synchronized with each other.
 Each *shepherd* node consists of a BeagleBone, the *shepherd* cape and a particular choice of capelets according to the user requirements.
 
-Shepherd works in two key modes: `Harvest`_ and `Emulation`_.
+Shepherd works in two key modes: `Harvester`_ and `Emulator`_.
 
 
 Time-synchronization
@@ -28,7 +28,7 @@ Instead, you can use the timing signal (PPS) from a GPS receiver.
 We have designed a GPS capelet (hardware/capelets/gps) to easily connect a GPS receiver and provide all necessary software in our repository.
 
 
-Harvest
+Harvester
 --------
 
 For recording a harvesting scenario, shepherd nodes are equipped with a harvesting transducer, e.g. a solar panel or piezo-electric harvester.
@@ -49,10 +49,11 @@ A group of shepherd nodes can be deployed to the environment of interest to meas
 The time-synchronization between the shepherd nodes allows to gather the readings from multiple nodes with respect to a common time-line.
 The data thus represents the spatio-temporal energy availability.
 
-Emulation
+Emulator
 ---------
 
-In emulation mode, spatio-temporal current and voltage data is replayed to a group of sensor nodes (targets).
+In emulator mode, spatio-temporal current and voltage data is replayed to a group of sensor nodes (targets).
+
 Each shepherd node hosts a DAC controlled current source that can precisely supply the target ports.
 Relying on time-synchronization, shepherd can thus faithfully reproduce previously recorded (or model-based) spatio-temporal energy conditions.
 

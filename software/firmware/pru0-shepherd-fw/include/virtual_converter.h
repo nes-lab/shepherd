@@ -28,7 +28,7 @@ void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
  * - Voltage-value in buffer is written to DAC
  * - (optional) current-value in buffer is used as a limiter (power to target shuts down if it is drawing to much)
  * - (optional) output-capacitor (C != 0) is catching current-spikes of target
- * - this regulator is currently the closest possible simulation of solar -> diode -> target (with voltage-value set to threshold of target)
+ * - this converter is currently the closest possible simulation of solar -> diode -> target (with voltage-value set to threshold of target)
  * - further usage: on/off-patterns
  */
 
@@ -52,7 +52,7 @@ void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
 /* Solar - Diode - Target
  * -> currently not possible to emulate
- * - needs IV-curves and feedback to
+ * - needs IV-curves and feedback
  * TODO: later
  */
 #endif // PRU_FIRMWARE_PRU0_SHEPHERD_FW_CONVERTER_H

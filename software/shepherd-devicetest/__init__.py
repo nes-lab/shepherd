@@ -19,7 +19,7 @@ from shepherd_callbacks import *
 # - id= is now tag=
 
 
-def main():
+def assemble_window():
 
     with dpg.window(tag="main", label="Shepherd Testing and Debug Tool", width=1000, height=600):
 
@@ -120,17 +120,17 @@ def main():
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_dac", default_value="DAC-Control")
 
-        for iter in range(len(dac_channels)):
+        for _iter, _vals in enumerate(dac_channels):
             dpg.add_spacer(height=1)
             with dpg.group(horizontal=True):
-                dpg.add_checkbox(tag=f"en_dac{iter}",
-                             label="En DAC " + str(iter),
+                dpg.add_checkbox(tag=f"en_dac{_iter}",
+                             label="En DAC " + str(_iter),
                              default_value=True,
                              callback=dac_en_callback,
-                             user_data=iter)
+                             user_data=_iter)
                 dpg.add_spacer(width=10)
-                dpg.add_text(tag=f"textA_dac{iter}", default_value="Voltage:")
-                dpg.add_slider_int(tag=f"value_raw_dac{iter}",
+                dpg.add_text(tag=f"textA_dac{_iter}", default_value="Voltage:")
+                dpg.add_slider_int(tag=f"value_raw_dac{_iter}",
                                label="raw",
                                width=400,
                                default_value=0,
@@ -138,11 +138,11 @@ def main():
                                max_value=((1 << 16) - 1),
                                clamped=True,
                                callback=dac_raw_callback,
-                               user_data=iter)
-                with dpg.tooltip(f"value_raw_dac{iter}"):
-                    dpg.add_text("set raw value for dac (ctrl+click for manual input), WARNING: Sliding can crash GUI")
+                               user_data=_iter)
+                with dpg.tooltip(f"value_raw_dac{_iter}"):
+                    dpg.add_text("set raw value for dac (ctrl+click for manual input)")
                 dpg.add_spacer(width=10)
-                dpg.add_input_float(tag=f"value_mV_dac{iter}",
+                dpg.add_input_float(tag=f"value_mV_dac{_iter}",
                                 min_value=0.0,
                                 max_value=5000.0,
                                 min_clamped=True,
@@ -153,30 +153,31 @@ def main():
                                 before="",
                                 label="mV",
                                 callback=dac_val_callback,
-                                user_data=iter)
+                                user_data=_iter)
                 dpg.add_spacer(width=10)
-                dpg.add_text(tag=f"textB_dac{iter}", default_value=dac_channels[iter][3])
+                dpg.add_text(tag=f"textB_dac{_iter}", default_value=_vals[3])
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_adc",
                  default_value="ADC-Readout")
 
-        for iter in range(len(adc_channels)):
+        for _iter, _vals in enumerate(adc_channels):
             dpg.add_spacer(height=1)
             with dpg.group(horizontal=True):
-                dpg.add_text(tag=f"text_A_adc{iter}", default_value=f"ADC{iter} - " + adc_channels[iter][3])
+                dpg.add_text(tag=f"text_A_adc{_iter}", default_value=f"ADC{_iter} - " + _vals[3])
                 dpg.add_spacer(width=20)
-                dpg.add_text(tag=f"text_B_adc{iter}", default_value="raw")
+                dpg.add_text(tag=f"text_B_adc{_iter}", default_value="raw")
                 dpg.add_spacer(width=2)
-                dpg.add_input_text(tag=f"value_raw_adc{iter}",
+                dpg.add_input_text(tag=f"value_raw_adc{_iter}",
                                default_value="0",
                                readonly=True,
                                label="",
                                width=200)
                 dpg.add_spacer(width=20)
-                dpg.add_text(tag=f"text_C_adc{iter}", default_value="SI")
+
+                dpg.add_text(tag=f"text_C_adc{_iter}", default_value="SI")
                 dpg.add_spacer(width=2)
-                dpg.add_input_text(tag=f"value_mSI_adc{iter}",
+                dpg.add_input_text(tag=f"value_mSI_adc{_iter}",
                                default_value="0",
                                readonly=True,
                                label="",
@@ -216,11 +217,10 @@ def main():
                          callback=gpio_batok_callback,
                          )
 
-    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing some pieces, or proper doc) -> also add back tooltips
-    #dpg.set_render_callback(callback=window_refresh_callback)
-    dpg.set_viewport_resize_callback(callback=window_refresh_callback)
+    # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing themes)
     #dpg.set_theme(theme="Gold")  # fav: Purple, Gold, Light
     dpg.set_frame_callback(frame=1, callback=program_start_callback)
+    dpg.set_frame_callback(frame=10, callback=window_refresh_callback)
     dpg.configure_item("refresh_value", enabled=False)
 
 
@@ -229,7 +229,7 @@ if __name__ == '__main__':
     dpg.create_viewport(title="Shepherd Testing and Debug Tool (VP)", width=1000, height=600)
     dpg.setup_dearpygui()
 
-    main()
+    assemble_window()
     dpg.set_primary_window("main", True)
 
     dpg.show_viewport()

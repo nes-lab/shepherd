@@ -3,7 +3,7 @@ virtsource:
   # - what is required
   # - the limits and default values
   # NOTE: input can be also float (ie. 2.3e-4), there is no proper int-formatting (like in py 1_000_000)
-  # TODO: find a way to process direct, boost, boost + buck, future: IV-Curves as input for same regulator
+  # TODO: find a way to process direct, boost, boost + buck, future: IV-Curves as input for same converter
 
   # General Config
   converter_base: neutral # to complete undefined vars, bases: neutral, direct, BQ25504 (boost), BQ25570 (boost-buck)
@@ -23,16 +23,16 @@ virtsource:
 
   V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
   V_pwr_good_disable_threshold_mV: 2400
-  immediate_pwr_good_signal: false  # 1: emulate instant schmitt-trigger, 0: stay in interval for checking thresholds
+  immediate_pwr_good_signal: false  # 1: activate instant schmitt-trigger, 0: stay in interval for checking thresholds
 
   C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
 
   # Extra
   V_output_log_gpio_threshold_mV: 1400  # min voltage needed to enable recording changes in gpio-bank
 
-  # Boost Regulator, ie. BQ25504
+  # Boost Converter, ie. BQ25504
   V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-  V_intermediate_max_mV:  3600 # -> boost shuts off harvesting
+  V_intermediate_max_mV:  3600 # -> boost converter shuts off
 
   LUT_input_efficiency: [
     [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ], # rows are current -> here a[V=0][:]
@@ -51,7 +51,7 @@ virtsource:
   LUT_input_V_min_log2_uV: 7 # 2^7 = 128 uV -> array[0] is for inputs < 128 uV
   LUT_input_I_min_log2_nA: 8 # 2^8 = 256 nA -> array[0] is for inputs < 256 nA
 
-  # Buck-Regulator , ie. BQ25570
+  # Buck-Converter , ie. BQ25570
   V_output_mV: 2000
   V_buck_drop_mV: 0  # simulate LDO min voltage differential or output-diode
 
