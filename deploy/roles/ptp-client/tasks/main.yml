@@ -20,6 +20,7 @@
     - gpsd.service
     - gpsd.socket
     - systemd-timesyncd.service
+  ignore_errors: yes  # services may not exist
   tags:
     - ptp
     - conf

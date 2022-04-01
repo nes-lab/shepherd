@@ -26,6 +26,7 @@
     apt_repository:
       repo: deb [trusted=yes] https://shepherd.nes-lab.org debian/
       state: present
+      validate_certs: no
 
   - name: Install shepherd meta-package (This may take >15 minutes)
     apt:

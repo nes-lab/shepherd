@@ -41,6 +41,7 @@
   with_items:
     - phc2sys.service
     - ptp4l.service
+  ignore_errors: yes  # services may not exist
   tags:
     - ptp
     - conf
