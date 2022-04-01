@@ -11,6 +11,7 @@
     repo: deb [trusted=yes] https://shepherd.nes-lab.org gps/
     state: present
     validate_certs: no
+  ignore_errors: yes
   tags: gps
 
 - name: install required packages
