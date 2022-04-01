@@ -5,10 +5,12 @@
   changed_when: False
   tags: gps
 
+# TODO: fails on latest ubuntu nightlies -> replace with ansible-setup-version
 - name: Add shepherd repository to aptitude
   apt_repository:
     repo: deb [trusted=yes] https://shepherd.nes-lab.org gps/
     state: present
+    validate_certs: no
   tags: gps
 
 - name: install required packages

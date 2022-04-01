@@ -5,6 +5,7 @@
     state: stopped
     enabled: no
     daemon_reload: yes
+  ignore_errors: yes  # services may not exist
   tags:
     - gps
     - conf
@@ -25,6 +26,7 @@
     - phc2sys.service
     - ptp4l.service
   when: '"ptp_clients" not in group_names and "ptp_servers" not in group_names'
+  ignore_errors: yes  # services may not exist
   tags:
     - gps
     - conf

@@ -79,6 +79,23 @@
         - ssh_host_rsa_key
     when: stat_keys.stat.exists == True
 
+  - name: Update SSL-Certificates
+    shell: update-ca-certificates -f -v
+
+  - name: Check if Tool-Folder exists
+    stat:
+      path: /opt/scripts
+    register: tool_folder
+
+  - name: Clone boot-script-tools
+    git:
+      repo: https://github.com/RobertCNelson/boot-scripts
+      dest: /opt/scripts
+    when: not tool_folder.stat.exists
+
+  - name: Downgrade Kernel to working config
+    command: /opt/scripts/tools/update_kernel.sh --lts-4_19
+
   - name: Grow root partition to drive size
     command: /opt/scripts/tools/grow_partition.sh
 
