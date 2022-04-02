@@ -1,4 +1,5 @@
 ---
+
 - name: Disable NTP service
   systemd:
     name: systemd-timesyncd.service
@@ -6,12 +7,6 @@
     enabled: no
     daemon_reload: yes
   ignore_errors: yes  # services may not exist
-  tags:
-    - gps
-    - conf
-
-- name: Disable connman automatic time update
-  shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
   tags:
     - gps
     - conf

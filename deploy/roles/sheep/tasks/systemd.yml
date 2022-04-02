@@ -1,12 +1,12 @@
 ---
 - name: Add systemd unit
   copy:
-    src: '{{ repo_dir.stdout }}/software/meta-package/debian/shepherd.{{ item }}.service'
-    dest: '/etc/systemd/system/{{ item }}.service'
+    src: '{{ item }}'
+    dest: '/etc/systemd/system/{{ item }}'
   with_items:
-   - shepherd
-   - shepherd-rpc
-   - shepherd-launcher
+   - shepherd.service
+   - shepherd-rpc.service
+   - shepherd-launcher.service
   tags:
     - install
     - systemd
@@ -25,3 +25,10 @@
   tags:
     - conf
     - systemd
+
+- name: Disable connman automatic time update
+  shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
+  tags:
+    - conf
+    - systemd
+

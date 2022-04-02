@@ -10,16 +10,16 @@
 
 - name: Override service configs
   copy:
-    src: "{{ gps_path }}/{{ item }}.override.conf"
+    src: "{{ item }}.override.conf"
     dest: "/etc/systemd/system/{{ item }}.service.d/"
   with_items:
     - chrony
     - gpsd
 
-- name: Add config systemd service
+- name: Add ublox-config systemd service
   template:
-    src: "{{ gps_path }}/debian/shepherd-gps.ublox-config.service"
-    dest: "/etc/systemd/system/ublox-config.service"
+    src: "ublox_config.service"
+    dest: "/etc/systemd/system/"
 
 - name: Disable services
   systemd:
@@ -32,4 +32,10 @@
     - gpsd.socket
     - gpsd.service
     - chrony.service
-    - ublox-config.service
+    - ublox_config.service
+
+- name: Disable connman automatic time update
+  shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
+  tags:
+    - conf
+    - systemd

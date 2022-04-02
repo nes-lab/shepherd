@@ -48,7 +48,7 @@
     lineinfile:
       path: /etc/sudoers
       state: present
-      regexp: '^%sudo'
+      regexp: '^%sudo.*$'
       line: '%sudo ALL=(ALL) NOPASSWD: ALL'
       validate: 'visudo -cf %s'
 
@@ -111,4 +111,10 @@
     apt:
       upgrade: dist
       update_cache: yes
+    when: apt_upgrade|bool
+
+  - name: Cleanup Apt (Cache & Dependencies)
+    apt:
+      autoclean: yes
+      autoremove: yes
     when: apt_upgrade|bool

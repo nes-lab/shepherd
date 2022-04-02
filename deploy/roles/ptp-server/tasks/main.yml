@@ -2,7 +2,7 @@
 - name: Configure PTP for master mode
   lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
-    regexp: "slaveOnly\\s*(0|1)"
+    regexp: "slaveOnly.*$"
     line: "slaveOnly  0"
     state: present
   tags:
@@ -16,12 +16,6 @@
     enabled: no
     daemon_reload: yes
   ignore_errors: yes  # services may not exist
-  tags:
-    - ptp
-    - conf
-
-- name: Disable connman automatic time update
-  shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
   tags:
     - ptp
     - conf

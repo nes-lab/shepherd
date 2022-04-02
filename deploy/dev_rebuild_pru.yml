@@ -6,18 +6,21 @@
   vars:
     shepherd_install_path: /opt/shepherd
     pru_support_path: '{{ ti_path }}/{{ pru_support_package }}'
-    #pru_support_path: '{{ shepherd_install_path }}/software/firmware/_pssp57g' # TODO: just for debug
     rebuild_kernel_module: true
     rebuild_python_package: true
 
   vars_prompt:
     # these can be also passed as argument:  -e "refresh_source=True" -> automatically skips these prompts
     - name: refresh_source
-      prompt: "Do you want to (forcefully) git pull the Shepherd-Source on Nodes? [yesNo]"
+      prompt: "Do you want to (forcefully) git pull the Shepherd-Source on Nodes?"
       private: no
       default: "no"
 
   tasks:
+
+  - name: own codebase
+    command: 'chown -R {{ ansible_user }} {{ shepherd_install_path }}'
+    become: true
 
   - name: GIT - Update Shepherd-Codebase
     git:

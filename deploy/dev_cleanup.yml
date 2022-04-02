@@ -5,7 +5,7 @@
 
   vars_prompt:
     - name: confirmation
-      prompt: "Do you really want to continue? [YESno]"
+      prompt: "Do you really want to continue?"
       private: no
       default: "yes"
 
