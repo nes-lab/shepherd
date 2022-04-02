@@ -1,8 +1,0 @@
-Source: shepherd-dkms
-Maintainer: Kai Geissdoerfer <kai.geissdoerfer@tu-dresden.de>
-Build-Depends: debhelper (>= 11), dkms
-
-Package: shepherd-dkms
-Architecture: all
-Depends: ${misc:Depends}, shepherd-firmware
-Description: DKMS source for the shepherd kernel driver

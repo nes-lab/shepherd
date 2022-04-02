@@ -1,7 +1,6 @@
 import os
 from setuptools import setup
 
-# Note: there is a second requirement-install-list in ./debian/postinst
 requirements = [
     "click",
     "click-config-file",

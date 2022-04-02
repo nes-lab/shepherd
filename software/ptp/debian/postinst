@@ -1,2 +1,0 @@
-systemctl enable phc2sys
-systemctl disable systemd-timesyncd

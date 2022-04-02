@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.6"
+# TODO: is this file outdates without debian-packages? same with build.sh?
 
 services:
   - docker

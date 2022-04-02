@@ -1,3 +1,0 @@
-#!/bin/sh
-
-pip3 install zerorpc click_config_file "python-periphery<2.0.0" dbus-python "click<8.0.0" psutil pyserial
