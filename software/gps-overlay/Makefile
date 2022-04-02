@@ -1,4 +1,4 @@
-TARGET = BB-SHPRD-00A0
+TARGET = BB-GPS-00A0
 
 $(TARGET).dtbo: $(TARGET).dtsp
 	@echo ' '

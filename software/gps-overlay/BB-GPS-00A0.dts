@@ -1,0 +1,96 @@
+/*
+ * Copyright (C) 2013 the8thlayerof.net
+ *
+ * GPS cape
+ * UART2 on pins P9.21, P9.22
+ * PPS on pin P8.7
+ * TODO: in theory there are also P8_08 gps_nReset & P8_09 gps_safeboot
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+/plugin/;
+#include "am335x_pinctrl.h"
+
+/ {
+    // note: (older) "ti,beaglebone" types seem to be working as well for v4.19.x-ti, but this is more future-proof
+    compatible = "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green";
+
+    /* identification */
+    part-number = "BB-GPS";
+    version = "00A0";
+
+    /* state the resources this cape uses */
+    exclusive-use =
+        /* the pin header uses */
+        "P9.21",        /* uart2_txd/GPS RX */
+        "P9.22",        /* uart2_rxd/GPS TX */
+        "P8.7",         /* timer4/GPS PPS   */
+        /* the hardware ip uses */
+        "uart2",   /* 0-based counting */
+        "gpio2_2", /* 0-based counting */
+        "timer4";  /* 1-based counting */
+
+    /* Check Table 9-60 in am335x TRM */
+
+    /* Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/  */
+    /* Note:
+        - root-path and "chosen" seem to produce a warning with dtc, internet is not helpful
+        - this is the reference solution choosen by: https://github.com/RobertCNelson/bb.org-overlays
+    */
+    fragment@0 {
+        target-path="/";
+        __overlay__ {
+            chosen {
+                overlays {
+                    BB-GPS-00A0 = __TIMESTAMP__;
+                    };
+                };
+            };
+        };
+
+
+    fragment@1 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            gps_uart2_pins: pinmux_gps_uart2_pins {
+                pinctrl-single,pins = <
+                    P9_21(MUX_MODE1)                /* uart2_txd | MODE1 */
+                    P9_22(MUX_MODE1 | RX_ACTIVE)	/* uart2_rxd | MODE1 */
+                    >;
+                };
+
+            gps_pps_pins: pinmux_gps_pps_pins {
+                pinctrl-single,pins = <
+                    P8_07(MUX_MODE2 | RX_ACTIVE)    /* P8.7 MODE2 to TIMER4 */
+                    >;
+                };
+            };
+        };
+
+	fragment@2 {
+        target = <&uart2>;	/* 1-based counting */
+        __overlay__ {
+            status = "okay";
+            pinctrl-names = "default";
+            pinctrl-0 = <&gps_uart2_pins>;
+            };
+	    };
+
+	fragment@3 {
+		target = <&ocp>;
+		__overlay__ {
+    		status = "okay";
+            pinctrl-names = "default";
+            pinctrl-0 = <&gps_pps_pins>;
+			P8_07_pinmux { status = "disabled"; };
+			pps_gmtimer {
+				compatible = "pps-gmtimer";
+				status = "okay";
+				timer = <&timer4>;
+			    };
+		    };
+	    };
+};

@@ -1,2 +1,0 @@
-sed -r -i 's/dtb_overlay=\/lib\/firmware\/BB-SHPRD-00A0.dtbo/#dtb_overlay=\/lib\/firmware\/<file>.dtbo/g' /boot/uEnv.txt
-sed -r -i '/#?shepherd/d' /etc/modules
