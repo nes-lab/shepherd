@@ -173,11 +173,11 @@
    fragment@2 {
        target = <&pruss>;
        __overlay__ {
-           status = "okay";
+            status = "okay";
             pinctrl-names = "default";
             pinctrl-0 = <&bb_shprd_pins>;
             shepherd{
-               compatible = "tud,shepherd";
+               compatible = "nes,shepherd";
                prusses = <&pruss>;
             };	
        };
