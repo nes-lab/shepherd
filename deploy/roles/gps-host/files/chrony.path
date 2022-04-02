@@ -1,3 +1,4 @@
+# TODO: what was this used for?
 
 [Unit]
 Description= Triggers chrony service when PPS device appears

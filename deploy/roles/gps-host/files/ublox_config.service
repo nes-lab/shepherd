@@ -1,3 +1,5 @@
+# part of shepherd-gps
+
 [Unit]
 Description=Enable GALILEO on ublox GPS device
 After=gpsd.service

@@ -8,3 +8,13 @@ sheep:
       ansible_host: 192.168.1.102
   vars:
     ansible_user: jane
+# sheep can be assigned roles:
+# - choices for time-sync: ntp_clients, gps_clients, ptp_clients, ptp_servers
+# - to lockdown the software there is a role "secured"
+# - assign individually ("sheep0:") or as ranges ("sheep[2:10]:")
+# https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
+# harmless (nonsense) example:
+example_clients:
+  hosts:
+    sheep0:
+    sheep[20:30]:

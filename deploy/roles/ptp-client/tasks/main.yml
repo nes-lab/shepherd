@@ -2,7 +2,7 @@
 - name: Configure PTP for slave-only mode
   lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
-    regexp: "slaveOnly\\s*(0|1)"
+    regexp: "slaveOnly.*$"
     line: "slaveOnly  1"
     state: present
   tags:
@@ -21,12 +21,6 @@
     - gpsd.socket
     - systemd-timesyncd.service
   ignore_errors: yes  # services may not exist
-  tags:
-    - ptp
-    - conf
-
-- name: Disable connman automatic time update
-  shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
   tags:
     - ptp
     - conf

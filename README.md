@@ -37,7 +37,7 @@ We assume that your local machine is connected to the same network, that the nod
 If you haven't done it yet, clone this repository to your local machine:
 
 ```
-git clone https://github.com/geissdoerfer/shepherd.git
+git clone https://github.com/orgua/shepherd.git
 ```
 
 Next, install the tools used for installing and controlling the *shepherd* nodes.
@@ -53,6 +53,7 @@ pip3 install ansible shepherd-herd
 The `inventory/herd.yml` file shows an example of how to provide the host names and known IP addresses of your BeagleBones.
 Adjust it to reflect your setup.
 You can arbitrarily choose and assign the hostnames (sheep0, sheep1, in this example) and the ansible_user (jane in this example).
+[**TODO:** update description with roles].
 
 ```
 sheep:
@@ -73,12 +74,11 @@ Now run the `bootstrap.yml` *Ansible* playbook, which sets the hostname, creates
 ansible-playbook deploy/bootstrap.yml
 ```
 
-Finally, use the `install.yml` playbook to setup the *shepherd* software, optionally configuring PTP for time-synchronization:
+Finally, use the `deploy.yml` playbook to setup the *shepherd* software with the configured roles from inventory:
 
 ```
-ansible-playbook deploy/install.yml -e ptp=true
+ansible-playbook deploy/deploy.yml
 ```
-
 
 ## Usage
 

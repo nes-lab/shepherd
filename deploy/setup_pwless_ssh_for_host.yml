@@ -1,5 +1,5 @@
 ---
-- name: Add certificate of current host to target for password-less ssh
+- name: Deposit your machines' certificates (host) to nodes for future password-less ssh-logins
   hosts: all
   become: true
   gather_facts: no

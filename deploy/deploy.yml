@@ -41,10 +41,15 @@
 
 - hosts: gps_clients
   roles:
-    - gps-client
+    - gps-client  # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
   become: yes
 
 - hosts: ptp_servers
   roles:
     - ptp-server
+  become: yes
+
+- hosts: secured
+  roles:
+    - secure-testbed
   become: yes

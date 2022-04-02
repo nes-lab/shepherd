@@ -72,6 +72,7 @@ Clone the shepherd repository to your machine:
 Add an inventory file in the `inventory` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
 Just start by editing the provided `inventory/herd.yml` example.
 Pick a username that you want to use to login to the nodes and assign as `ansible_user` variable.
+[**TODO:** update description with roles].
 
 .. code-block:: yaml
 
@@ -109,14 +110,7 @@ The *install* playbook allows to easily automate this process on a group of node
 
 .. code-block:: bash
 
-    ansible-playbook deploy/install.yml
-
-To install and configure PTP for time-synchronizing a bunch of shepherd-nodes, you can set the `ptp` variable on the command line, alternatively you get asked on script-start:
-
-.. code-block:: bash
-
-    ansible-playbook deploy/install.yml -e "ptp=True"
-
+    ansible-playbook deploy/deploy.yml
 
 On success, the nodes will reboot and should be ready for use, for example, using the *shepherd-herd* command line utility.
 
@@ -124,10 +118,8 @@ Further playbooks:
 
     - ``setup_linux_configuration.yml`` will handle updates, some configuration, remove clutter, improve ram-usage and boot-duration
     - ``setup_linux_performance.yml`` handles additional speed-improving changes
-    - ``setup_linux_security.yml`` will close down system so that nodes can be distributed safely in open spaces (basic steps to reduce attack surface)
     - ``fetch-hostkeys.yml`` will copy keys from nodes, handy for reflashing image, while keeping keys
-    - ``setup_allow_ssh_from_pwless_host.yml`` will deposit your machines' certificates on the nodes for future passwordless login
+    - ``setup_pwdless_ssh_for_host.yml`` will deposit your machines' certificates on the nodes for future passwordless login
     - ``setup-dev-nfs.yml`` establish a local network file system ``/opt/shepherd-dev`` for the nodes to access
     - ``setup-ext-storage.yml`` will format and automount sd-card to ''/var/shepherd/recordings''
-    - ``deploy.yml`` offers faster and easier way to test updates in shepherd-code-base
     - ``dev_rebuild_pru.yml`` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart

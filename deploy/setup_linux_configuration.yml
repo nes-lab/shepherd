@@ -24,12 +24,12 @@
   vars_prompt:
     # these can be also passed as argument:  -e "update_kernel=True" -> automatically skips these prompts
     - name: update_kernel
-      prompt: "Do you want to update the Kernel? [yesNO]"
+      prompt: "Do you want to update the Kernel?"
       private: no
       default: "no"
 
     - name: update_bootloader
-      prompt: "Do you want to update the Bootloader? [yesNO]"
+      prompt: "Do you want to update the Bootloader?"
       private: no
       default: "no"
 
@@ -45,7 +45,6 @@
   - name: SCRIPT - Switch to newest release of Kernel Branch "{{ default_kernel_branch }}"
     shell: /opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}
     when: update_kernel|bool
-    # TODO: this script gets recommended, but apt should be also just fine, should be cleaner
 
   - name: SYS - Restart device
     shell: sleep 2 && shutdown -r now "Ansible restart"
@@ -69,7 +68,6 @@
     register: kernelrelease
     changed_when: False
 
-  # TODO: this is a copy of an entry in install.yml
   - name: APT - Install matching Kernel-Headers for running Kernel
     apt:
       name: 'linux-headers-{{ kernelrelease.stdout.strip() }}'
@@ -127,18 +125,15 @@
       state: absent
       purge: yes
 
-  - name: APT - Remove Dependencies that are no longer required
-    apt:
-      autoremove: yes
-      
-  - name: APT - Remove useless Packages from the Cache
-    apt:
-      autoclean: yes
-
   - name: APT - Upgrade all packages to the latest version
     apt:
       upgrade: dist
       update_cache: yes
+
+  - name: APT - Cleanup Cache & Dependencies
+    apt:
+      autoremove: yes
+      autoclean: yes
 
   - name: CFG - Set timezone to "{{ timezone }}"
     timezone:
