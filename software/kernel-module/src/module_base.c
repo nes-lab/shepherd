@@ -20,7 +20,7 @@ MODULE_SOFTDEP("pre: remoteproc");
 
 static const struct of_device_id shepherd_dt_ids[] = {
 	{
-		.compatible = "tud,shepherd",
+		.compatible = "nes,shepherd",
 	},
 	{ /* sentinel */ }
 };
