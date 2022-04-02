@@ -26,7 +26,7 @@
     name: ubxserial
 
 - name: configure chrony and gpsd (not active)
-  template:
+  copy:
     src: "{{ item }}"
     dest: "/etc/shepherd/"
     mode: 0644

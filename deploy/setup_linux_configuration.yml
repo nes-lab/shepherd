@@ -9,14 +9,15 @@
     timezone: Europe/Berlin
     # potentially dangerous / improve security:
     non_essential_packages_a: ['dnsmasq', 'dnsmasq-*', 'nginx', 'nginx-*']
-    # old kernel data
-    non_essential_packages_b: ['linux-image-4.15.*', 'linux-image-4.14.*']
-    non_essential_packages_c: ['linux-headers-4.15.*', 'linux-headers-4.14.*']
+    # old kernel data # TODO: kernel / header that comes with image are somehow not in apt -> dpkgs
+    non_essential_packages_b: ['linux-image-4.14.*', 'linux-image-5.10.*', 'linux-image-5.15.*']
+    non_essential_packages_c: ['linux-headers-4.14.*', 'linux-headers-5.10.*', 'linux-headers-5.15.*']
     # todo: soon add linux-*-4.19.*
     # not needed drivers / packages Todo: rf-drivers could become important later
     non_essential_packages_d: ['alsa-utils', 'wireless-*', 'wpasupplicant', 'ofono', 'bluez', 'bluetooth', 'rfkill']
     non_essential_packages_e: ['seeed-modules-*', 'rtl8*', 'can-utils', 'libasound*']
     non_essential_packages_f: ['ti-sgx-*', 'eject', 'iw', 'vpdma-*', 'libx11*']
+    non_essential_packages_g: ['vim-runtime', 'humanity-icon-theme', 'python3-sympy']
     # todo: vpdma maybe my fault, manual install, there is much more cluttering up the system,
     # - initramfs-* seems to be unused
     # ubuntu 21.04 seems to have no linux-headers/image-4.15, vpdma-*,
@@ -63,6 +64,21 @@
     shell: yes | /opt/scripts/tools/developers/update_bootloader.sh
     when: update_bootloader|bool
 
+  - name: APT - Uninstall non-essential Packages
+    apt:
+      name: "{{ item }}"
+      state: absent
+      purge: yes
+    ignore_errors: yes
+    with_items:
+      - "{{ non_essential_packages_a }}"
+      - "{{ non_essential_packages_b }}"
+      - "{{ non_essential_packages_c }}"
+      - "{{ non_essential_packages_d }}"
+      - "{{ non_essential_packages_e }}"
+      - "{{ non_essential_packages_f }}"
+      - "{{ non_essential_packages_g }}"
+
   - name: Uname - Get Kernel-Version
     command: uname --kernel-release
     register: kernelrelease
@@ -73,66 +89,16 @@
       name: 'linux-headers-{{ kernelrelease.stdout.strip() }}'
       update_cache: yes
 
-  - name: APT - Update Cache
-    apt:
-      update_cache: yes
-
-  - name: APT - Combine Package-List
-    set_fact:
-      non_essential_pckgs: "{{ non_essential_packages_a +
-                               non_essential_packages_b +
-                               non_essential_packages_c +
-                               non_essential_packages_d +
-                               non_essential_packages_e +
-                               non_essential_packages_f }}"
-  # TODO: kernel / header that comes with image are somehow not in apt -> dpkgs
-
-  # keep non_essential_pckgs in divided steps for now, better debug
-  - name: APT - Uninstall non-essential Packages (Part A)
-    ignore_errors: yes
-    apt:
-      name: "{{ non_essential_packages_a }}"
-      state: absent
-      purge: yes
-  - name: APT - Uninstall non-essential Packages (Part B)
-    ignore_errors: yes
-    apt:
-      name: "{{ non_essential_packages_b }}"
-      state: absent
-      purge: yes
-  - name: APT - Uninstall non-essential Packages (Part C)
-    ignore_errors: yes
-    apt:
-      name: "{{ non_essential_packages_c }}"
-      state: absent
-      purge: yes 
-  - name: APT - Uninstall non-essential Packages (Part D)
-    ignore_errors: yes
-    apt:
-      name: "{{ non_essential_packages_d }}"
-      state: absent
-      purge: yes
-  - name: APT - Uninstall non-essential Packages (Part E)
-    ignore_errors: yes
-    apt:
-      name: "{{ non_essential_packages_e }}"
-      state: absent
-      purge: yes
-  - name: APT - Uninstall non-essential Packages (Part F)
-    ignore_errors: yes
-    apt:
-      name: "{{ non_essential_packages_f }}"
-      state: absent
-      purge: yes
-
   - name: APT - Upgrade all packages to the latest version
     apt:
       upgrade: dist
       update_cache: yes
 
-  - name: APT - Cleanup Cache & Dependencies
+  - name: APT - Cleanup Cache
     apt:
       autoremove: yes
+  - name: APT - Cleanup Dependencies
+    apt:
       autoclean: yes
 
   - name: CFG - Set timezone to "{{ timezone }}"

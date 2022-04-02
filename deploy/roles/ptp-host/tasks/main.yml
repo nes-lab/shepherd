@@ -17,12 +17,6 @@
     - ptp
     - conf
 
-- name: Disable connman automatic time update
-  shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
-  tags:
-    - conf
-    - systemd
-
 - name: Deploy systemd overlay files
   copy:
     src: "{{ item.src }}"
