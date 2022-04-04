@@ -21,9 +21,6 @@ sys.path.append(str(shepherd_path))
 from calibration import CalibrationData
 from calibration_default import *
 
-# SMU Config-Parameters
-mode_4wire = True
-pwrline_cycles = 16  # .001 to 25 allowed
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -81,8 +78,7 @@ def plot_calibration(measurements, calibration, file_name):
             plt.clf()
 
 
-def set_smu_to_vsource(smu, value_v: float, limit_i: float):
-    global mode_4wire, pwrline_cycles
+def set_smu_to_vsource(smu, value_v: float, limit_i: float, pwrline_cycles: float, mode_4wire: bool):
     smu.sense = smu.SENSE_REMOTE if mode_4wire else smu.SENSE_LOCAL
     smu.source.levelv = value_v
     smu.source.limiti = limit_i
@@ -95,8 +91,7 @@ def set_smu_to_vsource(smu, value_v: float, limit_i: float):
     smu.measure.nplc = pwrline_cycles
 
 
-def set_smu_as_isource(smu, value_i: float, limit_v: float):
-    global mode_4wire, pwrline_cycles
+def set_smu_as_isource(smu, value_i: float, limit_v: float, pwrline_cycles: float, mode_4wire: bool):
     smu.sense = smu.SENSE_REMOTE if mode_4wire else smu.SENSE_LOCAL
     smu.source.leveli = value_i
     smu.source.limitv = limit_v
@@ -116,7 +111,7 @@ def reject_outliers(data, m = 2.):
     return data[s < m]
 
 
-def meas_harvester_adc_voltage(rpc_client, smu):
+def meas_harvester_adc_voltage(rpc_client, smu, pwrline_cycles: float, mode_4wire: bool):
 
     smu_current_A = 0.1e-3
     smu_voltages_V = np.linspace(0.3, 2.5, 12)
@@ -127,7 +122,7 @@ def meas_harvester_adc_voltage(rpc_client, smu):
     print(f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw}) -> upper limit now max")
     rpc_client.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_raw, also_main=True)
 
-    set_smu_to_vsource(smu, 0.0, smu_current_A)
+    set_smu_to_vsource(smu, 0.0, smu_current_A, pwrline_cycles, mode_4wire)
 
     results = list()
     for voltage_V in smu_voltages_V:
@@ -154,7 +149,7 @@ def meas_harvester_adc_voltage(rpc_client, smu):
     return results
 
 
-def meas_harvester_adc_current(rpc_client, smu):  # TODO: combine with previous FN
+def meas_harvester_adc_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bool):  # TODO: combine with previous FN
 
     sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
     dac_voltage_V = 2.5
@@ -164,7 +159,7 @@ def meas_harvester_adc_current(rpc_client, smu):  # TODO: combine with previous 
     print(f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw})")
     rpc_client.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_raw, also_main=True)
 
-    set_smu_as_isource(smu, 0.0, 3.0)
+    set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
 
     results = list()
     for current_A in sm_currents_A:
@@ -190,7 +185,7 @@ def meas_harvester_adc_current(rpc_client, smu):  # TODO: combine with previous 
     return results
 
 
-def meas_emulator_current(rpc_client, smu):
+def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bool):
 
     sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
     dac_voltage_V = 2.5
@@ -200,7 +195,7 @@ def meas_emulator_current(rpc_client, smu):
     # write both dac-channels of emulator
     rpc_client.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_to_raw(dac_voltage_V), also_main=True)  # TODO: rpc seems to have trouble with named parameters, so 2**20 is a bugfix
 
-    set_smu_as_isource(smu, 0.0, 3.0)
+    set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
 
     results = list()
     for current_A in sm_currents_A:
@@ -226,7 +221,7 @@ def meas_emulator_current(rpc_client, smu):
     return results
 
 
-def meas_dac_voltage(rpc_client, smu, dac_bitmask):
+def meas_dac_voltage(rpc_client, smu, dac_bitmask, pwrline_cycles: float, mode_4wire: bool):
 
     smu_current_A = 0.1e-3
     voltages_V = np.linspace(0.3, 2.5, 12)
@@ -236,7 +231,7 @@ def meas_dac_voltage(rpc_client, smu, dac_bitmask):
     # write both dac-channels of emulator
     rpc_client.dac_write(dac_bitmask, 0)
 
-    set_smu_as_isource(smu, smu_current_A, 5.0)  # TODO: used for emu & hrv, add paramter for drain and src
+    set_smu_as_isource(smu, smu_current_A, 5.0, pwrline_cycles, mode_4wire)  # TODO: used for emu & hrv, add parameter for drain and src
 
     results = list()
     for _iter, _val in enumerate(voltages_raw):
@@ -263,17 +258,18 @@ def meas_dac_voltage(rpc_client, smu, dac_bitmask):
 def cli():
     pass
 
-
 @cli.command()
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe", help="Host Username")
 @click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
 @click.option("--outfile", "-o", type=click.Path(), help="save-file, file gets extended if it already exists")
-@click.option("--smu-ip", type=str, default="192.168.1.108")
+@click.option("--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network")
 @click.option("--all", "all_", is_flag=True, help="handle both, harvester and emulator")
 @click.option("--harvester", "-h", is_flag=True, help="handle only harvester")
 @click.option("--emulator", "-e", is_flag=True, help="handle only emulator")
-def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
+@click.option("--smu-4wire", is_flag=True, help="use 4wire-mode for measuring voltage (recommended)")
+@click.option("--smu-nplc", type=float, default=16, help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)")
+def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator, smu_4wire, smu_nplc):
 
     if all_:
         if harvester or emulator:
@@ -289,6 +285,8 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
         fabric_args = {"password": password}
     else:
         fabric_args = {}
+
+    smu_nplc = min(max(smu_nplc, 0.001), 25)
 
     rpc_client = zerorpc.Client(timeout=60, heartbeat=20)
 
@@ -312,13 +310,13 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
             if usr_conf:
                 measurement_dict["harvester"] = dict()
                 print(f"Measurement - Harvester - ADC . Voltage")
-                measurement_dict["harvester"]["adc_voltage"] = meas_harvester_adc_voltage(rpc_client, kth.smub)
+                measurement_dict["harvester"]["adc_voltage"] = meas_harvester_adc_voltage(rpc_client, kth.smub, smu_nplc, smu_4wire)
                 print(f"Measurement - Harvester - ADC . Current")
-                measurement_dict["harvester"]["adc_current"] = meas_harvester_adc_current(rpc_client, kth.smub)
+                measurement_dict["harvester"]["adc_current"] = meas_harvester_adc_current(rpc_client, kth.smub, smu_nplc, smu_4wire)
                 print(f"Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
-                measurement_dict["harvester"]["dac_voltage_a"] = meas_dac_voltage(rpc_client, kth.smua, 0b0001)
+                measurement_dict["harvester"]["dac_voltage_a"] = meas_dac_voltage(rpc_client, kth.smua, 0b0001, smu_nplc, smu_4wire)
                 print(f"Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
-                measurement_dict["harvester"]["dac_voltage_b"] = meas_dac_voltage(rpc_client, kth.smub, 0b0010)
+                measurement_dict["harvester"]["dac_voltage_b"] = meas_dac_voltage(rpc_client, kth.smub, 0b0010, smu_nplc, smu_4wire)
 
         if emulator:
             click.echo(INSTR_EMU)
@@ -329,19 +327,19 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator):
                 print(f"Measurement - Emulator - ADC . Current - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
-                measurement_dict["emulator"]["adc_current"] = meas_emulator_current(rpc_client, kth.smua)
+                measurement_dict["emulator"]["adc_current"] = meas_emulator_current(rpc_client, kth.smua, smu_nplc, smu_4wire)
 
                 print(f"Measurement - Emulator - ADC . Current - Target B")
                 # targetB-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(False)
                 # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
-                measurement_dict["emulator"]["adc_voltage"] = meas_emulator_current(rpc_client, kth.smub)
+                measurement_dict["emulator"]["adc_voltage"] = meas_emulator_current(rpc_client, kth.smub, smu_nplc, smu_4wire)
 
                 rpc_client.select_target_for_power_tracking(False)  # routes DAC.A to TGT.A to SMU-A
                 print(f"Measurement - Emulator - DAC . Voltage - Channel A")
-                measurement_dict["emulator"]["dac_voltage_a"] = meas_dac_voltage(rpc_client, kth.smua, 0b1100)
+                measurement_dict["emulator"]["dac_voltage_a"] = meas_dac_voltage(rpc_client, kth.smua, 0b1100, smu_nplc, smu_4wire)
                 print(f"Measurement - Emulator - DAC . Voltage - Channel B")
-                measurement_dict["emulator"]["dac_voltage_b"] = meas_dac_voltage(rpc_client, kth.smub, 0b1100)
+                measurement_dict["emulator"]["dac_voltage_b"] = meas_dac_voltage(rpc_client, kth.smub, 0b1100, smu_nplc, smu_4wire)
 
         out_dict = {"node": host, "measurements": measurement_dict}
         cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
