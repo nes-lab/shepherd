@@ -26,22 +26,6 @@
       - /var/shepherd/recordings2/*
     when: confirmation | bool
 
-  - name: delete firmware
-    command: "rm -rf {{item}}"
-    with_items:
-      - /usr/lib/firmware/netronome
-      - /usr/lib/firmware/qcom
-      - /usr/lib/firmware/amd*
-      - /usr/lib/firmware/intel
-      - /usr/lib/firmware/mellanox
-      - /usr/lib/firmware/liquidio
-      - /usr/lib/firmware/mrvl
-      - /usr/lib/firmware/ath1*
-      - /usr/lib/firmware/nvidia
-      - /usr/lib/firmware/radeon
-      - /usr/lib/firmware/iwlwifi*
-    when: confirmation | bool
-
   - name: clean apt-cache
     command: apt clean
     when: confirmation | bool

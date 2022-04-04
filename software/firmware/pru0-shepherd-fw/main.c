@@ -391,7 +391,8 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		}
 
 		const uint32_t timer_ticks = iep_get_cnt_val() - timer_start;
-		if (timer_ticks > shared_mem->pru0_max_ticks_per_sample)
+		if ((timer_ticks > shared_mem->pru0_max_ticks_per_sample) &&
+		    (timer_ticks < 1u<<20u))
 		{
 			shared_mem->pru0_max_ticks_per_sample = timer_ticks;
 		}

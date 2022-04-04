@@ -183,7 +183,7 @@ class CalibrationData(object):
                 except ValueError as e:
                     logger.error(f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]")
 
-                if rval < 0.999:
+                if ("rval" in locals()) and (rval < 0.999):
                     logger.warning(
                         f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}")
                 cal_dict[component][channel]["gain"] = gain

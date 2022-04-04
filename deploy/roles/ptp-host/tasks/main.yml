@@ -48,8 +48,10 @@
     enabled: no
     daemon_reload: yes
   with_items:
-    - phc2sys.service
+    - phc2sys.service # TODO: these fail in recent ubuntu nightlies, linuxptp switched to servive-templates, keep old style for now
     - ptp4l.service
+    - phc2sys@eth0.service
+    - ptp4l@eth0.service
   ignore_errors: yes  # services may not exist
   tags:
     - ptp

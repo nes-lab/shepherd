@@ -78,7 +78,7 @@ def config_logger(verbose: int):
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
-@click.option("-v", "--verbose", count=True, default=2)
+@click.option("-v", "--verbose", count=True, default=2, help="4 Levels, but level 4 has serious performance impact")
 @click.pass_context
 def cli(ctx, verbose: int):
     """ Shepherd: Synchronized Energy Harvesting Emulator and Recorder
@@ -129,7 +129,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     short_help="Runs a mode with given parameters. Mainly for use with config file.")
 @click.option("--mode", default="harvester", type=click.Choice(["harvester", "emulator"]))
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
-@click.option("-v", "--verbose", count=True)
+@click.option("-v", "--verbose", count=True, help="4 Levels, but level 4 has serious performance impact")
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 def run(mode, parameters: Dict, verbose):
 
@@ -257,7 +257,7 @@ def emulator(
         warn_only=warn_only,
         skip_log_voltage=skip_log_voltage,
         skip_log_current=skip_log_current,
-        skip_log_gpio=skip_log_gpio
+        skip_log_gpio=skip_log_gpio,
     )
 
 
