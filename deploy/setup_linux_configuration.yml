@@ -34,6 +34,11 @@
       private: no
       default: "no"
 
+    - name: delete_unused_files
+      prompt: "Should the script remove unused files like firmware?"
+      private: no
+      default: "yes"
+
   tasks:
 
   - name: GIT - Update "boot-scripts" from RoberCNelson
@@ -63,6 +68,28 @@
   - name: SCRIPT - Update Bootloader
     shell: yes | /opt/scripts/tools/developers/update_bootloader.sh
     when: update_bootloader|bool
+
+  - name: delete unused firmware
+    command: "rm -rf {{item}}"
+    with_items:
+      - /usr/lib/firmware/netronome
+      - /usr/lib/firmware/qcom
+      - /usr/lib/firmware/amd*
+      - /usr/lib/firmware/intel
+      - /usr/lib/firmware/mellanox
+      - /usr/lib/firmware/liquidio
+      - /usr/lib/firmware/mrvl
+      - /usr/lib/firmware/ath1*
+      - /usr/lib/firmware/nvidia
+      - /usr/lib/firmware/radeon
+      - /usr/lib/firmware/iwlwifi-*
+    when: delete_unused_files|bool
+
+  - name: delete Logs
+    command: "rm -rf {{item}}"
+    with_items:
+      - /var/log/*
+    when: delete_unused_files|bool
 
   - name: APT - Uninstall non-essential Packages
     apt:
@@ -94,12 +121,14 @@
       upgrade: dist
       update_cache: yes
 
-  - name: APT - Cleanup Cache
-    apt:
-      autoremove: yes
   - name: APT - Cleanup Dependencies
     apt:
+      autoremove: yes
+  - name: APT - Cleanup Cache
+    apt:
       autoclean: yes
+  - name: APT - clean cache
+    command: apt clean  # this one seems reliable (compared to the two above)
 
   - name: CFG - Set timezone to "{{ timezone }}"
     timezone:

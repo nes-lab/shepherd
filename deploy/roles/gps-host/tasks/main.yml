@@ -68,7 +68,7 @@
   notify: restart device
   tags: gps
 
-- name: Set enabled capes
+- name: Set GPS-cape to enabled
   lineinfile:
     dest: '/boot/uEnv.txt'
     regexp: '#?uboot_overlay_addr6=.*$'
