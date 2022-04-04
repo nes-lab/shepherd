@@ -8,6 +8,7 @@ parameters:
   # - providing a directory -> file is named emu_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> emu#num.h5
   output_path: /var/shepherd/recordings
+  output_compression: 1  # should be 1 (level 1 gzip), lzf, or None (order of recommendation)
   virtsource: # provide path, name (ie. default, BQ25570) or parameters
     converter_base: BQ25570
     harvester: mppt_bq_solar
@@ -24,4 +25,4 @@ parameters:
   skip_log_voltage: false
   skip_log_current: false
   skip_log_gpio: false
-verbose: 2 # serious performance impact for value > 2
+verbose: 2 # serious performance impact for value > 3

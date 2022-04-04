@@ -46,6 +46,7 @@ ExceptionRecord = namedtuple(
 
 monitors_end = threading.Event()
 
+
 def unique_path(base_path: Union[str, Path], suffix: str):
     counter = 0
     while True:
@@ -53,19 +54,6 @@ def unique_path(base_path: Union[str, Path], suffix: str):
         if not path.exists():
             return path
         counter += 1
-
-
-def add_dataset_time(grp: h5py.Group, length: int, chunks: Union[bool, tuple] = True) -> NoReturn:
-    grp.create_dataset(
-        "time",
-        (length,),
-        dtype="u8",
-        maxshape=(None,),
-        chunks=chunks,
-        compression=LogWriter.compression_algo,
-    )
-    grp["time"].attrs["unit"] = f"ns"
-    grp["time"].attrs["description"] = "system time [ns]"
 
 
 class LogWriter(object):
@@ -86,10 +74,12 @@ class LogWriter(object):
     """
 
     # choose lossless compression filter
-    # - gzip: good compression, moderate speed, select level from 1-9, default is 4
-    # - lzf: low to moderate compression, very fast, no options -> 20 % overhead for half the filesize
-    # NOTE for quick and easy performance improvement: remove compression for monitor-datasets, or even group_value
-    compression_algo = "lzf"
+    # - lzf: low to moderate compression, VERY fast, no options -> 20 % cpu overhead for half the filesize
+    # - gzip: good compression, moderate speed, select level from 1-9, default is 4 -> lower levels seem fine
+    #         --> _algo=number instead of "gzip" is read as compression level for gzip
+    # -> comparison / benchmarks https://www.h5py.org/lzf/
+    # NOTE for quick and easy performance improvements: remove compression for monitor-datasets, or even group_value
+    compression_algo = 1
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
     sys_log_next_ns = 0
     dmesg_mon_t = None
@@ -107,6 +97,7 @@ class LogWriter(object):
             skip_voltage: bool = False,
             skip_current: bool = False,
             skip_gpio: bool = False,
+            output_compression: str = None,
     ):
         if force_overwrite or not store_path.exists():
             self.store_path = store_path
@@ -131,6 +122,10 @@ class LogWriter(object):
         self._write_voltage = not skip_voltage
         self._write_current = not skip_current
         self._write_gpio = (not skip_gpio) and ("emulat" in mode)
+
+        if output_compression in ["gzip", "lzf"] + list(range(1, 10)):
+            self.compression_algo = output_compression
+
         logger.debug(f"Set log-writing for voltage:     {'enabled' if self._write_voltage else 'disabled'}")
         logger.debug(f"Set log-writing for current:     {'enabled' if self._write_current else 'disabled'}")
         logger.debug(f"Set log-writing for gpio:        {'enabled' if self._write_gpio else 'disabled'}")
@@ -185,7 +180,7 @@ class LogWriter(object):
         # the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
         self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
 
-        add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
+        self.add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(
             "current",
             (self.data_inc,),
@@ -214,7 +209,7 @@ class LogWriter(object):
 
         # Create group for gpio data
         self.gpio_grp = self._h5file.create_group("gpio")
-        add_dataset_time(self.gpio_grp, self.gpio_inc)
+        self.add_dataset_time(self.gpio_grp, self.gpio_inc)
         self.gpio_grp.create_dataset(
             "value",
             (self.gpio_inc,),
@@ -228,7 +223,7 @@ class LogWriter(object):
 
         # Create group for exception logs, entry consists of a timestamp, a message and a value
         self.xcpt_grp = self._h5file.create_group("exceptions")
-        add_dataset_time(self.xcpt_grp, self.xcpt_inc)
+        self.add_dataset_time(self.xcpt_grp, self.xcpt_inc)
         self.xcpt_grp.create_dataset(
             "message",
             (self.xcpt_inc,),
@@ -241,7 +236,7 @@ class LogWriter(object):
 
         # UART-Logger
         self.uart_grp = self._h5file.create_group("uart")
-        add_dataset_time(self.uart_grp, self.uart_inc)
+        self.add_dataset_time(self.uart_grp, self.uart_inc)
         # Every log entry consists of a timestamp and a message
         self.uart_grp.create_dataset(
             "message",
@@ -254,7 +249,7 @@ class LogWriter(object):
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
-        add_dataset_time(self.sysutil_grp, self.sysutil_inc, (self.sysutil_inc,))
+        self.add_dataset_time(self.sysutil_grp, self.sysutil_inc, (self.sysutil_inc,))
         self.sysutil_grp["time"].attrs["unit"] = "ns"
         self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
         self.sysutil_grp.create_dataset("cpu", (self.sysutil_inc,), dtype="u1", maxshape=(None,), chunks=(self.sysutil_inc,), )
@@ -274,7 +269,7 @@ class LogWriter(object):
 
         # Create dmesg-Logger -> consists of a timestamp and a message
         self.dmesg_grp = self._h5file.create_group("dmesg")
-        add_dataset_time(self.dmesg_grp, self.dmesg_inc)
+        self.add_dataset_time(self.dmesg_grp, self.dmesg_inc)
         self.dmesg_grp.create_dataset(
             "message",
             (self.dmesg_inc,),
@@ -285,7 +280,7 @@ class LogWriter(object):
 
         # Create timesync-Logger
         self.timesync_grp = self._h5file.create_group("timesync")
-        add_dataset_time(self.timesync_grp, self.timesync_inc)
+        self.add_dataset_time(self.timesync_grp, self.timesync_inc)
         self.timesync_grp.create_dataset("value", (self.timesync_inc, 3), dtype="i8", maxshape=(None, 3), chunks=True)
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs["description"] = "master offset [ns], s2 freq [Hz], path delay [ns]"
@@ -533,6 +528,18 @@ class LogWriter(object):
             tevent.wait(poll_intervall)  # rate limiter
         logger.debug(f"[PTP4lMonitor] ended itself")
 
+    def add_dataset_time(self, grp: h5py.Group, length: int, chunks: Union[bool, tuple] = True) -> NoReturn:
+        grp.create_dataset(
+            "time",
+            (length,),
+            dtype="u8",
+            maxshape=(None,),
+            chunks=chunks,
+            compression=self.compression_algo,
+        )
+        grp["time"].attrs["unit"] = f"ns"
+        grp["time"].attrs["description"] = "system time [ns]"
+
     def __setitem__(self, key, item):
         """Offer a convenient interface to store any relevant key-value data"""
         return self._h5file.attrs.__setitem__(key, item)
@@ -605,7 +612,7 @@ class LogReader(object):
         """
         cal = CalibrationData.from_default()
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
-            cal_channel = cal_channel_harvest_dict[channel]
+            cal_channel = cal_channel_hrv_dict[channel]
             cal.data["harvester"][cal_channel][parameter] = self._h5file["data"][channel].attrs[parameter]
         return CalibrationData(cal)
 

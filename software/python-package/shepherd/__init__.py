@@ -527,13 +527,14 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
 
 
 def run_recorder(
-    output_path: Path,
-    duration: float = None,
-    harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
-    force_overwrite: bool = False,
-    use_cal_default: bool = False,
-    start_time: float = None,
-    warn_only: bool = False,
+        output_path: Path,
+        duration: float = None,
+        harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
+        force_overwrite: bool = False,
+        use_cal_default: bool = False,
+        start_time: float = None,
+        warn_only: bool = False,
+        output_compression=None,
 ):
     """Starts recording.
 
@@ -547,8 +548,8 @@ def run_recorder(
         use_cal_default (bool): True to use default calibration values, False to
             read calibration data from EEPROM
         start_time (float): Desired start time of emulation in unix epoch time
-        warn_only (bool): Set true to continue recording after recoverable
-            error
+        warn_only (bool): Set true to continue recording after recoverable error
+        output_compression: "lzf" recommended, alternatives are "gzip" (level 4) or gzip-level 1-9
     """
     mode = "harvester"
     cal_data = retrieve_calibration(use_cal_default)
@@ -576,7 +577,9 @@ def run_recorder(
                            mode=mode,
                            force_overwrite=force_overwrite,
                            samples_per_buffer=samples_per_buffer,
-                           samplerate_sps=samplerate_sps)
+                           samplerate_sps=samplerate_sps,
+                           output_compression=output_compression,
+                           )
 
     verbose = get_verbose_level() >= 4  # performance-critical, <4 reduces chatter during main-loop
 
@@ -646,6 +649,7 @@ def run_emulator(
         skip_log_voltage: bool = False,
         skip_log_current: bool = False,
         skip_log_gpio: bool = False,
+        output_compression=None,
 ):
     """ Starts emulator.
 
@@ -672,6 +676,7 @@ def run_emulator(
         :param skip_log_voltage: [bool] reduce file-size by omitting this log
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
+        :param output_compression: "lzf" recommended, alternatives are "gzip" (level 4) or gzip-level 1-9
     """
     mode = "emulator"
     cal = retrieve_calibration(use_cal_default)
@@ -713,7 +718,8 @@ def run_emulator(
             skip_current=skip_log_current,
             skip_gpio=skip_log_gpio,
             samples_per_buffer=samples_per_buffer,
-            samplerate_sps=samplerate_sps
+            samplerate_sps=samplerate_sps,
+            output_compression=output_compression,
         )
 
     if isinstance(input_path, str):
