@@ -133,9 +133,9 @@ def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_harvest_preconf_metapackage(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest_preconf_etc_shp_examples(shepherd_up, cli_runner, tmp_path):
     here = Path(__file__).absolute().parent
-    file_path = here.parent.parent / "meta-package/example_config_harvester.yml"
+    file_path = here.parent / "example_config_harvester.yml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
 
@@ -329,9 +329,9 @@ def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_preconf_metapackage(shepherd_up, cli_runner, tmp_path):
+def test_cli_emulate_preconf_etc_shp_examples(shepherd_up, cli_runner, tmp_path):
     here = Path(__file__).absolute().parent
-    file_path = here.parent.parent / "meta-package/example_config_emulator.yml"
+    file_path = here.parent / "example_config_emulator.yml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
     assert res.exit_code == 0
 

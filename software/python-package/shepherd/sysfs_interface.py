@@ -234,8 +234,9 @@ def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
-    cal_pru = {"adc_gain": int_settings[0], "adc_offset": int_settings[1],
-               "dac_gain": int_settings[2], "dac_offset": int_settings[3]}
+    cal_pru = {"adc_current_gain": int_settings[0], "adc_current_offset": int_settings[1],
+               "adc_voltage_gain": int_settings[2], "adc_voltage_offset": int_settings[3],
+               "dac_voltage_gain": int_settings[4], "dac_voltage_offset": int_settings[5]}
     return cal_pru
 
 
