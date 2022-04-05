@@ -192,7 +192,8 @@ class SharedMem(object):
         if verbose:
             logger.debug(
                 f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
-                f"with len {n_samples} and timestamp {buffer_timestamp}"
+                f"with len {n_samples} and timestamp {buffer_timestamp // 1000000} ms "
+                f"@{round(time.time(), 3)} sys_ts"
             )
 
         # sanity-check of received timestamp, TODO: python knows the desired duration between timestamps
