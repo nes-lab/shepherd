@@ -36,3 +36,4 @@
     file:
       path: '/boot/initrd.img-{{ kernelrelease.stdout.strip() }}'
       state: absent
+    ignore_errors: yes
