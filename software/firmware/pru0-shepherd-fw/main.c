@@ -18,38 +18,16 @@
 #include "ringbuffer.h"
 #include "shepherd_config.h"
 
+#include "calibration.h"
+#include "virtual_converter.h"
+#include "sampling.h"
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
-//#define ENABLE_PROGRAMMER	// reduces firmware by ~800 Byte (dummy for now)
-#define ENABLE_VSOURCE_TESTS	// reduces firmware by ~500 Byte
-#define ENABLE_SAMPLING		// reduces firmware by ~20 kByte (no smpl, vhrv, vcnv)
-
-/* TODO: granularity not needed for now, later it may allow programmer + emulation (for testbed w/o harvester)
-#define ENABLE_VHARVESTER
-#define ENABLE_VCONVERTER
-#if defined(ENABLE_VHARVESTER) || defined(ENABLE_VCONVERTER)
-#define ENABLE_SAMPLING
-#endif
-*/
-
-#ifdef ENABLE_SAMPLING
-#include "sampling.h"
-#endif
-
-#if defined(ENABLE_SAMPLING) || defined(ENABLE_VSOURCE_TESTS)
-#include "calibration.h"
-#include "virtual_converter.h"
-#endif
 
 #ifdef ENABLE_DEBUG_MATH_FN
 #include "math64_safe.h"
 #endif
-
-#ifdef  ENABLE_PROGRAMMER
-#include "programmer.h"
-#endif
-
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 	(0xFFFFFFFF)
@@ -214,7 +192,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
         	uint32_t res;
         	uint64_t res64;
 		switch (msg_in.type) {
-#ifdef ENABLE_SAMPLING
+
 		case MSG_DBG_ADC:
 			res = sample_dbg_adc(msg_in.value[0]);
 			send_message(shared_mem, MSG_DBG_ADC, res, 0);
@@ -227,13 +205,11 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		case MSG_DBG_GP_BATOK:
 			set_batok_pin(shared_mem, msg_in.value[0] > 0);
 			return 1U;
-#endif // ENABLE_SAMPLING
 
 		case MSG_DBG_GPI:
 			send_message(shared_mem,MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
 			return 1U;
 
-#ifdef ENABLE_VSOURCE_TESTS
 		case MSG_DBG_VSOURCE_P_INP: // TODO: these can be done with normal emulator instantiation
 			converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
 			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_P_input_fW()>>32u) , (uint32_t)get_P_input_fW());
@@ -275,7 +251,6 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			res = converter_update_states_and_output(shared_mem);
 			send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
 			return 1u;
-#endif // ENABLE_VSOURCE_TESTS
 
 #ifdef ENABLE_DEBUG_MATH_FN
 		case MSG_DBG_FN_TESTS:
@@ -355,14 +330,13 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
 			/* The actual sampling takes place here */
-#ifdef ENABLE_SAMPLING
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
 				//GPIO_ON(DEBUG_PIN0_MASK);
 				sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
 				//GPIO_OFF(DEBUG_PIN0_MASK);
 			}
-#endif // ENABLE_SAMPLING
+
 			shared_mem->analog_sample_counter++;
 
 			if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
@@ -370,7 +344,6 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				/* Did the Linux kernel module ask for reset? */
 				if (shared_mem->shepherd_state == STATE_RESET) return;
 
-#ifdef ENABLE_SAMPLING
 				/* PRU tries to exchange a full buffer for a fresh one if measurement is running */
 				if ((shared_mem->shepherd_state == STATE_RUNNING) &&
 				    (shared_mem->shepherd_mode != MODE_DEBUG))
@@ -379,7 +352,6 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 									    shared_mem->analog_sample_counter);
 					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
 				}
-#endif // ENABLE_SAMPLING
 			}
 			else
 			{
@@ -473,11 +445,9 @@ reset:
 
 	ring_init(&free_buffers);
 
-#ifdef ENABLE_SAMPLING
 	GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 	sample_init(shared_memory);
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-#endif // ENABLE_SAMPLING
 
 	shared_memory->gpio_edges = NULL;
 	shared_memory->vsource_skip_gpio_logging = false;
@@ -486,14 +456,7 @@ reset:
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-#ifdef ENABLE_PROGRAMMER
-	if (shared_memory->programmer_ctrl.state == 1)
-		programmer(shared_memory, buffers_far);
-	else
-		event_loop(shared_memory, &free_buffers, buffers_far);
-#else
 	event_loop(shared_memory, &free_buffers, buffers_far);
-#endif
 
 	goto reset;
 }
