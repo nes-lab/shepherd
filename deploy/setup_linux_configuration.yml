@@ -10,8 +10,8 @@
     # potentially dangerous / improve security:
     non_essential_packages_a: ['dnsmasq', 'dnsmasq-*', 'nginx', 'nginx-*']
     # old kernel data # TODO: kernel / header that comes with image are somehow not in apt -> dpkgs
-    non_essential_packages_b: ['linux-image-4.14.*', 'linux-image-5.10.*', 'linux-image-5.15.*']
-    non_essential_packages_c: ['linux-headers-4.14.*', 'linux-headers-5.10.*', 'linux-headers-5.15.*']
+    non_essential_packages_b: ['linux-image-4.14.*', 'linux-image-5.4.*', 'linux-image-5.10.*', 'linux-image-5.15.*']
+    non_essential_packages_c: ['linux-headers-4.14.*', 'linux-headers-5.4.*', 'linux-headers-5.10.*', 'linux-headers-5.15.*']
     # todo: soon add linux-*-4.19.*
     # not needed drivers / packages Todo: rf-drivers could become important later
     non_essential_packages_d: ['alsa-utils', 'wireless-*', 'wpasupplicant', 'ofono', 'bluez', 'bluetooth', 'rfkill']
@@ -35,9 +35,9 @@
       default: "no"
 
     - name: delete_unused_files
-      prompt: "Should the script remove unused files like firmware?"
+      prompt: "Should the script remove unused packets & files like firmware?"
       private: no
-      default: "yes"
+      default: "no"
 
   tasks:
 
@@ -85,6 +85,12 @@
       - /usr/lib/firmware/iwlwifi-*
     when: delete_unused_files|bool
 
+  - name: delete initrd.img
+    command: "rm -rf {{item}}"
+    with_items:
+      - /boot/initrd.img-*
+    when: delete_unused_files|bool
+
   - name: delete Logs
     command: "rm -rf {{item}}"
     with_items:
@@ -105,6 +111,7 @@
       - "{{ non_essential_packages_e }}"
       - "{{ non_essential_packages_f }}"
       - "{{ non_essential_packages_g }}"
+    when: delete_unused_files|bool
 
   - name: Uname - Get Kernel-Version
     command: uname --kernel-release
@@ -124,16 +131,13 @@
   - name: APT - Cleanup Dependencies
     apt:
       autoremove: yes
+
   - name: APT - Cleanup Cache
     apt:
       autoclean: yes
+
   - name: APT - clean cache
     command: apt clean  # this one seems reliable (compared to the two above)
-
-  - name: APT - Cleanup Cache & Dependencies
-    apt:
-      autoremove: yes
-      autoclean: yes
 
   - name: CFG - Set timezone to "{{ timezone }}"
     timezone:
