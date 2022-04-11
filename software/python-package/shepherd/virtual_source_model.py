@@ -1,9 +1,9 @@
 from typing import NoReturn
 from shepherd import VirtualSourceData, CalibrationData
 import math
-# TODO: rename VirtualSourceModel
 
-class VirtualSource(object):
+
+class VirtualSourceModel(object):
     """
     this is ported py-version of the pru-code, goals:
     - stay close to original code-base

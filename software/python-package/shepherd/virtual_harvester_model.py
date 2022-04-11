@@ -1,7 +1,7 @@
 from virtual_harvester_data import VirtualHarvesterData
-# TODO: rename to _Model
 
-class VirtualHarvester(object):
+
+class VirtualHarvesterModel(object):
     """
     this is ported py-version of the pru-code, goals:
     - stay close to original code-base
