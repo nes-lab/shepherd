@@ -235,7 +235,7 @@ struct SharedMem {
 	/* The time for sampling samples_per_buffer. Determines sampling rate */
 	uint32_t buffer_period_ns;
 	/* active utilization-monitor for PRU0 */
-	uint32_t pru0_max_ticks_per_sample;
+	uint32_t pru0_ticks_per_sample;
 	/* ADC calibration settings */
 	struct CalibrationConfig calibration_settings;
 	/* This structure defines all settings of virtual converter emulation*/
