@@ -122,4 +122,4 @@ Further playbooks:
     - ``setup_pwdless_ssh_for_host.yml`` will deposit your machines' certificates on the nodes for future passwordless login
     - ``setup-dev-nfs.yml`` establish a local network file system ``/opt/shepherd-dev`` for the nodes to access
     - ``setup-ext-storage.yml`` will format and automount sd-card to ''/var/shepherd/recordings''
-    - ``dev_rebuild_pru.yml`` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart
+    - ``dev_rebuild_sw.yml`` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart

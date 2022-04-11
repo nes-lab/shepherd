@@ -1,10 +1,8 @@
-#include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include <pru_cfg.h>
-#include <pru_iep.h>
-#include <rsc_types.h>
+//#include <pru_iep.h>
+//#include <rsc_types.h>
 
 #include "iep.h"
 #include "stdint_fast.h"
@@ -31,7 +29,6 @@
 
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER 	(0xFFFFFFFF)
-
 
 // alternative message channel specially dedicated for errors
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
@@ -85,35 +82,38 @@ static bool_ft receive_message(volatile struct SharedMem *const shared_mem, stru
 }
 
 static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
-			  struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
+			  struct SampleBuffer *const buffers_far, const uint32_t last_buffer_idx)
 {
 	uint32_t next_buffer_idx;
 	uint8_t tmp_idx;
-	struct SampleBuffer * next_buffer;
 
 	/* Fetch and prepare new buffer from ring */
-	if (ring_get(free_buffers_ptr, &tmp_idx) > 0) {
+	if (ring_get(free_buffers_ptr, &tmp_idx) > 0u)
+	{
 		next_buffer_idx = (uint32_t)tmp_idx;
-        	next_buffer = buffers_far + next_buffer_idx;
-		next_buffer->timestamp_ns = shared_mem->next_buffer_timestamp_ns;
+		shared_mem->sample_buffer = buffers_far + next_buffer_idx;
+		shared_mem->sample_buffer->timestamp_ns = shared_mem->next_buffer_timestamp_ns;
 		shared_mem->last_sample_timestamp_ns = shared_mem->next_buffer_timestamp_ns;
 
-		if (shared_mem->next_buffer_timestamp_ns == 0)
+		if (shared_mem->next_buffer_timestamp_ns == 0u)
 		{
 			/* debug-output for a wrong timestamp */
 			send_status(shared_mem, MSG_ERR_TIMESTAMP, 0);
 		}
-	} else {
+	}
+	else
+	{
 		next_buffer_idx = NO_BUFFER;
-		send_status(shared_mem, MSG_ERR_NOFREEBUF, 0);
+		shared_mem->sample_buffer = NULL;
+		send_status(shared_mem, MSG_ERR_NOFREEBUF, 0u);
 	}
 
-	/* Lock access to gpio_edges structure to allow swap without inconsistency */
+	/* Lock the access to gpio_edges structure to allow swap without inconsistency */
 	simple_mutex_enter(&shared_mem->gpio_edges_mutex);
 
 	if (next_buffer_idx != NO_BUFFER)
 	{
-		shared_mem->gpio_edges = &next_buffer->gpio_edges;
+		shared_mem->gpio_edges = &shared_mem->sample_buffer->gpio_edges;
 		shared_mem->gpio_edges->idx = 0;
 	}
 	else
@@ -124,10 +124,10 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 	simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 
 	/* If we had a valid buffer, return it to host */
-	if (current_buffer_idx != NO_BUFFER)
+	if (last_buffer_idx != NO_BUFFER)
 	{
-		(buffers_far + current_buffer_idx)->len = analog_sample_idx; // TODO: could be removed in future, not possible by design
-		send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx, 0);
+		(buffers_far + last_buffer_idx)->len = ADC_SAMPLES_PER_BUFFER; // TODO: could be removed in future, not used ATM
+		send_message(shared_mem, MSG_BUF_FROM_PRU, last_buffer_idx, ADC_SAMPLES_PER_BUFFER);
 	}
 
 	return next_buffer_idx;
@@ -288,7 +288,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 {
 	uint32_t sample_buf_idx = NO_BUFFER;
 	enum ShepherdMode shepherd_mode = (enum ShepherdMode)shared_mem->shepherd_mode;
-	uint32_t iep_tmr_cmp_sts = 0;
+	uint32_t iep_tmr_cmp_sts = 0u;
 
 	while (1)
 	{
@@ -308,18 +308,19 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			// TODO: make sure that 1 us passes before trying to get that value
 		}
 		// timestamp pru0 to monitor utilization
-		const uint32_t timer_start = iep_get_cnt_val();
+		const uint32_t timer_start = iep_get_cnt_val() - 30u; // rough estimate on
 
 		// Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
 		if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
 		{
 			/* Clear Timer Compare 0 and forward it to pru1 */
-			//GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			GPIO_TOGGLE(DEBUG_PIN0_MASK);
 			shared_mem->cmp0_trigger_for_pru1 = 1u;
 			iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
 			/* prepare a new buffer-cycle */
 			shared_mem->analog_sample_counter = 0u;
-			//GPIO_TOGGLE(DEBUG_PIN1_MASK);
+			/* without a buffer: only show short Signal for new Cycle */
+			if (sample_buf_idx == NO_BUFFER) GPIO_TOGGLE(DEBUG_PIN0_MASK);
 		}
 
 		// Sample, swap buffer and receive messages
@@ -328,16 +329,19 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			/* Clear Timer Compare 1 and forward it to pru1 */
 			shared_mem->cmp1_trigger_for_pru1 = 1u;
 			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
+			uint32_t inc_done = 0u;
 
 			/* The actual sampling takes place here */
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
-				//GPIO_ON(DEBUG_PIN0_MASK);
-				sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
-				//GPIO_OFF(DEBUG_PIN0_MASK);
+				GPIO_ON(DEBUG_PIN1_MASK);
+				inc_done = sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
+				GPIO_OFF(DEBUG_PIN1_MASK);
 			}
 
-			shared_mem->analog_sample_counter++;
+			/* counter-incrementation, allow premature incrementation by sub-sampling_fn, use return_value to register it */
+			if (!inc_done)
+				shared_mem->analog_sample_counter++;
 
 			if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
 			{
@@ -348,26 +352,33 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 				if ((shared_mem->shepherd_state == STATE_RUNNING) &&
 				    (shared_mem->shepherd_mode != MODE_DEBUG))
 				{
-					sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
-									    shared_mem->analog_sample_counter);
-					GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
+					GPIO_ON(DEBUG_PIN1_MASK);
+					sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx);
+					GPIO_OFF(DEBUG_PIN1_MASK);
 				}
+
+				/* pre-reset counter, so pru1 can fetch data */
+				shared_mem->analog_sample_counter = 0u;
+				shared_mem->analog_value_index = NO_BUFFER;
 			}
 			else
 			{
 				/* only handle kernel-communications if this is not the last sample */
-				//GPIO_ON(DEBUG_PIN0_MASK);
+				GPIO_ON(DEBUG_PIN1_MASK);
 				handle_kernel_com(shared_mem, free_buffers_ptr);
-                		//GPIO_OFF(DEBUG_PIN0_MASK);
+                		GPIO_OFF(DEBUG_PIN1_MASK);
 			}
 		}
 
-		const uint32_t timer_ticks = iep_get_cnt_val() - timer_start;
-		if ((timer_ticks > shared_mem->pru0_max_ticks_per_sample) &&
-		    (timer_ticks < 1u<<20u))
+		// record loop-duration -> gets further processed by pru1
+		shared_mem->pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
+		/*
+		GPIO_OFF(DEBUG_PIN0_MASK);
+		if (shared_mem->pru0_ticks_per_sample >= 1950u)
 		{
-			shared_mem->pru0_max_ticks_per_sample = timer_ticks;
-		}
+			// TODO: debug-artifact to find long loop-cycles
+			GPIO_TOGGLE(DEBUG_PIN0_MASK);
+		}*/
 	}
 }
 
@@ -404,6 +415,7 @@ void main(void)
 	shared_memory->next_buffer_timestamp_ns = 0u;
 	shared_memory->analog_sample_counter = 0u;
 	shared_memory->gpio_edges = NULL;
+	shared_memory->sample_buffer = NULL;
 
 	shared_memory->gpio_pin_state = 0u;
 
@@ -434,14 +446,14 @@ void main(void)
 	struct SampleBuffer *const buffers_far = (struct SampleBuffer *)resourceTable.shared_mem.pa;
 
 	/* Allow OCP master port access by the PRU so the PRU can read external memories */
-	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
+	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0u;
 
 	/* allow PRU1 to enter event-loop */
 	shared_memory->cmp0_trigger_for_pru1 = 1u;
 
 reset:
-	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, shared_memory->pru0_max_ticks_per_sample, 0);
-	shared_memory->pru0_max_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
+	send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
+	shared_memory->pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
 	ring_init(&free_buffers);
 

@@ -27,7 +27,7 @@
       repo: https://github.com/orgua/shepherd
       dest: '{{ shepherd_install_path }}'
       update: yes
-      version: master
+      # version: master
       force: yes
     when: refresh_source|bool
     become: false

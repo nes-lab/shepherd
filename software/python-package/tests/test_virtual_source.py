@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from shepherd import ShepherdDebug, CalibrationData, VirtualSourceData
-from shepherd.virtual_source import VirtualSource
+from shepherd.virtual_source_model import VirtualSourceModel
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def pru_vsource(request, shepherd_up, vs_config, cal_config):
 
 @pytest.fixture
 def pyt_vsource(vs_config, cal_config):
-    return VirtualSource(vs_config, cal_config)
+    return VirtualSourceModel(vs_config, cal_config)
 
 
 @pytest.fixture

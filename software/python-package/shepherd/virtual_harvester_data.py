@@ -81,8 +81,6 @@ class VirtualHarvesterData(object):
 
         if window_samples is not None:
             self.data["window_samples"] = window_samples
-        else:
-            self.data["window_samples"] = 0
 
         self._check_and_complete()
         logger.debug(f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'")
@@ -142,11 +140,11 @@ class VirtualHarvesterData(object):
         self._check_num("wait_cycles", 0, 100, verbose=verbose)
 
         # factor-in timing-constraints
-        window_samples = self.data["window_size"] * (1 + self.data["wait_cycles"])
+        _window_samples = self.data["window_size"] * (1 + self.data["wait_cycles"])
 
         time_min_ms = (1 + self.data["wait_cycles"]) * 1_000 / self.samplerate_sps
         if self.for_emulation:
-            window_ms = window_samples * 1_000 / self.samplerate_sps
+            window_ms = _window_samples * 1_000 / self.samplerate_sps
             time_min_ms = max(time_min_ms, window_ms)
 
         self._check_num("interval_ms", 0.01, 1_000_000, verbose=verbose)  # creates param if missing
@@ -158,11 +156,16 @@ class VirtualHarvesterData(object):
         if (ratio_new/ratio_old - 1) > 0.1:
             logger.debug(f"[{self.name}] Ratio between interval & duration has changed more than 10% due to constraints, from {ratio_old} to {ratio_new}")
 
-        # for proper emulation
+        # for proper emulation and harvesting (this var decides how h5-file is treated)
         if "window_samples" not in self.data:
-            self.data["window_samples"] = window_samples
-        if self.for_emulation and (window_samples > self.data["window_samples"]):
-            self.data["window_samples"] = window_samples
+            self.data["window_samples"] = _window_samples
+        if self.for_emulation and (self.data["window_samples"] > 0) and (_window_samples > self.data["window_samples"]):
+            # TODO: verify that this works ->
+            #  if window_samples are zero (set from datalog-reader) they should
+            #  stay zero to disable hrv-routine during emulation
+            self.data["window_samples"] = _window_samples
+        if verbose:
+            logger.debug(f"[{self.name}] window_samples = {self.data['window_samples']}")
 
     def _check_num(self, setting_key: str, min_value: float = 0, max_value: float = 2**32-1, verbose: bool = True) -> NoReturn:
         try:

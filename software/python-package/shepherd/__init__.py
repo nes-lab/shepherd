@@ -611,9 +611,9 @@ def run_recorder(
         if duration is None:
             ts_end = sys.float_info.max
         else:
-            ts_end = time.time() + duration
+            ts_end = start_time + duration
 
-        while time.time() < ts_end:
+        while True:
             try:
                 idx, hrv_buf = recorder.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
@@ -626,6 +626,9 @@ def run_recorder(
                 log_writer.write_exception(err_rec)
                 if not warn_only:
                     raise
+
+            if (hrv_buf.timestamp_ns / 1e9) >= ts_end:
+                break
 
             log_writer.write_buffer(hrv_buf)
             recorder.return_buffer(idx, verbose=verbose)
@@ -773,7 +776,7 @@ def run_emulator(
         if duration is None:
             ts_end = sys.float_info.max
         else:
-            ts_end = time.time() + duration
+            ts_end = start_time + duration
 
         for hrvst_buf in log_reader.read_buffers(start=fifo_buffer_size, verbose=verbose):
             try:
@@ -789,18 +792,20 @@ def run_emulator(
                 if not warn_only:
                     raise
 
+            if emu_buf.timestamp_ns / 1e9 >= ts_end:
+                break
+
             if output_path is not None:
                 log_writer.write_buffer(emu_buf)
 
             emu.return_buffer(idx, hrvst_buf, verbose)
 
-            if time.time() > ts_end:
-                break
-
         # Read all remaining buffers from PRU
         while True:
             try:
                 idx, emu_buf = emu.get_buffer(verbose=verbose)
+                if emu_buf.timestamp_ns / 1e9 >= ts_end:
+                    break
                 if output_path is not None:
                     log_writer.write_buffer(emu_buf)
             except ShepherdIOException as e:

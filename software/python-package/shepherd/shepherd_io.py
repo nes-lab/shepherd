@@ -68,7 +68,7 @@ class GPIOEdges(object):
             self.values = values
 
     def __len__(self):
-        return self.values.size
+        return min(self.values.size, self.timestamps_ns.size)
 
 
 class DataBuffer(object):
@@ -84,6 +84,8 @@ class DataBuffer(object):
         current: np.ndarray,
         timestamp_ns: int = None,
         gpio_edges: GPIOEdges = None,
+        util_mean: float = 0,
+        util_max: float = 0,
     ):
         self.timestamp_ns = timestamp_ns
         self.voltage = voltage
@@ -92,9 +94,11 @@ class DataBuffer(object):
             self.gpio_edges = gpio_edges
         else:
             self.gpio_edges = GPIOEdges()
+        self.util_mean = util_mean
+        self.util_max = util_max
 
     def __len__(self):
-        return self.voltage.size
+        return min(self.voltage.size, self.current.size)
 
 
 class SharedMem(object):
@@ -140,6 +144,8 @@ class SharedMem(object):
             + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
             # 16 bit GPIO state per GPIO event
             + 2 * commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
+            # pru0 util stat
+            + 2 * 4
         )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
         # TODO: put number in shared-mem or other way around
 
@@ -148,6 +154,7 @@ class SharedMem(object):
         self.gpiostr_offset = 12 + 2 * 4 * self.samples_per_buffer
         self.gpio_ts_offset = self.gpiostr_offset + 4
         self.gpio_vl_offset = self.gpiostr_offset + 4 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
+        self.pru0_ut_offset = self.gpiostr_offset + 4 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
 
         logger.debug(f"Size of 1 Buffer:\t{ self.buffer_size } byte")
 
@@ -243,7 +250,22 @@ class SharedMem(object):
         )
         gpio_edges = GPIOEdges(gpio_timestamps_ns, gpio_values)
 
-        return DataBuffer(voltage, current, buffer_timestamp, gpio_edges)
+        # pru0 util
+        self.mapped_mem.seek(buffer_offset + self.pru0_ut_offset)
+        pru0_max_ticks, pru0_sum_ticks = struct.unpack("=LL", self.mapped_mem.read(8))
+        pru0_util_max = round(100 * pru0_max_ticks / 2000, 1)
+        pru0_util_mean = round(100 * pru0_sum_ticks / n_samples / 2000, 1)
+        if pru0_util_mean > pru0_util_max:
+            pru0_util_mean = 0.1
+        if verbose:
+            if (pru0_util_mean > 95) or (pru0_util_max > 100):
+                warn_msg = f"Pru0 Loop-Util:  mean = {pru0_util_mean} %, max = {pru0_util_max} % -> WARNING: broken real-time-condition"
+                logger.warning(warn_msg)
+                # TODO: raise ShepherdIOException or add this info into output-file? WRONG PLACE HERE
+            else:
+                logger.info(f"Pru0 Loop-Util: mean = {pru0_util_mean} %, max = {pru0_util_max} %")
+
+        return DataBuffer(voltage, current, buffer_timestamp, gpio_edges, pru0_util_mean, pru0_util_max)
 
     def write_buffer(self, index: int, voltage, current) -> NoReturn:
 

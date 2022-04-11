@@ -20,6 +20,7 @@
     non_essential_packages_g: ['vim-runtime', 'humanity-icon-theme', 'python3-sympy']
     # todo: vpdma maybe my fault, manual install, there is much more cluttering up the system,
     # - initramfs-* seems to be unused
+    # - add: libjpeg*, libx11
     # ubuntu 21.04 seems to have no linux-headers/image-4.15, vpdma-*,
 
   vars_prompt:

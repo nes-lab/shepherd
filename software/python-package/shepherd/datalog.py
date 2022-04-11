@@ -335,7 +335,8 @@ class LogWriter(object):
             logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
         runtime = round(self.data_grp['time'].shape[0] / self.samplerate_sps, 1)
-        logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, {self.gpio_grp['time'].shape[0]} gpio-events)")
+        logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, "
+                    f"{self.gpio_grp['time'].shape[0]} gpio-events, {self.xcpt_grp['time'].shape[0]} xcpt-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
         self._h5file.close()
@@ -379,6 +380,11 @@ class LogWriter(object):
             self.gpio_grp["time"][self.gpio_pos:gpio_new_pos] = buffer.gpio_edges.timestamps_ns
             self.gpio_grp["value"][self.gpio_pos:gpio_new_pos] = buffer.gpio_edges.values
             self.gpio_pos = gpio_new_pos
+
+        if (buffer.util_mean > 95) or (buffer.util_max > 100):
+            warn_msg = f"Pru0 Loop-Util:  mean = {buffer.util_mean} %, max = {buffer.util_max} % -> WARNING: broken real-time-condition"
+            expt = ExceptionRecord(int(time.time() * 1e9), warn_msg, 42)
+            self.write_exception(expt)
 
         self.log_sys_stats()
 
@@ -566,7 +572,7 @@ class LogReader(object):
         self.ds_voltage = self._h5file["data"]["voltage"]
         self.ds_current = self._h5file["data"]["current"]
         runtime = round(self.ds_voltage.shape[0] / self.samplerate_sps, 1)
-        logger.info(f"Reading data from '{self.store_path}', contains {runtime} s")
+        logger.info(f"Reading data from '{self.store_path}', contains {runtime} s, window_size = {self.get_window_samples()}")
         return self
 
     def __exit__(self, *exc):
