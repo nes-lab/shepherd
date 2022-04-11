@@ -19,32 +19,39 @@ static bool_ft dac_aux_link_to_mid = false;
 static inline void sample_emulator(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
 {
 	/* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
-	//__delay_cycles(200 / 5); // current design takes 1400 ns
+	//__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
 
-	/* Get input current/voltage from shared memory buffer */
-	uint32_t input_current_nA = buffer->values_current[shared_mem->analog_sample_counter];
-	uint32_t input_voltage_uV = buffer->values_voltage[shared_mem->analog_sample_counter];
+	/* Get input current/voltage from pru1
+	 * - these 2 far mem-reads can take from 420 to 2540 us -> destroyer of real time :) */
+	while (shared_mem->analog_value_index != shared_mem->analog_sample_counter);
+	uint32_t input_current_nA = shared_mem->analog_value_current;
+	uint32_t input_voltage_uV = shared_mem->analog_value_voltage;
 
 	sample_iv_harvester(&input_voltage_uV, &input_current_nA);
 
 	converter_calc_inp_power(input_voltage_uV, input_current_nA);
 
-	/* measure current flow */
+	/* measure current */
 	const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
+
 	converter_calc_out_power(current_adc_raw);
 
 	converter_update_cap_storage();
 
 	const uint32_t voltage_dac = converter_update_states_and_output(shared_mem);
 
-    	dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
-
 	if (dac_aux_link_to_main) /* set both channels with same voltage */
+	{
+		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | voltage_dac);
+	}
+	else	/* only set main channel */
 	{
 		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | voltage_dac);
 	}
-	else if (dac_aux_link_to_mid)
+
+	if (dac_aux_link_to_mid)
 	{
+		// USAGE NOT RECOMMENDED! as it takes ~800 ns and might break realtime
 		dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_V_intermediate_raw());
 	}
 

@@ -84,7 +84,7 @@ CFLAGS += --opt_level=4
 # TODO: with optimization <4 and no debug symbols the firmware does not work (60/54 kB, against 101/92 kB)?!?
 
 # Speed Optimization (short -mf)
-CFLAGS += --opt_for_speed=3
+CFLAGS += --opt_for_speed=2
 # 2, 1, 0 	gradually optimize for size, (lower number means higher risk of performance impact)
 # 3, 4, 5 	gradually optimize for performance (higher num means high risk impacting size)
 # default is 4 (without value), 1 (not specifying command)

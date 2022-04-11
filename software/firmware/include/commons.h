@@ -91,16 +91,27 @@ enum ShepherdState {
 struct GPIOEdges {
 	uint32_t idx;
 	uint64_t timestamp_ns[MAX_GPIO_EVT_PER_BUFFER];
-	uint16_t  bitmask[MAX_GPIO_EVT_PER_BUFFER];
+	uint16_t bitmask[MAX_GPIO_EVT_PER_BUFFER];
+
 } __attribute__((packed));
 
 struct SampleBuffer {
 	uint32_t len;
 	uint64_t timestamp_ns;
-	uint32_t values_voltage[ADC_SAMPLES_PER_BUFFER]; // TODO: would be more efficient for PRU to keep matching V&C together
+	uint32_t values_voltage[ADC_SAMPLES_PER_BUFFER];
 	uint32_t values_current[ADC_SAMPLES_PER_BUFFER];
 	struct GPIOEdges gpio_edges;
+	uint32_t pru0_max_ticks_per_sample;
+	uint32_t pru0_sum_ticks_for_buffer;
 } __attribute__((packed));
+/*
+ * TODO: sample-buffer needs big update
+ * 	- one large fifo with IV-Struct would have big advantage!
+ * 	- overhead on bufferchange would be minimal and
+ * 	- pru1 could read ahead, despite a bufferchange
+ * 	- python would still fill this fifo block by block, its just easier for the pru to read
+ * 	- keep matching V&C / IV Values together -> more efficient for pru
+ */
 
 
 /* Programmer-Control as part of SharedMem-Struct */
@@ -257,7 +268,7 @@ struct SharedMem {
 	/* The time for sampling samples_per_buffer. Determines sampling rate */
 	uint32_t buffer_period_ns;
 	/* active utilization-monitor for PRU0 */
-	uint32_t pru0_max_ticks_per_sample;
+	uint32_t pru0_ticks_per_sample;
 	/* ADC calibration settings */
 	struct CalibrationConfig calibration_settings;
 	/* This structure defines all settings of virtual converter emulation*/
@@ -286,9 +297,14 @@ struct SharedMem {
 	* which is the current buffer, but PRU1 is sampling GPIOs. Therefore PRU0
 	* shares the memory location of the current gpio_edges struct
 	*/
-	struct GPIOEdges *gpio_edges;
-	/* Counter for ADC-Samples, updated by PRU0, also needed (non-writing) by PRU1 for some timing-calculations */
+	struct GPIOEdges *gpio_edges;		// far/slow location in RAM
+	struct SampleBuffer *sample_buffer;	// far/slow location in RAM
+	/* Counter for ADC-Samples, updated by PRU0, also needed (non-writing) by PRU1 */
 	uint32_t analog_sample_counter;
+	/* Fetch-System where pru0 can instruct pru1 to get the IV-Set from far buffer */
+	uint32_t analog_value_index;
+	uint32_t analog_value_current;
+	uint32_t analog_value_voltage;
 	/* Token system to ensure both PRUs can share interrupts */
 	bool_ft cmp0_trigger_for_pru1;
 	bool_ft cmp1_trigger_for_pru1;

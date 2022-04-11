@@ -259,6 +259,10 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	uint32_t compensation_counter = 0u;
 	uint32_t compensation_increment = 0u;
 
+	/* pru0 util monitor */
+	uint32_t pru0_max_ticks_per_sample = 0u;
+	uint32_t pru0_sum_ticks_for_buffer = 0u;
+
 	/* Our initial guess of the sampling period based on nominal timer period */
 	uint32_t analog_sample_period = sync_repl.analog_sample_period;
 	uint32_t buffer_block_period = sync_repl.buffer_block_period;
@@ -329,6 +333,15 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			buffer_block_period = sync_repl.buffer_block_period;
 			iep_set_cmp_val(IEP_CMP0, buffer_block_period);
 
+			/* transmit pru0-util, current design puts this in fresh/next buffer */
+			if (shared_mem->sample_buffer != NULL)
+			{
+				shared_mem->sample_buffer->pru0_sum_ticks_for_buffer = pru0_sum_ticks_for_buffer;
+				shared_mem->sample_buffer->pru0_max_ticks_per_sample = pru0_max_ticks_per_sample;
+				pru0_sum_ticks_for_buffer = 0;
+				pru0_max_ticks_per_sample = 0;
+			}
+
 			/* more maintenance */
 			last_analog_sample_ticks = 0;
 
@@ -374,6 +387,22 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 			continue; // for more regular gpio-sampling
 		}
 
+		/* Mem-Reading for PRU0 -> this can vary from 420 - 2500 (rare) */
+		if ((shared_mem->analog_sample_counter != shared_mem->analog_value_index) &&
+		    (shared_mem->sample_buffer != NULL) &&
+		    (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
+		{
+			DEBUG_RAMRD_STATE_1;
+			const uint32_t value_index = shared_mem->analog_sample_counter;
+			shared_mem->analog_value_current = shared_mem->sample_buffer->values_current[value_index];
+			//if (value_index == 0u) DEBUG_RAMRD_STATE_0;
+			shared_mem->analog_value_voltage = shared_mem->sample_buffer->values_voltage[value_index];
+			//if (value_index == 0u) DEBUG_RAMRD_STATE_1;
+			shared_mem->analog_value_index = value_index;
+			DEBUG_RAMRD_STATE_0;
+		}
+
+		/* remote gpio-triggering for pru0 */
 		if (shared_mem->vsource_batok_trigger_for_pru1)
 		{
 			if (shared_mem->vsource_batok_pin_value)
@@ -387,6 +416,20 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 				DEBUG_PGOOD_STATE_0;
 			}
 			shared_mem->vsource_batok_trigger_for_pru1 = false;
+		}
+
+		/* pru0 util monitoring */
+		if (shared_mem->pru0_ticks_per_sample != 0xFFFFFFFFu)
+		{
+			if (shared_mem->pru0_ticks_per_sample < (1u<<20u))
+			{
+				if (shared_mem->pru0_ticks_per_sample > pru0_max_ticks_per_sample)
+				{
+					pru0_max_ticks_per_sample = shared_mem->pru0_ticks_per_sample;
+				}
+				pru0_sum_ticks_for_buffer += shared_mem->pru0_ticks_per_sample;
+			}
+			shared_mem->pru0_ticks_per_sample = 0xFFFFFFFFu;
 		}
 	}
 }
@@ -410,6 +453,10 @@ reset:
 	send_status(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 101);
 	/* Make sure the mutex is clear */
 	simple_mutex_exit(&shared_memory->gpio_edges_mutex);
+
+	shared_memory->analog_value_current = 0u;
+	shared_memory->analog_value_voltage = 0u;
+	shared_memory->analog_value_index = 0u;
 
 	DEBUG_STATE_0;
 	iep_init();
