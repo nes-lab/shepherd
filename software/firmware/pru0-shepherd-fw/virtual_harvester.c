@@ -64,7 +64,7 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
 	// TODO: divide lib into IVC and ADC Parts
 }
 
-void sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 	if (cfg->algorithm >= HRV_MPPT_PO)
 		harvest_adc_mppt_po(buffer, sample_idx);
@@ -75,6 +75,7 @@ void sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t samp
 	else if (cfg->algorithm >= HRV_IVCURVE)
 		harvest_adc_ivcurve(buffer, sample_idx);
 	// todo: else send error to system
+	return 0u;
 }
 
 static void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)

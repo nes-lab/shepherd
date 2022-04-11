@@ -6,7 +6,7 @@
 
 void harvester_initialize(const volatile struct HarvesterConfig *const);
 
-void sample_adc_harvester(struct SampleBuffer *const buffer, uint32_t sample_idx);
+uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, uint32_t sample_idx);
 
 void sample_iv_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 

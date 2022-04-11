@@ -329,16 +329,19 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 			/* Clear Timer Compare 1 and forward it to pru1 */
 			shared_mem->cmp1_trigger_for_pru1 = 1u;
 			iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
+			uint32_t inc_done = 0u;
 
 			/* The actual sampling takes place here */
 			if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
 			{
 				GPIO_ON(DEBUG_PIN1_MASK);
-				sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
+				inc_done = sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
 				GPIO_OFF(DEBUG_PIN1_MASK);
 			}
 
-			shared_mem->analog_sample_counter++;
+			/* counter-incrementation, allow premature incrementation by sub-sampling_fn, use return_value to register it */
+			if (!inc_done)
+				shared_mem->analog_sample_counter++;
 
 			if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
 			{
