@@ -141,6 +141,7 @@ def write_dac_aux_voltage(calibration_settings: Union[CalibrationData, None], vo
     elif isinstance(voltage, str) and "mid" in voltage.lower():
         # set bit 21 (during pru-reset) and therefore output intermediate (storage cap) voltage on second channel
         write_dac_aux_voltage_raw(2 ** 21)
+        logger.warning("Second DAC-Channel puts out intermediate emulation voltage (@Cap) -> this might break realtime")
         return
 
     if voltage < 0.0:
@@ -246,7 +247,7 @@ def write_virtual_converter_settings(settings: list) -> NoReturn:
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    logger.debug(f"Writing virtual converter to sysfs_interface, first value is {settings[0]}")
+    logger.debug(f"Writing virtual converter to sysfs_interface, first values are {settings[0:3]}")
 
     output = ""
     for setting in settings:
@@ -282,7 +283,7 @@ def write_virtual_harvester_settings(settings: list) -> NoReturn:
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    logger.debug(f"Writing virtual harvester to sysfs_interface, first value is {settings[0]}")
+    logger.debug(f"Writing virtual harvester to sysfs_interface, first values are {settings[0:3]}")
     output = ""
     for setting in settings:
         if isinstance(setting, int):
