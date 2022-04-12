@@ -123,7 +123,7 @@ class LogWriter(object):
         self._write_current = not skip_current
         self._write_gpio = (not skip_gpio) and ("emulat" in mode)
 
-        if output_compression in ["gzip", "lzf"] + list(range(1, 10)):
+        if output_compression.lower() in ["gzip", "lzf"] + list(range(1, 10)):
             self.compression_algo = output_compression
 
         logger.debug(f"Set log-writing for voltage:     {'enabled' if self._write_voltage else 'disabled'}")
@@ -133,7 +133,7 @@ class LogWriter(object):
         # initial sysutil-reading and delta-history
         self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
         self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
-        # Optimization: allowing larger more effizient resizes (before .resize() was called per element)
+        # Optimization: allowing larger more efficient resizes (before .resize() was called per element)
         # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
         # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
         inc_duration = int(100)
@@ -173,7 +173,7 @@ class LogWriter(object):
         logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
 
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
-        self._h5file.attrs["mode"] = self.mode  # TODO: should be part of data-group
+        self._h5file.attrs["mode"] = self.mode
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
@@ -197,7 +197,7 @@ class LogWriter(object):
             dtype="u4",
             maxshape=(None,),
             chunks=self.chunk_shape,
-            compression=LogWriter.compression_algo,
+            compression=self.compression_algo,
         )
         self.data_grp["voltage"].attrs["unit"] = "V"
         self.data_grp["voltage"].attrs["description"] = "voltage [V] = value * gain + offset"
