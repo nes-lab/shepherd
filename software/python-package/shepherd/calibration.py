@@ -68,7 +68,7 @@ class CalibrationData(object):
         return self.data[key]
 
     def __repr__(self):
-        return yaml.dump(self.data, default_flow_style=False)
+        return yaml.dump(self.data, default_flow_style=False, sort_keys=False)
 
     @classmethod
     def from_bytestr(cls, data: bytes):

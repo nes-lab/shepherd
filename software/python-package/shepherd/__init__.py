@@ -572,7 +572,7 @@ def run_recorder(
     recorder = Recorder(shepherd_mode=mode,
                         harvester=harvester,
                         calibration=cal_data)
-    log_writer = LogWriter(store_path=store_path,
+    log_writer = LogWriter(file_path=store_path,
                            calibration_data=cal_data,
                            mode=mode,
                            force_overwrite=force_overwrite,
@@ -590,7 +590,7 @@ def run_recorder(
 
         # in_stream has to be disabled to avoid trouble with pytest
         res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
-        log_writer["hostname"] = res.stdout
+        log_writer["hostname"] = "".join(x for x in res.stdout if x.isprintable()).strip()
         log_writer.embed_config(recorder.harvester.data)
         log_writer.start_monitors()
 
@@ -713,7 +713,7 @@ def run_emulator(
             store_path = output_path
 
         log_writer = LogWriter(
-            store_path=store_path,
+            file_path=store_path,
             force_overwrite=force_overwrite,
             mode=mode,
             calibration_data=cal,

@@ -49,7 +49,7 @@ def calibration_data():
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_create_logwriter(mode, tmp_path, calibration_data):
     d = tmp_path / f"{ mode }.h5"
-    h = LogWriter(store_path=d, calibration_data=calibration_data, mode=mode)
+    h = LogWriter(file_path=d, calibration_data=calibration_data, mode=mode)
     assert not d.exists()
     h.__enter__()
     assert d.exists()
@@ -62,7 +62,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     stat = d.stat()
     time.sleep(0.1)
 
-    h = LogWriter(store_path=d, calibration_data=calibration_data, force_overwrite=False)
+    h = LogWriter(file_path=d, calibration_data=calibration_data, force_overwrite=False)
     h.__enter__()
     h.__exit__()
     # This should have created the following alternative file:
@@ -70,7 +70,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     assert h.store_path == d_altered
     assert d_altered.exists()
 
-    h = LogWriter(store_path=d, calibration_data=calibration_data, force_overwrite=True)
+    h = LogWriter(file_path=d, calibration_data=calibration_data, force_overwrite=True)
     h.__enter__()
     h.__exit__()
     new_stat = d.stat()
@@ -81,7 +81,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
 def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
     with LogWriter(
-        store_path=d, calibration_data=calibration_data, mode=mode
+        file_path=d, calibration_data=calibration_data, mode=mode
     ) as log:
         log.write_buffer(data_buffer)
 
@@ -99,7 +99,7 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
 def test_calibration_logging(mode, tmp_path, calibration_data):
     d = tmp_path / "recording.h5"
     with LogWriter(
-        store_path=d, mode=mode, calibration_data=calibration_data
+        file_path=d, mode=mode, calibration_data=calibration_data
     ) as _:
         pass
 
@@ -115,7 +115,7 @@ def test_calibration_logging(mode, tmp_path, calibration_data):
 def test_exception_logging(tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
 
-    with LogWriter(store_path=d, calibration_data=calibration_data) as writer:
+    with LogWriter(file_path=d, calibration_data=calibration_data) as writer:
         writer.write_buffer(data_buffer)
 
         ts = int(time.time() * 1000)
@@ -136,7 +136,7 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
 def test_key_value_store(tmp_path, calibration_data):
     d = tmp_path / "harvest.h5"
 
-    with LogWriter(store_path=d, calibration_data=calibration_data) as writer:
+    with LogWriter(file_path=d, calibration_data=calibration_data) as writer:
 
         writer["some string"] = "this is a string"
         writer["some value"] = 5
@@ -149,13 +149,13 @@ def test_key_value_store(tmp_path, calibration_data):
 @pytest.mark.timeout(2)
 def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest_perf.h5"
-    with LogWriter(store_path=d, force_overwrite=True, calibration_data=calibration_data) as log:
+    with LogWriter(file_path=d, force_overwrite=True, calibration_data=calibration_data) as log:
         log.write_buffer(data_buffer)
 
 
 def test_logreader_performance(data_h5):
     read_durations = []
-    with LogReader(store_path=data_h5, samples_per_buffer=10_000) as reader:
+    with LogReader(file_path=data_h5, samples_per_buffer=10_000) as reader:
         past = time.time()
         for data in reader.read_buffers():
             now = time.time()

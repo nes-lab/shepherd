@@ -47,7 +47,7 @@ def log_writer(tmp_path):
     cal = CalibrationData.from_default()
     with LogWriter(
         force_overwrite=True,
-        store_path=tmp_path / "test.h5",
+        file_path=tmp_path / "test.h5",
         mode="emulator",
         calibration_data=cal,
     ) as lw:

@@ -60,7 +60,7 @@ class LogWriter(object):
     """Stores data coming from PRU's in HDF5 format
 
     Args:
-        store_path (Path): Name of the HDF5 file that data will be written to
+        file_path (Path): Name of the HDF5 file that data will be written to
         calibration_data (CalibrationData): Data is written as raw ADC
             values. We need calibration data in order to convert to physical
             units later.
@@ -79,16 +79,17 @@ class LogWriter(object):
     #         --> _algo=number instead of "gzip" is read as compression level for gzip
     # -> comparison / benchmarks https://www.h5py.org/lzf/
     # NOTE for quick and easy performance improvements: remove compression for monitor-datasets, or even group_value
-    compression_algo = 1
+    compression_algo = None
     sys_log_intervall_ns = 1 * (10 ** 9)  # step-size is 1 s
     sys_log_next_ns = 0
+    uart_path = '/dev/ttyO1'
     dmesg_mon_t = None
     ptp4l_mon_t = None
     uart_mon_t = None
 
     def __init__(
             self,
-            store_path: Path,
+            file_path: Path,
             calibration_data: CalibrationData,
             mode: str = "harvester",
             force_overwrite: bool = False,
@@ -97,18 +98,19 @@ class LogWriter(object):
             skip_voltage: bool = False,
             skip_current: bool = False,
             skip_gpio: bool = False,
-            output_compression: str = None,
+            output_compression: Union[None, str, int] = None,
     ):
-        if force_overwrite or not store_path.exists():
-            self.store_path = store_path
+        file_path = Path(file_path)
+        if force_overwrite or not file_path.exists():
+            self.store_path = file_path
             logger.info(f"Storing data to   '{self.store_path}'")
         else:
-            base_dir = store_path.resolve().parents[0]
+            base_dir = file_path.resolve().parents[0]
             self.store_path = unique_path(
-                base_dir / store_path.stem, store_path.suffix
+                base_dir / file_path.stem, file_path.suffix
             )
             logger.warning(
-                    f"File {store_path} already exists.. "
+                    f"File {file_path} already exists.. "
                     f"storing under {self.store_path} instead"
             )
         # Refer to shepherd/calibration.py for the format of calibration data
@@ -122,8 +124,9 @@ class LogWriter(object):
         self._write_voltage = not skip_voltage
         self._write_current = not skip_current
         self._write_gpio = (not skip_gpio) and ("emulat" in mode)
+        self._write_uart = Path(self.uart_path).exists()
 
-        if output_compression.lower() in ["gzip", "lzf"] + list(range(1, 10)):
+        if output_compression in [None, "lzf", 1]:  # order of recommendation
             self.compression_algo = output_compression
 
         logger.debug(f"Set log-writing for voltage:     {'enabled' if self._write_voltage else 'disabled'}")
@@ -207,19 +210,20 @@ class LogWriter(object):
             cal_channel = cal_channel_hrv_dict[channel] if (self.mode == "harvester") else cal_channel_emu_dict[channel]
             self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][cal_channel][parameter]
 
-        # Create group for gpio data
-        self.gpio_grp = self._h5file.create_group("gpio")
-        self.add_dataset_time(self.gpio_grp, self.gpio_inc)
-        self.gpio_grp.create_dataset(
-            "value",
-            (self.gpio_inc,),
-            dtype="u2",
-            maxshape=(None,),
-            chunks=True,
-            compression=LogWriter.compression_algo,
-        )
-        self.gpio_grp["value"].attrs["unit"] = "n"
-        self.gpio_grp["value"].attrs["description"] = GPIO_LOG_BIT_POSITIONS
+        if self._write_gpio:
+            # Create group for gpio data
+            self.gpio_grp = self._h5file.create_group("gpio")
+            self.add_dataset_time(self.gpio_grp, self.gpio_inc)
+            self.gpio_grp.create_dataset(
+                "value",
+                (self.gpio_inc,),
+                dtype="u2",
+                maxshape=(None,),
+                chunks=True,
+                compression=LogWriter.compression_algo,
+            )
+            self.gpio_grp["value"].attrs["unit"] = "n"
+            self.gpio_grp["value"].attrs["description"] = GPIO_LOG_BIT_POSITIONS
 
         # Create group for exception logs, entry consists of a timestamp, a message and a value
         self.xcpt_grp = self._h5file.create_group("exceptions")
@@ -235,17 +239,18 @@ class LogWriter(object):
         self.xcpt_grp["value"].attrs["unit"] = "n"
 
         # UART-Logger
-        self.uart_grp = self._h5file.create_group("uart")
-        self.add_dataset_time(self.uart_grp, self.uart_inc)
-        # Every log entry consists of a timestamp and a message
-        self.uart_grp.create_dataset(
-            "message",
-            (self.uart_inc,),
-            dtype=h5py.special_dtype(vlen=bytes),
-            maxshape=(None,),
-            chunks=True,
-        )
-        self.uart_grp["message"].attrs["description"] = f"raw ascii-bytes"
+        if self._write_uart:
+            self.uart_grp = self._h5file.create_group("uart")
+            self.add_dataset_time(self.uart_grp, self.uart_inc)
+            # Every log entry consists of a timestamp and a message
+            self.uart_grp.create_dataset(
+                "message",
+                (self.uart_inc,),
+                dtype=h5py.special_dtype(vlen=bytes),
+                maxshape=(None,),
+                chunks=True,
+            )
+            self.uart_grp["message"].attrs["description"] = f"raw ascii-bytes"
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
@@ -295,7 +300,7 @@ class LogWriter(object):
         :param data: from virtual harvester or converter / source
         :return: None
         """
-        self.data_grp.attrs["config"] = yaml.dump(data, default_flow_style=False)
+        self.data_grp.attrs["config"] = yaml.dump(data, default_flow_style=False, sort_keys=False)
         if "window_samples" in data:
             self.data_grp.attrs["window_samples"] = data["window_samples"]
 
@@ -308,15 +313,17 @@ class LogWriter(object):
         self.data_grp["time"].resize((self.data_pos if self._write_current or self._write_voltage else 0,))
         self.data_grp["voltage"].resize((self.data_pos if self._write_voltage else 0,))
         self.data_grp["current"].resize((self.data_pos if self._write_current else 0,))
-        self.gpio_grp["time"].resize((self.gpio_pos if self._write_gpio else 0,))
-        self.gpio_grp["value"].resize((self.gpio_pos if self._write_gpio else 0,))
+        if self._write_gpio:
+            self.gpio_grp["time"].resize((self.gpio_pos if self._write_gpio else 0,))
+            self.gpio_grp["value"].resize((self.gpio_pos if self._write_gpio else 0,))
         self.sysutil_grp["time"].resize((self.sysutil_pos,))
         self.sysutil_grp["cpu"].resize((self.sysutil_pos,))
         self.sysutil_grp["ram"].resize((self.sysutil_pos, 2))
         self.sysutil_grp["io"].resize((self.sysutil_pos, 4))
         self.sysutil_grp["net"].resize((self.sysutil_pos, 2))
-        self.uart_grp["time"].resize((self.uart_pos,))
-        self.uart_grp["message"].resize((self.uart_pos,))
+        if self._write_uart:
+            self.uart_grp["time"].resize((self.uart_pos,))
+            self.uart_grp["message"].resize((self.uart_pos,))
         self.dmesg_grp["time"].resize((self.dmesg_pos,))
         self.dmesg_grp["message"].resize((self.dmesg_pos,))
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
@@ -332,11 +339,13 @@ class LogWriter(object):
             logger.info(f"[LogWriter] terminate PTP4L-Monitor ({self.timesync_grp['time'].shape[0]} entries)")
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
-            logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
+            if self._write_uart:
+                logger.info(f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)")
             self.uart_mon_t = None
         runtime = round(self.data_grp['time'].shape[0] / self.samplerate_sps, 1)
+        gpevents = self.gpio_grp['time'].shape[0] if self._write_gpio else 0
         logger.info(f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, "
-                    f"{self.gpio_grp['time'].shape[0]} gpio-events, {self.xcpt_grp['time'].shape[0]} xcpt-events)")
+                    f"{gpevents} gpio-events, {self.xcpt_grp['time'].shape[0]} xcpt-events)")
         self._h5file.flush()
         logger.info("[LogWriter] closing  hdf5 file")
         self._h5file.close()
@@ -451,15 +460,14 @@ class LogWriter(object):
         # - uart is bytes-type -> storing in hdf5 is hard, tried 'S' and opaque-type -> failed with errors
         # - converting is producing ValueError on certain chars, errors="backslashreplace" does not help
         # TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
-        if not isinstance(baudrate, int) or baudrate == 0:
+        if (not self._write_uart) or (not isinstance(baudrate, int)) or (baudrate == 0):
             return
         global monitors_end
-        uart_path = '/dev/ttyO1'
-        logger.debug(f"Will start UART-Monitor for target on '{uart_path}' @ {baudrate} baud")
+        logger.debug(f"Will start UART-Monitor for target on '{self.uart_path}' @ {baudrate} baud")
         tevent = threading.Event()
         try:
             # open serial as non-exclusive
-            with serial.Serial(uart_path, baudrate, timeout=0) as uart:
+            with serial.Serial(self.uart_path, baudrate, timeout=0) as uart:
                 while True:
                     if monitors_end.is_set():
                         break
@@ -477,10 +485,10 @@ class LogWriter(object):
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{uart_path}' with baudrate={baudrate} -> will skip logging")
+                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{self.uart_path}' with baudrate={baudrate} -> will skip logging")
         except serial.SerialException as e:
             logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{uart_path}' to target -> will skip logging")
+                f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{self.uart_path}' to target -> will skip logging")
         logger.debug(f"[UartMonitor] ended itself")
 
     def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
@@ -555,15 +563,15 @@ class LogReader(object):
     """ Sequentially Reads data from HDF5 file.
 
     Args:
-        store_path (Path): Path of hdf5 file containing IV data
+        file_path (Path): Path of hdf5 file containing IV data
         samples_per_buffer (int): Number of IV samples per buffer
     """
 
     def __init__(self,
-                 store_path: Path,
+                 file_path: Path,
                  samples_per_buffer: int = 10_000,
                  samplerate_sps: int = 100_000):
-        self.store_path = store_path
+        self.store_path = file_path
         self.samples_per_buffer = samples_per_buffer
         self.samplerate_sps = samplerate_sps
 
@@ -623,6 +631,6 @@ class LogReader(object):
         return CalibrationData(cal)
 
     def get_window_samples(self) -> int:
-        if "window_samples" in self._h5file["data"].attrs:
+        if "window_samples" in self._h5file["data"].attrs.keys():
             return self._h5file["data"].attrs["window_samples"]
         return 0
