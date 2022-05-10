@@ -25,7 +25,7 @@ from shepherd.cli import cli
 
 
 def random_data(length):
-    return np.random.randint(0, high=2 ** 18, size=length, dtype="u4")
+    return np.random.randint(0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture
@@ -55,12 +55,17 @@ def test_cli_harvest(shepherd_up, cli_runner, tmp_path):
 def test_cli_harvest_no_cal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
-        cli, ["-vvv",
-              "harvester",
-              "-d", "10",
-              "--force_overwrite",
-              "--use_cal_default",
-              "-o", str(store)]
+        cli,
+        [
+            "-vvv",
+            "harvester",
+            "-d",
+            "10",
+            "--force_overwrite",
+            "--use_cal_default",
+            "-o",
+            str(store),
+        ],
     )
 
     assert res.exit_code == 0
@@ -73,14 +78,20 @@ def test_cli_harvest_parameters_long(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
-        cli, ["-vvv",
-              "harvester",
-              "--duration", "10",
-              "--start_time", f"{start_time}",
-              "--force_overwrite",
-              "--use_cal_default",
-              "--warn-only",
-              "--output_path", f"{str(store)}"]
+        cli,
+        [
+            "-vvv",
+            "harvester",
+            "--duration",
+            "10",
+            "--start_time",
+            f"{start_time}",
+            "--force_overwrite",
+            "--use_cal_default",
+            "--warn-only",
+            "--output_path",
+            f"{str(store)}",
+        ],
     )
 
     assert res.exit_code == 0
@@ -93,13 +104,19 @@ def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
-        cli, ["-vvv",
-              "harvester",
-              "-d", "10",
-              "-s", f"{start_time}",
-              "-f",
-              "--no-warn-only",
-              "-o", str(store)]
+        cli,
+        [
+            "-vvv",
+            "harvester",
+            "-d",
+            "10",
+            "-s",
+            f"{start_time}",
+            "-f",
+            "--no-warn-only",
+            "-o",
+            str(store),
+        ],
     )
 
     assert res.exit_code == 0
@@ -110,13 +127,7 @@ def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path):
 @pytest.mark.timeout(60)
 def test_cli_harvest_parameters_minimal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli, [
-              "harvester",
-              "-f",
-              "-d", "10",
-              "-o", str(store)]
-    )
+    res = cli_runner.invoke(cli, ["harvester", "-f", "-d", "10", "-o", str(store)])
 
     assert res.exit_code == 0
     assert store.exists()
@@ -149,9 +160,11 @@ def test_cli_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
         [
             "-vvv",
             "emulator",
-            "-d", "10",
+            "-d",
+            "10",
             "--force_overwrite",
-            "-o", str(store),
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -171,10 +184,13 @@ def test_cli_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, d
         [
             "-vvv",
             "emulator",
-            "-d", "10",
+            "-d",
+            "10",
             "--force_overwrite",
-            "--virtsource", str(file_path),
-            "-o", str(store),
+            "--virtsource",
+            str(file_path),
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -192,10 +208,13 @@ def test_cli_emulate_with_bq25570(shepherd_up, cli_runner, tmp_path, data_h5):
         [
             "-vvv",
             "emulator",
-            "-d", "10",
+            "-d",
+            "10",
             "--force_overwrite",
-            "--virtsource", "BQ25570",
-            "-o", str(store),
+            "--virtsource",
+            "BQ25570",
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -217,9 +236,12 @@ def test_cli_virtsource_emulate_wrong_option(
         [
             "-vvv",
             "emulator",
-            "-d", "10",
-            "--virtWrong", str(file_path),
-            "-o", str(store),
+            "-d",
+            "10",
+            "--virtWrong",
+            str(file_path),
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -235,9 +257,12 @@ def test_cli_emulate_aux_voltage(shepherd_up, cli_runner, tmp_path, data_h5):
         [
             "-vvv",
             "emulator",
-            "-d", "10",
-            "--aux_voltage", "2.5",
-            "-o", str(store),
+            "-d",
+            "10",
+            "--aux_voltage",
+            "2.5",
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -256,18 +281,24 @@ def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5)
         [
             "-vvv",
             "emulator",
-            "--duration", "10",
-            "--start_time", str(start_time),
-            "--aux_voltage", "2.5",
+            "--duration",
+            "10",
+            "--start_time",
+            str(start_time),
+            "--aux_voltage",
+            "2.5",
             "--force_overwrite",
             "--use_cal_default",
             "--enable_io",
             "--io_sel_target_a",
             "--pwr_sel_target_a",
             "--warn-only",
-            "--virtsource", str(file_path),
-            "--output_path", str(store),
-            "--uart_baudrate", "9600",
+            "--virtsource",
+            str(file_path),
+            "--output_path",
+            str(store),
+            "--uart_baudrate",
+            "9600",
             "--log_mid_voltage",
             "--skip_log_voltage",
             "--skip_log_current",
@@ -288,15 +319,19 @@ def test_cli_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5
         [
             "-vvv",
             "emulator",
-            "-d", "10",
-            "-s", str(start_time),
-            "--aux_voltage", "2.5",
+            "-d",
+            "10",
+            "-s",
+            str(start_time),
+            "--aux_voltage",
+            "2.5",
             "-f",
             "--disable_io",
             "--io_sel_target_b",
             "--pwr_sel_target_b",
             "--no-warn-only",
-            "-o", str(store),
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -311,7 +346,8 @@ def test_cli_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_
         cli,
         [
             "emulator",
-            "-o", str(store),
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )
@@ -343,10 +379,14 @@ def test_cli_emulate_aux_voltage_fail(shepherd_up, cli_runner, tmp_path, data_h5
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv", "emulator",
-            "-d", "10",
-            "--aux_voltage", "5.5",
-            "-o", str(store),
+            "-vvv",
+            "emulator",
+            "-d",
+            "10",
+            "--aux_voltage",
+            "5.5",
+            "-o",
+            str(store),
             str(data_h5),
         ],
     )

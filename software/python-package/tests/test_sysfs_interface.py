@@ -4,7 +4,12 @@ import time
 from pathlib import Path
 import yaml
 
-from shepherd import sysfs_interface, ShepherdIO, VirtualSourceData, VirtualHarvesterData
+from shepherd import (
+    sysfs_interface,
+    ShepherdIO,
+    VirtualSourceData,
+    VirtualHarvesterData,
+)
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_data import flatten_dict_list
 
@@ -178,10 +183,6 @@ def test_virtsource_settings(shepherd_up, virtsource_settings):
 @pytest.mark.hardware
 def test_initial_virtsource_settings(shepherd_up):
     # NOTE: initial config is set in main() of pru0
-    vsource_settings = [
-        list(range(100, 124)),
-        list(range(12 * 12)),
-        list(range(12))
-    ]
+    vsource_settings = [list(range(100, 124)), list(range(12 * 12)), list(range(12))]
     values_1d = flatten_dict_list(vsource_settings)
     assert sysfs_interface.read_virtual_converter_settings() == values_1d

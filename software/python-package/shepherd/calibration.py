@@ -32,10 +32,12 @@ logger = logging.getLogger(__name__)
 cal_component_list = ["harvester", "emulator"]
 cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
 # functions from cal-default.py to convert the channels in cal_channel_list
-cal_channel_fn_list = ["dac_voltage_to_raw",
-                       "dac_voltage_to_raw",
-                       "adc_current_to_raw",
-                       "adc_voltage_to_raw"]
+cal_channel_fn_list = [
+    "dac_voltage_to_raw",
+    "dac_voltage_to_raw",
+    "adc_current_to_raw",
+    "adc_voltage_to_raw",
+]
 # translator-dicts for datalog
 cal_channel_hrv_dict = {"voltage": "adc_voltage", "current": "adc_current"}
 cal_channel_emu_dict = {"voltage": "dac_voltage_b", "current": "adc_current"}
@@ -43,11 +45,15 @@ cal_parameter_list = ["gain", "offset"]
 
 
 # slim alternative to the methods (same name) of CalibrationData
-def convert_raw_to_value(cal_dict: dict, raw: int) -> float:  # more precise dict[str, int], trouble with py3.6
+def convert_raw_to_value(
+    cal_dict: dict, raw: int
+) -> float:  # more precise dict[str, int], trouble with py3.6
     return (float(raw) * cal_dict["gain"]) + cal_dict["offset"]
 
 
-def convert_value_to_raw(cal_dict: dict, value: float) -> int:  # more precise dict[str, int], trouble with py3.6
+def convert_value_to_raw(
+    cal_dict: dict, value: float
+) -> int:  # more precise dict[str, int], trouble with py3.6
     return int((value - cal_dict["offset"]) / cal_dict["gain"])
 
 
@@ -78,12 +84,16 @@ class CalibrationData(object):
 
         Args:
             data: Byte string containing calibration data.
-        
+
         Returns:
             CalibrationData object with extracted calibration data.
         """
-        val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
-        values = struct.unpack(">" + val_count * "d", data)  # X double float, big endian
+        val_count = (
+            len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+        )
+        values = struct.unpack(
+            ">" + val_count * "d", data
+        )  # X double float, big endian
         cal_dict = {}
         counter = 0
         for component in cal_component_list:
@@ -114,7 +124,7 @@ class CalibrationData(object):
                 cal_fn = cal_channel_fn_list[ch_index]
                 # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(cal_def, cal_fn)(0)
-                gain_inv = (getattr(cal_def, cal_fn)(1.0) - offset)
+                gain_inv = getattr(cal_def, cal_fn)(1.0) - offset
                 cal_dict[component][channel] = {
                     "offset": -float(offset) / float(gain_inv),
                     "gain": 1.0 / float(gain_inv),
@@ -129,7 +139,7 @@ class CalibrationData(object):
         Args:
             filename (Path): Path to YAML formatted file containing calibration
                 values.
-        
+
         Returns:
             CalibrationData object with extracted calibration data.
         """
@@ -145,7 +155,7 @@ class CalibrationData(object):
         Args:
             filename (Path): Path to YAML formatted file containing calibration
                 measurement values.
-        
+
         Returns:
             CalibrationData object with extracted calibration data.
         """
@@ -179,13 +189,18 @@ class CalibrationData(object):
                     gain = float(result.slope)
                     rval = result.rvalue  # test quality of regression
                 except KeyError:
-                    logger.error(f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})")
+                    logger.error(
+                        f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})"
+                    )
                 except ValueError as e:
-                    logger.error(f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]")
+                    logger.error(
+                        f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]"
+                    )
 
                 if ("rval" in locals()) and (rval < 0.999):
                     logger.warning(
-                        f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}")
+                        f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}"
+                    )
                 cal_dict[component][channel]["gain"] = gain
                 cal_dict[component][channel]["offset"] = offset
         return cls(cal_dict)
@@ -216,31 +231,51 @@ class CalibrationData(object):
             for channel in cal_channel_list:
                 for parameter in cal_parameter_list:
                     flattened.append(self.data[component][channel][parameter])
-        val_count = len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+        val_count = (
+            len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+        )
         return struct.pack(">" + val_count * "d", *flattened)
 
     def export_for_sysfs(self, component: str) -> dict:
         if component not in cal_component_list:
-            raise ValueError(f"[Cal] change to unknown component (={component}) detected")
+            raise ValueError(
+                f"[Cal] change to unknown component (={component}) detected"
+            )
         comp_data = self.data[component]
         cal_set = {
             # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
-            "adc_current_gain": round(1e9 * (2 ** 8) * comp_data["adc_current"]["gain"]),
-            "adc_current_offset": round(1e9 * (2 ** 0) * comp_data["adc_current"]["offset"]),
+            "adc_current_gain": round(
+                1e9 * (2**8) * comp_data["adc_current"]["gain"]
+            ),
+            "adc_current_offset": round(
+                1e9 * (2**0) * comp_data["adc_current"]["offset"]
+            ),
             # ADC is handled in uV (micro-volt), gain is shifted by 8 bit [scaling according to commons.h]
-            "adc_voltage_gain": round(1e6 * (2 ** 8) * comp_data["adc_voltage"]["gain"]),
-            "adc_voltage_offset": round(1e6 * (2 ** 0) * comp_data["adc_voltage"]["offset"]),
+            "adc_voltage_gain": round(
+                1e6 * (2**8) * comp_data["adc_voltage"]["gain"]
+            ),
+            "adc_voltage_offset": round(
+                1e6 * (2**0) * comp_data["adc_voltage"]["offset"]
+            ),
             # DAC is handled in uV (micro-volt), gain is shifted by 20 bit
-            "dac_voltage_gain": round((2 ** 20) / (1e6 * comp_data["dac_voltage_b"]["gain"])),
-            "dac_voltage_offset": round(1e6 * (2 ** 0) * comp_data["dac_voltage_b"]["offset"]),
+            "dac_voltage_gain": round(
+                (2**20) / (1e6 * comp_data["dac_voltage_b"]["gain"])
+            ),
+            "dac_voltage_offset": round(
+                1e6 * (2**0) * comp_data["dac_voltage_b"]["offset"]
+            ),
         }
 
         for key, value in cal_set.items():
             # TODO: is exception more useful? -> raise ValueError
             if ("gain" in key) and not (0 <= value < 2**32):
-                logger.warning(f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()")
+                logger.warning(
+                    f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()"
+                )
                 cal_set[key] = min(max(value, 0), 2**32 - 1)
-            if ("offset" in key) and not (-2**31 <= value < 2**31):
-                logger.warning(f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()")
-                cal_set[key] = min(max(value, -2**31), 2**31 - 1)
+            if ("offset" in key) and not (-(2**31) <= value < 2**31):
+                logger.warning(
+                    f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()"
+                )
+                cal_set[key] = min(max(value, -(2**31)), 2**31 - 1)
         return cal_set

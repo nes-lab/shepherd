@@ -17,7 +17,7 @@ from shepherd.datalog import ExceptionRecord
 
 
 def random_data(length):
-    return np.random.randint(0, high=2 ** 18, size=length, dtype="u4")
+    return np.random.randint(0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture()
@@ -80,9 +80,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
-    with LogWriter(
-        file_path=d, calibration_data=calibration_data, mode=mode
-    ) as log:
+    with LogWriter(file_path=d, calibration_data=calibration_data, mode=mode) as log:
         log.write_buffer(data_buffer)
 
     with h5py.File(d, "r") as written:
@@ -98,14 +96,16 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_calibration_logging(mode, tmp_path, calibration_data):
     d = tmp_path / "recording.h5"
-    with LogWriter(
-        file_path=d, mode=mode, calibration_data=calibration_data
-    ) as _:
+    with LogWriter(file_path=d, mode=mode, calibration_data=calibration_data) as _:
         pass
 
-    h5store = h5py.File(d, "r")  # hint: logReader would be more direct, but less untouched
+    h5store = h5py.File(
+        d, "r"
+    )  # hint: logReader would be more direct, but less untouched
 
-    for channel_entry, parameter in product(cal_channel_hrv_dict.items(), cal_parameter_list):
+    for channel_entry, parameter in product(
+        cal_channel_hrv_dict.items(), cal_parameter_list
+    ):
         assert (
             h5store["data"][channel_entry[0]].attrs[parameter]
             == calibration_data[mode][channel_entry[1]][parameter]
@@ -126,7 +126,10 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
 
         # Note: decode is needed at least for h5py < 3, and old dtype=h5py.special_dtype(vlen=str)
         assert writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
-        assert writer.xcpt_grp["message"][1].decode("UTF8") == "there was another exception"
+        assert (
+            writer.xcpt_grp["message"][1].decode("UTF8")
+            == "there was another exception"
+        )
         assert writer.xcpt_grp["value"][0] == 0
         assert writer.xcpt_grp["value"][1] == 1
         assert writer.xcpt_grp["time"][0] == ts
@@ -149,7 +152,9 @@ def test_key_value_store(tmp_path, calibration_data):
 @pytest.mark.timeout(2)
 def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest_perf.h5"
-    with LogWriter(file_path=d, force_overwrite=True, calibration_data=calibration_data) as log:
+    with LogWriter(
+        file_path=d, force_overwrite=True, calibration_data=calibration_data
+    ) as log:
         log.write_buffer(data_buffer)
 
 

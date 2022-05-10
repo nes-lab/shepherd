@@ -34,7 +34,7 @@ target_pin_nums = {  # pin-order from target-connector
     "gpio3": 47,
     "gpio4": 61,
     "gpio5": 80,
-    "gpio6": 81,    # v2.3 -> always RX
+    "gpio6": 81,  # v2.3 -> always RX
     "uart_rx": 14,  # v2.3 -> always RX
     "uart_tx": 15,
     "swd1_clk": 5,

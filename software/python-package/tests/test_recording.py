@@ -56,7 +56,7 @@ def test_recorder(log_writer, recorder):
         recorder.return_buffer(idx)
 
 
-@pytest.mark.hardware # TODO extend with new harvester-options
+@pytest.mark.hardware  # TODO extend with new harvester-options
 @pytest.mark.timeout(40)
 def test_record_fn(tmp_path, shepherd_up):
     output = tmp_path / "rec.h5"

@@ -28,6 +28,7 @@ def call_repeatedly(interval, func, *args):
     def loop():
         while not stopped.wait(interval):  # the first call is in `interval` secs
             func(*args)
+
     Thread(target=loop).start()
     return stopped.set
 
@@ -67,13 +68,9 @@ class Launcher(object):
         systemd1 = sys_bus.get_object(
             "org.freedesktop.systemd1", "/org/freedesktop/systemd1"
         )
-        self.manager = dbus.Interface(
-            systemd1, "org.freedesktop.systemd1.Manager"
-        )
+        self.manager = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
 
-        shepherd_object = self.manager.LoadUnit(
-            f"{ self.service_name }.service"
-        )
+        shepherd_object = self.manager.LoadUnit(f"{ self.service_name }.service")
         self.shepherd_proxy = sys_bus.get_object(
             "org.freedesktop.systemd1", str(shepherd_object)
         )
@@ -174,7 +171,7 @@ class Launcher(object):
         return new_state
 
     def initiate_shutdown(self, timeout: int = 5) -> NoReturn:
-        """ Initiates system shutdown.
+        """Initiates system shutdown.
 
         Args:
             timeout (int): Number of seconds to wait before powering off
@@ -198,7 +195,7 @@ class Launcher(object):
         self.manager.PowerOff()
 
     def ack_watchdog(self) -> NoReturn:
-        """ prevent system-reset from watchdog
+        """prevent system-reset from watchdog
         hw-rev2 has a watchdog that can turn on the BB every ~60 min
 
         """

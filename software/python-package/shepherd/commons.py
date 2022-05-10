@@ -10,7 +10,9 @@ corresponding implementation in `software/firmware/include/commons.h`
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14  # TODO: replace by (currently non-existing) sysfs_interface
+MAX_GPIO_EVT_PER_BUFFER = (
+    16_384  # 2^14  # TODO: replace by (currently non-existing) sysfs_interface
+)
 
 MSG_BUF_FROM_HOST = 0x01
 MSG_BUF_FROM_PRU = 0x02
@@ -34,17 +36,18 @@ MSG_DEP_ERR_INCMPLT = 0xE3
 MSG_DEP_ERR_INVLDCMD = 0xE4
 MSG_DEP_ERR_NOFREEBUF = 0xE5
 
-GPIO_LOG_BIT_POSITIONS = """
-pru_reg     name            BB_pin	sys_pin
-r31_00      TARGET_GPIO0    P8_45	P8_14, g0[14]
-r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27]
-r31_02      TARGET_GPIO2    P8_43	P8_16, g1[14]
-r31_03      TARGET_GPIO3    P8_44	P8_15, g1[15]
-r31_04      TARGET_GPIO4    P8_41	P8_26, g1[29]
-r31_05      TARGET_GPIO5    P8_42	P8_36, g2[16]
-r31_06      TARGET_GPIO6    P8_39	P8_34, g2[17]
-r31_07      TARGET_UART_RX  P8_40	P9_26, g0[14]
-r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15]
-r30_09/out  TARGET_BAT_OK   P8_29	-
-"""
+# fmt: off
+GPIO_LOG_BIT_POSITIONS = {
+    0: {"pru_reg": "r31_00", "name": "tgt_gpio0",   "bb_pin": "P8_45", "sys_pin": "P8_14", "sys_reg": "g0[26]"},
+    1: {"pru_reg": "r31_01", "name": "tgt_gpio1",   "bb_pin": "P8_46", "sys_pin": "P8_17", "sys_reg": "g0[27]"},
+    2: {"pru_reg": "r31_02", "name": "tgt_gpio2",   "bb_pin": "P8_43", "sys_pin": "P8_16", "sys_reg": "g1[14]"},
+    3: {"pru_reg": "r31_03", "name": "tgt_gpio3",   "bb_pin": "P8_44", "sys_pin": "P8_15", "sys_reg": "g1[15]"},
+    4: {"pru_reg": "r31_04", "name": "tgt_gpio4",   "bb_pin": "P8_41", "sys_pin": "P8_26", "sys_reg": "g1[29]"},
+    5: {"pru_reg": "r31_05", "name": "tgt_gpio5",   "bb_pin": "P8_42", "sys_pin": "P8_36", "sys_reg": "g2[16]"},
+    6: {"pru_reg": "r31_06", "name": "tgt_gpio6",   "bb_pin": "P8_39", "sys_pin": "P8_34", "sys_reg": "g2[17]"},
+    7: {"pru_reg": "r31_07", "name": "tgt_uart_rx", "bb_pin": "P8_40", "sys_pin": "P9_26", "sys_reg": "g0[14]"},
+    8: {"pru_reg": "r31_08", "name": "tgt_uart_tx", "bb_pin": "P8_27", "sys_pin": "P9_24", "sys_reg": "g0[15]"},
+    9: {"pru_reg": "r31_09", "name": "tgt_bat_ok",  "bb_pin": "P8_29", "sys_pin": "",      "sys_reg": ""},
+}
 # Note: this table is copied (for hdf5-reference) from pru1/main.c
+# fmt: on

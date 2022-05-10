@@ -86,7 +86,9 @@ class VirtualHarvesterModel(object):
         compare_now = voltage_uV < self.voltage_set_uV
         voltage_step = abs(voltage_uV - self.voltage_last)
 
-        if (compare_now != self.compare_last) and (voltage_step < self.voltage_step_x4_uV):
+        if (compare_now != self.compare_last) and (
+            voltage_step < self.voltage_step_x4_uV
+        ):
             if self.voltage_last < voltage_uV:
                 self.voltage_hold = self.voltage_last
                 self.current_hold = self.voltage_last
@@ -100,12 +102,18 @@ class VirtualHarvesterModel(object):
         return self.voltage_hold, self.current_hold
 
     def iv_mppt_voc(self, voltage_uV: int, current_nA: int) -> tuple:
-        self.interval_step = 0 if (self.interval_step >= self.interval_n) else (self.interval_step + 1)
+        self.interval_step = (
+            0 if (self.interval_step >= self.interval_n) else (self.interval_step + 1)
+        )
         self.age_now += 1
         self.age_nxt += 1
 
-        if (current_nA < self.current_limit_nA) and (voltage_uV < self.voc_nxt) and \
-           (voltage_uV >= self.voltage_min_uV) and (voltage_uV <= self.voltage_max_uV):
+        if (
+            (current_nA < self.current_limit_nA)
+            and (voltage_uV < self.voc_nxt)
+            and (voltage_uV >= self.voltage_min_uV)
+            and (voltage_uV <= self.voltage_max_uV)
+        ):
             self.voc_nxt = voltage_uV
             self.age_nxt = 0
 
@@ -123,7 +131,9 @@ class VirtualHarvesterModel(object):
         return voltage_uV, current_nA
 
     def iv_mppt_po(self, voltage_uV: int, current_nA: int) -> tuple:
-        self.interval_step = 0 if (self.interval_step >= self.interval_n) else (self.interval_step + 1)
+        self.interval_step = (
+            0 if (self.interval_step >= self.interval_n) else (self.interval_step + 1)
+        )
         if self.interval_step == 0:
             power_now = voltage_uV * current_nA
             if power_now > self.power_last:
@@ -140,7 +150,9 @@ class VirtualHarvesterModel(object):
                 else:
                     self.voltage_set_uV -= self.incr_step_uV
             self.power_last = power_now
-            self.voltage_set_uV = min(max(self.voltage_set_uV, self.voltage_min_uV), self.voltage_max_uV)
+            self.voltage_set_uV = min(
+                max(self.voltage_set_uV, self.voltage_min_uV), self.voltage_max_uV
+            )
         return self.iv_cv(voltage_uV, current_nA)
 
     def iv_mppt_opt(self, voltage_uV: int, current_nA: int) -> tuple:
@@ -148,7 +160,11 @@ class VirtualHarvesterModel(object):
         self.age_nxt += 1
 
         power = voltage_uV * current_nA
-        if (power > self.power_nxt) and (voltage_uV >= self.voltage_min_uV) and (voltage_uV <= self.voltage_max_uV):
+        if (
+            (power > self.power_nxt)
+            and (voltage_uV >= self.voltage_min_uV)
+            and (voltage_uV <= self.voltage_max_uV)
+        ):
             self.age_nxt = 0
             self.power_nxt = power
             self.voltage_nxt = voltage_uV

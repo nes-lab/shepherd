@@ -30,7 +30,9 @@ setup(
     version="0.2.6",
     description="Synchronized Energy Harvesting Emulator and Recorder",
     packages=["shepherd"],
-    package_data={'shepherd': ['virtual_source_defs.yml', 'virtual_harvester_defs.yml']},
+    package_data={
+        "shepherd": ["virtual_source_defs.yml", "virtual_harvester_defs.yml"]
+    },
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha

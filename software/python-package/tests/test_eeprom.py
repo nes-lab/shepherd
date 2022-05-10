@@ -4,7 +4,11 @@ from pathlib import Path
 from shepherd import EEPROM
 from shepherd import CapeData
 from shepherd import CalibrationData
-from shepherd.calibration import cal_parameter_list, cal_channel_list, cal_component_list
+from shepherd.calibration import (
+    cal_parameter_list,
+    cal_channel_list,
+    cal_component_list,
+)
 
 
 @pytest.fixture()
@@ -33,9 +37,7 @@ def data_test_string():
 @pytest.fixture()
 def eeprom_open(request, fake_hardware):
     if fake_hardware is not None:
-        fake_hardware.create_file(
-            "/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768
-        )
+        fake_hardware.create_file("/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768)
         request.applymarker(
             pytest.mark.xfail(
                 raises=OSError, reason="pyfakefs doesn't support seek in files"

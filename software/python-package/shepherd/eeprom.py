@@ -60,7 +60,7 @@ class CapeData(object):
             serial_number (str): Cape serial number according to BeagleBone
                 specification, e.g. 0119XXXX0001
             version (str): Cape version, e.g. 00A0
-        
+
         """
 
         data = {
@@ -120,6 +120,7 @@ class EEPROM(object):
     shepherd calibration data.
 
     """
+
     _write_protect_pin: GPIO = None
 
     def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49):
@@ -130,9 +131,7 @@ class EEPROM(object):
             address (int): Address of EEPROM, usually fixed in hardware or
                 by DIP switch
         """
-        self.dev_path = (
-            f"/sys/bus/i2c/devices/{ bus_num }" f"-{address:04X}/eeprom"
-        )
+        self.dev_path = f"/sys/bus/i2c/devices/{ bus_num }" f"-{address:04X}/eeprom"
         self._write_protect_pin = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
@@ -168,9 +167,7 @@ class EEPROM(object):
         try:
             os.write(self.fd, buffer)
         except TimeoutError:
-            logger.error(
-                "Timeout writing to EEPROM. Is write protection disabled?"
-            )
+            logger.error("Timeout writing to EEPROM. Is write protection disabled?")
             raise
         self._write_protect_pin.write(True)
 
@@ -179,15 +176,13 @@ class EEPROM(object):
 
         Args:
             key (str): Name of requested attribute
-        
+
         Raises:
             KeyError: If key is not a valid attribute
         """
         if key not in eeprom_format:
             raise KeyError(f"{ key } is not a valid EEPROM parameter")
-        raw_data = self._read(
-            eeprom_format[key]["offset"], eeprom_format[key]["size"]
-        )
+        raw_data = self._read(eeprom_format[key]["offset"], eeprom_format[key]["size"])
         if eeprom_format[key]["type"] == "ascii":
             return raw_data.decode("utf-8")
         if eeprom_format[key]["type"] == "str":
@@ -202,7 +197,7 @@ class EEPROM(object):
         Args:
             key (str): Name of the attribute
             value: Value of the attribute
-        
+
         Raises:
             KeyError: If key is not a valid attribute
             ValueError: If value does not meet specification of corresponding
@@ -262,9 +257,10 @@ class EEPROM(object):
         """
         data_serialized = calibration_data.to_bytestr()
         if len(data_serialized) != calibration_data_format["size"]:
-            raise ValueError(f"WriteCal: data-size is wrong! expected = {calibration_data_format['size']} bytes, but got {len(data_serialized)}")
-        self._write(
-            calibration_data_format["offset"], data_serialized)
+            raise ValueError(
+                f"WriteCal: data-size is wrong! expected = {calibration_data_format['size']} bytes, but got {len(data_serialized)}"
+            )
+        self._write(calibration_data_format["offset"], data_serialized)
 
     def read_calibration(self) -> CalibrationData:
         """Reads and returns shepherd calibration data from EEPROM
@@ -280,5 +276,7 @@ class EEPROM(object):
             logger.debug("EEPROM provided calibration-settings")
         except struct.error:
             cal = CalibrationData.from_default()
-            logger.warning("EEPROM seems to have no usable data - will set calibration from default-values")
+            logger.warning(
+                "EEPROM seems to have no usable data - will set calibration from default-values"
+            )
         return cal

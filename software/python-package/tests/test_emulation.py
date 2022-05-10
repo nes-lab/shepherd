@@ -18,7 +18,7 @@ from shepherd import ShepherdIOException
 
 
 def random_data(length):
-    return np.random.randint(0, high=2 ** 18, size=length, dtype="u4")
+    return np.random.randint(0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture
@@ -113,10 +113,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
     )
 
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
-        assert (
-            hf_emu["data"]["time"].shape[0]
-            == hf_hrvst["data"]["time"].shape[0]
-        )
+        assert hf_emu["data"]["time"].shape[0] == hf_hrvst["data"]["time"].shape[0]
         assert hf_emu["data"]["time"][0] == start_time * 10**9
 
 
@@ -131,9 +128,18 @@ def test_target_pins(shepherd_up):
         [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
         [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
         [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
-        [8, "emulator", "dac_voltage_b", "Emulator Rail B"], ]
+        [8, "emulator", "dac_voltage_b", "Emulator Rail B"],
+    ]
 
-    gpio_channels = [0, 1, 2, 3, 4, 7, 8]  # 5&6 are UART, can only be used when free, 7&8 are SWD
+    gpio_channels = [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        8,
+    ]  # 5&6 are UART, can only be used when free, 7&8 are SWD
     pru_responses = [0, 1, 6, 7, 8, 2, 3]  # corresponding to r31_num (and later 2^num)
 
     for channel in [2, 3]:
@@ -148,13 +154,13 @@ def test_target_pins(shepherd_up):
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
-        assert response & (2**pru_responses[io_index])
+        assert response & (2 ** pru_responses[io_index])
 
     shepherd_io.select_main_target_for_io(sel_target_a=False)
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
-        assert response & (2**pru_responses[io_index])
+        assert response & (2 ** pru_responses[io_index])
 
     # TODO: could add a loopback for uart, but extra hardware is needed for that

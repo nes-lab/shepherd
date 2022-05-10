@@ -14,25 +14,30 @@ if __name__ == "__main__":
 
     if not file_rec.exists():
         print("Start harvesting")
-        run_recorder(output_path=file_rec,
-                     duration=duration,
-                     force_overwrite=True,
-                     use_cal_default=True, )
+        run_recorder(
+            output_path=file_rec,
+            duration=duration,
+            force_overwrite=True,
+            use_cal_default=True,
+        )
 
     print("Starting Emulation1, only logging of SysUtil-Stats")
-    run_emulator(input_path=file_rec,
-                 output_path=file_emu1,
-                 duration=duration,
-                 force_overwrite=True,
-                 virtsource="BQ25570s",
-                 skip_log_gpio=True,
-                 skip_log_current=True,
-                 skip_log_voltage=True,
-                 )
+    run_emulator(
+        input_path=file_rec,
+        output_path=file_emu1,
+        duration=duration,
+        force_overwrite=True,
+        virtsource="BQ25570s",
+        skip_log_gpio=True,
+        skip_log_current=True,
+        skip_log_voltage=True,
+    )
 
     print("Starting Emulation2, ")
-    run_emulator(input_path=file_rec,
-                 output_path=file_emu2,
-                 duration=duration,
-                 force_overwrite=True,
-                 virtsource="BQ25570s", )
+    run_emulator(
+        input_path=file_rec,
+        output_path=file_emu2,
+        duration=duration,
+        force_overwrite=True,
+        virtsource="BQ25570s",
+    )
