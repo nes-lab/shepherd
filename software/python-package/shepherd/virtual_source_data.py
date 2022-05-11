@@ -1,3 +1,4 @@
+import copy
 from typing import NoReturn, Union
 from pathlib import Path
 import yaml
@@ -102,6 +103,7 @@ class VirtualSourceData(object):
         if log_intermediate_voltage is not None:
             self.data["log_intermediate_voltage"] = log_intermediate_voltage
 
+        self.data_min = copy.copy(self.data)
         self.check_and_complete()
         logger.debug(
             f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"

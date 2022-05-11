@@ -1,3 +1,4 @@
+import copy
 from typing import NoReturn, Union
 from pathlib import Path
 import yaml
@@ -32,6 +33,7 @@ class VirtualHarvesterData(object):
     """
 
     data: dict = {}
+    data_min: dict = {}
     name: str = "vHarvester"
     _default: str = "ivcurve"  # fallback in case of Setting = None
     _def_file = "virtual_harvester_defs.yml"
@@ -92,6 +94,7 @@ class VirtualHarvesterData(object):
         if window_samples is not None:
             self.data["window_samples"] = window_samples
 
+        self.data_min = copy.copy(self.data)
         self._check_and_complete()
         logger.debug(
             f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
