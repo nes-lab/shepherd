@@ -81,7 +81,7 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
 	state.V_input_uV = 0u;
 	state.P_inp_fW_n8 = 0ull;
 	state.P_out_fW_n4 = 0ull;
-	state.interval_startup_disabled_drain_n = config->interval_startup_delay_drain_n;
+	state.interval_startup_disabled_drain_n = cfg->interval_startup_delay_drain_n;
 
 	/* container for the stored energy: */
 	state.V_mid_uV_n32 = ((uint64_t)cfg->V_intermediate_init_uV) << 32u;

@@ -23,7 +23,7 @@ algorithms = {
 }
 
 
-class VirtualHarvesterData(object):
+class VirtualHarvesterData:
     """TODO: this class is very similar to virtual_source_data, could share a base-class
 
     :param setting: harvester-config as name, path to yaml or already usable as dict
