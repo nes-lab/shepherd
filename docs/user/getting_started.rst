@@ -16,7 +16,7 @@ For each shepherd node, you'll need:
   * for recording: harvesting transducer, e.g. solar capelet and solar cell
   * for emulation: target capelet
 
-In addition, you'll need at least one SD-card with at least 4GB capacity.
+In addition, you'll need at least one SD-card with at least 4GB capacity. To setup linux and control the nodes a linux host-machine is recommended, but the terminal in macOS or WSL for Windows should work as well.
 
 For the cape and capelets take a look at the `hardware design files <https://github.com/orgua/shepherd/tree/master/hardware>`_.
 Shepherd version 2 hardware is currently under development, see the separate `repository <https://github.com/orgua/shepherd_v2_planning/tree/master/PCBs>`_.
@@ -54,6 +54,8 @@ If you plan to install the OS and shepherd software on the onboard EMMC flash, y
 If you plan to install the OS and shepherd software on SD card, you have to prepare one SD card for every shepherd node.
 Depending on your choice, follow `the official instructions <https://elinux.org/BeagleBoardUbuntu#eMMC:_All_BeagleBone_Variants_with_eMMC>`_ for **BeagleBone**.
 Shepherd has been tested on Ubuntu 18.04 LTS (image updated 2020-03-12), but might work with other Debian based distributions.
+
+**Note from 2022-05**: the last official release is getting quite old. Latest nightlies of Ubuntu, ie. `bone-ubuntu-20.04.4-console-armhf-2022-05-17-4gb.img.xz <https://rcn-ee.com/rootfs/ubuntu-armhf/2022-05-17/>`_, work as well and offer more performant software.
 
 After installing the OS on the BeagleBones and booting them, find out their IP addresses.
 If you know the subnet, you can use nmap from your machine, for example:
