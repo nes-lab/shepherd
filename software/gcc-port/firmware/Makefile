@@ -28,26 +28,10 @@
 
 # Very simple makefile to cross-compile for PRU
 
-SRCDIRS=. lib
-INCDIRS=. ./include/ # can be list
-
 # Common flags
 CROSS_COMPILE ?= pru-
 CFLAGS += -g -Os
 CFLAGS += -Wall -Wextra
-
-# automatically add the -I onto each include directory
-CFLAGS=$(foreach D,$(INCDIRS),-I$(D)) $(OPT) $(DEPFLAGS)
-
-# for-style iteration (foreach) and regular expression completions (wildcard)
-CFILES=$(foreach D,$(SRCDIRS),$(wildcard $(D)/*.c))
-
-# regular expression replacement
-OBJECTS=$(patsubst %.c,%.o,$(CFILES))
-DEPFILES=$(patsubst %.c,%.d,$(CFILES))
-
-# generate files that encode make rules for the .h dependencies
-DEPFLAGS=-MP -MD
 
 # Add remoteproc headers
 CFLAGS += -isystem include
@@ -64,15 +48,41 @@ CFLAGS += -minrt
 CFLAGS0 += -mmcu=am335x.pru0 -DPRU0
 CFLAGS1 += -mmcu=am335x.pru1 -nostdlib -nodefaultlibs -nostartfiles -DPRU1
 
+# generate files that encode make rules for the .h dependencies
+DEPFLAGS=-MP -MD
+
+COMMON_SRC_DIRS=./lib/src/
+COMMON_INC_DIRS=./include/ ./lib/include/
+
+SRC_DIRS0=. $(COMMON_SRC_DIRS) ./pru0-shepherd-fw/
+INC_DIRS0=. $(COMMON_INC_DIRS)
+
+SRC_DIRS1=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw/
+INC_DIRS1=. $(COMMON_INC_DIRS) 
+
+# automatically add the -I onto each include directory
+CFLAGS0 += $(foreach D,$(INC_DIRS0),-I$(D)) $(OPT) $(DEPFLAGS)
+CFLAGS1 += $(foreach D,$(INC_DIRS1),-I$(D)) $(OPT) $(DEPFLAGS)
+
+# for-style iteration (foreach) and regular expression completions (wildcard)
+CFILES=$(foreach D,$(SRCDIRS),$(wildcard $(D)/*.c))
+
+# regular expression replacement
+OBJECTS=$(patsubst %.c,%.o,$(CFILES))
+DEPFILES=$(patsubst %.c,%.d,$(CFILES))
+
+
+
+
 # List of source files to compile for each PRU core.
-SRC0 := $(notdir $(wildcard ./pru0-shepherd-fw/*.c) $(wildcard ./lib/src/*.c)) #main0.c calibration.c math64_safe.c ringbuffer.c sampling.c virtual_converter.c virtual_harvester.c spi_transfer_pru.S gpio_io_fast.S register_magic.S iep.c simple_lock.c
-SRC1 := $(notdir $(wildcard ./pru1-shepherd-fw/*.c) $(wildcard ./lib/src/*.c)) #main1.c iep.c simple_lock.c
+#SRC0 := $(notdir $(wildcard ./pru0-shepherd-fw/*.c) $(wildcard ./lib/src/*.c)) #main0.c calibration.c math64_safe.c ringbuffer.c sampling.c virtual_converter.c virtual_harvester.c spi_transfer_pru.S gpio_io_fast.S register_magic.S iep.c simple_lock.c
+#SRC1 := $(notdir $(wildcard ./pru1-shepherd-fw/*.c) $(wildcard ./lib/src/*.c)) #main1.c iep.c simple_lock.c
 
 # GCC's -MMD does not yield the needed C dependencies when compiling all
 # C source files at once. So manually list headers here.
-HEADERS0 := $(notdir $(wildcard ./pru0-shepherd-fw/include/*.h) $(wildcard ./lib/include/*.h) $(wildcard ./include/*.h))
+#HEADERS0 := $(notdir $(wildcard ./pru0-shepherd-fw/include/*.h) $(wildcard ./lib/include/*.h) $(wildcard ./include/*.h))
 #calibration.h hw_config.h math64_safe.h resource_table0.h resource_table_def.h ringbuffer.h sampling.h spi_transfer_pru.h virtual_converter.h virtual_harvester.h commons.h shepherd_config.h gpio.h iep.h intc.h simple_lock.h stdint_fast.h
-HEADERS1 := $(notdir $(wildcard ./pru1-shepherd-fw/include/*.h) $(wildcard ./lib/include/*.h) $(wildcard ./include/*.h))
+#HEADERS1 := $(notdir $(wildcard ./pru1-shepherd-fw/include/*.h) $(wildcard ./lib/include/*.h) $(wildcard ./include/*.h))
 #debug_routines.h intc_map.h resource_table1.h commons.h shepherd_config.h gpio.h iep.h intc.h simple_lock.h stdint_fast.h
 
 # Where to output compiled objects
