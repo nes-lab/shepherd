@@ -28,7 +28,7 @@
 
 # Very simple makefile to cross-compile for PRU
 
-CODEDIRS=. lib
+SRCDIRS=. lib
 INCDIRS=. ./include/ # can be list
 
 # Common flags
@@ -40,7 +40,7 @@ CFLAGS += -Wall -Wextra
 CFLAGS=$(foreach D,$(INCDIRS),-I$(D)) $(OPT) $(DEPFLAGS)
 
 # for-style iteration (foreach) and regular expression completions (wildcard)
-CFILES=$(foreach D,$(CODEDIRS),$(wildcard $(D)/*.c))
+CFILES=$(foreach D,$(SRCDIRS),$(wildcard $(D)/*.c))
 
 # regular expression replacement
 OBJECTS=$(patsubst %.c,%.o,$(CFILES))
