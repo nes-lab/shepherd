@@ -30,7 +30,8 @@
 
 # Common flags
 CROSS_COMPILE ?= pru-
-CFLAGS += -g -Os
+OPT=-Os
+CFLAGS += -g $(OPT)
 CFLAGS += -Wall -Wextra
 
 # Add remoteproc headers
@@ -51,13 +52,13 @@ CFLAGS1 += -mmcu=am335x.pru1 -nostdlib -nodefaultlibs -nostartfiles -DPRU1
 # generate files that encode make rules for the .h dependencies
 DEPFLAGS=-MP -MD
 
-COMMON_SRC_DIRS=./lib/src/
-COMMON_INC_DIRS=./include/ ./lib/include/
+COMMON_SRC_DIRS=./lib/src
+COMMON_INC_DIRS=./include ./lib/include
 
-SRC_DIRS0=. $(COMMON_SRC_DIRS) ./pru0-shepherd-fw/
+SRC_DIRS0=. $(COMMON_SRC_DIRS) ./pru0-shepherd-fw
 INC_DIRS0=. $(COMMON_INC_DIRS)
 
-SRC_DIRS1=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw/
+SRC_DIRS1=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw
 INC_DIRS1=. $(COMMON_INC_DIRS) 
 
 # automatically add the -I onto each include directory
@@ -65,12 +66,15 @@ CFLAGS0 += $(foreach D,$(INC_DIRS0),-I$(D)) $(OPT) $(DEPFLAGS)
 CFLAGS1 += $(foreach D,$(INC_DIRS1),-I$(D)) $(OPT) $(DEPFLAGS)
 
 # for-style iteration (foreach) and regular expression completions (wildcard)
-CFILES=$(foreach D,$(SRCDIRS),$(wildcard $(D)/*.c))
+CFILES0=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.c))
+CFILES1=$(foreach D,$(SRC_DIRS1),$(wildcard $(D)/*.c))
 
 # regular expression replacement
-OBJECTS=$(patsubst %.c,%.o,$(CFILES))
-DEPFILES=$(patsubst %.c,%.d,$(CFILES))
+OBJECTS0=$(patsubst %.c,%.o,$(CFILES0))
+DEPFILES0=$(patsubst %.c,%.d,$(CFILES0))
 
+OBJECTS1=$(patsubst %.c,%.o,$(CFILES1))
+DEPFILES1=$(patsubst %.c,%.d,$(CFILES1))
 
 
 
@@ -115,16 +119,33 @@ all: $(ELF0) $(ELF1)
 $(OUT):
 	mkdir $(OUT)
 
-$(ELF0): $(SRC0) $(HEADERS0) | $(OUT)
-	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRC0) $(LDFLAGS) -o $@
+$(ELF0): $(OBJECTS0)
+	$(CROSS_COMPILE)gcc -o $@ $^
 
-$(ELF1): $(SRC1) $(HEADERS1) | $(OUT)
-	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
+$(ELF1): $(OBJECTS1)
+	$(CROSS_COMPILE)gcc -o $@ $^
 
+# only want the .c file dependency here, thus $< instead of $^.
+$(OBJECTS0): $(CFILES0)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) -c -o $@ $<
+
+$(OBJECTS1): $(CFILES1)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) -c -o $@ $<
+
+#$(ELF0): $(SRC0) $(HEADERS0) | $(OUT)
+#	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRC0) $(LDFLAGS) -o $@
+#
+#$(ELF1): $(SRC1) $(HEADERS1) | $(OUT)
+#	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
+#
 clean:
-	$(RM) -fr $(ELF0) $(ELF1) $(OUT)
+	rm -rf $(BINARY) $(OBJECTS) $(DEPFILES) #$(RM) -fr $(ELF0) $(ELF1) $(OUT)
 
 cscope:
 	cscope -bRk
+
+# include the dependencies
+-include $(DEPFILES0)
+-include $(DEPFILES1)
 
 .PHONY: all clean cscope
