@@ -1,0 +1,9 @@
+//volatile __far pruIep CT_IEP __attribute__((cregister("PRU_IEP", far), peripheral));
+extern uint32_t CHECK_STRUCT_pruIep__[1/(sizeof(pruIep) == 0x031C)];
+
+#ifdef __GNUC__
+volatile pruIep *CT_IEP__ = (void *)0x0002E000;
+#define CT_IEP	(*CT_IEP__)
+#else
+volatile __far pruIep CT_IEP __attribute__((cregister("PRU_IEP", far), peripheral));
+#endif
