@@ -21,6 +21,7 @@ harvesters:
     wait_cycles: 1 # first cycle: ADC-Sampling & DAC-Writing, further steps: waiting
 
   ivcurve: # sawtooth-wave
+    dtype: ivcurve
     window_size: 250
     voltage_min_mV: 0
     voltage_max_mV: 5000
@@ -42,7 +43,12 @@ harvesters:
     window_size: 909
     wait_cycles: 0
 
+  isc_voc:  # short circuit current, open circuit voltage,
+    dtype: isc_voc
+    wait_cycles: 1  # results in 25 kHz (isc, wait, voc, wait)
+
   cv: # constant voltage
+    dtype: ivsample
     voltage_mV: 2400
 
   cv20:
@@ -54,6 +60,7 @@ harvesters:
     voltage_mV: 3300
 
   mppt_voc: # open circuit voltage for solar
+    dtype: ivsample
     setpoint_n: 0.76
     interval_ms: 100     # between measurements
     duration_ms: 1.2     # solar can overshoot when load is removed
@@ -78,6 +85,7 @@ harvesters:
     base: mppt_bqt
 
   mppt_po: # perturbe & observe
+    dtype: ivsample
     voltage_min_mV: 0
     voltage_max_mV: 5000
     voltage_step_mV: 10
