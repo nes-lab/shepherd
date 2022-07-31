@@ -50,44 +50,23 @@ CFLAGS0 += -mmcu=am335x.pru0 -DPRU0
 CFLAGS1 += -mmcu=am335x.pru1 -nostdlib -nodefaultlibs -nostartfiles -DPRU1
 
 # generate files that encode make rules for the .h dependencies
-DEPFLAGS=-MP -MD
+#DEPFLAGS=-MP -MD
 
-COMMON_SRC_DIRS=./lib/src
-COMMON_INC_DIRS=./include ./lib/include
+COMMON_SRC_DIRS:=./lib/src
+COMMON_INC_DIRS:=./include ./lib/include
 
-SRC_DIRS0=. $(COMMON_SRC_DIRS) ./pru0-shepherd-fw
-INC_DIRS0=. $(COMMON_INC_DIRS)
+SRC_DIRS0:=. $(COMMON_SRC_DIRS) ./pru0-shepherd-fw
+INC_DIRS0:=. $(COMMON_INC_DIRS) ./pru0-shepherd-fw/include
 
-SRC_DIRS1=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw
-INC_DIRS1=. $(COMMON_INC_DIRS) 
+SRC_DIRS1:=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw
+INC_DIRS1:=. $(COMMON_INC_DIRS) ./pru1-shepherd-fw/include
 
-# automatically add the -I onto each include directory
-CFLAGS0 += $(foreach D,$(INC_DIRS0),-I$(D)) $(OPT) $(DEPFLAGS)
-CFLAGS1 += $(foreach D,$(INC_DIRS1),-I$(D)) $(OPT) $(DEPFLAGS)
+SRC0:=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.c))
+SRCASM:=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.S))
+SRC1:=$(foreach D,$(SRC_DIRS1),$(wildcard $(D)/*.c))
 
-# for-style iteration (foreach) and regular expression completions (wildcard)
-CFILES0=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.c))
-CFILES1=$(foreach D,$(SRC_DIRS1),$(wildcard $(D)/*.c))
-
-# regular expression replacement
-OBJECTS0=$(patsubst %.c,%.o,$(CFILES0))
-DEPFILES0=$(patsubst %.c,%.d,$(CFILES0))
-
-OBJECTS1=$(patsubst %.c,%.o,$(CFILES1))
-DEPFILES1=$(patsubst %.c,%.d,$(CFILES1))
-
-
-
-# List of source files to compile for each PRU core.
-#SRC0 := $(notdir $(wildcard ./pru0-shepherd-fw/*.c) $(wildcard ./lib/src/*.c)) #main0.c calibration.c math64_safe.c ringbuffer.c sampling.c virtual_converter.c virtual_harvester.c spi_transfer_pru.S gpio_io_fast.S register_magic.S iep.c simple_lock.c
-#SRC1 := $(notdir $(wildcard ./pru1-shepherd-fw/*.c) $(wildcard ./lib/src/*.c)) #main1.c iep.c simple_lock.c
-
-# GCC's -MMD does not yield the needed C dependencies when compiling all
-# C source files at once. So manually list headers here.
-#HEADERS0 := $(notdir $(wildcard ./pru0-shepherd-fw/include/*.h) $(wildcard ./lib/include/*.h) $(wildcard ./include/*.h))
-#calibration.h hw_config.h math64_safe.h resource_table0.h resource_table_def.h ringbuffer.h sampling.h spi_transfer_pru.h virtual_converter.h virtual_harvester.h commons.h shepherd_config.h gpio.h iep.h intc.h simple_lock.h stdint_fast.h
-#HEADERS1 := $(notdir $(wildcard ./pru1-shepherd-fw/include/*.h) $(wildcard ./lib/include/*.h) $(wildcard ./include/*.h))
-#debug_routines.h intc_map.h resource_table1.h commons.h shepherd_config.h gpio.h iep.h intc.h simple_lock.h stdint_fast.h
+HEADERS0:=$(foreach D,$(INC_DIRS0),$(wildcard $(D)/*.h))
+HEADERS1:=$(foreach D,$(INC_DIRS1),$(wildcard $(D)/*.h))
 
 # Where to output compiled objects
 OUT := out
@@ -119,33 +98,16 @@ all: $(ELF0) $(ELF1)
 $(OUT):
 	mkdir $(OUT)
 
-$(ELF0): $(OBJECTS0)
-	$(CROSS_COMPILE)gcc -o $@ $^
+$(ELF0): $(SRC0) $(SRCASM) $(HEADERS0) | $(OUT)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRC0) $(SRCASM) $(LDFLAGS) -o $@
 
-$(ELF1): $(OBJECTS1)
-	$(CROSS_COMPILE)gcc -o $@ $^
+$(ELF1): $(SRC1) $(HEADERS1) | $(OUT)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
 
-# only want the .c file dependency here, thus $< instead of $^.
-$(OBJECTS0): $(CFILES0)
-	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) -c -o $@ $<
-
-$(OBJECTS1): $(CFILES1)
-	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) -c -o $@ $<
-
-#$(ELF0): $(SRC0) $(HEADERS0) | $(OUT)
-#	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRC0) $(LDFLAGS) -o $@
-#
-#$(ELF1): $(SRC1) $(HEADERS1) | $(OUT)
-#	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
-#
 clean:
-	rm -rf $(BINARY) $(OBJECTS) $(DEPFILES) #$(RM) -fr $(ELF0) $(ELF1) $(OUT)
+	$(RM) -fr $(ELF0) $(ELF1) $(OUT)
 
 cscope:
 	cscope -bRk
-
-# include the dependencies
--include $(DEPFILES0)
--include $(DEPFILES1)
 
 .PHONY: all clean cscope
