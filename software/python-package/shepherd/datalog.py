@@ -54,8 +54,9 @@ def unique_path(base_path: Union[str, Path], suffix: str):
         counter += 1
 
 
-class LogWriter(object):
+class LogWriter:
     """Stores data coming from PRU's in HDF5 format
+       TODO: replace with shepherd_data.Writer to fully support new datatype
 
     Args:
         file_path (Path): Name of the HDF5 file that data will be written to
@@ -85,11 +86,19 @@ class LogWriter(object):
     ptp4l_mon_t = None
     uart_mon_t = None
 
+    mode_default: str = "harvester"
+    datatype_default: str = "ivsample"
+    mode_dtype_dict = {
+        "harvester": ["ivsample", "ivcurve", "isc_voc"],
+        "emulator": ["ivsample"],
+    }
+
     def __init__(
         self,
         file_path: Path,
         calibration_data: CalibrationData,
-        mode: str = "harvester",
+        mode: str = None,
+        datatype: str = None,
         force_overwrite: bool = False,
         samples_per_buffer: int = 10_000,
         samplerate_sps: int = 100_000,
@@ -110,7 +119,22 @@ class LogWriter(object):
                 f"storing under {self.store_path} instead"
             )
         # Refer to shepherd/calibration.py for the format of calibration data
-        self.mode = mode
+        if not isinstance(mode, (str, type(None))):
+            raise TypeError(f"can not handle type '{type(mode)}' for mode")
+        if isinstance(mode, str) and mode not in self.mode_dtype_dict:
+            raise ValueError(f"can not handle mode '{mode}'")
+
+        if not isinstance(datatype, (str, type(None))):
+            raise TypeError(f"can not handle type '{type(datatype)}' for datatype")
+        if (
+            isinstance(datatype, str)
+            and datatype
+            not in self.mode_dtype_dict[self.mode_default if (mode is None) else mode]
+        ):
+            raise ValueError(f"can not handle datatype '{datatype}'")
+
+        self.mode = self.mode_default if (mode is None) else mode
+        self.datatype = self.datatype_default if (datatype is None) else datatype
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
@@ -180,7 +204,14 @@ class LogWriter(object):
         logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
 
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
-        self._h5file.attrs["mode"] = self.mode
+        if isinstance(self._mode, str) and self._mode in self.mode_dtype_dict:
+            self.h5file.attrs["mode"] = self._mode
+
+        if (
+            isinstance(self._datatype, str)
+            and self._datatype in self.mode_dtype_dict[self.get_mode()]
+        ):
+            self.h5file["data"].attrs["datatype"] = self._datatype
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
@@ -680,84 +711,3 @@ class LogWriter(object):
     def __setitem__(self, key, item):
         """Offer a convenient interface to store any relevant key-value data"""
         return self._h5file.attrs.__setitem__(key, item)
-
-
-class LogReader(object):
-    """Sequentially Reads data from HDF5 file.
-
-    Args:
-        file_path (Path): Path of hdf5 file containing IV data
-        samples_per_buffer (int): Number of IV samples per buffer
-    """
-
-    def __init__(
-        self,
-        file_path: Path,
-        samples_per_buffer: int = 10_000,
-        samplerate_sps: int = 100_000,
-    ):
-        self.store_path = file_path
-        self.samples_per_buffer = samples_per_buffer
-        self.samplerate_sps = samplerate_sps
-
-    def __enter__(self):
-        self._h5file = h5py.File(self.store_path, "r")
-        self.ds_voltage = self._h5file["data"]["voltage"]
-        self.ds_current = self._h5file["data"]["current"]
-        runtime = round(self.ds_voltage.shape[0] / self.samplerate_sps, 1)
-        logger.info(
-            f"Reading data from '{self.store_path}', contains {runtime} s, window_size = {self.get_window_samples()}"
-        )
-        return self
-
-    def __exit__(self, *exc):
-        self._h5file.close()
-
-    def read_buffers(self, start: int = 0, end: int = None, verbose: bool = False):
-        """Reads the specified range of buffers from the hdf5 file.
-
-        Args:
-            :param start: (int): Index of first buffer to be read
-            :param end: (int): Index of last buffer to be read
-            :param verbose: chatter-prevention, performance-critical computation saver
-        Yields:
-            Buffers between start and end
-        """
-        if end is None:
-            end = int(self._h5file["data"]["time"].shape[0] / self.samples_per_buffer)
-        logger.debug(f"Reading blocks from { start } to { end } from source-file")
-
-        for i in range(start, end):
-            if verbose:
-                ts_start = time.time()
-            idx_start = i * self.samples_per_buffer
-            idx_end = idx_start + self.samples_per_buffer
-            db = DataBuffer(
-                voltage=self.ds_voltage[idx_start:idx_end],
-                current=self.ds_current[idx_start:idx_end],
-            )
-            if verbose:
-                logger.debug(
-                    f"Reading datablock with {self.samples_per_buffer} samples "
-                    f"from file took { round(1e3 * (time.time()-ts_start), 2) } ms"
-                )
-            yield db
-
-    def get_calibration_data(self) -> CalibrationData:
-        """Reads calibration data from hdf5 file.
-
-        Returns:
-            Calibration data as CalibrationData object
-        """
-        cal = CalibrationData.from_default()
-        for channel, parameter in product(["current", "voltage"], cal_parameter_list):
-            cal_channel = cal_channel_hrv_dict[channel]
-            cal.data["harvester"][cal_channel][parameter] = self._h5file["data"][
-                channel
-            ].attrs[parameter]
-        return CalibrationData(cal)
-
-    def get_window_samples(self) -> int:
-        if "window_samples" in self._h5file["data"].attrs.keys():
-            return self._h5file["data"].attrs["window_samples"]
-        return 0

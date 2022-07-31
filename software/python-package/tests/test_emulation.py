@@ -5,11 +5,12 @@ import h5py
 import time
 import yaml
 
-from shepherd.shepherd_io import DataBuffer, VirtualSourceData
+from shepherd_data import Reader as ShpReader
+
+from shepherd.shepherd_io import DataBuffer, VirtualSourceConfig
 
 from shepherd import ShepherdDebug
 from shepherd import LogWriter
-from shepherd import LogReader
 from shepherd import Emulator
 from shepherd import run_emulator
 from shepherd import sysfs_interface
@@ -55,20 +56,21 @@ def log_writer(tmp_path):
 
 
 @pytest.fixture()
-def log_reader(data_h5):
-    with LogReader(data_h5, 10_000) as lr:
+def shp_reader(data_h5):
+    with ShpReader(data_h5) as lr:
         yield lr
 
 
 @pytest.fixture()
-def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
-    vs_settings = VirtualSourceData(virtsource_settings_yml)
+def emulator(request, shepherd_up, shp_reader, virtsource_settings_yml):
+    vs_cfg = VirtualSourceConfig(virtsource_settings_yml)
     fifo_buffer_size = sysfs_interface.get_n_buffers()
+    init_buffers = [DataBuffer(voltage=dsv, current=dsc) for _, dsv, dsc in shp_reader.read_buffers(end_n=fifo_buffer_size)]
     emu = Emulator(
-        calibration_recording=log_reader.get_calibration_data(),
+        calibration_recording=CalibrationData(shp_reader.get_calibration_data()),
         calibration_emulator=CalibrationData.from_default(),
-        initial_buffers=log_reader.read_buffers(end=fifo_buffer_size),
-        virtsource=vs_settings,
+        initial_buffers=init_buffers,
+        vsource=vs_cfg,
     )
     request.addfinalizer(emu.__del__)
     emu.__enter__()
@@ -77,13 +79,14 @@ def emulator(request, shepherd_up, log_reader, virtsource_settings_yml):
 
 
 @pytest.mark.hardware
-def test_emulation(log_writer, log_reader, emulator):
+def test_emulation(log_writer, shp_reader, emulator):
     emulator.start(wait_blocking=False)
     fifo_buffer_size = sysfs_interface.get_n_buffers()
     emulator.wait_for_start(15)
-    for hrvst_buf in log_reader.read_buffers(start=fifo_buffer_size):
+    for _, dsv, dsc in shp_reader.read_buffers(start_n=fifo_buffer_size):
         idx, emu_buf = emulator.get_buffer()
         log_writer.write_buffer(emu_buf)
+        hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
         emulator.return_buffer(idx, hrvst_buf)
 
     for _ in range(fifo_buffer_size):

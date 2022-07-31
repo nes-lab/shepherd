@@ -23,11 +23,13 @@ import numpy
 import invoke
 import signal
 
-from shepherd.shepherd_io import ShepherdIO
-from shepherd.virtual_harvester_data import VirtualHarvesterData
-from shepherd.virtual_source_data import VirtualSourceData
+from shepherd_data import Reader as ShpReader
+
+from shepherd.shepherd_io import ShepherdIO, DataBuffer
+from shepherd.virtual_harvester_data import VirtualHarvesterConfig
+from shepherd.virtual_source_data import VirtualSourceConfig
 from shepherd.shepherd_io import ShepherdIOException
-from shepherd.datalog import LogReader
+
 from shepherd.datalog import LogWriter
 from shepherd.datalog import ExceptionRecord
 from shepherd.eeprom import EEPROM
@@ -71,7 +73,7 @@ class Recorder(ShepherdIO):
     def __init__(
         self,
         shepherd_mode: str = "harvester",
-        harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
+        harvester: Union[dict, str, Path, VirtualHarvesterConfig] = None,
         calibration: CalibrationData = None,
     ):
         logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
@@ -80,7 +82,7 @@ class Recorder(ShepherdIO):
             * sysfs_interface.get_samples_per_buffer()
             // sysfs_interface.get_buffer_period_ns()
         )
-        self.harvester = VirtualHarvesterData(harvester, self.samplerate_sps)
+        self.harvester = VirtualHarvesterConfig(harvester, self.samplerate_sps)
         self.calibration = calibration
         super().__init__(shepherd_mode)
 
@@ -137,7 +139,7 @@ class Emulator(ShepherdIO):
         sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
         aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
-        virtsource (dict): Settings which define the behavior of virtual source emulation
+        infile_vh_cfg (dict): Settings which define the behavior of virtual harvester during emulation
     """
 
     def __init__(
@@ -150,9 +152,9 @@ class Emulator(ShepherdIO):
         sel_target_for_io: bool = True,
         sel_target_for_pwr: bool = True,
         aux_target_voltage: float = 0.0,
-        virtsource: Union[dict, str, Path, VirtualSourceData] = None,
+        vsource: Union[dict, str, Path, VirtualSourceConfig] = None,
         log_intermediate_voltage: bool = None,
-        harvester_window_samples: int = None,
+        infile_vh_cfg: dict = None,
     ):
 
         logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
@@ -172,14 +174,13 @@ class Emulator(ShepherdIO):
             * sysfs_interface.get_samples_per_buffer()
             // sysfs_interface.get_buffer_period_ns()
         )
-        self.converter = VirtualSourceData(
-            virtsource, self.samplerate_sps, log_intermediate_voltage
+        self.vs_cfg = VirtualSourceConfig(
+            vsource, self.samplerate_sps, log_intermediate_voltage
         )
-        self.harvester = VirtualHarvesterData(
-            self.converter.data["harvester"],
+        self.vh_cfg = VirtualHarvesterConfig(
+            self.vs_cfg.get_harvester(),
             self.samplerate_sps,
-            for_emulation=True,
-            window_samples=harvester_window_samples,
+            emu_cfg=infile_vh_cfg,
         )
 
         self._set_target_io_lvl_conv = set_target_io_lvl_conv
@@ -202,9 +203,10 @@ class Emulator(ShepherdIO):
         super().set_power_state_recorder(False)
         super().set_power_state_emulator(True)
 
+        # TODO: why are there wrappers? just directly access
         super().send_calibration_settings(self.calibration)
-        super().send_virtual_converter_settings(self.converter)
-        super().send_virtual_harvester_settings(self.harvester)
+        super().send_virtual_converter_settings(self.vs_cfg)
+        super().send_virtual_harvester_settings(self.vh_cfg)
 
         super().reinitialize_prus()  # needed for ADCs
 
@@ -358,9 +360,11 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def vsource_init(self, vs_settings, cal_settings):
+    def vsource_init(self, vs_settings: VirtualSourceConfig, cal_settings):
         super().send_virtual_converter_settings(vs_settings)
         super().send_calibration_settings(cal_settings)
+        vh_config = VirtualHarvesterConfig(vs_settings.get_harvester(), )
+        super().send_virtual_harvester_settings()
         time.sleep(0.5)
         super().start()
         super()._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
@@ -439,7 +443,7 @@ class ShepherdDebug(ShepherdIO):
         return values[0]  # V_out_dac_raw
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
-    def iterate(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
+    def iterate_sampling(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
         self.vsource_calc_inp_power(V_in_uV, A_in_nA)
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
@@ -589,7 +593,7 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
 def run_recorder(
     output_path: Path,
     duration: float = None,
-    harvester: Union[dict, str, Path, VirtualHarvesterData] = None,
+    harvester: Union[dict, str, Path, VirtualHarvesterConfig] = None,
     force_overwrite: bool = False,
     use_cal_default: bool = False,
     start_time: float = None,
@@ -638,6 +642,7 @@ def run_recorder(
         file_path=store_path,
         calibration_data=cal_data,
         mode=mode,
+        datatype=recorder.harvester.data["dtype"],  # is there a cleaner way?
         force_overwrite=force_overwrite,
         samples_per_buffer=samples_per_buffer,
         samplerate_sps=samplerate_sps,
@@ -712,7 +717,7 @@ def run_emulator(
     sel_target_for_io: bool = True,
     sel_target_for_pwr: bool = True,
     aux_target_voltage: float = 0.0,
-    virtsource: Union[dict, str, Path, VirtualSourceData] = None,
+    virtsource: Union[dict, str, Path, VirtualSourceConfig] = None,
     log_intermediate_voltage: bool = None,
     uart_baudrate: int = None,
     warn_only: bool = False,
@@ -787,6 +792,7 @@ def run_emulator(
             file_path=store_path,
             force_overwrite=force_overwrite,
             mode=mode,
+            datatype="ivsample",
             calibration_data=cal,
             skip_voltage=skip_log_voltage,
             skip_current=skip_log_current,
@@ -803,10 +809,11 @@ def run_emulator(
     if not input_path.exists():
         raise ValueError(f"Input-File does not exist ({input_path})")
 
-    log_reader = LogReader(input_path, samples_per_buffer, samplerate_sps)
-    verbose = (
-        get_verbose_level() >= 4
-    )  # performance-critical, <4 reduces chatter during main-loop
+    # performance-critical, <4 reduces chatter during main-loop
+    verbose = get_verbose_level() >= 4
+
+    log_reader = ShpReader(input_path, verbose=verbose)
+    # TODO: new reader allow to check mode and dtype of recording (should be emu, ivcurves)
 
     with ExitStack() as stack:
         if output_path is not None:
@@ -822,25 +829,24 @@ def run_emulator(
         stack.enter_context(log_reader)
 
         fifo_buffer_size = sysfs_interface.get_n_buffers()
+        init_buffers = [DataBuffer(voltage=dsv, current=dsc) for _, dsv, dsc in log_reader.read_buffers(end_n=fifo_buffer_size)]
 
         emu = Emulator(
             shepherd_mode=mode,  # TODO: this should not be needed anymore
-            initial_buffers=log_reader.read_buffers(
-                end=fifo_buffer_size, verbose=verbose
-            ),
-            calibration_recording=log_reader.get_calibration_data(),
+            initial_buffers=init_buffers,
+            calibration_recording=CalibrationData(log_reader.get_calibration_data()),
             calibration_emulator=cal,
             set_target_io_lvl_conv=set_target_io_lvl_conv,
             sel_target_for_io=sel_target_for_io,
             sel_target_for_pwr=sel_target_for_pwr,
             aux_target_voltage=aux_target_voltage,
-            virtsource=virtsource,
+            vsource=virtsource,
             log_intermediate_voltage=log_intermediate_voltage,
-            harvester_window_samples=log_reader.get_window_samples(),
+            infile_vh_cfg=log_reader.get_hrv_config(),
         )
         stack.enter_context(emu)
         if output_path is not None:
-            log_writer.embed_config(emu.converter.data)
+            log_writer.embed_config(emu.vs_cfg.data)
         emu.start(start_time, wait_blocking=False)
         logger.info(f"waiting {start_time - time.time():.2f} s until start")
         emu.wait_for_start(start_time - time.time() + 15)
@@ -859,9 +865,7 @@ def run_emulator(
         else:
             ts_end = start_time + duration
 
-        for hrvst_buf in log_reader.read_buffers(
-            start=fifo_buffer_size, verbose=verbose
-        ):
+        for _, dsv, dsc in log_reader.read_buffers(start_n=fifo_buffer_size):
             try:
                 idx, emu_buf = emu.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
@@ -881,6 +885,7 @@ def run_emulator(
             if output_path is not None:
                 log_writer.write_buffer(emu_buf)
 
+            hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
             emu.return_buffer(idx, hrvst_buf, verbose)
 
         # Read all remaining buffers from PRU

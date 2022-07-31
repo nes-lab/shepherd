@@ -5,8 +5,9 @@ import logging
 from pathlib import Path
 import h5py
 from itertools import product
+from shepherd_data import Reader
 
-from shepherd import LogReader, cal_channel_list
+from shepherd import cal_channel_list
 from shepherd import LogWriter
 from shepherd import CalibrationData
 from shepherd.calibration import cal_parameter_list, cal_channel_hrv_dict
@@ -101,7 +102,7 @@ def test_calibration_logging(mode, tmp_path, calibration_data):
 
     h5store = h5py.File(
         d, "r"
-    )  # hint: logReader would be more direct, but less untouched
+    )  # hint: shpReader would be more direct, but less untouched
 
     for channel_entry, parameter in product(
         cal_channel_hrv_dict.items(), cal_parameter_list
@@ -158,11 +159,11 @@ def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
         log.write_buffer(data_buffer)
 
 
-def test_logreader_performance(data_h5):
+def test_reader_performance(data_h5):
     read_durations = []
-    with LogReader(file_path=data_h5, samples_per_buffer=10_000) as reader:
+    with Reader(file_path=data_h5) as reader:
         past = time.time()
-        for data in reader.read_buffers():
+        for _ in reader.read_buffers():
             now = time.time()
             elapsed = now - past
             read_durations.append(elapsed)
