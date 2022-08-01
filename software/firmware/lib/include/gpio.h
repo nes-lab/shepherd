@@ -1,7 +1,13 @@
 #ifndef __GPIO_H_
 #define __GPIO_H_
 
-#ifdef __GNUC__
+#ifdef __CYTHON__
+#define read_r30()     		(0)
+#define write_r30(pin_mask)	(pin_mask)  // mockups
+#define read_r31()		(0)
+#define write_r31(pin_mask)	(pin_mask)
+
+#elif defined(__GNUC__)
 // NOTE: gcc can't use registers directly, so this is a workaround to allow gcc & cgt
 #include <pru/io.h>
 

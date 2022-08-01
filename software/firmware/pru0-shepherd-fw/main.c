@@ -211,6 +211,8 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 			return 1U;
 
 		case MSG_DBG_VSOURCE_P_INP: // TODO: these can be done with normal emulator instantiation
+			// TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
+			//sample_iv_harvester(&input_voltage_uV, &input_current_nA);
 			converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
 			send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t)(get_P_input_fW()>>32u) , (uint32_t)get_P_input_fW());
 			return 1u;
@@ -233,6 +235,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 		case MSG_DBG_VSOURCE_INIT:
 			calibration_initialize(&shared_mem->calibration_settings);
 			converter_initialize(&shared_mem->converter_settings);
+			//harvester_initialize(&shared_mem->harvester_settings);
 			send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
 			return 1u;
 

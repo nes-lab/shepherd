@@ -25,9 +25,9 @@ from periphery import GPIO
 from shepherd import sysfs_interface
 from shepherd import commons
 from shepherd.calibration import CalibrationData, cal_component_list
-from shepherd.virtual_source_data import VirtualSourceData
+from shepherd.virtual_source_data import VirtualSourceConfig
 from shepherd.sysfs_interface import SysfsInterfaceException
-from shepherd.virtual_harvester_data import VirtualHarvesterData
+from shepherd.virtual_harvester_data import VirtualHarvesterConfig
 
 logger = logging.getLogger(__name__)
 
@@ -630,7 +630,7 @@ class ShepherdIO(object):
         sysfs_interface.write_calibration_settings(cal_dict)
 
     @staticmethod
-    def send_virtual_converter_settings(settings: VirtualSourceData) -> NoReturn:
+    def send_virtual_converter_settings(settings: VirtualSourceConfig) -> NoReturn:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
@@ -641,7 +641,7 @@ class ShepherdIO(object):
         sysfs_interface.write_virtual_converter_settings(settings.export_for_sysfs())
 
     @staticmethod
-    def send_virtual_harvester_settings(settings: VirtualHarvesterData) -> NoReturn:
+    def send_virtual_harvester_settings(settings: VirtualHarvesterConfig) -> NoReturn:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)

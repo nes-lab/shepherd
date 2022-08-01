@@ -287,7 +287,7 @@ def write_virtual_converter_settings(settings: list) -> NoReturn:
             output += " ".join(setting) + " \n"
         else:
             raise SysfsInterfaceException(
-                f"virtsource value {setting} has wrong type ({type(setting)})"
+                f"virtual-converter value {setting} has wrong type ({type(setting)})"
             )
 
     wait_for_state("idle", 3.0)

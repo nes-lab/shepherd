@@ -40,8 +40,8 @@ Usage:
 
 .. code-block:: python
 
-    # We'll read existing data using a LogReader
-    lr = LogReader("mylog.h5")
+    # We'll read existing data using a Reader for the Shepherd-file
+    lr = shepherd_data.Reader("mylog.h5")
     with ExitStack() as stack:
         stack.enter_context(lr)
         emu = Emulator(
@@ -77,19 +77,21 @@ Usage:
             recorder.release_buffer(idx)
 
 
-LogReader
+(log)Reader
 ---------
 
-The *LogReader* is used to read previously recorded data from an hdf5 file buffer by buffer.
+The *Reader* for shepherd-files is used to read previously recorded data from an hdf5 file buffer by buffer.
 It can be used with the Emulator to replay recorded data to an attached sensor node.
 
-.. autoclass:: shepherd.LogReader
+TODO: update with https://pypi.org/project/shepherd-data/ shpd.Reader
+
+.. autoclass:: shepherd_data.Reader
    :members:
 
 Usage:
 
 .. code-block:: python
 
-    with LogReader("mylog.h5") as log_reader:
+    with shepherd_data.Reader("mylog.h5") as log_reader:
         for buf in log_reader.read_buffers(end=1000):
             print(len(buf))

@@ -3,7 +3,8 @@ import subprocess
 import time
 from pathlib import Path
 
-from shepherd import ShepherdDebug, CalibrationData, VirtualSourceData
+from shepherd import ShepherdDebug, CalibrationData, VirtualSourceConfig
+from shepherd.virtual_converter_model import VirtualConverterModel
 from shepherd.virtual_source_model import VirtualSourceModel
 
 
@@ -26,8 +27,11 @@ def vs_config(request):
             vsc = vs_name
     else:
         assert 0
-    return VirtualSourceData(vsc)
+    return VirtualSourceConfig(vsc)
 
+@pytest.fixture
+def inp_hrv_cfg(dtype: str = "ivsample", samples: int = 0):
+    return {"dtype": dtype, "window_samples": samples}
 
 @pytest.fixture
 def cal_config():
@@ -40,13 +44,13 @@ def pru_vsource(request, shepherd_up, vs_config, cal_config):
     request.addfinalizer(pru.__del__)
     pru.__enter__()
     request.addfinalizer(pru.__exit__)
-    pru.vsource_init(vs_config, cal_config)
+    pru.vsource_init(vs_config, cal_config, inp_hrv_cfg())  # TODO: extend to be real vsource
     return pru
 
 
 @pytest.fixture
 def pyt_vsource(vs_config, cal_config):
-    return VirtualSourceModel(vs_config, cal_config)
+    return VirtualSourceModel(vs_config, cal_config, inp_hrv_cfg())  # TODO: will be changed!!!!!!
 
 
 @pytest.fixture
@@ -199,8 +203,8 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
 @pytest.mark.vs_name("direct")  # easiest case: v_inp == v_out, current not
 def test_vsource_direct(pru_vsource, pyt_vsource):
     for voltage_mV in [0, 100, 500, 1000, 2000, 3000, 4000, 4500]:
-        V_pru_mV = pru_vsource.iterate(voltage_mV * 10**3, 0, 0) * 10**-3
-        V_pyt_mV = pyt_vsource.iterate(voltage_mV * 10**3, 0, 0) * 10**-3
+        V_pru_mV = pru_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
+        V_pyt_mV = pyt_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
         print(
             f"DirectSRC - Inp = {voltage_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV"
         )
@@ -214,14 +218,18 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     voltages_mV = [1000, 1100, 1500, 2000, 2500, 3000, 3500, 4000, 4500]
 
     # input with lower voltage should not change (open) output
-    V_pru_mV = pru_vsource.iterate(0, 0, 0) * 10**-3
-    V_pyt_mV = pyt_vsource.iterate(0, 0, 0) * 10**-3
+    V_pru_mV = pru_vsource.iterate_sampling(0, 0, 0) * 10**-3
+    V_pyt_mV = pyt_vsource.iterate_sampling(0, 0, 0) * 10**-3
     A_in_nA = 10**3
     for V_in_mV in voltages_mV[
         0:4
     ]:  # NOTE: make sure this selection is below cap-init-voltage
-        V_pru2_mV = pru_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
-        V_pyt2_mV = pyt_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+        V_pru2_mV = (
+            pru_vsource.iterate_sampling(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+        )
+        V_pyt2_mV = (
+            pyt_vsource.iterate_sampling(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+        )
         assert V_pru_mV == V_pru2_mV
         assert V_pyt_mV == V_pyt2_mV
         print(
@@ -234,9 +242,9 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     V_target_mV = 500
     A_out_nA = 10**7
     steps_needed = [0, 0]
-    while pru_vsource.iterate(0, 0, A_out_nA) > V_target_mV * 10**3:
+    while pru_vsource.iterate_sampling(0, 0, A_out_nA) > V_target_mV * 10**3:
         steps_needed[0] += 1
-    while pyt_vsource.iterate(0, 0, A_out_nA) > V_target_mV * 10**3:
+    while pyt_vsource.iterate_sampling(0, 0, A_out_nA) > V_target_mV * 10**3:
         steps_needed[1] += 1
     print(
         f"DiodeCap Draining to {V_target_mV} mV needed {steps_needed} (pru, py) steps"
@@ -249,8 +257,12 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     # zero current -> no change in output
     A_in_nA = 0
     for V_in_mV in voltages_mV:
-        V_pru_mV = pru_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
-        V_pyt_mV = pyt_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+        V_pru_mV = (
+            pru_vsource.iterate_sampling(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+        )
+        V_pyt_mV = (
+            pyt_vsource.iterate_sampling(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+        )
         print(
             f"DiodeCap inp=0nA - Inp = {V_in_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV"
         )
@@ -261,8 +273,12 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     A_in_nA = 2 * 10**8
     for V_in_mV in voltages_mV:
         for _ in range(100):
-            V_pru_mV = pru_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
-            V_pyt_mV = pyt_vsource.iterate(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+            V_pru_mV = (
+                pru_vsource.iterate_sampling(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+            )
+            V_pyt_mV = (
+                pyt_vsource.iterate_sampling(V_in_mV * 10**3, A_in_nA, 0) * 10**-3
+            )
         V_postDiode_mV = max(V_in_mV - 300, 0)  # diode drop voltage
         print(
             f"DiodeCap inp=200mA - Inp = {V_in_mV} mV, PostDiode = {V_postDiode_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV"
@@ -276,8 +292,8 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     A_in_nA = 5 * 10**6
     A_out_nA = 2 * A_in_nA
     for _ in range(100):
-        V_pru_mV = pru_vsource.iterate(V_in_uV, A_in_nA, A_out_nA) * 10**-3
-        V_pyt_mV = pyt_vsource.iterate(V_in_uV, A_in_nA, A_out_nA) * 10**-3
+        V_pru_mV = pru_vsource.iterate_sampling(V_in_uV, A_in_nA, A_out_nA) * 10**-3
+        V_pyt_mV = pyt_vsource.iterate_sampling(V_in_uV, A_in_nA, A_out_nA) * 10**-3
 
     V_settle_mV = (V_in_uV * 10**-3 - 300) / 2
     print(

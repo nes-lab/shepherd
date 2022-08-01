@@ -4,6 +4,8 @@ from pathlib import Path
 import yaml
 import logging
 
+from shepherd import VirtualHarvesterConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ def flatten_dict_list(dl) -> list:
     return result
 
 
-class VirtualSourceData(object):
+class VirtualSourceConfig:
     """
     Container for VS Settings, Data will be checked and completed
     - settings will be created from default values when omitted
@@ -39,10 +41,11 @@ class VirtualSourceData(object):
         - virtual source -> container for harvester + converter
     """
 
-    data: dict = {}
-    data_min: dict = {}
     name: str = "vSource"
     _def_file = "virtual_source_defs.yml"
+
+    data: dict = {}
+    data_min: dict = None
 
     def __init__(
         self,
@@ -55,7 +58,7 @@ class VirtualSourceData(object):
         Args:
             setting: if omitted, the data is generated from default values
         """
-        self.samplerate_sps = samplerate_sps
+        self.samplerate_sps: int = samplerate_sps
 
         def_path = Path(__file__).parent.resolve() / self._def_file
         with open(def_path, "r") as def_data:
@@ -86,9 +89,10 @@ class VirtualSourceData(object):
 
         if setting is None:
             self.data = {}
-        elif isinstance(setting, VirtualSourceData):
+        elif isinstance(setting, VirtualSourceConfig):
             self._inheritance.append(self.name + "-Element")
             self.data = setting.data
+            self.data_min = setting.data_min
             self.samplerate_sps = setting.samplerate_sps
         elif isinstance(setting, dict):
             self._inheritance.append("parameter-dict")
@@ -103,16 +107,19 @@ class VirtualSourceData(object):
         if log_intermediate_voltage is not None:
             self.data["log_intermediate_voltage"] = log_intermediate_voltage
 
-        self.data_min = copy.copy(self.data)
+        if self.data_min is None:
+            self.data_min = copy.copy(self.data)
+
         self.check_and_complete()
+
         logger.debug(
             f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
         )
 
     def export_for_sysfs(self) -> list:
-        """prepares virtsource settings for PRU core (a lot of unit-conversions)
+        """prepares virtual-converter settings for PRU core (a lot of unit-conversions)
 
-        The current emulator in PRU relies on the virtsource settings.
+        The current emulator in PRU relies on the virtual-converter settings.
         This Fn add values in correct order and convert to requested unit
 
         Returns:
@@ -411,3 +418,6 @@ class VirtualSourceData(object):
 
     def get_state_log_intermediate(self):
         return self.data["log_intermediate_voltage"] > 0
+
+    def get_harvester(self) -> str:
+        return self.data["harvester"]

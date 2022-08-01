@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # - "_opt" has its own algo for emulation, but is only a fast mppt_po for harvesting
 algorithms = {
     "neutral": 2**0,
+    "isc_voc": 2**3,
     "ivcurve": 2**4,
     "cv": 2**8,
     # "ci": 2**9, # is this desired?
@@ -23,19 +24,20 @@ algorithms = {
 }
 
 
-class VirtualHarvesterData:
+class VirtualHarvesterConfig:
     """TODO: this class is very similar to virtual_source_data, could share a base-class
 
     :param setting: harvester-config as name, path to yaml or already usable as dict
     :param samplerate_sps:
-    :param for_emulation: unlocks a different kind of algorithms and constraints
-    :param window_samples: complete length of the ivcurve (if applicable) -> steps * (1 + wait_cycles)
+    :param emu_cfg: optional config-dict (needed for emulation) with:
+        - dtype: datatype of input-file
+        - window_samples: complete length of the ivcurve (if applicable) -> steps * (1 + wait_cycles)
     """
 
     data: dict = {}
     data_min: dict = {}
     name: str = "vHarvester"
-    _default: str = "ivcurve"  # fallback in case of Setting = None
+    _dtype_default: str = "ivcurve"  # fallback in case of Setting = None
     _def_file = "virtual_harvester_defs.yml"
     _cal = CalibrationData.from_default()
 
@@ -43,17 +45,25 @@ class VirtualHarvesterData:
         self,
         setting: Union[dict, str, Path],
         samplerate_sps: int = 100_000,
-        for_emulation: bool = False,
-        window_samples: int = None,
+        emu_cfg: Union[None, dict] = None,
     ):
 
         self.samplerate_sps = samplerate_sps
-        self.for_emulation = for_emulation
+        self.for_emulation = emu_cfg is not None
         def_path = Path(__file__).parent.resolve() / self._def_file
         with open(def_path, "r") as def_data:
             self._config_defs = yaml.safe_load(def_data)["harvesters"]
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
+
+        if self.for_emulation:
+            for element in ["dtype", "window_samples"]:
+                if element not in emu_cfg:
+                    raise TypeError(f"Harvester-Config from Input-File was faulty ({element} missing)")
+                else:
+                    self.data[element] = emu_cfg[element]
+            if self.data["dtype"] == "isc_voc":
+                raise TypeError(f"vHarvester can't handle 'isc_voc' format during emulation yet")
 
         if isinstance(setting, str) and Path(setting).exists():
             setting = Path(setting)
@@ -76,11 +86,12 @@ class VirtualHarvesterData:
                 )
 
         if setting is None:
-            self._inheritance.append(self._default)
-            self.data = self._config_defs[self._default]
-        elif isinstance(setting, VirtualHarvesterData):
+            self._inheritance.append(self._dtype_default)
+            self.data = self._config_defs[self._dtype_default]
+        elif isinstance(setting, VirtualHarvesterConfig):
             self._inheritance.append(self.name + "-Element")
             self.data = setting.data
+            self.data_min = setting.data_min
             self.samplerate_sps = setting.samplerate_sps
             self.for_emulation = setting.for_emulation
         elif isinstance(setting, dict):
@@ -91,10 +102,9 @@ class VirtualHarvesterData:
                 f"[{self.name}] {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?"
             )
 
-        if window_samples is not None:
-            self.data["window_samples"] = window_samples
+        if self.data_min is None:
+            self.data_min = copy.copy(self.data)
 
-        self.data_min = copy.copy(self.data)
         self._check_and_complete()
         logger.debug(
             f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
@@ -202,6 +212,9 @@ class VirtualHarvesterData:
             logger.debug(
                 f"[{self.name}] Ratio between interval & duration has changed more than 10% due to constraints, from {ratio_old} to {ratio_new}"
             )
+
+        if "dtype" not in self.data and "dtype" in self._config_base:
+            self.data["dtype"] = self._config_base["dtype"]
 
         # for proper emulation and harvesting (this var decides how h5-file is treated)
         if "window_samples" not in self.data:

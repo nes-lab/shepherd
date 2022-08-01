@@ -7,8 +7,8 @@ import yaml
 from shepherd import (
     sysfs_interface,
     ShepherdIO,
-    VirtualSourceData,
-    VirtualHarvesterData,
+    VirtualSourceConfig,
+    VirtualHarvesterConfig,
 )
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_data import flatten_dict_list
@@ -22,7 +22,7 @@ def virtsource_settings():
     with open(file_path, "r") as config_data:
         vs_dict = yaml.safe_load(config_data)["virtsource"]
 
-    vs_set = VirtualSourceData(vs_dict)
+    vs_set = VirtualSourceConfig(vs_dict)
     vs_list = vs_set.export_for_sysfs()
     return vs_list
 
@@ -35,7 +35,7 @@ def harvester_settings():
     with open(file_path, "r") as config_data:
         hrv_dict = yaml.safe_load(config_data)["parameters"]["harvester"]
 
-    hrv_set = VirtualHarvesterData(hrv_dict)
+    hrv_set = VirtualHarvesterConfig(hrv_dict)
     hrv_list = hrv_set.export_for_sysfs()
     return hrv_list
 
