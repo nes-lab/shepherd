@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include "spi_transfer_sys.h"
 #include "gpio.h"
-#include "hw_config.h"
 
 
 void sys_spi_init()
