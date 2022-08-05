@@ -190,7 +190,9 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 	if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
 	{
         	uint32_t res;
+#ifdef ENABLE_DEBUG_MATH_FN
         	uint64_t res64;
+#endif
 		switch (msg_in.type) {
 
 		case MSG_DBG_ADC:
@@ -384,7 +386,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 	}
 }
 
-void main(void)
+int main(void)
 {
 	GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 	static struct RingBuffer free_buffers;

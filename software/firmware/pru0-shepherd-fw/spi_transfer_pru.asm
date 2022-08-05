@@ -1,5 +1,5 @@
 ; HW_REV == 2.0, TODO: there can be less NOPs, ICs are faster
-SCLK .set 0
+SCLK .set 0 ; ti specific code, gcc can use: ".equ SCLK, 0"
 MOSI .set 1
 MISO .set 2
 

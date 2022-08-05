@@ -11,9 +11,7 @@ uint32_t msb_position(const uint32_t value)
 	}
 	return pos;
 }
-#endif
 
-#ifdef __GNUC__
 uint8_ft get_num_size_as_bits(const uint32_t value)
 {
 	/* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */

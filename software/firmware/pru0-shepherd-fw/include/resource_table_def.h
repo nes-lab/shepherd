@@ -49,8 +49,14 @@
 // pseudo-assertion to test for correct struct-size, zero cost
 extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (8 + 4 + 2*4*10000 + 4 + 8*16384 + 2*16384 + 2*4))];
 
+#if !defined(__GNUC__)
 #pragma DATA_SECTION(resourceTable, ".resource_table")
 #pragma RETAIN(resourceTable)
+#define __resource_table /* */
+#else
+#define __resource_table __attribute__((section(".resource_table")))
+#endif
+
 struct my_resource_table resourceTable = {
         {
                 1, /* Resource table version: only version 1 is supported by the current driver */
