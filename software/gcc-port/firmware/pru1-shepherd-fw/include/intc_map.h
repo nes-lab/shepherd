@@ -43,8 +43,13 @@
  * the map is NOT used by the PRU firmware. That means DATA_SECTION and RETAIN
  * are required to prevent the PRU compiler from optimizing out .pru_irq_map.
  */
+#if !defined(__GNUC__)
 #pragma DATA_SECTION(my_irq_rsc, ".pru_irq_map")
 #pragma RETAIN(my_irq_rsc)
+#define __pru_irq_map		/* */
+#else
+#define __pru_irq_map __attribute__((section(".pru_irq_map"),unavailable("pru_irq_map is for usage by the host only")))
+#endif
 
 struct pru_irq_rsc my_irq_rsc  = {
 	0,			/* type = 0 */

@@ -434,7 +434,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	volatile struct SharedMem *const shared_memory = (volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET;
 

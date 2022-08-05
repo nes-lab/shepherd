@@ -1,6 +1,17 @@
 #include "math64_safe.h"
 
-#ifdef __GNUC__
+#ifdef __CYTHON__
+uint32_t msb_position(const uint32_t value)
+{
+	uint32_t pos = 0;
+	while (value > 0)
+	{
+		pos++;
+		value = value >> 1;
+	}
+	return pos;
+}
+
 uint8_ft get_num_size_as_bits(const uint32_t value)
 {
 	/* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
