@@ -34,7 +34,7 @@ OPT=-Os
 CFLAGS += -g $(OPT)
 CFLAGS += -Wall -Wextra
 
-# Add remoteproc headers
+# Add remoteproc headers, TODO: where is this coming from?
 CFLAGS += -isystem include
 
 # Headers needed by the TI rpmsg library.
@@ -44,29 +44,32 @@ CFLAGS += -I${PRU_SUPPORT}/include -I${PRU_SUPPORT}/include/am335x
 # and destructors from CRT.
 CFLAGS += -minrt
 
+# use pru-specific asm-cmds
+CFLAGS += -mloop 
+#-mabi=ti
+
 # Per-PRU core flags. The -mmcu option will select the correct linker
 # script and will predefine mcu-specific macros.
 CFLAGS0 += -mmcu=am335x.pru0 -DPRU0
-CFLAGS1 += -mmcu=am335x.pru1 -nostdlib -nodefaultlibs -nostartfiles -DPRU1
+CFLAGS1 += -mmcu=am335x.pru1 -DPRU1
+
+# include headers-directorys
+CFLAGS += -I ./include -I ./lib/include
+CFLAGS0 += -I ./pru0-shepherd-fw/include
+CFLAGS1 += -I ./pru1-shepherd-fw/include
 
 # generate files that encode make rules for the .h dependencies
 #DEPFLAGS=-MP -MD
 
 COMMON_SRC_DIRS:=./lib/src
-COMMON_INC_DIRS:=./include ./lib/include
 
 SRC_DIRS0:=. $(COMMON_SRC_DIRS) ./pru0-shepherd-fw
-INC_DIRS0:=. $(COMMON_INC_DIRS) ./pru0-shepherd-fw/include
-
 SRC_DIRS1:=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw
-INC_DIRS1:=. $(COMMON_INC_DIRS) ./pru1-shepherd-fw/include
 
 SRC0:=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.c))
 SRCASM:=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.S))
 SRC1:=$(foreach D,$(SRC_DIRS1),$(wildcard $(D)/*.c))
 
-HEADERS0:=$(foreach D,$(INC_DIRS0),$(wildcard $(D)/*.h))
-HEADERS1:=$(foreach D,$(INC_DIRS1),$(wildcard $(D)/*.h))
 
 # Where to output compiled objects
 OUT := out
@@ -77,7 +80,7 @@ ELF1 := $(OUT)/pru-core1.elf
 
 
 # ============================ DO NOT TOUCH BELOW ============================
-all: $(ELF0) $(ELF1)
+all: $(ELF1) $(ELF0) # TODO: reversed for now, because pru0 is still failing
 	@echo Success: $^
 
 %.s : %.elf
@@ -98,11 +101,15 @@ all: $(ELF0) $(ELF1)
 $(OUT):
 	mkdir $(OUT)
 
-$(ELF0): $(SRC0) $(SRCASM) $(HEADERS0) | $(OUT)
-	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRC0) $(SRCASM) $(LDFLAGS) -o $@
+$(ELF0): $(SRC0) $(SRCASM) | $(OUT)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRCASM) $(SRC0) $(LDFLAGS) -o $@
 
-$(ELF1): $(SRC1) $(HEADERS1) | $(OUT)
+$(ELF1): $(SRC1) | $(OUT)
 	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
+
+install: $(ELF0) $(ELF1)
+	install -D $(ELF0) /lib/firmware/$(FWNAME0)
+	install -D $(ELF1) /lib/firmware/$(FWNAME1)
 
 clean:
 	$(RM) -fr $(ELF0) $(ELF1) $(OUT)
@@ -110,4 +117,4 @@ clean:
 cscope:
 	cscope -bRk
 
-.PHONY: all clean cscope
+.PHONY: all install clean cscope

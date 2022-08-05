@@ -39,9 +39,3 @@ cd ../
 sed -i -e "s/\(volatile __far\).*/\/\/patch>>/" $PWD/$TOOLS_DIR/pru-software-support-package/include/am335x/pru_iep.h
 sed -i -e "/\/\/patch>>/r $1" $PWD/$TOOLS_DIR/pru-software-support-package/include/am335x/pru_iep.h
 
-# 6. Compile
-echo "9. Compiling..."
-make
-
-# 7. Exit
-echo "10. Done!"
