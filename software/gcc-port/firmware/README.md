@@ -1,15 +1,16 @@
-# Testing GCC Port
+# Installing Prerequisites
 
-To test the GCC Port, run the commands below
+run the commands below
 
 ```shell
-git clone -b gcc-cmp https://github.com/fedy0/shepherd.git
+git clone -b gcc-port https://github.com/fedy0/shepherd.git
 cd shepherd/software/firmware
-chmod +x setup.sh
-sudo ./setup.sh pru_iep.patch
+chmod +x *.sh
+./setup.sh
+source ~/.bashrc
 ```
 
-0. The script above would do the following:
+The commands above do the following:
 
 1. Clone this repository branch
 
@@ -17,8 +18,15 @@ sudo ./setup.sh pru_iep.patch
 
 3. Install the PRU software support packages from [pssp](https://github.com/dinuxbg/pru-software-support-package.git)
 
-4. Export PRU gcc and binutils to your env PATH
+4. Export toolchain-paths to users environmental variables & reload .bashrc
 
-5. Patch PRU software support packages
+# Compiling GCC Port
 
-6. Compile PRUs' firmware
+- compilation and cleaning can and should be done without sudo
+- installation needs sudo as it copies the firmware to system-
+
+```shell
+make 
+sudo make install
+make clean
+```

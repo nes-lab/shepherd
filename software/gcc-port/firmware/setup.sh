@@ -1,6 +1,6 @@
 #!/bin/bash
-# chmod 755 setup.sh
-# sudo ./setup.sh pru_iep.patch
+# chmod +x setup.sh
+# ./setup.sh
 
 TOOLCHAIN=pru-elf-2022.05.amd64
 TOOLS_DIR=tools
@@ -13,7 +13,7 @@ cd $TOOLS_DIR
 
 # 2. Install the cross-compiler toolchain by downloading and untar gnupru release
 echo "3. Downloading the cross-compiler toolchain..."
-wget -r -tries=2 https://github.com/dinuxbg/gnupru/releases/download/2022.05/$TOOLCHAIN.tar.xz --output-document=gcc-port -o log 
+wget -r -tries=2 https://github.com/dinuxbg/gnupru/releases/latest/download/$TOOLCHAIN.tar.xz --output-document=gcc-port -o log 
 echo "4. Untar'ing the cross-compiler toolchain..."
 tar -xf gcc-port
 echo "5. Deleting toolchain archive..."
@@ -32,10 +32,4 @@ echo "export PRU_SUPPORT=$PWD/pru-software-support-package" >> ~/.bashrc
 echo 'export PATH=$PATH:$PRU_GCC' >> ~/.bashrc
 export PS1=$PS1:fix
 source ~/.bashrc
-
-# 5. Patch PRU software support packages
-echo "8. Patching PRU software support packages..."
-cd ../
-sed -i -e "s/\(volatile __far\).*/\/\/patch>>/" $PWD/$TOOLS_DIR/pru-software-support-package/include/am335x/pru_iep.h
-sed -i -e "/\/\/patch>>/r $1" $PWD/$TOOLS_DIR/pru-software-support-package/include/am335x/pru_iep.h
-
+# note: source-cmd seems not to work in .sh?!? manual refresh afterwards needed

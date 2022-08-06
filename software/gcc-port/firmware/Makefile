@@ -40,9 +40,9 @@ CFLAGS += -std=gnu99
 CFLAGS += -funsigned-char
 CFLAGS += -funsigned-bitfields
 
-# Optimization -> space-saving
+# Optimization -> space-saving (mixing whole-program-switch with LTO can break code!) 
 CFLAGS += -Os
-#CFLAGS += -fwhole-program#		
+#CFLAGS += -fwhole-program		
 CFLAGS += -fuse-linker-plugin
 CFLAGS += -flto
 
@@ -129,8 +129,8 @@ $(ELF1): $(SRC1) | $(OUT)
 	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
 
 install: $(ELF0) $(ELF1)
-	install -D $(ELF0) /lib/firmware/$(FWNAME0)
-	install -D $(ELF1) /lib/firmware/$(FWNAME1)
+	install -D $(ELF0) /lib/firmware/am335x-pru0-shepherd-fw
+	install -D $(ELF1) /lib/firmware/am335x-pru1-shepherd-fw
 
 clean:
 	$(RM) -fr $(ELF0) $(ELF1) $(OUT)
