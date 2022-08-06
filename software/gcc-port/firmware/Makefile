@@ -30,30 +30,52 @@
 
 # Common flags
 CROSS_COMPILE ?= pru-
-OPT=-Os
-CFLAGS += -g $(OPT)
-CFLAGS += -Wall -Wextra
 
-# Add remoteproc headers, TODO: where is this coming from?
+# Debug symbols and intermediate file keeping
+CFLAGS += -g0
+#CFLAGS += -save-temps
+
+# Language-Features, c99 wanted, but it produces errors from compiler/io.h
+CFLAGS += -std=gnu99 
+CFLAGS += -funsigned-char
+CFLAGS += -funsigned-bitfields
+
+# Optimization -> space-saving
+CFLAGS += -Os
+#CFLAGS += -fwhole-program#		
+CFLAGS += -fuse-linker-plugin
+CFLAGS += -flto
+
+# PRU-Specific Optimizations:
+# Squeeze code size by removing atexit, exit, constructors and destructors from CRT.
+CFLAGS += -minrt
+# use pru-specific asm-cmds
+CFLAGS += -mloop
+#-mabi=ti
+
+# Warnings and Static Analyzer
+CFLAGS += -Wall -Wextra 
+CFLAGS += -fanalyzer
+
+# Add external Headers: remoteproc?, PSSP
 CFLAGS += -isystem include
-
-# Headers needed by the TI rpmsg library.
 CFLAGS += -I${PRU_SUPPORT}/include -I${PRU_SUPPORT}/include/am335x
 
-# Define this to squeeze code size by removing atexit, exit, constructors
-# and destructors from CRT.
-CFLAGS += -minrt
 
-# use pru-specific asm-cmds
-CFLAGS += -mloop 
-#-mabi=ti
+# TODO
+# - Instruction RAM of PRU0 is overflowing (2672 byte over 8 kB)
+# - disable float? no option to disallow soft-float
+# - multiplication is probably wrong (loop-based) and not using register-magic
+# - option to keep output, despice of errors (-noinhibit-exec not working)
+# - inform about regions, memory usage, mapping (--gc-sections, -Map not working)
+
 
 # Per-PRU core flags. The -mmcu option will select the correct linker
 # script and will predefine mcu-specific macros.
 CFLAGS0 += -mmcu=am335x.pru0 -DPRU0
 CFLAGS1 += -mmcu=am335x.pru1 -DPRU1
 
-# include headers-directorys
+# include internal Headers
 CFLAGS += -I ./include -I ./lib/include
 CFLAGS0 += -I ./pru0-shepherd-fw/include
 CFLAGS1 += -I ./pru1-shepherd-fw/include
@@ -69,7 +91,6 @@ SRC_DIRS1:=. $(COMMON_SRC_DIRS) ./pru1-shepherd-fw
 SRC0:=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.c))
 SRCASM:=$(foreach D,$(SRC_DIRS0),$(wildcard $(D)/*.S))
 SRC1:=$(foreach D,$(SRC_DIRS1),$(wildcard $(D)/*.c))
-
 
 # Where to output compiled objects
 OUT := out
