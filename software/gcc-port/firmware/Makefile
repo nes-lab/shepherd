@@ -46,6 +46,9 @@ CFLAGS += -Os
 CFLAGS += -fuse-linker-plugin
 CFLAGS += -flto
 
+# Avoid inlining -> to debug compiler-output (ie. pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]')
+#CFLAGS += -fno-inline 
+
 # PRU-Specific Optimizations:
 # Squeeze code size by removing atexit, exit, constructors and destructors from CRT.
 # We cannot activate minrt when using stdio 
@@ -54,6 +57,7 @@ CFLAGS += -minrt
 CFLAGS += -mloop
 # switch ABI, TODO: breaks compilation with undefined references to memset, memcpy
 #CFLAGS += -mabi=ti
+#CFLAGS += -mno-memcpy
 
 # replace stdlibs, TEST to allow -mabi=ti
 #CFLAGS += -nostdlib -nodefaultlibs -nostartfiles
