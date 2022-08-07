@@ -35,7 +35,7 @@ make clean
 
 ## Complications
 
-Assembly (solved)
+### Assembly (solved)
 
 - file-ending is different 
 	- CGT: .asm
@@ -44,13 +44,13 @@ Assembly (solved)
 	- CGT: "VAR .set value"
 	- GCC: ".equ VAR, value" 
 
-Multiplication
+### Multiplication
 
 - pru can only multiply with [register-magic](https://github.com/dinuxbg/gnupru/wiki/Multiplication)
 - current code may use loops instead of this magic
 - we probably need an asm-version for mul32 (with overflow safety, like the c-version)
 
-Overflow of program memory - the Story so far
+### Overflow of program memory - the Story so far
 
 - pru1-code compiles, but pru0 fails with ~ 3 kB overflow of program memory (8 kB)
 - disabling debug-symbols (-g0) does not change program memory, but size of elf-file gets reduced significantly
@@ -63,7 +63,7 @@ Overflow of program memory - the Story so far
 - did read through large parts of gcc v12.1 doc (gcc.pdf) with no luck
 - enabling -ffast-math does nothing to our code-size (should only help with float-ops)
 
-Overflow - next steps (proposal)
+### Overflow - next steps (proposal)
 
 - generate size-map of mem-regions 
 	- dedicated switches had no success in CFLAGS: --gc-sections, -Map filename
@@ -83,7 +83,7 @@ Overflow - next steps (proposal)
 		- did "-nostdlib -nodefaultlibs -nostartfiles" in fedys branch had a meaning? these flags broke normal compiling
 	- u64-math may produce more complex routines
 
-Optional
+### Optional
 
 - "-DPRU0" could be replaced, as [gcc defines](https://github.com/dinuxbg/gnuprumcu/blob/master/device-specs/am335x.pru0) something like "-D__AM335X_PRU0__" -> should be compatible with GCT
 
