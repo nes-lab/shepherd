@@ -48,10 +48,22 @@ CFLAGS += -flto
 
 # PRU-Specific Optimizations:
 # Squeeze code size by removing atexit, exit, constructors and destructors from CRT.
+# We cannot activate minrt when using stdio 
 CFLAGS += -minrt
 # use pru-specific asm-cmds
 CFLAGS += -mloop
-#-mabi=ti
+# switch ABI, TODO: breaks compilation with undefined references to memset, memcpy
+#CFLAGS += -mabi=ti
+
+# replace stdlibs, TEST to allow -mabi=ti
+#CFLAGS += -nostdlib -nodefaultlibs -nostartfiles
+#CFLAGS += -L${PRU_GCC}/../pru-elf/lib
+#CFLAGS += -lc #loads libc.a
+#CFLAGS += -static
+
+# c++ specific flags, 
+#CFLAGS += -fno-rtti
+CFLAGS += -fno-exceptions
 
 # Warnings and Static Analyzer
 CFLAGS += -Wall -Wextra 
@@ -60,15 +72,6 @@ CFLAGS += -fanalyzer
 # Add external Headers: remoteproc?, PSSP
 CFLAGS += -isystem include
 CFLAGS += -I${PRU_SUPPORT}/include -I${PRU_SUPPORT}/include/am335x
-
-
-# TODO
-# - Instruction RAM of PRU0 is overflowing (2672 byte over 8 kB)
-# - disable float? no option to disallow soft-float
-# - multiplication is probably wrong (loop-based) and not using register-magic
-# - option to keep output, despice of errors (-noinhibit-exec not working)
-# - inform about regions, memory usage, mapping (--gc-sections, -Map not working)
-
 
 # Per-PRU core flags. The -mmcu option will select the correct linker
 # script and will predefine mcu-specific macros.
