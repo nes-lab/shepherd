@@ -34,6 +34,19 @@ uint32_t min_value(uint32_t value1, uint32_t value2)
 }
 #endif
 
+
+#if defined(__GNUC__) || defined(__CYTHON__)
+
+uint64_t mul64(const uint64_t value1, const uint64_t value2)
+{
+	const uint64_t product = value1 * value2;
+	if ((product < value1) || (product < value2)) return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
+	else 					      return product;
+    // TODO: not completely right, or is it?
+}
+
+#else
+
 /* Faster and more time-constant replacement for uint64-multiplication
  * - native code takes 3 - 7 us per mul, depending on size of number (hints at add-loop)
  * - model-calculation gets much safer with container-boundaries
@@ -56,6 +69,8 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
 	if ((v1bits + v2bits) <= 64u) 	return product; // simple approximation, not 100% correct, but cheap
 	else 				return (uint64_t)(0xFFFFFFFFFFFFFFFFull);
 }
+
+#endif
 
 uint32_t mul32(const uint32_t value1, const uint32_t value2)
 {
