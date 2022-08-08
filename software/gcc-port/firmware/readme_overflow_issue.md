@@ -19,8 +19,8 @@
 Raising [this issue](https://github.com/dinuxbg/gnupru/issues/43) helped a lot!
 
 - compiling code with `uint32`-only (replaced `uint64`) works!
-- compiling u32 with `-no-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
-- analyzing codes-size with u32-version, `-no-inline`, minor cleanout:
+- compiling u32 with `-fno-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
+- analyzing codes-size with u32-version, `-fno-inline`, minor cleanout:
 
 ```shell
 pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
@@ -40,7 +40,7 @@ pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
 200005c0 00001778 T main
 ```
 
-- same with `-no-inline`
+- same with `-fno-inline`
 
 ```
 [small objects omitted]
@@ -95,7 +95,7 @@ change target in makefile
 20000710 00002280 T main
 ```
 
-- same with `-no-inline`
+- same with `-fno-inline`
 
 ```
 20000198 0000000c t calibration_initialize
@@ -163,12 +163,38 @@ change target in makefile
 20002428 00000218 t event_loop.constprop.0
 ```
 
-- compiling original code (u64) with `-no-inline` without size-hack reduces overflow from 2672 to 2276 bytes. 
+- compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes. 
 	- is this a self-made inline-fuckup?
 	- removing `inline` from our codebase brings overflow back to 2672 bytes
 	- that is strange!
 
-### Overflow - next steps (proposal)
+- direct compare the biggest FNs
+  - u64-heavy Fns grow by factor 1.6 to 2.4
+
+```
+u64 u32 x fn_name
+108 0a0 t converter_calc_out_power              -> 264 vs 160 bytes
+    0c0 t harvest_iv_cv
+188 0c4 t converter_initialize                  -> 392 vs 196 bytes
+214 0dc t converter_update_cap_storage          -> 532 vs 220 bytes
+1a4 0ec t converter_calc_inp_power              -> 420 vs 236 bytes
+100 100 t harvest_iv_mppt_opt
+120 108 t harvest_iv_mppt_voc
+10c 10c t handle_kernel_com
+120 120 t harvest_adc_mppt_voc
+130 130 t harvest_iv_mppt_po
+13c 13c t harvest_adc_ivcurve
+20c 148 t converter_update_states_and_output    -> 524 vs 328 bytes
+148 148 t sample_emulator
+174 158 t handle_buffer_swap
+1c4 1c0 T main
+1c4 1c4 t harvest_adc_mppt_po
+1d4 1cc t sample_init
+218 218 t event_loop
+```
+
+
+### ~~Overflow - next steps (proposal)~~ -> obsolete, see readme.md
 
 - generate size-map of mem-regions
 	- GCC: `pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'`
