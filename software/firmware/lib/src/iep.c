@@ -1,15 +1,7 @@
 #include <stdint.h>
-#include <pru_cfg.h>
-#include <pru_intc.h>
 #include <pru_iep.h>
-
 #include "iep.h"
 
-#ifdef __GNUC__
-#include <pru/io.h>
-#else
-volatile register uint32_t __R31;
-#endif
 
 void iep_set_us(const uint32_t value)
 {

@@ -1,5 +1,5 @@
-#ifndef _HW_CONFIG_H_
-#define _HW_CONFIG_H_
+#ifndef PRU0_HW_CONFIG_H_
+#define PRU0_HW_CONFIG_H_
 
 #include "gpio.h"
 
@@ -26,4 +26,4 @@
 #define DEBUG_PIN0_MASK		BIT_SHIFT(P8_12)
 #define DEBUG_PIN1_MASK		BIT_SHIFT(P8_11)
 
-#endif /* _HW_CONFIG_H_ */
+#endif /* PRU0_HW_CONFIG_H_ */

@@ -1,5 +1,5 @@
-#ifndef __SAMPLING_H_
-#define __SAMPLING_H_
+#ifndef SHEPHERD_PRU0_SAMPLING_H_
+#define SHEPHERD_PRU0_SAMPLING_H_
 
 #include "commons.h"
 
@@ -8,4 +8,4 @@ uint32_t sample(volatile struct SharedMem * shared_mem, struct SampleBuffer *cur
 uint32_t sample_dbg_adc(uint32_t channel_num);
 void sample_dbg_dac(uint32_t value);
 
-#endif /* __SAMPLING_H_ */
+#endif /* SHEPHERD_PRU0_SAMPLING_H_ */

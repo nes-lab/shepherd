@@ -62,7 +62,7 @@ uint32_t cal_conv_adc_raw_to_uV(const uint32_t voltage_raw)
 // safe conversion - 5 V is 13 bit as mV, 23 bit as uV, 31 bit as uV_n8
 uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
 {
-	uint32_t dac_raw = 0u;
+	uint32_t dac_raw;
 	// return (((uint64_t)(voltage_uV - cal->dac_voltage_offset_uV) * (uint64_t)cal->dac_voltage_inv_factor_uV_n20) >> 20u);
 	// avoid mixing signed and unsigned OPs
 	if (cal->dac_voltage_offset_uV >= 0)

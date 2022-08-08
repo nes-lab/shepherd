@@ -1,10 +1,10 @@
-#ifndef __GPIO_H_
-#define __GPIO_H_
+#ifndef SHEPHERD_GPIO_H_
+#define SHEPHERD_GPIO_H_
 
 #ifdef __CYTHON__
 #define read_r30()     		(0)
 #define write_r30(pin_mask)	(pin_mask)  // mockups
-#define read_r31()		(0)
+#define read_r31()			(0)
 #define write_r31(pin_mask)	(pin_mask)
 
 #elif defined(__GNUC__)
@@ -72,4 +72,4 @@ volatile register uint32_t	__R31;
 // TODO: there are special asm-commands to set or clear a bit. its faster and gets rid of the additional _mask
 #endif
 
-#endif /* __GPIO_H_ */
+#endif /* SHEPHERD_GPIO_H_ */

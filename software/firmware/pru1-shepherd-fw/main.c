@@ -55,7 +55,7 @@ enum SyncState {
 // alternative message channel specially dedicated for errors
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	// do not care for sent-status, newest error wins IF different from previous
+	// do not care for sent-status -> the newest error wins IF different from previous
 	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value[0] == value)))
 	{
 		shared_mem->pru1_msg_error.unread = 0u;
@@ -145,7 +145,7 @@ static inline bool_ft send_sync_request(volatile struct SharedMem *const shared_
 }
 
 /*
- * Here, we sample the the GPIO pins from a connected sensor node. We repeatedly
+ * Here, we sample the GPIO pins from a connected sensor node. We repeatedly
  * poll the state via the R31 register and keep the last state in a static
  * variable. Once we detect a change, the new value (V1=4bit, V2=10bit) is written to the
  * corresponding buffer (which is managed by PRU0). The tricky part is the
@@ -277,7 +277,8 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
 	/* Clear raw interrupt status from ARM host */
 	INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 	/* Wait for first timer interrupt from Linux host */
-	while (!(read_r31() & HOST_INT_TIMESTAMP_MASK)) {};
+	while (!(read_r31() & HOST_INT_TIMESTAMP_MASK))
+        {}
 
 	if (INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 

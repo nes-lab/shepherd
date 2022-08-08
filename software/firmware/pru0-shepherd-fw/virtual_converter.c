@@ -1,8 +1,5 @@
 #include <stdint.h>
-#include <stdio.h>
 #include "commons.h"
-#include "shepherd_config.h"
-#include "gpio.h"
 #include "hw_config.h"
 #include "stdint_fast.h"
 #include "virtual_converter.h"
@@ -25,7 +22,7 @@ static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
  * Generation:
  * - array[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10u) / (n + 0.5)
  * - limit array[0] to 1023 -> not needed anymore due to mult with overflow-protection, instead overprovision
- * - largest value array[39] is 5.11 V
+ * - the largest value array[39] is 5.11 V
  * python:
  *    LUT = [(2**10)/(n + 0.5) for n in range(40)]
  */
@@ -403,7 +400,7 @@ void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft va
 
 uint32_t get_I_mid_out_nA(void)
 {
-	return div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);;
+	return div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);
 }
 
 bool_ft get_state_log_intermediate(void)

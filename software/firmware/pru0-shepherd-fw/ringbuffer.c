@@ -1,4 +1,3 @@
-#include "inttypes.h"
 #include "ringbuffer.h"
 
 void ring_init(struct RingBuffer *const buf)

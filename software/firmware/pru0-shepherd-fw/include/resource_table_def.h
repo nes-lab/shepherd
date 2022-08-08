@@ -31,8 +31,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _RSC_TABLE_PRU_H_
-#define _RSC_TABLE_PRU_H_
+#ifndef SHEPHERD_PRU0_RESOURCE_TABLE_DEF_H_
+#define SHEPHERD_PRU0_RESOURCE_TABLE_DEF_H_
 
 #include <stddef.h>
 
@@ -79,4 +79,4 @@ struct my_resource_table resourceTable = {
         },
 };
 
-#endif /* _RSC_TABLE_PRU_H_ */
+#endif /* SHEPHERD_PRU0_RESOURCE_TABLE_DEF_H_ */

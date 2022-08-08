@@ -1,5 +1,5 @@
-#ifndef PRU1_DEBUG_ROUTINES_H
-#define PRU1_DEBUG_ROUTINES_H
+#ifndef PRU1_DEBUG_ROUTINES_H_
+#define PRU1_DEBUG_ROUTINES_H_
 
 // Debug Code - Config, TODO: enable by makefile or compile-command for both PRUs
 #define DEBUG_GPIO_EN   0   // state1= gpio-checking, state2=writing data, state0=loop&event-routines
@@ -116,4 +116,4 @@ static void inline debug_loop_delays(const uint32_t shepherd_state)
 #endif
 
 
-#endif //PRU1_DEBUG_ROUTINES_H
+#endif //PRU1_DEBUG_ROUTINES_H_

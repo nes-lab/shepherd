@@ -60,4 +60,4 @@ struct pru_irq_rsc my_irq_rsc  = {
 };
 
 
-#endif //PRU_FIRMWARE_PRU1_SHEPHERD_FW_INCLUDE_INTC_MAP_H
+#endif // PRU_FIRMWARE_PRU1_SHEPHERD_FW_INCLUDE_INTC_MAP_H

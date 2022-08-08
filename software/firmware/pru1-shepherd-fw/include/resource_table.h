@@ -31,8 +31,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _RSC_TABLE_PRU_H_
-#define _RSC_TABLE_PRU_H_
+#ifndef SHEPHERD_PRU1_RESOURCE_TABLE_H_
+#define SHEPHERD_PRU1_RESOURCE_TABLE_H_
 
 #include <stddef.h>
 #include <rsc_types.h>
@@ -79,17 +79,15 @@ struct my_resource_table resourceTable = {
 	/* resource definitions */
         {
                 TYPE_CUSTOM,
-                TYPE_PRU_INTS,
+                {TYPE_PRU_INTS},
                 sizeof(struct fw_rsc_custom_ints),
                 {
                         /* PRU_INTS version */
-                        0x0000,
+                        {0x0000,
                         /* Channel-to-host mapping, 255 for unused
                            In this example, channel 0 is on position 0, so channel 0
                            maps to host interrupt 0 */
-                        0,
-                        HOST_UNUSED,
-			HOST_UNUSED,
+                        {0,
                         HOST_UNUSED,
                         HOST_UNUSED,
                         HOST_UNUSED,
@@ -97,12 +95,14 @@ struct my_resource_table resourceTable = {
                         HOST_UNUSED,
                         HOST_UNUSED,
                         HOST_UNUSED,
+                        HOST_UNUSED,
+                        HOST_UNUSED},
                         /* Number of evts being mapped to channels */
                         (sizeof(pru_intc_map) / sizeof(struct ch_map)),
                         /* Pointer to the structure containing mapped events */
-                        pru_intc_map,
+                        pru_intc_map},
                 },
         },
 };
 
-#endif /* _RSC_TABLE_PRU_H_ */
+#endif /* SHEPHERD_PRU1_RESOURCE_TABLE_H_ */

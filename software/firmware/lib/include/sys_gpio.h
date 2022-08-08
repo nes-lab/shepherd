@@ -1,8 +1,8 @@
 // driver to access gpio-registers from beaglebone-memory
 // based on SPRUH73Q Dec2019, TODO: could be added to pssp, but needs entry in .cmd file
 
-#ifndef PRU1_SYS_GPIO_H
-#define PRU1_SYS_GPIO_H
+#ifndef PRU_SYS_GPIO_H_
+#define PRU_SYS_GPIO_H_
 #include <stdint.h>
 #include "gpio.h"
 
@@ -116,4 +116,4 @@ static inline void check_gpio_test()
 }
 
 
-#endif //PRU1_SYS_GPIO_H
+#endif //PRU_SYS_GPIO_H_
