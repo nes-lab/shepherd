@@ -22,17 +22,19 @@ static uint32_t power_last_raw = 0u; // adc_mppt_po
 static const volatile struct HarvesterConfig *cfg;
 
 // to be used with harvester-frontend
-static void harvest_adc_ivcurve(struct SampleBuffer *const, uint32_t);
-static void harvest_adc_cv(struct SampleBuffer *const, uint32_t);
-static void harvest_adc_mppt_voc(struct SampleBuffer *const, uint32_t);
-static void harvest_adc_mppt_po(struct SampleBuffer *const, uint32_t);
+static void harvest_adc_ivcurve(struct SampleBuffer *, uint32_t);
+static void harvest_adc_isc_voc(struct SampleBuffer *, uint32_t);
+static void harvest_adc_cv(struct SampleBuffer *, uint32_t);
+static void harvest_adc_mppt_voc(struct SampleBuffer *, uint32_t);
+static void harvest_adc_mppt_po(struct SampleBuffer *, uint32_t);
 
 // to be used in virtual harvester (part of emulator)
-static void harvest_iv_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
-static void harvest_iv_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
-static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
-static void harvest_iv_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_iv_cv(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
+static void harvest_iv_mppt_voc(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
+static void harvest_iv_mppt_po(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
+static void harvest_iv_mppt_opt(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
 
+#define HRV_ISC_VOC		(1u << 3u)
 #define HRV_IVCURVE		(1u << 4u)
 #define HRV_CV			(1u << 8u)
 #define HRV_MPPT_VOC		(1u << 12u)
@@ -74,6 +76,8 @@ uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t 
 		harvest_adc_cv(buffer, sample_idx);
 	else if (cfg->algorithm >= HRV_IVCURVE)
 		harvest_adc_ivcurve(buffer, sample_idx);
+	else if (cfg->algorithm >= HRV_ISC_VOC)
+		harvest_adc_isc_voc(buffer, sample_idx);
 	// todo: else send error to system
 	return 0u;
 }
@@ -151,6 +155,42 @@ static void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_
 }
 
 
+static void harvest_adc_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+{
+	/* 	Record VOC & ISC
+	 * 	- open the circuit -> voltage will settle when set to MAX
+	 * 	- short circuit current -> current will rise when voltage is set to 0
+	 * 	- influencing parameters: wait_cycles_n
+ 	*/
+
+	/* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+	/* NOTE: it's in here so this timeslot can be used for calculations */
+	__delay_cycles(800 / 5);
+	const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+	const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+
+	if (settle_steps == 0u)
+	{
+		/* write new state (is_rising == VOC, else ISC)*/
+		const uint32_t voltage_raw = is_rising ? DAC_MAX_VAL : 0u;
+		dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_raw);
+
+		/* sample and hold after settling-period */
+		if (is_rising) current_hold = current_adc;
+		else voltage_hold = voltage_adc;
+
+		/* prepare next state-change */
+		is_rising ^= 1u;
+		settle_steps = cfg->wait_cycles_n;
+	}
+	else
+		settle_steps--;
+
+	buffer->values_current[sample_idx] = current_hold;
+	buffer->values_voltage[sample_idx] = voltage_hold;
+}
+
+
 static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
 /*	Determine VOC and harvest
@@ -211,7 +251,7 @@ static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_
 	/*	perturbe & observe
 	 * 	- move a voltage step every interval and evaluate power-increase
 	 * 		- if higher -> keep this step-direction and begin doubling step-size
-	 * 		- if lower -> reverse direction and move smallest step back
+	 * 		- if lower -> reverse direction and move the smallest step back
 	 * 		- resulting steps if direction is kept: 1, 1, 2, 4, 8, ...
 	 *	- influencing parameters: interval_n, voltage_set_uV, voltage_step_uV, voltage_min_uV, voltage_max_uV,
 	 */
@@ -280,7 +320,6 @@ static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_
 	buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-// TODO: add ISC&VOC-Harvest-Recorder (higher sampling-rate for solar-cells)
 /* // TODO: do we need a constant-current-version?
 const uint32_t current_nA = cal_conv_adc_raw_to_nA(current_adc); // TODO: could be simplified by providing raw-value in cfg
 if (current_nA > cfg->current_limit_nA)
@@ -370,7 +409,7 @@ static void harvest_iv_mppt_voc(uint32_t * const p_voltage_uV, uint32_t * const 
 		age_nxt = 0u;
 	}
 
-	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or be NOT the best */
+	/* current "best VOC" (the lowest voltage with zero-current) can not get too old, or be NOT the best */
 	if ((age_now > cfg->window_size) || (voc_nxt <= voc_now))
 	{
 		age_now = age_nxt;
@@ -448,7 +487,7 @@ static void harvest_iv_mppt_po(uint32_t * const p_voltage_uV, uint32_t * const p
 
 static void harvest_iv_mppt_opt(uint32_t * const p_voltage_uV, uint32_t * const p_current_nA)
 {
-	/* Derivate of VOC -> selects highest power directly
+	/* Derivate of VOC -> selects the highest power directly
 	 * - influencing parameters: window_size, voltage_min_uV, voltage_max_uV,
 	 */
 	static uint32_t age_now = 0u, power_now = 0u, voltage_now = 0u, current_now = 0u;
@@ -470,7 +509,7 @@ static void harvest_iv_mppt_opt(uint32_t * const p_voltage_uV, uint32_t * const 
 		current_nxt = *p_current_nA;
 	}
 
-	/* current "best VOC" (lowest voltage with zero-current) can not get too old, or NOT be the best */
+	/* current "best VOC" (the lowest voltage with zero-current) can not get too old, or NOT be the best */
 	if ((age_now > cfg->window_size) || (power_nxt >= power_now))
 	{
 		age_now = age_nxt;

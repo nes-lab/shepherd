@@ -1,8 +1,6 @@
 #include <stdint.h>
 
 #include <pru_cfg.h>
-//#include <pru_iep.h>
-//#include <rsc_types.h>
 
 #include "iep.h"
 #include "stdint_fast.h"
@@ -22,6 +20,7 @@
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
+//#define ENABLE_DBG_VSOURCE	// reduces firmware by x kByte
 
 #ifdef ENABLE_DEBUG_MATH_FN
 #include "math64_safe.h"
@@ -33,7 +32,7 @@
 // alternative message channel specially dedicated for errors
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-	// do not care for sent-status, newest error wins IF different from previous
+	// do not care for sent-status -> the newest error wins IF different from previous
 	if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value[0] == value)))
 	{
 		shared_mem->pru0_msg_error.unread = 0u;
@@ -304,7 +303,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 		// NOTE: pru1 manages the irq, but pru0 reacts to it directly -> less jitter
 		while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // read iep-reg -> 12 cycles, 60 ns
 
-		// Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
+		// pre-trigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
 		if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
 		{
 			GPIO_OFF(SPI_CS_ADCs_MASK);
@@ -394,7 +393,7 @@ int main(void)
 	static struct RingBuffer free_buffers;
 
 	/*
-	 * The shared mem is dynamically allocated and we have to inform user space
+	 * The shared mem is dynamically allocated -> we have to inform user space
 	 * about the address and size via sysfs, which exposes parts of the
 	 * shared_mem structure.
 	 * Do this initialization early! The kernel module relies on it.
@@ -447,7 +446,7 @@ int main(void)
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
 	 * are used to transfer the actual data between us and the Linux host.
 	 * This memory is requested from remoteproc via a carveout resource request
-	 * in our resourcetable
+	 * in our resource-table
 	 */
 	struct SampleBuffer *const buffers_far = (struct SampleBuffer *)resourceTable.shared_mem.pa;
 

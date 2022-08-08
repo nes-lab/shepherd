@@ -1,5 +1,5 @@
-#ifndef __IEP_H_
-#define __IEP_H_
+#ifndef SHEPHERD_IEP_H_
+#define SHEPHERD_IEP_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -33,4 +33,4 @@ void iep_set_cmp_val(uint8_ft compare_channel, uint32_t value);
 uint32_t iep_get_cmp_val(uint8_ft compare_channel);
 uint32_t iep_get_cnt_val();
 
-#endif /* __IEP_H_ */
+#endif /* SHEPHERD_IEP_H_ */

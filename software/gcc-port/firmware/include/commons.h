@@ -1,5 +1,5 @@
-#ifndef __COMMONS_H_
-#define __COMMONS_H_
+#ifndef SHEPHERD_COMMONS_H_
+#define SHEPHERD_COMMONS_H_
 // NOTE: a (almost) Copy of this definition-file exists for the kernel module (copy changes by hand)
 // NOTE: and most of the structs are hardcoded in read_buffer() in shepherd_io.py
 
@@ -317,4 +317,4 @@ struct SharedMem {
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000); // NOTE: PRUs shared ram should be even 12kb
 
-#endif /* __COMMONS_H_ */
+#endif /* __SHEPHERD_COMMONS_H_ */

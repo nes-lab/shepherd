@@ -1,5 +1,5 @@
-#ifndef __INTC_H_
-#define __INTC_H_
+#ifndef SHEPHERD_INTC_H_
+#define SHEPHERD_INTC_H_
 
 #include "gpio.h"
 #include <pru_intc.h>
@@ -28,4 +28,4 @@ inline uint32_t intc_check_event(const uint32_t secr0, const uint32_t pos)
     return ((secr0) &(1U << (pos)));
 }
 
-#endif /* __INTC_H_ */
+#endif /* SHEPHERD_INTC_H_ */

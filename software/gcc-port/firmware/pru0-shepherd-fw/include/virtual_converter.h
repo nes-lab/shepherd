@@ -11,9 +11,9 @@ void converter_calc_out_power(uint32_t current_adc_raw);
 void converter_update_cap_storage(void);
 uint32_t converter_update_states_and_output(volatile struct SharedMem * shared_mem);
 
-void set_P_input_fW(const uint32_t P_fW);
-void set_P_output_fW(const uint32_t P_fW);
-void set_V_intermediate_uV(const uint32_t C_uV);
+void set_P_input_fW(uint32_t P_fW);
+void set_P_output_fW(uint32_t P_fW);
+void set_V_intermediate_uV(uint32_t C_uV);
 uint64_t get_P_input_fW(void);
 uint64_t get_P_output_fW(void);
 uint32_t get_V_intermediate_uV(void);
@@ -26,7 +26,7 @@ void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value);
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC
- * - (optional) current-value in buffer is used as a limiter (power to target shuts down if it is drawing to much)
+ * - (optional) current-value in buffer is used as a limiter (power to target shuts down if it is drawing too much)
  * - (optional) output-capacitor (C != 0) is catching current-spikes of target
  * - this converter is currently the closest possible simulation of solar -> diode -> target (with voltage-value set to threshold of target)
  * - further usage: on/off-patterns

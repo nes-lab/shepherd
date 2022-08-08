@@ -1,5 +1,5 @@
-#ifndef _RESOURCE_TABLE_H_
-#define _RESOURCE_TABLE_H_
+#ifndef SHEPHERD_PRU0_RESOURCE_TABLE_H_
+#define SHEPHERD_PRU0_RESOURCE_TABLE_H_
 
 #include <rsc_types.h>
 
@@ -13,4 +13,4 @@ struct my_resource_table {
 	struct fw_rsc_carveout shared_mem;
 };
 
-#endif /* _RESOURCE_TABLE_H_ */
+#endif /* SHEPHERD_PRU0_RESOURCE_TABLE_H_ */
