@@ -6,10 +6,9 @@ run the commands below
 
 ```shell
 git clone -b gcc-port https://github.com/fedy0/shepherd.git
-cd shepherd/software/firmware
-chmod +x *.sh
+cd shepherd/software/gcc-port/firmware
+chmod 755 *.sh
 ./setup.sh
-source ~/.bashrc
 ```
 
 The commands above do the following:

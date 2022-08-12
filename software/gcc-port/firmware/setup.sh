@@ -1,5 +1,5 @@
 #!/bin/bash
-# chmod +x setup.sh
+# chmod 755 setup.sh
 # ./setup.sh
 
 TOOLCHAIN=pru-elf-2022.05.amd64
@@ -32,4 +32,3 @@ echo "export PRU_SUPPORT=$PWD/pru-software-support-package" >> ~/.bashrc
 echo 'export PATH=$PATH:$PRU_GCC' >> ~/.bashrc
 export PS1=$PS1:fix
 source ~/.bashrc
-# note: source-cmd seems not to work in .sh?!? manual refresh afterwards needed
