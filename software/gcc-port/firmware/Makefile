@@ -28,11 +28,18 @@
 
 # Very simple makefile to cross-compile for PRU
 
+# export PRU_GCC=$PWD/tools/pru-elf-2022.05.amd64/bin
+# export PRU_SUPPORT=$PWD/tools/pru-software-support-package
+# export PATH=$PATH:$PRU_GCC
+
+#PRU_GCC := $(PWD)/tools/pru-elf-2022.05.amd64/bin
+#PRU_SUPPORT := $(PWD)/tools/pru-software-support-package
+
 # Common flags
-CROSS_COMPILE ?= pru-
+CROSS_COMPILE ?= $(PRU_GCC)/pru-
 
 # Debug symbols and intermediate file keeping
-CFLAGS += -g0
+CFLAGS += -g
 #CFLAGS += -save-temps
 
 # Language-Features, c99 wanted, but it produces errors from compiler/io.h
@@ -47,7 +54,7 @@ CFLAGS += -fuse-linker-plugin
 CFLAGS += -flto
 
 # Avoid inlining -> to debug compiler-output (ie. pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]')
-#CFLAGS += -fno-inline 
+#CFLAGS += -fno-inline
 
 # PRU-Specific Optimizations:
 # Squeeze code size by removing atexit, exit, constructors and destructors from CRT.
@@ -77,6 +84,8 @@ CFLAGS += -fanalyzer
 CFLAGS += -isystem include
 CFLAGS += -I${PRU_SUPPORT}/include -I${PRU_SUPPORT}/include/am335x
 
+
+
 # Per-PRU core flags. The -mmcu option will select the correct linker
 # script and will predefine mcu-specific macros.
 CFLAGS0 += -mmcu=am335x.pru0 -DPRU0
@@ -86,6 +95,11 @@ CFLAGS1 += -mmcu=am335x.pru1 -DPRU1
 CFLAGS += -I ./include -I ./lib/include
 CFLAGS0 += -I ./pru0-shepherd-fw/include
 CFLAGS1 += -I ./pru1-shepherd-fw/include
+
+# specialized code-paths for pru0
+CFLAGS0e += $(CFLAGS0) -DENABLE_EMULATOR
+CFLAGS0h += $(CFLAGS0) -DENABLE_HARVESTER
+CFLAGS0a += $(CFLAGS0) -DENABLE_EMULATOR -DENABLE_HARVESTER
 
 # generate files that encode make rules for the .h dependencies
 #DEPFLAGS=-MP -MD
@@ -103,12 +117,13 @@ SRC1:=$(foreach D,$(SRC_DIRS1),$(wildcard $(D)/*.c))
 OUT := out
 
 # Final ELF image file names
-ELF0 := $(OUT)/pru-core0.elf
+ELF0e := $(OUT)/pru-core0e.elf
+ELF0h := $(OUT)/pru-core0h.elf
+ELF0a := $(OUT)/pru-core0a.elf
 ELF1 := $(OUT)/pru-core1.elf
 
-
 # ============================ DO NOT TOUCH BELOW ============================
-all: $(ELF1) $(ELF0) # TODO: reversed for now, because pru0 is still failing
+all: $(ELF1) $(ELF0h) $(ELF0e) $(ELF0a) # TODO: reversed for now, because pru0 is still failing
 	@echo Success: $^
 
 %.s : %.elf
@@ -129,18 +144,24 @@ all: $(ELF1) $(ELF0) # TODO: reversed for now, because pru0 is still failing
 $(OUT):
 	mkdir $(OUT)
 
-$(ELF0): $(SRC0) $(SRCASM) | $(OUT)
-	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0) $(SRCASM) $(SRC0) $(LDFLAGS) -o $@
+$(ELF0e): $(SRC0) $(SRCASM) | $(OUT)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0e) $(SRCASM) $(SRC0) $(LDFLAGS) -o $@
+
+$(ELF0h): $(SRC0) $(SRCASM) | $(OUT)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0h) $(SRCASM) $(SRC0) $(LDFLAGS) -o $@
+	
+$(ELF0a): $(SRC0) $(SRCASM) | $(OUT)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS0a) $(SRCASM) $(SRC0) $(LDFLAGS) -o $@
 
 $(ELF1): $(SRC1) | $(OUT)
 	$(CROSS_COMPILE)gcc $(CFLAGS) $(CFLAGS1) $(SRC1) $(LDFLAGS) -o $@
 
 install: $(ELF0) $(ELF1)
-	install -D $(ELF0) /lib/firmware/am335x-pru0-shepherd-fw
+	install -D $(ELF0h) /lib/firmware/am335x-pru0-shepherd-fw
 	install -D $(ELF1) /lib/firmware/am335x-pru1-shepherd-fw
 
 clean:
-	$(RM) -fr $(ELF0) $(ELF1) $(OUT)
+	$(RM) -fr $(ELF0e) $(ELF0h) $(ELF0a) $(ELF1) $(OUT)
 
 cscope:
 	cscope -bRk

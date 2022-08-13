@@ -68,6 +68,7 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
 
 uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
+#ifdef ENABLE_HARVESTER
 	if (cfg->algorithm >= HRV_MPPT_PO)
 		harvest_adc_mppt_po(buffer, sample_idx);
 	else if (cfg->algorithm >= HRV_MPPT_VOC)
@@ -79,6 +80,7 @@ uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t 
 	else if (cfg->algorithm >= HRV_ISC_VOC)
 		harvest_adc_isc_voc(buffer, sample_idx);
 	// todo: else send error to system
+#endif
 	return 0u;
 }
 
