@@ -1,7 +1,7 @@
 ; HW_REV == 2.0, TODO: there can be less NOPs, ICs are faster
-SCLK .set 0
-MOSI .set 1
-MISO .set 2
+.equ SCLK, 0 ;SCLK .set 0
+.equ MOSI, 1 ;MOSI .set 1
+.equ MISO, 2 ;MISO .set 2
 
 .macro NOP ; TODO: this assembler understands a simple NOP, without macro
    MOV r23, r23
