@@ -15,12 +15,18 @@
 #include "shepherd_config.h"
 
 #include "calibration.h"
-#include "virtual_converter.h"
+
 #include "sampling.h"
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
-//#define ENABLE_DBG_VSOURCE	// reduces firmware by x kByte
+//#define ENABLE_DBG_VSOURCE	// reduces firmware by x Byte
+//#define ENABLE_EMULATOR       // done by compiler-switch
+//#define ENABLE_HARVESTER      // done by compiler-switch
+
+#ifdef ENABLE_EMULATOR
+#include "virtual_converter.h"
+#endif
 
 #ifdef ENABLE_DEBUG_MATH_FN
 #include "math64_safe.h"

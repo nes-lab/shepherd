@@ -18,6 +18,7 @@ static bool_ft dac_aux_link_to_mid = false;
 
 static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
 {
+#ifdef ENABLE_EMULATOR
 	/* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
 	//__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
 
@@ -66,6 +67,7 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
 		buffer->values_current[shared_mem->analog_sample_counter] = current_adc_raw;
 		buffer->values_voltage[shared_mem->analog_sample_counter] = voltage_dac;
 	}
+#endif
 	return 1u; // because we already incremented
 }
 

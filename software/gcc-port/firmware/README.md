@@ -42,6 +42,8 @@ make clean
 - setting constants differs from ti compiler (CGT)
 	- CGT: `VAR .set value`
 	- GCC: `.equ VAR, value` 
+- fix is to use [+x with gcc](https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html)
+	-  encapsulation `-x assembler SRCASM -x none` when loading the asm-sources into the compiler
 
 ### Multiplication
 
