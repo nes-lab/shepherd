@@ -11,7 +11,7 @@
     - gps
     - conf
 
-- name: Disable PTP services
+- name: Disable PTP services (some entries will fail)
   systemd:
     name: "{{ item }}"
     state: stopped

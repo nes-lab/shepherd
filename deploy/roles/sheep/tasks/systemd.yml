@@ -28,7 +28,7 @@
 
 - name: Disable connman automatic time update
   shell: busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"
-  ignore_errors: yes  # services may not exist
+  ignore_errors: yes  # services may not exist in newer releases (ubuntu 20.04 ++)
   tags:
     - conf
     - systemd

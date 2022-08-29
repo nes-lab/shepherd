@@ -27,13 +27,6 @@
       state: stopped
       daemon_reload: yes
 
-  - name: Uname - Get Kernel-Version
-    command: uname --kernel-release
-    register: kernelrelease
-    changed_when: False
-
   - name: CFG - Optimize Boot by removing outdated initrd
-    file:
-      path: '/boot/initrd.img-{{ kernelrelease.stdout.strip() }}'
-      state: absent
-    ignore_errors: yes
+    command: "rm -rf /boot/initrd.img*"
+    # note: ansible.builtin.file would have been preferred, but it has a problem with wildcards

@@ -35,7 +35,7 @@
     - ptp
     - conf
 
-- name: Enable PTP services
+- name: Enable PTP services (some entries will fail)
   systemd:
     name: "{{ item }}"
     state: restarted

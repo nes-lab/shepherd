@@ -1,4 +1,4 @@
-- name: Disable GPS and PTP services
+- name: Disable GPS and PTP services (some entries will fail)
   systemd:
     name: "{{ item }}"
     state: stopped

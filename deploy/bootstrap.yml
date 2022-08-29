@@ -11,12 +11,13 @@
 
   pre_tasks:
 
-  - set_fact:
-    new_user: "{{ ansible_user }}"
-    # special internal variables:
-    ansible_user: "{{ default_user }}"
-    ansible_password: "{{ default_password }}"
-    ansible_become_password: "{{ default_password }}"
+  - name: Switch ansible-config to use default-credentials of distribution
+    set_fact:
+      new_user: "{{ ansible_user }}"
+      # special internal variables:
+      ansible_user: "{{ default_user }}"
+      ansible_password: "{{ default_password }}"
+      ansible_become_password: "{{ default_password }}"
 
   - name: Get time and date from ansible controller
     local_action: command date -u +"%Y-%m-%dT%H:%M:%SZ"
@@ -27,12 +28,17 @@
     command: "date -s {{ local_time.stdout }}"
 
   - name: Check if ansible-Host has local ssh-key-pair
-    local_action: 'stat path=~/.ssh/id_rsa.pub'
+    local_action:
+      module: ansible.builtin.stat
+      path: ~/.ssh/id_rsa.pub
     register: key_file
+    become: no
 
   - name: Generate fresh ssh-key-pair (if needed)
-    local_action: 'ssh-keygen -q -t rsa -N ""'
-    when: not key_file.exits
+    local_action:
+      module: ansible.builtin.command
+      cmd: 'ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa'
+    when: key_file.stat.exists == False
     become: no
 
   tasks:
@@ -101,7 +107,7 @@
   - name: Update SSL-Certificates
     shell: update-ca-certificates -f -v
 
-  - name: GIT - Clone & Update boot-script-tools from RoberCNelson
+  - name: GIT - Clone & Update boot-script-tools from RobertCNelson
     git:
       repo: https://github.com/RobertCNelson/boot-scripts
       dest: /opt/scripts

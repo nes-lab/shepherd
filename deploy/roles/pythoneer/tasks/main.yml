@@ -1,0 +1,18 @@
+--- # This will switch to alternative repo for newer python versions
+- name: Install dependency to extend apt-repos
+  ansible.builtin.apt:
+    name: software-properties-common
+    state: present
+    update_cache: yes
+    when: False
+
+- name: Add nginx stable repository from PPA and install its signing key on Debian target
+  ansible.builtin.apt_repository:
+    repo: 'ppa:deadsnakes/ppa'
+    codename: deadsnakes
+
+- name: Install dependency to extend apt-repos
+  ansible.builtin.apt:
+    name: ["python3.10-dev", "python3.10-venv", "python3.10-distutils"]
+    state: present
+    update_cache: yes

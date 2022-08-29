@@ -35,7 +35,7 @@
     - ptp
     - conf
 
-- name: Disable services
+- name: Disable services (some entries will fail)
   systemd:
     name: "{{ item }}"
     state: stopped

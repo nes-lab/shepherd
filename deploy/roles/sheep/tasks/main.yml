@@ -104,6 +104,7 @@
         "virtualenv",
       ]
     extra_args: --upgrade
+  when: False # TODO: not cleanest solution (packages managed by apt) but setup for pyPackage failed recently
 
 - name: Get full path of repository
   local_action: "shell realpath {{ role_path }}/../../.."
@@ -183,11 +184,13 @@
     - python
     - conf
 
-- name: Link to shepherd-sheep for compatibility with deb package
-  file:
+- name: Symlink to shepherd-sheep for compatibility with deb package (might fail -> already exists)
+  ansible.builtin.file:
     src: /usr/local/bin/shepherd-sheep
-    dest: /usr/bin/shepherd-sheep
+    path: /usr/bin/shepherd-sheep
     state: link
+    follow: yes
+  ignore_errors: yes
   tags:
     - install
     - python
