@@ -26,8 +26,8 @@ import signal
 from shepherd.datalog_reader import LogReader as ShpReader
 
 from shepherd.shepherd_io import ShepherdIO, DataBuffer
-from shepherd.virtual_harvester_data import VirtualHarvesterConfig
-from shepherd.virtual_source_data import VirtualSourceConfig
+from shepherd.virtual_harvester_config import VirtualHarvesterConfig
+from shepherd.virtual_source_config import VirtualSourceConfig
 from shepherd.shepherd_io import ShepherdIOException
 
 from shepherd.datalog import LogWriter
@@ -363,7 +363,9 @@ class ShepherdDebug(ShepherdIO):
     def vsource_init(self, vs_settings: VirtualSourceConfig, cal_settings):
         super().send_virtual_converter_settings(vs_settings)
         super().send_calibration_settings(cal_settings)
-        vh_config = VirtualHarvesterConfig(vs_settings.get_harvester(), )
+        vh_config = VirtualHarvesterConfig(
+            vs_settings.get_harvester(),
+        )
         super().send_virtual_harvester_settings()
         time.sleep(0.5)
         super().start()
@@ -829,7 +831,10 @@ def run_emulator(
         stack.enter_context(log_reader)
 
         fifo_buffer_size = sysfs_interface.get_n_buffers()
-        init_buffers = [DataBuffer(voltage=dsv, current=dsc) for _, dsv, dsc in log_reader.read_buffers(end_n=fifo_buffer_size)]
+        init_buffers = [
+            DataBuffer(voltage=dsv, current=dsc)
+            for _, dsv, dsc in log_reader.read_buffers(end_n=fifo_buffer_size)
+        ]
 
         emu = Emulator(
             shepherd_mode=mode,  # TODO: this should not be needed anymore

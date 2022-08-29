@@ -64,7 +64,10 @@ def shp_reader(data_h5):
 def emulator(request, shepherd_up, shp_reader, virtsource_settings_yml):
     vs_cfg = VirtualSourceConfig(virtsource_settings_yml)
     fifo_buffer_size = sysfs_interface.get_n_buffers()
-    init_buffers = [DataBuffer(voltage=dsv, current=dsc) for _, dsv, dsc in shp_reader.read_buffers(end_n=fifo_buffer_size)]
+    init_buffers = [
+        DataBuffer(voltage=dsv, current=dsc)
+        for _, dsv, dsc in shp_reader.read_buffers(end_n=fifo_buffer_size)
+    ]
     emu = Emulator(
         calibration_recording=CalibrationData(shp_reader.get_calibration_data()),
         calibration_emulator=CalibrationData.from_default(),

@@ -11,7 +11,7 @@ from shepherd import (
     VirtualHarvesterConfig,
 )
 from shepherd.calibration import CalibrationData
-from shepherd.virtual_source_data import flatten_dict_list
+from shepherd.virtual_source_config import flatten_dict_list
 
 
 @pytest.fixture

@@ -25,9 +25,9 @@ from periphery import GPIO
 from shepherd import sysfs_interface
 from shepherd import commons
 from shepherd.calibration import CalibrationData, cal_component_list
-from shepherd.virtual_source_data import VirtualSourceConfig
+from shepherd.virtual_source_config import VirtualSourceConfig
 from shepherd.sysfs_interface import SysfsInterfaceException
-from shepherd.virtual_harvester_data import VirtualHarvesterConfig
+from shepherd import VirtualHarvesterConfig
 
 logger = logging.getLogger(__name__)
 
