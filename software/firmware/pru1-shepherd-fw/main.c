@@ -30,18 +30,18 @@
 
 #define SANITY_CHECKS		(0)	// warning: costs performance, but is helpful for dev / debugging
 
-/* overview for pin-mirroring - HW-Rev2.3
+/* overview for pin-mirroring - HW-Rev2.4b
 
-pru_reg     name            BB_pin	sys_pin
-r31_00      TARGET_GPIO0    P8_45	P8_14, g0[14]
-r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27]
-r31_02      TARGET_GPIO2    P8_43	P8_16, g1[14]
-r31_03      TARGET_GPIO3    P8_44	P8_15, g1[15]
-r31_04      TARGET_GPIO4    P8_41	P8_26, g1[29]
-r31_05      TARGET_GPIO5    P8_42	P8_36, g2[16]
-r31_06      TARGET_GPIO6    P8_39	P8_34, g2[17]
-r31_07      TARGET_UART_RX  P8_40	P9_26, g0[14]
-r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15]
+pru_reg     name            BB_pin	sys_pin sys_reg
+r31_00      TARGET_GPIO0    P8_45	P8_14, g0[26] -> 26
+r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27] -> 27
+r31_02      TARGET_GPIO2    P8_43	P8_16, g1[14] -> 46
+r31_03      TARGET_GPIO3    P8_44	P8_15, g1[15] -> 47
+r31_04      TARGET_GPIO4    P8_41	P8_26, g1[29] -> 61
+r31_05      TARGET_GPIO5    P8_42	P8_36, g2[16] -> 80
+r31_06      TARGET_GPIO6    P8_39	P8_34, g2[17] -> 81
+r31_07      TARGET_UART_RX  P8_40	P9_26, g0[14] -> 14
+r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15] -> 15
 r30_09/out  TARGET_BAT_OK   P8_29	-
 
 Note: this table is copied (for hdf5-reference) in commons.py
