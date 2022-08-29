@@ -23,7 +23,7 @@ import numpy
 import invoke
 import signal
 
-from shepherd_data import Reader as ShpReader
+from shepherd.datalog_reader import LogReader as ShpReader
 
 from shepherd.shepherd_io import ShepherdIO, DataBuffer
 from shepherd.virtual_harvester_data import VirtualHarvesterConfig

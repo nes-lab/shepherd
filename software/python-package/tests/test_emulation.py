@@ -5,8 +5,7 @@ import h5py
 import time
 import yaml
 
-from shepherd_data import Reader as ShpReader
-
+from shepherd.datalog_reader import LogReader as ShpReader
 from shepherd.shepherd_io import DataBuffer, VirtualSourceConfig
 
 from shepherd import ShepherdDebug

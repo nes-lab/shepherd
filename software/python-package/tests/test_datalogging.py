@@ -5,13 +5,13 @@ import logging
 from pathlib import Path
 import h5py
 from itertools import product
-from shepherd_data import Reader
 
 from shepherd import cal_channel_list
 from shepherd import LogWriter
 from shepherd import CalibrationData
 from shepherd.calibration import cal_parameter_list, cal_channel_hrv_dict
 
+from shepherd.datalog_reader import LogReader as ShpReader
 from shepherd.shepherd_io import DataBuffer
 from shepherd.shepherd_io import GPIOEdges
 from shepherd.datalog import ExceptionRecord
@@ -161,7 +161,7 @@ def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
 
 def test_reader_performance(data_h5):
     read_durations = []
-    with Reader(file_path=data_h5) as reader:
+    with ShpReader(file_path=data_h5) as reader:
         past = time.time()
         for _ in reader.read_buffers():
             now = time.time()

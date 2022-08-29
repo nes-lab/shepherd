@@ -9,14 +9,33 @@
     default_password: temppwd
     apt_upgrade: true
 
-  tasks:
+  pre_tasks:
 
   - set_fact:
-      new_user: "{{ ansible_user }}"
-      # special internal variables:
-      ansible_user: "{{ default_user }}"
-      ansible_password: "{{ default_password }}"
-      ansible_become_password: "{{ default_password }}"
+    new_user: "{{ ansible_user }}"
+    # special internal variables:
+    ansible_user: "{{ default_user }}"
+    ansible_password: "{{ default_password }}"
+    ansible_become_password: "{{ default_password }}"
+
+  - name: Get time and date from ansible controller
+    local_action: command date -u +"%Y-%m-%dT%H:%M:%SZ"
+    register: local_time
+    become: no
+
+  - name: Set correct time
+    command: "date -s {{ local_time.stdout }}"
+
+  - name: Check if ansible-Host has local ssh-key-pair
+    local_action: 'stat path=~/.ssh/id_rsa.pub'
+    register: key_file
+
+  - name: Generate fresh ssh-key-pair (if needed)
+    local_action: 'ssh-keygen -q -t rsa -N ""'
+    when: not key_file.exits
+    become: no
+
+  tasks:
 
   - name: Set hostname
     hostname:
@@ -100,7 +119,6 @@
     async: 1
     poll: 0
     ignore_errors: true
-
   - name: waiting to come back
     wait_for_connection:
       delay: 15
@@ -108,13 +126,13 @@
     become: no
 
   - name: Upgrade all packages to the latest version
-    apt:
+    ansible.builtin.apt:
       upgrade: dist
       update_cache: yes
     when: apt_upgrade|bool
 
   - name: Cleanup Apt (Cache & Dependencies)
-    apt:
+    ansible.builtin.apt:
       autoclean: yes
       autoremove: yes
     when: apt_upgrade|bool

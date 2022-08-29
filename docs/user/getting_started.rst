@@ -55,7 +55,7 @@ If you plan to install the OS and shepherd software on SD card, you have to prep
 Depending on your choice, follow `the official instructions <https://elinux.org/BeagleBoardUbuntu#eMMC:_All_BeagleBone_Variants_with_eMMC>`_ for **BeagleBone**.
 Shepherd has been tested on Ubuntu 18.04 LTS (image updated 2020-03-12), but might work with other Debian based distributions.
 
-**Note from 2022-05**: the last official release is getting quite old. Latest nightlies of Ubuntu, ie. `bone-ubuntu-20.04.4-console-armhf-2022-05-17-4gb.img.xz <https://rcn-ee.com/rootfs/ubuntu-armhf/2022-05-17/>`_, work as well and offer more performant software.
+**Note from 2022-05**: the last official release is getting quite old. Latest nightlies of Ubuntu, ie. `am335x-ubuntu-20.04.4-console-armhf-2022-08-24-4gb.img.xz <https://rcn-ee.com/rootfs/ubuntu-armhf-focal-minimal/2022-08-24/>`_, work as well and offer more performant software.
 
 After installing the OS on the BeagleBones and booting them, find out their IP addresses.
 If you know the subnet, you can use nmap from your machine, for example:

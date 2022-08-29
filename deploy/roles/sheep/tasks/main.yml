@@ -86,13 +86,24 @@
         "python3-pip",
         "python3-setuptools",
         "python3-virtualenv",
-        "python3-msgpack-numpy",
+        "python3-msgpack",
         "libdbus-glib-1-dev",
         "libgirepository1.0-dev",
         "dkms",
       ]
     state: present
     update_cache: yes
+
+- name: PIP - update essential base-packages (setuptools, pip, ...)
+  ansible.builtin.pip:
+    name:
+      [
+        "pip",
+        "setuptools",
+        "wheel",
+        "virtualenv",
+      ]
+    extra_args: --upgrade
 
 - name: Get full path of repository
   local_action: "shell realpath {{ role_path }}/../../.."
