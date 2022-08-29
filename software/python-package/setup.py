@@ -16,7 +16,7 @@ requirements = [
     "msgpack-numpy",
     "gevent",
     "scipy",
-    "shepherd-data",
+    # "shepherd-data",
 ]
 
 # We are installing the DBUS module to build the docs, but the C libraries
