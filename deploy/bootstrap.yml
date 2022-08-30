@@ -20,16 +20,14 @@
         ansible_become_password: "{{ default_password }}"
 
     - name: Get time and date from ansible controller
-      ansible.builtin.command:
-        cmd: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+      ansible.builtin.command: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
       delegate_to: localhost
       changed_when: false
       register: local_time
       become: false
 
     - name: Set correct time
-      ansible.builtin.command:
-        cmd: "date -s {{ local_time.stdout }}"
+      ansible.builtin.command: "date -s {{ local_time.stdout }}"
       changed_when: true
 
     - name: Check if ansible-Host has local ssh-key-pair
@@ -40,9 +38,9 @@
       become: false
 
     - name: Generate fresh ssh-key-pair (if needed)
-      ansible.builtin.command:
-        cmd: 'ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa'
+      ansible.builtin.command: 'ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa'
       delegate_to: localhost
+      changed_when: true
       when: not key_file.stat.exists
       become: false
 
@@ -94,7 +92,7 @@
       ansible.builtin.copy:
         src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
         dest: '/etc/ssh/'
-        mode: 0644
+        mode: '0644'
       with_items:
         - ssh_host_ecdsa_key.pub
         - ssh_host_ed25519_key.pub
@@ -105,7 +103,7 @@
       ansible.builtin.copy:
         src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
         dest: '/etc/ssh/'
-        mode: 0600
+        mode: '0600'
       with_items:
         - ssh_host_ecdsa_key
         - ssh_host_ed25519_key
@@ -113,8 +111,7 @@
       when: stat_keys.stat.exists
 
     - name: Update SSL-Certificates
-      ansible.builtin.command:
-        cmd: 'update-ca-certificates -f -v'
+      ansible.builtin.command: 'update-ca-certificates -f -v'
       changed_when: true
 
     - name: GIT - Clone & Update boot-script-tools from RobertCNelson
@@ -125,27 +122,15 @@
         version: master
 
     - name: Downgrade Kernel to working config
-      ansible.builtin.command:
-        cmd: '/opt/scripts/tools/update_kernel.sh --lts-4_19'
+      ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --lts-4_19'
       changed_when: true
 
     - name: Grow root partition to drive size
-      ansible.builtin.command:
-        cmd: '/opt/scripts/tools/grow_partition.sh'
+      ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
       changed_when: true
 
     - name: Restart device
-      ansible.builtin.shell:
-        cmd: 'sleep 2 && shutdown -r now "Ansible restart"'
-      async: 1
-      poll: 0
-      changed_when: true
-      ignore_errors: true
-    - name: Waiting to come back
-      ansible.builtin.wait_for_connection:
-        delay: 15
-        timeout: 300
-      become: false
+      ansible.builtin.reboot:
 
     - name: Upgrade all packages to the latest version
       ansible.builtin.apt:

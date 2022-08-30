@@ -7,7 +7,8 @@
     - install
 
 - name: Reload kernel modules
-  command: depmod -a
+  ansible.builtin.command: 'depmod -a'
+  changed_when: true
   tags:
     - install
 
@@ -29,7 +30,7 @@
     chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
     target: install
   notify:
-    - restart device
+    - Restart device
   tags:
     - install
     - device-tree

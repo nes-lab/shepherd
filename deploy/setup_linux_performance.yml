@@ -6,7 +6,7 @@
   tasks:
 
   - name: CFG - Improve SSH-Speed
-    lineinfile:
+    ansible.builtin.lineinfile:
       dest: /etc/ssh/sshd_config
       regexp: "{{ item.regex }}"
       line: "{{ item.line }}"
@@ -16,17 +16,18 @@
       - {regex: '^.*Compression.*$', line: 'Compression no'}
 
   - name: CFG - Adapt default Target to multi-user
-    command: systemctl set-default multi-user
+    ansible.builtin.command: 'systemctl set-default multi-user'
+    changed_when: true
     # check with: sudo systemctl get-default
 
   - name: CFG - Disable Graphical.target
-    #command: systemctl disable graphical.target
-    systemd:
+    ansible.builtin.systemd:
       name: graphical.target
-      enabled: no
+      enabled: false
       state: stopped
-      daemon_reload: yes
+      daemon_reload: true
 
   - name: CFG - Optimize Boot by removing outdated initrd
-    command: "rm -rf /boot/initrd.img*"
+    ansible.builtin.command: "rm -rf /boot/initrd.img*"
+    changed_when: true
     # note: ansible.builtin.file would have been preferred, but it has a problem with wildcards

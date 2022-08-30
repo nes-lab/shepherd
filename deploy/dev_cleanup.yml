@@ -6,33 +6,43 @@
   vars_prompt:
     - name: confirmation
       prompt: "Do you really want to continue?"
-      private: no
+      private: false
       default: "yes"
 
   tasks:
 
   - name: delete Logs and other tmp-files
-    command: "rm -rf {{item}}"
+    ansible.builtin.command: "rm -rf {{item}}"
     with_items:
       - /var/log/*
       - /var/lib/apt/lists
     when: confirmation | bool
+    changed_when: true
     # note: ansible.builtin.file would have been preferred, but it has a problem with wildcards
 
   - name: delete recordings
-    command: "rm -rf {{item}}"
+    ansible.builtin.command: "rm -rf {{item}}"
     with_items:
       - /var/shepherd/recordings/*
       - /var/shepherd/recordings2/*
     when: confirmation | bool
+    changed_when: true
 
   - name: Optimize Boot by removing outdated initrd
-    command: "rm -rf /boot/initrd.img*"
+    ansible.builtin.command: "rm -rf /boot/initrd.img*"
     when: confirmation | bool
+    changed_when: true
 
-  - name: clean apt-cache
-    command: apt clean
-    when: confirmation | bool
+  - name: Clean apt-caches - A
+    ansible.builtin.apt:
+      autoremove: true
+  - name: Clean apt-caches - B
+    ansible.builtin.apt:
+      autoclean: true
+  - name: Clean apt-caches - C
+    ansible.builtin.apt:
+      clean: true
 
   - name: Discard unused blocks (trim)
-    command: fstrim -a
+    ansible.builtin.command: 'fstrim -a'
+    changed_when: true

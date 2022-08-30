@@ -13,28 +13,30 @@
     # these can be also passed as argument:  -e "refresh_source=True" -> automatically skips these prompts
     - name: refresh_source
       prompt: "Do you want to (forcefully) git pull the Shepherd-Source on Nodes?"
-      private: no
+      private: false
       default: "no"
 
   tasks:
 
   - name: own codebase
-    command: 'chown -R {{ ansible_user }} {{ shepherd_install_path }}'
+    ansible.builtin.command: 'chown -R {{ ansible_user }} {{ shepherd_install_path }}'
     become: true
+    changed_when: true
 
   - name: GIT - Update Shepherd-Codebase
-    git:
+    ansible.builtin.git:
       repo: https://github.com/orgua/shepherd
       dest: '{{ shepherd_install_path }}'
-      update: yes
+      update: true
       # version: master
-      force: yes
+      force: true
     when: refresh_source|bool
     become: false
 
   - name: Stop Kernel Module
-    command: modprobe -rf shepherd
-    ignore_errors: yes
+    ansible.builtin.command: 'modprobe -rf shepherd'
+    failed_when: false
+    changed_when: true
 
   - name: Clean PRU Firmware Source
     make:
@@ -82,10 +84,12 @@
       target: install
 
   - name: Stop PRU0
-    command: echo "stop" > /sys/class/remoteproc/remoteproc1/state
+    ansible.builtin.shell:
+      cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc1/state'
 
   - name: Stop PRU1
-    command: echo "stop" > /sys/class/remoteproc/remoteproc2/state
+    ansible.builtin.shell:
+      cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc2/state'
 
   - name: Build and install kernel module
     make:
@@ -94,19 +98,20 @@
     when: rebuild_kernel_module|bool
 
   - name: Refresh list of kernel modules
-    command: depmod -a
+    ansible.builtin.command: 'depmod -a'
     when: rebuild_kernel_module|bool
+    changed_when: true
 
   - name: Install shepherd python package
-    command: python3 setup.py install --force
+    ansible.builtin.command: 'python3 setup.py install --force'
     args:
       chdir: '{{ shepherd_install_path }}/software/python-package'
     tags:
       - install
       - python
     when: rebuild_python_package|bool
+    changed_when: true
 
   - name: Load Shepherd-Module
-    command: modprobe -a shepherd
-    
-
+    ansible.builtin.command: 'modprobe -a shepherd'
+    changed_when: true

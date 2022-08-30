@@ -5,13 +5,13 @@
 # TODO: (maybe) remove avahi in managed network
 
 - name: SYS - Remove default User "ubuntu"
-  user:
+  ansible.builtin.user:
     name: ubuntu
-    remove: yes
+    remove: true
     state: absent
 
 - name: CFG - Improve SSHd-Security
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
@@ -39,19 +39,19 @@
   # TODO: x11Forwarding is twice in file, one yes and one no
 
 - name: CFG - Install custom SSHd-Banner for Login
-  copy:
+  ansible.builtin.copy:
     src: 'sshd_banner.text'
     dest: '/etc/issue.net'
-    force: yes
-    mode: u=rw
+    force: true
+    mode: '0644'
 
 - name: INIT - Check if "message of the day" exists
-  stat:
+  ansible.builtin.stat:
     path: /etc/default/motd-news
   register: motd_result
 
 - name: CFG - Disable "message of the day"-Service (motd)
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/default/motd-news
     regexp: '^.*ENABLED.*$'
     line: 'ENABLED=0'
@@ -59,24 +59,35 @@
   when: motd_result.stat.exists
 
 - name: CFG - Disable motd-news.timer
-  command: systemctl disable motd-news.timer
+  ansible.builtin.systemd:
+    name: 'motd-news.timer'
+    masked: true
+    state: stopped
+    enabled: false
+  changed_when: true
 
 - name: CFG - Disable Terminal over Serial -> Services
-  command: systemctl mask {{ item }}
+  ansible.builtin.systemd:
+    name: '{{ item }}'
+    masked: true
+    state: stopped
+    enabled: false
   with_items:
     - 'serial-getty@ttyGS0.service'
     - 'serial-getty@ttyS0.service'
     - 'getty@tty1.service'
+  changed_when: true
+  # change active ones with: sudo systemctl list-units
 
 - name: CFG - Disable Terminal over Serial -> Grub
-  replace:
+  ansible.builtin.replace:
     dest: /etc/default/grub
     regexp: '^console=ttyO0,115200n8\s$'
     replace: ''
-  ignore_errors: true # not existing in latest nightlies
+  failed_when: false # not existing in latest nightlies
 
 - name: CFG - Disable Terminal over Serial -> uBoot
-  replace:
+  ansible.builtin.replace:
     dest: /boot/uEnv.txt
     regexp: '^console='
     replace: '#console='
@@ -85,23 +96,21 @@
 # TODO: uEnv has UART enabled
 
 - name: SYS - Find and disable world-writables
-  command: find / -xdev -perm +o=w ! \( -type d -perm +o=t \) ! -type l -ok chmod -v o-w {} \;
+  ansible.builtin.command:
+    cmd: 'find / -xdev -perm +o=w ! \( -type d -perm +o=t \) ! -type l -ok chmod -v o-w {} \;'
+  changed_when: true
 
 - name: SYS - Prevent active User from creating new world writables
-  shell: 'umask 002 && umask'
+  ansible.builtin.shell:
+    cmd: 'umask 002 && umask'
+  changed_when: true
 
-- name: SYS - Restart Device
-  shell: sleep 2 && shutdown -r now "Ansible restart"
-  async: 1
-  poll: 0
-  ignore_errors: true
-- name: SYS - Waiting to come back
-  wait_for_connection:
-    delay: 15
-    timeout: 300
-  become: no
+- name: Restart device
+  ansible.builtin.reboot:
 
 - name: INFO - check for port-listeners (look for open ports beside of SSHd)
-  shell: netstat -apn | grep LISTEN
+  ansible.builtin.shell:
+    cmd: 'netstat -apn | grep LISTEN'
+  changed_when: false
   register: netstat
 # - debug: msg="{{ netstat.stdout }}"

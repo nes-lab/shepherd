@@ -1,67 +1,63 @@
 ---
 - name: Make sure TI software path exists
-  file:
+  ansible.builtin.file:
     path: '{{ ti_path }}'
     state: directory
-  become: yes
+    mode: '0644'
+  become: true
   tags:
     - pru-tools
 
 - name: Download and extract pru software support package
-  unarchive:
+  ansible.builtin.unarchive:
     src: 'http://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/{{ pru_support_package }}.tar.gz'
     dest: '{{ ti_path }}'
-    remote_src: yes
-  become: yes
+    remote_src: true
+  become: true
   tags:
     - pru-tools
 
 - name: Download PRU Code Generation tools installer
-  get_url:
+  ansible.builtin.get_url:
     url: '{{ pru_cgt_installer }}'
     dest: /tmp/
     timeout: 120
-  register: get_url_ret
-  tags:
-    - pru-tools
-
-- name: Make PRU Code Generation tools installer executable
-  file:
-    dest: '{{ get_url_ret.dest }}'
     mode: a+x
-  become: yes
+  register: get_url_ret
+  become: true
   tags:
     - pru-tools
 
 - name: Install PRU Code Generation tools
-  shell: '{{ get_url_ret.dest }}'
-  become: yes
+  ansible.builtin.command: '{{ get_url_ret.dest }}'
+  become: true
+  changed_when: true
   tags:
     - pru-tools
 
 - name: Prepare path to link binaries
-  file:
+  ansible.builtin.file:
     path: '{{ pru_cgt_path }}/bin'
     state: directory
-    recurse: yes
-  become: yes
+    recurse: true
+  become: true
   tags:
     - pru-tools
 
 - name: Symlink PRU compiler and linker
-  file:
+  ansible.builtin.file:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
     state: link
   with_items:
    - { src: /usr/bin/clpru, dest: '{{ pru_cgt_path }}/bin/clpru' }
    - { src: /usr/bin/lnkpru, dest: '{{ pru_cgt_path }}/bin/lnkpru' }
-  become: yes
+  become: true
   tags:
     - pru-tools
 
 - name: Adding PRU environment vars in bashrc file
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: '{{ item[1] }}/.bashrc'
     line: 'export {{ item[0]["name"] }}={{ item[0]["path"] }}'
     insertafter: 'EOF'
@@ -72,6 +68,6 @@
       { name: PRU_SUPPORT, path: '{{ ti_path }}/{{ pru_support_package }}' }
      ]
    - ['/home/{{ ansible_user }}', '/root']
-  become: yes
+  become: true
   tags:
     - pru-tools

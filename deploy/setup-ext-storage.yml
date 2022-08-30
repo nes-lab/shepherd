@@ -3,14 +3,16 @@
   hosts: all
   vars:
     storage_dev: mmcblk0
-  become: yes
+  become: true
   tasks:
 
   - name: Confirm formatting external storage
-    pause: prompt='This will format your external storage at /dev/{{ storage_dev }}. All data will be lost. Press Ctrl+c and then "a" to abort'
+    ansible.builtin.pause:
+      prompt: 'This will format your external storage at /dev/{{ storage_dev }}. All data will be lost. Press Ctrl+c and then "a" to abort'
 
   - name: Check root device
-    shell: "mount | grep ' / ' | cut -d' ' -f 1"
+    ansible.builtin.shell:
+      cmd: "mount | grep ' / ' | cut -d' ' -f 1"
     register: root_dev
 
   - fail:
@@ -18,7 +20,7 @@
     when: root_dev.stdout == "/dev/" + storage_dev + "p1"
 
   - name: install parted
-    apt:
+    ansible.builtin.apt:
       name: parted
       state: present
 
@@ -27,9 +29,9 @@
     register: dev_info
 
   - name: Unmount external storage
-    command: 'umount /dev/{{ storage_dev }}p1'
-    ignore_errors: yes
-    failed_when: no
+    ansible.builtin.command: 'umount /dev/{{ storage_dev }}p1'
+    failed_when: false
+    changed_when: true
 
   - name: Remove all partitions from disk
     parted:
@@ -45,15 +47,16 @@
       state: present
 
   - name: Unmount external storage
-    command: 'umount /dev/{{ storage_dev }}p1'
-    ignore_errors: yes
-    failed_when: no
+    ansible.builtin.command: 'umount /dev/{{ storage_dev }}p1'
+    failed_when: false
+    changed_when: true
 
   - name: Create a ext4 filesystem
-    command: 'mkfs.ext4 -F /dev/{{ storage_dev }}p1'
+    ansible.builtin.command: 'mkfs.ext4 -F /dev/{{ storage_dev }}p1'
+    changed_when: true
 
   - name: Mount external storage at /var/shepherd/recordings
-    mount:
+    ansible.posix.mount:
       path: '/var/shepherd/recordings'
       src: '/dev/{{ storage_dev }}p1'
       fstype: ext4
@@ -63,7 +66,7 @@
       passno: '2'
 
   - name: Mount tmpfs at /tmp
-    mount:
+    ansible.posix.mount:
       path: '/tmp'
       src: 'tmpfs'
       fstype: tmpfs

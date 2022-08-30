@@ -2,34 +2,25 @@
 - name: Deposit your machines' certificates (host) to nodes for future password-less ssh-logins
   hosts: all
   become: true
-  gather_facts: no
+  gather_facts: false
 
   vars_prompt:
     - name: current_password
       prompt: "Provide current target-password"
-      private: yes
+      private: true
 
   tasks:
 
-  - set_fact:
+  - ansible.builtin.set_fact:
       # special internal variables:
       ansible_password: "{{ current_password }}"
       ansible_become_password: "{{ current_password }}"
 
   - name: enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
-    authorized_key:
+    ansible.posix.authorized_key:
       user: "{{ ansible_user }}"
       state: present
       key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
-  - name: restart device
-    shell: sleep 2 && shutdown -r now "Ansible restart"
-    async: 1
-    poll: 0
-    ignore_errors: true
-
-  - name: waiting to come back
-    wait_for_connection:
-      delay: 15
-      timeout: 300
-    become: no
+  - name: Restart device
+    ansible.builtin.reboot:

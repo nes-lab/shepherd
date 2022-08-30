@@ -1,6 +1,6 @@
 ---
 - name: Disable most factory enabled capes and overlays
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: "/boot/uEnv.txt"
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
@@ -26,14 +26,14 @@
         regexpress: "#?enable_uboot_cape_universal=.*$",
         replacement: "#enable_uboot_cape_universal=1",
       }
-  become: yes
+  become: true
   notify:
     - restart device
   tags:
     - device-tree
 
 - name: Enable shepherd overlays
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: "/boot/uEnv.txt"
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
@@ -59,19 +59,19 @@
       regexpress: '#?uboot_overlay_addr5=.*$',
       replacement: "uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo",
       }
-  become: yes
+  become: true
   notify:
     - restart device
   tags:
     - device-tree
 
 - name: Get kernel version
-  command: uname --kernel-release
+  ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
-  changed_when: False
+  changed_when: false
 
 - name: APT - Install required packages
-  apt:
+  ansible.builtin.apt:
     name:
       [
         "linux-headers-{{ kernelrelease.stdout.strip() }}",
@@ -92,7 +92,7 @@
         "dkms",
       ]
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: PIP - update essential base-packages (setuptools, pip, ...)
   ansible.builtin.pip:
@@ -104,12 +104,15 @@
         "virtualenv",
       ]
     extra_args: --upgrade
-  when: False # TODO: not cleanest solution (packages managed by apt) but setup for pyPackage failed recently
+  when: false
+  # disabled for now - not the cleanest solution - packages managed by apt but setup for pyPackage failed recently
 
 - name: Get full path of repository
-  local_action: "shell realpath {{ role_path }}/../../.."
+  ansible.builtin.command: "realpath {{ role_path }}/../../.."
+  delegate_to: localhost
   register: repo_dir
-  become: no
+  become: false
+  changed_when: false
   tags:
     - source-code
     - device-tree
@@ -117,11 +120,12 @@
     - systemd
 
 - name: Create paths for shepherd
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+    mode: '0644'
   with_items:
     - "{{ shepherd_install_path }}"
     - "{{ shepherd_data_path }}"
@@ -131,12 +135,12 @@
     - python
 
 - name: Synchronize host shepherd dir to target
-  synchronize:
+  ansible.posix.synchronize:
     src: "{{ repo_dir.stdout }}/"
     dest: "{{ shepherd_install_path }}"
-    delete: yes
-    owner: no
-    group: no
+    delete: true
+    owner: false
+    group: false
     rsync_opts:
       - "--exclude=.eggs"
       - "--exclude=__pycache__"
@@ -144,15 +148,21 @@
     - source-code
     - python
 
-- name: own shepherd codebase
-  command: 'chown -R {{ ansible_user }} {{ shepherd_install_path }}'
+- name: Own shepherd codebase
+  ansible.builtin.file:
+    path: '{{ shepherd_install_path }}'
+    state: 'directory'
+    owner: '{{ ansible_user }}'
+    recurse: true
   become: true
+  changed_when: true
   tags:
     - source-code
     - python
 
 - name: Install shepherd python package
-  command: python3 setup.py install --force
+  ansible.builtin.command: 'python3 setup.py install --force'
+  changed_when: true
   args:
     chdir: "{{ shepherd_install_path }}/software/python-package"
   tags:
@@ -160,11 +170,12 @@
     - python
 
 - name: Deploy example configuration
-  copy:
+  ansible.builtin.copy:
     src: "{{ repo_dir.stdout }}/software/python-package/{{ item }}"
     dest: "{{ shepherd_config_path }}"
-    force: no
+    force: false
     owner: "{{ ansible_user }}"
+    mode: '0644'
   with_items:
    - 'example_config_emulator.yml'
    - 'example_config_harvester.yml'
@@ -174,11 +185,12 @@
     - conf
 
 - name: Deploy default configuration for launcher (harvest)
-  copy:
+  ansible.builtin.copy:
     src: "{{ repo_dir.stdout }}/software/python-package/example_config_harvester.yml"
     dest: "{{ shepherd_config_path }}/config.yml"
-    force: no
+    force: false
     owner: "{{ ansible_user }}"
+    mode: '0644'
   tags:
     - source-code
     - python
@@ -189,8 +201,8 @@
     src: /usr/local/bin/shepherd-sheep
     path: /usr/bin/shepherd-sheep
     state: link
-    follow: yes
-  ignore_errors: yes
+    follow: true
+  failed_when: false
   tags:
     - install
     - python
@@ -207,7 +219,7 @@
 
 # TODO: divide better into parts, so rebuild_fw triggers a reload of kernel module as well, but not the make-permanent-part
 - name: Make Shepherd Module permanent
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: "/etc/modules"
     regexp: "#?shepherd.*$"
     line: "shepherd"

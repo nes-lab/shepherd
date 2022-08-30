@@ -4,18 +4,18 @@
 
   tasks:
   - name: Prepare directory per host
-    local_action:
-      module: file
+    ansible.builtin.file:
       path: "{{ playbook_dir}}/keys/{{ inventory_hostname }}"
       state: directory
       mode: 0755
+    delegate_to: localhost
 
   - name: Fetch keys
-    fetch:
+    ansible.builtin.fetch:
       src: '/etc/ssh/{{ item }}'
       dest: '{{ playbook_dir}}/keys/{{ inventory_hostname }}/'
-      flat: yes
-    become: yes
+      flat: true
+    become: true
     with_items:
       - ssh_host_ecdsa_key
       - ssh_host_ecdsa_key.pub

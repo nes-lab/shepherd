@@ -1,12 +1,12 @@
 ---
 - name: Get kernel version
-  command: uname --kernel-release
+  ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
-  changed_when: False
+  changed_when: false
   tags: gps
 
-- name: install required packages
-  apt:
+- name: Install required packages
+  ansible.builtin.apt:
     name:
       [
         "python3-pip",
@@ -18,15 +18,15 @@
         "dkms",
       ]
     state: present
-    update_cache: yes
+    update_cache: true
   tags: gps
 
-- name: install python ubxserial modules
-  pip:
+- name: Install python ubxserial modules
+  ansible.builtin.pip:
     name: ubxserial
 
-- name: configure chrony and gpsd (not active)
-  copy:
+- name: Configure chrony and gpsd (not active)
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "/etc/shepherd/"
     mode: 0644
@@ -39,7 +39,7 @@
     - conf
 
 - name: Disable factory enabled capes
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: '/boot/uEnv.txt'
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
@@ -65,20 +65,20 @@
       regexpress: "#?enable_uboot_cape_universal=.*$",
       replacement: "#enable_uboot_cape_universal=1",
       }
-  notify: restart device
+  notify: Restart device
   tags: gps
 
 - name: Set GPS-cape to enabled
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: '/boot/uEnv.txt'
     regexp: '#?uboot_overlay_addr6=.*$'
     line: "uboot_overlay_addr6=/lib/firmware/BB-GPS-00A0.dtbo"
     state: present
-  notify: restart device
+  notify: Restart device
   tags: gps
 
 - name: Copy pps-gmtimer code
-  synchronize:
+  ansible.posix.synchronize:
     src: "{{ pps_gmtimer_path }}"
     dest: /opt/pps-gmtimer
   tags:
@@ -94,7 +94,7 @@
     - pps
 
 - name: Copy device tree overlay for GPS-Capelet
-  synchronize:
+  ansible.posix.synchronize:
     src: "{{ gps_overlay_path }}"
     dest: "/opt/gps-overlay"
   tags:
@@ -105,21 +105,23 @@
   make:
     chdir: "/opt/gps-overlay"
     target: install
-  notify: restart device
+  notify: Restart device
   tags:
     - gps
     - device-tree
 
 - name: Add udev rule for hw pps device
-  copy:
+  ansible.builtin.copy:
     src: "91-hw-pps.rules"
     dest: "/etc/udev/rules.d/"
+    mode: '0644'
   tags:
     - gps
     - conf
 
-- name: make system find kernel-module
-  command: depmod -ae
+- name: Make system find kernel-module
+  ansible.builtin.command: 'depmod -ae'
+  changed_when: true
   tags:
     - gps
     - conf
