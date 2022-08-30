@@ -4,6 +4,7 @@
   vars:
     mount_path: /opt/shepherd-dev
   tasks:
+
     - name: Get full path of repository
       ansible.builtin.command: "realpath {{ playbook_dir }}/.."
       delegate_to: localhost
@@ -17,7 +18,8 @@
 
     - name: Confirm setting up of NFS share
       ansible.builtin.pause:
-        prompt: 'Confirm that you really want to configure an NFS share on your local machine. This is a security risk! Press return to continue. Press Ctrl+c and then "a" to abort'
+        prompt: 'Confirm that you really want to configure an NFS share on your local machine.
+        This is a security risk! Press return to continue. Press Ctrl+c and then "a" to abort'
 
     - name: Install nfs server - pacman (requires openss-askpass)
       ansible.builtin.package:

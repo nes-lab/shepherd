@@ -3,23 +3,24 @@
   hosts: all
 
   tasks:
-  - name: Prepare directory per host
-    ansible.builtin.file:
-      path: "{{ playbook_dir}}/keys/{{ inventory_hostname }}"
-      state: directory
-      mode: 0755
-    delegate_to: localhost
 
-  - name: Fetch keys
-    ansible.builtin.fetch:
-      src: '/etc/ssh/{{ item }}'
-      dest: '{{ playbook_dir}}/keys/{{ inventory_hostname }}/'
-      flat: true
-    become: true
-    with_items:
-      - ssh_host_ecdsa_key
-      - ssh_host_ecdsa_key.pub
-      - ssh_host_ed25519_key
-      - ssh_host_ed25519_key.pub
-      - ssh_host_rsa_key
-      - ssh_host_rsa_key.pub
+    - name: Prepare directory per host
+      ansible.builtin.file:
+        path: "{{ playbook_dir}}/keys/{{ inventory_hostname }}"
+        state: directory
+        mode: 0755
+      delegate_to: localhost
+
+    - name: Fetch keys
+      ansible.builtin.fetch:
+        src: '/etc/ssh/{{ item }}'
+        dest: '{{ playbook_dir}}/keys/{{ inventory_hostname }}/'
+        flat: true
+      become: true
+      with_items:
+        - ssh_host_ecdsa_key
+        - ssh_host_ecdsa_key.pub
+        - ssh_host_ed25519_key
+        - ssh_host_ed25519_key.pub
+        - ssh_host_rsa_key
+        - ssh_host_rsa_key.pub

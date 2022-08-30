@@ -7,25 +7,25 @@
     state: present
   with_items:
     - {
-        regexpress: "#?disable_uboot_overlay_video=.*$",
-        replacement: "disable_uboot_overlay_video=1",
-      }
+      regexpress: "#?disable_uboot_overlay_video=.*$",
+      replacement: "disable_uboot_overlay_video=1",
+    }
     - {
-        regexpress: "#?disable_uboot_overlay_audio=.*$",
-        replacement: "disable_uboot_overlay_audio=1",
-      }
+      regexpress: "#?disable_uboot_overlay_audio=.*$",
+      replacement: "disable_uboot_overlay_audio=1",
+    }
     - {
-        regexpress: "#?disable_uboot_overlay_wireless=.*$",
-        replacement: "disable_uboot_overlay_wireless=1",
-      }
+      regexpress: "#?disable_uboot_overlay_wireless=.*$",
+      replacement: "disable_uboot_overlay_wireless=1",
+    }
     - {
-        regexpress: "#?disable_uboot_overlay_adc=.*$",
-        replacement: "disable_uboot_overlay_adc=1",
-      }
+      regexpress: "#?disable_uboot_overlay_adc=.*$",
+      replacement: "disable_uboot_overlay_adc=1",
+    }
     - {
-        regexpress: "#?enable_uboot_cape_universal=.*$",
-        replacement: "#enable_uboot_cape_universal=1",
-      }
+      regexpress: "#?enable_uboot_cape_universal=.*$",
+      replacement: "#enable_uboot_cape_universal=1",
+    }
   become: true
   notify:
     - restart device
@@ -40,25 +40,25 @@
     state: present
   with_items:
     - {
-        regexpress: "#?enable_uboot_overlays=.*$",
-        replacement: "enable_uboot_overlays=1",
-      }
+      regexpress: "#?enable_uboot_overlays=.*$",
+      replacement: "enable_uboot_overlays=1",
+    }
     - {
       regexpress: '#?uboot_overlay_pru=.*$',
       replacement: "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo",
-      } # TODO: this _overlay_pru should maybe be _overlay_addr0? it is not listed in recent uEnvs
+    } # TODO: this _overlay_pru should maybe be _overlay_addr0? it is not listed in recent uEnvs
     - {
       regexpress: '#?dtb_overlay=.*$',
       replacement: "dtb_overlay=/lib/firmware/BB-SHPRD-00A0.dtbo",
-      }
+    }
     - {
       regexpress: '#?uboot_overlay_addr4=.*$',
       replacement: "#uboot_overlay_addr4=/lib/firmware/BB-I2C1-00A0.dtbo",
-      }
+    }
     - {
       regexpress: '#?uboot_overlay_addr5=.*$',
       replacement: "uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo",
-      }
+    }
   become: true
   notify:
     - restart device
@@ -177,8 +177,8 @@
     owner: "{{ ansible_user }}"
     mode: '0644'
   with_items:
-   - 'example_config_emulator.yml'
-   - 'example_config_harvester.yml'
+    - 'example_config_emulator.yml'
+    - 'example_config_harvester.yml'
   tags:
     - source-code
     - python

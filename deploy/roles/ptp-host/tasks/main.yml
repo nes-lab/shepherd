@@ -25,13 +25,13 @@
     mode: '0644'
   with_items:
     - {
-        src: "phc2sys_mands.conf",
-        dest: "phc2sys.service.d/phc2sys_mands.conf",
-      }
+      src: "phc2sys_mands.conf",
+      dest: "phc2sys.service.d/phc2sys_mands.conf",
+    }
     - {
-        src: "ptp_restart.conf",
-        dest: "ptp4l.service.d/ptp_restart.conf"
-      }
+      src: "ptp_restart.conf",
+      dest: "ptp4l.service.d/ptp_restart.conf"
+    }
   tags:
     - ptp
     - conf

@@ -5,59 +5,59 @@
 
   tasks:
 
-  # TODO: easiest current option to later install special version of openOCD (this step will not install it -> copy config and service by hand)
-  - name: Add shepherd repository to aptitude
-    ansible.builtin.apt_repository:
-      repo: deb [trusted=yes] https://shepherd.nes-lab.org debian/
-      state: present
-      validate_certs: false
+    # TODO: easiest current option to later install special version of openOCD (this step will not install it -> copy config and service by hand)
+    - name: Add shepherd repository to aptitude
+      ansible.builtin.apt_repository:
+        repo: deb [trusted=yes] https://shepherd.nes-lab.org debian/
+        state: present
+        validate_certs: false
 
-  - name: Install modded openOCD-version
-    ansible.builtin.apt:
-      name: shepherd-openocd
-      state: latest
-      update_cache: true
+    - name: Install modded openOCD-version
+      ansible.builtin.apt:
+        name: shepherd-openocd
+        state: latest
+        update_cache: true
 
-  - name: Get full path of repository
-    ansible.builtin.command: 'realpath {{ playbook_dir }}/..'
-    delegate_to: localhost
-    register: repo_dir
-    become: false
-    changed_when: false
+    - name: Get full path of repository
+      ansible.builtin.command: 'realpath {{ playbook_dir }}/..'
+      delegate_to: localhost
+      register: repo_dir
+      become: false
+      changed_when: false
 
-  # TODO: beaglebone.cfg also contains a pin-config! maybe deactivate it
-  - name: Add pin-config for shepherd-hw v2.1
-    ansible.builtin.copy:
-      src: '{{ repo_dir.stdout }}/software/openocd/shepherd.cfg'
-      dest: '/usr/share/openocd/scripts/interface/shepherd.cfg'
-      mode: '0644'
+    # TODO: beaglebone.cfg also contains a pin-config! maybe deactivate it
+    - name: Add pin-config for shepherd-hw v2.1
+      ansible.builtin.copy:
+        src: '{{ repo_dir.stdout }}/software/openocd/shepherd.cfg'
+        dest: '/usr/share/openocd/scripts/interface/shepherd.cfg'
+        mode: '0644'
 
-  - name: Add systemd services
-    ansible.builtin.copy:
-      src: '{{ repo_dir.stdout }}/software/openocd/debian/{{ item }}.service'
-      dest: '/etc/systemd/system/{{ item }}.service'
-      mode: '0644'
-    with_items:
-     - shepherd-openocd
-    tags:
-      - install
-      - systemd
+    - name: Add systemd services
+      ansible.builtin.copy:
+        src: '{{ repo_dir.stdout }}/software/openocd/debian/{{ item }}.service'
+        dest: '/etc/systemd/system/{{ item }}.service'
+        mode: '0644'
+      with_items:
+        - shepherd-openocd
+      tags:
+        - install
+        - systemd
 
-  - name: Register systemd services
-    ansible.builtin.systemd:
-      name: '{{ item.name }}'
-      state: stopped
-      enabled: '{{ item.enabled }}'
-      daemon_reload: true
-    with_items:
-     - { name: shepherd-openocd, enabled: false}
-    tags:
-      - install
-      - systemd
+    - name: Register systemd services
+      ansible.builtin.systemd:
+        name: '{{ item.name }}'
+        state: stopped
+        enabled: '{{ item.enabled }}'
+        daemon_reload: true
+      with_items:
+        - { name: shepherd-openocd, enabled: false}
+      tags:
+        - install
+        - systemd
 
-  - name: Slow down Programming Clock-Speed (needed for hw v2.2)
-    ansible.builtin.lineinfile:
-      path: /usr/share/openocd/scripts/interface/beaglebone.cfg
-      state: present
-      regexp: '^am335x_gpio_speed_coeffs'
-      line: 'am335x_gpio_speed_coeffs 500000 320' # raise coeff from 230k to 500k
+    - name: Slow down Programming Clock-Speed (needed for hw v2.2)
+      ansible.builtin.lineinfile:
+        path: /usr/share/openocd/scripts/interface/beaglebone.cfg
+        state: present
+        regexp: '^am335x_gpio_speed_coeffs'
+        line: 'am335x_gpio_speed_coeffs 500000 320' # raise coeff from 230k to 500k

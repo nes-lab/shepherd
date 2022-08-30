@@ -48,23 +48,23 @@
     - {
       regexpress: "#?disable_uboot_overlay_video=.*$",
       replacement: "disable_uboot_overlay_video=1",
-      }
+    }
     - {
       regexpress: "#?disable_uboot_overlay_audio=.*$",
       replacement: "disable_uboot_overlay_audio=1",
-      }
+    }
     - {
       regexpress: "#?disable_uboot_overlay_wireless=.*$",
       replacement: "disable_uboot_overlay_wireless=1",
-      }
+    }
     - {
       regexpress: "#?disable_uboot_overlay_adc=.*$",
       replacement: "disable_uboot_overlay_adc=1",
-      }
+    }
     - {
       regexpress: "#?enable_uboot_cape_universal=.*$",
       replacement: "#enable_uboot_cape_universal=1",
-      }
+    }
   notify: Restart device
   tags: gps
 

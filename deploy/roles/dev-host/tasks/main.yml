@@ -50,8 +50,8 @@
     dest: '{{ item.dest }}'
     state: link
   with_items:
-   - { src: /usr/bin/clpru, dest: '{{ pru_cgt_path }}/bin/clpru' }
-   - { src: /usr/bin/lnkpru, dest: '{{ pru_cgt_path }}/bin/lnkpru' }
+    - { src: /usr/bin/clpru, dest: '{{ pru_cgt_path }}/bin/clpru' }
+    - { src: /usr/bin/lnkpru, dest: '{{ pru_cgt_path }}/bin/lnkpru' }
   become: true
   tags:
     - pru-tools
@@ -63,11 +63,11 @@
     insertafter: 'EOF'
     state: present
   with_nested:
-   - [
+    - [
       { name: PRU_CGT, path: '{{ pru_cgt_path }}' },
       { name: PRU_SUPPORT, path: '{{ ti_path }}/{{ pru_support_package }}' }
-     ]
-   - ['/home/{{ ansible_user }}', '/root']
+    ]
+    - ['/home/{{ ansible_user }}', '/root']
   become: true
   tags:
     - pru-tools

@@ -5,9 +5,9 @@
     dest: '/etc/systemd/system/{{ item }}'
     mode: '0644'
   with_items:
-   - shepherd.service
-   - shepherd-rpc.service
-   - shepherd-launcher.service
+    - shepherd.service
+    - shepherd-rpc.service
+    - shepherd-launcher.service
   tags:
     - install
     - systemd
@@ -19,10 +19,10 @@
     enabled: '{{ item.enabled }}'
     daemon_reload: true
   with_items:
-   - { name: shepherd, enabled: false}
-   - { name: shepherd-rpc, enabled: false}
-   - { name: shepherd-launcher, enabled: true}
-   - { name: systemd-timesyncd, enabled: false}
+    - { name: shepherd, enabled: false}
+    - { name: shepherd-rpc, enabled: false}
+    - { name: shepherd-launcher, enabled: true}
+    - { name: systemd-timesyncd, enabled: false}
   tags:
     - conf
     - systemd
