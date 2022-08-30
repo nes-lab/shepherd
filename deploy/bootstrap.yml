@@ -1,8 +1,8 @@
----
+--- # TODO: improve other playbooks with ansible-lint as well
 - name: Base setup
   hosts: all
   become: true
-  gather_facts: no
+  gather_facts: false
 
   vars:
     default_user: ubuntu
@@ -11,134 +11,150 @@
 
   pre_tasks:
 
-  - name: Switch ansible-config to use default-credentials of distribution
-    set_fact:
-      new_user: "{{ ansible_user }}"
-      # special internal variables:
-      ansible_user: "{{ default_user }}"
-      ansible_password: "{{ default_password }}"
-      ansible_become_password: "{{ default_password }}"
+    - name: Switch ansible-config to use default-credentials of distribution
+      ansible.builtin.set_fact:
+        new_user: "{{ ansible_user }}"
+        # special internal variables:
+        ansible_user: "{{ default_user }}"
+        ansible_password: "{{ default_password }}"
+        ansible_become_password: "{{ default_password }}"
 
-  - name: Get time and date from ansible controller
-    local_action: command date -u +"%Y-%m-%dT%H:%M:%SZ"
-    register: local_time
-    become: no
+    - name: Get time and date from ansible controller
+      ansible.builtin.command:
+        cmd: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+      delegate_to: localhost
+      changed_when: false
+      register: local_time
+      become: false
 
-  - name: Set correct time
-    command: "date -s {{ local_time.stdout }}"
+    - name: Set correct time
+      ansible.builtin.command:
+        cmd: "date -s {{ local_time.stdout }}"
+      changed_when: true
 
-  - name: Check if ansible-Host has local ssh-key-pair
-    local_action:
-      module: ansible.builtin.stat
-      path: ~/.ssh/id_rsa.pub
-    register: key_file
-    become: no
+    - name: Check if ansible-Host has local ssh-key-pair
+      ansible.builtin.stat:
+        path: ~/.ssh/id_rsa.pub
+      delegate_to: localhost
+      register: key_file
+      become: false
 
-  - name: Generate fresh ssh-key-pair (if needed)
-    local_action:
-      module: ansible.builtin.command
-      cmd: 'ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa'
-    when: key_file.stat.exists == False
-    become: no
+    - name: Generate fresh ssh-key-pair (if needed)
+      ansible.builtin.command:
+        cmd: 'ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa'
+      delegate_to: localhost
+      when: not key_file.stat.exists
+      become: false
 
   tasks:
 
-  - name: Set hostname
-    hostname:
-      name: "{{ inventory_hostname }}"
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
 
-  - name: Adjust /etc/hosts
-    lineinfile:
-      dest: /etc/hosts
-      regexp: '^127\.0\.1\.1\s+.+\.localdomain\s+.+'
-      line: '127.0.1.1  {{ inventory_hostname }}.localdomain  {{ inventory_hostname }}'
-      state: present
+    - name: Adjust /etc/hosts
+      ansible.builtin.lineinfile:
+        dest: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+.+\.localdomain\s+.+'
+        line: '127.0.1.1  {{ inventory_hostname }}.localdomain  {{ inventory_hostname }}'
+        state: present
 
-  - name: Add the new user
-    user:
-      name: "{{ new_user }}"
-      shell: /bin/bash
-      groups: sudo
-      append: yes
+    - name: Add the new user
+      ansible.builtin.user:
+        name: "{{ new_user }}"
+        shell: /bin/bash
+        groups: sudo
+        append: true
+        generate_ssh_key: true
 
-  - name: enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
-    authorized_key:
-      user: "{{ item }}"
-      state: present
-      key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-    with_items:
-      - "{{ new_user }}"
+    - name: Enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      with_items:
+        - "{{ new_user }}"
 
-  - name: Allow sudoers sudo without password
-    lineinfile:
-      path: /etc/sudoers
-      state: present
-      regexp: '^%sudo.*$'
-      line: '%sudo ALL=(ALL) NOPASSWD: ALL'
-      validate: 'visudo -cf %s'
+    - name: Allow sudoers sudo without password
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo.*$'
+        line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
 
-  - name: Check if we have hostkeys locally
-    local_action: 'stat path={{ playbook_dir }}/keys/{{ inventory_hostname }}'
-    register: stat_keys
-    become: no
+    - name: Check if we have host-keys locally
+      ansible.builtin.stat:
+        path: '{{ playbook_dir }}/keys/{{ inventory_hostname }}'
+      delegate_to: localhost
+      register: stat_keys
+      become: false
 
-  - name: Copy public keys from local
-    copy:
-      src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
-      dest: '/etc/ssh/'
-      mode: 0644
-    with_items:
+    - name: Copy public keys from local
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
+        dest: '/etc/ssh/'
+        mode: 0644
+      with_items:
         - ssh_host_ecdsa_key.pub
         - ssh_host_ed25519_key.pub
         - ssh_host_rsa_key.pub
-    when: stat_keys.stat.exists == True
+      when: stat_keys.stat.exists
 
-  - name: Copy private keys from local
-    copy:
-      src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
-      dest: '/etc/ssh/'
-      mode: 0600
-    with_items:
+    - name: Copy private keys from local
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
+        dest: '/etc/ssh/'
+        mode: 0600
+      with_items:
         - ssh_host_ecdsa_key
         - ssh_host_ed25519_key
         - ssh_host_rsa_key
-    when: stat_keys.stat.exists == True
+      when: stat_keys.stat.exists
 
-  - name: Update SSL-Certificates
-    shell: update-ca-certificates -f -v
+    - name: Update SSL-Certificates
+      ansible.builtin.command:
+        cmd: 'update-ca-certificates -f -v'
+      changed_when: true
 
-  - name: GIT - Clone & Update boot-script-tools from RobertCNelson
-    git:
-      repo: https://github.com/RobertCNelson/boot-scripts
-      dest: /opt/scripts
-      update: yes
-      version: master
+    - name: GIT - Clone & Update boot-script-tools from RobertCNelson
+      ansible.builtin.git:
+        repo: https://github.com/RobertCNelson/boot-scripts
+        dest: /opt/scripts
+        update: true
+        version: master
 
-  - name: Downgrade Kernel to working config
-    command: /opt/scripts/tools/update_kernel.sh --lts-4_19
+    - name: Downgrade Kernel to working config
+      ansible.builtin.command:
+        cmd: '/opt/scripts/tools/update_kernel.sh --lts-4_19'
+      changed_when: true
 
-  - name: Grow root partition to drive size
-    command: /opt/scripts/tools/grow_partition.sh
+    - name: Grow root partition to drive size
+      ansible.builtin.command:
+        cmd: '/opt/scripts/tools/grow_partition.sh'
+      changed_when: true
 
-  - name: restart device
-    shell: sleep 2 && shutdown -r now "Ansible restart"
-    async: 1
-    poll: 0
-    ignore_errors: true
-  - name: waiting to come back
-    wait_for_connection:
-      delay: 15
-      timeout: 300
-    become: no
+    - name: Restart device
+      ansible.builtin.shell:
+        cmd: 'sleep 2 && shutdown -r now "Ansible restart"'
+      async: 1
+      poll: 0
+      changed_when: true
+      ignore_errors: true
+    - name: Waiting to come back
+      ansible.builtin.wait_for_connection:
+        delay: 15
+        timeout: 300
+      become: false
 
-  - name: Upgrade all packages to the latest version
-    ansible.builtin.apt:
-      upgrade: dist
-      update_cache: yes
-    when: apt_upgrade|bool
+    - name: Upgrade all packages to the latest version
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+      when: apt_upgrade | bool
 
-  - name: Cleanup Apt (Cache & Dependencies)
-    ansible.builtin.apt:
-      autoclean: yes
-      autoremove: yes
-    when: apt_upgrade|bool
+    - name: Cleanup Apt (Cache & Dependencies)
+      ansible.builtin.apt:
+        autoclean: true
+        autoremove: true
+      when: apt_upgrade | bool
