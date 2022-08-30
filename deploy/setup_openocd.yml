@@ -15,7 +15,7 @@
     - name: Install modded openOCD-version
       ansible.builtin.apt:
         name: shepherd-openocd
-        state: latest
+        state: present
         update_cache: true
 
     - name: Get full path of repository

@@ -27,7 +27,14 @@
       state: stopped
       daemon_reload: true
 
-  - name: CFG - Optimize Boot by removing outdated initrd
-    ansible.builtin.command: "rm -rf /boot/initrd.img*"
-    changed_when: true
-    # note: ansible.builtin.file would have been preferred, but it has a problem with wildcards
+  - name: Optimize Boot by removing outdated initrd - find files with Wildcard
+    # ansible.builtin.command: "rm -rf /boot/initrd.img*"
+    ansible.builtin.find:
+      paths: '/boot'
+      patterns: 'initrd.img*'
+    register: files_init
+  - name: Optimize Boot by removing outdated initrd - delete files found previously
+    ansible.builtin.find:
+      path: "{{ item.path }}"
+      state: absent
+    with_items: "{{ files_init.files }}"

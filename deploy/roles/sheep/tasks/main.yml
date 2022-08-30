@@ -155,7 +155,6 @@
     owner: '{{ ansible_user }}'
     recurse: true
   become: true
-  changed_when: true
   tags:
     - source-code
     - python

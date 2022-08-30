@@ -14,12 +14,15 @@
       ansible.builtin.shell:
         cmd: "mount | grep ' / ' | cut -d' ' -f 1"
       register: root_dev
+      changed_when: false
+      # despite ansible-lints claim this is not doable with ansible.posix.mount
 
-    - fail:
+    - name: Fail if device is root device
+      ansible.builtin.fail:
         msg: Cannot use root device as external storage!
       when: root_dev.stdout == "/dev/" + storage_dev + "p1"
 
-    - name: install parted
+    - name: Install parted
       ansible.builtin.apt:
         name: parted
         state: present
@@ -42,7 +45,7 @@
 
     - name: Create a new primary partition
       parted:
-        device: '/dev/{{ storage_dev}}'
+        device: '/dev/{{ storage_dev }}'
         number: 1
         state: present
 

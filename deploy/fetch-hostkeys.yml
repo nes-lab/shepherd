@@ -6,7 +6,7 @@
 
     - name: Prepare directory per host
       ansible.builtin.file:
-        path: "{{ playbook_dir}}/keys/{{ inventory_hostname }}"
+        path: "{{ playbook_dir }}/keys/{{ inventory_hostname }}"
         state: directory
         mode: 0755
       delegate_to: localhost
@@ -14,7 +14,7 @@
     - name: Fetch keys
       ansible.builtin.fetch:
         src: '/etc/ssh/{{ item }}'
-        dest: '{{ playbook_dir}}/keys/{{ inventory_hostname }}/'
+        dest: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/'
         flat: true
       become: true
       with_items:

@@ -11,12 +11,13 @@
 
   tasks:
 
-    - ansible.builtin.set_fact:
+    - name: Set provided PW for current playbook
+      ansible.builtin.set_fact:
         # special internal variables:
         ansible_password: "{{ current_password }}"
         ansible_become_password: "{{ current_password }}"
 
-    - name: enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
+    - name: Enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
       ansible.posix.authorized_key:
         user: "{{ ansible_user }}"
         state: present

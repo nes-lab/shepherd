@@ -42,7 +42,7 @@
     - name: Adding the path for nfs on localhost
       ansible.builtin.lineinfile:
         dest: "/etc/exports"
-        line: "{{ repo_dir.stdout }}	*(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000)"
+        line: "{{ repo_dir.stdout }}   *(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000)"
         insertafter: "EOF"
         state: present
       delegate_to: localhost

@@ -18,19 +18,22 @@
 
   tasks:
 
-    - name: own codebase
-      ansible.builtin.command: 'chown -R {{ ansible_user }} {{ shepherd_install_path }}'
+    - name: Own shepherd codebase
+      ansible.builtin.file:
+        path: '{{ shepherd_install_path }}'
+        state: 'directory'
+        owner: '{{ ansible_user }}'
+        recurse: true
       become: true
-      changed_when: true
 
     - name: GIT - Update Shepherd-Codebase
       ansible.builtin.git:
         repo: https://github.com/orgua/shepherd
         dest: '{{ shepherd_install_path }}'
         update: true
-        # version: master
+        version: master
         force: true
-      when: refresh_source|bool
+      when: refresh_source | bool
       become: false
 
     - name: Stop Kernel Module
@@ -62,7 +65,7 @@
         - pru1
       become: false
 
-    - name: install PRU firmware
+    - name: Install PRU firmware
       make:
         chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
         target: install
@@ -73,12 +76,12 @@
         - pru0
         - pru1
 
-    - name: clean shepherd device tree
+    - name: Clean shepherd device tree
       make:
         chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
         target: clean
 
-    - name: build and install shepherd device tree
+    - name: Build and install shepherd device tree
       make:
         chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
         target: install
@@ -86,20 +89,22 @@
     - name: Stop PRU0
       ansible.builtin.shell:
         cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc1/state'
+      changed_when: true
 
     - name: Stop PRU1
       ansible.builtin.shell:
         cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc2/state'
+      changed_when: true
 
     - name: Build and install kernel module
       make:
         chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
         target: install
-      when: rebuild_kernel_module|bool
+      when: rebuild_kernel_module | bool
 
     - name: Refresh list of kernel modules
       ansible.builtin.command: 'depmod -a'
-      when: rebuild_kernel_module|bool
+      when: rebuild_kernel_module | bool
       changed_when: true
 
     - name: Install shepherd python package
@@ -109,7 +114,7 @@
       tags:
         - install
         - python
-      when: rebuild_python_package|bool
+      when: rebuild_python_package | bool
       changed_when: true
 
     - name: Load Shepherd-Module
