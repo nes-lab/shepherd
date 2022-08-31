@@ -32,8 +32,9 @@ jobs:
         run: "sudo python3 setup.py install --force"
         working-directory: "./software/python-package"
       - name: Test the py-package (limited test-range)
-        run: "python3 setup.py test --addopts '-vvv --fake'"
+        run: "sudo python3 setup.py test --addopts '-vvv --fake'"
         working-directory: "./software/python-package"
+        # needs sudo because it installs packages
       - name: Lint the py-package
         run: "pylint $(git ls-files '*.py') || pylint-exit $?"
         working-directory: "software/python-package/"
