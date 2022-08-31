@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          pip3 install ansible-lint
+          pip3 install ansible ansible-lint
       - name: Analysing the playbooks with lint
         run: |
           ansible-lint deploy/*
