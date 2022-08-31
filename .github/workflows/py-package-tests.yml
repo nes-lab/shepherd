@@ -22,6 +22,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip3 install pylint pylint-exit black
+          pip3 install msgpack # TODO: install-process fails otherwise
 
       - name: Build the py-package
         run: "python3 setup.py build --force"
