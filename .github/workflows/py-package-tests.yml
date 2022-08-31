@@ -23,16 +23,18 @@ jobs:
           python3 -m pip install --upgrade pip
           pip3 install pylint pylint-exit black
 
-      - name: Switch to Sub-Dir
-        run: "cd software/python-package/"
-
       - name: Build the py-package
         run: "python3 setup.py build --force"
+        working-directory: "software/python-package"
       - name: Install the py-package
         run: "sudo python3 setup.py install --force"
+        working-directory: "./software/python-package"
       - name: Test the py-package (limited test-range)
         run: "python3 setup.py test --addopts '-vvv --fake'"
+        working-directory: "./software/python-package"
       - name: Lint the py-package
         run: "pylint $(git ls-files '*.py') || pylint-exit $?"
+        working-directory: "software/python-package/"
       - name: Black-Check the py-package
         run: "black --check ./"
+        working-directory: "./software/python-package"
