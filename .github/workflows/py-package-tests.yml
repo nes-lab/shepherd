@@ -1,0 +1,38 @@
+name: tests for python-package
+
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.6"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install pylint pylint-exit black
+
+      - name: Switch to Sub-Dir
+        run: "cd software/python-package/"
+
+      - name: Build the py-package
+        run: "python3 setup.py build --force"
+      - name: Install the py-package
+        run: "sudo python3 setup.py install --force"
+      - name: Test the py-package (limited test-range)
+        run: "python3 setup.py test --addopts '-vvv --fake'"
+      - name: Lint the py-package
+        run: "pylint $(git ls-files '*.py') || pylint-exit $?"
+      - name: Black-Check the py-package
+        run: "black --check ./"
