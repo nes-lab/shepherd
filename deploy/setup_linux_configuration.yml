@@ -39,7 +39,7 @@
 
   tasks:
 
-    - name: GIT - Update "boot-scripts" from RobertCNelson
+    - name: GIT - Clone & Update boot-script-tools from RobertCNelson
       ansible.builtin.git:
         repo: https://github.com/RobertCNelson/boot-scripts
         dest: /opt/scripts

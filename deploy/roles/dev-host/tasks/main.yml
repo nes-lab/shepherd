@@ -14,6 +14,9 @@
     dest: '{{ ti_path }}'
     remote_src: true
   become: true
+  register: dl_pssp_ret
+  until: dl_pssp_ret is not failed
+  retries: 3
   tags:
     - pru-tools
 
@@ -23,13 +26,15 @@
     dest: /tmp/
     timeout: 120
     mode: a+x
-  register: get_url_ret
+  register: dl_cgt_ret
   become: true
+  until: dl_cgt_ret is not failed
+  retries: 3
   tags:
     - pru-tools
 
 - name: Install PRU Code Generation tools
-  ansible.builtin.command: '{{ get_url_ret.dest }}'
+  ansible.builtin.command: '{{ dl_cgt_ret.dest }}'
   become: true
   changed_when: true
   tags:

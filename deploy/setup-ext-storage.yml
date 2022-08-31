@@ -12,7 +12,7 @@
 
     - name: Check root device
       ansible.builtin.shell:
-        cmd: "mount | grep ' / ' | cut -d' ' -f 1"
+        cmd: "mount | grep ' / ' | cut -d' ' -f 1"  # noqa command-instead-of-module
       register: root_dev
       changed_when: false
       # despite ansible-lints claim this is not doable with ansible.posix.mount
