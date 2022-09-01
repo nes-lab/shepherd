@@ -29,8 +29,7 @@
   make:
     chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
     target: install
-  notify:
-    - Restart device
+  notify: Restart device
   tags:
     - install
     - device-tree

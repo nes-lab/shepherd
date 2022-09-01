@@ -27,10 +27,8 @@
       replacement: "#enable_uboot_cape_universal=1",
     }
   become: true
-  notify:
-    - restart device
-  tags:
-    - device-tree
+  notify: Restart device
+  tags: device-tree
 
 - name: Enable shepherd overlays
   ansible.builtin.lineinfile:
@@ -60,10 +58,8 @@
       replacement: "uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo",
     }
   become: true
-  notify:
-    - restart device
-  tags:
-    - device-tree
+  notify: Restart device
+  tags: device-tree
 
 - name: Get kernel version
   ansible.builtin.command: 'uname --kernel-release'
