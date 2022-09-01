@@ -99,10 +99,8 @@ def cli(ctx, verbose: int):
     config_logger(verbose)
 
 
-@cli.command(
-    short_help="Turns target power supply on or off (i.e. for programming)"
-)
-@click.option("--on/--off", default=True)
+@cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
+@click.option("--on/--off", type=click.BOOL, default=True)
 @click.option(
     "--voltage",
     "-v",
@@ -180,9 +178,7 @@ def run(mode, parameters: Dict, verbose):
             parameters["output_path"] = Path(parameters["output_path"])
         run_recorder(**parameters)
     elif mode == "emulator":
-        if ("output_path" in parameters) and (
-            parameters["output_path"] is not None
-        ):
+        if ("output_path" in parameters) and (parameters["output_path"] is not None):
             parameters["output_path"] = Path(parameters["output_path"])
         if "input_path" in parameters:
             parameters["input_path"] = Path(parameters["input_path"])
@@ -222,21 +218,15 @@ def run(mode, parameters: Dict, verbose):
     type=click.FLOAT,
     help="Duration of recording in seconds",
 )
-@click.option(
-    "--force_overwrite", "-f", is_flag=True, help="Overwrite existing file"
-)
-@click.option(
-    "--use_cal_default", is_flag=True, help="Use default calibration values"
-)
+@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option(
     "--start_time",
     "-s",
     type=click.FLOAT,
     help="Desired start time in unix epoch time",
 )
-@click.option(
-    "--warn-only/--no-warn-only", default=True, help="Warn only on errors"
-)
+@click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def harvester(
     output_path,
     algorithm,
@@ -274,12 +264,8 @@ def harvester(
     type=click.FLOAT,
     help="Duration of recording in seconds",
 )
-@click.option(
-    "--force_overwrite", "-f", is_flag=True, help="Overwrite existing file"
-)
-@click.option(
-    "--use_cal_default", is_flag=True, help="Use default calibration values"
-)
+@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option(
     "--start_time",
     "-s",
@@ -321,9 +307,7 @@ def harvester(
     type=click.INT,
     help="Enable UART-Logging for target by setting a baudrate",
 )
-@click.option(
-    "--warn-only/--no-warn-only", default=True, help="Warn only on errors"
-)
+@click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 @click.option(
     "--skip_log_voltage",
     is_flag=True,
@@ -432,10 +416,7 @@ def write(infofile, version, serial_number, cal_file, use_cal_default):
     if infofile is not None:
         if serial_number is not None or version is not None:
             raise click.UsageError(
-                (
-                    "--infofile and --version/--serial_number"
-                    " are mutually exclusive"
-                )
+                ("--infofile and --version/--serial_number" " are mutually exclusive")
             )
         cape_data = CapeData.from_yaml(infofile)
         with EEPROM() as storage:
