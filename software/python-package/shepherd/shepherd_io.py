@@ -27,7 +27,7 @@ from shepherd import commons
 from shepherd.calibration import CalibrationData, cal_component_list
 from shepherd.virtual_source_config import VirtualSourceConfig
 from shepherd.sysfs_interface import SysfsInterfaceException
-from shepherd import VirtualHarvesterConfig
+from shepherd.virtual_harvester_config import VirtualHarvesterConfig
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ class GPIOEdges(object):
     together with the corresponding timestamp
     """
 
-    def __init__(self, timestamps_ns: np.ndarray = None, values: np.ndarray = None):
+    def __init__(
+        self, timestamps_ns: np.ndarray = None, values: np.ndarray = None
+    ):
         if timestamps_ns is None:
             self.timestamps_ns = np.empty(0)
             self.values = np.empty(0)
@@ -202,7 +204,9 @@ class SharedMem(object):
 
         # Read the header consisting of 12 (4 + 8 Bytes)
         # First two values are number of samples and 64 bit timestamp
-        n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
+        n_samples, buffer_timestamp = struct.unpack(
+            "=LQ", self.mapped_mem.read(12)
+        )
         if verbose:
             logger.debug(
                 f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
@@ -214,7 +218,9 @@ class SharedMem(object):
         if self.prev_timestamp > 0:
             diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6
             if buffer_timestamp == 0:
-                logger.error(f"ZERO      timestamp detected after recv it from PRU")
+                logger.error(
+                    f"ZERO      timestamp detected after recv it from PRU"
+                )
             if diff_ms < 0:
                 logger.error(
                     f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
@@ -265,7 +271,9 @@ class SharedMem(object):
 
         # pru0 util
         self.mapped_mem.seek(buffer_offset + self.pru0_ut_offset)
-        pru0_max_ticks, pru0_sum_ticks = struct.unpack("=LL", self.mapped_mem.read(8))
+        pru0_max_ticks, pru0_sum_ticks = struct.unpack(
+            "=LL", self.mapped_mem.read(8)
+        )
         pru0_util_max = round(100 * pru0_max_ticks / 2000, 1)
         pru0_util_mean = round(100 * pru0_sum_ticks / n_samples / 2000, 1)
         if pru0_util_mean > pru0_util_max:
@@ -400,7 +408,9 @@ class ShepherdIO(object):
             self.shared_mem.__enter__()
 
         except Exception as xcp:
-            logger.warning(f"ShepherdIO.Init caught an exception ({xcp}) -> exit now")
+            logger.warning(
+                f"ShepherdIO.Init caught an exception ({xcp}) -> exit now"
+            )
             self._cleanup()
             raise
 
@@ -447,7 +457,9 @@ class ShepherdIO(object):
             except SysfsInterfaceException:
                 break
 
-    def start(self, start_time: float = None, wait_blocking: bool = True) -> NoReturn:
+    def start(
+        self, start_time: float = None, wait_blocking: bool = True
+    ) -> NoReturn:
         """Starts sampling either now or at later point in time.
 
         Args:
@@ -455,7 +467,9 @@ class ShepherdIO(object):
             wait_blocking (bool): If true, block until start has completed
         """
         if isinstance(start_time, (float, int)):
-            logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
+            logger.debug(
+                f"asking kernel module for start at {round(start_time, 2)}"
+            )
         sysfs_interface.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
@@ -614,7 +628,9 @@ class ShepherdIO(object):
         """
         return sysfs_interface.read_dac_aux_voltage(cal_settings)
 
-    def send_calibration_settings(self, cal_settings: CalibrationData) -> NoReturn:
+    def send_calibration_settings(
+        self, cal_settings: CalibrationData
+    ) -> NoReturn:
         """Sends calibration settings to PRU core
 
         For the virtual source it is required to have the calibration settings.
@@ -630,7 +646,9 @@ class ShepherdIO(object):
         sysfs_interface.write_calibration_settings(cal_dict)
 
     @staticmethod
-    def send_virtual_converter_settings(settings: VirtualSourceConfig) -> NoReturn:
+    def send_virtual_converter_settings(
+        settings: VirtualSourceConfig,
+    ) -> NoReturn:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
@@ -638,17 +656,23 @@ class ShepherdIO(object):
         :param settings: Contains the settings for the virtual source.
         :param log_intermediate_voltage: monitor capacitor, useful when output is const
         """
-        sysfs_interface.write_virtual_converter_settings(settings.export_for_sysfs())
+        sysfs_interface.write_virtual_converter_settings(
+            settings.export_for_sysfs()
+        )
 
     @staticmethod
-    def send_virtual_harvester_settings(settings: VirtualHarvesterConfig) -> NoReturn:
+    def send_virtual_harvester_settings(
+        settings: VirtualHarvesterConfig,
+    ) -> NoReturn:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
 
         :param settings: Contains the settings for the virtual source.
         """
-        sysfs_interface.write_virtual_harvester_settings(settings.export_for_sysfs())
+        sysfs_interface.write_virtual_harvester_settings(
+            settings.export_for_sysfs()
+        )
 
     def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU

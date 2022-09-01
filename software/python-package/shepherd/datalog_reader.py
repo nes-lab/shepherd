@@ -50,9 +50,11 @@ class LogReader:
     ds_time: h5py.Dataset = None
     ds_voltage: h5py.Dataset = None
     ds_current: h5py.Dataset = None
-    _cal: dict[str, dict] = None
+    _cal: dict = None  # dict[str, dict]
 
-    def __init__(self, file_path: Union[Path, None], verbose: Union[bool, None] = True):
+    def __init__(
+        self, file_path: Union[Path, None], verbose: Union[bool, None] = True
+    ):
         self._skip_open = file_path is None  # for access by writer-class
         if not self._skip_open:
             self._file_path = Path(file_path)
@@ -63,7 +65,9 @@ class LogReader:
         if not self._skip_open:
             if not self._file_path.exists():
                 raise FileNotFoundError(
-                    errno.ENOENT, os.strerror(errno.ENOENT), self._file_path.name
+                    errno.ENOENT,
+                    os.strerror(errno.ENOENT),
+                    self._file_path.name,
                 )
             self.h5file = h5py.File(self._file_path, "r")
 
@@ -115,22 +119,23 @@ class LogReader:
         self.h5file.flush()
         if self.ds_time.shape[0] > 1:
             self.sample_interval_ns = int(self.ds_time[1] - self.ds_time[0])
-            self.samplerate_sps = max(int(10**9 // self.sample_interval_ns), 1)
+            self.samplerate_sps = max(
+                int(10**9 // self.sample_interval_ns), 1
+            )
             self.sample_interval_s = 1.0 / self.samplerate_sps
         self.runtime_s = round(self.ds_time.shape[0] / self.samplerate_sps, 1)
         self.file_size = self._file_path.stat().st_size
-        self.data_rate = self.file_size / self.runtime_s if self.runtime_s > 0 else 0
+        self.data_rate = (
+            self.file_size / self.runtime_s if self.runtime_s > 0 else 0
+        )
 
-    def read_buffers(
-        self, start_n: int = 0, end_n: int = None, is_raw: bool = False
-    ) -> tuple:
+    def read_buffers(self, start_n: int = 0, end_n: int = None) -> tuple:
         """Generator that reads the specified range of buffers from the hdf5 file.
         can be configured on first call
 
         Args:
             :param start_n: (int) Index of first buffer to be read
             :param end_n: (int) Index of last buffer to be read
-            :param is_raw: (bool) output original data, not transformed to SI-Units
         Yields:
             Buffers between start and end (tuple with time, voltage, current)
         """
@@ -139,27 +144,15 @@ class LogReader:
         self._logger.debug(
             "Reading blocks from %s to %s from source-file", start_n, end_n
         )
-        _raw = is_raw
-
         for i in range(start_n, end_n):
             idx_start = i * self.samples_per_buffer
             idx_end = idx_start + self.samples_per_buffer
-            if _raw:
-                yield (
-                    self.ds_time[idx_start:idx_end],
-                    self.ds_voltage[idx_start:idx_end],
-                    self.ds_current[idx_start:idx_end],
-                )
-            else:
-                yield (
-                    self.ds_time[idx_start:idx_end] * 1e-9,
-                    convert_raw_to_value(
-                        self._cal["voltage"], self.ds_voltage[idx_start:idx_end]
-                    ),
-                    convert_raw_to_value(
-                        self._cal["current"], self.ds_current[idx_start:idx_end]
-                    ),
-                )
+
+            yield (
+                self.ds_time[idx_start:idx_end],
+                self.ds_voltage[idx_start:idx_end],
+                self.ds_current[idx_start:idx_end],
+            )
 
     def get_calibration_data(self) -> dict:
         """Reads calibration-data from hdf5 file.
@@ -236,7 +229,9 @@ class LogReader:
         for dset, attr in product(["current", "voltage"], ["gain", "offset"]):
             if attr not in self.h5file["data"][dset].attrs.keys():
                 self._logger.error(
-                    "attribute '%s' not found in dataset '%s' (@Validator)", attr, dset
+                    "attribute '%s' not found in dataset '%s' (@Validator)",
+                    attr,
+                    dset,
                 )
                 return False
         if self.get_datatype() not in self.mode_dtype_dict[self.get_mode()]:
@@ -287,7 +282,8 @@ class LogReader:
                 )
             if (comp == "gzip") and (opts is not None) and (int(opts) > 1):
                 self._logger.warning(
-                    "gzip compression is too high (%s > 1) for BBone (@Validator)", opts
+                    "gzip compression is too high (%s > 1) for BBone (@Validator)",
+                    opts,
                 )
         # host-name
         if self.get_hostname() == "unknown":

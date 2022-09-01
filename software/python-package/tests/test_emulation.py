@@ -69,7 +69,9 @@ def emulator(request, shepherd_up, shp_reader, virtsource_settings_yml):
         for _, dsv, dsc in shp_reader.read_buffers(end_n=fifo_buffer_size)
     ]
     emu = Emulator(
-        calibration_recording=CalibrationData(shp_reader.get_calibration_data()),
+        calibration_recording=CalibrationData(
+            shp_reader.get_calibration_data()
+        ),
         calibration_emulator=CalibrationData.from_default(),
         initial_buffers=init_buffers,
         vsource=vs_cfg,
@@ -118,7 +120,9 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
     )
 
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
-        assert hf_emu["data"]["time"].shape[0] == hf_hrvst["data"]["time"].shape[0]
+        assert (
+            hf_emu["data"]["time"].shape[0] == hf_hrvst["data"]["time"].shape[0]
+        )
         assert hf_emu["data"]["time"][0] == start_time * 10**9
 
 
@@ -145,11 +149,21 @@ def test_target_pins(shepherd_up):
         7,
         8,
     ]  # 5&6 are UART, can only be used when free, 7&8 are SWD
-    pru_responses = [0, 1, 6, 7, 8, 2, 3]  # corresponding to r31_num (and later 2^num)
+    pru_responses = [
+        0,
+        1,
+        6,
+        7,
+        8,
+        2,
+        3,
+    ]  # corresponding to r31_num (and later 2^num)
 
     for channel in [2, 3]:
         dac_cfg = dac_channels[channel]
-        value_raw = shepherd_io.convert_value_to_raw(dac_cfg[1], dac_cfg[2], 2.0)
+        value_raw = shepherd_io.convert_value_to_raw(
+            dac_cfg[1], dac_cfg[2], 2.0
+        )
         shepherd_io.dac_write(dac_cfg[0], value_raw)
 
     shepherd_io.set_target_io_level_conv(True)

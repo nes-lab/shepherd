@@ -56,7 +56,9 @@ def pytest_addoption(parser):
 def pytest_collection_modifyitems(config, items):
     skip_fake = pytest.mark.skip(reason="need --fake option to run")
     skip_real = pytest.mark.skip(reason="selected fake hardware only")
-    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option to run")
+    skip_eeprom_write = pytest.mark.skip(
+        reason="requires --eeprom-write option to run"
+    )
     skip_missing_hardware = pytest.mark.skip(reason="no hardware to test on")
     real_hardware = check_beagleboard()
 
@@ -68,7 +70,9 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_real)
         if "fake_hardware" in item.keywords and not config.getoption("--fake"):
             item.add_marker(skip_fake)
-        if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
+        if "eeprom_write" in item.keywords and not config.getoption(
+            "--eeprom-write"
+        ):
             item.add_marker(skip_eeprom_write)
 
 
@@ -76,16 +80,16 @@ def pytest_collection_modifyitems(config, items):
 def shepherd_up(fake_hardware, shepherd_down):
     if fake_hardware is not None:
         files = [
-            ("/sys/kernel/shepherd/state", "idle"),
-            ("/sys/kernel/shepherd/mode", "harvester"),
-            ("/sys/kernel/shepherd/n_buffers", "1"),
-            ("/sys/kernel/shepherd/memory/address", "1"),
-            ("/sys/kernel/shepherd/memory/size", "1"),
-            ("/sys/kernel/shepherd/samples_per_buffer", "1"),
-            ("/sys/kernel/shepherd/buffer_period_ns", "1"),
-            ("/sys/kernel/shepherd/dac_auxiliary_voltage_raw", "0"),
-            ("/sys/kernel/shepherd/calibration_settings", "0"),
-            ("/sys/kernel/shepherd/virtsource_settings", "0"),
+            ("/sys/shepherd/state", "idle"),
+            ("/sys/shepherd/mode", "harvester"),
+            ("/sys/shepherd/n_buffers", "1"),
+            ("/sys/shepherd/memory/address", "1"),
+            ("/sys/shepherd/memory/size", "1"),
+            ("/sys/shepherd/samples_per_buffer", "1"),
+            ("/sys/shepherd/buffer_period_ns", "1"),
+            ("/sys/shepherd/dac_auxiliary_voltage_raw", "0"),
+            ("/sys/shepherd/calibration_settings", "0"),
+            ("/sys/shepherd/virtsource_settings", "0"),
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)

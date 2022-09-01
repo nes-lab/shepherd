@@ -30,7 +30,12 @@ logger = logging.getLogger(__name__)
 # -> general formula is:    si-value = raw_value * gain + offset
 # TODO: emulator has no ADC_voltage, but uses this slot to store cal-data for target-port B
 cal_component_list = ["harvester", "emulator"]
-cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
+cal_channel_list = [
+    "dac_voltage_a",
+    "dac_voltage_b",
+    "adc_current",
+    "adc_voltage",
+]
 # functions from cal-default.py to convert the channels in cal_channel_list
 cal_channel_fn_list = [
     "dac_voltage_to_raw",
@@ -89,7 +94,9 @@ class CalibrationData(object):
             CalibrationData object with extracted calibration data.
         """
         val_count = (
-            len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+            len(cal_component_list)
+            * len(cal_channel_list)
+            * len(cal_parameter_list)
         )
         values = struct.unpack(
             ">" + val_count * "d", data
@@ -178,10 +185,10 @@ class CalibrationData(object):
                     gain = 1.0
                 offset = 0
                 try:
-                    sample_points = meas_data["measurements"][component][channel]
-                    x = np.empty(len(sample_points))
-                    y = np.empty(len(sample_points))
-                    for i, point in enumerate(sample_points):
+                    sample_pts = meas_data["measurements"][component][channel]
+                    x = np.empty(len(sample_pts))
+                    y = np.empty(len(sample_pts))
+                    for i, point in enumerate(sample_pts):
                         x[i] = point["shepherd_raw"]
                         y[i] = point["reference_si"]
                     result = stats.linregress(x, y)
@@ -205,17 +212,25 @@ class CalibrationData(object):
                 cal_dict[component][channel]["offset"] = offset
         return cls(cal_dict)
 
-    def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
+    def convert_raw_to_value(
+        self, component: str, channel: str, raw: int
+    ) -> float:
         offset = self.data[component][channel]["offset"]
         gain = self.data[component][channel]["gain"]
-        raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
+        raw_max = (
+            cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
+        )
         raw = min(max(raw, 0), raw_max)
         return max(float(raw) * gain + offset, 0.0)
 
-    def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
+    def convert_value_to_raw(
+        self, component: str, channel: str, value: float
+    ) -> int:
         offset = self.data[component][channel]["offset"]
         gain = self.data[component][channel]["gain"]
-        raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
+        raw_max = (
+            cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
+        )
         return min(max(int((value - offset) / gain), 0), raw_max)
 
     def to_bytestr(self):
@@ -232,7 +247,9 @@ class CalibrationData(object):
                 for parameter in cal_parameter_list:
                     flattened.append(self.data[component][channel][parameter])
         val_count = (
-            len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
+            len(cal_component_list)
+            * len(cal_channel_list)
+            * len(cal_parameter_list)
         )
         return struct.pack(">" + val_count * "d", *flattened)
 

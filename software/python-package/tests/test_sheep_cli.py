@@ -127,7 +127,9 @@ def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path):
 @pytest.mark.timeout(60)
 def test_cli_harvest_parameters_minimal(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
-    res = cli_runner.invoke(cli, ["harvester", "-f", "-d", "10", "-o", str(store)])
+    res = cli_runner.invoke(
+        cli, ["harvester", "-f", "-d", "10", "-o", str(store)]
+    )
 
     assert res.exit_code == 0
     assert store.exists()
@@ -144,7 +146,9 @@ def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_harvest_preconf_etc_shp_examples(shepherd_up, cli_runner, tmp_path):
+def test_cli_harvest_preconf_etc_shp_examples(
+    shepherd_up, cli_runner, tmp_path
+):
     here = Path(__file__).absolute().parent
     file_path = here.parent / "example_config_harvester.yml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
@@ -175,7 +179,9 @@ def test_cli_emulate(shepherd_up, cli_runner, tmp_path, data_h5):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_with_custom_virtsource(shepherd_up, cli_runner, tmp_path, data_h5):
+def test_cli_emulate_with_custom_virtsource(
+    shepherd_up, cli_runner, tmp_path, data_h5
+):
     here = Path(__file__).absolute().parent
     file_path = here / "example_config_virtsource.yml"
     store = tmp_path / "out.h5"
@@ -271,7 +277,9 @@ def test_cli_emulate_aux_voltage(shepherd_up, cli_runner, tmp_path, data_h5):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5):
+def test_cli_emulate_parameters_long(
+    shepherd_up, cli_runner, tmp_path, data_h5
+):
     store = tmp_path / "out.h5"
     here = Path(__file__).absolute().parent
     file_path = here / "example_config_virtsource.yml"
@@ -311,7 +319,9 @@ def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5)
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5):
+def test_cli_emulate_parameters_short(
+    shepherd_up, cli_runner, tmp_path, data_h5
+):
     store = tmp_path / "out.h5"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
@@ -340,7 +350,9 @@ def test_cli_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_parameters_minimal(shepherd_up, cli_runner, tmp_path, data_h5):
+def test_cli_emulate_parameters_minimal(
+    shepherd_up, cli_runner, tmp_path, data_h5
+):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli,
@@ -365,7 +377,9 @@ def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_preconf_etc_shp_examples(shepherd_up, cli_runner, tmp_path):
+def test_cli_emulate_preconf_etc_shp_examples(
+    shepherd_up, cli_runner, tmp_path
+):
     here = Path(__file__).absolute().parent
     file_path = here.parent / "example_config_emulator.yml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
@@ -374,7 +388,9 @@ def test_cli_emulate_preconf_etc_shp_examples(shepherd_up, cli_runner, tmp_path)
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_aux_voltage_fail(shepherd_up, cli_runner, tmp_path, data_h5):
+def test_cli_emulate_aux_voltage_fail(
+    shepherd_up, cli_runner, tmp_path, data_h5
+):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
         cli,

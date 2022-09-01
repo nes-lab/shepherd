@@ -111,12 +111,19 @@ class VirtualHarvesterModel:
         distance_now = abs(_voltage_uV - self.voltage_set_uV)
         distance_last = abs(self.voltage_last - self.voltage_set_uV)
 
-        if compare_now != self.compare_last and step_size_now < self.voltage_step_x4_uV:
-            if distance_now < distance_last and distance_now < self.voltage_step_x4_uV:
+        if (
+            compare_now != self.compare_last
+            and step_size_now < self.voltage_step_x4_uV
+        ):
+            if (
+                distance_now < distance_last
+                and distance_now < self.voltage_step_x4_uV
+            ):
                 self.voltage_hold = _voltage_uV
                 self.current_hold = _current_nA
             elif (
-                distance_last < distance_now and distance_last < self.voltage_step_x4_uV
+                distance_last < distance_now
+                and distance_last < self.voltage_step_x4_uV
             ):
                 self.voltage_hold = self.voltage_last
                 self.current_hold = self.voltage_last
@@ -140,7 +147,9 @@ class VirtualHarvesterModel:
             self.voc_nxt = _voltage_uV
             self.age_nxt = 0
 
-        if (self.age_now > self._cfg.window_size) or (self.voc_nxt <= self.voc_now):
+        if (self.age_now > self._cfg.window_size) or (
+            self.voc_nxt <= self.voc_now
+        ):
             self.age_now = self.age_nxt
             self.voc_now = self.voc_nxt
             self.age_nxt = 0
@@ -148,7 +157,9 @@ class VirtualHarvesterModel:
 
         _voltage_uV, _current_nA = self.iv_cv(_voltage_uV, _current_nA)
         if self.interval_step < self._cfg.duration_n:
-            self.voltage_set_uV = int(self.voc_now * self._cfg.setpoint_n8 / 256)
+            self.voltage_set_uV = int(
+                self.voc_now * self._cfg.setpoint_n8 / 256
+            )
             _current_nA = 0
 
         return _voltage_uV, _current_nA
@@ -202,7 +213,9 @@ class VirtualHarvesterModel:
             self.voltage_nxt = _voltage_uV
             self.current_nxt = _current_nA
 
-        if (self.age_now > self._cfg.window_size) or (self.power_nxt >= self.power_now):
+        if (self.age_now > self._cfg.window_size) or (
+            self.power_nxt >= self.power_now
+        ):
             self.age_now = self.age_nxt
             self.power_now = self.power_nxt
             self.voltage_now = self.voltage_nxt

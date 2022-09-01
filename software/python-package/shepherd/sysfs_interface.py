@@ -29,7 +29,13 @@ class SysfsInterfaceException(Exception):
 # dedicated sampling modes
 # - _adc_read - modes are used per rpc (currently to calibrate the hardware)
 # TODO: what is with "None"?
-shepherd_modes = ["harvester", "hrv_adc_read", "emulator", "emu_adc_read", "debug"]
+shepherd_modes = [
+    "harvester",
+    "hrv_adc_read",
+    "emulator",
+    "emu_adc_read",
+    "debug",
+]
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
@@ -70,7 +76,9 @@ def set_start(start_time: float = None) -> NoReturn:
     current_state = get_state()
     logger.debug(f"current state of shepherd kernel module: {current_state}")
     if current_state != "idle":
-        raise SysfsInterfaceException(f"Cannot start from state { current_state }")
+        raise SysfsInterfaceException(
+            f"Cannot start from state { current_state }"
+        )
 
     with open(sysfs_path / "state", "w") as f:
         if isinstance(start_time, float):
@@ -92,7 +100,9 @@ def set_stop(force: bool = False) -> NoReturn:
     if not force:
         current_state = get_state()
         if current_state != "running":
-            raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
+            raise SysfsInterfaceException(
+                f"Cannot stop from state { current_state }"
+            )
 
     with open(sysfs_path / "state", "w") as f:
         f.write("stop")
@@ -136,7 +146,9 @@ def write_dac_aux_voltage(
         voltage = 0.0
     elif voltage is False:
         voltage = 0.0
-    elif (voltage is True) or (isinstance(voltage, str) and "main" in voltage.lower()):
+    elif (voltage is True) or (
+        isinstance(voltage, str) and "main" in voltage.lower()
+    ):
         # set bit 20 (during pru-reset) and therefore link both adc-channels
         write_dac_aux_voltage_raw(2**20)
         return
@@ -149,9 +161,13 @@ def write_dac_aux_voltage(
         return
 
     if voltage < 0.0:
-        raise SysfsInterfaceException(f"sending voltage with negative value: {voltage}")
+        raise SysfsInterfaceException(
+            f"sending voltage with negative value: {voltage}"
+        )
     if voltage > 5.0:
-        raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage}")
+        raise SysfsInterfaceException(
+            f"sending voltage above limit of 5V: {voltage}"
+        )
 
     if calibration_settings is None:
         output = calibration_default.dac_voltage_to_raw(voltage)
@@ -178,7 +194,9 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
             f"DAC: sending raw-voltage above possible limit of 16bit-value -> this might trigger commands"
         )
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
-        logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
+        logger.debug(
+            f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}"
+        )
         f.write(str(voltage_raw))
 
 
@@ -359,7 +377,9 @@ def write_pru_msg(msg_type: int, values: list) -> NoReturn:
         # catch all single ints and floats
         values = [int(values), 0]
     elif not isinstance(values, list):
-        raise ValueError(f"Outgoing msg to pru should have been list but is {values}")
+        raise ValueError(
+            f"Outgoing msg to pru should have been list but is {values}"
+        )
 
     for value in values:
         if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
@@ -384,7 +404,14 @@ def read_pru_msg() -> tuple:
     return msg_parts[0], msg_parts[1:]
 
 
-prog_attribs = ["protocol", "datarate", "pin_tck", "pin_tdio", "pin_tdo", "pin_tms"]
+prog_attribs = [
+    "protocol",
+    "datarate",
+    "pin_tck",
+    "pin_tdio",
+    "pin_tdo",
+    "pin_tms",
+]
 
 
 def write_programmer_ctrl(
@@ -405,7 +432,9 @@ def write_programmer_ctrl(
             )
     for _iter, attribute in enumerate(prog_attribs):
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug(f"[sysfs] set programmer/{attribute} = '{parameters[_iter]}'")
+            logger.debug(
+                f"[sysfs] set programmer/{attribute} = '{parameters[_iter]}'"
+            )
             file.write(str(parameters[_iter]))
 
 

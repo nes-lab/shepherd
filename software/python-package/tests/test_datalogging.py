@@ -63,7 +63,9 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     stat = d.stat()
     time.sleep(0.1)
 
-    h = LogWriter(file_path=d, calibration_data=calibration_data, force_overwrite=False)
+    h = LogWriter(
+        file_path=d, calibration_data=calibration_data, force_overwrite=False
+    )
     h.__enter__()
     h.__exit__()
     # This should have created the following alternative file:
@@ -71,7 +73,9 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     assert h.store_path == d_altered
     assert d_altered.exists()
 
-    h = LogWriter(file_path=d, calibration_data=calibration_data, force_overwrite=True)
+    h = LogWriter(
+        file_path=d, calibration_data=calibration_data, force_overwrite=True
+    )
     h.__enter__()
     h.__exit__()
     new_stat = d.stat()
@@ -81,7 +85,9 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest.h5"
-    with LogWriter(file_path=d, calibration_data=calibration_data, mode=mode) as log:
+    with LogWriter(
+        file_path=d, calibration_data=calibration_data, mode=mode
+    ) as log:
         log.write_buffer(data_buffer)
 
     with h5py.File(d, "r") as written:
@@ -97,7 +103,9 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_calibration_logging(mode, tmp_path, calibration_data):
     d = tmp_path / "recording.h5"
-    with LogWriter(file_path=d, mode=mode, calibration_data=calibration_data) as _:
+    with LogWriter(
+        file_path=d, mode=mode, calibration_data=calibration_data
+    ) as _:
         pass
 
     h5store = h5py.File(
@@ -126,7 +134,10 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
         )
 
         # Note: decode is needed at least for h5py < 3, and old dtype=h5py.special_dtype(vlen=str)
-        assert writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
+        assert (
+            writer.xcpt_grp["message"][0].decode("UTF8")
+            == "there was an exception"
+        )
         assert (
             writer.xcpt_grp["message"][1].decode("UTF8")
             == "there was another exception"

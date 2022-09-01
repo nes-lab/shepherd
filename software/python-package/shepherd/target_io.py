@@ -66,7 +66,9 @@ class TargetIO(object):
         """
         for name, pin in target_pin_dirs.items():
             self.dirs[name] = GPIO(pin, "out")
-            self.dirs[name].write(True)  # TODO: still unused, init pins as output
+            self.dirs[name].write(
+                True
+            )  # TODO: still unused, init pins as output
 
         for name, pin in target_pin_nums.items():
             self.gpios[name] = GPIO(pin, "out")

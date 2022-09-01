@@ -131,7 +131,9 @@ class EEPROM(object):
             address (int): Address of EEPROM, usually fixed in hardware or
                 by DIP switch
         """
-        self.dev_path = f"/sys/bus/i2c/devices/{ bus_num }" f"-{address:04X}/eeprom"
+        self.dev_path = (
+            f"/sys/bus/i2c/devices/{bus_num}" f"-{address:04X}/eeprom"
+        )
         self._write_protect_pin = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
@@ -167,7 +169,9 @@ class EEPROM(object):
         try:
             os.write(self.fd, buffer)
         except TimeoutError:
-            logger.error("Timeout writing to EEPROM. Is write protection disabled?")
+            logger.error(
+                "Timeout writing to EEPROM. Is write protection disabled?"
+            )
             raise
         self._write_protect_pin.write(True)
 
@@ -182,7 +186,9 @@ class EEPROM(object):
         """
         if key not in eeprom_format:
             raise KeyError(f"{ key } is not a valid EEPROM parameter")
-        raw_data = self._read(eeprom_format[key]["offset"], eeprom_format[key]["size"])
+        raw_data = self._read(
+            eeprom_format[key]["offset"], eeprom_format[key]["size"]
+        )
         if eeprom_format[key]["type"] == "ascii":
             return raw_data.decode("utf-8")
         if eeprom_format[key]["type"] == "str":

@@ -20,7 +20,9 @@ import math
 class PruCalibration:
     """part of calibration.h"""
 
-    def __init__(self, config: CalibrationData = CalibrationData.from_default()):
+    def __init__(
+        self, config: CalibrationData = CalibrationData.from_default()
+    ):
         self.cal = config
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:
@@ -65,7 +67,9 @@ class KernelConverterStruct:
         self.Constant_1k_per_Ohm: int = values[5]
 
         self.Constant_us_per_nF: float = values[6] / (2**28)
-        self.V_intermediate_init_uV: int = values[7]  # allow a proper / fast startup
+        self.V_intermediate_init_uV: int = values[
+            7
+        ]  # allow a proper / fast startup
         self.I_intermediate_leak_nA: int = values[8]
 
         self.V_enable_output_threshold_uV: int = values[
@@ -171,15 +175,21 @@ class VirtualConverterModel:
 
         # prepare hysteresis-thresholds
         self.dV_enable_output_uV = self._cfg.dV_enable_output_uV  # TODO added
-        self.V_enable_output_threshold_uV = self._cfg.V_enable_output_threshold_uV
+        self.V_enable_output_threshold_uV = (
+            self._cfg.V_enable_output_threshold_uV
+        )
         # TODO added
-        self.V_disable_output_threshold_uV = self._cfg.V_disable_output_threshold_uV
+        self.V_disable_output_threshold_uV = (
+            self._cfg.V_disable_output_threshold_uV
+        )
         # TODO added
 
         if self.dV_enable_output_uV > self.V_enable_output_threshold_uV:
             self.V_enable_output_threshold_uV = self.dV_enable_output_uV
 
-    def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
+    def calc_inp_power(
+        self, input_voltage_uV: int, input_current_nA: int
+    ) -> int:
         # Next 2 lines are Python-specific
         input_voltage_uV = max(0, input_voltage_uV)
         input_current_nA = max(0, input_current_nA)
@@ -218,7 +228,9 @@ class VirtualConverterModel:
                 input_voltage_uV = 0
 
         if self.enable_boost:
-            eta_inp = self.get_input_efficiency(input_voltage_uV, input_current_nA)
+            eta_inp = self.get_input_efficiency(
+                input_voltage_uV, input_current_nA
+            )
         else:
             eta_inp = 1.0
 
@@ -269,7 +281,9 @@ class VirtualConverterModel:
     def update_states_and_output(self) -> int:
 
         self.sample_count += 1
-        check_thresholds = self.sample_count >= self._cfg.interval_check_thresholds_n
+        check_thresholds = (
+            self.sample_count >= self._cfg.interval_check_thresholds_n
+        )
 
         if check_thresholds:
             self.sample_count = 0
@@ -293,7 +307,8 @@ class VirtualConverterModel:
 
         if self.is_outputting or self.interval_startup_disabled_drain_n > 0:
             if (not self.enable_buck) or (
-                self.V_mid_uV <= self._cfg.V_output_uV + self._cfg.V_buck_drop_uV
+                self.V_mid_uV
+                <= self._cfg.V_output_uV + self._cfg.V_buck_drop_uV
             ):
                 if self.V_mid_uV > self._cfg.V_buck_drop_uV:
                     self.V_out_dac_uV = self.V_mid_uV - self._cfg.V_buck_drop_uV
@@ -320,9 +335,9 @@ class VirtualConverterModel:
             pos_v = self._cfg.LUT_size - 1
         if pos_c >= self._cfg.LUT_size:
             pos_c = self._cfg.LUT_size - 1
-        return self._cfg.LUT_inp_efficiency_n8[pos_v * self._cfg.LUT_size + pos_c] / (
-            2**8
-        )
+        return self._cfg.LUT_inp_efficiency_n8[
+            pos_v * self._cfg.LUT_size + pos_c
+        ] / (2**8)
 
     def get_output_inv_efficiency(self, current_nA) -> float:
         current_n = int(current_nA / (2**self._cfg.LUT_output_I_min_log2_nA))
