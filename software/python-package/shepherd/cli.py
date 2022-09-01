@@ -100,7 +100,7 @@ def cli(ctx, verbose: int):
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
-@click.option("--on/--off", type=click.BOOL, default=True)
+@click.option("--on/--off", default=True)
 @click.option(
     "--voltage",
     "-v",
@@ -110,13 +110,11 @@ def cli(ctx, verbose: int):
 )
 @click.option(
     "--gpio_pass/--gpio_omit",
-    type=click.BOOL,
     default=True,
     help="Route UART, Programmer-Pins and other GPIO to this target",
 )
 @click.option(
     "--sel_a/--sel_b",
-    type=click.BOOL,
     default=True,
     help="Choose (main)Target that gets connected to virtual Source",
 )
@@ -534,7 +532,6 @@ def launcher(led, button):
 @click.argument("firmware-file", type=click.Path(exists=True, dir_okay=False))
 @click.option(
     "--sel_a/--sel_b",
-    type=click.BOOL,
     default=True,
     help="Choose Target-Port for programming",
 )
