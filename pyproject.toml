@@ -1,5 +1,5 @@
 [tool.black]
-line-length = 88 # already default ... 
+line-length = 88 # already default ...
 [flake8]
 max-line-length = 100
-extend-ignore = E203
+extend-ignore = "E203"
