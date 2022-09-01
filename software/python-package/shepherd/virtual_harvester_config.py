@@ -176,9 +176,7 @@ class VirtualHarvesterConfig:
         current_limit_uA = 10**6 * self._cal.convert_raw_to_value(
             "harvester", "adc_current", 4
         )
-        self._check_num(
-            "current_limit_uA", current_limit_uA, 50_000, verbose=verbose
-        )
+        self._check_num("current_limit_uA", current_limit_uA, 50_000, verbose=verbose)
 
         if "voltage_step_mV" not in self.data:
             self.data["voltage_step_mV"] = (
@@ -188,27 +186,19 @@ class VirtualHarvesterConfig:
         v_step_min_mV = 10**3 * self._cal.convert_raw_to_value(
             "harvester", "dac_voltage_b", 4
         )
-        self._check_num(
-            "voltage_step_mV", v_step_min_mV, 1_000_000, verbose=verbose
-        )
+        self._check_num("voltage_step_mV", v_step_min_mV, 1_000_000, verbose=verbose)
 
         self._check_num("setpoint_n", 0, 1, verbose=verbose)
 
         self._check_num("rising", 0, 1, verbose=verbose)
-        self.data["hrv_mode"] = 1 * (self.for_emulation > 0) + 2 * (
-            self.data["rising"]
-        )
+        self.data["hrv_mode"] = 1 * (self.for_emulation > 0) + 2 * (self.data["rising"])
 
         self._check_num("wait_cycles", 0, 100, verbose=verbose)
 
         # factor-in timing-constraints
-        _window_samples = self.data["window_size"] * (
-            1 + self.data["wait_cycles"]
-        )
+        _window_samples = self.data["window_size"] * (1 + self.data["wait_cycles"])
 
-        time_min_ms = (
-            (1 + self.data["wait_cycles"]) * 1_000 / self.samplerate_sps
-        )
+        time_min_ms = (1 + self.data["wait_cycles"]) * 1_000 / self.samplerate_sps
         if self.for_emulation:
             window_ms = _window_samples * 1_000 / self.samplerate_sps
             time_min_ms = max(time_min_ms, window_ms)
@@ -294,10 +284,7 @@ class VirtualHarvesterConfig:
         Returns:
             int-list (2nd level for LUTs) that can be feed into sysFS
         """
-        if (
-            self.for_emulation
-            and self.data["algorithm_num"] <= algorithms["ivcurve"]
-        ):
+        if self.for_emulation and self.data["algorithm_num"] <= algorithms["ivcurve"]:
             raise ValueError(
                 f"Select valid harvest-algorithm for emulator, current usage = {self._inheritance}"
             )

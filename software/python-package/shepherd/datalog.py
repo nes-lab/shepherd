@@ -40,9 +40,7 @@ logger = logging.getLogger(__name__)
 An entry for an exception to be stored together with the data consists of a
 timestamp, a custom message and an arbitrary integer value
 """
-ExceptionRecord = namedtuple(
-    "ExceptionRecord", ["timestamp", "message", "value"]
-)
+ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"])
 
 monitors_end = threading.Event()
 
@@ -116,9 +114,7 @@ class LogWriter:
             logger.info(f"Storing data to   '{self.store_path}'")
         else:
             base_dir = file_path.resolve().parents[0]
-            self.store_path = unique_path(
-                base_dir / file_path.stem, file_path.suffix
-            )
+            self.store_path = unique_path(base_dir / file_path.stem, file_path.suffix)
             logger.warning(
                 f"File {file_path} already exists.. "
                 f"storing under {self.store_path} instead"
@@ -130,22 +126,16 @@ class LogWriter:
             raise ValueError(f"can not handle mode '{mode}'")
 
         if not isinstance(datatype, (str, type(None))):
-            raise TypeError(
-                f"can not handle type '{type(datatype)}' for datatype"
-            )
+            raise TypeError(f"can not handle type '{type(datatype)}' for datatype")
         if (
             isinstance(datatype, str)
             and datatype
-            not in self.mode_dtype_dict[
-                self.mode_default if (mode is None) else mode
-            ]
+            not in self.mode_dtype_dict[self.mode_default if (mode is None) else mode]
         ):
             raise ValueError(f"can not handle datatype '{datatype}'")
 
         self._mode = self.mode_default if (mode is None) else mode
-        self._datatype = (
-            self.datatype_default if (datatype is None) else datatype
-        )
+        self._datatype = self.datatype_default if (datatype is None) else datatype
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
@@ -216,16 +206,12 @@ class LogWriter:
 
         # show key parameters for h5-performance
         settings = list(self._h5file.id.get_access_plist().get_cache())
-        logger.debug(
-            f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)"
-        )
+        logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
         # the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
-        self.data_grp.attrs[
-            "window_samples"
-        ] = 0  # will be adjusted by .embed_config()
+        self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
 
         self.add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(
@@ -253,18 +239,16 @@ class LogWriter:
             "description"
         ] = "voltage [V] = value * gain + offset"
 
-        for channel, parameter in product(
-            ["current", "voltage"], cal_parameter_list
-        ):
+        for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
             cal_channel = (
                 cal_channel_hrv_dict[channel]
                 if (self._mode == "harvester")
                 else cal_channel_emu_dict[channel]
             )
-            self.data_grp[channel].attrs[parameter] = self.calibration_data[
-                self._mode
-            ][cal_channel][parameter]
+            self.data_grp[channel].attrs[parameter] = self.calibration_data[self._mode][
+                cal_channel
+            ][parameter]
 
         if self._write_gpio:
             # Create group for gpio data
@@ -318,9 +302,7 @@ class LogWriter:
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
-        self.add_dataset_time(
-            self.sysutil_grp, self.sysutil_inc, (self.sysutil_inc,)
-        )
+        self.add_dataset_time(self.sysutil_grp, self.sysutil_inc, (self.sysutil_inc,))
         self.sysutil_grp["time"].attrs["unit"] = "ns"
         self.sysutil_grp["time"].attrs["description"] = "system time [ns]"
         self.sysutil_grp.create_dataset(
@@ -340,9 +322,7 @@ class LogWriter:
             chunks=(self.sysutil_inc, 2),
         )
         self.sysutil_grp["ram"].attrs["unit"] = "%"
-        self.sysutil_grp["ram"].attrs[
-            "description"
-        ] = "ram_available [%], ram_used [%]"
+        self.sysutil_grp["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
         self.sysutil_grp.create_dataset(
             "io",
             (self.sysutil_inc, 4),
@@ -362,9 +342,7 @@ class LogWriter:
             chunks=(self.sysutil_inc, 2),
         )
         self.sysutil_grp["net"].attrs["unit"] = "n"
-        self.sysutil_grp["net"].attrs[
-            "description"
-        ] = "nw_sent [byte], nw_recv [byte]"
+        self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
         self.sys_log_next_ns = int(time.time()) * (10**9)
         self.log_sys_stats()
 
@@ -432,25 +410,13 @@ class LogWriter:
 
         # meantime: trim over-provisioned parts
         self.data_grp["time"].resize(
-            (
-                self.data_pos
-                if self._write_current or self._write_voltage
-                else 0,
-            )
+            (self.data_pos if self._write_current or self._write_voltage else 0,)
         )
-        self.data_grp["voltage"].resize(
-            (self.data_pos if self._write_voltage else 0,)
-        )
-        self.data_grp["current"].resize(
-            (self.data_pos if self._write_current else 0,)
-        )
+        self.data_grp["voltage"].resize((self.data_pos if self._write_voltage else 0,))
+        self.data_grp["current"].resize((self.data_pos if self._write_current else 0,))
         if self._write_gpio:
-            self.gpio_grp["time"].resize(
-                (self.gpio_pos if self._write_gpio else 0,)
-            )
-            self.gpio_grp["value"].resize(
-                (self.gpio_pos if self._write_gpio else 0,)
-            )
+            self.gpio_grp["time"].resize((self.gpio_pos if self._write_gpio else 0,))
+            self.gpio_grp["value"].resize((self.gpio_pos if self._write_gpio else 0,))
         self.sysutil_grp["time"].resize((self.sysutil_pos,))
         self.sysutil_grp["cpu"].resize((self.sysutil_pos,))
         self.sysutil_grp["ram"].resize((self.sysutil_pos, 2))
@@ -514,14 +480,10 @@ class LogWriter:
             )
 
         if self._write_voltage:
-            self.data_grp["voltage"][
-                self.data_pos : data_end_pos
-            ] = buffer.voltage
+            self.data_grp["voltage"][self.data_pos : data_end_pos] = buffer.voltage
 
         if self._write_current:
-            self.data_grp["current"][
-                self.data_pos : data_end_pos
-            ] = buffer.current
+            self.data_grp["current"][self.data_pos : data_end_pos] = buffer.current
 
         if self._write_voltage or self._write_current:
             self.data_grp["time"][self.data_pos : data_end_pos] = (
@@ -614,31 +576,21 @@ class LogWriter:
             # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
     def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
-        self.dmesg_mon_t = threading.Thread(
-            target=self.monitor_dmesg, daemon=True
-        )
+        self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
         self.dmesg_mon_t.start()
-        self.ptp4l_mon_t = threading.Thread(
-            target=self.monitor_ptp4l, daemon=True
-        )
+        self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
         self.ptp4l_mon_t.start()
         self.uart_mon_t = threading.Thread(
             target=self.monitor_uart, args=(uart_baudrate,), daemon=True
         )
         self.uart_mon_t.start()
 
-    def monitor_uart(
-        self, baudrate: int, poll_intervall: float = 0.01
-    ) -> NoReturn:
+    def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> NoReturn:
         # TODO: TEST - Not final, goal: raw bytes in hdf5
         # - uart is bytes-type -> storing in hdf5 is hard, tried 'S' and opaque-type -> failed with errors
         # - converting is producing ValueError on certain chars, errors="backslashreplace" does not help
         # TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
-        if (
-            (not self._write_uart)
-            or (not isinstance(baudrate, int))
-            or (baudrate == 0)
-        ):
+        if (not self._write_uart) or (not isinstance(baudrate, int)) or (baudrate == 0):
             return
         global monitors_end
         logger.debug(
@@ -663,9 +615,9 @@ class LogWriter:
                                 data_length += self.uart_inc
                                 self.uart_grp["time"].resize((data_length,))
                                 self.uart_grp["message"].resize((data_length,))
-                            self.uart_grp["time"][self.uart_pos] = int(
-                                time.time()
-                            ) * (10**9)
+                            self.uart_grp["time"][self.uart_pos] = int(time.time()) * (
+                                10**9
+                            )
                             self.uart_grp["message"][
                                 self.uart_pos
                             ] = output  # np.void(uart_rx)
@@ -706,9 +658,7 @@ class LogWriter:
                     data_length += self.dmesg_inc
                     self.dmesg_grp["time"].resize((data_length,))
                     self.dmesg_grp["message"].resize((data_length,))
-                self.dmesg_grp["time"][self.dmesg_pos] = int(
-                    time.time() * (10**9)
-                )
+                self.dmesg_grp["time"][self.dmesg_pos] = int(time.time() * (10**9))
                 self.dmesg_grp["message"][self.dmesg_pos] = line
             except OSError:
                 logger.error(

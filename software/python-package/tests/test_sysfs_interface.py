@@ -128,10 +128,7 @@ def test_dac_aux_voltage(shepherd_up, value):
     cal_set = CalibrationData.from_default()
     msb_threshold = cal_set.convert_raw_to_value("emulator", "dac_voltage_b", 2)
     sysfs_interface.write_dac_aux_voltage(cal_set, value)
-    assert (
-        abs(sysfs_interface.read_dac_aux_voltage(cal_set) - value)
-        <= msb_threshold
-    )
+    assert abs(sysfs_interface.read_dac_aux_voltage(cal_set) - value) <= msb_threshold
 
 
 @pytest.mark.parametrize("value", [0, 100, 16000])
@@ -167,9 +164,7 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 @pytest.mark.hardware
 def test_initial_harvester_settings(shepherd_up, harvester_settings):
     sysfs_interface.write_virtual_harvester_settings(harvester_settings)
-    assert (
-        sysfs_interface.read_virtual_harvester_settings() == harvester_settings
-    )
+    assert sysfs_interface.read_virtual_harvester_settings() == harvester_settings
 
 
 @pytest.mark.hardware

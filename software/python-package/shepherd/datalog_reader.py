@@ -52,9 +52,7 @@ class LogReader:
     ds_current: h5py.Dataset = None
     _cal: dict = None  # dict[str, dict]
 
-    def __init__(
-        self, file_path: Union[Path, None], verbose: Union[bool, None] = True
-    ):
+    def __init__(self, file_path: Union[Path, None], verbose: Union[bool, None] = True):
         self._skip_open = file_path is None  # for access by writer-class
         if not self._skip_open:
             self._file_path = Path(file_path)
@@ -119,15 +117,11 @@ class LogReader:
         self.h5file.flush()
         if self.ds_time.shape[0] > 1:
             self.sample_interval_ns = int(self.ds_time[1] - self.ds_time[0])
-            self.samplerate_sps = max(
-                int(10**9 // self.sample_interval_ns), 1
-            )
+            self.samplerate_sps = max(int(10**9 // self.sample_interval_ns), 1)
             self.sample_interval_s = 1.0 / self.samplerate_sps
         self.runtime_s = round(self.ds_time.shape[0] / self.samplerate_sps, 1)
         self.file_size = self._file_path.stat().st_size
-        self.data_rate = (
-            self.file_size / self.runtime_s if self.runtime_s > 0 else 0
-        )
+        self.data_rate = self.file_size / self.runtime_s if self.runtime_s > 0 else 0
 
     def read_buffers(self, start_n: int = 0, end_n: int = None) -> tuple:
         """Generator that reads the specified range of buffers from the hdf5 file.

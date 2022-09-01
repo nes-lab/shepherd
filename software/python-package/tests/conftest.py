@@ -56,9 +56,7 @@ def pytest_addoption(parser):
 def pytest_collection_modifyitems(config, items):
     skip_fake = pytest.mark.skip(reason="need --fake option to run")
     skip_real = pytest.mark.skip(reason="selected fake hardware only")
-    skip_eeprom_write = pytest.mark.skip(
-        reason="requires --eeprom-write option to run"
-    )
+    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option to run")
     skip_missing_hardware = pytest.mark.skip(reason="no hardware to test on")
     real_hardware = check_beagleboard()
 
@@ -70,9 +68,7 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_real)
         if "fake_hardware" in item.keywords and not config.getoption("--fake"):
             item.add_marker(skip_fake)
-        if "eeprom_write" in item.keywords and not config.getoption(
-            "--eeprom-write"
-        ):
+        if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
 
 

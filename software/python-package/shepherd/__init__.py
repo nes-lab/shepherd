@@ -163,14 +163,10 @@ class Emulator(ShepherdIO):
 
         if calibration_emulator is None:
             calibration_emulator = CalibrationData.from_default()
-            logger.warning(
-                "No calibration data for emulator provided - using defaults"
-            )
+            logger.warning("No calibration data for emulator provided - using defaults")
         if calibration_recording is None:
             calibration_recording = CalibrationData.from_default()
-            logger.warning(
-                "No calibration data harvester provided - using defaults"
-            )
+            logger.warning("No calibration data harvester provided - using defaults")
 
         self.calibration = calibration_emulator
         self.samplerate_sps = (
@@ -192,15 +188,11 @@ class Emulator(ShepherdIO):
         self._sel_target_for_pwr = sel_target_for_pwr
         self._aux_target_voltage = aux_target_voltage
 
-        self._v_gain = (
-            1e6 * calibration_recording["harvester"]["adc_voltage"]["gain"]
-        )
+        self._v_gain = 1e6 * calibration_recording["harvester"]["adc_voltage"]["gain"]
         self._v_offset = (
             1e6 * calibration_recording["harvester"]["adc_voltage"]["offset"]
         )
-        self._i_gain = (
-            1e9 * calibration_recording["harvester"]["adc_current"]["gain"]
-        )
+        self._i_gain = 1e9 * calibration_recording["harvester"]["adc_current"]["gain"]
         self._i_offset = (
             1e9 * calibration_recording["harvester"]["adc_current"]["offset"]
         )
@@ -221,9 +213,7 @@ class Emulator(ShepherdIO):
         super().set_target_io_level_conv(self._set_target_io_lvl_conv)
         super().select_main_target_for_io(self._sel_target_for_io)
         super().select_main_target_for_power(self._sel_target_for_pwr)
-        super().set_aux_target_voltage(
-            self.calibration, self._aux_target_voltage
-        )
+        super().set_aux_target_voltage(self.calibration, self._aux_target_voltage)
 
         # Preload emulator with data
         time.sleep(1)
@@ -240,16 +230,14 @@ class Emulator(ShepherdIO):
             ts_start = time.time()
 
         # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        voltage_transformed = (
-            buffer.voltage * self._v_gain + self._v_offset
-        ).astype("u4")
-        current_transformed = (
-            buffer.current * self._i_gain + self._i_offset
-        ).astype("u4")
-
-        self.shared_mem.write_buffer(
-            index, voltage_transformed, current_transformed
+        voltage_transformed = (buffer.voltage * self._v_gain + self._v_offset).astype(
+            "u4"
         )
+        current_transformed = (buffer.current * self._i_gain + self._i_offset).astype(
+            "u4"
+        )
+
+        self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         super()._return_buffer(index)
         if verbose:
             logger.debug(
@@ -463,9 +451,7 @@ class ShepherdDebug(ShepherdIO):
         return values[0]  # V_out_dac_raw
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
-    def iterate_sampling(
-        self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0
-    ):
+    def iterate_sampling(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
         self.vsource_calc_inp_power(V_in_uV, A_in_nA)
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
@@ -474,9 +460,7 @@ class ShepherdDebug(ShepherdIO):
         self.vsource_update_cap_storage()
         V_out_raw = self.vsource_update_states_and_output()
         V_out_uV = int(
-            self._cal.convert_raw_to_value(
-                "emulator", "dac_voltage_b", V_out_raw
-            )
+            self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
         self.P_in_fW += V_in_uV * A_in_nA
@@ -515,23 +499,17 @@ class ShepherdDebug(ShepherdIO):
     def set_io_level_converter(self, state) -> NoReturn:
         self.set_target_io_level_conv(state)
 
-    def convert_raw_to_value(
-        self, component: str, channel: str, raw: int
-    ) -> float:
+    def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
         return self._cal.convert_raw_to_value(component, channel, raw)
 
-    def convert_value_to_raw(
-        self, component: str, channel: str, value: float
-    ) -> int:
+    def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
         return self._cal.convert_value_to_raw(component, channel, value)
 
     def set_gpio_one_high(self, num: int) -> NoReturn:
         if not (self._io is None):
             self._io.one_high(num)
         else:
-            logger.debug(
-                f"Error: IO is not enabled in this shepherd-debug-instance"
-            )
+            logger.debug(f"Error: IO is not enabled in this shepherd-debug-instance")
 
     def set_power_state_emulator(self, state: bool) -> NoReturn:
         super().set_power_state_emulator(state)
@@ -561,12 +539,8 @@ class ShepherdDebug(ShepherdIO):
         return self.gpios["target_io_en"].read()
 
     @staticmethod
-    def set_aux_target_voltage_raw(
-        voltage_raw, also_main: bool = False
-    ) -> NoReturn:
-        sysfs_interface.write_dac_aux_voltage_raw(
-            voltage_raw | (int(also_main) << 20)
-        )
+    def set_aux_target_voltage_raw(voltage_raw, also_main: bool = False) -> NoReturn:
+        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw | (int(also_main) << 20))
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()
@@ -671,9 +645,7 @@ def run_recorder(
         10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
     )
 
-    recorder = Recorder(
-        shepherd_mode=mode, harvester=harvester, calibration=cal_data
-    )
+    recorder = Recorder(shepherd_mode=mode, harvester=harvester, calibration=cal_data)
     log_writer = LogWriter(
         file_path=store_path,
         calibration_data=cal_data,
@@ -730,9 +702,7 @@ def run_recorder(
                 logger.error(
                     f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
                 )
-                err_rec = ExceptionRecord(
-                    int(time.time() * 1e9), str(e), e.value
-                )
+                err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 log_writer.write_exception(err_rec)
                 if not warn_only:
                     raise
@@ -875,9 +845,7 @@ def run_emulator(
         emu = Emulator(
             shepherd_mode=mode,  # TODO: this should not be needed anymore
             initial_buffers=init_buffers,
-            calibration_recording=CalibrationData(
-                log_reader.get_calibration_data()
-            ),
+            calibration_recording=CalibrationData(log_reader.get_calibration_data()),
             calibration_emulator=cal,
             set_target_io_lvl_conv=set_target_io_lvl_conv,
             sel_target_for_io=sel_target_for_io,
@@ -916,9 +884,7 @@ def run_emulator(
                     f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
                 )
 
-                err_rec = ExceptionRecord(
-                    int(time.time() * 1e9), str(e), e.value
-                )
+                err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 if output_path is not None:
                     log_writer.write_exception(err_rec)
                 if not warn_only:

@@ -169,9 +169,7 @@ class VirtualSourceConfig:
             ],
             # is now n4 -> resulting value for PRU is inverted, so 2^4 / value, inv-max = 2^14 for min-value = 1/1024
             [
-                min((2**14), round((2**4) / value))
-                if (value > 0)
-                else int(2**14)
+                min((2**14), round((2**4) / value)) if (value > 0) else int(2**14)
                 for value in self.data["LUT_output_efficiency"]
             ],
         ]
@@ -191,9 +189,7 @@ class VirtualSourceConfig:
         self.data["converter_mode"] += 1 if enable_storage else 0
         enable_boost = self.data["enable_boost"] and enable_storage
         self.data["converter_mode"] += 2 if enable_boost else 0
-        self.data["converter_mode"] += (
-            4 if (self.data["enable_buck"] > 0) else 0
-        )
+        self.data["converter_mode"] += 4 if (self.data["enable_buck"] > 0) else 0
         self.data["converter_mode"] += (
             8 if (self.data["log_intermediate_voltage"] > 0) else 0
         )
@@ -254,14 +250,9 @@ class VirtualSourceConfig:
 
         # decide which hysteresis-thresholds to use for buck-converter
         if self.data["enable_buck"] > 0:
-            V_pre_output_mV = (
-                self.data["V_output_mV"] + self.data["V_buck_drop_mV"]
-            )
+            V_pre_output_mV = self.data["V_output_mV"] + self.data["V_buck_drop_mV"]
 
-            if (
-                self.data["V_intermediate_enable_threshold_mV"]
-                > V_pre_output_mV
-            ):
+            if self.data["V_intermediate_enable_threshold_mV"] > V_pre_output_mV:
                 self.data["dV_enable_output_mV"] = dV_output_en_thrs_mV
                 self.data["V_enable_output_threshold_mV"] = self.data[
                     "V_intermediate_enable_threshold_mV"
@@ -272,10 +263,7 @@ class VirtualSourceConfig:
                     V_pre_output_mV + self.data["dV_enable_output_mV"]
                 )
 
-            if (
-                self.data["V_intermediate_disable_threshold_mV"]
-                > V_pre_output_mV
-            ):
+            if self.data["V_intermediate_disable_threshold_mV"] > V_pre_output_mV:
                 self.data["V_disable_output_threshold_mV"] = self.data[
                     "V_intermediate_disable_threshold_mV"
                 ]
@@ -328,9 +316,7 @@ class VirtualSourceConfig:
 
         # General
         self._check_num("log_intermediate_voltage", 4.29e9, verbose=verbose)
-        self._check_num(
-            "interval_startup_delay_drain_ms", 10000, verbose=verbose
-        )
+        self._check_num("interval_startup_delay_drain_ms", 10000, verbose=verbose)
 
         self._check_num("V_input_max_mV", 10e3, verbose=verbose)
         self._check_num("I_input_max_mA", 4.29e3, verbose=verbose)
@@ -341,19 +327,13 @@ class VirtualSourceConfig:
         self._check_num("I_intermediate_leak_nA", 4.29e9, verbose=verbose)
         self._check_num("V_intermediate_init_mV", 10000, verbose=verbose)
 
-        self._check_num(
-            "V_pwr_good_enable_threshold_mV", 10000, verbose=verbose
-        )
-        self._check_num(
-            "V_pwr_good_disable_threshold_mV", 10000, verbose=verbose
-        )
+        self._check_num("V_pwr_good_enable_threshold_mV", 10000, verbose=verbose)
+        self._check_num("V_pwr_good_disable_threshold_mV", 10000, verbose=verbose)
         self._check_num("immediate_pwr_good_signal", 4.29e9, verbose=verbose)
 
         self._check_num("C_output_uF", 4.29e6, verbose=verbose)
 
-        self._check_num(
-            "V_output_log_gpio_threshold_mV", 4.29e6, verbose=verbose
-        )
+        self._check_num("V_output_log_gpio_threshold_mV", 4.29e6, verbose=verbose)
 
         if "harvester" not in self.data and "harvester" in self._config_base:
             self.data["harvester"] = self._config_base["harvester"]
@@ -374,12 +354,8 @@ class VirtualSourceConfig:
         self._check_num("V_output_mV", 5000, verbose=verbose)
         self._check_num("V_buck_drop_mV", 5000, verbose=verbose)
 
-        self._check_num(
-            "V_intermediate_enable_threshold_mV", 10000, verbose=verbose
-        )
-        self._check_num(
-            "V_intermediate_disable_threshold_mV", 10000, verbose=verbose
-        )
+        self._check_num("V_intermediate_enable_threshold_mV", 10000, verbose=verbose)
+        self._check_num("V_intermediate_disable_threshold_mV", 10000, verbose=verbose)
         self._check_num("interval_check_thresholds_ms", 4.29e3, verbose=verbose)
 
         self._check_list("LUT_output_efficiency", 1.0, verbose=verbose)
@@ -389,9 +365,7 @@ class VirtualSourceConfig:
         self.calculate_internal_states()
         self._check_num("dV_enable_output_mV", 4.29e6, verbose=verbose)
         self._check_num("V_enable_output_threshold_mV", 4.29e6, verbose=verbose)
-        self._check_num(
-            "V_disable_output_threshold_mV", 4.29e6, verbose=verbose
-        )
+        self._check_num("V_disable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("Constant_us_per_nF_n28", 4.29e9, verbose=verbose)
         self._check_num("Constant_1k_per_Ohm", 4.29e9, verbose=verbose)
 

@@ -56,9 +56,7 @@ class VirtualSourceModel:
         vh_struct = KernelHarvesterStruct(vh_config)
         self.hrv = VirtualHarvesterModel(vh_struct)
 
-    def iterate_sampling(
-        self, V_inp_uV: int = 0, I_inp_nA: int = 0, A_out_nA: int = 0
-    ):
+    def iterate_sampling(self, V_inp_uV: int = 0, I_inp_nA: int = 0, A_out_nA: int = 0):
         """TEST-SIMPLIFICATION - code below is not part of pru-code, but in part sample_emulator() in sampling.c
 
         :param V_inp_uV:
@@ -79,9 +77,7 @@ class VirtualSourceModel:
         self.cnv.update_cap_storage()
         V_out_raw = self.cnv.update_states_and_output()
         V_out_uV = int(
-            self._cal.convert_raw_to_value(
-                "emulator", "dac_voltage_b", V_out_raw
-            )
+            self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
         self.cnv.P_inp_fW += V_inp_uV * I_inp_nA

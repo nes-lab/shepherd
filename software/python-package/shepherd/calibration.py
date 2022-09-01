@@ -94,9 +94,7 @@ class CalibrationData(object):
             CalibrationData object with extracted calibration data.
         """
         val_count = (
-            len(cal_component_list)
-            * len(cal_channel_list)
-            * len(cal_parameter_list)
+            len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         )
         values = struct.unpack(
             ">" + val_count * "d", data
@@ -212,25 +210,17 @@ class CalibrationData(object):
                 cal_dict[component][channel]["offset"] = offset
         return cls(cal_dict)
 
-    def convert_raw_to_value(
-        self, component: str, channel: str, raw: int
-    ) -> float:
+    def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
         offset = self.data[component][channel]["offset"]
         gain = self.data[component][channel]["gain"]
-        raw_max = (
-            cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
-        )
+        raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
         raw = min(max(raw, 0), raw_max)
         return max(float(raw) * gain + offset, 0.0)
 
-    def convert_value_to_raw(
-        self, component: str, channel: str, value: float
-    ) -> int:
+    def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
         offset = self.data[component][channel]["offset"]
         gain = self.data[component][channel]["gain"]
-        raw_max = (
-            cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
-        )
+        raw_max = cal_def.RAW_MAX_DAC if "dac" in channel else cal_def.RAW_MAX_ADC
         return min(max(int((value - offset) / gain), 0), raw_max)
 
     def to_bytestr(self):
@@ -247,9 +237,7 @@ class CalibrationData(object):
                 for parameter in cal_parameter_list:
                     flattened.append(self.data[component][channel][parameter])
         val_count = (
-            len(cal_component_list)
-            * len(cal_channel_list)
-            * len(cal_parameter_list)
+            len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         )
         return struct.pack(">" + val_count * "d", *flattened)
 
