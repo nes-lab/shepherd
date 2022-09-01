@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt install python3-msgpack
-          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade pip msgpack
           pip3 install pylint pylint-exit black
         # TODO: install-process fails without msgpack pre-installed
 

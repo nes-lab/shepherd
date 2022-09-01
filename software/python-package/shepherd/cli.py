@@ -118,6 +118,7 @@ def cli(ctx, verbose: int):
 )
 @click.option(
     "--sel_a/--sel_b",
+    type=click.BOOL,
     default=True,
     help="Choose (main)Target that gets connected to virtual Source",
 )
