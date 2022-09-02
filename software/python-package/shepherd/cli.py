@@ -27,13 +27,12 @@ from periphery import GPIO
 from shepherd import sysfs_interface
 from shepherd import run_recorder
 from shepherd import run_emulator
-from shepherd.calibration import CalibrationData
-from shepherd import EEPROM
-from shepherd import CapeData
+from .calibration import CalibrationData
+from .eeprom import EEPROM, CapeData
 from shepherd import ShepherdDebug
 from shepherd import set_verbose_level
-from shepherd.shepherd_io import gpio_pin_nums
-from shepherd.launcher import Launcher
+from .shepherd_io import gpio_pin_nums
+from .launcher import Launcher
 
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd")
@@ -50,7 +49,9 @@ logger.addHandler(consoleHandler)
 # - default-cal -> use_cal_default
 # - start-time -> start_time
 # - sheep run record -> sheep run harvester, same with sheep record
-# TODO: clean up internal naming only have harvest/emulate to use harvester/emulator, even the commands should be "sheep harvester config"
+# TODO: clean up internal naming only have harvest/emulate to
+#       use harvester/emulator, even the commands should be
+#       "sheep harvester config"
 
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
@@ -79,7 +80,7 @@ def config_logger(verbose: int):
         logging.logProcesses = 0
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
+@click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "-v",
     "--verbose",
@@ -88,7 +89,7 @@ def config_logger(verbose: int):
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click.pass_context
-def cli(ctx, verbose: int):
+def cli(ctx=None, verbose: int = 2):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder
 
     Args:
@@ -142,7 +143,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
     sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
-    logger.info(f"Re-Initialized PRU to finalize settings")
+    logger.info("Re-Initialized PRU to finalize settings")
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)
 
 
@@ -170,7 +171,7 @@ def run(mode, parameters: Dict, verbose):
         )
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
-    logger.debug(f"CLI did process run()")
+    logger.debug("CLI did process run()")
     if mode == "harvester":
         if "output_path" in parameters:
             parameters["output_path"] = Path(parameters["output_path"])
@@ -372,7 +373,7 @@ def emulator(
 
 
 @cli.group(
-    context_settings=dict(help_option_names=["-h", "--help"], obj={}),
+    context_settings={"help_option_names": ["-h", "--help"], "obj": {}},
     short_help="Read/Write data from EEPROM",
 )
 def eeprom():
@@ -473,7 +474,9 @@ def read(infofile, cal_file):
 
 
 @eeprom.command(
-    short_help="Convert calibration measurements to calibration data, where FILENAME is YAML-formatted file containing calibration measurements"
+    short_help="Convert calibration measurements to calibration data, "
+    "where FILENAME is YAML-formatted file "
+    "containing calibration measurements"
 )
 @click.argument("filename", type=click.Path(exists=True))
 @click.option(
@@ -570,7 +573,7 @@ def programmer(firmware_file, sel_a, voltage, speed, protocol):
             sysfs_interface.write_programmer_ctrl(
                 protocol, speed, 24, 25, 26, 27
             )  # TODO: pins-nums are placeholders
-            logger.info(f"Programmer initialized, will start now")
+            logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
         except OSError as err:
             logger.error(

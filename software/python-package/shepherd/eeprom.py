@@ -21,7 +21,7 @@ import yaml
 from pathlib import Path
 from periphery import GPIO
 
-from shepherd.calibration import CalibrationData
+from .calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +39,14 @@ eeprom_format = {
 calibration_data_format = {"offset": 512, "size": 128, "type": "binary"}
 
 
-class CapeData(object):
+class CapeData:
     """Representation of Beaglebone Cape information
 
     According to BeagleBone specifications, each cape should host an EEPROM
     that contains some standardized information about the type of cape,
     manufacturer, version etc.
 
-    See `Link text <https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
+    `See<https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
     """
 
     def __init__(self, data):
@@ -112,7 +112,7 @@ class CapeData(object):
             yield key, self.data[key]
 
 
-class EEPROM(object):
+class EEPROM:
     """Represents EEPROM device
 
     Convenient wrapper of Linux I2C EEPROM device. Knows about the format
@@ -258,7 +258,9 @@ class EEPROM(object):
         data_serialized = calibration_data.to_bytestr()
         if len(data_serialized) != calibration_data_format["size"]:
             raise ValueError(
-                f"WriteCal: data-size is wrong! expected = {calibration_data_format['size']} bytes, but got {len(data_serialized)}"
+                f"WriteCal: data-size is wrong! "
+                f"expected = {calibration_data_format['size']} bytes, "
+                f"but got {len(data_serialized)}"
             )
         self._write(calibration_data_format["offset"], data_serialized)
 

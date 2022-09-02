@@ -12,7 +12,7 @@ Compromises:
 - Python has no static vars -> FName_reset is handling the class-vars
 
 """
-from shepherd import VirtualHarvesterConfig
+from .virtual_harvester_config import VirtualHarvesterConfig
 
 
 class KernelHarvesterStruct:

@@ -23,22 +23,36 @@ import numpy
 import invoke
 import signal
 
-from shepherd.datalog_reader import LogReader as ShpReader
-
-from shepherd.shepherd_io import ShepherdIO, DataBuffer
-from shepherd.virtual_harvester_config import VirtualHarvesterConfig
-from shepherd.virtual_source_config import VirtualSourceConfig
-from shepherd.shepherd_io import ShepherdIOException
-
-from shepherd.datalog import LogWriter
-from shepherd.datalog import ExceptionRecord
-from shepherd.eeprom import EEPROM
-from shepherd.eeprom import CapeData
-from shepherd.calibration import CalibrationData
-from shepherd.calibration import cal_channel_list
 from shepherd import commons
 from shepherd import sysfs_interface
-from shepherd.target_io import TargetIO
+
+from .datalog_reader import LogReader
+from .shepherd_io import ShepherdIO, DataBuffer
+from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_source_config import VirtualSourceConfig
+from .shepherd_io import ShepherdIOException
+from .datalog import LogWriter, ExceptionRecord
+from .eeprom import EEPROM, CapeData
+from .calibration import CalibrationData
+from .target_io import TargetIO
+from .launcher import Launcher
+
+__all__ = [
+    "LogReader",
+    "LogWriter",
+    "EEPROM",
+    "CapeData",
+    "CalibrationData",
+    "VirtualSourceConfig",
+    "VirtualHarvesterConfig",
+    "TargetIO",
+    "Launcher",
+    "run_emulator",
+    "run_recorder",
+    "ShepherdDebug",
+    "set_verbose_level",
+    "get_verbose_level",
+]
 
 # Set default logging handler to avoid "No handler found" warnings.
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -136,9 +150,15 @@ class Emulator(ShepherdIO):
         calibration_emulator (CalibrationData): Shepherd calibration data
             belonging to the cape used for emulation
         set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
-        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
-        sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
-        aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
+        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone,
+                            True = Target A,
+                            False = Target B
+        sel_target_for_pwr: choose which targets gets the supply with current-monitor,
+                            True = Target A,
+                            False = Target B
+        aux_target_voltage: Sets, Enables or disables the voltage for the second target,
+                            0.0 or False for Disable,
+                            True for linking it to voltage of other Target
         infile_vh_cfg (dict): Settings which define the behavior of virtual harvester during emulation
     """
 
@@ -362,7 +382,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_FN_TESTS:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
@@ -372,14 +393,15 @@ class ShepherdDebug(ShepherdIO):
         vh_config = VirtualHarvesterConfig(
             vs_settings.get_harvester(),
         )
-        super().send_virtual_harvester_settings()
+        super().send_virtual_harvester_settings(vh_config)
         time.sleep(0.5)
         super().start()
         super()._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSOURCE_INIT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         # TEST-SIMPLIFICATION - code below is not part of pru-code
         self.P_in_fW = 0.0
@@ -396,7 +418,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_inp_pW
 
@@ -410,7 +433,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_CHARGE:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
@@ -419,7 +443,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
@@ -428,7 +453,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_DRAIN:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
@@ -437,7 +463,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0]  # V_store_uV
 
@@ -446,7 +473,8 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0]  # V_out_dac_raw
 
@@ -474,7 +502,8 @@ class ShepherdDebug(ShepherdIO):
         """
         return True
 
-    # all methods below are wrapper for zerorpc - it seems to have trouble with inheritance and runtime inclusion
+    # all methods below are wrapper for zerorpc - it seems
+    # to have trouble with inheritance and runtime inclusion
 
     @staticmethod
     def set_shepherd_state(state: bool) -> NoReturn:
@@ -509,7 +538,7 @@ class ShepherdDebug(ShepherdIO):
         if not (self._io is None):
             self._io.one_high(num)
         else:
-            logger.debug(f"Error: IO is not enabled in this shepherd-debug-instance")
+            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def set_power_state_emulator(self, state: bool) -> NoReturn:
         super().set_power_state_emulator(state)
@@ -820,7 +849,7 @@ def run_emulator(
     # performance-critical, <4 reduces chatter during main-loop
     verbose = get_verbose_level() >= 4
 
-    log_reader = ShpReader(input_path, verbose=verbose)
+    log_reader = LogReader(input_path, verbose=verbose)
     # TODO: new reader allow to check mode and dtype of recording (should be emu, ivcurves)
 
     with ExitStack() as stack:

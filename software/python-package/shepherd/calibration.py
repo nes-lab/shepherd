@@ -51,18 +51,20 @@ cal_parameter_list = ["gain", "offset"]
 
 # slim alternative to the methods (same name) of CalibrationData
 def convert_raw_to_value(
-    cal_dict: dict, raw: int
+    cal_dict: dict,
+    raw: int,
 ) -> float:  # more precise dict[str, int], trouble with py3.6
     return (float(raw) * cal_dict["gain"]) + cal_dict["offset"]
 
 
 def convert_value_to_raw(
-    cal_dict: dict, value: float
+    cal_dict: dict,
+    value: float,
 ) -> int:  # more precise dict[str, int], trouble with py3.6
     return int((value - cal_dict["offset"]) / cal_dict["gain"])
 
 
-class CalibrationData(object):
+class CalibrationData:
     """Represents SHEPHERD calibration data.
 
     Defines the format of calibration data and provides convenient functions
@@ -172,7 +174,7 @@ class CalibrationData(object):
         for component in cal_component_list:
             cal_dict[component] = {}
             for channel in cal_channel_list:
-                cal_dict[component][channel] = dict()
+                cal_dict[component][channel] = {}
                 if "dac_voltage" in channel:
                     gain = 1.0 / cal_def.dac_voltage_to_raw(1.0)
                 elif "adc_current" in channel:
@@ -204,7 +206,9 @@ class CalibrationData(object):
 
                 if ("rval" in locals()) and (rval < 0.999):
                     logger.warning(
-                        f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}"
+                        f"Calibration may be faulty -> "
+                        f"Correlation coefficient (rvalue) = {rval:.6f} is too low "
+                        f"for {component}-{channel}"
                     )
                 cal_dict[component][channel]["gain"] = gain
                 cal_dict[component][channel]["offset"] = offset

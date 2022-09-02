@@ -34,7 +34,7 @@ def call_repeatedly(interval, func, *args):
     return stopped.set
 
 
-class Launcher(object):
+class Launcher:
     """Stores data coming from PRU's in HDF5 format
 
     Args:
@@ -167,7 +167,7 @@ class Launcher(object):
 
         new_state = self.get_state()
         if new_state != requested_state:
-            raise Exception(f"state didn't change")
+            raise Exception("state didn't change")
 
         return new_state
 

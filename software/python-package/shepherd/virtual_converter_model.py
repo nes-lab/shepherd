@@ -12,15 +12,19 @@ Compromises:
 
 """
 
-from typing import NoReturn
-from shepherd import VirtualSourceConfig, CalibrationData
 import math
+from typing import NoReturn
+
+from .calibration import CalibrationData
+from .virtual_source_config import VirtualSourceConfig
 
 
 class PruCalibration:
     """part of calibration.h"""
 
-    def __init__(self, config: CalibrationData = CalibrationData.from_default()):
+    _cal_default: CalibrationData = CalibrationData.from_default()
+
+    def __init__(self, config: CalibrationData = _cal_default):
         self.cal = config
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:

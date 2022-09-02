@@ -10,12 +10,10 @@ import errno
 import os
 from itertools import product
 from pathlib import Path
-from typing import NoReturn, Union, Dict
+from typing import NoReturn, Dict, Optional
 
 import h5py
 import yaml
-
-from shepherd.calibration import convert_raw_to_value
 
 
 class LogReader:
@@ -52,7 +50,7 @@ class LogReader:
     ds_current: h5py.Dataset = None
     _cal: dict = None  # dict[str, dict]
 
-    def __init__(self, file_path: Union[Path, None], verbose: Union[bool, None] = True):
+    def __init__(self, file_path: Optional[Path], verbose: Optional[bool] = True):
         self._skip_open = file_path is None  # for access by writer-class
         if not self._skip_open:
             self._file_path = Path(file_path)

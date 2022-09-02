@@ -17,17 +17,15 @@ import logging
 import time
 import struct
 import mmap
-from pathlib import Path
-from typing import NoReturn, Union
+from typing import NoReturn, Union, Optional
 import numpy as np
 from periphery import GPIO
 
-from shepherd import sysfs_interface
+from shepherd import sysfs_interface as sfs
 from shepherd import commons
-from shepherd.calibration import CalibrationData, cal_component_list
-from shepherd.virtual_source_config import VirtualSourceConfig
-from shepherd.sysfs_interface import SysfsInterfaceException
-from shepherd.virtual_harvester_config import VirtualHarvesterConfig
+from .calibration import CalibrationData, cal_component_list
+from .virtual_source_config import VirtualSourceConfig
+from .virtual_harvester_config import VirtualHarvesterConfig
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +48,7 @@ class ShepherdIOException(Exception):
         self.value = value
 
 
-class GPIOEdges(object):
+class GPIOEdges:
     """Python representation of GPIO edge buffer
 
     On detection of an edge, shepherd stores the state of all sampled GPIO pins
@@ -69,7 +67,7 @@ class GPIOEdges(object):
         return min(self.values.size, self.timestamps_ns.size)
 
 
-class DataBuffer(object):
+class DataBuffer:
     """Python representation of a shepherd buffer.
 
     Containing IV samples with corresponding timestamp and info about any
@@ -99,7 +97,7 @@ class DataBuffer(object):
         return min(self.voltage.size, self.current.size)
 
 
-class SharedMem(object):
+class SharedMem:
     """Represents shared RAM used to exchange data between PRUs and userspace.
 
     A large area of contiguous memory is allocated through remoteproc. The PRUs
@@ -214,7 +212,7 @@ class SharedMem(object):
         if self.prev_timestamp > 0:
             diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6
             if buffer_timestamp == 0:
-                logger.error(f"ZERO      timestamp detected after recv it from PRU")
+                logger.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 logger.error(
                     f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
@@ -272,7 +270,12 @@ class SharedMem(object):
             pru0_util_mean = 0.1
         if verbose:
             if (pru0_util_mean > 95) or (pru0_util_max > 100):
-                warn_msg = f"Pru0 Loop-Util:  mean = {pru0_util_mean} %, max = {pru0_util_max} % -> WARNING: broken real-time-condition"
+                warn_msg = (
+                    f"Pru0 Loop-Util:  "
+                    f"mean = {pru0_util_mean} %, "
+                    f"max = {pru0_util_max} % "
+                    f"-> WARNING: broken real-time-condition"
+                )
                 logger.warning(warn_msg)
                 # TODO: raise ShepherdIOException or add this info into output-file? WRONG PLACE HERE
             else:
@@ -304,8 +307,8 @@ class SharedMem(object):
     def write_firmware(self, data: bytes):
         data_size = len(data)
         if data_size > self.size:
-            ValueError(f"firmware file is larger than the SharedMEM-Buffer")
-        sysfs_interface.write_programmer_datasize(data_size)
+            ValueError("firmware file is larger than the SharedMEM-Buffer")
+        sfs.write_programmer_datasize(data_size)
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
         logger.debug(
@@ -314,7 +317,7 @@ class SharedMem(object):
         return data_size
 
 
-class ShepherdIO(object):
+class ShepherdIO:
     """Generic ShepherdIO interface.
 
     This class acts as interface between kernel module and firmware on the PRUs,
@@ -368,28 +371,28 @@ class ShepherdIO(object):
             # If shepherd hasn't been terminated properly
             self.reinitialize_prus()
             logger.debug(f"Switching to '{ self.mode }'-mode")
-            sysfs_interface.write_mode(self.mode)
+            sfs.write_mode(self.mode)
 
             # clean up msg-channel provided by kernel module
             self._flush_msgs()
 
             # Ask PRU for base address of shared mem (reserved with remoteproc)
-            mem_address = sysfs_interface.get_mem_address()
+            mem_address = sfs.get_mem_address()
             # Ask PRU for size of shared memory (reserved with remoteproc)
-            mem_size = sysfs_interface.get_mem_size()
+            mem_size = sfs.get_mem_size()
 
             logger.debug(
                 f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"
             )
 
             # Ask PRU for size of individual buffers
-            self.samples_per_buffer = sysfs_interface.get_samples_per_buffer()
+            self.samples_per_buffer = sfs.get_samples_per_buffer()
             logger.debug(f"Samples per buffer: \t{ self.samples_per_buffer }")
 
-            self.n_buffers = sysfs_interface.get_n_buffers()
+            self.n_buffers = sfs.get_n_buffers()
             logger.debug(f"Number of buffers: \t{ self.n_buffers }")
 
-            self.buffer_period_ns = sysfs_interface.get_buffer_period_ns()
+            self.buffer_period_ns = sfs.get_buffer_period_ns()
             self._buffer_period = self.buffer_period_ns / 1e9
             logger.debug(f"Buffer period: \t\t{ self._buffer_period } s")
 
@@ -404,7 +407,7 @@ class ShepherdIO(object):
             self._cleanup()
             raise
 
-        sysfs_interface.wait_for_state("idle", 3)
+        sfs.wait_for_state("idle", 3)
         return self
 
     def __exit__(self, *args):
@@ -420,7 +423,7 @@ class ShepherdIO(object):
                 message types part of the data exchange protocol
             values (int): Actual content of the message
         """
-        sysfs_interface.write_pru_msg(msg_type, values)
+        sfs.write_pru_msg(msg_type, values)
 
     def _get_msg(self, timeout_n: int = 5):
         """Tries to retrieve formatted message from PRU0.
@@ -432,8 +435,8 @@ class ShepherdIO(object):
         """  # TODO: cleanest way without exception: ask sysfs-file with current msg-count
         for _ in range(timeout_n):
             try:
-                return sysfs_interface.read_pru_msg()
-            except SysfsInterfaceException:
+                return sfs.read_pru_msg()
+            except sfs.SysfsInterfaceException:
                 time.sleep(self._buffer_period)
                 continue
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
@@ -443,8 +446,8 @@ class ShepherdIO(object):
         """Flushes msg_channel by reading all available bytes."""
         while True:
             try:
-                sysfs_interface.read_pru_msg()
-            except SysfsInterfaceException:
+                sfs.read_pru_msg()
+            except sfs.SysfsInterfaceException:
                 break
 
     def start(self, start_time: float = None, wait_blocking: bool = True) -> NoReturn:
@@ -456,7 +459,7 @@ class ShepherdIO(object):
         """
         if isinstance(start_time, (float, int)):
             logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
-        sysfs_interface.set_start(start_time)
+        sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
 
@@ -467,22 +470,22 @@ class ShepherdIO(object):
         Args:
             timeout (float): Time to wait in seconds
         """
-        sysfs_interface.wait_for_state("running", timeout)
+        sfs.wait_for_state("running", timeout)
 
     def reinitialize_prus(self) -> NoReturn:
-        sysfs_interface.set_stop(force=True)  # forces idle
-        sysfs_interface.wait_for_state("idle", 5)
+        sfs.set_stop(force=True)  # forces idle
+        sfs.wait_for_state("idle", 5)
 
     def _cleanup(self):
         logger.debug("ShepherdIO is commanded to power down / cleanup")
-        while sysfs_interface.get_state() != "idle":
+        while sfs.get_state() != "idle":
             try:
-                sysfs_interface.set_stop(force=True)
+                sfs.set_stop(force=True)
             except Exception as e:
                 print(e)
             try:
-                sysfs_interface.wait_for_state("idle", 3.0)
-            except SysfsInterfaceException:
+                sfs.wait_for_state("idle", 3.0)
+            except sfs.SysfsInterfaceException:
                 logger.warning(
                     "CleanupRoutine - send stop-command and waiting for PRU to go to idle"
                 )
@@ -540,7 +543,7 @@ class ShepherdIO(object):
         Args:
             sel_target_a: True to select A, False for B
         """
-        current_state = sysfs_interface.get_state()
+        current_state = sfs.get_state()
         if current_state != "idle":
             self.reinitialize_prus()
         if sel_target_a is None:
@@ -555,9 +558,11 @@ class ShepherdIO(object):
             self.start(wait_blocking=True)
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
-        """choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
+        """choose which targets gets the io-connection (serial, swd, gpio) from beaglebone,
+            True = Target A,
+            False = Target B
 
-        shepherd hw-rev2 has two ports for targets and can switch independently from power supplies
+        shepherd hw-rev2 has two ports for targets and can switch independently between power supplies
 
         Args:
             sel_target_a: True to select A, False for B
@@ -572,7 +577,7 @@ class ShepherdIO(object):
     def set_target_io_level_conv(self, state: bool) -> NoReturn:
         """Enables or disables the GPIO level converter to targets.
 
-        The shepherd cape has bi-directional logic level translators (LSF0108)
+        The shepherd cape has bidirectional logic level translators (LSF0108)
         for translating UART, GPIO and SWD signals between BeagleBone and target
         voltage levels. This function enables or disables the converter and
         additional switches (NLAS4684) to keep leakage low.
@@ -588,7 +593,7 @@ class ShepherdIO(object):
 
     @staticmethod
     def set_aux_target_voltage(
-        cal_settings: Union[CalibrationData, None], voltage: float
+        cal_settings: Optional[CalibrationData], voltage: float
     ) -> NoReturn:
         """Enables or disables the voltage for the second target
 
@@ -600,7 +605,7 @@ class ShepherdIO(object):
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        sysfs_interface.write_dac_aux_voltage(cal_settings, voltage)
+        sfs.write_dac_aux_voltage(cal_settings, voltage)
 
     @staticmethod
     def get_aux_voltage(cal_settings: CalibrationData) -> float:
@@ -612,7 +617,7 @@ class ShepherdIO(object):
         Returns:
             aux voltage
         """
-        return sysfs_interface.read_dac_aux_voltage(cal_settings)
+        return sfs.read_dac_aux_voltage(cal_settings)
 
     def send_calibration_settings(self, cal_settings: CalibrationData) -> NoReturn:
         """Sends calibration settings to PRU core
@@ -627,7 +632,7 @@ class ShepherdIO(object):
         if cal_settings is None:
             cal_settings = CalibrationData.from_default()
         cal_dict = cal_settings.export_for_sysfs(self.component)
-        sysfs_interface.write_calibration_settings(cal_dict)
+        sfs.write_calibration_settings(cal_dict)
 
     @staticmethod
     def send_virtual_converter_settings(
@@ -638,9 +643,8 @@ class ShepherdIO(object):
         Note: to apply these settings the pru has to do a re-init (reset)
 
         :param settings: Contains the settings for the virtual source.
-        :param log_intermediate_voltage: monitor capacitor, useful when output is const
         """
-        sysfs_interface.write_virtual_converter_settings(settings.export_for_sysfs())
+        sfs.write_virtual_converter_settings(settings.export_for_sysfs())
 
     @staticmethod
     def send_virtual_harvester_settings(
@@ -652,7 +656,7 @@ class ShepherdIO(object):
 
         :param settings: Contains the settings for the virtual source.
         """
-        sysfs_interface.write_virtual_harvester_settings(settings.export_for_sysfs())
+        sfs.write_virtual_harvester_settings(settings.export_for_sysfs())
 
     def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU
@@ -715,7 +719,7 @@ class ShepherdIO(object):
                 )
             elif msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
                 raise ShepherdIOException(
-                    f"PRU ran out of buffers",
+                    "PRU ran out of buffers",
                     commons.MSG_DEP_ERR_NOFREEBUF,
                     value,
                 )

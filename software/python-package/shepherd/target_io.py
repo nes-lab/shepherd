@@ -51,7 +51,7 @@ target_pin_dirs = {  # TODO:
 }
 
 
-class TargetIO(object):
+class TargetIO:
 
     gpios = {}
     pin_names = []

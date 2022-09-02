@@ -8,22 +8,14 @@ this is ported py-version of the pru-code, goals:
 NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
 """
-from typing import Union
+from typing import Union, Optional
 
-from shepherd import (
-    CalibrationData,
-    VirtualSourceConfig,
-    VirtualHarvesterConfig,
-)
-from shepherd.virtual_converter_model import (
-    PruCalibration,
-    VirtualConverterModel,
-    KernelConverterStruct,
-)
-from shepherd.virtual_harvester_model import (
-    VirtualHarvesterModel,
-    KernelHarvesterStruct,
-)
+from .calibration import CalibrationData
+from .virtual_source_config import VirtualSourceConfig
+from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_converter_model import VirtualConverterModel
+from .virtual_converter_model import PruCalibration, KernelConverterStruct
+from .virtual_harvester_model import VirtualHarvesterModel, KernelHarvesterStruct
 
 
 class VirtualSourceModel:
@@ -38,7 +30,7 @@ class VirtualSourceModel:
         self,
         vs_setting: Union[dict, VirtualSourceConfig],
         cal_data: CalibrationData,
-        input_setting: Union[None, dict],
+        input_setting: Optional[dict],
     ):
 
         self._cal = cal_data

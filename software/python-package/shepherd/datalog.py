@@ -26,13 +26,13 @@ import psutil as psutil
 import serial
 import yaml
 
-from shepherd.calibration import CalibrationData
-from shepherd.calibration import cal_channel_hrv_dict
-from shepherd.calibration import cal_channel_emu_dict
-from shepherd.calibration import cal_parameter_list
+from .calibration import CalibrationData
+from .calibration import cal_channel_hrv_dict
+from .calibration import cal_channel_emu_dict
+from .calibration import cal_parameter_list
 
-from shepherd.shepherd_io import DataBuffer
-from shepherd.commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
+from .shepherd_io import DataBuffer
+from .commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,6 @@ class LogWriter:
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
         self.data_grp = self._h5file.create_group("data")
-        # the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
         self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
 
         self.add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
@@ -240,7 +239,9 @@ class LogWriter:
         ] = "voltage [V] = value * gain + offset"
 
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
-            # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
+            # TODO: not the cleanest cal-selection,
+            #       maybe just hand the resulting two and
+            #       rename them already to "current, voltage" in calling FN
             cal_channel = (
                 cal_channel_hrv_dict[channel]
                 if (self._mode == "harvester")
@@ -298,7 +299,7 @@ class LogWriter:
                 maxshape=(None,),
                 chunks=True,
             )
-            self.uart_grp["message"].attrs["description"] = f"raw ascii-bytes"
+            self.uart_grp["message"].attrs["description"] = "raw ascii-bytes"
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
@@ -392,7 +393,7 @@ class LogWriter:
     def embed_config(self, data: dict) -> NoReturn:
         """
         Important Step to get a self-describing Output-File
-        Note: the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
+        Note: the window_samples-size is important for reconstruction
 
         :param data: from virtual harvester or converter / source
         :return: None
@@ -508,7 +509,12 @@ class LogWriter:
             self.gpio_pos = gpio_new_pos
 
         if (buffer.util_mean > 95) or (buffer.util_max > 100):
-            warn_msg = f"Pru0 Loop-Util:  mean = {buffer.util_mean} %, max = {buffer.util_max} % -> WARNING: broken real-time-condition"
+            warn_msg = (
+                f"Pru0 Loop-Util:  "
+                f"mean = {buffer.util_mean} %, "
+                f"max = {buffer.util_max} % "
+                f"-> WARNING: broken real-time-condition"
+            )
             expt = ExceptionRecord(int(time.time() * 1e9), warn_msg, 42)
             self.write_exception(expt)
 
@@ -625,13 +631,17 @@ class LogWriter:
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{self.uart_path}' with baudrate={baudrate} -> will skip logging"
+                f"[UartMonitor] PySerial ValueError '{e}' - "
+                f"couldn't configure serial-port '{self.uart_path}' "
+                f"with baudrate={baudrate} -> will skip logging"
             )
         except serial.SerialException as e:
             logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{self.uart_path}' to target -> will skip logging"
+                f"[UartMonitor] pySerial SerialException '{e} - "
+                f"Couldn't open Serial-Port '{self.uart_path}' to target "
+                "-> will skip logging"
             )
-        logger.debug(f"[UartMonitor] ended itself")
+        logger.debug("[UartMonitor] ended itself")
 
     def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
         # var1: ['dmesg', '--follow'] -> not enough control
@@ -665,10 +675,11 @@ class LogWriter:
                     f"[DmesgMonitor] Caught a Write Error for Line: [{type(line)}] {line}"
                 )
             tevent.wait(poll_intervall)  # rate limiter
-        logger.debug(f"[DmesgMonitor] ended itself")
+        logger.debug("[DmesgMonitor] ended itself")
 
     def monitor_ptp4l(self, poll_intervall: float = 0.25):
-        # example: Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
+        # example:
+        # Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
         global monitors_end
         cmd_ptp4l = [
             "sudo",
@@ -710,7 +721,7 @@ class LogWriter:
                     f"[PTP4lMonitor] Caught a Write Error for Line: [{type(line)}] {line}"
                 )
             tevent.wait(poll_intervall)  # rate limiter
-        logger.debug(f"[PTP4lMonitor] ended itself")
+        logger.debug("[PTP4lMonitor] ended itself")
 
     def add_dataset_time(
         self, grp: h5py.Group, length: int, chunks: Union[bool, tuple] = True
@@ -723,7 +734,7 @@ class LogWriter:
             chunks=chunks,
             compression=self.compression_algo,
         )
-        grp["time"].attrs["unit"] = f"ns"
+        grp["time"].attrs["unit"] = "ns"
         grp["time"].attrs["description"] = "system time [ns]"
 
     def __setitem__(self, key, item):

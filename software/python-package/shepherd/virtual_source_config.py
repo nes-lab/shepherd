@@ -4,8 +4,6 @@ from pathlib import Path
 import yaml
 import logging
 
-# from shepherd import VirtualHarvesterConfig
-
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +34,8 @@ class VirtualSourceConfig:
     - internal settings are derived from existing values (PRU has no FPU, so it is done here)
     - settings can be exported in required format
     - NOTES to naming:
-        - virtual harvester -> used for harvester and emulator, contains tools to characterize (ivcurve) and harvest these energy-sources (mppt)
+        - virtual harvester -> used for harvester and emulator, contains tools to
+                            characterize (ivcurve) and harvest these energy-sources (mppt)
         - virtual converter -> buck-boost, diode and other converters to supply the target
         - virtual source -> container for harvester + converter
     """
@@ -206,9 +205,11 @@ class VirtualSourceConfig:
         self.data["Constant_1k_per_Ohm"] = max(10**6 / R_input_mOhm, 1)
 
         """
-        compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
-        -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
-        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when V_Cap >= V_out
+        compensate for (hard to detect) current-surge of real capacitors
+        when converter gets turned on -> this can be const value, because
+        the converter always turns on with "V_storage_enable_threshold_uV"
+        TODO: currently neglecting: delay after disabling converter, boost
+        only has simpler formula, second enabling when V_Cap >= V_out
 
         Math behind this calculation:
         Energy-Change Storage Cap   ->  E_new = E_old - E_output
@@ -280,7 +281,11 @@ class VirtualSourceConfig:
             ]
 
     def check_and_complete(self, verbose: bool = True) -> NoReturn:
-        """checks virtual-source-settings for present values, adds default values to missing ones, checks against limits of algorithm"""
+        """
+        checks virtual-source-settings for present values,
+        adds default values to missing ones,
+        checks against limits of algorithm
+        """
         if "converter_base" in self.data:
             base_name = self.data["converter_base"]
         else:
@@ -288,7 +293,8 @@ class VirtualSourceConfig:
 
         if base_name in self._inheritance:
             raise ValueError(
-                f"[{self.name}] loop detected in 'base'-inheritance-system @ '{base_name}' already in {self._inheritance}"
+                f"[{self.name}] loop detected in 'base'-inheritance-system "
+                f"@ '{base_name}' already in {self._inheritance}"
             )
         else:
             self._inheritance.append(base_name)

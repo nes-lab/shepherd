@@ -13,9 +13,9 @@ provided by the shepherd kernel module
 import logging
 import time
 from pathlib import Path
-from typing import NoReturn, Union
+from typing import NoReturn, Optional
 
-from shepherd.calibration import CalibrationData
+from .calibration import CalibrationData
 from shepherd import calibration_default
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ def set_start(start_time: float = None) -> NoReturn:
             logger.debug(f"writing start-time = {start_time} to sysfs")
             f.write(f"{start_time}")
         else:  # unknown type
-            logger.debug(f"writing 'start' to sysfs")
+            logger.debug("writing 'start' to sysfs")
             f.write("start")
 
 
@@ -130,7 +130,7 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
 
 
 def write_dac_aux_voltage(
-    calibration_settings: Union[CalibrationData, None], voltage: float
+    calibration_settings: Optional[CalibrationData], voltage: float
 ) -> NoReturn:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
@@ -138,9 +138,7 @@ def write_dac_aux_voltage(
         :param voltage: desired voltage in volt
         :param calibration_settings: optional set to convert volt to raw
     """
-    if voltage is None:
-        voltage = 0.0
-    elif voltage is False:
+    if (voltage is None) or (voltage is False):
         voltage = 0.0
     elif (voltage is True) or (isinstance(voltage, str) and "main" in voltage.lower()):
         # set bit 20 (during pru-reset) and therefore link both adc-channels
@@ -181,7 +179,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
     """
     if voltage_raw >= (2**16):
         logger.info(
-            f"DAC: sending raw-voltage above possible limit of 16bit-value -> this might trigger commands"
+            "DAC: sending raw-voltage above possible limit of 16bit-value -> this might trigger commands"
         )
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
         logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
@@ -386,7 +384,7 @@ def read_pru_msg() -> tuple:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
-        raise SysfsInterfaceException(f"pru_msg was too short")
+        raise SysfsInterfaceException("pru_msg was too short")
     return msg_parts[0], msg_parts[1:]
 
 
@@ -409,7 +407,7 @@ def write_programmer_ctrl(
     pin_tms: int = 0,
 ):
     if ("jtag" in protocol.lower()) and ((pin_tdo < 1) or (pin_tms < 1)):
-        raise SysfsInterfaceException(f"jtag needs 4 pins defined")
+        raise SysfsInterfaceException("jtag needs 4 pins defined")
     parameters = [protocol, datarate, pin_tck, pin_tdio, pin_tdo, pin_tms]
     for parameter in parameters[1:]:
         if (parameter < 0) or (parameter >= 2**32):

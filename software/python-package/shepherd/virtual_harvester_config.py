@@ -1,9 +1,9 @@
 import copy
-from typing import NoReturn, Union
+from typing import NoReturn, Union, Optional
 from pathlib import Path
 import yaml
 import logging
-from shepherd.calibration import CalibrationData
+from .calibration import CalibrationData
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class VirtualHarvesterConfig:
         self,
         setting: Union[dict, str, Path],
         samplerate_sps: int = 100_000,
-        emu_cfg: Union[None, dict] = None,
+        emu_cfg: Optional[dict] = None,
     ):
 
         self.samplerate_sps = samplerate_sps
@@ -66,7 +66,7 @@ class VirtualHarvesterConfig:
                     self.data[element] = emu_cfg[element]
             if self.data["dtype"] == "isc_voc":
                 raise TypeError(
-                    f"vHarvester can't handle 'isc_voc' format during emulation yet"
+                    "vHarvester can't handle 'isc_voc' format during emulation yet"
                 )
 
         if isinstance(setting, str) and Path(setting).exists():
@@ -123,7 +123,8 @@ class VirtualHarvesterConfig:
 
         if base_name in self._inheritance:
             raise ValueError(
-                f"[{self.name}] loop detected in 'base'-inheritance-system @ '{base_name}' already in {self._inheritance}"
+                f"[{self.name}] loop detected in 'base'-inheritance-system "
+                f"@ '{base_name}' already in {self._inheritance}"
             )
         else:
             self._inheritance.append(base_name)
@@ -220,7 +221,8 @@ class VirtualHarvesterConfig:
         ratio_new = self.data["duration_ms"] / self.data["interval_ms"]
         if (ratio_new / ratio_old - 1) > 0.1:
             logger.debug(
-                f"[{self.name}] Ratio between interval & duration has changed more than 10% due to constraints, from {ratio_old} to {ratio_new}"
+                f"[{self.name}] Ratio between interval & duration has changed "
+                f"more than 10% due to constraints, from {ratio_old} to {ratio_new}"
             )
 
         if "dtype" not in self.data and "dtype" in self._config_base:
