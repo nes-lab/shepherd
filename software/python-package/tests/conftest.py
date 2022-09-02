@@ -85,7 +85,16 @@ def shepherd_up(fake_hardware, shepherd_down):
             ("/sys/shepherd/buffer_period_ns", "1"),
             ("/sys/shepherd/dac_auxiliary_voltage_raw", "0"),
             ("/sys/shepherd/calibration_settings", "0"),
-            ("/sys/shepherd/virtsource_settings", "0"),
+            ("/sys/shepherd/virtual_converter_settings", "0"),
+            ("/sys/shepherd/virtual_harvester_settings", "0"),
+            ("/sys/shepherd/programmer/protocol", "0"),
+            ("/sys/shepherd/programmer/datarate", "0"),
+            ("/sys/shepherd/programmer/pin_tck", "0"),
+            ("/sys/shepherd/programmer/pin_tdio", "0"),
+            ("/sys/shepherd/programmer/pin_tdo", "0"),
+            ("/sys/shepherd/programmer/pin_tms", "0"),
+            # TODO: design tests for programmer, also check if all hardware-tests need real hw
+            #       -> there should be more tests that don't requiere a pru
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
