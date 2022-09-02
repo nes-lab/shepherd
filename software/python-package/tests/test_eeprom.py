@@ -4,11 +4,9 @@ from pathlib import Path
 from shepherd import EEPROM
 from shepherd import CapeData
 from shepherd import CalibrationData
-from shepherd.calibration import (
-    cal_parameter_list,
-    cal_channel_list,
-    cal_component_list,
-)
+from shepherd.calibration import cal_parameter_list
+from shepherd.calibration import cal_channel_list
+from shepherd.calibration import cal_component_list
 
 
 @pytest.fixture()

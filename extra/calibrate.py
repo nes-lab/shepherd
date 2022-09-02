@@ -15,7 +15,9 @@ import matplotlib.pyplot as plt
 import sys
 
 script_path = Path(__file__).parent
-shepherd_path = script_path.parent.joinpath('software', 'python-package', 'shepherd').resolve()
+shepherd_path = script_path.parent.joinpath(
+    "software", "python-package", "shepherd"
+).resolve()
 sys.path.append(str(shepherd_path))
 
 from calibration import CalibrationData
@@ -64,11 +66,11 @@ def plot_calibration(measurements, calibration, file_name):
                 continue
 
             fig, ax = plt.subplots()
-            ax.plot(xl, yl, ":", linewidth=2, color='green')
-            ax.scatter(xp, yp, marker='*', color='k')
-            ax.set_xlabel(r'raw value', fontsize=10)
-            ax.set_ylabel(r'SI-Unit', fontsize=10)
-            ax.set_title(f'Calibration-Check for {component} - {channel}')
+            ax.plot(xl, yl, ":", linewidth=2, color="green")
+            ax.scatter(xp, yp, marker="*", color="k")
+            ax.set_xlabel(r"raw value", fontsize=10)
+            ax.set_ylabel(r"SI-Unit", fontsize=10)
+            ax.set_title(f"Calibration-Check for {component} - {channel}")
             ax.grid(True)
             fig.set_figwidth(11)
             fig.set_figheight(10)
@@ -78,7 +80,9 @@ def plot_calibration(measurements, calibration, file_name):
             plt.clf()
 
 
-def set_smu_to_vsource(smu, value_v: float, limit_i: float, pwrline_cycles: float, mode_4wire: bool):
+def set_smu_to_vsource(
+    smu, value_v: float, limit_i: float, pwrline_cycles: float, mode_4wire: bool
+):
     smu.sense = smu.SENSE_REMOTE if mode_4wire else smu.SENSE_LOCAL
     smu.source.levelv = value_v
     smu.source.limiti = limit_i
@@ -91,7 +95,9 @@ def set_smu_to_vsource(smu, value_v: float, limit_i: float, pwrline_cycles: floa
     smu.measure.nplc = pwrline_cycles
 
 
-def set_smu_as_isource(smu, value_i: float, limit_v: float, pwrline_cycles: float, mode_4wire: bool):
+def set_smu_as_isource(
+    smu, value_i: float, limit_v: float, pwrline_cycles: float, mode_4wire: bool
+):
     smu.sense = smu.SENSE_REMOTE if mode_4wire else smu.SENSE_LOCAL
     smu.source.leveli = value_i
     smu.source.limitv = limit_v
@@ -104,14 +110,16 @@ def set_smu_as_isource(smu, value_i: float, limit_v: float, pwrline_cycles: floa
     smu.measure.nplc = pwrline_cycles
 
 
-def reject_outliers(data, m = 2.):
+def reject_outliers(data, m=2.0):
     d = np.abs(data - np.median(data))
     mdev = np.median(d)
-    s = d/mdev if mdev else 0.
+    s = d / mdev if mdev else 0.0
     return data[s < m]
 
 
-def meas_harvester_adc_voltage(rpc_client, smu, pwrline_cycles: float, mode_4wire: bool):
+def meas_harvester_adc_voltage(
+    rpc_client, smu, pwrline_cycles: float, mode_4wire: bool
+):
 
     smu_current_A = 0.1e-3
     smu_voltages_V = np.linspace(0.3, 2.5, 12)
@@ -119,8 +127,10 @@ def meas_harvester_adc_voltage(rpc_client, smu, pwrline_cycles: float, mode_4wir
     dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
     mode_old = rpc_client.switch_shepherd_mode("hrv_adc_read")
-    print(f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw}) -> upper limit now max")
-    rpc_client.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_raw, also_main=True)
+    print(
+        f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw}) -> upper limit now max"
+    )
+    rpc_client.set_aux_target_voltage_raw((2**20) + dac_voltage_raw, also_main=True)
 
     set_smu_to_vsource(smu, 0.0, smu_current_A, pwrline_cycles, mode_4wire)
 
@@ -140,16 +150,22 @@ def meas_harvester_adc_voltage(rpc_client, smu, pwrline_cycles: float, mode_4wir
 
         smu_current_mA = 1000 * smu.measure.i()
 
-        results.append({"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw})
-        print(f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;"
-              f"  adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); adc-c: {adc_current_raw} raw")
+        results.append(
+            {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw}
+        )
+        print(
+            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;"
+            f"  adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); adc-c: {adc_current_raw} raw"
+        )
 
     smu.source.output = smu.OUTPUT_OFF
     rpc_client.switch_shepherd_mode(mode_old)
     return results
 
 
-def meas_harvester_adc_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bool):  # TODO: combine with previous FN
+def meas_harvester_adc_current(
+    rpc_client, smu, pwrline_cycles: float, mode_4wire: bool
+):  # TODO: combine with previous FN
 
     sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
     dac_voltage_V = 2.5
@@ -157,7 +173,7 @@ def meas_harvester_adc_current(rpc_client, smu, pwrline_cycles: float, mode_4wir
 
     mode_old = rpc_client.switch_shepherd_mode("hrv_adc_read")
     print(f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw})")
-    rpc_client.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_raw, also_main=True)
+    rpc_client.set_aux_target_voltage_raw((2**20) + dac_voltage_raw, also_main=True)
 
     set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
 
@@ -177,8 +193,10 @@ def meas_harvester_adc_current(rpc_client, smu, pwrline_cycles: float, mode_4wir
         smu_voltage = smu.measure.v()
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
-        print(f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
-              f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)")
+        print(
+            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
+            f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
+        )
 
     smu.source.output = smu.OUTPUT_OFF
     rpc_client.switch_shepherd_mode(mode_old)
@@ -193,7 +211,9 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
     mode_old = rpc_client.switch_shepherd_mode("emu_adc_read")
     print(f" -> setting dac-voltage to {dac_voltage_V} V")
     # write both dac-channels of emulator
-    rpc_client.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_to_raw(dac_voltage_V), also_main=True)  # TODO: rpc seems to have trouble with named parameters, so 2**20 is a bugfix
+    rpc_client.set_aux_target_voltage_raw(
+        (2**20) + dac_voltage_to_raw(dac_voltage_V), also_main=True
+    )  # TODO: rpc seems to have trouble with named parameters, so 2**20 is a bugfix
 
     set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
 
@@ -213,15 +233,19 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
         smu_voltage = smu.measure.v()
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
-        print(f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
-              f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)")
+        print(
+            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
+            f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
+        )
 
     smu.source.output = smu.OUTPUT_OFF
     rpc_client.switch_shepherd_mode(mode_old)
     return results
 
 
-def meas_dac_voltage(rpc_client, smu, dac_bitmask, pwrline_cycles: float, mode_4wire: bool):
+def meas_dac_voltage(
+    rpc_client, smu, dac_bitmask, pwrline_cycles: float, mode_4wire: bool
+):
 
     smu_current_A = 0.1e-3
     voltages_V = np.linspace(0.3, 2.5, 12)
@@ -231,7 +255,9 @@ def meas_dac_voltage(rpc_client, smu, dac_bitmask, pwrline_cycles: float, mode_4
     # write both dac-channels of emulator
     rpc_client.dac_write(dac_bitmask, 0)
 
-    set_smu_as_isource(smu, smu_current_A, 5.0, pwrline_cycles, mode_4wire)  # TODO: used for emu & hrv, add parameter for drain and src
+    set_smu_as_isource(
+        smu, smu_current_A, 5.0, pwrline_cycles, mode_4wire
+    )  # TODO: used for emu & hrv, add parameter for drain and src
 
     results = list()
     for _iter, _val in enumerate(voltages_raw):
@@ -247,8 +273,10 @@ def meas_dac_voltage(rpc_client, smu, dac_bitmask, pwrline_cycles: float, mode_4
         smu_current_mA = 1000 * smu.measure.i()
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
-        print(f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"
-              f"  SMU-reference: {mean:.6f} V (median = {medi:.6f}); current: {smu_current_mA:.3f} mA")
+        print(
+            f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"
+            f"  SMU-reference: {mean:.6f} V (median = {medi:.6f}); current: {smu_current_mA:.3f} mA"
+        )
 
     smu.source.output = smu.OUTPUT_OFF
     return results
@@ -258,18 +286,52 @@ def meas_dac_voltage(rpc_client, smu, dac_bitmask, pwrline_cycles: float, mode_4
 def cli():
     pass
 
+
 @cli.command()
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe", help="Host Username")
-@click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
-@click.option("--outfile", "-o", type=click.Path(), help="save-file, file gets extended if it already exists")
-@click.option("--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network")
+@click.option(
+    "--password",
+    "-p",
+    type=str,
+    default=None,
+    help="Host User Password -> only needed when key-credentials are missing",
+)
+@click.option(
+    "--outfile",
+    "-o",
+    type=click.Path(),
+    help="save-file, file gets extended if it already exists",
+)
+@click.option(
+    "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
+)
 @click.option("--all", "all_", is_flag=True, help="handle both, harvester and emulator")
 @click.option("--harvester", "-h", is_flag=True, help="handle only harvester")
 @click.option("--emulator", "-e", is_flag=True, help="handle only emulator")
-@click.option("--smu-4wire", is_flag=True, help="use 4wire-mode for measuring voltage (recommended)")
-@click.option("--smu-nplc", type=float, default=16, help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)")
-def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator, smu_4wire, smu_nplc):
+@click.option(
+    "--smu-4wire",
+    is_flag=True,
+    help="use 4wire-mode for measuring voltage (recommended)",
+)
+@click.option(
+    "--smu-nplc",
+    type=float,
+    default=16,
+    help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)",
+)
+def measure(
+    host,
+    user,
+    password,
+    outfile,
+    smu_ip,
+    all_,
+    harvester,
+    emulator,
+    smu_4wire,
+    smu_nplc,
+):
 
     if all_:
         if harvester or emulator:
@@ -298,7 +360,9 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator, sm
                 measurement_dict = config["measurements"]
                 print("Save-File loaded successfully - will extend dataset")
 
-    with Keithley2600(f"TCPIP0::{smu_ip}::INSTR") as kth, Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
+    with Keithley2600(f"TCPIP0::{smu_ip}::INSTR") as kth, Connection(
+        host, user=user, connect_kwargs=fabric_args
+    ) as cnx:
         # kth = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")  # my fork allows context manager
         kth.reset()
         cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
@@ -310,13 +374,25 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator, sm
             if usr_conf:
                 measurement_dict["harvester"] = dict()
                 print(f"Measurement - Harvester - ADC . Voltage")
-                measurement_dict["harvester"]["adc_voltage"] = meas_harvester_adc_voltage(rpc_client, kth.smub, smu_nplc, smu_4wire)
+                measurement_dict["harvester"][
+                    "adc_voltage"
+                ] = meas_harvester_adc_voltage(
+                    rpc_client, kth.smub, smu_nplc, smu_4wire
+                )
                 print(f"Measurement - Harvester - ADC . Current")
-                measurement_dict["harvester"]["adc_current"] = meas_harvester_adc_current(rpc_client, kth.smub, smu_nplc, smu_4wire)
+                measurement_dict["harvester"][
+                    "adc_current"
+                ] = meas_harvester_adc_current(
+                    rpc_client, kth.smub, smu_nplc, smu_4wire
+                )
                 print(f"Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
-                measurement_dict["harvester"]["dac_voltage_a"] = meas_dac_voltage(rpc_client, kth.smua, 0b0001, smu_nplc, smu_4wire)
+                measurement_dict["harvester"]["dac_voltage_a"] = meas_dac_voltage(
+                    rpc_client, kth.smua, 0b0001, smu_nplc, smu_4wire
+                )
                 print(f"Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
-                measurement_dict["harvester"]["dac_voltage_b"] = meas_dac_voltage(rpc_client, kth.smub, 0b0010, smu_nplc, smu_4wire)
+                measurement_dict["harvester"]["dac_voltage_b"] = meas_dac_voltage(
+                    rpc_client, kth.smub, 0b0010, smu_nplc, smu_4wire
+                )
 
         if emulator:
             click.echo(INSTR_EMU)
@@ -327,19 +403,29 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator, sm
                 print(f"Measurement - Emulator - ADC . Current - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
-                measurement_dict["emulator"]["adc_current"] = meas_emulator_current(rpc_client, kth.smua, smu_nplc, smu_4wire)
+                measurement_dict["emulator"]["adc_current"] = meas_emulator_current(
+                    rpc_client, kth.smua, smu_nplc, smu_4wire
+                )
 
                 print(f"Measurement - Emulator - ADC . Current - Target B")
                 # targetB-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(False)
                 # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
-                measurement_dict["emulator"]["adc_voltage"] = meas_emulator_current(rpc_client, kth.smub, smu_nplc, smu_4wire)
+                measurement_dict["emulator"]["adc_voltage"] = meas_emulator_current(
+                    rpc_client, kth.smub, smu_nplc, smu_4wire
+                )
 
-                rpc_client.select_target_for_power_tracking(False)  # routes DAC.A to TGT.A to SMU-A
+                rpc_client.select_target_for_power_tracking(
+                    False
+                )  # routes DAC.A to TGT.A to SMU-A
                 print(f"Measurement - Emulator - DAC . Voltage - Channel A")
-                measurement_dict["emulator"]["dac_voltage_a"] = meas_dac_voltage(rpc_client, kth.smua, 0b1100, smu_nplc, smu_4wire)
+                measurement_dict["emulator"]["dac_voltage_a"] = meas_dac_voltage(
+                    rpc_client, kth.smua, 0b1100, smu_nplc, smu_4wire
+                )
                 print(f"Measurement - Emulator - DAC . Voltage - Channel B")
-                measurement_dict["emulator"]["dac_voltage_b"] = meas_dac_voltage(rpc_client, kth.smub, 0b1100, smu_nplc, smu_4wire)
+                measurement_dict["emulator"]["dac_voltage_b"] = meas_dac_voltage(
+                    rpc_client, kth.smub, 0b1100, smu_nplc, smu_4wire
+                )
 
         out_dict = {"node": host, "measurements": measurement_dict}
         cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
@@ -354,7 +440,12 @@ def measure(host, user, password, outfile, smu_ip, all_, harvester, emulator, sm
 @cli.command()
 @click.argument("infile", type=click.Path(exists=True))
 @click.option("--outfile", "-o", type=click.Path())
-@click.option("--plot", "-p", is_flag=True, help="generate plots that contain data points and calibration model")
+@click.option(
+    "--plot",
+    "-p",
+    is_flag=True,
+    help="generate plots that contain data points and calibration model",
+)
 def convert(infile, outfile, plot: bool):
     with open(infile, "r") as stream:
         meas_data = yaml.safe_load(stream)
@@ -378,19 +469,33 @@ def convert(infile, outfile, plot: bool):
 @click.argument("host", type=str)
 @click.option("--calfile", "-c", type=click.Path(exists=True))
 @click.option("--measurementfile", "-m", type=click.Path(exists=True))
-@click.option("--version", "-v", type=str, default="22A0",
-              help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision")
-@click.option("--serial_number", "-s", type=str, required=True,
-              help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment")
+@click.option(
+    "--version",
+    "-v",
+    type=str,
+    default="22A0",
+    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision",
+)
+@click.option(
+    "--serial_number",
+    "-s",
+    type=str,
+    required=True,
+    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment",
+)
 @click.option("--user", "-u", type=str, default="joe")
-@click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
+@click.option(
+    "--password",
+    "-p",
+    type=str,
+    default=None,
+    help="Host User Password -> only needed when key-credentials are missing",
+)
 def write(host, calfile, measurementfile, version, serial_number, user, password):
 
     if calfile is None:
         if measurementfile is None:
-            raise click.UsageError(
-                "provide one of cal-file or measurement-file"
-            )
+            raise click.UsageError("provide one of cal-file or measurement-file")
 
         with open(measurementfile, "r") as stream:
             in_measurements = yaml.safe_load(stream)
@@ -405,9 +510,7 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
 
     else:
         if measurementfile is not None:
-            raise click.UsageError(
-                "provide only one of cal-file or measurement-file"
-            )
+            raise click.UsageError("provide only one of cal-file or measurement-file")
         with open(calfile, "r") as stream:
             in_data = yaml.safe_load(stream)
 
@@ -441,7 +544,13 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
 @cli.command()
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe")
-@click.option("--password", "-p", type=str, default=None, help="Host User Password -> only needed when key-credentials are missing")
+@click.option(
+    "--password",
+    "-p",
+    type=str,
+    default=None,
+    help="Host User Password -> only needed when key-credentials are missing",
+)
 def read(host, user, password):
 
     if password is not None:

@@ -196,7 +196,7 @@
             shepherd{
                compatible = "nes,shepherd";
                prusses = <&pruss>;
-            };	
+            };
        };
    };
 

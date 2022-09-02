@@ -13,4 +13,3 @@ parameters:
   use_cal_default: true
   force_overwrite: false
 verbose: 2 # serious performance impact for value > 3
-

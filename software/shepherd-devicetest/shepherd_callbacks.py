@@ -13,7 +13,7 @@ def include(filename):
         os.error(f"File {filename} not found")
 
 
-#include('../python-package/shepherd/calibration.py')
+# include('../python-package/shepherd/calibration.py')
 
 ###############################
 # Basic Window Callbacks
@@ -31,7 +31,9 @@ def program_start_callback(sender, data) -> NoReturn:
 def schedule_refresh() -> NoReturn:
     global refresh_interval, refresh_next
     if refresh_next <= dpg.get_frame_count():
-        refresh_next = round(dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate())
+        refresh_next = round(
+            dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate()
+        )
         dpg.set_frame_callback(frame=refresh_next, callback=window_refresh_callback)
 
 
@@ -57,7 +59,10 @@ def update_gui_elements() -> NoReturn:
     host_state = shepherd_io is not None
     shepherd_state = state_dict[dpg.get_value("shepherd_state")]
     dpg.configure_item("host_name", enabled=not host_state)
-    dpg.configure_item("button_disconnect", label="Disconnect from Host" if host_state else "Connect to Host")
+    dpg.configure_item(
+        "button_disconnect",
+        label="Disconnect from Host" if host_state else "Connect to Host",
+    )
     dpg.configure_item("refresh_value", enabled=host_state)
     dpg.configure_item("shepherd_pwr", enabled=host_state)
     dpg.configure_item("shepherd_state", enabled=host_state)
@@ -72,8 +77,8 @@ def update_gui_elements() -> NoReturn:
     for _iter, _ in enumerate(dac_channels):
         dac_state = dpg.get_value(f"en_dac{_iter}") and host_state
         dpg.configure_item(f"en_dac{_iter}", enabled=host_state)
-        #dpg.configure_item(f"textA_dac{_iter}", enabled=dac_state)  #
-        #dpg.configure_item(f"textB_dac{_iter}", enabled=dac_state)
+        # dpg.configure_item(f"textA_dac{_iter}", enabled=dac_state)  #
+        # dpg.configure_item(f"textB_dac{_iter}", enabled=dac_state)
         dpg.configure_item(f"value_raw_dac{_iter}", enabled=dac_state)
         dpg.configure_item(f"value_mV_dac{_iter}", enabled=dac_state)
     for _iter, _ in enumerate(adc_channels):
@@ -89,6 +94,7 @@ def refresh_rate_callback(sender, element_data, user_data) -> NoReturn:
     global refresh_interval
     refresh_interval = round(1.0 / float(element_data), 3)
     print(f"Wished for {element_data} fps, {refresh_interval} s")
+
 
 ########################
 # Zero RPC Connection
@@ -137,8 +143,9 @@ def connect_button_callback(sender, element_data, user_data) -> NoReturn:
         print(f"Disconnected from Host '{host}'")
     if check_connection():
         print(f"Connected to Host '{host}'")
-        #shepherd_cal = shepherd_io._cal.from_default()
+        # shepherd_cal = shepherd_io._cal.from_default()
     update_gui_elements()
+
 
 #################################
 # Board (Power)-Routing
@@ -237,16 +244,20 @@ def reinitialize_prus(sender, element_data, user_data) -> NoReturn:
     print("reinitialized PRUs")
     update_gui_elements()
 
+
 #################################
 # DAC functionality
 #################################
 
 
-dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
-    [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
-    [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
-    [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
-    [8, "emulator", "dac_voltage_b", "Emulator Rail B"], ]
+dac_channels = (
+    [  # combination of debug channel number, voltage_index, cal_component, cal_channel
+        [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
+        [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
+        [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
+        [8, "emulator", "dac_voltage_b", "Emulator Rail B"],
+    ]
+)
 
 
 def dac_en_callback(sender, en_state, user_value) -> NoReturn:
@@ -280,7 +291,8 @@ def dac_val_callback(sender, value_mV, user_value) -> NoReturn:
 adc_channels = [  # combination of debug channel name, cal_component, cal_channel
     ("hrv_i_in", "harvester", "adc_current", "Harvester I_in [mA]"),
     ("hrv_v_in", "harvester", "adc_voltage", "Harvester V_in [mV]"),
-    ("emu_i_out", "emulator", "adc_current", "Emulator I_out [mA]"), ]
+    ("emu_i_out", "emulator", "adc_current", "Emulator I_out [mA]"),
+]
 
 
 def adc_refresh() -> NoReturn:

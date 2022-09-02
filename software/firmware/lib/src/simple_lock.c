@@ -13,7 +13,7 @@
 inline void simple_mutex_enter(volatile simple_mutex_t *const mutex)
 {
 	/* Spin, if lock is taken by other PRU */
-	while(mutex->OTHER_LOCK) 
+	while(mutex->OTHER_LOCK)
 		{}
 	mutex->MY_LOCK = 1U;
 
@@ -21,7 +21,7 @@ inline void simple_mutex_enter(volatile simple_mutex_t *const mutex)
 	#ifdef PRU1
 		/* Wait a little to guarantee detection of simultaneous access */
 		__delay_cycles(5);
-		while(mutex->OTHER_LOCK) 
+		while(mutex->OTHER_LOCK)
 			{}
 	#endif
 

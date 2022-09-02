@@ -75,7 +75,7 @@ voltage is calculated. The input and output efficiency of the converter is
 modelled using lookup tables, as function of the input or output current.
 
 Every iteration the capacitor voltage is checked to not go beyond its minimum
-and maximum value. However, the `upper_threshold_voltage` and 
+and maximum value. However, the `upper_threshold_voltage` and
 `lower_threshold_voltage` is checked every 'discretize' iterations. This models
 the behavior of the BQ255xx, where only the threshold voltages are checked every
 ~64ms.

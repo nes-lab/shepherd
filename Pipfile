@@ -8,6 +8,7 @@ pylint = "*"
 black = "*"
 twine = "*"
 bump2version = "*"
+pre-commit = "*"
 
 [packages]
 shepherd = {editable = true,path = "./software/python-package"}

@@ -32,7 +32,7 @@ struct shepherd_platform_data {
 
 /*
  * get the two prus from the pruss-device-tree-node and save the pointers for common use.
- * the pruss-device-tree-node must have a shepherd entry with a pointer to the prusses. 
+ * the pruss-device-tree-node must have a shepherd entry with a pointer to the prusses.
  */
 
 static struct shepherd_platform_data *
