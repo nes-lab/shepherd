@@ -1,0 +1,39 @@
+[flake8]
+max-line-length = 100
+require-plugins =
+
+    ### Bugs
+    flake8-bugbear
+    flake8-secure-coding-standard
+    flake8-bandit
+    flake8-builtins
+
+    ### Clean Code
+    flake8-comprehensions
+    flake8-simplify
+    flake8-eradicate
+    flake8-commas
+
+    ### Limitations
+    flake8-blind-except
+    # flake8-logging-format
+    # flake8-print
+
+    ### Documentation
+    flake8-comments
+    # flake8-docstrings
+    # flake8-rst-docstrings
+
+    ### Test-Improvements
+    flake8-assertive
+
+extend-ignore =
+    # black-formatter-specific
+    E203
+
+per-file-ignores =
+    # imported but unused
+    software/python-package/tests/*: SCS108 S101
+
+count = True
+statistics = True
