@@ -129,7 +129,8 @@ def test_target_pins(shepherd_up):
     shepherd_io.start()
     shepherd_io.select_main_target_for_power(sel_target_a=True)
 
-    dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
+    dac_channels = [
+        # combination of debug channel number, voltage_index, cal_component, cal_channel
         [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
         [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
         [4, "emulator", "dac_voltage_a", "Emulator Rail A"],

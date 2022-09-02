@@ -94,8 +94,9 @@ class Launcher:
             logger.info("waiting for falling edge..")
             self.gpio_led.write(True)
             if not self.gpio_button.poll():
-                # note: poll is suspected to exit after ~ 1-2 weeks running -> fills mmc with random measurement
-                # TODO: observe behavior, hopefully this change fixes the bug
+                # NOTE poll is suspected to exit after ~ 1-2 weeks running
+                #      -> fills mmc with random measurement
+                # TODO observe behavior, hopefully this change fixes the bug
                 continue
             self.gpio_led.write(False)
             logger.debug("edge detected")

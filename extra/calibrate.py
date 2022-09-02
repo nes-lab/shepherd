@@ -59,7 +59,7 @@ def plot_calibration(measurements, calibration, file_name):
                 xl = [xp[0], xp[-1]]
                 yl = [gain * xlp + offset for xlp in xl]
             except KeyError:
-                print(f"NOTE: data was not found - will skip plot")
+                print("NOTE: data was not found - will skip plot")
                 continue
             except ValueError as e:
                 print(f"NOTE: data was faulty - will skip plot [{e}]")
@@ -80,6 +80,14 @@ def plot_calibration(measurements, calibration, file_name):
             plt.clf()
 
 
+def set_smu_auto_on(smu, pwrline_cycles: float):
+    smu.source.output = smu.OUTPUT_ON
+    smu.measure.autozero = smu.AUTOZERO_AUTO
+    smu.measure.autorangev = smu.AUTORANGE_ON
+    smu.measure.autorangei = smu.AUTORANGE_ON
+    smu.measure.nplc = pwrline_cycles
+
+
 def set_smu_to_vsource(
     smu, value_v: float, limit_i: float, pwrline_cycles: float, mode_4wire: bool
 ):
@@ -88,11 +96,7 @@ def set_smu_to_vsource(
     smu.source.limiti = limit_i
     smu.source.func = smu.OUTPUT_DCVOLTS
     smu.source.autorangev = smu.AUTORANGE_ON
-    smu.source.output = smu.OUTPUT_ON
-    smu.measure.autozero = smu.AUTOZERO_AUTO
-    smu.measure.autorangev = smu.AUTORANGE_ON
-    smu.measure.autorangei = smu.AUTORANGE_ON
-    smu.measure.nplc = pwrline_cycles
+    set_smu_auto_on(smu, pwrline_cycles)
 
 
 def set_smu_as_isource(
@@ -103,11 +107,7 @@ def set_smu_as_isource(
     smu.source.limitv = limit_v
     smu.source.func = smu.OUTPUT_DCAMPS
     smu.source.autorangei = smu.AUTORANGE_ON
-    smu.source.output = smu.OUTPUT_ON
-    smu.measure.autozero = smu.AUTOZERO_AUTO
-    smu.measure.autorangev = smu.AUTORANGE_ON
-    smu.measure.autorangei = smu.AUTORANGE_ON
-    smu.measure.nplc = pwrline_cycles
+    set_smu_auto_on(smu, pwrline_cycles)
 
 
 def reject_outliers(data, m=2.0):
@@ -128,7 +128,8 @@ def meas_harvester_adc_voltage(
 
     mode_old = rpc_client.switch_shepherd_mode("hrv_adc_read")
     print(
-        f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw}) -> upper limit now max"
+        f" -> setting dac-voltage to {dac_voltage_V} V "
+        f"(raw = {dac_voltage_raw}) -> upper limit now max"
     )
     rpc_client.set_aux_target_voltage_raw((2**20) + dac_voltage_raw, also_main=True)
 

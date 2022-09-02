@@ -47,11 +47,13 @@ __all__ = [
     "VirtualHarvesterConfig",
     "TargetIO",
     "Launcher",
-    "run_emulator",
-    "run_recorder",
-    "ShepherdDebug",
     "set_verbose_level",
     "get_verbose_level",
+    "Recorder",
+    "Emulator",
+    "ShepherdDebug",
+    "run_emulator",
+    "run_recorder",
 ]
 
 # Set default logging handler to avoid "No handler found" warnings.

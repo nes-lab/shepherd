@@ -3,7 +3,6 @@ import os
 import zerorpc
 import dearpygui.dearpygui as dpg
 from past.builtins import execfile
-import time
 
 
 def include(filename):

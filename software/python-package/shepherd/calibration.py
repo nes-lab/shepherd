@@ -18,7 +18,8 @@ from pathlib import Path
 from scipy import stats
 
 # voodoo to allow loading this file from outside (extras)
-# TODO: underlying problem for loading shepherd is a missing mockup of gpio-module, sysfs and sharedmem
+# TODO: underlying problem for loading shepherd is
+#  a missing mockup of gpio-module, sysfs and sharedmem
 try:
     import shepherd.calibration_default as cal_def
 except ModuleNotFoundError:
@@ -129,7 +130,8 @@ class CalibrationData:
             cal_dict[component] = {}
             for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
-                # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
+                # generation of gain / offset is reversed at first
+                # (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(cal_def, cal_fn)(0)
                 gain_inv = getattr(cal_def, cal_fn)(1.0) - offset
                 cal_dict[component][channel] = {
@@ -197,11 +199,13 @@ class CalibrationData:
                     rval = result.rvalue  # test quality of regression
                 except KeyError:
                     logger.error(
-                        f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})"
+                        f"data not found -> '{component}-{channel}' "
+                        f"replaced with default values (gain={gain})"
                     )
                 except ValueError as e:
                     logger.error(
-                        f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]"
+                        f"data faulty -> '{component}-{channel}' "
+                        f"replaced with default values (gain={gain}) [{e}]"
                     )
 
                 if ("rval" in locals()) and (rval < 0.999):
@@ -252,14 +256,16 @@ class CalibrationData:
             )
         comp_data = self.data[component]
         cal_set = {
-            # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
+            # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit
+            # [scaling according to commons.h]
             "adc_current_gain": round(
                 1e9 * (2**8) * comp_data["adc_current"]["gain"]
             ),
             "adc_current_offset": round(
                 1e9 * (2**0) * comp_data["adc_current"]["offset"]
             ),
-            # ADC is handled in uV (micro-volt), gain is shifted by 8 bit [scaling according to commons.h]
+            # ADC is handled in uV (micro-volt), gain is shifted by 8 bit
+            # [scaling according to commons.h]
             "adc_voltage_gain": round(
                 1e6 * (2**8) * comp_data["adc_voltage"]["gain"]
             ),
@@ -279,12 +285,14 @@ class CalibrationData:
             # TODO: is exception more useful? -> raise ValueError
             if ("gain" in key) and not (0 <= value < 2**32):
                 logger.warning(
-                    f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()"
+                    f"Number (={value}) exceeds uint32-container, "
+                    f"in CalibrationData.export_for_sysfs()"
                 )
                 cal_set[key] = min(max(value, 0), 2**32 - 1)
             if ("offset" in key) and not (-(2**31) <= value < 2**31):
                 logger.warning(
-                    f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()"
+                    f"Number (={value}) exceeds int32-container, "
+                    f"in CalibrationData.export_for_sysfs()"
                 )
                 cal_set[key] = min(max(value, -(2**31)), 2**31 - 1)
         return cal_set

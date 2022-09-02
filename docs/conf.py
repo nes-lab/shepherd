@@ -13,15 +13,15 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../"))
-sys.path.insert(0, os.path.abspath("../software/python-package"))
-sys.path.insert(0, os.path.abspath("../software/shepherd-herd"))
+sys.path.insert(0, os.path.realpath("../"))
+sys.path.insert(0, os.path.realpath("../software/python-package"))
+sys.path.insert(0, os.path.realpath("../software/shepherd-herd"))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "SHEPHERD"
-copyright = "2019, Networked Embedded Systems Lab, TU Dresden"
+copyright = "2019-2022, Networked Embedded Systems Lab, TU Dresden"
 author = "Kai Geissdoerfer"
 
 

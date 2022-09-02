@@ -1,19 +1,14 @@
 import pytest
 import numpy as np
 import time
-import logging
-from pathlib import Path
 import h5py
 from itertools import product
 
-from shepherd import cal_channel_list
 from shepherd import LogWriter
 from shepherd import CalibrationData
 from shepherd.calibration import cal_parameter_list, cal_channel_hrv_dict
-
 from shepherd.datalog_reader import LogReader as ShpReader
 from shepherd.shepherd_io import DataBuffer
-from shepherd.shepherd_io import GPIOEdges
 from shepherd.datalog import ExceptionRecord
 
 

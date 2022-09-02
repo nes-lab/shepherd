@@ -12,7 +12,7 @@ HDF5 files.
 """
 
 import logging
-import subprocess
+import subprocess  # noqa S404
 import threading
 import time
 from typing import NoReturn, Union
@@ -73,11 +73,14 @@ class LogWriter:
     """
 
     # choose lossless compression filter
-    # - lzf: low to moderate compression, VERY fast, no options -> 20 % cpu overhead for half the filesize
-    # - gzip: good compression, moderate speed, select level from 1-9, default is 4 -> lower levels seem fine
-    #         --> _algo=number instead of "gzip" is read as compression level for gzip
-    # -> comparison / benchmarks https://www.h5py.org/lzf/
-    # NOTE for quick and easy performance improvements: remove compression for monitor-datasets, or even group_value
+    # - lzf:    low to moderate compression, VERY fast, no options
+    #           -> 20 % cpu overhead for half the filesize
+    # - gzip:   good compression, moderate speed, select level from 1-9,
+    #           default is 4 -> lower levels seem fine
+    #           --> _algo=number instead of "gzip" is read as compression level for gzip
+    #  -> comparison / benchmarks https://www.h5py.org/lzf/
+    # NOTE: for quick and easy performance improvements:
+    #       remove compression for monitor-datasets, or even group_value
     compression_algo = None
     sys_log_enabled = True
     sys_log_intervall_ns = 1 * (10**9)  # step-size is 1 s
@@ -169,7 +172,8 @@ class LogWriter:
         else:
             self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
             self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
-        # Optimization: allowing larger more efficient resizes (before .resize() was called per element)
+        # Optimization: allowing larger more efficient resizes
+        #               (before .resize() was called per element)
         # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
         # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
         inc_duration = int(100)
@@ -188,7 +192,8 @@ class LogWriter:
         self.xcpt_inc = 100
         self.timesync_pos = 0
         self.timesync_inc = inc_duration
-        # NOTE for possible optimization: align resize with chunk-size -> rely on autochunking -> inc = h5ds.chunks
+        # NOTE for possible optimization: align resize with chunk-size
+        #      -> rely on autochunking -> inc = h5ds.chunks
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -208,7 +213,7 @@ class LogWriter:
         settings = list(self._h5file.id.get_access_plist().get_cache())
         logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
 
-        # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
+        # Store voltage and current samples in the data group, both are stored as 4 Byte uint
         self.data_grp = self._h5file.create_group("data")
         self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
 
@@ -386,7 +391,7 @@ class LogWriter:
         return self
 
     def get_mode(self) -> str:
-        if "mode" in self._h5file.attrs.keys():
+        if "mode" in self._h5file.attrs:
             return self._h5file.attrs["mode"]
         return ""
 
@@ -436,18 +441,21 @@ class LogWriter:
 
         if self.dmesg_mon_t is not None:
             logger.info(
-                f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)"
+                f"[LogWriter] terminate Dmesg-Monitor, "
+                f"({self.dmesg_grp['time'].shape[0]} entries)"
             )
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
             logger.info(
-                f"[LogWriter] terminate PTP4L-Monitor ({self.timesync_grp['time'].shape[0]} entries)"
+                f"[LogWriter] terminate PTP4L-Monitor, "
+                f"({self.timesync_grp['time'].shape[0]} entries)"
             )
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
             if self._write_uart:
                 logger.info(
-                    f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)"
+                    f"[LogWriter] terminate UART-Monitor,  "
+                    f"({self.uart_grp['time'].shape[0]} entries)"
                 )
             self.uart_mon_t = None
         runtime = round(self.data_grp["time"].shape[0] / self.samplerate_sps, 1)
@@ -579,7 +587,8 @@ class LogWriter:
             )
             self.sysutil_nw_last = sysutil_nw_now
             self.sysutil_pos += 1
-            # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
+            # TODO: add temp, not working:
+            #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
     def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
         self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
@@ -593,9 +602,11 @@ class LogWriter:
 
     def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> NoReturn:
         # TODO: TEST - Not final, goal: raw bytes in hdf5
-        # - uart is bytes-type -> storing in hdf5 is hard, tried 'S' and opaque-type -> failed with errors
-        # - converting is producing ValueError on certain chars, errors="backslashreplace" does not help
-        # TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        # - uart is bytes-type -> storing in hdf5 is hard,
+        #   tried 'S' and opaque-type -> failed with errors
+        # - converting is producing ValueError on certain chars,
+        #   errors="backslashreplace" does not help
+        # TODO: eval https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
         if (not self._write_uart) or (not isinstance(baudrate, int)) or (baudrate == 0):
             return
         global monitors_end
@@ -654,7 +665,7 @@ class LogWriter:
             f"--lines={backlog}",
             "--output=short-precise",
         ]
-        proc_dmesg = subprocess.Popen(
+        proc_dmesg = subprocess.Popen(  # noqa S603
             cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True
         )
         tevent = threading.Event()
@@ -679,7 +690,7 @@ class LogWriter:
 
     def monitor_ptp4l(self, poll_intervall: float = 0.25):
         # example:
-        # Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
+        # sheep1 ptp4l[378]: [821.629] master offset -4426 s2 freq +285889 path delay 12484
         global monitors_end
         cmd_ptp4l = [
             "sudo",
@@ -689,7 +700,7 @@ class LogWriter:
             "--lines=1",
             "--output=short-precise",
         ]  # for client
-        proc_ptp4l = subprocess.Popen(
+        proc_ptp4l = subprocess.Popen(  # noqa S603
             cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True
         )
         tevent = threading.Event()

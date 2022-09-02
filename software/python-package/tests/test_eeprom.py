@@ -38,7 +38,8 @@ def eeprom_open(request, fake_hardware):
         fake_hardware.create_file("/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768)
         request.applymarker(
             pytest.mark.xfail(
-                raises=OSError, reason="pyfakefs doesn't support seek in files"
+                raises=OSError,
+                reason="pyfakefs doesn't support seek in files",
             )
         )
     with EEPROM() as eeprom:
@@ -89,7 +90,7 @@ def test_write_raw(eeprom_retained, data_test_string):
 @pytest.mark.hardware
 def test_read_value(eeprom_with_data, data_example):
     with pytest.raises(KeyError):
-        datum = eeprom_with_data["some non-sense parameter"]
+        _ = eeprom_with_data["some non-sense parameter"]
     assert eeprom_with_data["version"] == data_example["version"]
 
 

@@ -31,7 +31,8 @@ class VirtualHarvesterConfig:
     :param samplerate_sps:
     :param emu_cfg: optional config-dict (needed for emulation) with:
         - dtype: datatype of input-file
-        - window_samples: complete length of the ivcurve (if applicable) -> steps * (1 + wait_cycles)
+        - window_samples: complete length of the ivcurve (if applicable)
+          -> steps * (1 + wait_cycles)
     """
 
     data: dict = {}
@@ -86,7 +87,8 @@ class VirtualHarvesterConfig:
                 setting = self._config_defs[setting]
             else:
                 raise NotImplementedError(
-                    f"[{self.name}] was set to '{setting}', but definition missing in '{self._def_file}'"
+                    f"[{self.name}] was set to '{setting}', "
+                    f"but definition missing in '{self._def_file}'"
                 )
 
         if setting is None:
@@ -103,7 +105,8 @@ class VirtualHarvesterConfig:
             self.data = setting
         else:
             raise NotImplementedError(
-                f"[{self.name}] {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?"
+                f"[{self.name}] {type(setting)}'{setting}' could not be handled. "
+                f"In case of file-path -> does it exist?"
             )
 
         if self.data_min is None:
@@ -116,10 +119,7 @@ class VirtualHarvesterConfig:
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
 
-        if "base" in self.data:
-            base_name = self.data["base"]
-        else:
-            base_name = "neutral"
+        base_name = self.data.get("base", default="neutral")
 
         if base_name in self._inheritance:
             raise ValueError(
@@ -258,23 +258,27 @@ class VirtualHarvesterConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, set to inherited value = {set_value}"
+                    f"[{self.name}] '{setting_key}' not provided, "
+                    f"et to inherited value = {set_value}"
                 )
         if (min_value is not None) and (set_value < min_value):
             if verbose:
                 logger.debug(
-                    f"[{self.name}] {setting_key} = {set_value}, but must be >= {min_value} -> adjusted"
+                    f"[{self.name}] {setting_key} = {set_value}, "
+                    f"but must be >= {min_value} -> adjusted"
                 )
             set_value = min_value
         if (max_value is not None) and (set_value > max_value):
             if verbose:
                 logger.debug(
-                    f"[{self.name}] {setting_key} = {set_value}, but must be <= {max_value} -> adjusted"
+                    f"[{self.name}] {setting_key} = {set_value}, "
+                    f"but must be <= {max_value} -> adjusted"
                 )
             set_value = max_value
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"[{self.name}] '{setting_key}' must a single positive number, but is '{set_value}'"
+                f"[{self.name}] '{setting_key}' must a single positive number, "
+                f"but is '{set_value}'"
             )
         self.data[setting_key] = set_value
 

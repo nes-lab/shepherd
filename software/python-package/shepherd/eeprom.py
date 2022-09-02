@@ -208,10 +208,8 @@ class EEPROM:
         if eeprom_format[key]["type"] == "ascii":
             if len(value) != eeprom_format[key]["size"]:
                 raise ValueError(
-                    (
-                        f"Value { value } has wrong size. "
-                        f"Required size is { eeprom_format[key]['size'] }"
-                    )
+                    f"Value { value } has wrong size. "
+                    f"Required size is { eeprom_format[key]['size'] }"
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         elif eeprom_format[key]["type"] == "str":
@@ -219,10 +217,8 @@ class EEPROM:
                 value += "\0"
             elif len(value) > eeprom_format[key]["size"]:
                 raise ValueError(
-                    (
-                        f"Value { value } is longer than maximum "
-                        f"size { eeprom_format[key]['size'] }"
-                    )
+                    f"Value { value } is longer than maximum "
+                    f"size { eeprom_format[key]['size'] }"
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         else:

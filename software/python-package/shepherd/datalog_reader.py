@@ -3,7 +3,8 @@ shepherd.datalog_reader
 ~~~~~
 Provides classes for retrieving sampled IV data from HDF5 files.
 stripped version of https://github.com/orgua/shepherd-datalib/blob/main/src/shepherd_data/reader.py
--> currently the easiest way to get rid of some dependencies (mostly pandas, that gets installed by src and fails on BB)
+-> currently the easiest way to get rid of some dependencies
+(mostly pandas, that gets installed by src and fails on BB)
 """
 import logging
 import errno
@@ -157,27 +158,27 @@ class LogReader:
         """
         :return:
         """
-        if "window_samples" in self.h5file["data"].attrs.keys():
+        if "window_samples" in self.h5file["data"].attrs:
             return self.h5file["data"].attrs["window_samples"]
         return 0
 
     def get_mode(self) -> str:
-        if "mode" in self.h5file.attrs.keys():
+        if "mode" in self.h5file.attrs:
             return self.h5file.attrs["mode"]
         return ""
 
     def get_config(self) -> Dict:
-        if "config" in self.h5file["data"].attrs.keys():
+        if "config" in self.h5file["data"].attrs:
             return yaml.safe_load(self.h5file["data"].attrs["config"])
         return {}
 
     def get_hostname(self) -> str:
-        if "hostname" in self.h5file.attrs.keys():
+        if "hostname" in self.h5file.attrs:
             return self.h5file.attrs["hostname"]
         return "unknown"
 
     def get_datatype(self) -> str:
-        if "datatype" in self.h5file["data"].attrs.keys():
+        if "datatype" in self.h5file["data"].attrs:
             return self.h5file["data"].attrs["datatype"]
         return ""
 
@@ -288,8 +289,8 @@ class LogReader:
         :param key: attribute, group, dataset
         :return: value of that key, or handle of object
         """
-        if key in self.h5file.attrs.keys():
+        if key in self.h5file.attrs:
             return self.h5file.attrs.__getitem__(key)
-        if key in self.h5file.keys():
+        if key in self.h5file:
             return self.h5file.__getitem__(key)
         raise KeyError

@@ -9,8 +9,7 @@ remotely.
 :copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import os
-from past.builtins import execfile
+import dearpygui.dearpygui as dpg
 from shepherd_callbacks import *
 
 # include('../python-package/shepherd/calibration.py')

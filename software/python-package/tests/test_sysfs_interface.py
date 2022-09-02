@@ -1,15 +1,11 @@
 import pytest
-import subprocess
 import time
 from pathlib import Path
 import yaml
 
-from shepherd import (
-    sysfs_interface,
-    ShepherdIO,
-    VirtualSourceConfig,
-    VirtualHarvesterConfig,
-)
+from shepherd import sysfs_interface
+from shepherd import VirtualSourceConfig
+from shepherd import VirtualHarvesterConfig
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_config import flatten_dict_list
 
@@ -162,22 +158,15 @@ def test_initial_calibration_settings(shepherd_up, calibration_settings):
 
 
 @pytest.mark.hardware
-def test_initial_harvester_settings(shepherd_up, harvester_settings):
-    sysfs_interface.write_virtual_harvester_settings(harvester_settings)
-    assert sysfs_interface.read_virtual_harvester_settings() == harvester_settings
-
-
-@pytest.mark.hardware
 def test_initial_harvester_settings(shepherd_up):
     hrv_list = [0] + list(range(200, 211))
     assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
 @pytest.mark.hardware
-def test_virtsource_settings(shepherd_up, virtsource_settings):
-    sysfs_interface.write_virtual_converter_settings(virtsource_settings)
-    values_1d = flatten_dict_list(virtsource_settings)
-    assert sysfs_interface.read_virtual_converter_settings() == values_1d
+def test_writing_harvester_settings(shepherd_up, harvester_settings):
+    sysfs_interface.write_virtual_harvester_settings(harvester_settings)
+    assert sysfs_interface.read_virtual_harvester_settings() == harvester_settings
 
 
 @pytest.mark.hardware
@@ -189,4 +178,11 @@ def test_initial_virtsource_settings(shepherd_up):
         list(range(12)),
     ]
     values_1d = flatten_dict_list(vsource_settings)
+    assert sysfs_interface.read_virtual_converter_settings() == values_1d
+
+
+@pytest.mark.hardware
+def test_writing_virtsource_settings(shepherd_up, virtsource_settings):
+    sysfs_interface.write_virtual_converter_settings(virtsource_settings)
+    values_1d = flatten_dict_list(virtsource_settings)
     assert sysfs_interface.read_virtual_converter_settings() == values_1d

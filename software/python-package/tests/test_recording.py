@@ -1,5 +1,4 @@
 import pytest
-import logging
 import h5py
 import time
 import numpy as np
