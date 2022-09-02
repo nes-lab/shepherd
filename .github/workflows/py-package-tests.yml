@@ -22,8 +22,11 @@ jobs:
         run: |
           sudo apt install python3-msgpack
           python3 -m pip install --upgrade pip msgpack
-          pip3 install pylint pylint-exit black
-        # TODO: install-process fails without msgpack pre-installed
+          pip3 install pylint pylint-exit black pylint-pytest
+        # NOTE: install-process fails without msgpack pre-installed
+
+      - name: Run Pre-Commit Tests
+        uses: pre-commit/action@v3.0.0
 
       - name: Build the py-package
         run: "python3 setup.py build --force"
@@ -35,9 +38,7 @@ jobs:
         run: "sudo python3 setup.py test --addopts '-vvv --fake'"
         working-directory: "./software/python-package"
         # needs sudo because it installs packages
-      - name: Lint the py-package
+      - name: PyLint the py-package
         run: "pylint $(git ls-files '*.py') || pylint-exit $?"
+        # -E --py-version 3.8
         working-directory: "software/python-package/"
-      - name: Black-Check the py-package
-        run: "black --check ./"
-        working-directory: "./software/python-package"

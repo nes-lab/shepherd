@@ -1,8 +1,9 @@
 [flake8]
 max-line-length = 100
 require-plugins =
+    # https://github.com/DmytroLitvinov/awesome-flake8-extensions
 
-    ### Bugs
+    ### Bugs & Code-Smells
     flake8-bugbear
     flake8-secure-coding-standard
     flake8-bandit
@@ -30,10 +31,16 @@ require-plugins =
 extend-ignore =
     # black-formatter-specific
     E203
+    # hideous
+    C812
+    C815
 
 per-file-ignores =
     # imported but unused
     software/python-package/tests/*: SCS108 S101
+
+exclude =
+    software/shepherd-devicetest/*
 
 count = True
 statistics = True

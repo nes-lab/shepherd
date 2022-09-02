@@ -1,12 +1,11 @@
 # install:
 #  pip install pre-commit
-#  pre-commit install
+#  pre-commit install-hooks
 #  pre-commit run --all-files
 # update:
 #  pre-commit autoupdate
 # TODO:
 # - auto-enable for repo on clone
-# - github actions https://github.com/pre-commit/action
 # - more hooks (clang-format,...) https://pre-commit.com/hooks.html
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
@@ -50,5 +49,5 @@ repos:
 
         ### Test-Improvements
         - flake8-assertive
-default_language_version:
-    python: python3.8
+#default_language_version:
+#    python: python3.8
