@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 from pathlib import Path
 
@@ -12,17 +13,12 @@ from fabric import Connection
 import msgpack
 import msgpack_numpy
 import matplotlib.pyplot as plt
-import sys
 
-script_path = Path(__file__).parent
-shepherd_path = script_path.parent.joinpath(
-    "software", "python-package", "shepherd"
-).resolve()
-sys.path.append(str(shepherd_path))
+# NOTE: needs locally installed shepherd-package
+from shepherd.calibration import CalibrationData
+from shepherd.calibration_default import dac_voltage_to_raw
 
-from calibration import CalibrationData
-from calibration_default import *
-
+# TODO: change to datalib after functionally is added there
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -135,7 +131,7 @@ def meas_harvester_adc_voltage(
 
     set_smu_to_vsource(smu, 0.0, smu_current_A, pwrline_cycles, mode_4wire)
 
-    results = list()
+    results = []
     for voltage_V in smu_voltages_V:
         smu.source.levelv = voltage_V
         time.sleep(0.5)
@@ -155,8 +151,9 @@ def meas_harvester_adc_voltage(
             {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw}
         )
         print(
-            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;"
-            f"  adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); adc-c: {adc_current_raw} raw"
+            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;  "
+            f"adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); "
+            f"adc-c: {adc_current_raw} raw"
         )
 
     smu.source.output = smu.OUTPUT_OFF
@@ -178,7 +175,7 @@ def meas_harvester_adc_current(
 
     set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
 
-    results = list()
+    results = []
     for current_A in sm_currents_A:
         smu.source.leveli = current_A
         time.sleep(0.5)
@@ -190,7 +187,8 @@ def meas_harvester_adc_current(
         filter_rate = 100 * adc_filtered.size / meas_rec[0].size
         adc_current_raw = float(np.mean(adc_filtered))
 
-        # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
+        # voltage measurement only for information, drop might appear severe,
+        # because 4port-measurement is not active
         smu_voltage = smu.measure.v()
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
@@ -218,7 +216,7 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
 
     set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
 
-    results = list()
+    results = []
     for current_A in sm_currents_A:
         smu.source.leveli = -current_A  # negative current, because smu acts as a drain
         time.sleep(0.5)
@@ -230,7 +228,8 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
         filter_rate = 100 * adc_filtered.size / meas_rec[0].size
         adc_current_raw = float(np.mean(adc_filtered))
 
-        # voltage measurement only for information, drop might appear severe, because 4port-measurement is not active
+        # voltage measurement only for information, drop might appear severe,
+        # because 4port-measurement is not active
         smu_voltage = smu.measure.v()
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
@@ -260,13 +259,13 @@ def meas_dac_voltage(
         smu, smu_current_A, 5.0, pwrline_cycles, mode_4wire
     )  # TODO: used for emu & hrv, add parameter for drain and src
 
-    results = list()
+    results = []
     for _iter, _val in enumerate(voltages_raw):
         rpc_client.dac_write(dac_bitmask, _val)
         time.sleep(0.5)
         smu.measure.v()
-        meas_series = list([])
-        for index in range(30):
+        meas_series = []
+        for _ in range(30):
             meas_series.append(smu.measure.v())
             time.sleep(0.01)
         mean = float(np.mean(meas_series))
@@ -283,7 +282,7 @@ def meas_dac_voltage(
     return results
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
+@click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 def cli():
     pass
 
@@ -353,7 +352,7 @@ def measure(
 
     rpc_client = zerorpc.Client(timeout=60, heartbeat=20)
 
-    measurement_dict = dict()
+    measurement_dict = {}
     if (outfile is not None) and Path(outfile).exists():
         with open(outfile, "r") as config_data:
             config = yaml.safe_load(config_data)
@@ -364,7 +363,6 @@ def measure(
     with Keithley2600(f"TCPIP0::{smu_ip}::INSTR") as kth, Connection(
         host, user=user, connect_kwargs=fabric_args
     ) as cnx:
-        # kth = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")  # my fork allows context manager
         kth.reset()
         cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
         rpc_client.connect(f"tcp://{ host }:4242")
@@ -373,24 +371,24 @@ def measure(
             click.echo(INSTR_HRVST)
             usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
-                measurement_dict["harvester"] = dict()
-                print(f"Measurement - Harvester - ADC . Voltage")
+                measurement_dict["harvester"] = {}
+                print("Measurement - Harvester - ADC . Voltage")
                 measurement_dict["harvester"][
                     "adc_voltage"
                 ] = meas_harvester_adc_voltage(
                     rpc_client, kth.smub, smu_nplc, smu_4wire
                 )
-                print(f"Measurement - Harvester - ADC . Current")
+                print("Measurement - Harvester - ADC . Current")
                 measurement_dict["harvester"][
                     "adc_current"
                 ] = meas_harvester_adc_current(
                     rpc_client, kth.smub, smu_nplc, smu_4wire
                 )
-                print(f"Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
+                print("Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
                 measurement_dict["harvester"]["dac_voltage_a"] = meas_dac_voltage(
                     rpc_client, kth.smua, 0b0001, smu_nplc, smu_4wire
                 )
-                print(f"Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
+                print("Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
                 measurement_dict["harvester"]["dac_voltage_b"] = meas_dac_voltage(
                     rpc_client, kth.smub, 0b0010, smu_nplc, smu_4wire
                 )
@@ -399,16 +397,16 @@ def measure(
             click.echo(INSTR_EMU)
             usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
-                measurement_dict["emulator"] = dict()
+                measurement_dict["emulator"] = {}
 
-                print(f"Measurement - Emulator - ADC . Current - Target A")
+                print("Measurement - Emulator - ADC . Current - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
                 measurement_dict["emulator"]["adc_current"] = meas_emulator_current(
                     rpc_client, kth.smua, smu_nplc, smu_4wire
                 )
 
-                print(f"Measurement - Emulator - ADC . Current - Target B")
+                print("Measurement - Emulator - ADC . Current - Target B")
                 # targetB-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(False)
                 # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
@@ -419,11 +417,11 @@ def measure(
                 rpc_client.select_target_for_power_tracking(
                     False
                 )  # routes DAC.A to TGT.A to SMU-A
-                print(f"Measurement - Emulator - DAC . Voltage - Channel A")
+                print("Measurement - Emulator - DAC . Voltage - Channel A")
                 measurement_dict["emulator"]["dac_voltage_a"] = meas_dac_voltage(
                     rpc_client, kth.smua, 0b1100, smu_nplc, smu_4wire
                 )
-                print(f"Measurement - Emulator - DAC . Voltage - Channel B")
+                print("Measurement - Emulator - DAC . Voltage - Channel B")
                 measurement_dict["emulator"]["dac_voltage_b"] = meas_dac_voltage(
                     rpc_client, kth.smub, 0b1100, smu_nplc, smu_4wire
                 )
@@ -432,7 +430,7 @@ def measure(
         cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
         res_repr = yaml.dump(out_dict, default_flow_style=False)
         if outfile is not None:
-            with open(outfile, "w") as f:
+            with os.open(outfile, os.O_WRONLY) as f:
                 f.write(res_repr)
         else:
             print(res_repr)
@@ -460,7 +458,7 @@ def convert(infile, outfile, plot: bool):
     out_dict = {"node": meas_data["node"], "calibration": calib_dict}
     res_repr = yaml.dump(out_dict, default_flow_style=False)
     if outfile is not None:
-        with open(outfile, "w") as f:
+        with os.open(outfile, os.O_WRONLY) as f:
             f.write(res_repr)
     else:
         print(res_repr)
@@ -500,13 +498,14 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
 
         with open(measurementfile, "r") as stream:
             in_measurements = yaml.safe_load(stream)
-        in_data = dict()
-        in_data["calibration"] = CalibrationData.from_measurements(measurementfile).data
-        in_data["node"] = in_measurements["node"]
+        in_data = {
+            "calibration": CalibrationData.from_measurements(measurementfile).data,
+            "node": in_measurements["node"],
+        }
         res_repr = yaml.dump(in_data, default_flow_style=False)
         tmp_file = tempfile.NamedTemporaryFile()
         calfile = tmp_file.name
-        with open(calfile, "w") as f:
+        with os.open(calfile, os.O_WRONLY) as f:
             f.write(res_repr)
 
     else:
@@ -530,7 +529,7 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
         fabric_args = {}
 
     with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
-        cnx.put(calfile, "/tmp/calib.yml")
+        cnx.put(calfile, "/tmp/calib.yml")  # noqa S108
         cnx.sudo(
             (
                 f"shepherd-sheep eeprom write -v { version } -s {serial_number}"
