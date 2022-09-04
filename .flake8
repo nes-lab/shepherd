@@ -37,8 +37,12 @@ extend-ignore =
     C813
 
 per-file-ignores =
-    # imported but unused
+    # asserts (in tests are ok)
     software/python-package/tests/*: SCS108 S101
+    # commented out code, TODO: finalize model
+    *_model.py: E800
+    # telnet for openOCD, for now, TODO: replace by direct ssh.run()
+    software/shepherd-herd/shepherd_herd/__init__.py: S401 S312
 
 exclude =
     software/shepherd-devicetest/*

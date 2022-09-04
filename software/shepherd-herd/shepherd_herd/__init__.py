@@ -277,6 +277,7 @@ def process_result(ctx, result, **kwargs):
 
 
 def start_openocd(cnx, hostname, timeout=30):
+    # TODO: why start a whole telnet-session? we can just flash and verify firmware by remote-cmd
     cnx.sudo("systemctl start shepherd-openocd", hide=True, warn=True)
     ts_end = time.time() + timeout
     while True:
