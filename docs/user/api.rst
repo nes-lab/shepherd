@@ -78,20 +78,20 @@ Usage:
 
 
 (log)Reader
----------
+------------
 
 The *Reader* for shepherd-files is used to read previously recorded data from an hdf5 file buffer by buffer.
 It can be used with the Emulator to replay recorded data to an attached sensor node.
 
 TODO: update with https://pypi.org/project/shepherd-data/ shpd.Reader
 
-.. autoclass:: shepherd_data.Reader
+.. autoclass:: shepherd.LogReader
    :members:
 
 Usage:
 
 .. code-block:: python
 
-    with shepherd_data.Reader("mylog.h5") as log_reader:
+    with shepherd.LogReader("mylog.h5") as log_reader:
         for buf in log_reader.read_buffers(end=1000):
             print(len(buf))

@@ -29,7 +29,7 @@ We have designed a GPS capelet (hardware/capelets/gps) to easily connect a GPS r
 
 
 Harvester
---------
+----------
 
 For recording a harvesting scenario, shepherd nodes are equipped with a harvesting transducer, e.g. a solar panel or piezo-electric harvester.
 This transducer is connected to the input of the harvesting circuit on the shepherd cape.
