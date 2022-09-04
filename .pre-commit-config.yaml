@@ -1,8 +1,9 @@
 # install:
 #  pip install pre-commit
-#  pre-commit install-hooks
+# # pre-commit install-hooks
+# run:
 #  pre-commit run --all-files
-# update:
+# update deps:
 #  pre-commit autoupdate
 # TODO:
 # - auto-enable for repo on clone
@@ -14,6 +15,10 @@ repos:
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
+    -   id: check-executables-have-shebangs
+#    -   id: check-shebang-scripts-are-executable
+    -   id: detect-private-key
+    -   id: mixed-line-ending
 -   repo: https://github.com/psf/black
     rev: 22.8.0
     hooks:
