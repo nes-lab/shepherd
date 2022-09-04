@@ -14,7 +14,6 @@ same test. Either find a solution or put every CLI call in a separate test.
 """
 import time
 import pytest
-import click
 import numpy as np
 from pathlib import Path
 

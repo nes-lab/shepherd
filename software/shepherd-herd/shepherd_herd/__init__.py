@@ -11,9 +11,9 @@ images to target sensor nodes.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+import contextlib
 
 import click
-import re
 import time
 from fabric import Group
 import numpy as np
@@ -100,7 +100,7 @@ def configure_shepherd(
         if res.exited != 3:
             raise Exception(f"shepherd not inactive on {hostnames[cnx.host]}")
 
-        cnx.put(StringIO(config_yml), "/tmp/config.yml")
+        cnx.put(StringIO(config_yml), "/tmp/config.yml")  # noqa S108
         cnx.sudo("mv /tmp/config.yml /etc/shepherd/config.yml")
 
 
@@ -121,7 +121,7 @@ def start_shepherd(
         res = cnx.sudo("systemctl start shepherd", hide=True, warn=True)
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
+@click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "--inventory",
     "-i",
@@ -163,14 +163,13 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
             except yaml.YAMLError:
                 raise click.UsageError(f"Couldn't read inventory file {host_path}")
 
-        hostlist = list()
-        hostnames = dict()
+        hostlist = []
+        hostnames = {}
         for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-            if limit is not None:
-                if not hostname in limit.split(","):
-                    continue
+            if (limit is not None) and (hostname not in limit.split(",")):
+                continue
 
-            if "ansible_host" in hostvars.keys():
+            if "ansible_host" in hostvars:
                 hostlist.append(hostvars["ansible_host"])
                 hostnames[hostvars["ansible_host"]] = hostname
             else:
@@ -178,10 +177,8 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
                 hostnames[hostname] = hostname
 
         if user is None:
-            try:
+            with contextlib.suppress(KeyError):
                 user = inventory_data["sheep"]["vars"]["ansible_user"]
-            except KeyError:
-                pass
 
     if user is None:
         raise click.UsageError("Provide user by command line or in inventory file")
@@ -197,7 +194,7 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
 
     ctx.obj["verbose"] = verbose
 
-    connect_kwargs = dict()
+    connect_kwargs = {}
     if key_filename is not None:
         connect_kwargs["key_filename"] = key_filename
 
@@ -300,7 +297,7 @@ def start_openocd(cnx, hostname, timeout=30):
 @click.pass_context
 def flash(ctx, image):
     for cnx in ctx.obj["fab group"]:
-        cnx.put(image, "/tmp/target_image.bin")
+        cnx.put(image, "/tmp/target_image.bin")  # noqa S108
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
             logger.debug(f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}")
@@ -451,7 +448,7 @@ def harvester(
 )
 @click.option(
     "--virtsource",
-    default=dict(),
+    default={},
     help="Use the desired setting for the virtual source",
 )
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)

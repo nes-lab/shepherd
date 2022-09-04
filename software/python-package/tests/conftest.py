@@ -1,23 +1,15 @@
+from contextlib import suppress
 import gc
 
 import pytest
-import linecache
-import tokenize
-import py
-import subprocess
+import subprocess  # noqa S404
 import time
-
-import shepherd
-from shepherd import sysfs_interface
 
 
 def check_beagleboard():
-    try:
-        with open("/proc/cpuinfo") as info:
-            if "AM33XX" in info.read():
-                return True
-    except Exception:
-        pass
+    with suppress(Exception), open("/proc/cpuinfo") as info:
+        if "AM33XX" in info.read():
+            return True
     return False
 
 
@@ -94,16 +86,16 @@ def shepherd_up(fake_hardware, shepherd_down):
             ("/sys/shepherd/programmer/pin_tdo", "0"),
             ("/sys/shepherd/programmer/pin_tms", "0"),
             # TODO: design tests for programmer, also check if all hardware-tests need real hw
-            #       -> there should be more tests that don't requiere a pru
+            #       -> there should be more tests that don't require a pru
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
         yield
     else:
-        subprocess.run(["modprobe", "shepherd"])
+        subprocess.run(["~/", "modprobe", "shepherd"], timeout=60)  # noqa S607 S603
         time.sleep(3)
         yield
-        subprocess.run(["rmmod", "shepherd"])
+        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa S607 S603
         gc.collect()  # precaution
         time.sleep(3)
 
@@ -111,5 +103,5 @@ def shepherd_up(fake_hardware, shepherd_down):
 @pytest.fixture()
 def shepherd_down(fake_hardware):
     if fake_hardware is None:
-        subprocess.run(["rmmod", "shepherd"])
+        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa S607 S603
         time.sleep(3)

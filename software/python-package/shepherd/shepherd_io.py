@@ -208,7 +208,8 @@ class SharedMem:
                 f"@{round(time.time(), 3)} sys_ts"
             )
 
-        # sanity-check of received timestamp, TODO: python knows the desired duration between timestamps
+        # sanity-check of received timestamp,
+        # TODO: python knows the desired duration between timestamps
         if self.prev_timestamp > 0:
             diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6
             if buffer_timestamp == 0:
@@ -277,7 +278,8 @@ class SharedMem:
                     f"-> WARNING: broken real-time-condition"
                 )
                 logger.warning(warn_msg)
-                # TODO: raise ShepherdIOException or add this info into output-file? WRONG PLACE HERE
+                # TODO: raise ShepherdIOException or add this info into output-file?
+                #  WRONG PLACE HERE
             else:
                 logger.info(
                     f"Pru0 Loop-Util: mean = {pru0_util_mean} %, max = {pru0_util_max} %"
@@ -535,7 +537,10 @@ class ShepherdIO:
         self.gpios["en_emulator"].write(state)
 
     def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:
-        """choose which targets gets the supply with current-monitor, True = Target A, False = Target B
+        """
+        choose which targets gets the supply with current-monitor,
+            True = Target A,
+            False = Target B
 
         shepherd hw-rev2 has two ports for targets and two separate power supplies,
         but only one is able to measure current, the other is considered "auxiliary"
@@ -562,7 +567,8 @@ class ShepherdIO:
             True = Target A,
             False = Target B
 
-        shepherd hw-rev2 has two ports for targets and can switch independently between power supplies
+        shepherd hw-rev2 has two ports for targets and can switch independently
+        between power supplies
 
         Args:
             sel_target_a: True to select A, False for B
@@ -690,7 +696,6 @@ class ShepherdIO:
         while True:
             msg_type, value = self._get_msg(timeout_n)
             value = value[0]
-            # logger.debug(f"received msg type {msg_type}")
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
                 ts_start = time.time()

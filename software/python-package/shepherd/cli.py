@@ -10,6 +10,7 @@ functionality to a command line user.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+import os
 from typing import Dict
 
 import click
@@ -41,10 +42,12 @@ logger.addHandler(consoleHandler)
 # TODO: correct docs
 # --length -l is now --duration -d ->
 # --input --output is now --output_path -> correct docs
-# --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
-#          possible choices: nothing, converter-name like BQ25570 / BQ25504, path to yaml-config
-#           -> vSource contains vharvester and vConverter
-# - the options get repeated all the time, is it possible to define them upfront and just include them where needed?
+# --virtsource replaces vcap, is not optional anymore,
+#   maybe prepare preconfigured converters (bq-series) to choose from
+#   possible choices: nothing, converter-name like BQ25570 / BQ25504, path to yaml-config
+#   -> vSource contains vharvester and vConverter
+# - the options get repeated all the time, is it possible to define them
+#   upfront and just include them where needed?
 # - ditch sudo, add user to allow sys_fs-access and other things
 # - default-cal -> use_cal_default
 # - start-time -> start_time
@@ -167,7 +170,8 @@ def run(mode, parameters: Dict, verbose):
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(
-            f"parameter-argument is not dict, but {type(parameters)} (last occurred with v8-alpha-version of click-lib)"
+            f"parameter-argument is not dict, but {type(parameters)} "
+            "(last occurred with v8-alpha-version of click-lib)"
         )
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
@@ -325,7 +329,8 @@ def harvester(
 @click.option(
     "--log_mid_voltage",
     is_flag=True,
-    help="record / log virtual intermediate (cap-)voltage and -current (out) instead of output-voltage and -current",
+    help="record / log virtual intermediate (cap-)voltage and -current (out) "
+    "instead of output-voltage and -current",
 )
 def emulator(
     input_path,
@@ -461,13 +466,13 @@ def read(infofile, cal_file):
         cal = storage.read_calibration()
 
     if infofile:
-        with open(infofile, "w") as f:
+        with os.open(infofile, os.O_WRONLY) as f:
             f.write(repr(cape_data))
     else:
         print(repr(cape_data))
 
     if cal_file:
-        with open(cal_file, "w") as f:
+        with os.open(cal_file, os.O_WRONLY) as f:
             f.write(repr(cal))
     else:
         print(repr(cal))
@@ -490,7 +495,7 @@ def make(filename, output_path):
     if output_path is None:
         print(repr(cd))
     else:
-        with open(output_path, "w") as f:
+        with os.open(output_path, os.O_WRONLY) as f:
             f.write(repr(cd))
 
 

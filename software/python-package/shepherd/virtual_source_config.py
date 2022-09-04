@@ -83,7 +83,8 @@ class VirtualSourceConfig:
                 setting = self._config_defs[setting]
             else:
                 raise NotImplementedError(
-                    f"[{self.name}] was set to '{setting}', but definition missing in '{self._def_file}'"
+                    f"[{self.name}] was set to '{setting}', "
+                    f"but definition missing in '{self._def_file}'"
                 )
 
         if setting is None:
@@ -98,7 +99,8 @@ class VirtualSourceConfig:
             self.data = setting
         else:
             raise NotImplementedError(
-                f"[{self.name}] InputSetting could not be handled. In case of file-path -> does it exist? \n"
+                f"[{self.name}] InputSetting could not be handled. "
+                f"In case of file-path -> does it exist? \n"
                 f"\t type = '{type(setting)}', \n"
                 f"\t content = '{setting}'"
             )
@@ -166,7 +168,8 @@ class VirtualSourceConfig:
                 min(255, round(256 * value)) if (value > 0) else 0
                 for value in self.data["LUT_input_efficiency"]
             ],
-            # is now n4 -> resulting value for PRU is inverted, so 2^4 / value, inv-max = 2^14 for min-value = 1/1024
+            # is now n4 -> resulting value for PRU is inverted, so 2^4 / value,
+            # inv-max = 2^14 for min-value = 1/1024
             [
                 min((2**14), round((2**4) / value)) if (value > 0) else int(2**14)
                 for value in self.data["LUT_output_efficiency"]
@@ -214,7 +217,8 @@ class VirtualSourceConfig:
         Math behind this calculation:
         Energy-Change Storage Cap   ->  E_new = E_old - E_output
         with Energy of a Cap 	    -> 	E_x = C_x * V_x^2 / 2
-        combine formulas 		    -> 	C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
+        combine formulas 		    ->
+                    C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
         convert formula to V_new 	->	V_store_new^2 = V_store_old^2 - (C_out / C_store) * V_out^2
         convert into dV	 	        ->	dV = V_store_new - V_store_old
         in case of V_cap = V_out 	-> 	dV = V_store_old * (sqrt(1 - C_out / C_store) - 1)
@@ -230,7 +234,8 @@ class VirtualSourceConfig:
                 pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5
             )
 
-            # second case: storage cap below v_out (only different for enabled buck), enable when >= v_out
+            # second case: storage cap below v_out (only different for enabled buck),
+            #              enable when >= v_out
             # v_enable is either bucks v_out or same dV-Value is calculated a second time
             dV_output_imed_low_mV = v_out * (1 - pow(1 - c_out / c_store, 0.5))
         else:
@@ -286,10 +291,7 @@ class VirtualSourceConfig:
         adds default values to missing ones,
         checks against limits of algorithm
         """
-        if "converter_base" in self.data:
-            base_name = self.data["converter_base"]
-        else:
-            base_name = "neutral"
+        base_name = self.data.get("converter_base", default="neutral")
 
         if base_name in self._inheritance:
             raise ValueError(
@@ -344,7 +346,7 @@ class VirtualSourceConfig:
         if "harvester" not in self.data and "harvester" in self._config_base:
             self.data["harvester"] = self._config_base["harvester"]
 
-        # Boost
+        # Boost-Converter
         self._check_num("enable_boost", 4.29e9, verbose=verbose)
         self._check_num("V_input_boost_threshold_mV", 10000, verbose=verbose)
         self._check_num("V_intermediate_max_mV", 10000, verbose=verbose)
@@ -355,7 +357,7 @@ class VirtualSourceConfig:
         )  # TODO: naming could confuse
         self._check_num("LUT_input_I_min_log2_nA", 20, verbose=verbose)
 
-        # Buck
+        # Buck-Converter
         self._check_num("enable_buck", 4.29e9, verbose=verbose)
         self._check_num("V_output_mV", 5000, verbose=verbose)
         self._check_num("V_buck_drop_mV", 5000, verbose=verbose)
@@ -384,11 +386,13 @@ class VirtualSourceConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, set to inherited value = {set_value}"
+                    f"[{self.name}] '{setting_key}' not provided, "
+                    f"set to inherited value = {set_value}"
                 )
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"[{self.name}] '{setting_key}' must a single positive number, but is '{set_value}'"
+                f"[{self.name}] '{setting_key}' must a single positive number, "
+                f"but is '{set_value}'"
             )
         if set_value < 0:
             raise NotImplementedError(
@@ -410,7 +414,8 @@ class VirtualSourceConfig:
             values = default
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, will be set to inherited value = {values[0]}"
+                    f"[{self.name}] '{setting_key}' not provided, "
+                    f"will be set to inherited value = {values[0]}"
                 )
         if (
             (len(values) != len(default))
@@ -418,7 +423,8 @@ class VirtualSourceConfig:
             or (max(values) > max_value)
         ):
             raise NotImplementedError(
-                f"[{self.name}] {setting_key} must a list of {len(default)} values, within range of [{0}; {max_value}]"
+                f"[{self.name}] {setting_key} must a list of {len(default)} values, "
+                f"within range of [{0}; {max_value}]"
             )
         self.data[setting_key] = values
 

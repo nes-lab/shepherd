@@ -146,13 +146,14 @@ class Emulator(ShepherdIO):
 
     Args:
         shepherd_mode:
-        initial_buffers: recorded data  # TODO: initial_ is not the best name, is this a yield/generator?
+        initial_buffers: recorded data
+            TODO: initial_ is not the best name, is this a yield/generator?
         calibration_recording (CalibrationData): Shepherd calibration data
             belonging to the IV data that is being emulated
         calibration_emulator (CalibrationData): Shepherd calibration data
             belonging to the cape used for emulation
         set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
-        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone,
+        sel_target_for_io: choose which target gets the io-connection (serial, swd, gpio),
                             True = Target A,
                             False = Target B
         sel_target_for_pwr: choose which targets gets the supply with current-monitor,
@@ -161,14 +162,15 @@ class Emulator(ShepherdIO):
         aux_target_voltage: Sets, Enables or disables the voltage for the second target,
                             0.0 or False for Disable,
                             True for linking it to voltage of other Target
-        infile_vh_cfg (dict): Settings which define the behavior of virtual harvester during emulation
+        infile_vh_cfg (dict): define the behavior of virtual harvester during emulation
     """
 
     def __init__(
         self,
         shepherd_mode: str = "emulator",
         initial_buffers: list = None,
-        calibration_recording: CalibrationData = None,  # TODO: make clearer that this is "THE RECORDING"
+        calibration_recording: CalibrationData = None,
+        # TODO: make clearer that this is "THE RECORDING"
         calibration_emulator: CalibrationData = None,
         set_target_io_lvl_conv: bool = False,
         sel_target_for_io: bool = True,
@@ -368,7 +370,11 @@ class ShepherdDebug(ShepherdIO):
         """Writes value to specified DAC channel, DAC8562
 
         Args:
-            channels: 4 lower bits of int-num control b0: harvester-ch-a, b1: hrv-ch-b, b2: emulator-ch-a, b3: emu-ch-b
+            channels: 4 lower bits of int-num control
+                b0: harvester-ch-a,
+                b1: hrv-ch-b,
+                b2: emulator-ch-a,
+                b3: emu-ch-b
             value (int): 16 bit raw DAC value to be sent to corresponding channel
         """
         channels = (int(channels) & ((1 << 4) - 1)) << 20
@@ -619,12 +625,14 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
                 return storage.read_calibration()
         except ValueError:
             logger.warning(
-                "Couldn't read calibration from EEPROM (ValueError). Falling back to default values."
+                "Couldn't read calibration from EEPROM (ValueError). "
+                "Falling back to default values."
             )
             return CalibrationData.from_default()
         except FileNotFoundError:
             logger.warning(
-                "Couldn't read calibration from EEPROM (FileNotFoundError). Falling back to default values."
+                "Couldn't read calibration from EEPROM (FileNotFoundError). "
+                "Falling back to default values."
             )
             return CalibrationData.from_default()
 
@@ -776,7 +784,7 @@ def run_emulator(
         :param use_cal_default: [bool] True to use default calibration values, False to
             read calibration data from EEPROM
         :param start_time: [float] Desired start time of emulation in unix epoch time
-        :param set_target_io_lvl_conv: [bool] Enables or disables the GPIO level converter to targets.
+        :param set_target_io_lvl_conv: [bool] Enables the GPIO level converter to targets.
         :param sel_target_for_io: [bool] choose which targets gets the io-connection
             (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         :param sel_target_for_pwr: [bool] choose which targets gets the supply with current-monitor,
@@ -790,7 +798,9 @@ def run_emulator(
         :param skip_log_voltage: [bool] reduce file-size by omitting this log
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
-        :param output_compression: "lzf" recommended, alternatives are "gzip" (level 4) or gzip-level 1-9
+        :param output_compression: "lzf" recommended, alternatives are
+            "gzip" (level 4) or
+            gzip-level 1-9
     """
     mode = "emulator"
     cal = retrieve_calibration(use_cal_default)

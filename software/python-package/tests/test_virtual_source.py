@@ -1,10 +1,7 @@
 import pytest
-import subprocess
-import time
 from pathlib import Path
 
 from shepherd import ShepherdDebug, CalibrationData, VirtualSourceConfig
-from shepherd.virtual_converter_model import VirtualConverterModel
 from shepherd.virtual_source_model import VirtualSourceModel
 
 
@@ -153,7 +150,8 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
     n_samples = int(dt_s / reference_vss["t_sample_s"])
 
     print(
-        f"DRAIN - feeding I = {I_out_nA} nA as {I_out_adc_raw} raw into vSource with {n_samples} steps"
+        f"DRAIN - feeding I = {I_out_nA} nA as {I_out_adc_raw} raw "
+        f"into vSource with {n_samples} steps"
     )
     print(f" PRU VCap = {pru_vsource.vsource_update_cap_storage()} uV")
     print(f" PRU POut = {pru_vsource.vsource_calc_out_power(I_out_adc_raw)} fW")
@@ -171,7 +169,8 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
         v_raw2 = pyt_vsource.update_states_and_output()
         if (v_raw1 < 1) or (v_raw2 < 1):
             print(
-                f"Stopped Drain-loop after {index}/{n_samples} samples ({round(100*index/n_samples)} %), because output was disabled"
+                f"Stopped Drain-loop after {index}/{n_samples} samples "
+                f"({round(100*index/n_samples)} %), because output was disabled"
             )
             break
 
@@ -239,7 +238,10 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
         assert V_pru_mV == V_pru2_mV
         assert V_pyt_mV == V_pyt2_mV
         print(
-            f"DiodeCap LowInput - Inp = {V_in_mV} mV, OutPru = {V_pru2_mV} mV, OutPy = {V_pyt2_mV} mV"
+            "DiodeCap LowInput - "
+            f"Inp = {V_in_mV} mV, "
+            f"OutPru = {V_pru2_mV} mV, "
+            f"OutPy = {V_pyt2_mV} mV"
         )
     assert pyt_vsource.P_in_fW >= pyt_vsource.P_out_fW
     assert pru_vsource.P_in_fW >= pru_vsource.P_out_fW
@@ -287,7 +289,11 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
             )
         V_postDiode_mV = max(V_in_mV - 300, 0)  # diode drop voltage
         print(
-            f"DiodeCap inp=200mA - Inp = {V_in_mV} mV, PostDiode = {V_postDiode_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV"
+            "DiodeCap inp=200mA - "
+            f"Inp = {V_in_mV} mV, "
+            f"PostDiode = {V_postDiode_mV} mV, "
+            f"OutPru = {V_pru_mV} mV, "
+            f"OutPy = {V_pyt_mV} mV"
         )
         assert difference_percent(V_pru_mV, V_postDiode_mV, 50) < 3
         assert difference_percent(V_pyt_mV, V_postDiode_mV, 50) < 3
@@ -303,10 +309,14 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
 
     V_settle_mV = (V_in_uV * 10**-3 - 300) / 2
     print(
-        f"DiodeCap Drain in=5mA,out=10mA - Inp = {V_in_uV/10**3} mV, Settle = {V_settle_mV} mV, OutPru = {V_pru_mV} mV, OutPy = {V_pyt_mV} mV"
+        "DiodeCap Drain in=5mA,out=10mA - "
+        f"Inp = {V_in_uV/10**3} mV, "
+        f"Settle = {V_settle_mV} mV, "
+        f"OutPru = {V_pru_mV} mV, "
+        f"OutPy = {V_pyt_mV} mV"
     )
-    # assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
-    # assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
+    assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
+    assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
     assert pyt_vsource.P_in_fW >= pyt_vsource.P_out_fW
     assert pru_vsource.P_in_fW >= pru_vsource.P_out_fW
 

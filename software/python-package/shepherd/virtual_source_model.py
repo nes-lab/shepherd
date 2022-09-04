@@ -49,7 +49,9 @@ class VirtualSourceModel:
         self.hrv = VirtualHarvesterModel(vh_struct)
 
     def iterate_sampling(self, V_inp_uV: int = 0, I_inp_nA: int = 0, A_out_nA: int = 0):
-        """TEST-SIMPLIFICATION - code below is not part of pru-code, but in part sample_emulator() in sampling.c
+        """
+        TEST-SIMPLIFICATION - code below is not part of pru-code,
+        but in part sample_emulator() in sampling.c
 
         :param V_inp_uV:
         :param I_inp_nA:

@@ -556,8 +556,6 @@ class LogWriter:
         if ts_now_ns >= self.sys_log_next_ns:
             data_length = self.sysutil_grp["time"].shape[0]
             if self.sysutil_pos >= data_length:
-                # self._h5file.flush()
-                # logger.info(f"flushed output-file @ {data_length} s")
                 data_length += self.sysutil_inc
                 self.sysutil_grp["time"].resize((data_length,))
                 self.sysutil_grp["cpu"].resize((data_length,))
