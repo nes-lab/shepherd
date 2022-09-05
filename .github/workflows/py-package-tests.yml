@@ -32,7 +32,7 @@ jobs:
         run: "sudo pip3 install ./[test]"
         working-directory: "./software/python-package"
       - name: Test the shepherd py-package (limited test-range)
-        run: "pytest --fake"
+        run: "sudo pytest --fake"
         working-directory: "./software/python-package"
         # needs sudo because it installs packages
       - name: PyLint the shepherd py-package
