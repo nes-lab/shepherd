@@ -1,5 +1,6 @@
 from contextlib import suppress
 import gc
+from pathlib import Path
 
 import pytest
 import subprocess  # noqa S404
@@ -90,6 +91,12 @@ def shepherd_up(fake_hardware, shepherd_down):
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
+        here = Path(__file__).absolute().parent
+        shpk = here.parent / "shepherd"
+        fake_hardware.add_real_file(here / "example_config_harvester.yml")
+        fake_hardware.add_real_file(here / "example_config_virtsource.yml")
+        fake_hardware.add_real_file(shpk / "virtual_harvester_defs.yml")
+        fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
         yield
     else:
         subprocess.run(["~/", "modprobe", "shepherd"], timeout=60)  # noqa S607 S603

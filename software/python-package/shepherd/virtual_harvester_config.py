@@ -119,7 +119,7 @@ class VirtualHarvesterConfig:
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
 
-        base_name = self.data.get("base", default="neutral")
+        base_name = self.data.get("base", "neutral")  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
             raise ValueError(

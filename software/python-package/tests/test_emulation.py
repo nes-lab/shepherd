@@ -137,6 +137,7 @@ def test_target_pins(shepherd_up):
         [8, "emulator", "dac_voltage_b", "Emulator Rail B"],
     ]
 
+    # channels: 5&6 are UART, can only be used when free, 7&8 are SWD
     gpio_channels = [
         0,
         1,
@@ -145,7 +146,8 @@ def test_target_pins(shepherd_up):
         4,
         7,
         8,
-    ]  # 5&6 are UART, can only be used when free, 7&8 are SWD
+    ]
+    # response: corresponding to r31_num (and later 2^num)
     pru_responses = [
         0,
         1,
@@ -154,7 +156,7 @@ def test_target_pins(shepherd_up):
         8,
         2,
         3,
-    ]  # corresponding to r31_num (and later 2^num)
+    ]
 
     for channel in [2, 3]:
         dac_cfg = dac_channels[channel]

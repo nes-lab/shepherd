@@ -291,7 +291,7 @@ class VirtualSourceConfig:
         adds default values to missing ones,
         checks against limits of algorithm
         """
-        base_name = self.data.get("converter_base", default="neutral")
+        base_name = self.data.get("converter_base", "neutral")  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
             raise ValueError(
