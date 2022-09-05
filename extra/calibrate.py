@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import time
 from pathlib import Path
 
@@ -430,7 +429,7 @@ def measure(
         cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
         res_repr = yaml.dump(out_dict, default_flow_style=False)
         if outfile is not None:
-            with os.open(outfile, os.O_WRONLY) as f:
+            with open(outfile, "w") as f:
                 f.write(res_repr)
         else:
             print(res_repr)
@@ -458,7 +457,7 @@ def convert(infile, outfile, plot: bool):
     out_dict = {"node": meas_data["node"], "calibration": calib_dict}
     res_repr = yaml.dump(out_dict, default_flow_style=False)
     if outfile is not None:
-        with os.open(outfile, os.O_WRONLY) as f:
+        with open(outfile, "w") as f:
             f.write(res_repr)
     else:
         print(res_repr)
@@ -505,7 +504,7 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
         res_repr = yaml.dump(in_data, default_flow_style=False)
         tmp_file = tempfile.NamedTemporaryFile()
         calfile = tmp_file.name
-        with os.open(calfile, os.O_WRONLY) as f:
+        with open(calfile, "w") as f:
             f.write(res_repr)
 
     else:

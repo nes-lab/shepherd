@@ -10,7 +10,6 @@ functionality to a command line user.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import os
 from typing import Dict
 
 import click
@@ -466,13 +465,13 @@ def read(infofile, cal_file):
         cal = storage.read_calibration()
 
     if infofile:
-        with os.open(infofile, os.O_WRONLY) as f:
+        with open(infofile, "w") as f:
             f.write(repr(cape_data))
     else:
         print(repr(cape_data))
 
     if cal_file:
-        with os.open(cal_file, os.O_WRONLY) as f:
+        with open(cal_file, "w") as f:
             f.write(repr(cal))
     else:
         print(repr(cal))
@@ -495,7 +494,7 @@ def make(filename, output_path):
     if output_path is None:
         print(repr(cd))
     else:
-        with os.open(output_path, os.O_WRONLY) as f:
+        with open(output_path, "w") as f:
             f.write(repr(cd))
 
 

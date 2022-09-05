@@ -31,6 +31,8 @@ require-plugins =
 extend-ignore =
     # black-formatter-specific
     E203
+    # open() vs os.open()
+    SCS109
     # hideous
     C812
     C815
