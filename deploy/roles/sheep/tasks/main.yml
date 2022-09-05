@@ -156,10 +156,11 @@
     - python
 
 - name: Install shepherd python package
-  ansible.builtin.command: 'python3 setup.py install --force'
-  changed_when: true
-  args:
-    chdir: "{{ shepherd_install_path }}/software/python-package"
+  ansible.builtin.pip:
+    name: "./"
+    state: forcereinstall
+    editable: true
+    chdir: '{{ shepherd_install_path }}/software/python-package'
   tags:
     - install
     - python

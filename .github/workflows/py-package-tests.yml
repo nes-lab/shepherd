@@ -28,17 +28,18 @@ jobs:
       - name: Run Pre-Commit Tests
         uses: pre-commit/action@v3.0.0
 
-      - name: Build the py-package
-        run: "python3 setup.py build --force"
-        working-directory: "software/python-package"
-      - name: Install the py-package
-        run: "sudo python3 setup.py install --force"
+      - name: Install the shepherd py-package
+        run: "sudo pip3 install -e ./[test]"
         working-directory: "./software/python-package"
-      - name: Test the py-package (limited test-range)
-        run: "sudo python3 setup.py test --addopts '-vvv --fake'"
+      - name: Test the shepherd py-package (limited test-range)
+        run: "pytest --fake"
         working-directory: "./software/python-package"
         # needs sudo because it installs packages
-      - name: PyLint the py-package
+      - name: PyLint the shepherd py-package
         run: "pylint $(git ls-files '*.py') || pylint-exit $?"
         # -E --py-version 3.8
         working-directory: "software/python-package/"
+
+      - name: Install the shepherd-herd py-package
+        run: "sudo pip3 install -e ./[test]"
+        working-directory: "./software/shepherd-herd"

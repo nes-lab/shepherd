@@ -24,6 +24,8 @@ import yaml
 import logging
 import click_config_file
 
+__version__ = "0.2.6"
+
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd-herd")
 logger.addHandler(consoleHandler)

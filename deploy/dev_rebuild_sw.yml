@@ -108,14 +108,15 @@
       changed_when: true
 
     - name: Install shepherd python package
-      ansible.builtin.command: 'python3 setup.py install --force'
-      args:
+      ansible.builtin.pip:
+        name: "./"
+        state: forcereinstall
+        editable: true
         chdir: '{{ shepherd_install_path }}/software/python-package'
       tags:
         - install
         - python
       when: rebuild_python_package | bool
-      changed_when: true
 
     - name: Load Shepherd-Module
       ansible.builtin.command: 'modprobe -a shepherd'

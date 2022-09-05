@@ -37,6 +37,8 @@ from .calibration import CalibrationData
 from .target_io import TargetIO
 from .launcher import Launcher
 
+__version__ = "0.2.6"
+
 __all__ = [
     "LogReader",
     "LogWriter",

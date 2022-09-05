@@ -89,11 +89,15 @@ You should always make sure the tests are passing before committing your code.
 
 To run the python tests, have a copy of the source code on a BeagleBone.
 Build and install from source (see `Development setup`_ for more).
-Change into the `software/python-package` directory and run:
+Change into the `software/python-package` directory and run the following commands to:
+- install dependencies of tests
+- run testbench
 
 .. code-block:: bash
 
-    sudo python3 setup.py test --addopts "-vv"
+    sudo pip3 install -e ./[tests] --force-reinstall
+
+    pytest
 
 Releasing
 ---------
