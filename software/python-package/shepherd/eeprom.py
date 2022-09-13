@@ -23,7 +23,7 @@ from periphery import GPIO
 
 from .calibration import CalibrationData
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.eeprom")
 
 eeprom_format = {
     "header": {"offset": 0, "size": 4, "type": "binary"},

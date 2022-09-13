@@ -43,7 +43,7 @@ class LogReader:
     file_size: int = None
     data_rate: float = None
 
-    _logger: logging.Logger = logging.getLogger("SHPData.Reader")
+    _logger: logging.Logger = logging.getLogger("shp.datalog.reader")
 
     h5file: h5py.File = None
     ds_time: h5py.Dataset = None

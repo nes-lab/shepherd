@@ -5,7 +5,7 @@ import yaml
 import logging
 from .calibration import CalibrationData
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.hrvConfig")
 
 # Currently implemented harvesters
 # NOTE: numbers have meaning and will be tested ->
@@ -87,7 +87,7 @@ class VirtualHarvesterConfig:
                 setting = self._config_defs[setting]
             else:
                 raise NotImplementedError(
-                    f"[{self.name}] was set to '{setting}', "
+                    f"Config was set to '{setting}', "
                     f"but definition missing in '{self._def_file}'"
                 )
 
@@ -105,7 +105,7 @@ class VirtualHarvesterConfig:
             self.data = setting
         else:
             raise NotImplementedError(
-                f"[{self.name}] {type(setting)}'{setting}' could not be handled. "
+                f"{type(setting)}'{setting}' could not be handled. "
                 f"In case of file-path -> does it exist?"
             )
 
@@ -114,7 +114,7 @@ class VirtualHarvesterConfig:
 
         self._check_and_complete()
         logger.debug(
-            f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
+            "initialized with the following inheritance-chain: '%s'", self._inheritance
         )
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
@@ -123,7 +123,7 @@ class VirtualHarvesterConfig:
 
         if base_name in self._inheritance:
             raise ValueError(
-                f"[{self.name}] loop detected in 'base'-inheritance-system "
+                f"loop detected in 'base'-inheritance-system "
                 f"@ '{base_name}' already in {self._inheritance}"
             )
         else:
@@ -132,22 +132,18 @@ class VirtualHarvesterConfig:
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self.data
             self.data = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
             self._check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
         else:
             raise NotImplementedError(
-                f"[{self.name}] converter-base '{base_name}' is unknown to system"
+                f"converter-base '{base_name}' is unknown to system", base_name
             )
 
         self.data["algorithm_num"] = 0
@@ -221,8 +217,10 @@ class VirtualHarvesterConfig:
         ratio_new = self.data["duration_ms"] / self.data["interval_ms"]
         if (ratio_new / ratio_old - 1) > 0.1:
             logger.debug(
-                f"[{self.name}] Ratio between interval & duration has changed "
-                f"more than 10% due to constraints, from {ratio_old} to {ratio_new}"
+                "Ratio between interval & duration has changed "
+                "more than 10% due to constraints, from %s to %s",
+                ratio_old,
+                ratio_new,
             )
 
         if "dtype" not in self.data and "dtype" in self._config_base:
@@ -241,9 +239,7 @@ class VirtualHarvesterConfig:
             #  stay zero to disable hrv-routine during emulation
             self.data["window_samples"] = _window_samples
         if verbose:
-            logger.debug(
-                f"[{self.name}] window_samples = {self.data['window_samples']}"
-            )
+            logger.debug("window_samples = %s", self.data["window_samples"])
 
     def _check_num(
         self,
@@ -258,26 +254,31 @@ class VirtualHarvesterConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, "
-                    f"et to inherited value = {set_value}"
+                    "'%s' not provided, set to inherited value = %s",
+                    setting_key,
+                    set_value,
                 )
         if (min_value is not None) and (set_value < min_value):
             if verbose:
                 logger.debug(
-                    f"[{self.name}] {setting_key} = {set_value}, "
-                    f"but must be >= {min_value} -> adjusted"
+                    "%s = %s, but must be >= %s -> adjusted",
+                    setting_key,
+                    set_value,
+                    min_value,
                 )
             set_value = min_value
         if (max_value is not None) and (set_value > max_value):
             if verbose:
                 logger.debug(
-                    f"[{self.name}] {setting_key} = {set_value}, "
-                    f"but must be <= {max_value} -> adjusted"
+                    "%s = %s, but must be <= %s -> adjusted",
+                    setting_key,
+                    set_value,
+                    max_value,
                 )
             set_value = max_value
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"[{self.name}] '{setting_key}' must a single positive number, "
+                f"'{setting_key}' must a single positive number, "
                 f"but is '{set_value}'"
             )
         self.data[setting_key] = set_value

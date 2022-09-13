@@ -34,7 +34,7 @@ from .calibration import cal_parameter_list
 from .shepherd_io import DataBuffer
 from .commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.datalog.writer")
 
 """
 An entry for an exception to be stored together with the data consists of a

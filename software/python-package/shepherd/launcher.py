@@ -19,7 +19,7 @@ import logging
 import os
 from periphery import GPIO
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.launcher")
 
 
 def call_repeatedly(interval, func, *args):

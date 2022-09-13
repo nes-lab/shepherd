@@ -18,7 +18,7 @@ from typing import NoReturn, Optional
 from .calibration import CalibrationData
 from shepherd import calibration_default
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.interface")
 sysfs_path = Path("/sys/shepherd")
 
 
@@ -74,7 +74,7 @@ def set_start(start_time: float = None) -> NoReturn:
         start_time (int): Desired start time in unix time
     """
     current_state = get_state()
-    logger.debug(f"current state of shepherd kernel module: {current_state}")
+    logger.debug("current state of shepherd kernel module: %s", current_state)
     if current_state != "idle":
         raise SysfsInterfaceException(f"Cannot start from state { current_state }")
 
@@ -82,7 +82,7 @@ def set_start(start_time: float = None) -> NoReturn:
         if isinstance(start_time, float):
             start_time = int(start_time)
         if isinstance(start_time, int):
-            logger.debug(f"writing start-time = {start_time} to sysfs")
+            logger.debug("writing start-time = %s to sysfs", start_time)
             f.write(f"{start_time}")
         else:  # unknown type
             logger.debug("writing 'start' to sysfs")
@@ -124,7 +124,7 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
                 f"Cannot set mode when shepherd is { get_state() }"
             )
 
-    logger.debug(f"sysfs/mode: '{mode}'")
+    logger.debug("sysfs/mode: '%s'", mode)
     with open(sysfs_path / "mode", "w") as f:
         f.write(mode)
 
@@ -167,7 +167,7 @@ def write_dac_aux_voltage(
         )
 
     logger.debug(
-        f"Set voltage of supply for auxiliary Target to {voltage} V (raw={output})"
+        "Set voltage of supply for auxiliary Target to %s V (raw=%s)", voltage, output
     )
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
     write_dac_aux_voltage_raw(output)
@@ -185,7 +185,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
             "-> this might trigger commands"
         )
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
-        logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
+        logger.debug("Sending raw auxiliary voltage (dac channel B): %s", voltage_raw)
         f.write(str(voltage_raw))
 
 
@@ -250,7 +250,7 @@ def write_calibration_settings(
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        logger.debug(f"Sending calibration settings: {output}")
+        logger.debug("Sending calibration settings: %s", output)
         f.write(output)
 
 
@@ -282,7 +282,8 @@ def write_virtual_converter_settings(settings: list) -> NoReturn:
 
     """
     logger.debug(
-        f"Writing virtual converter to sysfs_interface, first values are {settings[0:3]}"
+        "Writing virtual converter to sysfs_interface, first values are %s",
+        settings[0:3],
     )
 
     output = ""
@@ -322,7 +323,8 @@ def write_virtual_harvester_settings(settings: list) -> NoReturn:
 
     """
     logger.debug(
-        f"Writing virtual harvester to sysfs_interface, first values are {settings[0:3]}"
+        "Writing virtual harvester to sysfs_interface, first values are %s",
+        settings[0:3],
     )
     output = ""
     for setting in settings:
@@ -419,7 +421,9 @@ def write_programmer_ctrl(
             )
     for _iter, attribute in enumerate(prog_attribs):
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug(f"[sysfs] set programmer/{attribute} = '{parameters[_iter]}'")
+            logger.debug(
+                f"[sysfs] set programmer/%s = '%s'", attribute, parameters[_iter]
+            )
             file.write(str(parameters[_iter]))
 
 

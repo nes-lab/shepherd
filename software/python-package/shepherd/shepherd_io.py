@@ -27,7 +27,7 @@ from .calibration import CalibrationData, cal_component_list
 from .virtual_source_config import VirtualSourceConfig
 from .virtual_harvester_config import VirtualHarvesterConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.io")
 
 ID_ERR_TIMEOUT = 100
 
@@ -157,7 +157,7 @@ class SharedMem:
             self.gpiostr_offset + 4 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
         )
 
-        logger.debug(f"Size of 1 Buffer:\t{ self.buffer_size } byte")
+        logger.debug("Size of 1 Buffer:\t%s byte", self.buffer_size)
 
     def __enter__(self):
         self.devmem_fd = os.open(
@@ -216,15 +216,18 @@ class SharedMem:
                 logger.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 logger.error(
-                    f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
+                    "BACKWARDS timestamp-jump detected after recv it from PRU -> %s ms",
+                    diff_ms,
                 )
             elif diff_ms < 95:
                 logger.error(
-                    f"TOO SMALL timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
+                    "TOO SMALL timestamp-jump detected after recv it from PRU -> %s ms",
+                    diff_ms,
                 )
             elif diff_ms > 105:
                 logger.error(
-                    f"FORWARDS  timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
+                    "FORWARDS  timestamp-jump detected after recv it from PRU -> %s ms",
+                    diff_ms,
                 )
         self.prev_timestamp = buffer_timestamp
 
@@ -272,17 +275,19 @@ class SharedMem:
         if verbose:
             if (pru0_util_mean > 95) or (pru0_util_max > 100):
                 warn_msg = (
-                    f"Pru0 Loop-Util:  "
-                    f"mean = {pru0_util_mean} %, "
-                    f"max = {pru0_util_max} % "
-                    f"-> WARNING: broken real-time-condition"
+                    "Pru0 Loop-Util: mean = %s %, max = %s % "
+                    "-> WARNING: broken real-time-condition",
+                    pru0_util_mean,
+                    pru0_util_max,
                 )
                 logger.warning(warn_msg)
                 # TODO: raise ShepherdIOException or add this info into output-file?
                 #  WRONG PLACE HERE
             else:
                 logger.info(
-                    f"Pru0 Loop-Util: mean = {pru0_util_mean} %, max = {pru0_util_max} %"
+                    "Pru0 Loop-Util: mean = %s %, max = %s %",
+                    pru0_util_mean,
+                    pru0_util_max,
                 )
 
         return DataBuffer(
@@ -314,7 +319,7 @@ class SharedMem:
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
         logger.debug(
-            f"wrote Firmware-Data to SharedMEM-Buffer (size = {data_size} bytes)"
+            "wrote Firmware-Data to SharedMEM-Buffer (size = %s bytes)", data_size
         )
         return data_size
 
@@ -372,7 +377,7 @@ class ShepherdIO:
 
             # If shepherd hasn't been terminated properly
             self.reinitialize_prus()
-            logger.debug(f"Switching to '{ self.mode }'-mode")
+            logger.debug("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
 
             # clean up msg-channel provided by kernel module
@@ -389,14 +394,14 @@ class ShepherdIO:
 
             # Ask PRU for size of individual buffers
             self.samples_per_buffer = sfs.get_samples_per_buffer()
-            logger.debug(f"Samples per buffer: \t{ self.samples_per_buffer }")
+            logger.debug("Samples per buffer: \t%s", self.samples_per_buffer)
 
             self.n_buffers = sfs.get_n_buffers()
-            logger.debug(f"Number of buffers: \t{ self.n_buffers }")
+            logger.debug("Number of buffers: \t%s", self.n_buffers)
 
             self.buffer_period_ns = sfs.get_buffer_period_ns()
             self._buffer_period = self.buffer_period_ns / 1e9
-            logger.debug(f"Buffer period: \t\t{ self._buffer_period } s")
+            logger.debug("Buffer period: \t\t%s s", self._buffer_period)
 
             self.shared_mem = SharedMem(
                 mem_address, mem_size, self.n_buffers, self.samples_per_buffer
@@ -405,7 +410,9 @@ class ShepherdIO:
             self.shared_mem.__enter__()
 
         except Exception as xcp:
-            logger.warning(f"ShepherdIO.Init caught an exception ({xcp}) -> exit now")
+            logger.exception(
+                "ShepherdIO.Init caught an exception -> exit now", exc_info=xcp
+            )
             self._cleanup()
             raise
 
@@ -460,7 +467,7 @@ class ShepherdIO:
             wait_blocking (bool): If true, block until start has completed
         """
         if isinstance(start_time, (float, int)):
-            logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
+            logger.debug("asking kernel module for start at %s", round(start_time, 2))
         sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
@@ -484,7 +491,7 @@ class ShepherdIO:
             try:
                 sfs.set_stop(force=True)
             except Exception as e:
-                print(e)
+                logger.exception("Cleanup caught an exception", exc_info=e)
             try:
                 sfs.wait_for_state("idle", 3.0)
             except sfs.SysfsInterfaceException:
@@ -509,7 +516,7 @@ class ShepherdIO:
             state (bool): True for on, False for off
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set power-supplies of shepherd-pcb to {state_str}")
+        logger.debug("Set power-supplies of shepherd-pcb to %s", state_str)
         self.gpios["en_shepherd"].write(state)
 
     def set_power_state_recorder(self, state: bool) -> NoReturn:
@@ -521,7 +528,7 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set Recorder of shepherd-pcb to {state_str}")
+        logger.debug("Set Recorder of shepherd-pcb to %s", state_str)
         self.gpios["en_recorder"].write(state)
 
     def set_power_state_emulator(self, state: bool) -> NoReturn:
@@ -533,7 +540,7 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set Emulator of shepherd-pcb to {state_str}")
+        logger.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
 
     def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:
@@ -556,7 +563,7 @@ class ShepherdIO:
             sel_target_a = True
         target = "A" if sel_target_a else "B"
         logger.debug(
-            f"Set routing for (main) supply with current-monitor to target {target}"
+            "Set routing for (main) supply with current-monitor to target %s", target
         )
         self.gpios["target_pwr_sel"].write(sel_target_a)
         if current_state != "idle":
@@ -577,7 +584,7 @@ class ShepherdIO:
             # Target A is Default
             sel_target_a = True
         target = "A" if sel_target_a else "B"
-        logger.debug(f"Set routing for IO to Target {target}")
+        logger.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(sel_target_a)
 
     def set_target_io_level_conv(self, state: bool) -> NoReturn:
@@ -594,7 +601,7 @@ class ShepherdIO:
         if state is None:
             state = False
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set target-io level converter to {state_str}")
+        logger.debug("Set target-io level converter to %s", state_str)
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
@@ -702,13 +709,14 @@ class ShepherdIO:
                 buf = self.shared_mem.read_buffer(value, verbose)
                 if verbose:
                     logger.debug(
-                        f"Processing buffer #{ value } from shared memory took "
-                        f"{ round(1e3 * (time.time()-ts_start), 2) } ms"
+                        "Processing buffer #%s from shared memory took %s ms",
+                        value,
+                        round(1e3 * (time.time() - ts_start), 2),
                     )
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:
-                logger.info(f"Received cmd to print: {value}")
+                logger.info("Received cmd to print: %s", value)
                 continue
 
             elif msg_type == commons.MSG_DEP_ERR_INCMPLT:

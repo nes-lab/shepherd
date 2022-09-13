@@ -13,7 +13,6 @@ import datetime
 import logging
 import time
 import sys
-from logging import NullHandler
 from pathlib import Path
 from contextlib import ExitStack
 from typing import NoReturn, Union
@@ -36,6 +35,8 @@ from .eeprom import EEPROM, CapeData
 from .calibration import CalibrationData
 from .target_io import TargetIO
 from .launcher import Launcher
+from .logger_config import set_verbose_level
+from .logger_config import get_verbose_level
 
 __version__ = "0.2.6"
 
@@ -58,21 +59,9 @@ __all__ = [
     "run_recorder",
 ]
 
-# Set default logging handler to avoid "No handler found" warnings.
-logging.getLogger(__name__).addHandler(NullHandler())
-logger = logging.getLogger(__name__)
-verbose_level = 0
 
-
-def get_verbose_level() -> int:
-    global verbose_level
-    return verbose_level
-
-
-def set_verbose_level(value: int) -> NoReturn:
-    # needed to differentiate DEBUG-Modes -> -3 only ON during init, -4 also ON during main-run
-    global verbose_level
-    verbose_level = value
+logger = logging.getLogger("shp")
+set_verbose_level(verbose=1)
 
 
 class Recorder(ShepherdIO):
@@ -698,9 +687,8 @@ def run_recorder(
         output_compression=output_compression,
     )
 
-    verbose = (
-        get_verbose_level() >= 4
-    )  # performance-critical, <4 reduces chatter during main-loop
+    # performance-critical, <4 reduces chatter during main-loop
+    verbose = get_verbose_level() >= 4
 
     with ExitStack() as stack:
 

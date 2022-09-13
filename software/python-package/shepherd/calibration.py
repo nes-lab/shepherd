@@ -25,7 +25,7 @@ try:
 except ModuleNotFoundError:
     import calibration_default as cal_def
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.cal")
 
 # gain and offset will be normalized to SI-Units, most likely V, A
 # -> general formula is:    si-value = raw_value * gain + offset

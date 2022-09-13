@@ -25,17 +25,18 @@ import click_config_file
 from periphery import GPIO
 
 from shepherd import sysfs_interface
+from shepherd import set_verbose_level
 from shepherd import run_recorder
 from shepherd import run_emulator
 from .calibration import CalibrationData
 from .eeprom import EEPROM, CapeData
 from shepherd import ShepherdDebug
-from shepherd import set_verbose_level
 from .shepherd_io import gpio_pin_nums
 from .launcher import Launcher
 
+
+logger = logging.getLogger("shp.cli")
 consoleHandler = logging.StreamHandler()
-logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
 # TODO: correct docs
@@ -63,25 +64,6 @@ def yamlprovider(file_path: str, cmd_name) -> Dict:
     return full_config
 
 
-def config_logger(verbose: int):
-    set_verbose_level(
-        verbose
-    )  # performance-critical, <4 reduces chatter during main-loop
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-    if verbose < 3:
-        # reduce log-overhead when not debugging, also more user-friendly exceptions
-        logging._srcfile = None
-        logging.logThreads = 0
-        logging.logProcesses = 0
-
-
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "-v",
@@ -99,7 +81,7 @@ def cli(ctx=None, verbose: int = 2):
         verbose:
     Returns:
     """
-    config_logger(verbose)
+    set_verbose_level(verbose)
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
@@ -165,7 +147,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 def run(mode, parameters: Dict, verbose):
 
-    config_logger(verbose)
+    set_verbose_level(verbose)
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(

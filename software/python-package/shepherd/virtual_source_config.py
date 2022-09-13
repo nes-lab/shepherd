@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.srcConfig")
 
 
 def flatten_dict_list(dl) -> list:
