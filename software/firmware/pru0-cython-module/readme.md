@@ -1,6 +1,6 @@
 ## Cython Compiled Lib
 
-This directory contains setup for compiling the virtual converter / harvester / source as a shared library and use it in python to: 
+This directory contains setup for compiling the virtual converter / harvester / source as a shared library and use it in python to:
 - compare it to reference implementation
 - enable unittesting of sub-functions
 
@@ -32,7 +32,7 @@ python setup.py clean --all
 
 ### TODO
 
-done: 
+done:
 - replaced distutils by setuptools (as distutils are deprecated)
 - implemented some compile-constants alter behaviour of c-code (no hw-dependency)
 - used established folder-structure ... this code can now live in shepherd/software/firmware/pru0-cython-module
@@ -45,7 +45,7 @@ done:
 - wrote a readme to help using the code
 - ... lib compiles
 
-todo: 
+todo:
 - testing.py fails -> functions in calibration.h are "undefined symbol"
   - maybe it just needs another "cdef extern from 'calibration.h'"
 - structs still unknown to cython
