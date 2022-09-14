@@ -1,10 +1,13 @@
 """
 The cdef extern... tells Cython that the function declarations below are also found in the virtual_converter.h file. This is useful for ensuring that the Python bindings are built against the same declarations as the C code.
 """
+from libc.stdint cimport *
 from libc.stdint cimport uint32_t
 from libc.stdint cimport uint64_t
-from libc.stdint cimport *
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport free
+from libc.stdlib cimport malloc
+
+
 cdef extern from "virtual_converter.h":
 
 	# Function declarations from virtual_converter.h

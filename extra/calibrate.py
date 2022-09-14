@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import logging
+import tempfile
 import time
 from pathlib import Path
 
-from keithley2600 import Keithley2600
 import click
-import zerorpc
-import yaml
-import numpy as np
-import tempfile
-from fabric import Connection
+import matplotlib.pyplot as plt
 import msgpack
 import msgpack_numpy
-import matplotlib.pyplot as plt
+import numpy as np
+import yaml
+import zerorpc
+from fabric import Connection
+from keithley2600 import Keithley2600
 
 # NOTE: needs locally installed shepherd-package
 from shepherd.calibration import CalibrationData
@@ -159,7 +159,7 @@ def meas_harvester_adc_voltage(
             {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw}
         )
         logger.debug(
-            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;  "  # noqa G004
+            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;  "  # noqa: G004
             f"adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); "
             f"adc-c: {adc_current_raw} raw"
         )
@@ -205,7 +205,7 @@ def meas_harvester_adc_current(
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         logger.debug(
-            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa G004
+            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa: G004
             f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
         )
 
@@ -246,7 +246,7 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         logger.debug(
-            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa G004
+            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa: G004
             f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
         )
 
@@ -286,7 +286,7 @@ def meas_dac_voltage(
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
         logger.debug(
-            f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"  # noqa G004
+            f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"  # noqa: G004
             f"  SMU-reference: {mean:.6f} V (median = {medi:.6f}); current: {smu_current_mA:.3f} mA"
         )
 
@@ -545,7 +545,7 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
         fabric_args = {}
 
     with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
-        cnx.put(calfile, "/tmp/calib.yml")  # noqa S108
+        cnx.put(calfile, "/tmp/calib.yml")  # noqa: S108
         cnx.sudo(
             (
                 f"shepherd-sheep eeprom write -v { version } -s {serial_number}"

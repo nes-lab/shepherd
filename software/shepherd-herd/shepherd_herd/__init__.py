@@ -12,17 +12,17 @@ images to target sensor nodes.
 :license: MIT, see LICENSE for more details.
 """
 import contextlib
-
-import click
+import logging
+import telnetlib
 import time
-from fabric import Group
-import numpy as np
 from io import StringIO
 from pathlib import Path
-import telnetlib
-import yaml
-import logging
+
+import click
 import click_config_file
+import numpy as np
+import yaml
+from fabric import Group
 
 __version__ = "0.2.6"
 
@@ -102,7 +102,7 @@ def configure_shepherd(
         if res.exited != 3:
             raise Exception(f"shepherd not inactive on {hostnames[cnx.host]}")
 
-        cnx.put(StringIO(config_yml), "/tmp/config.yml")  # noqa S108
+        cnx.put(StringIO(config_yml), "/tmp/config.yml")  # noqa: S108
         cnx.sudo("mv /tmp/config.yml /etc/shepherd/config.yml")
 
 
@@ -300,7 +300,7 @@ def start_openocd(cnx, hostname, timeout=30):
 @click.pass_context
 def flash(ctx, image):
     for cnx in ctx.obj["fab group"]:
-        cnx.put(image, "/tmp/target_image.bin")  # noqa S108
+        cnx.put(image, "/tmp/target_image.bin")  # noqa: S108
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
             logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])

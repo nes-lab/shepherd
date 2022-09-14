@@ -13,10 +13,12 @@ provided by the shepherd kernel module
 import logging
 import time
 from pathlib import Path
-from typing import NoReturn, Optional
+from typing import NoReturn
+from typing import Optional
+
+from shepherd import calibration_default
 
 from .calibration import CalibrationData
-from shepherd import calibration_default
 
 logger = logging.getLogger("shp.interface")
 sysfs_path = Path("/sys/shepherd")

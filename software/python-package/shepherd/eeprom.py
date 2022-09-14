@@ -12,13 +12,13 @@ through Linux I2C device driver.
 :license: MIT, see LICENSE for more details.
 """
 
+import logging
 import os
 import struct
-import logging
+from pathlib import Path
 from typing import NoReturn
 
 import yaml
-from pathlib import Path
 from periphery import GPIO
 
 from .calibration import CalibrationData

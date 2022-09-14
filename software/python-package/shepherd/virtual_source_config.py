@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import copy
-from typing import NoReturn, Union
-from pathlib import Path
-import yaml
 import logging
+from pathlib import Path
+from typing import NoReturn
+from typing import Union
+
+import yaml
 
 logger = logging.getLogger("shp.srcConfig")
 

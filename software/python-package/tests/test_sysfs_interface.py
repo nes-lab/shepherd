@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-import pytest
 import time
 from pathlib import Path
-import yaml
 
-from shepherd import sysfs_interface
-from shepherd import VirtualSourceConfig
-from shepherd import VirtualHarvesterConfig
+import pytest
+import yaml
 from shepherd.calibration import CalibrationData
 from shepherd.virtual_source_config import flatten_dict_list
+
+from shepherd import VirtualHarvesterConfig
+from shepherd import VirtualSourceConfig
+from shepherd import sysfs_interface
 
 
 @pytest.fixture

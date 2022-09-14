@@ -9,14 +9,17 @@ this is ported py-version of the pru-code, goals:
 NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
 """
-from typing import Union, Optional
+from typing import Optional
+from typing import Union
 
 from .calibration import CalibrationData
-from .virtual_source_config import VirtualSourceConfig
-from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_converter_model import KernelConverterStruct
+from .virtual_converter_model import PruCalibration
 from .virtual_converter_model import VirtualConverterModel
-from .virtual_converter_model import PruCalibration, KernelConverterStruct
-from .virtual_harvester_model import VirtualHarvesterModel, KernelHarvesterStruct
+from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_harvester_model import KernelHarvesterStruct
+from .virtual_harvester_model import VirtualHarvesterModel
+from .virtual_source_config import VirtualSourceConfig
 
 
 class VirtualSourceModel:

@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-import pytest
-from pathlib import Path
-import numpy as np
-import h5py
 import time
+from pathlib import Path
+
+import h5py
+import numpy as np
+import pytest
 import yaml
-
 from shepherd.datalog_reader import LogReader as ShpReader
-from shepherd.shepherd_io import DataBuffer, VirtualSourceConfig
+from shepherd.shepherd_io import DataBuffer
+from shepherd.shepherd_io import VirtualSourceConfig
 
-from shepherd import ShepherdDebug
-from shepherd import LogWriter
+from shepherd import CalibrationData
 from shepherd import Emulator
+from shepherd import LogWriter
+from shepherd import ShepherdDebug
+from shepherd import ShepherdIOException
 from shepherd import run_emulator
 from shepherd import sysfs_interface
-from shepherd import CalibrationData
-from shepherd import ShepherdIOException
 
 
 def random_data(length):

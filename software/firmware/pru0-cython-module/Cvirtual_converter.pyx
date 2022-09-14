@@ -4,14 +4,15 @@
 #cimport hvirtual_converter
 """vishal.shepherd.software.firmware.pru0_shepherd_fw."""
 #from hvirtual_converter cimport (converter_calc_inp_power, converter_calc_out_power, converter_update_cap_storage, set_P_input_fW, set_P_output_fW, set_V_intermediate_uV, get_P_input_fW, get_P_output_fW, get_V_intermediate_uV, get_V_intermediate_raw, get_I_mid_out_nA)
-cimport hvirtual_converter
 
+cimport hvirtual_converter
+from libc.stdint cimport *
 from libc.stdint cimport uint32_t
 from libc.stdint cimport uint64_t
-from libc.stdint cimport *
-from libc.stdlib cimport malloc, free
-import pyximport
+from libc.stdlib cimport free
+from libc.stdlib cimport malloc
 
+import pyximport
 
 #cdef extern from "virtual_converter.c":
 #	cdef static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA)

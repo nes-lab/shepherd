@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 import copy
-from typing import NoReturn, Union, Optional
-from pathlib import Path
-import yaml
 import logging
+from pathlib import Path
+from typing import NoReturn
+from typing import Optional
+from typing import Union
+
+import yaml
+
 from .calibration import CalibrationData
 
 logger = logging.getLogger("shp.hrvConfig")

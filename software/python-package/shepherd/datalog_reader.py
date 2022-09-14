@@ -7,12 +7,14 @@ stripped version of https://github.com/orgua/shepherd-datalib/blob/main/src/shep
 -> currently the easiest way to get rid of some dependencies
 (mostly pandas, that gets installed by src and fails on BB)
 """
-import logging
 import errno
+import logging
 import os
 from itertools import product
 from pathlib import Path
-from typing import NoReturn, Dict, Optional
+from typing import Dict
+from typing import NoReturn
+from typing import Optional
 
 import h5py
 import yaml

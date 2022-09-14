@@ -11,21 +11,26 @@ TODO: these files are getting to big, ~ 1000 LOC, refactor into class_X.py
 :license: MIT, see LICENSE for more details.
 """
 
-import os
-import weakref
 import logging
-import time
-import struct
 import mmap
-from typing import NoReturn, Union, Optional
+import os
+import struct
+import time
+import weakref
+from typing import NoReturn
+from typing import Optional
+from typing import Union
+
 import numpy as np
 from periphery import GPIO
 
-from shepherd import sysfs_interface as sfs
 from shepherd import commons
-from .calibration import CalibrationData, cal_component_list
-from .virtual_source_config import VirtualSourceConfig
+from shepherd import sysfs_interface as sfs
+
+from .calibration import CalibrationData
+from .calibration import cal_component_list
 from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_source_config import VirtualSourceConfig
 
 logger = logging.getLogger("shp.io")
 
@@ -203,7 +208,7 @@ class SharedMem:
         n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
         if verbose:
             logger.debug(
-                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "  # noqa G004
+                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "  # noqa: G004
                 f"with len {n_samples} and timestamp {buffer_timestamp // 1000000} ms "
                 f"@{round(time.time(), 3)} sys_ts"
             )
@@ -388,7 +393,7 @@ class ShepherdIO:
             mem_size = sfs.get_mem_size()
 
             logger.debug(
-                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"  # noqa G004
+                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"  # noqa: G004
             )
 
             # Ask PRU for size of individual buffers

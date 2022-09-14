@@ -13,14 +13,15 @@ same test. Either find a solution or put every CLI call in a separate test.
 :license: MIT, see LICENSE for more details.
 """
 import time
-import pytest
-import numpy as np
 from pathlib import Path
 
-from shepherd import LogWriter
-from shepherd import CalibrationData
-from shepherd.shepherd_io import DataBuffer
+import numpy as np
+import pytest
 from shepherd.cli import cli
+from shepherd.shepherd_io import DataBuffer
+
+from shepherd import CalibrationData
+from shepherd import LogWriter
 
 
 def random_data(length):

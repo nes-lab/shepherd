@@ -10,30 +10,32 @@ functionality to a command line user.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+import logging
+import signal
+import sys
+import time
+from pathlib import Path
 from typing import Dict
 
 import click
-import time
-import logging
-import sys
-import signal
-import zerorpc
+import click_config_file
 import gevent
 import yaml
-from pathlib import Path
-import click_config_file
+import zerorpc
 from periphery import GPIO
 
-from shepherd import sysfs_interface, get_verbose_level
-from shepherd import set_verbose_level
-from shepherd import run_recorder
-from shepherd import run_emulator
-from .calibration import CalibrationData
-from .eeprom import EEPROM, CapeData
 from shepherd import ShepherdDebug
-from .shepherd_io import gpio_pin_nums
-from .launcher import Launcher
+from shepherd import get_verbose_level
+from shepherd import run_emulator
+from shepherd import run_recorder
+from shepherd import set_verbose_level
+from shepherd import sysfs_interface
 
+from .calibration import CalibrationData
+from .eeprom import EEPROM
+from .eeprom import CapeData
+from .launcher import Launcher
+from .shepherd_io import gpio_pin_nums
 
 logger = logging.getLogger("shp.cli")
 consoleHandler = logging.StreamHandler()

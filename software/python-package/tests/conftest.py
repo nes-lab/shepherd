@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from contextlib import suppress
 import gc
+import subprocess  # noqa: S404
+import time
+from contextlib import suppress
 from pathlib import Path
 
 import pytest
-import subprocess  # noqa S404
-import time
 
 
 def check_beagleboard():
@@ -100,10 +100,10 @@ def shepherd_up(fake_hardware, shepherd_down):
         fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
         yield
     else:
-        subprocess.run(["~/", "modprobe", "shepherd"], timeout=60)  # noqa S607 S603
+        subprocess.run(["~/", "modprobe", "shepherd"], timeout=60)  # noqa: S607 S603
         time.sleep(3)
         yield
-        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa S607 S603
+        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa: S607 S603
         gc.collect()  # precaution
         time.sleep(3)
 
@@ -111,5 +111,5 @@ def shepherd_up(fake_hardware, shepherd_down):
 @pytest.fixture()
 def shepherd_down(fake_hardware):
     if fake_hardware is None:
-        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa S607 S603
+        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa: S607 S603
         time.sleep(3)

@@ -11,32 +11,37 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import datetime
 import logging
-import time
+import signal
 import sys
-from pathlib import Path
+import time
 from contextlib import ExitStack
-from typing import NoReturn, Union
+from pathlib import Path
+from typing import NoReturn
+from typing import Union
+
+import invoke
 import msgpack
 import msgpack_numpy
 import numpy
-import invoke
-import signal
 
 from shepherd import commons
 from shepherd import sysfs_interface
 
+from .calibration import CalibrationData
+from .datalog import ExceptionRecord
+from .datalog import LogWriter
 from .datalog_reader import LogReader
-from .shepherd_io import ShepherdIO, DataBuffer
+from .eeprom import EEPROM
+from .eeprom import CapeData
+from .launcher import Launcher
+from .logger_config import get_verbose_level
+from .logger_config import set_verbose_level
+from .shepherd_io import DataBuffer
+from .shepherd_io import ShepherdIO
+from .shepherd_io import ShepherdIOException
+from .target_io import TargetIO
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
-from .shepherd_io import ShepherdIOException
-from .datalog import LogWriter, ExceptionRecord
-from .eeprom import EEPROM, CapeData
-from .calibration import CalibrationData
-from .target_io import TargetIO
-from .launcher import Launcher
-from .logger_config import set_verbose_level
-from .logger_config import get_verbose_level
 
 __version__ = "0.2.6"
 

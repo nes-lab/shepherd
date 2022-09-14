@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
-import pytest
 from pathlib import Path
 
-from shepherd import ShepherdDebug, CalibrationData, VirtualSourceConfig
+import pytest
 from shepherd.virtual_source_model import VirtualSourceModel
+
+from shepherd import CalibrationData
+from shepherd import ShepherdDebug
+from shepherd import VirtualSourceConfig
 
 
 @pytest.fixture

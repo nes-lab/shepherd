@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from pathlib import Path
 
-from shepherd import run_recorder, run_emulator, logger
+from shepherd import logger
+from shepherd import run_emulator
+from shepherd import run_recorder
 
 # run with
 # sudo python3 /opt/shepherd/software/python-package/tests_manual/testbench_longrun.py

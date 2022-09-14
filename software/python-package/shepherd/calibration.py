@@ -11,10 +11,11 @@ data
 :license: MIT, see LICENSE for more details.
 """
 import logging
-import yaml
 import struct
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import yaml
 from scipy import stats
 
 # voodoo to allow loading this file from outside (extras)

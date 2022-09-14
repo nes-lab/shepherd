@@ -12,27 +12,28 @@ HDF5 files.
 """
 
 import logging
-import subprocess  # noqa S404
+import subprocess  # noqa: S404
 import threading
 import time
-from typing import NoReturn, Union
-
-import numpy as np
-from pathlib import Path
-import h5py
-from itertools import product
 from collections import namedtuple
+from itertools import product
+from pathlib import Path
+from typing import NoReturn
+from typing import Union
+
+import h5py
+import numpy as np
 import psutil as psutil
 import serial
 import yaml
 
 from .calibration import CalibrationData
-from .calibration import cal_channel_hrv_dict
 from .calibration import cal_channel_emu_dict
+from .calibration import cal_channel_hrv_dict
 from .calibration import cal_parameter_list
-
+from .commons import GPIO_LOG_BIT_POSITIONS
+from .commons import MAX_GPIO_EVT_PER_BUFFER
 from .shepherd_io import DataBuffer
-from .commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
 
 logger = logging.getLogger("shp.datalog.writer")
 
@@ -648,13 +649,13 @@ class LogWriter:
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - "  # noqa G004
+                f"[UartMonitor] PySerial ValueError '{e}' - "  # noqa: G004
                 f"couldn't configure serial-port '{self.uart_path}' "
                 f"with baudrate={baudrate} -> will skip logging"
             )
         except serial.SerialException as e:
             logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - "  # noqa G004
+                f"[UartMonitor] pySerial SerialException '{e} - "  # noqa: G004
                 f"Couldn't open Serial-Port '{self.uart_path}' to target "
                 "-> will skip logging"
             )
@@ -671,7 +672,7 @@ class LogWriter:
             f"--lines={backlog}",
             "--output=short-precise",
         ]
-        proc_dmesg = subprocess.Popen(  # noqa S603
+        proc_dmesg = subprocess.Popen(  # noqa: S603
             cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True
         )
         tevent = threading.Event()
@@ -708,7 +709,7 @@ class LogWriter:
             "--lines=1",
             "--output=short-precise",
         ]  # for client
-        proc_ptp4l = subprocess.Popen(  # noqa S603
+        proc_ptp4l = subprocess.Popen(  # noqa: S603
             cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True
         )
         tevent = threading.Event()

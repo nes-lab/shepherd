@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-import pytest
-import h5py
 import time
-import numpy as np
 
+import h5py
+import numpy as np
+import pytest
+
+from shepherd import CalibrationData
 from shepherd import LogWriter
 from shepherd import Recorder
 from shepherd import run_recorder
-from shepherd import CalibrationData
 
 
 @pytest.fixture(params=["harvester"])  # TODO: there is a second mode now

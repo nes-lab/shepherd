@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from typing import NoReturn
 import os
-import zerorpc
+from typing import NoReturn
+
 import dearpygui.dearpygui as dpg
+import zerorpc
 from past.builtins import execfile
 
 

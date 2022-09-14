@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import pytest
 from pathlib import Path
+
+import pytest
 
 from shepherd import CalibrationData
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from setuptools import setup, Extension
 from Cython.Build import cythonize
+from setuptools import Extension
+from setuptools import setup
 
 setup(
     ext_modules=cythonize(

@@ -10,13 +10,14 @@ Relies on systemd service.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-from typing import NoReturn
-from threading import Event, Thread
-
-import dbus
-import time
 import logging
 import os
+import time
+from threading import Event
+from threading import Thread
+from typing import NoReturn
+
+import dbus
 from periphery import GPIO
 
 logger = logging.getLogger("shp.launcher")
