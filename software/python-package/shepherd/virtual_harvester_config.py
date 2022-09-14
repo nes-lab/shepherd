@@ -61,13 +61,13 @@ class VirtualHarvesterConfig:
             for element in ["dtype", "window_samples"]:
                 if element not in emu_cfg:
                     raise TypeError(
-                        f"Harvester-Config from Input-File was faulty ({element} missing)"
+                        f"[{self.name}] Config from Input-File was faulty ({element} missing)"
                     )
                 else:
                     self.data[element] = emu_cfg[element]
             if self.data["dtype"] == "isc_voc":
                 raise TypeError(
-                    "vHarvester can't handle 'isc_voc' format during emulation yet"
+                    f"[{self.name}] vHarvester can't handle 'isc_voc' format during emulation yet"
                 )
 
         if isinstance(setting, str) and Path(setting).exists():
@@ -87,7 +87,7 @@ class VirtualHarvesterConfig:
                 setting = self._config_defs[setting]
             else:
                 raise NotImplementedError(
-                    f"Config was set to '{setting}', "
+                    f"[{self.name}] Config was set to '{setting}', "
                     f"but definition missing in '{self._def_file}'"
                 )
 
@@ -105,7 +105,7 @@ class VirtualHarvesterConfig:
             self.data = setting
         else:
             raise NotImplementedError(
-                f"{type(setting)}'{setting}' could not be handled. "
+                f"[{self.name}] {type(setting)}'{setting}' could not be handled. "
                 f"In case of file-path -> does it exist?"
             )
 
@@ -114,7 +114,9 @@ class VirtualHarvesterConfig:
 
         self._check_and_complete()
         logger.debug(
-            "initialized with the following inheritance-chain: '%s'", self._inheritance
+            "%s initialized with the following inheritance-chain: '%s'",
+            self.name,
+            self._inheritance,
         )
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
@@ -123,7 +125,7 @@ class VirtualHarvesterConfig:
 
         if base_name in self._inheritance:
             raise ValueError(
-                f"loop detected in 'base'-inheritance-system "
+                f"[{self.name}] loop detected in 'base'-inheritance-system "
                 f"@ '{base_name}' already in {self._inheritance}"
             )
         else:
@@ -143,7 +145,7 @@ class VirtualHarvesterConfig:
             self.data = config_stash
         else:
             raise NotImplementedError(
-                f"converter-base '{base_name}' is unknown to system", base_name
+                f"[{self.name}] converter-base '{base_name}' is unknown to system"
             )
 
         self.data["algorithm_num"] = 0
@@ -278,7 +280,7 @@ class VirtualHarvesterConfig:
             set_value = max_value
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"'{setting_key}' must a single positive number, "
+                f"[{self.name}] '{setting_key}' must a single positive number, "
                 f"but is '{set_value}'"
             )
         self.data[setting_key] = set_value
@@ -293,11 +295,13 @@ class VirtualHarvesterConfig:
         """
         if self.for_emulation and self.data["algorithm_num"] <= algorithms["ivcurve"]:
             raise ValueError(
-                f"Select valid harvest-algorithm for emulator, current usage = {self._inheritance}"
+                f"[{self.name}] Select valid harvest-algorithm for emulator, "
+                f"current usage = {self._inheritance}"
             )
         elif self.data["algorithm_num"] < algorithms["ivcurve"]:
             raise ValueError(
-                f"Select valid harvest-algorithm for harvester, current usage = {self._inheritance}"
+                f"[{self.name}] Select valid harvest-algorithm for harvester, "
+                f"current usage = {self._inheritance}"
             )
 
         return [

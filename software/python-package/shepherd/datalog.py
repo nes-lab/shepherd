@@ -114,14 +114,16 @@ class LogWriter:
         file_path = Path(file_path)
         if force_overwrite or not file_path.exists():
             self.store_path = file_path
-            logger.info(f"Storing data to   '{self.store_path}'")
+            logger.info("Storing data to   '%s'", self.store_path)
         else:
             base_dir = file_path.resolve().parents[0]
             self.store_path = unique_path(base_dir / file_path.stem, file_path.suffix)
             logger.warning(
-                f"File {file_path} already exists.. "
-                f"storing under {self.store_path} instead"
+                "File %s already exists.. storing under %s instead",
+                file_path,
+                self.store_path,
             )
+
         # Refer to shepherd/calibration.py for the format of calibration data
         if not isinstance(mode, (str, type(None))):
             raise TypeError(f"can not handle type '{type(mode)}' for mode")
@@ -156,13 +158,16 @@ class LogWriter:
             self.compression_algo = output_compression
 
         logger.debug(
-            f"Set log-writing for voltage:     {'enabled' if self._write_voltage else 'disabled'}"
+            "Set log-writing for voltage:\t\t%s",
+            "enabled" if self._write_voltage else "disabled",
         )
         logger.debug(
-            f"Set log-writing for current:     {'enabled' if self._write_current else 'disabled'}"
+            "Set log-writing for current:\t\t%s",
+            "enabled" if self._write_current else "disabled",
         )
         logger.debug(
-            f"Set log-writing for gpio:        {'enabled' if self._write_gpio else 'disabled'}"
+            "Set log-writing for gpio:\t\t%s",
+            "enabled" if self._write_gpio else "disabled",
         )
 
         # initial sysutil-reading and delta-history
@@ -211,7 +216,7 @@ class LogWriter:
 
         # show key parameters for h5-performance
         settings = list(self._h5file.id.get_access_plist().get_cache())
-        logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
+        logger.debug("H5Py Cache_setting=%s (_mdc, _nslots, _nbytes, _w0)", settings)
 
         # Store voltage and current samples in the data group, both are stored as 4 Byte uint
         self.data_grp = self._h5file.create_group("data")
@@ -441,31 +446,33 @@ class LogWriter:
 
         if self.dmesg_mon_t is not None:
             logger.info(
-                f"[LogWriter] terminate Dmesg-Monitor, "
-                f"({self.dmesg_grp['time'].shape[0]} entries)"
+                "terminate Dmesg-Monitor, (%s entries)",
+                self.dmesg_grp["time"].shape[0],
             )
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
             logger.info(
-                f"[LogWriter] terminate PTP4L-Monitor, "
-                f"({self.timesync_grp['time'].shape[0]} entries)"
+                "terminate PTP4L-Monitor, (%s entries)",
+                self.timesync_grp["time"].shape[0],
             )
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
             if self._write_uart:
                 logger.info(
-                    f"[LogWriter] terminate UART-Monitor,  "
-                    f"({self.uart_grp['time'].shape[0]} entries)"
+                    "terminate UART-Monitor, (%s entries)",
+                    self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
         runtime = round(self.data_grp["time"].shape[0] / self.samplerate_sps, 1)
         gpevents = self.gpio_grp["time"].shape[0] if self._write_gpio else 0
         logger.info(
-            f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, "
-            f"{gpevents} gpio-events, {self.xcpt_grp['time'].shape[0]} xcpt-events)"
+            "flushing hdf5 file (%s s iv-data, %s gpio-events, %s xcpt-events)",
+            runtime,
+            gpevents,
+            self.xcpt_grp["time"].shape[0],
         )
         self._h5file.flush()
-        logger.info("[LogWriter] closing  hdf5 file")
+        logger.info("closing hdf5 file")
         self._h5file.close()
 
     def write_buffer(self, buffer: DataBuffer) -> NoReturn:
@@ -609,7 +616,9 @@ class LogWriter:
             return
         global monitors_end
         logger.debug(
-            f"Will start UART-Monitor for target on '{self.uart_path}' @ {baudrate} baud"
+            "Will start UART-Monitor for target on '%s' @ %s baud",
+            self.uart_path,
+            baudrate,
         )
         tevent = threading.Event()
         try:
@@ -640,13 +649,13 @@ class LogWriter:
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
             logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - "
+                f"[UartMonitor] PySerial ValueError '{e}' - "  # noqa G004
                 f"couldn't configure serial-port '{self.uart_path}' "
                 f"with baudrate={baudrate} -> will skip logging"
             )
         except serial.SerialException as e:
             logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - "
+                f"[UartMonitor] pySerial SerialException '{e} - "  # noqa G004
                 f"Couldn't open Serial-Port '{self.uart_path}' to target "
                 "-> will skip logging"
             )
@@ -681,7 +690,9 @@ class LogWriter:
                 self.dmesg_grp["message"][self.dmesg_pos] = line
             except OSError:
                 logger.error(
-                    f"[DmesgMonitor] Caught a Write Error for Line: [{type(line)}] {line}"
+                    "[DmesgMonitor] Caught a Write Error for Line: [%s] %s",
+                    type(line),
+                    line,
                 )
             tevent.wait(poll_intervall)  # rate limiter
         logger.debug("[DmesgMonitor] ended itself")
@@ -727,7 +738,9 @@ class LogWriter:
                 self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
             except OSError:
                 logger.error(
-                    f"[PTP4lMonitor] Caught a Write Error for Line: [{type(line)}] {line}"
+                    "[PTP4lMonitor] Caught a Write Error for Line: [%s] %s",
+                    type(line),
+                    line,
                 )
             tevent.wait(poll_intervall)  # rate limiter
         logger.debug("[PTP4lMonitor] ended itself")

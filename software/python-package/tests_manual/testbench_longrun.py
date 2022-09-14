@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from shepherd import run_recorder, run_emulator
+from shepherd import run_recorder, run_emulator, logger
 
 # run with
-# sudo python3 /opt/shepherd/software/python-package/shepherd/testbench_longrun.py
+# sudo python3 /opt/shepherd/software/python-package/tests_manual/testbench_longrun.py
 
 if __name__ == "__main__":
     duration = 600 * 60
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     file_emu2 = benchmark_path / "benchmark_emu2.h5"
 
     if not file_rec.exists():
-        print("Start harvesting")
+        logger.info("Start harvesting")
         run_recorder(
             output_path=file_rec,
             duration=duration,
@@ -21,7 +21,7 @@ if __name__ == "__main__":
             use_cal_default=True,
         )
 
-    print("Starting Emulation1, only logging of SysUtil-Stats")
+    logger.info("Starting Emulation1, only logging of SysUtil-Stats")
     run_emulator(
         input_path=file_rec,
         output_path=file_emu1,
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         skip_log_voltage=True,
     )
 
-    print("Starting Emulation2, ")
+    logger.info("Starting Emulation2, ")
     run_emulator(
         input_path=file_rec,
         output_path=file_emu2,

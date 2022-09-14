@@ -44,8 +44,8 @@ repos:
 
         ### Limitations
         - flake8-blind-except
-        # flake8-logging-format
-        # flake8-print
+        - flake8-logging-format
+        - flake8-print
 
         ### Documentation
         - flake8-comments

@@ -203,7 +203,7 @@ class SharedMem:
         n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
         if verbose:
             logger.debug(
-                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
+                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "  # noqa G004
                 f"with len {n_samples} and timestamp {buffer_timestamp // 1000000} ms "
                 f"@{round(time.time(), 3)} sys_ts"
             )
@@ -274,13 +274,12 @@ class SharedMem:
             pru0_util_mean = 0.1
         if verbose:
             if (pru0_util_mean > 95) or (pru0_util_max > 100):
-                warn_msg = (
+                logger.warning(
                     "Pru0 Loop-Util: mean = %s %, max = %s % "
                     "-> WARNING: broken real-time-condition",
                     pru0_util_mean,
                     pru0_util_max,
                 )
-                logger.warning(warn_msg)
                 # TODO: raise ShepherdIOException or add this info into output-file?
                 #  WRONG PLACE HERE
             else:
@@ -389,7 +388,7 @@ class ShepherdIO:
             mem_size = sfs.get_mem_size()
 
             logger.debug(
-                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"
+                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"  # noqa G004
             )
 
             # Ask PRU for size of individual buffers
@@ -409,10 +408,8 @@ class ShepherdIO:
 
             self.shared_mem.__enter__()
 
-        except Exception as xcp:
-            logger.exception(
-                "ShepherdIO.Init caught an exception -> exit now", exc_info=xcp
-            )
+        except Exception:
+            logger.exception("ShepherdIO.Init caught an exception -> exit now")
             self._cleanup()
             raise
 
@@ -467,7 +464,7 @@ class ShepherdIO:
             wait_blocking (bool): If true, block until start has completed
         """
         if isinstance(start_time, (float, int)):
-            logger.debug("asking kernel module for start at %s", round(start_time, 2))
+            logger.debug("asking kernel module for start at %s", f"{start_time:.2f}")
         sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
@@ -490,13 +487,15 @@ class ShepherdIO:
         while sfs.get_state() != "idle":
             try:
                 sfs.set_stop(force=True)
-            except Exception as e:
-                logger.exception("Cleanup caught an exception", exc_info=e)
+            except sfs.SysfsInterfaceException:
+                logger.exception(
+                    "CleanupRoutine - caused an exception while trying to stop PRU"
+                )
             try:
                 sfs.wait_for_state("idle", 3.0)
             except sfs.SysfsInterfaceException:
                 logger.warning(
-                    "CleanupRoutine - send stop-command and waiting for PRU to go to idle"
+                    "CleanupRoutine - caused an exception while waiting for PRU to go to idle"
                 )
         self.set_aux_target_voltage(None, 0.0)
 

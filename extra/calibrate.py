@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 import time
 from pathlib import Path
 
@@ -18,6 +19,12 @@ from shepherd.calibration import CalibrationData
 from shepherd.calibration_default import dac_voltage_to_raw
 
 # TODO: change to datalib after functionally is added there
+
+logger = logging.getLogger("shp.calTool")
+consoleHandler = logging.StreamHandler()
+logger.addHandler(consoleHandler)
+logging.basicConfig(level=logging.DEBUG)
+
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
@@ -54,10 +61,10 @@ def plot_calibration(measurements, calibration, file_name):
                 xl = [xp[0], xp[-1]]
                 yl = [gain * xlp + offset for xlp in xl]
             except KeyError:
-                print("NOTE: data was not found - will skip plot")
+                logger.info("NOTE: data was not found - will skip plot")
                 continue
             except ValueError as e:
-                print(f"NOTE: data was faulty - will skip plot [{e}]")
+                logger.info("NOTE: data was faulty - will skip plot", exc_info=e)
                 continue
 
             fig, ax = plt.subplots()
@@ -122,9 +129,10 @@ def meas_harvester_adc_voltage(
     dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
     mode_old = rpc_client.switch_shepherd_mode("hrv_adc_read")
-    print(
-        f" -> setting dac-voltage to {dac_voltage_V} V "
-        f"(raw = {dac_voltage_raw}) -> upper limit now max"
+    logger.debug(
+        " -> setting dac-voltage to %s V (raw = %s) -> upper limit now max",
+        dac_voltage_V,
+        dac_voltage_raw,
     )
     rpc_client.set_aux_target_voltage_raw((2**20) + dac_voltage_raw, also_main=True)
 
@@ -149,8 +157,8 @@ def meas_harvester_adc_voltage(
         results.append(
             {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw}
         )
-        print(
-            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;  "
+        logger.debug(
+            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;  "  # noqa G004
             f"adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); "
             f"adc-c: {adc_current_raw} raw"
         )
@@ -169,7 +177,11 @@ def meas_harvester_adc_current(
     dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
     mode_old = rpc_client.switch_shepherd_mode("hrv_adc_read")
-    print(f" -> setting dac-voltage to {dac_voltage_V} V (raw = {dac_voltage_raw})")
+    logger.debug(
+        " -> setting dac-voltage to %s V (raw = %s)",
+        dac_voltage_V,
+        dac_voltage_raw,
+    )
     rpc_client.set_aux_target_voltage_raw((2**20) + dac_voltage_raw, also_main=True)
 
     set_smu_as_isource(smu, 0.0, 3.0, pwrline_cycles, mode_4wire)
@@ -191,8 +203,8 @@ def meas_harvester_adc_current(
         smu_voltage = smu.measure.v()
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
-        print(
-            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
+        logger.debug(
+            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa G004
             f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
         )
 
@@ -207,7 +219,7 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
     dac_voltage_V = 2.5
 
     mode_old = rpc_client.switch_shepherd_mode("emu_adc_read")
-    print(f" -> setting dac-voltage to {dac_voltage_V} V")
+    logger.debug(" -> setting dac-voltage to %s V", dac_voltage_V)
     # write both dac-channels of emulator
     rpc_client.set_aux_target_voltage_raw(
         (2**20) + dac_voltage_to_raw(dac_voltage_V), also_main=True
@@ -232,8 +244,8 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
         smu_voltage = smu.measure.v()
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
-        print(
-            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"
+        logger.debug(
+            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa G004
             f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
         )
 
@@ -272,8 +284,8 @@ def meas_dac_voltage(
         smu_current_mA = 1000 * smu.measure.i()
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
-        print(
-            f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"
+        logger.debug(
+            f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"  # noqa G004
             f"  SMU-reference: {mean:.6f} V (median = {medi:.6f}); current: {smu_current_mA:.3f} mA"
         )
 
@@ -357,7 +369,7 @@ def measure(
             config = yaml.safe_load(config_data)
             if "measurements" in config:
                 measurement_dict = config["measurements"]
-                print("Save-File loaded successfully - will extend dataset")
+                logger.info("Save-File loaded successfully - will extend dataset")
 
     with Keithley2600(f"TCPIP0::{smu_ip}::INSTR") as kth, Connection(
         host, user=user, connect_kwargs=fabric_args
@@ -371,23 +383,27 @@ def measure(
             usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
                 measurement_dict["harvester"] = {}
-                print("Measurement - Harvester - ADC . Voltage")
+                logger.info("Measurement - Harvester - ADC . Voltage")
                 measurement_dict["harvester"][
                     "adc_voltage"
                 ] = meas_harvester_adc_voltage(
                     rpc_client, kth.smub, smu_nplc, smu_4wire
                 )
-                print("Measurement - Harvester - ADC . Current")
+                logger.info("Measurement - Harvester - ADC . Current")
                 measurement_dict["harvester"][
                     "adc_current"
                 ] = meas_harvester_adc_current(
                     rpc_client, kth.smub, smu_nplc, smu_4wire
                 )
-                print("Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
+                logger.info(
+                    "Measurement - Harvester - DAC . Voltage - Channel A (VSim)"
+                )
                 measurement_dict["harvester"]["dac_voltage_a"] = meas_dac_voltage(
                     rpc_client, kth.smua, 0b0001, smu_nplc, smu_4wire
                 )
-                print("Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
+                logger.info(
+                    "Measurement - Harvester - DAC . Voltage - Channel B (VHarv)"
+                )
                 measurement_dict["harvester"]["dac_voltage_b"] = meas_dac_voltage(
                     rpc_client, kth.smub, 0b0010, smu_nplc, smu_4wire
                 )
@@ -398,14 +414,14 @@ def measure(
             if usr_conf:
                 measurement_dict["emulator"] = {}
 
-                print("Measurement - Emulator - ADC . Current - Target A")
+                logger.info("Measurement - Emulator - ADC . Current - Target A")
                 # targetA-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(True)
                 measurement_dict["emulator"]["adc_current"] = meas_emulator_current(
                     rpc_client, kth.smua, smu_nplc, smu_4wire
                 )
 
-                print("Measurement - Emulator - ADC . Current - Target B")
+                logger.info("Measurement - Emulator - ADC . Current - Target B")
                 # targetB-Port will get the monitored dac-channel-b
                 rpc_client.select_target_for_power_tracking(False)
                 # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
@@ -416,11 +432,11 @@ def measure(
                 rpc_client.select_target_for_power_tracking(
                     False
                 )  # routes DAC.A to TGT.A to SMU-A
-                print("Measurement - Emulator - DAC . Voltage - Channel A")
+                logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
                 measurement_dict["emulator"]["dac_voltage_a"] = meas_dac_voltage(
                     rpc_client, kth.smua, 0b1100, smu_nplc, smu_4wire
                 )
-                print("Measurement - Emulator - DAC . Voltage - Channel B")
+                logger.info("Measurement - Emulator - DAC . Voltage - Channel B")
                 measurement_dict["emulator"]["dac_voltage_b"] = meas_dac_voltage(
                     rpc_client, kth.smub, 0b1100, smu_nplc, smu_4wire
                 )
@@ -432,7 +448,7 @@ def measure(
             with open(outfile, "w") as f:
                 f.write(res_repr)
         else:
-            print(res_repr)
+            logger.info(res_repr)
 
 
 @cli.command()
@@ -460,7 +476,7 @@ def convert(infile, outfile, plot: bool):
         with open(outfile, "w") as f:
             f.write(res_repr)
     else:
-        print(res_repr)
+        logger.info(res_repr)
 
 
 @cli.command()

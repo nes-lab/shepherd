@@ -199,20 +199,26 @@ class CalibrationData:
                     rval = result.rvalue  # test quality of regression
                 except KeyError:
                     logger.error(
-                        f"data not found -> '{component}-{channel}' "
-                        f"replaced with default values (gain={gain})"
+                        "data not found -> '%s-%s' replaced with default values (gain=%s)",
+                        component,
+                        channel,
+                        gain,
                     )
-                except ValueError as e:
+                except ValueError:
                     logger.error(
-                        f"data faulty -> '{component}-{channel}' "
-                        f"replaced with default values (gain={gain}) [{e}]"
+                        "data not found -> '%s-%s' replaced with default values (gain=%s)",
+                        component,
+                        channel,
+                        gain,
                     )
 
                 if ("rval" in locals()) and (rval < 0.999):
                     logger.warning(
-                        f"Calibration may be faulty -> "
-                        f"Correlation coefficient (rvalue) = {rval:.6f} is too low "
-                        f"for {component}-{channel}"
+                        "Calibration may be faulty -> Correlation coefficient "
+                        "(rvalue) = %s is too low for %s-%s",
+                        f"{rval:.6f}",
+                        component,
+                        channel,
                     )
                 cal_dict[component][channel]["gain"] = gain
                 cal_dict[component][channel]["offset"] = offset
@@ -285,14 +291,14 @@ class CalibrationData:
             # TODO: is exception more useful? -> raise ValueError
             if ("gain" in key) and not (0 <= value < 2**32):
                 logger.warning(
-                    f"Number (={value}) exceeds uint32-container, "
-                    f"in CalibrationData.export_for_sysfs()"
+                    "Number (=%s) exceeds uint32-container, in CalibrationData.export_for_sysfs()",
+                    value,
                 )
                 cal_set[key] = min(max(value, 0), 2**32 - 1)
             if ("offset" in key) and not (-(2**31) <= value < 2**31):
                 logger.warning(
-                    f"Number (={value}) exceeds int32-container, "
-                    f"in CalibrationData.export_for_sysfs()"
+                    "Number (=%s) exceeds int32-container, in CalibrationData.export_for_sysfs()",
+                    value,
                 )
                 cal_set[key] = min(max(value, -(2**31)), 2**31 - 1)
         return cal_set

@@ -2,10 +2,9 @@ import logging
 from typing import NoReturn
 
 # Set default logging handler to avoid "No handler found" warnings.
-logging.getLogger("shp").addHandler(logging.NullHandler())
 logger = logging.getLogger("shp")
-logging.basicConfig(format="%(name)s %(levelname)s: %(message)s")
-verbose_level: int = None
+logger.addHandler(logging.NullHandler())
+verbose_level: int = 0
 
 
 def get_verbose_level() -> int:
@@ -29,8 +28,14 @@ def set_verbose_level(verbose: int) -> NoReturn:
         logger.setLevel(logging.INFO)
     elif verbose > 2:
         logger.setLevel(logging.DEBUG)
+
     if verbose < 3:
         # reduce log-overhead when not debugging, also more user-friendly exceptions
         logging._srcfile = None
         logging.logThreads = 0
         logging.logProcesses = 0
+
+    if verbose > 2:
+        logging.basicConfig(format="%(name)s %(levelname)s: %(message)s")
+    else:
+        logging.basicConfig(format="%(message)s")

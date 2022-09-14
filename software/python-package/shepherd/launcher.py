@@ -136,7 +136,7 @@ class Launcher:
             if time.time() > ts_end:
                 raise TimeoutError("Timed out waiting for service state")
 
-        logger.debug(f"service ActiveState: { systemd_state }")
+        logger.debug("service ActiveState: %s", systemd_state)
 
         if systemd_state == "active":
             return True

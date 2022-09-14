@@ -93,7 +93,8 @@ def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
     I_inp_nA = int(I_inp_nA * 10**0)
     n_samples = int(dt_s / reference_vss["t_sample_s"])
     print(
-        f"CHARGE - feeding I = {I_inp_nA} nA, V = {V_inp_mV} mV into vSource with {n_samples} steps"
+        f"CHARGE - feeding I = {I_inp_nA} nA, V = {V_inp_mV} mV "
+        f"into vSource with {n_samples} steps"
     )
     print(f" PRU VCap = {pru_vsource.vsource_update_cap_storage()} uV")
     print(f" PRU PInp = {pru_vsource.vsource_calc_inp_power(V_inp_uV, I_inp_nA)} fW")

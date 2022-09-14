@@ -114,7 +114,9 @@ class VirtualSourceConfig:
         self.check_and_complete()
 
         logger.debug(
-            f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
+            "%s initialized with the following inheritance-chain: '%s'",
+            self.name,
+            self._inheritance,
         )
 
     def export_for_sysfs(self) -> list:
@@ -306,16 +308,12 @@ class VirtualSourceConfig:
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self.data
             self.data = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
             self.check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
@@ -388,8 +386,9 @@ class VirtualSourceConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, "
-                    f"set to inherited value = {set_value}"
+                    "'%s' not provided, " "set to inherited value = %s",
+                    setting_key,
+                    set_value,
                 )
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
@@ -416,8 +415,9 @@ class VirtualSourceConfig:
             values = default
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, "
-                    f"will be set to inherited value = {values[0]}"
+                    "'%s' not provided, will be set to inherited value = %s",
+                    setting_key,
+                    values[0],
                 )
         if (
             (len(values) != len(default))

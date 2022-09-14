@@ -52,6 +52,7 @@ __all__ = [
     "Launcher",
     "set_verbose_level",
     "get_verbose_level",
+    "logger",
     "Recorder",
     "Emulator",
     "ShepherdDebug",
@@ -83,7 +84,7 @@ class Recorder(ShepherdIO):
         harvester: Union[dict, str, Path, VirtualHarvesterConfig] = None,
         calibration: CalibrationData = None,
     ):
-        logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
+        logger.debug("Recorder-Init in %s-mode", shepherd_mode)
         self.samplerate_sps = (
             10**9
             * sysfs_interface.get_samples_per_buffer()
@@ -125,7 +126,7 @@ class Recorder(ShepherdIO):
         """
         super()._return_buffer(index)
         if verbose:
-            logger.debug(f"Sent empty buffer #{index} to PRU")
+            logger.debug("Sent empty buffer #%s to PRU", index)
 
 
 class Emulator(ShepherdIO):
@@ -172,7 +173,7 @@ class Emulator(ShepherdIO):
         infile_vh_cfg: dict = None,
     ):
 
-        logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
+        logger.debug("Emulator-Init in %s-mode", shepherd_mode)
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
 
@@ -256,8 +257,9 @@ class Emulator(ShepherdIO):
         super()._return_buffer(index)
         if verbose:
             logger.debug(
-                f"Sending emu-buffer #{ index } to PRU took "
-                f"{ round(1e3 * (time.time()-ts_start), 2) } ms"
+                "Sending emu-buffer #%s to PRU took %s ms",
+                index,
+                round(1e3 * (time.time() - ts_start), 2),
             )
 
 
@@ -707,7 +709,7 @@ def run_recorder(
 
         recorder.start(start_time, wait_blocking=False)
 
-        logger.info(f"waiting {start_time - time.time():.2f} s until start")
+        logger.info("waiting %s s until start", f"{start_time - time.time():.2f}")
         recorder.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -728,9 +730,7 @@ def run_recorder(
             try:
                 idx, hrv_buf = recorder.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
-                logger.error(
-                    f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
-                )
+                logger.warning("Caught an Exception", exc_info=e)
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 log_writer.write_exception(err_rec)
                 if not warn_only:
@@ -890,7 +890,7 @@ def run_emulator(
         if output_path is not None:
             log_writer.embed_config(emu.vs_cfg.data)
         emu.start(start_time, wait_blocking=False)
-        logger.info(f"waiting {start_time - time.time():.2f} s until start")
+        logger.info("waiting %s s until start", f"{start_time - time.time():.2f}")
         emu.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -911,9 +911,7 @@ def run_emulator(
             try:
                 idx, emu_buf = emu.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
-                logger.error(
-                    f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
-                )
+                logger.warning("Caught an Exception", exc_info=e)
 
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 if output_path is not None:

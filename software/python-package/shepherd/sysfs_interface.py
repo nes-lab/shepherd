@@ -421,9 +421,7 @@ def write_programmer_ctrl(
             )
     for _iter, attribute in enumerate(prog_attribs):
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug(
-                f"[sysfs] set programmer/%s = '%s'", attribute, parameters[_iter]
-            )
+            logger.debug("set programmer/%s = '%s'", attribute, parameters[_iter])
             file.write(str(parameters[_iter]))
 
 

@@ -17,7 +17,7 @@ require-plugins =
 
     ### Limitations
     flake8-blind-except
-    # flake8-logging-format
+    flake8-logging-format
     # flake8-print
 
     ### Documentation
@@ -33,18 +33,20 @@ extend-ignore =
     E203
     # open() vs os.open()
     SCS109
-    # hideous
+    # hideous commas
     C812
     C815
     C813
 
 per-file-ignores =
-    # asserts (in tests are ok)
-    software/python-package/tests/*: SCS108 S101
+    # asserts (in tests are ok), also allow print() instead of logger
+    software/python-package/tests/*: SCS108 S101 T201
     # commented out code, TODO: finalize model
     *_model.py: E800
     # telnet for openOCD, for now, TODO: replace by direct ssh.run()
     software/shepherd-herd/shepherd_herd/__init__.py: S401 S312
+    # allow print() instead of logger
+    # software/python-package/tests/test_virtual_source.py: T201
 
 exclude =
     software/shepherd-devicetest/*

@@ -24,7 +24,7 @@ from pathlib import Path
 import click_config_file
 from periphery import GPIO
 
-from shepherd import sysfs_interface
+from shepherd import sysfs_interface, get_verbose_level
 from shepherd import set_verbose_level
 from shepherd import run_recorder
 from shepherd import run_emulator
@@ -58,7 +58,7 @@ logger.addHandler(consoleHandler)
 
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
-    logger.info(f"reading config from {file_path}, cmd={cmd_name}")
+    logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
     with open(file_path, "r") as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
@@ -110,20 +110,20 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
-        logger.info(f"Shepherd-State \t= {'enabled' if on else 'disabled'}")
+        logger.info("Shepherd-State \t= %s", "enabled" if on else "disabled")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(not sel_a)  # switched because rail A is AUX
-        logger.info(f"Select Target \t= {'A' if sel_a else 'B'}")
+        logger.info("Select Target \t= %s", "A" if sel_a else "B")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(sel_a)
     for pin_name in ["target_io_en"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(gpio_pass)
-        logger.info(f"IO passing \t= {'enabled' if gpio_pass else 'disabled'}")
+        logger.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
     cal = CalibrationData.from_default()
-    logger.info(f"Target Voltage \t= {voltage} V")
+    logger.info("Target Voltage \t= %s V", voltage)
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
     sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
@@ -442,6 +442,9 @@ def write(infofile, version, serial_number, cal_file, use_cal_default):
 )
 def read(infofile, cal_file):
 
+    if get_verbose_level() < 2:
+        set_verbose_level(2)
+
     with EEPROM() as storage:
         cape_data = storage.read_cape_data()
         cal = storage.read_calibration()
@@ -450,13 +453,13 @@ def read(infofile, cal_file):
         with open(infofile, "w") as f:
             f.write(repr(cape_data))
     else:
-        print(repr(cape_data))
+        logger.info(repr(cape_data))
 
     if cal_file:
         with open(cal_file, "w") as f:
             f.write(repr(cal))
     else:
-        print(repr(cal))
+        logger.info(repr(cal))
 
 
 @eeprom.command(
@@ -472,9 +475,13 @@ def read(infofile, cal_file):
     help="Path to resulting YAML-formatted calibration data file",
 )
 def make(filename, output_path):
+
+    if get_verbose_level() < 2:
+        set_verbose_level(2)
+
     cd = CalibrationData.from_measurements(filename)
     if output_path is None:
-        print(repr(cd))
+        logger.info(repr(cd))
     else:
         with open(output_path, "w") as f:
             f.write(repr(cd))
@@ -561,19 +568,19 @@ def programmer(firmware_file, sel_a, voltage, speed, protocol):
             )  # TODO: pins-nums are placeholders
             logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
-        except OSError as err:
-            logger.error(
-                f"Failed to initialize Programmer, shepherdState = {sysfs_interface.get_state()}"
+        except OSError:
+            logger.exception(
+                "Failed to initialize Programmer, shepherdState = %s",
+                sysfs_interface.get_state(),
             )
-            logger.error(err)
             return
         state = sysfs_interface.check_programmer()
         while state != "idle":
-            logger.info(f"Programming in progress,\tstate = {state}")
+            logger.info("Programming in progress,\tstate = %s", state)
             time.sleep(1)
             state = sysfs_interface.check_programmer()
         logger.info(
-            f"Finished Programming!,\tctrl = {sysfs_interface.read_programmer_ctrl()})"
+            "Finished Programming!,\tctrl = %s", sysfs_interface.read_programmer_ctrl()
         )
 
 

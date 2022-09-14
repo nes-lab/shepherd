@@ -32,7 +32,7 @@ logger.addHandler(consoleHandler)
 
 
 def yamlprovider(file_path, cmd_name):
-    logger.info(f"reading config from {file_path}")
+    logger.info("reading config from %s", file_path)
     with open(file_path, "r") as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
@@ -95,7 +95,7 @@ def configure_shepherd(
     }
     config_yml = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
 
-    logger.debug(f"Rolling out the following config:\n\n{config_yml}")
+    logger.debug("Rolling out the following config:\n\n%s", config_yml)
 
     for cnx in group:
         res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
@@ -210,10 +210,10 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
 def poweroff(ctx, restart):
     for cnx in ctx.obj["fab group"]:
         if restart:
-            logger.info(f"rebooting {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("rebooting %s", ctx.obj["hostnames"][cnx.host])
             cnx.sudo("reboot", hide=True, warn=True)
         else:
-            logger.info(f"powering off {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("powering off %s", ctx.obj["hostnames"][cnx.host])
             cnx.sudo("poweroff", hide=True, warn=True)
 
 
@@ -291,7 +291,7 @@ def start_openocd(cnx, hostname, timeout=30):
         if time.time() > ts_end:
             raise TimeoutError(f"Timed out waiting for openocd on host {hostname}")
         else:
-            logger.debug(f"waiting for openocd on {hostname}")
+            logger.debug("waiting for openocd on %s", hostname)
             time.sleep(1)
 
 
@@ -303,16 +303,16 @@ def flash(ctx, image):
         cnx.put(image, "/tmp/target_image.bin")  # noqa S108
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}")
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"program /tmp/target_image.bin verify reset\n")
             res = tn.read_until(b"Verified OK", timeout=5)
             if b"Verified OK" in res:
                 logger.info(
-                    f"flashed image on {ctx.obj['hostnames'][cnx.host]} successfully"
+                    "flashed image on %s successfully", ctx.obj["hostnames"][cnx.host]
                 )
             else:
                 logger.error(
-                    f"failed flashing image on {ctx.obj['hostnames'][cnx.host]}"
+                    "failed flashing image on %s", ctx.obj["hostnames"][cnx.host]
                 )
 
 
@@ -322,9 +322,9 @@ def halt(ctx):
     for cnx in ctx.obj["fab group"]:
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}")
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"halt\n")
-            logger.info(f"target halted on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target halted on %s", ctx.obj["hostnames"][cnx.host])
 
 
 @target.command(short_help="Erases the target")
@@ -333,11 +333,11 @@ def erase(ctx):
     for cnx in ctx.obj["fab group"]:
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}")
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"halt\n")
-            logger.info(f"target halted on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target halted on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"nrf52 mass_erase\n")
-            logger.info(f"target erased on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target erased on %s", ctx.obj["hostnames"][cnx.host])
 
 
 @target.command(short_help="Resets the target")
@@ -346,9 +346,9 @@ def reset(ctx):
     for cnx in ctx.obj["fab group"]:
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}")
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"reset\n")
-            logger.info(f"target reset on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target reset on %s", ctx.obj["hostnames"][cnx.host])
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
@@ -409,7 +409,7 @@ def harvester(
     )
 
     if start:
-        logger.debug(f"Scheduling start of shepherd at {ts_start} (in ~ {delay} s)")
+        logger.debug("Scheduling start of shepherd at %s (in ~ %s s)", ts_start, delay)
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -512,7 +512,7 @@ def emulator(
     )
 
     if start:
-        logger.debug(f"Scheduling start of shepherd at {ts_start} (in ~ {delay} s)")
+        logger.debug("Scheduling start of shepherd at %s (in ~ %s s)", ts_start, delay)
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -547,7 +547,7 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
         for cnx in ctx.obj["fab group"]:
 
             logger.info(
-                f"stopping shepherd service on {ctx.obj['hostnames'][cnx.host]}"
+                "stopping shepherd service on %s", ctx.obj["hostnames"][cnx.host]
             )
             res = cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
 
@@ -566,7 +566,7 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
 
         target_path = Path(outdir) / ctx.obj["hostnames"][cnx.host]
         if not target_path.exists():
-            logger.info(f"creating local dir {target_path}")
+            logger.info("creating local dir %s", target_path)
             target_path.mkdir()
 
         if Path(filename).is_absolute():
@@ -581,14 +581,18 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
 
         logger.info(
             (
-                f"retrieving remote file {filepath} from "
-                f"{ctx.obj['hostnames'][cnx.host]} to local {local_path}"
+                "retrieving remote file %s from %s to local %s",
+                filepath,
+                ctx.obj["hostnames"][cnx.host],
+                local_path,
             )
         )
         cnx.get(filepath, local=Path(local_path))
         if delete:
             logger.info(
-                f"deleting {filepath} from remote {ctx.obj['hostnames'][cnx.host]}"
+                "deleting %s from remote %s",
+                filepath,
+                ctx.obj["hostnames"][cnx.host],
             )
             cnx.sudo(f"rm {str(filepath)}", hide=True)
 
