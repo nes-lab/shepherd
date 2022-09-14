@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import copy
 from typing import NoReturn, Union, Optional
 from pathlib import Path

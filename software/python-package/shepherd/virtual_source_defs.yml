@@ -178,4 +178,4 @@ virtsources:
 
   BQ25570si:  # record internal StorageCap instead of Output
     converter_base: BQ25570s
-    log_intermediate_voltage: True
+    log_intermediate_voltage: true

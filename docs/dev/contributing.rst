@@ -24,7 +24,7 @@ While some parts of the `shepherd` software stack can be developed hardware inde
 
 We found the following setup convenient: Have the code on your laptop/workstation and use your editor/IDE to develop code.
 Have a BeagleBone (potentially with `shepherd` hardware) connected to the same network as your workstation.
-Prepare the BeagleBone by running the `bootstrap.yml` ansible playbook and additionally applying the `deploy/dev-host` ansible role.
+Prepare the BeagleBone by running the `bootstrap.yml` ansible playbook and additionally applying the `deploy/dev_host` ansible role.
 
 You can now either use the ansible `deploy/sheep` role to push the changed code to the target and build and install it there.
 Running the role takes significant time though as all components (kernel module, firmware and python package) are built.

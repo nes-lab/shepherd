@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup, Extension
 from Cython.Build import cythonize
 

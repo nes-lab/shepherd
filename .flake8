@@ -18,7 +18,7 @@ require-plugins =
     ### Limitations
     flake8-blind-except
     flake8-logging-format
-    # flake8-print
+    flake8-print
 
     ### Documentation
     flake8-comments
@@ -37,6 +37,10 @@ extend-ignore =
     C812
     C815
     C813
+    # DOCString TODO: reduce here
+    D100
+    D102
+    D103
 
 per-file-ignores =
     # asserts (in tests are ok), also allow print() instead of logger

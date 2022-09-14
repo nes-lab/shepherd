@@ -9,50 +9,65 @@
 # - auto-enable for repo on clone
 # - more hooks (clang-format,...) https://pre-commit.com/hooks.html
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
     hooks:
-    -   id: check-yaml
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-    -   id: check-executables-have-shebangs
-#    -   id: check-shebang-scripts-are-executable
-    -   id: detect-private-key
-    -   id: mixed-line-ending
--   repo: https://github.com/psf/black
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-executables-have-shebangs
+  #    - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: mixed-line-ending
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: fix-byte-order-marker
+      - id: fix-encoding-pragma
+  - repo: https://github.com/psf/black
     rev: 22.8.0
     hooks:
-    -   id: black
-- repo: https://github.com/pycqa/flake8
-  rev: 5.0.4
-  hooks:
-    - id: flake8
-      args: [--config, .flake8]
-      additional_dependencies:
-        # NOTE: entries are copy of .flake8-config-file -> for auto-install
-        ### Bugs
-        - flake8-bugbear
-        - flake8-secure-coding-standard
-        - flake8-bandit
-        - flake8-builtins
+      - id: black
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
+      - id: flake8
+        args: [--config, .flake8]
+        additional_dependencies:
+          # NOTE: entries are copy of .flake8-config-file -> for auto-install
+          ### Bugs
+          - flake8-bugbear
+          - flake8-secure-coding-standard
+          - flake8-bandit
+          - flake8-builtins
 
-        ### Clean Code
-        - flake8-comprehensions
-        - flake8-simplify
-        - flake8-eradicate
-        - flake8-commas
+          ### Clean Code
+          - flake8-comprehensions
+          - flake8-simplify
+          - flake8-eradicate
+          - flake8-commas
 
-        ### Limitations
-        - flake8-blind-except
-        - flake8-logging-format
-        - flake8-print
+          ### Limitations
+          - flake8-blind-except
+          - flake8-logging-format
+          - flake8-print
 
-        ### Documentation
-        - flake8-comments
-        # flake8-docstrings
-        # flake8-rst-docstrings
+          ### Documentation
+          - flake8-comments
+          # - flake8-docstrings
+          # - flake8-rst-docstrings
 
-        ### Test-Improvements
-        - flake8-assertive
-#default_language_version:
+          ### Test-Improvements
+          - flake8-assertive
+
+  - repo: https://github.com/ansible-community/ansible-lint.git
+    rev: v6.5.2
+    hooks:
+      - id: ansible-lint
+        files: \.(yaml|yml)$
+
+# default_language_version:
 #    python: python3.8

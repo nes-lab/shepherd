@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from typing import NoReturn
 import os
 import zerorpc
@@ -332,33 +333,29 @@ def gpio_batok_callback(sender, en_state, user_data) -> NoReturn:
     gpio_refresh()
 
 
-"""
-cal = CalibrationData.from_default()
-shepherd_io.set_aux_target_voltage(cal, 3.3)
-shepherd_io.set_target_io_level_conv(True)
-shepherd_io.select_main_target_for_io(False)
-shepherd_io.select_main_target_for_power(True)
-shepherd_io.start()
-
-target_gpio = TargetIO()
-target_gpio.pin_count
-target_gpio.one_high(index)
-
-voltage_raw = cal.convert_value_to_raw(cal_comp, cal_ch, dac_voltages[v_index])
-shepherd_io.dac_write(dbg_ch, voltage_raw)
-
-value_raw = shepherd_io.adc_read(dbg_ch)
-value_si = cal.convert_raw_to_value(cal_comp, cal_ch, value_raw) * 1e3
-
-gpi_state = shepherd_io.gpi_read()
-
-shepherd_io._cleanup()
-
-## other useful stuff
-
-_set_shepherd_pcb_power
-
-"""
+# cal = CalibrationData.from_default()
+# shepherd_io.set_aux_target_voltage(cal, 3.3)
+# shepherd_io.set_target_io_level_conv(True)
+# shepherd_io.select_main_target_for_io(False)
+# shepherd_io.select_main_target_for_power(True)
+# shepherd_io.start()
+#
+# target_gpio = TargetIO()
+# target_gpio.pin_count
+# target_gpio.one_high(index)
+#
+# voltage_raw = cal.convert_value_to_raw(cal_comp, cal_ch, dac_voltages[v_index])
+# shepherd_io.dac_write(dbg_ch, voltage_raw)
+#
+# value_raw = shepherd_io.adc_read(dbg_ch)
+# value_si = cal.convert_raw_to_value(cal_comp, cal_ch, value_raw) * 1e3
+#
+# gpi_state = shepherd_io.gpi_read()
+#
+# shepherd_io._cleanup()
+#
+# # other useful stuff
+# _set_shepherd_pcb_power
 
 
 def filter_update_callback(sender, element_data, user_data) -> NoReturn:

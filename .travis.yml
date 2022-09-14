@@ -9,28 +9,28 @@ services:
 addons:
   apt:
     packages:
-     - sshpass
+      - sshpass
 
 script:
- - export PROJECT_DIR=$PWD
- - docker build -t shepherd-builder-img .
- - docker create -it --name shepherd-builder shepherd-builder-img
- - docker cp $PROJECT_DIR/software shepherd-builder:/code
- - docker start -a shepherd-builder
- - docker cp shepherd-builder:/artifacts $PROJECT_DIR/
+  - export PROJECT_DIR=$PWD
+  - docker build -t shepherd-builder-img .
+  - docker create -it --name shepherd-builder shepherd-builder-img
+  - docker cp $PROJECT_DIR/software shepherd-builder:/code
+  - docker start -a shepherd-builder
+  - docker cp shepherd-builder:/artifacts $PROJECT_DIR/
 
 before_deploy:
- - cd $PROJECT_DIR/software/shepherd-herd
+  - cd $PROJECT_DIR/software/shepherd-herd
 
 deploy:
 
- - provider: script
-   script: SSHPASS=$DEPLOY_PASS sshpass -e scp -v -o StrictHostKeyChecking=no $PROJECT_DIR/artifacts/debian/* $DEPLOY_USER@$DEPLOY_HOST:shepherd/debian/
-   skip_cleanup: true
+  - provider: script
+    script: SSHPASS=$DEPLOY_PASS sshpass -e scp -v -o StrictHostKeyChecking=no $PROJECT_DIR/artifacts/debian/* $DEPLOY_USER@$DEPLOY_HOST:shepherd/debian/
+    skip_cleanup: true
 
- - provider: pypi
-   user: $PYPI_USER
-   password: $PYPI_PASS
-   on:
-     tags: true
-     branch: master
+  - provider: pypi
+    user: $PYPI_USER
+    password: $PYPI_PASS
+    on:
+      tags: true
+      branch: master

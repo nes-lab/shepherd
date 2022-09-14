@@ -10,7 +10,7 @@
 
 - name: Download and extract pru software support package
   ansible.builtin.unarchive:
-    src: 'http://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/{{ pru_support_package }}.tar.gz'
+    src: 'https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/{{ pru_support_package }}.tar.gz'
     dest: '{{ ti_path }}'
     remote_src: true
   become: true

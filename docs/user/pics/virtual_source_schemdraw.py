@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import schemdraw
 import schemdraw.elements as elm
 

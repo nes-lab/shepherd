@@ -35,7 +35,7 @@ def call_repeatedly(interval, func, *args):
 
 
 class Launcher:
-    """Stores data coming from PRU's in HDF5 format
+    """Stores data coming from PRU's in HDF5 format.
 
     Args:
         pin_button (int): Pin number where button is connected. Must be

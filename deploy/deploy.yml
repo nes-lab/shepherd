@@ -3,10 +3,10 @@
   hosts: sheep
 
   roles:
-    - dev-host
+    - dev_host
     - sheep
-    - gps-host
-    - ptp-host
+    - gps_host
+    - ptp_host
 
   handlers:
     - name: Restart device
@@ -27,29 +27,29 @@
 - name: Role - PTP-Client
   hosts: ptp_clients
   roles:
-    - ptp-client
+    - ptp_client
   become: true
 
 - name: Role - NTP-Client
   hosts: ntp_clients
   roles:
-    - ntp-client
+    - ntp_client
   become: true
 
 - name: Role - GPS-Client
   hosts: gps_clients
   roles:
-    - gps-client  # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
+    - gps_client  # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
   become: true
 
 - name: Role - PTP-Server
   hosts: ptp_servers
   roles:
-    - ptp-server
+    - ptp_server
   become: true
 
 - name: Role - Secured Testbed
   hosts: secured
   roles:
-    - secure-testbed
+    - secure_testbed
   become: true

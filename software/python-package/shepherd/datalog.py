@@ -36,10 +36,9 @@ from .commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
 
 logger = logging.getLogger("shp.datalog.writer")
 
-"""
-An entry for an exception to be stored together with the data consists of a
-timestamp, a custom message and an arbitrary integer value
-"""
+
+# An entry for an exception to be stored together with the data consists of a
+# timestamp, a custom message and an arbitrary integer value
 ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"])
 
 monitors_end = threading.Event()
