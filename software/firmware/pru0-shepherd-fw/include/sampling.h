@@ -3,9 +3,9 @@
 
 #include "commons.h"
 
-void sample_init(const volatile struct SharedMem * shared_mem);
-uint32_t sample(volatile struct SharedMem * shared_mem, struct SampleBuffer *current_buffer_far, enum ShepherdMode mode);
+void     sample_init(const volatile struct SharedMem *shared_mem);
+uint32_t sample(volatile struct SharedMem *shared_mem, struct SampleBuffer *current_buffer_far, enum ShepherdMode mode);
 uint32_t sample_dbg_adc(uint32_t channel_num);
-void sample_dbg_dac(uint32_t value);
+void     sample_dbg_dac(uint32_t value);
 
 #endif /* SHEPHERD_PRU0_SAMPLING_H_ */

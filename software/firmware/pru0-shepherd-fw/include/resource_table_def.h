@@ -42,41 +42,40 @@
 #include "ringbuffer.h"
 
 /* Definition for unused interrupts */
-#define HOST_UNUSED     255U
+#define HOST_UNUSED   255U
 
-#define SIZE_CARVEOUT	(FIFO_BUFFER_SIZE * sizeof(struct SampleBuffer))
+#define SIZE_CARVEOUT (FIFO_BUFFER_SIZE * sizeof(struct SampleBuffer))
 
 // pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t CHECK_CARVEOUT[1/(SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (8 + 4 + 2*4*10000 + 4 + 8*16384 + 2*16384 + 2*4))];
+extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (8 + 4 + 2 * 4 * 10000 + 4 + 8 * 16384 + 2 * 16384 + 2 * 4))];
 
 #if !defined(__GNUC__)
-#pragma DATA_SECTION(resourceTable, ".resource_table")
-#pragma RETAIN(resourceTable)
-#define __resource_table /* */
+  #pragma DATA_SECTION(resourceTable, ".resource_table")
+  #pragma RETAIN(resourceTable)
+  #define __resource_table /* */
 #else
-#define __resource_table __attribute__((section(".resource_table")))
+  #define __resource_table __attribute__((section(".resource_table")))
 #endif
 
 struct my_resource_table resourceTable = {
         {
-                1, /* Resource table version: only version 1 is supported by the current driver */
-                1, /* number of entries in the table */
-                { 0U, 0U } /* reserved, must be zero */
+                1,       /* Resource table version: only version 1 is supported by the current driver */
+                1,       /* number of entries in the table */
+                {0U, 0U} /* reserved, must be zero */
         },
         /* offsets to entries */
         {
-		offsetof(struct my_resource_table, shared_mem),
+                offsetof(struct my_resource_table, shared_mem),
         },
 
-	/* resource entries */
+        /* resource entries */
         {
-		TYPE_CARVEOUT, 0x0, /* Memory address */
-		0x0, /* Physical address */
-		SIZE_CARVEOUT, /* ~ 15 MB */
-		0, /* Flags */
-		0, /* Reserved */
-		"PRU_HOST_SHARED_MEM"
-        },
+                TYPE_CARVEOUT, 0x0, /* Memory address */
+                0x0,                /* Physical address */
+                SIZE_CARVEOUT,      /* ~ 15 MB */
+                0,                  /* Flags */
+                0,                  /* Reserved */
+                "PRU_HOST_SHARED_MEM"},
 };
 
 #endif /* SHEPHERD_PRU0_RESOURCE_TABLE_DEF_H_ */

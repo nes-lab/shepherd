@@ -3,12 +3,13 @@
 
 #ifndef PRU_SYS_GPIO_H_
 #define PRU_SYS_GPIO_H_
-#include <stdint.h>
 #include "gpio.h"
+#include <stdint.h>
 
 
 // GPIO Registers, ch25.4
-typedef struct{
+typedef struct
+{
     // 0h
     uint32_t GPIO_REVISION;
     uint32_t RSVD00x[3];
@@ -52,13 +53,13 @@ typedef struct{
     uint32_t RSVD12x[4];
     // 130h
     uint32_t GPIO_CTRL;
-    uint32_t GPIO_OE;               // output-enabled -> should also be sampled when starting a measurement
-    uint32_t GPIO_DATAIN;           // sampled with interface clock
+    uint32_t GPIO_OE;     // output-enabled -> should also be sampled when starting a measurement
+    uint32_t GPIO_DATAIN; // sampled with interface clock
     uint32_t GPIO_DATAOUT;
     // 140h
     uint32_t GPIO_LEVELDETECT0;
     uint32_t GPIO_LEVELDETECT1;
-    uint32_t GPIO_RISINGDETECT;     // rising-edge and falling-edge could be used to sample pins with IRQ
+    uint32_t GPIO_RISINGDETECT; // rising-edge and falling-edge could be used to sample pins with IRQ
     uint32_t GPIO_FALLINGDETECT;
     // 150h
     uint32_t GPIO_DEBOUNCENABLE;
@@ -74,19 +75,19 @@ typedef struct{
 } Gpio;
 
 // pseudo-assertion to test for correct struct-size
-extern uint32_t CHECK_STRUCT_Gpio__[1/(sizeof(Gpio) == 0x0198)];
+extern uint32_t CHECK_STRUCT_Gpio__[1 / (sizeof(Gpio) == 0x0198)];
 
 
 // Memory Map, p182
 #ifdef __GNUC__
-volatile Gpio *CT_GPIO0__ = (void *)0x44E07000; // TODO: the other gnu-definitions in pssp should also not use __X
-#define CT_GPIO0	(*CT_GPIO0__)
-volatile Gpio *CT_GPIO1__ = (void *)0x4804C000;
-#define CT_GPIO1	(*CT_GPIO1__)
-volatile Gpio *CT_GPIO2__ = (void *)0x481AC000;
-#define CT_GPIO2	(*CT_GPIO2__)
-volatile Gpio *CT_GPIO3__ = (void *)0x481AE000;
-#define CT_GPIO3	(*CT_GPIO3__)
+volatile Gpio *CT_GPIO0__ = (void *) 0x44E07000; // TODO: the other gnu-definitions in pssp should also not use __X
+  #define CT_GPIO0 (*CT_GPIO0__)
+volatile Gpio *CT_GPIO1__ = (void *) 0x4804C000;
+  #define CT_GPIO1 (*CT_GPIO1__)
+volatile Gpio *CT_GPIO2__ = (void *) 0x481AC000;
+  #define CT_GPIO2 (*CT_GPIO2__)
+volatile Gpio *CT_GPIO3__ = (void *) 0x481AE000;
+  #define CT_GPIO3 (*CT_GPIO3__)
 #else
 volatile __far Gpio CT_GPIO0 __attribute__((cregister("GPIO0", far), peripheral));
 volatile __far Gpio CT_GPIO1 __attribute__((cregister("GPIO1", far), peripheral));
@@ -112,7 +113,7 @@ static inline void check_gpio_test()
     const uint32_t gpio_reg = CT_GPIO2.GPIO_DATAIN;
     // test for shepherd sense-button, P8_34, gpio2[17], 81 (shepherd v1)
     if (gpio_reg & (1U << 17U)) GPIO_ON(BIT_SHIFT(P8_11));
-    else                        GPIO_OFF(BIT_SHIFT(P8_11));
+    else GPIO_OFF(BIT_SHIFT(P8_11));
 }
 
 

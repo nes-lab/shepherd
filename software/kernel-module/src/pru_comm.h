@@ -10,13 +10,13 @@
  * Maps the shared memory structure within the PRU's 'shared RAM' memory
  * region.
  */
-int pru_comm_init(void);
+int                pru_comm_init(void);
 /**
  * Clean up communication between our kernel module and the PRUs.
  *
  * @see pru_comm_init()
  */
-int pru_comm_exit(void);
+int                pru_comm_exit(void);
 
 /**
  * Trigger a system event on the PRUs
@@ -26,7 +26,7 @@ int pru_comm_exit(void);
  * events to communicate time-critical events from this Linux kernel module to
  * the PRUs
  */
-int pru_comm_trigger(unsigned int system_event);
+int                pru_comm_trigger(unsigned int system_event);
 
 /**
  * Schedule start of the actual sampling at a later point in time
@@ -38,14 +38,14 @@ int pru_comm_trigger(unsigned int system_event);
  *
  * @param start_time_second desired system time in seconds at which PRUs should start sampling/replaying
  */
-int pru_comm_schedule_delayed_start(unsigned int start_time_second);
+int                pru_comm_schedule_delayed_start(unsigned int start_time_second);
 
 /**
  * Cancel a previously scheduled 'delayed start'
  *
  * @see pru_comm_trigger()
  */
-int pru_comm_cancel_delayed_start(void);
+int                pru_comm_cancel_delayed_start(void);
 
 /**
  * Read the 'shepherd state' from the PRUs
@@ -65,7 +65,7 @@ enum ShepherdState pru_comm_get_state(void);
  * @param state new shepherd state
  * @see SharedMem
  */
-int pru_comm_set_state(enum ShepherdState state);
+int                pru_comm_set_state(enum ShepherdState state);
 
 /**
  * Reads the buffer period from the PRUs
@@ -79,20 +79,20 @@ int pru_comm_set_state(enum ShepherdState state);
  *
  * @returns Buffer period in nanoseconds
  */
-unsigned int pru_comm_get_buffer_period_ns(void);
+unsigned int       pru_comm_get_buffer_period_ns(void);
 
 /**
  * Receives Sync-Messages from PRU1
  * @param msg
  * @return success = 1, error = 0
  */
-unsigned char pru1_comm_receive_sync_request(struct ProtoMsg *const msg);
+unsigned char      pru1_comm_receive_sync_request(struct ProtoMsg *const msg);
 /**
  * Sends Sync-Messages to PRU1, error occurs on send when previous msg was not yet received (will be overwritten)
  * @param msg
  * @return success = 1, error = 0
  */
-unsigned char pru1_comm_send_sync_reply(struct SyncMsg *const msg);
+unsigned char      pru1_comm_send_sync_reply(struct SyncMsg *const msg);
 
 /*
  * COM-System between kernel module and PRU0
@@ -100,15 +100,15 @@ unsigned char pru1_comm_send_sync_reply(struct SyncMsg *const msg);
  * @param msg_container is a ProtoMsg
  * @return success = 1, error = 0
  */
-unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg);
-unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg);
+unsigned char      pru0_comm_receive_error(struct ProtoMsg *const msg);
+unsigned char      pru1_comm_receive_error(struct ProtoMsg *const msg);
 
-unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg);
-unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg);
+unsigned char      pru0_comm_receive_msg(struct ProtoMsg *const msg);
+unsigned char      pru0_comm_send_msg(struct ProtoMsg *const msg);
 /*
  * send_status -> returns 1 if last sent msg was received and buffer is free to fill, 0 otherwise
  */
-unsigned char pru0_comm_check_send_status(void);
+unsigned char      pru0_comm_check_send_status(void);
 
 
 #endif /* PRU_COMM_H_ */

@@ -13,9 +13,9 @@ void reset_prev_timestamp(void);
  * to the 'buffer period' and a phase aligned with the real time. This timer
  * triggers an interrupt on PRU0
  */
-int sync_init(uint32_t timer_period_ns);
-int sync_exit(void);
-int sync_reset(void);
+int  sync_init(uint32_t timer_period_ns);
+int  sync_exit(void);
+int  sync_reset(void);
 
 /**
  * Control loop
@@ -35,7 +35,7 @@ int sync_reset(void);
  * @param sync_reply fresh values for next 100ms-window
  * @param sync_rqst timed iep-counter-value that was received from PRU0
  */
-int sync_loop(struct SyncMsg *sync_reply, const struct ProtoMsg *sync_rqst);
+int  sync_loop(struct SyncMsg *sync_reply, const struct ProtoMsg *sync_rqst);
 
 /**
  * Synchronization data structure
@@ -43,12 +43,13 @@ int sync_loop(struct SyncMsg *sync_reply, const struct ProtoMsg *sync_rqst);
  * Holds dynamic info about synchronization loop. Is exposed through sysfs to
  * allow users to track state.
  */
-struct sync_data_s {
-    int64_t error_now;
-    int64_t error_pre;
-    int64_t error_dif;
-	int64_t error_sum;
-	int32_t clock_corr;
+struct sync_data_s
+{
+    int64_t  error_now;
+    int64_t  error_pre;
+    int64_t  error_dif;
+    int64_t  error_sum;
+    int32_t  clock_corr;
     uint32_t previous_period;
 };
 
