@@ -111,7 +111,7 @@ get_shepherd_platform_data(struct platform_device *pdev)
 static int shepherd_drv_probe(struct platform_device *pdev)
 {
     struct shepherd_platform_data *pdata;
-    int                            i;
+    uint8                          i;
     int                            ret = 0;
 
     printk(KERN_INFO "shprd.k: found shepherd device!!!");
@@ -153,7 +153,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     /* Setup the sysfs interface for access from userspace */
     sysfs_interface_init();
 
-    return 0;
+    return ret;
 }
 
 static int shepherd_drv_remove(struct platform_device *pdev)

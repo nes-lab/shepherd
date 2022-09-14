@@ -301,9 +301,9 @@ void event_loop(volatile struct SharedMem *const shared_mem,
                 struct RingBuffer *const         free_buffers_ptr,
                 struct SampleBuffer *const       buffers_far) // TODO: should be volatile, also for programmer and more
 {
-    uint32_t          sample_buf_idx  = NO_BUFFER;
-    enum ShepherdMode shepherd_mode   = (enum ShepherdMode) shared_mem->shepherd_mode;
-    uint32_t          iep_tmr_cmp_sts = 0u;
+    uint32_t          sample_buf_idx = NO_BUFFER;
+    enum ShepherdMode shepherd_mode  = (enum ShepherdMode) shared_mem->shepherd_mode;
+    uint32_t          iep_tmr_cmp_sts;
 
     while (1)
     {

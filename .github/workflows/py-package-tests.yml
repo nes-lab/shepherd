@@ -22,9 +22,11 @@ jobs:
       - name: Install dependencies 🔧
         run: |
           sudo apt install python3-msgpack
+          sudo apt install cppcheck
           python3 -m pip install --upgrade pip msgpack
-          pip3 install pylint pylint-exit black pylint-pytest
+          pip3 install pylint pylint-exit pylint-pytest
         # NOTE: install-process fails without msgpack pre-installed
+        # NOTE: cppcheck is needed for pre-commit
 
       - name: Run Pre-Commit Tests 🧪
         uses: pre-commit/action@v3.0.0

@@ -18,8 +18,7 @@ void                                            calibration_initialize(const vol
 #define RESIDUE_MAX_nA      (NOISE_ESTIMATE_nA * RESIDUE_SIZE_FACTOR)
 uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-    static uint32_t negative_residue_nA = 0;
-    const uint32_t  I_nA                = mul64(current_raw, cal->adc_current_factor_nA_n8) >> 8u;
+    const uint32_t I_nA = mul64(current_raw, cal->adc_current_factor_nA_n8) >> 8u;
     // avoid mixing signed and unsigned OPs
     if (cal->adc_current_offset_nA >= 0)
     {
@@ -28,7 +27,8 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
     }
     else
     {
-        const uint32_t adc_offset_nA = -cal->adc_current_offset_nA + negative_residue_nA;
+        static uint32_t negative_residue_nA = 0;
+        const uint32_t  adc_offset_nA       = -cal->adc_current_offset_nA + negative_residue_nA;
 
         if (I_nA > adc_offset_nA)
         {

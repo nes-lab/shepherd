@@ -511,7 +511,7 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
     const uint32_t             non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                   mem_offset = 0u;
-    int                        buf_pos    = 0;
+    int32_t                    buf_pos    = 0;
     uint32_t                   i          = 0u;
 
     if (pru_comm_get_state() != STATE_IDLE)
@@ -523,8 +523,9 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
     mem_offset        = kobj_attr_wrapped->val_offset;
     for (i = 0; i < non_lut_size; i += 4)
     {
-        uint32_t value_retrieved, value_length;
-        int      ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
+        uint32_t value_retrieved;
+        int32_t  value_length;
+        int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
         writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
@@ -534,8 +535,9 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
     mem_offset = kobj_attr_wrapped->val_offset + non_lut_size;
     for (i = 0; i < inp_lut_size; i += 1)
     {
-        uint32_t value_retrieved, value_length;
-        int      ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
+        uint32_t value_retrieved;
+        int32_t  value_length;
+        int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
         if (value_retrieved > 255) printk(KERN_WARNING "shprd.k: virtual Converter parsing got a u8-value out of bound");
@@ -546,8 +548,9 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
     mem_offset = kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
     for (i = 0; i < out_lut_size; i += 4)
     {
-        uint32_t value_retrieved, value_length;
-        int      ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
+        uint32_t value_retrieved;
+        int32_t  value_length;
+        int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
         writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
@@ -604,7 +607,7 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
     static const uint32_t      struct_size = sizeof(struct HarvesterConfig);
     struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                   mem_offset = 0u;
-    int                        buf_pos    = 0;
+    int32_t                    buf_pos    = 0;
     uint32_t                   i          = 0u;
 
     if (pru_comm_get_state() != STATE_IDLE)
@@ -614,8 +617,9 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
     mem_offset        = kobj_attr_wrapped->val_offset;
     for (i = 0; i < struct_size; i += 4)
     {
-        uint32_t value_retrieved, value_length;
-        int      ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
+        uint32_t value_retrieved;
+        int32_t  value_length;
+        int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
         writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
@@ -647,7 +651,7 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject        *kobj,
                                           struct kobj_attribute *attr,
                                           const char *buffer, size_t count)
 {
-    struct ProtoMsg pru_msg;
+    struct ProtoMsg pru_msg = {.id = MSG_TO_PRU, .unread = 0u, .type = MSG_NONE, .reserved = [0u], .value = [0u, 0u]};
 
     if (sscanf(buffer, "%hhu %u %u", &pru_msg.type, &pru_msg.value[0], &pru_msg.value[1]) != 0)
     {
@@ -670,7 +674,7 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject        *kobj,
     }
     else
     {
-        count += sprintf(buf + strlen(buf), "%hhu ", 0x00u);
+        count += sprintf(buf + strlen(buf), "%u ", 0x00u);
     }
     return count;
 }

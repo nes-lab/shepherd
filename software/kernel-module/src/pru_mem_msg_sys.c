@@ -92,7 +92,7 @@ int mem_msg_sys_reset(void)
 
 int mem_msg_sys_test(void)
 {
-    struct ProtoMsg msg1;
+    struct ProtoMsg msg1 = {.id = MSG_TO_PRU, .unread = 0u, .type = MSG_NONE, .reserved = [0u], .value = [0u, 0u]};
     struct SyncMsg  msg2;
     printk(KERN_INFO "shprd.k: test msg-pipelines between kM and PRUs -> triggering roundtrip-messages for pipeline 1-3");
     msg1.type     = MSG_TEST;
@@ -139,7 +139,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
     struct ProtoMsg     pru_msg;
     struct timespec     ts_now;
     static unsigned int step_pos = 0;
-    uint8_t             had_work = 0;
+    uint8_t             had_work;
     uint32_t            iter;
 
     /* Timestamp system clock */
@@ -227,14 +227,14 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             }
         }
 
-        /* resetting to shortest sleep period */
+        /* resetting to the shortest sleep period */
         step_pos = coord_timer_steps_ns_size - 1;
     }
 
     if (pru0_comm_check_send_status() && ring_get(&msg_ringbuf_to_pru, &pru_msg))
     {
         pru0_comm_send_msg(&pru_msg);
-        /* resetting to shortest sleep period */
+        /* resetting to the shortest sleep period */
         step_pos = coord_timer_steps_ns_size - 1;
     }
 

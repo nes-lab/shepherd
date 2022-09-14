@@ -108,7 +108,8 @@ Make sure you have pre-commit installed:
 
 .. code-block:: bash
 
-    pip install pre-commit
+    pip3 install pre-commit
+    sudo apt install cppcheck
 
 Now you can either install an automatic hook for git that gets executed before committing:
 

@@ -1,6 +1,6 @@
 # install:
-#  pip install pre-commit
-# # pre-commit install-hooks
+#  pip3 install pre-commit
+#  sudo apt install cppcheck
 # run:
 #  pre-commit run --all-files
 # update deps:
@@ -75,6 +75,24 @@ repos:
       - id: clang-format
         types_or: [c++, c]
 
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: "v1.3.5"
+    hooks:
+      - id: cppcheck
+        args: [ --enable=all,
+                --std=c99,
+                --platform=unix32,
+                --verbose,
+                -q,
+                --max-ctu-depth=10,
+                -isoftware/firmware/_cgt233/,
+                -isoftware/firmware/_pssp57g/,
+                --suppress=unusedFunction,
+                --suppress=variableScope,
+                --suppress=unreadVariable,
+                --suppress=missingInclude,
+                --suppress=unmatchedSuppression,
+              ]
 
 # default_language_version:
 #    python: python3.8
