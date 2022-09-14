@@ -27,10 +27,26 @@ repos:
       - id: check-toml
       - id: fix-byte-order-marker
       - id: fix-encoding-pragma
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files", "--force-single-line"]
   - repo: https://github.com/psf/black
     rev: 22.8.0
     hooks:
       - id: black
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-use-type-annotations
+      - id: python-no-log-warn
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
   - repo: https://github.com/pycqa/flake8
     rev: 5.0.4
     hooks:
@@ -79,20 +95,24 @@ repos:
     rev: "v1.3.5"
     hooks:
       - id: cppcheck
-        args: [ --enable=all,
-                --std=c99,
-                --platform=unix32,
-                --verbose,
-                -q,
-                --max-ctu-depth=10,
-                -isoftware/firmware/_cgt233/,
-                -isoftware/firmware/_pssp57g/,
-                --suppress=unusedFunction,
-                --suppress=variableScope,
-                --suppress=unreadVariable,
-                --suppress=missingInclude,
-                --suppress=unmatchedSuppression,
-              ]
+        args:
+          - "--enable=all"
+          - "--std=c99"
+          - "--platform=unix32"
+          - "--verbose"
+          - "-q"
+          - "--max-ctu-depth=10"
+          - "-isoftware/firmware/_cgt233/"
+          - "-isoftware/firmware/_pssp57g/"
+          - "--suppress=unusedFunction"
+          - "--suppress=variableScope"
+          - "--suppress=unreadVariable"
+          - "--suppress=missingInclude"
+          - "--suppress=unmatchedSuppression"
+
+#     - id: clang-tidy
+#       args: [ "-checks=bugprone-,cert-,performance-,portability-"]
+# TODO: there are more linters, but there are to many false positives
 
 # default_language_version:
 #    python: python3.8

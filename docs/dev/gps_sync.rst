@@ -19,7 +19,7 @@ One kernel module and two services work in concert to provide a grandmaster cloc
 Hardware setup
 --------------
 
-The GPS-capelet (see `hardware/capelets/gps`) is stacked on top of the shepherd cape or an attached harvesting capelet, respectively.
+The GPS-capelet (see ``hardware/capelets/gps``) is stacked on top of the shepherd cape or an attached harvesting capelet, respectively.
 
 - The PPS signal is connected to Timer4 on pin P8_7
 - The GPS-Uart is connect over UART2 on pins P9_21 and P9_22
@@ -28,7 +28,7 @@ The GPS-capelet (see `hardware/capelets/gps`) is stacked on top of the shepherd 
 Configuring GNSS module
 -----------------------
 
-The u-blox GPS receiver can be configured to optimize its perfomance. To do this directly form the host node the python the python script: ``ubloxmsg_exchange`` was
+The u-blox GPS receiver can be configured to optimize its performance. To do this directly form the host node the python the python script: ``ubloxmsg_exchange`` was
 written (see https://github.com/kugelbit/ubx-packet-exchange). The configuration files can be found under ``config_files``.  To this end the following configurations were set:
 
 - SBAS was disabled for better timing information
@@ -40,13 +40,13 @@ In addtion the standard config of the receiver leads to the following behaviour:
 - If the PPS is not locked, the LED on the capelet will not blink. After the lock is attained, the LED will start blinking at 1 Hz.
 - NMEA messages are enabled for the UART link which connects to the BeagleBone.
 
-Note: Recent versions of gpsd include a tool `ubxtool`, allowing convenient configuration of ublox receivers:
- - Poll GNSS config: `ubxtool -p CFG-GNSS`
- - Enable Galileo: `ubxtool -e GALILEO`
- - Enable binary messages: `ubxtool -e BINARY`
- - Disable NMEA messages: `ubxtool -d NMEA`
- - Disable SBAS: `ubxtool -d SBAS`
- - Poll time pulse config: `ubxtool -p CFG-TP5`
+Note: Recent versions of gpsd include a tool ``ubxtool``, allowing convenient configuration of ublox receivers:
+ - Poll GNSS config: ``ubxtool -p CFG-GNSS``
+ - Enable Galileo: ``ubxtool -e GALILEO``
+ - Enable binary messages: ``ubxtool -e BINARY``
+ - Disable NMEA messages: ``ubxtool -d NMEA``
+ - Disable SBAS: ``ubxtool -d SBAS``
+ - Poll time pulse config: ``ubxtool -p CFG-TP5``
 
 Deploy
 ------

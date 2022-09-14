@@ -18,7 +18,7 @@ The userspace application writes the first block of harvesting data into one of 
 Data extraction
 ---------------
 
-The user space code (written in python) has to extract the data from a buffer in the shared memory. Generally, a user space application can only access its own virtual address space. We use Linux's `/dev/mem` and python's `mmap.mmap(..)` to map the corresponding region of physical memory to the local address space. Using this mapping, we only need to seek the memory location of a buffer, extract the header information using `struct.unpack()` and interpret the raw data as numpy array using `numpy.frombuffer()`.
+The user space code (written in python) has to extract the data from a buffer in the shared memory. Generally, a user space application can only access its own virtual address space. We use Linux's ``/dev/mem`` and python's ``mmap.mmap(..)`` to map the corresponding region of physical memory to the local address space. Using this mapping, we only need to seek the memory location of a buffer, extract the header information using ``struct.unpack()`` and interpret the raw data as numpy array using ``numpy.frombuffer()``.
 
 
 Database

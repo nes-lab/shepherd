@@ -3,7 +3,7 @@ API
 
 The shepherd API offers high level access to shepherd's functionality and forms the base for the two command line utilities.
 Note that the API only convers local functionality on a single shepherd node.
-Use the `shepherd-herd` command line utility to orchestrate a group of shepherd nodes remotely.
+Use the ``shepherd-herd`` command line utility to orchestrate a group of shepherd nodes remotely.
 
 Recorder
 --------

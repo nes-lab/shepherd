@@ -4,26 +4,26 @@ VirtCap (TODO - old)
 The overall approach of VirtCap emulation is very similar to regular emulation.
 Main difference is that the output is not a dac voltage / current,
 but switching the LDO output on and off.
-The output switch should be connected to `P8_11`.
+The output switch should be connected to ``P8_11``.
 The algorithm is executed in the pru0 core.
 
 Passing recordings to pru0
 --------------------------
 
 On the python side, the VirtCap is initiated in the Emulator class.
-With regular emulation, the shared buffers are filled `dac values`.
+With regular emulation, the shared buffers are filled ``dac values``.
 During VirtCap emulation, the shared buffers are filled with actual
-recorded `adc current and voltage values`. Because the emulation and recording
-can be done on different devices. The recorded `adc values` are compensated
+recorded ``adc current and voltage values``. Because the emulation and recording
+can be done on different devices. The recorded ``adc values`` are compensated
 to use the same calibration settings as the emulation calibration settings.
-This is done in `__init__.py`.
+This is done in ``__init__.py``.
 
 Extended sysfs_interface
 ------------------------
 
-Besides the recorded `adc current and voltage values`, more information needs
+Besides the recorded ``adc current and voltage values``, more information needs
 to be passed down to the pru0 core. Two new structs have been added to the
-`sysfs_interface shared memory`.
+``sysfs_interface shared memory``.
 
 .. code-block:: c
 
@@ -56,7 +56,7 @@ to be passed down to the pru0 core. Two new structs have been added to the
     } __attribute__((packed));
 
 This information is send to the pru0 core at the start of virtcap emulation in
-`__init__.py`.
+``__init__.py``.
 
 VirtCap Execution
 -----------------
@@ -75,8 +75,8 @@ voltage is calculated. The input and output efficiency of the converter is
 modelled using lookup tables, as function of the input or output current.
 
 Every iteration the capacitor voltage is checked to not go beyond its minimum
-and maximum value. However, the `upper_threshold_voltage` and
-`lower_threshold_voltage` is checked every 'discretize' iterations. This models
+and maximum value. However, the ``upper_threshold_voltage`` and
+``lower_threshold_voltage`` is checked every 'discretize' iterations. This models
 the behavior of the BQ255xx, where only the threshold voltages are checked every
 ~64ms.
 

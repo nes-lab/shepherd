@@ -71,9 +71,9 @@ Clone the shepherd repository to your machine:
     git clone https://github.com/orgua/shepherd.git
 
 
-Add an inventory file in the `inventory` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
-Just start by editing the provided `inventory/herd.yml` example.
-Pick a username that you want to use to login to the nodes and assign as `ansible_user` variable.
+Add an inventory file in the ``inventory`` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
+Just start by editing the provided ``inventory/herd.yml`` example.
+Pick a username that you want to use to login to the nodes and assign as ``ansible_user`` variable.
 [**TODO:** update description with roles].
 
 .. code-block:: yaml
@@ -91,8 +91,8 @@ Pick a username that you want to use to login to the nodes and assign as `ansibl
 
 We'll use `Ansible <https://www.ansible.com/>`_ to roll out a basic configuration to the nodes.
 This includes setting the hostname, adding the user, allowing password-less ssh access and sudo without password.
-Make sure that you have `Python >=3.6`, `pip` and `sshpass` installed on your machine.
-Install `Ansible` with:
+Make sure that you have ``Python >=3.6``, ``pip`` and ``sshpass`` installed on your machine.
+Install ``Ansible`` with:
 
 .. code-block:: bash
 
