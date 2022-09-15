@@ -92,7 +92,7 @@ int mem_msg_sys_reset(void)
 
 int mem_msg_sys_test(void)
 {
-    struct ProtoMsg msg1 = {.id = MSG_TO_PRU, .unread = 0u, .type = MSG_NONE, .reserved = [0u], .value = [0u, 0u]};
+    struct ProtoMsg msg1 = {.id = MSG_TO_PRU, .unread = 0u, .type = MSG_NONE, .reserved = {0u}, .value = {0u, 0u}};
     struct SyncMsg  msg2;
     printk(KERN_INFO "shprd.k: test msg-pipelines between kM and PRUs -> triggering roundtrip-messages for pipeline 1-3");
     msg1.type     = MSG_TEST;

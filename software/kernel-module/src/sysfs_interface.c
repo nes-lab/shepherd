@@ -651,7 +651,7 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject        *kobj,
                                           struct kobj_attribute *attr,
                                           const char *buffer, size_t count)
 {
-    struct ProtoMsg pru_msg = {.id = MSG_TO_PRU, .unread = 0u, .type = MSG_NONE, .reserved = [0u], .value = [0u, 0u]};
+    struct ProtoMsg pru_msg = {.id = MSG_TO_PRU, .unread = 0u, .type = MSG_NONE, .reserved = {0u}, .value = {0u, 0u}};
 
     if (sscanf(buffer, "%hhu %u %u", &pru_msg.type, &pru_msg.value[0], &pru_msg.value[1]) != 0)
     {
