@@ -159,7 +159,7 @@
   ansible.builtin.pip:
     name: "./"
     state: forcereinstall
-    editable: true
+    editable: false
     chdir: '{{ shepherd_install_path }}/software/python-package'
   tags:
     - install

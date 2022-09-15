@@ -2,6 +2,7 @@
 - name: Refresh Src, compile and install PRU-Fw, restart Kernel-Module, reinstall py-package, without Reboot
   hosts: all
   become: true
+  # TODO: cleanup sheep-role/build and use that! less duplication
 
   vars:
     shepherd_install_path: /opt/shepherd
@@ -115,7 +116,7 @@
       ansible.builtin.pip:
         name: "./"
         state: forcereinstall
-        editable: true
+        editable: false
         chdir: '{{ shepherd_install_path }}/software/python-package'
       tags:
         - install
