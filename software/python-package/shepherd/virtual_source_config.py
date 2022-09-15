@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import copy
 import logging
 from pathlib import Path
@@ -63,7 +62,7 @@ class VirtualSourceConfig:
         self.samplerate_sps: int = samplerate_sps
 
         def_path = Path(__file__).parent.resolve() / self._def_file
-        with open(def_path, "r") as def_data:
+        with open(def_path) as def_data:
             self._config_defs = yaml.safe_load(def_data)["virtsources"]
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
@@ -78,7 +77,7 @@ class VirtualSourceConfig:
             and setting.suffix in [".yaml", ".yml"]
         ):
             self._inheritance.append(str(setting))
-            with open(setting, "r") as config_data:
+            with open(setting) as config_data:
                 setting = yaml.safe_load(config_data)["virtsource"]
         if isinstance(setting, str):
             if setting in self._config_defs:

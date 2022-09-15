@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from pathlib import Path
 
 import pytest
@@ -31,7 +30,7 @@ def data_example(data_calibration):
 
 @pytest.fixture()
 def data_test_string():
-    return "test content".encode("utf-8")
+    return b"test content"
 
 
 @pytest.fixture()

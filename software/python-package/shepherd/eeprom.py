@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.eeprom
 ~~~~~
@@ -84,7 +82,7 @@ class CapeData:
 
         """
         data = {"header": b"\xAA\x55\x33\xEE"}
-        with open(filename, "r") as stream:
+        with open(filename) as stream:
             yaml_dict = yaml.safe_load(stream)
 
         data.update(yaml_dict)

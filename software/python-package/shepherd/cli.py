@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.cli
 ~~~~~
@@ -61,7 +59,7 @@ logger.addHandler(consoleHandler)
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
     logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
-    with open(file_path, "r") as config_data:
+    with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
 
@@ -403,7 +401,7 @@ def write(infofile, version, serial_number, cal_file, use_cal_default):
     if infofile is not None:
         if serial_number is not None or version is not None:
             raise click.UsageError(
-                ("--infofile and --version/--serial_number" " are mutually exclusive")
+                "--infofile and --version/--serial_number" " are mutually exclusive"
             )
         cape_data = CapeData.from_yaml(infofile)
         with EEPROM() as storage:

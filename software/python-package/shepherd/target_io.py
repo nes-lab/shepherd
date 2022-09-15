@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.target_io
 ~~~~~

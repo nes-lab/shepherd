@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import gc
 import subprocess  # noqa: S404
 import time

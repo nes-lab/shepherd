@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import copy
 import logging
 from pathlib import Path
@@ -57,7 +56,7 @@ class VirtualHarvesterConfig:
         self.samplerate_sps = samplerate_sps
         self.for_emulation = emu_cfg is not None
         def_path = Path(__file__).parent.resolve() / self._def_file
-        with open(def_path, "r") as def_data:
+        with open(def_path) as def_data:
             self._config_defs = yaml.safe_load(def_data)["harvesters"]
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
@@ -84,7 +83,7 @@ class VirtualHarvesterConfig:
             and setting.suffix in [".yaml", ".yml"]
         ):
             self._inheritance.append(str(setting))
-            with open(setting, "r") as config_data:
+            with open(setting) as config_data:
                 setting = yaml.safe_load(config_data)["harvesters"]
         if isinstance(setting, str):
             if setting in self._config_defs:

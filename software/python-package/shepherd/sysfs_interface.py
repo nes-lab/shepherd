@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.sysfs_interface
 ~~~~~
@@ -217,7 +215,7 @@ def read_dac_aux_voltage_raw() -> int:
 
     Returns: voltage as dac_raw
     """
-    with open(sysfs_path / "dac_auxiliary_voltage_raw", "r") as f:
+    with open(sysfs_path / "dac_auxiliary_voltage_raw") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -262,7 +260,7 @@ def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    with open(sysfs_path / "calibration_settings", "r") as f:
+    with open(sysfs_path / "calibration_settings") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -312,7 +310,7 @@ def read_virtual_converter_settings() -> list:
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    with open(sysfs_path / "virtual_converter_settings", "r") as f:
+    with open(sysfs_path / "virtual_converter_settings") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings
@@ -348,7 +346,7 @@ def read_virtual_harvester_settings() -> list:
     The  pru-algorithm uses these settings to configure emulator.
 
     """
-    with open(sysfs_path / "virtual_harvester_settings", "r") as f:
+    with open(sysfs_path / "virtual_harvester_settings") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings
@@ -387,7 +385,7 @@ def read_pru_msg() -> tuple:
     """
     Returns:
     """
-    with open(sysfs_path / "pru_msg_box", "r") as f:
+    with open(sysfs_path / "pru_msg_box") as f:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
@@ -430,7 +428,7 @@ def write_programmer_ctrl(
 def read_programmer_ctrl() -> list:
     parameters = []
     for attribute in prog_attribs:
-        with open(sysfs_path / "programmer" / attribute, "r") as file:
+        with open(sysfs_path / "programmer" / attribute) as file:
             parameters.append(file.read().rstrip())
     return parameters
 
@@ -448,7 +446,7 @@ def start_programmer() -> NoReturn:
 
 
 def check_programmer() -> str:
-    with open(sysfs_path / "programmer/state", "r") as file:
+    with open(sysfs_path / "programmer/state") as file:
         return file.read().rstrip()
 
 
@@ -464,35 +462,35 @@ attribs = [
 
 
 def get_mode() -> str:
-    with open(sysfs_path / "mode", "r") as f:
+    with open(sysfs_path / "mode") as f:
         return str(f.read().rstrip())
 
 
 def get_state() -> str:
-    with open(sysfs_path / "state", "r") as f:
+    with open(sysfs_path / "state") as f:
         return str(f.read().rstrip())
 
 
 def get_n_buffers() -> int:
-    with open(sysfs_path / "n_buffers", "r") as f:
+    with open(sysfs_path / "n_buffers") as f:
         return int(f.read().rstrip())
 
 
 def get_buffer_period_ns() -> int:
-    with open(sysfs_path / "buffer_period_ns", "r") as f:
+    with open(sysfs_path / "buffer_period_ns") as f:
         return int(f.read().rstrip())
 
 
 def get_samples_per_buffer() -> int:
-    with open(sysfs_path / "samples_per_buffer", "r") as f:
+    with open(sysfs_path / "samples_per_buffer") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_address() -> int:
-    with open(sysfs_path / "memory/address", "r") as f:
+    with open(sysfs_path / "memory/address") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_size() -> int:
-    with open(sysfs_path / "memory/size", "r") as f:
+    with open(sysfs_path / "memory/size") as f:
         return int(f.read().rstrip())

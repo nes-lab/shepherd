@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.calibration
 ~~~~~
@@ -153,7 +151,7 @@ class CalibrationData:
         Returns:
             CalibrationData object with extracted calibration data.
         """
-        with open(filename, "r") as stream:
+        with open(filename) as stream:
             in_data = yaml.safe_load(stream)
 
         return cls(in_data["calibration"])
@@ -169,7 +167,7 @@ class CalibrationData:
         Returns:
             CalibrationData object with extracted calibration data.
         """
-        with open(filename, "r") as stream:
+        with open(filename) as stream:
             meas_data = yaml.safe_load(stream)
 
         cal_dict = {}

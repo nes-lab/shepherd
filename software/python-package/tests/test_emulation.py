@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import time
 from pathlib import Path
 
@@ -28,7 +27,7 @@ def virtsource_settings_yml():
     here = Path(__file__).absolute()
     name = "example_config_virtsource.yml"
     file_path = here.parent / name
-    with open(file_path, "r") as config_data:
+    with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config["virtsource"]
 

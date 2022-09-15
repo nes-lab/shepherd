@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd_herd
 ~~~~~
@@ -33,7 +31,7 @@ logger.addHandler(consoleHandler)
 
 def yamlprovider(file_path, cmd_name):
     logger.info("reading config from %s", file_path)
-    with open(file_path, "r") as config_data:
+    with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
 
@@ -159,7 +157,7 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
         if not host_path.exists():
             raise click.FileError(inventory)
 
-        with open(host_path, "r") as stream:
+        with open(host_path) as stream:
             try:
                 inventory_data = yaml.safe_load(stream)
             except yaml.YAMLError:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import time
 from pathlib import Path
 
@@ -17,7 +16,7 @@ def virtsource_settings():
     here = Path(__file__).absolute()
     name = "example_config_virtsource.yml"
     file_path = here.parent / name
-    with open(file_path, "r") as config_data:
+    with open(file_path) as config_data:
         vs_dict = yaml.safe_load(config_data)["virtsource"]
 
     vs_set = VirtualSourceConfig(vs_dict)
@@ -30,7 +29,7 @@ def harvester_settings():
     here = Path(__file__).absolute()
     name = "example_config_harvester.yml"
     file_path = here.parent / name
-    with open(file_path, "r") as config_data:
+    with open(file_path) as config_data:
         hrv_dict = yaml.safe_load(config_data)["parameters"]["harvester"]
 
     hrv_set = VirtualHarvesterConfig(hrv_dict)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import logging
 import tempfile
 import time
@@ -366,7 +365,7 @@ def measure(
 
     measurement_dict = {}
     if (outfile is not None) and Path(outfile).exists():
-        with open(outfile, "r") as config_data:
+        with open(outfile) as config_data:
             config = yaml.safe_load(config_data)
             if "measurements" in config:
                 measurement_dict = config["measurements"]
@@ -462,7 +461,7 @@ def measure(
     help="generate plots that contain data points and calibration model",
 )
 def convert(infile, outfile, plot: bool):
-    with open(infile, "r") as stream:
+    with open(infile) as stream:
         meas_data = yaml.safe_load(stream)
         meas_dict = meas_data["measurements"]
 
@@ -512,7 +511,7 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
         if measurementfile is None:
             raise click.UsageError("provide one of cal-file or measurement-file")
 
-        with open(measurementfile, "r") as stream:
+        with open(measurementfile) as stream:
             in_measurements = yaml.safe_load(stream)
         in_data = {
             "calibration": CalibrationData.from_measurements(measurementfile).data,
@@ -527,7 +526,7 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
     else:
         if measurementfile is not None:
             raise click.UsageError("provide only one of cal-file or measurement-file")
-        with open(calfile, "r") as stream:
+        with open(calfile) as stream:
             in_data = yaml.safe_load(stream)
 
     if in_data["node"] != host:
@@ -547,10 +546,8 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
     with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
         cnx.put(calfile, "/tmp/calib.yml")  # noqa: S108
         cnx.sudo(
-            (
                 f"shepherd-sheep eeprom write -v { version } -s {serial_number}"
                 " -c /tmp/calib.yml"
-            )
         )
         click.echo("----------EEPROM READ------------")
         cnx.sudo("shepherd-sheep eeprom read")

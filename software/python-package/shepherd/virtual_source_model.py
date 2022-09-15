@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 
 this is ported py-version of the pru-code, goals:
