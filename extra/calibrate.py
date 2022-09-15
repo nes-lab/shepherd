@@ -546,8 +546,8 @@ def write(host, calfile, measurementfile, version, serial_number, user, password
     with Connection(host, user=user, connect_kwargs=fabric_args) as cnx:
         cnx.put(calfile, "/tmp/calib.yml")  # noqa: S108
         cnx.sudo(
-                f"shepherd-sheep eeprom write -v { version } -s {serial_number}"
-                " -c /tmp/calib.yml"
+            f"shepherd-sheep eeprom write -v { version } -s {serial_number}"
+            " -c /tmp/calib.yml"
         )
         click.echo("----------EEPROM READ------------")
         cnx.sudo("shepherd-sheep eeprom read")
