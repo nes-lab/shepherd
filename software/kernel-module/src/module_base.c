@@ -8,6 +8,7 @@
 #include <linux/of_device.h>
 #include <linux/platform_device.h>
 #include <linux/remoteproc.h>
+#include <linux/types.h>
 
 #include "pru_comm.h"
 #include "pru_mem_msg_sys.h"
@@ -111,7 +112,7 @@ get_shepherd_platform_data(struct platform_device *pdev)
 static int shepherd_drv_probe(struct platform_device *pdev)
 {
     struct shepherd_platform_data *pdata;
-    uint8                          i;
+    u8                             i;
     int                            ret = 0;
 
     printk(KERN_INFO "shprd.k: found shepherd device!!!");
