@@ -1,4 +1,4 @@
---- # TODO: improve other playbooks with ansible-lint as well
+---
 - name: Base setup
   hosts: all
   become: true

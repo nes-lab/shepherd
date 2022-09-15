@@ -1,6 +1,8 @@
 #ifndef SHEPHERD_GPIO_H_
 #define SHEPHERD_GPIO_H_
 
+#include <stdint.h>
+
 #ifdef __CYTHON__
   #define read_r30()          (0)
   #define write_r30(pin_mask) (pin_mask) // mockups
