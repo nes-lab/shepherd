@@ -112,11 +112,20 @@
       when: rebuild_kernel_module | bool
       changed_when: true
 
+    - name: Uninstall shepherd python package
+      ansible.builtin.pip:
+        name: "./"
+        state: absent
+        chdir: '{{ shepherd_install_path }}/software/python-package'
+      tags:
+        - install
+        - python
+      when: rebuild_python_package | bool
+
     - name: Install shepherd python package
       ansible.builtin.pip:
         name: "./"
-        state: forcereinstall
-        editable: false
+        state: present  # forcereinstall prefered, but that seems to compile dependencies
         chdir: '{{ shepherd_install_path }}/software/python-package'
       tags:
         - install

@@ -36,7 +36,9 @@
 - name: Install PRU Code Generation tools
   ansible.builtin.command: '{{ dl_cgt_ret.dest }}'
   become: true
+  register: inst_cgt_ret
   retries: 2 # TODO: experimental, this step failed recently on 2/4 nodes
+  until: inst_cgt_ret is not failed
   changed_when: true
   tags:
     - pru-tools

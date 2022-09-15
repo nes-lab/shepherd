@@ -100,7 +100,7 @@
         "virtualenv",
       ]
     extra_args: --upgrade
-  when: false
+  when: true
   # disabled for now - not the cleanest solution - packages managed by apt but setup for pyPackage failed recently
 
 - name: Get full path of repository
@@ -157,9 +157,8 @@
 
 - name: Install shepherd python package
   ansible.builtin.pip:
-    name: "./"
-    state: forcereinstall
-    editable: false
+    name: "./[test]"
+    state: present  # forcereinstall prefered, but that seems to compile dependencies
     chdir: '{{ shepherd_install_path }}/software/python-package'
   tags:
     - install
