@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # TODO: -latest was 20.04 and had old packages
     strategy:
       matrix:
         python-version: ["3.10", "3.8"]
