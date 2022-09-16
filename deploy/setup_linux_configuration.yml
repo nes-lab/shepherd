@@ -84,7 +84,7 @@
         - "iwlwifi-*"
       register: files_fw_list # this will give us a nested list
     - name: Delete unused firmware
-      ansible.builtin.find:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       with_items: "{{ files_fw_list | map(attribute='results') | sum(start=[]) | map(attribute='path') | list }}"
@@ -97,7 +97,7 @@
         patterns: 'initrd.img*'
       register: files_init
     - name: Optimize Boot by removing outdated initrd - delete files found previously
-      ansible.builtin.find:
+      ansible.builtin.file:
         path: "{{ item.path }}"
         state: absent
       with_items: "{{ files_init.files }}"
@@ -110,7 +110,7 @@
         recurse: true
       register: files_tmp
     - name: Delete Logs and other tmp-files
-      ansible.builtin.find:
+      ansible.builtin.file:
         path: "{{ item.path }}"
         state: absent
       with_items: "{{ files_tmp.files }}"

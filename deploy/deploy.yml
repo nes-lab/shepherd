@@ -3,10 +3,7 @@
   hosts: sheep
 
   roles:
-    - dev_host
     - sheep
-    - gps_host
-    - ptp_host
 
   handlers:
     - name: Restart device

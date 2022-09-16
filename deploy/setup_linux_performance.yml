@@ -34,7 +34,7 @@
       patterns: 'initrd.img*'
     register: files_init
   - name: Optimize Boot by removing outdated initrd - delete files found previously
-    ansible.builtin.find:
+    ansible.builtin.file:
       path: "{{ item.path }}"
       state: absent
     with_items: "{{ files_init.files }}"
