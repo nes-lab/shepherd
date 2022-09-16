@@ -38,7 +38,7 @@
       default: "no"
 
   tasks:
-
+    # TODO: already in bootstrap
     - name: GIT - Clone & Update boot-script-tools from RobertCNelson
       ansible.builtin.git:
         repo: https://github.com/RobertCNelson/boot-scripts

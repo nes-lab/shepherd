@@ -1,8 +1,7 @@
 # SHEpHERD: SyncHronized Energy Harvesting Emulator RecorDer
 
 [![Build Status](https://travis-ci.org/geissdoerfer/shepherd.svg?branch=master)](https://travis-ci.org/geissdoerfer/shepherd)
-[![python-tests](https://github.com/orgua/shepherd/actions/workflows/py-package-tests.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/py-package-tests.yml)
-[![ansible-lint](https://github.com/orgua/shepherd/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/ansible-lint.yml)
+[![QA-Tests](https://github.com/orgua/shepherd/actions/workflows/repo-tests.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/repo-tests.yml)
 [![Code Quality](https://www.codefactor.io/repository/github/orgua/shepherd/badge)](https://www.codefactor.io/repository/github/orgua/shepherd)
 
 
