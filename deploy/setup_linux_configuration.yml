@@ -69,6 +69,7 @@
       ansible.builtin.find:
         paths: '/usr/lib/firmware'
         patterns: '{{ item }}'
+        hidden: true
         recurse: true
       with_items:
         - "netronome"
@@ -85,10 +86,12 @@
       register: files_fw_list # this will give us a nested list
     - name: Delete unused firmware
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: "{{ item.path }}"
         state: absent
-      with_items: "{{ files_fw_list | map(attribute='results') | sum(start=[]) | map(attribute='path') | list }}"
-      when: delete_unused_files | bool
+      loop: "{{ files_fw_list.results|subelements('files') }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: false # delete_unused_files | bool # TODO: disable for now
 
     - name: Optimize Boot by removing outdated initrd - find files with Wildcard
       # ansible.builtin.command: "rm -rf /boot/initrd.img*"
