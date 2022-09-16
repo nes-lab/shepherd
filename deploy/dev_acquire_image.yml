@@ -1,0 +1,39 @@
+---
+- name: Delete space wasting or forgotten files (WARNING - includes recordings) and cleans up free space to prepare image-extraction
+  hosts: sheep01
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Restart device
+      ansible.builtin.reboot:
+
+    - name: Discard unused blocks (trim)
+      ansible.builtin.command: 'fstrim -a'
+      changed_when: true
+
+    - name: Overwrite empty space
+      ansible.builtin.command: 'dd if=/dev/zero of=/opt/zero_file bs=4M'
+      failed_when: false  # will write zeros until it fails
+      changed_when: true
+
+    - name: Sync
+      ansible.builtin.command: 'sync'
+      changed_when: true
+
+    - name: remove empty space file
+      ansible.builtin.file:
+        path: '/opt/zero_file'
+        state: absent
+
+    - name: Discard unused blocks (trim)
+      ansible.builtin.command: 'fstrim -a'
+      changed_when: true
+
+    - name: display post cleanup message
+      ansible.buildin.debug:
+        msg: "ssh jacob@192.168.165.227 'dd if=/dev/mmcblk1 | gzip -1 -' | dd of=image.gz"
+# TODO: do actual command
+# hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+# ansible_user

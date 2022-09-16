@@ -3,13 +3,6 @@
   hosts: all
   become: true
 
-  vars_prompt:
-    # these can be also passed as argument:  -e "zero_empty_space=True" -> automatically skips these prompts
-    - name: zero_empty_space
-      prompt: "Do you want to zero-out empty space at the end (prereq for image-creation)?"
-      private: false
-      default: "no"
-
   tasks:
 
     - name: Confirm delete-process
@@ -66,26 +59,7 @@
       ansible.builtin.command: 'fstrim -a'
       changed_when: true
 
-    - name: Restart device
-      ansible.builtin.reboot:
-      when: zero_empty_space
-
-    - name: Overwrite empty space
-      ansible.builtin.command: 'dd if=/dev/zero of=/opt/zero_file bs=4M'
-      failed_when: false  # will write zeros until it fails
-      changed_when: true
-      when: zero_empty_space
-
-    - name: Sync
-      ansible.builtin.command: 'sync'
-      changed_when: true
-      when: zero_empty_space
-
-    - name: remove empty space
+    - name: remove empty space file
       ansible.builtin.file:
         path: '/opt/zero_file'
         state: absent
-
-    - name: Discard unused blocks (trim)
-      ansible.builtin.command: 'fstrim -a'
-      changed_when: true
