@@ -41,7 +41,7 @@ from .target_io import TargetIO
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
 
-__version__ = "0.2.6"
+__version__ = "0.3.0"
 
 __all__ = [
     "LogReader",

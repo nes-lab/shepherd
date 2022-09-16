@@ -22,7 +22,7 @@ import numpy as np
 import yaml
 from fabric import Group
 
-__version__ = "0.2.6"
+__version__ = "0.3.0"
 
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd-herd")
