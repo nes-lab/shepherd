@@ -5,7 +5,7 @@
 
   tasks:
 
-    - name: Cleanup Beaglebone
+    - name: Maintain Beaglebone
       ansible.builtin.include_role:
         name: maintained
       vars:
