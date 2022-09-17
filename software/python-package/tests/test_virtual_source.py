@@ -41,21 +41,21 @@ def cal_config():
 
 
 @pytest.fixture()
-def pru_vsource(request, shepherd_up, vs_config, cal_config):
+def pru_vsource(request, shepherd_up, vs_config, cal_config, inp_hrv_cfg):
     pru = ShepherdDebug()
     request.addfinalizer(pru.__del__)
     pru.__enter__()
     request.addfinalizer(pru.__exit__)
     pru.vsource_init(
-        vs_config, cal_config, inp_hrv_cfg()
+        vs_config, cal_config, inp_hrv_cfg
     )  # TODO: extend to be real vsource
     return pru
 
 
 @pytest.fixture
-def pyt_vsource(vs_config, cal_config):
+def pyt_vsource(vs_config, cal_config, inp_hrv_cfg):
     return VirtualSourceModel(
-        vs_config, cal_config, inp_hrv_cfg()
+        vs_config, cal_config, inp_hrv_cfg
     )  # TODO: will be changed!!!!!!
 
 

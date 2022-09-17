@@ -81,13 +81,15 @@ class LogReader:
         self.ds_voltage = self.h5file["data"]["voltage"]
         self.ds_current = self.h5file["data"]["current"]
         self._cal = {
-            "voltage": {
-                "gain": self.ds_voltage.attrs["gain"],
-                "offset": self.ds_voltage.attrs["offset"],
-            },
-            "current": {
-                "gain": self.ds_current.attrs["gain"],
-                "offset": self.ds_current.attrs["offset"],
+            "harvester": {
+                "voltage": {
+                    "gain": self.ds_voltage.attrs["gain"],
+                    "offset": self.ds_voltage.attrs["offset"],
+                },
+                "current": {
+                    "gain": self.ds_current.attrs["gain"],
+                    "offset": self.ds_current.attrs["offset"],
+                },
             },
         }
         self._refresh_file_stats()
