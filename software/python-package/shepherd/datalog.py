@@ -219,6 +219,9 @@ class LogWriter:
         # Store voltage and current samples in the data group, both are stored as 4 Byte uint
         self.data_grp = self._h5file.create_group("data")
         self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
+        # these attributes will be adjusted at the end of fn:
+        self.data_grp.attrs["datatype"] = self.datatype_default
+        self.data_grp.attrs["mode"] = self.mode_default
 
         self.add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(

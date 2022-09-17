@@ -36,6 +36,7 @@ def virtsource_settings_yml():
 def data_h5(tmp_path):
     store_path = tmp_path / "record_example.h5"
     with LogWriter(store_path, CalibrationData.from_default()) as store:
+        store["hostname"] = "Inky"
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)
@@ -124,6 +125,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
 
 
 @pytest.mark.hardware
+@pytest.mark.skip(reason="(REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 def test_target_pins(shepherd_up):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
@@ -139,25 +141,9 @@ def test_target_pins(shepherd_up):
     ]
 
     # channels: 5&6 are UART, can only be used when free, 7&8 are SWD
-    gpio_channels = [
-        0,
-        1,
-        2,
-        3,
-        4,
-        7,
-        8,
-    ]
+    gpio_channels = [0, 1, 2, 3, 4, 7, 8]
     # response: corresponding to r31_num (and later 2^num)
-    pru_responses = [
-        0,
-        1,
-        6,
-        7,
-        8,
-        2,
-        3,
-    ]
+    pru_responses = [0, 1, 6, 7, 8, 2, 3]
 
     for channel in [2, 3]:
         dac_cfg = dac_channels[channel]

@@ -30,6 +30,7 @@ def random_data(length):
 def data_h5(tmp_path):
     store_path = tmp_path / "harvest_example.h5"
     with LogWriter(store_path, CalibrationData.from_default()) as store:
+        store["hostname"] = "Blinky"
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)

@@ -41,19 +41,36 @@ def pytest_addoption(parser):
 
 
 def pytest_collection_modifyitems(config, items):
-    skip_real = pytest.mark.skip(reason="hardware cannot be faked")
-    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option to run")
-    skip_missing_hardware = pytest.mark.skip(reason="no hardware to test on")
+    skip_fake = pytest.mark.skip(reason="cannot be faked")
+    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
+    skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
     real_hardware = check_beagleboard()
 
     for item in items:
-        if "hardware" in item.keywords:
-            if not real_hardware:
-                item.add_marker(skip_missing_hardware)
-            else:
-                item.add_marker(skip_real)
+        if "hardware" in item.keywords and not real_hardware:
+            item.add_marker(skip_missing_hardware)
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
+        if (
+            "fake_hardware" in item.keywords and "hardware" in item.keywords
+        ):  # real_hardware:
+            item.add_marker(skip_fake)
+
+
+def load_kernel_module():
+    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
+    time.sleep(3)
+
+
+def remove_kernel_module():
+    ret = 1
+    while ret > 0:
+        ret = subprocess.run(  # noqa: S607 S603
+            ["modprobe", "-rf", "shepherd"], timeout=60, capture_output=True
+        ).returncode
+        time.sleep(1)
+    gc.collect()  # precaution
+    time.sleep(3)
 
 
 @pytest.fixture()
@@ -90,16 +107,12 @@ def shepherd_up(fake_hardware, shepherd_down):
         fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
         yield
     else:
-        subprocess.run(["modprobe", "shepherd"], timeout=60)  # noqa: S607 S603
-        time.sleep(3)
+        load_kernel_module()
         yield
-        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa: S607 S603
-        gc.collect()  # precaution
-        time.sleep(3)
+        remove_kernel_module()
 
 
 @pytest.fixture()
 def shepherd_down(fake_hardware):
     if fake_hardware is None:
-        subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa: S607 S603
-        time.sleep(3)
+        remove_kernel_module()

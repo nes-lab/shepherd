@@ -95,9 +95,20 @@ Change into the ``software/python-package`` directory and run the following comm
 
 .. code-block:: bash
 
-    sudo pip3 install -e ./[tests] --force-reinstall
+    sudo pip3 install ./[tests] --force-reinstall
 
     sudo pytest
+
+**Note:** recently the testbench had trouble running through and therefor loosing the debug-output. It is probably caused by repeatedly loading & unloading the shepherd kernel module. The following commands allow to run single tests, whole test-files or end the testbench after x Errors.
+
+.. code-block:: bash
+
+    sudo pytest tests/test_sheep_cli.py::test_cli_emulate_aux_voltage
+
+    sudo pytest tests/test_sheep_cli.py
+
+    sudo pytest --maxfail=1
+
 
 Releasing
 ---------

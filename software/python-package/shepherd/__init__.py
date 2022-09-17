@@ -15,6 +15,7 @@ import time
 from contextlib import ExitStack
 from pathlib import Path
 from typing import NoReturn
+from typing import Optional
 from typing import Union
 
 import invoke
@@ -391,11 +392,18 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def vsource_init(self, vs_settings: VirtualSourceConfig, cal_settings):
+    def vsource_init(
+        self,
+        vs_settings: VirtualSourceConfig,
+        cal_settings,
+        input_setting: Optional[dict],
+    ):
         super().send_virtual_converter_settings(vs_settings)
         super().send_calibration_settings(cal_settings)
         vh_config = VirtualHarvesterConfig(
             vs_settings.get_harvester(),
+            vs_settings.samplerate_sps,
+            emu_cfg=input_setting,
         )
         super().send_virtual_harvester_settings(vh_config)
         time.sleep(0.5)
