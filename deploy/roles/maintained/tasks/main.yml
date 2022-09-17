@@ -73,7 +73,6 @@
   vars:
     do_delete_recordings: false
     do_zero_free_space: false
-  become: true
   when: delete_unused_files | bool
 
 - name: Restart device

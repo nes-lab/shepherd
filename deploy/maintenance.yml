@@ -2,7 +2,6 @@
 - name: Update software & cleanup
   hosts: all
   become: true
-  gather_facts: true
 
   tasks:
 
@@ -13,4 +12,3 @@
         update_kernel: true
         update_bootloader: true
         delete_unused_files: true
-      become: true

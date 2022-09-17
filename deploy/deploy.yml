@@ -20,7 +20,6 @@
         update_kernel: true
         update_bootloader: true
         delete_unused_files: true
-      become: true
   post_tasks:
     - name: Cleanup after software
       ansible.builtin.include_role:
@@ -29,7 +28,6 @@
         update_kernel: false
         update_bootloader: false
         delete_unused_files: true
-      become: true
 
 - name: Main-Software for Shepherd
   roles:

@@ -12,7 +12,6 @@
       vars:
         do_delete_recordings: true
         do_zero_free_space: true
-      become: true
 
     - name: display post cleanup message
       ansible.builtin.debug:
