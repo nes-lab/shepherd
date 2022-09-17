@@ -16,6 +16,7 @@ non_essential_packages_c: ['linux-headers-4.14.*', 'linux-headers-5.4.*', 'linux
 # not needed drivers / packages
 non_essential_packages_d: ['alsa-utils', 'wireless-*', 'wpasupplicant', 'ofono', 'bluez', 'bluetooth', 'rfkill']
 non_essential_packages_e: ['seeed-modules-*', 'rtl8*', 'can-utils', 'libasound*']
-non_essential_packages_f: ['ti-sgx-*', 'eject', 'iw', 'libx11*', 'initramfs*']
+non_essential_packages_f: ['ti-sgx-*', 'eject', 'iw', 'initramfs*']
 non_essential_packages_g: ['vim-runtime', 'humanity-icon-theme', 'python3-sympy']
-# - add: libjpeg*,
+# - add: libjpeg*,? part of sheep-install
+# NOTE: 'libx11*' part of python3-h5py

@@ -97,7 +97,7 @@ Change into the ``software/python-package`` directory and run the following comm
 
     sudo pip3 install -e ./[tests] --force-reinstall
 
-    pytest
+    sudo pytest
 
 Releasing
 ---------
