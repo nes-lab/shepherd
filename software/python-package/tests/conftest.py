@@ -59,7 +59,9 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_missing_hardware)
             if config.getoption("--fake"):
                 item.add_marker(skip_real)
-        if "fake_hardware" in item.keywords and not config.getoption("--fake"):
+        # if "fake_hardware" in item.keywords and not config.getoption("--fake"):
+        # TODO: automatically switch to fake hardware if no real is available
+        if "fake_hardware" in item.keywords and real_hardware:
             item.add_marker(skip_fake)
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
@@ -99,7 +101,7 @@ def shepherd_up(fake_hardware, shepherd_down):
         fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
         yield
     else:
-        subprocess.run(["~/", "modprobe", "shepherd"], timeout=60)  # noqa: S607 S603
+        subprocess.run(["modprobe", "shepherd"], timeout=60)  # noqa: S607 S603
         time.sleep(3)
         yield
         subprocess.run(["rmmod", "shepherd"], timeout=60)  # noqa: S607 S603

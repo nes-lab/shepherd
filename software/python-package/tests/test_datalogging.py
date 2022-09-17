@@ -123,11 +123,17 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
         )
 
         # Note: decode is needed at least for h5py < 3, and old dtype=h5py.special_dtype(vlen=str)
-        assert writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
-        assert (
-            writer.xcpt_grp["message"][1].decode("UTF8")
-            == "there was another exception"
-        )
+        if isinstance(writer.xcpt_grp["message"][0], str):
+            assert writer.xcpt_grp["message"][0] == "there was an exception"
+            assert writer.xcpt_grp["message"][1] == "there was another exception"
+        else:
+            assert (
+                writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
+            )
+            assert (
+                writer.xcpt_grp["message"][1].decode("UTF8")
+                == "there was another exception"
+            )
         assert writer.xcpt_grp["value"][0] == 0
         assert writer.xcpt_grp["value"][1] == 1
         assert writer.xcpt_grp["time"][0] == ts
