@@ -46,7 +46,10 @@
 - name: Role - GPS-Client
   hosts: gps_clients
   roles:
-    - gps_client  # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
+    - gps_client
+# TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
+#       -> could switch to components and argument_specs
+#       https://steampunk.si/blog/ansible-role-argument-specification/
 
 - name: Role - PTP-Server
   hosts: ptp_servers

@@ -13,7 +13,7 @@
   with_items: "{{ files_init.files }}"
 
 
-- name: Delete unused firmware (by beaglebone, slightly risky)
+- name: Delete unused firmware (by beaglebone, slightly risky) - A
   ansible.builtin.file:
     path: "/lib/firmware/{{ item }}"
     state: absent
@@ -33,6 +33,17 @@
     - "mediatek"
     - "nvidia"
   become: true
+
+- name: Find unused firmware (by beaglebone, slightly risky) - B
+  ansible.builtin.find:
+    paths: '/lib/firmware/'
+    patterns: 'iwlwifi-*' # > 100 mb, wifi-blobs
+  register: files_fw
+- name: Delete unused firmware (by beaglebone, slightly risky) - B
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_fw.files }}"
 
 - name: APT - Uninstall non-essential Packages
   ansible.builtin.apt:

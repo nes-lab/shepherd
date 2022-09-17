@@ -36,7 +36,10 @@
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | gzip -1 -' | dd of=image.img.gz -> 742 mb 1600s broken image
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | gzip -1 - | dd of=image.img.gz -> 742 mb 1300s
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz -> 466 mb 1320s
-# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image2.img.xz -> 466 mb 1333s
+# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image3.img.xz -> 466 mb 1333s
+# base: 1.4 gb used, 2.0 gb free, 41 % usage -> 363 mb,
 
 # safe without xz, mount, change uEnv.txt, umount, xz
+# sudo mkdir /mnt/image
+# sudo mount -o loop /home/NAME/Downloads/image.dd /mnt/image
 # TODO: delete Journal?
