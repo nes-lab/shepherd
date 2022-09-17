@@ -1,0 +1,28 @@
+---
+
+- name: Find recordings
+  ansible.builtin.find:
+    paths: ["/var/shepherd/recordings/", "/var/shepherd/recordings2/"]
+    patterns: '*'
+    recurse: true
+  register: files_rec
+- name: Delete recordings
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_rec.files }}"
+  when: do_delete_recordings | bool
+  # NOTE: could be done with just .find, but this leaves directory intact
+
+- name: Include removal of software
+  ansible.builtin.include_tasks:
+    file: software.yml
+
+- name: Include removal of temp-data
+  ansible.builtin.include_tasks:
+    file: temp_data.yml
+
+- name: Include zeroing free/empty disk-space
+  ansible.builtin.include_tasks:
+    file: zero_free_space.yml
+  when: do_zero_free_space | bool

@@ -6,30 +6,13 @@
 
   tasks:
 
-    - name: Restart device
-      ansible.builtin.reboot:
-
-    - name: Discard unused blocks (trim)
-      ansible.builtin.command: 'fstrim -a'
-      changed_when: true
-
-    - name: Overwrite empty space
-      ansible.builtin.command: 'dd if=/dev/zero of=/opt/zero_file bs=4M'
-      failed_when: false  # will write zeros until it fails
-      changed_when: true
-
-    - name: remove empty space file
-      ansible.builtin.file:
-        path: '/opt/zero_file'
-        state: absent
-
-    - name: Sync
-      ansible.builtin.command: 'sync'
-      changed_when: true
-
-    - name: Discard unused blocks (trim)
-      ansible.builtin.command: 'fstrim -a'
-      changed_when: true
+    - name: Cleanup Beaglebone
+      ansible.builtin.include_role:
+        name: cleaned
+      vars:
+        do_delete_recordings: true
+        do_zero_free_space: true
+      become: true
 
     - name: display post cleanup message
       ansible.builtin.debug:
@@ -42,7 +25,7 @@
     - name: display file
       ansible.builtin.debug:
         msg: "{{ ansible_date_time.date }}_{{ inventory_hostname }}_mmcblk1.img.gz"
-        
+
 # TODO: test - do actual command
 # hostvars[inventory_hostname]['ansible_default_ipv4']['address']
 # ansible_user
@@ -56,3 +39,4 @@
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image2.img.xz -> 466 mb 1333s
 
 # safe without xz, mount, change uEnv.txt, umount, xz
+# TODO: delete Journal?

@@ -1,0 +1,38 @@
+---
+
+- name: Clean apt-caches - A
+  ansible.builtin.apt:
+    autoremove: true
+- name: Clean apt-caches - B
+  ansible.builtin.apt:
+    autoclean: true
+- name: Clean apt-caches - C
+  ansible.builtin.apt:
+    clean: true
+
+- name: Clean pip-caches - A
+  ansible.builtin.file:
+    path: "/root/.cache/pip"
+    state: absent
+  become: true
+- name: Clean pip-caches - B
+  ansible.builtin.file:
+    path: "~/.cache/pip"
+    state: absent
+  become: false
+
+- name: Discard unused blocks (trim)
+  ansible.builtin.command: 'fstrim -a'
+  changed_when: true
+
+- name: Find Logs and other tmp-files
+  ansible.builtin.find:
+    paths: ["/var/log/", "/var/lib/apt/lists"]
+    patterns: '*'
+    recurse: true
+  register: files_tmp
+- name: Delete Logs and other tmp-files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_tmp.files }}"

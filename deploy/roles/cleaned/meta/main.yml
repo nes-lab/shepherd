@@ -1,0 +1,13 @@
+---
+
+galaxy_info:
+  description: Cleans Beaglebone to get more space for measurements (after shp-install there are ~ 900 mb free, after these scripts we get 1700 mb)
+  company: NES-Lab
+  author: Ingmar
+  license: MIT
+  min_ansible_version: 2.8
+  platforms:
+    - name: Debian
+      versions: all
+    - name: Ubuntu
+      versions: all

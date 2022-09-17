@@ -1,0 +1,23 @@
+---
+
+- name: CFG - Improve SSH-Speed
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "{{ item.regex }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - {regex: '^.*UseDNS.*$', line: 'UseDNS no'}
+    - {regex: '^.*Compression.*$', line: 'Compression no'}
+
+- name: CFG - Adapt default Target to multi-user
+  ansible.builtin.command: 'systemctl set-default multi-user'
+  changed_when: true
+  # check with: sudo systemctl get-default
+
+- name: CFG - Disable Graphical.target
+  ansible.builtin.systemd:
+    name: graphical.target
+    enabled: false
+    state: stopped
+    daemon_reload: true

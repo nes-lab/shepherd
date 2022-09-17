@@ -1,13 +1,7 @@
 ---
-- name: Role - Sheep
+- name: Install Shepherd-Software - Role-based
   hosts: sheep
-
-  roles:
-    - sheep
-
-  handlers:
-    - name: Restart device
-      ansible.builtin.reboot:
+  become: true
 
   pre_tasks:
     - name: Get time and date from ansible controller
@@ -19,34 +13,49 @@
     - name: Set correct time
       ansible.builtin.command: "date -s {{ local_time.stdout }}"
       changed_when: true
-  become: true
+    - name: Update kernel, bootloader, software & cleanup afterwards
+      ansible.builtin.include_role:
+        name: maintained
+      vars:
+        update_kernel: true
+        update_bootloader: true
+        delete_unused_files: true
+      become: true
+  post_tasks:
+    - name: Cleanup after software
+      ansible.builtin.include_role:
+        name: maintained
+      vars:
+        update_kernel: false
+        update_bootloader: false
+        delete_unused_files: true
+      become: true
+
+- name: Main-Software for Shepherd
+  roles:
+    - sheep
 
 - name: Role - PTP-Client
   hosts: ptp_clients
   roles:
     - ptp_client
-  become: true
 
 - name: Role - NTP-Client
   hosts: ntp_clients
   roles:
     - ntp_client
-  become: true
 
 - name: Role - GPS-Client
   hosts: gps_clients
   roles:
     - gps_client  # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
-  become: true
 
 - name: Role - PTP-Server
   hosts: ptp_servers
   roles:
     - ptp_server
-  become: true
 
 - name: Role - Secured Testbed
   hosts: secured
   roles:
     - secure_testbed
-  become: true

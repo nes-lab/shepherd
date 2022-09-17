@@ -27,7 +27,10 @@
       replacement: "#enable_uboot_cape_universal=1",
     }
   become: true
-  notify: Restart device
+  tags: device-tree
+
+- name: Restart device
+  ansible.builtin.reboot:
   tags: device-tree
 
 - name: Enable shepherd overlays
@@ -58,7 +61,10 @@
       replacement: "uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo",
     }
   become: true
-  notify: Restart device
+  tags: device-tree
+
+- name: Restart device
+  ansible.builtin.reboot:
   tags: device-tree
 
 - name: Get kernel version
@@ -70,8 +76,8 @@
   ansible.builtin.apt:
     name:
       [
-        "linux-headers-{{ kernelrelease.stdout.strip() }}",
-        "linux-firmware",
+        "linux-headers-{{ kernelrelease.stdout.strip() }}", # TODO: done by bootstrap / maintenance
+        "linux-firmware", # TODO: is already there
         "zlib1g-dev",
         "libjpeg-dev",
         "python3-numpy",    # TODO: rethink apt usage. most of these are easier updatable per pip
@@ -202,12 +208,14 @@
     - install
     - python
 
-- include_tasks: build.yml
+- ansible.builtin.include_tasks:
+    file: build.yml
   tags:
     - install
     - build
 
-- include_tasks: systemd.yml
+- ansible.builtin.include_tasks:
+    file: systemd.yml
   tags:
     - install
     - systemd

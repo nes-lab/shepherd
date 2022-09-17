@@ -1,0 +1,16 @@
+---
+- name: Update software & cleanup
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Cleanup Beaglebone
+      ansible.builtin.include_role:
+        name: maintained
+      vars:
+        update_kernel: true
+        update_bootloader: true
+        delete_unused_files: true
+      become: true
