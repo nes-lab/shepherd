@@ -17,6 +17,9 @@ from typing import Optional
 
 import h5py
 import yaml
+from shepherd.calibration import cal_parameter_list
+
+from shepherd import CalibrationData
 
 
 class LogReader:
@@ -60,7 +63,7 @@ class LogReader:
         if verbose is not None:
             self._logger.setLevel(logging.INFO if verbose else logging.WARNING)
 
-    def __enter__(self):
+    def __enter__(self, cal_channel_harvest_dict=None):
         if not self._skip_open:
             if not self._file_path.exists():
                 raise FileNotFoundError(
@@ -80,6 +83,14 @@ class LogReader:
         self.ds_time = self.h5file["data"]["time"]
         self.ds_voltage = self.h5file["data"]["voltage"]
         self.ds_current = self.h5file["data"]["current"]
+
+        self._cal = CalibrationData.from_default()
+        for channel, parameter in product(["current", "voltage"], cal_parameter_list):
+            cal_channel = cal_channel_harvest_dict[channel]
+            self._cal["harvesting"][cal_channel][parameter] = self.h5file["data"][
+                channel
+            ].attrs[parameter]
+
         self._cal = {
             "harvester": {
                 "voltage": {
