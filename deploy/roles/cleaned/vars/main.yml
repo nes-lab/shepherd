@@ -1,6 +1,7 @@
 ---
 # user can control rule by altering these vars from outside
 do_delete_recordings: false
+do_remove_software: true
 do_zero_free_space: false
 
 

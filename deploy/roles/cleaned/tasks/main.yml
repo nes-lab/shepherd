@@ -6,6 +6,7 @@
     patterns: '*'
     recurse: true
   register: files_rec
+  when: do_delete_recordings | bool
 - name: Delete recordings
   ansible.builtin.file:
     path: "{{ item.path }}"
@@ -17,6 +18,7 @@
 - name: Include removal of software
   ansible.builtin.include_tasks:
     file: software.yml
+  when: do_remove_software | bool
 
 - name: Include removal of temp-data
   ansible.builtin.include_tasks:

@@ -1,7 +1,7 @@
 ---
 
 galaxy_info:
-  description: Cleans Beaglebone to get more space for measurements (after shp-install there are ~ 900 mb free, after these scripts we get 1700 mb)
+  description: Cleans Beaglebone to get more space for measurements (after shp-install there are ~ 900 mb free, after these scripts we get 2000 mb, 42% usage)
   company: NES-Lab
   author: Ingmar
   license: MIT

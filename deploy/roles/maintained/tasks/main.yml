@@ -11,7 +11,7 @@
     update: true
     version: master
     force: true
-- name: Remove space-waster of boot-script-repo (free 26 of 27 mb)
+- name: Remove space-waster of boot-script-repo (free 13 of 27 mb)
   ansible.builtin.file:
     path: "/opt/scripts/device/" # ["/opt/scripts/.git/", "/opt/scripts/device/"]
     state: absent

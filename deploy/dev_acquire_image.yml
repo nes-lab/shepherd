@@ -11,6 +11,7 @@
         name: cleaned
       vars:
         do_delete_recordings: true
+        do_remove_software: false
         do_zero_free_space: true
 
     - name: display post cleanup message
