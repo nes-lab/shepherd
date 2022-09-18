@@ -8,14 +8,39 @@ Codestyle
 
 Please stick to the C and Python codestyle guidelines provided with the source code.
 
-All Python code is supposed to be formatted using `Black <https://black.readthedocs.io/en/stable/>`_ and `Flake8 <https://flake8.pycqa.org/en/latest/>`_ linter including some addons for cleaner and more secure code.
+All **Python code** uses the feature-set of **version 3.8** is supposed to be formatted using `Black <https://black.readthedocs.io/en/stable/>`_ in default mode and is tested with the `Flake8 <https://flake8.pycqa.org/en/latest/>`_ linter including some addons for cleaner and more secure code.
 
-C code shall be formatted according to the Linux kernel C codesytle guide.
+**C code** uses the feature-set of **C99** and shall be formatted based on *LLVM*-Style with some alterations to make it easier to read, similar to python code.
 We provide the corresponding ``clang-format`` config as ``.clang-format`` in the repository's root directory.
 
 Many IDEs/editors allow to automatically format code using the corresponding formatter and codestyle.
-Please make use of this feature or otherwise integrate automatic codestyle formatting into your workflow.
-See `Releasing`_ for more details on our `pre-commit <https://pre-commit.com/>`_-workflow.
+
+To ensure basic quality standards we implemented the `pre-commit <https://pre-commit.com/>`_-workflow into the repo. It will
+
+- handle formatting for python and C code (automatically)
+- linters python, C, YAML, TOML, reStructuredText (rst), ansible playbooks
+- it specially warns about security-related issues and deprecated features in python and C code
+
+Pull Requests to the main branch will be tested online with *Github Actions*.
+
+Make sure you have pre-commit installed:
+
+.. code-block:: bash
+
+    pip3 install pre-commit
+    sudo apt install cppcheck
+
+Now you can either install an automatic hook for git that gets executed before committing:
+
+.. code-block:: bash
+
+    pre-commit install
+
+Or you can just run the pre-commit checks:
+
+.. code-block:: bash
+
+    pre-commit run --all-files
 
 Development setup
 -----------------
@@ -87,19 +112,26 @@ Tests
 There is an initial testing framework that covers a large portion of the python code.
 You should always make sure the tests are passing before committing your code.
 
-To run the python tests, have a copy of the source code on a BeagleBone.
+To run the full range of python tests, have a copy of the source code on a BeagleBone.
 Build and install from source (see `Development setup`_ for more).
 Change into the ``software/python-package`` directory and run the following commands to:
+
 - install dependencies of tests
 - run testbench
 
 .. code-block:: bash
 
-    sudo pip3 install ./[tests] --force-reinstall
+    sudo pip3 install ./[tests]
 
     sudo pytest
 
-**Note:** recently the testbench had trouble running through and therefor loosing the debug-output. It is probably caused by repeatedly loading & unloading the shepherd kernel module. The following commands allow to run single tests, whole test-files or end the testbench after x Errors.
+Some tests (~40) are hardware-independent, while most of them require a beaglebone to work (~100). The testbench detects the BeagleBone automatically. A small subset (~8) tests writing & configuring the EEPROM on the shepherd cape and must be enabled manually (``sudo pytest --eeprom-write``)
+
+**Note:** Recently the testbench had trouble running through completely and therefor loosing the debug-output. It is probably caused by repeatedly loading & unloading the shepherd kernel module. The following commands allow to :
+
+- run single tests,
+- whole test-files or
+- end the testbench after x Errors.
 
 .. code-block:: bash
 
@@ -113,29 +145,9 @@ Change into the ``software/python-package`` directory and run the following comm
 Releasing
 ---------
 
-Before committing to the repository please run our `pre-commit <https://pre-commit.com/>`_-workflow. It will handle formatting and linters python-code. This is also one of the implemented tests in Github Action for QA for every pull request.
+Before committing to the repository please run our `pre-commit <https://pre-commit.com/>`_-workflow described in `Codestyle`_.
 
-Make sure you have pre-commit installed:
-
-.. code-block:: bash
-
-    pip3 install pre-commit
-    sudo apt install cppcheck
-
-Now you can either install an automatic hook for git that gets executed before committing:
-
-.. code-block:: bash
-
-    pre-commit install
-
-Or you can just run the pre-commit checks:
-
-.. code-block:: bash
-
-    pre-commit run --all-files
-
-Once you have a clean stable version of code, you should decide if your release is a patch, minor or major (see `Semantic Versioning <https://semver.org/>`_).
-Make sure you're on the master branch and have a clean working directory.
+Once you have a clean stable version of code, you should decide if your release is a patch, minor or major (see `Semantic Versioning <https://semver.org/>`_). Make sure you're on the main branch and have a clean working directory.
 Use ``bump2version`` to update the version number across the repository:
 
 .. code-block:: bash

@@ -39,7 +39,9 @@
 
     - name: Stop Kernel Module
       ansible.builtin.command: 'modprobe -rf shepherd'
-      failed_when: false
+      register: modprobe_ret
+      until: modprobe_ret is not failed
+      retries: 5
       changed_when: true
 
     - name: Clean PRU Firmware Source
@@ -117,10 +119,12 @@
         name: "./"
         state: absent
         chdir: '{{ shepherd_install_path }}/software/python-package'
+      failed_when: false
       tags:
         - install
         - python
       when: rebuild_python_package | bool
+      # TODO: maybe not needed
 
     - name: Install shepherd python package
       ansible.builtin.pip:
