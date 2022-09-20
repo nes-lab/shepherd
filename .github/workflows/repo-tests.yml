@@ -88,9 +88,9 @@ jobs:
 
       - name: Prepare using CGT
         run: |
+          file ${{ env.PRU_CGT }}/bin/clpru
 #          sudo ln -s /usr/bin/clpru ${{ env.PRU_CGT }}/bin/clpru
 #          sudo ln -s /usr/bin/lnkpru ${{ env.PRU_CGT }}/bin/lnkpru
-          file ${{ env.PRU_CGT }}/bin/clpru
 
       - name: Build PRU0 🧱
         run: |
