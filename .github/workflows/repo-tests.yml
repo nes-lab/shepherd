@@ -67,7 +67,6 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
-#          sudo apt-get install multiarch-support
 
       - name: Install APT dependencies 🔧
         run: sudo apt install build-essential
@@ -77,7 +76,7 @@ jobs:
 
       - name: Install CGT dependency 🔧
         run: |
-          sudo wget --tries 3 ${{ env.pru_cgt_link_pre }}${{ env.pru_cgt_installer }}
+          sudo wget -q --tries 3 ${{ env.pru_cgt_link_pre }}${{ env.pru_cgt_installer }}
           sudo chmod a+x ./${{ env.pru_cgt_installer }}
           sudo ./${{ env.pru_cgt_installer }}
         working-directory: /usr/share/ti
@@ -89,8 +88,8 @@ jobs:
       - name: Prepare using CGT
         run: |
           file ${{ env.PRU_CGT }}/bin/clpru
-#          sudo ln -s /usr/bin/clpru ${{ env.PRU_CGT }}/bin/clpru
-#          sudo ln -s /usr/bin/lnkpru ${{ env.PRU_CGT }}/bin/lnkpru
+          sudo ln -s ${{ env.PRU_CGT }}/bin/clpru /usr/bin/clpru
+          sudo ln -s ${{ env.PRU_CGT }}/bin/lnkpru /usr/bin/lnkpru
 
       - name: Build PRU0 🧱
         run: |
