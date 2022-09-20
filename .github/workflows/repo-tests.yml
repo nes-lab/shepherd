@@ -54,7 +54,7 @@ jobs:
       pru_cgt_link_pre: "https://software-dl.ti.com/codegen/esd/cgt_public_sw/PRU/2.3.3/"
       pru_support_package: "pru-software-support-package-5.9.0"
       pru_support_link_pre: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/"
-      PRU_CGT: "/usr/share/ti/cgt_pru"
+      PRU_CGT: "/usr/share/ti/ti-cgt-pru_2.3.3"
       PRU_SUPPORT: "/usr/share/ti/pru-software-support-package-5.9.0"
 
     steps:
@@ -88,14 +88,13 @@ jobs:
 
       - name: Prepare using CGT
         run: |
-          sudo ln -s /usr/bin/clpru ${{ env.PRU_CGT }}/bin/clpru
-          sudo ln -s /usr/bin/lnkpru ${{ env.PRU_CGT }}/bin/lnkpru
-          file /usr/bin/clpru
+#          sudo ln -s /usr/bin/clpru ${{ env.PRU_CGT }}/bin/clpru
+#          sudo ln -s /usr/bin/lnkpru ${{ env.PRU_CGT }}/bin/lnkpru
+          file ${{ env.PRU_CGT }}/bin/clpru
 
       - name: Build PRU0 🧱
         run: |
-          export PATH=$PATH:/usr/
-          export PRU_CGT=/usr
+          export PATH=$PATH:$PRU_CGT
           sudo make
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
