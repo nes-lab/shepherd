@@ -1,4 +1,4 @@
-name: Test Repo
+name: Repo-Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  various-tests:
     runs-on: ubuntu-22.04 # TODO: -latest was 20.04 and had old packages
     strategy:
       matrix:
@@ -46,3 +46,52 @@ jobs:
       - name: Install the shepherd-herd py-package 𓋿 𓀍
         run: "sudo pip3 install ./"
         working-directory: "./software/shepherd-herd"
+
+  pru-tests:
+    runs-on: ubuntu-latest
+    env:
+
+      ti_tools_path: "/usr/share/ti/"
+      pru_cgt_dir: "cgt_pru"
+
+      pru_cgt_installer: "ti_cgt_pru_2.3.3_armlinuxa8hf_busybox_installer.sh"
+      pru_cgt_link: "https://software-dl.ti.com/codegen/esd/cgt_public_sw/PRU/2.3.3/{{ env.pru_cgt_installer }}"
+
+      pru_support_package: "pru-software-support-package-5.9.0"
+      pru_support_link: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/${{ env.pru_support_package }}.tar.gz"
+
+      PRU_CGT: "${{ env.ti_tools_path }}${{ env.pru_cgt_dir }}"
+      PRU_SUPPORT: "${{ env.ti_tools_path }}${{ env.pru_support_package }}"
+
+    steps:
+
+      - name: Checkout 🛎️
+        uses: actions/checkout@master
+
+      - name: Install APT dependencies 🔧
+        run: sudo apt install build-essential
+
+      - name: Install PSSP dependency 🔧
+        run: |
+          wget -r -tries=3 ${{ env.pru_support_link }} --output-document=${{ env.PRU_SUPPORT }}.tar.gz
+          tar -xf ${{ env.PRU_SUPPORT }}.tar.gz
+
+      - name: Install CGT dependency 🔧
+        run: |  
+          mkdir ${{ env.PRU_CGT }}
+          wget -r -tries=3 ${{ env.pru_cgt_link }}
+          sudo ${{ env.pru_cgt_installer }}
+
+      - name: Prepare using CGT
+        run: |
+          mkdir ${{ env.PRU_CGT }}/bin
+          ln -s /usr/bin/clpru ${{ env.PRU_CGT }}/bin/clpru
+          ln -s /usr/bin/lnkpru ${{ env.PRU_CGT }}/bin/lnkpru
+
+      - name: Build PRU0 🧱
+        run: make
+        working-directory: "software/firmware/pru0-shepherd-fw/"
+
+      - name: Build PRU1 🧱
+        run: make
+        working-directory: "software/firmware/pru1-shepherd-fw/"

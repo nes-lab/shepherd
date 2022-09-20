@@ -2,7 +2,7 @@ name: Generate Github-Pages
 
 on:
   push:
-    branches: [ "master", "dev" ]
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
