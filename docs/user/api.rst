@@ -77,7 +77,7 @@ Usage:
             recorder.release_buffer(idx)
 
 
-(log)Reader
+LogReader
 ------------
 
 The *Reader* for shepherd-files is used to read previously recorded data from an hdf5 file buffer by buffer.

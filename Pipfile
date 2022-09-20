@@ -11,8 +11,8 @@ bump2version = "*"
 pre-commit = "*"
 
 [packages]
-shepherd = {editable = true,path = "./software/python-package"}
-shepherd-herd = {editable = true,path = "./software/shepherd-herd"}
+shepherd = {path = "./software/python-package"}
+shepherd-herd = {path = "./software/shepherd-herd"}
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
