@@ -16,7 +16,6 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-executables-have-shebangs
-#      - id: check-shebang-scripts-are-executable
       - id: detect-private-key
       - id: mixed-line-ending
       - id: check-added-large-files
@@ -26,17 +25,17 @@ repos:
       - id: check-symlinks
       - id: check-toml
       - id: fix-byte-order-marker
-#      - id: fix-encoding-pragma
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
-        args: ["--profile", "black", "--filter-files", "--force-single-line"]
+
   - repo: https://github.com/psf/black
     rev: 22.8.0
     hooks:
       - id: black
+
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.9.0
     hooks:
@@ -47,16 +46,17 @@ repos:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
+
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.37.3
+    rev: v2.38.0
     hooks:
       - id: pyupgrade
-        args: [--py38-plus]
+        args: ["--py38-plus"]
+
   - repo: https://github.com/pycqa/flake8
     rev: 5.0.4
     hooks:
       - id: flake8
-        args: [--config, .flake8]
         additional_dependencies:
           # NOTE: entries are copy of .flake8-config-file -> for auto-install
           ### Bugs
@@ -85,7 +85,7 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.5.2
+    rev: v6.6.1
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
@@ -118,6 +118,18 @@ repos:
 #     - id: clang-tidy
 #       args: [ "-checks=bugprone-,cert-,performance-,portability-"]
 # TODO: add more c-linters, but there are to many false positives
+
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: "v0.971"
+#    hooks:
+#      - id: mypy
+# TODO: activate mypy -> some work to fix type-annotations
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.2.1"
+    hooks:
+      - id: codespell
+        exclude: \.(sch|brd|lbr)$
 
 # TODO: github.com/PyCQA/pydocstyle
 # TODO: github.com/PyCQA/pylint
