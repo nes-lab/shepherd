@@ -30,6 +30,12 @@ repos:
     rev: 5.10.1
     hooks:
       - id: isort
+        args:
+          - "--profile"
+          - "black"
+          - "--filter-files"
+          - "--force-single-line"
+          - "--show-config"
 
   - repo: https://github.com/psf/black
     rev: 22.8.0
