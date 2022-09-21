@@ -5,9 +5,6 @@ import h5py
 import numpy as np
 import pytest
 import yaml
-from shepherd.datalog_reader import LogReader as ShpReader
-from shepherd.shepherd_io import DataBuffer
-from shepherd.shepherd_io import VirtualSourceConfig
 
 from shepherd import CalibrationData
 from shepherd import Emulator
@@ -16,6 +13,9 @@ from shepherd import ShepherdDebug
 from shepherd import ShepherdIOException
 from shepherd import run_emulator
 from shepherd import sysfs_interface
+from shepherd.datalog_reader import LogReader as ShpReader
+from shepherd.shepherd_io import DataBuffer
+from shepherd.shepherd_io import VirtualSourceConfig
 
 
 def random_data(length):

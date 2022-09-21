@@ -1,11 +1,11 @@
 from pathlib import Path
 
 import pytest
-from shepherd.virtual_source_model import VirtualSourceModel
 
 from shepherd import CalibrationData
 from shepherd import ShepherdDebug
 from shepherd import VirtualSourceConfig
+from shepherd.virtual_source_model import VirtualSourceModel
 
 
 @pytest.fixture

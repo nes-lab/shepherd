@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from shepherd.calibration import CalibrationData
-from shepherd.virtual_source_config import flatten_dict_list
 
 from shepherd import VirtualHarvesterConfig
 from shepherd import VirtualSourceConfig
 from shepherd import sysfs_interface
+from shepherd.calibration import CalibrationData
+from shepherd.virtual_source_config import flatten_dict_list
 
 
 @pytest.fixture

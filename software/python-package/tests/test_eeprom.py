@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import pytest
-from shepherd.calibration import cal_channel_list
-from shepherd.calibration import cal_component_list
-from shepherd.calibration import cal_parameter_list
 
 from shepherd import EEPROM
 from shepherd import CalibrationData
 from shepherd import CapeData
+from shepherd.calibration import cal_channel_list
+from shepherd.calibration import cal_component_list
+from shepherd.calibration import cal_parameter_list
 
 
 @pytest.fixture()

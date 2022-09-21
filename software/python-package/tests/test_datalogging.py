@@ -4,14 +4,14 @@ from itertools import product
 import h5py
 import numpy as np
 import pytest
+
+from shepherd import CalibrationData
+from shepherd import LogWriter
 from shepherd.calibration import cal_channel_hrv_dict
 from shepherd.calibration import cal_parameter_list
 from shepherd.datalog import ExceptionRecord
 from shepherd.datalog_reader import LogReader as ShpReader
 from shepherd.shepherd_io import DataBuffer
-
-from shepherd import CalibrationData
-from shepherd import LogWriter
 
 
 def random_data(length):

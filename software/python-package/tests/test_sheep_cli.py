@@ -15,11 +15,11 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from shepherd.cli import cli
-from shepherd.shepherd_io import DataBuffer
 
 from shepherd import CalibrationData
 from shepherd import LogWriter
+from shepherd.cli import cli
+from shepherd.shepherd_io import DataBuffer
 
 
 def random_data(length):
