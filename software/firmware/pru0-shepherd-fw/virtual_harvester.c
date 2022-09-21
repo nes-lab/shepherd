@@ -247,7 +247,7 @@ static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32
 
 static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-    /*	perturbe & observe
+    /*	perturb & observe
 	 * 	- move a voltage step every interval and evaluate power-increase
 	 * 		- if higher -> keep this step-direction and begin doubling step-size
 	 * 		- if lower -> reverse direction and move the smallest step back
@@ -431,7 +431,7 @@ static void harvest_iv_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_
 
 static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
-    /* Perturbe & Observe
+    /* Perturb & Observe
 	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_iv_cv()
 	 * - influencing parameters: interval_n, voltage_step_uV, voltage_max_uV, voltage_min_uV
 	 */

@@ -164,7 +164,7 @@
 - name: Install shepherd python package
   ansible.builtin.pip:
     name: "./[test]"
-    state: present  # NOTE: forcereinstall prefered, but that seems to compile dependencies?
+    state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
     chdir: '{{ shepherd_install_path }}/software/python-package'
   tags:
     - install

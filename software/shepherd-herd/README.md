@@ -1,6 +1,6 @@
 # shepherd-herd
 
-*shepherd-herd* ist the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
+*shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
 
 
 ## Installation

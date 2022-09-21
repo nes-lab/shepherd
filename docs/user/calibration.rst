@@ -20,7 +20,7 @@ When storing recorded data, these values are stored together with the binary dat
 The *gain* and *offset* values can be derived from nominal hardware configuration.
 However, due to component tolerances, offset voltages and other effects, the real mapping can significantly differ from nominal values.
 
-Therefore, we recommend to *calibrate* shepherd by comparing a number of sample points recorded with shepherd to known refernce values measured with accurate lab equipment.
+Therefore, we recommend to *calibrate* shepherd by comparing a number of sample points recorded with shepherd to known reference values measured with accurate lab equipment.
 From the tuples of reference values and measurements, you can estimate the *gain* and *offset* by ordinary least squares linear regression.
 These values can be stored in the EEPROM on the shepherd cape and, at the beginning of a recording extracted and stored in the database file.
 

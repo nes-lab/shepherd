@@ -32,10 +32,10 @@ The u-blox GPS receiver can be configured to optimize its performance. To do thi
 written (see https://github.com/kugelbit/ubx-packet-exchange). The configuration files can be found under ``config_files``.  To this end the following configurations were set:
 
 - SBAS was disabled for better timing information
-- The stationary mode was enabled to get a better percussion and a stable perfomance
+- The stationary mode was enabled to get a better percussion and a stable performance
 - the GPS- and galileo-satelite-systems were enabled to get a fast and stable fix
 
-In addtion the standard config of the receiver leads to the following behaviour:
+In addition the standard config of the receiver leads to the following behaviour:
 
 - If the PPS is not locked, the LED on the capelet will not blink. After the lock is attained, the LED will start blinking at 1 Hz.
 - NMEA messages are enabled for the UART link which connects to the BeagleBone.
@@ -77,7 +77,7 @@ Configuration files:
 - the device tree file (dts) for the GPS-caplet is found in the pps-gmtimer folder (DD-GPS-00A0.dts).
 
 DEBUG:
-if you want to see whats going on you can run the services in DEBUG-Mode:
+if you want to see what's going on you can run the services in DEBUG-Mode:
 
 - chrony: ``sudo chronyd -dd``
 - gpsd: ``sudo gpsd -N /dev/ttyO2 -D15 -n``

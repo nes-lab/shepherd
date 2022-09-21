@@ -216,7 +216,7 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
     /*
      * Based on the previous IEP timer period and the nominal timer period
      * we can estimate the real nanoseconds passing per tick
-     * We operate on fixed point arithmetics by shifting by 30 bit
+     * We operate on fixed point arithmetic OPs by shifting by 30 bit
      */
     ns_per_tick_n30 = div_u64(((uint64_t) trigger_loop_period_ns << 30u), sync_data->previous_period);
 

@@ -212,7 +212,7 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
 {
     // input: current is max 50 mA => 26 bit
     // states: voltage is 23 bit,
-    // output: with eta beeing 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
+    // output: with eta being 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
     /* BUCK, Calculate current flowing out of the storage capacitor */
     const uint64_t V_mid_uV_n4    = (state.V_mid_uV_n32 >> 28u);

@@ -37,7 +37,7 @@ The circuit is a software-controlled and -monitored current-sink with a variable
 
 By generalising the approach of version 1 with a dedicated harvest-IC the circuit became more flexible.
 The software currently supports to switch between constant voltage (CV) harvesting and maximum power point trackers (`MPPT <https://en.wikipedia.org/wiki/Maximum_Power_Point_Tracking>`_), with
-an open circuit voltage (VOC) or perturbe & observe (PO) algorithm.
+an open circuit voltage (VOC) or perturb & observe (PO) algorithm.
 The implementation is parametrized and can therefore be altered on the fly, e.g. to mimic a BQ25505-Converter by scheduling the 256 ms long VOC measurement every 16 s.
 
 A second advantage of the circuit is that it allows to characterize the harvesting transducer and the energy scenario.

@@ -127,7 +127,7 @@ Change into the ``software/python-package`` directory and run the following comm
 
 Some tests (~40) are hardware-independent, while most of them require a beaglebone to work (~100). The testbench detects the BeagleBone automatically. A small subset (~8) tests writing & configuring the EEPROM on the shepherd cape and must be enabled manually (``sudo pytest --eeprom-write``)
 
-**Note:** Recently the testbench had trouble running through completely and therefor loosing the debug-output. It is probably caused by repeatedly loading & unloading the shepherd kernel module. The following commands allow to :
+**Note:** Recently the testbench had trouble running through completely and therefore losing the debug-output. It is probably caused by repeatedly loading & unloading the shepherd kernel module. The following commands allow to :
 
 - run single tests,
 - whole test-files or

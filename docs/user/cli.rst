@@ -22,7 +22,7 @@ shepherd-herd
 Examples
 ********
 
-In the following we assume that you have an ansible style, YAML-formatted inventory file named ``hosts`` in your current working diretory.
+In the following we assume that you have an ansible style, YAML-formatted inventory file named ``hosts`` in your current working directory.
 Refer to the example ``hosts`` file in the root directory of the shepherd repository.
 To start recording harvesting data using the hardware MPPT algorithm and store it under the default path, overwriting existing data and precharging the capacitor before starting the recording:
 

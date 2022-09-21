@@ -554,7 +554,7 @@ class LogWriter:
         self.xcpt_pos += 1
 
     def log_sys_stats(self) -> NoReturn:
-        """captures state of system in a fixed intervall
+        """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
