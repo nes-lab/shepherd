@@ -206,7 +206,7 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 
     const enum ShepherdMode mode                 = (enum ShepherdMode) shared_mem->shepherd_mode;
     const uint32_t          dac_ch_a_voltage_raw = shared_mem->dac_auxiliary_voltage_raw & 0xFFFF;
-    /* switch to set behaviour of aux-channel (dac A) */
+    /* switch to set behavior of aux-channel (dac A) */
     dac_aux_link_to_main                         = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
     dac_aux_link_to_mid                          = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
 

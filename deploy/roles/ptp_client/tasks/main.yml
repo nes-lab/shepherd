@@ -1,5 +1,5 @@
 ---
-- name: Configure PTP for slave-only mode
+- name: Configure PTP for client-only mode
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
     regexp: "slaveOnly.*$"

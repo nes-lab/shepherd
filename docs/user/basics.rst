@@ -3,7 +3,7 @@ Basics
 
 *shepherd* is a testbed for the battery-less Internet of Things.
 It allows to record harvesting conditions at multiple points in space over time.
-The recorded data can be replayed to attached wireless sensor nodes, examining their behaviour under the constraints of spatio-temporal energy availability.
+The recorded data can be replayed to attached wireless sensor nodes, examining their behavior under the constraints of spatio-temporal energy availability.
 
 For a detailed description see our `Paper <https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf>`_ for shepherd version 1. Currently version 2 is in development.
 
@@ -35,7 +35,7 @@ For recording a harvesting scenario, shepherd nodes are equipped with a harvesti
 This transducer is connected to the input of the harvesting circuit on the shepherd cape.
 The circuit is a software-controlled and -monitored current-sink with a variable voltage.
 
-By generalising the approach of version 1 with a dedicated harvest-IC the circuit became more flexible.
+By generalizing the approach of version 1 with a dedicated harvest-IC the circuit became more flexible.
 The software currently supports to switch between constant voltage (CV) harvesting and maximum power point trackers (`MPPT <https://en.wikipedia.org/wiki/Maximum_Power_Point_Tracking>`_), with
 an open circuit voltage (VOC) or perturb & observe (PO) algorithm.
 The implementation is parametrized and can therefore be altered on the fly, e.g. to mimic a BQ25505-Converter by scheduling the 256 ms long VOC measurement every 16 s.

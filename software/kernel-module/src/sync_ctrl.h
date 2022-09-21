@@ -22,8 +22,8 @@ int  sync_reset(void);
  *
  * The controller is best described as a Phase-Locked-Loop system: The kernel
  * module runs a reference clock with phase and frequency synchronized to the
- * network-wide master. The frequency equals the 'buffer period' and the phase
- * should be aligned to the wrap of the real time. E.g. if we have a buffer
+ * network-wide time-coordinator. The frequency equals the 'buffer period' and the
+ * phase should be aligned to the wrap of the real time. E.g. if we have a buffer
  * period of 100ms, the timer should fire at X.1s, X.2s, X.3s and so on.
  * Our task is to copy that clock to the PRU's IEP. For this purpose, we run
  * a Linux hrtimer, that expires on the corresponding wrap of the Linux

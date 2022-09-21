@@ -3,9 +3,9 @@ name: Generate Docs
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python 🐍
         uses: actions/setup-python@v2
       - name: Checkout 🛎️
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
 

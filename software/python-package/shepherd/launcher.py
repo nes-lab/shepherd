@@ -183,12 +183,12 @@ class Launcher:
         for _ in range(timeout):
             if self.gpio_button.poll(timeout=0.5):
                 logger.debug("edge detected")
-                logger.info("shutdown cancelled")
+                logger.info("shutdown canceled")
                 return
             self.gpio_led.write(True)
             if self.gpio_button.poll(timeout=0.5):
                 logger.debug("edge detected")
-                logger.info("shutdown cancelled")
+                logger.info("shutdown canceled")
                 return
             self.gpio_led.write(False)
         os.sync()

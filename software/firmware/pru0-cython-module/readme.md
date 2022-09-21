@@ -34,7 +34,7 @@ python setup.py clean --all
 
 done:
 - replaced distutils by setuptools (as distutils are deprecated)
-- implemented some compile-constants alter behaviour of c-code (no hw-dependency)
+- implemented some compile-constants alter behavior of c-code (no hw-dependency)
 - used established folder-structure ... this code can now live in shepherd/software/firmware/pru0-cython-module
 - switched to cython-prerelease to allow "volatile" (pipenv usage)
 - use py3 code in cython -> language_level=... in .pyx file

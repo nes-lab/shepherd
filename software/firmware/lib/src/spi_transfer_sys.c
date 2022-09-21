@@ -22,7 +22,7 @@ void sys_spi_init()
     SYS_SPI.SYSCONFIG_bit.AUTOIDLE      = 0; // 0: no idle, 1:
 
     // [IRQSTATUS, IRQENABLE]
-    SYS_SPI.SYST_bit.SPIENDIR           = 0u; // 0: Output, Master-Mode
+    SYS_SPI.SYST_bit.SPIENDIR           = 0u; // 0: Output, Primary/Controller-Mode
     SYS_SPI.SYST_bit.SPIDATDIR0         = 0u; // 0: D0 -> output
     SYS_SPI.SYST_bit.SPIDATDIR1         = 1u; // 1: D1 -> input
     // DEBUG ?!?
@@ -34,7 +34,7 @@ void sys_spi_init()
     SYS_SPI.SYST_bit.SPIEN_3            = 1;
 
     SYS_SPI.MODULCTRL_bit.SYSTEM_TEST   = 0; // 0: functional mode, 1: test
-    SYS_SPI.MODULCTRL_bit.MS            = 0; // 0: master mode, 1: slave
+    SYS_SPI.MODULCTRL_bit.MS            = 0; // 0: primary mode (controller), 1: secondary (periphery)
     SYS_SPI.MODULCTRL_bit.PIN34         = 0; // 0: SPIEN is CS (4Pin-Mode), 1: SPIEN not used
     SYS_SPI.MODULCTRL_bit.SINGLE        = 1; // 1: One Channel Mode
 
@@ -72,7 +72,7 @@ void sys_spi_init()
 
 
     // TODO: it would be possible to repeat data-aquisition automatically, adc also supports auto-increment mode, you just have to collect data
-    // TODO: dma-mode only when in transmit-only or receive-only or slave mode (chapter 24.3.5)
+    // TODO: dma-mode only when in transmit-only or receive-only or client-mode (chapter 24.3.5)
 }
 
 uint32_t sys_adc_readwrite(const uint32_t cs_pin, const uint32_t val)

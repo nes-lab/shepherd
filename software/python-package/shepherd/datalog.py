@@ -216,7 +216,8 @@ class LogWriter:
         settings = list(self._h5file.id.get_access_plist().get_cache())
         logger.debug("H5Py Cache_setting=%s (_mdc, _nslots, _nbytes, _w0)", settings)
 
-        # Store voltage and current samples in the data group, both are stored as 4 Byte uint
+        # Store voltage and current samples in the data group,
+        # both are stored as 4 Byte unsigned integer
         self.data_grp = self._h5file.create_group("data")
         self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
         # these attributes will be adjusted at the end of fn:
@@ -382,7 +383,7 @@ class LogWriter:
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs[
             "description"
-        ] = "master offset [ns], s2 freq [Hz], path delay [ns]"
+        ] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
         # Store the mode in order to allow user to differentiate harvesting vs emulation data
         if isinstance(self._mode, str) and self._mode in self.mode_dtype_dict:
@@ -700,7 +701,7 @@ class LogWriter:
 
     def monitor_ptp4l(self, poll_intervall: float = 0.25):
         # example:
-        # sheep1 ptp4l[378]: [821.629] master offset -4426 s2 freq +285889 path delay 12484
+        # sheep1 ptp4l[378]: [821.629] main offset -4426 s2 freq +285889 path delay 12484
         global monitors_end
         cmd_ptp4l = [
             "sudo",

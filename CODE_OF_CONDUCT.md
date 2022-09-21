@@ -126,3 +126,10 @@ enforcement ladder](https://github.com/mozilla/diversity).
 For answers to common questions about this code of conduct, see the FAQ at
 https://www.contributor-covenant.org/faq. Translations are available at
 https://www.contributor-covenant.org/translations.
+
+## Example SPI - naming scheme to use
+
+- primary / controller
+- secondary / periphery
+- MISO -> POCI (periphery out, controller in)
+- MOSI -> PICO (periphery in, controller out)

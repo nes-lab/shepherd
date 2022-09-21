@@ -196,7 +196,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     {
         // TODO: not working as expected, this should alarm when PRUs are offline
         ts_last_error_ns = ts_now_system_ns;
-        printk(KERN_ERR "shprd.k: Faulty behaviour - PRU did not answer to trigger-request in time!");
+        printk(KERN_ERR "shprd.k: Faulty behavior - PRU did not answer to trigger-request in time!");
     }
 
     hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),

@@ -1,5 +1,5 @@
 ---
-- name: Configure PTP for master mode
+- name: Configure PTP for server-mode (time-coordinator)
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
     regexp: "slaveOnly.*$"

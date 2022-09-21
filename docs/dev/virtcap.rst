@@ -72,7 +72,7 @@ sample is taken, the last measured sample is used.
 Then the VirtCap function is called (using the input/output voltage/current as
 input for the function). Based on these values, the new storage capacitor
 voltage is calculated. The input and output efficiency of the converter is
-modelled using lookup tables, as function of the input or output current.
+modeled using lookup tables, as function of the input or output current.
 
 Every iteration the capacitor voltage is checked to not go beyond its minimum
 and maximum value. However, the ``upper_threshold_voltage`` and

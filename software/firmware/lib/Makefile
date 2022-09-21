@@ -101,7 +101,7 @@ LFLAGS += --warn_sections #                 warn when undefined output section i
 LFLAGS += --stack_size=$(STACK_SIZE) #      default is 256 byte
 LFLAGS += --heap_size=$(HEAP_SIZE)
 
-# Init-Model -> you MUST SPECIFY ONE one of both (otherwise program-entry-point missing -> undefined behaviour)
+# Init-Model -> you MUST SPECIFY ONE one of both (otherwise program-entry-point missing -> undefined behavior)
 #     ram: var-init at load-time, enhanced performance, reduced boot time, save memory used by the initialization tables
 #     rom: var-init at run-time, default method of auto-initialization
 LFLAGS += --ram_model

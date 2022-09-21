@@ -10,7 +10,7 @@ void                                            calibration_initialize(const vol
 
 
 /* bring values into adc domain with -> voltage_uV = adc_value * gain_factor + offset
- * original definition in: https://github.com/geissdoerfer/shepherd/blob/master/docs/user/data_format.rst */
+ * original definition in: https://github.com/orgua/shepherd/blob/main/docs/user/data_format.rst */
 // Note: n8 can overflow uint32, 50mA are 16 bit as uA, 26 bit as nA, 34 bit as nA_n8-factor -> keep multiplication u64
 // TODO: negative residue compensation, new undocumented feature to compensate for noise around 0 - current uint-design cuts away negative part and leads to biased mean()
 #define NOISE_ESTIMATE_nA   (2000u)

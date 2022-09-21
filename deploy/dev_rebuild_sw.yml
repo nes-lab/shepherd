@@ -32,7 +32,7 @@
         repo: https://github.com/orgua/shepherd
         dest: '{{ shepherd_install_path }}'
         update: true
-        version: master
+        version: main
         force: true
       when: refresh_source | bool
       become: false

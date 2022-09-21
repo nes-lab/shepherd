@@ -18,8 +18,8 @@ For each shepherd node, you'll need:
 
 In addition, you'll need at least one SD-card with at least 4GB capacity. To setup linux and control the nodes a linux host-machine is recommended, but the terminal in macOS or WSL for Windows should work as well.
 
-For the cape and capelets take a look at the `hardware design files <https://github.com/orgua/shepherd/tree/master/hardware>`_.
-Shepherd version 2 hardware is currently under development, see the separate `repository <https://github.com/orgua/shepherd_v2_planning/tree/master/PCBs>`_.
+For the cape and capelets take a look at the `hardware design files <https://github.com/orgua/shepherd/tree/main/hardware>`_.
+Shepherd version 2 hardware is currently under development, see the separate `repository <https://github.com/orgua/shepherd_v2_planning/tree/main/PCBs>`_.
 The capelets can mostly be soldered by hand (except the target pcb).
 The shepherd cape has a large number of small components and we suggest to send it to a PCB fab for assembly.
 

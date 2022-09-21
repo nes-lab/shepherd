@@ -147,7 +147,7 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
         result             = r32;
     }                                                                       // ~ 28 ns, limits 0..65535
     else if (mode == 2) result = factor * factor;                           // ~ 34 ns, limits 0..65535
-    else if (mode == 3) result = (uint64_t) factor * factor;                // ~ 42 ns, limits 0..65535 -> wrong behaviour!!!
+    else if (mode == 3) result = (uint64_t) factor * factor;                // ~ 42 ns, limits 0..65535 -> wrong behavior!!!
     else if (mode == 4) result = factor * (uint64_t) factor;                // ~ 48 ns, limits 0..(2^32-1) -> works fine?
     else if (mode == 5) result = (uint64_t) factor * (uint64_t) factor;     // ~ 54 ns, limits 0..(2^32-1)
     else if (mode == 6) result = ((uint64_t) factor) * ((uint64_t) factor); // ~ 54 ns, limits 0..(2^32-1)
@@ -460,7 +460,7 @@ int main(void)
 	 */
     struct SampleBuffer *const buffers_far           = (struct SampleBuffer *) resourceTable.shared_mem.pa;
 
-    /* Allow OCP master port access by the PRU so the PRU can read external memories */
+    /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT                   = 0u;
 
     /* allow PRU1 to enter event-loop */

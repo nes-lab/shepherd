@@ -8,7 +8,7 @@ Note how the following description traverses the clock hierarchy top-down starti
 General Structure
 -----------------
 
-The master node is connected to a u-blox GPS receiver (shepherd-capelet), from which it receives a PPS signal via GPIO and global time via UART if the GPS-Modul has an position-fix.
+The primary node is connected to a u-blox GPS receiver (shepherd-capelet), from which it receives a PPS signal via GPIO and global time via UART if the GPS-Modul has an position-fix.
 One kernel module and two services work in concert to provide a grandmaster clock:
 
 - ``pps_gmtimer`` (kernel module) timestamps edges on a GPIO pin with respect to an internal hardware timer on the AM335x and feeds the timestamps as a Linux pps device.
@@ -35,7 +35,7 @@ written (see https://github.com/kugelbit/ubx-packet-exchange). The configuration
 - The stationary mode was enabled to get a better percussion and a stable performance
 - the GPS- and galileo-satelite-systems were enabled to get a fast and stable fix
 
-In addition the standard config of the receiver leads to the following behaviour:
+In addition the standard config of the receiver leads to the following behavior:
 
 - If the PPS is not locked, the LED on the capelet will not blink. After the lock is attained, the LED will start blinking at 1 Hz.
 - NMEA messages are enabled for the UART link which connects to the BeagleBone.
@@ -58,7 +58,7 @@ Useful commands
 ---------------
 
 Check if PPS pulses are coming: ``cat /sys/class/pps/pps0/assert``
-On the master check that gpsd and chrony are running:
+On the primary node check that gpsd and chrony are running:
 
 - ``systemctl status gpsd``
 - ``systemctl status chrony``

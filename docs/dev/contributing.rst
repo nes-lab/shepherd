@@ -158,4 +158,4 @@ Finally, push the changes and the tag to trigger the CI pipeline to build and de
 
 .. code-block:: bash
 
-    git push origin master --tags
+    git push origin main --tags

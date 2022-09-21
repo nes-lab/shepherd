@@ -449,7 +449,7 @@ int main(void)
 {
     volatile struct SharedMem *const shared_memory = (volatile struct SharedMem *) PRU_SHARED_MEM_STRUCT_OFFSET;
 
-    /* Allow OCP master port access by the PRU so the PRU can read external memories */
+    /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT                 = 0;
     DEBUG_STATE_0;
 

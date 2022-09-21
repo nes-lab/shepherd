@@ -2,9 +2,9 @@ name: Repo-Tests
 
 on:
   push:
-    branches: [ "master", "dev" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   various-tests:
@@ -62,7 +62,7 @@ jobs:
 #    steps:
 #
 #      - name: Checkout 🛎️
-#        uses: actions/checkout@master
+#        uses: actions/checkout@v3
 #
 #      - name: Install 32bit dependencies 🔧
 #        run: |
