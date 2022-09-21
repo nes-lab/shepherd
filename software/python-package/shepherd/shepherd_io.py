@@ -160,7 +160,7 @@ class SharedMem:
             self.gpiostr_offset + 4 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
         )
 
-        logger.debug("Size of 1 Buffer:\t%s byte", self.buffer_size)
+        logger.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
 
     def __enter__(self):
         self.devmem_fd = os.open(
@@ -219,17 +219,17 @@ class SharedMem:
                 logger.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 logger.error(
-                    "BACKWARDS timestamp-jump detected after recv it from PRU -> %s ms",
+                    "BACKWARDS timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
             elif diff_ms < 95:
                 logger.error(
-                    "TOO SMALL timestamp-jump detected after recv it from PRU -> %s ms",
+                    "TOO SMALL timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
             elif diff_ms > 105:
                 logger.error(
-                    "FORWARDS  timestamp-jump detected after recv it from PRU -> %s ms",
+                    "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
         self.prev_timestamp = buffer_timestamp
@@ -278,7 +278,7 @@ class SharedMem:
         if verbose:
             if (pru0_util_mean > 95) or (pru0_util_max > 100):
                 logger.warning(
-                    "Pru0 Loop-Util: mean = %s %, max = %s % "
+                    "Pru0 Loop-Util: mean = %d %%, max = %d %% "
                     "-> WARNING: broken real-time-condition",
                     pru0_util_mean,
                     pru0_util_max,
@@ -287,7 +287,7 @@ class SharedMem:
                 #  WRONG PLACE HERE
             else:
                 logger.info(
-                    "Pru0 Loop-Util: mean = %s %, max = %s %",
+                    "Pru0 Loop-Util: mean = %d %%, max = %d %%",
                     pru0_util_mean,
                     pru0_util_max,
                 )
@@ -321,7 +321,7 @@ class SharedMem:
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
         logger.debug(
-            "wrote Firmware-Data to SharedMEM-Buffer (size = %s bytes)", data_size
+            "wrote Firmware-Data to SharedMEM-Buffer (size = %d bytes)", data_size
         )
         return data_size
 
@@ -396,14 +396,14 @@ class ShepherdIO:
 
             # Ask PRU for size of individual buffers
             self.samples_per_buffer = sfs.get_samples_per_buffer()
-            logger.debug("Samples per buffer: \t%s", self.samples_per_buffer)
+            logger.debug("Samples per buffer: \t%d", self.samples_per_buffer)
 
             self.n_buffers = sfs.get_n_buffers()
-            logger.debug("Number of buffers: \t%s", self.n_buffers)
+            logger.debug("Number of buffers: \t%d", self.n_buffers)
 
             self.buffer_period_ns = sfs.get_buffer_period_ns()
             self._buffer_period = self.buffer_period_ns / 1e9
-            logger.debug("Buffer period: \t\t%s s", self._buffer_period)
+            logger.debug("Buffer period: \t\t%d s", self._buffer_period)
 
             self.shared_mem = SharedMem(
                 mem_address, mem_size, self.n_buffers, self.samples_per_buffer
@@ -467,7 +467,7 @@ class ShepherdIO:
             wait_blocking (bool): If true, block until start has completed
         """
         if isinstance(start_time, (float, int)):
-            logger.debug("asking kernel module for start at %s", f"{start_time:.2f}")
+            logger.debug("asking kernel module for start at %.2f", start_time)
         sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
@@ -711,14 +711,14 @@ class ShepherdIO:
                 buf = self.shared_mem.read_buffer(value, verbose)
                 if verbose:
                     logger.debug(
-                        "Processing buffer #%s from shared memory took %s ms",
+                        "Processing buffer #%d from shared memory took %.2f ms",
                         value,
-                        round(1e3 * (time.time() - ts_start), 2),
+                        1e3 * (time.time() - ts_start),
                     )
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:
-                logger.info("Received cmd to print: %s", value)
+                logger.info("Received cmd to print: %d", value)
                 continue
 
             elif msg_type == commons.MSG_DEP_ERR_INCMPLT:

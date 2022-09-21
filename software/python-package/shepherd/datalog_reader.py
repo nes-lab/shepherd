@@ -97,11 +97,11 @@ class LogReader:
         if not self._skip_open:
             self._logger.info(
                 "Reading data from '%s'\n"
-                "\t- runtime %s s\n"
+                "\t- runtime %.2f s\n"
                 "\t- mode = %s\n"
-                "\t- window_size = %s\n"
-                "\t- size = %s MiB\n"
-                "\t- rate = %s KiB/s",
+                "\t- window_size = %d\n"
+                "\t- size = %d MiB\n"
+                "\t- rate = %d KiB/s",
                 self._file_path,
                 self.runtime_s,
                 self.get_mode(),
@@ -139,7 +139,7 @@ class LogReader:
         if end_n is None:
             end_n = int(self.ds_time.shape[0] // self.samples_per_buffer)
         self._logger.debug(
-            "Reading blocks from %s to %s from source-file", start_n, end_n
+            "Reading blocks from %d to %d from source-file", start_n, end_n
         )
         for i in range(start_n, end_n):
             idx_start = i * self.samples_per_buffer
@@ -256,8 +256,8 @@ class LogReader:
             ds_size = self.h5file["data"][dset].shape[0]
             if ds_time_size != ds_size:
                 self._logger.warning(
-                    "dataset '%s' has different size (=%s), "
-                    "compared to time-ds (=%s) (@Validator)",
+                    "dataset '%s' has different size (=%d), "
+                    "compared to time-ds (=%d) (@Validator)",
                     dset,
                     ds_size,
                     ds_time_size,
@@ -279,7 +279,7 @@ class LogReader:
                 )
             if (comp == "gzip") and (opts is not None) and (int(opts) > 1):
                 self._logger.warning(
-                    "gzip compression is too high (%s > 1) for BBone (@Validator)",
+                    "gzip compression is too high (%d > 1) for BBone (@Validator)",
                     opts,
                 )
         # host-name

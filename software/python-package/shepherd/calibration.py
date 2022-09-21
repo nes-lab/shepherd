@@ -198,14 +198,14 @@ class CalibrationData:
                     rval = result.rvalue  # test quality of regression
                 except KeyError:
                     logger.error(
-                        "data not found -> '%s-%s' replaced with default values (gain=%s)",
+                        "data not found -> '%s-%s' replaced with default values (gain=%f)",
                         component,
                         channel,
                         gain,
                     )
                 except ValueError:
                     logger.error(
-                        "data not found -> '%s-%s' replaced with default values (gain=%s)",
+                        "data not found -> '%s-%s' replaced with default values (gain=%f)",
                         component,
                         channel,
                         gain,
@@ -214,8 +214,8 @@ class CalibrationData:
                 if ("rval" in locals()) and (rval < 0.999):
                     logger.warning(
                         "Calibration may be faulty -> Correlation coefficient "
-                        "(rvalue) = %s is too low for %s-%s",
-                        f"{rval:.6f}",
+                        "(rvalue) = %.6f is too low for %s-%s",
+                        rval,
                         component,
                         channel,
                     )

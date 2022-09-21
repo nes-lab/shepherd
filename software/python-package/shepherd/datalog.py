@@ -448,27 +448,27 @@ class LogWriter:
 
         if self.dmesg_mon_t is not None:
             logger.info(
-                "terminate Dmesg-Monitor, (%s entries)",
+                "terminate Dmesg-Monitor, (%d entries)",
                 self.dmesg_grp["time"].shape[0],
             )
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
             logger.info(
-                "terminate PTP4L-Monitor, (%s entries)",
+                "terminate PTP4L-Monitor, (%d entries)",
                 self.timesync_grp["time"].shape[0],
             )
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
             if self._write_uart:
                 logger.info(
-                    "terminate UART-Monitor, (%s entries)",
+                    "terminate UART-Monitor, (%d entries)",
                     self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
         runtime = round(self.data_grp["time"].shape[0] / self.samplerate_sps, 1)
         gpevents = self.gpio_grp["time"].shape[0] if self._write_gpio else 0
         logger.info(
-            "flushing hdf5 file (%s s iv-data, %s gpio-events, %s xcpt-events)",
+            "flushing hdf5 file (%d s iv-data, %d gpio-events, %d xcpt-events)",
             runtime,
             gpevents,
             self.xcpt_grp["time"].shape[0],
@@ -618,7 +618,7 @@ class LogWriter:
             return
         global monitors_end
         logger.debug(
-            "Will start UART-Monitor for target on '%s' @ %s baud",
+            "Will start UART-Monitor for target on '%s' @ %d baud",
             self.uart_path,
             baudrate,
         )

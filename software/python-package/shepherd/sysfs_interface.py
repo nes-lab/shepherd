@@ -82,7 +82,7 @@ def set_start(start_time: float = None) -> NoReturn:
         if isinstance(start_time, float):
             start_time = int(start_time)
         if isinstance(start_time, int):
-            logger.debug("writing start-time = %s to sysfs", start_time)
+            logger.debug("writing start-time = %d to sysfs", start_time)
             f.write(f"{start_time}")
         else:  # unknown type
             logger.debug("writing 'start' to sysfs")
@@ -167,7 +167,7 @@ def write_dac_aux_voltage(
         )
 
     logger.debug(
-        "Set voltage of supply for auxiliary Target to %s V (raw=%s)", voltage, output
+        "Set voltage of supply for auxiliary Target to %.3f V (raw=%d)", voltage, output
     )
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
     write_dac_aux_voltage_raw(output)
@@ -185,7 +185,7 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
             "-> this might trigger commands"
         )
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
-        logger.debug("Sending raw auxiliary voltage (dac channel B): %s", voltage_raw)
+        logger.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))
 
 

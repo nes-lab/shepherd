@@ -123,7 +123,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
         pin.write(gpio_pass)
         logger.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
     cal = CalibrationData.from_default()
-    logger.info("Target Voltage \t= %s V", voltage)
+    logger.info("Target Voltage \t= %.3f V", voltage)
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
     sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset

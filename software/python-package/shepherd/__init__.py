@@ -261,9 +261,9 @@ class Emulator(ShepherdIO):
         super()._return_buffer(index)
         if verbose:
             logger.debug(
-                "Sending emu-buffer #%s to PRU took %s ms",
+                "Sending emu-buffer #%d to PRU took %.2f ms",
                 index,
-                round(1e3 * (time.time() - ts_start), 2),
+                1e3 * (time.time() - ts_start),
             )
 
 
@@ -720,7 +720,7 @@ def run_recorder(
 
         recorder.start(start_time, wait_blocking=False)
 
-        logger.info("waiting %s s until start", f"{start_time - time.time():.2f}")
+        logger.info("waiting %.2f s until start", start_time - time.time())
         recorder.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -901,7 +901,7 @@ def run_emulator(
         if output_path is not None:
             log_writer.embed_config(emu.vs_cfg.data)
         emu.start(start_time, wait_blocking=False)
-        logger.info("waiting %s s until start", f"{start_time - time.time():.2f}")
+        logger.info("waiting %.2f s until start", start_time - time.time())
         emu.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")

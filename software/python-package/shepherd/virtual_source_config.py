@@ -310,12 +310,12 @@ class VirtualSourceConfig:
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self.data
             self.data = self._config_defs[base_name]
-            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             self.check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
@@ -388,7 +388,7 @@ class VirtualSourceConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    "'%s' not provided, " "set to inherited value = %s",
+                    "Param '%s' not provided, set to inherited value = %s",
                     setting_key,
                     set_value,
                 )
@@ -417,7 +417,7 @@ class VirtualSourceConfig:
             values = default
             if verbose:
                 logger.debug(
-                    "'%s' not provided, will be set to inherited value = %s",
+                    "Param '%s' not provided, set to inherited value = %s",
                     setting_key,
                     values[0],
                 )

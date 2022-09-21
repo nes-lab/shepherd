@@ -138,12 +138,12 @@ class VirtualHarvesterConfig:
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self.data
             self.data = self._config_defs[base_name]
-            logger.debug("Parameter-Set will be completed with '%s'-base", base_name)
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             self._check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
@@ -223,10 +223,8 @@ class VirtualHarvesterConfig:
         ratio_new = self.data["duration_ms"] / self.data["interval_ms"]
         if (ratio_new / ratio_old - 1) > 0.1:
             logger.debug(
-                "Ratio between interval & duration has changed "
-                "more than 10% due to constraints, from %s to %s",
-                ratio_old,
-                ratio_new,
+                "Ratio between interval & duration has changed "  # noqa: G004
+                f"more than 10% due to constraints, from {ratio_old} to {ratio_new}"
             )
 
         if "dtype" not in self.data and "dtype" in self._config_base:
@@ -245,7 +243,7 @@ class VirtualHarvesterConfig:
             #  stay zero to disable hrv-routine during emulation
             self.data["window_samples"] = _window_samples
         if verbose:
-            logger.debug("window_samples = %s", self.data["window_samples"])
+            logger.debug("window_samples = %d", self.data["window_samples"])
 
     def _check_num(
         self,
@@ -260,14 +258,14 @@ class VirtualHarvesterConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    "'%s' not provided, set to inherited value = %s",
+                    "Param '%s' not provided, set to inherited value = %s",
                     setting_key,
                     set_value,
                 )
         if (min_value is not None) and (set_value < min_value):
             if verbose:
                 logger.debug(
-                    "%s = %s, but must be >= %s -> adjusted",
+                    "Param %s = %s, but must be >= %s -> adjusted",
                     setting_key,
                     set_value,
                     min_value,
@@ -276,7 +274,7 @@ class VirtualHarvesterConfig:
         if (max_value is not None) and (set_value > max_value):
             if verbose:
                 logger.debug(
-                    "%s = %s, but must be <= %s -> adjusted",
+                    "Param %s = %s, but must be <= %s -> adjusted",
                     setting_key,
                     set_value,
                     max_value,

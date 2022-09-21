@@ -39,3 +39,16 @@ def set_verbose_level(verbose: int) -> NoReturn:
         logging.basicConfig(format="%(name)s %(levelname)s: %(message)s")
     else:
         logging.basicConfig(format="%(message)s")
+
+
+# short reminder for format-strings:
+# %s    string
+# %d    decimal
+# %f    float
+# %o    decimal as octal
+# %x    decimal as hex
+#
+# %05d  pad right (aligned with 5chars)
+# %-05d pad left (left aligned)
+# %06.2f    6chars float, including dec point, with 2 chars after
+# %.5s  truncate to 5 chars
