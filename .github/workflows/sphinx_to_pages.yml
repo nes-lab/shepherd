@@ -1,4 +1,5 @@
-name: Generate Github-Pages
+name: Generate Docs
+# for Github-Pages
 
 on:
   push:
