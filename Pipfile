@@ -11,8 +11,9 @@ bump2version = "*"
 pre-commit = "*"
 
 [packages]
-shepherd = {path = "./software/python-package"}
-shepherd-herd = {path = "./software/shepherd-herd"}
+# NOTE: pip does not install these packages with as editable (-e), but pipenv does
+shepherd = {editable = true, path = "./software/python-package"}
+shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
