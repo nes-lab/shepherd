@@ -27,6 +27,7 @@ pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
 #schemdraw = "*"
+coverage = "*"
 
 [pipenv]
 allow_prereleases = false

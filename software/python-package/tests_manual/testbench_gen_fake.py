@@ -7,7 +7,6 @@ from shepherd import CalibrationData
 from shepherd import LogWriter
 from shepherd.shepherd_io import DataBuffer
 
-
 tmp_path = Path("/var/shepherd/recordings")
 store_path = tmp_path / "harvest_example.h5"
 
