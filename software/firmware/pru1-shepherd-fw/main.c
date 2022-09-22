@@ -194,6 +194,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem, const
 
         /* Each buffer can only store a limited number of events */
         if (cIDX >= MAX_GPIO_EVT_PER_BUFFER) return;
+        // TODO: indicate overflow here before returning. ie. MAX_GPIO.. + 1
 
         /* Ticks since we've taken the last sample */
         const uint32_t ticks_since_last_sample = CT_IEP.TMR_CNT - last_sample_ticks;
@@ -203,7 +204,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem, const
         simple_mutex_enter(&shared_mem->gpio_edges_mutex);
         shared_mem->gpio_edges->timestamp_ns[cIDX] = gpio_timestamp_ns;
         shared_mem->gpio_edges->bitmask[cIDX]      = (uint16_t) gpio_status;
-        shared_mem->gpio_edges->idx                = cIDX + 1;
+        shared_mem->gpio_edges->idx                = cIDX + 1u;
         simple_mutex_exit(&shared_mem->gpio_edges_mutex);
     }
 }

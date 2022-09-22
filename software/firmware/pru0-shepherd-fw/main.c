@@ -113,7 +113,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
     if (next_buffer_idx != NO_BUFFER)
     {
         shared_mem->gpio_edges      = &shared_mem->sample_buffer->gpio_edges;
-        shared_mem->gpio_edges->idx = 0;
+        shared_mem->gpio_edges->idx = 0u;
     }
     else
     {

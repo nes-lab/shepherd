@@ -253,6 +253,13 @@ class SharedMem:
         self.mapped_mem.seek(buffer_offset + self.gpiostr_offset)
         (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
 
+        if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
+            logger.error(
+                "Size of gpio_events out of range with %d entries", n_gpio_events
+            )
+            # TODO: put into LogWriter.write_exception() with ShepherdIOException
+            n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
+
         gpio_timestamps_ns = np.frombuffer(
             self.mapped_mem,
             "=u8",
