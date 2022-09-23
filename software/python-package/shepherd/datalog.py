@@ -466,11 +466,11 @@ class LogWriter:
                 )
             self.uart_mon_t = None
         runtime = round(self.data_grp["time"].shape[0] / self.samplerate_sps, 1)
-        gpevents = self.gpio_grp["time"].shape[0] if self._write_gpio else 0
+        gpio_events = self.gpio_grp["time"].shape[0] if self._write_gpio else 0
         logger.info(
             "flushing hdf5 file (%d s iv-data, %d gpio-events, %d xcpt-events)",
             runtime,
-            gpevents,
+            gpio_events,
             self.xcpt_grp["time"].shape[0],
         )
         self._h5file.flush()
@@ -514,7 +514,7 @@ class LogWriter:
             gpio_new_pos = self.gpio_pos + len_edges
             data_length = self.gpio_grp["time"].shape[0]
             if gpio_new_pos >= data_length:
-                data_length += self.gpio_inc
+                data_length += max(self.gpio_inc, gpio_new_pos - data_length)
                 self.gpio_grp["time"].resize((data_length,))
                 self.gpio_grp["value"].resize((data_length,))
             self.gpio_grp["time"][

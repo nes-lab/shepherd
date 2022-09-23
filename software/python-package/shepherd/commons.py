@@ -8,9 +8,8 @@ corresponding implementation in `software/firmware/include/commons.h`
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-MAX_GPIO_EVT_PER_BUFFER = (
-    16_384  # 2^14  # TODO: replace by (currently non-existing) sysfs_interface
-)
+MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14
+# TODO: replace by (currently non-existing) sysfs_interface
 
 MSG_BUF_FROM_HOST = 0x01
 MSG_BUF_FROM_PRU = 0x02
