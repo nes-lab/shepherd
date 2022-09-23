@@ -224,7 +224,7 @@ class VirtualHarvesterConfig:
         if (ratio_new / ratio_old - 1) > 0.1:
             logger.debug(
                 "Ratio between interval & duration has changed "
-                "more than 10% due to constraints, from %.4f to %.4f",
+                "more than 10%% due to constraints, from %.4f to %.4f",
                 ratio_old,
                 ratio_new,
             )

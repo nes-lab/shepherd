@@ -414,7 +414,7 @@ void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft va
 
 uint32_t get_I_mid_out_nA(void)
 {
-    return div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);
+    return (uint32_t) div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);
 }
 
 bool_ft get_state_log_intermediate(void)

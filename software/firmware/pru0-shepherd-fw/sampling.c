@@ -24,9 +24,10 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     /* Get input current/voltage from pru1 (these 2 far mem-reads can take from 420 to 300 us -> destroyer of real time) */
     while (shared_mem->analog_value_index != shared_mem->analog_sample_counter)
         ;
-    uint32_t input_current_nA = shared_mem->analog_value_current;
-    uint32_t input_voltage_uV = shared_mem->analog_value_voltage;
-    shared_mem->analog_sample_counter++;
+    uint32_t       input_current_nA       = shared_mem->analog_value_current;
+    uint32_t       input_voltage_uV       = shared_mem->analog_value_voltage;
+    const uint32_t current_sample_counter = shared_mem->analog_sample_counter;
+    shared_mem->analog_sample_counter++; // increment early to trigger pru1 to fetch new data
 
     sample_iv_harvester(&input_voltage_uV, &input_current_nA);
 
@@ -59,13 +60,13 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     /* write back converter-state into shared memory buffer */
     if (get_state_log_intermediate())
     {
-        buffer->values_current[shared_mem->analog_sample_counter] = get_I_mid_out_nA();
-        buffer->values_voltage[shared_mem->analog_sample_counter] = get_V_intermediate_uV();
+        buffer->values_current[current_sample_counter] = get_I_mid_out_nA();
+        buffer->values_voltage[current_sample_counter] = get_V_intermediate_uV();
     }
     else
     {
-        buffer->values_current[shared_mem->analog_sample_counter] = current_adc_raw;
-        buffer->values_voltage[shared_mem->analog_sample_counter] = voltage_dac;
+        buffer->values_current[current_sample_counter] = current_adc_raw;
+        buffer->values_voltage[current_sample_counter] = voltage_dac;
     }
     return 1u; // because we already incremented
 }

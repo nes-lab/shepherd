@@ -72,7 +72,7 @@ enum MsgType
 enum MsgID
 {
     MSG_TO_KERNEL = 0x55,
-    MSG_TO_PRU    = 0xAA
+    MSG_TO_PRU    = 0xAA,
 };
 
 enum ShepherdMode
@@ -97,6 +97,7 @@ enum ShepherdState
 
 struct GPIOEdges
 {
+    uint32_t canary;
     uint32_t idx;
     uint64_t timestamp_ns[MAX_GPIO_EVT_PER_BUFFER];
     uint16_t bitmask[MAX_GPIO_EVT_PER_BUFFER];
@@ -104,6 +105,7 @@ struct GPIOEdges
 
 struct SampleBuffer
 {
+    uint32_t         canary;
     uint32_t         len;
     uint64_t         timestamp_ns;
     uint32_t         values_voltage[ADC_SAMPLES_PER_BUFFER];
@@ -171,7 +173,7 @@ struct CalibrationConfig
  * 	_uV-u32 = 4294 V
  * 	_nA-u32 = ~ 4.294 A
  */
-struct ConverterConfig
+struct ConverterConfig // TODO: should get canary
 {
     /* General Reg Config */
     uint32_t converter_mode;                 // bitmask to alter functionality
@@ -214,7 +216,7 @@ struct ConverterConfig
 } __attribute__((packed));
 
 
-struct HarvesterConfig
+struct HarvesterConfig // TODO: should get canary
 {
     uint32_t algorithm;
     uint32_t hrv_mode;
@@ -299,6 +301,8 @@ struct SharedMem
     struct ProtoMsg          pru1_sync_outbox;
     struct ProtoMsg          pru1_msg_error;
     /* NOTE: End of region (also) controlled by kernel module */
+
+    // TODO: this position should get a canary
 
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
     uint64_t                 last_sample_timestamp_ns;

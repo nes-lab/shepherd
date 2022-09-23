@@ -91,6 +91,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
     {
         next_buffer_idx                         = (uint32_t) tmp_idx;
         shared_mem->sample_buffer               = buffers_far + next_buffer_idx;
+        shared_mem->sample_buffer->canary       = 0x0F0F0F0Fu;
         shared_mem->sample_buffer->timestamp_ns = shared_mem->next_buffer_timestamp_ns;
         shared_mem->last_sample_timestamp_ns    = shared_mem->next_buffer_timestamp_ns;
 
@@ -112,8 +113,9 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
 
     if (next_buffer_idx != NO_BUFFER)
     {
-        shared_mem->gpio_edges      = &shared_mem->sample_buffer->gpio_edges;
-        shared_mem->gpio_edges->idx = 0u;
+        shared_mem->gpio_edges         = &shared_mem->sample_buffer->gpio_edges;
+        shared_mem->gpio_edges->idx    = 0u;
+        shared_mem->gpio_edges->canary = 0x0F0F0F0Fu;
     }
     else
     {

@@ -133,34 +133,39 @@ class SharedMem:
 
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
-            # Header: 64 bit timestamp + 32 bit counter
-            8
+            # Header: 32 bit canary, 32 bit counter, 64 bit timestamp
+            4
             + 4
+            + 8
             # Actual IV data, 32 bit for each current and voltage
             + 2 * 4 * self.samples_per_buffer
-            # GPIO edge count
+            # GPIO-Header: 32 bit canary, 32 bit edge counter
+            + 4
             + 4
             # 64 bit timestamp per GPIO event
             + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-            # 16 bit GPIO state per GPIO event
-            + 2 * commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
+            # 16 bit GPIO state per GPIO event (edge data)
+            + 2 * commons.MAX_GPIO_EVT_PER_BUFFER
             # pru0 util stat
             + 2 * 4
         )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
         # TODO: put number in shared-mem or other way around
 
-        self.voltage_offset = 12
-        self.current_offset = 12 + 1 * 4 * self.samples_per_buffer
-        self.gpiostr_offset = 12 + 2 * 4 * self.samples_per_buffer
-        self.gpio_ts_offset = self.gpiostr_offset + 4
-        self.gpio_vl_offset = (
-            self.gpiostr_offset + 4 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-        )
+        self.voltage_offset = 4 + 4 + 8
+        self.current_offset = 16 + 1 * 4 * self.samples_per_buffer
+        self.gpio_offset = 16 + 2 * 4 * self.samples_per_buffer
+        self.gpio_ts_offset = self.gpio_offset + 4 + 4
+        self.gpio_vl_offset = self.gpio_offset + 8 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
         self.pru0_ut_offset = (
-            self.gpiostr_offset + 4 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
+            self.gpio_offset + 8 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
         )
 
         logger.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
+        if self.buffer_size * self.n_buffers != self.size:
+            raise BufferError(
+                "Py-estimated mem-size for buffers is different "
+                f"from pru-reported size ({self.buffer_size * self.n_buffers} vs. {self.size})"
+            )
 
     def __enter__(self):
         self.devmem_fd = os.open(
@@ -201,9 +206,11 @@ class SharedMem:
         buffer_offset = index * self.buffer_size
         self.mapped_mem.seek(buffer_offset)
 
-        # Read the header consisting of 12 (4 + 8 Bytes)
-        # First two values are number of samples and 64 bit timestamp
-        n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
+        # Read the header consisting of 16 (4 + 4 + 8 Bytes)
+        # -> canary, number of samples and 64 bit timestamp
+        canary1, n_samples, buffer_timestamp = struct.unpack(
+            "=LLQ", self.mapped_mem.read(16)
+        )
         if verbose:
             logger.debug(
                 "Retrieved buffer #%d  (@+0x%06X) "
@@ -213,6 +220,10 @@ class SharedMem:
                 n_samples,
                 buffer_timestamp // 1000000,
                 time.time(),
+            )
+        if canary1 != 0x0F0F0F0F:
+            raise BufferError(
+                f"CANARY of SampleBuffer was harmed! Is 0x{canary1:X}, expected 0x0F0F0F0F"
             )
 
         # sanity-check of received timestamp,
@@ -254,14 +265,20 @@ class SharedMem:
         )
 
         # Read the number of gpio events in the buffer
-        self.mapped_mem.seek(buffer_offset + self.gpiostr_offset)
-        (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
+        self.mapped_mem.seek(buffer_offset + self.gpio_offset)
+        canary2, n_gpio_events = struct.unpack("=LL", self.mapped_mem.read(8))
+
+        if canary2 != 0x0F0F0F0F:
+            raise BufferError(
+                f"CANARY of GpioBuffer was harmed! Is 0x{canary2:X}, expected 0x0F0F0F0F"
+            )
 
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
             logger.error(
                 "Size of gpio_events out of range with %d entries", n_gpio_events
             )
-            # TODO: put into LogWriter.write_exception() with ShepherdIOException
+            # TODO: should be exception, also
+            #  put into LogWriter.write_exception() with ShepherdIOException
             n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
         gpio_timestamps_ns = np.frombuffer(
@@ -416,7 +433,7 @@ class ShepherdIO:
 
             self.buffer_period_ns = sfs.get_buffer_period_ns()
             self._buffer_period = self.buffer_period_ns / 1e9
-            logger.debug("Buffer period: \t\t%d s", self._buffer_period)
+            logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
 
             self.shared_mem = SharedMem(
                 mem_address, mem_size, self.n_buffers, self.samples_per_buffer

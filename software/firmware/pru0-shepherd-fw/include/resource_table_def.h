@@ -47,7 +47,7 @@
 #define SIZE_CARVEOUT (FIFO_BUFFER_SIZE * sizeof(struct SampleBuffer))
 
 // pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (8 + 4 + 2 * 4 * 10000 + 4 + 8 * 16384 + 2 * 16384 + 2 * 4))];
+extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (4 + 4 + 8 + 2 * 4 * 10000 + (4 + 4 + (8 + 2) * 16384) + 2 * 4))];
 
 #if !defined(__GNUC__)
   #pragma DATA_SECTION(resourceTable, ".resource_table")
