@@ -12,7 +12,7 @@ pre-commit = "*"
 
 [packages]
 # NOTE: pip does not install these packages with as editable (-e), but pipenv does
-shepherd = {editable = true, path = "./software/python-package"}
+shepherd = {editable = true, path = "./software/python-package[test]"}
 shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
 sphinx = "*"
 sphinx-click = "*"
