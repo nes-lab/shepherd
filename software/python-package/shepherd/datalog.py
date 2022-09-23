@@ -650,16 +650,20 @@ class LogWriter:
                             self.uart_pos += 1
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
-            logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - "  # noqa: G004
-                f"couldn't configure serial-port '{self.uart_path}' "
-                f"with baudrate={baudrate} -> will skip logging"
+            logger.error(  # noqa: G200
+                "[UartMonitor] PySerial ValueError '%s' - "
+                "couldn't configure serial-port '%s' "
+                "with baudrate=%d -> will skip logging",
+                e,
+                self.uart_path,
+                baudrate,
             )
         except serial.SerialException as e:
-            logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - "  # noqa: G004
-                f"Couldn't open Serial-Port '{self.uart_path}' to target "
-                "-> will skip logging"
+            logger.error(  # noqa: G200
+                "[UartMonitor] pySerial SerialException '%s - "
+                "Couldn't open Serial-Port '%s' to target -> will skip logging",
+                e,
+                self.uart_path,
             )
         logger.debug("[UartMonitor] ended itself")
 

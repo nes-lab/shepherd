@@ -149,7 +149,7 @@ def meas_harvester_adc_voltage(
         adc_current_raw = float(np.mean(reject_outliers(meas_rec[0])))
 
         adc_filtered = reject_outliers(meas_rec[1])
-        filter_rate = 100 * adc_filtered.size / meas_rec[1].size
+        outlier_rate = 100 * (1 - adc_filtered.size / meas_rec[1].size)
         adc_voltage_raw = float(np.mean(adc_filtered))
 
         smu_current_mA = 1000 * smu.measure.i()
@@ -158,9 +158,13 @@ def meas_harvester_adc_voltage(
             {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw}
         )
         logger.debug(
-            f"  SMU-reference: {voltage_V:.3f} V @ {smu_current_mA:.3f} mA;  "  # noqa: G004
-            f"adc-v: {adc_voltage_raw:.4f} raw (filtered = {filter_rate:.2f} %); "
-            f"adc-c: {adc_current_raw} raw"
+            "  SMU-reference: %.4f V @ %.3f mA;"
+            "  adc-v: %.4f raw; adc-c: %.3f raw; filtered %.2f %% of values",
+            voltage_V,
+            smu_current_mA,
+            adc_voltage_raw,
+            adc_current_raw,
+            outlier_rate,
         )
 
     smu.source.output = smu.OUTPUT_OFF
@@ -195,7 +199,7 @@ def meas_harvester_adc_current(
         meas_enc = rpc_client.sample_from_pru(40)  # captures # buffers
         meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
         adc_filtered = reject_outliers(meas_rec[0])
-        filter_rate = 100 * adc_filtered.size / meas_rec[0].size
+        outlier_rate = 100 * (1 - adc_filtered.size / meas_rec[0].size)
         adc_current_raw = float(np.mean(adc_filtered))
 
         # voltage measurement only for information, drop might appear severe,
@@ -204,8 +208,12 @@ def meas_harvester_adc_current(
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         logger.debug(
-            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa: G004
-            f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
+            "  SMU-reference: %.3f mA @ %.4f V;"
+            "  adc-c: %.4f raw; filtered %.2f %% of values",
+            1000 * current_A,
+            smu_voltage,
+            adc_current_raw,
+            outlier_rate,
         )
 
     smu.source.output = smu.OUTPUT_OFF
@@ -236,7 +244,7 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
         meas_enc = rpc_client.sample_from_pru(40)  # captures # buffers
         meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
         adc_filtered = reject_outliers(meas_rec[0])
-        filter_rate = 100 * adc_filtered.size / meas_rec[0].size
+        outlier_rate = 100 * (1 - adc_filtered.size / meas_rec[0].size)
         adc_current_raw = float(np.mean(adc_filtered))
 
         # voltage measurement only for information, drop might appear severe,
@@ -245,8 +253,12 @@ def meas_emulator_current(rpc_client, smu, pwrline_cycles: float, mode_4wire: bo
 
         results.append({"reference_si": current_A, "shepherd_raw": adc_current_raw})
         logger.debug(
-            f"  SMU-reference: {1000*current_A:.3f} mA @ {smu_voltage:.4f} V;"  # noqa: G004
-            f"  adc-c: {adc_current_raw:.4f} raw (filter-rate = {filter_rate:.2f} %)"
+            "  SMU-reference: %.3f mA @ %.4f V;"
+            "  adc-c: %.4f raw; filtered %.2f %% of values",
+            1000 * current_A,
+            smu_voltage,
+            adc_current_raw,
+            outlier_rate,
         )
 
     smu.source.output = smu.OUTPUT_OFF
@@ -285,8 +297,13 @@ def meas_dac_voltage(
 
         results.append({"reference_si": mean, "shepherd_raw": _val})
         logger.debug(
-            f"  shp-dac: {voltages_V[_iter]:.3f} V ({_val:.0f} raw);"  # noqa: G004
-            f"  SMU-reference: {mean:.6f} V (median = {medi:.6f}); current: {smu_current_mA:.3f} mA"
+            "  shp-dac: %.3f V (%.0f raw);"
+            "  SMU-reference: %.6f V (median = %.6f); current: %.3f mA",
+            voltages_V[_iter],
+            _val,
+            mean,
+            medi,
+            smu_current_mA,
         )
 
     smu.source.output = smu.OUTPUT_OFF

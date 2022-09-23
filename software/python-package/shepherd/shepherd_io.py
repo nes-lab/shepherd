@@ -206,9 +206,13 @@ class SharedMem:
         n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
         if verbose:
             logger.debug(
-                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "  # noqa: G004
-                f"with len {n_samples} and timestamp {buffer_timestamp // 1000000} ms "
-                f"@{round(time.time(), 3)} sys_ts"
+                "Retrieved buffer #%d  (@+0x%06X) "
+                "with len %d and timestamp %d ms @%.3f sys_ts",
+                index,
+                index * self.buffer_size,
+                n_samples,
+                buffer_timestamp // 1000000,
+                time.time(),
             )
 
         # sanity-check of received timestamp,
@@ -398,7 +402,9 @@ class ShepherdIO:
             mem_size = sfs.get_mem_size()
 
             logger.debug(
-                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"  # noqa: G004
+                "Shared memory address: \t0x%08X, size: %d byte",
+                mem_address,
+                mem_size,
             )
 
             # Ask PRU for size of individual buffers
