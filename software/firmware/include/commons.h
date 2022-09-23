@@ -45,7 +45,7 @@ enum MsgType
     MSG_DBG_VSOURCE_P_OUT         = 0xA9,
     MSG_DBG_VSOURCE_V_CAP         = 0xAA,
     MSG_DBG_VSOURCE_V_OUT         = 0xAB,
-    MSG_DBG_VSOURCE_INIT          = 0xAC, // TODO: removed from pru-code
+    MSG_DBG_VSOURCE_INIT          = 0xAC, // TODO: remove from pru-code
     MSG_DBG_VSOURCE_CHARGE        = 0xAD,
     MSG_DBG_VSOURCE_DRAIN         = 0xAE,
     MSG_DBG_FN_TESTS              = 0xAF,

@@ -77,6 +77,5 @@ class VirtualSourceModel:
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
-        self.cnv.P_inp_fW += V_inp_uV * I_inp_nA
-        self.cnv.P_out_fW += V_out_uV * A_out_nA
+
         return V_out_uV

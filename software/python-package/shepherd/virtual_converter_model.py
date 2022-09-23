@@ -152,8 +152,8 @@ class VirtualConverterModel:
 
         # boost internal state
         self.V_input_uV = 0.0
-        self.P_inp_fW = 0.0  # TODO changed / inter
-        self.P_out_fW = 0.0  # TODO changed / inter
+        self.P_inp_fW = 0.0
+        self.P_out_fW = 0.0
         self.interval_startup_disabled_drain_n = (
             self._cfg.interval_startup_delay_drain_n
         )
@@ -172,11 +172,9 @@ class VirtualConverterModel:
         self.power_good = True
 
         # prepare hysteresis-thresholds
-        self.dV_enable_output_uV = self._cfg.dV_enable_output_uV  # TODO added
+        self.dV_enable_output_uV = self._cfg.dV_enable_output_uV
         self.V_enable_output_threshold_uV = self._cfg.V_enable_output_threshold_uV
-        # TODO added
         self.V_disable_output_threshold_uV = self._cfg.V_disable_output_threshold_uV
-        # TODO added
 
         if self.dV_enable_output_uV > self.V_enable_output_threshold_uV:
             self.V_enable_output_threshold_uV = self.dV_enable_output_uV
@@ -248,7 +246,7 @@ class VirtualConverterModel:
         return round(self.P_out_fW)  # Python-specific, added for easier testing
 
     # TODO: add range-checks for add, sub Ops
-    def update_cap_storage(self) -> int:  # TODO: STOP here
+    def update_cap_storage(self) -> int:
         if self.enable_storage:
             V_mid_prot_uV = max(1.0, self.V_mid_uV)
             P_sum_fW = self.P_inp_fW - self.P_out_fW
@@ -291,7 +289,7 @@ class VirtualConverterModel:
             else:
                 if self.V_mid_uV >= self._cfg.V_pwr_good_enable_threshold_uV:
                     self.power_good = self.is_outputting
-            # set pin to state ..
+            # set batok pin to state ... TODO
 
         if self.is_outputting or self.interval_startup_disabled_drain_n > 0:
             if (not self.enable_buck) or (

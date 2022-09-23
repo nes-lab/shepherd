@@ -280,7 +280,7 @@ class ShepherdDebug(ShepherdIO):
     # offer a default cali for debugging, TODO: maybe also try to read from eeprom
     _cal: CalibrationData = None
     _io: TargetIO = None
-    P_in_fW: float = 0.0
+    P_inp_fW: float = 0.0
     P_out_fW: float = 0.0
 
     def __init__(self, use_io: bool = True):
@@ -413,14 +413,15 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSOURCE_INIT:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }, "
+                " is ENABLE_DBG_VSOURCE defined in pru0/main.c??"
             )
-        # TEST-SIMPLIFICATION - code below is not part of pru-code
-        self.P_in_fW = 0.0
+        # TEST-SIMPLIFICATION - code below is not part of main pru-code
+        self.P_inp_fW = 0.0
         self.P_out_fW = 0.0
         self._cal = cal_settings
 
-    def vsource_calc_inp_power(
+    def cnv_calc_inp_power(
         self, input_voltage_uV: int, input_current_nA: int
     ) -> int:
         super()._send_msg(
@@ -491,8 +492,8 @@ class ShepherdDebug(ShepherdIO):
         return values[0]  # V_out_dac_raw
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
-    def iterate_sampling(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
-        self.vsource_calc_inp_power(V_in_uV, A_in_nA)
+    def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
+        self.cnv_calc_inp_power(V_inp_uV, A_inp_nA)
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
         )
@@ -503,7 +504,7 @@ class ShepherdDebug(ShepherdIO):
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
-        self.P_in_fW += V_in_uV * A_in_nA
+        self.P_inp_fW += V_inp_uV * A_inp_nA
         self.P_out_fW += V_out_uV * A_out_nA
         return V_out_uV
 

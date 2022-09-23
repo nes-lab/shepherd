@@ -133,7 +133,7 @@ void                                          converter_initialize(const volatil
 // TODO: explain design goals and limitations... why does the code looks that way
 /* Math behind this Converter
  * Individual drains / sources -> 	P_x = I_x * V_x
- * Efficiency 				eta_x = P_out_x / P_in_x  -> P_out_x = P_in_x * eta_x
+ * Efficiency 				eta_x = P_out_x / P_inp_x  -> P_out_x = P_inp_x * eta_x
  * Power in and out of Converter -> 	P = P_in - P_out
  * Current in storage cap -> 		I = P / V_cap
  * voltage change for Cap -> 		dV = I * dt / C
@@ -266,7 +266,7 @@ void converter_update_cap_storage(void)
     }
     if ((uint32_t) (state.V_mid_uV_n32 >> 32u) < 1u)
     {
-        state.V_mid_uV_n32 = (uint64_t) 1u << 32u;
+        state.V_mid_uV_n32 = ((uint64_t) 1u) << 32u;
     }
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
@@ -324,7 +324,7 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
         set_batok_pin(shared_mem, state.power_good);
     }
 
-    if (is_outputting || (state.interval_startup_disabled_drain_n > 0))
+    if (is_outputting || (state.interval_startup_disabled_drain_n > 0u))
     {
         if ((state.enable_buck == false) || (V_mid_uV <= cfg->V_output_uV + cfg->V_buck_drop_uV))
         {
@@ -362,7 +362,6 @@ uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t curre
     return (uint32_t) cfg->LUT_inp_efficiency_n8[pos_v][pos_c];
 }
 
-// TODO: fix input to take SI-units
 uint32_t get_output_inv_efficiency_n4(const uint32_t current_nA)
 {
     uint8_t pos_c = msb_position(current_nA >> cfg->LUT_output_I_min_log2_nA);

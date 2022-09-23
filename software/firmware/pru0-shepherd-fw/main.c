@@ -20,7 +20,7 @@
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
-//#define ENABLE_DBG_VSOURCE	// reduces firmware by x kByte
+#define ENABLE_DBG_VSOURCE // reduces firmware by 40 Byte
 
 #ifdef ENABLE_DEBUG_MATH_FN
   #include "math64_safe.h"
