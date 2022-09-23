@@ -41,7 +41,7 @@ enum MsgType
     MSG_DBG_GPI                   = 0xA2u,
     MSG_DBG_GP_BATOK              = 0xA3u,
     MSG_DBG_PRINT                 = 0xA6u,
-    MSG_DBG_VSOURCE_P_INP         = 0xA8, // TODO: update these names
+    MSG_DBG_VSOURCE_P_INP         = 0xA8, // TODO: update these names, mostly cnv_ instead of vsource
     MSG_DBG_VSOURCE_P_OUT         = 0xA9,
     MSG_DBG_VSOURCE_V_CAP         = 0xAA,
     MSG_DBG_VSOURCE_V_OUT         = 0xAB,

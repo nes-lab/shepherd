@@ -280,8 +280,8 @@ class ShepherdDebug(ShepherdIO):
     # offer a default cali for debugging, TODO: maybe also try to read from eeprom
     _cal: CalibrationData = None
     _io: TargetIO = None
-    P_inp_fW: float = 0.0
-    P_out_fW: float = 0.0
+    W_inp_fWs: float = 0.0
+    W_out_fWs: float = 0.0
 
     def __init__(self, use_io: bool = True):
         super().__init__("debug")
@@ -417,8 +417,8 @@ class ShepherdDebug(ShepherdIO):
                 " is ENABLE_DBG_VSOURCE defined in pru0/main.c??"
             )
         # TEST-SIMPLIFICATION - code below is not part of main pru-code
-        self.P_inp_fW = 0.0
-        self.P_out_fW = 0.0
+        self.W_inp_fWs = 0.0
+        self.W_out_fWs = 0.0
         self._cal = cal_settings
 
     def cnv_calc_inp_power(
@@ -436,7 +436,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_inp_pW
 
-    def vsource_charge(
+    def cnv_charge(
         self, input_voltage_uV: int, input_current_nA: int
     ) -> (int, int):
         self._send_msg(
@@ -451,7 +451,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
-    def vsource_calc_out_power(self, current_adc_raw: int) -> int:
+    def cnv_calc_out_power(self, current_adc_raw: int) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_P_OUT, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
@@ -461,7 +461,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def vsource_drain(self, current_adc_raw: int) -> (int, int):
+    def cnv_drain(self, current_adc_raw: int) -> (int, int):
         self._send_msg(commons.MSG_DBG_VSOURCE_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_DRAIN:
@@ -471,7 +471,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
-    def vsource_update_cap_storage(self) -> int:
+    def cnv_update_cap_storage(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
@@ -481,7 +481,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0]  # V_store_uV
 
-    def vsource_update_states_and_output(self) -> int:
+    def cnv_update_states_and_output(self) -> int:
         self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
@@ -493,19 +493,20 @@ class ShepherdDebug(ShepherdIO):
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
     def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
-        self.cnv_calc_inp_power(V_inp_uV, A_inp_nA)
+        # TODO: virtual harvesting missing, maybe per model?
+        P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA)
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
         )
-        self.vsource_calc_out_power(A_out_raw)
-        self.vsource_update_cap_storage()
-        V_out_raw = self.vsource_update_states_and_output()
+        P_out_fW = self.cnv_calc_out_power(A_out_raw)
+        self.cnv_update_cap_storage()
+        V_out_raw = self.cnv_update_states_and_output()
         V_out_uV = int(
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
-        self.P_inp_fW += V_inp_uV * A_inp_nA
-        self.P_out_fW += V_out_uV * A_out_nA
+        self.W_inp_fWs += P_inp_fW
+        self.W_out_fWs += P_out_fW
         return V_out_uV
 
     @staticmethod

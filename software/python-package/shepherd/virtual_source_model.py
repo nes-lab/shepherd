@@ -29,6 +29,9 @@ class VirtualSourceModel:
     hrv: VirtualHarvesterModel = None
     cnv: VirtualConverterModel = None
 
+    W_inp_fWs = 0.0
+    W_out_fWs = 0.0
+
     def __init__(
         self,
         vs_setting: Union[dict, VirtualSourceConfig],
@@ -61,21 +64,25 @@ class VirtualSourceModel:
         :param A_out_nA:
         :return:
         """
-        V_inp_uV, I_inp_nA = self.hrv.iv_sample(V_inp_uV, I_inp_nA)
+        # V_inp_uV, I_inp_nA = self.hrv.iv_sample(V_inp_uV, I_inp_nA)
+        # TODO: disabled for now, pru-code is not ready for this
 
-        self.cnv.calc_inp_power(V_inp_uV, I_inp_nA)
+        P_inp_fW = self.cnv.calc_inp_power(V_inp_uV, I_inp_nA)
 
         # fake ADC read
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
         )
 
-        self.cnv.calc_out_power(A_out_raw)
+        P_out_fW = self.cnv.calc_out_power(A_out_raw)
         self.cnv.update_cap_storage()
         V_out_raw = self.cnv.update_states_and_output()
         V_out_uV = int(
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
+
+        self.W_inp_fWs += P_inp_fW
+        self.W_out_fWs += P_out_fW
 
         return V_out_uV
