@@ -395,16 +395,19 @@ class ShepherdDebug(ShepherdIO):
     def vsource_init(
         self,
         vs_settings: VirtualSourceConfig,
-        cal_settings,
+        cal_data: CalibrationData,
         input_setting: Optional[dict],
     ):
-        super().send_virtual_converter_settings(vs_settings)
-        super().send_calibration_settings(cal_settings)
+        vs_config = VirtualSourceConfig(vs_settings)
+        super().send_virtual_converter_settings(vs_config)
+        super().send_calibration_settings(cal_data)
+
         vh_config = VirtualHarvesterConfig(
-            vs_settings.get_harvester(),
-            vs_settings.samplerate_sps,
+            vs_config.get_harvester(),
+            vs_config.samplerate_sps,
             emu_cfg=input_setting,
         )
+
         super().send_virtual_harvester_settings(vh_config)
         time.sleep(0.5)
         super().start()
@@ -419,11 +422,16 @@ class ShepherdDebug(ShepherdIO):
         # TEST-SIMPLIFICATION - code below is not part of main pru-code
         self.W_inp_fWs = 0.0
         self.W_out_fWs = 0.0
-        self._cal = cal_settings
+        self._cal = cal_data
 
-    def cnv_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
+    def cnv_calc_inp_power(
+        self, input_voltage_uV: int, input_current_nA: int, include_hrv: bool = False
+    ) -> int:
+
         super()._send_msg(
-            commons.MSG_DBG_VSRC_P_INP,
+            commons.MSG_DBG_VSRC_HRV_P_INP
+            if include_hrv
+            else commons.MSG_DBG_VSRC_P_INP,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
@@ -489,8 +497,8 @@ class ShepherdDebug(ShepherdIO):
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
     def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
-        # TODO: virtual harvesting missing, maybe per model?
-        P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA)
+        # NOTE: this includes the harvester
+        P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
         )

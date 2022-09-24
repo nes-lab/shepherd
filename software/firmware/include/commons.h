@@ -49,6 +49,7 @@ enum MsgType
     MSG_DBG_VSRC_CHARGE           = 0xAD,
     MSG_DBG_VSRC_DRAIN            = 0xAE,
     MSG_DBG_FN_TESTS              = 0xAF,
+    MSG_DBG_VSRC_HRV_P_INP        = 0xB1, // HRV + CNV in one go
 
     /* KERNELSPACE (enum >=0xC0) */
     // STATUS

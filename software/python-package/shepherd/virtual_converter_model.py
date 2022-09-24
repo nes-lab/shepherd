@@ -289,7 +289,7 @@ class VirtualConverterModel:
             else:
                 if self.V_mid_uV >= self._cfg.V_pwr_good_enable_threshold_uV:
                     self.power_good = self.is_outputting
-            # set batok pin to state ... TODO
+            # set batok pin to state ... TODO?
 
         if self.is_outputting or self.interval_startup_disabled_drain_n > 0:
             if (not self.enable_buck) or (

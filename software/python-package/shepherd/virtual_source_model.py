@@ -51,6 +51,7 @@ class VirtualSourceModel:
             vs_config.samplerate_sps,
             emu_cfg=input_setting,
         )
+
         vh_struct = KernelHarvesterStruct(vh_config)
         self.hrv = VirtualHarvesterModel(vh_struct)
 
@@ -64,8 +65,7 @@ class VirtualSourceModel:
         :param A_out_nA:
         :return:
         """
-        # V_inp_uV, I_inp_nA = self.hrv.iv_sample(V_inp_uV, I_inp_nA)
-        # TODO: disabled for now, pru-code is not ready for this
+        V_inp_uV, I_inp_nA = self.hrv.iv_sample(V_inp_uV, I_inp_nA)
 
         P_inp_fW = self.cnv.calc_inp_power(V_inp_uV, I_inp_nA)
 

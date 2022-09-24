@@ -61,19 +61,6 @@ class VirtualHarvesterConfig:
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
 
-        if self.for_emulation:
-            for element in ["dtype", "window_samples"]:
-                if element not in emu_cfg:
-                    raise TypeError(
-                        f"[{self.name}] Config from Input-File was faulty ({element} missing)"
-                    )
-                else:
-                    self.data[element] = emu_cfg[element]
-            if self.data["dtype"] == "isc_voc":
-                raise TypeError(
-                    f"[{self.name}] vHarvester can't handle 'isc_voc' format during emulation yet"
-                )
-
         if isinstance(setting, str) and Path(setting).exists():
             setting = Path(setting)
         if (
@@ -112,6 +99,20 @@ class VirtualHarvesterConfig:
                 f"[{self.name}] {type(setting)}'{setting}' could not be handled. "
                 f"In case of file-path -> does it exist?"
             )
+
+        if self.for_emulation:
+            for element in ["dtype", "window_samples"]:
+                if element in emu_cfg:
+                    self.data[element] = emu_cfg[element]
+                else:
+                    raise TypeError(
+                        f"[{self.name}] Config from Input-File was faulty ({element} missing)"
+                    )
+
+            if self.data["dtype"] == "isc_voc":
+                raise TypeError(
+                    f"[{self.name}] vHarvester can't handle 'isc_voc' format during emulation yet"
+                )
 
         if self.data_min is None:
             self.data_min = copy.copy(self.data)

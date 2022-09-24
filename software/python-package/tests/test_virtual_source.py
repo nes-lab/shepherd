@@ -211,6 +211,7 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
 @pytest.mark.hardware
 @pytest.mark.vs_name("direct")  # easiest case: v_inp == v_out, current not
 def test_vsource_direct(pru_vsource, pyt_vsource):
+
     for voltage_mV in [0, 100, 500, 1000, 2000, 3000, 4000, 4500]:
         V_pru_mV = pru_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
         V_pyt_mV = pyt_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
@@ -312,8 +313,10 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     A_out_nA = 2 * A_inp_nA
     V_settle_mV = (V_inp_uV * 10**-3 - 300) / 2
     # how many steps? charging took 9 steps at 200mA, so roughly 9 * 200 / (10 - 5)
-    print(f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV/10**3} mV , Out = 10mA "
-          f"-> V_out should settle @ {V_settle_mV} mV ")
+    print(
+        f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV/10**3} mV , Out = 10mA "
+        f"-> V_out should settle @ {V_settle_mV} mV "
+    )
     for _ in range(25):
         for _ in range(50):
             V_pru_mV = (
