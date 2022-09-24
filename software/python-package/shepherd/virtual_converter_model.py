@@ -66,7 +66,7 @@ class KernelConverterStruct:
         self.V_input_max_uV: int = values[2]
         self.I_input_max_nA: int = values[3]
         self.V_input_drop_uV: int = values[4]
-        self.Constant_1k_per_Ohm: int = values[5]
+        self.R_input_kOhm: int = values[5] / (2**22)
 
         self.Constant_us_per_nF: float = values[6] / (2**28)
         self.V_intermediate_init_uV: int = values[7]  # allow a proper / fast startup
@@ -208,12 +208,12 @@ class VirtualConverterModel:
             input_voltage_uV = 0
         else:
             if input_voltage_uV > self.V_mid_uV:
-                I_limit_nA = (
-                    input_voltage_uV - self.V_mid_uV
-                ) * self._cfg.Constant_1k_per_Ohm
-                if input_current_nA > I_limit_nA:
-                    input_current_nA = I_limit_nA
-                input_voltage_uV = self.V_mid_uV
+                V_diff_uV = input_voltage_uV - self.V_mid_uV
+                V_drop_uV = input_current_nA * self._cfg.R_input_kOhm
+                if V_drop_uV > V_diff_uV:
+                    input_voltage_uV = self.V_mid_uV
+                else:
+                    input_voltage_uV -= V_drop_uV
             else:
                 input_voltage_uV = 0
 

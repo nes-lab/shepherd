@@ -41,13 +41,13 @@ enum MsgType
     MSG_DBG_GPI                   = 0xA2u,
     MSG_DBG_GP_BATOK              = 0xA3u,
     MSG_DBG_PRINT                 = 0xA6u,
-    MSG_DBG_VSOURCE_P_INP         = 0xA8, // TODO: update these names, mostly cnv_ instead of vsource
-    MSG_DBG_VSOURCE_P_OUT         = 0xA9,
-    MSG_DBG_VSOURCE_V_CAP         = 0xAA,
-    MSG_DBG_VSOURCE_V_OUT         = 0xAB,
-    MSG_DBG_VSOURCE_INIT          = 0xAC, // TODO: remove from pru-code
-    MSG_DBG_VSOURCE_CHARGE        = 0xAD,
-    MSG_DBG_VSOURCE_DRAIN         = 0xAE,
+    MSG_DBG_VSRC_P_INP            = 0xA8,
+    MSG_DBG_VSRC_P_OUT            = 0xA9,
+    MSG_DBG_VSRC_V_CAP            = 0xAA,
+    MSG_DBG_VSRC_V_OUT            = 0xAB,
+    MSG_DBG_VSRC_INIT             = 0xAC, // TODO: remove from pru-code
+    MSG_DBG_VSRC_CHARGE           = 0xAD,
+    MSG_DBG_VSRC_DRAIN            = 0xAE,
     MSG_DBG_FN_TESTS              = 0xAF,
 
     /* KERNELSPACE (enum >=0xC0) */
@@ -180,9 +180,9 @@ struct ConverterConfig // TODO: should get canary
     uint32_t interval_startup_delay_drain_n; // allow target to power up and go to sleep
 
     uint32_t V_input_max_uV;
-    uint32_t I_input_max_nA;      // limits input-power
-    uint32_t V_input_drop_uV;     // simulate possible diode
-    uint32_t Constant_1k_per_Ohm; // resistance only active with disabled boost
+    uint32_t I_input_max_nA;   // limits input-power
+    uint32_t V_input_drop_uV;  // simulate possible diode
+    uint32_t R_input_kOhm_n22; // resistance only active with disabled boost
 
     uint32_t Constant_us_per_nF_n28;
     uint32_t V_intermediate_init_uV; // allow a proper / fast startup

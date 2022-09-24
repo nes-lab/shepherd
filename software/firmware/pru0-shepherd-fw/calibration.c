@@ -4,7 +4,7 @@
 static const volatile struct CalibrationConfig *cal;
 
 
-void calibration_initialize(const volatile struct CalibrationConfig *const config)
+void                                            calibration_initialize(const volatile struct CalibrationConfig *const config)
 {
     cal = config;
 }

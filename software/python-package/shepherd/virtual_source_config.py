@@ -141,7 +141,7 @@ class VirtualSourceConfig:
             round(self.data["V_input_max_mV"] * 1e3),  # uV
             round(self.data["I_input_max_mA"] * 1e6),  # nA
             round(self.data["V_input_drop_mV"] * 1e3),  # uV
-            round(self.data["Constant_1k_per_Ohm"] * 1),  # 1/mOhm
+            round(self.data["R_input_kOhm_n22"] * 1),
             round(self.data["Constant_us_per_nF_n28"]),  # us/nF = us*V / nA*s
             round(self.data["V_intermediate_init_mV"] * 1e3),  # uV
             round(self.data["I_intermediate_leak_nA"] * 1),  # nA
@@ -206,10 +206,6 @@ class VirtualSourceConfig:
         self.data["Constant_us_per_nF_n28"] = (10**3 * (2**28)) // (
             C_storage_uF * self.samplerate_sps
         )
-
-        # inverse resistance constant
-        R_input_mOhm = max(self.data["R_input_mOhm"], 0.001)
-        self.data["Constant_1k_per_Ohm"] = max(10**6 / R_input_mOhm, 1)
 
         """
         compensate for (hard to detect) current-surge of real capacitors
@@ -331,7 +327,13 @@ class VirtualSourceConfig:
         self._check_num("V_input_max_mV", 10e3, verbose=verbose)
         self._check_num("I_input_max_mA", 4.29e3, verbose=verbose)
         self._check_num("V_input_drop_mV", 4.29e6, verbose=verbose)
+
         self._check_num("R_input_mOhm", 4.29e6, verbose=verbose)
+        self.data["R_input_kOhm_n22"] = (
+            (2**22) * self.data["R_input_mOhm"] / (10**6)
+        )
+        # TODO: possible optimization: n32 (range 1uOhm to 1 kOhm) is easier to calc in pru
+        self._check_num("R_input_kOhm_n22", 4.29e9, verbose=verbose)
 
         self._check_num("C_intermediate_uF", 100e3, verbose=verbose)
         self._check_num("I_intermediate_leak_nA", 4.29e9, verbose=verbose)
@@ -354,9 +356,8 @@ class VirtualSourceConfig:
         self._check_num("V_intermediate_max_mV", 10000, verbose=verbose)
 
         self._check_list("LUT_input_efficiency", 1.0, verbose=verbose)
-        self._check_num(
-            "LUT_input_V_min_log2_uV", 20, verbose=verbose
-        )  # TODO: naming could confuse
+        self._check_num("LUT_input_V_min_log2_uV", 20, verbose=verbose)
+        # TODO: naming could confuse
         self._check_num("LUT_input_I_min_log2_nA", 20, verbose=verbose)
 
         # Buck-Converter
@@ -377,7 +378,6 @@ class VirtualSourceConfig:
         self._check_num("V_enable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("V_disable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("Constant_us_per_nF_n28", 4.29e9, verbose=verbose)
-        self._check_num("Constant_1k_per_Ohm", 4.29e9, verbose=verbose)
 
     def _check_num(
         self, setting_key: str, max_value: float = None, verbose: bool = True

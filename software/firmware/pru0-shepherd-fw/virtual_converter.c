@@ -195,9 +195,16 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         const uint32_t V_mid_uV = (state.V_mid_uV_n32 >> 32u);
         if (input_voltage_uV > V_mid_uV)
         {
-            const uint32_t I_limit_nA = mul32((input_voltage_uV - V_mid_uV), cfg->Constant_1k_per_Ohm);
-            if (input_current_nA > I_limit_nA) input_current_nA = I_limit_nA;
-            input_voltage_uV = V_mid_uV;
+            const uint32_t V_diff_uV = input_voltage_uV - V_mid_uV;
+            const uint32_t V_drop_uV = (uint32_t) (((uint64_t) input_current_nA * (uint64_t) cfg->R_input_kOhm_n22) >> 22u);
+            if (V_drop_uV > V_diff_uV)
+            {
+                input_voltage_uV = V_mid_uV;
+            }
+            else
+            {
+                input_voltage_uV -= V_drop_uV;
+            }
         }
         else input_voltage_uV = 0u;
     }

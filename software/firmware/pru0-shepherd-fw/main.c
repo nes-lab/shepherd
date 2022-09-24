@@ -215,49 +215,49 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
                 return 1U;
 
 #ifdef ENABLE_DBG_VSOURCE
-            case MSG_DBG_VSOURCE_P_INP: // TODO: these can be done with normal emulator instantiation
+            case MSG_DBG_VSRC_P_INP: // TODO: these can be done with normal emulator instantiation
                 // TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
-                //sample_iv_harvester(&input_voltage_uV, &input_current_nA);
+                //sample_iv_harvester(&input_voltage_uV, &input_current_nA); TODO: activate
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-                send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t) (get_P_input_fW() >> 32u), (uint32_t) get_P_input_fW());
+                send_message(shared_mem, MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u), (uint32_t) get_P_input_fW());
                 return 1u;
 
-            case MSG_DBG_VSOURCE_P_OUT:
+            case MSG_DBG_VSRC_P_OUT:
                 converter_calc_out_power(msg_in.value[0]);
-                send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t) (get_P_output_fW() >> 32u), (uint32_t) get_P_output_fW());
+                send_message(shared_mem, MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u), (uint32_t) get_P_output_fW());
                 return 1u;
 
-            case MSG_DBG_VSOURCE_V_CAP:
+            case MSG_DBG_VSRC_V_CAP:
                 converter_update_cap_storage();
-                send_message(shared_mem, MSG_DBG_VSOURCE_V_CAP, get_V_intermediate_uV(), 0);
+                send_message(shared_mem, MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_V_OUT:
+            case MSG_DBG_VSRC_V_OUT:
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
+                send_message(shared_mem, MSG_DBG_VSRC_V_OUT, res, 0);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_INIT:
+            case MSG_DBG_VSRC_INIT:
                 calibration_initialize(&shared_mem->calibration_settings);
                 converter_initialize(&shared_mem->converter_settings);
                 //harvester_initialize(&shared_mem->harvester_settings);
-                send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
+                send_message(shared_mem, MSG_DBG_VSRC_INIT, 0, 0);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_CHARGE:
+            case MSG_DBG_VSRC_CHARGE:
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
                 converter_calc_out_power(0u);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_V_intermediate_uV(), res);
+                send_message(shared_mem, MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_DRAIN:
+            case MSG_DBG_VSRC_DRAIN:
                 converter_calc_inp_power(0u, 0u);
                 converter_calc_out_power(msg_in.value[0]);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
+                send_message(shared_mem, MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
 #endif
 

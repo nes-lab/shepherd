@@ -32,7 +32,7 @@ const struct ConverterConfig ConverterConfig_default = {
         .V_input_max_uV                  = 102u,
         .I_input_max_nA                  = 103u,
         .V_input_drop_uV                 = 104u,
-        .Constant_1k_per_Ohm             = 105u,
+        .R_input_kOhm_n22                = 105u,
 
         .Constant_us_per_nF_n28          = 106u,
         .V_intermediate_init_uV          = 107u,

@@ -408,11 +408,11 @@ class ShepherdDebug(ShepherdIO):
         super().send_virtual_harvester_settings(vh_config)
         time.sleep(0.5)
         super().start()
-        super()._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
+        super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
-        if msg_type != commons.MSG_DBG_VSOURCE_INIT:
+        if msg_type != commons.MSG_DBG_VSRC_INIT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_INIT) }, "
                 f"but got type={ hex(msg_type) } val={ values }, "
                 " is ENABLE_DBG_VSOURCE defined in pru0/main.c??"
             )
@@ -421,72 +421,68 @@ class ShepherdDebug(ShepherdIO):
         self.W_out_fWs = 0.0
         self._cal = cal_settings
 
-    def cnv_calc_inp_power(
-        self, input_voltage_uV: int, input_current_nA: int
-    ) -> int:
+    def cnv_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         super()._send_msg(
-            commons.MSG_DBG_VSOURCE_P_INP,
+            commons.MSG_DBG_VSRC_P_INP,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
+        if msg_type != commons.MSG_DBG_VSRC_P_INP:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_INP) }, "
                 f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_inp_pW
 
-    def cnv_charge(
-        self, input_voltage_uV: int, input_current_nA: int
-    ) -> (int, int):
+    def cnv_charge(self, input_voltage_uV: int, input_current_nA: int) -> (int, int):
         self._send_msg(
-            commons.MSG_DBG_VSOURCE_CHARGE,
+            commons.MSG_DBG_VSRC_CHARGE,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_CHARGE:
+        if msg_type != commons.MSG_DBG_VSRC_CHARGE:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_CHARGE) }, "
                 f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
     def cnv_calc_out_power(self, current_adc_raw: int) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_P_OUT, int(current_adc_raw))
+        self._send_msg(commons.MSG_DBG_VSRC_P_OUT, int(current_adc_raw))
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
+        if msg_type != commons.MSG_DBG_VSRC_P_OUT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_OUT) }, "
                 f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
     def cnv_drain(self, current_adc_raw: int) -> (int, int):
-        self._send_msg(commons.MSG_DBG_VSOURCE_DRAIN, int(current_adc_raw))
+        self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_DRAIN:
+        if msg_type != commons.MSG_DBG_VSRC_DRAIN:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_DRAIN) }, "
                 f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
     def cnv_update_cap_storage(self) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
+        self._send_msg(commons.MSG_DBG_VSRC_V_CAP, 0)
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
+        if msg_type != commons.MSG_DBG_VSRC_V_CAP:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_CAP) }, "
                 f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0]  # V_store_uV
 
     def cnv_update_states_and_output(self) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
+        self._send_msg(commons.MSG_DBG_VSRC_V_OUT, 0)
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
+        if msg_type != commons.MSG_DBG_VSRC_V_OUT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, "
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_OUT) }, "
                 f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0]  # V_out_dac_raw

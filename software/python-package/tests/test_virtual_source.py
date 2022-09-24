@@ -112,7 +112,7 @@ def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
         pyt_vsource.cnv.update_cap_storage()
 
     pru_vsource.cnv_calc_inp_power(0, 0)
-    V_cap_pru_mV = float(pru_vsource.cnv_update_cap_storage()) * 10 ** -3
+    V_cap_pru_mV = float(pru_vsource.cnv_update_cap_storage()) * 10**-3
     pyt_vsource.cnv.calc_inp_power(0, 0)
     V_cap_pyt_mV = float(pyt_vsource.cnv.update_cap_storage()) * 10**-3
 
@@ -179,7 +179,7 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
             break
 
     pru_vsource.cnv_calc_out_power(0)
-    V_mid_pru_mV = float(pru_vsource.cnv_update_cap_storage()) * 10 ** -3
+    V_mid_pru_mV = float(pru_vsource.cnv_update_cap_storage()) * 10**-3
     V_out_pru_raw = pru_vsource.cnv_update_states_and_output()
     pyt_vsource.cnv.calc_out_power(0)
     V_mid_pyt_mV = float(pyt_vsource.cnv.update_cap_storage()) * 10**-3
@@ -312,22 +312,25 @@ def test_vsource_diodecap(pru_vsource, pyt_vsource):
     A_out_nA = 2 * A_inp_nA
     V_settle_mV = (V_inp_uV * 10**-3 - 300) / 2
     # how many steps? charging took 9 steps at 200mA, so roughly 9 * 200 / (10 - 5)
-    for _ in range(20):
-        for _ in range(40):
-            V_pru_mV = pru_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
-            V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
+    print(f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV/10**3} mV , Out = 10mA "
+          f"-> V_out should settle @ {V_settle_mV} mV ")
+    for _ in range(25):
+        for _ in range(50):
+            V_pru_mV = (
+                pru_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
+            )
+            V_pyt_mV = (
+                pyt_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
+            )
         print(
-            "DiodeCap Drain in=5mA,out=10mA - "
-            f"Inp = {V_inp_uV/10**3} mV, "
-            f"Settle = {V_settle_mV} mV, "
+            "DiodeCap Drain - "
             f"OutPru = {V_pru_mV:.3f} mV, "
-            f"OutPy = {V_pyt_mV:.3f} mV, {[pyt_vsource.cnv.P_inp_fW, pyt_vsource.cnv.P_out_fW]}"
+            f"OutPy = {V_pyt_mV:.3f} mV"
         )
     assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
     assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
     assert pyt_vsource.W_inp_fWs >= pyt_vsource.W_out_fWs
     assert pru_vsource.W_inp_fWs >= pru_vsource.W_out_fWs
-    assert 0
 
 
 # TODO: add IO-Test with very small and very large values
