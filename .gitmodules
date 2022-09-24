@@ -1,3 +1,7 @@
 [submodule "software/shepherd-datalib"]
 	path = software/shepherd-datalib
 	url = https://github.com/orgua/shepherd-datalib.git
+
+[submodule "software/shepherd-webservice"]
+	path = software/shepherd-webservice
+	url = https://github.com/orgua/shepherd_webservice.git

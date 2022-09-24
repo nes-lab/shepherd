@@ -32,7 +32,7 @@ virtsource:
 
   # Boost Converter, ie. BQ25504
   V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-  V_intermediate_max_mV:  3600 # -> boost converter shuts off
+  V_intermediate_max_mV: 3600 # -> boost converter shuts off
 
   LUT_input_efficiency: [
     [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ], # rows are current -> here a[V=0][:]

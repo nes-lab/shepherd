@@ -2,56 +2,56 @@
 #define PRU1_DEBUG_ROUTINES_H_
 
 // Debug Code - Config, TODO: enable by makefile or compile-command for both PRUs
-#define DEBUG_GPIO_EN   0   // state1= gpio-checking, state2=writing data, state0=loop&event-routines
-#define DEBUG_EVENT_EN  0   // state1=Event1, s2=e2, s3=e3 (expensive part)
-#define DEBUG_LOOP_EN   0
-#define DEBUG_PGOOD_EN  1  // send power_good to LED1		-> default ON
-#define DEBUG_RAMRD_EN	1  // far ram read (for pru0) on LED0
+#define DEBUG_GPIO_EN  0 // state1= gpio-checking, state2=writing data, state0=loop&event-routines
+#define DEBUG_EVENT_EN 0 // state1=Event1, s2=e2, s3=e3 (expensive part)
+#define DEBUG_LOOP_EN  0
+#define DEBUG_PGOOD_EN 1 // send power_good to LED1		-> default ON
+#define DEBUG_RAMRD_EN 1 // far ram read (for pru0) on LED0
 
 // Debug Code, state-changes add ~2 ticks (s1 & 2), ~1 ticks (s0 & s3)
-#define DEBUG_STATE_0       write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
-#define DEBUG_STATE_1       write_r30((read_r30() | DEBUG_PIN0_MASK) & ~DEBUG_PIN1_MASK)
-#define DEBUG_STATE_2       write_r30((read_r30() | DEBUG_PIN1_MASK) & ~DEBUG_PIN0_MASK)
-#define DEBUG_STATE_3       write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+#define DEBUG_STATE_0  write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+#define DEBUG_STATE_1  write_r30((read_r30() | DEBUG_PIN0_MASK) & ~DEBUG_PIN1_MASK)
+#define DEBUG_STATE_2  write_r30((read_r30() | DEBUG_PIN1_MASK) & ~DEBUG_PIN0_MASK)
+#define DEBUG_STATE_3  write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
 
 #if (DEBUG_GPIO_EN > 0)
-#define DEBUG_GPIO_STATE_0  DEBUG_STATE_0
-#define DEBUG_GPIO_STATE_1  DEBUG_STATE_1
-#define DEBUG_GPIO_STATE_2  DEBUG_STATE_2
-#define DEBUG_GPIO_STATE_3  DEBUG_STATE_3
+  #define DEBUG_GPIO_STATE_0 DEBUG_STATE_0
+  #define DEBUG_GPIO_STATE_1 DEBUG_STATE_1
+  #define DEBUG_GPIO_STATE_2 DEBUG_STATE_2
+  #define DEBUG_GPIO_STATE_3 DEBUG_STATE_3
 #else
-#define DEBUG_GPIO_STATE_0
-#define DEBUG_GPIO_STATE_1
-#define DEBUG_GPIO_STATE_2
-#define DEBUG_GPIO_STATE_3
+  #define DEBUG_GPIO_STATE_0
+  #define DEBUG_GPIO_STATE_1
+  #define DEBUG_GPIO_STATE_2
+  #define DEBUG_GPIO_STATE_3
 #endif
 
 #if (DEBUG_EVENT_EN > 0)
-#define DEBUG_EVENT_STATE_0  DEBUG_STATE_0
-#define DEBUG_EVENT_STATE_1  DEBUG_STATE_1
-#define DEBUG_EVENT_STATE_2  DEBUG_STATE_2
-#define DEBUG_EVENT_STATE_3  DEBUG_STATE_3
+  #define DEBUG_EVENT_STATE_0 DEBUG_STATE_0
+  #define DEBUG_EVENT_STATE_1 DEBUG_STATE_1
+  #define DEBUG_EVENT_STATE_2 DEBUG_STATE_2
+  #define DEBUG_EVENT_STATE_3 DEBUG_STATE_3
 #else
-#define DEBUG_EVENT_STATE_0
-#define DEBUG_EVENT_STATE_1
-#define DEBUG_EVENT_STATE_2
-#define DEBUG_EVENT_STATE_3
+  #define DEBUG_EVENT_STATE_0
+  #define DEBUG_EVENT_STATE_1
+  #define DEBUG_EVENT_STATE_2
+  #define DEBUG_EVENT_STATE_3
 #endif
 
 #if (DEBUG_PGOOD_EN > 0)
-#define DEBUG_PGOOD_STATE_0 	write_r30(read_r30() & ~DEBUG_PIN1_MASK)
-#define DEBUG_PGOOD_STATE_1 	write_r30(read_r30() | DEBUG_PIN1_MASK)
+  #define DEBUG_PGOOD_STATE_0 write_r30(read_r30() & ~DEBUG_PIN1_MASK)
+  #define DEBUG_PGOOD_STATE_1 write_r30(read_r30() | DEBUG_PIN1_MASK)
 #else
-#define DEBUG_PGOOD_STATE_0
-#define DEBUG_PGOOD_STATE_1
+  #define DEBUG_PGOOD_STATE_0
+  #define DEBUG_PGOOD_STATE_1
 #endif
 
 #if (DEBUG_RAMRD_EN > 0)
-#define DEBUG_RAMRD_STATE_0	write_r30(read_r30() & ~DEBUG_PIN0_MASK)
-#define DEBUG_RAMRD_STATE_1	write_r30(read_r30() | DEBUG_PIN0_MASK)
+  #define DEBUG_RAMRD_STATE_0 write_r30(read_r30() & ~DEBUG_PIN0_MASK)
+  #define DEBUG_RAMRD_STATE_1 write_r30(read_r30() | DEBUG_PIN0_MASK)
 #else
-#define DEBUG_RAMRD_STATE_0
-#define DEBUG_RAMRD_STATE_1
+  #define DEBUG_RAMRD_STATE_0
+  #define DEBUG_RAMRD_STATE_1
 #endif
 
 
@@ -59,10 +59,10 @@
 // "print" number by toggling debug pins bitwise, lowest bitvalue first
 static void inline shift_gpio(const uint32_t number)
 {
-    const uint32_t gpio_off = read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-    const uint32_t gpio_one = gpio_off | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+    const uint32_t gpio_off  = read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+    const uint32_t gpio_one  = gpio_off | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     const uint32_t gpio_zero = gpio_off | DEBUG_PIN0_MASK;
-    uint32_t value = number << 1u;
+    uint32_t       value     = number << 1u;
     while (value >>= 1u)
     {
         write_r30(gpio_off);
@@ -75,10 +75,10 @@ static void inline shift_gpio(const uint32_t number)
 // analyze ticks between fn-calls (=time in loop), and output values for min, mean, max on debug pins
 static void inline debug_loop_delays(const uint32_t shepherd_state)
 {
-    static uint32_t ticks_last = 0;
-    static uint32_t ticks_max = 0;
-    static uint32_t ticks_min = 0xFFFFFFFF;
-    static uint32_t ticks_sum = 0;
+    static uint32_t ticks_last  = 0;
+    static uint32_t ticks_max   = 0;
+    static uint32_t ticks_min   = 0xFFFFFFFF;
+    static uint32_t ticks_sum   = 0;
     static uint32_t ticks_count = 0;
 
     if (shepherd_state == STATE_RUNNING)
@@ -104,10 +104,10 @@ static void inline debug_loop_delays(const uint32_t shepherd_state)
             __delay_cycles(8);
 
             shift_gpio(ticks_min);
-            shift_gpio(ticks_sum>>20u);
+            shift_gpio(ticks_sum >> 20u);
             shift_gpio(ticks_max);
 
-            ticks_sum = 0;
+            ticks_sum   = 0;
             ticks_count = 0;
         }
     }

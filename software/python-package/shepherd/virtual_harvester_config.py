@@ -1,11 +1,15 @@
 import copy
-from typing import NoReturn, Union
-from pathlib import Path
-import yaml
 import logging
-from shepherd.calibration import CalibrationData
+from pathlib import Path
+from typing import NoReturn
+from typing import Optional
+from typing import Union
 
-logger = logging.getLogger(__name__)
+import yaml
+
+from .calibration import CalibrationData
+
+logger = logging.getLogger("shp.hrvConfig")
 
 # Currently implemented harvesters
 # NOTE: numbers have meaning and will be tested ->
@@ -31,7 +35,8 @@ class VirtualHarvesterConfig:
     :param samplerate_sps:
     :param emu_cfg: optional config-dict (needed for emulation) with:
         - dtype: datatype of input-file
-        - window_samples: complete length of the ivcurve (if applicable) -> steps * (1 + wait_cycles)
+        - window_samples: complete length of the ivcurve (if applicable)
+          -> steps * (1 + wait_cycles)
     """
 
     data: dict = {}
@@ -45,25 +50,16 @@ class VirtualHarvesterConfig:
         self,
         setting: Union[dict, str, Path],
         samplerate_sps: int = 100_000,
-        emu_cfg: Union[None, dict] = None,
+        emu_cfg: Optional[dict] = None,
     ):
 
         self.samplerate_sps = samplerate_sps
         self.for_emulation = emu_cfg is not None
         def_path = Path(__file__).parent.resolve() / self._def_file
-        with open(def_path, "r") as def_data:
+        with open(def_path) as def_data:
             self._config_defs = yaml.safe_load(def_data)["harvesters"]
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
-
-        if self.for_emulation:
-            for element in ["dtype", "window_samples"]:
-                if element not in emu_cfg:
-                    raise TypeError(f"Harvester-Config from Input-File was faulty ({element} missing)")
-                else:
-                    self.data[element] = emu_cfg[element]
-            if self.data["dtype"] == "isc_voc":
-                raise TypeError(f"vHarvester can't handle 'isc_voc' format during emulation yet")
 
         if isinstance(setting, str) and Path(setting).exists():
             setting = Path(setting)
@@ -74,7 +70,7 @@ class VirtualHarvesterConfig:
             and setting.suffix in [".yaml", ".yml"]
         ):
             self._inheritance.append(str(setting))
-            with open(setting, "r") as config_data:
+            with open(setting) as config_data:
                 setting = yaml.safe_load(config_data)["harvesters"]
         if isinstance(setting, str):
             if setting in self._config_defs:
@@ -82,7 +78,8 @@ class VirtualHarvesterConfig:
                 setting = self._config_defs[setting]
             else:
                 raise NotImplementedError(
-                    f"[{self.name}] was set to '{setting}', but definition missing in '{self._def_file}'"
+                    f"[{self.name}] Config was set to '{setting}', "
+                    f"but definition missing in '{self._def_file}'"
                 )
 
         if setting is None:
@@ -99,27 +96,42 @@ class VirtualHarvesterConfig:
             self.data = setting
         else:
             raise NotImplementedError(
-                f"[{self.name}] {type(setting)}'{setting}' could not be handled. In case of file-path -> does it exist?"
+                f"[{self.name}] {type(setting)}'{setting}' could not be handled. "
+                f"In case of file-path -> does it exist?"
             )
+
+        if self.for_emulation:
+            for element in ["dtype", "window_samples"]:
+                if element in emu_cfg:
+                    self.data[element] = emu_cfg[element]
+                else:
+                    raise TypeError(
+                        f"[{self.name}] Config from Input-File was faulty ({element} missing)"
+                    )
+
+            if self.data["dtype"] == "isc_voc":
+                raise TypeError(
+                    f"[{self.name}] vHarvester can't handle 'isc_voc' format during emulation yet"
+                )
 
         if self.data_min is None:
             self.data_min = copy.copy(self.data)
 
         self._check_and_complete()
         logger.debug(
-            f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
+            "%s initialized with the following inheritance-chain: '%s'",
+            self.name,
+            self._inheritance,
         )
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
 
-        if "base" in self.data:
-            base_name = self.data["base"]
-        else:
-            base_name = "neutral"
+        base_name = self.data.get("base", "neutral")  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
             raise ValueError(
-                f"[{self.name}] loop detected in 'base'-inheritance-system @ '{base_name}' already in {self._inheritance}"
+                f"[{self.name}] loop detected in 'base'-inheritance-system "
+                f"@ '{base_name}' already in {self._inheritance}"
             )
         else:
             self._inheritance.append(base_name)
@@ -127,16 +139,12 @@ class VirtualHarvesterConfig:
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self.data
             self.data = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             self._check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
@@ -157,7 +165,10 @@ class VirtualHarvesterConfig:
 
         self._check_num("voltage_min_mV", 0, 5_000, verbose=verbose)
         self._check_num(
-            "voltage_max_mV", self.data["voltage_min_mV"], 5_000, verbose=verbose
+            "voltage_max_mV",
+            self.data["voltage_min_mV"],
+            5_000,
+            verbose=verbose,
         )
         self._check_num(
             "voltage_mV",
@@ -205,12 +216,18 @@ class VirtualHarvesterConfig:
         ratio_old = self.data["duration_ms"] / self.data["interval_ms"]
         self._check_num("interval_ms", time_min_ms, 1_000_000, verbose=verbose)
         self._check_num(
-            "duration_ms", time_min_ms, self.data["interval_ms"], verbose=verbose
+            "duration_ms",
+            time_min_ms,
+            self.data["interval_ms"],
+            verbose=verbose,
         )
         ratio_new = self.data["duration_ms"] / self.data["interval_ms"]
         if (ratio_new / ratio_old - 1) > 0.1:
             logger.debug(
-                f"[{self.name}] Ratio between interval & duration has changed more than 10% due to constraints, from {ratio_old} to {ratio_new}"
+                "Ratio between interval & duration has changed "
+                "more than 10%% due to constraints, from %.4f to %.4f",
+                ratio_old,
+                ratio_new,
             )
 
         if "dtype" not in self.data and "dtype" in self._config_base:
@@ -229,9 +246,7 @@ class VirtualHarvesterConfig:
             #  stay zero to disable hrv-routine during emulation
             self.data["window_samples"] = _window_samples
         if verbose:
-            logger.debug(
-                f"[{self.name}] window_samples = {self.data['window_samples']}"
-            )
+            logger.debug("window_samples = %d", self.data["window_samples"])
 
     def _check_num(
         self,
@@ -246,23 +261,32 @@ class VirtualHarvesterConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, set to inherited value = {set_value}"
+                    "Param '%s' not provided, set to inherited value = %s",
+                    setting_key,
+                    set_value,
                 )
         if (min_value is not None) and (set_value < min_value):
             if verbose:
                 logger.debug(
-                    f"[{self.name}] {setting_key} = {set_value}, but must be >= {min_value} -> adjusted"
+                    "Param %s = %s, but must be >= %s -> adjusted",
+                    setting_key,
+                    set_value,
+                    min_value,
                 )
             set_value = min_value
         if (max_value is not None) and (set_value > max_value):
             if verbose:
                 logger.debug(
-                    f"[{self.name}] {setting_key} = {set_value}, but must be <= {max_value} -> adjusted"
+                    "Param %s = %s, but must be <= %s -> adjusted",
+                    setting_key,
+                    set_value,
+                    max_value,
                 )
             set_value = max_value
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"[{self.name}] '{setting_key}' must a single positive number, but is '{set_value}'"
+                f"[{self.name}] '{setting_key}' must a single positive number, "
+                f"but is '{set_value}'"
             )
         self.data[setting_key] = set_value
 
@@ -276,11 +300,13 @@ class VirtualHarvesterConfig:
         """
         if self.for_emulation and self.data["algorithm_num"] <= algorithms["ivcurve"]:
             raise ValueError(
-                f"Select valid harvest-algorithm for emulator, current usage = {self._inheritance}"
+                f"[{self.name}] Select valid harvest-algorithm for emulator, "
+                f"current usage = {self._inheritance}"
             )
         elif self.data["algorithm_num"] < algorithms["ivcurve"]:
             raise ValueError(
-                f"Select valid harvest-algorithm for harvester, current usage = {self._inheritance}"
+                f"[{self.name}] Select valid harvest-algorithm for harvester, "
+                f"current usage = {self._inheritance}"
             )
 
         return [

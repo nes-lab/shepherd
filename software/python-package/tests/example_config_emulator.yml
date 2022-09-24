@@ -13,11 +13,16 @@ parameters:
     converter_base: BQ25570
     V_output_mV: 3300
   force_overwrite: true
-  use_cal_default: False
+  use_cal_default: false
   enable_io: true # regarding io level translators
   io_sel_target_a: true
   pwr_sel_target_a: true
-  aux_voltage: 3.3 # set None to disable (0 V), 0-4.5 for specific const voltage, "mid" will output intermediate voltage (vsource storage cap), true or "main" to mirror main target voltage
+  aux_voltage: 3.3
+    # aux_voltage options:
+    # - None to disable (0 V),
+    # - 0-4.5 for specific const Voltage,
+    # - "mid" will output intermediate voltage (vsource storage cap),
+    # - true or "main" to mirror main target voltage
   uart_baudrate: 9600 # set None to disable uart-logging for target
   skip_log_voltage: false
   skip_log_current: false

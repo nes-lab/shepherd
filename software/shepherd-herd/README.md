@@ -1,6 +1,6 @@
 # shepherd-herd
 
-*shepherd-herd* ist the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
+*shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
 
 
 ## Installation
@@ -10,7 +10,14 @@ Use your python package manager to install it.
 For example, using pip:
 
 ```
-pip install shepherd-herd
+pip3 install shepherd-herd
+```
+
+For install from local sources:
+
+```
+cd shepherd/software/shepherd-herd/
+pip3 install ./
 ```
 
 ## Usage

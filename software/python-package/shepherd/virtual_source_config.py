@@ -1,12 +1,12 @@
 import copy
-from typing import NoReturn, Union
-from pathlib import Path
-import yaml
 import logging
+from pathlib import Path
+from typing import NoReturn
+from typing import Union
 
-from shepherd import VirtualHarvesterConfig
+import yaml
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.srcConfig")
 
 
 def flatten_dict_list(dl) -> list:
@@ -36,7 +36,8 @@ class VirtualSourceConfig:
     - internal settings are derived from existing values (PRU has no FPU, so it is done here)
     - settings can be exported in required format
     - NOTES to naming:
-        - virtual harvester -> used for harvester and emulator, contains tools to characterize (ivcurve) and harvest these energy-sources (mppt)
+        - virtual harvester -> used for harvester and emulator, contains tools to
+                            characterize (ivcurve) and harvest these energy-sources (mppt)
         - virtual converter -> buck-boost, diode and other converters to supply the target
         - virtual source -> container for harvester + converter
     """
@@ -61,7 +62,7 @@ class VirtualSourceConfig:
         self.samplerate_sps: int = samplerate_sps
 
         def_path = Path(__file__).parent.resolve() / self._def_file
-        with open(def_path, "r") as def_data:
+        with open(def_path) as def_data:
             self._config_defs = yaml.safe_load(def_data)["virtsources"]
             self._config_base = self._config_defs["neutral"]
         self._inheritance = []
@@ -76,7 +77,7 @@ class VirtualSourceConfig:
             and setting.suffix in [".yaml", ".yml"]
         ):
             self._inheritance.append(str(setting))
-            with open(setting, "r") as config_data:
+            with open(setting) as config_data:
                 setting = yaml.safe_load(config_data)["virtsource"]
         if isinstance(setting, str):
             if setting in self._config_defs:
@@ -84,7 +85,8 @@ class VirtualSourceConfig:
                 setting = self._config_defs[setting]
             else:
                 raise NotImplementedError(
-                    f"[{self.name}] was set to '{setting}', but definition missing in '{self._def_file}'"
+                    f"[{self.name}] was set to '{setting}', "
+                    f"but definition missing in '{self._def_file}'"
                 )
 
         if setting is None:
@@ -99,7 +101,8 @@ class VirtualSourceConfig:
             self.data = setting
         else:
             raise NotImplementedError(
-                f"[{self.name}] InputSetting could not be handled. In case of file-path -> does it exist? \n"
+                f"[{self.name}] InputSetting could not be handled. "
+                f"In case of file-path -> does it exist? \n"
                 f"\t type = '{type(setting)}', \n"
                 f"\t content = '{setting}'"
             )
@@ -113,7 +116,9 @@ class VirtualSourceConfig:
         self.check_and_complete()
 
         logger.debug(
-            f"[{self.name}] initialized with the following inheritance-chain: '{self._inheritance}'"
+            "%s initialized with the following inheritance-chain: '%s'",
+            self.name,
+            self._inheritance,
         )
 
     def export_for_sysfs(self) -> list:
@@ -136,7 +141,7 @@ class VirtualSourceConfig:
             round(self.data["V_input_max_mV"] * 1e3),  # uV
             round(self.data["I_input_max_mA"] * 1e6),  # nA
             round(self.data["V_input_drop_mV"] * 1e3),  # uV
-            round(self.data["Constant_1k_per_Ohm"] * 1),  # 1/mOhm
+            round(self.data["R_input_kOhm_n22"] * 1),
             round(self.data["Constant_us_per_nF_n28"]),  # us/nF = us*V / nA*s
             round(self.data["V_intermediate_init_mV"] * 1e3),  # uV
             round(self.data["I_intermediate_leak_nA"] * 1),  # nA
@@ -167,7 +172,8 @@ class VirtualSourceConfig:
                 min(255, round(256 * value)) if (value > 0) else 0
                 for value in self.data["LUT_input_efficiency"]
             ],
-            # is now n4 -> resulting value for PRU is inverted, so 2^4 / value, inv-max = 2^14 for min-value = 1/1024
+            # is now n4 -> resulting value for PRU is inverted, so 2^4 / value,
+            # inv-max = 2^14 for min-value = 1/1024
             [
                 min((2**14), round((2**4) / value)) if (value > 0) else int(2**14)
                 for value in self.data["LUT_output_efficiency"]
@@ -201,19 +207,18 @@ class VirtualSourceConfig:
             C_storage_uF * self.samplerate_sps
         )
 
-        # inverse resistance constant
-        R_input_mOhm = max(self.data["R_input_mOhm"], 0.001)
-        self.data["Constant_1k_per_Ohm"] = max(10**6 / R_input_mOhm, 1)
-
         """
-        compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
-        -> this can be const value, because the converter always turns on with "V_storage_enable_threshold_uV"
-        TODO: currently neglecting: delay after disabling converter, boost only has simpler formula, second enabling when V_Cap >= V_out
+        compensate for (hard to detect) current-surge of real capacitors
+        when converter gets turned on -> this can be const value, because
+        the converter always turns on with "V_storage_enable_threshold_uV"
+        TODO: currently neglecting: delay after disabling converter, boost
+        only has simpler formula, second enabling when V_Cap >= V_out
 
         Math behind this calculation:
         Energy-Change Storage Cap   ->  E_new = E_old - E_output
         with Energy of a Cap 	    -> 	E_x = C_x * V_x^2 / 2
-        combine formulas 		    -> 	C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
+        combine formulas 		    ->
+                    C_store * V_store_new^2 / 2 = C_store * V_store_old^2 / 2 - C_out * V_out^2 / 2
         convert formula to V_new 	->	V_store_new^2 = V_store_old^2 - (C_out / C_store) * V_out^2
         convert into dV	 	        ->	dV = V_store_new - V_store_old
         in case of V_cap = V_out 	-> 	dV = V_store_old * (sqrt(1 - C_out / C_store) - 1)
@@ -229,7 +234,8 @@ class VirtualSourceConfig:
                 pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5
             )
 
-            # second case: storage cap below v_out (only different for enabled buck), enable when >= v_out
+            # second case: storage cap below v_out (only different for enabled buck),
+            #              enable when >= v_out
             # v_enable is either bucks v_out or same dV-Value is calculated a second time
             dV_output_imed_low_mV = v_out * (1 - pow(1 - c_out / c_store, 0.5))
         else:
@@ -280,15 +286,19 @@ class VirtualSourceConfig:
             ]
 
     def check_and_complete(self, verbose: bool = True) -> NoReturn:
-        """checks virtual-source-settings for present values, adds default values to missing ones, checks against limits of algorithm"""
-        if "converter_base" in self.data:
-            base_name = self.data["converter_base"]
-        else:
-            base_name = "neutral"
+        """
+        checks virtual-source-settings for present values,
+        adds default values to missing ones,
+        checks against limits of algorithm
+        """
+        base_name = self.data.get(
+            "converter_base", "neutral"
+        )  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
             raise ValueError(
-                f"[{self.name}] loop detected in 'base'-inheritance-system @ '{base_name}' already in {self._inheritance}"
+                f"[{self.name}] loop detected in 'base'-inheritance-system "
+                f"@ '{base_name}' already in {self._inheritance}"
             )
         else:
             self._inheritance.append(base_name)
@@ -296,16 +306,12 @@ class VirtualSourceConfig:
         if base_name == "neutral":
             # root of recursive completion
             self._config_base = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             verbose = False
         elif base_name in self._config_defs:
             config_stash = self.data
             self.data = self._config_defs[base_name]
-            logger.debug(
-                f"[{self.name}] Parameter-Set will be completed with '{base_name}'-base"
-            )
+            logger.debug("Parameter-Set will be completed with base = '%s'", base_name)
             self.check_and_complete(verbose=False)
             self._config_base = self.data
             self.data = config_stash
@@ -321,7 +327,13 @@ class VirtualSourceConfig:
         self._check_num("V_input_max_mV", 10e3, verbose=verbose)
         self._check_num("I_input_max_mA", 4.29e3, verbose=verbose)
         self._check_num("V_input_drop_mV", 4.29e6, verbose=verbose)
+
         self._check_num("R_input_mOhm", 4.29e6, verbose=verbose)
+        self.data["R_input_kOhm_n22"] = (
+            (2**22) * self.data["R_input_mOhm"] / (10**6)
+        )
+        # TODO: possible optimization: n32 (range 1uOhm to 1 kOhm) is easier to calc in pru
+        self._check_num("R_input_kOhm_n22", 4.29e9, verbose=verbose)
 
         self._check_num("C_intermediate_uF", 100e3, verbose=verbose)
         self._check_num("I_intermediate_leak_nA", 4.29e9, verbose=verbose)
@@ -338,18 +350,17 @@ class VirtualSourceConfig:
         if "harvester" not in self.data and "harvester" in self._config_base:
             self.data["harvester"] = self._config_base["harvester"]
 
-        # Boost
+        # Boost-Converter
         self._check_num("enable_boost", 4.29e9, verbose=verbose)
         self._check_num("V_input_boost_threshold_mV", 10000, verbose=verbose)
         self._check_num("V_intermediate_max_mV", 10000, verbose=verbose)
 
         self._check_list("LUT_input_efficiency", 1.0, verbose=verbose)
-        self._check_num(
-            "LUT_input_V_min_log2_uV", 20, verbose=verbose
-        )  # TODO: naming could confuse
+        self._check_num("LUT_input_V_min_log2_uV", 20, verbose=verbose)
+        # TODO: naming could confuse
         self._check_num("LUT_input_I_min_log2_nA", 20, verbose=verbose)
 
-        # Buck
+        # Buck-Converter
         self._check_num("enable_buck", 4.29e9, verbose=verbose)
         self._check_num("V_output_mV", 5000, verbose=verbose)
         self._check_num("V_buck_drop_mV", 5000, verbose=verbose)
@@ -367,7 +378,6 @@ class VirtualSourceConfig:
         self._check_num("V_enable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("V_disable_output_threshold_mV", 4.29e6, verbose=verbose)
         self._check_num("Constant_us_per_nF_n28", 4.29e9, verbose=verbose)
-        self._check_num("Constant_1k_per_Ohm", 4.29e9, verbose=verbose)
 
     def _check_num(
         self, setting_key: str, max_value: float = None, verbose: bool = True
@@ -378,11 +388,14 @@ class VirtualSourceConfig:
             set_value = self._config_base[setting_key]
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, set to inherited value = {set_value}"
+                    "Param '%s' not provided, set to inherited value = %s",
+                    setting_key,
+                    set_value,
                 )
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
-                f"[{self.name}] '{setting_key}' must a single positive number, but is '{set_value}'"
+                f"[{self.name}] '{setting_key}' must a single positive number, "
+                f"but is '{set_value}'"
             )
         if set_value < 0:
             raise NotImplementedError(
@@ -404,7 +417,9 @@ class VirtualSourceConfig:
             values = default
             if verbose:
                 logger.debug(
-                    f"[{self.name}] '{setting_key}' not provided, will be set to inherited value = {values[0]}"
+                    "Param '%s' not provided, set to inherited value = %s",
+                    setting_key,
+                    values[0],
                 )
         if (
             (len(values) != len(default))
@@ -412,7 +427,8 @@ class VirtualSourceConfig:
             or (max(values) > max_value)
         ):
             raise NotImplementedError(
-                f"[{self.name}] {setting_key} must a list of {len(default)} values, within range of [{0}; {max_value}]"
+                f"[{self.name}] {setting_key} must a list of {len(default)} values, "
+                f"within range of [{0}; {max_value}]"
             )
         self.data[setting_key] = values
 

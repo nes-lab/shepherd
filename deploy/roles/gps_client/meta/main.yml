@@ -1,0 +1,15 @@
+---
+dependencies:
+  - role: gps_host
+
+galaxy_info:
+  description: Prepares Beaglebone to run as a GPS-Client for timesync.
+  company: NES-Lab
+  author: Kai & Ingmar
+  license: MIT
+  min_ansible_version: 2.8
+  platforms:
+    - name: Debian
+      versions: all
+    - name: Ubuntu
+      versions: all

@@ -1,0 +1,36 @@
+name: Generate Docs
+# for Github-Pages
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Python 🐍
+        uses: actions/setup-python@v2
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
+
+      - name: Install dependencies 🔧
+        run: |
+          pip3 install sphinx sphinx-click sphinx-rtd-theme
+          pip3 install sphinxcontrib-applehelp sphinxcontrib-devhelp sphinxcontrib-htmlhelp
+          pip3 install sphinxcontrib-jsmath sphinxcontrib-qthelp sphinxcontrib-serializinghtml
+          pip3 install sphinx-sitemap
+
+      - name: Build and Commit 🧱
+        uses: sphinx-notes/pages@v2
+      - name: Push changes 📌
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: pages
+          force: true

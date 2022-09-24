@@ -3,7 +3,7 @@
 ..
 
 VirtCap (TODO - Old)
-=======
+====================
 
 Emulator
 ---------
@@ -12,7 +12,7 @@ In addition to regular emulation, shepherd provides VirtCap.
 VirtCap uses an algorithm to completely virtualize the DC/DC converter and storage capacitor.
 With VirtCap, users emulate any DC/DC converter.
 Also the capacitor size is software configurable.
-This allows to do a test sweep over various capacitor sizes, 
+This allows to do a test sweep over various capacitor sizes,
 without having to hand replace them by hand.
 VirtCap is configured by means of yml-file.
 
@@ -65,16 +65,16 @@ This is an example of a virtcap-settings file which emulates a BQ25570:
 :leakage_current: Static capacitor leakage current (in micro amperes)
 :discretize: Period at which the upper and lower threshold voltages are checked (defined is steps of 10us). The BQ255xx defines a period of ~64ms in its datasheet. Leave at 1 if you want to check the threshold continuous
 :output_cap_uf: Simulates an output capacitor which will cause an instant voltage drop in storage capacitor voltage when output turns on.
-:lookup_input_efficiency: 
+:lookup_input_efficiency:
     Defines the input efficiency of the DC/DC converter as function of input current on a logarithmic scale.
     Each element represents input efficiency for a given input current. Since there is no floating point support,
     efficiency is defined as: :math:`0-100 \% \times 4096`
-    
+
     | First row defines input efficiency for 0.01--0.09mA.
     | Second row defines input efficiency for 0.1--0.9mA.
     | Third row defines input efficiency for 1--9mA.
     | Fourth row defines input efficiency for 10--90mA.
-:lookup_output_efficiency: 
+:lookup_output_efficiency:
     Defines the output efficiency of the DC/DC converter as function of output current on a logarithmic scale.
     Each element represents input efficiency for a given output current. Since there is no floating point support,
     efficiency is defined as: :math:`0-100 \% \times 4096`
@@ -191,10 +191,10 @@ function of the capacitor voltage defined as
 
 .. math::
 
-   \begin{cases} 
+   \begin{cases}
        b(0)(V_{\text{cap}}) = \text{false}, \\
-       b(n)(V_{\text{cap}}) = 
-       \begin{cases} 
+       b(n)(V_{\text{cap}}) =
+       \begin{cases}
          \text{true},       & \text{if } \text{not}(b(n-1)) \text{\ and\ } (V_{\text{cap}} > V_{\text{ut}}), \\
          \text{false},       & \text{if } b(n-1) \text{\ and\ } (V_{\text{cap}}, < V_{\text{lt}}), \\
          b_{n-1,} & \text{otherwise},
@@ -218,18 +218,18 @@ emulation we model this voltage drop by calculating
 .. figure:: pics/scope-image-vcap.png
    :name: fig:vcap-drop
    :width: 95.0%
-   :alt: Scope image of storage capacitor voltage (in blue) and output 
+   :alt: Scope image of storage capacitor voltage (in blue) and output
         voltage (in yellow) from a solar-powered bq25570 converter with a
         94 storage capacitor, 22 output capacitor and 1 kΩ load. While the
         output is off, the capacitor voltage charges until it reaches its
         upper threshold voltage. When the output voltage turns on, the
         capacitor voltage drops 0.1 V.
 
-   Scope image of storage capacitor voltage (in blue) and output 
-   voltage (in yellow) from a solar-powered bq25570 converter with a 
+   Scope image of storage capacitor voltage (in blue) and output
+   voltage (in yellow) from a solar-powered bq25570 converter with a
    94 storage capacitor, 22 uF output capacitor and 1 kΩ load. While the
-   output is off, the capacitor voltage charges until it reaches its 
-   upper threshold voltage. When the output voltage turns on, the 
+   output is off, the capacitor voltage charges until it reaches its
+   upper threshold voltage. When the output voltage turns on, the
    capacitor voltage drops 0.1 V.
 
 As the output turns on, energy will transfer between the capacitors,

@@ -1,6 +1,6 @@
 # This is an example configuration for shepherd.
 # Instead of modifying, better make a copy and name it config.yml
-# Behaviour: emulate a BQ-Controller for target A, enable io-connection
+# Behavior: emulate a BQ-Controller for target A, enable io-connection
 mode: emulator
 parameters:
   input_path: /var/shepherd/recordings/hrv.h5
@@ -20,7 +20,12 @@ parameters:
   enable_io: true
   io_sel_target_a: true
   pwr_sel_target_a: true
-  aux_voltage: 3.3  # set None to disable (0 V), 0-4.5 for specific const Voltage, "mid" will output intermediate voltage (vsource storage cap), true or "main" to mirror main target voltage
+  aux_voltage: 3.3
+    # aux_voltage options:
+    # - None to disable (0 V),
+    # - 0-4.5 for specific const Voltage,
+    # - "mid" will output intermediate voltage (vsource storage cap),
+    # - true or "main" to mirror main target voltage
   uart_baudrate: 9600  # set None to disable uart-logging for target
   skip_log_voltage: false
   skip_log_current: false

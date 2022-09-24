@@ -373,10 +373,10 @@ Source: www.johnsoncomponents.com .. J502-ND.pdf</description>
 <designrules name="PCB-POOL HighSpec *">
 <description language="de">&lt;b&gt;EAGLE Design Rules Prototypen  für PCB-POOL(R)&lt;/b&gt;
 &lt;p&gt;
-Wir haben in diesem DRU File alle notwendigen Design Einstellungen vorgenommen, damit Sie Ihre Leiterplatte 
+Wir haben in diesem DRU File alle notwendigen Design Einstellungen vorgenommen, damit Sie Ihre Leiterplatte
 gemaess unseren Mindestanforderungen im Standard bestellen koennen. Die Optionen Shapes und Misc sind dabei nicht relevant.
 Der minimale und maximale Wert für Roundness Shapes kann frei gewählt werden.
-Bitte beachten Sie, daß die Mindesteinstellungen nicht geaendert werden, da ansonsten keine Gewaehrleistung für eine 
+Bitte beachten Sie, daß die Mindesteinstellungen nicht geaendert werden, da ansonsten keine Gewaehrleistung für eine
 fehlerfreie Produktion übernommen werden kann.&lt;br&gt;
 Abzudeckende Vias koennen in Masks (unter Limit) eingestellt werden.
 &lt;/p&gt;Ihr Beta LAYOUT Team

@@ -7,18 +7,18 @@
 // - pru needs 7 cycles and branch when int8 or int16 or int32 is used together in an OP
 // - perfect for mixed usage and hinting minimal container size (that is needed per design)
 
-#define int8_ft     int32_t
-#define uint8_ft    uint32_t
-#define int16_ft    int32_t
-#define uint16_ft   uint32_t
-#define bool_ft     uint32_t
+#define int8_ft   int32_t
+#define uint8_ft  uint32_t
+#define int16_ft  int32_t
+#define uint16_ft uint32_t
+#define bool_ft   uint32_t
 
 #ifndef false
-#define false (0u)
+  #define false (0u)
 #endif
 
 #ifndef true
-#define true (1u)
+  #define true (1u)
 #endif
 
 /*

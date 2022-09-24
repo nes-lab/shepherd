@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.shepherd_io
 ~~~~~
@@ -11,25 +9,28 @@ TODO: these files are getting to big, ~ 1000 LOC, refactor into class_X.py
 :license: MIT, see LICENSE for more details.
 """
 
-import os
-import weakref
 import logging
-import time
-import struct
 import mmap
-from pathlib import Path
-from typing import NoReturn, Union
+import os
+import struct
+import time
+import weakref
+from typing import NoReturn
+from typing import Optional
+from typing import Union
+
 import numpy as np
 from periphery import GPIO
 
-from shepherd import sysfs_interface
 from shepherd import commons
-from shepherd.calibration import CalibrationData, cal_component_list
-from shepherd.virtual_source_config import VirtualSourceConfig
-from shepherd.sysfs_interface import SysfsInterfaceException
-from shepherd import VirtualHarvesterConfig
+from shepherd import sysfs_interface as sfs
 
-logger = logging.getLogger(__name__)
+from .calibration import CalibrationData
+from .calibration import cal_component_list
+from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_source_config import VirtualSourceConfig
+
+logger = logging.getLogger("shp.io")
 
 ID_ERR_TIMEOUT = 100
 
@@ -50,7 +51,7 @@ class ShepherdIOException(Exception):
         self.value = value
 
 
-class GPIOEdges(object):
+class GPIOEdges:
     """Python representation of GPIO edge buffer
 
     On detection of an edge, shepherd stores the state of all sampled GPIO pins
@@ -69,7 +70,7 @@ class GPIOEdges(object):
         return min(self.values.size, self.timestamps_ns.size)
 
 
-class DataBuffer(object):
+class DataBuffer:
     """Python representation of a shepherd buffer.
 
     Containing IV samples with corresponding timestamp and info about any
@@ -99,7 +100,7 @@ class DataBuffer(object):
         return min(self.voltage.size, self.current.size)
 
 
-class SharedMem(object):
+class SharedMem:
     """Represents shared RAM used to exchange data between PRUs and userspace.
 
     A large area of contiguous memory is allocated through remoteproc. The PRUs
@@ -132,34 +133,39 @@ class SharedMem(object):
 
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
-            # Header: 64 bit timestamp + 32 bit counter
-            8
+            # Header: 32 bit canary, 32 bit counter, 64 bit timestamp
+            4
             + 4
+            + 8
             # Actual IV data, 32 bit for each current and voltage
             + 2 * 4 * self.samples_per_buffer
-            # GPIO edge count
+            # GPIO-Header: 32 bit canary, 32 bit edge counter
+            + 4
             + 4
             # 64 bit timestamp per GPIO event
             + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-            # 16 bit GPIO state per GPIO event
-            + 2 * commons.MAX_GPIO_EVT_PER_BUFFER  # GPIO edge data
+            # 16 bit GPIO state per GPIO event (edge data)
+            + 2 * commons.MAX_GPIO_EVT_PER_BUFFER
             # pru0 util stat
             + 2 * 4
         )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
         # TODO: put number in shared-mem or other way around
 
-        self.voltage_offset = 12
-        self.current_offset = 12 + 1 * 4 * self.samples_per_buffer
-        self.gpiostr_offset = 12 + 2 * 4 * self.samples_per_buffer
-        self.gpio_ts_offset = self.gpiostr_offset + 4
-        self.gpio_vl_offset = (
-            self.gpiostr_offset + 4 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-        )
+        self.voltage_offset = 4 + 4 + 8
+        self.current_offset = 16 + 1 * 4 * self.samples_per_buffer
+        self.gpio_offset = 16 + 2 * 4 * self.samples_per_buffer
+        self.gpio_ts_offset = self.gpio_offset + 4 + 4
+        self.gpio_vl_offset = self.gpio_offset + 8 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
         self.pru0_ut_offset = (
-            self.gpiostr_offset + 4 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
+            self.gpio_offset + 8 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
         )
 
-        logger.debug(f"Size of 1 Buffer:\t{ self.buffer_size } byte")
+        logger.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
+        if self.buffer_size * self.n_buffers != self.size:
+            raise BufferError(
+                "Py-estimated mem-size for buffers is different "
+                f"from pru-reported size ({self.buffer_size * self.n_buffers} vs. {self.size})"
+            )
 
     def __enter__(self):
         self.devmem_fd = os.open(
@@ -200,32 +206,46 @@ class SharedMem(object):
         buffer_offset = index * self.buffer_size
         self.mapped_mem.seek(buffer_offset)
 
-        # Read the header consisting of 12 (4 + 8 Bytes)
-        # First two values are number of samples and 64 bit timestamp
-        n_samples, buffer_timestamp = struct.unpack("=LQ", self.mapped_mem.read(12))
+        # Read the header consisting of 16 (4 + 4 + 8 Bytes)
+        # -> canary, number of samples and 64 bit timestamp
+        canary1, n_samples, buffer_timestamp = struct.unpack(
+            "=LLQ", self.mapped_mem.read(16)
+        )
         if verbose:
             logger.debug(
-                f"Retrieved buffer #{ index }  (@+0x{index * self.buffer_size:06X}) "
-                f"with len {n_samples} and timestamp {buffer_timestamp // 1000000} ms "
-                f"@{round(time.time(), 3)} sys_ts"
+                "Retrieved buffer #%d  (@+0x%06X) "
+                "with len %d and timestamp %d ms @%.3f sys_ts",
+                index,
+                index * self.buffer_size,
+                n_samples,
+                buffer_timestamp // 1000000,
+                time.time(),
+            )
+        if canary1 != 0x0F0F0F0F:
+            raise BufferError(
+                f"CANARY of SampleBuffer was harmed! Is 0x{canary1:X}, expected 0x0F0F0F0F"
             )
 
-        # sanity-check of received timestamp, TODO: python knows the desired duration between timestamps
+        # sanity-check of received timestamp,
+        # TODO: python knows the desired duration between timestamps
         if self.prev_timestamp > 0:
             diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6
             if buffer_timestamp == 0:
-                logger.error(f"ZERO      timestamp detected after recv it from PRU")
+                logger.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 logger.error(
-                    f"BACKWARDS timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
+                    "BACKWARDS timestamp-jump detected after recv it from PRU -> %d ms",
+                    diff_ms,
                 )
             elif diff_ms < 95:
                 logger.error(
-                    f"TOO SMALL timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
+                    "TOO SMALL timestamp-jump detected after recv it from PRU -> %d ms",
+                    diff_ms,
                 )
             elif diff_ms > 105:
                 logger.error(
-                    f"FORWARDS  timestamp-jump detected after recv it from PRU -> {diff_ms} ms"
+                    "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
+                    diff_ms,
                 )
         self.prev_timestamp = buffer_timestamp
 
@@ -245,8 +265,21 @@ class SharedMem(object):
         )
 
         # Read the number of gpio events in the buffer
-        self.mapped_mem.seek(buffer_offset + self.gpiostr_offset)
-        (n_gpio_events,) = struct.unpack("=L", self.mapped_mem.read(4))
+        self.mapped_mem.seek(buffer_offset + self.gpio_offset)
+        canary2, n_gpio_events = struct.unpack("=LL", self.mapped_mem.read(8))
+
+        if canary2 != 0x0F0F0F0F:
+            raise BufferError(
+                f"CANARY of GpioBuffer was harmed! Is 0x{canary2:X}, expected 0x0F0F0F0F"
+            )
+
+        if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
+            logger.error(
+                "Size of gpio_events out of range with %d entries", n_gpio_events
+            )
+            # TODO: should be exception, also
+            #  put into LogWriter.write_exception() with ShepherdIOException
+            n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
         gpio_timestamps_ns = np.frombuffer(
             self.mapped_mem,
@@ -272,12 +305,19 @@ class SharedMem(object):
             pru0_util_mean = 0.1
         if verbose:
             if (pru0_util_mean > 95) or (pru0_util_max > 100):
-                warn_msg = f"Pru0 Loop-Util:  mean = {pru0_util_mean} %, max = {pru0_util_max} % -> WARNING: broken real-time-condition"
-                logger.warning(warn_msg)
-                # TODO: raise ShepherdIOException or add this info into output-file? WRONG PLACE HERE
+                logger.warning(
+                    "Pru0 Loop-Util: mean = %d %%, max = %d %% "
+                    "-> WARNING: broken real-time-condition",
+                    pru0_util_mean,
+                    pru0_util_max,
+                )
+                # TODO: raise ShepherdIOException or add this info into output-file?
+                #  WRONG PLACE HERE
             else:
                 logger.info(
-                    f"Pru0 Loop-Util: mean = {pru0_util_mean} %, max = {pru0_util_max} %"
+                    "Pru0 Loop-Util: mean = %d %%, max = %d %%",
+                    pru0_util_mean,
+                    pru0_util_max,
                 )
 
         return DataBuffer(
@@ -304,17 +344,17 @@ class SharedMem(object):
     def write_firmware(self, data: bytes):
         data_size = len(data)
         if data_size > self.size:
-            ValueError(f"firmware file is larger than the SharedMEM-Buffer")
-        sysfs_interface.write_programmer_datasize(data_size)
+            ValueError("firmware file is larger than the SharedMEM-Buffer")
+        sfs.write_programmer_datasize(data_size)
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
         logger.debug(
-            f"wrote Firmware-Data to SharedMEM-Buffer (size = {data_size} bytes)"
+            "wrote Firmware-Data to SharedMEM-Buffer (size = %d bytes)", data_size
         )
         return data_size
 
 
-class ShepherdIO(object):
+class ShepherdIO:
     """Generic ShepherdIO interface.
 
     This class acts as interface between kernel module and firmware on the PRUs,
@@ -367,31 +407,33 @@ class ShepherdIO(object):
 
             # If shepherd hasn't been terminated properly
             self.reinitialize_prus()
-            logger.debug(f"Switching to '{ self.mode }'-mode")
-            sysfs_interface.write_mode(self.mode)
+            logger.debug("Switching to '%s'-mode", self.mode)
+            sfs.write_mode(self.mode)
 
             # clean up msg-channel provided by kernel module
             self._flush_msgs()
 
             # Ask PRU for base address of shared mem (reserved with remoteproc)
-            mem_address = sysfs_interface.get_mem_address()
+            mem_address = sfs.get_mem_address()
             # Ask PRU for size of shared memory (reserved with remoteproc)
-            mem_size = sysfs_interface.get_mem_size()
+            mem_size = sfs.get_mem_size()
 
             logger.debug(
-                f"Shared memory address: \t0x{mem_address:08X}, size: {mem_size} byte"
+                "Shared memory address: \t0x%08X, size: %d byte",
+                mem_address,
+                mem_size,
             )
 
             # Ask PRU for size of individual buffers
-            self.samples_per_buffer = sysfs_interface.get_samples_per_buffer()
-            logger.debug(f"Samples per buffer: \t{ self.samples_per_buffer }")
+            self.samples_per_buffer = sfs.get_samples_per_buffer()
+            logger.debug("Samples per buffer: \t%d", self.samples_per_buffer)
 
-            self.n_buffers = sysfs_interface.get_n_buffers()
-            logger.debug(f"Number of buffers: \t{ self.n_buffers }")
+            self.n_buffers = sfs.get_n_buffers()
+            logger.debug("Number of buffers: \t%d", self.n_buffers)
 
-            self.buffer_period_ns = sysfs_interface.get_buffer_period_ns()
+            self.buffer_period_ns = sfs.get_buffer_period_ns()
             self._buffer_period = self.buffer_period_ns / 1e9
-            logger.debug(f"Buffer period: \t\t{ self._buffer_period } s")
+            logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
 
             self.shared_mem = SharedMem(
                 mem_address, mem_size, self.n_buffers, self.samples_per_buffer
@@ -399,12 +441,12 @@ class ShepherdIO(object):
 
             self.shared_mem.__enter__()
 
-        except Exception as xcp:
-            logger.warning(f"ShepherdIO.Init caught an exception ({xcp}) -> exit now")
+        except Exception:
+            logger.exception("ShepherdIO.Init caught an exception -> exit now")
             self._cleanup()
             raise
 
-        sysfs_interface.wait_for_state("idle", 3)
+        sfs.wait_for_state("idle", 3)
         return self
 
     def __exit__(self, *args):
@@ -420,7 +462,7 @@ class ShepherdIO(object):
                 message types part of the data exchange protocol
             values (int): Actual content of the message
         """
-        sysfs_interface.write_pru_msg(msg_type, values)
+        sfs.write_pru_msg(msg_type, values)
 
     def _get_msg(self, timeout_n: int = 5):
         """Tries to retrieve formatted message from PRU0.
@@ -432,8 +474,8 @@ class ShepherdIO(object):
         """  # TODO: cleanest way without exception: ask sysfs-file with current msg-count
         for _ in range(timeout_n):
             try:
-                return sysfs_interface.read_pru_msg()
-            except SysfsInterfaceException:
+                return sfs.read_pru_msg()
+            except sfs.SysfsInterfaceException:
                 time.sleep(self._buffer_period)
                 continue
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
@@ -443,8 +485,8 @@ class ShepherdIO(object):
         """Flushes msg_channel by reading all available bytes."""
         while True:
             try:
-                sysfs_interface.read_pru_msg()
-            except SysfsInterfaceException:
+                sfs.read_pru_msg()
+            except sfs.SysfsInterfaceException:
                 break
 
     def start(self, start_time: float = None, wait_blocking: bool = True) -> NoReturn:
@@ -455,8 +497,8 @@ class ShepherdIO(object):
             wait_blocking (bool): If true, block until start has completed
         """
         if isinstance(start_time, (float, int)):
-            logger.debug(f"asking kernel module for start at {round(start_time, 2)}")
-        sysfs_interface.set_start(start_time)
+            logger.debug("asking kernel module for start at %.2f", start_time)
+        sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
 
@@ -467,24 +509,26 @@ class ShepherdIO(object):
         Args:
             timeout (float): Time to wait in seconds
         """
-        sysfs_interface.wait_for_state("running", timeout)
+        sfs.wait_for_state("running", timeout)
 
     def reinitialize_prus(self) -> NoReturn:
-        sysfs_interface.set_stop(force=True)  # forces idle
-        sysfs_interface.wait_for_state("idle", 5)
+        sfs.set_stop(force=True)  # forces idle
+        sfs.wait_for_state("idle", 5)
 
     def _cleanup(self):
         logger.debug("ShepherdIO is commanded to power down / cleanup")
-        while sysfs_interface.get_state() != "idle":
+        while sfs.get_state() != "idle":
             try:
-                sysfs_interface.set_stop(force=True)
-            except Exception as e:
-                print(e)
+                sfs.set_stop(force=True)
+            except sfs.SysfsInterfaceException:
+                logger.exception(
+                    "CleanupRoutine - caused an exception while trying to stop PRU"
+                )
             try:
-                sysfs_interface.wait_for_state("idle", 3.0)
-            except SysfsInterfaceException:
+                sfs.wait_for_state("idle", 3.0)
+            except sfs.SysfsInterfaceException:
                 logger.warning(
-                    "CleanupRoutine - send stop-command and waiting for PRU to go to idle"
+                    "CleanupRoutine - caused an exception while waiting for PRU to go to idle"
                 )
         self.set_aux_target_voltage(None, 0.0)
 
@@ -504,7 +548,7 @@ class ShepherdIO(object):
             state (bool): True for on, False for off
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set power-supplies of shepherd-pcb to {state_str}")
+        logger.debug("Set power-supplies of shepherd-pcb to %s", state_str)
         self.gpios["en_shepherd"].write(state)
 
     def set_power_state_recorder(self, state: bool) -> NoReturn:
@@ -516,7 +560,7 @@ class ShepherdIO(object):
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set Recorder of shepherd-pcb to {state_str}")
+        logger.debug("Set Recorder of shepherd-pcb to %s", state_str)
         self.gpios["en_recorder"].write(state)
 
     def set_power_state_emulator(self, state: bool) -> NoReturn:
@@ -528,11 +572,14 @@ class ShepherdIO(object):
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set Emulator of shepherd-pcb to {state_str}")
+        logger.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
 
     def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:
-        """choose which targets gets the supply with current-monitor, True = Target A, False = Target B
+        """
+        choose which targets gets the supply with current-monitor,
+            True = Target A,
+            False = Target B
 
         shepherd hw-rev2 has two ports for targets and two separate power supplies,
         but only one is able to measure current, the other is considered "auxiliary"
@@ -540,7 +587,7 @@ class ShepherdIO(object):
         Args:
             sel_target_a: True to select A, False for B
         """
-        current_state = sysfs_interface.get_state()
+        current_state = sfs.get_state()
         if current_state != "idle":
             self.reinitialize_prus()
         if sel_target_a is None:
@@ -548,16 +595,19 @@ class ShepherdIO(object):
             sel_target_a = True
         target = "A" if sel_target_a else "B"
         logger.debug(
-            f"Set routing for (main) supply with current-monitor to target {target}"
+            "Set routing for (main) supply with current-monitor to target %s", target
         )
         self.gpios["target_pwr_sel"].write(sel_target_a)
         if current_state != "idle":
             self.start(wait_blocking=True)
 
     def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
-        """choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
+        """choose which targets gets the io-connection (serial, swd, gpio) from beaglebone,
+            True = Target A,
+            False = Target B
 
-        shepherd hw-rev2 has two ports for targets and can switch independently from power supplies
+        shepherd hw-rev2 has two ports for targets and can switch independently
+        between power supplies
 
         Args:
             sel_target_a: True to select A, False for B
@@ -566,13 +616,13 @@ class ShepherdIO(object):
             # Target A is Default
             sel_target_a = True
         target = "A" if sel_target_a else "B"
-        logger.debug(f"Set routing for IO to Target {target}")
+        logger.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(sel_target_a)
 
     def set_target_io_level_conv(self, state: bool) -> NoReturn:
         """Enables or disables the GPIO level converter to targets.
 
-        The shepherd cape has bi-directional logic level translators (LSF0108)
+        The shepherd cape has bidirectional logic level translators (LSF0108)
         for translating UART, GPIO and SWD signals between BeagleBone and target
         voltage levels. This function enables or disables the converter and
         additional switches (NLAS4684) to keep leakage low.
@@ -583,12 +633,12 @@ class ShepherdIO(object):
         if state is None:
             state = False
         state_str = "enabled" if state else "disabled"
-        logger.debug(f"Set target-io level converter to {state_str}")
+        logger.debug("Set target-io level converter to %s", state_str)
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
     def set_aux_target_voltage(
-        cal_settings: Union[CalibrationData, None], voltage: float
+        cal_settings: Optional[CalibrationData], voltage: float
     ) -> NoReturn:
         """Enables or disables the voltage for the second target
 
@@ -600,7 +650,7 @@ class ShepherdIO(object):
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        sysfs_interface.write_dac_aux_voltage(cal_settings, voltage)
+        sfs.write_dac_aux_voltage(cal_settings, voltage)
 
     @staticmethod
     def get_aux_voltage(cal_settings: CalibrationData) -> float:
@@ -612,7 +662,7 @@ class ShepherdIO(object):
         Returns:
             aux voltage
         """
-        return sysfs_interface.read_dac_aux_voltage(cal_settings)
+        return sfs.read_dac_aux_voltage(cal_settings)
 
     def send_calibration_settings(self, cal_settings: CalibrationData) -> NoReturn:
         """Sends calibration settings to PRU core
@@ -627,28 +677,31 @@ class ShepherdIO(object):
         if cal_settings is None:
             cal_settings = CalibrationData.from_default()
         cal_dict = cal_settings.export_for_sysfs(self.component)
-        sysfs_interface.write_calibration_settings(cal_dict)
+        sfs.write_calibration_settings(cal_dict)
 
     @staticmethod
-    def send_virtual_converter_settings(settings: VirtualSourceConfig) -> NoReturn:
-        """Sends virtsource settings to PRU core
-        looks like a simple one-liner but is needed by the child-classes
-        Note: to apply these settings the pru has to do a re-init (reset)
-
-        :param settings: Contains the settings for the virtual source.
-        :param log_intermediate_voltage: monitor capacitor, useful when output is const
-        """
-        sysfs_interface.write_virtual_converter_settings(settings.export_for_sysfs())
-
-    @staticmethod
-    def send_virtual_harvester_settings(settings: VirtualHarvesterConfig) -> NoReturn:
+    def send_virtual_converter_settings(
+        settings: VirtualSourceConfig,
+    ) -> NoReturn:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
 
         :param settings: Contains the settings for the virtual source.
         """
-        sysfs_interface.write_virtual_harvester_settings(settings.export_for_sysfs())
+        sfs.write_virtual_converter_settings(settings.export_for_sysfs())
+
+    @staticmethod
+    def send_virtual_harvester_settings(
+        settings: VirtualHarvesterConfig,
+    ) -> NoReturn:
+        """Sends virtsource settings to PRU core
+        looks like a simple one-liner but is needed by the child-classes
+        Note: to apply these settings the pru has to do a re-init (reset)
+
+        :param settings: Contains the settings for the virtual source.
+        """
+        sfs.write_virtual_harvester_settings(settings.export_for_sysfs())
 
     def _return_buffer(self, index: int) -> NoReturn:
         """Returns a buffer to the PRU
@@ -682,20 +735,20 @@ class ShepherdIO(object):
         while True:
             msg_type, value = self._get_msg(timeout_n)
             value = value[0]
-            # logger.debug(f"received msg type {msg_type}")
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
                 ts_start = time.time()
                 buf = self.shared_mem.read_buffer(value, verbose)
                 if verbose:
                     logger.debug(
-                        f"Processing buffer #{ value } from shared memory took "
-                        f"{ round(1e3 * (time.time()-ts_start), 2) } ms"
+                        "Processing buffer #%d from shared memory took %.2f ms",
+                        value,
+                        1e3 * (time.time() - ts_start),
                     )
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:
-                logger.info(f"Received cmd to print: {value}")
+                logger.info("Received cmd to print: %d", value)
                 continue
 
             elif msg_type == commons.MSG_DEP_ERR_INCMPLT:
@@ -711,7 +764,7 @@ class ShepherdIO(object):
                 )
             elif msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
                 raise ShepherdIOException(
-                    f"PRU ran out of buffers",
+                    "PRU ran out of buffers",
                     commons.MSG_DEP_ERR_NOFREEBUF,
                     value,
                 )

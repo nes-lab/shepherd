@@ -1,0 +1,15 @@
+---
+dependencies:
+  - role: ptp_host
+
+galaxy_info:
+  description: Prepares Beaglebone to run as a PTP-Server for timesync. That specific node should not be used as a regular sheep in big networks!
+  company: NES-Lab
+  author: Kai & Ingmar
+  license: MIT
+  min_ansible_version: 2.8
+  platforms:
+    - name: Debian
+      versions: all
+    - name: Ubuntu
+      versions: all

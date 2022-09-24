@@ -1,0 +1,145 @@
+---
+- name: Get kernel version
+  ansible.builtin.command: 'uname --kernel-release'
+  register: kernelrelease
+  changed_when: false
+  tags: gps
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      [
+        "python3-pip",
+        "gpsd",
+        "gpsd-clients",
+        "chrony",
+        "pps-tools",
+        "linux-headers-{{ kernelrelease.stdout.strip() }}",
+        "dkms",
+      ]
+    state: present
+    update_cache: true
+  tags: gps
+
+- name: Install python ubxserial modules
+  ansible.builtin.pip:
+    name: ubxserial
+
+- name: Configure chrony and gpsd (not active)
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/shepherd/"
+    mode: 0644
+  with_items:
+    - chrony.conf
+    - gpsd.conf
+    - ublox_config.ubx  # TODO: this file seems still unused
+  tags:
+    - gps
+    - conf
+
+- name: Disable factory enabled capes
+  ansible.builtin.lineinfile:
+    dest: '/boot/uEnv.txt'
+    regexp: "{{ item.regexpress }}"
+    line: "{{ item.replacement }}"
+    state: present
+  with_items:
+    - {
+      regexpress: "#?disable_uboot_overlay_video=.*$",
+      replacement: "disable_uboot_overlay_video=1",
+    }
+    - {
+      regexpress: "#?disable_uboot_overlay_audio=.*$",
+      replacement: "disable_uboot_overlay_audio=1",
+    }
+    - {
+      regexpress: "#?disable_uboot_overlay_wireless=.*$",
+      replacement: "disable_uboot_overlay_wireless=1",
+    }
+    - {
+      regexpress: "#?disable_uboot_overlay_adc=.*$",
+      replacement: "disable_uboot_overlay_adc=1",
+    }
+    - {
+      regexpress: "#?enable_uboot_cape_universal=.*$",
+      replacement: "#enable_uboot_cape_universal=1",
+    }
+  tags: gps
+
+- name: Restart device
+  ansible.builtin.reboot:
+  tags: gps
+
+- name: Set GPS-cape to enabled
+  ansible.builtin.lineinfile:
+    dest: '/boot/uEnv.txt'
+    regexp: '#?uboot_overlay_addr6=.*$'
+    line: "uboot_overlay_addr6=/lib/firmware/BB-GPS-00A0.dtbo"
+    state: present
+  tags: gps
+
+- name: Restart device
+  ansible.builtin.reboot:
+  tags: gps
+
+- name: Copy pps-gmtimer code
+  ansible.posix.synchronize:
+    src: "{{ pps_gmtimer_path }}"
+    dest: /opt/pps-gmtimer
+  tags:
+    - gps
+    - pps
+
+- name: Build and install pps-gmtimer module
+  make:
+    chdir: /opt/pps-gmtimer
+    target: install
+  tags:
+    - gps
+    - pps
+
+- name: Copy device tree overlay for GPS-Capelet
+  ansible.posix.synchronize:
+    src: "{{ gps_overlay_path }}"
+    dest: "/opt/gps-overlay"
+  tags:
+    - gps
+    - pps
+
+- name: Build and install GPS device tree overlay
+  make:
+    chdir: "/opt/gps-overlay"
+    target: install
+  tags:
+    - gps
+    - device-tree
+
+- name: Restart device
+  ansible.builtin.reboot:
+  tags:
+    - gps
+    - device-tree
+
+- name: Add udev rule for hw pps device
+  ansible.builtin.copy:
+    src: "91-hw-pps.rules"
+    dest: "/etc/udev/rules.d/"
+    mode: '0644'
+  tags:
+    - gps
+    - conf
+
+- name: Make system find kernel-module
+  ansible.builtin.command: 'depmod -ae'
+  changed_when: true
+  tags:
+    - gps
+    - conf
+
+- ansible.builtin.include_tasks:
+    file: systemd.yml
+  tags:
+    - gps
+    - conf
+    - systemd

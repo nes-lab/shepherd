@@ -17,7 +17,7 @@ virtsources:
     V_input_max_mV: 10000
     I_input_max_mA: 4200
     V_input_drop_mV: 0.0  # simulate input-diode
-    R_input_mOhm: 0.0 # resistance only active with disabled boost
+    R_input_mOhm: 0.0  # resistance only active with disabled boost, range [1 mOhm; 1MOhm]
 
     C_intermediate_uF: 0.0  # primary storage-Cap
     V_intermediate_init_mV: 3000 # allow a proper / fast startup
@@ -178,4 +178,4 @@ virtsources:
 
   BQ25570si:  # record internal StorageCap instead of Output
     converter_base: BQ25570s
-    log_intermediate_voltage: True
+    log_intermediate_voltage: true

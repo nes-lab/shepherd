@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.__init__
 ~~~~~
@@ -11,50 +9,64 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import datetime
 import logging
-import time
+import signal
 import sys
-from logging import NullHandler
-from pathlib import Path
+import time
 from contextlib import ExitStack
-from typing import NoReturn, Union
+from pathlib import Path
+from typing import NoReturn
+from typing import Optional
+from typing import Union
+
+import invoke
 import msgpack
 import msgpack_numpy
 import numpy
-import invoke
-import signal
 
-from shepherd.datalog_reader import LogReader as ShpReader
-
-from shepherd.shepherd_io import ShepherdIO, DataBuffer
-from shepherd.virtual_harvester_config import VirtualHarvesterConfig
-from shepherd.virtual_source_config import VirtualSourceConfig
-from shepherd.shepherd_io import ShepherdIOException
-
-from shepherd.datalog import LogWriter
-from shepherd.datalog import ExceptionRecord
-from shepherd.eeprom import EEPROM
-from shepherd.eeprom import CapeData
-from shepherd.calibration import CalibrationData
-from shepherd.calibration import cal_channel_list
 from shepherd import commons
 from shepherd import sysfs_interface
-from shepherd.target_io import TargetIO
 
-# Set default logging handler to avoid "No handler found" warnings.
-logging.getLogger(__name__).addHandler(NullHandler())
-logger = logging.getLogger(__name__)
-verbose_level = 0
+from .calibration import CalibrationData
+from .datalog import ExceptionRecord
+from .datalog import LogWriter
+from .datalog_reader import LogReader
+from .eeprom import EEPROM
+from .eeprom import CapeData
+from .launcher import Launcher
+from .logger_config import get_verbose_level
+from .logger_config import set_verbose_level
+from .shepherd_io import DataBuffer
+from .shepherd_io import ShepherdIO
+from .shepherd_io import ShepherdIOException
+from .target_io import TargetIO
+from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_source_config import VirtualSourceConfig
+
+__version__ = "0.3.0"
+
+__all__ = [
+    "LogReader",
+    "LogWriter",
+    "EEPROM",
+    "CapeData",
+    "CalibrationData",
+    "VirtualSourceConfig",
+    "VirtualHarvesterConfig",
+    "TargetIO",
+    "Launcher",
+    "set_verbose_level",
+    "get_verbose_level",
+    "logger",
+    "Recorder",
+    "Emulator",
+    "ShepherdDebug",
+    "run_emulator",
+    "run_recorder",
+]
 
 
-def get_verbose_level() -> int:
-    global verbose_level
-    return verbose_level
-
-
-def set_verbose_level(value: int) -> NoReturn:
-    # needed to differentiate DEBUG-Modes -> -3 only ON during init, -4 also ON during main-run
-    global verbose_level
-    verbose_level = value
+logger = logging.getLogger("shp")
+set_verbose_level(verbose=1)
 
 
 class Recorder(ShepherdIO):
@@ -76,7 +88,7 @@ class Recorder(ShepherdIO):
         harvester: Union[dict, str, Path, VirtualHarvesterConfig] = None,
         calibration: CalibrationData = None,
     ):
-        logger.debug(f"Recorder-Init in {shepherd_mode}-mode")
+        logger.debug("Recorder-Init in %s-mode", shepherd_mode)
         self.samplerate_sps = (
             10**9
             * sysfs_interface.get_samples_per_buffer()
@@ -118,7 +130,7 @@ class Recorder(ShepherdIO):
         """
         super()._return_buffer(index)
         if verbose:
-            logger.debug(f"Sent empty buffer #{index} to PRU")
+            logger.debug("Sent empty buffer #%s to PRU", index)
 
 
 class Emulator(ShepherdIO):
@@ -130,23 +142,31 @@ class Emulator(ShepherdIO):
 
     Args:
         shepherd_mode:
-        initial_buffers: recorded data  # TODO: initial_ is not the best name, is this a yield/generator?
+        initial_buffers: recorded data
+            TODO: initial_ is not the best name, is this a yield/generator?
         calibration_recording (CalibrationData): Shepherd calibration data
             belonging to the IV data that is being emulated
         calibration_emulator (CalibrationData): Shepherd calibration data
             belonging to the cape used for emulation
         set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
-        sel_target_for_io: choose which targets gets the io-connection (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
-        sel_target_for_pwr: choose which targets gets the supply with current-monitor, True = Target A, False = Target B
-        aux_target_voltage: Sets, Enables or disables the voltage for the second target, 0.0 or False for Disable, True for linking it to voltage of other Target
-        infile_vh_cfg (dict): Settings which define the behavior of virtual harvester during emulation
+        sel_target_for_io: choose which target gets the io-connection (serial, swd, gpio),
+                            True = Target A,
+                            False = Target B
+        sel_target_for_pwr: choose which targets gets the supply with current-monitor,
+                            True = Target A,
+                            False = Target B
+        aux_target_voltage: Sets, Enables or disables the voltage for the second target,
+                            0.0 or False for Disable,
+                            True for linking it to voltage of other Target
+        infile_vh_cfg (dict): define the behavior of virtual harvester during emulation
     """
 
     def __init__(
         self,
         shepherd_mode: str = "emulator",
         initial_buffers: list = None,
-        calibration_recording: CalibrationData = None,  # TODO: make clearer that this is "THE RECORDING"
+        calibration_recording: CalibrationData = None,
+        # TODO: make clearer that this is "THE RECORDING"
         calibration_emulator: CalibrationData = None,
         set_target_io_lvl_conv: bool = False,
         sel_target_for_io: bool = True,
@@ -157,7 +177,7 @@ class Emulator(ShepherdIO):
         infile_vh_cfg: dict = None,
     ):
 
-        logger.debug(f"Emulator-Init in {shepherd_mode}-mode")
+        logger.debug("Emulator-Init in %s-mode", shepherd_mode)
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
 
@@ -241,8 +261,9 @@ class Emulator(ShepherdIO):
         super()._return_buffer(index)
         if verbose:
             logger.debug(
-                f"Sending emu-buffer #{ index } to PRU took "
-                f"{ round(1e3 * (time.time()-ts_start), 2) } ms"
+                "Sending emu-buffer #%d to PRU took %.2f ms",
+                index,
+                1e3 * (time.time() - ts_start),
             )
 
 
@@ -259,8 +280,8 @@ class ShepherdDebug(ShepherdIO):
     # offer a default cali for debugging, TODO: maybe also try to read from eeprom
     _cal: CalibrationData = None
     _io: TargetIO = None
-    P_in_fW: float = 0.0
-    P_out_fW: float = 0.0
+    W_inp_fWs: float = 0.0
+    W_out_fWs: float = 0.0
 
     def __init__(self, use_io: bool = True):
         super().__init__("debug")
@@ -303,7 +324,13 @@ class ShepherdDebug(ShepherdIO):
             channel_no = 0
         elif channel.lower() in ["hrv_v_in", "v_in"]:
             channel_no = 1
-        elif channel.lower() in ["emu", "emu_a_out", "emu_i_out", "a_out", "i_out"]:
+        elif channel.lower() in [
+            "emu",
+            "emu_a_out",
+            "emu_i_out",
+            "a_out",
+            "i_out",
+        ]:
             channel_no = 2
         else:
             raise ValueError(f"ADC channel { channel } unknown")
@@ -340,7 +367,11 @@ class ShepherdDebug(ShepherdIO):
         """Writes value to specified DAC channel, DAC8562
 
         Args:
-            channels: 4 lower bits of int-num control b0: harvester-ch-a, b1: hrv-ch-b, b2: emulator-ch-a, b3: emu-ch-b
+            channels: 4 lower bits of int-num control
+                b0: harvester-ch-a,
+                b1: hrv-ch-b,
+                b2: emulator-ch-a,
+                b3: emu-ch-b
             value (int): 16 bit raw DAC value to be sent to corresponding channel
         """
         channels = (int(channels) & ((1 << 4) - 1)) << 20
@@ -356,109 +387,130 @@ class ShepherdDebug(ShepherdIO):
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_FN_TESTS:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def vsource_init(self, vs_settings: VirtualSourceConfig, cal_settings):
-        super().send_virtual_converter_settings(vs_settings)
-        super().send_calibration_settings(cal_settings)
+    def vsource_init(
+        self,
+        vs_settings: VirtualSourceConfig,
+        cal_data: CalibrationData,
+        input_setting: Optional[dict],
+    ):
+        vs_config = VirtualSourceConfig(vs_settings)
+        super().send_virtual_converter_settings(vs_config)
+        super().send_calibration_settings(cal_data)
+
         vh_config = VirtualHarvesterConfig(
-            vs_settings.get_harvester(),
+            vs_config.get_harvester(),
+            vs_config.samplerate_sps,
+            emu_cfg=input_setting,
         )
-        super().send_virtual_harvester_settings()
+
+        super().send_virtual_harvester_settings(vh_config)
         time.sleep(0.5)
         super().start()
-        super()._send_msg(commons.MSG_DBG_VSOURCE_INIT, 0)
+        super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
-        if msg_type != commons.MSG_DBG_VSOURCE_INIT:
+        if msg_type != commons.MSG_DBG_VSRC_INIT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_INIT) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_INIT) }, "
+                f"but got type={ hex(msg_type) } val={ values }, "
+                " is ENABLE_DBG_VSOURCE defined in pru0/main.c??"
             )
-        # TEST-SIMPLIFICATION - code below is not part of pru-code
-        self.P_in_fW = 0.0
-        self.P_out_fW = 0.0
-        self._cal = cal_settings
+        # TEST-SIMPLIFICATION - code below is not part of main pru-code
+        self.W_inp_fWs = 0.0
+        self.W_out_fWs = 0.0
+        self._cal = cal_data
 
-    def vsource_calc_inp_power(
-        self, input_voltage_uV: int, input_current_nA: int
+    def cnv_calc_inp_power(
+        self, input_voltage_uV: int, input_current_nA: int, include_hrv: bool = False
     ) -> int:
+
         super()._send_msg(
-            commons.MSG_DBG_VSOURCE_P_INP,
+            commons.MSG_DBG_VSRC_HRV_P_INP
+            if include_hrv
+            else commons.MSG_DBG_VSRC_P_INP,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_P_INP:
+        if msg_type != commons.MSG_DBG_VSRC_P_INP:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_INP) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_INP) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_inp_pW
 
-    def vsource_charge(
-        self, input_voltage_uV: int, input_current_nA: int
-    ) -> (int, int):
+    def cnv_charge(self, input_voltage_uV: int, input_current_nA: int) -> (int, int):
         self._send_msg(
-            commons.MSG_DBG_VSOURCE_CHARGE,
+            commons.MSG_DBG_VSRC_CHARGE,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_CHARGE:
+        if msg_type != commons.MSG_DBG_VSRC_CHARGE:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_CHARGE) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_CHARGE) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
-    def vsource_calc_out_power(self, current_adc_raw: int) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_P_OUT, int(current_adc_raw))
+    def cnv_calc_out_power(self, current_adc_raw: int) -> int:
+        self._send_msg(commons.MSG_DBG_VSRC_P_OUT, int(current_adc_raw))
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_P_OUT:
+        if msg_type != commons.MSG_DBG_VSRC_P_OUT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_P_OUT) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_OUT) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def vsource_drain(self, current_adc_raw: int) -> (int, int):
-        self._send_msg(commons.MSG_DBG_VSOURCE_DRAIN, int(current_adc_raw))
+    def cnv_drain(self, current_adc_raw: int) -> (int, int):
+        self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_DRAIN:
+        if msg_type != commons.MSG_DBG_VSRC_DRAIN:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_DRAIN) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_DRAIN) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
-    def vsource_update_cap_storage(self) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_V_CAP, 0)
+    def cnv_update_cap_storage(self) -> int:
+        self._send_msg(commons.MSG_DBG_VSRC_V_CAP, 0)
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_V_CAP:
+        if msg_type != commons.MSG_DBG_VSRC_V_CAP:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_CAP) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_CAP) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0]  # V_store_uV
 
-    def vsource_update_states_and_output(self) -> int:
-        self._send_msg(commons.MSG_DBG_VSOURCE_V_OUT, 0)
+    def cnv_update_states_and_output(self) -> int:
+        self._send_msg(commons.MSG_DBG_VSRC_V_OUT, 0)
         msg_type, values = self._get_msg()
-        if msg_type != commons.MSG_DBG_VSOURCE_V_OUT:
+        if msg_type != commons.MSG_DBG_VSRC_V_OUT:
             raise ShepherdIOException(
-                f"Expected msg type { hex(commons.MSG_DBG_VSOURCE_V_OUT) }, but got type={ hex(msg_type) } val={ values }"
+                f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_OUT) }, "
+                f"but got type={ hex(msg_type) } val={ values }"
             )
         return values[0]  # V_out_dac_raw
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
-    def iterate_sampling(self, V_in_uV: int = 0, A_in_nA: int = 0, A_out_nA: int = 0):
-        self.vsource_calc_inp_power(V_in_uV, A_in_nA)
+    def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
+        # NOTE: this includes the harvester
+        P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
         A_out_raw = self._cal.convert_value_to_raw(
             "emulator", "adc_current", A_out_nA * 10**-9
         )
-        self.vsource_calc_out_power(A_out_raw)
-        self.vsource_update_cap_storage()
-        V_out_raw = self.vsource_update_states_and_output()
+        P_out_fW = self.cnv_calc_out_power(A_out_raw)
+        self.cnv_update_cap_storage()
+        V_out_raw = self.cnv_update_states_and_output()
         V_out_uV = int(
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
             * 10**6
         )
-        self.P_in_fW += V_in_uV * A_in_nA
-        self.P_out_fW += V_out_uV * A_out_nA
+        self.W_inp_fWs += P_inp_fW
+        self.W_out_fWs += P_out_fW
         return V_out_uV
 
     @staticmethod
@@ -468,7 +520,8 @@ class ShepherdDebug(ShepherdIO):
         """
         return True
 
-    # all methods below are wrapper for zerorpc - it seems to have trouble with inheritance and runtime inclusion
+    # all methods below are wrapper for zerorpc - it seems
+    # to have trouble with inheritance and runtime inclusion
 
     @staticmethod
     def set_shepherd_state(state: bool) -> NoReturn:
@@ -503,7 +556,7 @@ class ShepherdDebug(ShepherdIO):
         if not (self._io is None):
             self._io.one_high(num)
         else:
-            logger.debug(f"Error: IO is not enabled in this shepherd-debug-instance")
+            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def set_power_state_emulator(self, state: bool) -> NoReturn:
         super().set_power_state_emulator(state)
@@ -582,12 +635,14 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
                 return storage.read_calibration()
         except ValueError:
             logger.warning(
-                "Couldn't read calibration from EEPROM (ValueError). Falling back to default values."
+                "Couldn't read calibration from EEPROM (ValueError). "
+                "Falling back to default values."
             )
             return CalibrationData.from_default()
         except FileNotFoundError:
             logger.warning(
-                "Couldn't read calibration from EEPROM (FileNotFoundError). Falling back to default values."
+                "Couldn't read calibration from EEPROM (FileNotFoundError). "
+                "Falling back to default values."
             )
             return CalibrationData.from_default()
 
@@ -651,9 +706,8 @@ def run_recorder(
         output_compression=output_compression,
     )
 
-    verbose = (
-        get_verbose_level() >= 4
-    )  # performance-critical, <4 reduces chatter during main-loop
+    # performance-critical, <4 reduces chatter during main-loop
+    verbose = get_verbose_level() >= 4
 
     with ExitStack() as stack:
 
@@ -672,7 +726,7 @@ def run_recorder(
 
         recorder.start(start_time, wait_blocking=False)
 
-        logger.info(f"waiting {start_time - time.time():.2f} s until start")
+        logger.info("waiting %.2f s until start", start_time - time.time())
         recorder.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -693,9 +747,7 @@ def run_recorder(
             try:
                 idx, hrv_buf = recorder.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
-                logger.error(
-                    f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
-                )
+                logger.warning("Caught an Exception", exc_info=e)
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 log_writer.write_exception(err_rec)
                 if not warn_only:
@@ -739,7 +791,7 @@ def run_emulator(
         :param use_cal_default: [bool] True to use default calibration values, False to
             read calibration data from EEPROM
         :param start_time: [float] Desired start time of emulation in unix epoch time
-        :param set_target_io_lvl_conv: [bool] Enables or disables the GPIO level converter to targets.
+        :param set_target_io_lvl_conv: [bool] Enables the GPIO level converter to targets.
         :param sel_target_for_io: [bool] choose which targets gets the io-connection
             (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
         :param sel_target_for_pwr: [bool] choose which targets gets the supply with current-monitor,
@@ -753,7 +805,9 @@ def run_emulator(
         :param skip_log_voltage: [bool] reduce file-size by omitting this log
         :param skip_log_gpio: [bool] reduce file-size by omitting this log
         :param skip_log_current: [bool] reduce file-size by omitting this log
-        :param output_compression: "lzf" recommended, alternatives are "gzip" (level 4) or gzip-level 1-9
+        :param output_compression: "lzf" recommended, alternatives are
+            "gzip" (level 4) or
+            gzip-level 1-9
     """
     mode = "emulator"
     cal = retrieve_calibration(use_cal_default)
@@ -814,7 +868,7 @@ def run_emulator(
     # performance-critical, <4 reduces chatter during main-loop
     verbose = get_verbose_level() >= 4
 
-    log_reader = ShpReader(input_path, verbose=verbose)
+    log_reader = LogReader(input_path, verbose=verbose)
     # TODO: new reader allow to check mode and dtype of recording (should be emu, ivcurves)
 
     with ExitStack() as stack:
@@ -853,7 +907,7 @@ def run_emulator(
         if output_path is not None:
             log_writer.embed_config(emu.vs_cfg.data)
         emu.start(start_time, wait_blocking=False)
-        logger.info(f"waiting {start_time - time.time():.2f} s until start")
+        logger.info("waiting %.2f s until start", start_time - time.time())
         emu.wait_for_start(start_time - time.time() + 15)
 
         logger.info("shepherd started!")
@@ -874,9 +928,7 @@ def run_emulator(
             try:
                 idx, emu_buf = emu.get_buffer(verbose=verbose)
             except ShepherdIOException as e:
-                logger.error(
-                    f"ShepherdIOException(ID={e.id_num}, val={e.value}): {str(e)}"
-                )
+                logger.warning("Caught an Exception", exc_info=e)
 
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 if output_path is not None:

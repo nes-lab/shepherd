@@ -24,7 +24,7 @@ drawing += elm.Ground()
 drawing += elm.Diode().right().at(N2.start)
 S2 = drawing.add(elm.SwitchSpdt().anchor("a").length(2))
 
-buck = drawing.add(elm.VoltageRegulator().label("Buck","top").anchor("in").at(S2.b))
+buck = drawing.add(elm.VoltageRegulator().label("Buck", "top").anchor("in").at(S2.b))
 drawing += elm.Line().down().at(buck.gnd).length(1.5)
 drawing += elm.Ground()
 

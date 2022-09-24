@@ -1,0 +1,47 @@
+---
+- name: Delete space wasting or forgotten files (WARNING - includes recordings) and cleans up free space to prepare image-extraction
+  hosts: sheep01
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Cleanup Beaglebone
+      ansible.builtin.include_role:
+        name: cleaned
+      vars:
+        do_delete_recordings: true
+        do_remove_software: false
+        do_zero_free_space: true
+
+    - name: display post cleanup message
+      ansible.builtin.debug:
+        msg: "ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | gzip -1 -' | dd of=image.img.gz"
+
+    - name: display ssh
+      ansible.builtin.debug:
+        msg: "{{ ansible_user }}@{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+    - name: display file
+      ansible.builtin.debug:
+        msg: "{{ ansible_date_time.date }}_{{ inventory_hostname }}_mmcblk1.img.gz"
+
+# TODO: test - do actual command
+# hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+# ansible_user
+# inventory_hostname
+# ansible_date_time.date = 2015-07-09
+
+# base: 1.7 gb used, 1.7 gb free, 51% usage
+# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | gzip -1 -' | dd of=image.img.gz -> 742 mb 1600s broken image
+# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | gzip -1 - | dd of=image.img.gz -> 742 mb 1300s
+# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz -> 466 mb 1320s
+# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image3.img.xz -> 466 mb 1333s
+# base: 1.4 gb used, 2.0 gb free, 41 % usage -> 363 mb,
+# - remove gcc-8, fw/iw
+# base: 1.2 gb used, 2.2 gb free, 36 % usage -> 326 mb,
+
+# safe without xz, mount, change uEnv.txt, umount, xz
+# sudo mkdir /mnt/image
+# sudo mount -o loop /home/NAME/Downloads/image.dd /mnt/image
+# TODO: delete Journal?

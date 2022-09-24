@@ -18,8 +18,8 @@ For each shepherd node, you'll need:
 
 In addition, you'll need at least one SD-card with at least 4GB capacity. To setup linux and control the nodes a linux host-machine is recommended, but the terminal in macOS or WSL for Windows should work as well.
 
-For the cape and capelets take a look at the `hardware design files <https://github.com/orgua/shepherd/tree/master/hardware>`_.
-Shepherd version 2 hardware is currently under development, see the separate `repository <https://github.com/orgua/shepherd_v2_planning/tree/master/PCBs>`_.
+For the cape and capelets take a look at the `hardware design files <https://github.com/orgua/shepherd/tree/main/hardware>`_.
+Shepherd version 2 hardware is currently under development, see the separate `repository <https://github.com/orgua/shepherd_v2_planning/tree/main/PCBs>`_.
 The capelets can mostly be soldered by hand (except the target pcb).
 The shepherd cape has a large number of small components and we suggest to send it to a PCB fab for assembly.
 
@@ -71,9 +71,9 @@ Clone the shepherd repository to your machine:
     git clone https://github.com/orgua/shepherd.git
 
 
-Add an inventory file in the `inventory` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
-Just start by editing the provided `inventory/herd.yml` example.
-Pick a username that you want to use to login to the nodes and assign as `ansible_user` variable.
+Add an inventory file in the ``inventory`` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
+Just start by editing the provided ``inventory/herd.yml`` example.
+Pick a username that you want to use to login to the nodes and assign as ``ansible_user`` variable.
 [**TODO:** update description with roles].
 
 .. code-block:: yaml
@@ -91,8 +91,8 @@ Pick a username that you want to use to login to the nodes and assign as `ansibl
 
 We'll use `Ansible <https://www.ansible.com/>`_ to roll out a basic configuration to the nodes.
 This includes setting the hostname, adding the user, allowing password-less ssh access and sudo without password.
-Make sure that you have `Python >=3.6`, `pip` and `sshpass` installed on your machine.
-Install `Ansible` with:
+Make sure that you have ``Python >=3.6``, ``pip`` and ``sshpass`` installed on your machine.
+Install ``Ansible`` with:
 
 .. code-block:: bash
 

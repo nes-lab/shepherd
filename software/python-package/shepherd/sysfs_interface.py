@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.sysfs_interface
 ~~~~~
@@ -13,12 +11,14 @@ provided by the shepherd kernel module
 import logging
 import time
 from pathlib import Path
-from typing import NoReturn, Union
+from typing import NoReturn
+from typing import Optional
 
-from shepherd.calibration import CalibrationData
 from shepherd import calibration_default
 
-logger = logging.getLogger(__name__)
+from .calibration import CalibrationData
+
+logger = logging.getLogger("shp.interface")
 sysfs_path = Path("/sys/shepherd")
 
 
@@ -29,7 +29,13 @@ class SysfsInterfaceException(Exception):
 # dedicated sampling modes
 # - _adc_read - modes are used per rpc (currently to calibrate the hardware)
 # TODO: what is with "None"?
-shepherd_modes = ["harvester", "hrv_adc_read", "emulator", "emu_adc_read", "debug"]
+shepherd_modes = [
+    "harvester",
+    "hrv_adc_read",
+    "emulator",
+    "emu_adc_read",
+    "debug",
+]
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
@@ -68,7 +74,7 @@ def set_start(start_time: float = None) -> NoReturn:
         start_time (int): Desired start time in unix time
     """
     current_state = get_state()
-    logger.debug(f"current state of shepherd kernel module: {current_state}")
+    logger.debug("current state of shepherd kernel module: %s", current_state)
     if current_state != "idle":
         raise SysfsInterfaceException(f"Cannot start from state { current_state }")
 
@@ -76,10 +82,10 @@ def set_start(start_time: float = None) -> NoReturn:
         if isinstance(start_time, float):
             start_time = int(start_time)
         if isinstance(start_time, int):
-            logger.debug(f"writing start-time = {start_time} to sysfs")
+            logger.debug("writing start-time = %d to sysfs", start_time)
             f.write(f"{start_time}")
         else:  # unknown type
-            logger.debug(f"writing 'start' to sysfs")
+            logger.debug("writing 'start' to sysfs")
             f.write("start")
 
 
@@ -118,13 +124,13 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
                 f"Cannot set mode when shepherd is { get_state() }"
             )
 
-    logger.debug(f"sysfs/mode: '{mode}'")
+    logger.debug("sysfs/mode: '%s'", mode)
     with open(sysfs_path / "mode", "w") as f:
         f.write(mode)
 
 
 def write_dac_aux_voltage(
-    calibration_settings: Union[CalibrationData, None], voltage: float
+    calibration_settings: Optional[CalibrationData], voltage: float
 ) -> NoReturn:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
@@ -132,19 +138,19 @@ def write_dac_aux_voltage(
         :param voltage: desired voltage in volt
         :param calibration_settings: optional set to convert volt to raw
     """
-    if voltage is None:
-        voltage = 0.0
-    elif voltage is False:
+    if (voltage is None) or (voltage is False):
         voltage = 0.0
     elif (voltage is True) or (isinstance(voltage, str) and "main" in voltage.lower()):
         # set bit 20 (during pru-reset) and therefore link both adc-channels
         write_dac_aux_voltage_raw(2**20)
         return
     elif isinstance(voltage, str) and "mid" in voltage.lower():
-        # set bit 21 (during pru-reset) and therefore output intermediate (storage cap) voltage on second channel
+        # set bit 21 (during pru-reset) and therefore output
+        # intermediate (storage cap) voltage on second channel
         write_dac_aux_voltage_raw(2**21)
         logger.warning(
-            "Second DAC-Channel puts out intermediate emulation voltage (@Cap) -> this might break realtime"
+            "Second DAC-Channel puts out intermediate emulation voltage (@Cap) "
+            "-> this might break realtime"
         )
         return
 
@@ -161,7 +167,7 @@ def write_dac_aux_voltage(
         )
 
     logger.debug(
-        f"Set voltage of supply for auxiliary Target to {voltage} V (raw={output})"
+        "Set voltage of supply for auxiliary Target to %.3f V (raw=%d)", voltage, output
     )
     # TODO: currently only an assumption that it is for emulation, could also be for harvesting
     write_dac_aux_voltage_raw(output)
@@ -175,10 +181,11 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
     """
     if voltage_raw >= (2**16):
         logger.info(
-            f"DAC: sending raw-voltage above possible limit of 16bit-value -> this might trigger commands"
+            "DAC: sending raw-voltage above possible limit of 16bit-value "
+            "-> this might trigger commands"
         )
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
-        logger.debug(f"Sending raw auxiliary voltage (dac channel B): {voltage_raw}")
+        logger.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))
 
 
@@ -208,7 +215,7 @@ def read_dac_aux_voltage_raw() -> int:
 
     Returns: voltage as dac_raw
     """
-    with open(sysfs_path / "dac_auxiliary_voltage_raw", "r") as f:
+    with open(sysfs_path / "dac_auxiliary_voltage_raw") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -243,7 +250,7 @@ def write_calibration_settings(
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        logger.debug(f"Sending calibration settings: {output}")
+        logger.debug("Sending calibration settings: %s", output)
         f.write(output)
 
 
@@ -253,7 +260,7 @@ def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    with open(sysfs_path / "calibration_settings", "r") as f:
+    with open(sysfs_path / "calibration_settings") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -275,7 +282,8 @@ def write_virtual_converter_settings(settings: list) -> NoReturn:
 
     """
     logger.debug(
-        f"Writing virtual converter to sysfs_interface, first values are {settings[0:3]}"
+        "Writing virtual converter to sysfs_interface, first values are %s",
+        settings[0:3],
     )
 
     output = ""
@@ -302,7 +310,7 @@ def read_virtual_converter_settings() -> list:
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    with open(sysfs_path / "virtual_converter_settings", "r") as f:
+    with open(sysfs_path / "virtual_converter_settings") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings
@@ -315,7 +323,8 @@ def write_virtual_harvester_settings(settings: list) -> NoReturn:
 
     """
     logger.debug(
-        f"Writing virtual harvester to sysfs_interface, first values are {settings[0:3]}"
+        "Writing virtual harvester to sysfs_interface, first values are %s",
+        settings[0:3],
     )
     output = ""
     for setting in settings:
@@ -337,7 +346,7 @@ def read_virtual_harvester_settings() -> list:
     The  pru-algorithm uses these settings to configure emulator.
 
     """
-    with open(sysfs_path / "virtual_harvester_settings", "r") as f:
+    with open(sysfs_path / "virtual_harvester_settings") as f:
         settings = f.read().rstrip()
     int_settings = [int(x) for x in settings.split()]
     return int_settings
@@ -376,15 +385,22 @@ def read_pru_msg() -> tuple:
     """
     Returns:
     """
-    with open(sysfs_path / "pru_msg_box", "r") as f:
+    with open(sysfs_path / "pru_msg_box") as f:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
-        raise SysfsInterfaceException(f"pru_msg was too short")
+        raise SysfsInterfaceException("pru_msg was too short")
     return msg_parts[0], msg_parts[1:]
 
 
-prog_attribs = ["protocol", "datarate", "pin_tck", "pin_tdio", "pin_tdo", "pin_tms"]
+prog_attribs = [
+    "protocol",
+    "datarate",
+    "pin_tck",
+    "pin_tdio",
+    "pin_tdo",
+    "pin_tms",
+]
 
 
 def write_programmer_ctrl(
@@ -396,7 +412,7 @@ def write_programmer_ctrl(
     pin_tms: int = 0,
 ):
     if ("jtag" in protocol.lower()) and ((pin_tdo < 1) or (pin_tms < 1)):
-        raise SysfsInterfaceException(f"jtag needs 4 pins defined")
+        raise SysfsInterfaceException("jtag needs 4 pins defined")
     parameters = [protocol, datarate, pin_tck, pin_tdio, pin_tdo, pin_tms]
     for parameter in parameters[1:]:
         if (parameter < 0) or (parameter >= 2**32):
@@ -405,14 +421,14 @@ def write_programmer_ctrl(
             )
     for _iter, attribute in enumerate(prog_attribs):
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug(f"[sysfs] set programmer/{attribute} = '{parameters[_iter]}'")
+            logger.debug("set programmer/%s = '%s'", attribute, parameters[_iter])
             file.write(str(parameters[_iter]))
 
 
 def read_programmer_ctrl() -> list:
     parameters = []
     for attribute in prog_attribs:
-        with open(sysfs_path / "programmer" / attribute, "r") as file:
+        with open(sysfs_path / "programmer" / attribute) as file:
             parameters.append(file.read().rstrip())
     return parameters
 
@@ -430,7 +446,7 @@ def start_programmer() -> NoReturn:
 
 
 def check_programmer() -> str:
-    with open(sysfs_path / "programmer/state", "r") as file:
+    with open(sysfs_path / "programmer/state") as file:
         return file.read().rstrip()
 
 
@@ -446,35 +462,35 @@ attribs = [
 
 
 def get_mode() -> str:
-    with open(sysfs_path / "mode", "r") as f:
+    with open(sysfs_path / "mode") as f:
         return str(f.read().rstrip())
 
 
 def get_state() -> str:
-    with open(sysfs_path / "state", "r") as f:
+    with open(sysfs_path / "state") as f:
         return str(f.read().rstrip())
 
 
 def get_n_buffers() -> int:
-    with open(sysfs_path / "n_buffers", "r") as f:
+    with open(sysfs_path / "n_buffers") as f:
         return int(f.read().rstrip())
 
 
 def get_buffer_period_ns() -> int:
-    with open(sysfs_path / "buffer_period_ns", "r") as f:
+    with open(sysfs_path / "buffer_period_ns") as f:
         return int(f.read().rstrip())
 
 
 def get_samples_per_buffer() -> int:
-    with open(sysfs_path / "samples_per_buffer", "r") as f:
+    with open(sysfs_path / "samples_per_buffer") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_address() -> int:
-    with open(sysfs_path / "memory/address", "r") as f:
+    with open(sysfs_path / "memory/address") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_size() -> int:
-    with open(sysfs_path / "memory/size", "r") as f:
+    with open(sysfs_path / "memory/size") as f:
         return int(f.read().rstrip())

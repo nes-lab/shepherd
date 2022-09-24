@@ -100,7 +100,7 @@
    /* Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/  */
    /* Note:
         - root-path and "chosen" seem to produce a warning with dtc, internet is not helpful
-        - this is the reference solution choosen by: https://github.com/RobertCNelson/bb.org-overlays
+        - this is the reference solution chosen by: https://github.com/RobertCNelson/bb.org-overlays
    */
    fragment@0 {
       target-path="/";
@@ -196,7 +196,7 @@
             shepherd{
                compatible = "nes,shepherd";
                prusses = <&pruss>;
-            };	
+            };
        };
    };
 

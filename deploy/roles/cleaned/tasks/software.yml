@@ -1,0 +1,61 @@
+---
+
+- name: Optimize Boot by removing outdated initrd - find files with Wildcard
+  # ansible.builtin.command: "rm -rf /boot/initrd.img*"
+  ansible.builtin.find:
+    paths: '/boot'
+    patterns: 'initrd.img*'
+  register: files_init
+- name: Optimize Boot by removing outdated initrd - delete files found previously
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_init.files }}"
+
+
+- name: Delete unused firmware (by beaglebone, slightly risky) - A
+  ansible.builtin.file:
+    path: "/lib/firmware/{{ item }}"
+    state: absent
+  with_items: # sorted by size, all ~ 360 mb
+    - "netronome"
+    - "amdgpu"
+    - "intel"
+    - "liquidio"
+    - "qcom"
+    - "qed"
+    - "brcm"
+    - "ath10k"
+    - "mellanox"
+    - "mrvl"
+    - "i915"
+    - "radeon"
+    - "mediatek"
+    - "nvidia"
+  become: true
+
+- name: Find unused firmware (by beaglebone, slightly risky) - B
+  ansible.builtin.find:
+    paths: '/lib/firmware/'
+    patterns: 'iwlwifi-*' # > 100 mb, wifi-blobs
+  register: files_fw
+- name: Delete unused firmware (by beaglebone, slightly risky) - B
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_fw.files }}"
+
+- name: APT - Uninstall non-essential Packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent
+    purge: true
+  failed_when: false
+  with_items:
+    - "{{ non_essential_packages_a }}"
+    - "{{ non_essential_packages_b }}"
+    - "{{ non_essential_packages_c }}"
+    - "{{ non_essential_packages_d }}"
+    - "{{ non_essential_packages_e }}"
+    - "{{ non_essential_packages_f }}"
+    - "{{ non_essential_packages_g }}"

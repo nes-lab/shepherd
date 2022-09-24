@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.datalog
 ~~~~~
@@ -12,34 +10,34 @@ HDF5 files.
 """
 
 import logging
-import subprocess
+import subprocess  # noqa: S404
 import threading
 import time
-from typing import NoReturn, Union
-
-import numpy as np
-from pathlib import Path
-import h5py
-from itertools import product
 from collections import namedtuple
+from itertools import product
+from pathlib import Path
+from typing import NoReturn
+from typing import Union
+
+import h5py
+import numpy as np
 import psutil as psutil
 import serial
 import yaml
 
-from shepherd.calibration import CalibrationData
-from shepherd.calibration import cal_channel_hrv_dict
-from shepherd.calibration import cal_channel_emu_dict
-from shepherd.calibration import cal_parameter_list
+from .calibration import CalibrationData
+from .calibration import cal_channel_emu_dict
+from .calibration import cal_channel_hrv_dict
+from .calibration import cal_parameter_list
+from .commons import GPIO_LOG_BIT_POSITIONS
+from .commons import MAX_GPIO_EVT_PER_BUFFER
+from .shepherd_io import DataBuffer
 
-from shepherd.shepherd_io import DataBuffer
-from shepherd.commons import GPIO_LOG_BIT_POSITIONS, MAX_GPIO_EVT_PER_BUFFER
+logger = logging.getLogger("shp.datalog.writer")
 
-logger = logging.getLogger(__name__)
 
-"""
-An entry for an exception to be stored together with the data consists of a
-timestamp, a custom message and an arbitrary integer value
-"""
+# An entry for an exception to be stored together with the data consists of a
+# timestamp, a custom message and an arbitrary integer value
 ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"])
 
 monitors_end = threading.Event()
@@ -73,12 +71,16 @@ class LogWriter:
     """
 
     # choose lossless compression filter
-    # - lzf: low to moderate compression, VERY fast, no options -> 20 % cpu overhead for half the filesize
-    # - gzip: good compression, moderate speed, select level from 1-9, default is 4 -> lower levels seem fine
-    #         --> _algo=number instead of "gzip" is read as compression level for gzip
-    # -> comparison / benchmarks https://www.h5py.org/lzf/
-    # NOTE for quick and easy performance improvements: remove compression for monitor-datasets, or even group_value
+    # - lzf:    low to moderate compression, VERY fast, no options
+    #           -> 20 % cpu overhead for half the filesize
+    # - gzip:   good compression, moderate speed, select level from 1-9,
+    #           default is 4 -> lower levels seem fine
+    #           --> _algo=number instead of "gzip" is read as compression level for gzip
+    #  -> comparison / benchmarks https://www.h5py.org/lzf/
+    # NOTE: for quick and easy performance improvements:
+    #       remove compression for monitor-datasets, or even group_value
     compression_algo = None
+    sys_log_enabled = True
     sys_log_intervall_ns = 1 * (10**9)  # step-size is 1 s
     sys_log_next_ns = 0
     uart_path = "/dev/ttyO1"
@@ -110,14 +112,16 @@ class LogWriter:
         file_path = Path(file_path)
         if force_overwrite or not file_path.exists():
             self.store_path = file_path
-            logger.info(f"Storing data to   '{self.store_path}'")
+            logger.info("Storing data to   '%s'", self.store_path)
         else:
             base_dir = file_path.resolve().parents[0]
             self.store_path = unique_path(base_dir / file_path.stem, file_path.suffix)
             logger.warning(
-                f"File {file_path} already exists.. "
-                f"storing under {self.store_path} instead"
+                "File %s already exists.. storing under %s instead",
+                file_path,
+                self.store_path,
             )
+
         # Refer to shepherd/calibration.py for the format of calibration data
         if not isinstance(mode, (str, type(None))):
             raise TypeError(f"can not handle type '{type(mode)}' for mode")
@@ -133,8 +137,8 @@ class LogWriter:
         ):
             raise ValueError(f"can not handle datatype '{datatype}'")
 
-        self.mode = self.mode_default if (mode is None) else mode
-        self.datatype = self.datatype_default if (datatype is None) else datatype
+        self._mode = self.mode_default if (mode is None) else mode
+        self._datatype = self.datatype_default if (datatype is None) else datatype
 
         self.calibration_data = calibration_data
         self.chunk_shape = (samples_per_buffer,)
@@ -145,26 +149,34 @@ class LogWriter:
         ).astype("u8")
         self._write_voltage = not skip_voltage
         self._write_current = not skip_current
-        self._write_gpio = (not skip_gpio) and ("emulat" in mode)
+        self._write_gpio = (not skip_gpio) and ("emulat" in self._mode)
         self._write_uart = Path(self.uart_path).exists()
 
         if output_compression in [None, "lzf", 1]:  # order of recommendation
             self.compression_algo = output_compression
 
         logger.debug(
-            f"Set log-writing for voltage:     {'enabled' if self._write_voltage else 'disabled'}"
+            "Set log-writing for voltage:\t\t%s",
+            "enabled" if self._write_voltage else "disabled",
         )
         logger.debug(
-            f"Set log-writing for current:     {'enabled' if self._write_current else 'disabled'}"
+            "Set log-writing for current:\t\t%s",
+            "enabled" if self._write_current else "disabled",
         )
         logger.debug(
-            f"Set log-writing for gpio:        {'enabled' if self._write_gpio else 'disabled'}"
+            "Set log-writing for gpio:\t\t%s",
+            "enabled" if self._write_gpio else "disabled",
         )
 
         # initial sysutil-reading and delta-history
-        self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
-        self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
-        # Optimization: allowing larger more efficient resizes (before .resize() was called per element)
+        if psutil.disk_io_counters() is None:
+            # fake or virtual hardware detected
+            self.sys_log_enabled = False
+        else:
+            self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
+            self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
+        # Optimization: allowing larger more efficient resizes
+        #               (before .resize() was called per element)
         # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
         # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
         inc_duration = int(100)
@@ -183,7 +195,8 @@ class LogWriter:
         self.xcpt_inc = 100
         self.timesync_pos = 0
         self.timesync_inc = inc_duration
-        # NOTE for possible optimization: align resize with chunk-size -> rely on autochunking -> inc = h5ds.chunks
+        # NOTE for possible optimization: align resize with chunk-size
+        #      -> rely on autochunking -> inc = h5ds.chunks
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -201,22 +214,15 @@ class LogWriter:
 
         # show key parameters for h5-performance
         settings = list(self._h5file.id.get_access_plist().get_cache())
-        logger.debug(f"H5Py Cache_setting={settings} (_mdc, _nslots, _nbytes, _w0)")
+        logger.debug("H5Py Cache_setting=%s (_mdc, _nslots, _nbytes, _w0)", settings)
 
-        # Store the mode in order to allow user to differentiate harvesting vs emulation data
-        if isinstance(self._mode, str) and self._mode in self.mode_dtype_dict:
-            self.h5file.attrs["mode"] = self._mode
-
-        if (
-            isinstance(self._datatype, str)
-            and self._datatype in self.mode_dtype_dict[self.get_mode()]
-        ):
-            self.h5file["data"].attrs["datatype"] = self._datatype
-
-        # Store voltage and current samples in the data group, both are stored as 4 Byte unsigned int
+        # Store voltage and current samples in the data group,
+        # both are stored as 4 Byte unsigned integer
         self.data_grp = self._h5file.create_group("data")
-        # the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
         self.data_grp.attrs["window_samples"] = 0  # will be adjusted by .embed_config()
+        # these attributes will be adjusted at the end of fn:
+        self.data_grp.attrs["datatype"] = self.datatype_default
+        self.data_grp.attrs["mode"] = self.mode_default
 
         self.add_dataset_time(self.data_grp, self.data_inc, self.chunk_shape)
         self.data_grp.create_dataset(
@@ -245,13 +251,15 @@ class LogWriter:
         ] = "voltage [V] = value * gain + offset"
 
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
-            # TODO: not the cleanest cal-selection, maybe just hand the resulting two and rename them already to "current, voltage" in calling FN
+            # TODO: not the cleanest cal-selection,
+            #       maybe just hand the resulting two and
+            #       rename them already to "current, voltage" in calling FN
             cal_channel = (
                 cal_channel_hrv_dict[channel]
-                if (self.mode == "harvester")
+                if (self._mode == "harvester")
                 else cal_channel_emu_dict[channel]
             )
-            self.data_grp[channel].attrs[parameter] = self.calibration_data[self.mode][
+            self.data_grp[channel].attrs[parameter] = self.calibration_data[self._mode][
                 cal_channel
             ][parameter]
 
@@ -269,7 +277,9 @@ class LogWriter:
             )
             self.gpio_grp["value"].attrs["unit"] = "n"
             self.gpio_grp["value"].attrs["description"] = yaml.safe_dump(
-                GPIO_LOG_BIT_POSITIONS, default_flow_style=False, sort_keys=False
+                GPIO_LOG_BIT_POSITIONS,
+                default_flow_style=False,
+                sort_keys=False,
             )
 
         # Create group for exception logs, entry consists of a timestamp, a message and a value
@@ -301,7 +311,7 @@ class LogWriter:
                 maxshape=(None,),
                 chunks=True,
             )
-            self.uart_grp["message"].attrs["description"] = f"raw ascii-bytes"
+            self.uart_grp["message"].attrs["description"] = "raw ascii-bytes"
 
         # Create sys-Logger
         self.sysutil_grp = self._h5file.create_group("sysutil")
@@ -364,19 +374,38 @@ class LogWriter:
         self.timesync_grp = self._h5file.create_group("timesync")
         self.add_dataset_time(self.timesync_grp, self.timesync_inc)
         self.timesync_grp.create_dataset(
-            "value", (self.timesync_inc, 3), dtype="i8", maxshape=(None, 3), chunks=True
+            "value",
+            (self.timesync_inc, 3),
+            dtype="i8",
+            maxshape=(None, 3),
+            chunks=True,
         )
         self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
         self.timesync_grp["value"].attrs[
             "description"
-        ] = "master offset [ns], s2 freq [Hz], path delay [ns]"
+        ] = "main offset [ns], s2 freq [Hz], path delay [ns]"
+
+        # Store the mode in order to allow user to differentiate harvesting vs emulation data
+        if isinstance(self._mode, str) and self._mode in self.mode_dtype_dict:
+            self._h5file.attrs["mode"] = self._mode
+
+        if (
+            isinstance(self._datatype, str)
+            and self._datatype in self.mode_dtype_dict[self.get_mode()]
+        ):
+            self._h5file["data"].attrs["datatype"] = self._datatype
 
         return self
+
+    def get_mode(self) -> str:
+        if "mode" in self._h5file.attrs:
+            return self._h5file.attrs["mode"]
+        return ""
 
     def embed_config(self, data: dict) -> NoReturn:
         """
         Important Step to get a self-describing Output-File
-        Note: the size of window_samples-attribute in harvest-data indicates ivcurves as input -> emulator uses virtual-harvester
+        Note: the window_samples-size is important for reconstruction
 
         :param data: from virtual harvester or converter / source
         :return: None
@@ -419,28 +448,33 @@ class LogWriter:
 
         if self.dmesg_mon_t is not None:
             logger.info(
-                f"[LogWriter] terminate Dmesg-Monitor ({self.dmesg_grp['time'].shape[0]} entries)"
+                "terminate Dmesg-Monitor, (%d entries)",
+                self.dmesg_grp["time"].shape[0],
             )
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
             logger.info(
-                f"[LogWriter] terminate PTP4L-Monitor ({self.timesync_grp['time'].shape[0]} entries)"
+                "terminate PTP4L-Monitor, (%d entries)",
+                self.timesync_grp["time"].shape[0],
             )
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
             if self._write_uart:
                 logger.info(
-                    f"[LogWriter] terminate UART-Monitor  ({self.uart_grp['time'].shape[0]} entries)"
+                    "terminate UART-Monitor, (%d entries)",
+                    self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
         runtime = round(self.data_grp["time"].shape[0] / self.samplerate_sps, 1)
-        gpevents = self.gpio_grp["time"].shape[0] if self._write_gpio else 0
+        gpio_events = self.gpio_grp["time"].shape[0] if self._write_gpio else 0
         logger.info(
-            f"[LogWriter] flushing hdf5 file ({runtime} s iv-data, "
-            f"{gpevents} gpio-events, {self.xcpt_grp['time'].shape[0]} xcpt-events)"
+            "flushing hdf5 file (%d s iv-data, %d gpio-events, %d xcpt-events)",
+            runtime,
+            gpio_events,
+            self.xcpt_grp["time"].shape[0],
         )
         self._h5file.flush()
-        logger.info("[LogWriter] closing  hdf5 file")
+        logger.info("closing hdf5 file")
         self._h5file.close()
 
     def write_buffer(self, buffer: DataBuffer) -> NoReturn:
@@ -480,7 +514,7 @@ class LogWriter:
             gpio_new_pos = self.gpio_pos + len_edges
             data_length = self.gpio_grp["time"].shape[0]
             if gpio_new_pos >= data_length:
-                data_length += self.gpio_inc
+                data_length += max(self.gpio_inc, gpio_new_pos - data_length)
                 self.gpio_grp["time"].resize((data_length,))
                 self.gpio_grp["value"].resize((data_length,))
             self.gpio_grp["time"][
@@ -492,7 +526,12 @@ class LogWriter:
             self.gpio_pos = gpio_new_pos
 
         if (buffer.util_mean > 95) or (buffer.util_max > 100):
-            warn_msg = f"Pru0 Loop-Util:  mean = {buffer.util_mean} %, max = {buffer.util_max} % -> WARNING: broken real-time-condition"
+            warn_msg = (
+                f"Pru0 Loop-Util:  "
+                f"mean = {buffer.util_mean} %, "
+                f"max = {buffer.util_max} % "
+                f"-> WARNING: broken real-time-condition"
+            )
             expt = ExceptionRecord(int(time.time() * 1e9), warn_msg, 42)
             self.write_exception(expt)
 
@@ -516,16 +555,16 @@ class LogWriter:
         self.xcpt_pos += 1
 
     def log_sys_stats(self) -> NoReturn:
-        """captures state of system in a fixed intervall
+        """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
+        if not self.sys_log_enabled:
+            return
         ts_now_ns = int(time.time() * (10**9))
         if ts_now_ns >= self.sys_log_next_ns:
             data_length = self.sysutil_grp["time"].shape[0]
             if self.sysutil_pos >= data_length:
-                # self._h5file.flush()
-                # logger.info(f"flushed output-file @ {data_length} s")
                 data_length += self.sysutil_inc
                 self.sysutil_grp["time"].resize((data_length,))
                 self.sysutil_grp["cpu"].resize((data_length,))
@@ -555,7 +594,8 @@ class LogWriter:
             )
             self.sysutil_nw_last = sysutil_nw_now
             self.sysutil_pos += 1
-            # TODO: add temp, not working: https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
+            # TODO: add temp, not working:
+            #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
     def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
         self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
@@ -569,14 +609,18 @@ class LogWriter:
 
     def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> NoReturn:
         # TODO: TEST - Not final, goal: raw bytes in hdf5
-        # - uart is bytes-type -> storing in hdf5 is hard, tried 'S' and opaque-type -> failed with errors
-        # - converting is producing ValueError on certain chars, errors="backslashreplace" does not help
-        # TODO: evaluate https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        # - uart is bytes-type -> storing in hdf5 is hard,
+        #   tried 'S' and opaque-type -> failed with errors
+        # - converting is producing ValueError on certain chars,
+        #   errors="backslashreplace" does not help
+        # TODO: eval https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
         if (not self._write_uart) or (not isinstance(baudrate, int)) or (baudrate == 0):
             return
         global monitors_end
         logger.debug(
-            f"Will start UART-Monitor for target on '{self.uart_path}' @ {baudrate} baud"
+            "Will start UART-Monitor for target on '%s' @ %d baud",
+            self.uart_path,
+            baudrate,
         )
         tevent = threading.Event()
         try:
@@ -606,14 +650,22 @@ class LogWriter:
                             self.uart_pos += 1
                     tevent.wait(poll_intervall)  # rate limiter
         except ValueError as e:
-            logger.error(
-                f"[UartMonitor] PySerial ValueError '{e}' - couldn't configure serial-port '{self.uart_path}' with baudrate={baudrate} -> will skip logging"
+            logger.error(  # noqa: G200
+                "[UartMonitor] PySerial ValueError '%s' - "
+                "couldn't configure serial-port '%s' "
+                "with baudrate=%d -> will skip logging",
+                e,
+                self.uart_path,
+                baudrate,
             )
         except serial.SerialException as e:
-            logger.error(
-                f"[UartMonitor] pySerial SerialException '{e} - Couldn't open Serial-Port '{self.uart_path}' to target -> will skip logging"
+            logger.error(  # noqa: G200
+                "[UartMonitor] pySerial SerialException '%s - "
+                "Couldn't open Serial-Port '%s' to target -> will skip logging",
+                e,
+                self.uart_path,
             )
-        logger.debug(f"[UartMonitor] ended itself")
+        logger.debug("[UartMonitor] ended itself")
 
     def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
         # var1: ['dmesg', '--follow'] -> not enough control
@@ -626,7 +678,7 @@ class LogWriter:
             f"--lines={backlog}",
             "--output=short-precise",
         ]
-        proc_dmesg = subprocess.Popen(
+        proc_dmesg = subprocess.Popen(  # noqa: S603
             cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True
         )
         tevent = threading.Event()
@@ -644,13 +696,16 @@ class LogWriter:
                 self.dmesg_grp["message"][self.dmesg_pos] = line
             except OSError:
                 logger.error(
-                    f"[DmesgMonitor] Caught a Write Error for Line: [{type(line)}] {line}"
+                    "[DmesgMonitor] Caught a Write Error for Line: [%s] %s",
+                    type(line),
+                    line,
                 )
             tevent.wait(poll_intervall)  # rate limiter
-        logger.debug(f"[DmesgMonitor] ended itself")
+        logger.debug("[DmesgMonitor] ended itself")
 
     def monitor_ptp4l(self, poll_intervall: float = 0.25):
-        # example: Feb 16 10:58:37 sheep1 ptp4l[378]: [821.629] master offset      -4426 s2 freq +285889 path delay     12484
+        # example:
+        # sheep1 ptp4l[378]: [821.629] main offset -4426 s2 freq +285889 path delay 12484
         global monitors_end
         cmd_ptp4l = [
             "sudo",
@@ -660,7 +715,7 @@ class LogWriter:
             "--lines=1",
             "--output=short-precise",
         ]  # for client
-        proc_ptp4l = subprocess.Popen(
+        proc_ptp4l = subprocess.Popen(  # noqa: S603
             cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True
         )
         tevent = threading.Event()
@@ -689,10 +744,12 @@ class LogWriter:
                 self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
             except OSError:
                 logger.error(
-                    f"[PTP4lMonitor] Caught a Write Error for Line: [{type(line)}] {line}"
+                    "[PTP4lMonitor] Caught a Write Error for Line: [%s] %s",
+                    type(line),
+                    line,
                 )
             tevent.wait(poll_intervall)  # rate limiter
-        logger.debug(f"[PTP4lMonitor] ended itself")
+        logger.debug("[PTP4lMonitor] ended itself")
 
     def add_dataset_time(
         self, grp: h5py.Group, length: int, chunks: Union[bool, tuple] = True
@@ -705,7 +762,7 @@ class LogWriter:
             chunks=chunks,
             compression=self.compression_algo,
         )
-        grp["time"].attrs["unit"] = f"ns"
+        grp["time"].attrs["unit"] = "ns"
         grp["time"].attrs["description"] = "system time [ns]"
 
     def __setitem__(self, key, item):

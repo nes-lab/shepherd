@@ -32,7 +32,7 @@ Some of the values were measured with an early prototype and may not accurately 
     |                            | Emulator current       | 19.2 us ??           |
     +----------------------------+------------------------+----------------------+
     | Max. Burden voltage        | Harvest recorder       | 50.4 mV              |
-    + TODO: still applicable?    +------------------------+----------------------+
+    +                            +------------------------+----------------------+
     |                            | Load recorder          | 76.1 mV              |
     +----------------------------+------------------------+----------------------+
     | GPIO sampling speed        |                        | 580 kHz - 5 MHz      |
@@ -41,3 +41,5 @@ Some of the values were measured with an early prototype and may not accurately 
     +----------------------------+------------------------+----------------------+
     | Max. Synchronization error |                        | < 1.0 us             |
     +----------------------------+------------------------+----------------------+
+
+TODO: burden voltage still applicable?

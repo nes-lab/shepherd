@@ -8,7 +8,7 @@ Note how the following description traverses the clock hierarchy top-down starti
 General Structure
 -----------------
 
-The master node is connected to a u-blox GPS receiver (shepherd-capelet), from which it receives a PPS signal via GPIO and global time via UART if the GPS-Modul has an position-fix.
+The primary node is connected to a u-blox GPS receiver (shepherd-capelet), from which it receives a PPS signal via GPIO and global time via UART if the GPS-Modul has an position-fix.
 One kernel module and two services work in concert to provide a grandmaster clock:
 
 - ``pps_gmtimer`` (kernel module) timestamps edges on a GPIO pin with respect to an internal hardware timer on the AM335x and feeds the timestamps as a Linux pps device.
@@ -19,7 +19,7 @@ One kernel module and two services work in concert to provide a grandmaster cloc
 Hardware setup
 --------------
 
-The GPS-capelet (see `hardware/capelets/gps`) is stacked on top of the shepherd cape or an attached harvesting capelet, respectively.
+The GPS-capelet (see ``hardware/capelets/gps``) is stacked on top of the shepherd cape or an attached harvesting capelet, respectively.
 
 - The PPS signal is connected to Timer4 on pin P8_7
 - The GPS-Uart is connect over UART2 on pins P9_21 and P9_22
@@ -28,25 +28,25 @@ The GPS-capelet (see `hardware/capelets/gps`) is stacked on top of the shepherd 
 Configuring GNSS module
 -----------------------
 
-The u-blox GPS receiver can be configured to optimize its perfomance. To do this directly form the host node the python the python script: ``ubloxmsg_exchange`` was
+The u-blox GPS receiver can be configured to optimize its performance. To do this directly form the host node the python the python script: ``ubloxmsg_exchange`` was
 written (see https://github.com/kugelbit/ubx-packet-exchange). The configuration files can be found under ``config_files``.  To this end the following configurations were set:
 
 - SBAS was disabled for better timing information
-- The stationary mode was enabled to get a better percussion and a stable perfomance
+- The stationary mode was enabled to get a better percussion and a stable performance
 - the GPS- and galileo-satelite-systems were enabled to get a fast and stable fix
 
-In addtion the standard config of the receiver leads to the following behaviour:
+In addition the standard config of the receiver leads to the following behavior:
 
 - If the PPS is not locked, the LED on the capelet will not blink. After the lock is attained, the LED will start blinking at 1 Hz.
 - NMEA messages are enabled for the UART link which connects to the BeagleBone.
 
-Note: Recent versions of gpsd include a tool `ubxtool`, allowing convenient configuration of ublox receivers:
- - Poll GNSS config: `ubxtool -p CFG-GNSS`
- - Enable Galileo: `ubxtool -e GALILEO`
- - Enable binary messages: `ubxtool -e BINARY`
- - Disable NMEA messages: `ubxtool -d NMEA`
- - Disable SBAS: `ubxtool -d SBAS`
- - Poll time pulse config: `ubxtool -p CFG-TP5`
+Note: Recent versions of gpsd include a tool ``ubxtool``, allowing convenient configuration of ublox receivers:
+ - Poll GNSS config: ``ubxtool -p CFG-GNSS``
+ - Enable Galileo: ``ubxtool -e GALILEO``
+ - Enable binary messages: ``ubxtool -e BINARY``
+ - Disable NMEA messages: ``ubxtool -d NMEA``
+ - Disable SBAS: ``ubxtool -d SBAS``
+ - Poll time pulse config: ``ubxtool -p CFG-TP5``
 
 Deploy
 ------
@@ -58,7 +58,7 @@ Useful commands
 ---------------
 
 Check if PPS pulses are coming: ``cat /sys/class/pps/pps0/assert``
-On the master check that gpsd and chrony are running:
+On the primary node check that gpsd and chrony are running:
 
 - ``systemctl status gpsd``
 - ``systemctl status chrony``
@@ -77,7 +77,7 @@ Configuration files:
 - the device tree file (dts) for the GPS-caplet is found in the pps-gmtimer folder (DD-GPS-00A0.dts).
 
 DEBUG:
-if you want to see whats going on you can run the services in DEBUG-Mode:
+if you want to see what's going on you can run the services in DEBUG-Mode:
 
 - chrony: ``sudo chronyd -dd``
 - gpsd: ``sudo gpsd -N /dev/ttyO2 -D15 -n``

@@ -26,4 +26,3 @@ calibration:
     dac_voltage_b:
       gain: 7.62877291921811e-05
       offset: 0.000281481899873981
-

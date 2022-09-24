@@ -1,20 +1,17 @@
-import pytest
-import numpy as np
 import time
-import logging
-from pathlib import Path
-import h5py
 from itertools import product
 
-from shepherd import cal_channel_list
-from shepherd import LogWriter
-from shepherd import CalibrationData
-from shepherd.calibration import cal_parameter_list, cal_channel_hrv_dict
+import h5py
+import numpy as np
+import pytest
 
+from shepherd import CalibrationData
+from shepherd import LogWriter
+from shepherd.calibration import cal_channel_hrv_dict
+from shepherd.calibration import cal_parameter_list
+from shepherd.datalog import ExceptionRecord
 from shepherd.datalog_reader import LogReader as ShpReader
 from shepherd.shepherd_io import DataBuffer
-from shepherd.shepherd_io import GPIOEdges
-from shepherd.datalog import ExceptionRecord
 
 
 def random_data(length):
@@ -34,6 +31,7 @@ def data_buffer():
 def data_h5(tmp_path):
     name = tmp_path / "record_example.h5"
     with LogWriter(name, CalibrationData.from_default()) as store:
+        store["hostname"] = "Pinky"
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)
@@ -126,11 +124,17 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
         )
 
         # Note: decode is needed at least for h5py < 3, and old dtype=h5py.special_dtype(vlen=str)
-        assert writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
-        assert (
-            writer.xcpt_grp["message"][1].decode("UTF8")
-            == "there was another exception"
-        )
+        if isinstance(writer.xcpt_grp["message"][0], str):
+            assert writer.xcpt_grp["message"][0] == "there was an exception"
+            assert writer.xcpt_grp["message"][1] == "there was another exception"
+        else:
+            assert (
+                writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
+            )
+            assert (
+                writer.xcpt_grp["message"][1].decode("UTF8")
+                == "there was another exception"
+            )
         assert writer.xcpt_grp["value"][0] == 0
         assert writer.xcpt_grp["value"][1] == 1
         assert writer.xcpt_grp["time"][0] == ts

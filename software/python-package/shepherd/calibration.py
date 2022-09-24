@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.calibration
 ~~~~~
@@ -11,26 +9,33 @@ data
 :license: MIT, see LICENSE for more details.
 """
 import logging
-import yaml
 import struct
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import yaml
 from scipy import stats
 
 # voodoo to allow loading this file from outside (extras)
-# TODO: underlying problem for loading shepherd is a missing mockup of gpio-module, sysfs and sharedmem
+# TODO: underlying problem for loading shepherd is
+#  a missing mockup of gpio-module, sysfs and sharedmem
 try:
     import shepherd.calibration_default as cal_def
 except ModuleNotFoundError:
     import calibration_default as cal_def
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.cal")
 
 # gain and offset will be normalized to SI-Units, most likely V, A
 # -> general formula is:    si-value = raw_value * gain + offset
 # TODO: emulator has no ADC_voltage, but uses this slot to store cal-data for target-port B
 cal_component_list = ["harvester", "emulator"]
-cal_channel_list = ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]
+cal_channel_list = [
+    "dac_voltage_a",
+    "dac_voltage_b",
+    "adc_current",
+    "adc_voltage",
+]
 # functions from cal-default.py to convert the channels in cal_channel_list
 cal_channel_fn_list = [
     "dac_voltage_to_raw",
@@ -46,18 +51,20 @@ cal_parameter_list = ["gain", "offset"]
 
 # slim alternative to the methods (same name) of CalibrationData
 def convert_raw_to_value(
-    cal_dict: dict, raw: int
+    cal_dict: dict,
+    raw: int,
 ) -> float:  # more precise dict[str, int], trouble with py3.6
     return (float(raw) * cal_dict["gain"]) + cal_dict["offset"]
 
 
 def convert_value_to_raw(
-    cal_dict: dict, value: float
+    cal_dict: dict,
+    value: float,
 ) -> int:  # more precise dict[str, int], trouble with py3.6
     return int((value - cal_dict["offset"]) / cal_dict["gain"])
 
 
-class CalibrationData(object):
+class CalibrationData:
     """Represents SHEPHERD calibration data.
 
     Defines the format of calibration data and provides convenient functions
@@ -122,7 +129,8 @@ class CalibrationData(object):
             cal_dict[component] = {}
             for ch_index, channel in enumerate(cal_channel_list):
                 cal_fn = cal_channel_fn_list[ch_index]
-                # generation of gain / offset is reversed at first (raw = (val - off)/gain), but corrected for storing
+                # generation of gain / offset is reversed at first
+                # (raw = (val - off)/gain), but corrected for storing
                 offset = getattr(cal_def, cal_fn)(0)
                 gain_inv = getattr(cal_def, cal_fn)(1.0) - offset
                 cal_dict[component][channel] = {
@@ -143,7 +151,7 @@ class CalibrationData(object):
         Returns:
             CalibrationData object with extracted calibration data.
         """
-        with open(filename, "r") as stream:
+        with open(filename) as stream:
             in_data = yaml.safe_load(stream)
 
         return cls(in_data["calibration"])
@@ -159,7 +167,7 @@ class CalibrationData(object):
         Returns:
             CalibrationData object with extracted calibration data.
         """
-        with open(filename, "r") as stream:
+        with open(filename) as stream:
             meas_data = yaml.safe_load(stream)
 
         cal_dict = {}
@@ -167,7 +175,7 @@ class CalibrationData(object):
         for component in cal_component_list:
             cal_dict[component] = {}
             for channel in cal_channel_list:
-                cal_dict[component][channel] = dict()
+                cal_dict[component][channel] = {}
                 if "dac_voltage" in channel:
                     gain = 1.0 / cal_def.dac_voltage_to_raw(1.0)
                 elif "adc_current" in channel:
@@ -178,10 +186,10 @@ class CalibrationData(object):
                     gain = 1.0
                 offset = 0
                 try:
-                    sample_points = meas_data["measurements"][component][channel]
-                    x = np.empty(len(sample_points))
-                    y = np.empty(len(sample_points))
-                    for i, point in enumerate(sample_points):
+                    sample_pts = meas_data["measurements"][component][channel]
+                    x = np.empty(len(sample_pts))
+                    y = np.empty(len(sample_pts))
+                    for i, point in enumerate(sample_pts):
                         x[i] = point["shepherd_raw"]
                         y[i] = point["reference_si"]
                     result = stats.linregress(x, y)
@@ -190,16 +198,26 @@ class CalibrationData(object):
                     rval = result.rvalue  # test quality of regression
                 except KeyError:
                     logger.error(
-                        f"data not found -> '{component}-{channel}' replaced with default values (gain={gain})"
+                        "data not found -> '%s-%s' replaced with default values (gain=%f)",
+                        component,
+                        channel,
+                        gain,
                     )
-                except ValueError as e:
+                except ValueError:
                     logger.error(
-                        f"data faulty -> '{component}-{channel}' replaced with default values (gain={gain}) [{e}]"
+                        "data not found -> '%s-%s' replaced with default values (gain=%f)",
+                        component,
+                        channel,
+                        gain,
                     )
 
                 if ("rval" in locals()) and (rval < 0.999):
                     logger.warning(
-                        f"Calibration may be faulty -> Correlation coefficient (rvalue) = {rval:.6f} is too low for {component}-{channel}"
+                        "Calibration may be faulty -> Correlation coefficient "
+                        "(rvalue) = %.6f is too low for %s-%s",
+                        rval,
+                        component,
+                        channel,
                     )
                 cal_dict[component][channel]["gain"] = gain
                 cal_dict[component][channel]["offset"] = offset
@@ -243,14 +261,16 @@ class CalibrationData(object):
             )
         comp_data = self.data[component]
         cal_set = {
-            # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit [scaling according to commons.h]
+            # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit
+            # [scaling according to commons.h]
             "adc_current_gain": round(
                 1e9 * (2**8) * comp_data["adc_current"]["gain"]
             ),
             "adc_current_offset": round(
                 1e9 * (2**0) * comp_data["adc_current"]["offset"]
             ),
-            # ADC is handled in uV (micro-volt), gain is shifted by 8 bit [scaling according to commons.h]
+            # ADC is handled in uV (micro-volt), gain is shifted by 8 bit
+            # [scaling according to commons.h]
             "adc_voltage_gain": round(
                 1e6 * (2**8) * comp_data["adc_voltage"]["gain"]
             ),
@@ -270,12 +290,14 @@ class CalibrationData(object):
             # TODO: is exception more useful? -> raise ValueError
             if ("gain" in key) and not (0 <= value < 2**32):
                 logger.warning(
-                    f"Number (={value}) exceeds uint32-container, in CalibrationData.export_for_sysfs()"
+                    "Number (=%s) exceeds uint32-container, in CalibrationData.export_for_sysfs()",
+                    value,
                 )
                 cal_set[key] = min(max(value, 0), 2**32 - 1)
             if ("offset" in key) and not (-(2**31) <= value < 2**31):
                 logger.warning(
-                    f"Number (={value}) exceeds int32-container, in CalibrationData.export_for_sysfs()"
+                    "Number (=%s) exceeds int32-container, in CalibrationData.export_for_sysfs()",
+                    value,
                 )
                 cal_set[key] = min(max(value, -(2**31)), 2**31 - 1)
         return cal_set

@@ -1,20 +1,21 @@
-import pytest
-from pathlib import Path
-import numpy as np
-import h5py
 import time
+from pathlib import Path
+
+import h5py
+import numpy as np
+import pytest
 import yaml
 
-from shepherd.datalog_reader import LogReader as ShpReader
-from shepherd.shepherd_io import DataBuffer, VirtualSourceConfig
-
-from shepherd import ShepherdDebug
-from shepherd import LogWriter
+from shepherd import CalibrationData
 from shepherd import Emulator
+from shepherd import LogWriter
+from shepherd import ShepherdDebug
+from shepherd import ShepherdIOException
 from shepherd import run_emulator
 from shepherd import sysfs_interface
-from shepherd import CalibrationData
-from shepherd import ShepherdIOException
+from shepherd.datalog_reader import LogReader as ShpReader
+from shepherd.shepherd_io import DataBuffer
+from shepherd.shepherd_io import VirtualSourceConfig
 
 
 def random_data(length):
@@ -26,7 +27,7 @@ def virtsource_settings_yml():
     here = Path(__file__).absolute()
     name = "example_config_virtsource.yml"
     file_path = here.parent / name
-    with open(file_path, "r") as config_data:
+    with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config["virtsource"]
 
@@ -35,6 +36,7 @@ def virtsource_settings_yml():
 def data_h5(tmp_path):
     store_path = tmp_path / "record_example.h5"
     with LogWriter(store_path, CalibrationData.from_default()) as store:
+        store["hostname"] = "Inky"
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)
@@ -123,29 +125,25 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
 
 
 @pytest.mark.hardware
+@pytest.mark.skip(reason="(REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 def test_target_pins(shepherd_up):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     shepherd_io.start()
     shepherd_io.select_main_target_for_power(sel_target_a=True)
 
-    dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
+    dac_channels = [
+        # combination of debug channel number, voltage_index, cal_component, cal_channel
         [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
         [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
         [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
         [8, "emulator", "dac_voltage_b", "Emulator Rail B"],
     ]
 
-    gpio_channels = [
-        0,
-        1,
-        2,
-        3,
-        4,
-        7,
-        8,
-    ]  # 5&6 are UART, can only be used when free, 7&8 are SWD
-    pru_responses = [0, 1, 6, 7, 8, 2, 3]  # corresponding to r31_num (and later 2^num)
+    # channels: 5&6 are UART, can only be used when free, 7&8 are SWD
+    gpio_channels = [0, 1, 2, 3, 4, 7, 8]
+    # response: corresponding to r31_num (and later 2^num)
+    pru_responses = [0, 1, 6, 7, 8, 2, 3]
 
     for channel in [2, 3]:
         dac_cfg = dac_channels[channel]

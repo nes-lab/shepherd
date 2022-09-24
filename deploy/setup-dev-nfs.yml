@@ -4,63 +4,69 @@
   vars:
     mount_path: /opt/shepherd-dev
   tasks:
+
     - name: Get full path of repository
-      local_action: "shell realpath {{ playbook_dir }}/.."
+      ansible.builtin.command: "realpath {{ playbook_dir }}/.."
+      delegate_to: localhost
+      changed_when: false
       register: repo_dir
 
     - name: Fetch local facts
-      local_action: setup
+      ansible.builtin.setup:
+      delegate_to: localhost
       register: local_facts
 
     - name: Confirm setting up of NFS share
-      pause: prompt='Confirm that you really want to configure an NFS share on your local machine. This is a security risk! Press return to continue. Press Ctrl+c and then "a" to abort'
+      ansible.builtin.pause:
+        prompt: 'Confirm that you really want to configure an NFS share on your local machine.
+        This is a security risk! Press return to continue. Press Ctrl+c and then "a" to abort'
 
     - name: Install nfs server - pacman (requires openss-askpass)
-      local_action:
-        module: package
+      ansible.builtin.package:
         name: nfs-utils
         state: present
         use: pacman
-      become: yes
+      delegate_to: localhost
+      become: true
       when: local_facts.ansible_facts.ansible_pkg_mgr == "pacman"
 
     - name: Install nfs server - apt (requires askpass)
-      local_action:
-        module: package
+      ansible.builtin.package:
         name: nfs-kernel-server
         state: present
         use: apt
-      become: yes
+      delegate_to: localhost
+      become: true
       when: local_facts.ansible_facts.ansible_pkg_mgr == "apt"
 
     - name: Adding the path for nfs on localhost
-      local_action:
-        module: lineinfile
+      ansible.builtin.lineinfile:
         dest: "/etc/exports"
-        line: "{{ repo_dir.stdout }}	*(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000)"
+        line: "{{ repo_dir.stdout }}   *(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000)"
         insertafter: "EOF"
         state: present
-      become: yes
+      delegate_to: localhost
+      become: true
 
     - name: Start nfs on localhost
-      local_action:
-        module: systemd
+      ansible.builtin.systemd:
         name: "nfs-server.service"
         state: restarted
-      become: yes
+      delegate_to: localhost
+      become: true
 
     - name: Install required packages
-      apt:
+      ansible.builtin.apt:
         name: "nfs-common"
         state: present
-        update_cache: yes
-      become: yes
+        update_cache: true
+      become: true
 
     - name: Mount nfs share
-      mount:
+      ansible.posix.mount:
         path: "{{ mount_path }}"
         src: "{{ local_facts.ansible_facts.ansible_default_ipv4.address }}:{{ repo_dir.stdout }}"
         fstype: nfs
         opts: v3,auto,user,exec,_netdev
         state: mounted
-      become: yes
+      become: true

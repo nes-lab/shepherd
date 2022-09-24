@@ -84,7 +84,7 @@ harvesters:
   mppt_bq_thermoelectric: # explicit naming
     base: mppt_bqt
 
-  mppt_po: # perturbe & observe
+  mppt_po: # perturb & observe
     dtype: ivsample
     voltage_min_mV: 0
     voltage_max_mV: 5000

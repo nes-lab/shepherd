@@ -2,8 +2,8 @@ API
 ===
 
 The shepherd API offers high level access to shepherd's functionality and forms the base for the two command line utilities.
-Note that the API only convers local functionality on a single shepherd node.
-Use the `shepherd-herd` command line utility to orchestrate a group of shepherd nodes remotely.
+Note that the API only converts local functionality on a single shepherd node.
+Use the ``shepherd-herd`` command line utility to orchestrate a group of shepherd nodes remotely.
 
 Recorder
 --------
@@ -77,21 +77,21 @@ Usage:
             recorder.release_buffer(idx)
 
 
-(log)Reader
----------
+LogReader
+------------
 
 The *Reader* for shepherd-files is used to read previously recorded data from an hdf5 file buffer by buffer.
 It can be used with the Emulator to replay recorded data to an attached sensor node.
 
 TODO: update with https://pypi.org/project/shepherd-data/ shpd.Reader
 
-.. autoclass:: shepherd_data.Reader
+.. autoclass:: shepherd.LogReader
    :members:
 
 Usage:
 
 .. code-block:: python
 
-    with shepherd_data.Reader("mylog.h5") as log_reader:
+    with shepherd.LogReader("mylog.h5") as log_reader:
         for buf in log_reader.read_buffers(end=1000):
             print(len(buf))

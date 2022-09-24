@@ -1,12 +1,16 @@
 # SHEpHERD: SyncHronized Energy Harvesting Emulator RecorDer
 
-[![Build Status](https://travis-ci.org/geissdoerfer/shepherd.svg?branch=master)](https://travis-ci.org/geissdoerfer/shepherd)
+[![QA-Tests](https://github.com/orgua/shepherd/actions/workflows/repo-tests.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/repo-tests.yml)
+
+[![Documentation](https://github.com/orgua/shepherd/actions/workflows/sphinx_to_pages.yml/badge.svg)](https://orgua.github.io/shepherd/)
+
+[![Code Quality](https://www.codefactor.io/repository/github/orgua/shepherd/badge)](https://www.codefactor.io/repository/github/orgua/shepherd)
 
 
 Batteryless sensor nodes depend on harvesting energy from their environment.
 Developing solutions involving groups of batteryless nodes requires a tool to analyze, understand and replicate spatio-temporal harvesting conditions.
 *shepherd* is a testbed for the batteryless Internet of Things, allowing to record harvesting conditions at multiple points in space over time.
-The recorded data can be replayed to attached wireless sensor nodes, examining their behaviour under the constraints of spatio-temporal energy availability.
+The recorded data can be replayed to attached wireless sensor nodes, examining their behavior under the constraints of spatio-temporal energy availability.
 
 **Features**
 

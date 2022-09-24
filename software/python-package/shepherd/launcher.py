@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.launcher
 ~~~~~
@@ -10,31 +8,33 @@ Relies on systemd service.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-from typing import NoReturn
-from threading import Event, Thread
-
-import dbus
-import time
 import logging
 import os
+import time
+from threading import Event
+from threading import Thread
+from typing import NoReturn
+
+import dbus
 from periphery import GPIO
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.launcher")
 
 
 def call_repeatedly(interval, func, *args):
     stopped = Event()
 
     def loop():
-        while not stopped.wait(interval):  # the first call is in `interval` secs
+        while not stopped.wait(interval):
+            # the first call is in `interval` secs
             func(*args)
 
     Thread(target=loop).start()
     return stopped.set
 
 
-class Launcher(object):
-    """Stores data coming from PRU's in HDF5 format
+class Launcher:
+    """Stores data coming from PRU's in HDF5 format.
 
     Args:
         pin_button (int): Pin number where button is connected. Must be
@@ -93,8 +93,9 @@ class Launcher(object):
             logger.info("waiting for falling edge..")
             self.gpio_led.write(True)
             if not self.gpio_button.poll():
-                # note: poll is suspected to exit after ~ 1-2 weeks running -> fills mmc with random measurement
-                # TODO: observe behavior, hopefully this change fixes the bug
+                # NOTE poll is suspected to exit after ~ 1-2 weeks running
+                #      -> fills mmc with random measurement
+                # TODO observe behavior, hopefully this change fixes the bug
                 continue
             self.gpio_led.write(False)
             logger.debug("edge detected")
@@ -134,7 +135,7 @@ class Launcher(object):
             if time.time() > ts_end:
                 raise TimeoutError("Timed out waiting for service state")
 
-        logger.debug(f"service ActiveState: { systemd_state }")
+        logger.debug("service ActiveState: %s", systemd_state)
 
         if systemd_state == "active":
             return True
@@ -166,7 +167,7 @@ class Launcher(object):
 
         new_state = self.get_state()
         if new_state != requested_state:
-            raise Exception(f"state didn't change")
+            raise Exception("state didn't change")
 
         return new_state
 
@@ -182,12 +183,12 @@ class Launcher(object):
         for _ in range(timeout):
             if self.gpio_button.poll(timeout=0.5):
                 logger.debug("edge detected")
-                logger.info("shutdown cancelled")
+                logger.info("shutdown canceled")
                 return
             self.gpio_led.write(True)
             if self.gpio_button.poll(timeout=0.5):
                 logger.debug("edge detected")
-                logger.info("shutdown cancelled")
+                logger.info("shutdown canceled")
                 return
             self.gpio_led.write(False)
         os.sync()

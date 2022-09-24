@@ -1,23 +1,16 @@
 import gc
+import subprocess  # noqa: S404
+import time
+from contextlib import suppress
+from pathlib import Path
 
 import pytest
-import linecache
-import tokenize
-import py
-import subprocess
-import time
-
-import shepherd
-from shepherd import sysfs_interface
 
 
 def check_beagleboard():
-    try:
-        with open("/proc/cpuinfo") as info:
-            if "AM33XX" in info.read():
-                return True
-    except Exception:
-        pass
+    with suppress(Exception), open("/proc/cpuinfo") as info:
+        if "AM33XX" in info.read():
+            return True
     return False
 
 
@@ -40,12 +33,6 @@ def fake_hardware(request):
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--fake",
-        action="store_true",
-        default=False,
-        help="run fake hardware tests",
-    )
-    parser.addoption(
         "--eeprom-write",
         action="store_true",
         default=False,
@@ -54,53 +41,78 @@ def pytest_addoption(parser):
 
 
 def pytest_collection_modifyitems(config, items):
-    skip_fake = pytest.mark.skip(reason="need --fake option to run")
-    skip_real = pytest.mark.skip(reason="selected fake hardware only")
-    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option to run")
-    skip_missing_hardware = pytest.mark.skip(reason="no hardware to test on")
+    skip_fake = pytest.mark.skip(reason="cannot be faked")
+    skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
+    skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
     real_hardware = check_beagleboard()
 
     for item in items:
-        if "hardware" in item.keywords:
-            if not real_hardware:
-                item.add_marker(skip_missing_hardware)
-            if config.getoption("--fake"):
-                item.add_marker(skip_real)
-        if "fake_hardware" in item.keywords and not config.getoption("--fake"):
-            item.add_marker(skip_fake)
+        if "hardware" in item.keywords and not real_hardware:
+            item.add_marker(skip_missing_hardware)
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
+        if (
+            "fake_hardware" in item.keywords and "hardware" in item.keywords
+        ):  # real_hardware:
+            item.add_marker(skip_fake)
+
+
+def load_kernel_module():
+    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
+    time.sleep(3)
+
+
+def remove_kernel_module():
+    ret = 1
+    while ret > 0:
+        ret = subprocess.run(  # noqa: S607 S603
+            ["modprobe", "-rf", "shepherd"], timeout=60, capture_output=True
+        ).returncode
+        time.sleep(1)
+    gc.collect()  # precaution
+    time.sleep(3)
 
 
 @pytest.fixture()
 def shepherd_up(fake_hardware, shepherd_down):
     if fake_hardware is not None:
         files = [
-            ("/sys/kernel/shepherd/state", "idle"),
-            ("/sys/kernel/shepherd/mode", "harvester"),
-            ("/sys/kernel/shepherd/n_buffers", "1"),
-            ("/sys/kernel/shepherd/memory/address", "1"),
-            ("/sys/kernel/shepherd/memory/size", "1"),
-            ("/sys/kernel/shepherd/samples_per_buffer", "1"),
-            ("/sys/kernel/shepherd/buffer_period_ns", "1"),
-            ("/sys/kernel/shepherd/dac_auxiliary_voltage_raw", "0"),
-            ("/sys/kernel/shepherd/calibration_settings", "0"),
-            ("/sys/kernel/shepherd/virtsource_settings", "0"),
+            ("/sys/shepherd/state", "idle"),
+            ("/sys/shepherd/mode", "harvester"),
+            ("/sys/shepherd/n_buffers", "1"),
+            ("/sys/shepherd/memory/address", "1"),
+            ("/sys/shepherd/memory/size", "1"),
+            ("/sys/shepherd/samples_per_buffer", "1"),
+            ("/sys/shepherd/buffer_period_ns", "1"),
+            ("/sys/shepherd/dac_auxiliary_voltage_raw", "0"),
+            ("/sys/shepherd/calibration_settings", "0"),
+            ("/sys/shepherd/virtual_converter_settings", "0"),
+            ("/sys/shepherd/virtual_harvester_settings", "0"),
+            ("/sys/shepherd/programmer/protocol", "0"),
+            ("/sys/shepherd/programmer/datarate", "0"),
+            ("/sys/shepherd/programmer/pin_tck", "0"),
+            ("/sys/shepherd/programmer/pin_tdio", "0"),
+            ("/sys/shepherd/programmer/pin_tdo", "0"),
+            ("/sys/shepherd/programmer/pin_tms", "0"),
+            # TODO: design tests for programmer, also check if all hardware-tests need real hw
+            #       -> there should be more tests that don't require a pru
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
+        here = Path(__file__).absolute().parent
+        shpk = here.parent / "shepherd"
+        fake_hardware.add_real_file(here / "example_config_harvester.yml")
+        fake_hardware.add_real_file(here / "example_config_virtsource.yml")
+        fake_hardware.add_real_file(shpk / "virtual_harvester_defs.yml")
+        fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
         yield
     else:
-        subprocess.run(["modprobe", "shepherd"])
-        time.sleep(3)
+        load_kernel_module()
         yield
-        subprocess.run(["rmmod", "shepherd"])
-        gc.collect()  # precaution
-        time.sleep(3)
+        remove_kernel_module()
 
 
 @pytest.fixture()
 def shepherd_down(fake_hardware):
     if fake_hardware is None:
-        subprocess.run(["rmmod", "shepherd"])
-        time.sleep(3)
+        remove_kernel_module()

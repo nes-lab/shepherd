@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.cli
 ~~~~~
@@ -10,76 +8,63 @@ functionality to a command line user.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+import logging
+import signal
+import sys
+import time
+from pathlib import Path
 from typing import Dict
 
 import click
-import time
-import logging
-import sys
-import signal
-import zerorpc
+import click_config_file
 import gevent
 import yaml
-from pathlib import Path
-import click_config_file
+import zerorpc
 from periphery import GPIO
 
-from shepherd import sysfs_interface
-from shepherd import run_recorder
-from shepherd import run_emulator
-from shepherd.calibration import CalibrationData
-from shepherd import EEPROM
-from shepherd import CapeData
 from shepherd import ShepherdDebug
+from shepherd import get_verbose_level
+from shepherd import run_emulator
+from shepherd import run_recorder
 from shepherd import set_verbose_level
-from shepherd.shepherd_io import gpio_pin_nums
-from shepherd.launcher import Launcher
+from shepherd import sysfs_interface
 
+from .calibration import CalibrationData
+from .eeprom import EEPROM
+from .eeprom import CapeData
+from .launcher import Launcher
+from .shepherd_io import gpio_pin_nums
+
+logger = logging.getLogger("shp.cli")
 consoleHandler = logging.StreamHandler()
-logger = logging.getLogger("shepherd")
 logger.addHandler(consoleHandler)
 
 # TODO: correct docs
 # --length -l is now --duration -d ->
 # --input --output is now --output_path -> correct docs
-# --virtsource replaces vcap, is not optional anymore, maybe prepare preconfigured converters (bq-series) to choose from
-#          possible choices: nothing, converter-name like BQ25570 / BQ25504, path to yaml-config
-#           -> vSource contains vharvester and vConverter
-# - the options get repeated all the time, is it possible to define them upfront and just include them where needed?
+# --virtsource replaces vcap, is not optional anymore,
+#   maybe prepare preconfigured converters (bq-series) to choose from
+#   possible choices: nothing, converter-name like BQ25570 / BQ25504, path to yaml-config
+#   -> vSource contains vharvester and vConverter
+# - the options get repeated all the time, is it possible to define them
+#   upfront and just include them where needed?
 # - ditch sudo, add user to allow sys_fs-access and other things
 # - default-cal -> use_cal_default
 # - start-time -> start_time
 # - sheep run record -> sheep run harvester, same with sheep record
-# TODO: clean up internal naming only have harvest/emulate to use harvester/emulator, even the commands should be "sheep harvester config"
+# TODO: clean up internal naming only have harvest/emulate to
+#       use harvester/emulator, even the commands should be
+#       "sheep harvester config"
 
 
 def yamlprovider(file_path: str, cmd_name) -> Dict:
-    logger.info(f"reading config from {file_path}, cmd={cmd_name}")
-    with open(file_path, "r") as config_data:
+    logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
+    with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
 
 
-def config_logger(verbose: int):
-    set_verbose_level(
-        verbose
-    )  # performance-critical, <4 reduces chatter during main-loop
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-    if verbose < 3:
-        # reduce log-overhead when not debugging, also more user-friendly exceptions
-        logging._srcfile = None
-        logging.logThreads = 0
-        logging.logProcesses = 0
-
-
-@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
+@click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "-v",
     "--verbose",
@@ -88,7 +73,7 @@ def config_logger(verbose: int):
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click.pass_context
-def cli(ctx, verbose: int):
+def cli(ctx=None, verbose: int = 2):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder
 
     Args:
@@ -96,17 +81,20 @@ def cli(ctx, verbose: int):
         verbose:
     Returns:
     """
-    config_logger(verbose)
+    set_verbose_level(verbose)
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
 @click.option("--on/--off", default=True)
 @click.option(
-    "--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage"
+    "--voltage",
+    "-v",
+    type=click.FLOAT,
+    default=3.0,
+    help="Target supply voltage",
 )
 @click.option(
     "--gpio_pass/--gpio_omit",
-    type=click.BOOL,
     default=True,
     help="Route UART, Programmer-Pins and other GPIO to this target",
 )
@@ -122,24 +110,24 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
-        logger.info(f"Shepherd-State \t= {'enabled' if on else 'disabled'}")
+        logger.info("Shepherd-State \t= %s", "enabled" if on else "disabled")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(not sel_a)  # switched because rail A is AUX
-        logger.info(f"Select Target \t= {'A' if sel_a else 'B'}")
+        logger.info("Select Target \t= %s", "A" if sel_a else "B")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(sel_a)
     for pin_name in ["target_io_en"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(gpio_pass)
-        logger.info(f"IO passing \t= {'enabled' if gpio_pass else 'disabled'}")
+        logger.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
     cal = CalibrationData.from_default()
-    logger.info(f"Target Voltage \t= {voltage} V")
+    logger.info("Target Voltage \t= %.3f V", voltage)
     sysfs_interface.write_dac_aux_voltage(cal, voltage)
     sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
-    logger.info(f"Re-Initialized PRU to finalize settings")
+    logger.info("Re-Initialized PRU to finalize settings")
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)
 
 
@@ -159,15 +147,16 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 def run(mode, parameters: Dict, verbose):
 
-    config_logger(verbose)
+    set_verbose_level(verbose)
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(
-            f"parameter-argument is not dict, but {type(parameters)} (last occurred with v8-alpha-version of click-lib)"
+            f"parameter-argument is not dict, but {type(parameters)} "
+            "(last occurred with v8-alpha-version of click-lib)"
         )
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
-    logger.debug(f"CLI did process run()")
+    logger.debug("CLI did process run()")
     if mode == "harvester":
         if "output_path" in parameters:
             parameters["output_path"] = Path(parameters["output_path"])
@@ -208,7 +197,10 @@ def run(mode, parameters: Dict, verbose):
     help="Choose one of the predefined virtual harvesters",
 )
 @click.option(
-    "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
+    "--duration",
+    "-d",
+    type=click.FLOAT,
+    help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
@@ -251,12 +243,18 @@ def harvester(
     help="Dir or file path for storing the power consumption data",
 )
 @click.option(
-    "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
+    "--duration",
+    "-d",
+    type=click.FLOAT,
+    help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option(
-    "--start_time", "-s", type=click.FLOAT, help="Desired start time in unix epoch time"
+    "--start_time",
+    "-s",
+    type=click.FLOAT,
+    help="Desired start time in unix epoch time",
 )
 @click.option(
     "--enable_io/--disable_io",
@@ -305,12 +303,15 @@ def harvester(
     help="reduce file-size by omitting current-logging",
 )
 @click.option(
-    "--skip_log_gpio", is_flag=True, help="reduce file-size by omitting gpio-logging"
+    "--skip_log_gpio",
+    is_flag=True,
+    help="reduce file-size by omitting gpio-logging",
 )
 @click.option(
     "--log_mid_voltage",
     is_flag=True,
-    help="record / log virtual intermediate (cap-)voltage and -current (out) instead of output-voltage and -current",
+    help="record / log virtual intermediate (cap-)voltage and -current (out) "
+    "instead of output-voltage and -current",
 )
 def emulator(
     input_path,
@@ -358,7 +359,7 @@ def emulator(
 
 
 @cli.group(
-    context_settings=dict(help_option_names=["-h", "--help"], obj={}),
+    context_settings={"help_option_names": ["-h", "--help"], "obj": {}},
     short_help="Read/Write data from EEPROM",
 )
 def eeprom():
@@ -392,13 +393,15 @@ def eeprom():
     help="YAML-formatted file with calibration data",
 )
 @click.option(
-    "--use_cal_default", is_flag=True, help="Use default calibration data (skip eeprom)"
+    "--use_cal_default",
+    is_flag=True,
+    help="Use default calibration data (skip eeprom)",
 )
 def write(infofile, version, serial_number, cal_file, use_cal_default):
     if infofile is not None:
         if serial_number is not None or version is not None:
             raise click.UsageError(
-                ("--infofile and --version/--serial_number" " are mutually exclusive")
+                "--infofile and --version/--serial_number" " are mutually exclusive"
             )
         cape_data = CapeData.from_yaml(infofile)
         with EEPROM() as storage:
@@ -439,6 +442,9 @@ def write(infofile, version, serial_number, cal_file, use_cal_default):
 )
 def read(infofile, cal_file):
 
+    if get_verbose_level() < 2:
+        set_verbose_level(2)
+
     with EEPROM() as storage:
         cape_data = storage.read_cape_data()
         cal = storage.read_calibration()
@@ -447,17 +453,19 @@ def read(infofile, cal_file):
         with open(infofile, "w") as f:
             f.write(repr(cape_data))
     else:
-        print(repr(cape_data))
+        logger.info(repr(cape_data))
 
     if cal_file:
         with open(cal_file, "w") as f:
             f.write(repr(cal))
     else:
-        print(repr(cal))
+        logger.info(repr(cal))
 
 
 @eeprom.command(
-    short_help="Convert calibration measurements to calibration data, where FILENAME is YAML-formatted file containing calibration measurements"
+    short_help="Convert calibration measurements to calibration data, "
+    "where FILENAME is YAML-formatted file "
+    "containing calibration measurements"
 )
 @click.argument("filename", type=click.Path(exists=True))
 @click.option(
@@ -467,9 +475,13 @@ def read(infofile, cal_file):
     help="Path to resulting YAML-formatted calibration data file",
 )
 def make(filename, output_path):
+
+    if get_verbose_level() < 2:
+        set_verbose_level(2)
+
     cd = CalibrationData.from_measurements(filename)
     if output_path is None:
-        print(repr(cd))
+        logger.info(repr(cd))
     else:
         with open(output_path, "w") as f:
             f.write(repr(cd))
@@ -516,12 +528,15 @@ def launcher(led, button):
 @click.argument("firmware-file", type=click.Path(exists=True, dir_okay=False))
 @click.option(
     "--sel_a/--sel_b",
-    type=click.BOOL,
     default=True,
     help="Choose Target-Port for programming",
 )
 @click.option(
-    "--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage"
+    "--voltage",
+    "-v",
+    type=click.FLOAT,
+    default=3.0,
+    help="Target supply voltage",
 )
 @click.option(
     "--speed", "-s", type=click.INT, default=1000, help="Programming-Datarate"
@@ -543,28 +558,29 @@ def programmer(firmware_file, sel_a, voltage, speed, protocol):
 
         cal = CalibrationData.from_default()
         sysfs_interface.write_dac_aux_voltage(cal, voltage)
-        sysfs_interface.wait_for_state("idle", 5)  # switching target may restart pru
+        # switching target may restart pru
+        sysfs_interface.wait_for_state("idle", 5)
 
         try:
             sd.shared_mem.write_firmware(fw.read())
             sysfs_interface.write_programmer_ctrl(
                 protocol, speed, 24, 25, 26, 27
             )  # TODO: pins-nums are placeholders
-            logger.info(f"Programmer initialized, will start now")
+            logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
-        except OSError as err:
-            logger.error(
-                f"Failed to initialize Programmer, shepherdState = {sysfs_interface.get_state()}"
+        except OSError:
+            logger.exception(
+                "Failed to initialize Programmer, shepherdState = %s",
+                sysfs_interface.get_state(),
             )
-            logger.error(err)
             return
         state = sysfs_interface.check_programmer()
         while state != "idle":
-            logger.info(f"Programming in progress,\tstate = {state}")
+            logger.info("Programming in progress,\tstate = %s", state)
             time.sleep(1)
             state = sysfs_interface.check_programmer()
         logger.info(
-            f"Finished Programming!,\tctrl = {sysfs_interface.read_programmer_ctrl()})"
+            "Finished Programming!,\tctrl = %s", sysfs_interface.read_programmer_ctrl()
         )
 
 

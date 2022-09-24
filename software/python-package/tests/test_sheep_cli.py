@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 test_sheep_cli
 ~~~~~
@@ -13,15 +11,15 @@ same test. Either find a solution or put every CLI call in a separate test.
 :license: MIT, see LICENSE for more details.
 """
 import time
-import pytest
-import click
-import numpy as np
 from pathlib import Path
 
-from shepherd import LogWriter
+import numpy as np
+import pytest
+
 from shepherd import CalibrationData
-from shepherd.shepherd_io import DataBuffer
+from shepherd import LogWriter
 from shepherd.cli import cli
+from shepherd.shepherd_io import DataBuffer
 
 
 def random_data(length):
@@ -32,6 +30,7 @@ def random_data(length):
 def data_h5(tmp_path):
     store_path = tmp_path / "harvest_example.h5"
     with LogWriter(store_path, CalibrationData.from_default()) as store:
+        store["hostname"] = "Blinky"
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)

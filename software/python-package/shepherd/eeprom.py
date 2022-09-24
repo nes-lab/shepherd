@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd.eeprom
 ~~~~~
@@ -12,18 +10,18 @@ through Linux I2C device driver.
 :license: MIT, see LICENSE for more details.
 """
 
+import logging
 import os
 import struct
-import logging
+from pathlib import Path
 from typing import NoReturn
 
 import yaml
-from pathlib import Path
 from periphery import GPIO
 
-from shepherd.calibration import CalibrationData
+from .calibration import CalibrationData
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shp.eeprom")
 
 eeprom_format = {
     "header": {"offset": 0, "size": 4, "type": "binary"},
@@ -39,14 +37,14 @@ eeprom_format = {
 calibration_data_format = {"offset": 512, "size": 128, "type": "binary"}
 
 
-class CapeData(object):
+class CapeData:
     """Representation of Beaglebone Cape information
 
     According to BeagleBone specifications, each cape should host an EEPROM
     that contains some standardized information about the type of cape,
     manufacturer, version etc.
 
-    See `Link text <https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
+    `See<https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
     """
 
     def __init__(self, data):
@@ -84,7 +82,7 @@ class CapeData(object):
 
         """
         data = {"header": b"\xAA\x55\x33\xEE"}
-        with open(filename, "r") as stream:
+        with open(filename) as stream:
             yaml_dict = yaml.safe_load(stream)
 
         data.update(yaml_dict)
@@ -112,7 +110,7 @@ class CapeData(object):
             yield key, self.data[key]
 
 
-class EEPROM(object):
+class EEPROM:
     """Represents EEPROM device
 
     Convenient wrapper of Linux I2C EEPROM device. Knows about the format
@@ -131,7 +129,7 @@ class EEPROM(object):
             address (int): Address of EEPROM, usually fixed in hardware or
                 by DIP switch
         """
-        self.dev_path = f"/sys/bus/i2c/devices/{ bus_num }" f"-{address:04X}/eeprom"
+        self.dev_path = f"/sys/bus/i2c/devices/{bus_num}" f"-{address:04X}/eeprom"
         self._write_protect_pin = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
@@ -208,10 +206,8 @@ class EEPROM(object):
         if eeprom_format[key]["type"] == "ascii":
             if len(value) != eeprom_format[key]["size"]:
                 raise ValueError(
-                    (
-                        f"Value { value } has wrong size. "
-                        f"Required size is { eeprom_format[key]['size'] }"
-                    )
+                    f"Value { value } has wrong size. "
+                    f"Required size is { eeprom_format[key]['size'] }"
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         elif eeprom_format[key]["type"] == "str":
@@ -219,10 +215,8 @@ class EEPROM(object):
                 value += "\0"
             elif len(value) > eeprom_format[key]["size"]:
                 raise ValueError(
-                    (
-                        f"Value { value } is longer than maximum "
-                        f"size { eeprom_format[key]['size'] }"
-                    )
+                    f"Value { value } is longer than maximum "
+                    f"size { eeprom_format[key]['size'] }"
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         else:
@@ -258,7 +252,9 @@ class EEPROM(object):
         data_serialized = calibration_data.to_bytestr()
         if len(data_serialized) != calibration_data_format["size"]:
             raise ValueError(
-                f"WriteCal: data-size is wrong! expected = {calibration_data_format['size']} bytes, but got {len(data_serialized)}"
+                f"WriteCal: data-size is wrong! "
+                f"expected = {calibration_data_format['size']} bytes, "
+                f"but got {len(data_serialized)}"
             )
         self._write(calibration_data_format["offset"], data_serialized)
 

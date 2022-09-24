@@ -1,55 +1,62 @@
 ---
-- hosts: sheep
-  roles:
-    - dev-host
-    - sheep
-    - gps-host
-    - ptp-host
-  handlers:
-    - name: restart device
-      shell: sleep 2 && shutdown -r now "Ansible restart"
-      async: 1
-      poll: 0
-      ignore_errors: true
-      become: yes
-      listen: "restart device"
-      notify: wait for reboot
-    - name: wait for reboot
-      wait_for_connection:
-        delay: 15
-        timeout: 300
-      listen: "wait for reboot"
+- name: Install Shepherd-Software - Role-based
+  hosts: sheep
+  become: true
+
   pre_tasks:
     - name: Get time and date from ansible controller
-      local_action: command date -u +"%Y-%m-%dT%H:%M:%SZ"
+      ansible.builtin.command: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+      delegate_to: localhost
+      changed_when: false
       register: local_time
-      become: no
-
+      become: false
     - name: Set correct time
-      command: "date -s {{ local_time.stdout }}"
-  become: yes
+      ansible.builtin.command: "date -s {{ local_time.stdout }}"
+      changed_when: true
+    - name: Update kernel, bootloader, software & cleanup afterwards
+      ansible.builtin.include_role:
+        name: maintained
+      vars:
+        update_kernel: true
+        update_bootloader: true
+        delete_unused_files: true
+  post_tasks:
+    - name: Cleanup after software
+      ansible.builtin.include_role:
+        name: maintained
+      vars:
+        update_kernel: false
+        update_bootloader: false
+        delete_unused_files: true
 
-- hosts: ptp_clients
+- name: Main-Software for Shepherd
   roles:
-    - ptp-client
-  become: yes
+    - sheep
 
-- hosts: ntp_clients
+- name: Role - PTP-Client
+  hosts: ptp_clients
   roles:
-    - ntp-client
-  become: yes
+    - ptp_client
 
-- hosts: gps_clients
+- name: Role - NTP-Client
+  hosts: ntp_clients
   roles:
-    - gps-client  # TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
-  become: yes
+    - ntp_client
 
-- hosts: ptp_servers
+- name: Role - GPS-Client
+  hosts: gps_clients
   roles:
-    - ptp-server
-  become: yes
+    - gps_client
+# TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
+#       -> could switch to components and argument_specs
+#       https://steampunk.si/blog/ansible-role-argument-specification/
 
-- hosts: secured
+- name: Role - PTP-Server
+  hosts: ptp_servers
   roles:
-    - secure-testbed
-  become: yes
+    - ptp_server
+
+- name: Role - Secured Testbed
+  hosts: secured
+  roles:
+    - secure_testbed

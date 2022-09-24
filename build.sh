@@ -21,7 +21,10 @@ build_kernel_module() {
 build_python_package() {
     cd /code/python-package
 
-    python3 setup.py sdist
+    pip3 install build
+
+    python3 -m build
+    # TODO: switched from setup.py to setup.cfg, probably wrong command:
     dpkg-buildpackage -uc -us
 
     cp ../python3-shepherd_*_all.deb /artifacts/debian/

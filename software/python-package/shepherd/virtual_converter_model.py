@@ -12,21 +12,25 @@ Compromises:
 
 """
 
-from typing import NoReturn
-from shepherd import VirtualSourceConfig, CalibrationData
 import math
+from typing import NoReturn
+
+from .calibration import CalibrationData
+from .virtual_source_config import VirtualSourceConfig
 
 
 class PruCalibration:
     """part of calibration.h"""
 
-    def __init__(self, config: CalibrationData = CalibrationData.from_default()):
+    _cal_default: CalibrationData = CalibrationData.from_default()
+
+    def __init__(self, config: CalibrationData = _cal_default):
         self.cal = config
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:
-        return self.cal.convert_raw_to_value(
-            "emulator", "adc_current", current_raw
-        ) * (10**9)
+        return self.cal.convert_raw_to_value("emulator", "adc_current", current_raw) * (
+            10**9
+        )
         # TODO: add feature "negative residue compensation" to here
 
     def conv_adc_raw_to_uV(self, voltage_raw: int) -> float:
@@ -62,7 +66,7 @@ class KernelConverterStruct:
         self.V_input_max_uV: int = values[2]
         self.I_input_max_nA: int = values[3]
         self.V_input_drop_uV: int = values[4]
-        self.Constant_1k_per_Ohm: int = values[5]
+        self.R_input_kOhm: int = values[5] / (2**22)
 
         self.Constant_us_per_nF: float = values[6] / (2**28)
         self.V_intermediate_init_uV: int = values[7]  # allow a proper / fast startup
@@ -141,17 +145,15 @@ class VirtualConverterModel:
     is_outputting: bool = True
     vsource_skip_gpio_logging: bool = False
 
-    def __init__(
-        self, config: KernelConverterStruct, calibration: PruCalibration
-    ):
+    def __init__(self, config: KernelConverterStruct, calibration: PruCalibration):
 
         self._cal = calibration
         self._cfg = config
 
         # boost internal state
         self.V_input_uV = 0.0
-        self.P_inp_fW = 0.0  # TODO changed / inter
-        self.P_out_fW = 0.0  # TODO changed / inter
+        self.P_inp_fW = 0.0
+        self.P_out_fW = 0.0
         self.interval_startup_disabled_drain_n = (
             self._cfg.interval_startup_delay_drain_n
         )
@@ -170,11 +172,9 @@ class VirtualConverterModel:
         self.power_good = True
 
         # prepare hysteresis-thresholds
-        self.dV_enable_output_uV = self._cfg.dV_enable_output_uV  # TODO added
+        self.dV_enable_output_uV = self._cfg.dV_enable_output_uV
         self.V_enable_output_threshold_uV = self._cfg.V_enable_output_threshold_uV
-        # TODO added
         self.V_disable_output_threshold_uV = self._cfg.V_disable_output_threshold_uV
-        # TODO added
 
         if self.dV_enable_output_uV > self.V_enable_output_threshold_uV:
             self.V_enable_output_threshold_uV = self.dV_enable_output_uV
@@ -208,12 +208,12 @@ class VirtualConverterModel:
             input_voltage_uV = 0
         else:
             if input_voltage_uV > self.V_mid_uV:
-                I_limit_nA = (
-                    input_voltage_uV - self.V_mid_uV
-                ) * self._cfg.Constant_1k_per_Ohm
-                if input_current_nA > I_limit_nA:
-                    input_current_nA = I_limit_nA
-                input_voltage_uV = self.V_mid_uV
+                V_diff_uV = input_voltage_uV - self.V_mid_uV
+                V_drop_uV = input_current_nA * self._cfg.R_input_kOhm
+                if V_drop_uV > V_diff_uV:
+                    input_voltage_uV = self.V_mid_uV
+                else:
+                    input_voltage_uV -= V_drop_uV
             else:
                 input_voltage_uV = 0
 
@@ -246,7 +246,7 @@ class VirtualConverterModel:
         return round(self.P_out_fW)  # Python-specific, added for easier testing
 
     # TODO: add range-checks for add, sub Ops
-    def update_cap_storage(self) -> int:  # TODO: STOP here
+    def update_cap_storage(self) -> int:
         if self.enable_storage:
             V_mid_prot_uV = max(1.0, self.V_mid_uV)
             P_sum_fW = self.P_inp_fW - self.P_out_fW
@@ -289,7 +289,7 @@ class VirtualConverterModel:
             else:
                 if self.V_mid_uV >= self._cfg.V_pwr_good_enable_threshold_uV:
                     self.power_good = self.is_outputting
-            # set pin to state ..
+            # set batok pin to state ... TODO?
 
         if self.is_outputting or self.interval_startup_disabled_drain_n > 0:
             if (not self.enable_buck) or (

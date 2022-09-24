@@ -1,0 +1,37 @@
+---
+- name: Prepare paths for service override
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}.service.d"
+    state: directory
+    recurse: true
+  with_items:
+    - gpsd
+    - chrony
+
+- name: Override service configs
+  ansible.builtin.copy:
+    src: "{{ item }}.override.conf"
+    dest: "/etc/systemd/system/{{ item }}.service.d/"
+    mode: '0644'
+  with_items:
+    - chrony
+    - gpsd
+
+- name: Add ublox-config systemd service
+  ansible.builtin.copy:
+    src: "ublox_config.service"
+    dest: "/etc/systemd/system/"
+    mode: '0644'
+
+- name: Disable services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    daemon_reload: true
+  failed_when: false  # services may not exist
+  with_items:
+    - gpsd.socket
+    - gpsd.service
+    - chrony.service
+    - ublox_config.service

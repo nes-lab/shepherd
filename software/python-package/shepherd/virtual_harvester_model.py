@@ -12,7 +12,7 @@ Compromises:
 - Python has no static vars -> FName_reset is handling the class-vars
 
 """
-from shepherd import VirtualHarvesterConfig
+from .virtual_harvester_config import VirtualHarvesterConfig
 
 
 class KernelHarvesterStruct:
@@ -81,7 +81,7 @@ class VirtualHarvesterModel:
 
         self.is_rising: bool = self._cfg.hrv_mode & (2**1)
 
-        # PO-Relevant (iv & adc)
+        # PO-Relevant, iv & adc
         self.volt_step_uV: int = self._cfg.voltage_step_uV
 
         # self.power_last_raw: int = 0  # adc_mppt_po

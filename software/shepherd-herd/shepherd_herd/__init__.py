@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 shepherd_herd
 ~~~~~
@@ -11,18 +9,20 @@ images to target sensor nodes.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-
-import click
-import re
+import contextlib
+import logging
+import telnetlib
 import time
-from fabric import Group
-import numpy as np
 from io import StringIO
 from pathlib import Path
-import telnetlib
-import yaml
-import logging
+
+import click
 import click_config_file
+import numpy as np
+import yaml
+from fabric import Group
+
+__version__ = "0.3.0"
 
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd-herd")
@@ -30,8 +30,8 @@ logger.addHandler(consoleHandler)
 
 
 def yamlprovider(file_path, cmd_name):
-    logger.info(f"reading config from {file_path}")
-    with open(file_path, "r") as config_data:
+    logger.info("reading config from %s", file_path)
+    with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
 
@@ -91,23 +91,22 @@ def configure_shepherd(
         "verbose": verbose,
         "parameters": parameters,
     }
-    config_yml = yaml.dump(
-        config_dict, default_flow_style=False, sort_keys=False
-    )
-    
-    logger.debug(f"Rolling out the following config:\n\n{config_yml}")
+    config_yml = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
+
+    logger.debug("Rolling out the following config:\n\n%s", config_yml)
 
     for cnx in group:
         res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
         if res.exited != 3:
             raise Exception(f"shepherd not inactive on {hostnames[cnx.host]}")
 
-        cnx.put(StringIO(config_yml), "/tmp/config.yml")
+        cnx.put(StringIO(config_yml), "/tmp/config.yml")  # noqa: S108
         cnx.sudo("mv /tmp/config.yml /etc/shepherd/config.yml")
 
 
 def start_shepherd(
-    group: Group, hostnames: dict,
+    group: Group,
+    hostnames: dict,
 ):
     """Starts shepherd service on the group of hosts.
 
@@ -122,15 +121,27 @@ def start_shepherd(
         res = cnx.sudo("systemctl start shepherd", hide=True, warn=True)
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"], obj={}))
-@click.option("--inventory", "-i", type=str,
+@click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
+@click.option(
+    "--inventory",
+    "-i",
+    type=str,
     default="inventory/herd.yml",
-    help="List of target hosts as comma-separated string or path to ansible-style yaml file")
-@click.option("--limit", "-l", type=str,
-    help="Comma-separated list of hosts to limit execution to")
+    help="List of target hosts as comma-separated string or path to ansible-style yaml file",
+)
+@click.option(
+    "--limit",
+    "-l",
+    type=str,
+    help="Comma-separated list of hosts to limit execution to",
+)
 @click.option("--user", "-u", type=str, help="User name for login to nodes")
-@click.option("--key-filename", "-k", type=click.Path(exists=True),
-    help="Path to private ssh key file")
+@click.option(
+    "--key-filename",
+    "-k",
+    type=click.Path(exists=True),
+    help="Path to private ssh key file",
+)
 @click.option("-v", "--verbose", count=True, default=2)
 @click.pass_context
 def cli(ctx, inventory, limit, user, key_filename, verbose):
@@ -146,22 +157,19 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
         if not host_path.exists():
             raise click.FileError(inventory)
 
-        with open(host_path, "r") as stream:
+        with open(host_path) as stream:
             try:
                 inventory_data = yaml.safe_load(stream)
             except yaml.YAMLError:
-                raise click.UsageError(
-                    f"Couldn't read inventory file {host_path}"
-                )
+                raise click.UsageError(f"Couldn't read inventory file {host_path}")
 
-        hostlist = list()
-        hostnames = dict()
+        hostlist = []
+        hostnames = {}
         for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-            if limit is not None:
-                if not hostname in limit.split(","):
-                    continue
+            if (limit is not None) and (hostname not in limit.split(",")):
+                continue
 
-            if "ansible_host" in hostvars.keys():
+            if "ansible_host" in hostvars:
                 hostlist.append(hostvars["ansible_host"])
                 hostnames[hostvars["ansible_host"]] = hostname
             else:
@@ -169,15 +177,11 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
                 hostnames[hostname] = hostname
 
         if user is None:
-            try:
+            with contextlib.suppress(KeyError):
                 user = inventory_data["sheep"]["vars"]["ansible_user"]
-            except KeyError:
-                pass
 
     if user is None:
-        raise click.UsageError(
-            "Provide user by command line or in inventory file"
-        )
+        raise click.UsageError("Provide user by command line or in inventory file")
 
     if verbose == 0:
         logger.setLevel(logging.ERROR)
@@ -190,13 +194,11 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
 
     ctx.obj["verbose"] = verbose
 
-    connect_kwargs = dict()
+    connect_kwargs = {}
     if key_filename is not None:
         connect_kwargs["key_filename"] = key_filename
 
-    ctx.obj["fab group"] = Group(
-        *hostlist, user=user, connect_kwargs=connect_kwargs
-    )
+    ctx.obj["fab group"] = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
     ctx.obj["hostnames"] = hostnames
 
 
@@ -206,10 +208,10 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
 def poweroff(ctx, restart):
     for cnx in ctx.obj["fab group"]:
         if restart:
-            logger.info(f"rebooting {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("rebooting %s", ctx.obj["hostnames"][cnx.host])
             cnx.sudo("reboot", hide=True, warn=True)
         else:
-            logger.info(f"powering off {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("powering off %s", ctx.obj["hostnames"][cnx.host])
             cnx.sudo("poweroff", hide=True, warn=True)
 
 
@@ -219,9 +221,7 @@ def poweroff(ctx, restart):
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def run(ctx, command, sudo):
     for cnx in ctx.obj["fab group"]:
-        click.echo(
-            f"************** {ctx.obj['hostnames'][cnx.host]} **************"
-        )
+        click.echo(f"************** {ctx.obj['hostnames'][cnx.host]} **************")
         if sudo:
             cnx.sudo(command, warn=True)
         else:
@@ -245,15 +245,21 @@ def run(ctx, command, sudo):
     help="Enable/disable power and debug access to the target",
 )
 @click.option("--voltage", "-v", type=float, default=3.0, help="Target supply voltage")
-@click.option("--sel_a/--sel_b", default=True,
-              help="Choose (main)Target that gets connected to virtual Source")
+@click.option(
+    "--sel_a/--sel_b",
+    default=True,
+    help="Choose (main)Target that gets connected to virtual Source",
+)
 @click.pass_context
 def target(ctx, port, on, voltage, sel_a):
     ctx.obj["openocd_telnet_port"] = port
     sel_target = "sel_a" if sel_a else "sel_b"
     if on or ctx.invoked_subcommand:
         for cnx in ctx.obj["fab group"]:
-            cnx.sudo(f"shepherd-sheep target-power --on --voltage {voltage} --{sel_target}", hide=True)
+            cnx.sudo(
+                f"shepherd-sheep target-power --on --voltage {voltage} --{sel_target}",
+                hide=True,
+            )
             start_openocd(cnx, ctx.obj["hostnames"][cnx.host])
     else:
         for cnx in ctx.obj["fab group"]:
@@ -271,6 +277,7 @@ def process_result(ctx, result, **kwargs):
 
 
 def start_openocd(cnx, hostname, timeout=30):
+    # TODO: why start a whole telnet-session? we can just flash and verify firmware by remote-cmd
     cnx.sudo("systemctl start shepherd-openocd", hide=True, warn=True)
     ts_end = time.time() + timeout
     while True:
@@ -280,11 +287,9 @@ def start_openocd(cnx, hostname, timeout=30):
         if openocd_status.exited == 0:
             break
         if time.time() > ts_end:
-            raise TimeoutError(
-                f"Timed out waiting for openocd on host {hostname}"
-            )
+            raise TimeoutError(f"Timed out waiting for openocd on host {hostname}")
         else:
-            logger.debug(f"waiting for openocd on {hostname}")
+            logger.debug("waiting for openocd on %s", hostname)
             time.sleep(1)
 
 
@@ -293,21 +298,19 @@ def start_openocd(cnx, hostname, timeout=30):
 @click.pass_context
 def flash(ctx, image):
     for cnx in ctx.obj["fab group"]:
-        cnx.put(image, "/tmp/target_image.bin")
+        cnx.put(image, "/tmp/target_image.bin")  # noqa: S108
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(
-                f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}"
-            )
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"program /tmp/target_image.bin verify reset\n")
             res = tn.read_until(b"Verified OK", timeout=5)
             if b"Verified OK" in res:
                 logger.info(
-                    f"flashed image on {ctx.obj['hostnames'][cnx.host]} successfully"
+                    "flashed image on %s successfully", ctx.obj["hostnames"][cnx.host]
                 )
             else:
                 logger.error(
-                    f"failed flashing image on {ctx.obj['hostnames'][cnx.host]}"
+                    "failed flashing image on %s", ctx.obj["hostnames"][cnx.host]
                 )
 
 
@@ -317,11 +320,9 @@ def halt(ctx):
     for cnx in ctx.obj["fab group"]:
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(
-                f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}"
-            )
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"halt\n")
-            logger.info(f"target halted on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target halted on %s", ctx.obj["hostnames"][cnx.host])
 
 
 @target.command(short_help="Erases the target")
@@ -330,13 +331,11 @@ def erase(ctx):
     for cnx in ctx.obj["fab group"]:
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(
-                f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}"
-            )
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"halt\n")
-            logger.info(f"target halted on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target halted on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"nrf52 mass_erase\n")
-            logger.info(f"target erased on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target erased on %s", ctx.obj["hostnames"][cnx.host])
 
 
 @target.command(short_help="Resets the target")
@@ -345,23 +344,34 @@ def reset(ctx):
     for cnx in ctx.obj["fab group"]:
 
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug(
-                f"connected to openocd on {ctx.obj['hostnames'][cnx.host]}"
-            )
+            logger.debug("connected to openocd on %s", ctx.obj["hostnames"][cnx.host])
             tn.write(b"reset\n")
-            logger.info(f"target reset on {ctx.obj['hostnames'][cnx.host]}")
+            logger.info("target reset on %s", ctx.obj["hostnames"][cnx.host])
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
-@click.option("--output_path", "-o", type=click.Path(),
+@click.option(
+    "--output_path",
+    "-o",
+    type=click.Path(),
     default="/var/shepherd/recordings/",
-    help="Dir or file path for resulting hdf5 file")
-@click.option("--algorithm", "-a", type=str, default=None,
-              help="Choose one of the predefined virtual harvesters")
-@click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
+    help="Dir or file path for resulting hdf5 file",
+)
+@click.option(
+    "--algorithm",
+    "-a",
+    type=str,
+    default=None,
+    help="Choose one of the predefined virtual harvesters",
+)
+@click.option(
+    "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
+)
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
-@click.option("--start/--no-start", default=True, help="Start shepherd after uploading config")
+@click.option(
+    "--start/--no-start", default=True, help="Start shepherd after uploading config"
+)
 @click.pass_context
 def harvester(
     ctx,
@@ -383,11 +393,11 @@ def harvester(
         "force_overwrite": force_overwrite,
         "use_cal_default": use_cal_default,
     }
-    
+
     if start:
         ts_start, delay = find_consensus_time(ctx.obj["fab group"])
         parameter_dict["start_time"] = ts_start
-    
+
     configure_shepherd(
         ctx.obj["fab group"],
         "harvester",
@@ -395,29 +405,53 @@ def harvester(
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
     )
-    
+
     if start:
-        logger.debug(f"Scheduling start of shepherd at {ts_start} (in ~ {delay} s)")
+        logger.debug("Scheduling start of shepherd at %s (in ~ %s s)", ts_start, delay)
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
-@cli.command(short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data")
+@cli.command(
+    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data"
+)
 @click.argument("input_path", type=click.Path())
-@click.option("--output_path", "-o", type=click.Path(),
+@click.option(
+    "--output_path",
+    "-o",
+    type=click.Path(),
     default="/var/shepherd/recordings/",
-    help="Dir or file path for resulting hdf5 file with load recordings")
-@click.option("--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds")
+    help="Dir or file path for resulting hdf5 file with load recordings",
+)
+@click.option(
+    "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
+)
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
-@click.option("--enable_io/--disable_io", default=True,
-              help="Switch the GPIO level converter to targets on/off")
-@click.option("--io_sel_target_a/--io_sel_target_b", default=True,
-              help="Choose Target that gets connected to IO")
-@click.option("--pwr_sel_target_a/--pwr_sel_target_b", default=True,
-              help="Choose (main)Target that gets connected to virtual Source")
-@click.option("--aux_voltage", type=float,
-              help="Set Voltage of auxiliary Power Source (second target)")
-@click.option("--virtsource", default=dict(), help="Use the desired setting for the virtual source")
+@click.option(
+    "--enable_io/--disable_io",
+    default=True,
+    help="Switch the GPIO level converter to targets on/off",
+)
+@click.option(
+    "--io_sel_target_a/--io_sel_target_b",
+    default=True,
+    help="Choose Target that gets connected to IO",
+)
+@click.option(
+    "--pwr_sel_target_a/--pwr_sel_target_b",
+    default=True,
+    help="Choose (main)Target that gets connected to virtual Source",
+)
+@click.option(
+    "--aux_voltage",
+    type=float,
+    help="Set Voltage of auxiliary Power Source (second target)",
+)
+@click.option(
+    "--virtsource",
+    default={},
+    help="Use the desired setting for the virtual source",
+)
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 @click.option(
     "--start/--no-start",
@@ -474,9 +508,9 @@ def emulator(
         ctx.obj["hostnames"],
         ctx.obj["verbose"],
     )
-    
+
     if start:
-        logger.debug(f"Scheduling start of shepherd at {ts_start} (in ~ {delay} s)")
+        logger.debug("Scheduling start of shepherd at %s (in ~ %s s)", ts_start, delay)
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -487,24 +521,31 @@ def stop(ctx):
         cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
 
 
-@cli.command(
-    short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR"
-)
+@cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
 @click.argument("filename", type=click.Path())
 @click.argument("outdir", type=click.Path(exists=True))
-@click.option("--rename", "-r", is_flag=True, 
-    help="Add current timestamp to measurement file")
-@click.option("--delete", "-d", is_flag=True,
-    help="Delete the file from the remote filesystem after retrieval")
-@click.option("--stop", "-s", is_flag=True,
-    help="Stop the on-going harvest/emulation process before retrieving the data",)
+@click.option(
+    "--rename", "-r", is_flag=True, help="Add current timestamp to measurement file"
+)
+@click.option(
+    "--delete",
+    "-d",
+    is_flag=True,
+    help="Delete the file from the remote filesystem after retrieval",
+)
+@click.option(
+    "--stop",
+    "-s",
+    is_flag=True,
+    help="Stop the on-going harvest/emulation process before retrieving the data",
+)
 @click.pass_context
 def retrieve(ctx, filename, outdir, rename, delete, stop):
     if stop:
         for cnx in ctx.obj["fab group"]:
 
             logger.info(
-                f"stopping shepherd service on {ctx.obj['hostnames'][cnx.host]}"
+                "stopping shepherd service on %s", ctx.obj["hostnames"][cnx.host]
             )
             res = cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
 
@@ -523,7 +564,7 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
 
         target_path = Path(outdir) / ctx.obj["hostnames"][cnx.host]
         if not target_path.exists():
-            logger.info(f"creating local dir {target_path}")
+            logger.info("creating local dir %s", target_path)
             target_path.mkdir()
 
         if Path(filename).is_absolute():
@@ -538,14 +579,18 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
 
         logger.info(
             (
-                f"retrieving remote file {filepath} from "
-                f"{ctx.obj['hostnames'][cnx.host]} to local {local_path}"
+                "retrieving remote file %s from %s to local %s",
+                filepath,
+                ctx.obj["hostnames"][cnx.host],
+                local_path,
             )
         )
         cnx.get(filepath, local=Path(local_path))
         if delete:
             logger.info(
-                f"deleting {filepath} from remote {ctx.obj['hostnames'][cnx.host]}"
+                "deleting %s from remote %s",
+                filepath,
+                ctx.obj["hostnames"][cnx.host],
             )
             cnx.sudo(f"rm {str(filepath)}", hide=True)
 

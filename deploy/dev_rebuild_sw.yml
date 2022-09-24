@@ -2,6 +2,7 @@
 - name: Refresh Src, compile and install PRU-Fw, restart Kernel-Module, reinstall py-package, without Reboot
   hosts: all
   become: true
+  # TODO: cleanup sheep-role/build and use that! less duplication
 
   vars:
     shepherd_install_path: /opt/shepherd
@@ -13,100 +14,128 @@
     # these can be also passed as argument:  -e "refresh_source=True" -> automatically skips these prompts
     - name: refresh_source
       prompt: "Do you want to (forcefully) git pull the Shepherd-Source on Nodes?"
-      private: no
+      private: false
       default: "no"
 
   tasks:
 
-  - name: own codebase
-    command: 'chown -R {{ ansible_user }} {{ shepherd_install_path }}'
-    become: true
+    - name: Own shepherd codebase
+      ansible.builtin.file:
+        path: '{{ shepherd_install_path }}'
+        state: 'directory'
+        owner: '{{ ansible_user }}'
+        recurse: true
+      become: true
 
-  - name: GIT - Update Shepherd-Codebase
-    git:
-      repo: https://github.com/orgua/shepherd
-      dest: '{{ shepherd_install_path }}'
-      update: yes
-      # version: master
-      force: yes
-    when: refresh_source|bool
-    become: false
+    - name: GIT - Update Shepherd-Codebase
+      ansible.builtin.git:
+        repo: https://github.com/orgua/shepherd
+        dest: '{{ shepherd_install_path }}'
+        update: true
+        version: main
+        force: true
+      when: refresh_source | bool
+      become: false
 
-  - name: Stop Kernel Module
-    command: modprobe -rf shepherd
-    ignore_errors: yes
+    - name: Stop Kernel Module
+      ansible.builtin.command: 'modprobe -rf shepherd'
+      register: modprobe_ret
+      until: modprobe_ret is not failed
+      retries: 5
+      changed_when: true
 
-  - name: Clean PRU Firmware Source
-    make:
-      chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
-      target: clean
-    environment:
-      PRU_CGT: '{{ pru_cgt_path }}'
-      PRU_SUPPORT: '{{ pru_support_path }}'
-    with_items:
-      - pru0
-      - pru1
-    become: false
+    - name: Clean PRU Firmware Source
+      make:
+        chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+        target: clean
+      environment:
+        PRU_CGT: '{{ pru_cgt_path }}'
+        PRU_SUPPORT: '{{ pru_support_path }}'
+      with_items:
+        - pru0
+        - pru1
+      become: false
 
-  - name: Build PRU firmware
-    make:
-      chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
-      target: all
-    environment:
-      PRU_CGT: '{{ pru_cgt_path }}'
-      PRU_SUPPORT: '{{ pru_support_path }}'
-    with_items:
-      - pru0
-      - pru1
-    become: false
-    
-  - name: install PRU firmware
-    make:
-      chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
-      target: install
-    environment:
-      PRU_CGT: '{{ pru_cgt_path }}'
-      PRU_SUPPORT: '{{ pru_support_path }}'
-    with_items:
-      - pru0
-      - pru1
+    - name: Build PRU firmware
+      make:
+        chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+        target: all
+      environment:
+        PRU_CGT: '{{ pru_cgt_path }}'
+        PRU_SUPPORT: '{{ pru_support_path }}'
+      with_items:
+        - pru0
+        - pru1
+      become: false
 
-  - name: clean shepherd device tree
-    make:
-      chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
-      target: clean
+    - name: Install PRU firmware
+      make:
+        chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+        target: install
+      environment:
+        PRU_CGT: '{{ pru_cgt_path }}'
+        PRU_SUPPORT: '{{ pru_support_path }}'
+      with_items:
+        - pru0
+        - pru1
 
-  - name: build and install shepherd device tree
-    make:
-      chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
-      target: install
+    - name: Clean shepherd device tree
+      make:
+        chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+        target: clean
 
-  - name: Stop PRU0
-    command: echo "stop" > /sys/class/remoteproc/remoteproc1/state
+    - name: Build and install shepherd device tree
+      make:
+        chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+        target: install
 
-  - name: Stop PRU1
-    command: echo "stop" > /sys/class/remoteproc/remoteproc2/state
+    - name: Check if PRUs are present
+      ansible.builtin.stat:
+        path: /sys/class/remoteproc/remoteproc1/state
+      register: sysfs_pru
 
-  - name: Build and install kernel module
-    make:
-      chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
-      target: install
-    when: rebuild_kernel_module|bool
+    - name: Stop PRUs
+      ansible.builtin.shell:
+        cmd: 'echo "stop" > /sys/class/remoteproc/{{ item }}/state'
+      with_items:
+        - remoteproc1
+        - remoteproc2
+      when: sysfs_pru.stat.exists
+      changed_when: true
 
-  - name: Refresh list of kernel modules
-    command: depmod -a
-    when: rebuild_kernel_module|bool
+    - name: Build and install kernel module
+      make:
+        chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
+        target: install
+      when: rebuild_kernel_module | bool
 
-  - name: Install shepherd python package
-    command: python3 setup.py install --force
-    args:
-      chdir: '{{ shepherd_install_path }}/software/python-package'
-    tags:
-      - install
-      - python
-    when: rebuild_python_package|bool
+    - name: Refresh list of kernel modules
+      ansible.builtin.command: 'depmod -a'
+      when: rebuild_kernel_module | bool
+      changed_when: true
 
-  - name: Load Shepherd-Module
-    command: modprobe -a shepherd
-    
+    - name: Uninstall shepherd python package
+      ansible.builtin.pip:
+        name: "./"
+        state: absent
+        chdir: '{{ shepherd_install_path }}/software/python-package'
+      failed_when: false
+      tags:
+        - install
+        - python
+      when: rebuild_python_package | bool
+      # TODO: maybe not needed
 
+    - name: Install shepherd python package
+      ansible.builtin.pip:
+        name: "./[test]"
+        state: present  # forcereinstall preferred, but that seems to compile dependencies
+        chdir: '{{ shepherd_install_path }}/software/python-package'
+      tags:
+        - install
+        - python
+      when: rebuild_python_package | bool
+
+    - name: Load Shepherd-Module
+      ansible.builtin.command: 'modprobe -a shepherd'
+      changed_when: true

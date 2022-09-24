@@ -9,7 +9,7 @@ Data is sampled/replayed through the ADC (TI ADS8694) and DAC (TI DAC8562T). Bot
 PRU to host
 -----------
 
-Data is sampled and transferred between PRUs and user space in buffers, i.e. blocks of SAMPLES_PER_BUFFER samples. These buffers correspond to sections of a continuous area of memory in DDR RAM to which both PRU and user space application have access. This memory is provisined through remoteproc, a Linux framework for managing resources in an AMP (asymmetric multicore processing) system. The PRU firmware contains a so-called resource table that allows to specify required resources. We request a carve-out memory area, which is a continuous, non-cached area in physical memory. On booting the PRU, the remoteproc driver reads the request, allocates the memory and writes the starting address of the allocated memory area to the resource table, which is readable by the PRU during run-time. The PRU exposes this memory location through shared RAM, which is accessible through the sysfs interface provided by the kernel module. Knowing physical address and size, the user space application can map that memory after which it has direct read/write access. The total memory areas is divided into N_BUFFERS distinct buffers. 
+Data is sampled and transferred between PRUs and user space in buffers, i.e. blocks of SAMPLES_PER_BUFFER samples. These buffers correspond to sections of a continuous area of memory in DDR RAM to which both PRU and user space application have access. This memory is provisined through remoteproc, a Linux framework for managing resources in an AMP (asymmetric multicore processing) system. The PRU firmware contains a so-called resource table that allows to specify required resources. We request a carve-out memory area, which is a continuous, non-cached area in physical memory. On booting the PRU, the remoteproc driver reads the request, allocates the memory and writes the starting address of the allocated memory area to the resource table, which is readable by the PRU during run-time. The PRU exposes this memory location through shared RAM, which is accessible through the sysfs interface provided by the kernel module. Knowing physical address and size, the user space application can map that memory after which it has direct read/write access. The total memory areas is divided into N_BUFFERS distinct buffers.
 
 In the following we describe the data transfer process for emulation. Emulation is the most general case because harvesting data has to be transferred from database to the analog frontend, while simultaneously consumption data (target voltage and current) has to be transferred from the analog frontend (ADC) to the database.
 
@@ -18,8 +18,8 @@ The userspace application writes the first block of harvesting data into one of 
 Data extraction
 ---------------
 
-The user space code (written in python) has to extract the data from a buffer in the shared memory. Generally, a user space application can only access its own virtual address space. We use Linux's `/dev/mem` and python's `mmap.mmap(..)` to map the corresponding region of physical memory to the local address space. Using this mapping, we only need to seek the memory location of a buffer, extract the header information using `struct.unpack()` and interpret the raw data as numpy array using `numpy.frombuffer()`.
- 
+The user space code (written in python) has to extract the data from a buffer in the shared memory. Generally, a user space application can only access its own virtual address space. We use Linux's ``/dev/mem`` and python's ``mmap.mmap(..)`` to map the corresponding region of physical memory to the local address space. Using this mapping, we only need to seek the memory location of a buffer, extract the header information using ``struct.unpack()`` and interpret the raw data as numpy array using ``numpy.frombuffer()``.
+
 
 Database
 --------

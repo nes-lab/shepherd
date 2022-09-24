@@ -3,8 +3,8 @@
   ansible.builtin.apt:
     name: software-properties-common
     state: present
-    update_cache: yes
-    when: False
+    update_cache: true
+    when: false
 
 - name: Add nginx stable repository from PPA and install its signing key on Debian target
   ansible.builtin.apt_repository:
@@ -15,4 +15,6 @@
   ansible.builtin.apt:
     name: ["python3.10-dev", "python3.10-venv", "python3.10-distutils"]
     state: present
-    update_cache: yes
+    update_cache: true
+
+# TODO: not finished - make usable with just calling python, also install packages
