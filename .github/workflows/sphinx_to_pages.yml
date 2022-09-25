@@ -13,7 +13,7 @@ jobs:
     steps:
 
       - name: Set up Python 🐍
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
       - name: Checkout 🛎️
         uses: actions/checkout@v3
         with:
