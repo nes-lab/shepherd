@@ -1,0 +1,55 @@
+name: Build Pru GCC
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  pru-tests:
+    runs-on: ubuntu-latest
+    env:
+      # as in roles/sheep/vars/main.yml
+      gcc_tools_path: "/usr/share/shepherd-tools/"
+      gcc_pru_cc_release: "pru-elf-2022.05.amd64"
+      gcc_pru_support_branch: "linux-4.19-rproc"
+      # weblinks
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
+      link_pssp: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git"
+      # env for makefile
+      PRU_GCC: "/usr/share/shepherd-tools/gcc-pru"
+      PRU_GCC_SUPPORT: "/usr/share/shepherd-tools/pru-software-support-package"
+
+    steps:
+
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - name: Install dependency
+        run: sudo apt install build-essential
+
+      - name: Download GCC cross-compiler for PRU
+        run: "sudo wget -q --tries 3 ${{ link_gcc }}${{ gcc_pru_cc_release }}.tar.gz --output-document=gcc-pru.tar.gz"
+        working-directory: $gcc_tools_path
+      - name: Extract GCC cross-compiler
+        run: "tar -xf gcc-pru.tar.gz"
+        working-directory: $gcc_tools_path
+
+      - name: Install PSSP dependency 🔧
+        run: "git clone --branch ${{ gcc_pru_support_branch }} ${{ link_pssp }}"
+        working-directory: $gcc_tools_path
+
+# TODO: still written for cgt, also change size of target
+#      - name: Build PRU0 🧱
+#        run: |
+#          export PATH=$PATH:$PRU_GCC
+#          sudo make
+#        working-directory: "software/firmware/pru0-shepherd-fw/"
+
+#      - name: Build PRU1 🧱
+#        run: |
+#          export PATH=$PATH:$PRU_GCC
+#          sudo make
+#        working-directory: "software/firmware/pru1-shepherd-fw/"
