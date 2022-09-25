@@ -1,26 +1,5 @@
 ---
 
-- name: Own shepherd codebase
-  ansible.builtin.file:
-    path: shepherd_install_path
-    state: directory
-    owner: ansible_user
-    recurse: true
-  become: true
-  tags:
-    - source-code
-    - python
-
-- name: GIT - Update Shepherd-Codebase
-  ansible.builtin.git:
-    repo: https://github.com/orgua/shepherd
-    dest: shepherd_install_path
-    update: true
-    version: shepherd_branch
-    force: true
-  when: refresh_source | bool
-  become: false
-
 - name: Build and install kernel module
   make:
     chdir: "{{ shepherd_install_path }}/software/kernel-module/src"

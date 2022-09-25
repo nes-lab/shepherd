@@ -16,8 +16,8 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: ansible_user
-    group: ansible_user
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: '0644'
   with_items:
     - shepherd_install_path
@@ -30,7 +30,7 @@
 - name: Synchronize host shepherd dir to target
   ansible.posix.synchronize:
     src: "{{ repo_dir.stdout }}/"
-    dest: shepherd_install_path
+    dest: "{{ shepherd_install_path }}"
     delete: true
     owner: false
     group: false

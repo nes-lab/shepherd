@@ -2,7 +2,7 @@
 
 - name: Make sure tool path exists
   ansible.builtin.file:
-    path: gcc_pru_cc_path
+    path: "{{ gcc_pru_cc_path }}"
     state: directory
     mode: '0644'
   become: true
@@ -12,7 +12,7 @@
 - name: Download and extract pru gcc cross compiler
   ansible.builtin.unarchive:  # TODO: ".armhf" could be user-configurable (other option "amd64")
     src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.gz'
-    dest: gcc_pru_cc_path
+    dest: "{{ gcc_pru_cc_path }}"
     remote_src: true
     mode: a+x
   become: true
@@ -25,9 +25,9 @@
 - name: Download pru software support package
   ansible.builtin.git:
     repo: 'https://github.com/dinuxbg/pru-software-support-package.git'
-    dest: gcc_pru_support_path
+    dest: "{{ gcc_pru_support_path }}"
     update: true
-    version: gcc_pru_support_branch
+    version: "{{ gcc_pru_support_branch }}"
     force: true
   become: true
   register: dl_pssp_ret
@@ -45,7 +45,7 @@
   with_nested:
     - [
       { name: PRU_GCC, value: '{{ gcc_pru_cc_path }}/bin' },
-      { name: PRU_GCC_SUPPORT, value: gcc_pru_support_path }
+      { name: PRU_GCC_SUPPORT, value: "{{ gcc_pru_support_path }}" }
     ]
     - ['/home/{{ ansible_user }}', '/root']
   become: true

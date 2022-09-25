@@ -2,7 +2,7 @@
 
 - name: Make sure TI software path exists
   ansible.builtin.file:
-    path: ti_pru_cgt_path
+    path: "{{ ti_pru_cgt_path }}"
     state: directory
     mode: '0644'
   become: true
@@ -11,8 +11,8 @@
 
 - name: Download PRU Code Generation tools installer
   ansible.builtin.get_url:
-    url: ti_pru_cgt_installer
-    dest: /tmp/
+    url: "{{ ti_pru_cgt_installer }}"
+    dest: "/tmp/"
     timeout: 120
     mode: a+x
   register: dl_cgt_ret
@@ -23,7 +23,7 @@
     - pru-tools
 
 - name: Install PRU Code Generation tools
-  ansible.builtin.command: dl_cgt_ret.dest
+  ansible.builtin.command: "{{ dl_cgt_ret.dest }}"
   become: true
   register: inst_cgt_ret
   retries: 3 # TODO: experimental, this step failed recently on 2/4 nodes
@@ -35,7 +35,7 @@
 - name: Download and extract pru software support package
   ansible.builtin.unarchive:
     src: 'https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/{{ ti_pru_support_package }}.tar.gz'
-    dest: ti_pru_support_path
+    dest: "{{ ti_pru_support_path }}"
     remote_src: true
   become: true
   register: dl_pssp_ret
@@ -73,8 +73,8 @@
     state: present
   with_nested:
     - [
-      { name: PRU_CGT, path: ti_pru_cgt_path },
-      { name: PRU_CGT_SUPPORT, path: ti_pru_support_path }
+      { name: PRU_CGT, path: "{{ ti_pru_cgt_path }}" },
+      { name: PRU_CGT_SUPPORT, path: "{{ ti_pru_support_path }}" }
     ]
     - ['/home/{{ ansible_user }}', '/root']
   become: true

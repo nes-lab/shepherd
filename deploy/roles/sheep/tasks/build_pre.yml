@@ -9,7 +9,7 @@
 
 - name: Check if PRU1 is present
   ansible.builtin.stat:
-    path: /sys/class/remoteproc/remoteproc1/state
+    path: "/sys/class/remoteproc/remoteproc1/state"
   register: sysfs_pru
 - name: Stop PRU1
   ansible.builtin.shell:
@@ -20,7 +20,7 @@
 
 - name: Check if PRU2 is present
   ansible.builtin.stat:
-    path: /sys/class/remoteproc/remoteproc2/state
+    path: "/sys/class/remoteproc/remoteproc2/state"
   register: sysfs_pru
 - name: Stop PRU2
   ansible.builtin.shell:
@@ -40,3 +40,24 @@
     - python
   when: rebuild_python_package | bool
   # TODO: maybe not needed
+
+- name: Own shepherd codebase
+  ansible.builtin.file:
+    path: "{{ shepherd_install_path }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    recurse: true
+  become: true
+  tags:
+    - source-code
+    - python
+
+- name: GIT - Update Shepherd-Codebase
+  ansible.builtin.git:
+    repo: https://github.com/orgua/shepherd
+    dest: "{{ shepherd_install_path }}"
+    update: true
+    version: "{{ shepherd_branch }}"
+    force: true
+  when: refresh_source | bool
+  become: false
