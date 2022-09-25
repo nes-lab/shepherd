@@ -1,6 +1,4 @@
 ---
-dependencies:
-  - role: dev_host
 
 galaxy_info:
   description: Prepares Beaglebone to run Shepherd, joins network as a sheep.

@@ -1,0 +1,81 @@
+---
+
+- name: Own shepherd codebase
+  ansible.builtin.file:
+    path: shepherd_install_path
+    state: directory
+    owner: ansible_user
+    recurse: true
+  become: true
+  tags:
+    - source-code
+    - python
+
+- name: GIT - Update Shepherd-Codebase
+  ansible.builtin.git:
+    repo: https://github.com/orgua/shepherd
+    dest: shepherd_install_path
+    update: true
+    version: shepherd_branch
+    force: true
+  when: refresh_source | bool
+  become: false
+
+- name: Build and install kernel module
+  make:
+    chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
+    target: install
+  when: rebuild_kernel_module | bool
+  tags:
+    - install
+
+- name: Clean PRU Firmware Source
+  make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+    target: clean
+  with_items:
+    - pru0
+    - pru1
+  become: true
+
+- name: Build PRU firmware
+  make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+    target: all
+  with_items:
+    - pru0
+    - pru1
+  become: false
+  # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
+
+- name: Install PRU firmware
+  make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+    target: install
+  with_items:
+    - pru0
+    - pru1
+  become: true
+
+- name: Clean shepherd device tree
+  make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+    target: clean
+
+- name: Build and install device tree overlay
+  make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+    target: install
+  tags:
+    - install
+    - device-tree
+
+- name: Install shepherd python package
+  ansible.builtin.pip:
+    name: "./[test]"
+    state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
+    chdir: '{{ shepherd_install_path }}/software/python-package'
+  tags:
+    - install
+    - python
+  when: rebuild_python_package | bool

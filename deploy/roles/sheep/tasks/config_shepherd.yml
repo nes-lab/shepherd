@@ -1,0 +1,46 @@
+---
+
+- name: Deploy example configuration
+  ansible.builtin.copy:
+    src: "{{ repo_dir.stdout }}/software/python-package/{{ item }}"
+    dest: shepherd_config_path
+    force: false
+    owner: ansible_user
+    mode: '0644'
+  with_items:
+    - example_config_emulator.yml
+    - example_config_harvester.yml
+  tags:
+    - source-code
+    - python
+    - conf
+
+- name: Deploy default configuration for launcher (harvest)
+  ansible.builtin.copy:
+    src: "{{ repo_dir.stdout }}/software/python-package/example_config_harvester.yml"
+    dest: "{{ shepherd_config_path }}/config.yml"
+    force: false
+    owner: ansible_user
+    mode: '0644'
+  tags:
+    - source-code
+    - python
+    - conf
+
+- name: Symlink to shepherd-sheep for compatibility with deb package (might fail -> already exists)
+  ansible.builtin.file:
+    src: /usr/local/bin/shepherd-sheep
+    path: /usr/bin/shepherd-sheep
+    state: link
+    follow: true
+  failed_when: false
+  tags:
+    - install
+    - python
+
+- name: Make Shepherd Module permanent
+  ansible.builtin.lineinfile:
+    dest: "/etc/modules"
+    regexp: "#?shepherd.*$"
+    line: "shepherd"
+    state: present

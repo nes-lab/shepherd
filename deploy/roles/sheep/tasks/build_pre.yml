@@ -1,0 +1,42 @@
+---
+
+- name: Stop Kernel Module
+  ansible.builtin.command: 'modprobe -rf shepherd'
+  register: modprobe_ret
+  until: modprobe_ret is not failed
+  retries: 5
+  changed_when: true
+
+- name: Check if PRU1 is present
+  ansible.builtin.stat:
+    path: /sys/class/remoteproc/remoteproc1/state
+  register: sysfs_pru
+- name: Stop PRU1
+  ansible.builtin.shell:
+    cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc1/state'
+  when: sysfs_pru.stat.exists
+  failed_when: false
+  changed_when: true
+
+- name: Check if PRU2 is present
+  ansible.builtin.stat:
+    path: /sys/class/remoteproc/remoteproc2/state
+  register: sysfs_pru
+- name: Stop PRU2
+  ansible.builtin.shell:
+    cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc2/state'
+  when: sysfs_pru.stat.exists
+  failed_when: false
+  changed_when: true
+
+- name: Uninstall shepherd python package
+  ansible.builtin.pip:
+    name: "./"
+    state: absent
+    chdir: '{{ shepherd_install_path }}/software/python-package'
+  failed_when: false
+  tags:
+    - install
+    - python
+  when: rebuild_python_package | bool
+  # TODO: maybe not needed

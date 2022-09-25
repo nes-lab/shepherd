@@ -1,0 +1,53 @@
+---
+
+- name: Make sure tool path exists
+  ansible.builtin.file:
+    path: gcc_pru_cc_path
+    state: directory
+    mode: '0644'
+  become: true
+  tags:
+    - pru-tools
+
+- name: Download and extract pru gcc cross compiler
+  ansible.builtin.unarchive:  # TODO: ".armhf" could be user-configurable (other option "amd64")
+    src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.gz'
+    dest: gcc_pru_cc_path
+    remote_src: true
+    mode: a+x
+  become: true
+  register: dl_cc_ret
+  until: dl_cc_ret is not failed
+  retries: 3
+  tags:
+    - pru-tools
+
+- name: Download pru software support package
+  ansible.builtin.git:
+    repo: 'https://github.com/dinuxbg/pru-software-support-package.git'
+    dest: gcc_pru_support_path
+    update: true
+    version: gcc_pru_support_branch
+    force: true
+  become: true
+  register: dl_pssp_ret
+  until: dl_pssp_ret is not failed
+  retries: 3
+  tags:
+    - pru-tools
+
+- name: Adding PRU environment vars in bashrc file
+  ansible.builtin.lineinfile:
+    dest: '{{ item[1] }}/.bashrc'
+    line: 'export {{ item[0]["name"] }}={{ item[0]["value"] }}'
+    insertafter: 'EOF'
+    state: present
+  with_nested:
+    - [
+      { name: PRU_GCC, value: '{{ gcc_pru_cc_path }}/bin' },
+      { name: PRU_GCC_SUPPORT, value: gcc_pru_support_path }
+    ]
+    - ['/home/{{ ansible_user }}', '/root']
+  become: true
+  tags:
+    - pru-tools

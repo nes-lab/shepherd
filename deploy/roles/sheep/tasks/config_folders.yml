@@ -1,0 +1,42 @@
+---
+
+- name: Get full path of repository
+  ansible.builtin.command: "realpath {{ role_path }}/../../.."
+  delegate_to: localhost
+  register: repo_dir
+  become: false
+  changed_when: false
+  tags:
+    - source-code
+    - device-tree
+    - python
+    - systemd
+
+- name: Create paths for shepherd
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: ansible_user
+    group: ansible_user
+    mode: '0644'
+  with_items:
+    - shepherd_install_path
+    - shepherd_data_path
+    - shepherd_config_path
+  tags:
+    - source-code
+    - python
+
+- name: Synchronize host shepherd dir to target
+  ansible.posix.synchronize:
+    src: "{{ repo_dir.stdout }}/"
+    dest: shepherd_install_path
+    delete: true
+    owner: false
+    group: false
+    rsync_opts:
+      - "--exclude=.eggs"
+      - "--exclude=__pycache__"
+  tags:
+    - source-code
+    - python
