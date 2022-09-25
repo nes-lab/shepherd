@@ -3,7 +3,7 @@
 ### Install & Config
 - name: Configure Shepherd - Pre-Phase
   ansible.builtin.include_tasks:
-    file: item
+    file: "{{ item }}"
   with_items:
     - config_folders.yml
     - config_overlays.yml
@@ -13,7 +13,7 @@
 
 - name: Install Pre-Requisits
   ansible.builtin.include_tasks:
-    file: item
+    file: "{{ item }}"
   with_items:
     - toolchain_kernel.yml
     - toolchain_py.yml
@@ -46,7 +46,7 @@
 ### Build
 - name: Build Shepherd-Software
   ansible.builtin.include_tasks:
-    file: item
+    file: "{{ item }}"
   with_items:
     - build_pre.yml
     - build_shp.yml
@@ -58,7 +58,7 @@
 ### Config
 - name: Configure Shepherd - Post-Phase
   ansible.builtin.include_tasks:
-    file: item
+    file: "{{ item }}"
   with_items:
     - config_shepherd.yml
     - config_systemd.yml
