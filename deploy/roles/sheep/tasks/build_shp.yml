@@ -12,7 +12,7 @@
   make:
     chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
     target: clean
-  with_items:
+  loop:
     - pru0
     - pru1
   become: true
@@ -21,9 +21,14 @@
   make:
     chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
     target: all
-  with_items:
+  loop:
     - pru0
     - pru1
+  environment:
+    PRU_CGT: '{{ ti_pru_cgt_path }}'
+    PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
+    PRU_GCC: '{{ gcc_pru_cc_path }}'
+    PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
   become: false
   # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
 
@@ -31,7 +36,7 @@
   make:
     chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
     target: install
-  with_items:
+  loop:
     - pru0
     - pru1
   become: true

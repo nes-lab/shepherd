@@ -7,7 +7,7 @@
     force: false
     owner: "{{ ansible_user }}"
     mode: '0644'
-  with_items:
+  loop:
     - example_config_emulator.yml
     - example_config_harvester.yml
   tags:

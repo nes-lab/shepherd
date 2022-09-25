@@ -58,7 +58,7 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
     state: link
-  with_items:
+  loop:
     - { src: /usr/bin/clpru, dest: '{{ ti_pru_cgt_path }}/bin/clpru' }
     - { src: /usr/bin/lnkpru, dest: '{{ ti_pru_support_path }}/bin/lnkpru' }
   become: true

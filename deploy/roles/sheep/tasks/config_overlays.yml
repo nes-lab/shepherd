@@ -6,7 +6,7 @@
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
     state: present
-  with_items:
+  loop:
     - {
       regexpress: "#?disable_uboot_overlay_video=.*$",
       replacement: "disable_uboot_overlay_video=1",
@@ -36,7 +36,7 @@
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
     state: present
-  with_items:
+  loop:
     - {
       regexpress: "#?enable_uboot_overlays=.*$",
       replacement: "enable_uboot_overlays=1",

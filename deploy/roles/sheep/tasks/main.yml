@@ -3,20 +3,24 @@
 ### Install & Config
 - name: Configure Shepherd - Pre-Phase
   ansible.builtin.include_tasks:
-    file: "{{ item }}"
-  with_items:
+    file: "{{ file_item }}"
+  loop:
     - config_folders.yml
     - config_overlays.yml
+  loop_control:
+    loop_var: file_item
   when: install_basics | bool
   tags:
     - install
 
 - name: Install Pre-Requisits
   ansible.builtin.include_tasks:
-    file: "{{ item }}"
-  with_items:
+    file: "{{ file_item }}"
+  loop:
     - toolchain_kernel.yml
     - toolchain_py.yml
+  loop_control:
+    loop_var: file_item
   when: install_basics | bool
   tags:
     - install
@@ -46,11 +50,13 @@
 ### Build
 - name: Build Shepherd-Software
   ansible.builtin.include_tasks:
-    file: "{{ item }}"
-  with_items:
+    file: "{{ file_item }}"
+  loop:
     - build_pre.yml
     - build_shp.yml
     - build_post.yml
+  loop_control:
+    loop_var: file_item
   tags:
     - install
     - build
@@ -58,10 +64,12 @@
 ### Config
 - name: Configure Shepherd - Post-Phase
   ansible.builtin.include_tasks:
-    file: "{{ item }}"
-  with_items:
+    file: "{{ file_item }}"
+  loop:
     - config_shepherd.yml
     - config_systemd.yml
+  loop_control:
+    loop_var: file_item
   when: install_basics | bool
   tags:
     - install

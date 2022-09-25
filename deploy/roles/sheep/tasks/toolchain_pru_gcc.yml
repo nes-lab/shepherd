@@ -10,7 +10,7 @@
     - pru-tools
 
 - name: Download and extract pru gcc cross compiler
-  ansible.builtin.unarchive:  # TODO: ".armhf" could be user-configurable (other option "amd64")
+  ansible.builtin.unarchive:
     src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.gz'
     dest: "{{ gcc_pru_cc_path }}"
     remote_src: true

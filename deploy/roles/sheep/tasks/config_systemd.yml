@@ -5,7 +5,7 @@
     src: '{{ item }}'
     dest: '/etc/systemd/system/{{ item }}'
     mode: '0644'
-  with_items:
+  loop:
     - shepherd.service
     - shepherd-rpc.service
     - shepherd-launcher.service
@@ -19,7 +19,7 @@
     state: stopped
     enabled: '{{ item.enabled }}'
     daemon_reload: true
-  with_items:
+  loop:
     - { name: shepherd, enabled: false}
     - { name: shepherd-rpc, enabled: false}
     - { name: shepherd-launcher, enabled: true}

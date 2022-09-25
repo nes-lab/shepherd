@@ -20,14 +20,14 @@ order to use the same Makefile
 endef
 $(error $(CGT_ERROR_BODY))
 endif
-ifndef PRU_SUPPORT
+ifndef PRU_CGT_SUPPORT
 define SUP_ERROR_BODY
 
 *******************************************************************************
-PRU_SUPPORT environment variable is not set. Examples given:
-(Desktop Linux) export PRU_SUPPORT=/path/to/ti/pru-software-support-package-#Version
-(Windows) set PRU_SUPPORT=C:/path/to/ti/pru-software-support-package-#Version
-(ARM Linux) export PRU_SUPPORT=/usr/share/ti/pru-software-support-package-#Version
+PRU_CGT_SUPPORT environment variable is not set. Examples given:
+(Desktop Linux) export PRU_CGT_SUPPORT=/path/to/ti/pru-software-support-package-#Version
+(Windows) set PRU_CGT_SUPPORT=C:/path/to/ti/pru-software-support-package-#Version
+(ARM Linux) export PRU_CGT_SUPPORT=/usr/share/ti/pru-software-support-package
 *******************************************************************************
 
 endef
@@ -46,8 +46,8 @@ LINKER_COMMAND_FILE=$(BASE_PATH)/lib/AM335x_PRU.cmd
 LIBS= --library=libc.a
 # NOTE: libc.a will be replaced during compile-time by fitting run-time-system (RTS) -> rtspruv3.lib
 
-INCLUDE += --include_path=${PRU_SUPPORT}/include
-INCLUDE += --include_path=${PRU_SUPPORT}/include/am335x
+INCLUDE += --include_path=${PRU_CGT_SUPPORT}/include
+INCLUDE += --include_path=${PRU_CGT_SUPPORT}/include/am335x
 INCLUDE += --include_path=$(BASE_PATH)/lib/include
 
 STACK_SIZE 	= 0x200 # 512 byte
