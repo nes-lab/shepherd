@@ -29,7 +29,7 @@ jobs:
         # NOTE: cppcheck is needed for pre-commit
 
       - name: Run Pre-Commit Tests 🧪
-        uses: pre-commit/action@v3
+        uses: pre-commit/action@v3.0.0
 
       - name: Install the shepherd py-package 🐑
         run: "sudo pip3 install ./[test]"
