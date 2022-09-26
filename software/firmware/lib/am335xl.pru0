@@ -1,0 +1,5 @@
+*cpp_device:
+-D__AM335X_PRU0__ -D__AM335X__
+
+*link_device:
+%{!r:--gc-sections --defsym=__IMEM_SIZE=8K --defsym=__DMEM_SIZE=18K --defsym=__HEAP_SIZE=32 --defsym=__STACK_SIZE=512}
