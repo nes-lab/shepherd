@@ -16,7 +16,6 @@ rebuild_python_package: true
 
 ### GCC ######
 gcc_tools_path: /usr/share/shepherd-tools/
-gcc_pru_cc_path: /usr/share/shepherd-tools/gcc-pru
 gcc_pru_support_path: /usr/share/shepherd-tools/pru-software-support-package
 gcc_pru_cc_release: pru-elf-2022.05.armhf
 # Source: https://github.com/dinuxbg/gnupru

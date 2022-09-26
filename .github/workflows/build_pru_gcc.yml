@@ -36,15 +36,18 @@ jobs:
 
       - name: Download GCC cross-compiler for PRU
         run: "wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.xz --output-document=gcc-pru.tar.xz"
+        working-directory: "${{ github.workspace }}"
       - name: Extract GCC cross-compiler
         run: "tar -xf gcc-pru.tar.xz"
         #run: "tar -xf gcc-pru.tar.xz -C ${{ env.PRU_GCC }}"
+        working-directory: "${{ github.workspace }}"
 
       - name: Install PSSP dependency 🔧
         run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
+        working-directory: "${{ github.workspace }}"
 
       - name: temporary size-hack for PRU0
-        run: cp software/firmware/lib/am335xl.pru0 $PRU_GCC/pru-elf/lib/device-specs/
+        run: "cp ${{ github.workspace }}/software/firmware/lib/am335xl.pru0 $PRU_GCC/pru-elf/lib/device-specs/"
 
       - name: Build PRU0 🧱
         run: |

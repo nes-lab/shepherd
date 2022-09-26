@@ -27,7 +27,7 @@
   environment:
     PRU_CGT: '{{ ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
-    PRU_GCC: '{{ gcc_pru_cc_path }}'
+    PRU_GCC: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}'
     PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
   become: false
   # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
