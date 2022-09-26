@@ -12,15 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # as in roles/sheep/vars/main.yml
-      gcc_tools_path: "/usr/share/shepherd-tools/"
       gcc_pru_cc_release: "pru-elf-2022.05.amd64"
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
       link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
       link_pssp: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git"
       # env for makefile
-      PRU_GCC: "/usr/share/shepherd-tools/gcc-pru"
-      PRU_GCC_SUPPORT: "/usr/share/shepherd-tools/pru-software-support-package"
+      PRU_GCC: "${{ env.GITHUB_WORKSPACE }}/gcc-pru"
+      PRU_GCC_SUPPORT: "${{ env.GITHUB_WORKSPACE }}/pru-software-support-package"
 
     steps:
 
@@ -33,18 +32,16 @@ jobs:
       - name: prepare directories
         run: |
           mkdir -p ${{ env.PRU_GCC }}/bin
-          mkdir -p ${{ env.PRU_GCC_SUPPORT }}/bin
+          mkdir -p ${{ env.PRU_GCC_SUPPORT }}
 
       - name: Download GCC cross-compiler for PRU
         run: "sudo wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.gz --output-document=gcc-pru.tar.gz"
-        working-directory: $gcc_tools_path
       - name: Extract GCC cross-compiler
         run: "tar -xf gcc-pru.tar.gz"
-        working-directory: $gcc_tools_path
 
       - name: Install PSSP dependency 🔧
         run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
-        working-directory: $gcc_tools_path
+
 
 # TODO: still written for cgt, also change size of target
 #      - name: Build PRU0 🧱
