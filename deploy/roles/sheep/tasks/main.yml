@@ -43,7 +43,7 @@
   tags:
     - install
 
-- name: Restart device after installing PreReqs
+- name: Restart device after installing PreReqs (& changing overlays)
   ansible.builtin.reboot:
   when: install_basics | bool
 
@@ -74,6 +74,6 @@
   tags:
     - install
 
-- name: Restart device after setup
+- name: Restart device after setup (specially services)
   ansible.builtin.reboot:
   when: install_basics | bool

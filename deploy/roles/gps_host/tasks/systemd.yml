@@ -4,7 +4,7 @@
     path: "/etc/systemd/system/{{ item }}.service.d"
     state: directory
     recurse: true
-  with_items:
+  loop:
     - gpsd
     - chrony
 
@@ -13,7 +13,7 @@
     src: "{{ item }}.override.conf"
     dest: "/etc/systemd/system/{{ item }}.service.d/"
     mode: '0644'
-  with_items:
+  loop:
     - chrony
     - gpsd
 
@@ -30,7 +30,7 @@
     enabled: false
     daemon_reload: true
   failed_when: false  # services may not exist
-  with_items:
+  loop:
     - gpsd.socket
     - gpsd.service
     - chrony.service

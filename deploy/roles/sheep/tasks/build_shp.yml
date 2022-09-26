@@ -10,20 +10,20 @@
 
 - name: Clean PRU Firmware Source
   make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
     target: clean
   loop:
-    - pru0
-    - pru1
+    - pru0-shepherd-fw
+    - pru1-shepherd-fw
   become: true
 
 - name: Build PRU firmware
   make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
     target: all
   loop:
-    - pru0
-    - pru1
+    - pru0-shepherd-fw
+    - pru1-shepherd-fw
   environment:
     PRU_CGT: '{{ ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
@@ -34,11 +34,11 @@
 
 - name: Install PRU firmware
   make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}-shepherd-fw"
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
     target: install
   loop:
-    - pru0
-    - pru1
+    - pru0-shepherd-fw
+    - pru1-shepherd-fw
   become: true
 
 - name: Clean shepherd device tree

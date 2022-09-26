@@ -17,7 +17,7 @@
     state: stopped
     enabled: false
     daemon_reload: true
-  with_items:
+  loop:
     - phc2sys.service # TODO: these fail in recent ubuntu nightlies, linuxptp switched to servive-templates, keep old style for now
     - ptp4l.service
     - phc2sys@eth0.service
@@ -34,7 +34,7 @@
     state: restarted
     enabled: true
     daemon_reload: true
-  with_items:
+  loop:
     - chrony.service
     - gpsd.socket
   tags:

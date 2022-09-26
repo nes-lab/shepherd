@@ -59,7 +59,3 @@
     }
   become: true
   tags: device-tree
-
-- name: Restart device
-  ansible.builtin.reboot:
-  tags: device-tree

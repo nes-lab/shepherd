@@ -17,7 +17,7 @@
   ansible.builtin.file:
     path: "/lib/firmware/{{ item }}"
     state: absent
-  with_items: # sorted by size, all ~ 360 mb
+  loop: # sorted by size, all ~ 360 mb
     - "netronome"
     - "amdgpu"
     - "intel"
@@ -51,7 +51,7 @@
     state: absent
     purge: true
   failed_when: false
-  with_items:
+  loop:  # TODO: change to loop could mean trouble (list with lists)
     - "{{ non_essential_packages_a }}"
     - "{{ non_essential_packages_b }}"
     - "{{ non_essential_packages_c }}"
