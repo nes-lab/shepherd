@@ -3,7 +3,7 @@ SCLK .set 0 ; ti specific code, gcc can use: ".equ SCLK, 0"
 MOSI .set 1
 MISO .set 2
 
-.macro NOP ; TODO: this assembler understands a simple NOP, without macro
+.macro NOP ; TODO: cgt assembler understands a simple NOP, without macro
    MOV r23, r23
 .endm
 

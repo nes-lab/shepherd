@@ -1,4 +1,4 @@
-DIRS = pru0-shepherd-fw pru1-shepherd-fw device-tree
+DIRS = pru0-shepherd-fw pru1-shepherd-fw device-tree pru0-programmer
 
 BUILDDIRS = $(DIRS:%=build-%)
 CLEANDIRS = $(DIRS:%=clean-%)

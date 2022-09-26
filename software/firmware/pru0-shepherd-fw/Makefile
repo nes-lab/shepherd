@@ -5,21 +5,25 @@ folder_path := $(dir $(mkfile_path))
 PROJ_NAME = $(current_dir)
 FW_NAME = shepherd
 
+BASE_PATH ?= ./..
+
 INCLUDE = --include_path=./include
-INCLUDE += --include_path=../include
 
 SOURCES = $(notdir $(wildcard ./*.c))
-
-# also add external files (./lib/src/)
+# add external sources (./lib/src/)
 SOURCES += simple_lock.c
 SOURCES += iep.c
 SOURCES += ringbuffer.c
-#SOURCES += sys_gpio.h
 
-ASM_SOURCES = spi_transfer_pru.asm
-ASM_SOURCES += gpio_io_fast.asm
-ASM_SOURCES += register_magic.asm
+ASM_SOURCES = $(notdir $(wildcard ./*.asm))
+# add external asm-files (./lib/src/)
+ASM_SOURCES += register_magic.asm # get_num_size_as_bits, msb_position, max_value, min_value
 
-BASE_PATH ?= ./..
-
-include $(BASE_PATH)/lib/Makefile
+ifdef PRU_CGT
+ASM_SOURCES += spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
+include $(BASE_PATH)/lib/CGT/Makefile
+endif
+ifdef PRU_GCC
+ASM_SOURCES += spi_transfer_pru_gcc.asm # small hack, constants are defined differently
+include $(BASE_PATH)/lib/GCC/Makefile
+endif

@@ -48,7 +48,12 @@ LIBS= --library=libc.a
 
 INCLUDE += --include_path=${PRU_CGT_SUPPORT}/include
 INCLUDE += --include_path=${PRU_CGT_SUPPORT}/include/am335x
+INCLUDE += --include_path=$(BASE_PATH)/include
 INCLUDE += --include_path=$(BASE_PATH)/lib/include
+
+# NOTE: autoinclude is easy, but cgt can't handle it (>7 kb fw-increase)
+#SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.c))
+#ASM_SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.asm))
 
 STACK_SIZE 	= 0x200 # 512 byte
 HEAP_SIZE 	= 0x100 # 256 byte
@@ -125,16 +130,17 @@ printStart:
 	@echo ''
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Building project: $(PROJ_NAME)'
+	@echo 'Building project: $(PROJ_NAME) with Ti CGT'
 
 .PHONY: printEnd
 printEnd:
 	@echo ''
 	@echo 'Output files can be found in the "$(GEN_DIR)" directory'
-	@echo 'Resulting firmware is $(TARGET_PATH), size in bytes:'
+	@echo 'Resulting firmware is $(TARGET_PATH)'
+	@echo 'Size in bytes:'
 	@stat -L -c %s $(TARGET_PATH)
 	@echo ''
-	@echo 'Finished building project: $(PROJ_NAME), '
+	@echo 'Finished building project: $(PROJ_NAME)'
 	@echo '************************************************************'
 	@echo ''
 
