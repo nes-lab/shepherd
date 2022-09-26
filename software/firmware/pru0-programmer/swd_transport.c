@@ -89,19 +89,19 @@ static int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8
 }
 
 /* Writes a word during host to target phase of SWD transfer */
-static int data_write(uint32_t *data)
+static int data_write(uint32_t *const data)
 {
     int parity_cnt = 0;
     for (int i = 0; i < TP_TCV_WIDTH; i++)
     {
-        if (*data & (1 << i))
+        if (*data & (1u << i))
         {
             parity_cnt++;
             iow(GPIO_STATE_HIGH);
         }
         else iow(GPIO_STATE_LOW);
     }
-    if (parity_cnt % 2) iow(GPIO_STATE_HIGH);
+    if (parity_cnt % 2u) iow(GPIO_STATE_HIGH);
     else iow(GPIO_STATE_LOW);
     return 0;
 }
@@ -133,7 +133,7 @@ static int data_read(uint32_t *data)
  *
  * @returns result of transfer in terms of SWD acknowledgment
  */
-static int transceive(swd_header_t *header, uint32_t *data)
+static int transceive(swd_header_t *const header, uint32_t *data)
 {
     int i;
     int rc;
@@ -194,15 +194,15 @@ int transport_reset(void)
     sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
     sys_gpio_set(pins.swdio, GPIO_STATE_HIGH);
 
-    for (int i = 0; i < 56; i++) { iow(1); }
+    for (int i = 0; i < 56; i++) { iow(GPIO_STATE_HIGH); }
 
     /* JTAG -> SWD sequence */
     uint16_t tmp = 0x79E7;
     for (int i = 15; i >= 0; i--) { iow((tmp >> i) & 0x01); }
 
-    for (int i = 0; i < 56; i++) { iow(1); }
+    for (int i = 0; i < 56; i++) { iow(GPIO_STATE_HIGH); }
 
-    for (int i = 0; i < 16; i++) { iow(0); }
+    for (int i = 0; i < 16; i++) { iow(GPIO_STATE_LOW); }
     return 0;
 }
 
