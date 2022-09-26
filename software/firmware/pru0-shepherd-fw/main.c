@@ -1,10 +1,6 @@
-#include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include <pru_cfg.h>
-#include <pru_iep.h>
-#include <rsc_types.h>
 
 #include "gpio.h"
 #include "iep.h"
@@ -18,36 +14,20 @@
 #include "ringbuffer.h"
 #include "shepherd_config.h"
 
+#include "calibration.h"
+#include "sampling.h"
+#include "virtual_converter.h"
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
-//#define ENABLE_PROGRAMMER	// reduces firmware by ~800 Byte (dummy for now)
-#define ENABLE_VSOURCE_TESTS // reduces firmware by ~500 Byte
-#define ENABLE_SAMPLING      // reduces firmware by ~20 kByte (no smpl, vhrv, vcnv)
-
-/* TODO: granularity not needed for now, later it may allow programmer + emulation (for testbed w/o harvester)
-#define ENABLE_VHARVESTER
-#define ENABLE_VCONVERTER
-#if defined(ENABLE_VHARVESTER) || defined(ENABLE_VCONVERTER)
-#define ENABLE_SAMPLING
-#endif
-*/
-
-#ifdef ENABLE_SAMPLING
-  #include "sampling.h"
-#endif
-
-#if defined(ENABLE_SAMPLING) || defined(ENABLE_VSOURCE_TESTS)
-  #include "calibration.h"
-  #include "virtual_converter.h"
-#endif
+#define ENABLE_DBG_VSOURCE // disabling increases firmware-size? (~150 byte)
 
 #ifdef ENABLE_DEBUG_MATH_FN
   #include "math64_safe.h"
 #endif
 
-#ifdef ENABLE_PROGRAMMER
-  #include "programmer.h"
+#ifdef ENABLE_DBG_VSOURCE
+  #include "virtual_harvester.h"
 #endif
 
 /* Used to signal an invalid buffer index */
@@ -56,7 +36,7 @@
 // alternative message channel specially dedicated for errors
 static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
 {
-    // do not care for sent-status, newest error wins IF different from previous
+    // do not care for sent-status -> the newest error wins IF different from previous
     if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value[0] == value)))
     {
         shared_mem->pru0_msg_error.unread   = 0u;
@@ -66,8 +46,7 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
         shared_mem->pru0_msg_error.unread   = 1u;
     }
-    if (type >= 0xE0)
-        __delay_cycles(200U / TIMER_TICK_NS); // 200 ns
+    if (type >= 0xE0) __delay_cycles(200U / TIMER_TICK_NS); // 200 ns
 }
 
 // send returns a 1 on success
@@ -106,21 +85,21 @@ static bool_ft receive_message(volatile struct SharedMem *const shared_mem, stru
 }
 
 static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
-                                   struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
+                                   struct SampleBuffer *const buffers_far, const uint32_t last_buffer_idx)
 {
-    uint32_t             next_buffer_idx;
-    uint8_t              tmp_idx;
-    struct SampleBuffer *next_buffer;
+    uint32_t next_buffer_idx;
+    uint8_t  tmp_idx;
 
     /* Fetch and prepare new buffer from ring */
-    if (ring_get(free_buffers_ptr, &tmp_idx) > 0)
+    if (ring_get(free_buffers_ptr, &tmp_idx) > 0u)
     {
-        next_buffer_idx                      = (uint32_t) tmp_idx;
-        next_buffer                          = buffers_far + next_buffer_idx;
-        next_buffer->timestamp_ns            = shared_mem->next_buffer_timestamp_ns;
-        shared_mem->last_sample_timestamp_ns = shared_mem->next_buffer_timestamp_ns;
+        next_buffer_idx                         = (uint32_t) tmp_idx;
+        shared_mem->sample_buffer               = buffers_far + next_buffer_idx;
+        shared_mem->sample_buffer->canary       = 0x0F0F0F0Fu;
+        shared_mem->sample_buffer->timestamp_ns = shared_mem->next_buffer_timestamp_ns;
+        shared_mem->last_sample_timestamp_ns    = shared_mem->next_buffer_timestamp_ns;
 
-        if (shared_mem->next_buffer_timestamp_ns == 0)
+        if (shared_mem->next_buffer_timestamp_ns == 0u)
         {
             /* debug-output for a wrong timestamp */
             send_status(shared_mem, MSG_ERR_TIMESTAMP, 0);
@@ -128,17 +107,19 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
     }
     else
     {
-        next_buffer_idx = NO_BUFFER;
-        send_status(shared_mem, MSG_ERR_NOFREEBUF, 0);
+        next_buffer_idx           = NO_BUFFER;
+        shared_mem->sample_buffer = NULL;
+        send_status(shared_mem, MSG_ERR_NOFREEBUF, 0u);
     }
 
-    /* Lock access to gpio_edges structure to allow swap without inconsistency */
+    /* Lock the access to gpio_edges structure to allow swap without inconsistency */
     simple_mutex_enter(&shared_mem->gpio_edges_mutex);
 
     if (next_buffer_idx != NO_BUFFER)
     {
-        shared_mem->gpio_edges      = &next_buffer->gpio_edges;
-        shared_mem->gpio_edges->idx = 0;
+        shared_mem->gpio_edges         = &shared_mem->sample_buffer->gpio_edges;
+        shared_mem->gpio_edges->idx    = 0u;
+        shared_mem->gpio_edges->canary = 0x0F0F0F0Fu;
     }
     else
     {
@@ -148,10 +129,10 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
     simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 
     /* If we had a valid buffer, return it to host */
-    if (current_buffer_idx != NO_BUFFER)
+    if (last_buffer_idx != NO_BUFFER)
     {
-        (buffers_far + current_buffer_idx)->len = analog_sample_idx; // TODO: could be removed in future, not possible by design
-        send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx, 0);
+        (buffers_far + last_buffer_idx)->len = ADC_SAMPLES_PER_BUFFER; // TODO: could be removed in future, not used ATM
+        send_message(shared_mem, MSG_BUF_FROM_PRU, last_buffer_idx, ADC_SAMPLES_PER_BUFFER);
     }
 
     return next_buffer_idx;
@@ -170,63 +151,35 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
     {
         const uint32_t r32 = factor * factor;
         result             = r32;
-    } // ~ 28 ns, limits 0..65535
-    else if (mode == 2)
-        result = factor * factor; // ~ 34 ns, limits 0..65535
-    else if (mode == 3)
-        result = (uint64_t) factor * factor; // ~ 42 ns, limits 0..65535 -> wrong behaviour!!!
-    else if (mode == 4)
-        result = factor * (uint64_t) factor; // ~ 48 ns, limits 0..(2^32-1) -> works fine?
-    else if (mode == 5)
-        result = (uint64_t) factor * (uint64_t) factor; // ~ 54 ns, limits 0..(2^32-1)
-    else if (mode == 6)
-        result = ((uint64_t) factor) * ((uint64_t) factor); // ~ 54 ns, limits 0..(2^32-1)
-    else if (mode == 11)
-        result = factor * f2; // ~ 3000 - 4800 - 6400 ns, limits 0..(2^32-1) -> time depends on size (4, 16, 32 bit)
-    else if (mode == 12)
-        result = f2 * factor; // same as above
-    else if (mode == 13)
-        result = f2 * f2; // same as above
-    else if (mode == 14)
-        result = mul64(f2, f2); //
-    else if (mode == 15)
-        result = mul64(factor, f2); //
-    else if (mode == 16)
-        result = mul64(f2, factor); //
-    else if (mode == 17)
-        result = mul64((uint64_t) factor, f2); //
-    else if (mode == 18)
-        result = mul64(f2, (uint64_t) factor); //
-    else if (mode == 21)
-        result = factor + f2; // ~ 84 ns, limits 0..(2^31-1) or (2^63-1)
-    else if (mode == 22)
-        result = f2 + factor; // ~ 90 ns, limits 0..(2^31-1) or (2^63-1)
-    else if (mode == 23)
-        result = f2 + f3; // ~ 92 ns, limits 0..(2^31-1) or (2^63-1)
-    else if (mode == 24)
-        result = f2 + 1111ull; // ~ 102 ns, overflow at 2^32
-    else if (mode == 25)
-        result = 1111ull + f2; // ~ 110 ns, overflow at 2^32
-    else if (mode == 26)
-        result = f2 + (uint64_t) 1111u; //
-    else if (mode == 27)
-        result = add64(f2, f3); //
-    else if (mode == 28)
-        result = add64(factor, f3); //
-    else if (mode == 29)
-        result = add64(f3, factor); //
-    else if (mode == 31)
-        result = factor - f3; // ~ 100 ns, limits 0..(2^32-1)
-    else if (mode == 32)
-        result = f2 - factor; // ~ 104 ns, limits 0..(2^64-1)
-    else if (mode == 33)
-        result = f2 - f3; // same
-    else if (mode == 41)
-        result = ((uint64_t) (factor) << 32u); // ~ 128 ns, limit (2^32-1)
-    else if (mode == 42)
-        result = (f2 >> 32u); // ~ 128 ns, also works
-    else if (mode == 51)
-        result = get_num_size_as_bits(factor); //
+    }                                                                       // ~ 28 ns, limits 0..65535
+    else if (mode == 2) result = factor * factor;                           // ~ 34 ns, limits 0..65535
+    else if (mode == 3) result = (uint64_t) factor * factor;                // ~ 42 ns, limits 0..65535 -> wrong behavior!!!
+    else if (mode == 4) result = factor * (uint64_t) factor;                // ~ 48 ns, limits 0..(2^32-1) -> works fine?
+    else if (mode == 5) result = (uint64_t) factor * (uint64_t) factor;     // ~ 54 ns, limits 0..(2^32-1)
+    else if (mode == 6) result = ((uint64_t) factor) * ((uint64_t) factor); // ~ 54 ns, limits 0..(2^32-1)
+    else if (mode == 11) result = factor * f2;                              // ~ 3000 - 4800 - 6400 ns, limits 0..(2^32-1) -> time depends on size (4, 16, 32 bit)
+    else if (mode == 12) result = f2 * factor;                              // same as above
+    else if (mode == 13) result = f2 * f2;                                  // same as above
+    else if (mode == 14) result = mul64(f2, f2);                            //
+    else if (mode == 15) result = mul64(factor, f2);                        //
+    else if (mode == 16) result = mul64(f2, factor);                        //
+    else if (mode == 17) result = mul64((uint64_t) factor, f2);             //
+    else if (mode == 18) result = mul64(f2, (uint64_t) factor);             //
+    else if (mode == 21) result = factor + f2;                              // ~ 84 ns, limits 0..(2^31-1) or (2^63-1)
+    else if (mode == 22) result = f2 + factor;                              // ~ 90 ns, limits 0..(2^31-1) or (2^63-1)
+    else if (mode == 23) result = f2 + f3;                                  // ~ 92 ns, limits 0..(2^31-1) or (2^63-1)
+    else if (mode == 24) result = f2 + 1111ull;                             // ~ 102 ns, overflow at 2^32
+    else if (mode == 25) result = 1111ull + f2;                             // ~ 110 ns, overflow at 2^32
+    else if (mode == 26) result = f2 + (uint64_t) 1111u;                    //
+    else if (mode == 27) result = add64(f2, f3);                            //
+    else if (mode == 28) result = add64(factor, f3);                        //
+    else if (mode == 29) result = add64(f3, factor);                        //
+    else if (mode == 31) result = factor - f3;                              // ~ 100 ns, limits 0..(2^32-1)
+    else if (mode == 32) result = f2 - factor;                              // ~ 104 ns, limits 0..(2^64-1)
+    else if (mode == 33) result = f2 - f3;                                  // same
+    else if (mode == 41) result = ((uint64_t) (factor) << 32u);             // ~ 128 ns, limit (2^32-1)
+    else if (mode == 42) result = (f2 >> 32u);                              // ~ 128 ns, also works
+    else if (mode == 51) result = get_num_size_as_bits(factor);             //
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     return result;
 }
@@ -242,10 +195,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
     if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
     {
         uint32_t res;
+#ifdef ENABLE_DEBUG_MATH_FN
         uint64_t res64;
+#endif
         switch (msg_in.type)
         {
-#ifdef ENABLE_SAMPLING
+
             case MSG_DBG_ADC:
                 res = sample_dbg_adc(msg_in.value[0]);
                 send_message(shared_mem, MSG_DBG_ADC, res, 0);
@@ -258,55 +213,59 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
             case MSG_DBG_GP_BATOK:
                 set_batok_pin(shared_mem, msg_in.value[0] > 0);
                 return 1U;
-#endif // ENABLE_SAMPLING
 
             case MSG_DBG_GPI:
                 send_message(shared_mem, MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
                 return 1U;
 
-#ifdef ENABLE_VSOURCE_TESTS
-            case MSG_DBG_VSOURCE_P_INP: // TODO: these can be done with normal emulator instantiation
+#ifdef ENABLE_DBG_VSOURCE
+            case MSG_DBG_VSRC_HRV_P_INP:
+                sample_iv_harvester(&msg_in.value[0], &msg_in.value[1]);
+                // run cnv right afterwards
+            case MSG_DBG_VSRC_P_INP: // TODO: these can be done with normal emulator instantiation
+                // TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-                send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t) (get_P_input_fW() >> 32u), (uint32_t) get_P_input_fW());
+                send_message(shared_mem, MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u), (uint32_t) get_P_input_fW());
                 return 1u;
 
-            case MSG_DBG_VSOURCE_P_OUT:
+            case MSG_DBG_VSRC_P_OUT:
                 converter_calc_out_power(msg_in.value[0]);
-                send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t) (get_P_output_fW() >> 32u), (uint32_t) get_P_output_fW());
+                send_message(shared_mem, MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u), (uint32_t) get_P_output_fW());
                 return 1u;
 
-            case MSG_DBG_VSOURCE_V_CAP:
+            case MSG_DBG_VSRC_V_CAP:
                 converter_update_cap_storage();
-                send_message(shared_mem, MSG_DBG_VSOURCE_V_CAP, get_V_intermediate_uV(), 0);
+                send_message(shared_mem, MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_V_OUT:
+            case MSG_DBG_VSRC_V_OUT:
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSOURCE_V_OUT, res, 0);
+                send_message(shared_mem, MSG_DBG_VSRC_V_OUT, res, 0);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_INIT:
+            case MSG_DBG_VSRC_INIT:
                 calibration_initialize(&shared_mem->calibration_settings);
                 converter_initialize(&shared_mem->converter_settings);
-                send_message(shared_mem, MSG_DBG_VSOURCE_INIT, 0, 0);
+                harvester_initialize(&shared_mem->harvester_settings);
+                send_message(shared_mem, MSG_DBG_VSRC_INIT, 0, 0);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_CHARGE:
+            case MSG_DBG_VSRC_CHARGE:
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
                 converter_calc_out_power(0u);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSOURCE_CHARGE, get_V_intermediate_uV(), res);
+                send_message(shared_mem, MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
 
-            case MSG_DBG_VSOURCE_DRAIN:
+            case MSG_DBG_VSRC_DRAIN:
                 converter_calc_inp_power(0u, 0u);
                 converter_calc_out_power(msg_in.value[0]);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSOURCE_DRAIN, get_V_intermediate_uV(), res);
+                send_message(shared_mem, MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
-#endif // ENABLE_VSOURCE_TESTS
+#endif
 
 #ifdef ENABLE_DEBUG_MATH_FN
             case MSG_DBG_FN_TESTS:
@@ -346,12 +305,13 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
     return 0u;
 }
 
-void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
-                struct SampleBuffer *const buffers_far) // TODO: should be volatile, also for programmer and more
+void event_loop(volatile struct SharedMem *const shared_mem,
+                struct RingBuffer *const         free_buffers_ptr,
+                struct SampleBuffer *const       buffers_far) // TODO: should be volatile, also for programmer and more
 {
-    uint32_t          sample_buf_idx  = NO_BUFFER;
-    enum ShepherdMode shepherd_mode   = (enum ShepherdMode) shared_mem->shepherd_mode;
-    uint32_t          iep_tmr_cmp_sts = 0;
+    uint32_t          sample_buf_idx = NO_BUFFER;
+    enum ShepherdMode shepherd_mode  = (enum ShepherdMode) shared_mem->shepherd_mode;
+    uint32_t          iep_tmr_cmp_sts;
 
     while (1)
     {
@@ -361,7 +321,7 @@ void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *
         while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()))
             ; // read iep-reg -> 12 cycles, 60 ns
 
-        // Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
+        // pre-trigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
         {
             GPIO_OFF(SPI_CS_ADCs_MASK);
@@ -372,18 +332,19 @@ void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *
             // TODO: make sure that 1 us passes before trying to get that value
         }
         // timestamp pru0 to monitor utilization
-        const uint32_t timer_start = iep_get_cnt_val();
+        const uint32_t timer_start = iep_get_cnt_val() - 30u; // rough estimate on
 
         // Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
         if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
         {
             /* Clear Timer Compare 0 and forward it to pru1 */
-            //GPIO_TOGGLE(DEBUG_PIN1_MASK);
+            GPIO_TOGGLE(DEBUG_PIN0_MASK);
             shared_mem->cmp0_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
             /* prepare a new buffer-cycle */
             shared_mem->analog_sample_counter = 0u;
-            //GPIO_TOGGLE(DEBUG_PIN1_MASK);
+            /* without a buffer: only show short Signal for new Cycle */
+            if (sample_buf_idx == NO_BUFFER) GPIO_TOGGLE(DEBUG_PIN0_MASK);
         }
 
         // Sample, swap buffer and receive messages
@@ -392,58 +353,65 @@ void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *
             /* Clear Timer Compare 1 and forward it to pru1 */
             shared_mem->cmp1_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
+            uint32_t inc_done = 0u;
 
             /* The actual sampling takes place here */
-#ifdef ENABLE_SAMPLING
             if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
             {
-                //GPIO_ON(DEBUG_PIN0_MASK);
-                sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
-                //GPIO_OFF(DEBUG_PIN0_MASK);
+                GPIO_ON(DEBUG_PIN1_MASK);
+                inc_done = sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
+                GPIO_OFF(DEBUG_PIN1_MASK);
             }
-#endif // ENABLE_SAMPLING
-            shared_mem->analog_sample_counter++;
+
+            /* counter-incrementation, allow premature incrementation by sub-sampling_fn, use return_value to register it */
+            if (!inc_done)
+                shared_mem->analog_sample_counter++;
 
             if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
             {
                 /* Did the Linux kernel module ask for reset? */
-                if (shared_mem->shepherd_state == STATE_RESET)
-                    return;
+                if (shared_mem->shepherd_state == STATE_RESET) return;
 
-#ifdef ENABLE_SAMPLING
                 /* PRU tries to exchange a full buffer for a fresh one if measurement is running */
-                if ((shared_mem->shepherd_state == STATE_RUNNING) && (shared_mem->shepherd_mode != MODE_DEBUG))
+                if ((shared_mem->shepherd_state == STATE_RUNNING) &&
+                    (shared_mem->shepherd_mode != MODE_DEBUG))
                 {
-                    sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
-                                                        shared_mem->analog_sample_counter);
-                    GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
+                    GPIO_ON(DEBUG_PIN1_MASK);
+                    sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx);
+                    GPIO_OFF(DEBUG_PIN1_MASK);
                 }
-#endif // ENABLE_SAMPLING
+                /* pre-reset counter, so pru1 can fetch data */
+                shared_mem->analog_sample_counter = 0u;
+                shared_mem->analog_value_index    = NO_BUFFER;
             }
             else
             {
                 /* only handle kernel-communications if this is not the last sample */
-                //GPIO_ON(DEBUG_PIN0_MASK);
+                GPIO_ON(DEBUG_PIN1_MASK);
                 handle_kernel_com(shared_mem, free_buffers_ptr);
-                //GPIO_OFF(DEBUG_PIN0_MASK);
+                GPIO_OFF(DEBUG_PIN1_MASK);
             }
         }
 
-        const uint32_t timer_ticks = iep_get_cnt_val() - timer_start;
-        if (timer_ticks > shared_mem->pru0_max_ticks_per_sample)
-        {
-            shared_mem->pru0_max_ticks_per_sample = timer_ticks;
-        }
+        // record loop-duration -> gets further processed by pru1
+        shared_mem->pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
+        /*
+		GPIO_OFF(DEBUG_PIN0_MASK);
+		if (shared_mem->pru0_ticks_per_sample >= 1950u)
+		{
+			// TODO: debug-artifact to find long loop-cycles
+			GPIO_TOGGLE(DEBUG_PIN0_MASK);
+		}*/
     }
 }
 
-void main(void)
+int main(void)
 {
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     static struct RingBuffer         free_buffers;
 
     /*
-	 * The shared mem is dynamically allocated and we have to inform user space
+	 * The shared mem is dynamically allocated -> we have to inform user space
 	 * about the address and size via sysfs, which exposes parts of the
 	 * shared_mem structure.
 	 * Do this initialization early! The kernel module relies on it.
@@ -470,6 +438,7 @@ void main(void)
     shared_memory->next_buffer_timestamp_ns          = 0u;
     shared_memory->analog_sample_counter             = 0u;
     shared_memory->gpio_edges                        = NULL;
+    shared_memory->sample_buffer                     = NULL;
 
     shared_memory->gpio_pin_state                    = 0u;
 
@@ -480,8 +449,8 @@ void main(void)
     /* NOTE: more inits are done in kernel */
     shared_memory->converter_settings.converter_mode = 0u;
     shared_memory->harvester_settings.algorithm      = 0u;
-    shared_memory->programmer_ctrl.state             = PRG_STATE_IDLE;
-    shared_memory->programmer_ctrl.target            = PRG_TARGET_NRF52;
+    shared_memory->programmer_ctrl.state             = 0u;
+    shared_memory->programmer_ctrl.protocol          = 0u;
 
     shared_memory->pru1_sync_outbox.unread           = 0u;
     shared_memory->pru1_sync_inbox.unread            = 0u;
@@ -495,27 +464,25 @@ void main(void)
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
 	 * are used to transfer the actual data between us and the Linux host.
 	 * This memory is requested from remoteproc via a carveout resource request
-	 * in our resourcetable
+	 * in our resource-table
 	 */
     struct SampleBuffer *const buffers_far           = (struct SampleBuffer *) resourceTable.shared_mem.pa;
 
-    /* Allow OCP master port access by the PRU so the PRU can read external memories */
-    CT_CFG.SYSCFG_bit.STANDBY_INIT                   = 0;
+    /* Allow OCP primary port access by the PRU so the PRU can read external memories */
+    CT_CFG.SYSCFG_bit.STANDBY_INIT                   = 0u;
 
     /* allow PRU1 to enter event-loop */
     shared_memory->cmp0_trigger_for_pru1             = 1u;
 
 reset:
-    send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, shared_memory->pru0_max_ticks_per_sample, 0);
-    shared_memory->pru0_max_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
+    send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
+    shared_memory->pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
     ring_init(&free_buffers);
 
-#ifdef ENABLE_SAMPLING
     GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     sample_init(shared_memory);
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-#endif // ENABLE_SAMPLING
 
     shared_memory->gpio_edges                = NULL;
     shared_memory->vsource_skip_gpio_logging = false;
@@ -524,16 +491,7 @@ reset:
     /* Make sure the mutex is clear */
     simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-#ifdef ENABLE_PROGRAMMER
-    if (shared_memory->programmer_ctrl.state == PRG_STATE_STARTING)
-    {
-        programmer(shared_memory, buffers_far);
-    }
-    else
-        event_loop(shared_memory, &free_buffers, buffers_far);
-#else
     event_loop(shared_memory, &free_buffers, buffers_far);
-#endif
 
     goto reset;
 }
