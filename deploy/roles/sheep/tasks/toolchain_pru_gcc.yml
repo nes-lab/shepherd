@@ -11,7 +11,7 @@
 
 - name: Download and extract pru gcc cross compiler
   ansible.builtin.unarchive:
-    src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.gz'
+    src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.xz'
     dest: "{{ gcc_pru_cc_path }}"
     remote_src: true
     mode: a+x
@@ -21,6 +21,12 @@
   retries: 3
   tags:
     - pru-tools
+
+- name: Apply Size-Hack for iMEM to make pru0 compile (fw not usable)
+  ansible.builtin.copy:
+    src: "{{ shepherd_install_path }}/software/firmware/lib/am335xl.pru0"
+    dest: "{{ PRU_GCC}}/pru-elf/lib/device-specs/"
+
 
 - name: Download pru software support package
   ansible.builtin.git:

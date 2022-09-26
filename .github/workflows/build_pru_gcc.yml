@@ -16,7 +16,7 @@ jobs:
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
       link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
-      link_pssp: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git"
+      link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
       PRU_GCC: "${{ github.workspace }}/pru-elf-2022.05.amd64"
       PRU_GCC_SUPPORT: "${{ github.workspace }}/pru-software-support-package"
@@ -35,7 +35,7 @@ jobs:
           mkdir -p ${{ env.PRU_GCC_SUPPORT }}
 
       - name: Download GCC cross-compiler for PRU
-        run: "sudo wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.xz --output-document=gcc-pru.tar.xz"
+        run: "wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.xz --output-document=gcc-pru.tar.xz"
       - name: Extract GCC cross-compiler
         run: "tar -xf gcc-pru.tar.xz"
         #run: "tar -xf gcc-pru.tar.xz -C ${{ env.PRU_GCC }}"
@@ -43,16 +43,17 @@ jobs:
       - name: Install PSSP dependency 🔧
         run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
 
+      - name: temporary size-hack for PRU0
+        run: cp software/firmware/lib/am335xl.pru0 $PRU_GCC/pru-elf/lib/device-specs/
 
-# TODO: still written for cgt, also change size of target
-#      - name: Build PRU0 🧱
-#        run: |
-#          export PATH=$PATH:$PRU_GCC
-#          sudo make
-#        working-directory: "software/firmware/pru0-shepherd-fw/"
+      - name: Build PRU0 🧱
+        run: |
+          export PATH=$PATH:$PRU_GCC
+          sudo make
+        working-directory: "software/firmware/pru0-shepherd-fw/"
 
-#      - name: Build PRU1 🧱
-#        run: |
-#          export PATH=$PATH:$PRU_GCC
-#          sudo make
-#        working-directory: "software/firmware/pru1-shepherd-fw/"
+      - name: Build PRU1 🧱
+        run: |
+          export PATH=$PATH:$PRU_GCC
+          sudo make
+        working-directory: "software/firmware/pru1-shepherd-fw/"
