@@ -30,6 +30,11 @@ jobs:
       - name: Install dependency
         run: sudo apt install build-essential
 
+      - name: prepare directories
+        run: |
+          mkdir -p ${{ env.PRU_GCC }}/bin
+          mkdir -p ${{ env.PRU_GCC_SUPPORT }}/bin
+
       - name: Download GCC cross-compiler for PRU
         run: "sudo wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.gz --output-document=gcc-pru.tar.gz"
         working-directory: $gcc_tools_path
