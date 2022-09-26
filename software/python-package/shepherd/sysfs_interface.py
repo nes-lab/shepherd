@@ -15,7 +15,6 @@ from typing import NoReturn
 from typing import Optional
 
 from shepherd import calibration_default
-from shepherd.calibration import CalibrationData
 
 from .calibration import CalibrationData
 
