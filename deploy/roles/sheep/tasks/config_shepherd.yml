@@ -2,7 +2,7 @@
 
 - name: Deploy example configuration
   ansible.builtin.copy:
-    src: "{{ repo_dir.stdout }}/software/python-package/{{ item }}"
+    src: "{{ shepherd_install_path }}/software/python-package/{{ item }}"
     dest: "{{ shepherd_config_path }}"
     force: false
     owner: "{{ ansible_user }}"
@@ -17,7 +17,7 @@
 
 - name: Deploy default configuration for launcher (harvest)
   ansible.builtin.copy:
-    src: "{{ repo_dir.stdout }}/software/python-package/example_config_harvester.yml"
+    src: "{{ shepherd_install_path }}/software/python-package/example_config_harvester.yml"
     dest: "{{ shepherd_config_path }}/config.yml"
     force: false
     owner: "{{ ansible_user }}"
