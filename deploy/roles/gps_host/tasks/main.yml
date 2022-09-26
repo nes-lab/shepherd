@@ -30,7 +30,7 @@
     src: "{{ item }}"
     dest: "/etc/shepherd/"
     mode: 0644
-  with_items:
+  loop:
     - chrony.conf
     - gpsd.conf
     - ublox_config.ubx  # TODO: this file seems still unused
@@ -44,7 +44,7 @@
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
     state: present
-  with_items:
+  loop:
     - {
       regexpress: "#?disable_uboot_overlay_video=.*$",
       replacement: "disable_uboot_overlay_video=1",
