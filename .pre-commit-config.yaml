@@ -1,0 +1,138 @@
+# install:
+#  pip3 install pre-commit
+#  sudo apt install cppcheck
+# run:
+#  pre-commit run --all-files
+# update deps:
+#  pre-commit autoupdate
+# TODO:
+# - auto-enable for repo on clone
+# - more hooks (clang-format,...) https://pre-commit.com/hooks.html
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-executables-have-shebangs
+      - id: detect-private-key
+      - id: mixed-line-ending
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: fix-byte-order-marker
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/psf/black
+    rev: 22.8.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-use-type-annotations
+      - id: python-no-log-warn
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.38.0
+    hooks:
+      - id: pyupgrade
+        args: ["--py38-plus"]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          # NOTE: entries are copy of .flake8-config-file -> for auto-install
+          ### Bugs
+          - flake8-bugbear
+          - flake8-secure-coding-standard
+          - flake8-bandit
+          - flake8-builtins
+
+          ### Clean Code
+          - flake8-comprehensions
+          - flake8-simplify
+          - flake8-eradicate
+          - flake8-commas
+
+          ### Limitations
+          - flake8-blind-except
+          - flake8-logging-format
+          - flake8-print
+
+          ### Documentation
+          - flake8-comments
+          # - flake8-docstrings
+          # - flake8-rst-docstrings
+
+          ### Test-Improvements
+          - flake8-assertive
+
+  - repo: https://github.com/ansible-community/ansible-lint.git
+    rev: v6.6.1
+    hooks:
+      - id: ansible-lint
+        files: \.(yaml|yml)$
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: 'v14.0.6'
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: "v1.3.5"
+    hooks:
+      - id: cppcheck
+        args:
+          - "--enable=all"
+          - "--std=c99"
+          - "--platform=unix32"
+          - "--verbose"
+          - "-q"
+          - "--max-ctu-depth=10"
+          - "-isoftware/firmware/_cgt233/"
+          - "-isoftware/firmware/_pssp57g/"
+          - "--suppress=unusedFunction"
+          - "--suppress=variableScope"
+          - "--suppress=unreadVariable"
+          - "--suppress=missingInclude"
+          - "--suppress=unmatchedSuppression"
+
+#     - id: clang-tidy
+#       args: [ "-checks=bugprone-,cert-,performance-,portability-"]
+# TODO: add more c-linters, but there are to many false positives
+
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: "v0.971"
+#    hooks:
+#      - id: mypy
+# TODO: activate mypy -> some work to fix type-annotations
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.2.1"
+    hooks:
+      - id: codespell
+        exclude: \.(sch|brd|lbr)$
+
+# TODO: github.com/PyCQA/pydocstyle
+# TODO: github.com/PyCQA/pylint
+
+# default_language_version:
+#    python: python3.8
