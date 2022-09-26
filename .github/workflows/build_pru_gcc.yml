@@ -31,14 +31,14 @@ jobs:
         run: sudo apt install build-essential
 
       - name: Download GCC cross-compiler for PRU
-        run: "sudo wget -q --tries 3 ${{ link_gcc }}${{ gcc_pru_cc_release }}.tar.gz --output-document=gcc-pru.tar.gz"
+        run: "sudo wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.gz --output-document=gcc-pru.tar.gz"
         working-directory: $gcc_tools_path
       - name: Extract GCC cross-compiler
         run: "tar -xf gcc-pru.tar.gz"
         working-directory: $gcc_tools_path
 
       - name: Install PSSP dependency 🔧
-        run: "git clone --branch ${{ gcc_pru_support_branch }} ${{ link_pssp }}"
+        run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
         working-directory: $gcc_tools_path
 
 # TODO: still written for cgt, also change size of target
