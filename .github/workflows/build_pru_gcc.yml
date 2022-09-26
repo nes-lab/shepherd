@@ -18,7 +18,7 @@ jobs:
       link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
       link_pssp: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git"
       # env for makefile
-      PRU_GCC: "${{ github.workspace }}/gcc-pru"
+      PRU_GCC: "${{ github.workspace }}/pru-elf-2022.05.amd64"
       PRU_GCC_SUPPORT: "${{ github.workspace }}/pru-software-support-package"
 
     steps:
@@ -35,9 +35,10 @@ jobs:
           mkdir -p ${{ env.PRU_GCC_SUPPORT }}
 
       - name: Download GCC cross-compiler for PRU
-        run: "sudo wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.gz --output-document=gcc-pru.tar.gz"
+        run: "sudo wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.xz --output-document=gcc-pru.tar.xz"
       - name: Extract GCC cross-compiler
-        run: "tar -xf gcc-pru.tar.gz"
+        run: "tar -xf gcc-pru.tar.xz"
+        #run: "tar -xf gcc-pru.tar.xz -C ${{ env.PRU_GCC }}"
 
       - name: Install PSSP dependency 🔧
         run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
