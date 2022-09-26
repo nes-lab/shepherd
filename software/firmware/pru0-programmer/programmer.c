@@ -5,8 +5,10 @@
 #include "sys_gpio.h"
 #include <stdint.h>
 
+#if !defined(SWD_SUPPORT) && !defined(SBW_SUPPORT)
+// select a primary programming-mode when none is chosen
 #define SWD_SUPPORT
-//#define SBW_SUPPORT
+#endif
 
 /* Writes block from hex file to target via driver */
 int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
@@ -54,7 +56,7 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     if (pc->target == PRG_TARGET_NRF52) drv = &nrf52_driver;
 #endif
 #ifdef SBW_SUPPORT
-    if (pc->target == PRG_TARGET_SBW) drv = &msp430fr_driver;
+    if (pc->target == PRG_TARGET_MSP430) drv = &msp430fr_driver;
 #endif
     else
     {

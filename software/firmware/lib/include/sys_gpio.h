@@ -119,14 +119,14 @@ static inline void check_gpio_test()
 
 typedef enum
 {
-    GPIO_DIR_OUT = 0,
-    GPIO_DIR_IN  = 1
+    GPIO_DIR_OUT = 0u,
+    GPIO_DIR_IN  = 1u
 } gpio_dir_t;
 
 typedef enum
 {
-    GPIO_STATE_LOW  = 0,
-    GPIO_STATE_HIGH = 1
+    GPIO_STATE_LOW  = 0u,
+    GPIO_STATE_HIGH = 1u
 } gpio_state_t;
 
 static inline void sys_gpio_cfg_dir(unsigned int pin, gpio_dir_t dir)

@@ -97,12 +97,12 @@ static int data_write(uint32_t *data)
         if (*data & (1 << i))
         {
             parity_cnt++;
-            iow(1);
+            iow(GPIO_STATE_HIGH);
         }
-        else iow(0);
+        else iow(GPIO_STATE_LOW);
     }
-    if (parity_cnt % 2) iow(1);
-    else iow(0);
+    if (parity_cnt % 2) iow(GPIO_STATE_HIGH);
+    else iow(GPIO_STATE_LOW);
     return 0;
 }
 
@@ -131,7 +131,7 @@ static int data_read(uint32_t *data)
  * @param header SWD header specifies port, address and direction of transfer
  * @param data pointer to source or destination of transfer
  *
- * @returns result of transfer in terms of SWD acknowledgement
+ * @returns result of transfer in terms of SWD acknowledgment
  */
 static int transceive(swd_header_t *header, uint32_t *data)
 {

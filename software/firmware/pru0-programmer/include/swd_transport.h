@@ -6,9 +6,9 @@
 typedef enum
 {
     /* Debug Port */
-    SWD_PORT_DP = 0,
+    SWD_PORT_DP = 0u,
     /* Memory Access Port */
-    SWD_PORT_AP = 1,
+    SWD_PORT_AP = 1u,
 } swd_port_t;
 
 /**

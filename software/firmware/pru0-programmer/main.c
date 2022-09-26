@@ -127,7 +127,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
                 struct SampleBuffer *const
                         buffers_far) // TODO: should be volatile, also for programmer and more
 {
-    uint32_t          iep_tmr_cmp_sts = 0;
+    uint32_t iep_tmr_cmp_sts = 0;
 
     while (1)
     {
@@ -188,7 +188,6 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 
         // record loop-duration -> gets further processed by pru1
         shared_mem->pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
-
     }
 }
 
