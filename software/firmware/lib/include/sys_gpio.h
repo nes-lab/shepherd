@@ -95,7 +95,6 @@ volatile __far Gpio CT_GPIO2 __attribute__((cregister("GPIO2", far), peripheral)
 volatile __far Gpio CT_GPIO3 __attribute__((cregister("GPIO3", far), peripheral));
 #endif
 
-
 /* Monitor GPIO from System / Linux:
     sudo su
     cd /sys/class/gpio
@@ -104,7 +103,6 @@ volatile __far Gpio CT_GPIO3 __attribute__((cregister("GPIO3", far), peripheral)
     echo in > direction
     cat value
  */
-
 
 static inline void check_gpio_test()
 {
@@ -116,5 +114,35 @@ static inline void check_gpio_test()
     else GPIO_OFF(BIT_SHIFT(P8_11));
 }
 
+typedef enum
+{
+    GPIO_DIR_OUT = 0,
+    GPIO_DIR_IN  = 1
+} gpio_dir_t;
+typedef enum
+{
+    GPIO_STATE_LOW  = 0,
+    GPIO_STATE_HIGH = 1
+} gpio_state_t;
+
+static inline void sys_gpio_cfg_dir(unsigned int pin, gpio_dir_t dir)
+{
+    if (dir == GPIO_DIR_OUT)
+        CT_GPIO0.GPIO_OE &= ~(1 << pin);
+    else
+        CT_GPIO0.GPIO_OE |= (1 << pin);
+}
+static inline void sys_gpio_set(unsigned int pin, gpio_state_t state)
+{
+    if (state)
+        CT_GPIO0.GPIO_SETDATAOUT = (1 << pin);
+    else
+        CT_GPIO0.GPIO_CLEARDATAOUT = (1 << pin);
+}
+
+static inline gpio_state_t sys_gpio_get(unsigned int pin)
+{
+    return (gpio_state_t) (CT_GPIO0.GPIO_DATAIN >> pin) & 1u;
+}
 
 #endif //PRU_SYS_GPIO_H_

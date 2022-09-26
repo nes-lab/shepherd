@@ -81,12 +81,10 @@ static ssize_t  sysfs_prog_state_store(struct kobject        *kobj,
 static ssize_t  sysfs_prog_state_show(struct kobject        *kobj,
                                       struct kobj_attribute *attr,
                                       char                  *buf);
-static ssize_t  sysfs_prog_protocol_store(struct kobject        *kobj,
-                                          struct kobj_attribute *attr,
-                                          const char *buffer, size_t count);
-static ssize_t  sysfs_prog_protocol_show(struct kobject        *kobj,
-                                         struct kobj_attribute *attr,
-                                         char                  *buf);
+
+static ssize_t  sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buffer, size_t count);
+static ssize_t  sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+
 static ssize_t  sysfs_prog_datarate_store(struct kobject        *kobj,
                                           struct kobj_attribute *attr,
                                           const char *buffer, size_t count);
@@ -147,30 +145,24 @@ struct kobj_attr_struct_s attr_pru_msg_system_settings = {
                              sysfs_pru_msg_system_store),
         .val_offset = 0};
 
-struct kobj_attr_struct_s attr_prog_state = {
-        .attr       = __ATTR(state, 0660, sysfs_prog_state_show, sysfs_prog_state_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, state)};
-struct kobj_attr_struct_s attr_prog_protocol = {
-        .attr       = __ATTR(protocol, 0660, sysfs_prog_protocol_show, sysfs_prog_protocol_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, protocol)};
-struct kobj_attr_struct_s attr_prog_datarate = {
-        .attr       = __ATTR(datarate, 0660, sysfs_SharedMem_show, sysfs_prog_datarate_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, datarate)};
-struct kobj_attr_struct_s attr_prog_datasize = {
-        .attr       = __ATTR(datasize, 0660, sysfs_SharedMem_show, sysfs_prog_datasize_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, datasize)};
-struct kobj_attr_struct_s attr_prog_pin_tck = {
-        .attr       = __ATTR(pin_tck, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tck)};
-struct kobj_attr_struct_s attr_prog_pin_tdio = {
-        .attr       = __ATTR(pin_tdio, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tdio)};
-struct kobj_attr_struct_s attr_prog_pin_tdo = {
-        .attr       = __ATTR(pin_tdo, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tdo)};
-struct kobj_attr_struct_s attr_prog_pin_tms = {
-        .attr       = __ATTR(pin_tms, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
-        .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tms)};
+
+struct kobj_attr_struct_s attr_prog_state                 = {.attr       = __ATTR(state, 0660, sysfs_prog_state_show, sysfs_prog_state_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, state)};
+struct kobj_attr_struct_s attr_prog_target                = {.attr       = __ATTR(target, 0660, sysfs_prog_target_show, sysfs_prog_target_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, target)};
+struct kobj_attr_struct_s attr_prog_datarate              = {.attr       = __ATTR(datarate, 0660, sysfs_SharedMem_show, sysfs_prog_datarate_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, datarate)};
+struct kobj_attr_struct_s attr_prog_datasize              = {.attr       = __ATTR(datasize, 0660, sysfs_SharedMem_show, sysfs_prog_datasize_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, datasize)};
+struct kobj_attr_struct_s attr_prog_pin_tck               = {.attr       = __ATTR(pin_tck, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tck)};
+struct kobj_attr_struct_s attr_prog_pin_tdio              = {.attr       = __ATTR(pin_tdio, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tdio)};
+struct kobj_attr_struct_s attr_prog_pin_tdo               = {.attr       = __ATTR(pin_tdo, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tdo)};
+struct kobj_attr_struct_s attr_prog_pin_tms               = {.attr       = __ATTR(pin_tms, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
+                                                .val_offset = offsetof(struct SharedMem, programmer_ctrl) + offsetof(struct ProgrammerCtrl, pin_tms)};
+
 
 struct kobj_attribute attr_sync_error =
         __ATTR(error, 0660, sysfs_sync_error_show, NULL);
@@ -210,7 +202,7 @@ static struct attribute_group attr_mem_group = {
 
 static struct attribute *pru_prog_attrs[] = {
         &attr_prog_state.attr.attr,
-        &attr_prog_protocol.attr.attr,
+        &attr_prog_target.attr.attr,
         &attr_prog_datarate.attr.attr,
         &attr_prog_datasize.attr.attr,
         &attr_prog_pin_tck.attr.attr,
@@ -552,7 +544,8 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
         int32_t  value_length;
         int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
-        if (ret != 1) return -EINVAL;
+        if (ret != 1)
+            return -EINVAL;
         writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
@@ -680,41 +673,38 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject        *kobj,
 }
 
 
-static ssize_t sysfs_prog_state_show(struct kobject        *kobj,
-                                     struct kobj_attribute *attr, char *buf)
+static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
     struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   value;
+    int32_t                    value;
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
     value             = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
-    if (value == 0)
+    if (value == PRG_STATE_IDLE)
         return sprintf(buf, "idle");
-    else if (value == 1)
+    else if (value == PRG_STATE_STARTING)
         return sprintf(buf, "starting");
-    else if (value == 2)
+    else if (value == PRG_STATE_INITIALIZING)
         return sprintf(buf, "initializing");
-    else if (value == 0xBAAAAAADu)
-        return sprintf(buf, "error");
+    else if (value < 0)
+        return sprintf(buf, "error (%d)", value);
     else
-        return sprintf(buf, "running - %u", value);
+        return sprintf(buf, "running - %d B written", value);
 }
 
-static ssize_t sysfs_prog_state_store(struct kobject        *kobj,
-                                      struct kobj_attribute *attr,
-                                      const char *buffer, size_t count)
+static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buffer, size_t count)
 {
     struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   value = 0u;
+    int32_t                    value = 0u;
     kobj_attr_wrapped                = container_of(attr, struct kobj_attr_struct_s, attr);
 
     if (strncmp(buffer, "start", 5) == 0)
-        value = 1;
+        value = PRG_STATE_STARTING;
     else if (strncmp(buffer, "stop", 4) == 0)
-        value = 0;
+        value = PRG_STATE_IDLE;
     else
         return -EINVAL;
 
-    if ((value > 0) && (pru_comm_get_state() != STATE_IDLE))
+    if ((value == PRG_STATE_STARTING) && (pru_comm_get_state() != STATE_IDLE))
         return -EBUSY;
     // TODO: kernel should test validity of struct (instead of pru) -> best place is here
 
@@ -722,7 +712,7 @@ static ssize_t sysfs_prog_state_store(struct kobject        *kobj,
     return count;
 }
 
-static ssize_t sysfs_prog_protocol_show(struct kobject        *kobj,
+static ssize_t sysfs_prog_target_show(struct kobject        *kobj,
                                         struct kobj_attribute *attr, char *buf)
 {
     struct kobj_attr_struct_s *kobj_attr_wrapped;
@@ -730,18 +720,16 @@ static ssize_t sysfs_prog_protocol_show(struct kobject        *kobj,
 
     switch (readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset))
     {
-        case 1:
-            return sprintf(buf, "swd");
-        case 2:
-            return sprintf(buf, "sbw");
-        case 3:
-            return sprintf(buf, "jtag");
+        case PRG_TARGET_NRF52:
+            return sprintf(buf, "nrf52");
+        case PRG_TARGET_MSP430:
+            return sprintf(buf, "msp430");
         default:
             return sprintf(buf, "unknown");
     }
 }
 
-static ssize_t sysfs_prog_protocol_store(struct kobject        *kobj,
+static ssize_t sysfs_prog_target_store(struct kobject        *kobj,
                                          struct kobj_attribute *attr,
                                          const char *buffer, size_t count)
 {
@@ -753,15 +741,13 @@ static ssize_t sysfs_prog_protocol_store(struct kobject        *kobj,
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-    if (strncmp(buffer, "swd", 3) == 0)
-        value = 1;
-    else if (strncmp(buffer, "sbw", 3) == 0)
-        value = 2;
-    else if (strncmp(buffer, "jtag", 4) == 0)
-        value = 3;
+    if (strncmp(buffer, "nrf52", 5) == 0)
+        value = PRG_TARGET_NRF52;
+    else if (strncmp(buffer, "msp430", 6) == 0)
+        value = PRG_TARGET_MSP430;
     else
     {
-        printk(KERN_INFO "shprd.k: setting programmer-protocol failed -> unknown value");
+        printk(KERN_INFO "shprd.k: setting programmer-target failed -> unknown value");
         return -EINVAL;
     }
 
@@ -830,7 +816,6 @@ static ssize_t sysfs_prog_pin_store(struct kobject        *kobj,
     writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     return count;
 }
-
 
 int sysfs_interface_init(void)
 {

@@ -15,6 +15,7 @@ from typing import NoReturn
 from typing import Optional
 
 from shepherd import calibration_default
+from shepherd.calibration import CalibrationData
 
 from .calibration import CalibrationData
 
@@ -393,27 +394,19 @@ def read_pru_msg() -> tuple:
     return msg_parts[0], msg_parts[1:]
 
 
-prog_attribs = [
-    "protocol",
-    "datarate",
-    "pin_tck",
-    "pin_tdio",
-    "pin_tdo",
-    "pin_tms",
-]
+prog_attribs = ["target", "datarate", "pin_tck", "pin_tdio", "pin_tdo", "pin_tms"]
 
 
 def write_programmer_ctrl(
-    protocol: str,
+    target: str,
     datarate: int,
     pin_tck: int,
     pin_tdio: int,
     pin_tdo: int = 0,
     pin_tms: int = 0,
 ):
-    if ("jtag" in protocol.lower()) and ((pin_tdo < 1) or (pin_tms < 1)):
-        raise SysfsInterfaceException("jtag needs 4 pins defined")
-    parameters = [protocol, datarate, pin_tck, pin_tdio, pin_tdo, pin_tms]
+    parameters = [target, datarate, pin_tck, pin_tdio, pin_tdo, pin_tms]
+
     for parameter in parameters[1:]:
         if (parameter < 0) or (parameter >= 2**32):
             raise SysfsInterfaceException(

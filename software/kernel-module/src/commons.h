@@ -73,6 +73,7 @@ enum ShepherdMode
     MODE_DEBUG,
     MODE_NONE
 };
+
 enum ShepherdState
 {
     STATE_UNKNOWN,
@@ -83,12 +84,31 @@ enum ShepherdState
     STATE_FAULT
 };
 
+enum ProgrammerState
+{
+    PRG_STATE_ERR_GENERIC  = -1,
+    PRG_STATE_ERR_OPEN     = -2,
+    PRG_STATE_ERR_WRITE    = -3,
+    PRG_STATE_ERR_VERIFY   = -4,
+    PRG_STATE_ERR_ERASE    = -5,
+    PRG_STATE_ERR_PARSE    = -6,
+    PRG_STATE_IDLE         = -0x70000001,
+    PRG_STATE_STARTING     = -0x70000002,
+    PRG_STATE_INITIALIZING = -0x70000003,
+};
+
+enum ProgrammerTarget
+{
+    PRG_TARGET_MSP430,
+    PRG_TARGET_NRF52,
+};
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl
 {
-    uint32_t state;        // 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
-    uint32_t protocol;     // 1: swd, 2: sbw, 3: jtag
+    int32_t  state; // <0: Programmer state, >0: number of bytes written
+    /* Target chip to be programmed */
+    uint32_t target;
     uint32_t datarate;     // baud
     uint32_t datasize;     // bytes
     uint32_t pin_tck;      // clock-output
@@ -96,7 +116,6 @@ struct ProgrammerCtrl
     uint32_t pin_tdo;      // data-output, only for JTAG
     uint32_t pin_tms;      // mode, only for JTAG
 } __attribute__((packed)); // TODO: pin_X can be u8, state/protocol u8,
-
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0
@@ -192,7 +211,6 @@ struct HarvesterConfig
     uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
 
-
 /* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg
 {
@@ -207,7 +225,6 @@ struct ProtoMsg
     /* Actual Content of message */
     uint32_t value[2];
 } __attribute__((packed));
-
 
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
 struct SyncMsg
