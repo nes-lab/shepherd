@@ -1073,7 +1073,7 @@ typedef struct
                       that  have met the criteria set in the PIN_CNF[n].SENSE
                                              registers  */
     uint32_t DETECTMODE; /*!< (@ 0x00000524) Select between default DETECT signal
-                          behaviour and LDETECT mode */
+                          behavior and LDETECT mode */
     uint32_t RESERVED1[118];
     uint32_t PIN_CNF[32]; /*!< (@ 0x00000700) Description collection:
                            Configuration of GPIO pins */

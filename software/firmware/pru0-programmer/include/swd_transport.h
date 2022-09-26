@@ -12,7 +12,7 @@ typedef enum
 } swd_port_t;
 
 /**
- * Reads a word from the specified address of the specified port. Checks for the acknowledgement
+ * Reads a word from the specified address of the specified port. Checks for the acknowledgment
  * and retries for given number of times or until the transfer is successful
  *
  * @param dst pointer to which result is written
@@ -25,7 +25,7 @@ typedef enum
 int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int retries);
 
 /**
- * Writes a word to the specified address of the specified port. Checks for the acknowledgement
+ * Writes a word to the specified address of the specified port. Checks for the acknowledgment
  * and retries for given number of times or until the transfer is successful
  *
  * @param data word to be written

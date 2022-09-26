@@ -1,5 +1,5 @@
-#include "programmer/swd_dap.h"
-#include "programmer/swd_transport.h"
+#include "swd_dap.h"
+#include "swd_transport.h"
 
 int dp_write(dp_reg_t reg, uint32_t val) { return transport_write(SWD_PORT_DP, reg, val, 5); }
 

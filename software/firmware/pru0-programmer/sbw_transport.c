@@ -37,7 +37,7 @@
  * the JTAG TMS, TDO and TDI signals over a two wire interface.
  */
 
-#include "programmer/sbw_transport.h"
+#include "sbw_transport.h"
 #include "delay.h"
 
 static gpio_state_t tclk_state = GPIO_STATE_LOW;

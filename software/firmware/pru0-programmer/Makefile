@@ -3,20 +3,18 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 folder_path := $(dir $(mkfile_path))
 PROJ_NAME = $(current_dir)
-FW_NAME = shepherd
+FW_NAME = programmer
 
-INCLUDE = --include_path=./include --include_path=../include
-
-VPATH = ./programmer
+INCLUDE = --include_path=./include
+INCLUDE += --include_path=../include
+INCLUDE += --include_path=../pru0-shepherd-fw/include
 
 SOURCES = $(notdir $(wildcard ./*.c))
-SOURCES += $(notdir $(wildcard ./programmer/*.c))
 
 # also add external files (./lib/src/)
 SOURCES += simple_lock.c
 SOURCES += iep.c
-SOURCES += intelhex.c
-
+SOURCES += ringbuffer.c
 #SOURCES += sys_gpio.h
 
 ASM_SOURCES = spi_transfer_pru.asm

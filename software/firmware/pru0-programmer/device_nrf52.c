@@ -1,11 +1,11 @@
 #include <stddef.h>
 
-#include "programmer/core_cm4.h"
-#include "programmer/device.h"
-#include "programmer/nrf52840.h"
-#include "programmer/nrf52840_bitfields.h"
-#include "programmer/swd_dap.h"
-#include "programmer/swd_transport.h"
+#include "core_cm4.h"
+#include "device.h"
+#include "nrf52840.h"
+#include "nrf52840_bitfields.h"
+#include "swd_dap.h"
+#include "swd_transport.h"
 
 /**
  * Writes a word to the specified address in memory. Note that this routine can NOT

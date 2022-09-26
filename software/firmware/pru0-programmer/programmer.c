@@ -1,7 +1,7 @@
 #include "programmer.h"
+#include "device.h"
 #include "intelhex.h"
-#include "programmer/device.h"
-#include "programmer/swd_transport.h"
+#include "swd_transport.h"
 #include "sys_gpio.h"
 #include <stdint.h>
 
@@ -36,7 +36,7 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     int                                   ret;
     ihex_mem_block_t                      block;
 
-    /* create more convinient access to structs */
+    /* create more convenient access to structs */
     const uint32_t *const                 fw = (uint32_t *) buffers_far;
     volatile struct ProgrammerCtrl *const pc =
             (struct ProgrammerCtrl *) &shared_mem->programmer_ctrl;

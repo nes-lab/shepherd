@@ -42,9 +42,9 @@
 
 #include "delay.h"
 
-#include "programmer/device.h"
-#include "programmer/sbw_jtag.h"
-#include "programmer/sbw_transport.h"
+#include "device.h"
+#include "sbw_jtag.h"
+#include "sbw_transport.h"
 
 #define ACTIVATE_MAGIC_PATTERN
 #define DISABLE_JTAG_SIGNATURE_WRITE 1
@@ -327,7 +327,7 @@ static int GetJtagID(uint16_t *jtag_id)
         for (i = 0; i < MAX_ENTRY_TRY; i++)
         {
             // if no JTAG ID is returns -> apply magic pattern to stop user cd
-            // excecution
+            // execution
             *jtag_id = magicPattern();
             if ((*jtag_id == 1) || (i >= MAX_ENTRY_TRY))
             {

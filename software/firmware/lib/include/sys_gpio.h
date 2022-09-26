@@ -122,6 +122,7 @@ typedef enum
     GPIO_DIR_OUT = 0,
     GPIO_DIR_IN  = 1
 } gpio_dir_t;
+
 typedef enum
 {
     GPIO_STATE_LOW  = 0,

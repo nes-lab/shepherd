@@ -1,4 +1,4 @@
-#include "programmer/swd_transport.h"
+#include "swd_transport.h"
 #include "delay.h"
 #include "sys_gpio.h"
 

@@ -41,8 +41,8 @@
 #include <stdint.h>
 
 #include "delay.h"
-#include "programmer/sbw_jtag.h"
-#include "programmer/sbw_transport.h"
+#include "sbw_jtag.h"
+#include "sbw_transport.h"
 #include "sys_gpio.h"
 
 void ResetTAP(void)
