@@ -122,15 +122,9 @@ static void tdo_sbw(void)
     sys_gpio_cfg_dir(pins.sbwtdio, GPIO_DIR_OUT);
 }
 
-void set_sbwtdio(gpio_state_t state)
-{
-    sys_gpio_set(pins.sbwtdio, state);
-}
+void set_sbwtdio(gpio_state_t state) { sys_gpio_set(pins.sbwtdio, state); }
 
-void set_sbwtck(gpio_state_t state)
-{
-    sys_gpio_set(pins.sbwtck, state);
-}
+void set_sbwtck(gpio_state_t state) { sys_gpio_set(pins.sbwtck, state); }
 
 void tmsl_tdil(void)
 {
@@ -190,14 +184,8 @@ gpio_state_t tmsh_tdil_tdo_rd(void)
 
 void clr_tclk_sbw(void)
 {
-    if (tclk_state == GPIO_STATE_HIGH)
-    {
-        tmsldh();
-    }
-    else
-    {
-        tmsl();
-    }
+    if (tclk_state == GPIO_STATE_HIGH) { tmsldh(); }
+    else { tmsl(); }
 
     sys_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
 
@@ -208,14 +196,8 @@ void clr_tclk_sbw(void)
 
 void set_tclk_sbw(void)
 {
-    if (tclk_state == GPIO_STATE_HIGH)
-    {
-        tmsldh();
-    }
-    else
-    {
-        tmsl();
-    }
+    if (tclk_state == GPIO_STATE_HIGH) { tmsldh(); }
+    else { tmsl(); }
     sys_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
 
     tdih();
@@ -223,12 +205,9 @@ void set_tclk_sbw(void)
     tclk_state = GPIO_STATE_HIGH;
 }
 
-gpio_state_t get_tclk(void)
-{
-    return tclk_state;
-}
+gpio_state_t get_tclk(void) { return tclk_state; }
 
-int sbw_transport_disconnect(void)
+int          sbw_transport_disconnect(void)
 {
     sys_gpio_cfg_dir(pins.sbwtdio, GPIO_DIR_IN);
     sys_gpio_cfg_dir(pins.sbwtck, GPIO_DIR_IN);

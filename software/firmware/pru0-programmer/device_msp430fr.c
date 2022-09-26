@@ -121,19 +121,12 @@ static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
 {
     // Check Init State at the beginning
     IR_Shift(IR_CNTRL_SIG_CAPTURE);
-    if (!(DR_Shift16(0) & 0x0301))
-        return SC_ERR_GENERIC;
+    if (!(DR_Shift16(0) & 0x0301)) return SC_ERR_GENERIC;
 
     clr_tclk_sbw();
     IR_Shift(IR_CNTRL_SIG_16BIT);
-    if (Format == F_WORD)
-    {
-        DR_Shift16(0x0500);
-    }
-    else
-    {
-        DR_Shift16(0x0510);
-    }
+    if (Format == F_WORD) { DR_Shift16(0x0500); }
+    else { DR_Shift16(0x0510); }
     IR_Shift(IR_ADDR_16BIT);
     DR_Shift20(Addr);
 
@@ -246,14 +239,8 @@ static int ExecutePOR_430Xv2(void)
     // disable Watchdog Timer on target device now by setting the HOLD signal
     // in the WDT_CNTRL register
     uint16_t id = IR_Shift(IR_CNTRL_SIG_CAPTURE);
-    if (id == JTAG_ID98)
-    {
-        WriteMem_430Xv2(F_WORD, 0x01CC, 0x5A80);
-    }
-    else
-    {
-        WriteMem_430Xv2(F_WORD, 0x015C, 0x5A80);
-    }
+    if (id == JTAG_ID98) { WriteMem_430Xv2(F_WORD, 0x01CC, 0x5A80); }
+    else { WriteMem_430Xv2(F_WORD, 0x015C, 0x5A80); }
 
     // Initialize Test Memory with default values to ensure consistency
     // between PC value and MAB (MAB is +2 after sync)
@@ -265,10 +252,7 @@ static int ExecutePOR_430Xv2(void)
 
     // Check if device is in Full-Emulation-State again and return status
     IR_Shift(IR_CNTRL_SIG_CAPTURE);
-    if (DR_Shift16(0) & 0x0301)
-    {
-        return (SC_ERR_NONE);
-    }
+    if (DR_Shift16(0) & 0x0301) { return (SC_ERR_NONE); }
 
     return (SC_ERR_GENERIC);
 }
@@ -286,25 +270,18 @@ static int SyncJtag_AssertPor(void)
     IR_Shift(IR_CNTRL_SIG_16BIT);
     DR_Shift16(0x1501); // Set device into JTAG mode + read
 
-    if ((IR_Shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID91) && (IR_Shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID99) && (IR_Shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID98))
+    if ((IR_Shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID91) &&
+        (IR_Shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID99) &&
+        (IR_Shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID98))
     {
         return (SC_ERR_GENERIC);
     }
     // wait for sync
-    while (!(DR_Shift16(0) & 0x0200) && i < 50)
-    {
-        i++;
-    };
+    while (!(DR_Shift16(0) & 0x0200) && i < 50) { i++; };
     // continues if sync was successful
-    if (i >= 50)
-    {
-        return (SC_ERR_GENERIC);
-    }
+    if (i >= 50) { return (SC_ERR_GENERIC); }
     // execute a Power-On-Reset
-    if (ExecutePOR_430Xv2() != SC_ERR_NONE)
-    {
-        return (SC_ERR_GENERIC);
-    }
+    if (ExecutePOR_430Xv2() != SC_ERR_NONE) { return (SC_ERR_GENERIC); }
 
     return (SC_ERR_NONE);
 }
@@ -336,7 +313,8 @@ static int GetJtagID(uint16_t *jtag_id)
         *jtag_id = (uint16_t) IR_Shift(IR_CNTRL_SIG_CAPTURE);
         delay_us(500);
         // break if a valid JTAG ID is being returned
-        if ((*jtag_id == JTAG_ID91) || (*jtag_id == JTAG_ID99) || (*jtag_id == JTAG_ID98)) //****************************
+        if ((*jtag_id == JTAG_ID91) || (*jtag_id == JTAG_ID99) ||
+            (*jtag_id == JTAG_ID98)) //****************************
         {
             break;
         }
@@ -356,10 +334,7 @@ static int GetJtagID(uint16_t *jtag_id)
                 // if magic pattern failed and 4 tries passed -> return status error
                 return (SC_ERR_GENERIC);
             }
-            else
-            {
-                break;
-            }
+            else { break; }
         }
         // For MSP430F5438 family mailbox is not functional in reset state.
         // Because of this issue the magicPattern is not usable on MSP430F5438
@@ -372,10 +347,7 @@ static int GetJtagID(uint16_t *jtag_id)
     {
         return (SC_ERR_NONE);
     }
-    else
-    {
-        return (SC_ERR_ET_DCDC_DEVID);
-    }
+    else { return (SC_ERR_ET_DCDC_DEVID); }
 }
 
 /**
@@ -390,10 +362,7 @@ static int GetCoreipIdXv2(uint16_t *core_id, uint32_t *device_id_ptr)
 {
     IR_Shift(IR_COREIP_ID);
     *core_id = DR_Shift16(0);
-    if (*core_id == 0)
-    {
-        return (SC_ERR_GENERIC);
-    }
+    if (*core_id == 0) { return (SC_ERR_GENERIC); }
     IR_Shift(IR_DEVICE_ID);
     *device_id_ptr = DR_Shift20(0);
     // The ID pointer is an un-scrambled 20bit value
@@ -410,10 +379,7 @@ static int GetCoreipIdXv2(uint16_t *core_id, uint32_t *device_id_ptr)
  */
 static int GetDevice_430Xv2(dev_dsc_t *dsc)
 {
-    if (GetJtagID(&dsc->jtag_id) != SC_ERR_NONE)
-    {
-        return SC_ERR_GENERIC;
-    }
+    if (GetJtagID(&dsc->jtag_id) != SC_ERR_NONE) { return SC_ERR_GENERIC; }
     if (IsLockKeyProgrammed() != SC_ERR_NONE) // Stop here if fuse is already blown
     {
         return STATUS_FUSEBLOWN;
@@ -422,10 +388,7 @@ static int GetDevice_430Xv2(dev_dsc_t *dsc)
     {
         return SC_ERR_GENERIC;
     }
-    if (SyncJtag_AssertPor() != SC_ERR_NONE)
-    {
-        return SC_ERR_GENERIC;
-    }
+    if (SyncJtag_AssertPor() != SC_ERR_NONE) { return SC_ERR_GENERIC; }
     // CPU is now in Full-Emulation-State
     // read DeviceId from memory
     dsc->device_id = ReadMem_430Xv2(F_WORD, dsc->device_id_ptr + 4);
@@ -472,14 +435,12 @@ static int ReleaseDevice_430Xv2(uint32_t Addr)
             shiftResult = IR_Shift(IR_CNTRL_SIG_RELEASE);
     }
 
-    if ((shiftResult == JTAG_ID91) || (shiftResult == JTAG_ID99) || (shiftResult == JTAG_ID98)) //****************************
+    if ((shiftResult == JTAG_ID91) || (shiftResult == JTAG_ID99) ||
+        (shiftResult == JTAG_ID98)) //****************************
     {
         return (SC_ERR_NONE);
     }
-    else
-    {
-        return (SC_ERR_GENERIC);
-    }
+    else { return (SC_ERR_GENERIC); }
 }
 
 /**
@@ -496,10 +457,7 @@ static int DisableMpu_430Xv2(void)
         newRegisterVal |= 0xA500;
         // unlock MPU for FR4xx/FR2xx
         WriteMem_430Xv2(F_WORD, FR4xx_LOCKREGISTER, newRegisterVal);
-        if ((ReadMem_430Xv2(F_WORD, FR4xx_LOCKREGISTER) & 0x3) == 0x0)
-        {
-            return SC_ERR_NONE;
-        }
+        if ((ReadMem_430Xv2(F_WORD, FR4xx_LOCKREGISTER) & 0x3) == 0x0) { return SC_ERR_NONE; }
         return SC_ERR_GENERIC;
     }
     else
@@ -511,19 +469,13 @@ static int DisableMpu_430Xv2(void)
         MPUCTL0             = ReadMem_430Xv2(F_WORD, 0x05A0);
 
         // check MPUENA bit: if MPU is not enabled just return no error
-        if ((MPUCTL0 & 0x1) == 0)
-        {
-            return (SC_ERR_NONE);
-        }
+        if ((MPUCTL0 & 0x1) == 0) { return (SC_ERR_NONE); }
         // check MPULOCK bit: if MPULOCK is set write access to all MPU
         // registers is disabled until a POR/BOR occurs
         if ((MPUCTL0 & 0x3) != 0x1)
         {
             // feed in magic pattern to stop code execution after BOR
-            if (i_WriteJmbIn16(STOP_DEVICE) == SC_ERR_GENERIC)
-            {
-                return (SC_ERR_GENERIC);
-            }
+            if (i_WriteJmbIn16(STOP_DEVICE) == SC_ERR_GENERIC) { return (SC_ERR_GENERIC); }
             // Apply BOR to reset the device
             set_sbwtck(GPIO_STATE_HIGH);
             delay_ms(20);
@@ -544,10 +496,7 @@ static int DisableMpu_430Xv2(void)
             // reset TAP state machine -> Run-Test/Idle
             ResetTAP();
             // get jtag control back
-            if (SC_ERR_GENERIC == SyncJtag_AssertPor())
-            {
-                return (SC_ERR_GENERIC);
-            }
+            if (SC_ERR_GENERIC == SyncJtag_AssertPor()) { return (SC_ERR_GENERIC); }
         }
         // MPU Registers are unlocked. MPU can now be disabled.
         // Set MPUENA = 0, write Fram MPUCTL0 key
@@ -555,10 +504,7 @@ static int DisableMpu_430Xv2(void)
 
         MPUCTL0 = ReadMem_430Xv2(F_WORD, 0x05A0);
         // now check if MPU is disabled
-        if ((MPUCTL0 & 0x1) == 0)
-        {
-            return SC_ERR_NONE;
-        }
+        if ((MPUCTL0 & 0x1) == 0) { return SC_ERR_NONE; }
         return SC_ERR_GENERIC;
     }
 }
@@ -586,8 +532,7 @@ static int open(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsigned int 
     sbw_transport_init(pin_sbwtck, pin_sbwtdio, f_clk);
     sbw_transport_connect();
 
-    if (GetDevice_430Xv2(&dsc) != SC_ERR_NONE)
-        return DRV_ERR_GENERIC;
+    if (GetDevice_430Xv2(&dsc) != SC_ERR_NONE) return DRV_ERR_GENERIC;
 
     /* Disables FRAM write protection */
     if (DisableMpu_430Xv2() != SC_ERR_NONE)
@@ -615,8 +560,7 @@ static int write(uint32_t address, uint32_t data)
         return DRV_ERR_PROTECTED;
     }
 #endif
-    if (WriteMem_430Xv2(F_WORD, (uint16_t) address, (uint16_t) data) != 0)
-        return DRV_ERR_GENERIC;
+    if (WriteMem_430Xv2(F_WORD, (uint16_t) address, (uint16_t) data) != 0) return DRV_ERR_GENERIC;
     return DRV_ERR_OK;
 }
 
@@ -642,10 +586,8 @@ static int verify(uint32_t address, uint32_t data)
 {
     uint16_t read_back = ReadMem_430Xv2(F_WORD, (uint16_t) address);
 
-    if ((data & 0xFFFF) == read_back)
-        return DRV_ERR_OK;
-    else
-        return DRV_ERR_VERIFY;
+    if ((data & 0xFFFF) == read_back) return DRV_ERR_OK;
+    else return DRV_ERR_VERIFY;
 }
 
 /* Emulates a flash erase by sequentially setting memory to 1s */
@@ -656,17 +598,13 @@ static int erase()
     {
         int ret = write(address, 0xFFFF);
 
-        if ((ret != DRV_ERR_OK) && (ret != DRV_ERR_PROTECTED))
-            return DRV_ERR_GENERIC;
+        if ((ret != DRV_ERR_OK) && (ret != DRV_ERR_PROTECTED)) return DRV_ERR_GENERIC;
     }
     return DRV_ERR_OK;
 }
 
 /* FRAM doesn't need erase before write -> just ignore function call */
-static int dummy_erase()
-{
-    return DRV_ERR_OK;
-}
+static int      dummy_erase() { return DRV_ERR_OK; }
 
 device_driver_t msp430fr_driver = {
         .open             = open,

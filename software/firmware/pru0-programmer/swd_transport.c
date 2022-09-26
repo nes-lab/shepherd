@@ -60,8 +60,7 @@ static void iotrn(gpio_dir_t dir)
     sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
     sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
-    if (dir == GPIO_DIR_OUT)
-        sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
+    if (dir == GPIO_DIR_OUT) sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
 
     __delay_var_cycles(clk_delay_cycles);
 }
@@ -82,11 +81,9 @@ static int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8
     int i;
     for (i = 1; i < 5; i++)
     {
-        if (*header & (0x01 << i))
-            bit_count++;
+        if (*header & (0x01 << i)) bit_count++;
     }
-    if (bit_count % 2)
-        *header |= (1 << 5);
+    if (bit_count % 2) *header |= (1 << 5);
 
     return 0;
 }
@@ -102,13 +99,10 @@ static int data_write(uint32_t *data)
             parity_cnt++;
             iow(1);
         }
-        else
-            iow(0);
+        else iow(0);
     }
-    if (parity_cnt % 2)
-        iow(1);
-    else
-        iow(0);
+    if (parity_cnt % 2) iow(1);
+    else iow(0);
     return 0;
 }
 
@@ -126,8 +120,7 @@ static int data_read(uint32_t *data)
         }
     }
     int parity = ior();
-    if ((parity_cnt % 2) != parity)
-        return -1;
+    if ((parity_cnt % 2) != parity) return -1;
     return 0;
 }
 
@@ -145,16 +138,10 @@ static int transceive(swd_header_t *header, uint32_t *data)
     int i;
     int rc;
 
-    for (i = 0; i < 8; i++)
-    {
-        iow((*header >> i) & 0x1);
-    }
+    for (i = 0; i < 8; i++) { iow((*header >> i) & 0x1); }
     iotrn(GPIO_DIR_IN);
     uint8_t ack = 0;
-    for (i = 0; i < 3; i++)
-    {
-        ack |= ior() << i;
-    }
+    for (i = 0; i < 3; i++) { ack |= ior() << i; }
     if (ack != SWD_ACK_OK)
     {
         iotrn(GPIO_DIR_OUT);
@@ -182,8 +169,7 @@ int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int re
 
     do {
         rc = transceive(&hdr, dst);
-        if (rc <= 0)
-            return rc;
+        if (rc <= 0) return rc;
         retries--;
     }
     while (retries > 0);
@@ -196,8 +182,7 @@ int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int r
     header_init(&hdr, port, SWD_RW_W, addr);
     do {
         rc = transceive(&hdr, &data);
-        if (rc <= 0)
-            return rc;
+        if (rc <= 0) return rc;
         retries--;
     }
     while (retries > 0);
@@ -209,27 +194,15 @@ int transport_reset(void)
     sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
     sys_gpio_set(pins.swdio, GPIO_STATE_HIGH);
 
-    for (int i = 0; i < 56; i++)
-    {
-        iow(1);
-    }
+    for (int i = 0; i < 56; i++) { iow(1); }
 
     /* JTAG -> SWD sequence */
     uint16_t tmp = 0x79E7;
-    for (int i = 15; i >= 0; i--)
-    {
-        iow((tmp >> i) & 0x01);
-    }
+    for (int i = 15; i >= 0; i--) { iow((tmp >> i) & 0x01); }
 
-    for (int i = 0; i < 56; i++)
-    {
-        iow(1);
-    }
+    for (int i = 0; i < 56; i++) { iow(1); }
 
-    for (int i = 0; i < 16; i++)
-    {
-        iow(0);
-    }
+    for (int i = 0; i < 16; i++) { iow(0); }
     return 0;
 }
 

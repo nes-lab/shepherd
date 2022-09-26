@@ -54,10 +54,12 @@
 #define NO_BUFFER (0xFFFFFFFF)
 
 // alternative message channel specially dedicated for errors
-static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value)
+static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type,
+                        const uint32_t value)
 {
     // do not care for sent-status, newest error wins IF different from previous
-    if (!((shared_mem->pru1_msg_error.type == type) && (shared_mem->pru1_msg_error.value[0] == value)))
+    if (!((shared_mem->pru1_msg_error.type == type) &&
+          (shared_mem->pru1_msg_error.value[0] == value)))
     {
         shared_mem->pru0_msg_error.unread   = 0u;
         shared_mem->pru0_msg_error.type     = type;
@@ -66,12 +68,12 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
         shared_mem->pru0_msg_error.unread   = 1u;
     }
-    if (type >= 0xE0)
-        __delay_cycles(200U / TIMER_TICK_NS); // 200 ns
+    if (type >= 0xE0) __delay_cycles(200U / TIMER_TICK_NS); // 200 ns
 }
 
 // send returns a 1 on success
-static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type, const uint32_t value1, const uint32_t value2)
+static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type,
+                            const uint32_t value1, const uint32_t value2)
 {
     if (shared_mem->pru0_msg_outbox.unread == 0)
     {
@@ -89,7 +91,8 @@ static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum Ms
 }
 
 // only one central hub should receive, because a message is only handed out once
-static bool_ft receive_message(volatile struct SharedMem *const shared_mem, struct ProtoMsg *const msg_container)
+static bool_ft receive_message(volatile struct SharedMem *const shared_mem,
+                               struct ProtoMsg *const           msg_container)
 {
     if (shared_mem->pru0_msg_inbox.unread >= 1)
     {
@@ -105,8 +108,11 @@ static bool_ft receive_message(volatile struct SharedMem *const shared_mem, stru
     return 0;
 }
 
-static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
-                                   struct SampleBuffer *const buffers_far, const uint32_t current_buffer_idx, const uint32_t analog_sample_idx)
+static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
+                                   struct RingBuffer *const         free_buffers_ptr,
+                                   struct SampleBuffer *const       buffers_far,
+                                   const uint32_t                   current_buffer_idx,
+                                   const uint32_t                   analog_sample_idx)
 {
     uint32_t             next_buffer_idx;
     uint8_t              tmp_idx;
@@ -140,17 +146,15 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem, 
         shared_mem->gpio_edges      = &next_buffer->gpio_edges;
         shared_mem->gpio_edges->idx = 0;
     }
-    else
-    {
-        shared_mem->gpio_edges = NULL;
-    }
+    else { shared_mem->gpio_edges = NULL; }
 
     simple_mutex_exit(&shared_mem->gpio_edges_mutex);
 
     /* If we had a valid buffer, return it to host */
     if (current_buffer_idx != NO_BUFFER)
     {
-        (buffers_far + current_buffer_idx)->len = analog_sample_idx; // TODO: could be removed in future, not possible by design
+        (buffers_far + current_buffer_idx)->len =
+                analog_sample_idx; // TODO: could be removed in future, not possible by design
         send_message(shared_mem, MSG_BUF_FROM_PRU, current_buffer_idx, 0);
     }
 
@@ -170,9 +174,8 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
     {
         const uint32_t r32 = factor * factor;
         result             = r32;
-    } // ~ 28 ns, limits 0..65535
-    else if (mode == 2)
-        result = factor * factor; // ~ 34 ns, limits 0..65535
+    }                                             // ~ 28 ns, limits 0..65535
+    else if (mode == 2) result = factor * factor; // ~ 34 ns, limits 0..65535
     else if (mode == 3)
         result = (uint64_t) factor * factor; // ~ 42 ns, limits 0..65535 -> wrong behaviour!!!
     else if (mode == 4)
@@ -182,62 +185,42 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
     else if (mode == 6)
         result = ((uint64_t) factor) * ((uint64_t) factor); // ~ 54 ns, limits 0..(2^32-1)
     else if (mode == 11)
-        result = factor * f2; // ~ 3000 - 4800 - 6400 ns, limits 0..(2^32-1) -> time depends on size (4, 16, 32 bit)
-    else if (mode == 12)
-        result = f2 * factor; // same as above
-    else if (mode == 13)
-        result = f2 * f2; // same as above
-    else if (mode == 14)
-        result = mul64(f2, f2); //
-    else if (mode == 15)
-        result = mul64(factor, f2); //
-    else if (mode == 16)
-        result = mul64(f2, factor); //
-    else if (mode == 17)
-        result = mul64((uint64_t) factor, f2); //
-    else if (mode == 18)
-        result = mul64(f2, (uint64_t) factor); //
-    else if (mode == 21)
-        result = factor + f2; // ~ 84 ns, limits 0..(2^31-1) or (2^63-1)
-    else if (mode == 22)
-        result = f2 + factor; // ~ 90 ns, limits 0..(2^31-1) or (2^63-1)
-    else if (mode == 23)
-        result = f2 + f3; // ~ 92 ns, limits 0..(2^31-1) or (2^63-1)
-    else if (mode == 24)
-        result = f2 + 1111ull; // ~ 102 ns, overflow at 2^32
-    else if (mode == 25)
-        result = 1111ull + f2; // ~ 110 ns, overflow at 2^32
-    else if (mode == 26)
-        result = f2 + (uint64_t) 1111u; //
-    else if (mode == 27)
-        result = add64(f2, f3); //
-    else if (mode == 28)
-        result = add64(factor, f3); //
-    else if (mode == 29)
-        result = add64(f3, factor); //
-    else if (mode == 31)
-        result = factor - f3; // ~ 100 ns, limits 0..(2^32-1)
-    else if (mode == 32)
-        result = f2 - factor; // ~ 104 ns, limits 0..(2^64-1)
-    else if (mode == 33)
-        result = f2 - f3; // same
-    else if (mode == 41)
-        result = ((uint64_t) (factor) << 32u); // ~ 128 ns, limit (2^32-1)
-    else if (mode == 42)
-        result = (f2 >> 32u); // ~ 128 ns, also works
-    else if (mode == 51)
-        result = get_num_size_as_bits(factor); //
+        result =
+                factor *
+                f2; // ~ 3000 - 4800 - 6400 ns, limits 0..(2^32-1) -> time depends on size (4, 16, 32 bit)
+    else if (mode == 12) result = f2 * factor;                  // same as above
+    else if (mode == 13) result = f2 * f2;                      // same as above
+    else if (mode == 14) result = mul64(f2, f2);                //
+    else if (mode == 15) result = mul64(factor, f2);            //
+    else if (mode == 16) result = mul64(f2, factor);            //
+    else if (mode == 17) result = mul64((uint64_t) factor, f2); //
+    else if (mode == 18) result = mul64(f2, (uint64_t) factor); //
+    else if (mode == 21) result = factor + f2;           // ~ 84 ns, limits 0..(2^31-1) or (2^63-1)
+    else if (mode == 22) result = f2 + factor;           // ~ 90 ns, limits 0..(2^31-1) or (2^63-1)
+    else if (mode == 23) result = f2 + f3;               // ~ 92 ns, limits 0..(2^31-1) or (2^63-1)
+    else if (mode == 24) result = f2 + 1111ull;          // ~ 102 ns, overflow at 2^32
+    else if (mode == 25) result = 1111ull + f2;          // ~ 110 ns, overflow at 2^32
+    else if (mode == 26) result = f2 + (uint64_t) 1111u; //
+    else if (mode == 27) result = add64(f2, f3);         //
+    else if (mode == 28) result = add64(factor, f3);     //
+    else if (mode == 29) result = add64(f3, factor);     //
+    else if (mode == 31) result = factor - f3;           // ~ 100 ns, limits 0..(2^32-1)
+    else if (mode == 32) result = f2 - factor;           // ~ 104 ns, limits 0..(2^64-1)
+    else if (mode == 33) result = f2 - f3;               // same
+    else if (mode == 41) result = ((uint64_t) (factor) << 32u); // ~ 128 ns, limit (2^32-1)
+    else if (mode == 42) result = (f2 >> 32u);                  // ~ 128 ns, also works
+    else if (mode == 51) result = get_num_size_as_bits(factor); //
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     return result;
 }
 #endif
 
-static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr)
+static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
+                                 struct RingBuffer *const         free_buffers_ptr)
 {
     struct ProtoMsg msg_in;
 
-    if (receive_message(shared_mem, &msg_in) == 0)
-        return 1u;
+    if (receive_message(shared_mem, &msg_in) == 0) return 1u;
 
     if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
     {
@@ -255,9 +238,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
                 sample_dbg_dac(msg_in.value[0]);
                 return 1u;
 
-            case MSG_DBG_GP_BATOK:
-                set_batok_pin(shared_mem, msg_in.value[0] > 0);
-                return 1U;
+            case MSG_DBG_GP_BATOK: set_batok_pin(shared_mem, msg_in.value[0] > 0); return 1U;
 #endif // ENABLE_SAMPLING
 
             case MSG_DBG_GPI:
@@ -267,12 +248,14 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 #ifdef ENABLE_VSOURCE_TESTS
             case MSG_DBG_VSOURCE_P_INP: // TODO: these can be done with normal emulator instantiation
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-                send_message(shared_mem, MSG_DBG_VSOURCE_P_INP, (uint32_t) (get_P_input_fW() >> 32u), (uint32_t) get_P_input_fW());
+                send_message(shared_mem, MSG_DBG_VSOURCE_P_INP,
+                             (uint32_t) (get_P_input_fW() >> 32u), (uint32_t) get_P_input_fW());
                 return 1u;
 
             case MSG_DBG_VSOURCE_P_OUT:
                 converter_calc_out_power(msg_in.value[0]);
-                send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT, (uint32_t) (get_P_output_fW() >> 32u), (uint32_t) get_P_output_fW());
+                send_message(shared_mem, MSG_DBG_VSOURCE_P_OUT,
+                             (uint32_t) (get_P_output_fW() >> 32u), (uint32_t) get_P_output_fW());
                 return 1u;
 
             case MSG_DBG_VSOURCE_V_CAP:
@@ -311,13 +294,12 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
 #ifdef ENABLE_DEBUG_MATH_FN
             case MSG_DBG_FN_TESTS:
                 res64 = debug_math_fns(msg_in.value[0], msg_in.value[1]);
-                send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t) (res64 >> 32u), (uint32_t) res64);
+                send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t) (res64 >> 32u),
+                             (uint32_t) res64);
                 return 1u;
 #endif //ENABLE_DEBUG_MATH_FN
 
-            default:
-                send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0);
-                return 0U;
+            default: send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0); return 0U;
         }
     }
     else
@@ -338,16 +320,15 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem, st
             // pipeline-test for msg-system
             send_status(shared_mem, MSG_TEST, msg_in.value[0]);
         }
-        else
-        {
-            send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0);
-        }
+        else { send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0); }
     }
     return 0u;
 }
 
-void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *const free_buffers_ptr,
-                struct SampleBuffer *const buffers_far) // TODO: should be volatile, also for programmer and more
+void event_loop(volatile struct SharedMem *const shared_mem,
+                struct RingBuffer *const         free_buffers_ptr,
+                struct SampleBuffer *const
+                        buffers_far) // TODO: should be volatile, also for programmer and more
 {
     uint32_t          sample_buf_idx  = NO_BUFFER;
     enum ShepherdMode shepherd_mode   = (enum ShepherdMode) shared_mem->shepherd_mode;
@@ -395,7 +376,8 @@ void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *
 
             /* The actual sampling takes place here */
 #ifdef ENABLE_SAMPLING
-            if ((sample_buf_idx != NO_BUFFER) && (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
+            if ((sample_buf_idx != NO_BUFFER) &&
+                (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
             {
                 //GPIO_ON(DEBUG_PIN0_MASK);
                 sample(shared_mem, buffers_far + sample_buf_idx, shepherd_mode);
@@ -407,15 +389,16 @@ void event_loop(volatile struct SharedMem *const shared_mem, struct RingBuffer *
             if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
             {
                 /* Did the Linux kernel module ask for reset? */
-                if (shared_mem->shepherd_state == STATE_RESET)
-                    return;
+                if (shared_mem->shepherd_state == STATE_RESET) return;
 
 #ifdef ENABLE_SAMPLING
                 /* PRU tries to exchange a full buffer for a fresh one if measurement is running */
-                if ((shared_mem->shepherd_state == STATE_RUNNING) && (shared_mem->shepherd_mode != MODE_DEBUG))
+                if ((shared_mem->shepherd_state == STATE_RUNNING) &&
+                    (shared_mem->shepherd_mode != MODE_DEBUG))
                 {
-                    sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far, sample_buf_idx,
-                                                        shared_mem->analog_sample_counter);
+                    sample_buf_idx =
+                            handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far,
+                                               sample_buf_idx, shared_mem->analog_sample_counter);
                     GPIO_TOGGLE(DEBUG_PIN1_MASK); // NOTE: desired user-feedback
                 }
 #endif // ENABLE_SAMPLING
@@ -448,7 +431,8 @@ void main(void)
 	 * shared_mem structure.
 	 * Do this initialization early! The kernel module relies on it.
 	 */
-    volatile struct SharedMem *const shared_memory   = (volatile struct SharedMem *) PRU_SHARED_MEM_STRUCT_OFFSET;
+    volatile struct SharedMem *const shared_memory =
+            (volatile struct SharedMem *) PRU_SHARED_MEM_STRUCT_OFFSET;
 
     // Initialize struct-Members Part A, must come first - this blocks PRU1!
     shared_memory->cmp0_trigger_for_pru1             = 0u; // Reset Token-System to init-values
@@ -497,16 +481,17 @@ void main(void)
 	 * This memory is requested from remoteproc via a carveout resource request
 	 * in our resourcetable
 	 */
-    struct SampleBuffer *const buffers_far           = (struct SampleBuffer *) resourceTable.shared_mem.pa;
+    struct SampleBuffer *const buffers_far = (struct SampleBuffer *) resourceTable.shared_mem.pa;
 
     /* Allow OCP master port access by the PRU so the PRU can read external memories */
-    CT_CFG.SYSCFG_bit.STANDBY_INIT                   = 0;
+    CT_CFG.SYSCFG_bit.STANDBY_INIT         = 0;
 
     /* allow PRU1 to enter event-loop */
-    shared_memory->cmp0_trigger_for_pru1             = 1u;
+    shared_memory->cmp0_trigger_for_pru1   = 1u;
 
 reset:
-    send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, shared_memory->pru0_max_ticks_per_sample, 0);
+    send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE,
+                 shared_memory->pru0_max_ticks_per_sample, 0);
     shared_memory->pru0_max_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
     ring_init(&free_buffers);
@@ -529,8 +514,7 @@ reset:
     {
         programmer(shared_memory, buffers_far);
     }
-    else
-        event_loop(shared_memory, &free_buffers, buffers_far);
+    else event_loop(shared_memory, &free_buffers, buffers_far);
 #else
     event_loop(shared_memory, &free_buffers, buffers_far);
 #endif

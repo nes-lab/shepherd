@@ -66,7 +66,8 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
     if (v1bits <= 32u) v1bits = get_num_size_as_bits(v1L);
     uint8_ft v2bits = get_num_size_as_bits(v2H) + 32u;
     if (v2bits <= 32u) v2bits = get_num_size_as_bits(v2L);
-    if ((v1bits + v2bits) <= 64u) return product; // simple approximation, not 100% correct, but cheap
+    if ((v1bits + v2bits) <= 64u)
+        return product; // simple approximation, not 100% correct, but cheap
     else return (uint64_t) (0xFFFFFFFFFFFFFFFFull);
 }
 

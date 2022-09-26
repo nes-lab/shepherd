@@ -68,8 +68,8 @@ struct my_resource_table
 
 struct my_resource_table resourceTable = {
         {
-                1,        /* Resource table version: only version 1 is supported by the current driver */
-                1,        /* number of entries in the table */
+                1, /* Resource table version: only version 1 is supported by the current driver */
+                1, /* number of entries in the table */
                 {0U, 0U}, /* reserved, must be zero */
         },
         /* offsets to entries */
@@ -88,16 +88,8 @@ struct my_resource_table resourceTable = {
                          /* Channel-to-host mapping, 255 for unused
                            In this example, channel 0 is on position 0, so channel 0
                            maps to host interrupt 0 */
-                         {0,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED,
-                          HOST_UNUSED},
+                         {0, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED,
+                          HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED},
                          /* Number of evts being mapped to channels */
                          (sizeof(pru_intc_map) / sizeof(struct ch_map)),
                          /* Pointer to the structure containing mapped events */

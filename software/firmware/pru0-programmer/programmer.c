@@ -20,10 +20,8 @@ int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
     for (unsigned int i = 0; i < n_words; i++)
     {
         uint32_t data = *((uint32_t *) src);
-        if (drv->write(dst, data) != DRV_ERR_OK)
-            return PRG_STATE_ERR_WRITE;
-        if (drv->verify(dst, data) != DRV_ERR_OK)
-            return PRG_STATE_ERR_VERIFY;
+        if (drv->write(dst, data) != DRV_ERR_OK) return PRG_STATE_ERR_WRITE;
+        if (drv->verify(dst, data) != DRV_ERR_OK) return PRG_STATE_ERR_VERIFY;
 
         src += drv->word_width_bytes;
         dst += drv->word_width_bytes;
@@ -31,7 +29,8 @@ int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
     return 0;
 }
 
-void programmer(volatile struct SharedMem *const shared_mem, volatile struct SampleBuffer *const buffers_far)
+void programmer(volatile struct SharedMem *const    shared_mem,
+                volatile struct SampleBuffer *const buffers_far)
 {
     device_driver_t                      *drv;
     int                                   ret;
@@ -39,9 +38,10 @@ void programmer(volatile struct SharedMem *const shared_mem, volatile struct Sam
 
     /* create more convinient access to structs */
     const uint32_t *const                 fw = (uint32_t *) buffers_far;
-    volatile struct ProgrammerCtrl *const pc = (struct ProgrammerCtrl *) &shared_mem->programmer_ctrl;
+    volatile struct ProgrammerCtrl *const pc =
+            (struct ProgrammerCtrl *) &shared_mem->programmer_ctrl;
 
-    pc->state                                = PRG_STATE_INITIALIZING;
+    pc->state = PRG_STATE_INITIALIZING;
 
     /* check for validity */
     if (pc->datasize >= shared_mem->mem_size)
@@ -51,12 +51,10 @@ void programmer(volatile struct SharedMem *const shared_mem, volatile struct Sam
     }
 
 #ifdef SWD_SUPPORT
-    if (pc->target == PRG_TARGET_NRF52)
-        drv = &nrf52_driver;
+    if (pc->target == PRG_TARGET_NRF52) drv = &nrf52_driver;
 #endif
 #ifdef SBW_SUPPORT
-    if (pc->target == PRG_TARGET_SBW)
-        drv = &msp430fr_driver;
+    if (pc->target == PRG_TARGET_SBW) drv = &msp430fr_driver;
 #endif
     else
     {

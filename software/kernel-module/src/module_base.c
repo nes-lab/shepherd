@@ -19,11 +19,10 @@
 MODULE_SOFTDEP("pre: pruss");
 MODULE_SOFTDEP("pre: remoteproc");
 
-static const struct of_device_id shepherd_dt_ids[] = {
-        {
-                .compatible = "nes,shepherd",
-        },
-        {/* sentinel */}};
+static const struct of_device_id shepherd_dt_ids[] = {{
+                                                              .compatible = "nes,shepherd",
+                                                      },
+                                                      {/* sentinel */}};
 MODULE_DEVICE_TABLE(of, shepherd_dt_ids);
 
 struct shepherd_platform_data
@@ -36,8 +35,7 @@ struct shepherd_platform_data
  * the pruss-device-tree-node must have a shepherd entry with a pointer to the prusses.
  */
 
-static struct shepherd_platform_data *
-get_shepherd_platform_data(struct platform_device *pdev)
+static struct shepherd_platform_data *get_shepherd_platform_data(struct platform_device *pdev)
 {
     struct device_node            *np = pdev->dev.of_node, *pruss_dn = NULL;
     struct device_node            *child;
@@ -71,34 +69,26 @@ get_shepherd_platform_data(struct platform_device *pdev)
     {
         if (strncmp(child->name, "pru", 3) == 0)
         {
-            tmp_rproc =
-                    rproc_get_by_phandle((phandle) child->phandle);
+            tmp_rproc = rproc_get_by_phandle((phandle) child->phandle);
 
             if (tmp_rproc == NULL)
             {
                 of_node_put(pruss_dn);
-                dev_err(&pdev->dev,
-                        "Unable to parse device node: %s \n",
-                        child->name);
+                dev_err(&pdev->dev, "Unable to parse device node: %s \n", child->name);
                 devm_kfree(&pdev->dev, pdata);
                 return NULL;
             }
 
             if (strncmp(tmp_rproc->name, "4a334000.pru", 12) == 0)
             {
-                printk(KERN_INFO
-                       "shprd.k: Found PRU0 at phandle 0x%02X",
-                       child->phandle);
+                printk(KERN_INFO "shprd.k: Found PRU0 at phandle 0x%02X", child->phandle);
 
                 pdata->rproc_prus[0] = tmp_rproc;
             }
 
-            else if (strncmp(tmp_rproc->name, "4a338000.pru", 12) ==
-                     0)
+            else if (strncmp(tmp_rproc->name, "4a338000.pru", 12) == 0)
             {
-                printk(KERN_INFO
-                       "shprd.k: Found PRU1 at phandle 0x%02X",
-                       child->phandle);
+                printk(KERN_INFO "shprd.k: Found PRU1 at phandle 0x%02X", child->phandle);
 
                 pdata->rproc_prus[1] = tmp_rproc;
             }
@@ -128,11 +118,9 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     /* Boot the two PRU cores with the corresponding shepherd firmware */
     for (i = 0; i < 2; i++)
     {
-        if (pdata->rproc_prus[i]->state == RPROC_RUNNING)
-            rproc_shutdown(pdata->rproc_prus[i]);
+        if (pdata->rproc_prus[i]->state == RPROC_RUNNING) rproc_shutdown(pdata->rproc_prus[i]);
 
-        sprintf(pdata->rproc_prus[i]->firmware,
-                "am335x-pru%u-shepherd-fw", i);
+        sprintf(pdata->rproc_prus[i]->firmware, "am335x-pru%u-shepherd-fw", i);
 
         if ((ret = rproc_boot(pdata->rproc_prus[i])))
         {

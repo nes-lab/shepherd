@@ -167,16 +167,21 @@ struct ConverterConfig
     uint32_t V_intermediate_init_uV; // allow a proper / fast startup
     uint32_t I_intermediate_leak_nA;
 
-    uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
+    uint32_t
+            V_enable_output_threshold_uV; // -> output gets connected (hysteresis-combo with next value)
     uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
-    uint32_t dV_enable_output_uV;           // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
-    uint32_t interval_check_thresholds_n;   // some BQs check every 65 ms if output should be disconnected
+    uint32_t
+            dV_enable_output_uV; // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
+    uint32_t
+            interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
 
     uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good-pin (hysteresis)
     uint32_t V_pwr_good_disable_threshold_uV;
-    uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
+    uint32_t
+            immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
 
-    uint32_t V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
+    uint32_t
+            V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
 
     /* Boost Reg */
     uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
@@ -187,11 +192,14 @@ struct ConverterConfig
     uint32_t V_buck_drop_uV; // simulate dropout-voltage or diode
 
     /* LUTs */
-    uint32_t LUT_input_V_min_log2_uV;                   // only u8 needed
-    uint32_t LUT_input_I_min_log2_nA;                   // only u8 needed
-    uint32_t LUT_output_I_min_log2_nA;                  // only u8 needed
-    uint8_t  LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE];       // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
+    uint32_t LUT_input_V_min_log2_uV;  // only u8 needed
+    uint32_t LUT_input_I_min_log2_nA;  // only u8 needed
+    uint32_t LUT_output_I_min_log2_nA; // only u8 needed
+    uint8_t  LUT_inp_efficiency_n8
+            [LUT_SIZE]
+            [LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
+    uint32_t LUT_out_inv_efficiency_n4
+            [LUT_SIZE]; // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
 } __attribute__((packed));
 
 

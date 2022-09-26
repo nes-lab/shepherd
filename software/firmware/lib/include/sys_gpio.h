@@ -53,13 +53,15 @@ typedef struct
     uint32_t RSVD12x[4];
     // 130h
     uint32_t GPIO_CTRL;
-    uint32_t GPIO_OE;     // output-enabled -> should also be sampled when starting a measurement
+    uint32_t GPIO_OE;
+    // output-enabled -> should also be sampled when starting a measurement
     uint32_t GPIO_DATAIN; // sampled with interface clock
     uint32_t GPIO_DATAOUT;
     // 140h
     uint32_t GPIO_LEVELDETECT0;
     uint32_t GPIO_LEVELDETECT1;
-    uint32_t GPIO_RISINGDETECT; // rising-edge and falling-edge could be used to sample pins with IRQ
+    uint32_t GPIO_RISINGDETECT;
+    // rising-edge and falling-edge could be used to sample pins with IRQ
     uint32_t GPIO_FALLINGDETECT;
     // 150h
     uint32_t GPIO_DEBOUNCENABLE;
@@ -80,7 +82,8 @@ extern uint32_t CHECK_STRUCT_Gpio__[1 / (sizeof(Gpio) == 0x0198)];
 
 // Memory Map, p182
 #ifdef __GNUC__
-volatile Gpio *CT_GPIO0__ = (void *) 0x44E07000; // TODO: the other gnu-definitions in pssp should also not use __X
+volatile Gpio *CT_GPIO0__ = (void *) 0x44E07000;
+    // TODO: the other gnu-definitions in pssp should also not use __X
   #define CT_GPIO0 (*CT_GPIO0__)
 volatile Gpio *CT_GPIO1__ = (void *) 0x4804C000;
   #define CT_GPIO1 (*CT_GPIO1__)
@@ -127,17 +130,13 @@ typedef enum
 
 static inline void sys_gpio_cfg_dir(unsigned int pin, gpio_dir_t dir)
 {
-    if (dir == GPIO_DIR_OUT)
-        CT_GPIO0.GPIO_OE &= ~(1 << pin);
-    else
-        CT_GPIO0.GPIO_OE |= (1 << pin);
+    if (dir == GPIO_DIR_OUT) CT_GPIO0.GPIO_OE &= ~(1 << pin);
+    else CT_GPIO0.GPIO_OE |= (1 << pin);
 }
 static inline void sys_gpio_set(unsigned int pin, gpio_state_t state)
 {
-    if (state)
-        CT_GPIO0.GPIO_SETDATAOUT = (1 << pin);
-    else
-        CT_GPIO0.GPIO_CLEARDATAOUT = (1 << pin);
+    if (state) CT_GPIO0.GPIO_SETDATAOUT = (1 << pin);
+    else CT_GPIO0.GPIO_CLEARDATAOUT = (1 << pin);
 }
 
 static inline gpio_state_t sys_gpio_get(unsigned int pin)

@@ -33,5 +33,7 @@ bool_ft ring_get(struct RingBuffer *const buf, uint8_t *const element)
 
 bool_ft ring_empty(const struct RingBuffer *const buf)
 {
-    return (buf->active > 0); // todo: seems wrong, emits true if not empty, but fn isn't used anyway
+    return (buf->active >
+            0);
+    // todo: seems wrong, emits true if not empty, but fn isn't used anyway
 }

@@ -16,7 +16,8 @@ static bool_ft         dac_aux_link_to_mid  = false;
  * (ie. py-package/shepherd/calibration_default.py)
  */
 
-static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const buffer)
+static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_mem,
+                                       struct SampleBuffer *const       buffer)
 {
     /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     //__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
@@ -46,10 +47,7 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     {
         dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | voltage_dac);
     }
-    else /* only set main channel */
-    {
-        dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | voltage_dac);
-    }
+    else /* only set main channel */ { dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | voltage_dac); }
 
     if (dac_aux_link_to_mid)
     {
@@ -89,8 +87,8 @@ static inline uint32_t sample_hrv_ADCs(struct SampleBuffer *const buffer, const 
 }
 
 
-uint32_t sample(volatile struct SharedMem *const shared_mem, struct SampleBuffer *const current_buffer_far,
-                const enum ShepherdMode mode)
+uint32_t sample(volatile struct SharedMem *const shared_mem,
+                struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
 {
     switch (mode) // reordered to prioritize longer routines
     {
@@ -102,8 +100,7 @@ uint32_t sample(volatile struct SharedMem *const shared_mem, struct SampleBuffer
             return sample_emu_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
         case MODE_HRV_ADC_READ:
             return sample_hrv_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
-        default:
-            return 0u;
+        default: return 0u;
     }
 }
 
@@ -116,15 +113,9 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
     switch (channel_num)
     {
-        case 0:
-            result = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-            break;
-        case 1:
-            result = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-            break;
-        default:
-            result = adc_fastread(SPI_CS_EMU_ADC_PIN);
-            break;
+        case 0: result = adc_fastread(SPI_CS_HRV_C_ADC_PIN); break;
+        case 1: result = adc_fastread(SPI_CS_HRV_V_ADC_PIN); break;
+        default: result = adc_fastread(SPI_CS_EMU_ADC_PIN); break;
     }
     return result;
 }
@@ -208,12 +199,14 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
     const enum ShepherdMode mode                 = (enum ShepherdMode) shared_mem->shepherd_mode;
     const uint32_t          dac_ch_a_voltage_raw = shared_mem->dac_auxiliary_voltage_raw & 0xFFFF;
     /* switch to set behavior of aux-channel (dac A) */
-    dac_aux_link_to_main                         = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
-    dac_aux_link_to_mid                          = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
+    dac_aux_link_to_main = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
+    dac_aux_link_to_mid  = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
 
     /* deactivate hw-units when not needed, initialize the other */
-    const bool_ft use_harvester                  = (mode == MODE_HARVESTER) || (mode == MODE_HRV_ADC_READ) || (mode == MODE_DEBUG);
-    const bool_ft use_emulator                   = (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
+    const bool_ft use_harvester =
+            (mode == MODE_HARVESTER) || (mode == MODE_HRV_ADC_READ) || (mode == MODE_DEBUG);
+    const bool_ft use_emulator =
+            (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
@@ -226,12 +219,14 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
         /* NOTE: if harvester is not used, dac is currently shut down -> connects power source with 1 Ohm to GND */
         if (dac_aux_link_to_main)
             dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | dac_ch_a_voltage_raw);
-        else
-            dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
-        dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | dac_ch_a_voltage_raw); // TODO: write aux more often if needed
+        else dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
+        dac_write(SPI_CS_HRV_DAC_PIN,
+                  DAC_CH_A_ADDR | dac_ch_a_voltage_raw); // TODO: write aux more often if needed
     }
 
-    ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester); // TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
+    ads8691_init(
+            SPI_CS_HRV_C_ADC_PIN,
+            use_harvester); // TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
     ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);

@@ -93,18 +93,10 @@ static uint32_t AllShifts(uint16_t Format, uint32_t Data)
 
     switch (Format)
     {
-        case F_BYTE:
-            MSB = 0x00000080;
-            break;
-        case F_WORD:
-            MSB = 0x00008000;
-            break;
-        case F_ADDR:
-            MSB = 0x00080000;
-            break;
-        case F_LONG:
-            MSB = 0x80000000;
-            break;
+        case F_BYTE: MSB = 0x00000080; break;
+        case F_WORD: MSB = 0x00008000; break;
+        case F_ADDR: MSB = 0x00080000; break;
+        case F_LONG: MSB = 0x80000000; break;
         default: // this is an unsupported format, function will just return 0
             return TDOword;
     }
@@ -115,31 +107,17 @@ static uint32_t AllShifts(uint16_t Format, uint32_t Data)
         {
             tdo = ((Data & MSB) == 0) ? tmsh_tdil_tdo_rd() : tmsh_tdih_tdo_rd();
         }
-        else
-        {
-            tdo = ((Data & MSB) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd();
-        }
+        else { tdo = ((Data & MSB) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd(); }
         Data <<= 1;
-        if (tdo)
-            TDOword++;
-        if (i > 1)
-            TDOword <<= 1; // TDO could be any port pin
+        if (tdo) TDOword++;
+        if (i > 1) TDOword <<= 1; // TDO could be any port pin
     }
     tmsh_tdih(); // update IR
-    if (get_tclk())
-    {
-        tmsl_tdih();
-    }
-    else
-    {
-        tmsl_tdil();
-    }
+    if (get_tclk()) { tmsl_tdih(); }
+    else { tmsl_tdil(); }
 
     // de-scramble bits on a 20bit shift
-    if (Format == F_ADDR)
-    {
-        TDOword = ((TDOword << 16) + (TDOword >> 4)) & 0x000FFFFF;
-    }
+    if (Format == F_ADDR) { TDOword = ((TDOword << 16) + (TDOword >> 4)) & 0x000FFFFF; }
 
     return (TDOword);
 }
@@ -147,14 +125,8 @@ static uint32_t AllShifts(uint16_t Format, uint32_t Data)
 uint32_t IR_Shift(uint8_t instruction)
 {
     // JTAG FSM state = Run-Test/Idle
-    if (get_tclk())
-    {
-        tmsh_tdih();
-    }
-    else
-    {
-        tmsh_tdil();
-    }
+    if (get_tclk()) { tmsh_tdih(); }
+    else { tmsh_tdil(); }
     // JTAG FSM state = Select DR-Scan
     tmsh_tdih();
 
@@ -170,14 +142,8 @@ uint32_t IR_Shift(uint8_t instruction)
 uint16_t DR_Shift16(uint16_t data)
 {
     // JTAG FSM state = Run-Test/Idle
-    if (get_tclk())
-    {
-        tmsh_tdih();
-    }
-    else
-    {
-        tmsh_tdil();
-    }
+    if (get_tclk()) { tmsh_tdih(); }
+    else { tmsh_tdil(); }
     // JTAG FSM state = Select DR-Scan
     tmsl_tdih();
     // JTAG FSM state = Capture-DR
@@ -191,14 +157,8 @@ uint16_t DR_Shift16(uint16_t data)
 uint32_t DR_Shift20(uint32_t address)
 {
     // JTAG FSM state = Run-Test/Idle
-    if (get_tclk())
-    {
-        tmsh_tdih();
-    }
-    else
-    {
-        tmsh_tdil();
-    }
+    if (get_tclk()) { tmsh_tdih(); }
+    else { tmsh_tdil(); }
     // JTAG FSM state = Select DR-Scan
     tmsl_tdih();
     // JTAG FSM state = Capture-DR
@@ -242,10 +202,7 @@ int i_WriteJmbIn16(uint16_t dataX)
     IR_Shift(IR_JMB_EXCHANGE);
     do {
         Timeout++;
-        if (Timeout >= 3000)
-        {
-            return SC_ERR_GENERIC;
-        }
+        if (Timeout >= 3000) { return SC_ERR_GENERIC; }
     }
     while (!(DR_Shift16(0x0000) & IN0RDY) && Timeout < 3000);
     if (Timeout < 3000)
@@ -269,10 +226,7 @@ int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY)
     IR_Shift(IR_JMB_EXCHANGE);
     do {
         Timeout++;
-        if (Timeout >= 3000)
-        {
-            return SC_ERR_GENERIC;
-        }
+        if (Timeout >= 3000) { return SC_ERR_GENERIC; }
     }
     while (!(DR_Shift16(0x0000) & IN0RDY) && Timeout < 3000);
 

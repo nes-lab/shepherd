@@ -21,18 +21,13 @@ enum ihex_error
     IHEX_ERR_END      = 3
 };
 
-static inline void ihex_init(char *file_mem)
-{
-    fptr = file_mem;
-}
+static inline void         ihex_init(char *file_mem) { fptr = file_mem; }
 
 /* converts ascii-encoded hex value to number */
 static inline unsigned int x2u(char x)
 {
-    if ((x >= 48) && (x <= 57))
-        return (unsigned int) (x - 48);
-    else if ((x >= 65) && (x <= 70))
-        return (unsigned int) (x - 55);
+    if ((x >= 48) && (x <= 57)) return (unsigned int) (x - 48);
+    else if ((x >= 65) && (x <= 70)) return (unsigned int) (x - 55);
     return 256;
 }
 
@@ -49,8 +44,7 @@ static int ihex_get_rec(ihex_rec_t *rec)
 {
     unsigned int i;
 
-    if (*(fptr++) != ':')
-        return -IHEX_ERR_START;
+    if (*(fptr++) != ':') return -IHEX_ERR_START;
 
     rec->len             = read_byte(&fptr);
 
@@ -79,14 +73,11 @@ static int ihex_get_rec(ihex_rec_t *rec)
     char lineend = *(fptr++);
     if (lineend == 0x0D)
     {
-        if (*(fptr++) == 0x0A)
-            return rc;
+        if (*(fptr++) == 0x0A) return rc;
         return -IHEX_ERR_END;
     }
-    else if (lineend == 0x0A)
-        return rc;
-    else
-        return -IHEX_ERR_END;
+    else if (lineend == 0x0A) return rc;
+    else return -IHEX_ERR_END;
 }
 
 int ihex_reader_init(char *file_mem)
@@ -103,8 +94,7 @@ ihex_ret_t ihex_reader_get(ihex_mem_block_t *block)
     static ihex_rec_t rec;
     while (1)
     {
-        if ((rc = ihex_get_rec(&rec)) != 0)
-            return rc;
+        if ((rc = ihex_get_rec(&rec)) != 0) return rc;
 
         if (rec.type == IHEX_REC_TYPE_DATA)
         {
@@ -118,9 +108,6 @@ ihex_ret_t ihex_reader_get(ihex_mem_block_t *block)
             unsigned int segment = ((unsigned int) rec.data[0] << 4) + rec.data[1];
             reader_addr += segment;
         }
-        else if (rec.type == IHEX_REC_TYPE_EOF)
-        {
-            return IHEX_RET_DONE;
-        }
+        else if (rec.type == IHEX_REC_TYPE_EOF) { return IHEX_RET_DONE; }
     }
 }
