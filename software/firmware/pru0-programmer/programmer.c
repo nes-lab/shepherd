@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #if !defined(SWD_SUPPORT) && !defined(SBW_SUPPORT)
-    // select a primary programming-mode when none is chosen
+// select a primary programming-mode when none is chosen
   #define SWD_SUPPORT
 #endif
 
