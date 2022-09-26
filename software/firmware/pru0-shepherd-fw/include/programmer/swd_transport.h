@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
-typedef enum {
-	/* Debug Port */
-	SWD_PORT_DP = 0,
-	/* Memory Access Port */
-	SWD_PORT_AP = 1,
+typedef enum
+{
+    /* Debug Port */
+    SWD_PORT_DP = 0,
+    /* Memory Access Port */
+    SWD_PORT_AP = 1,
 } swd_port_t;
 
 /**

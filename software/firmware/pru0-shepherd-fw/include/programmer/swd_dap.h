@@ -4,21 +4,23 @@
 #include <stdint.h>
 
 /* Register address map of Debug Port */
-typedef enum {
-	DP_REG_DPIDR = 0x0,
-	DP_REG_ABORT = 0x0,
-	DP_REG_CTRLSTAT = 0x4,
-	DP_REG_DLCR = 0x4,
-	DP_REG_SELECT = 0x8,
-	DP_REG_RDBUFF = 0xC,
+typedef enum
+{
+    DP_REG_DPIDR    = 0x0,
+    DP_REG_ABORT    = 0x0,
+    DP_REG_CTRLSTAT = 0x4,
+    DP_REG_DLCR     = 0x4,
+    DP_REG_SELECT   = 0x8,
+    DP_REG_RDBUFF   = 0xC,
 } dp_reg_t;
 
 /* Register address map of Memory Access Point */
-typedef enum {
-	AP_REG_CSW = 0x0,
-	AP_REG_TAR = 0x4,
-	AP_REG_DRW = 0xC,
-	AP_REG_IDR = 0xFC,
+typedef enum
+{
+    AP_REG_CSW = 0x0,
+    AP_REG_TAR = 0x4,
+    AP_REG_DRW = 0xC,
+    AP_REG_IDR = 0xFC,
 } ap_reg_t;
 
 /**
