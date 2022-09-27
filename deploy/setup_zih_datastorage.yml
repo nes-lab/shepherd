@@ -1,0 +1,77 @@
+---
+# proposed by helpdesk - login-server and dgw share home-directory
+# hard to do as a role because of vars_prompt of temp user-data
+# TODO: maybe it is better to store a set of authorized keys and distribute them
+
+- name: Add (network) datastorage to remote nodes
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    key_server: login.zih.tu-dresden.de
+    data_server: dgw.zih.tu-dresden.de
+    data_path_remote: /svm/vs-grp04/shepherdDS
+    data_path_local: /mnt/shp_ds/
+
+  vars_prompt:
+    - name: zih_user
+      prompt: "Please provide ZIH username with access to storage (will not be stored)"
+      private: false
+    - name: zih_password
+      prompt: "users password"
+      private: true
+
+  pre_tasks:
+
+    - name: Check for all prerequisites
+      ansible.builtin.fail:
+        msg: "The variable '{{item}}' is not defined"
+      when: (item is defined) and (item|length > 0)
+      loop:
+        - key_server
+        - data_server
+        - data_path_remote
+        - data_path_local
+        - zih_user
+        - zih_password
+
+    - name: Check if key-pair is present on remote node
+      ansible.builtin.stat:
+        path: "/home/{{ ansible_user }}/.ssh/id_rsa.pub"
+      register: key_file
+
+    - name: Generate fresh key-pair (if needed)
+      ansible.builtin.shell:
+        cmd: 'ssh-keygen -q -t rsa -N "" -C cfaed_nes_shepherd_node'
+      when: not key_file.exits
+      become: false
+
+  tasks:
+
+    - name: APT - Install required packages
+      ansible.builtin.apt:
+        name: ["sshfs", "sshpass"]
+        state: present
+        update_cache: true
+
+    - name: Authorize remote node with key-server
+      ansible.builtin.shell:
+        cmd: 'sshpass -p "{{zih_password}}" ssh-copy-id {{zih_user}}@{{key_server}}'
+
+    - name: Create mount-directory
+      ansible.builtin.file:
+        path: "{{data_path_local}}"
+        owner: "{{ansible_user}}"
+
+    - name: Enable automatic mounting
+      ansible.builtin.lineinfile:
+        dest: '/home/{{ ansible_user }}/.bashrc'
+        regex: '^.*sshfs.*$'
+        line: "sshfs {{zih_user}}@{{data_server}}:{{data_path_remote}} {{data_path_local}}"
+        state: present
+
+  post_tasks:
+
+    - name: Restart device
+      ansible.builtin.reboot:
