@@ -52,7 +52,9 @@ jobs:
 
       - name: Build PRU0 🧱
         run: |
-          export PATH=$PATH:$PRU_GCC
+          export PATH=$PATH:PRU_GCC
+          export PRU_GCC=$PRU_GCC
+          export PRU_GCC_SUPPORT=$PRU_GCC_SUPPORT
           sudo make
         working-directory: "software/firmware/pru0-shepherd-fw/"
 

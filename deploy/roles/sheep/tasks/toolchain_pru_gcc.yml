@@ -15,7 +15,7 @@
     src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.xz'
     dest: "{{ gcc_tools_path }}" # archive is double-packed ... one folder will always be gcc_pru_cc_release
     remote_src: true
-    mode: 755
+    mode: '0755'
     owner: "{{ ansible_user }}"
   become: true
   register: dl_cc_ret

@@ -82,10 +82,10 @@ extern uint32_t CHECK_STRUCT_Gpio__[1 / (sizeof(Gpio) == 0x0198)];
 
 // Memory Map, p182
 #ifdef __GNUC__
-#define CT_GPIO0 (*((volatile Gpio *)0x44E07000))
-#define CT_GPIO1 (*((volatile Gpio *)0x4804C000))
-#define CT_GPIO2 (*((volatile Gpio *)0x481AC000))
-#define CT_GPIO3 (*((volatile Gpio *)0x481AE000))
+  #define CT_GPIO0 (*((volatile Gpio *) 0x44E07000))
+  #define CT_GPIO1 (*((volatile Gpio *) 0x4804C000))
+  #define CT_GPIO2 (*((volatile Gpio *) 0x481AC000))
+  #define CT_GPIO3 (*((volatile Gpio *) 0x481AE000))
 #else
 volatile __far Gpio CT_GPIO0 __attribute__((cregister("GPIO0", far), peripheral));
 volatile __far Gpio CT_GPIO1 __attribute__((cregister("GPIO1", far), peripheral));
