@@ -1,9 +1,8 @@
 # SHEpHERD: SyncHronized Energy Harvesting Emulator RecorDer
 
 [![QA-Tests](https://github.com/orgua/shepherd/actions/workflows/repo-tests.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/repo-tests.yml)
-
 [![Documentation](https://github.com/orgua/shepherd/actions/workflows/sphinx_to_pages.yml/badge.svg)](https://orgua.github.io/shepherd/)
-
+[![Build Pru](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml)
 [![Code Quality](https://www.codefactor.io/repository/github/orgua/shepherd/badge)](https://www.codefactor.io/repository/github/orgua/shepherd)
 
 
