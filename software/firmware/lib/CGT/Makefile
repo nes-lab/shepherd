@@ -116,11 +116,12 @@ MAP=$(GEN_DIR)/pru$(PRU_NUM)-$(FW_NAME).map
 
 TARGET_PATH := $(folder_path)$(TARGET)
 
+# special folder to find source-files in (auto)
 VPATH += $(BASE_PATH)/lib/src
 
 # Using .object instead of .obj in order to not conflict with the CCS build process
-OBJECTS=$(patsubst %,$(GEN_DIR)/%,$(SOURCES:.c=.object))
-OBJECTS+=$(patsubst %,$(GEN_DIR)/%,$(ASM_SOURCES:.asm=.object))
+OBJECTS=$(patsubst %,$(GEN_DIR)/%,$(notdir $(SOURCES:.c=.object)))
+OBJECTS+=$(patsubst %,$(GEN_DIR)/%,$(notdir $(ASM_SOURCES:.asm=.object)))
 
 .PHONY: all
 all: printStart $(TARGET) printEnd

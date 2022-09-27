@@ -7,21 +7,24 @@ FW_NAME = shepherd
 
 BASE_PATH ?= ./..
 
-INCLUDE = --include_path=./include
+# include headers with -I or --include_path= (cgt-only)
+INCLUDE = -I./include
 
+# internal sources
 SOURCES = $(notdir $(wildcard ./*.c))
-# also add external files (./lib/src/)
-SOURCES += iep.c
-SOURCES += simple_lock.c
+# external sources - add manually
+SOURCES += $(BASE_PATH)/lib/src/iep.c
+SOURCES += $(BASE_PATH)/lib/src/simple_lock.c
 
+# internal asm-sources
 ASM_SOURCES = $(notdir $(wildcard ./*.asm))
-# add external asm-files (./lib/src/)
-#ASM_SOURCES += spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
+# external asm-sources - add manually
+#ASM_SOURCES += $(BASE_PATH)/lib/src/spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
 
 
-ifdef PRU_CGT
-include $(BASE_PATH)/lib/CGT/Makefile
-endif
+# look for gcc, but use cgt as fallback / default
 ifdef PRU_GCC
 include $(BASE_PATH)/lib/GCC/Makefile
+else
+include $(BASE_PATH)/lib/CGT/Makefile
 endif

@@ -7,23 +7,27 @@ FW_NAME = programmer
 
 BASE_PATH ?= ./..
 
-INCLUDE = --include_path=./include
-INCLUDE += --include_path=$(BASE_PATH)/pru0-shepherd-fw/include
+# include headers with -I or --include_path= (cgt-only)
+INCLUDE = -I./include
+# small hack to get resource_table without code-duplication
+INCLUDE += -I$(BASE_PATH)/pru0-shepherd-fw/include
 
+# internal sources
 SOURCES = $(notdir $(wildcard ./*.c))
-# add external sources (./lib/src/)
-SOURCES += simple_lock.c
-SOURCES += iep.c
-SOURCES += ringbuffer.c
+# external sources - add manually
+SOURCES += $(BASE_PATH)/lib/src/simple_lock.c
+SOURCES += $(BASE_PATH)/lib/src/iep.c
+SOURCES += $(BASE_PATH)/lib/src/ringbuffer.c
 
+# internal asm-sources
 ASM_SOURCES = $(notdir $(wildcard ./*.asm))
-# add external asm-files (./lib/src/)
+# external asm-sources - add manually
 #ASM_SOURCES += spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
 
 
-ifdef PRU_CGT
-include $(BASE_PATH)/lib/CGT/Makefile
-endif
+# look for gcc, but use cgt as fallback / default
 ifdef PRU_GCC
 include $(BASE_PATH)/lib/GCC/Makefile
+else
+include $(BASE_PATH)/lib/CGT/Makefile
 endif
