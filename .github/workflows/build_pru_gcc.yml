@@ -51,20 +51,13 @@ jobs:
         working-directory: "${{ github.workspace }}"
 
       - name: Build PRU0 🧱
-        run: |
-          export PATH=$PATH:PRU_GCC
-          export PRU_GCC=$PRU_GCC
-          export PRU_GCC_SUPPORT=$PRU_GCC_SUPPORT
-          make
+        run: make
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
       - name: Build PRU1 🧱
-        run: |
-          make
+        run: make
         working-directory: "software/firmware/pru1-shepherd-fw/"
 
       - name: Build Programmer 🧱
-        run: |
-          export PATH=$PATH:$PRU_GCC
-          sudo make
+        run: make
         working-directory: "software/firmware/pru0-programmer/"

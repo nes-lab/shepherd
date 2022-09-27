@@ -1381,8 +1381,7 @@ typedef struct
     uint32_t           RESERVED3[2];
     uint32_t           EVENTS_ENDRX; /*!< (@ 0x00000110) End of RXD buffer reached */
     uint32_t           RESERVED4;
-    uint32_t           EVENTS_END; /*!< (@ 0x00000118) End of RXD buffer and TXD buffer
-                          reached                   */
+    uint32_t           EVENTS_END; /*!< (@ 0x00000118) End of RXD buffer and TXD buffer reached */
     uint32_t           RESERVED5;
     uint32_t           EVENTS_ENDTX; /*!< (@ 0x00000120) End of TXD buffer reached */
     uint32_t           RESERVED6[10];
@@ -1688,10 +1687,10 @@ typedef struct
     uint32_t              EVENTS_RXERROR; /*!< (@ 0x00000128) NFC RX frame error reported. The
                               FRAMESTATUS.RX register contains details on the
                               source of the error. */
-    uint32_t              EVENTS_ENDRX;   /*!< (@ 0x0000012C) RX buffer (as defined by PACKETPTR
-                            and MAXLEN) in Data RAM full. */
-    uint32_t              EVENTS_ENDTX; /*!< (@ 0x00000130) Transmission of data in RAM has ended,
-                       and EasyDMA has ended accessing the TX buffer */
+    uint32_t              EVENTS_ENDRX;
+    /*!< (@ 0x0000012C) RX buffer (as defined by PACKETPTR and MAXLEN) in Data RAM full. */
+    uint32_t              EVENTS_ENDTX;
+    /*!< (@ 0x00000130) Transmission of data in RAM has ended, and EasyDMA has ended accessing the TX buffer */
     uint32_t              RESERVED4;
     uint32_t              EVENTS_AUTOCOLRESSTARTED; /*!< (@ 0x00000138) Auto collision
                                         resolution process has started */
