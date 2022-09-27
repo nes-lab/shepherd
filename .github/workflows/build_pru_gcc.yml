@@ -26,18 +26,18 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
-      - name: Install dependency
+      - name: Install dependency 🔧
         run: sudo apt install build-essential
 
-      - name: prepare directories
+      - name: prepare directories 📓
         run: |
           mkdir -p ${{ env.PRU_GCC }}/bin
           mkdir -p ${{ env.PRU_GCC_SUPPORT }}
 
-      - name: Download GCC cross-compiler for PRU
+      - name: Download GCC cross-compiler for PRU ⚔
         run: "wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.xz --output-document=gcc-pru.tar.xz"
         working-directory: "${{ github.workspace }}"
-      - name: Extract GCC cross-compiler
+      - name: Extract GCC cross-compiler ⚔
         run: "tar -xf gcc-pru.tar.xz"
         #run: "tar -xf gcc-pru.tar.xz -C ${{ env.PRU_GCC }}"
         working-directory: "${{ github.workspace }}"
@@ -46,10 +46,10 @@ jobs:
         run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
         working-directory: "${{ github.workspace }}"
 
-      - name: temporary size-hack for PRU0
-        run: "sudo cp software/firmware/lib/am335xl.pru0 $PRU_GCC/pru-elf/lib/device-specs/am335xl.pru0"
+      - name: temporary size-hack for PRU0 🕚
+        run: "sudo cp software/firmware/lib/am335xl.pru0 ${{ env.PRU_GCC }}/pru-elf/lib/device-specs/am335xl.pru0"
         working-directory: "${{ github.workspace }}"
-        
+
       - name: Build PRU0 🧱
         run: |
           export PATH=$PATH:$PRU_GCC
@@ -61,3 +61,9 @@ jobs:
           export PATH=$PATH:$PRU_GCC
           sudo make
         working-directory: "software/firmware/pru1-shepherd-fw/"
+
+      - name: Build Programmer 🧱
+        run: |
+          export PATH=$PATH:$PRU_GCC
+          sudo make
+        working-directory: "software/firmware/pru0-programmer/"

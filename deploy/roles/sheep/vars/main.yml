@@ -8,6 +8,7 @@ shepherd_config_path: /etc/shepherd
 install_basics: true
 install_gcc_tools: false
 install_ti_tools: true
+# NOTE: GCC
 
 shepherd_branch: main
 refresh_source: false
@@ -15,7 +16,7 @@ rebuild_kernel_module: true
 rebuild_python_package: true
 
 ### GCC ######
-gcc_tools_path: /usr/share/shepherd-tools/
+gcc_tools_path: /usr/share/shepherd-tools
 gcc_pru_support_path: /usr/share/shepherd-tools/pru-software-support-package
 gcc_pru_cc_release: pru-elf-2022.05.armhf
 # Source: https://github.com/dinuxbg/gnupru

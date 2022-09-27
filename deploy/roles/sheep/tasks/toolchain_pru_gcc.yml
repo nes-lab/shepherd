@@ -5,6 +5,7 @@
     path: "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}"
     state: directory
     mode: '0644'
+    owner: "{{ ansible_user }}"
   become: true
   tags:
     - pru-tools
@@ -14,7 +15,8 @@
     src: 'https://github.com/dinuxbg/gnupru/releases/latest/download/{{ gcc_pru_cc_release }}.tar.xz'
     dest: "{{ gcc_tools_path }}" # archive is double-packed ... one folder will always be gcc_pru_cc_release
     remote_src: true
-    mode: a+x
+    mode: 755
+    owner: "{{ ansible_user }}"
   become: true
   register: dl_cc_ret
   until: dl_cc_ret is not failed
@@ -50,7 +52,7 @@
     state: present
   with_nested:
     - [
-      { name: PRU_GCC, value: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}/bin' },
+      { name: PRU_GCC, value: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}' },
       { name: PRU_GCC_SUPPORT, value: "{{ gcc_pru_support_path }}" }
     ]
     - ['/home/{{ ansible_user }}', '/root']

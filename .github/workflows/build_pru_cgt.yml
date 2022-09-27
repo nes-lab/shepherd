@@ -47,7 +47,7 @@ jobs:
         run: git clone --branch v5.9.0 https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git
         working-directory: /usr/share/ti
 
-      - name: Prepare using CGT
+      - name: Prepare using CGT 🍲
         run: |
           file ${{ env.PRU_CGT }}/bin/clpru
           sudo ln -s ${{ env.PRU_CGT }}/bin/clpru /usr/bin/clpru
