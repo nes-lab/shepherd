@@ -2,8 +2,9 @@ PRU_NUM = 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 folder_path := $(dir $(mkfile_path))
-PROJ_NAME = $(current_dir)
-FW_NAME = programmer
+PROTO ?= SWD
+PROJ_NAME = $(current_dir)-$(PROTO)
+FW_NAME = programmer-$(PROTO)
 
 BASE_PATH ?= ./..
 
@@ -24,6 +25,9 @@ ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # external asm-sources - add manually
 #ASM_SOURCES += spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
 
+ifeq ($(PROTO), SBW)  # switch to SBW with "make SBW=1"
+CFLAGS += -D SBW_SUPPORT
+endif
 
 # look for gcc, but use cgt as fallback / default
 ifdef PRU_GCC

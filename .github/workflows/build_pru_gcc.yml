@@ -58,6 +58,14 @@ jobs:
         run: make
         working-directory: "software/firmware/pru1-shepherd-fw/"
 
-      - name: Build Programmer 🧱
+      - name: Build SWD Programmer 🧱
         run: make
+        working-directory: "software/firmware/pru0-programmer/"
+
+      - name: Clean Programmer 🧹
+        run: make clean
+        working-directory: "software/firmware/pru0-programmer/"
+
+      - name: Build SBW Programmer 🧱
+        run: make PROTO=SBW
         working-directory: "software/firmware/pru0-programmer/"

@@ -41,7 +41,6 @@ INCLUDE += -isystem ${PRU_GCC_SUPPORT}/include
 INCLUDE += -isystem ${PRU_GCC_SUPPORT}/include/am335x
 INCLUDE += -I$(BASE_PATH)/include
 INCLUDE += -I$(BASE_PATH)/lib/include
-# TODO: change first two to -isystem dir
 
 # NOTE: autoinclude is easy, but cgt can't handle it (>7 kb fw-increase)
 #SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.c))
@@ -95,7 +94,7 @@ CFLAGS += -fanalyzer
 
 # Per-PRU core flags. The -mmcu option will select the correct linker
 # script and will predefine mcu-specific macros.
-# TODO: PRU0 needs temporary size-hack (XL instead of just X), as firmware does not fit into IMEM
+# TODO: temporary size-hack (XL instead of just X), as one firmware does not fit into IMEM
 ifeq ($(PROJ_NAME), pru0-shepherd-fw)
 CFLAGS += -mmcu=am335xl.pru0 -DPRU0
 else
@@ -140,7 +139,7 @@ printEnd:
 	@echo 'Size in bytes:'
 	@stat -L -c %s $(TARGET_PATH)
 	@echo ''
-	@echo 'Finished building project: $(PROJ_NAME)'
+	@echo 'Finished building project: $(PROJ_NAME) (with GNU GCC)'
 	@echo '************************************************************'
 	@echo ''
 
@@ -171,12 +170,12 @@ clean:
 	@echo ''
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Cleaning project: $(PROJ_NAME)'
+	@echo 'Cleaning project: $(PROJ_NAME) (with GNU GCC)'
 	@echo ''
 	@echo 'Removing files in the "$(GEN_DIR)" directory'
 	$(RM) -fr $(ELF) $(GEN_DIR)
 	@echo ''
-	@echo 'Finished cleaning project: $(PROJ_NAME)'
+	@echo 'Finished cleaning project: $(PROJ_NAME) (with GNU GCC)'
 	@echo '************************************************************'
 	@echo ''
 	@echo ''
@@ -186,7 +185,7 @@ install: $(ELF)
 	@echo ''
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Installing project: $(PROJ_NAME)'
+	@echo 'Installing project: $(PROJ_NAME) (with GNU GCC)'
 	@echo ''
 	@echo 'Installing firmware to /lib/firmware'
 	install -D $(ELF) /lib/firmware/am335x-pru$(PRU_NUM)-$(FW_NAME)-fw

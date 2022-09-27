@@ -61,7 +61,7 @@ GEN_DIR		= gen
 
 ### Common compiler and linker flags (Defined in 'PRU Optimizing C/C++ Compiler User's Guide)
 ## PRU-Hardware
-CFLAGS = -v3 #                              silicon version
+CFLAGS += -v3 #                              silicon version
 CFLAGS += --endian=little #                 for data and code, both (big, little) is possible
 CFLAGS += --hardware_mac=on #               use Multiply and Accumulate Unit (no division though)
 
