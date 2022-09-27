@@ -230,7 +230,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
 #ifdef ENABLE_DBG_VSOURCE
             case MSG_DBG_VSRC_HRV_P_INP:
                 sample_iv_harvester(&msg_in.value[0], &msg_in.value[1]);
-                // run cnv right afterwards
+                // fall through
             case MSG_DBG_VSRC_P_INP: // TODO: these can be done with normal emulator instantiation
                 // TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);

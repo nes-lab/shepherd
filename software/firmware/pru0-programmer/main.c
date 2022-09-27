@@ -191,7 +191,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
     }
 }
 
-void main(void)
+int main(void)
 {
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     static struct RingBuffer         free_buffers;

@@ -183,7 +183,8 @@ int i_ReadJmbOut(void)
     if (lJMBOUT & OUT1RDY) // check if new data available
     {
         sJMBINCTL |= JMB32B + OUTREQ;
-        lJMBOUT  = DR_Shift16(sJMBINCTL);
+        //lJMBOUT  = DR_Shift16(sJMBINCTL); // cppcheck
+        DR_Shift16(sJMBINCTL);
         sJMBOUT0 = (uint16_t) DR_Shift16(0);
         sJMBOUT1 = (uint16_t) DR_Shift16(0);
         lJMBOUT  = ((uint32_t) sJMBOUT1 << 16) + sJMBOUT0;
