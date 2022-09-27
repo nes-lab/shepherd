@@ -29,6 +29,7 @@
     src: "{{ shepherd_install_path }}/software/firmware/lib/am335xl.pru0"
     dest: "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}/pru-elf/lib/device-specs/"
     remote_src: true
+    mode: '0666'
 
 - name: Download pru software support package
   ansible.builtin.git:

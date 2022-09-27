@@ -29,7 +29,7 @@
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "/etc/shepherd/"
-    mode: 0644
+    mode: '0644'
   loop:
     - chrony.conf
     - gpsd.conf

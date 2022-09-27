@@ -16,7 +16,7 @@
     path: "/opt/scripts/device/" # ["/opt/scripts/.git/", "/opt/scripts/device/"]
     state: absent
 
-- name: SCRIPT - Switch to newest release of Kernel Branch "{{ default_kernel_branch }}"
+- name: "SCRIPT - Switch to newest release of Kernel Branch {{ default_kernel_branch }}"
   ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}'
   when: update_kernel | bool
   changed_when: true
@@ -51,7 +51,7 @@
     upgrade: dist
     update_cache: true
 
-- name: CFG - Set timezone to "{{ timezone }}"
+- name: "CFG - Set timezone to {{ timezone }}"
   timezone:
     name: "{{ timezone }}"
 
