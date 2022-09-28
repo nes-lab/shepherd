@@ -165,7 +165,7 @@ shepherd-herd poweroff --reset
 
 ## Testbench
 
-For testing `shepherd-herd` there must be a valid `herd.yml` at one of the three mentioned locations with accessible sheep-nodes. Navigate your shell into the package-folder `/shepherd/software/shepherd-herd/` and run:
+For testing `shepherd-herd` there must be a valid `herd.yml` at one of the three mentioned locations (look at [simplified usage](#Usage)) with accessible sheep-nodes. Navigate your shell into the package-folder `/shepherd/software/shepherd-herd/` and run:
 
 ```Shell
 pytest

@@ -1,14 +1,6 @@
-# functions
-# - run
-# - poweroff
-#
-#
-from pathlib import Path
-from typing import Tuple
-
 import pytest
-import yaml
 from shepherd_herd import cli
+
 from .conftest import extract_first_sheep
 
 
@@ -72,7 +64,8 @@ def test_provide_inventory_long(cli_runner, local_herd) -> None:
         [
             "--inventory",
             str(local_herd),
-            "--verbose", "=3",
+            "--verbose",
+            "=3",
             "run",
             "date",
         ],
@@ -89,13 +82,13 @@ def test_provide_limit(cli_runner, local_herd) -> None:
             "-i",
             str(local_herd),
             "-l",
-            f"{sheep},"
-            "-vvv",
+            f"{sheep}," "-vvv",
             "run",
             "date",
         ],
     )
     assert res.exit_code == 0
+
 
 @pytest.mark.timeout(10)
 def test_provide_limit_fail(cli_runner, local_herd) -> None:
@@ -112,6 +105,7 @@ def test_provide_limit_fail(cli_runner, local_herd) -> None:
         ],
     )
     assert res.exit_code != 0
+
 
 # TODO: test providing user and key filename
 # TODO: test poweroff (reboot)

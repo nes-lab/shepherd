@@ -16,6 +16,7 @@ import telnetlib
 import time
 from io import StringIO
 from pathlib import Path
+from typing import List
 
 import click
 import click_config_file
@@ -140,6 +141,7 @@ def start_shepherd(
     "--limit",
     "-l",
     type=str,
+    default="",
     help="Comma-separated list of hosts to limit execution to",
 )
 @click.option("--user", "-u", type=str, help="User name for login to nodes")
@@ -162,6 +164,10 @@ def cli(ctx, inventory, limit, user, key_filename, verbose) -> None:
     :param verbose:
     :return:
     """
+    if limit.rstrip().endswith(","):
+        limit = limit.split(",")[:-1]
+    else:
+        limit = None
 
     if inventory.rstrip().endswith(","):
         hostlist = inventory.split(",")[:-1]
@@ -196,7 +202,7 @@ def cli(ctx, inventory, limit, user, key_filename, verbose) -> None:
         hostlist = []
         hostnames = {}
         for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-            if (limit is not None) and (hostname not in limit.split(",")):
+            if isinstance(limit, List) and (hostname not in limit):
                 continue
 
             if "ansible_host" in hostvars:
@@ -212,6 +218,11 @@ def cli(ctx, inventory, limit, user, key_filename, verbose) -> None:
 
     if user is None:
         raise click.UsageError("Provide user by command line or in inventory file")
+
+    if len(hostlist) < 1 or len(hostnames) < 1:
+        raise click.UsageError(
+            "Provide remote hosts (either inventory empty or limit does not match)"
+        )
 
     if verbose == 0:
         logger.setLevel(logging.ERROR)

@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import List
 from shutil import copy
 
 import numpy as np
 import pytest
-from shepherd_data import Writer
 import yaml
+from shepherd_data import Writer
 
 
 def extract_first_sheep(herd_path: Path) -> str:
@@ -15,7 +14,6 @@ def extract_first_sheep(herd_path: Path) -> str:
         except yaml.YAMLError:
             raise TypeError(f"Couldn't read inventory file {herd_path}")
     return list(inventory_data["sheep"]["hosts"].keys())[0]
-
 
 
 def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
