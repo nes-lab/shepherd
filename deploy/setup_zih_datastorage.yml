@@ -12,7 +12,7 @@
     key_server: login.zih.tu-dresden.de
     data_server: dgw.zih.tu-dresden.de
     data_path_remote: /svm/vs-grp04/shepherdDS
-    data_path_local: /mnt/shp_ds/
+    data_path_local: /var/shepherd/recordings/
 
   vars_prompt:
     - name: zih_user
