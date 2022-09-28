@@ -1,0 +1,65 @@
+from pathlib import Path
+from typing import List
+from shutil import copy
+
+import numpy as np
+import pytest
+from shepherd_data import Writer
+import yaml
+
+
+def extract_first_sheep(herd_path: Path) -> str:
+    with open(herd_path) as stream:
+        try:
+            inventory_data = yaml.safe_load(stream)
+        except yaml.YAMLError:
+            raise TypeError(f"Couldn't read inventory file {herd_path}")
+    return list(inventory_data["sheep"]["hosts"].keys())[0]
+
+
+
+def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
+    store_path = file_path / file_name
+
+    with Writer(store_path, compression=1) as file:
+
+        file.set_hostname("artificial")
+
+        duration_s = 2
+        repetitions = 5
+        timestamp_vector = np.arange(0.0, duration_s, file.sample_interval_ns / 1e9)
+
+        # values in SI units
+        voltages = np.linspace(3.60, 1.90, int(file.samplerate_sps * duration_s))
+        currents = np.linspace(100e-6, 2000e-6, int(file.samplerate_sps * duration_s))
+
+        for idx in range(repetitions):
+            timestamps = idx * duration_s + timestamp_vector
+            file.append_iv_data_si(timestamps, voltages, currents)
+
+    return store_path
+
+
+@pytest.fixture
+def data_h5_path(tmp_path) -> Path:
+    return generate_h5_file(tmp_path)
+
+
+@pytest.fixture
+def local_herd(tmp_path) -> Path:
+    # locations copied from herd.cli()
+    inventories = [
+        "/etc/shepherd/herd.yml",
+        "~/herd.yml",
+        "inventory/herd.yml",
+    ]
+    host_path = None
+    for inventory in inventories:
+        if Path(inventory).exists():
+            host_path = Path(inventory)
+    if host_path is None:
+        raise FileNotFoundError(", ".join(inventories))
+    local_path = tmp_path / "herd.yml"
+    copy(host_path, local_path)
+
+    return local_path

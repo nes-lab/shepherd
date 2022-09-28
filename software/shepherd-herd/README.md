@@ -162,3 +162,13 @@ Sheep can either be forced to power down completely or in this case reboot:
 ```Shell
 shepherd-herd poweroff --reset
 ```
+
+## Testbench
+
+For testing `shepherd-herd` there must be a valid `herd.yml` at one of the three mentioned locations with accessible sheep-nodes. Navigate your shell into the package-folder `/shepherd/software/shepherd-herd/` and run:
+
+```Shell
+pytest
+```
+
+TODO: add programming-option
