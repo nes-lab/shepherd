@@ -32,11 +32,13 @@
   tags:
     - pru-tools
 
-- name: Download and extract pru software support package
-  ansible.builtin.unarchive:
-    src: 'https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/{{ ti_pru_support_package }}.tar.gz'
+- name: Clone PRU software support package (Ti PSSP)
+  ansible.builtin.git:
+    repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
     dest: "{{ ti_pru_support_path }}"
-    remote_src: true
+    update: true
+    version: "{{ ti_pru_support_tag }}"
+    force: true
   become: true
   register: dl_pssp_ret
   until: dl_pssp_ret is not failed

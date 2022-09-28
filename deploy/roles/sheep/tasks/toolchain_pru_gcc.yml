@@ -1,6 +1,6 @@
 ---
 
-- name: Make sure tool path exists
+- name: Make sure GCC tool path exists
   ansible.builtin.file:
     path: "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}"
     state: directory
@@ -31,7 +31,7 @@
     remote_src: true
     mode: '0666'
 
-- name: Download pru software support package
+- name: Clone PRU software support package (GCC PSSP)
   ansible.builtin.git:
     repo: 'https://github.com/dinuxbg/pru-software-support-package.git'
     dest: "{{ gcc_pru_support_path }}"
@@ -45,6 +45,7 @@
   tags:
     - pru-tools
 
+# TODO: regex with "export name" like in config_overlays (same for TI and more?)
 - name: Adding PRU environment vars in bashrc file
   ansible.builtin.lineinfile:
     dest: '{{ item[1] }}/.bashrc'
