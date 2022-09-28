@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from shutil import copy
 
@@ -5,6 +6,7 @@ import numpy as np
 import pytest
 import yaml
 from shepherd_data import Writer
+from shepherd_herd import cli
 
 
 def extract_first_sheep(herd_path: Path) -> str:
@@ -14,6 +16,18 @@ def extract_first_sheep(herd_path: Path) -> str:
         except yaml.YAMLError:
             raise TypeError(f"Couldn't read inventory file {herd_path}")
     return list(inventory_data["sheep"]["hosts"].keys())[0]
+
+
+def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
+    duration = 0.0
+    while cli_run.invoke(cli, ["-vvv", "check"]).exit_code > 0:
+        if timeout - duration < 0:
+            return True
+        time.sleep(2)
+        duration -= 2
+    if duration < tmin:
+        raise TimeoutError(f"Shepherd only took {duration} s (min = {tmin} s)")
+    return False
 
 
 def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
@@ -61,3 +75,9 @@ def local_herd(tmp_path) -> Path:
     copy(host_path, local_path)
 
     return local_path
+
+
+@pytest.fixture
+def stopped_herd(cli_runner):
+    cli_runner.invoke(cli, ["-vvv", "stop"])
+    wait_for_end(cli_runner)

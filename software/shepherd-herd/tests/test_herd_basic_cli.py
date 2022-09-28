@@ -43,6 +43,34 @@ def test_run_fail(cli_runner) -> None:
 
 
 @pytest.mark.timeout(10)
+def test_run_sudo(cli_runner) -> None:
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "run",
+            "-s",
+            "echo 'it's me: $USER",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.timeout(10)
+def test_run_sudo_long(cli_runner) -> None:
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "run",
+            "--sudo",
+            "echo 'it's me: $USER",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.timeout(10)
 def test_provide_inventory(cli_runner, local_herd) -> None:
     res = cli_runner.invoke(
         cli,
@@ -82,7 +110,26 @@ def test_provide_limit(cli_runner, local_herd) -> None:
             "-i",
             str(local_herd),
             "-l",
-            f"{sheep}," "-vvv",
+            f"{sheep},",
+            "-vvv",
+            "run",
+            "date",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.timeout(10)
+def test_provide_limit_long(cli_runner, local_herd) -> None:
+    sheep = extract_first_sheep(local_herd)
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-i",
+            str(local_herd),
+            "--limit",
+            f"{sheep},",
+            "-vvv",
             "run",
             "date",
         ],
