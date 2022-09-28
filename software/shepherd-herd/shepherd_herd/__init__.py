@@ -9,6 +9,7 @@ images to target sensor nodes.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+
 import contextlib
 import logging
 import telnetlib
@@ -27,6 +28,12 @@ __version__ = "0.4.0"
 consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd-herd")
 logger.addHandler(consoleHandler)
+
+# TODO:
+#  - click.command shorthelp can also just be the first sentence of docstring
+#  https://click.palletsprojects.com/en/8.1.x/documentation/#command-short-help
+#  - document arguments in their docstring (has no help=)
+#  - arguments can be configured in a dict and standardized across tools
 
 
 def yamlprovider(file_path, cmd_name):
@@ -126,7 +133,7 @@ def start_shepherd(
     "--inventory",
     "-i",
     type=str,
-    default="inventory/herd.yml",
+    default="",
     help="List of target hosts as comma-separated string or path to ansible-style yaml file",
 )
 @click.option(
@@ -144,7 +151,17 @@ def start_shepherd(
 )
 @click.option("-v", "--verbose", count=True, default=2)
 @click.pass_context
-def cli(ctx, inventory, limit, user, key_filename, verbose):
+def cli(ctx, inventory, limit, user, key_filename, verbose) -> None:
+    """A primary set of options to configure how to interface the herd
+
+    :param ctx:
+    :param inventory:
+    :param limit:
+    :param user:
+    :param key_filename:
+    :param verbose:
+    :return:
+    """
 
     if inventory.rstrip().endswith(","):
         hostlist = inventory.split(",")[:-1]
@@ -153,9 +170,22 @@ def cli(ctx, inventory, limit, user, key_filename, verbose):
         hostnames = {hostname: hostname for hostname in hostlist}
 
     else:
-        host_path = Path(inventory)
-        if not host_path.exists():
-            raise click.FileError(inventory)
+        # look at all these directories for inventory-file
+        if inventory == "":
+            inventories = [
+                "/etc/shepherd/herd.yml",
+                "~/herd.yml",
+                "inventory/herd.yml",
+            ]
+        else:
+            inventories = [inventory]
+        host_path = None
+        for inventory in inventories:
+            if Path(inventory).exists():
+                host_path = Path(inventory)
+
+        if host_path is None:
+            raise click.FileError(", ".join(inventories))
 
         with open(host_path) as stream:
             try:
@@ -221,7 +251,7 @@ def poweroff(ctx, restart):
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def run(ctx, command, sudo):
     for cnx in ctx.obj["fab group"]:
-        click.echo(f"************** {ctx.obj['hostnames'][cnx.host]} **************")
+        click.echo(f"\n************** {ctx.obj['hostnames'][cnx.host]} **************")
         if sudo:
             cnx.sudo(command, warn=True)
         else:
@@ -267,7 +297,7 @@ def target(ctx, port, on, voltage, sel_a):
             cnx.sudo("shepherd-sheep target-power --off", hide=True)
 
 
-@target.resultcallback()
+@target.result_callback()
 @click.pass_context
 def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
@@ -407,7 +437,9 @@ def harvester(
     )
 
     if start:
-        logger.debug("Scheduling start of shepherd at %s (in ~ %s s)", ts_start, delay)
+        logger.debug(
+            "Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay
+        )
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -510,7 +542,9 @@ def emulator(
     )
 
     if start:
-        logger.debug("Scheduling start of shepherd at %s (in ~ %s s)", ts_start, delay)
+        logger.debug(
+            "Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay
+        )
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -525,7 +559,7 @@ def stop(ctx):
 @click.argument("filename", type=click.Path())
 @click.argument("outdir", type=click.Path(exists=True))
 @click.option(
-    "--rename", "-r", is_flag=True, help="Add current timestamp to measurement file"
+    "--timestamp", "-t", is_flag=True, help="Add current timestamp to measurement file"
 )
 @click.option(
     "--delete",
@@ -540,7 +574,16 @@ def stop(ctx):
     help="Stop the on-going harvest/emulation process before retrieving the data",
 )
 @click.pass_context
-def retrieve(ctx, filename, outdir, rename, delete, stop):
+def retrieve(ctx, filename, outdir, rename, delete, stop) -> None:
+    """
+
+    :param filename: remote file with absolute path or relative in '/var/shepherd/recordings/'
+    :param outdir: local path to put the files in 'outdir/[node-name]/filename'
+    :param rename:
+    :param delete:
+    :param stop:
+    :return:
+    """
     if stop:
         for cnx in ctx.obj["fab group"]:
 
@@ -573,7 +616,7 @@ def retrieve(ctx, filename, outdir, rename, delete, stop):
             filepath = Path("/var/shepherd/recordings") / filename
 
         if rename:
-            local_path = target_path / f"rec_{ time_str }.h5"
+            local_path = target_path / f"{filepath.stem}_{ time_str }.{filepath.suffix}"
         else:
             local_path = target_path / filepath.name
 
