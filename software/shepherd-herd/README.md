@@ -115,9 +115,18 @@ Explanation:
 
 For more virtual source models see [virtual_source_defs.yml](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd/virtual_source_defs.yml).
 
-### Data retrieval
+### Data distribution & retrieval
 
-After recording is done, retrieve the data from all nodes to your local machine for analysis:
+Recordings and config-files can be **distributed** to the remote nodes via:
+
+```Shell
+shepherd-herd distribute rec.h5
+```
+
+The default remote path is `/var/shepherd/recordings/`. For security reasons there are only two allowed paths:
+
+- `/var/shepherd/` for hdf5-recordings
+- `/etc/shepherd/` for yaml-config-files
 
 To retrieve the recordings from the shepherd nodes and store them locally on your machine in the current working directory (`./`):
 
@@ -133,15 +142,24 @@ Explanation:
 - files will be put in current working director (`./[node-name]/rec.h5`)
 - you can add `--timestamp` to extend filename
 
-### Check and stop Measurement (forcefully)
+### Start, check and stop Measurements
 
-The current state of the measurement can be checked with (console printout and return code):
+Manually **starting** a pre-configured measurement can be done via:
+
+```Shell
+shepherd-herd start
+```
+
+Note 1: config is loading from `/etc/shepherd/config.yml`
+Note 2: start is only loosely synchronized
+
+The current state of the measurement can be **checked** with (console printout and return code):
 
 ```Shell
 shepherd-herd check
 ```
 
-If the measurement runs indefinitely or something different came up and you want to stop:
+If the measurement runs indefinitely or something different came up and you want to **stop** forcefully:
 
 ```Shell
 shepherd-herd -l sheep1 stop

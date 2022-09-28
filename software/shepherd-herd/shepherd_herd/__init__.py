@@ -577,6 +577,17 @@ def emulator(
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
+@cli.command(
+    short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)"
+)
+@click.pass_context
+def start(ctx):
+    if check_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"]):
+        logger.info("Shepherd still running, will skip this command!")
+    else:
+        start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
+
+
 @cli.command(short_help="Information about current shepherd measurement")
 @click.pass_context
 def check(ctx) -> int:
@@ -593,6 +604,46 @@ def check(ctx) -> int:
 def stop(ctx):
     for cnx in ctx.obj["fab group"]:
         cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
+
+
+@cli.command(
+    short_help="Uploads a file FILENAME to the remote node, stored in in REMOTE_PATH"
+)
+@click.argument(
+    "filename",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
+@click.option(
+    "remote_path",
+    type=click.Path(),
+    help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
+)
+@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+def distribute(ctx, filename, remote_path, force_overwrite):
+    remotes_allowed = [
+        Path("/var/shepherd/recordings/"),  # default
+        Path("/var/shepherd/"),
+        Path("/etc/shepherd/"),
+    ]
+    if remote_path is None:
+        remote_path = remotes_allowed[0]
+        logger.info("Remote path not provided -> default = %s", remote_path)
+    else:
+        remote_path = Path(remote_path).absolute()
+        path_allowed = False
+        for remote_allowed in remotes_allowed:
+            if str(remote_allowed).startswith(str(remote_path)):
+                path_allowed = True
+        if not path_allowed:
+            raise NameError(f"provided path was forbidden ('{remote_path}')")
+
+    filename = Path(filename)
+    tmp_path = Path("tmp") / filename.name
+    xtr_arg = "-f" if force_overwrite else "-n"
+
+    for cnx in ctx.obj["fab group"]:
+        cnx.put(filename, Path("tmp") / filename.name)  # noqa: S108
+        cnx.sudo(f"mv {xtr_arg} {tmp_path} {remote_path}")
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")

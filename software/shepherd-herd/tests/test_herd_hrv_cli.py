@@ -1,8 +1,6 @@
-import time
-
 import pytest
-
 from shepherd_herd import cli
+
 from .conftest import wait_for_end
 
 
@@ -114,6 +112,8 @@ def test_harv_no_start(cli_runner, stopped_herd) -> None:
     assert res.exit_code == 0
     wait_for_end(cli_runner)
 
+
 # TODO:
+#   manually start
 #   forcefully stop
-#   retrieve & check
+#   retrieve & check with datalib (length & validity)
