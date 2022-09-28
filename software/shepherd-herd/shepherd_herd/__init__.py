@@ -129,6 +129,22 @@ def start_shepherd(
         res = cnx.sudo("systemctl start shepherd", hide=True, warn=True)
 
 
+def check_shepherd(group: Group, hostnames: dict) -> bool:
+    """Returns true ss long as one instance is still measuring
+
+    :param group:
+    :param hostnames:
+    :return: True is one node is still running
+    """
+    running = False
+    for cnx in group:
+        res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
+        if res.exited != 3:
+            running = True
+            logger.info("shepherd still active on %s", hostnames[cnx.host])
+    return running
+
+
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "--inventory",
@@ -411,7 +427,9 @@ def reset(ctx):
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
 @click.option(
-    "--start/--no-start", default=True, help="Start shepherd after uploading config"
+    "--start/--no-start",
+    default=True,
+    help="Start shepherd synchronized after uploading config",
 )
 @click.pass_context
 def harvester(
@@ -499,7 +517,7 @@ def harvester(
 @click.option(
     "--start/--no-start",
     default=True,
-    help="Start shepherd after uploading config",
+    help="Start shepherd synchronized after uploading config",
 )
 @click.pass_context
 def emulator(
@@ -557,6 +575,17 @@ def emulator(
             "Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay
         )
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
+
+
+@cli.command(short_help="Information about current shepherd measurement")
+@click.pass_context
+def check(ctx) -> int:
+    ret = check_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
+    if ret:
+        logger.info("Shepherd still running!")
+    else:
+        logger.info("Shepherd not running! (measurement is done)")
+    return int(ret)
 
 
 @cli.command(short_help="Stops any harvest/emulation")

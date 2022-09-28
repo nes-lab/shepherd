@@ -78,7 +78,7 @@ For a full list of supported commands and options, run ```shepherd-herd --help``
 Simultaneously start harvesting the connected energy sources on the nodes:
 
 ```Shell
-shepherd-herd harvester -a cv33 -d 30 -o rec.h5
+shepherd-herd harvester -a cv20 -d 30 -o rec.h5
 ```
 
 or with long arguments as alternative
@@ -133,7 +133,13 @@ Explanation:
 - files will be put in current working director (`./[node-name]/rec.h5`)
 - you can add `--timestamp` to extend filename
 
-### Stop Measurement (forcefully)
+### Check and stop Measurement (forcefully)
+
+The current state of the measurement can be checked with (console printout and return code):
+
+```Shell
+shepherd-herd check
+```
 
 If the measurement runs indefinitely or something different came up and you want to stop:
 
