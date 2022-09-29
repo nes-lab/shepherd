@@ -32,6 +32,7 @@
     path: "{{ item.path }}"
     state: absent
   with_items: "{{ files_tmp.files }}"
+  when: False  # Disabled for now, TODO: needs testing
 
 - name: Discard unused blocks (trim)
   ansible.builtin.command: 'fstrim -a'

@@ -9,7 +9,7 @@
     repo: https://github.com/RobertCNelson/boot-scripts
     dest: /opt/scripts
     update: true
-    version: main
+    version: HEAD
     force: true
 - name: Remove space-waster of boot-script-repo (free 13 of 27 mb)
   ansible.builtin.file:

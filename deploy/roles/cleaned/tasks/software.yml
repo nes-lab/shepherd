@@ -43,7 +43,8 @@
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  with_items: "{{ files_fw.files }}"
+  with_items: "{{ files_fw.files }}"#
+  when: False # Disabled for now, TODO: needs testing
 
 - name: APT - Uninstall non-essential Packages
   ansible.builtin.apt:
@@ -51,7 +52,7 @@
     state: absent
     purge: true
   failed_when: false
-  loop:  # TODO: change to loop could mean trouble (list with lists)
+  with_items:
     - "{{ non_essential_packages_a }}"
     - "{{ non_essential_packages_b }}"
     - "{{ non_essential_packages_c }}"
