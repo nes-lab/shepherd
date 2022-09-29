@@ -5,6 +5,7 @@
     path: "{{ ti_pru_cgt_path }}"
     state: directory
     mode: '0644'
+    owner: "{{ ansible_user }}"
   become: true
   tags:
     - pru-tools
@@ -51,6 +52,8 @@
     path: '{{ ti_pru_cgt_path }}/bin'
     state: directory
     recurse: true
+    owner: "{{ ansible_user }}"
+    mode: '0755'
   become: true
   tags:
     - pru-tools
@@ -60,6 +63,8 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
     state: link
+    owner: "{{ ansible_user }}"
+    mode: '0755'
   loop:
     - { src: /usr/bin/clpru, dest: '{{ ti_pru_cgt_path }}/bin/clpru' }
     - { src: /usr/bin/lnkpru, dest: '{{ ti_pru_cgt_path }}/bin/lnkpru' }
@@ -83,3 +88,11 @@
   become: true
   tags:
     - pru-tools
+
+- name: Own tool path
+  ansible.builtin.file:
+    path: "{{ ti_tools_path }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    recurse: true
+  become: true

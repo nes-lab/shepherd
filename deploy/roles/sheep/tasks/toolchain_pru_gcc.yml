@@ -29,6 +29,7 @@
     src: "{{ shepherd_install_path }}/software/firmware/lib/am335xl.pru0"
     dest: "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}/pru-elf/lib/device-specs/"
     remote_src: true
+    owner: "{{ ansible_user }}"
     mode: '0666'
 
 - name: Clone PRU software support package (GCC PSSP)
@@ -61,3 +62,11 @@
   become: true
   tags:
     - pru-tools
+
+- name: Own tool path
+  ansible.builtin.file:
+    path: "{{ gcc_tools_path }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    recurse: true
+  become: true
