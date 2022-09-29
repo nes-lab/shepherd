@@ -62,7 +62,7 @@
     state: link
   loop:
     - { src: /usr/bin/clpru, dest: '{{ ti_pru_cgt_path }}/bin/clpru' }
-    - { src: /usr/bin/lnkpru, dest: '{{ ti_pru_support_path }}/bin/lnkpru' }
+    - { src: /usr/bin/lnkpru, dest: '{{ ti_pru_cgt_path }}/bin/lnkpru' }
   become: true
   tags:
     - pru-tools
@@ -71,6 +71,7 @@
   ansible.builtin.lineinfile:
     dest: '{{ item[1] }}/.bashrc'
     line: 'export {{ item[0]["name"] }}={{ item[0]["path"] }}'
+    regex: "#?export {{ item[0]['name'] }}=.*$"
     insertafter: 'EOF'
     state: present
   with_nested:

@@ -9,9 +9,9 @@
   when: do_delete_recordings | bool
 - name: Delete recordings
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item }}"
     state: absent
-  with_items: "{{ files_rec.files }}"
+  with_items: "{{ files_rec.files | map(attribute='path') }}"
   when: do_delete_recordings | bool
   # NOTE: could be done with just .find, but this leaves directory intact
 

@@ -8,9 +8,9 @@
   register: files_init
 - name: Optimize Boot by removing outdated initrd - delete files found previously
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item }}"
     state: absent
-  with_items: "{{ files_init.files }}"
+  with_items: "{{ files_init.files | map(attribute='path') }}"
 
 
 - name: Delete unused firmware (by beaglebone, slightly risky) - A
@@ -41,9 +41,9 @@
   register: files_fw
 - name: Delete unused firmware (by beaglebone, slightly risky) - B
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item }}"
     state: absent
-  with_items: "{{ files_fw.files }}"#
+  with_items: "{{ files_fw.files | map(attribute='path') }}"
   when: False # Disabled for now, TODO: needs testing
 
 - name: APT - Uninstall non-essential Packages
