@@ -45,7 +45,6 @@
   tags:
     - pru-tools
 
-# TODO: regex with "export name" like in config_overlays (same for TI and more?)
 - name: Adding PRU environment vars in bashrc file
   ansible.builtin.lineinfile:
     dest: '{{ item[1] }}/.bashrc'
