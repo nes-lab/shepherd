@@ -1,11 +1,14 @@
 ---
 
-- name: Make sure TI software path exists
+- name: Make sure TI software paths exists
   ansible.builtin.file:
-    path: "{{ ti_pru_cgt_path }}"
+    path: "{{ item }}"
     state: directory
     mode: 'a+rwx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
+  loop:
+    - "{{ ti_tools_path }}"
+    - "{{ ti_pru_cgt_path }}"
   become: true
   tags:
     - pru-tools
