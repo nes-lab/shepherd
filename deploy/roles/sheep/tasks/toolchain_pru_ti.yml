@@ -4,7 +4,7 @@
   ansible.builtin.file:
     path: "{{ ti_pru_cgt_path }}"
     state: directory
-    mode: '0644'
+    mode: 'a+rwx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
   become: true
   tags:
@@ -53,7 +53,7 @@
     state: directory
     recurse: true
     owner: "{{ ansible_user }}"
-    mode: '0755'
+    mode: 'a+rx,u+w' # everyone can list and access files inside (+ owner can create & delete)
   become: true
   tags:
     - pru-tools
@@ -64,7 +64,7 @@
     dest: '{{ item.dest }}'
     state: link
     owner: "{{ ansible_user }}"
-    mode: '0755'
+    mode: 'a+rx,u+w'
   loop:
     - { src: /usr/bin/clpru, dest: '{{ ti_pru_cgt_path }}/bin/clpru' }
     - { src: /usr/bin/lnkpru, dest: '{{ ti_pru_cgt_path }}/bin/lnkpru' }

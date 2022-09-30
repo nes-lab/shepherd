@@ -10,7 +10,8 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: '0644'
+    owner: "{{ ansible_user }}"
+    mode: 'a+rwx'
   loop:
     - /etc/systemd/system/phc2sys.service.d/
     - /etc/systemd/system/ptp4l.service.d/

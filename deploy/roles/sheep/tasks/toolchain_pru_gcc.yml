@@ -4,7 +4,7 @@
   ansible.builtin.file:
     path: "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}"
     state: directory
-    mode: '0644'
+    mode: 'a+rx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
   become: true
   tags:
