@@ -12,6 +12,7 @@ images to target sensor nodes.
 
 import contextlib
 import logging
+import sys
 import telnetlib
 import time
 from io import StringIO
@@ -584,19 +585,21 @@ def emulator(
 def start(ctx):
     if check_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"]):
         logger.info("Shepherd still running, will skip this command!")
+        sys.exit(1)
     else:
         start_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
+        logger.info("Shepherd started.")
 
 
 @cli.command(short_help="Information about current shepherd measurement")
 @click.pass_context
-def check(ctx) -> int:
+def check(ctx) -> None:
     ret = check_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
     if ret:
         logger.info("Shepherd still running!")
+        sys.exit(1)
     else:
         logger.info("Shepherd not running! (measurement is done)")
-    return int(ret)
 
 
 @cli.command(short_help="Stops any harvest/emulation")
@@ -604,6 +607,7 @@ def check(ctx) -> int:
 def stop(ctx):
     for cnx in ctx.obj["fab group"]:
         cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
+    logger.info("Shepherd stopped.")
 
 
 @cli.command(
@@ -614,7 +618,7 @@ def stop(ctx):
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.option(
-    "remote_path",
+    "--remote_path",
     type=click.Path(),
     help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
 )
