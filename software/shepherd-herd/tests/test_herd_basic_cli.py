@@ -1,7 +1,10 @@
+import os
+
 import pytest
 from shepherd_herd import cli
 
 from .conftest import extract_first_sheep
+from .conftest import generate_h5_file
 
 
 @pytest.mark.timeout(10)
@@ -152,6 +155,141 @@ def test_provide_limit_fail(cli_runner, local_herd) -> None:
         ],
     )
     assert res.exit_code != 0
+
+
+def test_distribute_retrieve_std(cli_runner, tmp_path) -> None:
+    test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
+    elem_count1 = len(os.listdir(tmp_path))
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "distribute",
+            str(test_file),
+        ],
+    )
+    assert res.exit_code == 0
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "retrieve",
+            "-f",
+            "-t",
+            "-d",
+            str(test_file.name),
+            str(tmp_path),
+        ],
+    )
+    assert res.exit_code == 0
+    elem_count2 = len(os.listdir(tmp_path))
+    # file got deleted in prev retrieve, so fail now
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "retrieve",
+            "-s",
+            str(test_file.name),
+            str(tmp_path),
+        ],
+    )
+    assert res.exit_code != 0
+    elem_count3 = len(os.listdir(tmp_path))
+    assert elem_count1 < elem_count2
+    assert elem_count2 == elem_count3
+
+
+def test_distribute_retrieve_etc(cli_runner, tmp_path) -> None:
+    test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
+    elem_count1 = len(os.listdir(tmp_path))
+    dir_remote = "/etc/shepherd/"
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "distribute",
+            "--remote_path",
+            dir_remote,
+            str(test_file),
+        ],
+    )
+    assert res.exit_code == 0
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "retrieve",
+            "--force-stop",
+            "--separate",
+            "--delete",
+            dir_remote + str(test_file.name),
+            str(tmp_path),
+        ],
+    )
+    assert res.exit_code == 0
+    elem_count2 = len(os.listdir(tmp_path))
+    # file got deleted in prev retrieve, so fail now
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "retrieve",
+            "--timestamp",
+            dir_remote + str(test_file.name),
+            str(tmp_path),
+        ],
+    )
+    assert res.exit_code != 0
+    elem_count3 = len(os.listdir(tmp_path))
+    assert elem_count1 < elem_count2
+    assert elem_count2 == elem_count3
+
+
+def test_distribute_retrieve_var(cli_runner, tmp_path) -> None:
+    test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
+    elem_count1 = len(os.listdir(tmp_path))
+    dir_remote = "/var/shepherd/"
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "distribute",
+            "-r",
+            dir_remote,
+            str(test_file),
+        ],
+    )
+    assert res.exit_code == 0
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "retrieve",
+            "--force-stop",
+            "--separate",
+            "--delete",
+            dir_remote + str(test_file.name),
+            str(tmp_path),
+        ],
+    )
+    assert res.exit_code == 0
+    elem_count2 = len(os.listdir(tmp_path))
+    # file got deleted in prev retrieve, so fail now
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "retrieve",
+            "--timestamp",
+            dir_remote + str(test_file.name),
+            str(tmp_path),
+        ],
+    )
+    assert res.exit_code != 0
+    elem_count3 = len(os.listdir(tmp_path))
+    assert elem_count1 < elem_count2
+    assert elem_count2 == elem_count3
 
 
 # TODO: test providing user and key filename

@@ -142,8 +142,19 @@ def check_shepherd(group: Group, hostnames: dict) -> bool:
         res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
         if res.exited != 3:
             running = True
-            logger.info("shepherd still active on %s", hostnames[cnx.host])
+            logger.debug("shepherd still active on %s", hostnames[cnx.host])
     return running
+
+
+def stop_shepherd(
+    group: Group,
+    hostnames: dict,
+) -> bool:
+    for cnx in group:
+        logger.debug("stopping shepherd service on %s", hostnames[cnx.host])
+        cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
+    logger.debug("Shepherd was forcefully stopped.")
+    return True
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
@@ -325,7 +336,7 @@ def target(ctx, port, on, voltage, sel_a):
             cnx.sudo("shepherd-sheep target-power --off", hide=True)
 
 
-@target.result_callback()
+# @target.result_callback()  # TODO: disabled for now: errors in recent click-versions
 @click.pass_context
 def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
@@ -352,7 +363,9 @@ def start_openocd(cnx, hostname, timeout=30):
 
 
 @target.command(short_help="Flashes the binary IMAGE file to the target")
-@click.argument("image", type=click.Path(exists=True))
+@click.argument(
+    "image", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True)
+)
 @click.pass_context
 def flash(ctx, image):
     for cnx in ctx.obj["fab group"]:
@@ -605,8 +618,7 @@ def check(ctx) -> None:
 @cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
 def stop(ctx):
-    for cnx in ctx.obj["fab group"]:
-        cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
+    stop_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
     logger.info("Shepherd stopped.")
 
 
@@ -619,11 +631,18 @@ def stop(ctx):
 )
 @click.option(
     "--remote_path",
+    "-r",
+    default="/var/shepherd/recordings/",
     type=click.Path(),
     help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.pass_context
 def distribute(ctx, filename, remote_path, force_overwrite):
+
+    filename = Path(filename).absolute()
+    logger.info("Local source path = %s", filename)
+
     remotes_allowed = [
         Path("/var/shepherd/recordings/"),  # default
         Path("/var/shepherd/"),
@@ -638,23 +657,32 @@ def distribute(ctx, filename, remote_path, force_overwrite):
         for remote_allowed in remotes_allowed:
             if str(remote_allowed).startswith(str(remote_path)):
                 path_allowed = True
-        if not path_allowed:
+        if path_allowed:
+            logger.info("Remote path = %s", remote_path)
+        else:
             raise NameError(f"provided path was forbidden ('{remote_path}')")
 
-    filename = Path(filename)
-    tmp_path = Path("tmp") / filename.name
+    tmp_path = Path("/tmp") / filename.name  # noqa: S108
     xtr_arg = "-f" if force_overwrite else "-n"
 
     for cnx in ctx.obj["fab group"]:
-        cnx.put(filename, Path("tmp") / filename.name)  # noqa: S108
+        cnx.put(str(filename), str(tmp_path))  # noqa: S108
         cnx.sudo(f"mv {xtr_arg} {tmp_path} {remote_path}")
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
 @click.argument("filename", type=click.Path())
-@click.argument("outdir", type=click.Path(exists=True))
+@click.argument(
+    "outdir",
+    type=click.Path(
+        exists=True,
+    ),
+)
 @click.option(
     "--timestamp", "-t", is_flag=True, help="Add current timestamp to measurement file"
+)
+@click.option(
+    "--separate", "-s", is_flag=True, help="Every remote node gets own subdirectory"
 )
 @click.option(
     "--delete",
@@ -663,74 +691,89 @@ def distribute(ctx, filename, remote_path, force_overwrite):
     help="Delete the file from the remote filesystem after retrieval",
 )
 @click.option(
-    "--stop",
-    "-s",
+    "--force-stop",
+    "-f",
     is_flag=True,
     help="Stop the on-going harvest/emulation process before retrieving the data",
 )
 @click.pass_context
-def retrieve(ctx, filename, outdir, rename, delete, stop) -> None:
+def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> None:
     """
 
     :param filename: remote file with absolute path or relative in '/var/shepherd/recordings/'
     :param outdir: local path to put the files in 'outdir/[node-name]/filename'
-    :param rename:
+    :param timestamp:
+    :param separate:
     :param delete:
-    :param stop:
+    :param force_stop:
     :return:
     """
-    if stop:
-        for cnx in ctx.obj["fab group"]:
-
-            logger.info(
-                "stopping shepherd service on %s", ctx.obj["hostnames"][cnx.host]
-            )
-            res = cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
-
     time_str = time.strftime("%Y_%m_%dT%H_%M_%S")
-    ts_end = time.time() + 30
-    for cnx in ctx.obj["fab group"]:
-        while True:
-            res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
-            if res.exited == 3:
-                break
-            if not stop or time.time() > ts_end:
-                raise Exception(
-                    f"shepherd not inactive on {ctx.obj['hostnames'][cnx.host]}"
-                )
+    xtra_ts = f"_{ time_str }" if timestamp else ""
+    failed_retrieval = False
+
+    if force_stop:
+        stop_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
+        ts_end = time.time() + 30
+        while check_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"]):
+            if time.time() > ts_end:
+                logger.setLevel(logging.DEBUG)
+                # change lvl so check_shepherd tells about troubled node
+                check_shepherd(ctx.obj["fab group"], ctx.obj["hostnames"])
+                raise Exception("shepherd still active after timeout")
             time.sleep(1)
 
-        target_path = Path(outdir) / ctx.obj["hostnames"][cnx.host]
-        if not target_path.exists():
-            logger.info("creating local dir %s", target_path)
-            target_path.mkdir()
+    for cnx in ctx.obj["fab group"]:
+        if separate:
+            target_path = Path(outdir) / ctx.obj["hostnames"][cnx.host]
+            xtra_node = ""
+        else:
+            target_path = Path(outdir)
+            xtra_node = f"_{ctx.obj['hostnames'][cnx.host]}"
 
         if Path(filename).is_absolute():
             filepath = Path(filename)
         else:
             filepath = Path("/var/shepherd/recordings") / filename
 
-        if rename:
-            local_path = target_path / f"{filepath.stem}_{ time_str }.{filepath.suffix}"
-        else:
-            local_path = target_path / filepath.name
-
-        logger.info(
-            (
-                "retrieving remote file %s from %s to local %s",
+        res = cnx.run(
+            f"test -f {filepath}",
+            hide=True,
+            warn=True,
+        )
+        if res.exited > 0:
+            logger.error(
+                "remote file '%s' does not exist on node %s",
                 filepath,
                 ctx.obj["hostnames"][cnx.host],
-                local_path,
             )
+            failed_retrieval = True
+            continue
+
+        if not target_path.exists():
+            logger.info("creating local dir %s", target_path)
+            target_path.mkdir()
+
+        local_path = target_path / (
+            str(filepath.stem) + xtra_ts + xtra_node + filepath.suffix
         )
-        cnx.get(filepath, local=Path(local_path))
+
+        logger.info(
+            "retrieving remote file '%s' from %s to local '%s'",
+            filepath,
+            ctx.obj["hostnames"][cnx.host],
+            local_path,
+        )
+        cnx.get(str(filepath), local=str(local_path))
         if delete:
             logger.info(
                 "deleting %s from remote %s",
                 filepath,
                 ctx.obj["hostnames"][cnx.host],
             )
-            cnx.sudo(f"rm {str(filepath)}", hide=True)
+            cnx.sudo(f"rm {filepath}", hide=True)
+
+    sys.exit(failed_retrieval)
 
 
 def main():

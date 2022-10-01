@@ -138,9 +138,9 @@ Explanation:
 
 - look for remote `/var/shepherd/recordings/rec.h5` (when not issuing an absolute path)
 - don't delete remote file (add `-d` for that)
-- be sure measurement is done, otherwise you get a partial file (or add `--stop` to force it)
-- files will be put in current working director (`./[node-name]/rec.h5`)
-- you can add `--timestamp` to extend filename
+- be sure measurement is done, otherwise you get a partial file (or add `--force-stop` to force it)
+- files will be put in current working director (`./rec_[node-name].h5`, or `./[node-name]/rec.h5` if you add `--separate`)
+- you can add `--timestamp` to extend filename (`./rec_[timestamp]_[node-name].h5`)
 
 ### Start, check and stop Measurements
 
@@ -184,7 +184,7 @@ shepherd-herd target reset
 Sheep can either be forced to power down completely or in this case reboot:
 
 ```Shell
-shepherd-herd poweroff --reset
+shepherd-herd poweroff --restart
 ```
 
 ## Testbench

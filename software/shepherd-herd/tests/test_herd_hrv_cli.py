@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from shepherd_herd import cli
 
@@ -65,14 +67,17 @@ def test_harv_example_fail(cli_runner, stopped_herd) -> None:
 def test_harv_minimal(cli_runner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
-        [
-            "harvester",
-            "-d",
-            "10",  # not needed, but better stop automatically
-        ],
+        ["harvester"],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner, tmin=15)
+    time.sleep(10)
+    # forced stop
+    res = cli_runner.invoke(
+        cli,
+        ["-vvv", "stop"],
+    )
+    assert res.exit_code == 0
+    wait_for_end(cli_runner)
 
 
 @pytest.mark.timeout(60)
@@ -97,23 +102,29 @@ def test_harv_all_args(cli_runner, stopped_herd) -> None:
     wait_for_end(cli_runner, tmin=15)
 
 
-@pytest.mark.timeout(10)
+@pytest.mark.timeout(80)
 def test_harv_no_start(cli_runner, stopped_herd) -> None:
     # Note: short timeout is the catch
-    # -> also minimal arg-set without -d (not tested prior)
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
             "harvester",
+            "-d",
+            "10",
             "--no-start",
         ],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner)
+    wait_for_end(cli_runner, timeout=10)
+    # manual start
+    res = cli_runner.invoke(
+        cli,
+        ["-vvv", "start"],
+    )
+    assert res.exit_code == 0
+    wait_for_end(cli_runner, timeout=60)
 
 
 # TODO:
-#   manually start
-#   forcefully stop
 #   retrieve & check with datalib (length & validity)
