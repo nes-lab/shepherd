@@ -14,15 +14,15 @@
 
 - name: Create paths for shepherd
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item }}/"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: 'a+rwx'
   loop:
-    - shepherd_install_path
-    - shepherd_data_path
-    - shepherd_config_path
+    - "{{ shepherd_install_path }}"
+    - "{{ shepherd_data_path }}"
+    - "{{ shepherd_config_path }}"
   tags:
     - source-code
     - python

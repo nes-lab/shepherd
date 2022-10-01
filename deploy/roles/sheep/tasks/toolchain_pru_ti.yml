@@ -2,7 +2,7 @@
 
 - name: Make sure TI software paths exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ item }}/"
     state: directory
     mode: 'a+rwx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
@@ -52,7 +52,7 @@
 
 - name: Prepare path to link binaries
   ansible.builtin.file:
-    path: '{{ ti_pru_cgt_path }}/bin'
+    path: '{{ ti_pru_cgt_path }}/bin/'
     state: directory
     recurse: true
     owner: "{{ ansible_user }}"
@@ -94,7 +94,7 @@
 
 - name: Own tool path
   ansible.builtin.file:
-    path: "{{ ti_tools_path }}"
+    path: "{{ ti_tools_path }}/"
     state: directory
     owner: "{{ ansible_user }}"
     recurse: true

@@ -53,7 +53,7 @@
 
 - name: Own shepherd codebase
   ansible.builtin.file:
-    path: "{{ shepherd_install_path }}"
+    path: "{{ shepherd_install_path }}/"
     state: directory
     owner: "{{ ansible_user }}"
     mode: "a+rw"

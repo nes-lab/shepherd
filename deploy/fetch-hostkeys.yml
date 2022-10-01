@@ -6,7 +6,7 @@
 
     - name: Prepare directory per host
       ansible.builtin.file:
-        path: "{{ playbook_dir }}/keys/{{ inventory_hostname }}"
+        path: "{{ playbook_dir }}/keys/{{ inventory_hostname }}/"
         state: directory
         mode: 'a+rx,u+w' # everyone can list and access files inside (+ owner can create & delete)
       delegate_to: localhost

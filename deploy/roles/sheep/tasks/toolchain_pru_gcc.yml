@@ -7,8 +7,8 @@
     mode: 'a+rx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
   loop:
-    - "{{ gcc_tools_path }}"
-    - "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}"
+    - "{{ gcc_tools_path }}/"
+    - "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}/"
   become: true
   tags:
     - pru-tools
@@ -68,7 +68,7 @@
 
 - name: Own tool path
   ansible.builtin.file:
-    path: "{{ gcc_tools_path }}"
+    path: "{{ gcc_tools_path }}/"
     state: directory
     owner: "{{ ansible_user }}"
     recurse: true

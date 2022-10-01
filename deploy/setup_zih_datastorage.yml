@@ -61,8 +61,10 @@
 
     - name: Create mount-directory
       ansible.builtin.file:
-        path: "{{data_path_local}}"
+        path: "{{data_path_local}}/"
+        state: directory
         owner: "{{ansible_user}}"
+        mode: 'a+rwx'
 
     - name: Enable automatic mounting
       ansible.builtin.lineinfile:

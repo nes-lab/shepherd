@@ -3,10 +3,10 @@
 - name: Deploy example configuration
   ansible.builtin.copy:
     src: "{{ shepherd_install_path }}/software/python-package/{{ item }}"
-    dest: "{{ shepherd_config_path }}"
+    dest: "{{ shepherd_config_path }}/"
     force: false
     owner: "{{ ansible_user }}"
-    mode: '0644'
+    mode: 'a+rw'
     remote_src: true
   loop:
     - example_config_emulator.yml
@@ -22,7 +22,7 @@
     dest: "{{ shepherd_config_path }}/config.yml"
     force: false
     owner: "{{ ansible_user }}"
-    mode: '0644'
+    mode: 'a+rw'
     remote_src: true
   tags:
     - source-code

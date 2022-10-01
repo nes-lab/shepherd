@@ -35,7 +35,7 @@
     - name: Add systemd services
       ansible.builtin.copy:
         src: '{{ repo_dir.stdout }}/software/openocd/debian/{{ item }}.service'
-        dest: '/etc/systemd/system/{{ item }}.service'
+        dest: '/etc/systemd/system/'
         mode: '0644'
       loop:
         - shepherd-openocd
