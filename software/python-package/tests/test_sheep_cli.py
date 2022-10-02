@@ -112,6 +112,7 @@ def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path):
             "-s",
             f"{start_time}",
             "-f",
+            "-c",
             "--no-warn-only",
             "-o",
             str(store),
@@ -289,8 +290,8 @@ def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5)
             "--force_overwrite",
             "--use_cal_default",
             "--enable_io",
-            "--io_sel_target_a",
-            "--pwr_sel_target_a",
+            "--io_target_a",
+            "--pwr_target_a",
             "--warn-only",
             "--virtsource",
             str(file_path),
@@ -312,6 +313,8 @@ def test_cli_emulate_parameters_long(shepherd_up, cli_runner, tmp_path, data_h5)
 @pytest.mark.timeout(60)
 def test_cli_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5):
     store = tmp_path / "out.h5"
+    here = Path(__file__).absolute().parent
+    file_path = here / "example_config_virtsource.yml"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
         cli,
@@ -322,13 +325,16 @@ def test_cli_emulate_parameters_short(shepherd_up, cli_runner, tmp_path, data_h5
             "10",
             "-s",
             str(start_time),
-            "--aux_voltage",
+            "-x",
             "2.5",
             "-f",
+            "-c",
             "--disable_io",
-            "--io_sel_target_b",
-            "--pwr_sel_target_b",
+            "--io_target_b",
+            "--pwr_target_b",
             "--no-warn-only",
+            "-a",
+            str(file_path),
             "-o",
             str(store),
             str(data_h5),

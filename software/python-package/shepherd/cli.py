@@ -168,8 +168,8 @@ def run(mode, parameters: Dict, verbose):
             parameters["input_path"] = Path(parameters["input_path"])
         emu_translator = {
             "enable_io": "set_target_io_lvl_conv",
-            "io_sel_target_a": "sel_target_for_io",
-            "pwr_sel_target_a": "sel_target_for_pwr",
+            "io_target_a": "target_a_for_io",
+            "pwr_target_a": "target_a_for_pwr",  # TODO: implement something like: "io_target: a",
             "aux_voltage": "aux_target_voltage",
         }
         for key, value in emu_translator.items():
@@ -203,7 +203,9 @@ def run(mode, parameters: Dict, verbose):
     help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
+@click.option(
+    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+)
 @click.option(
     "--start_time",
     "-s",
@@ -249,7 +251,9 @@ def harvester(
     help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
+@click.option(
+    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+)
 @click.option(
     "--start_time",
     "-s",
@@ -262,17 +266,18 @@ def harvester(
     help="Switch the GPIO level converter to targets on/off",
 )
 @click.option(
-    "--io_sel_target_a/--io_sel_target_b",
+    "--io_target_a/--io_target_b",
     default=True,
     help="Choose Target that gets connected to IO",
 )
 @click.option(
-    "--pwr_sel_target_a/--pwr_sel_target_b",
+    "--pwr_target_a/--pwr_target_b",
     default=True,
     help="Choose (main)Target that gets connected to virtual Source",
 )
 @click.option(
     "--aux_voltage",
+    "-x",
     default=0.0,
     help="Set Voltage of auxiliary Power Source (second target). \n"
     "- set 0-4.5 for specific const voltage, \n"
@@ -281,6 +286,7 @@ def harvester(
 )
 @click.option(
     "--virtsource",
+    "-a",  # -v & -s already taken, so keep it consistent with hrv (algorithm)
     default="direct",
     help="Use the desired setting for the virtual source, provide yaml or name like BQ25570",
 )
@@ -321,8 +327,8 @@ def emulator(
     use_cal_default,
     start_time,
     enable_io,
-    io_sel_target_a,
-    pwr_sel_target_a,
+    io_target_a,
+    pwr_target_a,
     aux_voltage,
     virtsource,
     uart_baudrate,
@@ -345,8 +351,8 @@ def emulator(
         use_cal_default=use_cal_default,
         start_time=start_time,
         set_target_io_lvl_conv=enable_io,
-        sel_target_for_io=io_sel_target_a,
-        sel_target_for_pwr=pwr_sel_target_a,
+        sel_target_for_io=io_target_a,
+        sel_target_for_pwr=pwr_target_a,
         aux_target_voltage=aux_voltage,
         virtsource=virtsource,
         log_intermediate_voltage=log_mid_voltage,

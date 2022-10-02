@@ -18,8 +18,8 @@ parameters:
   force_overwrite: false
   use_cal_default: false
   enable_io: true
-  io_sel_target_a: true
-  pwr_sel_target_a: true
+  io_target_a: true
+  pwr_target_a: true
   aux_voltage: 3.3
     # aux_voltage options:
     # - None to disable (0 V),
