@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from shepherd_herd import cli
+from shepherd_herd.cli import cli
 
 from .conftest import extract_first_sheep
 from .conftest import generate_h5_file

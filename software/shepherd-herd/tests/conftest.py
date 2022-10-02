@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import yaml
 from shepherd_data import Writer
-from shepherd_herd import cli
+from shepherd_herd.cli import cli
 
 
 def extract_first_sheep(herd_path: Path) -> str:

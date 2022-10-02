@@ -1,7 +1,7 @@
 import time
 
 import pytest
-from shepherd_herd import cli
+from shepherd_herd.cli import cli
 
 from .conftest import wait_for_end
 
@@ -61,6 +61,7 @@ def test_harv_example_fail(cli_runner, stopped_herd) -> None:
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=15)
+    # TODO: is this correct? this should fail immediately
 
 
 @pytest.mark.timeout(60)
@@ -93,7 +94,6 @@ def test_harv_all_args(cli_runner, stopped_herd) -> None:
             "10",
             "--force_overwrite",
             "--use_cal_default",
-            "--start",
             "-o",
             "pytest.h5",
         ],
