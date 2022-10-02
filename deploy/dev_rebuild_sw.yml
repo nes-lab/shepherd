@@ -5,8 +5,8 @@
 
   vars_prompt:
     # these can be also passed as argument:  -e "refresh_from_git=True" -> automatically skips these prompts
-    - name: refresh_from_git
-      prompt: "Do you want to (forcefully) git pull the Shepherd-Source on Nodes?"
+    - name: refresh_from_host
+      prompt: "Do you want to distribute the shepherd-source from host to nodes?"
       private: false
       default: "no"
 
@@ -18,6 +18,6 @@
       vars:
         install_basics: false
         shepherd_branch: dev  # default: main
-        refresh_source: refresh_from_git
+        refresh_source: "{{ refresh_from_host }}"
         rebuild_kernel_module: true  # default: true
         rebuild_python_package: true # default: true

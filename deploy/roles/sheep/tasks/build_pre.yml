@@ -51,6 +51,25 @@
   when: rebuild_python_package | bool
   # TODO: maybe not needed
 
+- name: Get full path of repository
+  ansible.builtin.command: "realpath {{ role_path }}/../../.."
+  delegate_to: localhost
+  register: repo_dir
+  become: false
+  changed_when: false
+
+- name: Synchronize host shepherd dir to target
+  ansible.posix.synchronize:
+    src: "{{ repo_dir.stdout }}/"
+    dest: "{{ shepherd_install_path }}"
+    delete: true
+    owner: false
+    group: false
+    rsync_opts:
+      - "--exclude=.eggs"
+      - "--exclude=__pycache__"
+  when: refresh_source | bool
+
 - name: Own shepherd codebase
   ansible.builtin.file:
     path: "{{ shepherd_install_path }}/"
@@ -62,13 +81,3 @@
   tags:
     - source-code
     - python
-
-- name: GIT - Update Shepherd-Codebase
-  ansible.builtin.git:
-    repo: https://github.com/orgua/shepherd
-    dest: "{{ shepherd_install_path }}"
-    update: true
-    version: "{{ shepherd_branch }}"
-    force: true
-  when: refresh_source | bool
-  become: false
