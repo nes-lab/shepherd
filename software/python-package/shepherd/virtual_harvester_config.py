@@ -309,7 +309,7 @@ class VirtualHarvesterConfig:
                 f"current usage = {self._inheritance}"
             )
 
-        return [
+        setlist = [
             int(self.data["algorithm_num"]),
             int(self.data["hrv_mode"]),  # bit-field
             round(
@@ -333,3 +333,5 @@ class VirtualHarvesterConfig:
             ),  # n, samples
             round(self.data["wait_cycles"]),  # n, samples
         ]
+
+        return [int(value) for value in setlist]

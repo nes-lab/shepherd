@@ -82,6 +82,13 @@ def cli(ctx=None, verbose: int = 2):
     Returns:
     """
     set_verbose_level(verbose)
+    # test for correct usage -> fail early!
+    try:
+        sysfs_interface.get_mode()
+    except FileNotFoundError:
+        raise RuntimeError("Failed to access sysFS -> is the kernel module loaded?")
+    except PermissionError:
+        raise RuntimeError("Failed to access sysFS -> is shepherd-sheep run with 'sudo'?")
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")

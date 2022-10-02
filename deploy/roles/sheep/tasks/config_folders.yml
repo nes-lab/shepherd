@@ -34,6 +34,7 @@
     delete: true
     owner: false
     group: false
+    compress: false
     rsync_opts:
       - "--exclude=.eggs"
       - "--exclude=__pycache__"
