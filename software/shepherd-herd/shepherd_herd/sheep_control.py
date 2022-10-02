@@ -1,5 +1,8 @@
+import contextlib
 import logging
 from io import StringIO
+from pathlib import Path
+from typing import List
 
 import numpy as np
 import yaml
@@ -9,6 +12,95 @@ consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shepherd-herd")
 logger.addHandler(consoleHandler)
 # Note: defined here to avoid circular import
+
+
+def assemble_context(
+    ctx,
+    inventory: str = "",
+    limit: str = "",
+    user=None,
+    key_filename=None,
+    verbose: int = 2,
+):
+
+    if limit.rstrip().endswith(","):
+        limit = limit.split(",")[:-1]
+    else:
+        limit = None
+
+    if inventory.rstrip().endswith(","):
+        hostlist = inventory.split(",")[:-1]
+        if limit is not None:
+            hostlist = list(set(hostlist) & set(limit))
+        hostnames = {hostname: hostname for hostname in hostlist}
+
+    else:
+        # look at all these directories for inventory-file
+        if inventory == "":
+            inventories = [
+                "/etc/shepherd/herd.yml",
+                "~/herd.yml",
+                "inventory/herd.yml",
+            ]
+        else:
+            inventories = [inventory]
+        host_path = None
+        for inventory in inventories:
+            if Path(inventory).exists():
+                host_path = Path(inventory)
+
+        if host_path is None:
+            raise FileNotFoundError(", ".join(inventories))
+
+        with open(host_path) as stream:
+            try:
+                inventory_data = yaml.safe_load(stream)
+            except yaml.YAMLError:
+                raise FileNotFoundError(f"Couldn't read inventory file {host_path}")
+
+        hostlist = []
+        hostnames = {}
+        for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
+            if isinstance(limit, List) and (hostname not in limit):
+                continue
+
+            if "ansible_host" in hostvars:
+                hostlist.append(hostvars["ansible_host"])
+                hostnames[hostvars["ansible_host"]] = hostname
+            else:
+                hostlist.append(hostname)
+                hostnames[hostname] = hostname
+
+        if user is None:
+            with contextlib.suppress(KeyError):
+                user = inventory_data["sheep"]["vars"]["ansible_user"]
+
+    if user is None:
+        raise ValueError("Provide user by command line or in inventory file")
+
+    if len(hostlist) < 1 or len(hostnames) < 1:
+        raise ValueError(
+            "Provide remote hosts (either inventory empty or limit does not match)"
+        )
+
+    if verbose == 0:
+        logger.setLevel(logging.ERROR)
+    elif verbose == 1:
+        logger.setLevel(logging.WARNING)
+    elif verbose == 2:
+        logger.setLevel(logging.INFO)
+    elif verbose > 2:
+        logger.setLevel(logging.DEBUG)
+
+    ctx.obj["verbose"] = verbose
+
+    connect_kwargs = {}
+    if key_filename is not None:
+        connect_kwargs["key_filename"] = key_filename
+
+    ctx.obj["fab group"] = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
+    ctx.obj["hostnames"] = hostnames
+    return ctx
 
 
 def find_consensus_time(group: Group):

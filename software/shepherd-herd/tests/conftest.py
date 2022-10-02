@@ -22,8 +22,8 @@ def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
     ts_start = time.time()
     while cli_run.invoke(cli, ["-vvv", "check"]).exit_code > 0:
         duration = time.time() - ts_start
-        if (timeout - duration) < 0:
-            return True
+        if duration > timeout:
+            raise TimeoutError(f"Shepherd ran into timeout ({timeout} s)")
         time.sleep(2)
     duration = time.time() - ts_start
     if duration < tmin:
@@ -34,16 +34,15 @@ def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
 def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
     store_path = file_path / file_name
 
-    with Writer(store_path, compression=1) as file:
+    with Writer(store_path, compression=0) as file:
 
         file.set_hostname("artificial")
-
         duration_s = 2
-        repetitions = 5
+        repetitions = 10
         timestamp_vector = np.arange(0.0, duration_s, file.sample_interval_ns / 1e9)
 
         # values in SI units
-        voltages = np.linspace(3.60, 1.90, int(file.samplerate_sps * duration_s))
+        voltages = np.linspace(3.30, 1.90, int(file.samplerate_sps * duration_s))
         currents = np.linspace(100e-6, 2000e-6, int(file.samplerate_sps * duration_s))
 
         for idx in range(repetitions):

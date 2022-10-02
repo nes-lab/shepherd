@@ -1,16 +1,14 @@
-import contextlib
 import logging
 import sys
 import telnetlib
 import time
 from pathlib import Path
-from typing import List
 
 import click
 import click_config_file
 import yaml
-from fabric import Group
 
+from .sheep_control import assemble_context
 from .sheep_control import check_sheep
 from .sheep_control import configure_sheep
 from .sheep_control import find_consensus_time
@@ -57,7 +55,7 @@ def yamlprovider(file_path, cmd_name):
 )
 @click.option("-v", "--verbose", count=True, default=2)
 @click.pass_context
-def cli(ctx, inventory, limit, user, key_filename, verbose) -> None:
+def cli(ctx, inventory, limit, user, key_filename, verbose) -> click.Context:
     """A primary set of options to configure how to interface the herd
 
     :param ctx:
@@ -68,90 +66,15 @@ def cli(ctx, inventory, limit, user, key_filename, verbose) -> None:
     :param verbose:
     :return:
     """
-    if limit.rstrip().endswith(","):
-        limit = limit.split(",")[:-1]
-    else:
-        limit = None
-
-    if inventory.rstrip().endswith(","):
-        hostlist = inventory.split(",")[:-1]
-        if limit is not None:
-            hostlist = list(set(hostlist) & set(limit))
-        hostnames = {hostname: hostname for hostname in hostlist}
-
-    else:
-        # look at all these directories for inventory-file
-        if inventory == "":
-            inventories = [
-                "/etc/shepherd/herd.yml",
-                "~/herd.yml",
-                "inventory/herd.yml",
-            ]
-        else:
-            inventories = [inventory]
-        host_path = None
-        for inventory in inventories:
-            if Path(inventory).exists():
-                host_path = Path(inventory)
-
-        if host_path is None:
-            raise click.FileError(", ".join(inventories))
-
-        with open(host_path) as stream:
-            try:
-                inventory_data = yaml.safe_load(stream)
-            except yaml.YAMLError:
-                raise click.UsageError(f"Couldn't read inventory file {host_path}")
-
-        hostlist = []
-        hostnames = {}
-        for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-            if isinstance(limit, List) and (hostname not in limit):
-                continue
-
-            if "ansible_host" in hostvars:
-                hostlist.append(hostvars["ansible_host"])
-                hostnames[hostvars["ansible_host"]] = hostname
-            else:
-                hostlist.append(hostname)
-                hostnames[hostname] = hostname
-
-        if user is None:
-            with contextlib.suppress(KeyError):
-                user = inventory_data["sheep"]["vars"]["ansible_user"]
-
-    if user is None:
-        raise click.UsageError("Provide user by command line or in inventory file")
-
-    if len(hostlist) < 1 or len(hostnames) < 1:
-        raise click.UsageError(
-            "Provide remote hosts (either inventory empty or limit does not match)"
-        )
-
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-
-    ctx.obj["verbose"] = verbose
-
-    connect_kwargs = {}
-    if key_filename is not None:
-        connect_kwargs["key_filename"] = key_filename
-
-    ctx.obj["fab group"] = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
-    ctx.obj["hostnames"] = hostnames
+    ctx = assemble_context(ctx, inventory, limit, user, key_filename, verbose)
+    return ctx  # calm linter
 
 
 @cli.command(short_help="Power off shepherd nodes")
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
 def poweroff(ctx, restart):
-    poweroff_sheep(ctx.obj["fab group"], ctx.obj["hostnames"])
+    poweroff_sheep(ctx.obj["fab group"], ctx.obj["hostnames"], restart)
 
 
 @cli.command(short_help="Run COMMAND on the shell")
@@ -186,9 +109,12 @@ def run(ctx, command, sudo):
     "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
+@click.option(
+    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+)
 @click.option(
     "--no-start",
+    "-n",
     is_flag=True,
     help="Start shepherd synchronized after uploading config",
 )
@@ -248,35 +174,40 @@ def harvester(
     "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
+@click.option(
+    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+)
 @click.option(
     "--enable_io/--disable_io",
     default=True,
     help="Switch the GPIO level converter to targets on/off",
 )
 @click.option(
-    "--io_sel_target_a/--io_sel_target_b",
+    "--io_target_a/--io_target_b",
     default=True,
     help="Choose Target that gets connected to IO",
 )
 @click.option(
-    "--pwr_sel_target_a/--pwr_sel_target_b",
+    "--pwr_target_a/--pwr_target_b",
     default=True,
     help="Choose (main)Target that gets connected to virtual Source",
 )
 @click.option(
     "--aux_voltage",
+    "-x",
     type=float,
     help="Set Voltage of auxiliary Power Source (second target)",
 )
 @click.option(
     "--virtsource",
+    "-a",  # -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
     default={},
     help="Use the desired setting for the virtual source",
 )
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 @click.option(
     "--no-start",
+    "-n",
     is_flag=True,
     help="Start shepherd synchronized after uploading config",
 )
@@ -288,10 +219,10 @@ def emulator(
     duration,
     force_overwrite,
     use_cal_default,
-    enable_target_io,
-    sel_target_a_for_io,
-    sel_target_a_for_pwr,
-    aux_target_voltage,
+    enable_io,
+    io_target_a,
+    pwr_target_a,
+    aux_voltage,
     virtsource,
     no_start,
 ):
@@ -305,10 +236,10 @@ def emulator(
         "force_overwrite": force_overwrite,
         "duration": duration,
         "use_cal_default": use_cal_default,
-        "set_target_io_lvl_conv": enable_target_io,
-        "sel_target_for_io": sel_target_a_for_io,
-        "sel_target_for_pwr": sel_target_a_for_pwr,
-        "aux_target_voltage": aux_target_voltage,
+        "set_target_io_lvl_conv": enable_io,
+        "sel_target_for_io": io_target_a,
+        "sel_target_for_pwr": pwr_target_a,
+        "aux_target_voltage": aux_voltage,
         "settings_virtsource": virtsource,
     }
 
@@ -342,7 +273,7 @@ def emulator(
     short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)"
 )
 @click.pass_context
-def start(ctx):
+def start(ctx) -> None:
     if check_sheep(ctx.obj["fab group"], ctx.obj["hostnames"]):
         logger.info("Shepherd still running, will skip this command!")
         sys.exit(1)
@@ -364,7 +295,7 @@ def check(ctx) -> None:
 
 @cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
-def stop(ctx):
+def stop(ctx) -> None:
     stop_sheep(ctx.obj["fab group"], ctx.obj["hostnames"])
     logger.info("Shepherd stopped.")
 

@@ -78,20 +78,20 @@ For a full list of supported commands and options, run ```shepherd-herd --help``
 Simultaneously start harvesting the connected energy sources on the nodes:
 
 ```Shell
-shepherd-herd harvester -a cv20 -d 30 -o rec.h5
+shepherd-herd harvester -a cv20 -d 30 -o hrv.h5
 ```
 
 or with long arguments as alternative
 
 ```Shell
-shepherd-herd harvester --algorithm cv20 --duration 30.0 --output_path rec.h5
+shepherd-herd harvester --algorithm cv20 --duration 30.0 --output_path hrv.h5
 ```
 
 Explanation:
 
 - uses cv33 algorithm (constant voltage 2.0 V)
 - duration is 30s
-- file will be stored to `/var/shepherd/recordings/rec.h5` and not forcefully overwritten if it already exists (add `-f` for that)
+- file will be stored to `/var/shepherd/recordings/hrv.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
 
 For more harvesting algorithms see [virtual_harvester_defs.yml](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd/virtual_harvester_defs.yml).
@@ -101,13 +101,13 @@ For more harvesting algorithms see [virtual_harvester_defs.yml](https://github.c
 Use the previously recorded harvest for emulating an energy environment for the attached sensor nodes and monitor their power consumption and GPIO events:
 
 ```Shell
-shepherd-herd emulator --virtsource BQ25504 -o emu.h5 rec.h5
+shepherd-herd emulator --virtsource BQ25504 -o emu.h5 hrv.h5
 ```
 
 Explanation:
 
-- duration (`-d`) will be that of input file (`rec.h5`)
-- target port A will be selected for monitoring and io-routing (implicit `--enable_io --io_sel_taget_a --pwr_sel_target_a`)
+- duration (`-d`) will be that of input file (`hrv.h5`)
+- target port A will be selected for monitoring and io-routing (implicit `--enable_io --io_target_a --pwr_target_a`)
 - second target port will stay unpowered (add `--aux_voltage` for that)
 - virtual source will be configured as BQ25504-Converter
 - file will be stored to `/var/shepherd/recordings/emu.h5` and not forcefully overwritten if it already exists (add `-f` for that)
@@ -120,7 +120,7 @@ For more virtual source models see [virtual_source_defs.yml](https://github.com/
 Recordings and config-files can be **distributed** to the remote nodes via:
 
 ```Shell
-shepherd-herd distribute rec.h5
+shepherd-herd distribute hrv.h5
 ```
 
 The default remote path is `/var/shepherd/recordings/`. For security reasons there are only two allowed paths:
@@ -131,15 +131,15 @@ The default remote path is `/var/shepherd/recordings/`. For security reasons the
 To retrieve the recordings from the shepherd nodes and store them locally on your machine in the current working directory (`./`):
 
 ```Shell
-shepherd-herd retrieve rec.h5 ./
+shepherd-herd retrieve hrv.h5 ./
 ```
 
 Explanation:
 
-- look for remote `/var/shepherd/recordings/rec.h5` (when not issuing an absolute path)
+- look for remote `/var/shepherd/recordings/hrv.h5` (when not issuing an absolute path)
 - don't delete remote file (add `-d` for that)
 - be sure measurement is done, otherwise you get a partial file (or add `--force-stop` to force it)
-- files will be put in current working director (`./rec_[node-name].h5`, or `./[node-name]/rec.h5` if you add `--separate`)
+- files will be put in current working director (`./rec_[node-name].h5`, or `./[node-name]/hrv.h5` if you add `--separate`)
 - you can add `--timestamp` to extend filename (`./rec_[timestamp]_[node-name].h5`)
 
 ### Start, check and stop Measurements
@@ -159,7 +159,7 @@ The current state of the measurement can be **checked** with (console printout a
 shepherd-herd check
 ```
 
-If the measurement runs indefinitely or something different came up and you want to **stop** forcefully:
+If the measurement runs indefinitely or something different came up, and you want to **stop** forcefully:
 
 ```Shell
 shepherd-herd -l sheep1 stop
