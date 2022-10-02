@@ -107,7 +107,7 @@ shepherd-herd emulator --virtsource BQ25504 -o emu.h5 hrv.h5
 Explanation:
 
 - duration (`-d`) will be that of input file (`hrv.h5`)
-- target port A will be selected for monitoring and io-routing (implicit `--enable_io --io_target_a --pwr_target_a`)
+- target port A will be selected for current-monitoring and io-routing (implicit `--enable_io --io_target A --pwr_target A`)
 - second target port will stay unpowered (add `--aux_voltage` for that)
 - virtual source will be configured as BQ25504-Converter
 - file will be stored to `/var/shepherd/recordings/emu.h5` and not forcefully overwritten if it already exists (add `-f` for that)

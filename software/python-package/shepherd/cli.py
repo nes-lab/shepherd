@@ -167,9 +167,6 @@ def run(mode, parameters: Dict, verbose):
         if "input_path" in parameters:
             parameters["input_path"] = Path(parameters["input_path"])
         emu_translator = {
-            "enable_io": "set_target_io_lvl_conv",
-            "io_target_a": "target_a_for_io",
-            "pwr_target_a": "target_a_for_pwr",  # TODO: implement something like: "io_target: a",
             "aux_voltage": "aux_target_voltage",
         }
         for key, value in emu_translator.items():
@@ -266,14 +263,16 @@ def harvester(
     help="Switch the GPIO level converter to targets on/off",
 )
 @click.option(
-    "--io_target_a/--io_target_b",
-    default=True,
-    help="Choose Target that gets connected to IO",
+    "--io_target",
+    type=str,
+    default="A",
+    help="Choose Target 'A' or 'B' that gets connected to IO",
 )
 @click.option(
-    "--pwr_target_a/--pwr_target_b",
-    default=True,
-    help="Choose (main)Target that gets connected to virtual Source",
+    "--pwr_target",
+    type=str,
+    default="A",
+    help="Choose (main)Target 'A' or 'B' that gets connected to virtual Source / current-monitor",
 )
 @click.option(
     "--aux_voltage",
@@ -327,8 +326,8 @@ def emulator(
     use_cal_default,
     start_time,
     enable_io,
-    io_target_a,
-    pwr_target_a,
+    io_target,
+    pwr_target,
     aux_voltage,
     virtsource,
     uart_baudrate,
@@ -350,9 +349,9 @@ def emulator(
         force_overwrite=force_overwrite,
         use_cal_default=use_cal_default,
         start_time=start_time,
-        set_target_io_lvl_conv=enable_io,
-        sel_target_for_io=io_target_a,
-        sel_target_for_pwr=pwr_target_a,
+        enable_io=enable_io,
+        io_target=io_target,
+        pwr_target=pwr_target,
         aux_target_voltage=aux_voltage,
         virtsource=virtsource,
         log_intermediate_voltage=log_mid_voltage,

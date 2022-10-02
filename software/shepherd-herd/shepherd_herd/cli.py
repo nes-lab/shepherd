@@ -183,14 +183,16 @@ def harvester(
     help="Switch the GPIO level converter to targets on/off",
 )
 @click.option(
-    "--io_target_a/--io_target_b",
-    default=True,
+    "--io_target",
+    type=str,
+    default="A",
     help="Choose Target that gets connected to IO",
 )
 @click.option(
-    "--pwr_target_a/--pwr_target_b",
-    default=True,
-    help="Choose (main)Target that gets connected to virtual Source",
+    "--pwr_target",
+    type=str,
+    default="A",
+    help="Choose (main)Target that gets connected to virtual Source / current-monitor",
 )
 @click.option(
     "--aux_voltage",
@@ -220,8 +222,8 @@ def emulator(
     force_overwrite,
     use_cal_default,
     enable_io,
-    io_target_a,
-    pwr_target_a,
+    io_target,
+    pwr_target,
     aux_voltage,
     virtsource,
     no_start,
@@ -236,11 +238,11 @@ def emulator(
         "force_overwrite": force_overwrite,
         "duration": duration,
         "use_cal_default": use_cal_default,
-        "set_target_io_lvl_conv": enable_io,
-        "sel_target_for_io": io_target_a,
-        "sel_target_for_pwr": pwr_target_a,
+        "enable_io": enable_io,
+        "io_target": io_target,
+        "pwr_target": pwr_target,
         "aux_target_voltage": aux_voltage,
-        "settings_virtsource": virtsource,
+        "virtsource": virtsource,
     }
 
     if output_path is not None:

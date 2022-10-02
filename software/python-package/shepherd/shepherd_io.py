@@ -575,49 +575,59 @@ class ShepherdIO:
         logger.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
 
-    def select_main_target_for_power(self, sel_target_a: bool) -> NoReturn:
+    def select_main_target_for_power(self, target: str) -> NoReturn:
         """
-        choose which targets gets the supply with current-monitor,
-            True = Target A,
-            False = Target B
+        choose which targets (A or B) gets the supply with current-monitor,
 
         shepherd hw-rev2 has two ports for targets and two separate power supplies,
         but only one is able to measure current, the other is considered "auxiliary"
 
         Args:
-            sel_target_a: True to select A, False for B
+            target: A or B for that specific Target-Port
         """
         current_state = sfs.get_state()
         if current_state != "idle":
             self.reinitialize_prus()
-        if sel_target_a is None:
-            # Target A is Default
-            sel_target_a = True
-        target = "A" if sel_target_a else "B"
+        if target is None:
+            target = "A"
+        if isinstance(target, bool):
+            # to keep compatible with old implementation
+            target = "A" if target else "B"
+        if target.lower() == "a":
+            value = True
+        elif target.lower() == "b":
+            value = False
+        else:
+            raise ValueError(f"PWR Target must be A or B (was {target})")
         logger.debug(
             "Set routing for (main) supply with current-monitor to target %s", target
         )
-        self.gpios["target_pwr_sel"].write(sel_target_a)
+        self.gpios["target_pwr_sel"].write(value)
         if current_state != "idle":
             self.start(wait_blocking=True)
 
-    def select_main_target_for_io(self, sel_target_a: bool) -> NoReturn:
-        """choose which targets gets the io-connection (serial, swd, gpio) from beaglebone,
-            True = Target A,
-            False = Target B
+    def select_main_target_for_io(self, target: str) -> NoReturn:
+        """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
         shepherd hw-rev2 has two ports for targets and can switch independently
         between power supplies
 
         Args:
-            sel_target_a: True to select A, False for B
+            target: A or B for that specific Target-Port
         """
-        if sel_target_a is None:
-            # Target A is Default
-            sel_target_a = True
-        target = "A" if sel_target_a else "B"
+        if target is None:
+            target = "A"
+        if isinstance(target, bool):
+            # to keep compatible with old implementation
+            target = "A" if target else "B"
+        if target.lower() == "a":
+            value = True
+        elif target.lower() == "b":
+            value = False
+        else:
+            raise ValueError(f"IO Target must be A or B (was {target})")
         logger.debug("Set routing for IO to Target %s", target)
-        self.gpios["target_io_sel"].write(sel_target_a)
+        self.gpios["target_io_sel"].write(value)
 
     def set_target_io_level_conv(self, state: bool) -> NoReturn:
         """Enables or disables the GPIO level converter to targets.
