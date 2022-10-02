@@ -7,10 +7,18 @@
   ansible.builtin.command: 'fstrim -a'
   changed_when: true
 
+- name: Determine free space
+  ansible.builtin.command:
+    cmd: 'df -m /opt/ --output\=avail | tail -1'
+  register: opt_freespace_mb
+  changed_when: false
+
 - name: Overwrite empty space
-  ansible.builtin.command: 'dd if=/dev/zero of=/opt/zero_file bs=8M'
-  failed_when: false  # will write zeros until it fails
-  changed_when: true
+  community.general.filesize:
+    path: "/opt/zero_file"
+    blocksize: "8M"
+    source: "/dev/zero"
+    size: "{{ opt_freespace_mb.stdout | float - 20 }}MB"
 
 - name: Remove empty space file
   ansible.builtin.file:

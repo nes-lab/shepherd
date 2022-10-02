@@ -1,7 +1,7 @@
 ---
 
 - name: Build and install kernel module
-  make:
+  community.general.make:
     chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
     target: install
   when: rebuild_kernel_module | bool
@@ -9,7 +9,7 @@
     - install
 
 - name: Clean PRU Firmware Source
-  make:
+  community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
     target: clean
   loop:
@@ -18,7 +18,7 @@
   become: true
 
 - name: Build PRU firmware
-  make:
+  community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
     target: all
   loop:
@@ -33,7 +33,7 @@
   # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
 
 - name: Install PRU firmware
-  make:
+  community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
     target: install
   loop:
@@ -42,12 +42,12 @@
   become: true
 
 - name: Clean shepherd device tree
-  make:
+  community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
     target: clean
 
 - name: Build and install device tree overlay
-  make:
+  community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
     target: install
   tags:

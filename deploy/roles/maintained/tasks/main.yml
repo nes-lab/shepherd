@@ -52,7 +52,7 @@
     update_cache: true
 
 - name: "CFG - Set timezone to {{ timezone }}"
-  timezone:
+  community.general.timezone:
     name: "{{ timezone }}"
 
   # TODO: - name: CFG - Set CPU Governor to more relaxed state (powersave)

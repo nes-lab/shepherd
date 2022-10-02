@@ -92,7 +92,7 @@
     - pps
 
 - name: Build and install pps-gmtimer module
-  make:
+  community.general.make:
     chdir: /opt/pps-gmtimer
     target: install
   tags:
@@ -108,7 +108,7 @@
     - pps
 
 - name: Build and install GPS device tree overlay
-  make:
+  community.general.make:
     chdir: "/opt/gps-overlay"
     target: install
   tags:
@@ -137,7 +137,8 @@
     - gps
     - conf
 
-- ansible.builtin.include_tasks:
+- name: Config Systemd Services
+  ansible.builtin.include_tasks:
     file: systemd.yml
   tags:
     - gps

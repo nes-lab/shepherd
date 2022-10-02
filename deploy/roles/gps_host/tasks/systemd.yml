@@ -3,7 +3,7 @@
   ansible.builtin.file:
     path: "/etc/systemd/system/{{ item }}.service.d/"
     state: directory
-    owner: "{{ ansible_user}}"
+    owner: "{{ ansible_user }}"
     mode: 'a+rx,u+w'
     recurse: true
   loop:
