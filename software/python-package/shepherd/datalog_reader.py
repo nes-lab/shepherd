@@ -18,9 +18,9 @@ from typing import Optional
 import h5py
 import yaml
 
-from shepherd import CalibrationData
-from shepherd.calibration import cal_channel_hrv_dict
-from shepherd.calibration import cal_parameter_list
+from . import CalibrationData
+from .calibration import cal_channel_hrv_dict
+from .calibration import cal_parameter_list
 
 
 class LogReader:

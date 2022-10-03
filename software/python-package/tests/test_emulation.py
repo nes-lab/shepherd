@@ -125,7 +125,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
 
 
 @pytest.mark.hardware
-@pytest.mark.skip(reason="(REQUIRES CAPE HARDWARE v2.4")  # real cape needed
+@pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 def test_target_pins(shepherd_up):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()

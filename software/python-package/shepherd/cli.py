@@ -22,13 +22,12 @@ import yaml
 import zerorpc
 from periphery import GPIO
 
-from shepherd import ShepherdDebug
-from shepherd import get_verbose_level
-from shepherd import run_emulator
-from shepherd import run_recorder
-from shepherd import set_verbose_level
-from shepherd import sysfs_interface
-
+from . import ShepherdDebug
+from . import get_verbose_level
+from . import run_emulator
+from . import run_recorder
+from . import set_verbose_level
+from . import sysfs_interface
 from .calibration import CalibrationData
 from .eeprom import EEPROM
 from .eeprom import CapeData
@@ -88,7 +87,9 @@ def cli(ctx=None, verbose: int = 2):
     except FileNotFoundError:
         raise RuntimeError("Failed to access sysFS -> is the kernel module loaded?")
     except PermissionError:
-        raise RuntimeError("Failed to access sysFS -> is shepherd-sheep run with 'sudo'?")
+        raise RuntimeError(
+            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?"
+        )
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")

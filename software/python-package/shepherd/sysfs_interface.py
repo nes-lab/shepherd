@@ -14,8 +14,7 @@ from pathlib import Path
 from typing import NoReturn
 from typing import Optional
 
-from shepherd import calibration_default
-
+from . import calibration_default
 from .calibration import CalibrationData
 
 logger = logging.getLogger("shp.interface")

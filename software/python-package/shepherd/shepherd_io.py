@@ -22,9 +22,8 @@ from typing import Union
 import numpy as np
 from periphery import GPIO
 
-from shepherd import commons
-from shepherd import sysfs_interface as sfs
-
+from . import commons
+from . import sysfs_interface as sfs
 from .calibration import CalibrationData
 from .calibration import cal_component_list
 from .virtual_harvester_config import VirtualHarvesterConfig
@@ -598,7 +597,7 @@ class ShepherdIO:
         elif target.lower() == "b":
             value = False
         else:
-            raise ValueError(f"PWR Target must be A or B (was {target})")
+            raise ValueError(f"Parameter 'pwr_target' must be A or B (was {target})")
         logger.debug(
             "Set routing for (main) supply with current-monitor to target %s", target
         )
@@ -625,7 +624,7 @@ class ShepherdIO:
         elif target.lower() == "b":
             value = False
         else:
-            raise ValueError(f"IO Target must be A or B (was {target})")
+            raise ValueError(f"Parameter 'io_target' must be A or B (was {target})")
         logger.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(value)
 

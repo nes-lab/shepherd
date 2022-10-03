@@ -23,9 +23,8 @@ import msgpack
 import msgpack_numpy
 import numpy
 
-from shepherd import commons
-from shepherd import sysfs_interface
-
+from . import commons
+from . import sysfs_interface
 from .calibration import CalibrationData
 from .datalog import ExceptionRecord
 from .datalog import LogWriter
