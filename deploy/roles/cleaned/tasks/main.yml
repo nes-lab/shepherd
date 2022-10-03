@@ -3,7 +3,7 @@
 - name: Determine free space on main partition
   ansible.builtin.command:
     cmd: 'df -m /opt/ --output\=avail'
-  register: pre_freespace_mb
+  register: pre_free_mb
   changed_when: false
 
 - name: Find recordings
@@ -38,9 +38,11 @@
 - name: Determine free space on main partition
   ansible.builtin.command:
     cmd: 'df -m /opt/ --output\=avail'
-  register: opt_freespace_mb
+  register: opt_free_mb
   changed_when: false
 
 - name: Free space on main partition
   ansible.builtin.debug:
-    msg: "free = {{ opt_freespace_mb.stdout_lines[-1] }} MiB, cleaned = {{ (opt_freespace_mb.stdout_lines[-1] | float) - (pre_freespace_mb.stdout_lines[-1] | float) }} MiB"
+    msg:
+      - "free = {{ opt_free_mb.stdout_lines[-1] }} MiB, "
+      - "cleaned = {{ (opt_free_mb.stdout_lines[-1] | float) - (pre_free_mb.stdout_lines[-1] | float) }} MiB"
