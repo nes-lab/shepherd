@@ -37,7 +37,13 @@ sheep:
     ansible_user: jane
 ```
 
-Then use shepherd-herd to check if all your nodes are up:
+To find active nodes a ping-sweep (in this example from .1 to .64) can be achieved with:
+
+```Shell
+nmap -sn 192.168.1.1-64
+```
+
+After setting up the inventory, use shepherd-herd to check if all your nodes are responding correctly:
 
 ```Shell
 shepherd-herd -i herd.yml run echo 'hello'
@@ -49,7 +55,7 @@ Or, equivalently define the list of hosts on the command line
 shepherd-herd -i sheep0,sheep1,sheep2, run echo 'hello'
 ```
 
-To **simplify usage** you should set up the `herd.yml` in either of these directories (with falling lookup priority):
+To **simplify usage** it is recommended to set up the `herd.yml` in either of these directories (with falling lookup priority):
 
 - relative to your current working directory in `inventory/herd.yml`
 - in your local home-directory `~/herd.yml`
