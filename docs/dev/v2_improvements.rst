@@ -3,7 +3,7 @@ Improvements of Shepherd v2
 
 .. rubric:: About Shepherd v1.x (from git)
 
-Shepherd is a testbed for the batteryless Internet of Things, allowing to record harvesting conditions at multiple points in space over time. The recorded data can be replayed to attached wireless sensor nodes, examining their behaviour under the constraints of spatio-temporal energy availability.
+Shepherd is a testbed for the batteryless Internet of Things, allowing to record harvesting conditions at multiple points in space over time. The recorded data can be replayed to attached wireless sensor nodes, examining their behavior under the constraints of spatio-temporal energy availability.
 
 .. rubric:: About Shepherd v2.x
 
@@ -38,7 +38,7 @@ Virtual Source
 - harvesting-recorder has already several strategies implemented
 
   - constant voltage (CV)
-  - MPPT, based on open circuit voltage or perturbe & observe
+  - MPPT, based on open circuit voltage or perturb & observe
 
 - harvesting can be postponed by sampling
 

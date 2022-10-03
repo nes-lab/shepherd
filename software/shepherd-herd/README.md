@@ -201,4 +201,9 @@ For testing `shepherd-herd` there must be a valid `herd.yml` at one of the three
 pytest
 ```
 
-TODO: add programming-option
+**Note:** keep the herd small for the tests as the current implementation does not parallelize connections to the nodes.
+
+## ToDo
+
+- add programming-option to test
+- add new pru-programmer to interface

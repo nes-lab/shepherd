@@ -1,6 +1,6 @@
 # PRU-Firmware
 
-currently contains: 
+currently contains:
 
 - shepherd-firmware (pru0 & pru1)
 - programmer swd (pru0)
@@ -13,7 +13,7 @@ general use:
 ```Shell
 cd shepherd/software/firmware/pru0-shepherd-fw
 make clean
-make 
+make
 sudo make install
 `````
 
@@ -22,7 +22,7 @@ generate the two programmers (SWD is default):
 ```Shell
 cd shepherd/software/firmware/pru0-programmer
 make clean
-make 
+make
 # equals 'make PROTO=SWD'
 
 make PROTO=SBW
@@ -68,12 +68,12 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 
 ### Assembly (solved)
 
-- file-ending is different 
+- file-ending is different
 	- CGT: `.asm`
 	- GCC: `.s`
 - setting constants differs from ti compiler (CGT)
 	- CGT: `VAR .set value`
-	- GCC: `.equ VAR, value` 
+	- GCC: `.equ VAR, value`
 - fix is to use [+x with gcc](https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html)
 	-  encapsulation `-x assembler SRCASM -x none` when loading the asm-sources into the compiler
 
@@ -97,10 +97,10 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 - enabling `-ffast-math` does nothing to our code-size (should only help with float-ops)
 - compiling code with `uint32`-only (replaced `uint64`) works!
 - compiling u32 with `-fno-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
-- compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes. 
+- compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes.
 	- is this a self-made inline-fuckup?
 	- removing `inline` from our codebase brings overflow back to 2672 bytes
-	- that is strange! 
+	- that is strange!
 - comparing functions-size between source with u64 and u32-mod
   - converter_xyz-Fns grow by factor 1.6 to 2.4
 - **issue report confirmed at least 2 gcc-bugs**
@@ -111,4 +111,4 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 
 ### Optional
 
-- `-DPRU0` could be replaced, as [gcc defines](https://github.com/dinuxbg/gnuprumcu/blob/master/device-specs/am335x.pru0) something like `-D__AM335X_PRU0__` -> should be compatible with GCT
+- `-DPRU0` could be replaced, as [gcc defines](https://github.com/dinuxbg/gnuprumcu/blob/HEAD/device-specs/am335x.pru0) something like `-D__AM335X_PRU0__` -> should be compatible with GCT

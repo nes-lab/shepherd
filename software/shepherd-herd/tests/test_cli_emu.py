@@ -1,10 +1,10 @@
 import time
 
-from shepherd_herd.cli import cli
 import pytest
+from shepherd_herd.cli import cli
 
-from .conftest import wait_for_end
 from .conftest import generate_h5_file
+from .conftest import wait_for_end
 
 
 @pytest.mark.timeout(60)
@@ -30,8 +30,10 @@ def test_emu_example(cli_runner, stopped_herd) -> None:
         [
             "-vvv",
             "emulator",
-            "--virtsource", "BQ25504",
-            "-o", "pytest_emu.h5",
+            "--virtsource",
+            "BQ25504",
+            "-o",
+            "pytest_emu.h5",
             "pytest_src.h5",
         ],
     )
@@ -46,8 +48,10 @@ def test_emu_example_fail(cli_runner, stopped_herd) -> None:
         [
             "-vvv",
             "emulator",
-            "--virtsource", "BQ25504",
-            "-o", "pytest_emu.h5",
+            "--virtsource",
+            "BQ25504",
+            "-o",
+            "pytest_emu.h5",
             "pytest_NonExisting.h5",
         ],
     )
@@ -75,15 +79,21 @@ def test_emu_all_args_long(cli_runner, stopped_herd) -> None:
         [
             "-vvv",
             "emulator",
-            "--duration", "10",
+            "--duration",
+            "10",
             "--force_overwrite",
             "--use_cal_default",
             "--enable_io",
-            "--io_target", "A",
-            "--pwr_target", "A",
-            "--aux_voltage", "1.6",
-            "--virtsource", "BQ25504",
-            "--output_path", "pytest_emu.h5",
+            "--io_target",
+            "A",
+            "--pwr_target",
+            "A",
+            "--aux_voltage",
+            "1.6",
+            "--virtsource",
+            "BQ25504",
+            "--output_path",
+            "pytest_emu.h5",
             "pytest_src.h5",
         ],
     )
@@ -99,15 +109,21 @@ def test_emu_all_args_short(cli_runner, stopped_herd) -> None:
         [
             "-vvv",
             "emulator",
-            "-d", "10",
+            "-d",
+            "10",
             "-f",
             "-c",
             "--disable_io",
-            "--io_target", "B",
-            "--pwr_target", "B",
-            "-x", "1.4",
-            "-a", "BQ25570",
-            "-o", "pytest_emu.h5",
+            "--io_target",
+            "B",
+            "--pwr_target",
+            "B",
+            "-x",
+            "1.4",
+            "-a",
+            "BQ25570",
+            "-o",
+            "pytest_emu.h5",
             "pytest_src.h5",
         ],
     )
@@ -122,8 +138,10 @@ def test_emu_no_start(cli_runner, stopped_herd) -> None:
         [
             "-vvv",
             "emulator",
-            "-d", "20",
-            "-o", "pytest_emu.h5",
+            "-d",
+            "20",
+            "-o",
+            "pytest_emu.h5",
             "--no-start",
             "pytest_src.h5",
         ],
@@ -157,5 +175,6 @@ def test_emu_force_stop(cli_runner, stopped_herd) -> None:
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=10)
+
 
 # TODO: retrieve & check with datalib

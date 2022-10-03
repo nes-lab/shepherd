@@ -163,7 +163,7 @@ change target in makefile
 20002428 00000218 t event_loop.constprop.0
 ```
 
-- compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes. 
+- compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes.
 	- is this a self-made inline-fuckup?
 	- removing `inline` from our codebase brings overflow back to 2672 bytes
 	- that is strange!
@@ -199,12 +199,11 @@ u64 u32 x fn_name
 - generate size-map of mem-regions
 	- GCC: `pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'`
 	- CGT: ?
-	- do sizes look plausable? 
+	- do sizes look plausible?
 	- how does the result compare to Ti compiler?
 	- working pru1-compilation may provide clues - is it also increasing size?
 - possible culprits
 	- u64-math may produce more complex routines
 	- [32 Bit registers](https://github.com/dinuxbg/gnupru/wiki/ABI) instead of 16 Bit -> `-mabi=ti` could be the solution, but fails
-		- abi=ti produces undefined references to memcpy and memset -> flag [can't use c std lib](https://gcc.gnu.org/onlinedocs/gcc-12.1.0/gcc/PRU-Options.html#PRU-Options)	
+		- abi=ti produces undefined references to memcpy and memset -> flag [can't use c std lib](https://gcc.gnu.org/onlinedocs/gcc-12.1.0/gcc/PRU-Options.html#PRU-Options)
 	- accidental included soft-float emulation? no way found to prevent this in GCC
-	
