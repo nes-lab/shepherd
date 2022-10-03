@@ -4,7 +4,7 @@
   become: true
 
   vars_prompt:
-    # these can be also passed as argument:  -e "refresh_from_git=True" -> automatically skips these prompts
+    # automatically skip prompt with argument: -e "refresh_from_git=True"
     - name: refresh_from_host
       prompt: "Do you want to distribute the shepherd-source from host to nodes?"
       private: false

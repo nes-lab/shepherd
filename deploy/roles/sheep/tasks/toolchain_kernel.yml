@@ -5,7 +5,7 @@
   register: kernelrelease
   changed_when: false
 
-- name: APT - Install required packages
+- name: APT - Install required packages for kernel compilation
   ansible.builtin.apt:
     name:
       [

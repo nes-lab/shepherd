@@ -107,6 +107,8 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
 
 - name: INFO - check for port-listeners (look for open ports beside of SSHd)
   ansible.builtin.shell:

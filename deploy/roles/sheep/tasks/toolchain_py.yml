@@ -1,6 +1,6 @@
 ---
 
-- name: APT - Install required packages
+- name: APT - Install required packages for Python
   ansible.builtin.apt:
     name:
       [

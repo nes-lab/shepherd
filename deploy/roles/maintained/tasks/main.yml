@@ -22,13 +22,15 @@
   changed_when: true
   failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
 
-- name: Grow root partition to drive size
+- name: Grow root partition to drive-size
   ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
   when: update_kernel | bool # NOTE: condition not correct, but works for now
   changed_when: true
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   when: update_kernel | bool
 
 - name: SCRIPT - Update Bootloader
@@ -71,3 +73,5 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200

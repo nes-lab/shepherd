@@ -45,6 +45,8 @@
 
 - name: Restart device after installing PreReqs (& changing overlays)
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   when: install_basics | bool
 
 ### Build
@@ -76,4 +78,6 @@
 
 - name: Restart device after setup (specially services)
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   when: install_basics | bool

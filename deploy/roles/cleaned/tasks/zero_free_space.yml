@@ -2,6 +2,8 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
 
 - name: Discard unused blocks (trim)
   ansible.builtin.command: 'fstrim -a'
@@ -18,7 +20,7 @@
     path: "/opt/zero_file"
     blocksize: "8M"
     source: "/dev/zero"
-    size: "{{ opt_freespace_mb.stdout | float - 20 }}MB"
+    size: "{{ opt_freespace_mb.stdout_lines[-1] | float - 20 }}MB"
 
 - name: Remove empty space file
   ansible.builtin.file:

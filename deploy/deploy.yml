@@ -62,7 +62,7 @@
   roles:
     - secure_testbed
 
-- name: Install Shepherd-Software - Role-based
+- name: Installation done! Now post-installation tasks
   hosts: sheep
   become: true
 
