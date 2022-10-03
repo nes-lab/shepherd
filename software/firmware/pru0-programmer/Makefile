@@ -25,7 +25,7 @@ ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # external asm-sources - add manually
 #ASM_SOURCES += spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
 
-ifeq ($(PROTO), SBW)  # switch to SBW with "make SBW=1"
+ifeq ($(PROTO), SBW)  # switch to SBW with "make PROTO=SBW"
 CFLAGS += -D SBW_SUPPORT
 endif
 
