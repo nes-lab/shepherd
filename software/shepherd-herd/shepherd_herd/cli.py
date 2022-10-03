@@ -203,7 +203,7 @@ def harvester(
 @click.option(
     "--virtsource",
     "-a",  # -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
-    default={},
+    default="direct",
     help="Use the desired setting for the virtual source",
 )
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)

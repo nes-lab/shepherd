@@ -111,6 +111,8 @@ def find_consensus_time(group: Group):
     agreeing on a common time in the future and waiting for that time on each
     node.
 
+    TODO: this and the following commands should run the cnx-loops in parallel
+
     Args:
         group (fabric.Group): Group of fabric hosts on which to start shepherd.
     """
