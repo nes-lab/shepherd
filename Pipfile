@@ -9,6 +9,7 @@ black = "*"
 twine = "*"
 bump2version = "*"
 pre-commit = "*"
+build = "*"
 
 [packages]
 # NOTE: pip does not install these packages with as editable (-e), but pipenv does

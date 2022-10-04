@@ -40,8 +40,8 @@ jobs:
         working-directory: "${{ env.herd_path }}"
 
       - name: Publish package 🥳
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@v1.5.1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN_HERD_UPLOAD }}
-          packages_dir: "${{ env.herd_path }}"
+          packages_dir: "${{ env.herd_path }}/dist"
