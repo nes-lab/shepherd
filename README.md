@@ -4,7 +4,8 @@
 [![Documentation](https://github.com/orgua/shepherd/actions/workflows/sphinx_to_pages.yml/badge.svg)](https://orgua.github.io/shepherd/)
 [![Build Pru](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml)
 [![Code Quality](https://www.codefactor.io/repository/github/orgua/shepherd/badge)](https://www.codefactor.io/repository/github/orgua/shepherd)
-
+[![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
+[![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Batteryless sensor nodes depend on harvesting energy from their environment.
 Developing solutions involving groups of batteryless nodes requires a tool to analyze, understand and replicate spatio-temporal harvesting conditions.
