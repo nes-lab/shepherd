@@ -20,7 +20,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      herd_path: "./softare/shepherd-herd"
+      herd_path: "./software/shepherd-herd"
 
     steps:
 
@@ -43,5 +43,5 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1.5.1
         with:
           user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_TOKEN_HERD_UPLOAD }}
           packages_dir: "${{ env.herd_path }}"
