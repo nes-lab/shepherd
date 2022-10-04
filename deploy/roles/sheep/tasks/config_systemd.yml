@@ -1,10 +1,11 @@
 ---
+
 - name: Add systemd unit
   ansible.builtin.copy:
     src: '{{ item }}'
-    dest: '/etc/systemd/system/{{ item }}'
+    dest: '/etc/systemd/system/'
     mode: '0644'
-  with_items:
+  loop:
     - shepherd.service
     - shepherd-rpc.service
     - shepherd-launcher.service
@@ -18,7 +19,7 @@
     state: stopped
     enabled: '{{ item.enabled }}'
     daemon_reload: true
-  with_items:
+  loop:
     - { name: shepherd, enabled: false}
     - { name: shepherd-rpc, enabled: false}
     - { name: shepherd-launcher, enabled: true}
@@ -26,6 +27,8 @@
   tags:
     - conf
     - systemd
+
+# NOTE: could avoid a restart by issuing "sudo systemctl daemon-reload"
 
 - name: Disable connman automatic time update
   ansible.builtin.command:

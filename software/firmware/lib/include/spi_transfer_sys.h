@@ -1,5 +1,7 @@
 #ifndef PRU1_SPI_TRANSFER_SYS_H
 #define PRU1_SPI_TRANSFER_SYS_H
+
+#include <stdint.h> // small hack (this include is missing in sys_mcspi.h)
 #include <sys_mcspi.h>
 
 

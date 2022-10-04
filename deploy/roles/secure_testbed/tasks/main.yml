@@ -16,7 +16,7 @@
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
     state: present
-  with_items:
+  loop:
     - {regex: '^.*Protocol.*$', line: 'Protocol 2'}
     - {regex: '^.*StrictModes.*$', line: 'StrictModes yes'}
     - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 1m'}
@@ -72,10 +72,10 @@
     masked: true
     state: stopped
     enabled: false
-  with_items:
-    - 'serial-getty@ttyGS0.service'
-    - 'serial-getty@ttyS0.service'
-    - 'getty@tty1.service'
+  loop:
+    - serial-getty@ttyGS0.service
+    - serial-getty@ttyS0.service
+    - getty@tty1.service
   changed_when: true
   # change active ones with: sudo systemctl list-units
 
@@ -107,6 +107,8 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
 
 - name: INFO - check for port-listeners (look for open ports beside of SSHd)
   ansible.builtin.shell:

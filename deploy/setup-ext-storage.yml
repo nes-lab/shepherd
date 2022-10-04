@@ -41,7 +41,7 @@
         device: '/dev/{{ storage_dev }}'
         number: '{{ item.num }}'
         state: absent
-      loop: '{{ dev_info.partitions }}'
+      with_items: '{{ dev_info.partitions }}'
 
     - name: Create a new primary partition
       parted:

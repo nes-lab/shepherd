@@ -1,0 +1,35 @@
+---
+### basic config
+shepherd_install_path: /opt/shepherd
+shepherd_data_path: /var/shepherd/recordings
+shepherd_config_path: /etc/shepherd
+
+### program flow
+install_basics: true
+install_gcc_tools: false
+install_ti_tools: true
+# NOTE: GCC is alpha-stage as pru0-firmware does not correctly compile
+
+shepherd_branch: main
+refresh_source: false
+rebuild_kernel_module: true
+rebuild_python_package: true
+
+### GCC ######
+gcc_tools_path: /usr/share/shepherd-tools
+gcc_pru_support_path: /usr/share/shepherd-tools/pru-software-support-package
+gcc_pru_cc_release: pru-elf-2022.05.armhf
+# Source: https://github.com/dinuxbg/gnupru
+gcc_pru_support_branch: linux-4.19-rproc
+# Source: https://github.com/dinuxbg/pru-software-support-package
+
+### TI CGT ###
+ti_tools_path: /usr/share/ti
+ti_pru_cgt_path: /usr/share/ti/cgt-pru
+# cgt seems to install to /usr/bin/
+ti_pru_support_path: /usr/share/ti/pru-software-support-package
+ti_pru_cgt_installer: https://software-dl.ti.com/codegen/esd/cgt_public_sw/PRU/2.3.3/ti_cgt_pru_2.3.3_armlinuxa8hf_busybox_installer.sh
+# CGT-Updates: https://www.ti.com/tool/PRU-CGT#downloads
+ti_pru_support_tag: "v5.9.0"
+# PSSP-Updates: https://git.ti.com/cgit/pru-software-support-package/pru-software-support-package/
+# Note: >= v6.0.0 is reserved for kernel >=5.10 and needs a intc_map.h

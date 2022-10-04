@@ -20,14 +20,14 @@ order to use the same Makefile
 endef
 $(error $(CGT_ERROR_BODY))
 endif
-ifndef PRU_SUPPORT
+ifndef PRU_CGT_SUPPORT
 define SUP_ERROR_BODY
 
 *******************************************************************************
-PRU_SUPPORT environment variable is not set. Examples given:
-(Desktop Linux) export PRU_SUPPORT=/path/to/ti/pru-software-support-package-#Version
-(Windows) set PRU_SUPPORT=C:/path/to/ti/pru-software-support-package-#Version
-(ARM Linux) export PRU_SUPPORT=/usr/share/ti/pru-software-support-package-#Version
+PRU_CGT_SUPPORT environment variable is not set. Examples given:
+(Desktop Linux) export PRU_CGT_SUPPORT=/path/to/ti/pru-software-support-package-#Version
+(Windows) set PRU_CGT_SUPPORT=C:/path/to/ti/pru-software-support-package-#Version
+(ARM Linux) export PRU_CGT_SUPPORT=/usr/share/ti/pru-software-support-package
 *******************************************************************************
 
 endef
@@ -46,9 +46,14 @@ LINKER_COMMAND_FILE=$(BASE_PATH)/lib/AM335x_PRU.cmd
 LIBS= --library=libc.a
 # NOTE: libc.a will be replaced during compile-time by fitting run-time-system (RTS) -> rtspruv3.lib
 
-INCLUDE += --include_path=${PRU_SUPPORT}/include
-INCLUDE += --include_path=${PRU_SUPPORT}/include/am335x
+INCLUDE += --include_path=${PRU_CGT_SUPPORT}/include
+INCLUDE += --include_path=${PRU_CGT_SUPPORT}/include/am335x
+INCLUDE += --include_path=$(BASE_PATH)/include
 INCLUDE += --include_path=$(BASE_PATH)/lib/include
+
+# NOTE: autoinclude is easy, but cgt can't handle it (>7 kb fw-increase)
+#SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.c))
+#ASM_SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.asm))
 
 STACK_SIZE 	= 0x200 # 512 byte
 HEAP_SIZE 	= 0x100 # 256 byte
@@ -56,7 +61,7 @@ GEN_DIR		= gen
 
 ### Common compiler and linker flags (Defined in 'PRU Optimizing C/C++ Compiler User's Guide)
 ## PRU-Hardware
-CFLAGS = -v3 #                              silicon version
+CFLAGS += -v3 #                              silicon version
 CFLAGS += --endian=little #                 for data and code, both (big, little) is possible
 CFLAGS += --hardware_mac=on #               use Multiply and Accumulate Unit (no division though)
 
@@ -111,11 +116,12 @@ MAP=$(GEN_DIR)/pru$(PRU_NUM)-$(FW_NAME).map
 
 TARGET_PATH := $(folder_path)$(TARGET)
 
-VPATH = $(BASE_PATH)/lib/src
+# special folder to find source-files in (auto)
+VPATH += $(BASE_PATH)/lib/src
 
 # Using .object instead of .obj in order to not conflict with the CCS build process
-OBJECTS=$(patsubst %,$(GEN_DIR)/%,$(SOURCES:.c=.object))
-OBJECTS+=$(patsubst %,$(GEN_DIR)/%,$(ASM_SOURCES:.asm=.object))
+OBJECTS=$(patsubst %,$(GEN_DIR)/%,$(notdir $(SOURCES:.c=.object)))
+OBJECTS+=$(patsubst %,$(GEN_DIR)/%,$(notdir $(ASM_SOURCES:.asm=.object)))
 
 .PHONY: all
 all: printStart $(TARGET) printEnd
@@ -125,16 +131,17 @@ printStart:
 	@echo ''
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Building project: $(PROJ_NAME)'
+	@echo 'Building project: $(PROJ_NAME) with Ti CGT'
 
 .PHONY: printEnd
 printEnd:
 	@echo ''
 	@echo 'Output files can be found in the "$(GEN_DIR)" directory'
-	@echo 'Resulting firmware is $(TARGET_PATH), size in bytes:'
+	@echo 'Resulting firmware is $(TARGET_PATH)'
+	@echo 'Size in bytes:'
 	@stat -L -c %s $(TARGET_PATH)
 	@echo ''
-	@echo 'Finished building project: $(PROJ_NAME), '
+	@echo 'Finished building project: $(PROJ_NAME)'
 	@echo '************************************************************'
 	@echo ''
 

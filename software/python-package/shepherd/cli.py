@@ -22,13 +22,12 @@ import yaml
 import zerorpc
 from periphery import GPIO
 
-from shepherd import ShepherdDebug
-from shepherd import get_verbose_level
-from shepherd import run_emulator
-from shepherd import run_recorder
-from shepherd import set_verbose_level
-from shepherd import sysfs_interface
-
+from . import ShepherdDebug
+from . import get_verbose_level
+from . import run_emulator
+from . import run_recorder
+from . import set_verbose_level
+from . import sysfs_interface
 from .calibration import CalibrationData
 from .eeprom import EEPROM
 from .eeprom import CapeData
@@ -82,6 +81,15 @@ def cli(ctx=None, verbose: int = 2):
     Returns:
     """
     set_verbose_level(verbose)
+    # test for correct usage -> fail early!
+    try:
+        sysfs_interface.get_mode()
+    except FileNotFoundError:
+        raise RuntimeError("Failed to access sysFS -> is the kernel module loaded?")
+    except PermissionError:
+        raise RuntimeError(
+            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?"
+        )
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
@@ -167,9 +175,6 @@ def run(mode, parameters: Dict, verbose):
         if "input_path" in parameters:
             parameters["input_path"] = Path(parameters["input_path"])
         emu_translator = {
-            "enable_io": "set_target_io_lvl_conv",
-            "io_sel_target_a": "sel_target_for_io",
-            "pwr_sel_target_a": "sel_target_for_pwr",
             "aux_voltage": "aux_target_voltage",
         }
         for key, value in emu_translator.items():
@@ -203,7 +208,9 @@ def run(mode, parameters: Dict, verbose):
     help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
+@click.option(
+    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+)
 @click.option(
     "--start_time",
     "-s",
@@ -249,7 +256,9 @@ def harvester(
     help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option("--use_cal_default", is_flag=True, help="Use default calibration values")
+@click.option(
+    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+)
 @click.option(
     "--start_time",
     "-s",
@@ -262,17 +271,20 @@ def harvester(
     help="Switch the GPIO level converter to targets on/off",
 )
 @click.option(
-    "--io_sel_target_a/--io_sel_target_b",
-    default=True,
-    help="Choose Target that gets connected to IO",
+    "--io_target",
+    type=str,
+    default="A",
+    help="Choose Target 'A' or 'B' that gets connected to IO",
 )
 @click.option(
-    "--pwr_sel_target_a/--pwr_sel_target_b",
-    default=True,
-    help="Choose (main)Target that gets connected to virtual Source",
+    "--pwr_target",
+    type=str,
+    default="A",
+    help="Choose (main)Target 'A' or 'B' that gets connected to virtual Source / current-monitor",
 )
 @click.option(
     "--aux_voltage",
+    "-x",
     default=0.0,
     help="Set Voltage of auxiliary Power Source (second target). \n"
     "- set 0-4.5 for specific const voltage, \n"
@@ -281,6 +293,7 @@ def harvester(
 )
 @click.option(
     "--virtsource",
+    "-a",  # -v & -s already taken, so keep it consistent with hrv (algorithm)
     default="direct",
     help="Use the desired setting for the virtual source, provide yaml or name like BQ25570",
 )
@@ -321,8 +334,8 @@ def emulator(
     use_cal_default,
     start_time,
     enable_io,
-    io_sel_target_a,
-    pwr_sel_target_a,
+    io_target,
+    pwr_target,
     aux_voltage,
     virtsource,
     uart_baudrate,
@@ -344,9 +357,9 @@ def emulator(
         force_overwrite=force_overwrite,
         use_cal_default=use_cal_default,
         start_time=start_time,
-        set_target_io_lvl_conv=enable_io,
-        sel_target_for_io=io_sel_target_a,
-        sel_target_for_pwr=pwr_sel_target_a,
+        enable_io=enable_io,
+        io_target=io_target,
+        pwr_target=pwr_target,
         aux_target_voltage=aux_voltage,
         virtsource=virtsource,
         log_intermediate_voltage=log_mid_voltage,
@@ -539,16 +552,16 @@ def launcher(led, button):
     help="Target supply voltage",
 )
 @click.option(
-    "--speed", "-s", type=click.INT, default=1000, help="Programming-Datarate"
+    "--speed", "-s", type=click.INT, default=1_000_000, help="Programming-Datarate"
 )
 @click.option(
-    "--protocol",
-    "-p",
-    type=click.Choice(["swd", "sbw", "jtag"]),
-    default="swd",
-    help="Programming-Protocol",
+    "--target",
+    "-t",
+    type=click.Choice(["nrf52", "msp430"]),
+    default="nrf52",
+    help="Target chip",
 )
-def programmer(firmware_file, sel_a, voltage, speed, protocol):
+def programmer(firmware_file, sel_a, voltage, speed, target):
 
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
@@ -564,7 +577,7 @@ def programmer(firmware_file, sel_a, voltage, speed, protocol):
         try:
             sd.shared_mem.write_firmware(fw.read())
             sysfs_interface.write_programmer_ctrl(
-                protocol, speed, 24, 25, 26, 27
+                target, speed, 22, 23, 26, 27
             )  # TODO: pins-nums are placeholders
             logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()

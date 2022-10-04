@@ -9,26 +9,28 @@
     repo: https://github.com/RobertCNelson/boot-scripts
     dest: /opt/scripts
     update: true
-    version: main
+    version: HEAD  # noqa latest[git]
     force: true
 - name: Remove space-waster of boot-script-repo (free 13 of 27 mb)
   ansible.builtin.file:
     path: "/opt/scripts/device/" # ["/opt/scripts/.git/", "/opt/scripts/device/"]
     state: absent
 
-- name: SCRIPT - Switch to newest release of Kernel Branch "{{ default_kernel_branch }}"
+- name: "SCRIPT - Switch to newest release of Kernel Branch {{ default_kernel_branch }}"
   ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}'
   when: update_kernel | bool
   changed_when: true
   failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
 
-- name: Grow root partition to drive size
+- name: Grow root partition to drive-size
   ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
   when: update_kernel | bool # NOTE: condition not correct, but works for now
   changed_when: true
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   when: update_kernel | bool
 
 - name: SCRIPT - Update Bootloader
@@ -51,8 +53,8 @@
     upgrade: dist
     update_cache: true
 
-- name: CFG - Set timezone to "{{ timezone }}"
-  timezone:
+- name: "CFG - Set timezone to {{ timezone }}"
+  community.general.timezone:
     name: "{{ timezone }}"
 
   # TODO: - name: CFG - Set CPU Governor to more relaxed state (powersave)
@@ -71,3 +73,5 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200

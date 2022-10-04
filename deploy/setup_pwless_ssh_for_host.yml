@@ -25,3 +25,5 @@
 
     - name: Restart device
       ansible.builtin.reboot:
+        connect_timeout: 20
+        reboot_timeout: 200

@@ -5,9 +5,11 @@
 
 void sys_spi_init()
 {
-    const uint8_t spi_mode              = 1u; // 1: default, clock active high, sampling on falling edge
-    const uint8_t word_length           = 24; // bit, min is 4, max is 14, (can be higher, but must be split up into two registers)
-    const uint8_t clk_div               = 3;  // Base is 48 MHz
+    const uint8_t spi_mode              = 1u;
+    // 1: default, clock active high, sampling on falling edge
+    const uint8_t word_length           = 24;
+    // bit, min is 4, max is 14, (can be higher, but must be split up into two registers)
+    const uint8_t clk_div               = 3; // Base is 48 MHz
 
     // trigger soft reset
     //SYS_SPI.SYSCONFIG_bit.SOFTRESET = 1;
@@ -34,7 +36,8 @@ void sys_spi_init()
     SYS_SPI.SYST_bit.SPIEN_3            = 1;
 
     SYS_SPI.MODULCTRL_bit.SYSTEM_TEST   = 0; // 0: functional mode, 1: test
-    SYS_SPI.MODULCTRL_bit.MS            = 0; // 0: primary mode (controller), 1: secondary (periphery)
+    SYS_SPI.MODULCTRL_bit.MS            = 0;
+    // 0: primary mode (controller), 1: secondary (periphery)
     SYS_SPI.MODULCTRL_bit.PIN34         = 0; // 0: SPIEN is CS (4Pin-Mode), 1: SPIEN not used
     SYS_SPI.MODULCTRL_bit.SINGLE        = 1; // 1: One Channel Mode
 
@@ -44,24 +47,26 @@ void sys_spi_init()
     SYS_SPI.CH0CONF_bit.CLKG            = 0; // clock granularity, 0: power of 2, 1: integer divider
     SYS_SPI.CH0CONF_bit.FFER            = 0; // 1: use RX-FiFo for this channel
     SYS_SPI.CH0CONF_bit.FFEW            = 0; // 1: use TX-FiFo for this channel
-    SYS_SPI.CH0CONF_bit.TCS             = 2; // Chip select time control. 0: 0.5 cycles before, 1: 1.5 cycles, 2: 2.5 cycles
-    SYS_SPI.CH0CONF_bit.TURBO           = 0; // multi word transfer, for buffered mode, 1: active
-    SYS_SPI.CH0CONF_bit.IS              = 1; // input select, 1: DAT1 receives, 0: DAT0 receives
-    SYS_SPI.CH0CONF_bit.DPE1            = 1; // transmission enable for data1, 0: active
-    SYS_SPI.CH0CONF_bit.DPE0            = 0; // transmission enable for data0, 0: active
-    SYS_SPI.CH0CONF_bit.DMAR            = 0; // DMA read request, 0: disabled
-    SYS_SPI.CH0CONF_bit.DMAW            = 0; // DMA write request, 0: disabled
-    SYS_SPI.CH0CONF_bit.TRM             = 0; // transmit/receive-mode, 0: trx, 1: rx, 2: tx,
+    SYS_SPI.CH0CONF_bit.TCS =
+            2; // Chip select time control. 0: 0.5 cycles before, 1: 1.5 cycles, 2: 2.5 cycles
+    SYS_SPI.CH0CONF_bit.TURBO = 0; // multi word transfer, for buffered mode, 1: active
+    SYS_SPI.CH0CONF_bit.IS    = 1; // input select, 1: DAT1 receives, 0: DAT0 receives
+    SYS_SPI.CH0CONF_bit.DPE1  = 1; // transmission enable for data1, 0: active
+    SYS_SPI.CH0CONF_bit.DPE0  = 0; // transmission enable for data0, 0: active
+    SYS_SPI.CH0CONF_bit.DMAR  = 0; // DMA read request, 0: disabled
+    SYS_SPI.CH0CONF_bit.DMAW  = 0; // DMA write request, 0: disabled
+    SYS_SPI.CH0CONF_bit.TRM   = 0; // transmit/receive-mode, 0: trx, 1: rx, 2: tx,
     // DMA line assertions
-    SYS_SPI.CH0CONF_bit.WL              = word_length - 1u;
-    SYS_SPI.CH0CONF_bit.EPOL            = 1;                        // SPIEN polarity, 1: low active
-    SYS_SPI.CH0CONF_bit.CLKD            = clk_div;                  // clockdivider, power of 2, are bit-granular
-    SYS_SPI.CH0CONF_bit.POL             = (spi_mode >> 1u) & 0x01u; // Clk POLarity, 1=active low
-    SYS_SPI.CH0CONF_bit.PHA             = (spi_mode >> 0u) & 0x01u; // Clk PHAse, 1: latch on even numbered edges
+    SYS_SPI.CH0CONF_bit.WL    = word_length - 1u;
+    SYS_SPI.CH0CONF_bit.EPOL  = 1;       // SPIEN polarity, 1: low active
+    SYS_SPI.CH0CONF_bit.CLKD  = clk_div; // clockdivider, power of 2, are bit-granular
+    SYS_SPI.CH0CONF_bit.POL   = (spi_mode >> 1u) & 0x01u; // Clk POLarity, 1=active low
+    SYS_SPI.CH0CONF_bit.PHA =
+            (spi_mode >> 0u) & 0x01u; // Clk PHAse, 1: latch on even numbered edges
 
     // SYS_SPI.CH0STAT_bit.
 
-    SYS_SPI.CH0CTRL_bit.EXTCLK          = 0; // clock ratio extension
+    SYS_SPI.CH0CTRL_bit.EXTCLK = 0; // clock ratio extension
 
     // [CH1-3], NOTE: CS2 & CS3 are not pinned out
     /*

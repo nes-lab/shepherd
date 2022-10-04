@@ -18,10 +18,7 @@
 #define INTC_CLEAR_EVENT(x) (CT_INTC.SICR_bit.STS_CLR_IDX = (x))
 // below is a deconstructed INTC_CHECK_EVENT, better optimizable for slow/far register read
 
-inline uint32_t intc_get_secr0()
-{
-    return CT_INTC.SECR0;
-}
+inline uint32_t intc_get_secr0() { return CT_INTC.SECR0; }
 
 inline uint32_t intc_check_event(const uint32_t secr0, const uint32_t pos)
 {

@@ -53,13 +53,15 @@ typedef struct
     uint32_t RSVD12x[4];
     // 130h
     uint32_t GPIO_CTRL;
-    uint32_t GPIO_OE;     // output-enabled -> should also be sampled when starting a measurement
+    uint32_t GPIO_OE;
+    // output-enabled -> should also be sampled when starting a measurement
     uint32_t GPIO_DATAIN; // sampled with interface clock
     uint32_t GPIO_DATAOUT;
     // 140h
     uint32_t GPIO_LEVELDETECT0;
     uint32_t GPIO_LEVELDETECT1;
-    uint32_t GPIO_RISINGDETECT; // rising-edge and falling-edge could be used to sample pins with IRQ
+    uint32_t GPIO_RISINGDETECT;
+    // rising-edge and falling-edge could be used to sample pins with IRQ
     uint32_t GPIO_FALLINGDETECT;
     // 150h
     uint32_t GPIO_DEBOUNCENABLE;
@@ -80,21 +82,16 @@ extern uint32_t CHECK_STRUCT_Gpio__[1 / (sizeof(Gpio) == 0x0198)];
 
 // Memory Map, p182
 #ifdef __GNUC__
-volatile Gpio *CT_GPIO0__ = (void *) 0x44E07000; // TODO: the other gnu-definitions in pssp should also not use __X
-  #define CT_GPIO0 (*CT_GPIO0__)
-volatile Gpio *CT_GPIO1__ = (void *) 0x4804C000;
-  #define CT_GPIO1 (*CT_GPIO1__)
-volatile Gpio *CT_GPIO2__ = (void *) 0x481AC000;
-  #define CT_GPIO2 (*CT_GPIO2__)
-volatile Gpio *CT_GPIO3__ = (void *) 0x481AE000;
-  #define CT_GPIO3 (*CT_GPIO3__)
+  #define CT_GPIO0 (*((volatile Gpio *) 0x44E07000))
+  #define CT_GPIO1 (*((volatile Gpio *) 0x4804C000))
+  #define CT_GPIO2 (*((volatile Gpio *) 0x481AC000))
+  #define CT_GPIO3 (*((volatile Gpio *) 0x481AE000))
 #else
 volatile __far Gpio CT_GPIO0 __attribute__((cregister("GPIO0", far), peripheral));
 volatile __far Gpio CT_GPIO1 __attribute__((cregister("GPIO1", far), peripheral));
 volatile __far Gpio CT_GPIO2 __attribute__((cregister("GPIO2", far), peripheral));
 volatile __far Gpio CT_GPIO3 __attribute__((cregister("GPIO3", far), peripheral));
 #endif
-
 
 /* Monitor GPIO from System / Linux:
     sudo su
@@ -104,7 +101,6 @@ volatile __far Gpio CT_GPIO3 __attribute__((cregister("GPIO3", far), peripheral)
     echo in > direction
     cat value
  */
-
 
 static inline void check_gpio_test()
 {
@@ -116,5 +112,32 @@ static inline void check_gpio_test()
     else GPIO_OFF(BIT_SHIFT(P8_11));
 }
 
+typedef enum
+{
+    GPIO_DIR_OUT = 0u,
+    GPIO_DIR_IN  = 1u
+} gpio_dir_t;
+
+typedef enum
+{
+    GPIO_STATE_LOW  = 0u,
+    GPIO_STATE_HIGH = 1u
+} gpio_state_t;
+
+static inline void sys_gpio_cfg_dir(unsigned int pin, gpio_dir_t dir)
+{
+    if (dir == GPIO_DIR_OUT) CT_GPIO0.GPIO_OE &= ~(1 << pin);
+    else CT_GPIO0.GPIO_OE |= (1 << pin);
+}
+static inline void sys_gpio_set(unsigned int pin, gpio_state_t state)
+{
+    if (state) CT_GPIO0.GPIO_SETDATAOUT = (1 << pin);
+    else CT_GPIO0.GPIO_CLEARDATAOUT = (1 << pin);
+}
+
+static inline gpio_state_t sys_gpio_get(unsigned int pin)
+{
+    return (gpio_state_t) (CT_GPIO0.GPIO_DATAIN >> pin) & 1u;
+}
 
 #endif //PRU_SYS_GPIO_H_

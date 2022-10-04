@@ -67,11 +67,9 @@
 
     - name: Enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
       ansible.posix.authorized_key:
-        user: "{{ item }}"
+        user: "{{ new_user }}"
         state: present
         key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-      with_items:
-        - "{{ new_user }}"
 
     - name: Allow sudoers sudo without password
       ansible.builtin.lineinfile:
@@ -93,7 +91,7 @@
         src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
         dest: '/etc/ssh/'
         mode: '0644'
-      with_items:
+      loop:
         - ssh_host_ecdsa_key.pub
         - ssh_host_ed25519_key.pub
         - ssh_host_rsa_key.pub
@@ -104,7 +102,7 @@
         src: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/{{ item }}'
         dest: '/etc/ssh/'
         mode: '0600'
-      with_items:
+      loop:
         - ssh_host_ecdsa_key
         - ssh_host_ed25519_key
         - ssh_host_rsa_key

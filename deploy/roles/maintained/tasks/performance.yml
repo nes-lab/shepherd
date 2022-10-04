@@ -6,7 +6,7 @@
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
     state: present
-  with_items:
+  loop:
     - {regex: '^.*UseDNS.*$', line: 'UseDNS no'}
     - {regex: '^.*Compression.*$', line: 'Compression no'}
 

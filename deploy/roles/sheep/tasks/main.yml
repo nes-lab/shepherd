@@ -1,229 +1,83 @@
 ---
-- name: Disable most factory enabled capes and overlays
-  ansible.builtin.lineinfile:
-    dest: "/boot/uEnv.txt"
-    regexp: "{{ item.regexpress }}"
-    line: "{{ item.replacement }}"
-    state: present
-  with_items:
-    - {
-      regexpress: "#?disable_uboot_overlay_video=.*$",
-      replacement: "disable_uboot_overlay_video=1",
-    }
-    - {
-      regexpress: "#?disable_uboot_overlay_audio=.*$",
-      replacement: "disable_uboot_overlay_audio=1",
-    }
-    - {
-      regexpress: "#?disable_uboot_overlay_wireless=.*$",
-      replacement: "disable_uboot_overlay_wireless=1",
-    }
-    - {
-      regexpress: "#?disable_uboot_overlay_adc=.*$",
-      replacement: "disable_uboot_overlay_adc=1",
-    }
-    - {
-      regexpress: "#?enable_uboot_cape_universal=.*$",
-      replacement: "#enable_uboot_cape_universal=1",
-    }
-  become: true
-  tags: device-tree
 
-- name: Restart device
-  ansible.builtin.reboot:
-  tags: device-tree
-
-- name: Enable shepherd overlays
-  ansible.builtin.lineinfile:
-    dest: "/boot/uEnv.txt"
-    regexp: "{{ item.regexpress }}"
-    line: "{{ item.replacement }}"
-    state: present
-  with_items:
-    - {
-      regexpress: "#?enable_uboot_overlays=.*$",
-      replacement: "enable_uboot_overlays=1",
-    }
-    - {
-      regexpress: '#?uboot_overlay_pru=.*$',
-      replacement: "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo",
-    } # TODO: this _overlay_pru should maybe be _overlay_addr0? it is not listed in recent uEnvs
-    - {
-      regexpress: '#?dtb_overlay=.*$',
-      replacement: "dtb_overlay=/lib/firmware/BB-SHPRD-00A0.dtbo",
-    }
-    - {
-      regexpress: '#?uboot_overlay_addr4=.*$',
-      replacement: "#uboot_overlay_addr4=/lib/firmware/BB-I2C1-00A0.dtbo",
-    }
-    - {
-      regexpress: '#?uboot_overlay_addr5=.*$',
-      replacement: "uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo",
-    }
-  become: true
-  tags: device-tree
-
-- name: Restart device
-  ansible.builtin.reboot:
-  tags: device-tree
-
-- name: Get kernel version
-  ansible.builtin.command: 'uname --kernel-release'
-  register: kernelrelease
-  changed_when: false
-
-- name: APT - Install required packages
-  ansible.builtin.apt:
-    name:
-      [
-        "linux-headers-{{ kernelrelease.stdout.strip() }}", # TODO: done by bootstrap / maintenance
-        "linux-firmware", # TODO: is already there
-        "zlib1g-dev",
-        "libjpeg-dev",
-        "python3-numpy",    # TODO: rethink apt usage. most of these are easier updatable per pip
-        "python3-scipy",
-        "python3-zmq",
-        "python3-gevent",
-        "python3-h5py",
-        "python3-pip",
-        "python3-setuptools",
-        "python3-virtualenv",
-        "python3-msgpack",
-        "libdbus-glib-1-dev",
-        "libgirepository1.0-dev",
-        "dkms",
-      ]
-    state: present
-    update_cache: true
-
-- name: PIP - update essential base-packages (setuptools, pip, ...)
-  ansible.builtin.pip:
-    name:
-      [
-        "pip",
-        "setuptools",
-        "wheel",
-        "virtualenv",
-      ]
-    extra_args: --upgrade
-  when: true
-  # disabled for now - not the cleanest solution - packages managed by apt but setup for pyPackage failed recently
-
-- name: Get full path of repository
-  ansible.builtin.command: "realpath {{ role_path }}/../../.."
-  delegate_to: localhost
-  register: repo_dir
-  become: false
-  changed_when: false
-  tags:
-    - source-code
-    - device-tree
-    - python
-    - systemd
-
-- name: Create paths for shepherd
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: '0644'
-  with_items:
-    - "{{ shepherd_install_path }}"
-    - "{{ shepherd_data_path }}"
-    - "{{ shepherd_config_path }}"
-  tags:
-    - source-code
-    - python
-
-- name: Synchronize host shepherd dir to target
-  ansible.posix.synchronize:
-    src: "{{ repo_dir.stdout }}/"
-    dest: "{{ shepherd_install_path }}"
-    delete: true
-    owner: false
-    group: false
-    rsync_opts:
-      - "--exclude=.eggs"
-      - "--exclude=__pycache__"
-  tags:
-    - source-code
-    - python
-
-- name: Own shepherd codebase
-  ansible.builtin.file:
-    path: '{{ shepherd_install_path }}'
-    state: 'directory'
-    owner: '{{ ansible_user }}'
-    recurse: true
-  become: true
-  tags:
-    - source-code
-    - python
-
-- name: Install shepherd python package
-  ansible.builtin.pip:
-    name: "./[test]"
-    state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
-    chdir: '{{ shepherd_install_path }}/software/python-package'
+### Install & Config
+- name: Configure Shepherd - Pre-Phase
+  ansible.builtin.include_tasks:
+    file: "{{ file_item }}"
+  loop:
+    - config_folders.yml
+    - config_overlays.yml
+  loop_control:
+    loop_var: file_item
+  when: install_basics | bool
   tags:
     - install
-    - python
 
-- name: Deploy example configuration
-  ansible.builtin.copy:
-    src: "{{ repo_dir.stdout }}/software/python-package/{{ item }}"
-    dest: "{{ shepherd_config_path }}"
-    force: false
-    owner: "{{ ansible_user }}"
-    mode: '0644'
-  with_items:
-    - 'example_config_emulator.yml'
-    - 'example_config_harvester.yml'
-  tags:
-    - source-code
-    - python
-    - conf
-
-- name: Deploy default configuration for launcher (harvest)
-  ansible.builtin.copy:
-    src: "{{ repo_dir.stdout }}/software/python-package/example_config_harvester.yml"
-    dest: "{{ shepherd_config_path }}/config.yml"
-    force: false
-    owner: "{{ ansible_user }}"
-    mode: '0644'
-  tags:
-    - source-code
-    - python
-    - conf
-
-- name: Symlink to shepherd-sheep for compatibility with deb package (might fail -> already exists)
-  ansible.builtin.file:
-    src: /usr/local/bin/shepherd-sheep
-    path: /usr/bin/shepherd-sheep
-    state: link
-    follow: true
-  failed_when: false
+- name: Install Pre-Requisits
+  ansible.builtin.include_tasks:
+    file: "{{ file_item }}"
+  loop:
+    - toolchain_kernel.yml
+    - toolchain_py.yml
+  loop_control:
+    loop_var: file_item
+  when: install_basics | bool
   tags:
     - install
-    - python
 
-- ansible.builtin.include_tasks:
-    file: build.yml
+- name: Install Ti-Toolchain for PRU
+  ansible.builtin.include_tasks:
+    file: toolchain_pru_ti.yml
+  when:
+    - install_basics | bool
+    - install_ti_tools | bool
+  tags:
+    - install
+
+- name: Install GCC-Toolchain for PRU
+  ansible.builtin.include_tasks:
+    file: toolchain_pru_gcc.yml
+  when:
+    - install_basics | bool
+    - install_gcc_tools | bool
+  tags:
+    - install
+
+- name: Restart device after installing PreReqs (& changing overlays)
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
+  when: install_basics | bool
+
+### Build
+- name: Build Shepherd-Software
+  ansible.builtin.include_tasks:
+    file: "{{ file_item }}"
+  loop:
+    - build_pre.yml
+    - build_shp.yml
+    - build_post.yml
+  loop_control:
+    loop_var: file_item
   tags:
     - install
     - build
 
-- ansible.builtin.include_tasks:
-    file: systemd.yml
+### Config
+- name: Configure Shepherd - Post-Phase
+  ansible.builtin.include_tasks:
+    file: "{{ file_item }}"
+  loop:
+    - config_shepherd.yml
+    - config_systemd.yml
+  loop_control:
+    loop_var: file_item
+  when: install_basics | bool
   tags:
     - install
-    - systemd
 
-# TODO: divide better into parts, so rebuild_fw triggers a reload of kernel module as well, but not the make-permanent-part
-- name: Make Shepherd Module permanent
-  ansible.builtin.lineinfile:
-    dest: "/etc/modules"
-    regexp: "#?shepherd.*$"
-    line: "shepherd"
-    state: present
+- name: Restart device after setup (specially services)
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
+  when: install_basics | bool

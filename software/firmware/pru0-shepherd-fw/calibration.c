@@ -4,10 +4,7 @@
 static const volatile struct CalibrationConfig *cal;
 
 
-void                                            calibration_initialize(const volatile struct CalibrationConfig *const config)
-{
-    cal = config;
-}
+void calibration_initialize(const volatile struct CalibrationConfig *const config) { cal = config; }
 
 
 /* bring values into adc domain with -> voltage_uV = adc_value * gain_factor + offset
@@ -31,10 +28,7 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
         static uint32_t negative_residue_nA = 0;
         const uint32_t  adc_offset_nA       = -cal->adc_current_offset_nA + negative_residue_nA;
 
-        if (I_nA > adc_offset_nA)
-        {
-            return (I_nA - adc_offset_nA);
-        }
+        if (I_nA > adc_offset_nA) { return (I_nA - adc_offset_nA); }
         else
         {
             negative_residue_nA = adc_offset_nA - I_nA;
@@ -71,13 +65,12 @@ uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
         const uint32_t dac_offset_uV = cal->dac_voltage_offset_uV;
         if (voltage_uV > dac_offset_uV)
             dac_raw = mul64(voltage_uV - dac_offset_uV, cal->dac_voltage_inv_factor_uV_n20) >> 20u;
-        else
-            dac_raw = 0u;
+        else dac_raw = 0u;
     }
     else
     {
         const uint32_t dac_offset_uV = -cal->dac_voltage_offset_uV;
-        dac_raw                      = mul64(voltage_uV + dac_offset_uV, cal->dac_voltage_inv_factor_uV_n20) >> 20u;
+        dac_raw = mul64(voltage_uV + dac_offset_uV, cal->dac_voltage_inv_factor_uV_n20) >> 20u;
     }
     return (dac_raw > 0xFFFFu) ? 0xFFFFu : dac_raw;
 }

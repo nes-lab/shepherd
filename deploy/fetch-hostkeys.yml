@@ -6,9 +6,9 @@
 
     - name: Prepare directory per host
       ansible.builtin.file:
-        path: "{{ playbook_dir }}/keys/{{ inventory_hostname }}"
+        path: "{{ playbook_dir }}/keys/{{ inventory_hostname }}/"
         state: directory
-        mode: 0755
+        mode: 'a+rx,u+w' # everyone can list and access files inside (+ owner can create & delete)
       delegate_to: localhost
 
     - name: Fetch keys
@@ -17,7 +17,7 @@
         dest: '{{ playbook_dir }}/keys/{{ inventory_hostname }}/'
         flat: true
       become: true
-      with_items:
+      loop:
         - ssh_host_ecdsa_key
         - ssh_host_ecdsa_key.pub
         - ssh_host_ed25519_key

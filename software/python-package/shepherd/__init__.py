@@ -23,9 +23,8 @@ import msgpack
 import msgpack_numpy
 import numpy
 
-from shepherd import commons
-from shepherd import sysfs_interface
-
+from . import commons
+from . import sysfs_interface
 from .calibration import CalibrationData
 from .datalog import ExceptionRecord
 from .datalog import LogWriter
@@ -42,7 +41,7 @@ from .target_io import TargetIO
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "LogReader",
@@ -148,13 +147,9 @@ class Emulator(ShepherdIO):
             belonging to the IV data that is being emulated
         calibration_emulator (CalibrationData): Shepherd calibration data
             belonging to the cape used for emulation
-        set_target_io_lvl_conv: Enables or disables the GPIO level converter to targets.
-        sel_target_for_io: choose which target gets the io-connection (serial, swd, gpio),
-                            True = Target A,
-                            False = Target B
-        sel_target_for_pwr: choose which targets gets the supply with current-monitor,
-                            True = Target A,
-                            False = Target B
+        enable_io: Enables or disables the GPIO level converter to targets.
+        io_target: target-port (A or B) that gets the io-connection (serial, swd, gpio),
+        pwr_target: target-port (A or B) that gets the supply with current-monitor,
         aux_target_voltage: Sets, Enables or disables the voltage for the second target,
                             0.0 or False for Disable,
                             True for linking it to voltage of other Target
@@ -168,9 +163,9 @@ class Emulator(ShepherdIO):
         calibration_recording: CalibrationData = None,
         # TODO: make clearer that this is "THE RECORDING"
         calibration_emulator: CalibrationData = None,
-        set_target_io_lvl_conv: bool = False,
-        sel_target_for_io: bool = True,
-        sel_target_for_pwr: bool = True,
+        enable_io: bool = False,
+        io_target: str = "A",
+        pwr_target: str = "A",
         aux_target_voltage: float = 0.0,
         vsource: Union[dict, str, Path, VirtualSourceConfig] = None,
         log_intermediate_voltage: bool = None,
@@ -203,9 +198,9 @@ class Emulator(ShepherdIO):
             emu_cfg=infile_vh_cfg,
         )
 
-        self._set_target_io_lvl_conv = set_target_io_lvl_conv
-        self._sel_target_for_io = sel_target_for_io
-        self._sel_target_for_pwr = sel_target_for_pwr
+        self._enable_io = enable_io
+        self._io_target = io_target
+        self._pwr_target = pwr_target
         self._aux_target_voltage = aux_target_voltage
 
         self._v_gain = 1e6 * calibration_recording["harvester"]["adc_voltage"]["gain"]
@@ -230,9 +225,9 @@ class Emulator(ShepherdIO):
 
         super().reinitialize_prus()  # needed for ADCs
 
-        super().set_target_io_level_conv(self._set_target_io_lvl_conv)
-        super().select_main_target_for_io(self._sel_target_for_io)
-        super().select_main_target_for_power(self._sel_target_for_pwr)
+        super().set_target_io_level_conv(self._enable_io)
+        super().select_main_target_for_io(self._io_target)
+        super().select_main_target_for_power(self._pwr_target)
         super().set_aux_target_voltage(self.calibration, self._aux_target_voltage)
 
         # Preload emulator with data
@@ -538,10 +533,10 @@ class ShepherdDebug(ShepherdIO):
         self._set_shepherd_pcb_power(state)
 
     def select_target_for_power_tracking(self, sel_a: bool) -> NoReturn:
-        self.select_main_target_for_power(sel_a)
+        self.select_main_target_for_power("A" if sel_a else "B")
 
     def select_target_for_io_interface(self, sel_a: bool) -> NoReturn:
-        self.select_main_target_for_io(sel_a)
+        self.select_main_target_for_io("A" if sel_a else "B")
 
     def set_io_level_converter(self, state) -> NoReturn:
         self.set_target_io_level_conv(state)
@@ -767,9 +762,9 @@ def run_emulator(
     force_overwrite: bool = False,
     use_cal_default: bool = False,
     start_time: float = None,
-    set_target_io_lvl_conv: bool = False,
-    sel_target_for_io: bool = True,
-    sel_target_for_pwr: bool = True,
+    enable_io: bool = False,
+    io_target: str = "A",
+    pwr_target: str = "A",
     aux_target_voltage: float = 0.0,
     virtsource: Union[dict, str, Path, VirtualSourceConfig] = None,
     log_intermediate_voltage: bool = None,
@@ -791,11 +786,10 @@ def run_emulator(
         :param use_cal_default: [bool] True to use default calibration values, False to
             read calibration data from EEPROM
         :param start_time: [float] Desired start time of emulation in unix epoch time
-        :param set_target_io_lvl_conv: [bool] Enables the GPIO level converter to targets.
-        :param sel_target_for_io: [bool] choose which targets gets the io-connection
-            (serial, swd, gpio) from beaglebone, True = Target A, False = Target B
-        :param sel_target_for_pwr: [bool] choose which targets gets the supply with current-monitor,
-            True = Target A, False = Target B
+        :param enable_io: [bool] Enables the GPIO level converter to targets.
+        :param io_target: [str] choose which target (A or B) gets the io-connection
+            (serial, swd, gpio) from beaglebone
+        :param pwr_target: [str] choose which target (A or B) gets the supply with current-monitor,
         :param aux_target_voltage: Sets, Enables or disables the voltage for the second target,
             0.0 or False for Disable, True for linking it to voltage of other Target
         :param virtsource: [VirtualSourceData] Settings which define the behavior of VS emulation
@@ -815,14 +809,14 @@ def run_emulator(
     if start_time is None:
         start_time = round(time.time() + 10)
 
-    if set_target_io_lvl_conv is None:
-        set_target_io_lvl_conv = True
+    if enable_io is None:
+        enable_io = True
 
-    if sel_target_for_io is None:
-        sel_target_for_io = True
+    if io_target is None:
+        io_target = "A"
 
-    if sel_target_for_pwr is None:
-        sel_target_for_pwr = True
+    if pwr_target is None:
+        pwr_target = "A"
 
     if aux_target_voltage is None:
         aux_target_voltage = 0.0
@@ -895,9 +889,9 @@ def run_emulator(
             initial_buffers=init_buffers,
             calibration_recording=CalibrationData(log_reader.get_calibration_data()),
             calibration_emulator=cal,
-            set_target_io_lvl_conv=set_target_io_lvl_conv,
-            sel_target_for_io=sel_target_for_io,
-            sel_target_for_pwr=sel_target_for_pwr,
+            enable_io=enable_io,
+            io_target=io_target,
+            pwr_target=pwr_target,
             aux_target_voltage=aux_target_voltage,
             vsource=virtsource,
             log_intermediate_voltage=log_intermediate_voltage,

@@ -11,16 +11,15 @@
 #define PRU_INTC_SIZE        0x400
 #define PRU_INTC_SISR_OFFSET 0x20
 
-static void __iomem *pru_intc_io       = NULL;
-void __iomem        *pru_shared_mem_io = NULL;
+static void __iomem        *pru_intc_io       = NULL;
+void __iomem               *pru_shared_mem_io = NULL;
 
 /* This timer is used to schedule a delayed start of the actual sampling on the PRU */
-struct hrtimer       delayed_start_timer;
+struct hrtimer              delayed_start_timer;
 
-static enum hrtimer_restart
-    delayed_start_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart);
 
-int pru_comm_init(void)
+int                         pru_comm_init(void)
 {
     struct SharedMem *shared_mem;
 
@@ -28,8 +27,7 @@ int pru_comm_init(void)
     pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
     pru_shared_mem_io =
-            ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_STRUCT_OFFSET,
-                    sizeof(struct SharedMem));
+            ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_STRUCT_OFFSET, sizeof(struct SharedMem));
 
     shared_mem                       = (struct SharedMem *) pru_shared_mem_io;
 
@@ -62,8 +60,7 @@ int pru_comm_exit(void)
     return 0;
 }
 
-static enum hrtimer_restart
-delayed_start_callback(struct hrtimer *timer_for_restart)
+static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart)
 {
     struct timespec ts_now;
     uint64_t        now_ns_system;
@@ -91,24 +88,18 @@ int pru_comm_schedule_delayed_start(unsigned int start_time_second)
      * start. This allows the PRU enough time to receive the interrupt and
      * prepare itself to start at exactly the right time.
      */
-    trigger_timer_time = ktime_sub_ns(
-            trigger_timer_time, 3 * pru_comm_get_buffer_period_ns() / 4);
+    trigger_timer_time = ktime_sub_ns(trigger_timer_time, 3 * pru_comm_get_buffer_period_ns() / 4);
 
     trigger_timer_time_ns = ktime_to_ns(trigger_timer_time);
 
-    printk(KERN_INFO "shprd.k: Delayed start timer set to %llu",
-           trigger_timer_time_ns);
+    printk(KERN_INFO "shprd.k: Delayed start timer set to %llu", trigger_timer_time_ns);
 
-    hrtimer_start(&delayed_start_timer, trigger_timer_time,
-                  HRTIMER_MODE_ABS);
+    hrtimer_start(&delayed_start_timer, trigger_timer_time, HRTIMER_MODE_ABS);
 
     return 0;
 }
 
-int pru_comm_cancel_delayed_start(void)
-{
-    return hrtimer_cancel(&delayed_start_timer);
-}
+int pru_comm_cancel_delayed_start(void) { return hrtimer_cancel(&delayed_start_timer); }
 
 int pru_comm_trigger(unsigned int system_event)
 {
@@ -120,21 +111,19 @@ int pru_comm_trigger(unsigned int system_event)
 
 enum ShepherdState pru_comm_get_state(void)
 {
-    return (enum ShepherdState) readl(
-            pru_shared_mem_io + offsetof(struct SharedMem, shepherd_state));
+    return (enum ShepherdState) readl(pru_shared_mem_io +
+                                      offsetof(struct SharedMem, shepherd_state));
 }
 
 int pru_comm_set_state(enum ShepherdState state)
 {
-    writel(state,
-           pru_shared_mem_io + offsetof(struct SharedMem, shepherd_state));
+    writel(state, pru_shared_mem_io + offsetof(struct SharedMem, shepherd_state));
     return 0;
 }
 
 unsigned int pru_comm_get_buffer_period_ns(void)
 {
-    return readl(pru_shared_mem_io +
-                 offsetof(struct SharedMem, buffer_period_ns));
+    return readl(pru_shared_mem_io + offsetof(struct SharedMem, buffer_period_ns));
 }
 
 
@@ -152,7 +141,8 @@ unsigned char pru1_comm_receive_sync_request(struct ProtoMsg *const msg)
         writeb(0u, pru_shared_mem_io + offset_unread);
 
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd.k: recv_sync_req from pru1 -> mem corruption? id=%u (!=%u)", msg->id, MSG_TO_KERNEL);
+            printk(KERN_ERR "shprd.k: recv_sync_req from pru1 -> mem corruption? id=%u (!=%u)",
+                   msg->id, MSG_TO_KERNEL);
 
         return 1;
     }
@@ -191,7 +181,8 @@ unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg)
         writeb(0u, pru_shared_mem_io + offset_unread);
 
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd.k: recv_status from pru0 -> mem corruption? id=%u (!=%u)", msg->id, MSG_TO_KERNEL);
+            printk(KERN_ERR "shprd.k: recv_status from pru0 -> mem corruption? id=%u (!=%u)",
+                   msg->id, MSG_TO_KERNEL);
 
         return 1;
     }
@@ -213,7 +204,8 @@ unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg)
         writeb(0u, pru_shared_mem_io + offset_unread);
 
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd.k: recv_status from pru1 -> mem corruption? id=%u (!=%u)", msg->id, MSG_TO_KERNEL);
+            printk(KERN_ERR "shprd.k: recv_status from pru1 -> mem corruption? id=%u (!=%u)",
+                   msg->id, MSG_TO_KERNEL);
 
         return 1;
     }
@@ -235,7 +227,8 @@ unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg)
         writeb(0u, pru_shared_mem_io + offset_unread);
 
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
-            printk(KERN_ERR "shprd.k: recv_msg from pru0 -> mem corruption? id=%u (!=%u)", msg->id, MSG_TO_KERNEL);
+            printk(KERN_ERR "shprd.k: recv_msg from pru0 -> mem corruption? id=%u (!=%u)", msg->id,
+                   MSG_TO_KERNEL);
 
         return 1;
     }
@@ -261,6 +254,7 @@ unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg)
 
 unsigned char pru0_comm_check_send_status(void)
 {
-    static const uint32_t offset_unread = offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, unread);
+    static const uint32_t offset_unread =
+            offsetof(struct SharedMem, pru0_msg_inbox) + offsetof(struct ProtoMsg, unread);
     return readb(pru_shared_mem_io + offset_unread) == 0u;
 }

@@ -1,0 +1,12 @@
+---
+
+- name: Refresh list of kernel modules
+  ansible.builtin.command: 'depmod -a'
+  when: rebuild_kernel_module | bool
+  changed_when: true
+  tags:
+    - install
+
+- name: Load Shepherd-Module
+  ansible.builtin.command: 'modprobe -a shepherd'
+  changed_when: true

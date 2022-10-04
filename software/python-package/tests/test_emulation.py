@@ -112,9 +112,9 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         force_overwrite=True,
         use_cal_default=True,
         start_time=start_time,
-        set_target_io_lvl_conv=True,
-        sel_target_for_io=True,
-        sel_target_for_pwr=True,
+        enable_io=True,
+        io_target="A",
+        pwr_target="A",
         aux_target_voltage=2.5,
         virtsource="direct",
     )
@@ -125,12 +125,12 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
 
 
 @pytest.mark.hardware
-@pytest.mark.skip(reason="(REQUIRES CAPE HARDWARE v2.4")  # real cape needed
+@pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 def test_target_pins(shepherd_up):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     shepherd_io.start()
-    shepherd_io.select_main_target_for_power(sel_target_a=True)
+    shepherd_io.select_main_target_for_power("A")
 
     dac_channels = [
         # combination of debug channel number, voltage_index, cal_component, cal_channel
@@ -152,14 +152,14 @@ def test_target_pins(shepherd_up):
 
     shepherd_io.set_target_io_level_conv(True)
 
-    shepherd_io.select_main_target_for_io(sel_target_a=True)
+    shepherd_io.select_main_target_for_io("A")
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
         assert response & (2 ** pru_responses[io_index])
 
-    shepherd_io.select_main_target_for_io(sel_target_a=False)
+    shepherd_io.select_main_target_for_io("B")
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)

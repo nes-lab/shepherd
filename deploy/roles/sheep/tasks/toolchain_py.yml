@@ -1,0 +1,35 @@
+---
+
+- name: APT - Install required packages for Python
+  ansible.builtin.apt:
+    name:
+      [
+        "zlib1g-dev",
+        "libjpeg-dev",
+        "python3-numpy",    # TODO: rethink apt usage. most of these are easier updatable per pip
+        "python3-scipy",
+        "python3-zmq",
+        "python3-gevent",
+        "python3-h5py",
+        "python3-pip",
+        "python3-setuptools",
+        "python3-virtualenv",
+        "python3-msgpack",
+        "libdbus-glib-1-dev",
+        "libgirepository1.0-dev",
+      ]
+    state: present
+    update_cache: true
+
+- name: PIP - update essential base-packages (setuptools, pip, ...)
+  ansible.builtin.pip:
+    name:
+      [
+        "pip",
+        "setuptools",
+        "wheel",
+        "virtualenv",
+      ]
+    extra_args: --upgrade
+  when: true
+  # NOTE: not the cleanest solution - packages managed by apt but setup for pyPackage failed recently

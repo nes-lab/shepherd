@@ -47,7 +47,9 @@
 #define SIZE_CARVEOUT (FIFO_BUFFER_SIZE * sizeof(struct SampleBuffer))
 
 // pseudo-assertion to test for correct struct-size, zero cost
-extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (4 + 4 + 8 + 2 * 4 * 10000 + (4 + 4 + (8 + 2) * 16384) + 2 * 4))];
+extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT >=
+                                    FIFO_BUFFER_SIZE * (4 + 4 + 8 + 2 * 4 * 10000 +
+                                                        (4 + 4 + (8 + 2) * 16384) + 2 * 4))];
 
 #if !defined(__GNUC__)
   #pragma DATA_SECTION(resourceTable, ".resource_table")
@@ -59,8 +61,8 @@ extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT >= FIFO_BUFFER_SIZE * (4 + 4 +
 
 struct my_resource_table resourceTable = {
         {
-                1,       /* Resource table version: only version 1 is supported by the current driver */
-                1,       /* number of entries in the table */
+                1, /* Resource table version: only version 1 is supported by the current driver */
+                1, /* number of entries in the table */
                 {0U, 0U} /* reserved, must be zero */
         },
         /* offsets to entries */
@@ -69,13 +71,12 @@ struct my_resource_table resourceTable = {
         },
 
         /* resource entries */
-        {
-                TYPE_CARVEOUT, 0x0, /* Memory address */
-                0x0,                /* Physical address */
-                SIZE_CARVEOUT,      /* ~ 15 MB */
-                0,                  /* Flags */
-                0,                  /* Reserved */
-                "PRU_HOST_SHARED_MEM"},
+        {TYPE_CARVEOUT, 0x0, /* Memory address */
+         0x0,                /* Physical address */
+         SIZE_CARVEOUT,      /* ~ 15 MB */
+         0,                  /* Flags */
+         0,                  /* Reserved */
+         "PRU_HOST_SHARED_MEM"},
 };
 
 #endif /* SHEPHERD_PRU0_RESOURCE_TABLE_DEF_H_ */

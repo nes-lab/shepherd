@@ -37,12 +37,10 @@ inline bool_ft iep_check_evt_cmp(const uint8_ft compare_channel)
 
 // allow to build external, faster iep_check_evt_cmp, for when this fn is called more often in a loop
 // -> READs from IEP take 12 Cycles
-inline uint32_t iep_get_tmr_cmp_sts()
-{
-    return CT_IEP.TMR_CMP_STS;
-}
+inline uint32_t iep_get_tmr_cmp_sts() { return CT_IEP.TMR_CMP_STS; }
 
-inline uint32_t iep_check_evt_cmp_fast(const uint32_t tmr_cmp_sts, const uint32_t compare_channel_mask)
+inline uint32_t iep_check_evt_cmp_fast(const uint32_t tmr_cmp_sts,
+                                       const uint32_t compare_channel_mask)
 {
     return (tmr_cmp_sts & compare_channel_mask);
 }
@@ -79,12 +77,9 @@ inline uint32_t iep_get_cmp_val(const uint8_ft compare_channel)
     return *((uint32_t *) &CT_IEP + 18U + compare_channel);
 }
 
-inline uint32_t iep_get_cnt_val()
-{
-    return CT_IEP.TMR_CNT;
-}
+inline uint32_t iep_get_cnt_val() { return CT_IEP.TMR_CNT; }
 
-void iep_init()
+void            iep_init()
 {
     /* Disable counter */
     CT_IEP.TMR_GLB_CFG_bit.CNT_EN          = 0;

@@ -1,0 +1,71 @@
+name: Build Pru
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  pru-tests:
+    runs-on: ubuntu-latest
+    env:
+      # as in roles/sheep/vars/main.yml
+      gcc_pru_cc_release: "pru-elf-2022.05.amd64"
+      gcc_pru_support_branch: "linux-4.19-rproc"
+      # weblinks
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
+      link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
+      # env for makefile
+      PRU_GCC: "${{ github.workspace }}/pru-elf-2022.05.amd64"
+      PRU_GCC_SUPPORT: "${{ github.workspace }}/pru-software-support-package"
+
+    steps:
+
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - name: Install dependency 🔧
+        run: sudo apt install build-essential
+
+      - name: prepare directories 📓
+        run: |
+          mkdir -p ${{ env.PRU_GCC }}/bin
+          mkdir -p ${{ env.PRU_GCC_SUPPORT }}
+
+      - name: Download GCC cross-compiler for PRU ⚔
+        run: "wget -q --tries 3 ${{ env.link_gcc }}${{ env.gcc_pru_cc_release }}.tar.xz --output-document=gcc-pru.tar.xz"
+        working-directory: "${{ github.workspace }}"
+      - name: Extract GCC cross-compiler ⚔
+        run: "tar -xf gcc-pru.tar.xz"
+        #run: "tar -xf gcc-pru.tar.xz -C ${{ env.PRU_GCC }}"
+        working-directory: "${{ github.workspace }}"
+
+      - name: Install PSSP dependency 🔧
+        run: "git clone --branch ${{ env.gcc_pru_support_branch }} ${{ env.link_pssp }}"
+        working-directory: "${{ github.workspace }}"
+
+      - name: temporary size-hack for PRU0 🕚
+        run: "sudo cp software/firmware/lib/am335xl.pru0 ${{ env.PRU_GCC }}/pru-elf/lib/device-specs/am335xl.pru0"
+        working-directory: "${{ github.workspace }}"
+
+      - name: Build PRU0 🧱
+        run: make
+        working-directory: "software/firmware/pru0-shepherd-fw/"
+
+      - name: Build PRU1 🧱
+        run: make
+        working-directory: "software/firmware/pru1-shepherd-fw/"
+
+      - name: Build SWD Programmer 🧱
+        run: make
+        working-directory: "software/firmware/pru0-programmer/"
+
+      - name: Clean Programmer 🧹
+        run: make clean
+        working-directory: "software/firmware/pru0-programmer/"
+
+      - name: Build SBW Programmer 🧱
+        run: make PROTO=SBW
+        working-directory: "software/firmware/pru0-programmer/"

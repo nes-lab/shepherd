@@ -1,0 +1,84 @@
+---
+
+- name: Look for Kernel Module
+  ansible.builtin.command: 'modinfo shepherd'
+  register: modinfo_ret
+  failed_when: false
+  changed_when: false
+
+- name: Stop Kernel Module
+  ansible.builtin.command: 'modprobe -rf shepherd'
+  register: modprobe_ret
+  until: modprobe_ret is not failed
+  retries: 5
+  when: not modinfo_ret
+  changed_when: true
+  # fails at least on first install -> check for presence of shepherd
+  # lsmod | grep shepherd  -> $? is still 0 if present
+  # modinfo could work -> test above
+
+- name: Check if PRU1 is present
+  ansible.builtin.stat:
+    path: "/sys/class/remoteproc/remoteproc1/state"
+  register: sysfs_pru
+- name: Stop PRU1
+  ansible.builtin.shell:
+    cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc1/state'
+  when: sysfs_pru.stat.exists
+  failed_when: false
+  changed_when: true
+
+- name: Check if PRU2 is present
+  ansible.builtin.stat:
+    path: "/sys/class/remoteproc/remoteproc2/state"
+  register: sysfs_pru
+- name: Stop PRU2
+  ansible.builtin.shell:
+    cmd: 'echo "stop" > /sys/class/remoteproc/remoteproc2/state'
+  when: sysfs_pru.stat.exists
+  failed_when: false
+  changed_when: true
+
+- name: Uninstall shepherd python package
+  ansible.builtin.pip:
+    name: "./"
+    state: absent
+    chdir: '{{ shepherd_install_path }}/software/python-package'
+  failed_when: false
+  tags:
+    - install
+    - python
+  when: rebuild_python_package | bool
+  # TODO: maybe not needed
+
+- name: Get full path of repository
+  ansible.builtin.command: "realpath {{ role_path }}/../../.."
+  delegate_to: localhost
+  register: repo_dir
+  become: false
+  changed_when: false
+
+- name: Synchronize host shepherd dir to target
+  ansible.posix.synchronize:
+    src: "{{ repo_dir.stdout }}/"
+    dest: "{{ shepherd_install_path }}"
+    delete: true
+    owner: false
+    group: false
+    compress: false
+    rsync_opts:
+      - "--exclude=.eggs"
+      - "--exclude=__pycache__"
+  when: refresh_source | bool
+
+- name: Own shepherd codebase
+  ansible.builtin.file:
+    path: "{{ shepherd_install_path }}/"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "a+rw"
+    recurse: true
+  become: true
+  tags:
+    - source-code
+    - python

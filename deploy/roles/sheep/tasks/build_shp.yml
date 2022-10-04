@@ -1,0 +1,65 @@
+---
+
+- name: Build and install kernel module
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
+    target: install
+  when: rebuild_kernel_module | bool
+  tags:
+    - install
+
+- name: Clean PRU Firmware Source
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
+    target: clean
+  loop:
+    - pru0-shepherd-fw
+    - pru1-shepherd-fw
+  become: true
+
+- name: Build PRU firmware
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
+    target: all
+  loop:
+    - pru0-shepherd-fw
+    - pru1-shepherd-fw
+  environment:
+    PRU_CGT: '{{ ti_pru_cgt_path }}'
+    PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
+    # PRU_GCC: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}'
+    # PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
+  become: false
+  # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
+
+- name: Install PRU firmware
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
+    target: install
+  loop:
+    - pru0-shepherd-fw
+    - pru1-shepherd-fw
+  become: true
+
+- name: Clean shepherd device tree
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+    target: clean
+
+- name: Build and install device tree overlay
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+    target: install
+  tags:
+    - install
+    - device-tree
+
+- name: Install shepherd python package
+  ansible.builtin.pip:
+    name: "./[test]"
+    state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
+    chdir: '{{ shepherd_install_path }}/software/python-package'
+  tags:
+    - install
+    - python
+  when: rebuild_python_package | bool

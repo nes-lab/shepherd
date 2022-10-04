@@ -1,5 +1,11 @@
 ---
 
+- name: Determine free space on main partition
+  ansible.builtin.command:
+    cmd: 'df -m /opt/ --output\=avail'
+  register: pre_free_mb
+  changed_when: false
+
 - name: Find recordings
   ansible.builtin.find:
     paths: ["/var/shepherd/recordings/", "/var/shepherd/recordings2/"]
@@ -9,9 +15,9 @@
   when: do_delete_recordings | bool
 - name: Delete recordings
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item }}"
     state: absent
-  with_items: "{{ files_rec.files }}"
+  with_items: "{{ files_rec.files | map(attribute='path') }}"
   when: do_delete_recordings | bool
   # NOTE: could be done with just .find, but this leaves directory intact
 
@@ -28,3 +34,15 @@
   ansible.builtin.include_tasks:
     file: zero_free_space.yml
   when: do_zero_free_space | bool
+
+- name: Determine free space on main partition
+  ansible.builtin.command:
+    cmd: 'df -m /opt/ --output\=avail'
+  register: opt_free_mb
+  changed_when: false
+
+- name: Free space on main partition
+  ansible.builtin.debug:
+    msg:
+      - "free = {{ opt_free_mb.stdout_lines[-1] }} MiB, "
+      - "cleaned = {{ (opt_free_mb.stdout_lines[-1] | float) - (pre_free_mb.stdout_lines[-1] | float) }} MiB"

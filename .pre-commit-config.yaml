@@ -48,7 +48,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.38.0
+    rev: v2.38.2
     hooks:
       - id: pyupgrade
         args: ["--py38-plus"]
@@ -85,10 +85,16 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.6.1
+    rev: v6.8.0b1
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.2.1"
+    hooks:
+      - id: codespell
+        exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: 'v14.0.6'
@@ -96,6 +102,7 @@ repos:
       - id: clang-format
         types_or: [c++, c]
 
+  # cpp-check comes last! fails if uninstalled
   - repo: https://github.com/pocc/pre-commit-hooks
     rev: "v1.3.5"
     hooks:
@@ -124,13 +131,6 @@ repos:
 #    hooks:
 #      - id: mypy
 # TODO: activate mypy -> some work to fix type-annotations
-
-  - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.1"
-    hooks:
-      - id: codespell
-        exclude: \.(sch|brd|lbr)$
-
 # TODO: github.com/PyCQA/pydocstyle
 # TODO: github.com/PyCQA/pylint
 

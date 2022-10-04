@@ -42,7 +42,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dan Drown");
 MODULE_DESCRIPTION("PPS Client Driver using OMAP Timer hardware");
-MODULE_VERSION("0.3.0");
+MODULE_VERSION("0.4.0");
 
 struct pps_gmtimer_platform_data
 {
@@ -62,8 +62,7 @@ struct pps_gmtimer_platform_data
 };
 
 /* kobject *******************/
-static ssize_t timer_name_show(struct device           *dev,
-                               struct device_attribute *attr, char *buf)
+static ssize_t timer_name_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
     return sprintf(buf, "%s\n", pdata->timer_name);
@@ -71,28 +70,23 @@ static ssize_t timer_name_show(struct device           *dev,
 
 static DEVICE_ATTR(timer_name, S_IRUGO, timer_name_show, NULL);
 
-static ssize_t stats_show(struct device *dev, struct device_attribute *attr,
-                          char *buf)
+static ssize_t stats_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
-    return sprintf(buf, "capture: %u\noverflow: %u\n", pdata->capture,
-                   pdata->overflow);
+    return sprintf(buf, "capture: %u\noverflow: %u\n", pdata->capture, pdata->overflow);
 }
 
 static DEVICE_ATTR(stats, S_IRUGO, stats_show, NULL);
 
-static ssize_t interrupt_delta_show(struct device           *dev,
-                                    struct device_attribute *attr, char *buf)
+static ssize_t interrupt_delta_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
-    return sprintf(buf, "%lld.%09ld\n", (long long) pdata->delta.tv_sec,
-                   pdata->delta.tv_nsec);
+    return sprintf(buf, "%lld.%09ld\n", (long long) pdata->delta.tv_sec, pdata->delta.tv_nsec);
 }
 
 static DEVICE_ATTR(interrupt_delta, S_IRUGO, interrupt_delta_show, NULL);
 
-static ssize_t pps_ts_show(struct device *dev, struct device_attribute *attr,
-                           char *buf)
+static ssize_t pps_ts_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
     return sprintf(buf, "%lld.%09ld\n", (long long) pdata->ts.ts_real.tv_sec,
@@ -101,8 +95,7 @@ static ssize_t pps_ts_show(struct device *dev, struct device_attribute *attr,
 
 static DEVICE_ATTR(pps_ts, S_IRUGO, pps_ts_show, NULL);
 
-static ssize_t count_at_interrupt_show(struct device           *dev,
-                                       struct device_attribute *attr, char *buf)
+static ssize_t count_at_interrupt_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
     return sprintf(buf, "%u\n", pdata->count_at_interrupt);
@@ -110,37 +103,32 @@ static ssize_t count_at_interrupt_show(struct device           *dev,
 
 static DEVICE_ATTR(count_at_interrupt, S_IRUGO, count_at_interrupt_show, NULL);
 
-static ssize_t capture_show(struct device *dev, struct device_attribute *attr,
-                            char *buf)
+static ssize_t capture_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
     return sprintf(buf, "%u\n",
-                   __omap_dm_timer_read(pdata->capture_timer,
-                                        OMAP_TIMER_CAPTURE_REG,
+                   __omap_dm_timer_read(pdata->capture_timer, OMAP_TIMER_CAPTURE_REG,
                                         pdata->capture_timer->posted));
 }
 
 static DEVICE_ATTR(capture, S_IRUGO, capture_show, NULL);
 
-static ssize_t ctrlstatus_show(struct device           *dev,
-                               struct device_attribute *attr, char *buf)
+static ssize_t ctrlstatus_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata = dev->platform_data;
     return sprintf(buf, "%x\n",
-                   __omap_dm_timer_read(pdata->capture_timer,
-                                        OMAP_TIMER_CTRL_REG,
+                   __omap_dm_timer_read(pdata->capture_timer, OMAP_TIMER_CTRL_REG,
                                         pdata->capture_timer->posted));
 }
 
 static DEVICE_ATTR(ctrlstatus, S_IRUGO, ctrlstatus_show, NULL);
 
-static ssize_t timer_counter_show(struct device           *dev,
-                                  struct device_attribute *attr, char *buf)
+static ssize_t timer_counter_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct pps_gmtimer_platform_data *pdata         = dev->platform_data;
     unsigned int                      current_count = 0;
 
-    current_count                                   = pdata->timer_ops->read_counter(pdata->capture_timer);
+    current_count = pdata->timer_ops->read_counter(pdata->capture_timer);
     return sprintf(buf, "%u\n", current_count);
 }
 
@@ -173,53 +161,43 @@ static irqreturn_t pps_gmtimer_interrupt(int irq, void *data)
     {
         unsigned int irq_status;
 
-        irq_status =
-                pdata->timer_ops->read_status(pdata->capture_timer);
+        irq_status = pdata->timer_ops->read_status(pdata->capture_timer);
         if (irq_status & OMAP_TIMER_INT_CAPTURE)
         {
             uint32_t     ps_per_hz;
             unsigned int count_at_capture;
 
             pps_get_ts(&pdata->ts);
-            pdata->count_at_interrupt =
-                    pdata->timer_ops->read_counter(
-                            pdata->capture_timer);
-            count_at_capture = __omap_dm_timer_read(
-                    pdata->capture_timer, OMAP_TIMER_CAPTURE_REG,
-                    pdata->capture_timer->posted);
+            pdata->count_at_interrupt = pdata->timer_ops->read_counter(pdata->capture_timer);
+            count_at_capture    = __omap_dm_timer_read(pdata->capture_timer, OMAP_TIMER_CAPTURE_REG,
+                                                       pdata->capture_timer->posted);
 
-            pdata->delta.tv_sec  = 0;
+            pdata->delta.tv_sec = 0;
 
             // use picoseconds per hz to avoid floating point and limit the rounding error
-            ps_per_hz            = 1000000000 / (pdata->frequency / 1000);
-            pdata->delta.tv_nsec = ((pdata->count_at_interrupt -
-                                     count_at_capture) *
-                                    ps_per_hz) /
-                                   1000;
+            ps_per_hz           = 1000000000 / (pdata->frequency / 1000);
+            pdata->delta.tv_nsec =
+                    ((pdata->count_at_interrupt - count_at_capture) * ps_per_hz) / 1000;
 
             pps_sub_ts(&pdata->ts, pdata->delta);
-            pps_event(pdata->pps, &pdata->ts, PPS_CAPTUREASSERT,
-                      NULL);
+            pps_event(pdata->pps, &pdata->ts, PPS_CAPTUREASSERT, NULL);
 
             pdata->capture++;
 
-            __omap_dm_timer_write_status(pdata->capture_timer,
-                                         OMAP_TIMER_INT_CAPTURE);
+            __omap_dm_timer_write_status(pdata->capture_timer, OMAP_TIMER_INT_CAPTURE);
         }
         if (irq_status & OMAP_TIMER_INT_OVERFLOW)
         {
             pdata->overflow++;
-            __omap_dm_timer_write_status(pdata->capture_timer,
-                                         OMAP_TIMER_INT_OVERFLOW);
+            __omap_dm_timer_write_status(pdata->capture_timer, OMAP_TIMER_INT_OVERFLOW);
         }
     }
 
     return IRQ_HANDLED; // TODO: shared interrupts?
 }
 
-static void
-omap_dm_timer_setup_capture(struct omap_dm_timer           *timer,
-                            const struct omap_dm_timer_ops *timer_ops)
+static void omap_dm_timer_setup_capture(struct omap_dm_timer           *timer,
+                                        const struct omap_dm_timer_ops *timer_ops)
 {
     u32 ctrl;
 
@@ -240,8 +218,7 @@ omap_dm_timer_setup_capture(struct omap_dm_timer           *timer,
     ctrl |= OMAP_TIMER_CTRL_ST;
 
     // set capture
-    ctrl |= OMAP_TIMER_CTRL_TCM_LOWTOHIGH |
-            OMAP_TIMER_CTRL_GPOCFG; // TODO: configurable direction
+    ctrl |= OMAP_TIMER_CTRL_TCM_LOWTOHIGH | OMAP_TIMER_CTRL_GPOCFG; // TODO: configurable direction
 
     __omap_dm_timer_load_start(timer, ctrl, 0, timer->posted);
 
@@ -258,12 +235,10 @@ static void omap_dm_timer_use_tclkin(struct pps_gmtimer_platform_data *pdata)
 {
     struct clk *gt_fclk;
 
-    pdata->timer_ops->set_source(pdata->capture_timer,
-                                 OMAP_TIMER_SRC_EXT_CLK);
+    pdata->timer_ops->set_source(pdata->capture_timer, OMAP_TIMER_SRC_EXT_CLK);
     gt_fclk          = pdata->timer_ops->get_fclk(pdata->capture_timer);
     pdata->frequency = clk_get_rate(gt_fclk);
-    pr_info("timer(%s) switched to tclkin, rate=%uHz\n", pdata->timer_name,
-            pdata->frequency);
+    pr_info("timer(%s) switched to tclkin, rate=%uHz\n", pdata->timer_name, pdata->frequency);
 }
 
 static void pps_gmtimer_enable_irq(struct pps_gmtimer_platform_data *pdata)
@@ -281,8 +256,7 @@ static int pps_gmtimer_init_timer(struct device_node               *timer_dn,
 {
     struct clk *gt_fclk;
 
-    of_property_read_string_index(timer_dn, "ti,hwmods", 0,
-                                  &pdata->timer_name);
+    of_property_read_string_index(timer_dn, "ti,hwmods", 0, &pdata->timer_name);
     if (!pdata->timer_name)
     {
         pr_err("ti,hwmods property missing?\n");
@@ -297,8 +271,8 @@ static int pps_gmtimer_init_timer(struct device_node               *timer_dn,
     }
 
     // TODO: use devm_request_irq?
-    if (request_irq(pdata->capture_timer->irq, pps_gmtimer_interrupt,
-                    IRQF_TIMER, MODULE_NAME, pdata))
+    if (request_irq(pdata->capture_timer->irq, pps_gmtimer_interrupt, IRQF_TIMER, MODULE_NAME,
+                    pdata))
     {
         pr_err("cannot register IRQ %d\n", pdata->capture_timer->irq);
         return -EIO;
@@ -309,8 +283,7 @@ static int pps_gmtimer_init_timer(struct device_node               *timer_dn,
     gt_fclk          = pdata->timer_ops->get_fclk(pdata->capture_timer);
     pdata->frequency = clk_get_rate(gt_fclk);
 
-    pr_info("timer name=%s rate=%uHz\n", pdata->timer_name,
-            pdata->frequency);
+    pr_info("timer name=%s rate=%uHz\n", pdata->timer_name, pdata->frequency);
 
     return 0;
 }
@@ -322,9 +295,8 @@ static void pps_gmtimer_cleanup_timer(struct pps_gmtimer_platform_data *pdata)
         pdata->timer_ops->set_source(
                 pdata->capture_timer,
                 OMAP_TIMER_SRC_SYS_CLK); // in case TCLKIN is stopped during boot
-        pdata->timer_ops->set_int_disable(
-                pdata->capture_timer,
-                OMAP_TIMER_INT_CAPTURE | OMAP_TIMER_INT_OVERFLOW);
+        pdata->timer_ops->set_int_disable(pdata->capture_timer,
+                                          OMAP_TIMER_INT_CAPTURE | OMAP_TIMER_INT_OVERFLOW);
         free_irq(pdata->capture_timer->irq, pdata);
         pdata->timer_ops->stop(pdata->capture_timer);
         pdata->timer_ops->free(pdata->capture_timer);
@@ -338,13 +310,11 @@ static struct pps_gmtimer_platform_data *clocksource_timer = NULL;
 
 static u64                               pps_gmtimer_read_cycles(struct clocksource *cs)
 {
-    return (u64) __omap_dm_timer_read_counter(
-            clocksource_timer->capture_timer,
-            clocksource_timer->capture_timer->posted);
+    return (u64) __omap_dm_timer_read_counter(clocksource_timer->capture_timer,
+                                              clocksource_timer->capture_timer->posted);
 }
 
-static void
-pps_gmtimer_clocksource_init(struct pps_gmtimer_platform_data *pdata)
+static void pps_gmtimer_clocksource_init(struct pps_gmtimer_platform_data *pdata)
 {
     if (!clocksource_timer)
     {
@@ -358,20 +328,14 @@ pps_gmtimer_clocksource_init(struct pps_gmtimer_platform_data *pdata)
         clocksource_timer    = pdata;
         if (clocksource_register_hz(&pdata->clksrc, pdata->frequency))
         {
-            pr_err("Could not register clocksource %s\n",
-                   pdata->clksrc.name);
+            pr_err("Could not register clocksource %s\n", pdata->clksrc.name);
             clocksource_timer = NULL;
         }
-        else
-        {
-            pr_info("clocksource: %s at %u Hz\n",
-                    pdata->clksrc.name, pdata->frequency);
-        }
+        else { pr_info("clocksource: %s at %u Hz\n", pdata->clksrc.name, pdata->frequency); }
     }
 }
 
-static void
-pps_gmtimer_clocksource_cleanup(struct pps_gmtimer_platform_data *pdata)
+static void pps_gmtimer_clocksource_cleanup(struct pps_gmtimer_platform_data *pdata)
 {
     if (pdata == clocksource_timer)
     {
@@ -381,8 +345,7 @@ pps_gmtimer_clocksource_cleanup(struct pps_gmtimer_platform_data *pdata)
 }
 
 /* module ********************/
-static struct pps_gmtimer_platform_data *
-of_get_pps_gmtimer_pdata(struct platform_device *pdev)
+static struct pps_gmtimer_platform_data *of_get_pps_gmtimer_pdata(struct platform_device *pdev)
 {
     struct device_node               *np = pdev->dev.of_node, *timer_dn;
     struct platform_device           *timer_pdev;
@@ -390,10 +353,7 @@ of_get_pps_gmtimer_pdata(struct platform_device *pdev)
     struct pps_gmtimer_platform_data *pdata;
 
     pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
-    if (!pdata)
-    {
-        return NULL;
-    }
+    if (!pdata) { return NULL; }
 
     pdata->ready = 0;
 
@@ -420,22 +380,17 @@ of_get_pps_gmtimer_pdata(struct platform_device *pdev)
 
     pdata->timer_ops = timer_pdata->timer_ops;
 
-    if (!pdata->timer_ops || !pdata->timer_ops->request_by_node ||
-        !pdata->timer_ops->free || !pdata->timer_ops->enable ||
-        !pdata->timer_ops->disable || !pdata->timer_ops->get_fclk ||
-        !pdata->timer_ops->start || !pdata->timer_ops->stop ||
-        !pdata->timer_ops->set_load || !pdata->timer_ops->set_match ||
-        !pdata->timer_ops->set_pwm || !pdata->timer_ops->set_prescaler ||
-        !pdata->timer_ops->write_counter)
+    if (!pdata->timer_ops || !pdata->timer_ops->request_by_node || !pdata->timer_ops->free ||
+        !pdata->timer_ops->enable || !pdata->timer_ops->disable || !pdata->timer_ops->get_fclk ||
+        !pdata->timer_ops->start || !pdata->timer_ops->stop || !pdata->timer_ops->set_load ||
+        !pdata->timer_ops->set_match || !pdata->timer_ops->set_pwm ||
+        !pdata->timer_ops->set_prescaler || !pdata->timer_ops->write_counter)
     {
         dev_err(&pdev->dev, "Incomplete dmtimer pdata structure\n");
         goto fail2;
     }
 
-    if (pps_gmtimer_init_timer(timer_dn, pdata) < 0)
-    {
-        goto fail2;
-    }
+    if (pps_gmtimer_init_timer(timer_dn, pdata) < 0) { goto fail2; }
 
     of_node_put(timer_dn);
 
@@ -448,11 +403,10 @@ fail2:
     return NULL;
 }
 
-static const struct of_device_id pps_gmtimer_dt_ids[] = {
-        {
-                .compatible = "pps-gmtimer",
-        },
-        {/* sentinel */}};
+static const struct of_device_id pps_gmtimer_dt_ids[] = {{
+                                                                 .compatible = "pps-gmtimer",
+                                                         },
+                                                         {/* sentinel */}};
 MODULE_DEVICE_TABLE(of, pps_gmtimer_dt_ids);
 
 static int pps_gmtimer_probe(struct platform_device *pdev)
@@ -463,51 +417,28 @@ static int pps_gmtimer_probe(struct platform_device *pdev)
     const __be32                     *use_tclkin;
 
     match = of_match_device(pps_gmtimer_dt_ids, &pdev->dev);
-    if (match)
-    {
-        pdev->dev.platform_data = of_get_pps_gmtimer_pdata(pdev);
-    }
-    else
-    {
-        pr_err("of_match_device failed\n");
-    }
+    if (match) { pdev->dev.platform_data = of_get_pps_gmtimer_pdata(pdev); }
+    else { pr_err("of_match_device failed\n"); }
     pdata = pdev->dev.platform_data;
-    if (!pdata)
-        return -ENODEV;
+    if (!pdata) return -ENODEV;
 
     pdata->ready = 0;
 
-    if (sysfs_create_group(&pdev->dev.kobj, &attr_group))
-    {
-        pr_err("sysfs_create_group failed\n");
-    }
+    if (sysfs_create_group(&pdev->dev.kobj, &attr_group)) { pr_err("sysfs_create_group failed\n"); }
 
     pinctrl = devm_pinctrl_get_select_default(&pdev->dev);
-    if (IS_ERR(pinctrl))
-        pr_warning("pins are not configured from the driver\n");
+    if (IS_ERR(pinctrl)) pr_warning("pins are not configured from the driver\n");
 
     use_tclkin = of_get_property(pdev->dev.of_node, "use-tclkin", NULL);
-    if (use_tclkin && be32_to_cpup(use_tclkin) == 1)
-    {
-        omap_dm_timer_use_tclkin(pdata);
-    }
-    else
-    {
-        pr_info("using system clock\n");
-    }
+    if (use_tclkin && be32_to_cpup(use_tclkin) == 1) { omap_dm_timer_use_tclkin(pdata); }
+    else { pr_info("using system clock\n"); }
 
-    pdata->info.mode = PPS_CAPTUREASSERT | PPS_ECHOASSERT | PPS_CANWAIT |
-                       PPS_TSFMT_TSPEC;
+    pdata->info.mode  = PPS_CAPTUREASSERT | PPS_ECHOASSERT | PPS_CANWAIT | PPS_TSFMT_TSPEC;
     pdata->info.owner = THIS_MODULE;
-    snprintf(pdata->info.name, PPS_MAX_NAME_LEN - 1, "%s",
-             pdata->timer_name);
+    snprintf(pdata->info.name, PPS_MAX_NAME_LEN - 1, "%s", pdata->timer_name);
 
     pdata->pps = pps_register_source(&pdata->info, PPS_CAPTUREASSERT);
-    if (pdata->pps == NULL)
-    {
-        pr_err("failed to register %s as PPS source\n",
-               pdata->timer_name);
-    }
+    if (pdata->pps == NULL) { pr_err("failed to register %s as PPS source\n", pdata->timer_name); }
     else
     {
         // ready to go
@@ -551,11 +482,12 @@ static int pps_gmtimer_remove(struct platform_device *pdev)
 static struct platform_driver pps_gmtimer_driver = {
         .probe  = pps_gmtimer_probe,
         .remove = pps_gmtimer_remove,
-        .driver = {
-                .name           = MODULE_NAME,
-                .owner          = THIS_MODULE,
-                .of_match_table = of_match_ptr(pps_gmtimer_dt_ids),
-        },
+        .driver =
+                {
+                        .name           = MODULE_NAME,
+                        .owner          = THIS_MODULE,
+                        .of_match_table = of_match_ptr(pps_gmtimer_dt_ids),
+                },
 };
 
 module_platform_driver(pps_gmtimer_driver);

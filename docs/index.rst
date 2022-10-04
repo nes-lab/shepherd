@@ -40,6 +40,7 @@ Developer Guide
    dev/sysfs
    dev/gps_sync
    dev/virtcap
+   dev/v2_improvements
 
 Indices and tables
 ==================

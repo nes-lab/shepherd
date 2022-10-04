@@ -58,7 +58,8 @@ enum MsgType
     MSG_ERROR                     = 0xE0u,
     MSG_ERR_MEMCORRUPTION         = 0xE1u,
     MSG_ERR_BACKPRESSURE          = 0xE2u,
-    MSG_ERR_INCMPLT               = 0xE3u, /* TODO: could be removed, not possible per design */
+    MSG_ERR_INCMPLT               = 0xE3u,
+    /* TODO: MSG_ERR_INCMPLT could be removed, not possible per design */
     MSG_ERR_INVLDCMD              = 0xE4u,
     MSG_ERR_NOFREEBUF             = 0xE5u,
     MSG_ERR_TIMESTAMP             = 0xE6u,
@@ -96,6 +97,25 @@ enum ShepherdState
     STATE_FAULT
 };
 
+enum ProgrammerState
+{
+    PRG_STATE_ERR_GENERIC  = -1,
+    PRG_STATE_ERR_OPEN     = -2,
+    PRG_STATE_ERR_WRITE    = -3,
+    PRG_STATE_ERR_VERIFY   = -4,
+    PRG_STATE_ERR_ERASE    = -5,
+    PRG_STATE_ERR_PARSE    = -6,
+    PRG_STATE_IDLE         = -0x70000001,
+    PRG_STATE_STARTING     = -0x70000002,
+    PRG_STATE_INITIALIZING = -0x70000003,
+};
+
+enum ProgrammerTarget
+{
+    PRG_TARGET_MSP430,
+    PRG_TARGET_NRF52,
+};
+
 struct GPIOEdges
 {
     uint32_t canary;
@@ -124,19 +144,19 @@ struct SampleBuffer
  * 	- keep matching V&C / IV Values together -> more efficient for pru
  */
 
-
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl
 {
-    uint32_t state;        // flag, 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
-    uint32_t protocol;     // 1: swd, 2: sbw, 3: jtag
+    int32_t  state;
+    /* Target chip to be programmed */
+    uint32_t target;
     uint32_t datarate;     // baud
     uint32_t datasize;     // bytes
     uint32_t pin_tck;      // clock-output
     uint32_t pin_tdio;     // io for swd & sbw, only input for JTAG (TDI)
     uint32_t pin_tdo;      // data-output, only for JTAG
     uint32_t pin_tms;      // mode, only for JTAG
-} __attribute__((packed)); // TODO: pin_X can be u8, state/protocol u8,
+} __attribute__((packed)); // TODO: pin_X can be u8,
 
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
@@ -159,7 +179,7 @@ struct CalibrationConfig
     /* Offset of voltage-adc */
     int32_t  adc_voltage_offset_uV;
     /* Gain of voltage DAC for converting between SI-Unit and raw value */
-    uint32_t dac_voltage_inv_factor_uV_n20; // n20 means normalized to 2^20 (representing 1.0)
+    uint32_t dac_voltage_inv_factor_uV_n20; // n20 -> normalized to 2^20 (= 1.0)
     /* Offset of voltage DAC */
     int32_t  dac_voltage_offset_uV;
 } __attribute__((packed));
@@ -189,31 +209,42 @@ struct ConverterConfig // TODO: should get canary
     uint32_t V_intermediate_init_uV; // allow a proper / fast startup
     uint32_t I_intermediate_leak_nA;
 
-    uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
-    uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
-    uint32_t dV_enable_output_uV;           // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
-    uint32_t interval_check_thresholds_n;   // some BQs check every 65 ms if output should be disconnected
+    // -> output gets connected (hysteresis-combo with next value)
+    uint32_t V_enable_output_threshold_uV;
+    // -> output gets disconnected
+    uint32_t V_disable_output_threshold_uV;
+    // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
+    uint32_t dV_enable_output_uV;
+    // some BQs check every 65 ms if output should be disconnected
+    uint32_t interval_check_thresholds_n;
 
-    uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good-pin (hysteresis)
+    // target is informed by pwr-good-pin (hysteresis)
+    uint32_t V_pwr_good_enable_threshold_uV;
     uint32_t V_pwr_good_disable_threshold_uV;
-    uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
+    // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
+    uint32_t immediate_pwr_good_signal;
 
-    uint32_t V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
+    // min voltage to prevent jitter-noise in gpio-trace-recording
+    uint32_t V_output_log_gpio_threshold_uV;
 
     /* Boost Reg */
-    uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
-    uint32_t V_intermediate_max_uV;      // -> boost shuts off
+    // min input-voltage for the boost converter to work
+    uint32_t V_input_boost_threshold_uV;
+    // -> boost shuts off
+    uint32_t V_intermediate_max_uV;
 
     /* Buck Reg */
     uint32_t V_output_uV;
     uint32_t V_buck_drop_uV; // simulate dropout-voltage or diode
 
     /* LUTs */
-    uint32_t LUT_input_V_min_log2_uV;                   // only u8 needed
-    uint32_t LUT_input_I_min_log2_nA;                   // only u8 needed
-    uint32_t LUT_output_I_min_log2_nA;                  // only u8 needed
-    uint8_t  LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE];       // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
+    uint32_t LUT_input_V_min_log2_uV;  // only u8 needed
+    uint32_t LUT_input_I_min_log2_nA;  // only u8 needed
+    uint32_t LUT_output_I_min_log2_nA; // only u8 needed
+    // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
+    uint8_t  LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE];
+    // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
+    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE];
 } __attribute__((packed));
 
 
@@ -262,8 +293,9 @@ struct SyncMsg
     /* Actual Content of message */
     uint32_t buffer_block_period;  // corrected ticks that equal 100ms
     uint32_t analog_sample_period; // ~ 10 us
-    uint32_t compensation_steps;   // remainder of buffer_block/sample_count = sample_period
-    uint64_t next_timestamp_ns;    // start of next buffer block
+    // remainder of buffer_block/sample_count = sample_period
+    uint32_t compensation_steps;
+    uint64_t next_timestamp_ns; // start of next buffer block
 } __attribute__((packed));
 
 /* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
@@ -329,12 +361,13 @@ struct SharedMem
     bool_ft                  cmp0_trigger_for_pru1;
     bool_ft                  cmp1_trigger_for_pru1;
     /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-    bool_ft                  vsource_batok_trigger_for_pru1; // TODO: rename vsource to proper new name
+    bool_ft                  vsource_batok_trigger_for_pru1;
     bool_ft                  vsource_batok_pin_value;
     /* Trigger to control sampling of gpios */
     bool_ft                  vsource_skip_gpio_logging;
 } __attribute__((packed));
 
-ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000); // NOTE: PRUs shared ram should be even 12kb
+ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000);
+// NOTE: PRUs shared ram should be even 12kb
 
 #endif /* __SHEPHERD_COMMONS_H_ */

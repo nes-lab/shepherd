@@ -73,6 +73,7 @@ enum ShepherdMode
     MODE_DEBUG,
     MODE_NONE
 };
+
 enum ShepherdState
 {
     STATE_UNKNOWN,
@@ -83,12 +84,31 @@ enum ShepherdState
     STATE_FAULT
 };
 
+enum ProgrammerState
+{
+    PRG_STATE_ERR_GENERIC  = -1,
+    PRG_STATE_ERR_OPEN     = -2,
+    PRG_STATE_ERR_WRITE    = -3,
+    PRG_STATE_ERR_VERIFY   = -4,
+    PRG_STATE_ERR_ERASE    = -5,
+    PRG_STATE_ERR_PARSE    = -6,
+    PRG_STATE_IDLE         = -0x70000001,
+    PRG_STATE_STARTING     = -0x70000002,
+    PRG_STATE_INITIALIZING = -0x70000003,
+};
+
+enum ProgrammerTarget
+{
+    PRG_TARGET_MSP430,
+    PRG_TARGET_NRF52,
+};
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl
 {
-    uint32_t state;        // 0: idle, 1: start, 2: init, >2: running, 0xBAAAAAAD: Error
-    uint32_t protocol;     // 1: swd, 2: sbw, 3: jtag
+    int32_t  state; // <0: Programmer state, >0: number of bytes written
+    /* Target chip to be programmed */
+    uint32_t target;
     uint32_t datarate;     // baud
     uint32_t datasize;     // bytes
     uint32_t pin_tck;      // clock-output
@@ -96,7 +116,6 @@ struct ProgrammerCtrl
     uint32_t pin_tdo;      // data-output, only for JTAG
     uint32_t pin_tms;      // mode, only for JTAG
 } __attribute__((packed)); // TODO: pin_X can be u8, state/protocol u8,
-
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0
@@ -148,16 +167,21 @@ struct ConverterConfig
     uint32_t V_intermediate_init_uV; // allow a proper / fast startup
     uint32_t I_intermediate_leak_nA;
 
-    uint32_t V_enable_output_threshold_uV;  // -> output gets connected (hysteresis-combo with next value)
+    uint32_t
+            V_enable_output_threshold_uV; // -> output gets connected (hysteresis-combo with next value)
     uint32_t V_disable_output_threshold_uV; // -> output gets disconnected
-    uint32_t dV_enable_output_uV;           // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
-    uint32_t interval_check_thresholds_n;   // some BQs check every 65 ms if output should be disconnected
+    uint32_t
+            dV_enable_output_uV; // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
+    uint32_t
+            interval_check_thresholds_n; // some BQs check every 65 ms if output should be disconnected
 
     uint32_t V_pwr_good_enable_threshold_uV; // target is informed by pwr-good-pin (hysteresis)
     uint32_t V_pwr_good_disable_threshold_uV;
-    uint32_t immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
+    uint32_t
+            immediate_pwr_good_signal; // bool, 0: stay in interval for checking thresholds, >=1: emulate schmitt-trigger,
 
-    uint32_t V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
+    uint32_t
+            V_output_log_gpio_threshold_uV; // min voltage to prevent jitter-noise in gpio-trace-recording
 
     /* Boost Reg */
     uint32_t V_input_boost_threshold_uV; // min input-voltage for the boost converter to work
@@ -168,11 +192,14 @@ struct ConverterConfig
     uint32_t V_buck_drop_uV; // simulate dropout-voltage or diode
 
     /* LUTs */
-    uint32_t LUT_input_V_min_log2_uV;                   // only u8 needed
-    uint32_t LUT_input_I_min_log2_nA;                   // only u8 needed
-    uint32_t LUT_output_I_min_log2_nA;                  // only u8 needed
-    uint8_t  LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
-    uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE];       // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
+    uint32_t LUT_input_V_min_log2_uV;  // only u8 needed
+    uint32_t LUT_input_I_min_log2_nA;  // only u8 needed
+    uint32_t LUT_output_I_min_log2_nA; // only u8 needed
+    uint8_t  LUT_inp_efficiency_n8
+            [LUT_SIZE]
+            [LUT_SIZE]; // depending on inp_voltage, inp_current, (cap voltage), n8 means normalized to 2^8 => 1.0
+    uint32_t LUT_out_inv_efficiency_n4
+            [LUT_SIZE]; // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
 } __attribute__((packed));
 
 
@@ -192,7 +219,6 @@ struct HarvesterConfig
     uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
 
-
 /* Format of Message-Protocol between PRUs & Kernel Module */
 struct ProtoMsg
 {
@@ -207,7 +233,6 @@ struct ProtoMsg
     /* Actual Content of message */
     uint32_t value[2];
 } __attribute__((packed));
-
 
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
 struct SyncMsg

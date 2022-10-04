@@ -3,6 +3,13 @@
   hosts: all
   become: true
 
+  vars_prompt:
+    # automatically skip prompt with argument: -e "delete_recordings=True"
+    - name: delete_recordings
+      prompt: "Do you want to cleanout /var/shepherd/recordings/ on nodes?"
+      private: false
+      default: "no"
+
   tasks:
 
     - name: Maintain Beaglebone
@@ -11,4 +18,12 @@
       vars:
         update_kernel: true
         update_bootloader: true
-        delete_unused_files: true
+        delete_unused_files: false  # see below
+
+    - name: Cleanup Beaglebone
+      ansible.builtin.include_role:
+        name: cleaned
+      vars:
+        do_delete_recordings: "{{ delete_recordings }}"
+        do_remove_software: true
+        do_zero_free_space: false

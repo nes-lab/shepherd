@@ -29,8 +29,8 @@
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "/etc/shepherd/"
-    mode: 0644
-  with_items:
+    mode: '0644'
+  loop:
     - chrony.conf
     - gpsd.conf
     - ublox_config.ubx  # TODO: this file seems still unused
@@ -44,7 +44,7 @@
     regexp: "{{ item.regexpress }}"
     line: "{{ item.replacement }}"
     state: present
-  with_items:
+  loop:
     - {
       regexpress: "#?disable_uboot_overlay_video=.*$",
       replacement: "disable_uboot_overlay_video=1",
@@ -69,6 +69,8 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   tags: gps
 
 - name: Set GPS-cape to enabled
@@ -81,6 +83,8 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   tags: gps
 
 - name: Copy pps-gmtimer code
@@ -92,7 +96,7 @@
     - pps
 
 - name: Build and install pps-gmtimer module
-  make:
+  community.general.make:
     chdir: /opt/pps-gmtimer
     target: install
   tags:
@@ -108,7 +112,7 @@
     - pps
 
 - name: Build and install GPS device tree overlay
-  make:
+  community.general.make:
     chdir: "/opt/gps-overlay"
     target: install
   tags:
@@ -117,6 +121,8 @@
 
 - name: Restart device
   ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
   tags:
     - gps
     - device-tree
@@ -137,7 +143,8 @@
     - gps
     - conf
 
-- ansible.builtin.include_tasks:
+- name: Config Systemd Services
+  ansible.builtin.include_tasks:
     file: systemd.yml
   tags:
     - gps
