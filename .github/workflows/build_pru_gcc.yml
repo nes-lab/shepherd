@@ -51,15 +51,21 @@ jobs:
         working-directory: "${{ github.workspace }}"
 
       - name: Build PRU0 🧱
-        run: make
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-fw.elf
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
       - name: Build PRU1 🧱
-        run: make
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru1-shepherd-fw.elf
         working-directory: "software/firmware/pru1-shepherd-fw/"
 
       - name: Build SWD Programmer 🧱
-        run: make
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SWD-fw.elf
         working-directory: "software/firmware/pru0-programmer/"
 
       - name: Clean Programmer 🧹
@@ -67,5 +73,7 @@ jobs:
         working-directory: "software/firmware/pru0-programmer/"
 
       - name: Build SBW Programmer 🧱
-        run: make PROTO=SBW
+        run: |
+          make PROTO=SBW
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SBW-fw.elf
         working-directory: "software/firmware/pru0-programmer/"
