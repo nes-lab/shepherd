@@ -1,0 +1,103 @@
+---
+# Problem: sheep are sending out /etc/machine-id instead of MAC
+
+- name: Fix unique identifier of dhcp-client -> MAC
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Delete old netplan-config
+      ansible.builtin.file:
+        path: "/etc/netplan/bbone.yaml"
+        state: absent
+
+    - name: use MAC as unique ID
+      ansible.builtin.blockinfile:
+        path: "/etc/netplan/bbone.yaml"
+        create: true
+        mode: "a+rw"
+        block: |
+          network:
+            renderer: networkd
+            version: 2
+            ethernets:
+              eth0:
+                dhcp4: true
+                dhcp-identifier: mac
+
+    # TODO: this seems to be unused in recent ubuntu versions
+    # what works: sudo dhclient -v eth0  -> gets you a second ip in correct range (MAC-look-up)
+    - name: Send MAC as unique ID
+      ansible.builtin.lineinfile:
+        dest: '/etc/dhcp/dhclient.conf'
+        regexp: "{{ item.regexpress }}"
+        line: "{{ item.replacement }}"
+        state: present
+      loop:
+        - {
+          regexpress: "#?send dhcp-client-identifier.*$",
+          replacement: "send dhcp-client-identifier = hardware;",
+        }
+        - {
+          regexpress: "#?send host-name.*$",
+          replacement: "#send host-name = gethostname();",
+        }
+
+    - name: Find DHCP program data
+      ansible.builtin.find:
+        paths: '/var/lib/dhcp/'
+        patterns: '*'
+      register: files_dhcp
+    - name: Delete DHCP program data
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items: "{{ files_dhcp.files | map(attribute='path') }}"
+      when: false
+
+    - name: Disable IPv6 (sysctl)
+      ansible.builtin.lineinfile:
+        dest: '/etc/sysctl.conf'
+        regexp: "{{ item.regexpress }}"
+        line: "{{ item.replacement }}"
+        state: present
+      loop:
+        # NOTE: "." in regex should be cancelled with "\.", but ansible does not like it
+        - {
+          regexpress: "#?net.ipv6.conf.all.disable_ipv6.*$",
+          replacement: "net.ipv6.conf.all.disable_ipv6=1",
+        }
+        - {
+          regexpress: "#?net.ipv6.conf.default.disable_ipv6.*$",
+          replacement: "net.ipv6.conf.default.disable_ipv6=1",
+        }
+        - {
+          regexpress: "#?net.ipv6.conf.lo.disable_ipv6.*$",
+          replacement: "net.ipv6.conf.lo.disable_ipv6=1",
+        }
+      when: false
+      # trouble: does not work
+      # console OK: sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1  ... and so on
+      # loading config with: sudo sysctl -p    .... also ok for current boot
+
+    # disable ipv6-lines in /etc/hosts?
+
+    # test in uEnv.txt: cmdline += ipv6.disable=1   -> WORKS, TODO: not clean!
+    - name: Disable IPv6 (uEnv)
+      ansible.builtin.lineinfile:
+        dest: '/boot/uEnv.txt'
+        regexp: "^cmdline.*=.*[ipv6.disable]?.*$"
+        line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 quiet ipv6.disable=1"
+        state: present
+      when: false
+
+  post_tasks:
+
+    - name: Restart device
+      ansible.builtin.reboot:
+        connect_timeout: 20
+        reboot_timeout: 100
+      failed_when: false
+      # these nodes should not come back
