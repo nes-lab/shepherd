@@ -64,7 +64,7 @@
         line: "{{ item.replacement }}"
         state: present
       loop:
-        # NOTE: "." in regex should be cancelled with "\.", but ansible does not like it
+        # NOTE: "." in regex should be canceled with "\.", but ansible does not like it
         - {
           regexpress: "#?net.ipv6.conf.all.disable_ipv6.*$",
           replacement: "net.ipv6.conf.all.disable_ipv6=1",

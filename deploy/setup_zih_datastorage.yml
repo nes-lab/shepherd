@@ -72,7 +72,7 @@
 
     - name: APT - Install required packages
       ansible.builtin.apt:
-        name: [ "sshpass", "nfs-common" ]
+        name: ["sshpass", "nfs-common"]
         state: present
         update_cache: true
 
