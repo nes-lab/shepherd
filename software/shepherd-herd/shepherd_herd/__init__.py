@@ -10,11 +10,14 @@ images to target sensor nodes.
 :license: MIT, see LICENSE for more details.
 """
 
+from .sheep_control import assemble_group
 from .sheep_control import check_sheep
 from .sheep_control import configure_sheep
 from .sheep_control import find_consensus_time
+from .sheep_control import group_run
 from .sheep_control import logger
 from .sheep_control import poweroff_sheep
+from .sheep_control import set_verbose_level
 from .sheep_control import start_sheep
 from .sheep_control import stop_sheep
 
@@ -28,4 +31,7 @@ __all__ = [
     "stop_sheep",
     "configure_sheep",
     "poweroff_sheep",
+    "group_run",
+    "assemble_group",
+    "set_verbose_level",
 ]

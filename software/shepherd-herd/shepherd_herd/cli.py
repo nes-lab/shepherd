@@ -8,12 +8,14 @@ import click
 import click_config_file
 import yaml
 
-from .sheep_control import assemble_context
+from .sheep_control import assemble_group
 from .sheep_control import check_sheep
 from .sheep_control import configure_sheep
 from .sheep_control import find_consensus_time
+from .sheep_control import group_run
 from .sheep_control import logger
 from .sheep_control import poweroff_sheep
+from .sheep_control import set_verbose_level
 from .sheep_control import start_sheep
 from .sheep_control import stop_sheep
 
@@ -66,7 +68,11 @@ def cli(ctx, inventory, limit, user, key_filename, verbose) -> click.Context:
     :param verbose:
     :return:
     """
-    ctx = assemble_context(ctx, inventory, limit, user, key_filename, verbose)
+    set_verbose_level(verbose)
+    ctx.obj["verbose"] = verbose
+    group, hostnames = assemble_group(inventory, limit, user, key_filename)
+    ctx.obj["fab group"] = group
+    ctx.obj["hostnames"] = hostnames
     return ctx  # calm linter
 
 
@@ -82,12 +88,10 @@ def poweroff(ctx, restart):
 @click.argument("command", type=str)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def run(ctx, command, sudo):
-    for cnx in ctx.obj["fab group"]:
+    reply = group_run(ctx.obj["fab group"], sudo, command)
+    for i, cnx in ctx.obj["fab group"]:
         click.echo(f"\n************** {ctx.obj['hostnames'][cnx.host]} **************")
-        if sudo:
-            cnx.sudo(command, warn=True)
-        else:
-            cnx.run(command, warn=True)
+        click.echo(reply[i])
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
@@ -153,9 +157,7 @@ def harvester(
     )
 
     if not no_start:
-        logger.debug(
-            "Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay
-        )
+        logger.info("Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay)
         start_sheep(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -265,9 +267,7 @@ def emulator(
     )
 
     if not no_start:
-        logger.debug(
-            "Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay
-        )
+        logger.info("Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay)
         start_sheep(ctx.obj["fab group"], ctx.obj["hostnames"])
 
 
@@ -347,7 +347,9 @@ def distribute(ctx, filename, remote_path, force_overwrite):
 
     for cnx in ctx.obj["fab group"]:
         cnx.put(str(filename), str(tmp_path))  # noqa: S108
-        cnx.sudo(f"mv {xtr_arg} {tmp_path} {remote_path}")
+    group_run(
+        ctx.obj["fab group"], sudo=True, cmd=f"mv {xtr_arg} {tmp_path} {remote_path}"
+    )
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
@@ -404,6 +406,7 @@ def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> 
                 raise Exception("shepherd still active after timeout")
             time.sleep(1)
 
+    # TODO: could be parallelized, but low prio for now
     for cnx in ctx.obj["fab group"]:
         if separate:
             target_path = Path(outdir) / ctx.obj["hostnames"][cnx.host]
@@ -489,29 +492,37 @@ def target(ctx, port, on, voltage, sel_a):
     ctx.obj["openocd_telnet_port"] = port
     sel_target = "sel_a" if sel_a else "sel_b"
     if on or ctx.invoked_subcommand:
+        group_run(
+            ctx.obj["fab group"],
+            sudo=True,
+            cmd=f"shepherd-sheep target-power --on --voltage {voltage} --{sel_target}",
+        )
         for cnx in ctx.obj["fab group"]:
-            cnx.sudo(
-                f"shepherd-sheep target-power --on --voltage {voltage} --{sel_target}",
-                hide=True,
-            )
             start_openocd(cnx, ctx.obj["hostnames"][cnx.host])
     else:
-        for cnx in ctx.obj["fab group"]:
-            cnx.sudo("systemctl stop shepherd-openocd")
-            cnx.sudo("shepherd-sheep target-power --off", hide=True)
+        group_run(
+            ctx.obj["fab group"], sudo=True, cmd="systemctl stop shepherd-openocd"
+        )
+        group_run(
+            ctx.obj["fab group"], sudo=True, cmd="shepherd-sheep target-power --off"
+        )
 
 
 # @target.result_callback()  # TODO: disabled for now: errors in recent click-versions
 @click.pass_context
 def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
-        for cnx in ctx.obj["fab group"]:
-            cnx.sudo("systemctl stop shepherd-openocd")
-            cnx.sudo("shepherd-sheep target-power --off", hide=True)
+        group_run(
+            ctx.obj["fab group"], sudo=True, cmd="systemctl stop shepherd-openocd"
+        )
+        group_run(
+            ctx.obj["fab group"], sudo=True, cmd="shepherd-sheep target-power --off"
+        )
 
 
 def start_openocd(cnx, hostname, timeout=30):
     # TODO: why start a whole telnet-session? we can just flash and verify firmware by remote-cmd
+    # TODO: bad design for parallelization, but deprecated anyway
     cnx.sudo("systemctl start shepherd-openocd", hide=True, warn=True)
     ts_end = time.time() + timeout
     while True:

@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import threading
 from io import StringIO
 from pathlib import Path
 from typing import List
@@ -14,14 +15,23 @@ logger.addHandler(consoleHandler)
 # Note: defined here to avoid circular import
 
 
-def assemble_context(
-    ctx,
+def set_verbose_level(verbose: int = 2) -> None:
+    if verbose == 0:
+        logger.setLevel(logging.ERROR)
+    elif verbose == 1:
+        logger.setLevel(logging.WARNING)
+    elif verbose == 2:
+        logger.setLevel(logging.INFO)
+    elif verbose > 2:
+        logger.setLevel(logging.DEBUG)
+
+
+def assemble_group(
     inventory: str = "",
     limit: str = "",
     user=None,
     key_filename=None,
-    verbose: int = 2,
-):
+) -> (Group, list):
 
     if limit.rstrip().endswith(","):
         limit = limit.split(",")[:-1]
@@ -83,27 +93,37 @@ def assemble_context(
             "Provide remote hosts (either inventory empty or limit does not match)"
         )
 
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-
-    ctx.obj["verbose"] = verbose
-
     connect_kwargs = {}
     if key_filename is not None:
         connect_kwargs["key_filename"] = key_filename
+    group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
 
-    ctx.obj["fab group"] = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
-    ctx.obj["hostnames"] = hostnames
-    return ctx
+    return group, hostnames
 
 
-def find_consensus_time(group: Group):
+def thread_run(cnx, sudo: bool, cmd: str, results: np.ndarray, index: int) -> None:
+    if sudo:
+        results[index] = cnx.sudo(cmd, warn=True, hide=True)
+    else:
+        results[index] = cnx.run(cmd, warn=True, hide=True)
+
+
+def group_run(group: Group, sudo: bool, cmd: str) -> np.ndarray:
+    results = np.empty(len(group))
+    threads = np.empty(len(group))
+    for i, cnx in enumerate(group):
+        threads[i] = threading.Thread(
+            target=thread_run,
+            args=(cnx, sudo, cmd, results, i),
+            daemon=True,
+        )
+        threads[i].start()
+    for i, _cnx in enumerate(group):
+        threads[i].join()
+    return results
+
+
+def find_consensus_time(group: Group) -> (int, float):
     """Finds a start time in the future when all nodes should start service
 
     In order to run synchronously, all nodes should start at the same time.
@@ -111,16 +131,11 @@ def find_consensus_time(group: Group):
     agreeing on a common time in the future and waiting for that time on each
     node.
 
-    TODO: this and the following commands should run the cnx-loops in parallel
-
     Args:
         group (fabric.Group): Group of fabric hosts on which to start shepherd.
     """
     # Get the current time on each target node
-    ts_nows = np.empty(len(group))
-    for i, cnx in enumerate(group):
-        res = cnx.run("date +%s", hide=True, warn=True)
-        ts_nows[i] = float(res.stdout)
+    ts_nows = group_run(group, sudo=False, cmd="date +%s")
 
     if len(ts_nows) == 1:
         ts_start = ts_nows[0] + 20
@@ -142,7 +157,7 @@ def configure_sheep(
     parameters: dict,
     hostnames: dict,
     verbose: int = 0,
-):
+) -> None:
     """Configures shepherd service on the group of hosts.
 
     Rolls out a configuration file according to the given command and parameters
@@ -164,61 +179,66 @@ def configure_sheep(
 
     logger.debug("Rolling out the following config:\n\n%s", config_yml)
 
-    for cnx in group:
-        res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
-        if res.exited != 3:
-            raise Exception(f"shepherd not inactive on {hostnames[cnx.host]}")
+    reply = group_run(group, sudo=True, cmd="systemctl status shepherd")
 
+    for i, cnx in group:
+        if reply[i].exited != 3:
+            raise Exception(f"shepherd not inactive on {hostnames[cnx.host]}")
         cnx.put(StringIO(config_yml), "/tmp/config.yml")  # noqa: S108
-        cnx.sudo("mv /tmp/config.yml /etc/shepherd/config.yml")
+
+    group_run(group, sudo=True, cmd="mv /tmp/config.yml /etc/shepherd/config.yml")
+
+
+def check_sheep(group: Group, hostnames: dict, warn: bool = False) -> bool:
+    """Returns true ss long as one instance is still measuring
+
+    :param group:
+    :param hostnames:
+    :param warn:
+    :return: True is one node is still running
+    """
+    reply = group_run(group, sudo=True, cmd="systemctl status shepherd")
+    running = False
+
+    for i, cnx in group:
+        if reply[i].exited != 3:
+            running = True
+            if warn:
+                logger.warning("shepherd still active on %s", hostnames[cnx.host])
+            else:
+                logger.debug("shepherd still active on %s", hostnames[cnx.host])
+    return running
 
 
 def start_sheep(
     group: Group,
     hostnames: dict,
-):
+) -> None:
     """Starts shepherd service on the group of hosts.
 
     Args:
         group (fabric.Group): Group of fabric hosts on which to start shepherd.
         hostnames (dict): Dictionary of hostnames corresponding to fabric hosts
     """
-    for cnx in group:
-        res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
-        if res.exited != 3:
-            raise Exception(f"shepherd not inactive on {hostnames[cnx.host]}")
-        cnx.sudo("systemctl start shepherd", hide=True, warn=True)
-
-
-def check_sheep(group: Group, hostnames: dict) -> bool:
-    """Returns true ss long as one instance is still measuring
-
-    :param group:
-    :param hostnames:
-    :return: True is one node is still running
-    """
-    running = False
-    for cnx in group:
-        res = cnx.sudo("systemctl status shepherd", hide=True, warn=True)
-        if res.exited != 3:
-            running = True
-            logger.debug("shepherd still active on %s", hostnames[cnx.host])
-    return running
+    running = check_sheep(group, hostnames, warn=True)
+    if running:
+        logger.info("-> won't start while instances are running")
+    else:
+        group_run(group, sudo=True, cmd="systemctl start shepherd")
 
 
 def stop_sheep(group: Group, hostnames: dict) -> bool:
-    for cnx in group:
-        logger.debug("stopping shepherd service on %s", hostnames[cnx.host])
-        cnx.sudo("systemctl stop shepherd", hide=True, warn=True)
-    logger.debug("Shepherd was forcefully stopped.")
+    logger.debug(f"Shepherd-nodes affected: {hostnames}")
+    group_run(group, sudo=True, cmd="systemctl stop shepherd")
+    logger.info("Shepherd was forcefully stopped.")
     return True
 
 
 def poweroff_sheep(group: Group, hostnames: dict, restart: bool) -> None:
-    for cnx in group:
-        if restart:
-            logger.info("rebooting %s", hostnames[cnx.host])
-            cnx.sudo("reboot", hide=True, warn=True)
-        else:
-            logger.info("powering off %s", hostnames[cnx.host])
-            cnx.sudo("poweroff", hide=True, warn=True)
+    logger.debug(f"Shepherd-nodes affected: {hostnames}")
+    if restart:
+        group_run(group, sudo=True, cmd="reboot")
+        logger.info("Command for rebooting nodes was issued")
+    else:
+        group_run(group, sudo=True, cmd="poweroff")
+        logger.info("Command for powering off nodes was issued")
