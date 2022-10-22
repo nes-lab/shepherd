@@ -63,16 +63,6 @@ After mounting the share on the BeagleBone, you can compile and install the corr
 Or you use the playbook described in "alternative 1".
 
 
-Building debian packages (Deprecated)
--------------------------------------
-
-``shepherd`` software is packaged and distributed as debian packages.
-Building these packages requires a large number of libraries and tools to be installed.
-This motivates the use of docker for creating an isolated and well defined build environment.
-
-The procedure for building the image, creating a container, copying the code into the container, building the packages and copying the artifacts back to the host are found in the ``.travis.yml`` in the repository's root directory.
-
-
 Building the docs
 -----------------
 
