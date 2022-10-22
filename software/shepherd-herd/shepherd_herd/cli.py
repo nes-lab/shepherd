@@ -78,9 +78,9 @@ def poweroff(ctx, restart):
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def run(ctx, command, sudo):
     reply = ctx.obj["herd"].run_cmd(sudo, command)
-    for i, hostname in enumerate(ctx.obj["herd"].values()):
+    for i, hostname in enumerate(ctx.obj["herd"].hostnames.values()):
         click.echo(f"\n************** {hostname} **************")
-        click.echo(reply[i])
+        click.echo(reply[i].stdout)
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
@@ -260,7 +260,7 @@ def emulator(
 @click.pass_context
 def start(ctx) -> None:
     if ctx.obj["herd"].check_state():
-        logger.info("Shepherd still running, will skip this command!")
+        logger.info("Shepherd still active, will skip this command!")
         sys.exit(1)
     else:
         ctx.obj["herd"].start_measurement()
@@ -271,10 +271,10 @@ def start(ctx) -> None:
 @click.pass_context
 def check(ctx) -> None:
     if ctx.obj["herd"].check_state():
-        logger.info("Shepherd still running!")
+        logger.info("Shepherd still active!")
         sys.exit(1)
     else:
-        logger.info("Shepherd not running! (measurement is done)")
+        logger.info("Shepherd not active! (measurement is done)")
 
 
 @cli.command(short_help="Stops any harvest/emulation")
@@ -341,7 +341,6 @@ def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> 
     :param separate:
     :param delete:
     :param force_stop:
-    :return:
     """
 
     if force_stop:
