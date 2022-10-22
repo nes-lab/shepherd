@@ -187,5 +187,5 @@ module_platform_driver(shepherd_driver);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kai Geissdoerfer");
 MODULE_DESCRIPTION("Shepherd kernel module for time synchronization and data exchange to PRUs");
-MODULE_VERSION("0.4.2");
+MODULE_VERSION("0.4.3");
 // MODULE_ALIAS("rpmsg:rpmsg-shprd"); // TODO: is this still needed?

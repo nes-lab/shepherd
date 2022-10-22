@@ -18,7 +18,7 @@ from .sheep_control import poweroff_sheep
 from .sheep_control import start_sheep
 from .sheep_control import stop_sheep
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 __all__ = [
     "logger",
