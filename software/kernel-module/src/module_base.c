@@ -10,8 +10,8 @@
 #include <linux/remoteproc.h>
 #include <linux/types.h>
 
-#include "pru_firmware.h"
 #include "pru_comm.h"
+#include "pru_firmware.h"
 #include "pru_mem_msg_sys.h"
 #include "sync_ctrl.h"
 #include "sysfs_interface.h"
@@ -31,34 +31,33 @@ MODULE_DEVICE_TABLE(of, shepherd_dt_ids);
  * the pruss-device-tree-node must have a shepherd entry with a pointer to the prusses.
  */
 
-static struct shepherd_platform_data *get_shepherd_platform_data(struct platform_device *pdev)
+static int prepare_shepherd_platform_data(struct platform_device *pdev)
 {
-    struct device_node            *np = pdev->dev.of_node, *pruss_dn = NULL;
-    struct device_node            *child;
-    struct rproc                  *tmp_rproc;
-    struct shepherd_platform_data *pdata;
+    struct device_node *np = pdev->dev.of_node, *pruss_dn = NULL;
+    struct device_node *child;
+    struct rproc       *tmp_rproc;
 
     /*allocate mem for platform data*/
-    pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
-    if (!pdata)
+    shp_pdata = devm_kzalloc(&pdev->dev, sizeof(*shp_pdata), GFP_KERNEL);
+    if (!shp_pdata)
     {
         dev_err(&pdev->dev, "Unable to allocate platform data\n");
-        return NULL;
+        return 1;
     }
 
     if (!of_match_device(shepherd_dt_ids, &pdev->dev))
     {
         pr_err("of_match_device failed\n");
-        devm_kfree(&pdev->dev, pdata);
-        return NULL;
+        devm_kfree(&pdev->dev, shp_pdata);
+        return 1;
     }
 
     pruss_dn = of_parse_phandle(np, "prusses", 0);
     if (!pruss_dn)
     {
         dev_err(&pdev->dev, "Unable to parse device node: prusses\n");
-        devm_kfree(&pdev->dev, pdata);
-        return NULL;
+        devm_kfree(&pdev->dev, shp_pdata);
+        return 1;
     }
 
     for_each_child_of_node(pruss_dn, child)
@@ -71,45 +70,55 @@ static struct shepherd_platform_data *get_shepherd_platform_data(struct platform
             {
                 of_node_put(pruss_dn);
                 dev_err(&pdev->dev, "Unable to parse device node: %s \n", child->name);
-                devm_kfree(&pdev->dev, pdata);
-                return NULL;
+                devm_kfree(&pdev->dev, shp_pdata);
+                return 1;
             }
 
             if (strncmp(tmp_rproc->name, "4a334000.pru", 12) == 0)
             {
                 printk(KERN_INFO "shprd.k: Found PRU0 at phandle 0x%02X", child->phandle);
 
-                pdata->rproc_prus[0] = tmp_rproc;
+                shp_pdata->rproc_prus[0] = tmp_rproc;
             }
 
             else if (strncmp(tmp_rproc->name, "4a338000.pru", 12) == 0)
             {
                 printk(KERN_INFO "shprd.k: Found PRU1 at phandle 0x%02X", child->phandle);
 
-                pdata->rproc_prus[1] = tmp_rproc;
+                shp_pdata->rproc_prus[1] = tmp_rproc;
             }
         }
     }
 
     of_node_put(pruss_dn);
-    remember_shepherd_platform_data(pdata);
-    return pdata;
+    return 0;
 }
 
 static int shepherd_drv_probe(struct platform_device *pdev)
 {
-    int  ret = 0;
+    int ret = 0;
 
     printk(KERN_INFO "shprd.k: found shepherd device!!!");
 
-    get_shepherd_platform_data(pdev);
+    if (prepare_shepherd_platform_data(pdev))
+    {
+        /*pru device are not ready yet so kernel should retry the probe function later again*/
+        return -EPROBE_DEFER;
+    }
 
-    /* swap also handles sub-services for PRU */
+    /* swap FW -> also handles sub-services for PRU */
     ret = swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT);
-    if (ret) return ret;
+    if (!ret)
+    {
+        /* Set up the sysfs interface for access from userspace */
+        sysfs_interface_init();
+    }
 
-    /* Set up the sysfs interface for access from userspace */
-    sysfs_interface_init();
+    /* Allow some time for the PRUs to initialize. This is critical! */
+    msleep(300);
+
+    mem_msg_sys_init();
+    sync_init(pru_comm_get_buffer_period_ns());
 
     return ret;
 }

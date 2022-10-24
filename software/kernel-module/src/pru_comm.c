@@ -16,20 +16,49 @@ void __iomem               *pru_shared_mem_io = NULL;
 
 /* This timer is used to schedule a delayed start of the actual sampling on the PRU */
 struct hrtimer              delayed_start_timer;
+static u8                   init_done = 0;
 
 static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart);
 
-int                         pru_comm_init(void)
+void                        pru_comm_init(void)
 {
-    struct SharedMem *shared_mem;
-
+    if (init_done) return;
     /* Maps the control registers of the PRU's interrupt controller */
     pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
     pru_shared_mem_io =
             ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_STRUCT_OFFSET, sizeof(struct SharedMem));
 
-    shared_mem                       = (struct SharedMem *) pru_shared_mem_io;
+    hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    delayed_start_timer.function = &delayed_start_callback;
+
+    init_done                    = 1;
+    pru_comm_reset();
+
+    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
+}
+
+void pru_comm_exit(void)
+{
+    if (pru_intc_io != NULL)
+    {
+        iounmap(pru_intc_io);
+        pru_intc_io = NULL;
+    }
+    if (pru_shared_mem_io != NULL)
+    {
+        iounmap(pru_shared_mem_io);
+        pru_shared_mem_io = NULL;
+    }
+    hrtimer_cancel(&delayed_start_timer);
+    init_done = 0;
+}
+
+void pru_comm_reset(void)
+{
+    struct SharedMem *shared_mem = (struct SharedMem *) pru_shared_mem_io;
+
+    if (!init_done) return;
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;
@@ -44,21 +73,8 @@ int                         pru_comm_init(void)
     shared_mem->pru1_sync_inbox      = SyncMsg_default;
     shared_mem->pru1_sync_outbox     = ProtoMsg_default;
     shared_mem->pru1_msg_error       = ProtoMsg_default;
-
-    hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    delayed_start_timer.function = &delayed_start_callback;
-
-    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
-    return 0;
 }
 
-int pru_comm_exit(void)
-{
-    iounmap(pru_intc_io);
-    iounmap(pru_shared_mem_io);
-
-    return 0;
-}
 
 static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart)
 {
@@ -99,14 +115,12 @@ int pru_comm_schedule_delayed_start(unsigned int start_time_second)
     return 0;
 }
 
-int pru_comm_cancel_delayed_start(void) { return hrtimer_cancel(&delayed_start_timer); }
+int  pru_comm_cancel_delayed_start(void) { return hrtimer_cancel(&delayed_start_timer); }
 
-int pru_comm_trigger(unsigned int system_event)
+void pru_comm_trigger(unsigned int system_event)
 {
     /* Raise Interrupt on PRU INTC*/
     writel(system_event, pru_intc_io + PRU_INTC_SISR_OFFSET);
-
-    return 0;
 }
 
 enum ShepherdState pru_comm_get_state(void)
@@ -115,10 +129,9 @@ enum ShepherdState pru_comm_get_state(void)
                                       offsetof(struct SharedMem, shepherd_state));
 }
 
-int pru_comm_set_state(enum ShepherdState state)
+void pru_comm_set_state(enum ShepherdState state)
 {
     writel(state, pru_shared_mem_io + offsetof(struct SharedMem, shepherd_state));
-    return 0;
 }
 
 unsigned int pru_comm_get_buffer_period_ns(void)

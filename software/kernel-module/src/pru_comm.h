@@ -10,14 +10,15 @@
  * Maps the shared memory structure within the PRU's 'shared RAM' memory
  * region.
  */
-int                pru_comm_init(void);
+void               pru_comm_init(void);
 /**
  * Clean up communication between our kernel module and the PRUs.
  *
  * @see pru_comm_init()
  */
-int                pru_comm_exit(void);
+void               pru_comm_exit(void);
 
+void               pru_comm_reset(void);
 /**
  * Trigger a system event on the PRUs
  *
@@ -26,7 +27,7 @@ int                pru_comm_exit(void);
  * events to communicate time-critical events from this Linux kernel module to
  * the PRUs
  */
-int                pru_comm_trigger(unsigned int system_event);
+void               pru_comm_trigger(unsigned int system_event);
 
 /**
  * Schedule start of the actual sampling at a later point in time
@@ -65,7 +66,7 @@ enum ShepherdState pru_comm_get_state(void);
  * @param state new shepherd state
  * @see SharedMem
  */
-int                pru_comm_set_state(enum ShepherdState state);
+void               pru_comm_set_state(enum ShepherdState state);
 
 /**
  * Reads the buffer period from the PRUs

@@ -29,12 +29,13 @@ static const uint32_t     ns_pre_trigger         = 1005000;
 /* Timer to trigger fast sync_loop */
 struct hrtimer            trigger_loop_timer;
 struct hrtimer            sync_loop_timer;
+static u8                 timers_active    = 1;
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 const static unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
                                               5000000u,  2000000u,  1000000u,  500000u,   200000u,
                                               100000u,   50000u,    20000u};
-const static size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
+static const size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
 //static unsigned int step_pos = 0;
 
 // Sync-Routine - TODO: take these from pru-sharedmem
@@ -45,31 +46,28 @@ const static size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(
 #define SAMPLE_INTERVAL_NS     (BUFFER_PERIOD_NS / ADC_SAMPLES_PER_BUFFER)
 #define SAMPLE_PERIOD          (TIMER_BASE_PERIOD / ADC_SAMPLES_PER_BUFFER)
 static uint32_t     info_count = 6666; /* >6k triggers explanation-message once */
-struct sync_data_s *sync_data;
+struct sync_data_s *sync_data  = NULL;
+static u8           init_done  = 0;
 
-int                 sync_exit(void)
+void                sync_exit(void)
 {
     hrtimer_cancel(&trigger_loop_timer);
     hrtimer_cancel(&sync_loop_timer);
-    kfree(sync_data);
-
-    return 0;
+    if (sync_data != NULL)
+    {
+        kfree(sync_data);
+        sync_data = NULL;
+    }
+    init_done = 0;
 }
 
 int sync_init(uint32_t timer_period_ns)
 {
-    struct timespec ts_now;
-    uint64_t        now_ns_system;
-    uint32_t        ns_over_wrap;
-    uint64_t        ns_now_until_trigger;
+    if (init_done) return -1;
 
     sync_data = kmalloc(sizeof(struct sync_data_s), GFP_KERNEL);
-    if (!sync_data) return -1;
+    if (!sync_data) return -2;
     sync_reset();
-
-    /* Timestamp system clock */
-    getnstimeofday(&ts_now);
-    now_ns_system          = (uint64_t) timespec_to_ns(&ts_now);
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
@@ -81,30 +79,53 @@ int sync_init(uint32_t timer_period_ns)
     /* timer for Sync-Loop */
     hrtimer_init(&sync_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     sync_loop_timer.function = &sync_loop_callback;
+    // TODO: there is a .hrtimer_is_hres_enabled() and .hrtimer_switch_to_hres()
 
-    div_u64_rem(now_ns_system, timer_period_ns, &ns_over_wrap);
-    if (ns_over_wrap > (timer_period_ns / 2))
-    {
-        /* target timer-wrap one ahead */
-        ns_now_until_trigger = 2 * timer_period_ns - ns_over_wrap - ns_pre_trigger;
-    }
-    else
-    {
-        /* target next timer-wrap */
-        ns_now_until_trigger = timer_period_ns - ns_over_wrap - ns_pre_trigger;
-    }
-
-    hrtimer_start(&trigger_loop_timer, ns_to_ktime(now_ns_system + ns_now_until_trigger),
-                  HRTIMER_MODE_ABS);
-
-    hrtimer_start(&sync_loop_timer, ns_to_ktime(now_ns_system + 1000000), HRTIMER_MODE_ABS);
+    init_done                = 1;
+    sync_start();
 
     printk(KERN_INFO "shprd.k: sync-system initialized");
 
     return 0;
 }
 
-int sync_reset(void)
+void sync_pause(void) { timers_active = 0; }
+
+void sync_start(void)
+{
+    struct timespec ts_now;
+    uint64_t        now_ns_system;
+    uint32_t        ns_over_wrap;
+    uint64_t        ns_now_until_trigger;
+
+    /* Timestamp system clock */
+    getnstimeofday(&ts_now);
+    now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
+
+    if (!init_done) return;
+
+    sync_reset();
+    timers_active = 1;
+
+    div_u64_rem(now_ns_system, trigger_loop_period_ns, &ns_over_wrap);
+    if (ns_over_wrap > (trigger_loop_period_ns / 2))
+    {
+        /* target timer-wrap one ahead */
+        ns_now_until_trigger = 2 * trigger_loop_period_ns - ns_over_wrap - ns_pre_trigger;
+    }
+    else
+    {
+        /* target next timer-wrap */
+        ns_now_until_trigger = trigger_loop_period_ns - ns_over_wrap - ns_pre_trigger;
+    }
+
+    hrtimer_start(&trigger_loop_timer, ns_to_ktime(now_ns_system + ns_now_until_trigger),
+                  HRTIMER_MODE_ABS);
+
+    hrtimer_start(&sync_loop_timer, ns_to_ktime(now_ns_system + 1000000), HRTIMER_MODE_ABS);
+}
+
+void sync_reset(void)
 {
     sync_data->error_now       = 0;
     sync_data->error_pre       = 0;
@@ -112,7 +133,6 @@ int sync_reset(void)
     sync_data->error_sum       = 0;
     sync_data->clock_corr      = 0;
     sync_data->previous_period = TIMER_BASE_PERIOD;
-    return 0;
 }
 
 enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
@@ -128,6 +148,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     getnstimeofday(&ts_now);
     ts_now_system_ns = (uint64_t) timespec_to_ns(&ts_now);
 
+    if (!timers_active) return HRTIMER_NORESTART;
     /*
      * Get distance of system clock from timer wrap.
      * Is negative, when interrupt happened before wrap, positive when after
@@ -172,6 +193,8 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     /* Timestamp system clock */
     getnstimeofday(&ts_now);
     ts_now_system_ns = (uint64_t) timespec_to_ns(&ts_now);
+
+    if (!timers_active) return HRTIMER_NORESTART;
 
     if (pru1_comm_receive_sync_request(&sync_rqst))
     {

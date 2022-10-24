@@ -16,9 +16,12 @@ struct RingBuffer
 void    put_msg_to_pru(const struct ProtoMsg *const element);
 uint8_t get_msg_from_pru(struct ProtoMsg *const element);
 
-int     mem_msg_sys_exit(void);
-int     mem_msg_sys_reset(void);
-int     mem_msg_sys_init(void);
-int     mem_msg_sys_test(void);
+void    mem_msg_sys_exit(void);
+void    mem_msg_sys_reset(void);
+void    mem_msg_sys_init(void);
+void    mem_msg_sys_test(void);
+
+void    mem_msg_sys_pause(void);
+void    mem_msg_sys_start(void);
 
 #endif //SRC_MEM_MSG_PRU_H

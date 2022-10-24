@@ -14,8 +14,11 @@ void reset_prev_timestamp(void);
  * triggers an interrupt on PRU0
  */
 int  sync_init(uint32_t timer_period_ns);
-int  sync_exit(void);
-int  sync_reset(void);
+void sync_exit(void);
+void sync_reset(void);
+
+void sync_pause(void);
+void sync_start(void);
 
 /**
  * Control loop
