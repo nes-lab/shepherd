@@ -108,19 +108,21 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 
     /* swap FW -> also handles sub-services for PRU */
     ret = swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT);
-    if (!ret)
-    {
-        /* Set up the sysfs interface for access from userspace */
-        sysfs_interface_init();
-    }
+    if (ret) { return ret; }
 
     /* Allow some time for the PRUs to initialize. This is critical! */
     msleep(300);
-
+    /* Initialize shared memory and PRU interrupt controller */
+    pru_comm_init();
     mem_msg_sys_init();
+
+    /* Initialize synchronization mechanism between PRU1 and our clock */
     sync_init(pru_comm_get_buffer_period_ns());
 
-    return ret;
+    /* Setup the sysfs interface for access from userspace */
+    sysfs_interface_init();
+
+    return 0;
 }
 
 static int shepherd_drv_remove(struct platform_device *pdev)
