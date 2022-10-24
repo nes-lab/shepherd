@@ -2,6 +2,10 @@
 #define __COMMONS_H_
 #include <linux/types.h>
 
+#define PRU_FW_DEFAULT                  ("am335x-pru%u-shepherd-fw")
+#define PRU0_FW_DEFAULT                ("am335x-pru0-shepherd-fw")
+#define PRU1_FW_DEFAULT                ("am335x-pru1-shepherd-fw")
+
 // NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**

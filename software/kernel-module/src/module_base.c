@@ -10,6 +10,7 @@
 #include <linux/remoteproc.h>
 #include <linux/types.h>
 
+#include "pru_firmware.h"
 #include "pru_comm.h"
 #include "pru_mem_msg_sys.h"
 #include "sync_ctrl.h"
@@ -24,11 +25,6 @@ static const struct of_device_id shepherd_dt_ids[] = {{
                                                       },
                                                       {/* sentinel */}};
 MODULE_DEVICE_TABLE(of, shepherd_dt_ids);
-
-struct shepherd_platform_data
-{
-    struct rproc *rproc_prus[2];
-};
 
 /*
  * get the two prus from the pruss-device-tree-node and save the pointers for common use.
@@ -96,50 +92,23 @@ static struct shepherd_platform_data *get_shepherd_platform_data(struct platform
     }
 
     of_node_put(pruss_dn);
+    remember_shepherd_platform_data(pdata);
     return pdata;
 }
 
 static int shepherd_drv_probe(struct platform_device *pdev)
 {
-    struct shepherd_platform_data *pdata;
-    u8                             i;
-    int                            ret = 0;
+    int  ret = 0;
 
     printk(KERN_INFO "shprd.k: found shepherd device!!!");
 
-    pdata = get_shepherd_platform_data(pdev);
+    get_shepherd_platform_data(pdev);
 
-    if (pdata == NULL)
-    {
-        /*pru device are not ready yet so kernel should retry the probe function later again*/
-        return -EPROBE_DEFER;
-    }
+    /* swap also handles sub-services for PRU */
+    ret = swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT);
+    if (ret) return ret;
 
-    /* Boot the two PRU cores with the corresponding shepherd firmware */
-    for (i = 0; i < 2; i++)
-    {
-        if (pdata->rproc_prus[i]->state == RPROC_RUNNING) rproc_shutdown(pdata->rproc_prus[i]);
-
-        sprintf(pdata->rproc_prus[i]->firmware, "am335x-pru%u-shepherd-fw", i);
-
-        if ((ret = rproc_boot(pdata->rproc_prus[i])))
-        {
-            printk(KERN_ERR "shprd.k: Couldn't boot PRU%d", i);
-            return ret;
-        }
-    }
-    printk(KERN_INFO "shprd.k: PRUs programmed and started!");
-
-    /* Allow some time for the PRUs to initialize. This is critical! */
-    msleep(300);
-    /* Initialize shared memory and PRU interrupt controller */
-    pru_comm_init();
-    mem_msg_sys_init();
-
-    /* Initialize synchronization mechanism between PRU1 and our clock */
-    sync_init(pru_comm_get_buffer_period_ns());
-
-    /* Setup the sysfs interface for access from userspace */
+    /* Set up the sysfs interface for access from userspace */
     sysfs_interface_init();
 
     return ret;
