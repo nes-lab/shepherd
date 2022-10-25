@@ -15,6 +15,7 @@
   loop:
     - pru0-shepherd-fw
     - pru1-shepherd-fw
+    - pru0-programmer
   become: true
 
 - name: Build PRU firmware
@@ -24,6 +25,7 @@
   loop:
     - pru0-shepherd-fw
     - pru1-shepherd-fw
+    - pru0-programmer
   environment:
     PRU_CGT: '{{ ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
@@ -39,6 +41,32 @@
   loop:
     - pru0-shepherd-fw
     - pru1-shepherd-fw
+    - pru0-programmer
+  become: true
+
+# build second programmer
+- name: Clean PRU Firmware Source - PROG2
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
+    target: clean
+- name: Build PRU firmware - PROG2
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
+    target: all
+    params:
+      PROTO: SBW
+  environment:
+    PRU_CGT: '{{ ti_pru_cgt_path }}'
+    PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
+    # PRU_GCC: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}'
+    # PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
+  become: false
+- name: Install PRU firmware - PROG2
+  community.general.make:
+    chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
+    target: install
+    params:
+      PROTO: SBW
   become: true
 
 - name: Clean shepherd device tree
