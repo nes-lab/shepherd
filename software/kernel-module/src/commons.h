@@ -4,6 +4,7 @@
 
 // base: /lib/firmware/am335x-pru*
 // sudo sh -c 'echo am335x-pru0-programmer-SWD-fw > /sys/class/remoteproc/remoteproc1/firmware'
+// sudo sh -c 'echo prog-swd > /sys/shepherd/pru0_firmware'
 #define PRU_FW_DEFAULT               ("am335x-pru%u-shepherd-fw")
 #define PRU0_FW_DEFAULT              ("am335x-pru0-shepherd-fw")
 #define PRU1_FW_DEFAULT              ("am335x-pru1-shepherd-fw")

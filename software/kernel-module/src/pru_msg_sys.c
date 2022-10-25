@@ -66,7 +66,7 @@ uint8_t get_msg_from_pru(struct ProtoMsg *const element)
 
 struct hrtimer              coordinator_loop_timer;
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart);
-static u8                   timers_active          = 1;
+static u8                   timers_active          = 0;
 static u8                   init_done              = 0;
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 static const unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
@@ -114,7 +114,11 @@ void msg_sys_test(void)
 
 void msg_sys_init(void)
 {
-    if (init_done) return;
+    if (init_done)
+    {
+        printk(KERN_ERR "shprd.k: msg-system init requested -> can't init twice!");
+        return;
+    }
 
     hrtimer_init(&coordinator_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     coordinator_loop_timer.function = &coordinator_callback;
@@ -129,7 +133,11 @@ void msg_sys_init(void)
 
 void msg_sys_pause(void)
 {
-    if (!timers_active) return;
+    if (!timers_active)
+    {
+        printk(KERN_ERR "shprd.k: msg-system pause requested -> sys not running!");
+        return;
+    }
     timers_active = 0;
     printk(KERN_INFO "shprd.k: msg-system paused");
 }
@@ -143,8 +151,16 @@ void msg_sys_start(void)
     getnstimeofday(&ts_now);
     now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
 
-    if (!init_done) return;
-    if (timers_active) return;
+    if (!init_done)
+    {
+        printk(KERN_ERR "shprd.k: msg-system start requested without prior init");
+        return;
+    }
+    if (timers_active)
+    {
+        printk(KERN_ERR "shprd.k: msg-system start requested -> but already running!");
+        return;
+    }
 
     msg_sys_reset();
 

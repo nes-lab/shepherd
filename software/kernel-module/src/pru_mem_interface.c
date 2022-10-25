@@ -22,7 +22,11 @@ static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_res
 
 void                        mem_interface_init(void)
 {
-    if (init_done) return;
+    if (init_done)
+    {
+        printk(KERN_ERR "shprd.k: mem-interface init requested -> can't init twice!");
+        return;
+    }
     /* Maps the control registers of the PRU's interrupt controller */
     pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
@@ -59,7 +63,11 @@ void mem_interface_reset(void)
 {
     struct SharedMem *shared_mem = (struct SharedMem *) pru_shared_mem_io;
 
-    if (!init_done) return;
+    if (!init_done)
+    {
+        printk(KERN_ERR "shprd.k: mem-interface reset requested without prior init");
+        return;
+    }
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;

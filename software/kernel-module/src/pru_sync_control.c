@@ -29,7 +29,7 @@ static const uint32_t     ns_pre_trigger         = 1005000;
 /* Timer to trigger fast sync_loop */
 struct hrtimer            trigger_loop_timer;
 struct hrtimer            sync_loop_timer;
-static u8                 timers_active    = 1;
+static u8                 timers_active    = 0;
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 const static unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
@@ -64,10 +64,18 @@ void                sync_exit(void)
 
 int sync_init(uint32_t timer_period_ns)
 {
-    if (init_done) return -1;
+    if (init_done)
+    {
+        printk(KERN_ERR "shprd.k: pru-sync-system init requested -> can't init twice!");
+        return -1;
+    }
 
     sync_data = kmalloc(sizeof(struct sync_data_s), GFP_KERNEL);
-    if (!sync_data) return -2;
+    if (!sync_data)
+    {
+        printk(KERN_ERR "shprd.k: pru-sync-system kmalloc failed!");
+        return -2;
+    }
     sync_reset();
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
@@ -91,7 +99,11 @@ int sync_init(uint32_t timer_period_ns)
 
 void sync_pause(void)
 {
-    if (!timers_active) return;
+    if (!timers_active)
+    {
+        printk(KERN_ERR "shprd.k: pru-sync-system pause requested -> but wasn't running!");
+        return;
+    }
     timers_active = 0;
     printk(KERN_INFO "shprd.k: pru-sync-system paused");
 }
@@ -107,8 +119,16 @@ void sync_start(void)
     getnstimeofday(&ts_now);
     now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
 
-    if (!init_done) return;
-    if (timers_active) return;
+    if (!init_done)
+    {
+        printk(KERN_ERR "shprd.k: pru-sync-system start requested without prior init!");
+        return;
+    }
+    if (timers_active)
+    {
+        printk(KERN_ERR "shprd.k: pru-sync-system start requested -> but already running!");
+        return;
+    }
 
     sync_reset();
 
