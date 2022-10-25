@@ -1,10 +1,10 @@
-#include "pru_comm.h"
+#include "pru_mem_interface.h"
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 #include <linux/mutex.h>
 
-#include "pru_mem_msg_sys.h"
+#include "pru_msg_sys.h"
 
 /***************************************************************/
 /***************************************************************/
@@ -78,19 +78,20 @@ static const size_t         coord_timer_steps_ns_size =
 /***************************************************************/
 /***************************************************************/
 
-void mem_msg_sys_exit(void)
+void msg_sys_exit(void)
 {
     hrtimer_cancel(&coordinator_loop_timer);
     init_done = 0;
+    printk(KERN_INFO "shprd.k: msg-system exited");
 }
 
-void mem_msg_sys_reset(void)
+void msg_sys_reset(void)
 {
     ring_init(&msg_ringbuf_from_pru);
     ring_init(&msg_ringbuf_to_pru);
 }
 
-void mem_msg_sys_test(void)
+void msg_sys_test(void)
 {
     struct ProtoMsg msg1 = {.id       = MSG_TO_PRU,
                             .unread   = 0u,
@@ -111,7 +112,7 @@ void mem_msg_sys_test(void)
     pru1_comm_send_sync_reply(&msg2); // error-pipeline pru1
 }
 
-void mem_msg_sys_init(void)
+void msg_sys_init(void)
 {
     if (init_done) return;
 
@@ -121,18 +122,19 @@ void mem_msg_sys_init(void)
     init_done                       = 1;
     printk(KERN_INFO "shprd.k: msg-system initialized");
 
-    mem_msg_sys_start();
-    mem_msg_sys_test();
+    msg_sys_start();
+    msg_sys_test();
 }
 
 
-void mem_msg_sys_pause(void)
+void msg_sys_pause(void)
 {
+    if (!timers_active) return;
     timers_active = 0;
     printk(KERN_INFO "shprd.k: msg-system paused");
 }
 
-void mem_msg_sys_start(void)
+void msg_sys_start(void)
 {
     struct timespec ts_now;
     uint64_t        now_ns_system;
@@ -142,12 +144,14 @@ void mem_msg_sys_start(void)
     now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
 
     if (!init_done) return;
+    if (timers_active) return;
 
-    mem_msg_sys_reset();
-    timers_active = 1;
+    msg_sys_reset();
 
     hrtimer_start(&coordinator_loop_timer, ns_to_ktime(now_ns_system + coord_timer_steps_ns[0]),
                   HRTIMER_MODE_ABS);
+
+    timers_active = 1;
     printk(KERN_INFO "shprd.k: msg-system started");
 }
 

@@ -1,5 +1,5 @@
-#ifndef __SYNC_CTRL_H_
-#define __SYNC_CTRL_H_
+#ifndef __PRU_SYNC_CONTROL_H_
+#define __PRU_SYNC_CONTROL_H_
 
 #include "commons.h"
 
@@ -58,4 +58,4 @@ struct sync_data_s
 
 extern struct sync_data_s *sync_data;
 
-#endif /* __SYNC_CTRL_H_ */
+#endif /* __PRU_SYNC_CONTROL_H_ */

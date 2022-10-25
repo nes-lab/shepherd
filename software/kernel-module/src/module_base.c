@@ -10,10 +10,10 @@
 #include <linux/remoteproc.h>
 #include <linux/types.h>
 
-#include "pru_comm.h"
 #include "pru_firmware.h"
-#include "pru_mem_msg_sys.h"
-#include "sync_ctrl.h"
+#include "pru_mem_interface.h"
+#include "pru_msg_sys.h"
+#include "pru_sync_control.h"
 #include "sysfs_interface.h"
 
 #define MODULE_NAME "shepherd"
@@ -111,11 +111,11 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     if (ret) { return ret; }
 
     /* Initialize shared memory and PRU interrupt controller */
-    pru_comm_init();
-    mem_msg_sys_init();
+    mem_interface_init();
+    msg_sys_init();
 
     /* Initialize synchronization mechanism between PRU1 and our clock */
-    sync_init(pru_comm_get_buffer_period_ns());
+    sync_init(mem_interface_get_buffer_period_ns());
 
     /* Setup the sysfs interface for access from userspace */
     sysfs_interface_init();
@@ -129,8 +129,8 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 
     pdata = pdev->dev.platform_data;
     sysfs_interface_exit();
-    pru_comm_exit();
-    mem_msg_sys_exit();
+    mem_interface_exit();
+    msg_sys_exit();
     sync_exit();
 
     if (pdata != NULL)

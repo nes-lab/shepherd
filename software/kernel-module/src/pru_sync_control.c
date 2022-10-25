@@ -3,8 +3,8 @@
 #include <linux/math64.h>
 #include <linux/slab.h>
 
-#include "pru_comm.h"
-#include "sync_ctrl.h"
+#include "pru_mem_interface.h"
+#include "pru_sync_control.h"
 
 static uint32_t sys_ts_over_timer_wrap_ns = 0;
 static uint64_t next_timestamp_ns         = 0;
@@ -59,6 +59,7 @@ void                sync_exit(void)
         sync_data = NULL;
     }
     init_done = 0;
+    printk(KERN_INFO "shprd.k: pru-sync-system exited");
 }
 
 int sync_init(uint32_t timer_period_ns)
@@ -90,6 +91,7 @@ int sync_init(uint32_t timer_period_ns)
 
 void sync_pause(void)
 {
+    if (!timers_active) return;
     timers_active = 0;
     printk(KERN_INFO "shprd.k: pru-sync-system paused");
 }
@@ -106,9 +108,9 @@ void sync_start(void)
     now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
 
     if (!init_done) return;
+    if (timers_active) return;
 
     sync_reset();
-    timers_active = 1;
 
     div_u64_rem(now_ns_system, trigger_loop_period_ns, &ns_over_wrap);
     if (ns_over_wrap > (trigger_loop_period_ns / 2))
@@ -127,6 +129,7 @@ void sync_start(void)
 
     hrtimer_start(&sync_loop_timer, ns_to_ktime(now_ns_system + 1000000), HRTIMER_MODE_ABS);
     printk(KERN_INFO "shprd.k: pru-sync-system started");
+    timers_active = 1;
 }
 
 void sync_reset(void)
@@ -146,7 +149,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     uint64_t        ns_now_until_trigger;
 
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
-    pru_comm_trigger(HOST_PRU_EVT_TIMESTAMP);
+    mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
 
     /* Timestamp system clock */
     getnstimeofday(&ts_now);

@@ -4,10 +4,10 @@
 #include <linux/sysfs.h>
 
 #include "commons.h"
-#include "pru_comm.h"
 #include "pru_firmware.h"
-#include "pru_mem_msg_sys.h"
-#include "sync_ctrl.h"
+#include "pru_mem_interface.h"
+#include "pru_msg_sys.h"
+#include "pru_sync_control.h"
 
 #include "sysfs_interface.h"
 
@@ -267,7 +267,7 @@ static ssize_t sysfs_sync_correction_show(struct kobject *kobj, struct kobj_attr
 
 static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    switch (pru_comm_get_state())
+    switch (mem_interface_get_state())
     {
         case STATE_IDLE: return sprintf(buf, "idle");
         case STATE_ARMED: return sprintf(buf, "armed");
@@ -288,9 +288,9 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
     {
         if ((count < 5) || (count > 6)) return -EINVAL;
 
-        if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+        if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
-        pru_comm_set_state(STATE_RUNNING);
+        mem_interface_set_state(STATE_RUNNING);
         return count;
     }
 
@@ -298,8 +298,8 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
     {
         if ((count < 4) || (count > 5)) return -EINVAL;
 
-        pru_comm_cancel_delayed_start();
-        pru_comm_set_state(STATE_RESET);
+        mem_interface_cancel_delayed_start();
+        mem_interface_set_state(STATE_RESET);
         return count;
     }
 
@@ -307,13 +307,13 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
     {
         /* Timestamp system clock */
 
-        if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+        if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
         getnstimeofday(&ts_now);
         if (tmp < ts_now.tv_sec + 1) return -EINVAL;
         printk(KERN_INFO "shprd.k: Setting start-timestamp to %d", tmp);
-        pru_comm_set_state(STATE_ARMED);
-        pru_comm_schedule_delayed_start(tmp);
+        mem_interface_set_state(STATE_ARMED);
+        mem_interface_schedule_delayed_start(tmp);
         return count;
     }
     else return -EINVAL;
@@ -346,11 +346,11 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
     struct kobj_attr_struct_s *kobj_attr_wrapped;
     unsigned int               mode;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     // note: longer string must come first in case of similar strings (emulation_cal, emulation)
     if (strncmp(buf, "harvester", 9) == 0)
@@ -382,7 +382,7 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
 
     writel(mode, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     printk(KERN_INFO "shprd.k: new mode = %d (%s)", mode, buf);
-    pru_comm_set_state(STATE_RESET);
+    mem_interface_set_state(STATE_RESET);
     return count;
 }
 
@@ -392,7 +392,7 @@ static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj, struct kobj_a
     unsigned int               tmp;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
@@ -401,7 +401,7 @@ static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj, struct kobj_a
         printk(KERN_INFO "shprd.k: Setting auxiliary DAC-voltage to raw %u", tmp);
         writel(tmp, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
-        pru_comm_set_state(STATE_RESET); // TODO: really needed?
+        mem_interface_set_state(STATE_RESET); // TODO: really needed?
         return count;
     }
 
@@ -414,7 +414,7 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj, struct kob
     struct CalibrationConfig   tmp;
     struct kobj_attr_struct_s *kobj_attr_wrapped;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
@@ -473,7 +473,7 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
     int32_t                    buf_pos    = 0;
     uint32_t                   i          = 0u;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
@@ -569,7 +569,7 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
     int32_t                    buf_pos    = 0;
     uint32_t                   i          = 0u;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
     mem_offset        = kobj_attr_wrapped->val_offset;
@@ -663,7 +663,7 @@ static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribut
     else if (strncmp(buffer, "stop", 4) == 0) value = PRG_STATE_IDLE;
     else return -EINVAL;
 
-    if ((value == PRG_STATE_STARTING) && (pru_comm_get_state() != STATE_IDLE)) return -EBUSY;
+    if ((value == PRG_STATE_STARTING) && (mem_interface_get_state() != STATE_IDLE)) return -EBUSY;
     // TODO: kernel should test validity of struct (instead of pru) -> best place is here
 
     writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
@@ -689,7 +689,7 @@ static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribu
     struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                   value = 0u;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
@@ -711,7 +711,7 @@ static ssize_t sysfs_prog_datarate_store(struct kobject *kobj, struct kobj_attri
     struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                   value;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
@@ -729,7 +729,7 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
     uint32_t                   value;
     uint32_t                   value_max;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
     value_max         = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
@@ -746,7 +746,7 @@ static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute 
     struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                   value;
 
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
 
@@ -761,15 +761,15 @@ static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute 
 static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
                                         char *buf)
 {
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
-    read_pru0_firmware(buf);
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+    read_pru_firmware(0, buf);
     return strlen(buf);
 }
 
 static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
                                          const char *buffer, size_t count)
 {
-    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     /* FAIL with no file-name or not matching start-string */
     if (strlen(buffer) == 0) return -EINVAL;
