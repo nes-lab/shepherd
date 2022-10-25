@@ -45,8 +45,19 @@ done:
 - wrote a readme to help using the code
 - ... lib compiles
 
+done:(changes in October)
+- Fixed the earlier issues with testing.py:
+	- added few cdefs[from "calibration.h", "math64_safe.h"]
+	- added corresponding .c(paths) in setup.py and few definitions in .pxy
+	- Had to remove 'const' from - "uint32_t msb_position(const uint32_t value)" in math64_safe.c to make
+	  the cython build possible
+- Fixed issues with structure by:
+	- adding cdefs
+	- introducing class to handle it as a python object
+	- see second point in todo
+
 todo:
-- testing.py fails -> functions in calibration.h are "undefined symbol"
-  - maybe it just needs another "cdef extern from 'calibration.h'"
-- structs still unknown to cython
-  - maybe another "cdef extern from ..."
+- testing.py fails -> Segmentation Fault
+	- while trying to access any function in testing.py from .pxy
+- Structure functionality
+	- to be tested for functionality once testing.py issue is sorted

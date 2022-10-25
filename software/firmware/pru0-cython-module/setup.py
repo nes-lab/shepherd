@@ -6,7 +6,12 @@ setup(
     ext_modules=cythonize(
         Extension(
             "Cvirtual_converter",
-            ["Cvirtual_converter.pyx", "./../pru0-shepherd-fw/virtual_converter.c"],
+            [
+                "Cvirtual_converter.pyx",
+                "./../pru0-shepherd-fw/virtual_converter.c",
+                "./../pru0-shepherd-fw/calibration.c",
+                "./../pru0-shepherd-fw/math64_safe.c",
+            ],
             define_macros=[("__CYTHON__", "1"), ("PRU0", "1")],
             include_dirs=[
                 "./../pru0-shepherd-fw/include/",

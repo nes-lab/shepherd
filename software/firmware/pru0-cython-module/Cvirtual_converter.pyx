@@ -1,11 +1,9 @@
 #!python
 #cython: language_level=3
 
-#cimport hvirtual_converter
-"""vishal.shepherd.software.firmware.pru0_shepherd_fw."""
-#from hvirtual_converter cimport (converter_calc_inp_power, converter_calc_out_power, converter_update_cap_storage, set_P_input_fW, set_P_output_fW, set_V_intermediate_uV, get_P_input_fW, get_P_output_fW, get_V_intermediate_uV, get_V_intermediate_raw, get_I_mid_out_nA)
-
 cimport hvirtual_converter
+
+#import hvirtual_converter
 from libc.stdint cimport *
 from libc.stdint cimport uint32_t
 from libc.stdint cimport uint64_t
@@ -19,18 +17,36 @@ import pyximport
 #	cdef static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA)
 
 """
-	The language used here is a special mix of C and Python.
-	However it will look fairly familiar to Python developers.
+The language used here is a special mix of C and Python. However it will look fairly familiar to Python developers.
+"""
+cdef const hvirtual_converter.ConverterConfig *cfg
+#ctypedef hvirtual_converter.ConverterConfig *const config
 
+cdef Test test=Test() # To access functions inside class Test
+cdef class Test:
+	cdef const hvirtual_converter.ConverterConfig* config
 
-	This section looks like a regular Python function — because it just creates a Python function that has access to the C functions.
-	These are Python-Wrappers...
+	def __init__(self):
+		pass
+
+	cdef converter_initialize(self, const hvirtual_converter.ConverterConfig* config):  			hvirtual_converter.converter_initialize(self.config)
+"""
+	def converter_initialize(self.config):
+		hvirtual_converter.converter_initialize(self.config)
+
+	cdef _setup(self, cfg* t):
+		self._config = config
+		return self
+	def __cinit__(self, ):
+		self.config = config
+		converter_initialize(&config)
+"""
+"""
+This section looks like a regular Python function — because it just creates a Python function that has access to the C functions. These are Python-Wrappers...
 """
 
-"""
-def converter_initialize(*config):
-	hvirtual_converter.converter_initialize(*config)
-"""
+#def converter_initialize(*config):
+#	hvirtual_converter.converter_initialize(config)
 
 def converter_calc_inp_power(input_voltage_uV, input_current_nA):
 	return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
@@ -59,3 +75,7 @@ def get_P_input_fW():
 
 def set_V_intermediate_uV(C_uV):
 	hvirtual_converter.set_V_intermediate_uV(C_uV)
+
+"""	Added from Calibration.c to debug testing.py	"""
+def cal_conv_adc_raw_to_nA(current_raw):
+	return hvirtual_converter.cal_conv_adc_raw_to_nA(current_raw)
