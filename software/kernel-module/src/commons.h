@@ -2,9 +2,14 @@
 #define __COMMONS_H_
 #include <linux/types.h>
 
+// base: /lib/firmware/am335x-pru*
+// sudo sh -c 'echo am335x-pru0-programmer-SWD-fw > /sys/class/remoteproc/remoteproc2/firmware'
 #define PRU_FW_DEFAULT               ("am335x-pru%u-shepherd-fw")
 #define PRU0_FW_DEFAULT              ("am335x-pru0-shepherd-fw")
 #define PRU1_FW_DEFAULT              ("am335x-pru1-shepherd-fw")
+#define PRU0_FW_PRG_SWD              ("am335x-pru0-programmer-SWD-fw")
+#define PRU0_FW_PRG_SBW              ("am335x-pru0-programmer-SBW-fw")
+
 
 // NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 

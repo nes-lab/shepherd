@@ -82,14 +82,17 @@ int sync_init(uint32_t timer_period_ns)
     // TODO: there is a .hrtimer_is_hres_enabled() and .hrtimer_switch_to_hres()
 
     init_done                = 1;
+    printk(KERN_INFO "shprd.k: pru-sync-system initialized");
+
     sync_start();
-
-    printk(KERN_INFO "shprd.k: sync-system initialized");
-
     return 0;
 }
 
-void sync_pause(void) { timers_active = 0; }
+void sync_pause(void)
+{
+    timers_active = 0;
+    printk(KERN_INFO "shprd.k: pru-sync-system paused");
+}
 
 void sync_start(void)
 {
@@ -123,6 +126,7 @@ void sync_start(void)
                   HRTIMER_MODE_ABS);
 
     hrtimer_start(&sync_loop_timer, ns_to_ktime(now_ns_system + 1000000), HRTIMER_MODE_ABS);
+    printk(KERN_INFO "shprd.k: pru-sync-system started");
 }
 
 void sync_reset(void)

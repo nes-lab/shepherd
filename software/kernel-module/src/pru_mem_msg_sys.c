@@ -119,14 +119,18 @@ void mem_msg_sys_init(void)
     coordinator_loop_timer.function = &coordinator_callback;
 
     init_done                       = 1;
-    mem_msg_sys_start();
-
     printk(KERN_INFO "shprd.k: msg-system initialized");
+
+    mem_msg_sys_start();
     mem_msg_sys_test();
 }
 
 
-void mem_msg_sys_pause(void) { timers_active = 0; }
+void mem_msg_sys_pause(void)
+{
+    timers_active = 0;
+    printk(KERN_INFO "shprd.k: msg-system paused");
+}
 
 void mem_msg_sys_start(void)
 {
@@ -144,6 +148,7 @@ void mem_msg_sys_start(void)
 
     hrtimer_start(&coordinator_loop_timer, ns_to_ktime(now_ns_system + coord_timer_steps_ns[0]),
                   HRTIMER_MODE_ABS);
+    printk(KERN_INFO "shprd.k: msg-system started");
 }
 
 /***************************************************************/

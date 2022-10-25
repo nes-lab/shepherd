@@ -61,17 +61,23 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
         if (ret) return ret;
     }
 
-    /* start sub-services */
-    // TODO: name based loading of sub-services
-
     /* Allow some time for the PRUs to initialize. This is critical! */
     msleep(300);
-    /* Initialize shared memory and PRU interrupt controller */
+
+    /* restart sub-services */
     pru_comm_reset();
     mem_msg_sys_start();
 
     /* Initialize synchronization mechanism between PRU1 and our clock */
-    if (pru0_default && pru1_default) { sync_start(); }
+    if (fwncmp(0, PRU0_FW_DEFAULT) && fwncmp(1, PRU1_FW_DEFAULT)) { sync_start(); }
 
     return ret;
+}
+
+void read_pru0_firmware(char *file_name) { sprintf(file_name, shp_pdata->rproc_prus[0]->firmware); }
+
+int  fwncmp(u8 pru_num, const char *file_name)
+{
+    if (pru_num > 1) return -1;
+    return strncmp(shp_pdata->rproc_prus[pru_num]->firmware, file_name, strlen(file_name))
 }

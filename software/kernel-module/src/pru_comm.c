@@ -33,9 +33,9 @@ void                        pru_comm_init(void)
     delayed_start_timer.function = &delayed_start_callback;
 
     init_done                    = 1;
-    pru_comm_reset();
-
     printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
+
+    pru_comm_reset();
 }
 
 void pru_comm_exit(void)
@@ -73,6 +73,7 @@ void pru_comm_reset(void)
     shared_mem->pru1_sync_inbox      = SyncMsg_default;
     shared_mem->pru1_sync_outbox     = ProtoMsg_default;
     shared_mem->pru1_msg_error       = ProtoMsg_default;
+    printk(KERN_INFO "shprd.k: mem-interface reset to default");
 }
 
 
