@@ -1,7 +1,7 @@
 ---
 
 - name: Look for Kernel Module
-  ansible.builtin.command: 'modinfo shepherd'
+  ansible.builtin.command: 'lsmod | grep shepherd'
   register: modinfo_ret
   failed_when: false
   changed_when: false
@@ -11,11 +11,13 @@
   register: modprobe_ret
   until: modprobe_ret is not failed
   retries: 5
-  when: not modinfo_ret
+  when: not modinfo_ret.rc
   changed_when: true
   # fails at least on first install -> check for presence of shepherd
-  # lsmod | grep shepherd  -> $? is still 0 if present
-  # modinfo could work -> test above
+  # lsmod | grep shepherd
+  #   -> loaded: 2 lines, exit 0
+  #   -> notload: 0 lines, exit 1
+  # modinfo could work -> test above -> FAIL
 
 - name: Check if PRU1 is present
   ansible.builtin.stat:
