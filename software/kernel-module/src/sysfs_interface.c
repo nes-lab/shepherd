@@ -5,9 +5,12 @@
 
 #include "commons.h"
 #include "pru_comm.h"
+#include "pru_firmware.h"
 #include "pru_mem_msg_sys.h"
 #include "sync_ctrl.h"
+
 #include "sysfs_interface.h"
+
 
 int             schedule_start(unsigned int start_time_second);
 
@@ -15,6 +18,7 @@ struct kobject *kobj_ref;
 struct kobject *kobj_mem_ref;
 struct kobject *kobj_sync_ref;
 struct kobject *kobj_prog_ref;
+struct kobject *kobj_firmware_ref;
 
 static ssize_t  sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
@@ -79,6 +83,10 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
 static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute *attr,
                                     const char *buffer, size_t count);
 
+static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf);
+static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
 
 struct kobj_attr_struct_s
 {
@@ -161,6 +169,11 @@ struct kobj_attr_struct_s attr_prog_pin_tms = {
                       offsetof(struct ProgrammerCtrl, pin_tms)};
 
 
+struct kobj_attr_struct_s attr_pru0_firmware = {
+        .attr = __ATTR(pru0_firmware, 0660, sysfs_pru0_firmware_show, sysfs_pru0_firmware_store),
+        .val_offset = 0};
+
+
 struct kobj_attribute attr_sync_error = __ATTR(error, 0660, sysfs_sync_error_show, NULL);
 
 struct kobj_attribute attr_sync_correction =
@@ -186,25 +199,26 @@ static struct attribute_group attr_group = {
         .attrs = pru_attrs,
 };
 
+
 static struct attribute *pru_mem_attrs[] = {
         &attr_mem_base_addr.attr.attr,
         &attr_mem_size.attr.attr,
         NULL,
 };
-
 static struct attribute_group attr_mem_group = {
         .attrs = pru_mem_attrs,
 };
+
 
 static struct attribute *pru_prog_attrs[] = {
         &attr_prog_state.attr.attr,    &attr_prog_target.attr.attr,  &attr_prog_datarate.attr.attr,
         &attr_prog_datasize.attr.attr, &attr_prog_pin_tck.attr.attr, &attr_prog_pin_tdio.attr.attr,
         &attr_prog_pin_tdo.attr.attr,  &attr_prog_pin_tms.attr.attr, NULL,
 };
-
 static struct attribute_group attr_prog_group = {
         .attrs = pru_prog_attrs,
 };
+
 
 static struct attribute *pru_sync_attrs[] = {
         &attr_sync_error.attr,
@@ -212,10 +226,19 @@ static struct attribute *pru_sync_attrs[] = {
         &attr_sync_correction.attr,
         NULL,
 };
-
 static struct attribute_group attr_sync_group = {
         .attrs = pru_sync_attrs,
 };
+
+
+static struct attribute *pru_firmware_attrs[] = {
+        &attr_pru0_firmware.attr.attr,
+        NULL,
+};
+static struct attribute_group attr_firmware_group = {
+        .attrs = pru_firmware_attrs,
+};
+
 
 static ssize_t sysfs_SharedMem_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -734,6 +757,47 @@ static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute 
     return count;
 }
 
+
+static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf)
+{
+    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+    read_pru0_firmware(buf);
+    return strlen(buf);
+}
+
+static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count)
+{
+    if (pru_comm_get_state() != STATE_IDLE) return -EBUSY;
+
+    /* FAIL with no file-name or not matching start-string */
+    if (strlen(buffer) == 0) return -EINVAL;
+
+    /*
+    if (strncmp(buffer, "am335x-pru0-", 12)) return -EINVAL;
+    swap_pru_firmware(buffer, "");
+     */
+    /* NOTE: this does not work as expected as buffer contains xtra chars at the end
+     * ignore for now and hardcode
+     */
+    if ((strncmp(buffer, "prog-swd", 8) == 0) || (strncmp(buffer, "swd", 3) == 0))
+    {
+        swap_pru_firmware(PRU0_FW_PRG_SWD, "");
+    }
+    else if ((strncmp(buffer, "prog-sbw", 8) == 0) || (strncmp(buffer, "sbw", 3) == 0))
+    {
+        swap_pru_firmware(PRU0_FW_PRG_SBW, "");
+    }
+    else { swap_pru_firmware(PRU0_FW_DEFAULT, ""); }
+
+    return count;
+}
+
+/*
+ * TODO: implement a way to react on pru-firmware (hide programmer or shepherd-interface)
+ *  -> hiding programmer should be easy
+ */
 int sysfs_interface_init(void)
 {
     int retval = 0;
@@ -743,13 +807,19 @@ int sysfs_interface_init(void)
     if ((retval = sysfs_create_file(kobj_ref, &attr_state.attr)))
     {
         printk(KERN_ERR "shprd.k: Cannot create sysfs state attrib");
-        goto r_sysfs;
+        goto f_shp_state;
     }
 
     if ((retval = sysfs_create_group(kobj_ref, &attr_group)))
     {
-        printk(KERN_ERR "shprd.k: cannot create sysfs attrib group");
-        goto r_state;
+        printk(KERN_ERR "shprd.k: cannot create sysfs shp-control attrib group");
+        goto f_shp_group;
+    };
+
+    if ((retval = sysfs_create_group(kobj_ref, &attr_firmware_group)))
+    {
+        printk(KERN_ERR "shprd.k: cannot create sysfs firmware attrib group");
+        goto f_firmware;
     };
 
     kobj_mem_ref = kobject_create_and_add("memory", kobj_ref);
@@ -757,7 +827,7 @@ int sysfs_interface_init(void)
     if ((retval = sysfs_create_group(kobj_mem_ref, &attr_mem_group)))
     {
         printk(KERN_ERR "shprd.k: cannot create sysfs memory attrib group");
-        goto r_group;
+        goto f_mem;
     };
 
     kobj_sync_ref = kobject_create_and_add("sync", kobj_ref);
@@ -765,7 +835,7 @@ int sysfs_interface_init(void)
     if ((retval = sysfs_create_group(kobj_sync_ref, &attr_sync_group)))
     {
         printk(KERN_ERR "shprd.k: cannot create sysfs sync attrib group");
-        goto r_mem;
+        goto f_sync;
     };
 
     kobj_prog_ref = kobject_create_and_add("programmer", kobj_ref);
@@ -773,18 +843,26 @@ int sysfs_interface_init(void)
     if ((retval = sysfs_create_group(kobj_prog_ref, &attr_prog_group)))
     {
         printk(KERN_ERR "shprd.k: cannot create sysfs programmer attrib group");
-        goto r_mem;
+        goto f_prog;
     };
 
     return 0;
 
-r_mem:
+    // last item stays: attr_prog_group
+f_prog:
+    sysfs_remove_group(kobj_ref, &attr_sync_group);
+    kobject_put(kobj_prog_ref);
+f_sync:
+    sysfs_remove_group(kobj_ref, &attr_mem_group);
+    kobject_put(kobj_sync_ref);
+f_mem:
+    sysfs_remove_group(kobj_ref, &attr_firmware_group);
     kobject_put(kobj_mem_ref);
-r_group:
+f_firmware:
     sysfs_remove_group(kobj_ref, &attr_group);
-r_state:
+f_shp_group:
     sysfs_remove_file(kobj_ref, &attr_state.attr);
-r_sysfs:
+f_shp_state:
     kobject_put(kobj_ref);
 
     return retval;
@@ -792,6 +870,10 @@ r_sysfs:
 
 void sysfs_interface_exit(void)
 {
+    sysfs_remove_group(kobj_ref, &attr_prog_group);
+    sysfs_remove_group(kobj_ref, &attr_sync_group);
+    sysfs_remove_group(kobj_ref, &attr_mem_group);
+    sysfs_remove_group(kobj_ref, &attr_firmware_group);
     sysfs_remove_group(kobj_ref, &attr_group);
     sysfs_remove_file(kobj_ref, &attr_state.attr);
     kobject_put(kobj_prog_ref);
