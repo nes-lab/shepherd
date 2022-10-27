@@ -45,8 +45,8 @@ cdef class Test:
 This section looks like a regular Python function — because it just creates a Python function that has access to the C functions. These are Python-Wrappers...
 """
 
-#def converter_initialize(*config):
-#	hvirtual_converter.converter_initialize(config)
+def converter_initialize(*config):
+	hvirtual_converter.converter_initialize(config)
 
 def converter_calc_inp_power(input_voltage_uV, input_current_nA):
 	return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)

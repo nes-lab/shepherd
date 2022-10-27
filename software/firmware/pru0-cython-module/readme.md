@@ -16,10 +16,18 @@ pip3 install pipenv
 pipenv shell
 ```
 
-### Compile Module
+### Compile and install Module
 
 ```Shell
-python3 setup.py build_ext --inplace
+python3 setup.py build_ext
+# or just
+pip3 install ./
+```
+
+### Run the testing-scratchpad
+
+```Shell
+python3 testing.py
 ```
 
 ### Cleanup
