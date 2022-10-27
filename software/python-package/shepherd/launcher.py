@@ -15,8 +15,12 @@ from threading import Event
 from threading import Thread
 from typing import NoReturn
 
-import dbus
-from periphery import GPIO
+# allow importing shepherd on x86
+try:
+    import dbus
+    from periphery import GPIO
+except ModuleNotFoundError:
+    print("WARNING: Packages missing - shp.launcher will not work")  # noqa: T201
 
 logger = logging.getLogger("shp.launcher")
 
