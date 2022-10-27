@@ -53,7 +53,6 @@ done:
 - wrote a readme to help using the code
 - ... lib compiles
 
-done:(changes in October)
 - Fixed the earlier issues with testing.py:
 	- added few cdefs[from "calibration.h", "math64_safe.h"]
 	- added corresponding .c(paths) in setup.py and few definitions in .pxy
@@ -63,6 +62,11 @@ done:(changes in October)
 	- adding cdefs
 	- introducing class to handle it as a python object
 	- see second point in todo
+
+- made setup.py more modular and explicit
+- transformed .pyx-file into class -> still without data-transformations
+- updated install-instructions
+- guessed the interface of the module for testing.py
 
 todo:
 - testing.py fails -> Segmentation Fault

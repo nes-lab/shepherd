@@ -3,10 +3,16 @@
 # sys.path.append('/home/vishal/shepherd/software/firmware/pru0-cython-module')
 # import pyximport
 
-import virtual_converter
+from virtual_converter import VirtualConverter
+
+from shepherd import VirtualSourceConfig
+
+# TODO:
+#  - install shepherd package ("pip install ./" in software/python-package)
+
+vscfg = VirtualSourceConfig()
+vconv = VirtualConverter(vscfg.to)
 
 x = int(0)
-# virtual_converter.converter_calc_out_power(x)
-# print(virtual_converter.converter_calc_inp_power(5, 6))
-print(virtual_converter.converter_initialize(x))
-# print(output)
+print(vconv.converter_calc_out_power(x))
+print(vconv.converter_calc_inp_power(5, 6))

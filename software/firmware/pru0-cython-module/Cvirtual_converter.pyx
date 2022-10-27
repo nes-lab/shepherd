@@ -22,14 +22,6 @@ The language used here is a special mix of C and Python. However it will look fa
 cdef const hvirtual_converter.ConverterConfig *cfg
 #ctypedef hvirtual_converter.ConverterConfig *const config
 
-cdef Test test=Test() # To access functions inside class Test
-cdef class Test:
-	cdef const hvirtual_converter.ConverterConfig* config
-
-	def __init__(self):
-		pass
-
-	cdef converter_initialize(self, const hvirtual_converter.ConverterConfig* config):  			hvirtual_converter.converter_initialize(self.config)
 """
 	def converter_initialize(self.config):
 		hvirtual_converter.converter_initialize(self.config)
@@ -45,37 +37,41 @@ cdef class Test:
 This section looks like a regular Python function — because it just creates a Python function that has access to the C functions. These are Python-Wrappers...
 """
 
-# def converter_initialize(*config):
-#	hvirtual_converter.converter_initialize(config)
+cdef class VirtualConverter:
+	# TODO: each FN now needs data-conversion from python-objects to c-objects and reverse for return-values
 
-def converter_calc_inp_power(input_voltage_uV, input_current_nA):
-	return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
+	def __init__(self, const hvirtual_converter.ConverterConfig* config):
+		# TODO: convert python-dict to ConverterConfig-Struct, similar to virtual_converter_model.py, line 53 and following
+		hvirtual_converter.converter_initialize(config)
 
-def converter_calc_out_power(current_adc_raw):
-	return hvirtual_converter.converter_calc_out_power(current_adc_raw)
+	def converter_calc_inp_power(self, input_voltage_uV, input_current_nA):
+		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
 
-def get_I_mid_out_nA():
-	return hvirtual_converter.get_I_mid_out_nA()
+	def converter_calc_out_power(self, current_adc_raw):
+		return hvirtual_converter.converter_calc_out_power(current_adc_raw)
 
-def get_V_intermediate_raw():
-	return hvirtual_converter.get_V_intermediate_raw()
+	def get_I_mid_out_nA(self):
+		return hvirtual_converter.get_I_mid_out_nA()
 
-def get_V_intermediate_uV():
-	return hvirtual_converter.get_V_intermediate_uV()
+	def get_V_intermediate_raw(self):
+		return hvirtual_converter.get_V_intermediate_raw()
 
-def get_P_output_fW():
-	return hvirtual_converter.get_P_output_fW()
+	def get_V_intermediate_uV(self):
+		return hvirtual_converter.get_V_intermediate_uV()
 
-def get_P_input_fW():
-	return hvirtual_converter.get_P_input_fW()
+	def get_P_output_fW(self):
+		return hvirtual_converter.get_P_output_fW()
 
-# private fn
-#def py_get_output_inv_efficiency_n4(current_nA):
-#	return get_output_inv_efficiency_n4()
+	def get_P_input_fW(self):
+		return hvirtual_converter.get_P_input_fW()
 
-def set_V_intermediate_uV(C_uV):
-	hvirtual_converter.set_V_intermediate_uV(C_uV)
+	# private fn
+	#def py_get_output_inv_efficiency_n4(current_nA):
+	#	return get_output_inv_efficiency_n4()
 
-"""	Added from Calibration.c to debug testing.py	"""
-def cal_conv_adc_raw_to_nA(current_raw):
-	return hvirtual_converter.cal_conv_adc_raw_to_nA(current_raw)
+	def set_V_intermediate_uV(self, C_uV):
+		hvirtual_converter.set_V_intermediate_uV(C_uV)
+
+	"""	Added from Calibration.c to debug testing.py	"""
+	def cal_conv_adc_raw_to_nA(self, current_raw):
+		return hvirtual_converter.cal_conv_adc_raw_to_nA(current_raw)
