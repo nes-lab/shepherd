@@ -40,8 +40,11 @@ This section looks like a regular Python function — because it just creates a 
 cdef class VirtualConverter:
 	# TODO: each FN now needs data-conversion from python-objects to c-objects and reverse for return-values
 
-	def __init__(self, const hvirtual_converter.ConverterConfig* config):
+	def __init__(self, vs_config: list):
 		# TODO: convert python-dict to ConverterConfig-Struct, similar to virtual_converter_model.py, line 53 and following
+		cdef hvirtual_converter.ConverterConfig* config
+		config.converter_mode = vs_config[0]
+		# ... either
 		hvirtual_converter.converter_initialize(config)
 
 	def converter_calc_inp_power(self, input_voltage_uV, input_current_nA):

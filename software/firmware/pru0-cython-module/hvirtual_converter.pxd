@@ -58,13 +58,13 @@ cdef extern from "commons.h":
 cdef extern from "virtual_converter.h":
 
 	# Function declarations from virtual_converter.h
-	cdef void converter_initialize(const ConverterConfig *config)
+	cdef void converter_initialize(ConverterConfig *config)
 	cdef void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA)
 	cdef void converter_calc_out_power(uint32_t current_adc_raw)
 	cdef void converter_update_cap_storage()
-	cdef void set_P_input_fW(const uint32_t P_fW)
-	cdef void set_P_output_fW(const uint32_t P_fW)
-	cdef void set_V_intermediate_uV(const uint32_t C_uV)
+	cdef void set_P_input_fW(uint32_t P_fW)
+	cdef void set_P_output_fW(uint32_t P_fW)
+	cdef void set_V_intermediate_uV(uint32_t C_uV)
 	#cdef void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value)
 
 	#cdef uint32_t converter_update_states_and_output(volatile struct SharedMem * shared_mem)

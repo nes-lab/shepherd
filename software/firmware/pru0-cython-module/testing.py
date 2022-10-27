@@ -5,13 +5,10 @@
 
 from virtual_converter import VirtualConverter
 
-from shepherd import VirtualSourceConfig
-
-# TODO:
-#  - install shepherd package ("pip install ./" in software/python-package)
+from shepherd.virtual_source_config import VirtualSourceConfig
 
 vscfg = VirtualSourceConfig()
-vconv = VirtualConverter(vscfg.to)
+vconv = VirtualConverter(vscfg.export_for_sysfs())
 
 x = int(0)
 print(vconv.converter_calc_out_power(x))
