@@ -2,7 +2,7 @@
 
 - name: Look for Kernel Module
   ansible.builtin.command: 'lsmod | grep shepherd'
-  register: modinfo_ret
+  register: kmod_ret
   failed_when: false
   changed_when: false
 
@@ -11,7 +11,7 @@
   register: modprobe_ret
   until: modprobe_ret is not failed
   retries: 5
-  when: not modinfo_ret.rc
+  when: kmod_ret.rc == 0
   changed_when: true
   # fails at least on first install -> check for presence of shepherd
   # lsmod | grep shepherd

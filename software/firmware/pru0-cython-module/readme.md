@@ -16,7 +16,7 @@ pip3 install pipenv
 pipenv shell
 ```
 
-**Note**: a local shepherd-installation is needed. Pipenv is installing it. Otherwise run: 
+**Note**: a local shepherd-installation is needed. Pipenv is installing it. Otherwise run:
 
 ```Shell
 cd ./software/python-package
