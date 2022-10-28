@@ -12,27 +12,28 @@ import numpy as np
 import yaml
 import zerorpc
 from fabric import Connection
+
 from keithley2600 import Keithley2600
 
 # NOTE: needs locally installed shepherd-package
 from shepherd.calibration import CalibrationData
 from shepherd.calibration_default import dac_voltage_to_raw
 
+# TODO: Keithley-module still relies on fork: https://github.com/orgua/keithley2600
 # TODO: change to datalib after functionally is added there
 
 logger = logging.getLogger("shp.calTool")
-consoleHandler = logging.StreamHandler()
-logger.addHandler(consoleHandler)
-logging.basicConfig(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
-- Short P6-3 and P6-4 (Current Sink and Voltage-Measurement of Harvest-Port)
-- Connect SMU Channel A/B Lo to GND (P6-2, P8-1/2)
-- Connect SMU Channel A Hi to P6-1 (SimBuf)
-- Connect SMU Channel B Hi to P6-3/4
-- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results
+- Short P6-2 and P6-4
+    - P6-2 -> VSense / Voltage-Measurement of Harvest-Port
+    - P6-2 -> VHarv / Current Sink of Harvest-Port
+- Connect SMU Channel A & B Lo to GND (P6-1, alternatively P8-1/2)
+- Connect SMU Channel A Hi to P6-3 (VSim)
+- Connect SMU Channel B Hi to P6-2/4 (VSense, VHarv)
 """
 
 INSTR_EMU = """
@@ -42,8 +43,9 @@ INSTR_EMU = """
 - Connect SMU channel A Hi to P10-2 (Target-Port A Voltage)
 - Connect SMU channel B Lo to P11-1 (Target-Port B GND)
 - Connect SMU channel B Hi to P11-2 (Target-Port B Voltage)
-- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results
 """
+
+INSTR_4WIRE = "- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results"
 
 
 def plot_calibration(measurements, calibration, file_name):
@@ -397,6 +399,8 @@ def measure(
 
         if harvester:
             click.echo(INSTR_HRVST)
+            if not smu_4wire:
+                click.echo(INSTR_4WIRE)
             usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
                 measurement_dict["harvester"] = {}
@@ -427,6 +431,8 @@ def measure(
 
         if emulator:
             click.echo(INSTR_EMU)
+            if not smu_4wire:
+                click.echo(INSTR_4WIRE)
             usr_conf = click.confirm("Confirm that everything is set up ...")
             if usr_conf:
                 measurement_dict["emulator"] = {}

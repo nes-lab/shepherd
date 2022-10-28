@@ -8,10 +8,9 @@ remotely.
 :license: MIT, see LICENSE for more details.
 """
 import dearpygui.dearpygui as dpg
-
 from shepherd_callbacks import *
 
-include('../python-package/shepherd/calibration.py')
+include("../python-package/shepherd/calibration.py")
 # changes to make 0.8-Code work with v1.3
 # - replace .add_same_line(spacing=..) with "with dpg.group: ....... dpg.add_spacer(..)
 # - id= is now tag=
