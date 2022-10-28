@@ -30,7 +30,7 @@ INSTR_HRVST = """
 ---------------------- Harvester calibration -----------------------
 - Short P6-2 and P6-4
     - P6-2 -> VSense / Voltage-Measurement of Harvest-Port
-    - P6-2 -> VHarv / Current Sink of Harvest-Port
+    - P6-4 -> VHarv / Current Sink of Harvest-Port
 - Connect SMU Channel A & B Lo to GND (P6-1, alternatively P8-1/2)
 - Connect SMU Channel A Hi to P6-3 (VSim)
 - Connect SMU Channel B Hi to P6-2/4 (VSense, VHarv)
