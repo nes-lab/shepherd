@@ -384,6 +384,9 @@ class ShepherdIO:
         Args:
             mode (str): Shepherd mode, see sysfs_interface for more
         """
+        if not sfs.pru0_firmware_is_default():
+            sfs.load_pru0_firmware("shepherd")
+
         self.mode = mode
         if mode in cal_component_list:
             self.component = mode

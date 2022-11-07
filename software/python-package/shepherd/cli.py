@@ -538,7 +538,7 @@ def launcher(led, button):
     short_help="Programmer for Target-Controller",
     context_settings={"ignore_unknown_options": True},
 )
-@click.argument("firmware-file", type=click.Path(exists=True, dir_okay=False))
+@click.argument("firmware-file", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True))
 @click.option(
     "--sel_a/--sel_b",
     default=True,
@@ -574,6 +574,12 @@ def programmer(firmware_file, sel_a, voltage, speed, target):
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
 
+        protocol_dict = {
+            "nrf52": "SWD",
+            "msp430": "SBW",
+        }
+        sysfs_interface.load_pru0_firmware(protocol_dict[target])
+
         try:
             sd.shared_mem.write_firmware(fw.read())
             sysfs_interface.write_programmer_ctrl(
@@ -595,6 +601,7 @@ def programmer(firmware_file, sel_a, voltage, speed, target):
         logger.info(
             "Finished Programming!,\tctrl = %s", sysfs_interface.read_programmer_ctrl()
         )
+        sysfs_interface.load_pru0_firmware("shepherd")
 
 
 if __name__ == "__main__":

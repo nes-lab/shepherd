@@ -441,6 +441,33 @@ def check_programmer() -> str:
         return file.read().rstrip()
 
 
+pru0_firmwares = [
+    "am335x-pru0-shepherd-fw",
+    "am335x-pru0-programmer-SWD-fw",
+    "am335x-pru0-programmer-SBW-fw",
+]
+
+
+def load_pru0_firmware(value: str = "shepherd") -> NoReturn:
+    """
+
+    Args:
+        value: unique part of valid file-name like shepherd, swd, sbw (not case sensitive)
+    """
+    choice = pru0_firmwares[0]  # default
+    for firmware in pru0_firmwares:
+        if value.lower() in firmware.lower():
+            choice = firmware
+    with open(sysfs_path / "pru0_firmware", "w") as file:
+        logger.debug("set pru0-firmware to '%s'", choice)
+        file.write(choice)
+
+
+def pru0_firmware_is_default() -> bool:
+    with open(sysfs_path / "pru0_firmware") as file:
+        return file.read().rstrip() in pru0_firmwares[0]
+
+
 attribs = [
     "mode",
     "state",
