@@ -407,18 +407,31 @@ def target(ctx, port, on, voltage, sel_a):
         for cnx in ctx.obj["herd"].group:
             start_openocd(cnx, ctx.obj["herd"].hostnames[cnx.host])
     else:
-        replies1 = ctx.obj["herd"].run_cmd(sudo=True, cmd="systemctl stop shepherd-openocd")
-        replies2 = ctx.obj["herd"].run_cmd(sudo=True, cmd="shepherd-sheep target-power --off")
-        exit_code = max([reply.exited for reply in replies1] + [reply.exited for reply in replies2])
+        replies1 = ctx.obj["herd"].run_cmd(
+            sudo=True, cmd="systemctl stop shepherd-openocd"
+        )
+        replies2 = ctx.obj["herd"].run_cmd(
+            sudo=True, cmd="shepherd-sheep target-power --off"
+        )
+        exit_code = max(
+            [reply.exited for reply in replies1] + [reply.exited for reply in replies2]
+        )
         sys.exit(exit_code)
+
 
 # @target.result_callback()  # TODO: disabled for now: errors in recent click-versions
 @click.pass_context
 def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
-        replies1 = ctx.obj["herd"].run_cmd(sudo=True, cmd="systemctl stop shepherd-openocd")
-        replies2 = ctx.obj["herd"].run_cmd(sudo=True, cmd="shepherd-sheep target-power --off")
-        exit_code = max([reply.exited for reply in replies1] + [reply.exited for reply in replies2])
+        replies1 = ctx.obj["herd"].run_cmd(
+            sudo=True, cmd="systemctl stop shepherd-openocd"
+        )
+        replies2 = ctx.obj["herd"].run_cmd(
+            sudo=True, cmd="shepherd-sheep target-power --off"
+        )
+        exit_code = max(
+            [reply.exited for reply in replies1] + [reply.exited for reply in replies2]
+        )
         sys.exit(exit_code)
 
 
@@ -501,11 +514,15 @@ def reset(ctx):
 #                               Pru Programmer
 # #############################################################################
 
+
 @cli.command(
     short_help="Programmer for Target-Controller",
     context_settings={"ignore_unknown_options": True},
 )
-@click.argument("firmware-file", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True))
+@click.argument(
+    "firmware-file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
 @click.option(
     "--sel_a/--sel_b",
     default=True,

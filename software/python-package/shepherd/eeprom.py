@@ -52,7 +52,9 @@ class CapeData:
         self.data = data
 
     @classmethod
-    def from_values(cls, serial_number: str, version: str = "24B0", cal_date: str = "2022-01-01"):
+    def from_values(
+        cls, serial_number: str, version: str = "24B0", cal_date: str = "2022-01-01"
+    ):
         """Build the object from defaults and user-provided values
 
         Args:

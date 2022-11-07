@@ -480,7 +480,10 @@ def read(infofile, cal_file):
     "where FILENAME is YAML-formatted file "
     "containing calibration measurements"
 )
-@click.argument("filename", type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False))
+@click.argument(
+    "filename",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
 @click.option(
     "--output_path",
     "-o",

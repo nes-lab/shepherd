@@ -181,7 +181,10 @@ class Herd:
         cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
 
     def put_file(
-        self, src: [StringIO, Path, str], dst: [Path, str], force_overwrite: bool = False
+        self,
+        src: [StringIO, Path, str],
+        dst: [Path, str],
+        force_overwrite: bool = False,
     ) -> None:
 
         if isinstance(src, StringIO):
