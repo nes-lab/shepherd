@@ -181,7 +181,7 @@ class Herd:
         cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
 
     def put_file(
-        self, src: [StringIO, Path, str], dst: [Path, str], force_overwrite: bool
+        self, src: [StringIO, Path, str], dst: [Path, str], force_overwrite: bool = False
     ) -> None:
 
         if isinstance(src, StringIO):
@@ -315,8 +315,8 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        reply = self.run_cmd(sudo=False, cmd="date +%s")
-        ts_nows = [float(value.stdout) for value in reply.values()]
+        replies = self.run_cmd(sudo=False, cmd="date +%s")
+        ts_nows = [float(reply.stdout) for reply in replies]
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
         ts_diff = ts_max - ts_min
@@ -367,11 +367,11 @@ class Herd:
         :param warn:
         :return: True is one node is still active
         """
-        reply = self.run_cmd(sudo=True, cmd="systemctl status shepherd")
+        replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd")
         active = False
 
         for i, cnx in enumerate(self.group):
-            if reply[i].exited != 3:
+            if replies[i].exited != 3:
                 active = True
                 if warn:
                     logger.warning(
@@ -383,27 +383,34 @@ class Herd:
                     )
         return active
 
-    def start_measurement(self) -> None:
+    def start_measurement(self) -> int:
         """Starts shepherd service on the group of hosts."""
         if self.check_state(warn=True):
             logger.info("-> won't start while shepherd-instances are active")
+            return 1
         else:
-            self.run_cmd(sudo=True, cmd="systemctl start shepherd")
+            replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
+            return max([reply.exited for reply in replies])
 
-    def stop_measurement(self) -> bool:
+    def stop_measurement(self) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
-        self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
-        logger.info("Shepherd was forcefully stopped.")
-        return True
+        replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
+        exit_code = max([reply.exited for reply in replies])
+        logger.info("Shepherd was forcefully stopped")
+        if exit_code > 0:
+            logger.debug("-> max exit-code = %d", exit_code)
+        return exit_code
 
-    def poweroff(self, restart: bool) -> None:
+    def poweroff(self, restart: bool) -> bool:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
-            self.run_cmd(sudo=True, cmd="reboot")
+            replies = self.run_cmd(sudo=True, cmd="reboot")
             logger.info("Command for rebooting nodes was issued")
         else:
-            self.run_cmd(sudo=True, cmd="poweroff")
+            replies = self.run_cmd(sudo=True, cmd="poweroff")
             logger.info("Command for powering off nodes was issued")
+        exit_code = max([reply.exited for reply in replies])
+        return exit_code
 
     def await_stop(self, timeout: int = 30) -> bool:
         ts_end = time.time() + timeout

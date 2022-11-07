@@ -69,7 +69,8 @@ def cli(ctx, inventory, limit, user, key_filename, verbose) -> click.Context:
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
 def poweroff(ctx, restart):
-    ctx.obj["herd"].poweroff(restart)
+    exit_code = ctx.obj["herd"].poweroff(restart)
+    sys.exit(exit_code)
 
 
 @cli.command(short_help="Run COMMAND on the shell")
@@ -77,10 +78,13 @@ def poweroff(ctx, restart):
 @click.argument("command", type=str)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def run(ctx, command, sudo):
-    reply = ctx.obj["herd"].run_cmd(sudo, command)
+    replies = ctx.obj["herd"].run_cmd(sudo, command)
     for i, hostname in enumerate(ctx.obj["herd"].hostnames.values()):
         click.echo(f"\n************** {hostname} **************")
-        click.echo(reply[i].stdout)
+        click.echo(replies[i].stdout)
+        click.echo(f"exit-code = {replies[i].exited}")
+    exit_code = max([reply.exited for reply in replies])
+    sys.exit(exit_code)
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
@@ -144,7 +148,10 @@ def harvester(
 
     if not no_start:
         logger.info("Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay)
-        ctx.obj["herd"].start_measurement()
+        exit_code = ctx.obj["herd"].start_measurement()
+        logger.info("Shepherd started.")
+        if exit_code > 0:
+            logger.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(
@@ -251,7 +258,10 @@ def emulator(
 
     if not no_start:
         logger.info("Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay)
-        ctx.obj["herd"].start_measurement()
+        exit_code = ctx.obj["herd"].start_measurement()
+        logger.info("Shepherd started.")
+        if exit_code > 0:
+            logger.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(
@@ -263,8 +273,10 @@ def start(ctx) -> None:
         logger.info("Shepherd still active, will skip this command!")
         sys.exit(1)
     else:
-        ctx.obj["herd"].start_measurement()
+        exit_code = ctx.obj["herd"].start_measurement()
         logger.info("Shepherd started.")
+        if exit_code > 0:
+            logger.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(short_help="Information about current shepherd measurement")
@@ -280,8 +292,10 @@ def check(ctx) -> None:
 @cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
 def stop(ctx) -> None:
-    ctx.obj["herd"].stop_measurement()
+    exit_code = ctx.obj["herd"].stop_measurement()
     logger.info("Shepherd stopped.")
+    if exit_code > 0:
+        logger.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(
@@ -348,8 +362,8 @@ def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> 
         if ctx.obj["herd"].await_stop(timeout=30):
             raise Exception("shepherd still active after timeout")
 
-    reply = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
-    sys.exit(reply)  # TODO: wrong? maybe sum up?
+    failed = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
+    sys.exit(failed)
 
 
 # #############################################################################
@@ -393,16 +407,19 @@ def target(ctx, port, on, voltage, sel_a):
         for cnx in ctx.obj["herd"].group:
             start_openocd(cnx, ctx.obj["herd"].hostnames[cnx.host])
     else:
-        ctx.obj["herd"].run_cmd(sudo=True, cmd="systemctl stop shepherd-openocd")
-        ctx.obj["herd"].run_cmd(sudo=True, cmd="shepherd-sheep target-power --off")
-
+        replies1 = ctx.obj["herd"].run_cmd(sudo=True, cmd="systemctl stop shepherd-openocd")
+        replies2 = ctx.obj["herd"].run_cmd(sudo=True, cmd="shepherd-sheep target-power --off")
+        exit_code = max([reply.exited for reply in replies1] + [reply.exited for reply in replies2])
+        sys.exit(exit_code)
 
 # @target.result_callback()  # TODO: disabled for now: errors in recent click-versions
 @click.pass_context
 def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
-        ctx.obj["herd"].run_cmd(sudo=True, cmd="systemctl stop shepherd-openocd")
-        ctx.obj["herd"].run_cmd(sudo=True, cmd="shepherd-sheep target-power --off")
+        replies1 = ctx.obj["herd"].run_cmd(sudo=True, cmd="systemctl stop shepherd-openocd")
+        replies2 = ctx.obj["herd"].run_cmd(sudo=True, cmd="shepherd-sheep target-power --off")
+        exit_code = max([reply.exited for reply in replies1] + [reply.exited for reply in replies2])
+        sys.exit(exit_code)
 
 
 def start_openocd(cnx, hostname, timeout=30):
