@@ -383,59 +383,59 @@ def eeprom():
 @click.option(
     "--infofile",
     "-i",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with cape info",
 )
 @click.option(
     "--version",
     "-v",
     type=click.STRING,
-    default="22A0",
-    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision",
+    default="24A0",
+    help="Cape version number, max 4 Char, e.g. 22A0, reflecting hardware revision",
 )
 @click.option(
     "--serial_number",
     "-s",
     type=click.STRING,
-    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment",
+    help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
+)
+@click.option(
+    "--cal_date",
+    "-d",
+    type=click.STRING,
+    help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
 @click.option(
     "--cal-file",
     "-c",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with calibration data",
 )
-@click.option(
-    "--use_cal_default",
-    is_flag=True,
-    help="Use default calibration data (skip eeprom)",
-)
-def write(infofile, version, serial_number, cal_file, use_cal_default):
+def write(infofile, version, serial_number, cal_date, cal_file):
     if infofile is not None:
-        if serial_number is not None or version is not None:
-            raise click.UsageError(
-                "--infofile and --version/--serial_number" " are mutually exclusive"
-            )
         cape_data = CapeData.from_yaml(infofile)
+        # overwrite fields that were provided additionally
+        if version is not None:
+            cape_data.data["version"] = version
+        if serial_number is not None:
+            cape_data.data["serial_number"] = serial_number
+        if cal_date is not None:
+            cape_data.data["cal_date"] = cal_date
         with EEPROM() as storage:
             storage.write_cape_data(cape_data)
-    elif serial_number is not None or version is not None:
-        if version is None or serial_number is None:
-            raise click.UsageError("--version and --serial_number are required")
-        cape_data = CapeData.from_values(serial_number, version)
+    else:
+        if version is None:
+            raise click.UsageError("--version is required")
+        if serial_number is None:
+            raise click.UsageError("--serial_number is required")
+        if cal_date is None:
+            raise click.UsageError("--cal_date is required")
+        cape_data = CapeData.from_values(serial_number, version, cal_date)
         with EEPROM() as storage:
             storage.write_cape_data(cape_data)
 
     if cal_file is not None:
-        if use_cal_default:
-            raise click.UsageError(
-                "--use_cal_default and --cal-file are mutually exclusive"
-            )
         cal = CalibrationData.from_yaml(cal_file)
-        with EEPROM() as storage:
-            storage.write_calibration(cal)
-    if use_cal_default:
-        cal = CalibrationData.from_default()
         with EEPROM() as storage:
             storage.write_calibration(cal)
 
@@ -480,7 +480,7 @@ def read(infofile, cal_file):
     "where FILENAME is YAML-formatted file "
     "containing calibration measurements"
 )
-@click.argument("filename", type=click.Path(exists=True))
+@click.argument("filename", type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False))
 @click.option(
     "--output_path",
     "-o",
@@ -538,7 +538,10 @@ def launcher(led, button):
     short_help="Programmer for Target-Controller",
     context_settings={"ignore_unknown_options": True},
 )
-@click.argument("firmware-file", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True))
+@click.argument(
+    "firmware-file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
 @click.option(
     "--sel_a/--sel_b",
     default=True,
