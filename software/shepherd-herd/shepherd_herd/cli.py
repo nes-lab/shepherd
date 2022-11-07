@@ -349,7 +349,7 @@ def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> 
             raise Exception("shepherd still active after timeout")
 
     reply = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
-    sys.exit(reply)
+    sys.exit(reply)  # TODO: wrong? maybe sum up?
 
 
 # #############################################################################
@@ -483,6 +483,43 @@ def reset(ctx):
 # #############################################################################
 #                               Pru Programmer
 # #############################################################################
+
+@cli.command(
+    short_help="Programmer for Target-Controller",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("firmware-file", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True))
+@click.option(
+    "--sel_a/--sel_b",
+    default=True,
+    help="Choose Target-Port for programming",
+)
+@click.option(
+    "--voltage",
+    "-v",
+    type=click.FLOAT,
+    default=3.0,
+    help="Target supply voltage",
+)
+@click.option(
+    "--speed", "-s", type=click.INT, default=1_000_000, help="Programming-Datarate"
+)
+@click.option(
+    "--target",
+    "-t",
+    type=click.Choice(["nrf52", "msp430"]),
+    default="nrf52",
+    help="Target chip",
+)
+@click.pass_context
+def programmer(ctx, firmware_file, sel_a, voltage, speed, target):
+    temp_file = "/tmp/target_image.bin"
+    ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
+    command = f"shepherd-sheep programmer {temp_file} --sel_{'a' if sel_a else 'b'} -v {voltage} -s {speed} -t {target}"
+    replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
+    exit_code = max([reply.exited for reply in replies])
+    sys.exit(exit_code)
+
 
 if __name__ == "__main__":
     cli()
