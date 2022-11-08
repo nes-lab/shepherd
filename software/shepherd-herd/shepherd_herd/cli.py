@@ -547,9 +547,12 @@ def reset(ctx):
 )
 @click.pass_context
 def programmer(ctx, firmware_file, sel_a, voltage, speed, target):
-    temp_file = "/tmp/target_image.bin"
+    temp_file = "/tmp/target_image.bin"  # noqa: S108
     ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
-    command = f"shepherd-sheep programmer {temp_file} --sel_{'a' if sel_a else 'b'} -v {voltage} -s {speed} -t {target}"
+    command = (
+        f"shepherd-sheep programmer {temp_file} --sel_{'a' if sel_a else 'b'} "
+        f"-v {voltage} -s {speed} -t {target}"
+    )
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
     exit_code = max([reply.exited for reply in replies])
     sys.exit(exit_code)

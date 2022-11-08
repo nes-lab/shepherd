@@ -1,9 +1,19 @@
+from datetime import datetime
 from pathlib import Path
+from time import time
 
 import click
+import numpy as np
 import yaml
+
+from .calibrate import INSTR_4WIRE
+from .calibrate import INSTR_CAL_EMU
+from .calibrate import INSTR_CAL_HRV
+from .calibrate import Cal
+from .calibrate import logger
 from .calibrate import set_verbose_level
-from .calibrate import logger, Cal, INSTR_HRVST, INSTR_4WIRE, INSTR_EMU
+from .profiler import INSTR_PROFILE_SHP
+from .profiler import Profiler
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
@@ -31,9 +41,8 @@ def cli(verbose):
 @click.option(
     "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
 )
-@click.option("--all", "all_", is_flag=True, help="handle both, harvester and emulator")
-@click.option("--harvester", "-h", is_flag=True, help="handle only harvester")
-@click.option("--emulator", "-e", is_flag=True, help="handle only emulator")
+@click.option("--harvester", "-h", is_flag=True, help="only handle harvester")
+@click.option("--emulator", "-e", is_flag=True, help="only handle emulator")
 @click.option(
     "--smu-4wire",
     is_flag=True,
@@ -51,20 +60,12 @@ def measure(
     password,
     outfile,
     smu_ip,
-    all_,
     harvester,
     emulator,
     smu_4wire,
     smu_nplc,
 ):
-
-    if all_:
-        if harvester or emulator:
-            raise click.UsageError("Either provide --all or individual flags")
-
-        harvester = True
-        emulator = True
-    if not any([all_, harvester, emulator]):
+    if any([harvester, emulator]):
         harvester = True
         emulator = True
 
@@ -79,32 +80,40 @@ def measure(
     shpcal = Cal(host, user, password, smu_ip, smu_4wire, smu_nplc)
 
     if harvester:
-        click.echo(INSTR_HRVST)
+        click.echo(INSTR_CAL_HRV)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        usr_conf = click.confirm("Confirm that everything is set up ...")
+        usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
             results["harvester"] = shpcal.measure_harvester()
 
     if emulator:
-        click.echo(INSTR_EMU)
+        click.echo(INSTR_CAL_EMU)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        usr_conf = click.confirm("Confirm that everything is set up ...")
+        usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
             results["emulator"] = shpcal.measure_emulator()
 
     out_dict = {"node": host, "measurements": results}
     res_repr = yaml.dump(out_dict, default_flow_style=False)
-    if outfile is not None:
-        with open(outfile, "w") as f:
-            f.write(res_repr)
-    else:
-        logger.info(res_repr)
+    logger.info(res_repr)
+
+    if outfile is None:
+        timestamp = datetime.fromtimestamp(time())
+        timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+        outfile = Path(f"./{timestring}_shepherd_cape_measurement.yml")
+        logger.debug("No filename provided -> set to '%s'.", outfile)
+    with open(outfile, "w") as f:
+        f.write(res_repr)
+    logger.info("Saved Cal-Measurement to '%s'.", outfile)
 
 
 @cli.command()
-@click.argument("infile", type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False))
+@click.argument(
+    "infile",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
 @click.option("--outfile", "-o", type=click.Path())
 @click.option(
     "--plot",
@@ -126,8 +135,16 @@ def convert(infile, outfile, plot: bool):
     default=None,
     help="Host User Password -> only needed when key-credentials are missing",
 )
-@click.option("--cal_file", "-c", type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False))
-@click.option("--measurement_file", "-m", type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False))
+@click.option(
+    "--cal_file",
+    "-c",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
+@click.option(
+    "--measurement_file",
+    "-m",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
 @click.option(
     "--version",
     "-v",
@@ -147,15 +164,16 @@ def convert(infile, outfile, plot: bool):
     type=click.STRING,
     help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
-def write(host, user, password, cal_file, measurement_file, version, serial_number, cal_date):
+def write(
+    host, user, password, cal_file, measurement_file, version, serial_number, cal_date
+):
+    if not any([cal_file, measurement_file]):
+        raise click.UsageError("provide one of cal-file or measurement-file")
+    if all([cal_file, measurement_file]):
+        raise click.UsageError("provide only one of cal-file or measurement-file")
 
-    if cal_file is None:
-        if measurement_file is None:
-            raise click.UsageError("provide one of cal-file or measurement-file")
+    if measurement_file is not None:
         cal_file = Cal.convert(measurement_file)
-    else:
-        if measurement_file is not None:
-            raise click.UsageError("provide only one of cal-file or measurement-file")
 
     shpcal = Cal(host, user, password)
     shpcal.write(cal_file, serial_number, version, cal_date)
@@ -175,6 +193,97 @@ def write(host, user, password, cal_file, measurement_file, version, serial_numb
 def read(host, user, password):
     shpcal = Cal(host, user, password)
     shpcal.read()
+
+
+@cli.command()
+@click.argument("host", type=str)
+@click.option("--user", "-u", type=str, default="joe", help="Host Username")
+@click.option(
+    "--password",
+    "-p",
+    type=str,
+    default=None,
+    help="Host User Password -> only needed when key-credentials are missing",
+)
+@click.option(
+    "--outfile",
+    "-o",
+    type=click.Path(),
+    help="save file, if no filename is provided the hostname will be used",
+)
+@click.option(
+    "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
+)
+@click.option(
+    "--smu-4wire",
+    is_flag=True,
+    help="use 4wire-mode for measuring voltage (recommended)",
+)
+@click.option(
+    "--smu-nplc",
+    type=float,
+    default=16,
+    help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)",
+)
+@click.option("--harvester", "-h", is_flag=True, help="only handle harvester")
+@click.option("--emulator", "-e", is_flag=True, help="only handle emulator")
+@click.option(
+    "--short",
+    "-s",
+    is_flag=True,
+    help="reduce voltage / current steps for faster profiling (2x faster)",
+)
+def profile(
+    host,
+    user,
+    password,
+    outfile,
+    smu_ip,
+    smu_4wire,
+    smu_nplc,
+    harvester,
+    emulator,
+    short,
+):
+    if any([harvester, emulator]):
+        harvester = True
+        emulator = True
+
+    time_now = time()
+    components = ("_emu" if emulator else "") + ("_hrv" if harvester else "")
+    if outfile is None:
+        timestamp = datetime.fromtimestamp(time_now)
+        timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+        outfile = Path(f"./{timestring}_shepherd_cape")
+    if short:
+        file_path = outfile.stem + "_profile_short" + components + ".npz"
+    else:
+        file_path = outfile.stem + "_profile_full" + components + ".npz"
+
+    shpcal = Cal(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    profiler = Profiler(shpcal, short)
+    results_hrv = results_emu_a = results_emu_b = None
+
+    click.echo(INSTR_PROFILE_SHP)
+    if not smu_4wire:
+        click.echo(INSTR_4WIRE)
+    logger.info(
+        " -> Profiler will sweep through %d voltages and %d currents",
+        len(profiler.voltages_V),
+        len(profiler.currents_A),
+    )
+    click.confirm("Confirm that everything is set up ...", default=True)
+
+    if harvester:
+        results_hrv = profiler.measure_harvester()
+    if emulator:
+        results_emu_a = profiler.measure_emulator_a()
+        results_emu_b = profiler.measure_emulator_b()
+
+    np.savez_compressed(
+        file_path, emu_a=results_emu_a, emu_b=results_emu_b, hrv=results_hrv
+    )
+    logger.info("Profiling took %.1f s", time() - time_now)
 
 
 if __name__ == "__main__":

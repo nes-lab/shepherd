@@ -2,7 +2,8 @@
 import logging
 import time
 from pathlib import Path
-from typing import Union
+from typing import NoReturn
+from typing import Optional
 
 import msgpack
 import msgpack_numpy
@@ -11,11 +12,13 @@ import yaml
 import zerorpc
 from fabric import Connection
 from keithley2600 import Keithley2600
-from shepherd.calibration_default import dac_voltage_to_raw
+
 from shepherd.calibration import CalibrationData
+from shepherd.calibration_default import dac_voltage_to_raw
+
 from .plot import plot_calibration
 
-INSTR_HRVST = """
+INSTR_CAL_HRV = """
 ---------------------- Harvester calibration -----------------------
 - Short P6-2 and P6-4
     - P6-2 -> VSense / Voltage-Measurement of Harvest-Port
@@ -25,7 +28,7 @@ INSTR_HRVST = """
 - Connect SMU Channel B Hi to P6-2/4 (VSense, VHarv)
 """
 
-INSTR_EMU = """
+INSTR_CAL_EMU = """
 ---------------------- Emulator calibration -----------------------
 - remove targets from target-ports
 - Connect SMU channel A Lo to P10-1 (Target-Port A GND)
@@ -59,13 +62,21 @@ class Cal:
 
     _cnx: Connection = None
     _host: str = None
-    _sheep: zerorpc.Client = None
-    _kth: Keithley2600() = None
+    sheep: zerorpc.Client = None
+    kth: Keithley2600() = None
 
     _pwrline_cycles: float = None
     _mode_4wire: bool = None
 
-    def __init__(self, host, user, password: str = None, smu_ip: str = None, mode_4wire: bool = True, pwrline_cycles: float = 16):
+    def __init__(
+        self,
+        host,
+        user,
+        password: str = None,
+        smu_ip: str = None,
+        mode_4wire: bool = True,
+        pwrline_cycles: float = 16,
+    ):
 
         if password is not None:
             fabric_args = {"password": password}
@@ -76,17 +87,18 @@ class Cal:
         self._pwrline_cycles = min(max(pwrline_cycles, 0.001), 25)
 
         self._host = host
-        self._sheep = zerorpc.Client(timeout=60, heartbeat=20)
+        self.sheep = zerorpc.Client(timeout=60, heartbeat=20)
         self._cnx = Connection(host, user=user, connect_kwargs=fabric_args)
 
         if smu_ip is not None:
-            self._kth = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
+            self.kth = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
 
         # enter
         self._cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
-        self._sheep.connect(f"tcp://{host}:4242")
-        if self._kth is not None:
-            self._kth.reset()
+        time.sleep(2)
+        self.sheep.connect(f"tcp://{host}:4242")
+        if self.kth is not None:
+            self.kth.reset()
 
     def __del__(self):
         # ... overcautious
@@ -94,28 +106,32 @@ class Cal:
         self._cnx.close()
         del self._cnx
 
-    def set_smu_auto_on(self, smu):
+    def set_smu_auto_on(self, smu) -> NoReturn:
         smu.source.output = smu.OUTPUT_ON
         smu.measure.autozero = smu.AUTOZERO_AUTO
         smu.measure.autorangev = smu.AUTORANGE_ON
         smu.measure.autorangei = smu.AUTORANGE_ON
         smu.measure.nplc = self._pwrline_cycles
 
-    def set_smu_to_vsource(self, smu, value_v: float, limit_i: float):
+    def set_smu_to_vsource(self, smu, value_v: float, limit_i: float) -> float:
+        value_v = min(max(value_v, 0.0), 5.0)
         smu.sense = smu.SENSE_REMOTE if self._mode_4wire else smu.SENSE_LOCAL
         smu.source.levelv = value_v
         smu.source.limiti = limit_i
         smu.source.func = smu.OUTPUT_DCVOLTS
         smu.source.autorangev = smu.AUTORANGE_ON
         self.set_smu_auto_on(smu)
+        return value_v
 
-    def set_smu_as_isource(self, smu, value_i: float, limit_v: float):
+    def set_smu_to_isource(self, smu, value_i: float, limit_v: float = 5.0) -> float:
+        value_i = min(max(value_i, -0.050), 0.050)
         smu.sense = smu.SENSE_REMOTE if self._mode_4wire else smu.SENSE_LOCAL
         smu.source.leveli = value_i
         smu.source.limitv = limit_v
         smu.source.func = smu.OUTPUT_DCAMPS
         smu.source.autorangei = smu.AUTORANGE_ON
         self.set_smu_auto_on(smu)
+        return value_i
 
     @staticmethod
     def reject_outliers(data, m=2.0):
@@ -131,13 +147,15 @@ class Cal:
         dac_voltage_V = 4.5
         dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
-        mode_old = self._sheep.switch_shepherd_mode("hrv_adc_read")
+        mode_old = self.sheep.switch_shepherd_mode("hrv_adc_read")
         logger.debug(
             " -> setting dac-voltage to %s V (raw = %s) -> upper limit now max",
             dac_voltage_V,
             dac_voltage_raw,
         )
-        self._sheep.set_aux_target_voltage_raw((2 ** 20) + dac_voltage_raw, also_main=True)
+        self.sheep.set_aux_target_voltage_raw(
+            (2**20) + dac_voltage_raw, also_main=True
+        )
 
         self.set_smu_to_vsource(smu, 0.0, smu_current_A)
 
@@ -145,9 +163,9 @@ class Cal:
         for voltage_V in smu_voltages_V:
             smu.source.levelv = voltage_V
             time.sleep(0.5)
-            self._sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
+            self.sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
 
-            meas_enc = self._sheep.sample_from_pru(40)  # captures # buffers
+            meas_enc = self.sheep.sample_from_pru(40)  # captures # buffers
             meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
             adc_current_raw = float(np.mean(self.reject_outliers(meas_rec[0])))
 
@@ -171,32 +189,36 @@ class Cal:
             )
 
         smu.source.output = smu.OUTPUT_OFF
-        self._sheep.switch_shepherd_mode(mode_old)
+        self.sheep.switch_shepherd_mode(mode_old)
         return results
 
-    def measure_harvester_adc_current(self, smu) -> list:  # TODO: combine with previous FN
+    def measure_harvester_adc_current(
+        self, smu
+    ) -> list:  # TODO: combine with previous FN
 
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
         dac_voltage_V = 2.5
         dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
-        mode_old = self._sheep.switch_shepherd_mode("hrv_adc_read")
+        mode_old = self.sheep.switch_shepherd_mode("hrv_adc_read")
         logger.debug(
             " -> setting dac-voltage to %s V (raw = %s)",
             dac_voltage_V,
             dac_voltage_raw,
         )
-        self._sheep.set_aux_target_voltage_raw((2**20) + dac_voltage_raw, also_main=True)
+        self.sheep.set_aux_target_voltage_raw(
+            (2**20) + dac_voltage_raw, also_main=True
+        )
 
-        self.set_smu_as_isource(smu, 0.0, 3.0)
+        self.set_smu_to_isource(smu, 0.0, 3.0)
 
         results = []
         for current_A in sm_currents_A:
             smu.source.leveli = current_A
             time.sleep(0.5)
-            self._sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
+            self.sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
 
-            meas_enc = self._sheep.sample_from_pru(40)  # captures # buffers
+            meas_enc = self.sheep.sample_from_pru(40)  # captures # buffers
             meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
             adc_filtered = self.reject_outliers(meas_rec[0])
             outlier_rate = 100 * (1 - adc_filtered.size / meas_rec[0].size)
@@ -217,7 +239,7 @@ class Cal:
             )
 
         smu.source.output = smu.OUTPUT_OFF
-        self._sheep.switch_shepherd_mode(mode_old)
+        self.sheep.switch_shepherd_mode(mode_old)
         return results
 
     def measure_emulator_current(self, smu) -> list:
@@ -225,22 +247,24 @@ class Cal:
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
         dac_voltage_V = 2.5
 
-        mode_old = self._sheep.switch_shepherd_mode("emu_adc_read")
+        mode_old = self.sheep.switch_shepherd_mode("emu_adc_read")
         logger.debug(" -> setting dac-voltage to %s V", dac_voltage_V)
         # write both dac-channels of emulator
-        self._sheep.set_aux_target_voltage_raw(
+        self.sheep.set_aux_target_voltage_raw(
             (2**20) + dac_voltage_to_raw(dac_voltage_V), also_main=True
         )  # TODO: rpc seems to have trouble with named parameters, so 2**20 is a bugfix
 
-        self.set_smu_as_isource(smu, 0.0, 3.0)
+        self.set_smu_to_isource(smu, 0.0, 3.0)
 
         results = []
         for current_A in sm_currents_A:
-            smu.source.leveli = -current_A  # negative current, because smu acts as a drain
+            smu.source.leveli = (
+                -current_A
+            )  # negative current, because smu acts as a drain
             time.sleep(0.5)
-            self._sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
+            self.sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
 
-            meas_enc = self._sheep.sample_from_pru(40)  # captures # buffers
+            meas_enc = self.sheep.sample_from_pru(40)  # captures # buffers
             meas_rec = msgpack.unpackb(meas_enc, object_hook=msgpack_numpy.decode)
             adc_filtered = self.reject_outliers(meas_rec[0])
             outlier_rate = 100 * (1 - adc_filtered.size / meas_rec[0].size)
@@ -261,25 +285,26 @@ class Cal:
             )
 
         smu.source.output = smu.OUTPUT_OFF
-        self._sheep.switch_shepherd_mode(mode_old)
+        self.sheep.switch_shepherd_mode(mode_old)
         return results
 
-    def measure_dac_voltage(self, smu, dac_bitmask) -> list:
+    def measure_dac_voltage(self, smu, dac_bitmask, drain: bool = False) -> list:
 
         smu_current_A = 0.1e-3
+        if drain:  # for emulator
+            smu_current_A = -smu_current_A
         voltages_V = np.linspace(0.3, 2.5, 12)
 
         voltages_raw = [dac_voltage_to_raw(val) for val in voltages_V]
 
         # write both dac-channels of emulator
-        self._sheep.dac_write(dac_bitmask, 0)
+        self.sheep.dac_write(dac_bitmask, 0)
 
-        self.set_smu_as_isource(smu, smu_current_A, 5.0)
-        # TODO: used for emu & hrv, add parameter for drain and src
+        self.set_smu_to_isource(smu, smu_current_A, 5.0)
 
         results = []
         for _iter, _val in enumerate(voltages_raw):
-            self._sheep.dac_write(dac_bitmask, _val)
+            self.sheep.dac_write(dac_bitmask, _val)
             time.sleep(0.5)
             smu.measure.v()
             meas_series = []
@@ -307,51 +332,63 @@ class Cal:
     def measure_harvester(self) -> dict:
         results = {}
         logger.info("Measurement - Harvester - ADC . Voltage")
-        results["adc_voltage"] = self.measure_harvester_adc_voltage(self._kth.smub)
+        results["adc_voltage"] = self.measure_harvester_adc_voltage(self.kth.smub)
 
         logger.info("Measurement - Harvester - ADC . Current")
-        results["adc_current"] = self.measure_harvester_adc_current(self._kth.smub)
+        results["adc_current"] = self.measure_harvester_adc_current(self.kth.smub)
 
         logger.info("Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
-        results["dac_voltage_a"] = self.measure_dac_voltage(self._kth.smua, 0b0001)
+        results["dac_voltage_a"] = self.measure_dac_voltage(self.kth.smua, 0b0001)
 
         logger.info("Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
-        results["dac_voltage_b"] = self.measure_dac_voltage(self._kth.smub, 0b0010)
+        results["dac_voltage_b"] = self.measure_dac_voltage(self.kth.smub, 0b0010)
         return results
 
     def measure_emulator(self) -> dict:
         results = {}
         logger.info("Measurement - Emulator - ADC . Current - Target A")
         # targetA-Port will get the monitored dac-channel-b
-        self._sheep.select_target_for_power_tracking(True)
-        results["adc_current"] = self.measure_emulator_current(self._kth.smua)
+        self.sheep.select_target_for_power_tracking(True)
+        results["adc_current"] = self.measure_emulator_current(self.kth.smua)
 
         logger.info("Measurement - Emulator - ADC . Current - Target B")
         # targetB-Port will get the monitored dac-channel-b
-        self._sheep.select_target_for_power_tracking(False)
+        self.sheep.select_target_for_power_tracking(False)
         # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
-        results["adc_voltage"] = self.measure_emulator_current(self._kth.smub)
+        results["adc_voltage"] = self.measure_emulator_current(self.kth.smub)
 
-        self._sheep.select_target_for_power_tracking(False)  # routes DAC.A to TGT.A to SMU-A
+        self.sheep.select_target_for_power_tracking(
+            False
+        )  # routes DAC.A to TGT.A to SMU-A
         logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
-        results["dac_voltage_a"] = self.measure_dac_voltage(self._kth.smua, 0b1100)
+        results["dac_voltage_a"] = self.measure_dac_voltage(
+            self.kth.smua, 0b1100, drain=True
+        )
 
         logger.info("Measurement - Emulator - DAC . Voltage - Channel B")
-        results["dac_voltage_b"] = self.measure_dac_voltage(self._kth.smub, 0b1100)
+        results["dac_voltage_b"] = self.measure_dac_voltage(
+            self.kth.smub, 0b1100, drain=True
+        )
         return results
 
     def write(self, cal_file: str, serial: str, version: str, cal_date: str):
-        temp_file = "/tmp/calib.yml"
+        temp_file = "/tmp/calib.yml"  # noqa: S108
         with open(cal_file) as stream:
-            cal_host = yaml.safe_load(stream)['host']
+            cal_host = yaml.safe_load(stream)["host"]
         if cal_host != self._host:
-            logger.warning("Calibration data for '%s' doesn't match host '%s'.", cal_host, self._host)
+            logger.warning(
+                "Calibration data for '%s' doesn't match host '%s'.",
+                cal_host,
+                self._host,
+            )
 
         self._cnx.put(cal_file, temp_file)  # noqa: S108
         logger.info("----------EEPROM WRITE------------")
         result = self._cnx.sudo(
             f"shepherd-sheep eeprom write -v {version} -s {serial} -d {cal_date}"
-            f" -c {temp_file}", warn=True, hide=True,
+            f" -c {temp_file}",
+            warn=True,
+            hide=True,
         )
         logger.info(result.stdout)
         logger.info("---------------------------------")
@@ -363,13 +400,17 @@ class Cal:
         logger.info("---------------------------------")
 
     def retrieve(self, cal_file: str):
-        temp_file = "/tmp/calib.yml"
-        result = self._cnx.sudo(f"shepherd-sheep eeprom read -c {temp_file}", warn=True, hide=True)
+        temp_file = "/tmp/calib.yml"  # noqa: S108
+        result = self._cnx.sudo(
+            f"shepherd-sheep eeprom read -c {temp_file}", warn=True, hide=True
+        )
         logger.info(result.stdout)
         self._cnx.get(temp_file, local=str(cal_file))
 
     @staticmethod
-    def convert(meas_file: Path, cal_file: Union[None, Path] = None, do_plot: bool = False) -> Path:
+    def convert(
+        meas_file: Path, cal_file: Optional[Path] = None, do_plot: bool = False
+    ) -> Path:
         with open(meas_file) as stream:
             meas_data = yaml.safe_load(stream)
             meas_dict = meas_data["measurements"]
