@@ -44,7 +44,7 @@ def yamlprovider(file_path, cmd_name):
 @click.option(
     "--key-filename",
     "-k",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="Path to private ssh key file",
 )
 @click.option("-v", "--verbose", count=True, default=2)

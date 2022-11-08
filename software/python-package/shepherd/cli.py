@@ -381,7 +381,7 @@ def eeprom():
 
 @eeprom.command(short_help="Write data to EEPROM")
 @click.option(
-    "--infofile",
+    "--info_file",
     "-i",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with cape info",
@@ -406,14 +406,14 @@ def eeprom():
     help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
 @click.option(
-    "--cal-file",
+    "--cal_file",
     "-c",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with calibration data",
 )
-def write(infofile, version, serial_number, cal_date, cal_file):
-    if infofile is not None:
-        cape_data = CapeData.from_yaml(infofile)
+def write(info_file, version, serial_number, cal_date, cal_file):
+    if info_file is not None:
+        cape_data = CapeData.from_yaml(info_file)
         # overwrite fields that were provided additionally
         if version is not None:
             cape_data.data["version"] = version
@@ -442,18 +442,18 @@ def write(infofile, version, serial_number, cal_date, cal_file):
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
 @click.option(
-    "--infofile",
+    "--info_file",
     "-i",
     type=click.Path(),
     help="If provided, cape info data is dumped to this file",
 )
 @click.option(
-    "--cal-file",
+    "--cal_file",
     "-c",
     type=click.Path(),
     help="If provided, calibration data is dumped to this file",
 )
-def read(infofile, cal_file):
+def read(info_file, cal_file):
 
     if get_verbose_level() < 2:
         set_verbose_level(2)
@@ -462,8 +462,8 @@ def read(infofile, cal_file):
         cape_data = storage.read_cape_data()
         cal = storage.read_calibration()
 
-    if infofile:
-        with open(infofile, "w") as f:
+    if info_file:
+        with open(info_file, "w") as f:
             f.write(repr(cape_data))
     else:
         logger.info(repr(cape_data))
