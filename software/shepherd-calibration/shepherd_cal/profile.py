@@ -73,11 +73,8 @@ class Profile:
             segment_list.append(segment_df)
         data_df = pd.concat(segment_list, axis=0)
 
-        # for i in range(result.shape[1]):
-        # throw away first measurements
-        #    result[elem_dict["current_shp_raw"], i] = result[elem_dict["current_shp_raw"], i][100:]
-
-        # fragment to fix old profiles -> special case when measuring without SourceMeter, but with resistor
+        # fragment to fix old profiles
+        # -> special case when measuring without SourceMeter, but with resistor
         filter_v = data_df.v_ref_V <= -3
         data_df.loc[filter_v, "v_ref_V"] = data_df.loc[filter_v, "v_shp_V"]
         data_df.loc[filter_v, "c_ref_A"] = data_df.loc[filter_v, "c_shp_A"]
@@ -169,9 +166,9 @@ class Profile:
         data = self.results[component]
         c_gain = self.cals[component].c_gain
         x = 1e3 * data.v_ref_V  # todo: transition not finished, same with above FN
-        y = list([])
-        stddev = list([])
-        vol = list([])
+        y = []
+        stddev = []
+        vol = []
         for i in range(data.shape[1]):
             y.append(1e3 * data[elem_dict["current_shp_A"], i])
             value = 1e6 * c_gain * np.std(data[elem_dict["current_shp_raw"], i])
@@ -184,7 +181,8 @@ class Profile:
         ax.set_xlabel(r"Voltage [mV]", fontsize=10)
         ax.set_ylabel(r"Current [mA]", fontsize=10)
         ax.set_title(
-            f"Position of Setpoints with Standard-Deviation as color/size (mean = {np.mean(stddev):.2f} uA)"
+            "Position of Setpoints with Standard-Deviation as color/size "
+            f"(mean = {np.mean(stddev):.2f} uA)"
         )
         plt.colorbar(
             sct, label="Standard-Deviation [uA]", orientation="vertical", shrink=0.7
@@ -203,9 +201,9 @@ class Profile:
         data = self.results[component]
         c_gain = self.cals[component].c_gain
         x = 1e3 * data[elem_dict["voltage_ref_V"], :]
-        y = list([])
-        dyn = list([])
-        vol = list([])
+        y = []
+        dyn = []
+        vol = []
         for i in range(data.shape[1]):
             y.append(1e3 * data[elem_dict["current_shp_A"], i])
             value = (
@@ -225,7 +223,8 @@ class Profile:
         ax.set_xlabel(r"Voltage [mV]", fontsize=10)
         ax.set_ylabel(r"Current [mA]", fontsize=10)
         ax.set_title(
-            f"Position of Setpoints with ADC-MinMax-Intervall as color/size (mean = {np.mean(dyn):.2f} uA)"
+            "Position of Setpoints with ADC-MinMax-Intervall as color/size "
+            f"(mean = {np.mean(dyn):.2f} uA)"
         )
         plt.colorbar(
             sct, label="ADC-MinMax-Intervall [uA]", orientation="vertical", shrink=0.7
@@ -266,7 +265,7 @@ class Profile:
         )  # pivot: tail, mid, tip
         ax.set_xlabel(r"Voltage [mV]", fontsize=10)
         ax.set_ylabel(r"Current [mA]", fontsize=10)
-        ax.set_title(f"Position of Setpoints with Distance from Ref")
+        ax.set_title("Position of Setpoints with Distance from Ref")
         plt.colorbar(
             qpl,
             label="Error (mean) of Current [uA]",

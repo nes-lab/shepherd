@@ -45,7 +45,7 @@ class Calibrator:
     _cnx: Connection = None
     _host: str = None
     sheep: zerorpc.Client = None
-    kth: Keithley2600() = None
+    kth: type(Keithley2600) = None
 
     _pwrline_cycles: float = None
     _mode_4wire: bool = None

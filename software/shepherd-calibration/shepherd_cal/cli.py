@@ -19,7 +19,7 @@ from .profiler import Profiler
 
 # TODO: it may be useful to move host, user and password arguments to here
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
-@click.option("-v", "--verbose", count=True, default=3)
+@click.option("-v", "--verbose", count=True, default=3, help="4 Levels",)
 def cli(verbose):
     set_verbose_level(verbose)
 
@@ -29,7 +29,7 @@ def cli(verbose):
 # #############################################################################
 
 
-@cli.command()
+@cli.command(short_help="Measure calibration-data from shepherd cape with Keithley SMU")
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="jane", help="Host Username")
 @click.option(
@@ -116,7 +116,7 @@ def measure(
     logger.info("Saved Cal-Measurement to '%s'.", outfile)
 
 
-@cli.command()
+@cli.command(short_help="Convert measurement to calibration-data")
 @click.argument(
     "infile",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
@@ -132,7 +132,7 @@ def convert(infile, outfile, plot: bool):
     Calibrator.convert(infile, outfile, plot)
 
 
-@cli.command()
+@cli.command(short_help="Write calibration-data to shepherd cape")
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe")
 @click.option(
@@ -187,7 +187,7 @@ def write(
     shpcal.read()
 
 
-@cli.command()
+@cli.command(short_help="Read calibration-data from shepherd cape")
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="jane")
 @click.option(
@@ -207,7 +207,7 @@ def read(host, user, password):
 # #############################################################################
 
 
-@cli.command()
+@cli.command(short_help="Measure profile-data from shepherd cape with Keithley SMU")
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe", help="Host Username")
 @click.option(
@@ -298,12 +298,12 @@ def profile(
     logger.info("Profiling took %.1f s", time() - time_now)
 
 
-@cli.command()
+@cli.command(short_help="Analyze profile-data")
 @click.argument(
     "infile",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=True),
 )
-@click.option("--outfile", "-o", type=click.Path())
+@click.option("--outfile", "-o", type=click.Path(), help="CSV-File for storing meta-data of each profile (will be extended if existing)")
 @click.option(
     "--plot",
     "-p",
