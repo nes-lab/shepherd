@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import logging
 import time
 from pathlib import Path
 from typing import NoReturn
@@ -16,7 +15,8 @@ from keithley2600 import Keithley2600
 from shepherd.calibration import CalibrationData
 from shepherd.calibration_default import dac_voltage_to_raw
 
-from .plot import plot_calibration
+from .calibration_plot import plot_calibration
+from .logger import logger
 
 INSTR_CAL_HRV = """
 ---------------------- Harvester calibration -----------------------
@@ -40,25 +40,7 @@ INSTR_CAL_EMU = """
 INSTR_4WIRE = "- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results"
 
 
-consoleHandler = logging.StreamHandler()
-logger = logging.getLogger("shp.calTool")
-logger.addHandler(consoleHandler)
-logger.setLevel(logging.DEBUG)
-# Note: defined here to avoid circular import
-
-
-def set_verbose_level(verbose: int = 2) -> None:
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-
-
-class Cal:
+class Calibrator:
 
     _cnx: Connection = None
     _host: str = None

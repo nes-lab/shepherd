@@ -6,20 +6,27 @@ import click
 import numpy as np
 import yaml
 
-from .calibrate import INSTR_4WIRE
-from .calibrate import INSTR_CAL_EMU
-from .calibrate import INSTR_CAL_HRV
-from .calibrate import Cal
-from .calibrate import logger
-from .calibrate import set_verbose_level
+from .calibrator import INSTR_4WIRE
+from .calibrator import INSTR_CAL_EMU
+from .calibrator import INSTR_CAL_HRV
+from .calibrator import Calibrator
+from .logger import logger
+from .logger import set_verbose_level
+from .profile_analyzer import analyze_directory
 from .profiler import INSTR_PROFILE_SHP
 from .profiler import Profiler
 
 
+# TODO: it may be useful to move host, user and password arguments to here
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option("-v", "--verbose", count=True, default=3)
 def cli(verbose):
     set_verbose_level(verbose)
+
+
+# #############################################################################
+#                               Calibration
+# #############################################################################
 
 
 @cli.command()
@@ -77,7 +84,7 @@ def measure(
                 results = config["measurements"]
                 logger.info("Save-File loaded successfully - will extend dataset")
 
-    shpcal = Cal(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
 
     if harvester:
         click.echo(INSTR_CAL_HRV)
@@ -122,7 +129,7 @@ def measure(
     help="generate plots that contain data points and calibration model",
 )
 def convert(infile, outfile, plot: bool):
-    Cal.convert(infile, outfile, plot)
+    Calibrator.convert(infile, outfile, plot)
 
 
 @cli.command()
@@ -173,9 +180,9 @@ def write(
         raise click.UsageError("provide only one of cal-file or measurement-file")
 
     if measurement_file is not None:
-        cal_file = Cal.convert(measurement_file)
+        cal_file = Calibrator.convert(measurement_file)
 
-    shpcal = Cal(host, user, password)
+    shpcal = Calibrator(host, user, password)
     shpcal.write(cal_file, serial_number, version, cal_date)
     shpcal.read()
 
@@ -191,8 +198,13 @@ def write(
     help="Host User Password -> only needed when key-credentials are missing",
 )
 def read(host, user, password):
-    shpcal = Cal(host, user, password)
+    shpcal = Calibrator(host, user, password)
     shpcal.read()
+
+
+# #############################################################################
+#                               Profiler
+# #############################################################################
 
 
 @cli.command()
@@ -260,7 +272,7 @@ def profile(
     else:
         file_path = outfile.stem + "_profile_full" + components + ".npz"
 
-    shpcal = Cal(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
     profiler = Profiler(shpcal, short)
     results_hrv = results_emu_a = results_emu_b = None
 
@@ -284,6 +296,29 @@ def profile(
         file_path, emu_a=results_emu_a, emu_b=results_emu_b, hrv=results_hrv
     )
     logger.info("Profiling took %.1f s", time() - time_now)
+
+
+@cli.command()
+@click.argument(
+    "infile",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=True),
+)
+@click.option("--outfile", "-o", type=click.Path())
+@click.option(
+    "--plot",
+    "-p",
+    is_flag=True,
+    help="generate plots that visualize the profile",
+)
+def analyze(infile, outfile, plot):
+    """
+
+    Args:
+        infile: file or directory to
+        outfile: metadata stats from files
+        plot: do generate profile plots
+    """
+    analyze_directory(infile, outfile, plot)
 
 
 if __name__ == "__main__":

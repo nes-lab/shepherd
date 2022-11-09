@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .calibrate import logger
+from .logger import logger
 
 
 def plot_calibration(measurements: dict, calibration: dict, file_name: Path):

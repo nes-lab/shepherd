@@ -17,17 +17,8 @@ import numpy as np
 
 import shepherd.calibration_default as cal_def
 
-from .calibrate import Cal
-from .calibrate import logger
-
-adict = {
-    "voltage_shp_V": 0,
-    "voltage_shp_raw": 1,
-    "voltage_ref_V": 2,
-    "current_shp_A": 3,
-    "current_shp_raw": 4,
-    "current_ref_A": 5,
-}
+from .calibrator import Calibrator
+from .logger import logger
 
 INSTR_PROFILE_SHP = """
 ---------------------- Characterize Shepherd-Frontend -----------------------
@@ -46,11 +37,11 @@ INSTR_PROFILE_SHP = """
 
 class Profiler:
 
-    _cal: Cal = None
+    _cal: Calibrator = None
     voltage_V: np.ndarray = None
     currents_A: list = None
 
-    def __init__(self, calibrator: Cal, short: bool = False):
+    def __init__(self, calibrator: Calibrator, short: bool = False):
 
         self._cal = calibrator
 
@@ -209,6 +200,7 @@ class Profiler:
             cdata, vdata, v_meas, c_set = self.measure_harvester_setpoint(
                 self._cal.kth.smub, voltage, current
             )
+            # order from Profiler.elem_dict
             results[0][index] = voltage
             results[1][index] = vdata
             results[2][index] = v_meas
@@ -236,6 +228,7 @@ class Profiler:
             cdata, v_meas, c_set = self.measure_emulator_setpoint(
                 self._cal.kth.smua, voltage, current
             )
+            # order from Profiler.elem_dict
             results[0][index] = voltage
             results[1][index] = self._cal.sheep.convert_value_to_raw(
                 "emulator", "dac_voltage_b", voltage
@@ -255,6 +248,7 @@ class Profiler:
         )  # targetB-Port will get the monitored dac-channel-b
         for index, voltage in enumerate(self.voltages_V):
             cdata, v_meas, c_shp = self.measure_emulator_setpoint(None, voltage)
+            # order from Profiler.elem_dict
             results[0][index] = voltage
             results[1][index] = self._cal.sheep.convert_value_to_raw(
                 "emulator", "dac_voltage_b", voltage

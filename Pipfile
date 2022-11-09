@@ -15,7 +15,7 @@ build = "*"
 # NOTE: pip does not install these packages with as editable (-e), but pipenv does
 shepherd = {editable = true, path = "./software/python-package[test]"}
 shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
-shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
+shepherd-cal = {editable = true, path = "./software/shepherd-calibrate"}
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
