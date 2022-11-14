@@ -319,7 +319,7 @@ class Herd:
         """
         # Get the current time on each target node
         replies = self.run_cmd(sudo=False, cmd="date +%s")
-        ts_nows = [float(reply.stdout) for reply in replies]
+        ts_nows = [float(reply.stdout) for reply in replies.values()]
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
         ts_diff = ts_max - ts_min
@@ -393,12 +393,12 @@ class Herd:
             return 1
         else:
             replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
-            return max([reply.exited for reply in replies])
+            return max([reply.exited for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
-        exit_code = max([reply.exited for reply in replies])
+        exit_code = max([reply.exited for reply in replies.values()])
         logger.info("Shepherd was forcefully stopped")
         if exit_code > 0:
             logger.debug("-> max exit-code = %d", exit_code)
@@ -412,7 +412,7 @@ class Herd:
         else:
             replies = self.run_cmd(sudo=True, cmd="poweroff")
             logger.info("Command for powering off nodes was issued")
-        exit_code = max([reply.exited for reply in replies])
+        exit_code = max([reply.exited for reply in replies.values()])
         return exit_code
 
     def await_stop(self, timeout: int = 30) -> bool:

@@ -83,7 +83,7 @@ def run(ctx, command, sudo):
         click.echo(f"\n************** {hostname} **************")
         click.echo(replies[i].stdout)
         click.echo(f"exit-code = {replies[i].exited}")
-    exit_code = max([reply.exited for reply in replies])
+    exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -137,6 +137,7 @@ def harvester(
         "use_cal_default": use_cal_default,
     }
 
+    ts_start = delay = 0
     if not no_start:
         ts_start, delay = ctx.obj["herd"].find_consensus_time()
         parameter_dict["start_time"] = ts_start
@@ -247,6 +248,7 @@ def emulator(
 
         parameter_dict["output_path"] = str(fp_output)
 
+    ts_start = delay = 0
     if not no_start:
         ts_start, delay = ctx.obj["herd"].find_consensus_time()
         parameter_dict["start_time"] = ts_start
@@ -414,7 +416,8 @@ def target(ctx, port, on, voltage, sel_a):
             sudo=True, cmd="shepherd-sheep target-power --off"
         )
         exit_code = max(
-            [reply.exited for reply in replies1] + [reply.exited for reply in replies2]
+            [reply.exited for reply in replies1.values()]
+            + [reply.exited for reply in replies2.values()]
         )
         sys.exit(exit_code)
 
@@ -430,7 +433,8 @@ def process_result(ctx, result, **kwargs):
             sudo=True, cmd="shepherd-sheep target-power --off"
         )
         exit_code = max(
-            [reply.exited for reply in replies1] + [reply.exited for reply in replies2]
+            [reply.exited for reply in replies1.values()]
+            + [reply.exited for reply in replies2.values()]
         )
         sys.exit(exit_code)
 
@@ -554,7 +558,7 @@ def programmer(ctx, firmware_file, sel_a, voltage, speed, target):
         f"-v {voltage} -s {speed} -t {target}"
     )
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
-    exit_code = max([reply.exited for reply in replies])
+    exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
 
 
