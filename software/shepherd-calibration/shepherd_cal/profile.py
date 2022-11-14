@@ -37,21 +37,23 @@ class Profile:
     stats: list = []
 
     def __init__(self, file: Path):
+        if not isinstance(file, Path):
+            file = Path(file)
         if file.suffix != ".npz":
             # TODO: is this useful?
             file = file.stem + ".npz"
 
         logger.debug("processing '%s'", file)
         meas_file = np.load(file, allow_pickle=True)
-        self.file_name = str(file)
+        self.file_name = file.stem
 
         for comp_i in component_dict:
-
             if comp_i not in meas_file:
                 continue
             if (meas_file[comp_i] is None) or (meas_file[comp_i].size < 2):
                 continue
             comp_o = component_dict[comp_i]
+            logger.debug("  component '%s'", comp_o)
 
             self._prepare_data(comp_o, meas_file[comp_i])
             self._prepare_results(comp_o, self.data[comp_o])
@@ -89,7 +91,7 @@ class Profile:
         data_df["c_error_abs_mA"] = data_df.c_error_mA.abs()
 
         self.data[component] = data_df
-        self.cals[component] = data_df
+        self.cals[component] = cal
 
     def _prepare_results(self, component: str, data: pd.DataFrame) -> NoReturn:
         result = data.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)
@@ -193,7 +195,7 @@ class Profile:
         fig.set_figwidth(11)
         fig.set_figheight(10)
         fig.tight_layout()
-        plt.savefig(self.file_name)
+        plt.savefig(self.file_name + "_scatter_stddev_" + component + ".png")
         plt.close(fig)
         plt.clf()
 
@@ -236,7 +238,7 @@ class Profile:
         fig.set_figwidth(11)
         fig.set_figheight(10)
         fig.tight_layout()
-        plt.savefig(self.file_name)
+        plt.savefig(self.file_name + "_scatter_dynamic_" + component + ".png")
         plt.close(fig)
         plt.clf()
 
@@ -255,7 +257,7 @@ class Profile:
             1e3 * data.v_shp_V,
             1e3 * data.c_ref_A,  # XY
             data.v_error_mean_mV,
-            1e3 * data.c_error_mean_mA,  # UV
+            data.c_error_mean_mA,  # UV
             1e3 * data.c_error_mean_mA,  # W
             units="xy",
             scale=1,
@@ -279,6 +281,6 @@ class Profile:
         fig.set_figwidth(11)
         fig.set_figheight(10)
         fig.tight_layout()
-        plt.savefig(self.file_name)
+        plt.savefig(self.file_name + "_quiver_" + component + ".png")
         plt.close(fig)
         plt.clf()

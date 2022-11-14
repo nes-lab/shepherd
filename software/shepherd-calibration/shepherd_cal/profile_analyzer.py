@@ -9,6 +9,12 @@ from .profile import Profile
 def analyze_directory(folder_path: Path, stats_path: Path, do_plots: bool = False):
     stats_list = []
     stat_names = []
+    if stats_path is None:
+        stats_path = Path("./profile_analysis.csv")
+    if not isinstance(folder_path, Path):
+        folder_path = Path(folder_path)
+    if not isinstance(stats_path, Path):
+        stats_path = Path(stats_path)
     if Path(stats_path).exists():
         stats_base = pd.read_csv(stats_path, sep=";", decimal=",", index_col=False)
         stats_list.append(stats_base)
@@ -38,8 +44,8 @@ def analyze_directory(folder_path: Path, stats_path: Path, do_plots: bool = Fals
         if do_plots:
             for component in profile.data:
                 profile.quiver_setpoints_offset(component)
-                profile.scatter_setpoints_stddev(component)
-                profile.scatter_setpoints_dynamic(component)
+                # profile.scatter_setpoints_stddev(component)
+                # profile.scatter_setpoints_dynamic(component)
 
     stat_df = pd.concat(stats_list, axis=0)
     stat_df.to_csv(stats_path, sep=";", decimal=",", index=False)

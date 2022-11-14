@@ -49,12 +49,12 @@ class Calibration:
         )
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
-            logger.warning("WARNING: skipped a current_calibration")
+            logger.warning("NOTE: skipped determining current_calibration")
             return
         gain, offset = self.measurements_to_calibration(
             result.c_ref_A, result.c_shp_raw
         )
-        logger.info("->resulting C-Cal: gain = %f, offset = %f", gain, offset)
+        logger.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
         self.c_gain, self.c_offset = gain, offset
 
     def determine_voltage_cal(self, result: pd.DataFrame):
@@ -72,12 +72,12 @@ class Calibration:
         )
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
-            logger.warning("WARNING: skipped a voltage_calibration")
+            logger.warning("NOTE: skipped a voltage_calibration")
             return
         gain, offset = self.measurements_to_calibration(
             result.v_ref_V, result.v_shp_raw
         )
-        logger.info("->resulting V-Cal: gain = %f, offset = %f", gain, offset)
+        logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
         self.v_gain, self.v_offset = gain, offset
 
     def convert_current_raw_to_A(self, c_raw):

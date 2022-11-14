@@ -29,9 +29,8 @@ INSTR_PROFILE_SHP = """
 - Resistor (~200 Ohm) and Cap (1-10 uF) between
     - P11-1 (Target-B GND)
     - P11-2 (Target-B Voltage)
-- Connect SMU channel B Lo to P6-2 (HRV-Input GND)
-- Connect SMU channel B Hi to P6-3 & -4 (VSense and VHarvest connected together)
-- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results (can be disabled in script)
+- Connect SMU channel B Lo to P6-1 (HRV-Input GND)
+- Connect SMU channel B Hi to P6-2/4 (VSense, VHarv -> connected together)
 """
 
 
@@ -98,7 +97,9 @@ class Profiler:
     def measure_emulator_setpoint(self, smu, voltage_V: float, current_A: float = 0):
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
-        self._cal.set_smu_to_isource(smu, current_A, limit_v=5.0)
+        # negative current, because smu acts as a drain
+        if smu is not None:
+            self._cal.set_smu_to_isource(smu, -current_A, limit_v=5.0)
 
         # write both dac-channels of emulator
         dac_voltage_raw = self._cal.sheep.convert_value_to_raw(
@@ -113,7 +114,7 @@ class Profiler:
         ]
         adc_current_raw = float(np.mean(adc_currents_raw))
 
-        # voltage measurement only for information
+        # voltage measurement only for reference
         if smu is not None:
             smu_voltage = smu.measure.v()
             smu.source.output = smu.OUTPUT_OFF
@@ -124,13 +125,14 @@ class Profiler:
             )
 
         logger.info(
-            "  SMU-reference: %.3f mA @ %.4f V; "
-            "  emu-c-raw: mean=%.2f, stddev=%.2f @ %.3f V",
+            "  DAC @ %.3f V;"
+            " \tSMU: %.3f mA @ %.4f V; "
+            " \tI_raw: mean=%.2f, stddev=%.2f",
+            voltage_V,
             1000 * current_A,
             smu_voltage,
             adc_current_raw,
             np.std(adc_currents_raw),
-            voltage_V,
         )
 
         return adc_currents_raw, smu_voltage, current_A
@@ -166,10 +168,11 @@ class Profiler:
         smu.source.output = smu.OUTPUT_OFF
 
         logger.info(
-            "  SMU-reference: %.3f mA @ %.4f V;"
-            "  hrv-c-raw: mean=%.2f, stddev=%.2f;"
-            "  hrv-v-raw: mean=%.2f, stddev=%.2f"
-            " (%.3f V);   DAC: %.3f V",
+            "  DAC @ %.3f V;"
+            " \tSMU: %.3f mA @ %.4f V;"
+            " \tI_raw: mean=%.2f, stddev=%.2f;"
+            " \tV_raw: mean=%.2f, stddev=%.2f -> %.4f V",
+            voltage_V,
             1000 * current_A,
             smu_voltage,
             adc_current_raw,
@@ -177,7 +180,6 @@ class Profiler:
             adc_voltage_raw,
             np.std(adc_voltages_raw),
             voltage_adc_V,
-            voltage_V,
         )
 
         return adc_currents_raw, adc_voltages_raw, smu_voltage, current_A

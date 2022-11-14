@@ -25,7 +25,7 @@ INSTR_CAL_HRV = """
     - P6-4 -> VHarv / Current Sink of Harvest-Port
 - Connect SMU Channel A & B Lo to GND (P6-1, alternatively P8-1/2)
 - Connect SMU Channel A Hi to P6-3 (VSim)
-- Connect SMU Channel B Hi to P6-2/4 (VSense, VHarv)
+- Connect SMU Channel B Hi to P6-2/4 (VSense, VHarv -> connected together)
 """
 
 INSTR_CAL_EMU = """
@@ -97,6 +97,7 @@ class Calibrator:
 
     def set_smu_to_vsource(self, smu, value_v: float, limit_i: float) -> float:
         value_v = min(max(value_v, 0.0), 5.0)
+        limit_i = min(max(limit_i, -0.050), 0.050)
         smu.sense = smu.SENSE_REMOTE if self._mode_4wire else smu.SENSE_LOCAL
         smu.source.levelv = value_v
         smu.source.limiti = limit_i
@@ -107,6 +108,7 @@ class Calibrator:
 
     def set_smu_to_isource(self, smu, value_i: float, limit_v: float = 5.0) -> float:
         value_i = min(max(value_i, -0.050), 0.050)
+        limit_v = min(max(limit_v, 0.0), 5.0)
         smu.sense = smu.SENSE_REMOTE if self._mode_4wire else smu.SENSE_LOCAL
         smu.source.leveli = value_i
         smu.source.limitv = limit_v
@@ -393,6 +395,8 @@ class Calibrator:
     def convert(
         meas_file: Path, cal_file: Optional[Path] = None, do_plot: bool = False
     ) -> Path:
+        if not isinstance(meas_file, Path):
+            meas_file = Path(meas_file)
         with open(meas_file) as stream:
             meas_data = yaml.safe_load(stream)
             meas_dict = meas_data["measurements"]
@@ -406,6 +410,8 @@ class Calibrator:
         res_repr = yaml.dump(out_dict, default_flow_style=False)
         if cal_file is None:
             cal_file = meas_file.stem + "_cal.yml"
+        if not isinstance(cal_file, Path):
+            cal_file = Path(cal_file)
 
         if cal_file.exists():
             ValueError(f"Calibration File already exists ({cal_file})")

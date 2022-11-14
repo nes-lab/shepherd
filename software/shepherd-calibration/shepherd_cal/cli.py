@@ -19,7 +19,13 @@ from .profiler import Profiler
 
 # TODO: it may be useful to move host, user and password arguments to here
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
-@click.option("-v", "--verbose", count=True, default=3, help="4 Levels",)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    default=3,
+    help="4 Levels",
+)
 def cli(verbose):
     set_verbose_level(verbose)
 
@@ -72,7 +78,7 @@ def measure(
     smu_4wire,
     smu_nplc,
 ):
-    if any([harvester, emulator]):
+    if not any([harvester, emulator]):
         harvester = True
         emulator = True
 
@@ -90,7 +96,7 @@ def measure(
         click.echo(INSTR_CAL_HRV)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
+        usr_conf = click.pause("Please verify that everything is set up ...")
         if usr_conf:
             results["harvester"] = shpcal.measure_harvester()
 
@@ -98,7 +104,7 @@ def measure(
         click.echo(INSTR_CAL_EMU)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
+        usr_conf = click.pause("Please verify that everything is set up ...")
         if usr_conf:
             results["emulator"] = shpcal.measure_emulator()
 
@@ -129,7 +135,8 @@ def measure(
     help="generate plots that contain data points and calibration model",
 )
 def convert(infile, outfile, plot: bool):
-    Calibrator.convert(infile, outfile, plot)
+    outfile = Calibrator.convert(infile, outfile, plot)
+    logger.info("Cal-File was written to '%s'", outfile)
 
 
 @cli.command(short_help="Write calibration-data to shepherd cape")
@@ -257,7 +264,7 @@ def profile(
     emulator,
     short,
 ):
-    if any([harvester, emulator]):
+    if not any([harvester, emulator]):
         harvester = True
         emulator = True
 
@@ -284,7 +291,7 @@ def profile(
         len(profiler.voltages_V),
         len(profiler.currents_A),
     )
-    click.confirm("Confirm that everything is set up ...", default=True)
+    click.pause("Please verify that everything is set up ...")
 
     if harvester:
         results_hrv = profiler.measure_harvester()
@@ -303,7 +310,12 @@ def profile(
     "infile",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=True),
 )
-@click.option("--outfile", "-o", type=click.Path(), help="CSV-File for storing meta-data of each profile (will be extended if existing)")
+@click.option(
+    "--outfile",
+    "-o",
+    type=click.Path(),
+    help="CSV-File for storing meta-data of each profile (will be extended if existing)",
+)
 @click.option(
     "--plot",
     "-p",
