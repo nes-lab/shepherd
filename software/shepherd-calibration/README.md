@@ -39,13 +39,13 @@ For actual measurements the program will tell you how to connect the SMU to the 
 Calibration
 
 ```Shell
-shepherd-cal measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41 --smu-4wire  -o sheep0_cape_v240b.yml
+shepherd-cal measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41 -o sheep0_cape_v240b.yml
 shepherd-cal write sheep0 -u jane -p 1234 -m sheep0_cape_v240b.yml -v 24B0 -s i1270057 -d 2022-11-11
 ```
 
 Profiling
 
 ```Shell
-shepherd-cal profile sheep0 -u jane -p 1234 --smu-ip 10.0.0.41 --smu-4wire
+shepherd-cal profile sheep0 -u jane -p 1234 --smu-ip 10.0.0.41
 shepherd-cal analyze -o stats.csv --plot
 ```

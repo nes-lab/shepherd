@@ -57,9 +57,9 @@ def cli(verbose):
 @click.option("--harvester", "-h", is_flag=True, help="only handle harvester")
 @click.option("--emulator", "-e", is_flag=True, help="only handle emulator")
 @click.option(
-    "--smu-4wire",
+    "--smu-2wire",
     is_flag=True,
-    help="use 4wire-mode for measuring voltage (recommended)",
+    help="don't use 4wire-mode for measuring voltage (NOT recommended)",
 )
 @click.option(
     "--smu-nplc",
@@ -75,9 +75,10 @@ def measure(
     smu_ip,
     harvester,
     emulator,
-    smu_4wire,
+    smu_2wire,
     smu_nplc,
 ):
+    smu_4wire = not smu_2wire
     if not any([harvester, emulator]):
         harvester = True
         emulator = True
@@ -96,7 +97,7 @@ def measure(
         click.echo(INSTR_CAL_HRV)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        usr_conf = click.pause("Please verify that everything is set up ...")
+        usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
             results["harvester"] = shpcal.measure_harvester()
 
@@ -104,7 +105,7 @@ def measure(
         click.echo(INSTR_CAL_EMU)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        usr_conf = click.pause("Please verify that everything is set up ...")
+        usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
             results["emulator"] = shpcal.measure_emulator()
 
@@ -234,9 +235,9 @@ def read(host, user, password):
     "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
 )
 @click.option(
-    "--smu-4wire",
+    "--smu-2wire",
     is_flag=True,
-    help="use 4wire-mode for measuring voltage (recommended)",
+    help="don't use 4wire-mode for measuring voltage (NOT recommended)",
 )
 @click.option(
     "--smu-nplc",
@@ -252,22 +253,30 @@ def read(host, user, password):
     is_flag=True,
     help="reduce voltage / current steps for faster profiling (2x faster)",
 )
+@click.option(
+    "--quiet",
+    "-q",
+    is_flag=True,
+    help="remove user-interaction (setup prompt)",
+)
 def profile(
     host,
     user,
     password,
     outfile,
     smu_ip,
-    smu_4wire,
+    smu_2wire,
     smu_nplc,
     harvester,
     emulator,
     short,
+    quiet,
 ):
     if not any([harvester, emulator]):
         harvester = True
         emulator = True
 
+    smu_4wire = not smu_2wire
     time_now = time()
     components = ("_emu" if emulator else "") + ("_hrv" if harvester else "")
     if outfile is None:
@@ -283,15 +292,16 @@ def profile(
     profiler = Profiler(shpcal, short)
     results_hrv = results_emu_a = results_emu_b = None
 
-    click.echo(INSTR_PROFILE_SHP)
-    if not smu_4wire:
-        click.echo(INSTR_4WIRE)
-    logger.info(
-        " -> Profiler will sweep through %d voltages and %d currents",
-        len(profiler.voltages_V),
-        len(profiler.currents_A),
-    )
-    click.pause("Please verify that everything is set up ...")
+    if not quiet:
+        click.echo(INSTR_PROFILE_SHP)
+        if not smu_4wire:
+            click.echo(INSTR_4WIRE)
+        logger.info(
+            " -> Profiler will sweep through %d voltages and %d currents",
+            len(profiler.voltages_V),
+            len(profiler.currents_A),
+        )
+        click.confirm("Confirm that everything is set up ...", default=True)
 
     if harvester:
         results_hrv = profiler.measure_harvester()
