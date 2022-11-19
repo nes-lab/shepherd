@@ -129,6 +129,7 @@ def cal_measure(
         timestamp = datetime.fromtimestamp(time())
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
         outfile = Path(f"./{timestring}_shepherd_cape_measurement.yml")
+        # TODO: change suffix to .measurement.yml
         logger.debug("No filename provided -> set to '%s'.", outfile)
     with open(outfile, "w") as f:
         f.write(res_repr)
@@ -201,6 +202,7 @@ def cal_write(
 
     if measurement_file is not None:
         cal_file = Calibrator.convert(measurement_file)
+        # TODO: change default suffix to .calibration.yml
 
     shpcal = Calibrator(host, user, password)
     shpcal.write(cal_file, serial_number, version, cal_date)

@@ -11,6 +11,9 @@ def group_options(*options):
 
 
 # TODO: switch to this unifying style for all shepherd-tools
+#  - also specialize click-commands -> there are choice, file, IntRange, Datetime
+#  that are helpful for us
+
 # common general shepherd options
 
 opt_version = click.version_option()
