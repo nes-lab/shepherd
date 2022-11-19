@@ -36,7 +36,10 @@ from high to lower priority:
 - decoding digital protocols like uart and spi
 - search / highlight points of interest -> tbd
 
-In terms of usability and functionality the tool `Saleae Logic <https://www.saleae.com/downloads/>`_ is regarded as a role model.
+Sidenotes:
+
+- data-conversion is OK -> probably a more performant format and a chain of downsamples are needed to handle the performance on large overviews
+- in terms of usability and functionality the tool `Saleae Logic <https://www.saleae.com/downloads/>`_ is regarded as a role model
 
 Milestones / Steps
 ------------------
@@ -55,7 +58,11 @@ Useful links
 
 ``Flocklab`` - another similar Testbed `implemented plotting <https://github.com/ETHZ-TEC/FlockLab-Tools>`_ with `Bokeh <https://bokeh.org/>` both for web and offline usage.
 
-An alternative to Bokeh could be `plotly <https://github.com/plotly/plotly.py>`_
+An alternative to Bokeh could be `plotly <https://github.com/plotly/plotly.py>`_.
+source: https://pauliacomi.com/2020/06/07/plotly-v-bokeh.html
+
+For bundling and filtering plots in an overview-page: https://awesome-panel.org/ -> the video https://www.youtube.com/watch?v=0DBEXiMdSKc&t=530s talks about Terabytes of data visualized with datashader, rapids cuxFilter -> problem: GPU / CUDA based
+
 
 More Info on current GPIO-Pins routed to the targets:
 
