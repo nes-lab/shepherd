@@ -49,11 +49,19 @@ class Calibration:
         )
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
-            logger.warning("NOTE: skipped determining current_calibration")
+            logger.warning(
+                "NOTE: skipped determining current_calibration (missing data)"
+            )
             return
-        gain, offset = self.measurements_to_calibration(
-            result.c_ref_A, result.c_shp_raw
-        )
+        try:
+            gain, offset = self.measurements_to_calibration(
+                result.c_ref_A, result.c_shp_raw
+            )
+        except ValueError:
+            logger.warning(
+                "NOTE: skipped determining current_calibration (failed linregress)"
+            )
+            return
         logger.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
         self.c_gain, self.c_offset = gain, offset
 
@@ -72,11 +80,19 @@ class Calibration:
         )
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
-            logger.warning("NOTE: skipped a voltage_calibration")
+            logger.warning(
+                "NOTE: skipped determining voltage_calibration (missing data)"
+            )
             return
-        gain, offset = self.measurements_to_calibration(
-            result.v_ref_V, result.v_shp_raw
-        )
+        try:
+            gain, offset = self.measurements_to_calibration(
+                result.v_ref_V, result.v_shp_raw
+            )
+        except ValueError:
+            logger.warning(
+                "NOTE: skipped determining voltage_calibration (failed linregress)"
+            )
+            return
         logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
         self.v_gain, self.v_offset = gain, offset
 

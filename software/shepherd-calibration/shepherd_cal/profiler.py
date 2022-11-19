@@ -199,16 +199,19 @@ class Profiler:
         for index, (voltage, current) in enumerate(
             itertools.product(self.voltages_V, self.currents_A)
         ):
-            cdata, vdata, v_meas, c_set = self.measure_harvester_setpoint(
-                self._cal.kth.smub, voltage, current
-            )
+            (
+                c_adc_raw,
+                v_dac_raw,
+                v_smu_meas,
+                c_smu_set,
+            ) = self.measure_harvester_setpoint(self._cal.kth.smub, voltage, current)
             # order from Profiler.elem_dict
             results[0][index] = voltage
-            results[1][index] = vdata
-            results[2][index] = v_meas
+            results[1][index] = v_dac_raw
+            results[2][index] = v_smu_meas
             results[3][index] = current
-            results[4][index] = cdata
-            results[5][index] = c_set
+            results[4][index] = c_adc_raw
+            results[5][index] = c_smu_set
         # return to neutral mode
         self._cal.sheep.set_aux_target_voltage_raw(
             (2**20) + cal_def.dac_voltage_to_raw(5.0), also_main=True

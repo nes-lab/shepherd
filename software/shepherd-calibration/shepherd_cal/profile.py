@@ -10,10 +10,10 @@ from .logger import logger
 
 component_dict = {
     "a": "emu_a",
-    "b": "emu_b",
-    "h": "hrv",
     "emu_a": "emu_a",
+    "b": "emu_b",
     "emu_b": "emu_b",
+    "h": "hrv",
     "hrv": "hrv",
 }
 
@@ -35,6 +35,8 @@ class Profile:
     cals: dict = {}
     results: dict = {}
     stats: list = []
+    data_filters: dict = {}
+    res_filters: dict = {}
 
     def __init__(self, file: Path):
         if not isinstance(file, Path):
@@ -57,6 +59,7 @@ class Profile:
 
             self._prepare_data(comp_o, meas_file[comp_i])
             self._prepare_results(comp_o, self.data[comp_o])
+            self._prepare_filters(comp_o)
             self._prepare_stats(comp_o, self.data[comp_o])
 
     def _prepare_data(self, component: str, data_raw: np.ndarray) -> NoReturn:
@@ -81,10 +84,27 @@ class Profile:
         data_df.loc[filter_v, "v_ref_V"] = data_df.loc[filter_v, "v_shp_V"]
         data_df.loc[filter_v, "c_ref_A"] = data_df.loc[filter_v, "c_shp_A"]
 
-        cal = Calibration().from_measurement(data_df)
+        # fix the known case of missing SMU (PART 1)
+        if component == "emu_b" and "emu_a" in self.cals:
+            cal = self.cals["emu_a"]
+            logger.debug("  -> replaced Cal of emu_b with _a")
+        else:
+            cal = Calibration().from_measurement(data_df)
 
         data_df["c_shp_A"] = cal.convert_current_raw_to_A(data_df.c_shp_raw)
         data_df["c_shp_A"] = data_df.c_shp_A.apply(lambda x: x if x >= -1e-3 else -1e-3)
+
+        # fix the known case of missing SMU (PART 2)
+        if component == "emu_b":
+            # assume resistor
+            resistor = (data_df["v_shp_V"] / data_df["c_shp_A"]).median()
+            data_df["c_ref_A"] = data_df["v_shp_V"] / resistor
+            data_df["v_ref_V"] = data_df.loc[:, "v_shp_V"]
+            logger.debug(
+                "  -> replaced SMU-values with shp-values and estimate resistor (%.3f Ohm)",
+                resistor,
+            )
+
         data_df["v_error_mV"] = 1e3 * (data_df.v_ref_V - data_df.v_shp_V)
         data_df["v_error_abs_mV"] = data_df.v_error_mV.abs()
         data_df["c_error_mA"] = 1e3 * (data_df.c_ref_A - data_df.c_shp_A)
@@ -127,6 +147,16 @@ class Profile:
         )
         self.results[component] = result
 
+    def _prepare_filters(self, component: str):
+        data = self.data[component]
+        filter_c = (data.c_ref_A >= 3e-6) & (data.c_ref_A <= 40e-3)
+        filter_v = (data.v_shp_V >= 1.0) & (data.v_shp_V <= 3.9)
+        self.data_filters[component] = filter_c & filter_v
+        result = self.results[component]
+        filter_c = (result.c_ref_A >= 3e-6) & (result.c_ref_A <= 40e-3)
+        filter_v = (result.v_shp_V >= 1.0) & (result.v_shp_V <= 3.9)
+        self.res_filters[component] = filter_c & filter_v
+
     def _prepare_stats(self, component: str, data: pd.DataFrame) -> NoReturn:
         """Statistics-Generator
         - every dataset is a row
@@ -136,19 +166,10 @@ class Profile:
           min, max, stddev, minmax-intervall, mean
 
         """
-        filter_c = (data.c_ref_A >= 3e-6) & (data.c_ref_A <= 40e-3)
-        filter_v = (data.v_shp_V >= 1.0) & (data.v_shp_V <= 3.9)
-        result_filtered = data[filter_c & filter_v]
-
         for decision in [False, True]:
             stat_values = pd.DataFrame()
-            result_now = result_filtered if decision else data
-            stat_values["origin"] = [
-                self.file_name
-                + " "
-                + component.upper()
-                + (" limited" if decision else "")
-            ]
+            result_now = data[self.data_filters[component]] if decision else data
+            stat_values["origin"] = [self.file_name]  # Note: first entry must be in []
             stat_values["component"] = component.upper()
             stat_values["range"] = "limited" if decision else "full"
 
@@ -164,8 +185,11 @@ class Profile:
     def get_stats(self) -> pd.DataFrame:
         return pd.concat(self.stats, axis=0, ignore_index=True)
 
-    def scatter_setpoints_stddev(self, component: str):
+    def scatter_setpoints_stddev(self, component: str, filtered: bool = False):
         data = self.results[component]
+        if filtered:
+            data = data[self.res_filters[component]]
+        filter_str = "_filtered" if filtered else ""
         c_gain = self.cals[component].c_gain
         x = 1e3 * data.v_ref_V  # todo: transition not finished, same with above FN
         y = []
@@ -195,12 +219,17 @@ class Profile:
         fig.set_figwidth(11)
         fig.set_figheight(10)
         fig.tight_layout()
-        plt.savefig(self.file_name + "_scatter_stddev_" + component + ".png")
+        plt.savefig(
+            self.file_name + "_scatter_stddev_" + component + filter_str + ".png"
+        )
         plt.close(fig)
         plt.clf()
 
-    def scatter_setpoints_dynamic(self, component: str):
+    def scatter_setpoints_dynamic(self, component: str, filtered: bool = False):
         data = self.results[component]
+        if filtered:
+            data = data[self.res_filters[component]]
+        filter_str = "_filtered" if filtered else ""
         c_gain = self.cals[component].c_gain
         x = 1e3 * data[elem_dict["voltage_ref_V"], :]
         y = []
@@ -238,12 +267,17 @@ class Profile:
         fig.set_figwidth(11)
         fig.set_figheight(10)
         fig.tight_layout()
-        plt.savefig(self.file_name + "_scatter_dynamic_" + component + ".png")
+        plt.savefig(
+            self.file_name + "_scatter_dynamic_" + component + +filter_str + ".png"
+        )
         plt.close(fig)
         plt.clf()
 
-    def quiver_setpoints_offset(self, component: str):
+    def quiver_setpoints_offset(self, component: str, filtered: bool = False):
         data = self.results[component]
+        if filtered:
+            data = data[self.res_filters[component]]
+        filter_str = "_filtered" if filtered else ""
         fig, ax = plt.subplots()
         ax.scatter(
             1e3 * data.v_shp_V,
@@ -281,6 +315,6 @@ class Profile:
         fig.set_figwidth(11)
         fig.set_figheight(10)
         fig.tight_layout()
-        plt.savefig(self.file_name + "_quiver_" + component + ".png")
+        plt.savefig(self.file_name + "_quiver_" + component + filter_str + ".png")
         plt.close(fig)
         plt.clf()

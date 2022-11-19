@@ -26,6 +26,8 @@ from .profiler import Profiler
     default=3,
     help="4 Levels",
 )
+@click.version_option()
+# @click.pass_context
 def cli(verbose):
     set_verbose_level(verbose)
 
@@ -35,7 +37,17 @@ def cli(verbose):
 # #############################################################################
 
 
-@cli.command(short_help="Measure calibration-data from shepherd cape with Keithley SMU")
+@cli.group(
+    short_help="Command-Group for initializing the shepherd-cape with a Keithley SMU"
+)
+def calibration():
+    pass
+
+
+@calibration.command(
+    "measure",
+    short_help="Measure calibration-data from shepherd cape with Keithley SMU",
+)
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="jane", help="Host Username")
 @click.option(
@@ -67,7 +79,7 @@ def cli(verbose):
     default=16,
     help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)",
 )
-def measure(
+def cal_measure(
     host,
     user,
     password,
@@ -123,7 +135,7 @@ def measure(
     logger.info("Saved Cal-Measurement to '%s'.", outfile)
 
 
-@cli.command(short_help="Convert measurement to calibration-data")
+@calibration.command("convert", short_help="Convert measurement to calibration-data")
 @click.argument(
     "infile",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
@@ -135,12 +147,12 @@ def measure(
     is_flag=True,
     help="generate plots that contain data points and calibration model",
 )
-def convert(infile, outfile, plot: bool):
+def cal_convert(infile, outfile, plot: bool):
     outfile = Calibrator.convert(infile, outfile, plot)
     logger.info("Cal-File was written to '%s'", outfile)
 
 
-@cli.command(short_help="Write calibration-data to shepherd cape")
+@calibration.command("write", short_help="Write calibration-data to shepherd cape")
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe")
 @click.option(
@@ -179,7 +191,7 @@ def convert(infile, outfile, plot: bool):
     type=click.STRING,
     help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
-def write(
+def cal_write(
     host, user, password, cal_file, measurement_file, version, serial_number, cal_date
 ):
     if not any([cal_file, measurement_file]):
@@ -195,7 +207,7 @@ def write(
     shpcal.read()
 
 
-@cli.command(short_help="Read calibration-data from shepherd cape")
+@calibration.command("read", short_help="Read calibration-data from shepherd cape")
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="jane")
 @click.option(
@@ -205,7 +217,7 @@ def write(
     default=None,
     help="Host User Password -> only needed when key-credentials are missing",
 )
-def read(host, user, password):
+def cal_read(host, user, password):
     shpcal = Calibrator(host, user, password)
     shpcal.read()
 
@@ -215,7 +227,14 @@ def read(host, user, password):
 # #############################################################################
 
 
-@cli.command(short_help="Measure profile-data from shepherd cape with Keithley SMU")
+@cli.group(short_help="Command-Group for profiling the analog frontends")
+def profile():
+    pass
+
+
+@profile.command(
+    "measure", short_help="Measure profile-data from shepherd cape with Keithley SMU"
+)
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe", help="Host Username")
 @click.option(
@@ -259,7 +278,7 @@ def read(host, user, password):
     is_flag=True,
     help="remove user-interaction (setup prompt)",
 )
-def profile(
+def profile_measure(
     host,
     user,
     password,
@@ -312,10 +331,11 @@ def profile(
     np.savez_compressed(
         file_path, emu_a=results_emu_a, emu_b=results_emu_b, hrv=results_hrv
     )
-    logger.info("Profiling took %.1f s", time() - time_now)
+    logger.info("Data was written to '%s'", file_path)
+    logger.debug("Profiling took %.1f s", time() - time_now)
 
 
-@cli.command(short_help="Analyze profile-data")
+@profile.command("analyze", short_help="Analyze profile-data")
 @click.argument(
     "infile",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=True),
@@ -332,7 +352,7 @@ def profile(
     is_flag=True,
     help="generate plots that visualize the profile",
 )
-def analyze(infile, outfile, plot):
+def profile_analyze(infile, outfile, plot):
     """
 
     Args:

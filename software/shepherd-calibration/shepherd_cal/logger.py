@@ -1,8 +1,6 @@
 import logging
 
-# consoleHandler = logging.StreamHandler()
 logger = logging.getLogger("shp.calTool")
-# logger.addHandler(consoleHandler)
 logger.setLevel(logging.DEBUG)
 
 

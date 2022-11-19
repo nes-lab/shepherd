@@ -16,16 +16,18 @@ Calibration and profiling requires a SMU from Keithley. Our tests and initial ca
 
 ## Usage
 
-The Interface is not stable ATM, so explore the commands on your own: 
+The Interface is not stable ATM, so explore the commands on your own:
 
 ```Shell
 # to see the commands:
 shepherd-cal --help
 # help for individual commands, ie:
-shepherd-cal measure -h
+shepherd-cal calibration -h
+shepherd-cal calibration measure -h
+shepherd-cal profile -h
 ```
 
-It is currently possible to 
+It is currently possible to
 
 - calibrate the shepherd cape
 - read and write calibration to the shepherd cape
@@ -39,13 +41,13 @@ For actual measurements the program will tell you how to connect the SMU to the 
 Calibration
 
 ```Shell
-shepherd-cal measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41 -o sheep0_cape_v240b.yml
-shepherd-cal write sheep0 -u jane -p 1234 -m sheep0_cape_v240b.yml -v 24B0 -s i1270057 -d 2022-11-11
+shepherd-cal calibration measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41 -o sheep0_cape_v240b.yml
+shepherd-cal calibration write sheep0 -u jane -p 1234 -m sheep0_cape_v240b.yml -v 24B0 -s i1270057 -d 2022-11-11
 ```
 
 Profiling
 
 ```Shell
-shepherd-cal profile sheep0 -u jane -p 1234 --smu-ip 10.0.0.41
-shepherd-cal analyze -o stats.csv --plot
+shepherd-cal profile measure sheep0 -u jane -p 1234 --smu-ip 10.0.0.41
+shepherd-cal profile analyze -o stats.csv --plot
 ```
