@@ -32,7 +32,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 22.8.0
+    rev: 22.10.0
     hooks:
       - id: black
 
@@ -48,7 +48,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.38.2
+    rev: v3.2.2
     hooks:
       - id: pyupgrade
         args: ["--py38-plus"]
@@ -85,19 +85,19 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.8.0b1
+    rev: v6.8.6
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.1"
+    rev: "v2.2.2"
     hooks:
       - id: codespell
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: 'v14.0.6'
+    rev: 'v15.0.4'
     hooks:
       - id: clang-format
         types_or: [c++, c]
