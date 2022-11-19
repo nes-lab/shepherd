@@ -9,6 +9,7 @@ def group_options(*options):
 
     return wrapper
 
+
 # TODO: switch to this unifying style for all shepherd-tools
 # common general shepherd options
 
