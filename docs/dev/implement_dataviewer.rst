@@ -56,7 +56,7 @@ TBD, proposal:
 Useful links
 -------------
 
-``Flocklab`` - another similar Testbed `implemented plotting <https://github.com/ETHZ-TEC/FlockLab-Tools>`_ with `Bokeh <https://bokeh.org/>` both for web and offline usage.
+``FlockLab`` - another similar Testbed `implemented plotting <https://github.com/ETHZ-TEC/FlockLab-Tools>`_ with `Bokeh <https://bokeh.org/>`_ both for web and offline usage.
 
 An alternative to Bokeh could be `plotly <https://github.com/plotly/plotly.py>`_.
 source: https://pauliacomi.com/2020/06/07/plotly-v-bokeh.html
