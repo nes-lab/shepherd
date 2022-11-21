@@ -56,13 +56,15 @@ TBD, proposal:
 Useful links
 -------------
 
-``FlockLab`` - another similar Testbed `implemented plotting <https://github.com/ETHZ-TEC/FlockLab-Tools>`_ with `Bokeh <https://bokeh.org/>`_ both for web and offline usage.
+``FlockLab`` - a similar Testbed `implemented plotting <https://github.com/ETHZ-TEC/FlockLab-Tools>`_ with `Bokeh <https://bokeh.org/>`_ both for web and offline usage.
 
 An alternative to Bokeh could be `plotly <https://github.com/plotly/plotly.py>`_.
 source: https://pauliacomi.com/2020/06/07/plotly-v-bokeh.html
 
-For bundling and filtering plots in an overview-page: https://awesome-panel.org/ -> the video https://www.youtube.com/watch?v=0DBEXiMdSKc&t=530s talks about Terabytes of data visualized with datashader, rapids cuxFilter -> problem: GPU / CUDA based
+For bundling and filtering plots in an overview-page:
 
+- https://awesome-panel.org/ -> the video https://www.youtube.com/watch?v=0DBEXiMdSKc&t=530s talks about Terabytes of data visualized with datashader, rapids cuxFilter -> problem: GPU / CUDA based
+- Alternative: Streamlit https://streamlit.io
 
 More Info on current GPIO-Pins routed to the targets:
 
