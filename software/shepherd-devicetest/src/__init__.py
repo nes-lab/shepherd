@@ -19,7 +19,7 @@ include("../python-package/shepherd/calibration.py")
 def assemble_window():
 
     with dpg.window(
-        tag="main", label="Shepherd Testing and Debug Tool", width=1000, height=600
+        tag="main", label="Shepherd Testing and Debug Tool", width=1000, height=700
     ):
 
         with dpg.group(horizontal=True):
@@ -224,8 +224,22 @@ def assemble_window():
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_gpio", default_value="GPIO-Control")
-        dpg.add_spacer(height=1)
 
+        dpg.add_spacer(height=1)
+        with dpg.group(horizontal=True):
+            dpg.add_text(tag="text_D_gpio", default_value="Set Dir")
+            dpg.add_spacer(width=35)
+            for dir_name, dir_pin in gpio_dir_channels.items():
+                dpg.add_checkbox(
+                    tag=f"en_dir_{dir_name}",
+                    label=dir_name,
+                    default_value=False,
+                    callback=gpio_dir_callback,
+                    user_data=dir_pin,
+                )
+            dpg.add_text(tag="text_F_gpio", default_value=" (On == Input)")
+
+        dpg.add_spacer(height=1)
         with dpg.group(horizontal=True):
             dpg.add_text(tag="text_A_gpio", default_value="Set One")
             dpg.add_spacer(width=35)
@@ -236,6 +250,18 @@ def assemble_window():
                 horizontal=True,
                 default_value=len(gpio_channels) - 1,
             )
+
+        dpg.add_spacer(height=1)
+        with dpg.group(horizontal=True):
+            dpg.add_text(tag="text_E_gpio", default_value="Get Sys")
+            dpg.add_spacer(width=35)
+            for pin_name in gpio_channels[:-1]:
+                dpg.add_checkbox(
+                    tag=f"gpio_read_{pin_name}",
+                    label=pin_name,
+                    default_value=False,
+                    enabled=False,
+                )
 
         dpg.add_spacer(height=1)
         with dpg.group(horizontal=True):
@@ -270,7 +296,7 @@ def assemble_window():
 if __name__ == "__main__":
     dpg.create_context()
     dpg.create_viewport(
-        title="Shepherd Testing and Debug Tool (VP)", width=1000, height=600
+        title="Shepherd Testing and Debug Tool (VP)", width=1000, height=700
     )
     dpg.setup_dearpygui()
 
