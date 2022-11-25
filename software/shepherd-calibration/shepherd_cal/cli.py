@@ -177,8 +177,8 @@ def cal_convert(infile, outfile, plot: bool):
     "--version",
     "-v",
     type=click.STRING,
-    default="24A0",
-    help="Cape version number, max 4 Char, e.g. 22A0, reflecting hardware revision",
+    default="24B0",
+    help="Cape version number, max 4 Char, e.g. 24B0, reflecting hardware revision",
 )
 @click.option(
     "--serial_number",

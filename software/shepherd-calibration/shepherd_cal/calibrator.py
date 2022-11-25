@@ -358,7 +358,14 @@ class Calibrator:
     def write(self, cal_file: str, serial: str, version: str, cal_date: str):
         temp_file = "/tmp/calib.yml"  # noqa: S108
         with open(cal_file) as stream:
-            cal_host = yaml.safe_load(stream)["host"]
+            content = yaml.safe_load(stream)
+            print(content)
+            if "host" in content:
+                cal_host = content["host"]
+            elif "node" in content:
+                cal_host = content["node"]
+            else:
+                cal_host = "unknown"
         if cal_host != self._host:
             logger.warning(
                 "Calibration data for '%s' doesn't match host '%s'.",
@@ -369,7 +376,7 @@ class Calibrator:
         self._cnx.put(cal_file, temp_file)  # noqa: S108
         logger.info("----------EEPROM WRITE------------")
         result = self._cnx.sudo(
-            f"shepherd-sheep eeprom write -v {version} -s {serial} -d {cal_date}"
+            f"shepherd-sheep -vvv eeprom write -v {version} -s {serial} -d {cal_date}"
             f" -c {temp_file}",
             warn=True,
             hide=True,
@@ -379,14 +386,14 @@ class Calibrator:
 
     def read(self):
         logger.info("----------EEPROM READ------------")
-        result = self._cnx.sudo("shepherd-sheep eeprom read", warn=True, hide=True)
+        result = self._cnx.sudo("shepherd-sheep -vvv eeprom read", warn=True, hide=True)
         logger.info(result.stdout)
         logger.info("---------------------------------")
 
     def retrieve(self, cal_file: str):
         temp_file = "/tmp/calib.yml"  # noqa: S108
         result = self._cnx.sudo(
-            f"shepherd-sheep eeprom read -c {temp_file}", warn=True, hide=True
+            f"shepherd-sheep -vvv eeprom read -c {temp_file}", warn=True, hide=True
         )
         logger.info(result.stdout)
         self._cnx.get(temp_file, local=str(cal_file))
