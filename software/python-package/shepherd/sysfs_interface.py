@@ -392,7 +392,16 @@ def read_pru_msg() -> tuple:
     return msg_parts[0], msg_parts[1:]
 
 
-prog_attribs = ["target", "datarate", "pin_tck", "pin_tdio", "pin_tdo", "pin_tms"]
+prog_attribs = [
+    "target",
+    "datarate",
+    "pin_tck",
+    "pin_tdio",
+    "pin_dir_tdio",
+    "pin_tdo",
+    "pin_tms",
+    "pin_dir_tms",
+]
 
 
 def write_programmer_ctrl(
@@ -400,20 +409,22 @@ def write_programmer_ctrl(
     datarate: int,
     pin_tck: int,
     pin_tdio: int,
-    pin_tdo: int = 0,
-    pin_tms: int = 0,
+    pin_dir_tdio: int,
+    pin_tdo: Optional[int] = None,
+    pin_tms: Optional[int] = None,
+    pin_dir_tms: Optional[int] = None,
 ):
-    parameters = [target, datarate, pin_tck, pin_tdio, pin_tdo, pin_tms]
-
-    for parameter in parameters[1:]:
-        if (parameter < 0) or (parameter >= 2**32):
+    for num, attribute in enumerate(prog_attribs):
+        value = eval(attribute)  # noqa: S307, SCS101
+        if num > 0 and ((value < 0) or (value >= 2**32)):
             raise SysfsInterfaceException(
-                f"at least one parameter out of u32-bounds, value={parameter}"
+                f"at least one parameter out of u32-bounds, value={value}"
             )
-    for _iter, attribute in enumerate(prog_attribs):
+        if value is None:
+            continue
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug("set programmer/%s = '%s'", attribute, parameters[_iter])
-            file.write(str(parameters[_iter]))
+            logger.debug("set programmer/%s = '%s'", attribute, value)
+            file.write(str(value))
 
 
 def read_programmer_ctrl() -> list:

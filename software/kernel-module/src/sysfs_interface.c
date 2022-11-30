@@ -159,6 +159,10 @@ struct kobj_attr_struct_s attr_prog_pin_tdio = {
         .attr       = __ATTR(pin_tdio, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
         .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
                       offsetof(struct ProgrammerCtrl, pin_tdio)};
+struct kobj_attr_struct_s attr_prog_pin_dir_tdio = {
+        .attr       = __ATTR(pin_dir_tdio, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
+        .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
+                      offsetof(struct ProgrammerCtrl, pin_dir_tdio)};
 struct kobj_attr_struct_s attr_prog_pin_tdo = {
         .attr       = __ATTR(pin_tdo, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
         .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
@@ -167,7 +171,10 @@ struct kobj_attr_struct_s attr_prog_pin_tms = {
         .attr       = __ATTR(pin_tms, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
         .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
                       offsetof(struct ProgrammerCtrl, pin_tms)};
-
+struct kobj_attr_struct_s attr_prog_pin_dir_tms = {
+        .attr       = __ATTR(pin_dir_tms, 0660, sysfs_SharedMem_show, sysfs_prog_pin_store),
+        .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
+                      offsetof(struct ProgrammerCtrl, pin_dir_tms)};
 
 struct kobj_attr_struct_s attr_pru0_firmware = {
         .attr = __ATTR(pru0_firmware, 0660, sysfs_pru0_firmware_show, sysfs_pru0_firmware_store),
@@ -211,9 +218,17 @@ static struct attribute_group attr_mem_group = {
 
 
 static struct attribute *pru_prog_attrs[] = {
-        &attr_prog_state.attr.attr,    &attr_prog_target.attr.attr,  &attr_prog_datarate.attr.attr,
-        &attr_prog_datasize.attr.attr, &attr_prog_pin_tck.attr.attr, &attr_prog_pin_tdio.attr.attr,
-        &attr_prog_pin_tdo.attr.attr,  &attr_prog_pin_tms.attr.attr, NULL,
+        &attr_prog_state.attr.attr,
+        &attr_prog_target.attr.attr,
+        &attr_prog_datarate.attr.attr,
+        &attr_prog_datasize.attr.attr,
+        &attr_prog_pin_tck.attr.attr,
+        &attr_prog_pin_tdio.attr.attr,
+        &attr_prog_pin_dir_tdio.attr.attr,
+        &attr_prog_pin_tdo.attr.attr,
+        &attr_prog_pin_tms.attr.attr,
+        &attr_prog_pin_dir_tms.attr.attr,
+        NULL,
 };
 static struct attribute_group attr_prog_group = {
         .attrs = pru_prog_attrs,

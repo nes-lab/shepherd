@@ -567,7 +567,12 @@ def launcher(led, button):
     default="nrf52",
     help="Target chip",
 )
-def programmer(firmware_file, sel_a, voltage, speed, target):
+@click.option(
+    "--prog1/--prog2",
+    default=True,
+    help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
+)
+def programmer(firmware_file, sel_a, voltage, speed, target, prog1):
 
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
@@ -588,9 +593,10 @@ def programmer(firmware_file, sel_a, voltage, speed, target):
 
         try:
             sd.shared_mem.write_firmware(fw.read())
-            sysfs_interface.write_programmer_ctrl(
-                target, speed, 22, 23, 26, 27
-            )  # TODO: pins-nums are placeholders
+            if prog1:
+                sysfs_interface.write_programmer_ctrl(target, speed, 5, 4, 10)
+            else:
+                sysfs_interface.write_programmer_ctrl(target, speed, 8, 9, 11)
             logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
         except OSError:

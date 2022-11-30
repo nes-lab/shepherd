@@ -7,14 +7,16 @@
  * why? this is (safe) nonsense, that is testable for byteorder and proper values
  * */
 
-const struct ProgrammerCtrl    ProgrammerCtrl_default    = {.state    = PRG_STATE_IDLE,
-                                                            .target   = PRG_TARGET_NRF52,
-                                                            .datarate = 1000000u,
-                                                            .datasize = 0u,
-                                                            .pin_tck  = 1001u,
-                                                            .pin_tdio = 1002u,
-                                                            .pin_tdo  = 1003u,
-                                                            .pin_tms  = 1004u};
+const struct ProgrammerCtrl    ProgrammerCtrl_default    = {.state        = PRG_STATE_IDLE,
+                                                            .target       = PRG_TARGET_NRF52,
+                                                            .datarate     = 1000000u,
+                                                            .datasize     = 0u,
+                                                            .pin_tck      = 1001u,
+                                                            .pin_tdio     = 1002u,
+                                                            .pin_dir_tdio = 1003u,
+                                                            .pin_tdo      = 1004u,
+                                                            .pin_tms      = 1005u,
+                                                            .pin_dir_tms  = 1006u};
 
 const struct CalibrationConfig CalibrationConfig_default = {.adc_current_factor_nA_n8      = 255u,
                                                             .adc_current_offset_nA         = -1,

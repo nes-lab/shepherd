@@ -15,17 +15,17 @@ GPIO 7 - uart rx  - always RX
 GPIO 8 - uart tx  - dir2-pin / rxtx
 BAT OK            - always TX
 
-SWD1 CLK - jtag TCK   - always TX
-SWD1 IO  - jtag TDI   - pDir1-pin / rxtx
-SWD2 CLK - jtag TDO   - always TX
-SWD2 IO  - jtag TMS   - pDir2-pin / rxtx
+Prog1 CLK - jtag TCK   - always TX
+Prog1 IO  - jtag TDI   - pDir1-pin / rxtx
+Prog2 CLK - jtag TDO   - always TX
+Prog2 IO  - jtag TMS   - pDir2-pin / rxtx
 
 Direction Pins:
 
 gpio0to3 = 78  # P8_37, GPIO2[14]
 uart_tx = 79   # P8_38, GPIO2[15]
-swd1_io = 10   # P8_31, GPIO0[10]
-swd2_io = 11   # P8_32, GPIO0[11]
+prog1_io = 10   # P8_31, GPIO0[10]
+prog2_io = 11   # P8_32, GPIO0[11]
 
 :copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
@@ -44,10 +44,10 @@ target_pins = [  # pin-order from target-connector
     {"name": "gpio6", "pin": 81, "dir": "I"},
     {"name": "uart_rx", "pin": 14, "dir": "I"},
     {"name": "uart_tx", "pin": 15, "dir": 79},
-    {"name": "swd1_clk", "pin": 5, "dir": "O"},
-    {"name": "swd1_io", "pin": 4, "dir": 10},
-    {"name": "swd2_clk", "pin": 8, "dir": "O"},
-    {"name": "swd2_io", "pin": 9, "dir": 11},
+    {"name": "prog1_clk", "pin": 5, "dir": "O"},
+    {"name": "prog1_io", "pin": 4, "dir": 10},
+    {"name": "prog2_clk", "pin": 8, "dir": "O"},
+    {"name": "prog2_io", "pin": 9, "dir": 11},
 ]
 
 
@@ -64,9 +64,7 @@ class TargetIO:
         Args:
 
         """
-        dir_pins = set(
-            [pin["dir"] for pin in target_pins if isinstance(pin["dir"], int)]
-        )
+        dir_pins = {pin["dir"] for pin in target_pins if isinstance(pin["dir"], int)}
         for pin in dir_pins:
             self.dirs[pin] = GPIO(pin, "out")
             self.dirs[pin].write(True)  # True == Output to target
@@ -131,11 +129,11 @@ class TargetIO:
             dir_pin = self.dirs[dir_param]
             return not dir_pin.read()
 
-    def set_pin_direction(self, num: int, dir: bool) -> bool:
+    def set_pin_direction(self, num: int, pdir: bool) -> bool:
         """
         Args:
             num: number of pin, in reference to list target_pins
-            dir: False / 0 means Output, True / 1 means Input
+            pdir: False / 0 means Output, True / 1 means Input
 
         Returns: True if wanted change is set (does not mean that it was actually changed here)
 
@@ -144,19 +142,19 @@ class TargetIO:
         if isinstance(dir_param, str):
             # not changeable
             pin_state = dir_param == "I"
-            return pin_state == dir
+            return pin_state == pdir
         elif isinstance(dir_param, int):
             pins_affected = [
                 pin["name"] for pin in target_pins if pin["dir"] == dir_param
             ]
 
             # changing pin-dir has to be done in 2 stages to be safe
-            if dir:  # GPIO -> input
+            if pdir:  # GPIO -> input
                 for pin in pins_affected:
                     self.gpios[pin].direction = "in"
             # dir-pin high == output (reversed to dir)
-            self.dirs[dir_param].write(not dir)
-            if not dir:  # GPIO -> input
+            self.dirs[dir_param].write(not pdir)
+            if not pdir:  # GPIO -> input
                 for pin in pins_affected:
                     self.gpios[pin].direction = "out"
 

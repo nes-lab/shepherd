@@ -311,12 +311,22 @@ def adc_refresh() -> NoReturn:
 #################################
 
 # gpio_channels = [str(val) for val in list(range(9)) + ["None"]]
-gpio_channels = ["io0", "io1", "io2", "io3", "i4", "i5", "i6",
-                 "ser_i", "ser_io",
-                 "pr1_o", "pr1_io",
-                 "pr2_o", "pr2_io",
-                 "None",
-                 ]
+gpio_channels = [
+    "io0",
+    "io1",
+    "io2",
+    "io3",
+    "i4",
+    "i5",
+    "i6",
+    "ser_i",
+    "ser_io",
+    "pr1_o",
+    "pr1_io",
+    "pr2_o",
+    "pr2_io",
+    "None",
+]
 gpio_dir_channels = {"0to3": 0, "ser_io": 8, "pr1": 10, "pr2": 12}
 
 
