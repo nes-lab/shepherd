@@ -34,6 +34,8 @@ from typing import NoReturn
 
 from periphery import GPIO
 
+from .logger_config import logger
+
 target_pins = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},
     {"name": "gpio1", "pin": 27, "dir": 78},
@@ -111,7 +113,7 @@ class TargetIO:
             return False
         pin_name = target_pins[num]["name"]
         if self.gpios[pin_name].direction == "in":
-            print(f"Error: pin {pin_name} was input, shouldn't be")
+            logger.warning("Error: pin %s was input, shouldn't be", pin_name)
         self.gpios[pin_name].write(state)
         return True
 

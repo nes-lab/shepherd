@@ -359,13 +359,8 @@ class Calibrator:
         temp_file = "/tmp/calib.yml"  # noqa: S108
         with open(cal_file) as stream:
             content = yaml.safe_load(stream)
-            print(content)
-            if "host" in content:
-                cal_host = content["host"]
-            elif "node" in content:
-                cal_host = content["node"]
-            else:
-                cal_host = "unknown"
+            cal_std = content.get("node", "unknown")
+            cal_host = content.get("host", cal_std)
         if cal_host != self._host:
             logger.warning(
                 "Calibration data for '%s' doesn't match host '%s'.",

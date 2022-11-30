@@ -560,9 +560,9 @@ class ShepherdDebug(ShepherdIO):
             logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return False
 
-    def set_gpio_direction(self, num: int, dir: bool) -> NoReturn:
+    def set_gpio_direction(self, num: int, pdir: bool) -> NoReturn:
         if not (self._io is None):
-            self._io.set_pin_direction(num, dir)
+            self._io.set_pin_direction(num, pdir)
         else:
             logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
 

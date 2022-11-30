@@ -414,8 +414,9 @@ def write_programmer_ctrl(
     pin_tms: Optional[int] = None,
     pin_dir_tms: Optional[int] = None,
 ):
+    args = locals()
     for num, attribute in enumerate(prog_attribs):
-        value = eval(attribute)  # noqa: S307, SCS101
+        value = args[attribute]
         if num > 0 and ((value < 0) or (value >= 2**32)):
             raise SysfsInterfaceException(
                 f"at least one parameter out of u32-bounds, value={value}"
