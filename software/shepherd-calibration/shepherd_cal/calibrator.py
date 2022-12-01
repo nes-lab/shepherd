@@ -71,6 +71,7 @@ class Calibrator:
         self._host = host
         self.sheep = zerorpc.Client(timeout=60, heartbeat=20)
         self._cnx = Connection(host, user=user, connect_kwargs=fabric_args)
+        # TODO: check connection or else .sudo below throws socket.gaierror when sheep unavail
 
         if smu_ip is not None:
             self.kth = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
