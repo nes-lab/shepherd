@@ -34,5 +34,5 @@ coverage = "*"
 [pipenv]
 allow_prereleases = false
 
-[requires]
-python_version = "3"
+#[requires]
+#python_version = "3"
