@@ -11,7 +11,7 @@
     path: "{{ item }}"
     state: absent
   with_items: "{{ files_init.files | map(attribute='path') }}"
-
+  when: false # TODO: Disabled for now, needs testing
 
 - name: Delete unused firmware (by beaglebone, slightly risky) - A
   ansible.builtin.file:
@@ -33,7 +33,6 @@
     - "mediatek"
     - "nvidia"
   become: true
-  when: false # TODO: Disabled for now, needs testing
 
 - name: Find unused firmware (by beaglebone, slightly risky) - B
   ansible.builtin.find:

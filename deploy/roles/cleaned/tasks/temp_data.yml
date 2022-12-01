@@ -20,7 +20,6 @@
     path: "~/.cache/pip"
     state: absent
   become: false
-  when: false  # TODO: Disabled for now, needs testing
 
 - name: Find Logs and other tmp-files
   ansible.builtin.find:
@@ -33,7 +32,6 @@
     path: "{{ item }}"
     state: absent
   with_items: "{{ files_tmp.files | map(attribute='path') }}"
-  when: false  # TODO: Disabled for now, needs testing
 
 - name: Discard unused blocks (trim)
   ansible.builtin.command: 'fstrim -a'
