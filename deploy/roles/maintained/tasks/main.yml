@@ -63,6 +63,11 @@
   ansible.builtin.include_tasks:
     file: performance.yml
 
+- name: Restart device
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
+
 - name: Cleanup Beaglebone
   ansible.builtin.include_role:
     name: cleaned

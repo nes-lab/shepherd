@@ -20,6 +20,7 @@
     path: "~/.cache/pip"
     state: absent
   become: false
+  when: false  # TODO: Disabled for now, needs testing
 
 - name: Find Logs and other tmp-files
   ansible.builtin.find:

@@ -33,6 +33,7 @@
     - "mediatek"
     - "nvidia"
   become: true
+  when: false # TODO: Disabled for now, needs testing
 
 - name: Find unused firmware (by beaglebone, slightly risky) - B
   ansible.builtin.find:
