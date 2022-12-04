@@ -45,6 +45,23 @@
   with_items: "{{ files_fw.files | map(attribute='path') }}"
   when: false # TODO: Disabled for now, needs testing
 
+- name: Uname - Get Kernel-Version
+  ansible.builtin.command: 'uname --kernel-release'
+  register: kernelrelease
+  changed_when: false
+- name: Inform about Kernel-Version
+  ansible.builtin.debug:
+    msg:
+      - "active   = {{ kernelrelease.stdout.strip() }}"
+      - "required = {{ required_kernel_regex }} (regex)"
+- name: Check for required Kernel-Version
+  ansible.builtin.fail:
+    msg: |
+      Required Kernel-Version not active!
+      -> update_kernel.sh failed or /boot/uEnv.txt got changed
+  when: kernelrelease.stdout.strip() is not ansible.builtin.search(required_kernel_regex)
+  # TODO: a wrong version should disable the apt-task below (bricks the image)
+
 - name: APT - Uninstall non-essential Packages
   ansible.builtin.apt:
     name: "{{ item }}"
