@@ -1,5 +1,12 @@
 ---
 
+- name: Test if Node has Access to Internet
+  ansible.builtin.wait_for:
+    host: github.com
+    port: 88
+    started: started
+    timeout: 5
+
 - name: Update SSL-Certificates
   ansible.builtin.command: 'update-ca-certificates -f -v'
   changed_when: true
@@ -62,6 +69,12 @@
 - name: Include performance-modifications
   ansible.builtin.include_tasks:
     file: performance.yml
+
+- name: Restart device
+  # not needed, but easier for debugging
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
 
 - name: Cleanup Beaglebone
   ansible.builtin.include_role:
