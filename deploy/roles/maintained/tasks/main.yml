@@ -1,10 +1,10 @@
 ---
 
-- name: Test if Node has Access to Internet
+- name: Test if Node has Access to Internet (essential)
   ansible.builtin.wait_for:
     host: github.com
-    port: 88
-    started: started
+    port: 80
+    state: started
     timeout: 5
 
 - name: Update SSL-Certificates
