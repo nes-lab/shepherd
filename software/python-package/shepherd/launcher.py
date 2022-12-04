@@ -70,13 +70,15 @@ class Launcher:
 
         sys_bus = dbus.SystemBus()
         systemd1 = sys_bus.get_object(
-            "org.freedesktop.systemd1", "/org/freedesktop/systemd1"
+            "org.freedesktop.systemd1",
+            "/org/freedesktop/systemd1",
         )
         self.manager = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
 
         shepherd_object = self.manager.LoadUnit(f"{ self.service_name }.service")
         self.shepherd_proxy = sys_bus.get_object(
-            "org.freedesktop.systemd1", str(shepherd_object)
+            "org.freedesktop.systemd1",
+            str(shepherd_object),
         )
         logger.debug("configured dbus for systemd")
 

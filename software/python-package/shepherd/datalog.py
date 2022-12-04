@@ -145,7 +145,7 @@ class LogWriter:
         self.samplerate_sps = int(samplerate_sps)
         self.sample_interval_ns = int(10**9 // samplerate_sps)
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            samples_per_buffer
+            samples_per_buffer,
         ).astype("u8")
         self._write_voltage = not skip_voltage
         self._write_current = not skip_current
@@ -289,13 +289,17 @@ class LogWriter:
             "message",
             (self.xcpt_inc,),
             dtype=h5py.special_dtype(
-                vlen=str
+                vlen=str,
             ),  # TODO: switch to string_dtype() (h5py >v3.0)
             maxshape=(None,),
             chunks=True,
         )
         self.xcpt_grp.create_dataset(
-            "value", (self.xcpt_inc,), dtype="u4", maxshape=(None,), chunks=True
+            "value",
+            (self.xcpt_inc,),
+            dtype="u4",
+            maxshape=(None,),
+            chunks=True,
         )
         self.xcpt_grp["value"].attrs["unit"] = "n"
 
@@ -411,7 +415,9 @@ class LogWriter:
         :return: None
         """
         self.data_grp.attrs["config"] = yaml.dump(
-            data, default_flow_style=False, sort_keys=False
+            data,
+            default_flow_style=False,
+            sort_keys=False,
         )
         if "window_samples" in data:
             self.data_grp.attrs["window_samples"] = data["window_samples"]
@@ -423,7 +429,7 @@ class LogWriter:
 
         # meantime: trim over-provisioned parts
         self.data_grp["time"].resize(
-            (self.data_pos if self._write_current or self._write_voltage else 0,)
+            (self.data_pos if self._write_current or self._write_voltage else 0,),
         )
         self.data_grp["voltage"].resize((self.data_pos if self._write_voltage else 0,))
         self.data_grp["current"].resize((self.data_pos if self._write_current else 0,))
@@ -491,10 +497,10 @@ class LogWriter:
             data_length += self.data_inc
             self.data_grp["time"].resize((data_length,))
             self.data_grp["voltage"].resize(
-                (data_length if self._write_voltage else 0,)
+                (data_length if self._write_voltage else 0,),
             )
             self.data_grp["current"].resize(
-                (data_length if self._write_current else 0,)
+                (data_length if self._write_current else 0,),
             )
 
         if self._write_voltage:
@@ -576,7 +582,7 @@ class LogWriter:
                 self.sys_log_next_ns = int(time.time()) * (10**9)
             self.sysutil_grp["time"][self.sysutil_pos] = ts_now_ns
             self.sysutil_grp["cpu"][self.sysutil_pos] = int(
-                round(psutil.cpu_percent(0))
+                round(psutil.cpu_percent(0)),
             )
             mem_stat = psutil.virtual_memory()[0:3]
             self.sysutil_grp["ram"][self.sysutil_pos, 0:2] = [
@@ -603,7 +609,9 @@ class LogWriter:
         self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
         self.ptp4l_mon_t.start()
         self.uart_mon_t = threading.Thread(
-            target=self.monitor_uart, args=(uart_baudrate,), daemon=True
+            target=self.monitor_uart,
+            args=(uart_baudrate,),
+            daemon=True,
         )
         self.uart_mon_t.start()
 
@@ -679,7 +687,9 @@ class LogWriter:
             "--output=short-precise",
         ]
         proc_dmesg = subprocess.Popen(  # noqa: S603
-            cmd_dmesg, stdout=subprocess.PIPE, universal_newlines=True
+            cmd_dmesg,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
         )
         tevent = threading.Event()
         for line in iter(proc_dmesg.stdout.readline, ""):
@@ -716,7 +726,9 @@ class LogWriter:
             "--output=short-precise",
         ]  # for client
         proc_ptp4l = subprocess.Popen(  # noqa: S603
-            cmd_ptp4l, stdout=subprocess.PIPE, universal_newlines=True
+            cmd_ptp4l,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
         )
         tevent = threading.Event()
         for line in iter(proc_ptp4l.stdout.readline, ""):
@@ -739,7 +751,7 @@ class LogWriter:
                     self.timesync_grp["time"].resize((data_length,))
                     self.timesync_grp["values"].resize((data_length, 3))
                 self.timesync_grp["time"][self.timesync_pos] = int(
-                    time.time() * (10**9)
+                    time.time() * (10**9),
                 )
                 self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
             except OSError:
@@ -752,7 +764,10 @@ class LogWriter:
         logger.debug("[PTP4lMonitor] ended itself")
 
     def add_dataset_time(
-        self, grp: h5py.Group, length: int, chunks: Union[bool, tuple] = True
+        self,
+        grp: h5py.Group,
+        length: int,
+        chunks: Union[bool, tuple] = True,
     ) -> NoReturn:
         grp.create_dataset(
             "time",

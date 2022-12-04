@@ -19,12 +19,19 @@ include("../python-package/shepherd/calibration.py")
 def assemble_window():
 
     with dpg.window(
-        tag="main", label="Shepherd Testing and Debug Tool", width=1000, height=700
+        tag="main",
+        label="Shepherd Testing and Debug Tool",
+        width=1000,
+        height=700,
     ):
 
         with dpg.group(horizontal=True):
             dpg.add_input_text(
-                tag="host_name", default_value="sheep0", hint="", label="", width=120
+                tag="host_name",
+                default_value="sheep0",
+                hint="",
+                label="",
+                width=120,
             )
             with dpg.tooltip("host_name"):
                 dpg.add_text("enter name or IP of host")
@@ -86,7 +93,7 @@ def assemble_window():
             )
             with dpg.tooltip("target_pwr"):
                 dpg.add_text(
-                    "Change is also triggering a shepherd state change / pru re-init / reset"
+                    "Change is also triggering a shepherd state change / pru re-init / reset",
                 )
             dpg.add_spacer(width=10)
             dpg.add_text(tag="text_section_routing_C", default_value="Target IO")
@@ -121,7 +128,7 @@ def assemble_window():
             )
             with dpg.tooltip("gpio_nRes_REC_ADC"):
                 dpg.add_text(
-                    "Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)"
+                    "Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
                 )
             dpg.add_spacer(width=5)
 
@@ -133,7 +140,7 @@ def assemble_window():
             )
             with dpg.tooltip("gpio_nRes_EMU_ADC"):
                 dpg.add_text(
-                    "Option to reset this ADC - it has to be configured afterwards (with PRU re-init)"
+                    "Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
                 )
             dpg.add_spacer(width=15)
 
@@ -199,7 +206,8 @@ def assemble_window():
             dpg.add_spacer(height=1)
             with dpg.group(horizontal=True):
                 dpg.add_text(
-                    tag=f"text_A_adc{_iter}", default_value=f"ADC{_iter} - " + _vals[3]
+                    tag=f"text_A_adc{_iter}",
+                    default_value=f"ADC{_iter} - " + _vals[3],
                 )
                 dpg.add_spacer(width=20)
                 dpg.add_text(tag=f"text_B_adc{_iter}", default_value="raw")
@@ -296,7 +304,9 @@ def assemble_window():
 if __name__ == "__main__":
     dpg.create_context()
     dpg.create_viewport(
-        title="Shepherd Testing and Debug Tool (VP)", width=1000, height=700
+        title="Shepherd Testing and Debug Tool (VP)",
+        width=1000,
+        height=700,
     )
     dpg.setup_dearpygui()
 

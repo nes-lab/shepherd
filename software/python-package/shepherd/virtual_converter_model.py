@@ -35,12 +35,16 @@ class PruCalibration:
 
     def conv_adc_raw_to_uV(self, voltage_raw: int) -> float:
         return self.cal.convert_raw_to_value(
-            "emulator", "adc_voltage_b", voltage_raw
+            "emulator",
+            "adc_voltage_b",
+            voltage_raw,
         ) * (10**6)
 
     def conv_uV_to_dac_raw(self, voltage_uV: float) -> int:
         dac_raw = self.cal.convert_value_to_raw(
-            "emulator", "dac_voltage_b", float(voltage_uV) / (10**6)
+            "emulator",
+            "dac_voltage_b",
+            float(voltage_uV) / (10**6),
         )
         if dac_raw > (2**16) - 1:
             dac_raw = (2**16) - 1

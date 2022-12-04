@@ -31,14 +31,23 @@ opt_password = click.option(
 )
 
 opt_smu_ip = click.option(
-    "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
+    "--smu-ip",
+    type=str,
+    default="192.168.1.108",
+    help="IP of SMU-Device in network",
 )
 
 opt_harvester = click.option(
-    "--harvester", "-h", is_flag=True, help="only handle harvester"
+    "--harvester",
+    "-h",
+    is_flag=True,
+    help="only handle harvester",
 )
 opt_emulator = click.option(
-    "--emulator", "-e", is_flag=True, help="only handle emulator"
+    "--emulator",
+    "-e",
+    is_flag=True,
+    help="only handle emulator",
 )
 
 opt_smu_2wire = click.option(

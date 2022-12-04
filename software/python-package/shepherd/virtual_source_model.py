@@ -71,7 +71,9 @@ class VirtualSourceModel:
 
         # fake ADC read
         A_out_raw = self._cal.convert_value_to_raw(
-            "emulator", "adc_current", A_out_nA * 10**-9
+            "emulator",
+            "adc_current",
+            A_out_nA * 10**-9,
         )
 
         P_out_fW = self.cnv.calc_out_power(A_out_raw)
@@ -79,7 +81,7 @@ class VirtualSourceModel:
         V_out_raw = self.cnv.update_states_and_output()
         V_out_uV = int(
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
-            * 10**6
+            * 10**6,
         )
 
         self.W_inp_fWs += P_inp_fW

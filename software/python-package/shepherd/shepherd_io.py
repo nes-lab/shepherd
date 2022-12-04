@@ -111,7 +111,11 @@ class SharedMem:
     """
 
     def __init__(
-        self, address: int, size: int, n_buffers: int, samples_per_buffer: int
+        self,
+        address: int,
+        size: int,
+        n_buffers: int,
+        samples_per_buffer: int,
     ):
         """Initializes relevant parameters for shared memory area.
 
@@ -163,12 +167,13 @@ class SharedMem:
         if self.buffer_size * self.n_buffers != self.size:
             raise BufferError(
                 "Py-estimated mem-size for buffers is different "
-                f"from pru-reported size ({self.buffer_size * self.n_buffers} vs. {self.size})"
+                f"from pru-reported size ({self.buffer_size * self.n_buffers} vs. {self.size})",
             )
 
     def __enter__(self):
         self.devmem_fd = os.open(
-            "/dev/mem", os.O_RDWR | os.O_SYNC
+            "/dev/mem",
+            os.O_RDWR | os.O_SYNC,
         )  # TODO: could it also be async? might be error-source
 
         self.mapped_mem = mmap.mmap(
@@ -200,7 +205,7 @@ class SharedMem:
         # The buffers are organized as an array in shared memory
         if not (0 <= index < self.n_buffers):
             ValueError(
-                f"out of bound access (i={index}), tried reading from SharedMEM-Buffer"
+                f"out of bound access (i={index}), tried reading from SharedMEM-Buffer",
             )
         buffer_offset = index * self.buffer_size
         self.mapped_mem.seek(buffer_offset)
@@ -208,7 +213,8 @@ class SharedMem:
         # Read the header consisting of 16 (4 + 4 + 8 Bytes)
         # -> canary, number of samples and 64 bit timestamp
         canary1, n_samples, buffer_timestamp = struct.unpack(
-            "=LLQ", self.mapped_mem.read(16)
+            "=LLQ",
+            self.mapped_mem.read(16),
         )
         if verbose:
             logger.debug(
@@ -222,7 +228,7 @@ class SharedMem:
             )
         if canary1 != 0x0F0F0F0F:
             raise BufferError(
-                f"CANARY of SampleBuffer was harmed! Is 0x{canary1:X}, expected 0x0F0F0F0F"
+                f"CANARY of SampleBuffer was harmed! Is 0x{canary1:X}, expected 0x0F0F0F0F",
             )
 
         # sanity-check of received timestamp,
@@ -269,12 +275,13 @@ class SharedMem:
 
         if canary2 != 0x0F0F0F0F:
             raise BufferError(
-                f"CANARY of GpioBuffer was harmed! Is 0x{canary2:X}, expected 0x0F0F0F0F"
+                f"CANARY of GpioBuffer was harmed! Is 0x{canary2:X}, expected 0x0F0F0F0F",
             )
 
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
             logger.error(
-                "Size of gpio_events out of range with %d entries", n_gpio_events
+                "Size of gpio_events out of range with %d entries",
+                n_gpio_events,
             )
             # TODO: should be exception, also
             #  put into LogWriter.write_exception() with ShepherdIOException
@@ -332,7 +339,7 @@ class SharedMem:
 
         if not (0 <= index < self.n_buffers):
             ValueError(
-                f"out of bound access (i={index}), tried writing to SharedMEM-Buffer"
+                f"out of bound access (i={index}), tried writing to SharedMEM-Buffer",
             )
         buffer_offset = self.buffer_size * index
         # Seek buffer location in memory and skip 12B header
@@ -348,7 +355,8 @@ class SharedMem:
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
         logger.debug(
-            "wrote Firmware-Data to SharedMEM-Buffer (size = %d bytes)", data_size
+            "wrote Firmware-Data to SharedMEM-Buffer (size = %d bytes)",
+            data_size,
         )
         return data_size
 
@@ -438,7 +446,10 @@ class ShepherdIO:
             logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
 
             self.shared_mem = SharedMem(
-                mem_address, mem_size, self.n_buffers, self.samples_per_buffer
+                mem_address,
+                mem_size,
+                self.n_buffers,
+                self.samples_per_buffer,
             )
 
             self.shared_mem.__enter__()
@@ -524,13 +535,13 @@ class ShepherdIO:
                 sfs.set_stop(force=True)
             except sfs.SysfsInterfaceException:
                 logger.exception(
-                    "CleanupRoutine - caused an exception while trying to stop PRU"
+                    "CleanupRoutine - caused an exception while trying to stop PRU",
                 )
             try:
                 sfs.wait_for_state("idle", 3.0)
             except sfs.SysfsInterfaceException:
                 logger.warning(
-                    "CleanupRoutine - caused an exception while waiting for PRU to go to idle"
+                    "CleanupRoutine - caused an exception while waiting for PRU to go to idle",
                 )
         self.set_aux_target_voltage(None, 0.0)
 
@@ -602,7 +613,8 @@ class ShepherdIO:
         else:
             raise ValueError(f"Parameter 'pwr_target' must be A or B (was {target})")
         logger.debug(
-            "Set routing for (main) supply with current-monitor to target %s", target
+            "Set routing for (main) supply with current-monitor to target %s",
+            target,
         )
         self.gpios["target_pwr_sel"].write(value)
         if current_state != "idle":
@@ -650,7 +662,8 @@ class ShepherdIO:
 
     @staticmethod
     def set_aux_target_voltage(
-        cal_settings: Optional[CalibrationData], voltage: float
+        cal_settings: Optional[CalibrationData],
+        voltage: float,
     ) -> NoReturn:
         """Enables or disables the voltage for the second target
 
@@ -765,7 +778,9 @@ class ShepherdIO:
 
             elif msg_type == commons.MSG_DEP_ERR_INCMPLT:
                 raise ShepherdIOException(
-                    "Got incomplete buffer", commons.MSG_DEP_ERR_INCMPLT, value
+                    "Got incomplete buffer",
+                    commons.MSG_DEP_ERR_INCMPLT,
+                    value,
                 )
 
             elif msg_type == commons.MSG_DEP_ERR_INVLDCMD:
@@ -783,5 +798,5 @@ class ShepherdIO:
             else:
                 raise ShepherdIOException(
                     f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
-                    f"got { msg_type }[{ value }]"
+                    f"got { msg_type }[{ value }]",
                 )

@@ -113,7 +113,7 @@ class Herd:
 
         if len(hostlist) < 1 or len(hostnames) < 1:
             raise ValueError(
-                "Provide remote hosts (either inventory empty or limit does not match)"
+                "Provide remote hosts (either inventory empty or limit does not match)",
             )
 
         connect_kwargs = {}
@@ -193,7 +193,8 @@ class Herd:
             src_path = Path(src).absolute()
             if not src_path.exists():
                 raise FileNotFoundError(
-                    "Local source file '%s' does not exist!", src_path
+                    "Local source file '%s' does not exist!",
+                    src_path,
                 )
             logger.info("Local source path = %s", src_path)
 
@@ -326,7 +327,7 @@ class Herd:
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
             raise Exception(
-                f"Time difference between hosts greater {self.timestamp_diff_allowed} s"
+                f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
 
         # We need to estimate a future point in time such that all nodes are ready
@@ -361,7 +362,9 @@ class Herd:
             raise Exception("shepherd still active!")
 
         self.put_file(
-            StringIO(config_yml), "/etc/shepherd/config.yml", force_overwrite=True
+            StringIO(config_yml),
+            "/etc/shepherd/config.yml",
+            force_overwrite=True,
         )
 
     def check_state(self, warn: bool = False) -> bool:
@@ -378,11 +381,13 @@ class Herd:
                 active = True
                 if warn:
                     logger.warning(
-                        "shepherd still active on %s", self.hostnames[cnx.host]
+                        "shepherd still active on %s",
+                        self.hostnames[cnx.host],
                     )
                 else:
                     logger.debug(
-                        "shepherd still active on %s", self.hostnames[cnx.host]
+                        "shepherd still active on %s",
+                        self.hostnames[cnx.host],
                     )
         return active
 

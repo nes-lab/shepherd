@@ -88,7 +88,7 @@ def cli(ctx=None, verbose: int = 2):
         raise RuntimeError("Failed to access sysFS -> is the kernel module loaded?")
     except PermissionError:
         raise RuntimeError(
-            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?"
+            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?",
         )
 
 
@@ -140,10 +140,12 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 
 
 @cli.command(
-    short_help="Runs a mode with given parameters. Mainly for use with config file."
+    short_help="Runs a mode with given parameters. Mainly for use with config file.",
 )
 @click.option(
-    "--mode", default="harvester", type=click.Choice(["harvester", "emulator"])
+    "--mode",
+    default="harvester",
+    type=click.Choice(["harvester", "emulator"]),
 )
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option(
@@ -160,7 +162,7 @@ def run(mode, parameters: Dict, verbose):
     if not isinstance(parameters, Dict):
         raise click.BadParameter(
             f"parameter-argument is not dict, but {type(parameters)} "
-            "(last occurred with v8-alpha-version of click-lib)"
+            "(last occurred with v8-alpha-version of click-lib)",
         )
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
@@ -209,7 +211,10 @@ def run(mode, parameters: Dict, verbose):
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+    "--use_cal_default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
 )
 @click.option(
     "--start_time",
@@ -239,7 +244,7 @@ def harvester(
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data"
+    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data",
 )
 @click.argument("input_path", type=click.Path(exists=True))
 @click.option(
@@ -257,7 +262,10 @@ def harvester(
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+    "--use_cal_default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
 )
 @click.option(
     "--start_time",
@@ -478,7 +486,7 @@ def read(info_file, cal_file):
 @eeprom.command(
     short_help="Convert calibration measurements to calibration data, "
     "where FILENAME is YAML-formatted file "
-    "containing calibration measurements"
+    "containing calibration measurements",
 )
 @click.argument(
     "filename",
@@ -558,7 +566,11 @@ def launcher(led, button):
     help="Target supply voltage",
 )
 @click.option(
-    "--speed", "-s", type=click.INT, default=1_000_000, help="Programming-Datarate"
+    "--speed",
+    "-s",
+    type=click.INT,
+    default=1_000_000,
+    help="Programming-Datarate",
 )
 @click.option(
     "--target",
@@ -611,7 +623,8 @@ def programmer(firmware_file, sel_a, voltage, speed, target, prog1):
             time.sleep(1)
             state = sysfs_interface.check_programmer()
         logger.info(
-            "Finished Programming!,\tctrl = %s", sysfs_interface.read_programmer_ctrl()
+            "Finished Programming!,\tctrl = %s",
+            sysfs_interface.read_programmer_ctrl(),
         )
         sysfs_interface.load_pru0_firmware("shepherd")
 

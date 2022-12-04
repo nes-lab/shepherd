@@ -38,7 +38,7 @@ def cli(verbose):
 
 
 @cli.group(
-    short_help="Command-Group for initializing the shepherd-cape with a Keithley SMU"
+    short_help="Command-Group for initializing the shepherd-cape with a Keithley SMU",
 )
 def calibration():
     pass
@@ -64,7 +64,10 @@ def calibration():
     help="save-file, file gets extended if it already exists",
 )
 @click.option(
-    "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
+    "--smu-ip",
+    type=str,
+    default="192.168.1.108",
+    help="IP of SMU-Device in network",
 )
 @click.option("--harvester", "-h", is_flag=True, help="only handle harvester")
 @click.option("--emulator", "-e", is_flag=True, help="only handle emulator")
@@ -193,7 +196,14 @@ def cal_convert(infile, outfile, plot: bool):
     help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
 def cal_write(
-    host, user, password, cal_file, measurement_file, version, serial_number, cal_date
+    host,
+    user,
+    password,
+    cal_file,
+    measurement_file,
+    version,
+    serial_number,
+    cal_date,
 ):
     if not any([cal_file, measurement_file]):
         raise click.UsageError("provide one of cal-file or measurement-file")
@@ -235,7 +245,8 @@ def profile():
 
 
 @profile.command(
-    "measure", short_help="Measure profile-data from shepherd cape with Keithley SMU"
+    "measure",
+    short_help="Measure profile-data from shepherd cape with Keithley SMU",
 )
 @click.argument("host", type=str)
 @click.option("--user", "-u", type=str, default="joe", help="Host Username")
@@ -253,7 +264,10 @@ def profile():
     help="save file, if no filename is provided the hostname will be used",
 )
 @click.option(
-    "--smu-ip", type=str, default="192.168.1.108", help="IP of SMU-Device in network"
+    "--smu-ip",
+    type=str,
+    default="192.168.1.108",
+    help="IP of SMU-Device in network",
 )
 @click.option(
     "--smu-2wire",
@@ -331,7 +345,10 @@ def profile_measure(
         results_emu_b = profiler.measure_emulator_b()
 
     np.savez_compressed(
-        file_path, emu_a=results_emu_a, emu_b=results_emu_b, hrv=results_hrv
+        file_path,
+        emu_a=results_emu_a,
+        emu_b=results_emu_b,
+        hrv=results_hrv,
     )
     logger.info("Data was written to '%s'", file_path)
     logger.debug("Profiling took %.1f s", time() - time_now)

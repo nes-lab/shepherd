@@ -139,7 +139,8 @@ class Calibrator:
             dac_voltage_raw,
         )
         self.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_raw, also_main=True
+            (2**20) + dac_voltage_raw,
+            also_main=True,
         )
 
         self.set_smu_to_vsource(smu, 0.0, smu_current_A)
@@ -161,7 +162,7 @@ class Calibrator:
             smu_current_mA = 1000 * smu.measure.i()
 
             results.append(
-                {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw}
+                {"reference_si": float(voltage_V), "shepherd_raw": adc_voltage_raw},
             )
             logger.debug(
                 "  SMU-reference: %.4f V @ %.3f mA;"
@@ -178,7 +179,8 @@ class Calibrator:
         return results
 
     def measure_harvester_adc_current(
-        self, smu
+        self,
+        smu,
     ) -> list:  # TODO: combine with previous FN
 
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
@@ -192,7 +194,8 @@ class Calibrator:
             dac_voltage_raw,
         )
         self.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_raw, also_main=True
+            (2**20) + dac_voltage_raw,
+            also_main=True,
         )
 
         self.set_smu_to_isource(smu, 0.0, 3.0)
@@ -236,7 +239,8 @@ class Calibrator:
         logger.debug(" -> setting dac-voltage to %s V", dac_voltage_V)
         # write both dac-channels of emulator
         self.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_to_raw(dac_voltage_V), also_main=True
+            (2**20) + dac_voltage_to_raw(dac_voltage_V),
+            also_main=True,
         )  # TODO: rpc seems to have trouble with named parameters, so 2**20 is a bugfix
 
         self.set_smu_to_isource(smu, 0.0, 3.0)
@@ -343,16 +347,20 @@ class Calibrator:
         results["adc_voltage"] = self.measure_emulator_current(self.kth.smub)
 
         self.sheep.select_target_for_power_tracking(
-            False
+            False,
         )  # routes DAC.A to TGT.A to SMU-A
         logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
         results["dac_voltage_a"] = self.measure_dac_voltage(
-            self.kth.smua, 0b1100, drain=True
+            self.kth.smua,
+            0b1100,
+            drain=True,
         )
 
         logger.info("Measurement - Emulator - DAC . Voltage - Channel B")
         results["dac_voltage_b"] = self.measure_dac_voltage(
-            self.kth.smub, 0b1100, drain=True
+            self.kth.smub,
+            0b1100,
+            drain=True,
         )
         return results
 
@@ -389,14 +397,18 @@ class Calibrator:
     def retrieve(self, cal_file: str):
         temp_file = "/tmp/calib.yml"  # noqa: S108
         result = self._cnx.sudo(
-            f"shepherd-sheep -vvv eeprom read -c {temp_file}", warn=True, hide=True
+            f"shepherd-sheep -vvv eeprom read -c {temp_file}",
+            warn=True,
+            hide=True,
         )
         logger.info(result.stdout)
         self._cnx.get(temp_file, local=str(cal_file))
 
     @staticmethod
     def convert(
-        meas_file: Path, cal_file: Optional[Path] = None, do_plot: bool = False
+        meas_file: Path,
+        cal_file: Optional[Path] = None,
+        do_plot: bool = False,
     ) -> Path:
         if not isinstance(meas_file, Path):
             meas_file = Path(meas_file)

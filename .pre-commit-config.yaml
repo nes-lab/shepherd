@@ -2,7 +2,7 @@
 #  pip3 install pre-commit
 #  sudo apt install cppcheck
 # run:
-#  pre-commit run --all-files
+#  pre-commit run -a
 # update deps:
 #  pre-commit autoupdate
 # TODO:
@@ -26,6 +26,11 @@ repos:
       - id: check-toml
       - id: fix-byte-order-marker
 
+  - repo: https://github.com/asottile/add-trailing-comma
+    rev: v2.3.0
+    hooks:
+      - id: add-trailing-comma
+
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
@@ -48,7 +53,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.3
+    rev: v3.3.0
     hooks:
       - id: pyupgrade
         args: ["--py38-plus"]
@@ -85,7 +90,7 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.9.0
+    rev: v6.9.1
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$

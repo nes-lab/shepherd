@@ -208,10 +208,13 @@ class Profile:
         ax.set_ylabel(r"Current [mA]", fontsize=10)
         ax.set_title(
             "Position of Setpoints with Standard-Deviation as color/size "
-            f"(mean = {np.mean(stddev):.2f} uA)"
+            f"(mean = {np.mean(stddev):.2f} uA)",
         )
         plt.colorbar(
-            sct, label="Standard-Deviation [uA]", orientation="vertical", shrink=0.7
+            sct,
+            label="Standard-Deviation [uA]",
+            orientation="vertical",
+            shrink=0.7,
         )
         ax.grid(True)
         ax.set_xlim(-500, 5000)
@@ -220,7 +223,7 @@ class Profile:
         fig.set_figheight(10)
         fig.tight_layout()
         plt.savefig(
-            self.file_name + "_scatter_stddev_" + component + filter_str + ".png"
+            self.file_name + "_scatter_stddev_" + component + filter_str + ".png",
         )
         plt.close(fig)
         plt.clf()
@@ -255,10 +258,13 @@ class Profile:
         ax.set_ylabel(r"Current [mA]", fontsize=10)
         ax.set_title(
             "Position of Setpoints with ADC-MinMax-Intervall as color/size "
-            f"(mean = {np.mean(dyn):.2f} uA)"
+            f"(mean = {np.mean(dyn):.2f} uA)",
         )
         plt.colorbar(
-            sct, label="ADC-MinMax-Intervall [uA]", orientation="vertical", shrink=0.7
+            sct,
+            label="ADC-MinMax-Intervall [uA]",
+            orientation="vertical",
+            shrink=0.7,
         )
 
         ax.grid(True)
@@ -268,7 +274,7 @@ class Profile:
         fig.set_figheight(10)
         fig.tight_layout()
         plt.savefig(
-            self.file_name + "_scatter_dynamic_" + component + +filter_str + ".png"
+            self.file_name + "_scatter_dynamic_" + component + +filter_str + ".png",
         )
         plt.close(fig)
         plt.clf()

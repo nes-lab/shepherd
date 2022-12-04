@@ -103,11 +103,17 @@ def run(ctx, command, sudo):
     help="Choose one of the predefined virtual harvesters",
 )
 @click.option(
-    "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
+    "--duration",
+    "-d",
+    type=click.FLOAT,
+    help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+    "--use_cal_default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
 )
 @click.option(
     "--no-start",
@@ -156,7 +162,7 @@ def harvester(
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data"
+    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data",
 )
 @click.argument("input_path", type=click.Path())
 @click.option(
@@ -167,11 +173,17 @@ def harvester(
     help="Dir or file path for resulting hdf5 file with load recordings",
 )
 @click.option(
-    "--duration", "-d", type=click.FLOAT, help="Duration of recording in seconds"
+    "--duration",
+    "-d",
+    type=click.FLOAT,
+    help="Duration of recording in seconds",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+    "--use_cal_default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
 )
 @click.option(
     "--enable_io/--disable_io",
@@ -267,7 +279,7 @@ def emulator(
 
 
 @cli.command(
-    short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)"
+    short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)",
 )
 @click.pass_context
 def start(ctx) -> None:
@@ -301,7 +313,7 @@ def stop(ctx) -> None:
 
 
 @cli.command(
-    short_help="Uploads a file FILENAME to the remote node, stored in in REMOTE_PATH"
+    short_help="Uploads a file FILENAME to the remote node, stored in in REMOTE_PATH",
 )
 @click.argument(
     "filename",
@@ -329,10 +341,16 @@ def distribute(ctx, filename, remote_path, force_overwrite):
     ),
 )
 @click.option(
-    "--timestamp", "-t", is_flag=True, help="Add current timestamp to measurement file"
+    "--timestamp",
+    "-t",
+    is_flag=True,
+    help="Add current timestamp to measurement file",
 )
 @click.option(
-    "--separate", "-s", is_flag=True, help="Every remote node gets own subdirectory"
+    "--separate",
+    "-s",
+    is_flag=True,
+    help="Every remote node gets own subdirectory",
 )
 @click.option(
     "--delete",
@@ -410,14 +428,16 @@ def target(ctx, port, on, voltage, sel_a):
             start_openocd(cnx, ctx.obj["herd"].hostnames[cnx.host])
     else:
         replies1 = ctx.obj["herd"].run_cmd(
-            sudo=True, cmd="systemctl stop shepherd-openocd"
+            sudo=True,
+            cmd="systemctl stop shepherd-openocd",
         )
         replies2 = ctx.obj["herd"].run_cmd(
-            sudo=True, cmd="shepherd-sheep target-power --off"
+            sudo=True,
+            cmd="shepherd-sheep target-power --off",
         )
         exit_code = max(
             [reply.exited for reply in replies1.values()]
-            + [reply.exited for reply in replies2.values()]
+            + [reply.exited for reply in replies2.values()],
         )
         sys.exit(exit_code)
 
@@ -427,14 +447,16 @@ def target(ctx, port, on, voltage, sel_a):
 def process_result(ctx, result, **kwargs):
     if not kwargs["on"]:
         replies1 = ctx.obj["herd"].run_cmd(
-            sudo=True, cmd="systemctl stop shepherd-openocd"
+            sudo=True,
+            cmd="systemctl stop shepherd-openocd",
         )
         replies2 = ctx.obj["herd"].run_cmd(
-            sudo=True, cmd="shepherd-sheep target-power --off"
+            sudo=True,
+            cmd="shepherd-sheep target-power --off",
         )
         exit_code = max(
             [reply.exited for reply in replies1.values()]
-            + [reply.exited for reply in replies2.values()]
+            + [reply.exited for reply in replies2.values()],
         )
         sys.exit(exit_code)
 
@@ -446,7 +468,9 @@ def start_openocd(cnx, hostname, timeout=30):
     ts_end = time.time() + timeout
     while True:
         openocd_status = cnx.sudo(
-            "systemctl status shepherd-openocd", hide=True, warn=True
+            "systemctl status shepherd-openocd",
+            hide=True,
+            warn=True,
         )
         if openocd_status.exited == 0:
             break
@@ -459,7 +483,8 @@ def start_openocd(cnx, hostname, timeout=30):
 
 @target.command(short_help="Flashes the binary IMAGE file to the target")
 @click.argument(
-    "image", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True)
+    "image",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.pass_context
 def flash(ctx, image):
@@ -540,7 +565,11 @@ def reset(ctx):
     help="Target supply voltage",
 )
 @click.option(
-    "--speed", "-s", type=click.INT, default=1_000_000, help="Programming-Datarate"
+    "--speed",
+    "-s",
+    type=click.INT,
+    default=1_000_000,
+    help="Programming-Datarate",
 )
 @click.option(
     "--target",

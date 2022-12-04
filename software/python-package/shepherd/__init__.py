@@ -111,7 +111,7 @@ class Recorder(ShepherdIO):
         time.sleep(1)
         for i in range(self.n_buffers):
             time.sleep(
-                0.1 * float(self.buffer_period_ns) / 1e9
+                0.1 * float(self.buffer_period_ns) / 1e9,
             )  # could be as low as ~ 10us
             self.return_buffer(i, True)
 
@@ -190,7 +190,9 @@ class Emulator(ShepherdIO):
             // sysfs_interface.get_buffer_period_ns()
         )
         self.vs_cfg = VirtualSourceConfig(
-            vsource, self.samplerate_sps, log_intermediate_voltage
+            vsource,
+            self.samplerate_sps,
+            log_intermediate_voltage,
         )
         self.vh_cfg = VirtualHarvesterConfig(
             self.vs_cfg.get_harvester(),
@@ -234,7 +236,7 @@ class Emulator(ShepherdIO):
         time.sleep(1)
         for idx, buffer in enumerate(self._initial_buffers):
             time.sleep(
-                0.1 * float(self.buffer_period_ns) / 1e9
+                0.1 * float(self.buffer_period_ns) / 1e9,
             )  # could be as low as ~ 10us
             self.return_buffer(idx, buffer, verbose=True)
 
@@ -246,10 +248,10 @@ class Emulator(ShepherdIO):
 
         # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
         voltage_transformed = (buffer.voltage * self._v_gain + self._v_offset).astype(
-            "u4"
+            "u4",
         )
         current_transformed = (buffer.current * self._i_gain + self._i_offset).astype(
-            "u4"
+            "u4",
         )
 
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
@@ -290,12 +292,12 @@ class ShepherdDebug(ShepherdIO):
                 self._cal = storage.read_calibration()
         except ValueError:
             logger.warning(
-                "Couldn't read calibration from EEPROM (Val). Falling back to default values."
+                "Couldn't read calibration from EEPROM (Val). Falling back to default values.",
             )
             self._cal = CalibrationData.from_default()
         except FileNotFoundError:
             logger.warning(
-                "Couldn't read calibration from EEPROM (FS). Falling back to default values."
+                "Couldn't read calibration from EEPROM (FS). Falling back to default values.",
             )
             self._cal = CalibrationData.from_default()
 
@@ -336,7 +338,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_ADC:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_ADC) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0]
 
@@ -351,7 +353,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_GPI:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_GPI) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0]
 
@@ -383,7 +385,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_FN_TESTS:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
@@ -412,7 +414,7 @@ class ShepherdDebug(ShepherdIO):
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_INIT) }, "
                 f"but got type={ hex(msg_type) } val={ values }, "
-                " is ENABLE_DBG_VSOURCE defined in pru0/main.c??"
+                " is ENABLE_DBG_VSOURCE defined in pru0/main.c??",
             )
         # TEST-SIMPLIFICATION - code below is not part of main pru-code
         self.W_inp_fWs = 0.0
@@ -420,7 +422,10 @@ class ShepherdDebug(ShepherdIO):
         self._cal = cal_data
 
     def cnv_calc_inp_power(
-        self, input_voltage_uV: int, input_current_nA: int, include_hrv: bool = False
+        self,
+        input_voltage_uV: int,
+        input_current_nA: int,
+        include_hrv: bool = False,
     ) -> int:
 
         super()._send_msg(
@@ -433,7 +438,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSRC_P_INP:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_INP) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0] * (2**32) + values[1]  # P_inp_pW
 
@@ -446,7 +451,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSRC_CHARGE:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_CHARGE) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
@@ -456,7 +461,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSRC_P_OUT:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_OUT) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
@@ -466,7 +471,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSRC_DRAIN:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_DRAIN) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0], values[1]  # V_store_uV, V_out_dac_raw
 
@@ -476,7 +481,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSRC_V_CAP:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_CAP) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0]  # V_store_uV
 
@@ -486,7 +491,7 @@ class ShepherdDebug(ShepherdIO):
         if msg_type != commons.MSG_DBG_VSRC_V_OUT:
             raise ShepherdIOException(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_OUT) }, "
-                f"but got type={ hex(msg_type) } val={ values }"
+                f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0]  # V_out_dac_raw
 
@@ -495,14 +500,16 @@ class ShepherdDebug(ShepherdIO):
         # NOTE: this includes the harvester
         P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
         A_out_raw = self._cal.convert_value_to_raw(
-            "emulator", "adc_current", A_out_nA * 10**-9
+            "emulator",
+            "adc_current",
+            A_out_nA * 10**-9,
         )
         P_out_fW = self.cnv_calc_out_power(A_out_raw)
         self.cnv_update_cap_storage()
         V_out_raw = self.cnv_update_states_and_output()
         V_out_uV = int(
             self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
-            * 10**6
+            * 10**6,
         )
         self.W_inp_fWs += P_inp_fW
         self.W_out_fWs += P_out_fW
@@ -644,7 +651,8 @@ class ShepherdDebug(ShepherdIO):
         super().reinitialize_prus()
         base_array = numpy.vstack((c_array, v_array))
         return msgpack.packb(
-            base_array, default=msgpack_numpy.encode
+            base_array,
+            default=msgpack_numpy.encode,
         )  # zeroRPC / msgpack can not handle numpy-data without this
 
 
@@ -658,13 +666,13 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
         except ValueError:
             logger.warning(
                 "Couldn't read calibration from EEPROM (ValueError). "
-                "Falling back to default values."
+                "Falling back to default values.",
             )
             return CalibrationData.from_default()
         except FileNotFoundError:
             logger.warning(
                 "Couldn't read calibration from EEPROM (FileNotFoundError). "
-                "Falling back to default values."
+                "Falling back to default values.",
             )
             return CalibrationData.from_default()
 
@@ -705,7 +713,7 @@ def run_recorder(
     if output_path.is_dir():
         timestamp = datetime.datetime.fromtimestamp(start_time)
         timestring = timestamp.strftime(
-            "%Y-%m-%d_%H-%M-%S"
+            "%Y-%m-%d_%H-%M-%S",
         )  # closest to ISO 8601, avoid ":"
         store_path = output_path / f"hrv_{timestring}.h5"
     else:
@@ -734,7 +742,7 @@ def run_recorder(
     with ExitStack() as stack:
 
         stack.enter_context(
-            recorder
+            recorder,
         )  # TODO: these are no real contextmanagers, open with "with", do proper exit
         stack.enter_context(log_writer)
 
@@ -859,7 +867,7 @@ def run_emulator(
         if output_path.is_dir():
             timestamp = datetime.datetime.fromtimestamp(start_time)
             timestring = timestamp.strftime(
-                "%Y-%m-%d_%H-%M-%S"
+                "%Y-%m-%d_%H-%M-%S",
             )  # closest to ISO 8601, avoid ":"
             store_path = output_path / f"emu_{timestring}.h5"
         else:

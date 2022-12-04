@@ -32,7 +32,7 @@ def schedule_refresh() -> NoReturn:
     global refresh_interval, refresh_next
     if refresh_next <= dpg.get_frame_count():
         refresh_next = round(
-            dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate()
+            dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate(),
         )
         dpg.set_frame_callback(frame=refresh_next, callback=window_refresh_callback)
 

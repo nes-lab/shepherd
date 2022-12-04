@@ -28,7 +28,8 @@ class Calibration:
         gain = float(result.slope)
         if result.rvalue < 0.999:
             logger.warning(
-                "WARNING: a calibration had a low rvalue = %f", result.rvalue
+                "WARNING: a calibration had a low rvalue = %f",
+                result.rvalue,
             )
         return float(gain), float(offset)
 
@@ -50,16 +51,17 @@ class Calibration:
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
             logger.warning(
-                "NOTE: skipped determining current_calibration (missing data)"
+                "NOTE: skipped determining current_calibration (missing data)",
             )
             return
         try:
             gain, offset = self.measurements_to_calibration(
-                result.c_ref_A, result.c_shp_raw
+                result.c_ref_A,
+                result.c_shp_raw,
             )
         except ValueError:
             logger.warning(
-                "NOTE: skipped determining current_calibration (failed linregress)"
+                "NOTE: skipped determining current_calibration (failed linregress)",
             )
             return
         logger.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
@@ -81,16 +83,17 @@ class Calibration:
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
             logger.warning(
-                "NOTE: skipped determining voltage_calibration (missing data)"
+                "NOTE: skipped determining voltage_calibration (missing data)",
             )
             return
         try:
             gain, offset = self.measurements_to_calibration(
-                result.v_ref_V, result.v_shp_raw
+                result.v_ref_V,
+                result.v_shp_raw,
             )
         except ValueError:
             logger.warning(
-                "NOTE: skipped determining voltage_calibration (failed linregress)"
+                "NOTE: skipped determining voltage_calibration (failed linregress)",
             )
             return
         logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)

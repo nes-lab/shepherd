@@ -53,7 +53,10 @@ class CapeData:
 
     @classmethod
     def from_values(
-        cls, serial_number: str, version: str = "24B0", cal_date: str = "2022-01-01"
+        cls,
+        serial_number: str,
+        version: str = "24B0",
+        cal_date: str = "2022-01-01",
     ):
         """Build the object from defaults and user-provided values
 
@@ -214,7 +217,7 @@ class EEPROM:
             if len(value) != eeprom_format[key]["size"]:
                 raise ValueError(
                     f"Value { value } has wrong size. "
-                    f"Required size is { eeprom_format[key]['size'] }"
+                    f"Required size is { eeprom_format[key]['size'] }",
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         elif eeprom_format[key]["type"] == "str":
@@ -223,7 +226,7 @@ class EEPROM:
             elif len(value) > eeprom_format[key]["size"]:
                 raise ValueError(
                     f"Value { value } is longer than maximum "
-                    f"size { eeprom_format[key]['size'] }"
+                    f"size { eeprom_format[key]['size'] }",
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         else:
@@ -261,7 +264,7 @@ class EEPROM:
             raise ValueError(
                 f"WriteCal: data-size is wrong! "
                 f"expected = {calibration_data_format['size']} bytes, "
-                f"but got {len(data_serialized)}"
+                f"but got {len(data_serialized)}",
             )
         self._write(calibration_data_format["offset"], data_serialized)
 
@@ -272,7 +275,8 @@ class EEPROM:
             CalibrationData object containing data extracted from EEPROM
         """
         data = self._read(
-            calibration_data_format["offset"], calibration_data_format["size"]
+            calibration_data_format["offset"],
+            calibration_data_format["size"],
         )
         try:
             cal = CalibrationData.from_bytestr(data)
@@ -280,6 +284,6 @@ class EEPROM:
         except struct.error:
             cal = CalibrationData.from_default()
             logger.warning(
-                "EEPROM seems to have no usable data - will set calibration from default-values"
+                "EEPROM seems to have no usable data - will set calibration from default-values",
             )
         return cal

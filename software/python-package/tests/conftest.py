@@ -18,7 +18,7 @@ def check_beagleboard():
     params=[
         pytest.param("real_hardware", marks=pytest.mark.hardware),
         pytest.param("fake_hardware", marks=pytest.mark.fake_hardware),
-    ]
+    ],
 )
 def fake_hardware(request):
     if request.param == "fake_hardware":
@@ -66,7 +66,9 @@ def remove_kernel_module():
     ret = 1
     while ret > 0:
         ret = subprocess.run(  # noqa: S607 S603
-            ["modprobe", "-rf", "shepherd"], timeout=60, capture_output=True
+            ["modprobe", "-rf", "shepherd"],
+            timeout=60,
+            capture_output=True,
         ).returncode
         time.sleep(1)
     gc.collect()  # precaution
