@@ -29,7 +29,7 @@ This section looks like a regular Python function — because it just creates a 
 cdef class VirtualConverter:
 	# TODO: each FN now needs data-conversion from python-objects to c-objects and reverse for return-values
 	
-	def __init__(self, vs_config: list):
+	"""def __init__(self, vs_config: list):
 		cdef hvirtual_converter.ConverterConfig* config
 		self.config.converter_mode 			 						= vs_config[0]
 		self.config.interval_startup_delay_drain_n	 						= vs_config[1]
@@ -58,8 +58,9 @@ cdef class VirtualConverter:
 		self.config.LUT_inp_efficiency_n8[hvirtual_converter.LUT_SIZE][hvirtual_converter.LUT_SIZE]   = vs_config[23]
 		self.config.LUT_out_inv_efficiency_n4[hvirtual_converter.LUT_SIZE] 				= vs_config[24]		
 		hvirtual_converter.converter_initialize(config)
+	"""
 		
-	
+	"""
 	@staticmethod
 	def get_input_efficiency_n8(self, voltage_uV: int, current_nA: int) -> int:
 		voltage_n = int(voltage_uV / (2**self.config.LUT_input_V_min_log2_uV))
@@ -79,7 +80,30 @@ cdef class VirtualConverter:
 		if pos_c >= hvirtual_converter.LUT_SIZE:
 			pos_c = hvirtual_converter.LUT_SIZE- 1
 		return self.config.LUT_out_inv_efficiency_n4[pos_c] / (2**4)
-
+	"""
+	
+	""" Added temporarily to check static function callability, without using exact py-objects(due to some errors) by replacing it with random numbers """
+	@staticmethod
+	def get_input_efficiency_n8(self, voltage_uV: int, current_nA: int) -> int:
+		voltage_n = int(voltage_uV / (2**1))
+		current_n = int(current_nA / (2**1))
+		pos_v = int(voltage_n) if (voltage_n > 0) else 0  # V-Scale is Linear!
+		pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
+		if pos_v >= hvirtual_converter.LUT_SIZE:
+			pos_v = hvirtual_converter.LUT_SIZE - 1
+		if pos_c >= hvirtual_converter.LUT_SIZE:
+			pos_c = hvirtual_converter.LUT_SIZE - 1
+		return (1*hvirtual_converter.LUT_SIZE + pos_c) / (2**8)
+		
+	@staticmethod
+	def get_output_inv_efficiency_n4(self, current_nA) -> int:
+		current_n = int(current_nA / (2**1))
+		pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
+		if pos_c >= hvirtual_converter.LUT_SIZE:
+			pos_c = hvirtual_converter.LUT_SIZE- 1
+		return  1/(2**4)
+	""" check ends here """
+	
 	def converter_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int):
 		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
 
@@ -100,10 +124,6 @@ cdef class VirtualConverter:
 
 	def get_P_input_fW(self):
 		return hvirtual_converter.get_P_input_fW()
-
-	# private fn
-	#def py_get_output_inv_efficiency_n4(current_nA):
-	#	return get_output_inv_efficiency_n4()
 
 	def set_V_intermediate_uV(self, C_uV):
 		hvirtual_converter.set_V_intermediate_uV(C_uV)

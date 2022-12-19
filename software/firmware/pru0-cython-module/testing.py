@@ -5,7 +5,7 @@ sys.path.append('/software/firmware/pru0-cython-module')
 # import pyximport
 import numpy as np
 
-from virtual_converter import VirtualConverter
+from Cvirtual_converter import VirtualConverter
 
 #from shepherd.software.virtual_source_config import VirtualSourceConfig
 
@@ -34,7 +34,10 @@ class Test():
 		return self.access.get_I_mid_out_nA() 
 	
 	def Test_Method5(self):
-		return self.access.get_input_efficiency_n8() 
+		return self.access.get_input_efficiency_n8(self, 2, 4) 
+		
+	def Test_Method6(self):
+		return self.access.get_output_inv_efficiency_n4(self, -4)
 		
 if __name__ == "__main__":    
 	TempList = list(np.random.randint(low = 0, high=9, size=25))
@@ -46,6 +49,7 @@ if __name__ == "__main__":
 	print(accessInstanceTest.Test_Method2())
 	print(accessInstanceTest.Test_Method3())
 	print(accessInstanceTest.Test_Method4())
-	print(accessInstanceTest.Test_Method5())
+	print(accessInstanceTest.Test_Method5())	# for get_input_efficiency_n8()
+	print(accessInstanceTest.Test_Method6())	# for get_output_inv_efficiency_n4()
     
     
