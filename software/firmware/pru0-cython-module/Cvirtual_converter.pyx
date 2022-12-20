@@ -11,6 +11,13 @@ from libc.stdlib cimport malloc
 import pyximport
 import math
 
+cpdef enum:
+	DIV_SHIFT 	= 17
+	DIV_LUT_SIZE	= 40
+	
+cdef uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] 
+LUT_div_uV_n27[:] = [16383, 683, 410, 293, 228, 186, 158, 137, 120, 108, 98, 89, 82, 76, 71, 66, 62, 59, 55, 53, 50, 48, 46, 44, 42, 40, 39, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 27, 26]
+
 """
 The language used here is a special mix of C and Python. However it will look fairly familiar to Python developers.
 """
@@ -29,7 +36,15 @@ This section looks like a regular Python function — because it just creates a 
 cdef class VirtualConverter:
 	# TODO: each FN now needs data-conversion from python-objects to c-objects and reverse for return-values
 	
-	"""def __init__(self, vs_config: list):
+	
+	@staticmethod
+	def div_uV_n4(self, power_fW_n4, voltage_uV):
+		lut_pos = int(voltage_uV / (2**DIV_SHIFT))
+		if lut_pos >= DIV_LUT_SIZE:
+			lut_pos = DIV_LUT_SIZE - 1
+		return hvirtual_converter.mul64((power_fW_n4 >> 10u), (LUT_div_uV_n27[lut_pos]) >> 17)
+	"""
+	def __init__(self, vs_config: list):
 		cdef hvirtual_converter.ConverterConfig* config
 		self.config.converter_mode 			 						= vs_config[0]
 		self.config.interval_startup_delay_drain_n	 						= vs_config[1]
@@ -80,8 +95,8 @@ cdef class VirtualConverter:
 		if pos_c >= hvirtual_converter.LUT_SIZE:
 			pos_c = hvirtual_converter.LUT_SIZE- 1
 		return self.config.LUT_out_inv_efficiency_n4[pos_c] / (2**4)
-	"""
-	
+	"""		
+
 	""" Added temporarily to check static function callability, without using exact py-objects(due to some errors) by replacing it with random numbers """
 	@staticmethod
 	def get_input_efficiency_n8(self, voltage_uV: int, current_nA: int) -> int:
@@ -133,3 +148,9 @@ cdef class VirtualConverter:
 		return hvirtual_converter.cal_conv_adc_raw_to_nA(current_raw)
 	def cal_conv_uV_to_dac_raw(self, voltage_uV):
 		return hvirtual_converter.cal_conv_uV_to_dac_raw(voltage_uV)
+		
+	"""	Added from math64_safe.c to use div_uV_n4	"""
+	def mul64(self, value1, value2):
+		return hvirtual_converter.mul64(value1, value2)
+	
+	

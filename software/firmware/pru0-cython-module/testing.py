@@ -39,6 +39,9 @@ class Test():
 	def Test_Method6(self):
 		return self.access.get_output_inv_efficiency_n4(self, -4)
 		
+	def Test_Method7(self):
+		return self.access.div_uV_n4(self, 100000, 2000000)
+		
 if __name__ == "__main__":    
 	TempList = list(np.random.randint(low = 0, high=9, size=25))
 
@@ -51,5 +54,6 @@ if __name__ == "__main__":
 	print(accessInstanceTest.Test_Method4())
 	print(accessInstanceTest.Test_Method5())	# for get_input_efficiency_n8()
 	print(accessInstanceTest.Test_Method6())	# for get_output_inv_efficiency_n4()
+	print(accessInstanceTest.Test_Method7())	# for div_uV_n4()
     
     

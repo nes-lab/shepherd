@@ -67,3 +67,6 @@ cdef extern from "virtual_converter.h":
 	cdef uint32_t get_V_intermediate_raw()
 	cdef uint32_t get_I_mid_out_nA()
 	cdef uint32_t get_state_log_intermediate()
+	
+cdef extern from "math64_safe.h":	
+	cdef uint64_t mul64(uint64_t value1, uint64_t value2)
