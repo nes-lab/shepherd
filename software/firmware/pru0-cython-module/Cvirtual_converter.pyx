@@ -40,7 +40,7 @@ cdef:
 		state.P_out_fW_n4 			 = 0
 		state.V_out_dac_uV			 = cfg.V_output_uV
 		state.interval_startup_disabled_drain_n = cfg.interval_startup_delay_drain_n
-		state.enable_buck                       = bin(cfg.converter_mode & 0b0100) > 0
+		state.enable_buck                       = (cfg.converter_mode & 0b0100) > 0
 		
 # static function handling
 #cdef uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t current_nA)
@@ -160,18 +160,17 @@ cdef class VirtualConverter:
 		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
 
 	def converter_calc_out_power(self, current_adc_raw)-> int:
-		current_adc_raw = max(0, current_adc_raw)
-		current_adc_raw = min((2**18) - 1, current_adc_raw)
+
 		cdef uint64_t V_mid_uV_n4  = state.V_mid_uV_n32 >> 28
 		cdef uint64_t P_leak_fW_n4 = hvirtual_converter.mul64(cfg.I_intermediate_leak_nA, V_mid_uV_n4)
 		cdef uint32_t I_out_nA     = hvirtual_converter.cal_conv_adc_raw_to_nA(current_adc_raw)
 		
 		cdef uint32_t eta_inv_out_n4 = VirtualConverter.get_output_inv_efficiency_n4(I_out_nA) if (state.enable_buck) else (1 << 4)
-		state.P_out_fW_n4 = hvirtual_converter.add64(hvirtual_converter.mul64(eta_inv_out_n4 * state.V_out_dac_uV, I_out_nA), P_leak_fW_n4);
+		state.P_out_fW_n4 = hvirtual_converter.add64(hvirtual_converter.mul64(eta_inv_out_n4 * state.V_out_dac_uV, I_out_nA), P_leak_fW_n4)
 		if (state.interval_startup_disabled_drain_n > 0):
 			state.interval_startup_disabled_drain_n-=1
 			state.P_out_fW_n4 = 0
-		return V_mid_uV_n4
+		return state.P_out_fW_n4
 		#return hvirtual_converter.converter_calc_out_power(current_adc_raw)	
 
 	def get_V_intermediate_raw(self):
