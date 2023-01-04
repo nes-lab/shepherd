@@ -70,3 +70,4 @@ cdef extern from "virtual_converter.h":
 	
 cdef extern from "math64_safe.h":	
 	cdef uint64_t mul64(uint64_t value1, uint64_t value2)
+	cdef uint64_t add64(uint64_t value1, uint64_t value2)
