@@ -9,17 +9,32 @@ This directory contains setup for compiling the virtual converter / harvester / 
 choose what is needed
 
 ```Shell
-cd .\pru0_cython_module
+cd ./software/firmware/pru0_cython_module
 
 pip3 install pipenv
 
 pipenv shell
 ```
 
-### Compile Module
+**Note**: a local shepherd-installation is needed. Pipenv is installing it. Otherwise run:
 
 ```Shell
-python3 setup.py build_ext --inplace
+cd ./software/python-package
+pip3 install ./
+```
+
+### Compile and install Module
+
+```Shell
+python3 setup.py build_ext
+# or just
+pip3 install ./
+```
+
+### Run the testing-scratchpad
+
+```Shell
+python3 testing.py
 ```
 
 ### Cleanup
@@ -32,7 +47,7 @@ python setup.py clean --all
 
 ### TODO
 
-done:
+DONE:
 - replaced distutils by setuptools (as distutils are deprecated)
 - implemented some compile-constants alter behavior of c-code (no hw-dependency)
 - used established folder-structure ... this code can now live in shepherd/software/firmware/pru0-cython-module
@@ -45,8 +60,26 @@ done:
 - wrote a readme to help using the code
 - ... lib compiles
 
-todo:
-- testing.py fails -> functions in calibration.h are "undefined symbol"
-  - maybe it just needs another "cdef extern from 'calibration.h'"
-- structs still unknown to cython
-  - maybe another "cdef extern from ..."
+- Fixed the earlier issues with testing.py:
+	- added few cdefs[from "calibration.h", "math64_safe.h"]
+	- added corresponding .c(paths) in setup.py and few definitions in .pxy
+	- Had to remove 'const' from - "uint32_t msb_position(const uint32_t value)" in math64_safe.c to make
+	  the cython build possible
+- Fixed issues with structure by:
+	- adding cdefs
+	- introducing class to handle it as a python object
+	- see second point in todo
+
+- made setup.py more modular and explicit
+- transformed .pyx-file into class -> still without data-transformations
+- updated install-instructions
+- guessed the interface of the module for testing.py
+
+- structure functionality included similar to virtual_converter_model.py
+- calling(of return type functions in virtual_converter.c) is implemented in virtual_converter.pyx\.pxd and 
+called in testing.py
+
+TODO:
+- a good stratergy to analyse potential variables or important parameters from non-return type 
+functions(in virtual_converter.c) in virtual_converter.pyx and testing.py
+
