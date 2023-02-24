@@ -52,7 +52,7 @@ Installation
 Prepare the SD-cards.
 If you plan to install the OS and shepherd software on the onboard EMMC flash, you can prepare one SD card and sequentially flash the nodes.
 If you plan to install the OS and shepherd software on SD card, you have to prepare one SD card for every shepherd node.
-Depending on your choice, follow `the official instructions <https://elinux.org/BeagleBoardUbuntu#eMMC:_All_BeagleBone_Variants_with_eMMC>`_ for **BeagleBone**.
+Depending on your choice, follow `the official instructions <https://elinux.org/BeagleBoardUbuntu#eMMC:_All_BeagleBone_Variants_with_eMMC>`_ for **BeagleBone**. There is also a simplified and more detailed install-instruction in the following section.
 Shepherd has been tested on Ubuntu 18.04 LTS (image updated 2020-03-12), but might work with other Debian based distributions.
 
 **Note from 2022-05**: the last official release is getting quite old. Latest `nightlies of Ubuntu <https://rcn-ee.com/rootfs/ubuntu-armhf-focal-minimal/>`_ (navigate to newer date and choose ``am335x-[distro]-console-armhf-[date]-4gb.img.xz`` inside), work as well and offer more performant software.
@@ -123,22 +123,26 @@ Further playbooks:
     - ``setup-ext-storage.yml`` will format and automount sd-card to ''/var/shepherd/recordings''
     - ``dev_rebuild_sw.yml`` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart
 
+.. _install-simple:
+
 Installation - simplified & more detailed
 ------------------------------------------
 
-The following steps set up a single shepherd-node by using an already prepared shepherd-image. It cuts away the first instructions from the previous installation-guide (right to the shepherd-deploy with ansible). The guide is written for Windows 10 (or newer) as host, but linux users can easily adapt, as mostly WSL is used.
+The following steps set up a single shepherd-node by using an already prepared shepherd-image. It cuts away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but linux users can easily adapt, as mostly WSL is used.
 
 As new hardware and unknown software can be intimidating the steps were also `filmed and put on youtube <https://youtu.be/UPEH7QODm8A>`_ for comparing the progress.
 
-First step is downloading the `current image <https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx>`_ and flashing it to a micro-sd-card with balenaEtcher in admin mode (note: other tools like rufus don't work). Select the (still compressed ``.img.xz``) image and choose the drive. Insert the sd-card into the Beaglebone, connect the device via ethernet-cable to your router and power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
+First step is downloading the `current shepherd-image <https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx>`_ and flashing it to a micro-sd-card with balenaEtcher in admin mode (note: other tools like rufus don't work). Select the (still compressed ``.img.xz``) image and choose the drive before flashing.
 
-After power-up all **LEDs** should light up for ~1s. After that the outermost LED acts as a permanent heartbeat and the other 3 LEDs show different IO usage. Boot is finished when the LEDs stop being busy (~30s).
+Insert the sd-card into the Beaglebone, connect the device via ethernet-cable to your router and finally power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
+
+After power-up all **LEDs** should light up for ~1s. From then on the outermost LED acts as a permanent heartbeat and the other 3 LEDs show different IO usage. Boot is finished when the LEDs stop being busy (~30s).
 
 In most cases you can access the Beaglebone by using the hostname ``sheep0``. If that does not work you can check the list of network-devices compiled by your routers webinterface. Alternatively you can scan your local IP-space with an ip scanner, in our example the ``Angry IP Scanner`` was used. Look for the hostname ``sheep0`` or the MAC-Vendor ``Texas Instruments`` in the list. Be sure to use the IP-space of the correct network device.
 
-Configure WSL on Windows with a generic Ubuntu or just use the PowerShell if OpenSSH is installed as an optional feature (settings > apps > optional features).
+Configure WSL on Windows with a generic Ubuntu or just use the PowerShell if OpenSSH is installed as an optional feature (``settings > apps > optional features``).
 
-The commands below open a secure shell (ssh) to the Beaglebone. You have to accept a new fingerprint once before entering the password ``temppwd`` of the Beaglebone (the console will also tell you). Notice how the current console-line now begins with ``ubuntu@sheep0``. It means you are logged in and every issued command will be executed on the Beaglebone. To **quit the shell** type ``exit``.
+The commands below open a secure shell (ssh) to the Beaglebone. You have to accept a new fingerprint once before entering the password ``temppwd`` of the Beaglebone. The console will also tell you the password. Notice how the current console-line now begins with ``ubuntu@sheep0``. It means you are logged in and every issued command will be executed on the Beaglebone. To **quit the shell** type ``exit``.
 
 .. code-block:: bash
 
@@ -157,19 +161,18 @@ Now it is recommended to check if ubuntu was indeed started from the sd-card as 
     mount
     # -> should show that /dev/mmcblk0p1 (SD-Card) is "/" (root-directory) usually on line 1
 
-If the tests are positive it is safe to use the image as is from sd-card or copy it to internal eMMC for improved performance. Note that the usual eMMC flasher does not work and ``dd`` must be used instead:
+If the tests are positive it is safe to use the image as is from sd-card. Alternatively it is also possible to copy the OS to the internal eMMC for improved performance. Note that the usual eMMC flasher does not work and ``dd`` must be used instead:
 
 .. code-block:: bash
 
     sudo dd if=/dev/mmcblk0p1 of=/dev/mmcblk1p1
     # -> takes 10 - 20 min
 
-After the command finishes it is okay to shut down the Beaglebone. Either by ``sudo shutdown now`` or by pushing the button next to the network socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches. Except that ``mount`` now shows mmcblk1p1 (eMMC) as root-directory.
+After the command finishes shut down the Beaglebone either by ``sudo shutdown now`` or by pushing the button next to the network socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches except that ``mount`` now shows mmcblk1p1 (eMMC) as root-directory.
 
-For password-less entry and also usage of the Beaglebone we prepared a ansible playbook. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide above).
+For password-less entry & usage of the Beaglebone we prepared an ``ansible playbook``. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide from previous section).
 
 .. code-block:: bash
 
     # execute in shepherd-repo on host
     ansible-playbook ./deploy/setup_pwless_ssh_for_host.yml
-
