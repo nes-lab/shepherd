@@ -28,7 +28,9 @@
         state: present
 
     - name: Read device information
-      community.general.parted: 'device=/dev/{{ storage_dev }} unit=MiB'
+      community.general.parted:
+        device: '/dev/{{ storage_dev }}'
+        unit: 'MiB'
       register: dev_info
 
     - name: Unmount external storage

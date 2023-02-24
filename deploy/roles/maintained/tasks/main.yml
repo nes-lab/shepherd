@@ -43,6 +43,7 @@
 - name: SCRIPT - Update Bootloader
   ansible.builtin.shell:
     cmd: 'yes | /opt/scripts/tools/developers/update_bootloader.sh'
+  changed_when: true
   when: update_bootloader | bool
 
 - name: Uname - Get Kernel-Version

@@ -13,7 +13,7 @@
         path: "/etc/netplan/bbone.yaml"
         state: absent
 
-    - name: use MAC as unique ID
+    - name: Use MAC as unique ID
       ansible.builtin.blockinfile:
         path: "/etc/netplan/bbone.yaml"
         create: true

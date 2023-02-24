@@ -14,15 +14,15 @@
         do_remove_software: false
         do_zero_free_space: true
 
-    - name: display post cleanup message
+    - name: Display post cleanup message
       ansible.builtin.debug:
         msg: "ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | xz -3 -' | dd of=image.img.xz"
 
-    - name: display ssh
+    - name: Display ssh
       ansible.builtin.debug:
         msg: "{{ ansible_user }}@{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
 
-    - name: display file
+    - name: Display file
       ansible.builtin.debug:
         msg: "{{ ansible_date_time.date }}_{{ inventory_hostname }}_mmcblk1.img.gz"
 

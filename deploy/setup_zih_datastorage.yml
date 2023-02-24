@@ -44,8 +44,8 @@
 
     - name: Fail if prerequisites are missing
       ansible.builtin.fail:
-        msg: "The variable '{{item}}' is not defined"
-      when: (item is not defined) or (item|length < 1)
+        msg: "The variable '{{ item }}' is not defined"
+      when: (item is not defined) or (item | length < 1)
       loop:
         - key_server
         - scp_server
@@ -68,6 +68,7 @@
       ansible.builtin.shell:
         cmd: 'ssh-keygen -q -t rsa -N "" -C cfaed_nes_shepherd_node'
       when: not key_file.stat.exists
+      changed_when: true
       become: false
 
     - name: APT - Install required packages
@@ -87,43 +88,45 @@
 
     - name: Authorize remote node with key-server
       ansible.builtin.shell:
-        cmd: "sshpass -e ssh-copy-id -f -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub {{zih_user}}@{{key_server}}"
+        cmd: "sshpass -e ssh-copy-id -f -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub {{ zih_user }}@{{ key_server }}"
       environment:
-        SSHPASS: '{{zih_password}}'
+        SSHPASS: '{{ zih_password }}'
       become: false
+      changed_when: true
       register: auth_ret
       until: auth_ret is not failed
       retries: 7
 
     - name: Create temporary folder-structure
       ansible.builtin.file:
-        path: "/tmp/recordings/{{ansible_hostname}}/"
+        path: "/tmp/recordings/{{ ansible_hostname }}/"
         state: directory
         mode: "a+rwx"
       become: false
 
     - name: Create remote private recordings-directory
       ansible.builtin.command:
-        cmd: "sshpass -e scp -o StrictHostKeyChecking=no -r /tmp/recordings {{zih_user}}@{{scp_server}}/"
+        cmd: "sshpass -e scp -o StrictHostKeyChecking=no -r /tmp/recordings {{ zih_user }}@{{ scp_server }}/"
       environment:
-        SSHPASS: '{{zih_password}}'
+        SSHPASS: '{{ zih_password }}'
       become: false
+      changed_when: true
       register: auth_ret
       until: auth_ret is not failed
       retries: 7
 
     - name: Create local mount-directory
       ansible.builtin.file:
-        path: "{{data_path_local}}/"
+        path: "{{ data_path_local }}/"
         state: directory
-        owner: "{{ansible_user}}"
+        owner: "{{ ansible_user }}"
         mode: 'a+rwx'
 
     - name: Allow automatic Mounting
       ansible.builtin.lineinfile:
         dest: /etc/fstab
         regex: '^.*{{ nfs_server }}.*$'
-        line: '{{ nfs_server }}/recordings/{{ansible_hostname}}/ {{ data_path_local }} nfs nfsvers=4,rw 0 1'
+        line: '{{ nfs_server }}/recordings/{{ ansible_hostname }}/ {{ data_path_local }} nfs nfsvers=4,rw 0 1'
         state: present
 
     - name: Remove old automatic mounting
