@@ -15,7 +15,7 @@ jobs:
       gcc_pru_cc_release: "pru-elf-2023.01.amd64"
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
-      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2023.01"
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2023.01/"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
       PRU_GCC: "${{ github.workspace }}/pru-elf-2023.01.amd64"
