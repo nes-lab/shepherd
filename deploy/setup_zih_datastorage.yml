@@ -65,7 +65,7 @@
       become: false
 
     - name: Generate fresh key-pair (if needed)
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: 'ssh-keygen -q -t rsa -N "" -C cfaed_nes_shepherd_node'
       when: not key_file.stat.exists
       changed_when: true
@@ -87,7 +87,7 @@
 # vs-grp07.zih.tu-dresden.de:/shepherd_d/recordings/sheep0/ /var/shepherd/recordings nfs nfsvers=4,rw 0 1
 
     - name: Authorize remote node with key-server
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: "sshpass -e ssh-copy-id -f -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub {{ zih_user }}@{{ key_server }}"
       environment:
         SSHPASS: '{{ zih_password }}'
