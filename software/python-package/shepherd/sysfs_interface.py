@@ -260,7 +260,9 @@ def write_calibration_settings(
         f.write(output)
 
 
-def read_calibration_settings() -> dict:  # more precise dict[str, int], trouble with py3.6
+def read_calibration_settings() -> (
+    dict
+):  # more precise dict[str, int], trouble with py3.6
     """Retrieve the calibration settings from the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output

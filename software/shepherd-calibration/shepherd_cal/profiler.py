@@ -35,13 +35,11 @@ INSTR_PROFILE_SHP = """
 
 
 class Profiler:
-
     _cal: Calibrator = None
     voltage_V: np.ndarray = None
     currents_A: list = None
 
     def __init__(self, calibrator: Calibrator, short: bool = False):
-
         self._cal = calibrator
 
         if short:

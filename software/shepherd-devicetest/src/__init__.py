@@ -17,14 +17,12 @@ include("../python-package/shepherd/calibration.py")
 
 
 def assemble_window():
-
     with dpg.window(
         tag="main",
         label="Shepherd Testing and Debug Tool",
         width=1000,
         height=700,
     ):
-
         with dpg.group(horizontal=True):
             dpg.add_input_text(
                 tag="host_name",

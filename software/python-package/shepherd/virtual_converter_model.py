@@ -118,7 +118,6 @@ class KernelConverterStruct:
 
 
 class VirtualConverterModel:
-
     _cfg: KernelConverterStruct = None
 
     # CONVERTER STATE
@@ -150,7 +149,6 @@ class VirtualConverterModel:
     vsource_skip_gpio_logging: bool = False
 
     def __init__(self, config: KernelConverterStruct, calibration: PruCalibration):
-
         self._cal = calibration
         self._cfg = config
 
@@ -271,7 +269,6 @@ class VirtualConverterModel:
         return round(self.V_mid_uV)  # Python-specific, added for easier testing
 
     def update_states_and_output(self) -> int:
-
         self.sample_count += 1
         check_thresholds = self.sample_count >= self._cfg.interval_check_thresholds_n
 

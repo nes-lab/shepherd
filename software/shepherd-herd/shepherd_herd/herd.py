@@ -33,7 +33,6 @@ def set_verbose_level(verbose: int = 2) -> None:
 
 
 class Herd:
-
     group: Group = None
     hostnames: dict = None
 
@@ -55,7 +54,6 @@ class Herd:
         user=None,
         key_filename=None,
     ):
-
         if limit.rstrip().endswith(","):
             limit = limit.split(",")[:-1]
         else:
@@ -186,7 +184,6 @@ class Herd:
         dst: [Path, str],
         force_overwrite: bool = False,
     ) -> None:
-
         if isinstance(src, StringIO):
             src_path = src
         else:

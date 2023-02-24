@@ -156,7 +156,6 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 )
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 def run(mode, parameters: Dict, verbose):
-
     set_verbose_level(verbose)
 
     if not isinstance(parameters, Dict):
@@ -462,7 +461,6 @@ def write(info_file, version, serial_number, cal_date, cal_file):
     help="If provided, calibration data is dumped to this file",
 )
 def read(info_file, cal_file):
-
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
@@ -499,7 +497,6 @@ def read(info_file, cal_file):
     help="Path to resulting YAML-formatted calibration data file",
 )
 def make(filename, output_path):
-
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
@@ -514,7 +511,6 @@ def make(filename, output_path):
 @cli.command(short_help="Start zerorpc server")
 @click.option("--port", "-p", type=click.INT, default=4242)
 def rpc(port):
-
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     logger.info("Shepherd Debug Interface: Initialized")
@@ -585,7 +581,6 @@ def launcher(led, button):
     help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
 )
 def programmer(firmware_file, sel_a, voltage, speed, target, prog1):
-
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)

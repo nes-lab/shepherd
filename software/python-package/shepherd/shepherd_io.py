@@ -336,7 +336,6 @@ class SharedMem:
         )
 
     def write_buffer(self, index: int, voltage, current) -> NoReturn:
-
         if not (0 <= index < self.n_buffers):
             ValueError(
                 f"out of bound access (i={index}), tried writing to SharedMEM-Buffer",

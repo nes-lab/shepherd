@@ -171,7 +171,6 @@ class Emulator(ShepherdIO):
         log_intermediate_voltage: bool = None,
         infile_vh_cfg: dict = None,
     ):
-
         logger.debug("Emulator-Init in %s-mode", shepherd_mode)
         super().__init__(shepherd_mode)
         self._initial_buffers = initial_buffers
@@ -427,7 +426,6 @@ class ShepherdDebug(ShepherdIO):
         input_current_nA: int,
         include_hrv: bool = False,
     ) -> int:
-
         super()._send_msg(
             commons.MSG_DBG_VSRC_HRV_P_INP
             if include_hrv
@@ -740,7 +738,6 @@ def run_recorder(
     verbose = get_verbose_level() >= 4
 
     with ExitStack() as stack:
-
         stack.enter_context(
             recorder,
         )  # TODO: these are no real contextmanagers, open with "with", do proper exit

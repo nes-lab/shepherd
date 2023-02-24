@@ -37,7 +37,6 @@ class KernelHarvesterStruct:
 
 
 class VirtualHarvesterModel:
-
     _cfg: KernelHarvesterStruct = None
 
     HRV_IVCURVE: int = 2**4
@@ -71,7 +70,6 @@ class VirtualHarvesterModel:
     current_nxt: int = 0
 
     def __init__(self, config: KernelHarvesterStruct):
-
         self._cfg = config
 
         # INIT global vars: shared states

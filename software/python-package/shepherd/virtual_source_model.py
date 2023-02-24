@@ -38,7 +38,6 @@ class VirtualSourceModel:
         cal_data: CalibrationData,
         input_setting: Optional[dict],
     ):
-
         self._cal = cal_data
         self._prc = PruCalibration(cal_data)
 

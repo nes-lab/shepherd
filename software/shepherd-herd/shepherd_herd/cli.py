@@ -236,7 +236,6 @@ def emulator(
     virtsource,
     no_start,
 ):
-
     fp_input = Path(input_path)
     if not fp_input.is_absolute():
         fp_input = Herd.path_default / input_path

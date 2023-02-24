@@ -41,7 +41,6 @@ INSTR_4WIRE = "- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results
 
 
 class Calibrator:
-
     _cnx: Connection = None
     _host: str = None
     sheep: zerorpc.Client = None
@@ -59,7 +58,6 @@ class Calibrator:
         mode_4wire: bool = True,
         pwrline_cycles: float = 16,
     ):
-
         if password is not None:
             fabric_args = {"password": password}
         else:
@@ -126,7 +124,6 @@ class Calibrator:
         return data[s < m]
 
     def measure_harvester_adc_voltage(self, smu) -> list:
-
         smu_current_A = 0.1e-3
         smu_voltages_V = np.linspace(0.3, 2.5, 12)
         dac_voltage_V = 4.5
@@ -182,7 +179,6 @@ class Calibrator:
         self,
         smu,
     ) -> list:  # TODO: combine with previous FN
-
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
         dac_voltage_V = 2.5
         dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
@@ -231,7 +227,6 @@ class Calibrator:
         return results
 
     def measure_emulator_current(self, smu) -> list:
-
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
         dac_voltage_V = 2.5
 
@@ -278,7 +273,6 @@ class Calibrator:
         return results
 
     def measure_dac_voltage(self, smu, dac_bitmask, drain: bool = False) -> list:
-
         smu_current_A = 0.1e-3
         if drain:  # for emulator
             smu_current_A = -smu_current_A

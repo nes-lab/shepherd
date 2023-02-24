@@ -218,7 +218,6 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
 @pytest.mark.hardware
 @pytest.mark.vs_name("direct")  # easiest case: v_inp == v_out, current not
 def test_vsource_direct(pru_vsource, pyt_vsource):
-
     for voltage_mV in [0, 100, 500, 1000, 2000, 3000, 4000, 4500]:
         V_pru_mV = pru_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
         V_pyt_mV = pyt_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3

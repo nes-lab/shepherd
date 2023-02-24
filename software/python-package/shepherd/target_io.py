@@ -54,7 +54,6 @@ target_pins = [  # pin-order from target-connector
 
 
 class TargetIO:
-
     gpios = {}
     pin_names = []
     pin_count = 0

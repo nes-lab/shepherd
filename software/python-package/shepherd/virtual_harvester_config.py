@@ -52,7 +52,6 @@ class VirtualHarvesterConfig:
         samplerate_sps: int = 100_000,
         emu_cfg: Optional[dict] = None,
     ):
-
         self.samplerate_sps = samplerate_sps
         self.for_emulation = emu_cfg is not None
         def_path = Path(__file__).parent.resolve() / self._def_file
@@ -125,7 +124,6 @@ class VirtualHarvesterConfig:
         )
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
-
         base_name = self.data.get("base", "neutral")  # 2nd val = default if key missing
 
         if base_name in self._inheritance:

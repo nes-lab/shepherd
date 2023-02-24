@@ -5,7 +5,6 @@ from .logger import logger
 
 
 class Calibration:
-
     c_gain: float = 1
     c_offset: float = 0
     v_gain: float = 1

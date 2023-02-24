@@ -83,7 +83,6 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
         log.write_buffer(data_buffer)
 
     with h5py.File(d, "r") as written:
-
         assert "data" in written
         assert "time" in written["data"]
         for variable in ["voltage", "current"]:
@@ -147,7 +146,6 @@ def test_key_value_store(tmp_path, calibration_data):
     d = tmp_path / "harvest.h5"
 
     with LogWriter(file_path=d, calibration_data=calibration_data) as writer:
-
         writer["some string"] = "this is a string"
         writer["some value"] = 5
 

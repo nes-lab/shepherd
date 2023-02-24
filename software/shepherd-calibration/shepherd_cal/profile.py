@@ -29,7 +29,6 @@ elem_list: list = ["v_shp_V", "v_shp_raw", "v_ref_V", "c_shp_A", "c_shp_raw", "c
 
 
 class Profile:
-
     file_name: str = None
     data: dict = {}
     cals: dict = {}
