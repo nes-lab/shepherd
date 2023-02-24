@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # as in roles/sheep/vars/main.yml
-      gcc_pru_cc_release: "pru-elf-2022.05.amd64"
+      gcc_pru_cc_release: "pru-elf-2023.01.amd64"
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
-      link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2023.01"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
-      PRU_GCC: "${{ github.workspace }}/pru-elf-2022.05.amd64"
+      PRU_GCC: "${{ github.workspace }}/pru-elf-2023.01.amd64"
       PRU_GCC_SUPPORT: "${{ github.workspace }}/pru-software-support-package"
 
     steps:
