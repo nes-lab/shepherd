@@ -18,7 +18,7 @@ jobs:
       link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2023.01/"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
-      PRU_GCC: "${{ github.workspace }}/pru-elf-2023.01.amd64"
+      PRU_GCC: "${{ github.workspace }}/pru-elf" # was /pru-elf-2022.05.amd64 before
       PRU_GCC_SUPPORT: "${{ github.workspace }}/pru-software-support-package"
 
     steps:
