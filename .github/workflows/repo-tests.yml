@@ -25,7 +25,7 @@ jobs:
           sudo apt install cppcheck
           python3 -m pip install --upgrade pip msgpack
           pip3 install pylint pylint-exit pylint-pytest
-          sudo apt install ansible ansible-core
+          sudo apt install ansible
           ansible-galaxy collection install ansible.posix
           ansible-galaxy collection install community.general
         # NOTE: install-process fails without msgpack pre-installed
