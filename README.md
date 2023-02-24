@@ -21,7 +21,7 @@ The recorded data can be replayed to attached wireless sensor nodes, examining t
  - Configurable, constant voltage power supply for attached sensor nodes
  - Level-translated serial connection to the attached sensor nodes
 
-For a detailed description see our [Paper](https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf).
+For a detailed description see our [Paper](https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf) or the [official documentation](https://orgua.github.io/shepherd/).
 
 A *shepherd* instance consists of a group of spatially distributed *shepherd* nodes that are time-synchronized with each other.
 Each *shepherd* node consists of a [BeagleBone](https://beagleboard.org/bone), the *shepherd* cape and a particular choice of capelets according to the user requirements.
@@ -32,8 +32,8 @@ This repository contains the hardware design files for the shepherd cape and the
 
 Start by assembling your *shepherd* nodes, consisting of a BeagleBone Green/Black, a *shepherd* cape, a harvesting capelet and a target capelet.
 The next step is to manually install the latest Ubuntu Linux on each BeagleBone.
-You can install it to SD-card or the on-board EMMC flash, following [the official instructions](https://elinux.org/BeagleBoardUbuntu).
-Make sure to follow the instructions for **BeagleBone**.
+You can install it to SD-card or the on-board eMMC flash, following [the official instructions](https://elinux.org/BeagleBoardUbuntu).
+Make sure to follow the instructions for **BeagleBone**. Alternatively there are two more detailed guides in the [shepherd documentation](https://orgua.github.io/shepherd/user/getting_started.html).
 
 The following instructions describe how to install the *shepherd* software on a group of *shepherd* nodes connected to an Ethernet network.
 We assume that your local machine is connected to the same network, that the nodes have internet access and that you know the IP address of each node.
