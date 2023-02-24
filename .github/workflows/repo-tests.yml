@@ -25,8 +25,12 @@ jobs:
           sudo apt install cppcheck
           python3 -m pip install --upgrade pip msgpack
           pip3 install pylint pylint-exit pylint-pytest
+          sudo apt install ansible ansible-core
+          ansible-galaxy collection install ansible.posix
+          ansible-galaxy collection install community.general
         # NOTE: install-process fails without msgpack pre-installed
         # NOTE: cppcheck is needed for pre-commit
+        # NOTE: ansible + collections might be needed for linter
 
       - name: Run Pre-Commit Tests 🧪
         uses: pre-commit/action@v3.0.0
