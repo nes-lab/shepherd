@@ -82,7 +82,7 @@ void msg_sys_exit(void)
 {
     hrtimer_cancel(&coordinator_loop_timer);
     init_done = 0;
-    timer_active = 0;
+    timers_active = 0;
     printk(KERN_INFO "shprd.k: msg-system exited");
 }
 
