@@ -129,9 +129,9 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 
     pdata = pdev->dev.platform_data;
     sysfs_interface_exit();
-    mem_interface_exit();
     msg_sys_exit();
     sync_exit();
+    mem_interface_exit();
 
     if (pdata != NULL)
     {
