@@ -38,10 +38,14 @@ int                            load_pru_firmware(u8 pru_num, const char *file_na
 int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 {
     int ret = 0;
+    static u8 init_done = 0;
 
     /* pause sub-services */
-    msg_sys_pause();
-    sync_pause();
+    if (init_done)
+    {
+        msg_sys_pause();
+        sync_pause();
+    }
 
     if (shp_pdata == NULL) { return 1; }
 
@@ -61,14 +65,20 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
     /* Allow some time for the PRUs to initialize. This is critical! */
     msleep(300);
 
-    /* restart sub-services */
-    mem_interface_reset();
-    msg_sys_start();
+    if (init_done)
+    {
+        /* restart sub-services */
+        mem_interface_reset();
+        msg_sys_start();
 
-    /* Initialize synchronization mechanism between PRU1 and our clock */
-    if ((fwncmp(0, PRU0_FW_DEFAULT) == 0) && (fwncmp(1, PRU1_FW_DEFAULT) == 0)) { sync_start(); }
-    else printk(KERN_INFO "shprd.k: pru-sync-system NOT (re)started (only for shepherd-fw)");
-
+        /* Initialize synchronization mechanism between PRU1 and our clock */
+        if ((fwncmp(0, PRU0_FW_DEFAULT) == 0) && (fwncmp(1, PRU1_FW_DEFAULT) == 0))
+        {
+            sync_start();
+        }
+        else printk(KERN_INFO "shprd.k: pru-sync-system NOT (re)started (only for shepherd-fw)");
+    }
+    init_done = 1;
     return ret;
 }
 

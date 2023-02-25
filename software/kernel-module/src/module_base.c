@@ -42,14 +42,14 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
     if (!shp_pdata)
     {
         dev_err(&pdev->dev, "Unable to allocate platform data\n");
-        return 1;
+        return -1;
     }
 
     if (!of_match_device(shepherd_dt_ids, &pdev->dev))
     {
         pr_err("of_match_device failed\n");
         devm_kfree(&pdev->dev, shp_pdata);
-        return 1;
+        return -1;
     }
 
     pruss_dn = of_parse_phandle(np, "prusses", 0);
@@ -57,7 +57,7 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
     {
         dev_err(&pdev->dev, "Unable to parse device node: prusses\n");
         devm_kfree(&pdev->dev, shp_pdata);
-        return 1;
+        return -1;
     }
 
     for_each_child_of_node(pruss_dn, child)
@@ -69,9 +69,9 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
             if (tmp_rproc == NULL)
             {
                 of_node_put(pruss_dn);
-                dev_err(&pdev->dev, "Unable to parse device node: %s \n", child->name);
+                dev_err(&pdev->dev, "Not yet able to parse %s device node\n", child->name);
                 devm_kfree(&pdev->dev, shp_pdata);
-                return 1;
+                return -1;
             }
 
             if (strncmp(tmp_rproc->name, "4a334000.pru", 12) == 0)
@@ -91,7 +91,7 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
     }
 
     of_node_put(pruss_dn);
-    return 0;
+    return 1;
 }
 
 static int shepherd_drv_probe(struct platform_device *pdev)
@@ -100,7 +100,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 
     printk(KERN_INFO "shprd.k: found shepherd device!!!");
 
-    if (prepare_shepherd_platform_data(pdev))
+    if (prepare_shepherd_platform_data(pdev) < 0)
     {
         /*pru device are not ready yet so kernel should retry the probe function later again*/
         return -EPROBE_DEFER;
