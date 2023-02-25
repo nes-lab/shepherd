@@ -16,7 +16,7 @@
 
     - name: Display post cleanup message
       ansible.builtin.debug:
-        msg: "ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | xz -3 -' | dd of=image.img.xz"
+        msg: "ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | xz -6 -' | dd of=image.img.xz"
 
     - name: Display ssh
       ansible.builtin.debug:
@@ -37,6 +37,7 @@
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | gzip -1 - | dd of=image.img.gz -> 742 mb 1300s
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz -> 466 mb 1320s
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image3.img.xz -> 466 mb 1333s
+# ssh jane@10.0.0.11 'sudo dd if=/dev/mmcblk1' | xz -6 - |  dd of=image0.img.xz        -> 466 mb 1333s
 # base: 1.4 gb used, 2.0 gb free, 41 % usage -> 363 mb,
 # - remove gcc-8, fw/iw
 # base: 1.2 gb used, 2.2 gb free, 36 % usage -> 326 mb,
