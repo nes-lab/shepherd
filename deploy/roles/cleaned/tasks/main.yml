@@ -1,8 +1,7 @@
 ---
 
 - name: Determine free space on main partition
-  ansible.builtin.command:
-    cmd: 'df -m /opt/ --output\=avail'
+  ansible.builtin.command: 'df -m /opt/ --output\=avail'
   register: pre_free_mb
   changed_when: false
 
@@ -36,8 +35,7 @@
   when: do_zero_free_space | bool
 
 - name: Determine free space on main partition
-  ansible.builtin.command:
-    cmd: 'df -m /opt/ --output\=avail'
+  ansible.builtin.command: 'df -m /opt/ --output\=avail'
   register: opt_free_mb
   changed_when: false
 

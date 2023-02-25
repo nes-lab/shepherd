@@ -45,11 +45,11 @@
   become: true
 
 # build second programmer
-- name: Clean PRU Firmware Source - PROG2
+- name: Clean PRU Firmware Source - Programmer 2 - SBW
   community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
     target: clean
-- name: Build PRU firmware - PROG2
+- name: Build PRU firmware - Programmer 2 - SBW
   community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
     target: all
@@ -61,7 +61,7 @@
     # PRU_GCC: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}' # TODO: probably just []/pru-elf now
     # PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
   become: false
-- name: Install PRU firmware - PROG2
+- name: Install PRU firmware - Programmer 2 - SBW
   community.general.make:
     chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
     target: install

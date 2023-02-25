@@ -65,8 +65,7 @@
       become: false
 
     - name: Generate fresh key-pair (if needed)
-      ansible.builtin.command:
-        cmd: 'ssh-keygen -q -t rsa -N "" -C cfaed_nes_shepherd_node'
+      ansible.builtin.command: 'ssh-keygen -q -t rsa -N "" -C cfaed_nes_shepherd_node'
       when: not key_file.stat.exists
       changed_when: true
       become: false
