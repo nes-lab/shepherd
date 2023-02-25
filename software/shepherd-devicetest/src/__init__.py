@@ -8,24 +8,28 @@ remotely.
 :license: MIT, see LICENSE for more details.
 """
 import dearpygui.dearpygui as dpg
+from shepherd_callbacks import *
 
-from .shepherd_callbacks import *
-
-# include('../python-package/shepherd/calibration.py')
+include("../python-package/shepherd/calibration.py")
 # changes to make 0.8-Code work with v1.3
 # - replace .add_same_line(spacing=..) with "with dpg.group: ....... dpg.add_spacer(..)
 # - id= is now tag=
 
 
 def assemble_window():
-
     with dpg.window(
-        tag="main", label="Shepherd Testing and Debug Tool", width=1000, height=600
+        tag="main",
+        label="Shepherd Testing and Debug Tool",
+        width=1000,
+        height=700,
     ):
-
         with dpg.group(horizontal=True):
             dpg.add_input_text(
-                tag="host_name", default_value="sheep0", hint="", label="", width=120
+                tag="host_name",
+                default_value="sheep0",
+                hint="",
+                label="",
+                width=120,
             )
             with dpg.tooltip("host_name"):
                 dpg.add_text("enter name or IP of host")
@@ -87,7 +91,7 @@ def assemble_window():
             )
             with dpg.tooltip("target_pwr"):
                 dpg.add_text(
-                    "Change is also triggering a shepherd state change / pru re-init / reset"
+                    "Change is also triggering a shepherd state change / pru re-init / reset",
                 )
             dpg.add_spacer(width=10)
             dpg.add_text(tag="text_section_routing_C", default_value="Target IO")
@@ -122,7 +126,7 @@ def assemble_window():
             )
             with dpg.tooltip("gpio_nRes_REC_ADC"):
                 dpg.add_text(
-                    "Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)"
+                    "Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
                 )
             dpg.add_spacer(width=5)
 
@@ -134,7 +138,7 @@ def assemble_window():
             )
             with dpg.tooltip("gpio_nRes_EMU_ADC"):
                 dpg.add_text(
-                    "Option to reset this ADC - it has to be configured afterwards (with PRU re-init)"
+                    "Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
                 )
             dpg.add_spacer(width=15)
 
@@ -200,7 +204,8 @@ def assemble_window():
             dpg.add_spacer(height=1)
             with dpg.group(horizontal=True):
                 dpg.add_text(
-                    tag=f"text_A_adc{_iter}", default_value=f"ADC{_iter} - " + _vals[3]
+                    tag=f"text_A_adc{_iter}",
+                    default_value=f"ADC{_iter} - " + _vals[3],
                 )
                 dpg.add_spacer(width=20)
                 dpg.add_text(tag=f"text_B_adc{_iter}", default_value="raw")
@@ -225,8 +230,22 @@ def assemble_window():
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="text_section_gpio", default_value="GPIO-Control")
-        dpg.add_spacer(height=1)
 
+        dpg.add_spacer(height=1)
+        with dpg.group(horizontal=True):
+            dpg.add_text(tag="text_D_gpio", default_value="Set Dir")
+            dpg.add_spacer(width=35)
+            for dir_name, dir_pin in gpio_dir_channels.items():
+                dpg.add_checkbox(
+                    tag=f"en_dir_{dir_name}",
+                    label=dir_name,
+                    default_value=False,
+                    callback=gpio_dir_callback,
+                    user_data=dir_pin,
+                )
+            dpg.add_text(tag="text_F_gpio", default_value=" (On == Input)")
+
+        dpg.add_spacer(height=1)
         with dpg.group(horizontal=True):
             dpg.add_text(tag="text_A_gpio", default_value="Set One")
             dpg.add_spacer(width=35)
@@ -237,6 +256,18 @@ def assemble_window():
                 horizontal=True,
                 default_value=len(gpio_channels) - 1,
             )
+
+        dpg.add_spacer(height=1)
+        with dpg.group(horizontal=True):
+            dpg.add_text(tag="text_E_gpio", default_value="Get Sys")
+            dpg.add_spacer(width=35)
+            for pin_name in gpio_channels[:-1]:
+                dpg.add_checkbox(
+                    tag=f"gpio_read_{pin_name}",
+                    label=pin_name,
+                    default_value=False,
+                    enabled=False,
+                )
 
         dpg.add_spacer(height=1)
         with dpg.group(horizontal=True):
@@ -271,7 +302,9 @@ def assemble_window():
 if __name__ == "__main__":
     dpg.create_context()
     dpg.create_viewport(
-        title="Shepherd Testing and Debug Tool (VP)", width=1000, height=600
+        title="Shepherd Testing and Debug Tool (VP)",
+        width=1000,
+        height=700,
     )
     dpg.setup_dearpygui()
 

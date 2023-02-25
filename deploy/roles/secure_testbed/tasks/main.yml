@@ -115,4 +115,7 @@
     cmd: 'netstat -apn | grep LISTEN'
   changed_when: false
   register: netstat
-# - debug: msg="{{ netstat.stdout }}"
+
+- name: INFO - print listeners
+  ansible.builtin.debug:
+    msg: "{{ netstat.stdout }}"

@@ -99,7 +99,8 @@ class CalibrationData:
             len(cal_component_list) * len(cal_channel_list) * len(cal_parameter_list)
         )
         values = struct.unpack(
-            ">" + val_count * "d", data
+            ">" + val_count * "d",
+            data,
         )  # X double float, big endian
         cal_dict = {}
         counter = 0
@@ -111,7 +112,7 @@ class CalibrationData:
                     val = float(values[counter])
                     if np.isnan(val):
                         raise ValueError(
-                            f"{ component } { channel } { parameter } not a valid number"
+                            f"{ component } { channel } { parameter } not a valid number",
                         )
                     cal_dict[component][channel][parameter] = val
                     counter += 1
@@ -257,32 +258,32 @@ class CalibrationData:
     def export_for_sysfs(self, component: str) -> dict:
         if component not in cal_component_list:
             raise ValueError(
-                f"[Cal] change to unknown component (={component}) detected"
+                f"[Cal] change to unknown component (={component}) detected",
             )
         comp_data = self.data[component]
         cal_set = {
             # ADC is handled in nA (nano-ampere), gain is shifted by 8 bit
             # [scaling according to commons.h]
             "adc_current_gain": round(
-                1e9 * (2**8) * comp_data["adc_current"]["gain"]
+                1e9 * (2**8) * comp_data["adc_current"]["gain"],
             ),
             "adc_current_offset": round(
-                1e9 * (2**0) * comp_data["adc_current"]["offset"]
+                1e9 * (2**0) * comp_data["adc_current"]["offset"],
             ),
             # ADC is handled in uV (micro-volt), gain is shifted by 8 bit
             # [scaling according to commons.h]
             "adc_voltage_gain": round(
-                1e6 * (2**8) * comp_data["adc_voltage"]["gain"]
+                1e6 * (2**8) * comp_data["adc_voltage"]["gain"],
             ),
             "adc_voltage_offset": round(
-                1e6 * (2**0) * comp_data["adc_voltage"]["offset"]
+                1e6 * (2**0) * comp_data["adc_voltage"]["offset"],
             ),
             # DAC is handled in uV (micro-volt), gain is shifted by 20 bit
             "dac_voltage_gain": round(
-                (2**20) / (1e6 * comp_data["dac_voltage_b"]["gain"])
+                (2**20) / (1e6 * comp_data["dac_voltage_b"]["gain"]),
             ),
             "dac_voltage_offset": round(
-                1e6 * (2**0) * comp_data["dac_voltage_b"]["offset"]
+                1e6 * (2**0) * comp_data["dac_voltage_b"]["offset"],
             ),
         }
 

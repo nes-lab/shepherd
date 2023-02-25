@@ -41,7 +41,7 @@ def eeprom_open(request, fake_hardware):
             pytest.mark.xfail(
                 raises=OSError,
                 reason="pyfakefs doesn't support seek in files",
-            )
+            ),
         )
     with EEPROM() as eeprom:
         yield eeprom

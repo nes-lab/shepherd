@@ -13,7 +13,6 @@ skip_list:
 # and not relative to the CWD of execution. CLI arguments passed to the --exclude
 # option will be parsed relative to the CWD of execution.
 exclude_paths:
-  - .travis.yml
   - .github/workflows/
   - software/firmware/
   - software/shepherd-datalib

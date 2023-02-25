@@ -83,7 +83,6 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
         log.write_buffer(data_buffer)
 
     with h5py.File(d, "r") as written:
-
         assert "data" in written
         assert "time" in written["data"]
         for variable in ["voltage", "current"]:
@@ -99,11 +98,13 @@ def test_calibration_logging(mode, tmp_path, calibration_data):
         pass
 
     h5store = h5py.File(
-        d, "r"
+        d,
+        "r",
     )  # hint: shpReader would be more direct, but less untouched
 
     for channel_entry, parameter in product(
-        cal_channel_hrv_dict.items(), cal_parameter_list
+        cal_channel_hrv_dict.items(),
+        cal_parameter_list,
     ):
         assert (
             h5store["data"][channel_entry[0]].attrs[parameter]
@@ -120,7 +121,7 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
         ts = int(time.time() * 1000)
         writer.write_exception(ExceptionRecord(ts, "there was an exception", 0))
         writer.write_exception(
-            ExceptionRecord(ts + 1, "there was another exception", 1)
+            ExceptionRecord(ts + 1, "there was another exception", 1),
         )
 
         # Note: decode is needed at least for h5py < 3, and old dtype=h5py.special_dtype(vlen=str)
@@ -145,7 +146,6 @@ def test_key_value_store(tmp_path, calibration_data):
     d = tmp_path / "harvest.h5"
 
     with LogWriter(file_path=d, calibration_data=calibration_data) as writer:
-
         writer["some string"] = "this is a string"
         writer["some value"] = 5
 
@@ -158,7 +158,9 @@ def test_key_value_store(tmp_path, calibration_data):
 def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
     d = tmp_path / "harvest_perf.h5"
     with LogWriter(
-        file_path=d, force_overwrite=True, calibration_data=calibration_data
+        file_path=d,
+        force_overwrite=True,
+        calibration_data=calibration_data,
     ) as log:
         log.write_buffer(data_buffer)
 

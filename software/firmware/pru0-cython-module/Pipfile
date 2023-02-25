@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 cython = "*"
 setuptools = "*"
+shepherd = {editable = true, path = "../../python-package[test]"}
 
 [dev-packages]
 

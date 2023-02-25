@@ -86,7 +86,7 @@ class VirtualSourceConfig:
             else:
                 raise NotImplementedError(
                     f"[{self.name}] was set to '{setting}', "
-                    f"but definition missing in '{self._def_file}'"
+                    f"but definition missing in '{self._def_file}'",
                 )
 
         if setting is None:
@@ -104,7 +104,7 @@ class VirtualSourceConfig:
                 f"[{self.name}] InputSetting could not be handled. "
                 f"In case of file-path -> does it exist? \n"
                 f"\t type = '{type(setting)}', \n"
-                f"\t content = '{setting}'"
+                f"\t content = '{setting}'",
             )
 
         if log_intermediate_voltage is not None:
@@ -136,7 +136,7 @@ class VirtualSourceConfig:
             round(
                 self.data["interval_startup_delay_drain_ms"]
                 * self.samplerate_sps
-                // 10**3
+                // 10**3,
             ),  # n, samples
             round(self.data["V_input_max_mV"] * 1e3),  # uV
             round(self.data["I_input_max_mA"] * 1e6),  # nA
@@ -151,7 +151,7 @@ class VirtualSourceConfig:
             round(
                 self.data["interval_check_thresholds_ms"]
                 * self.samplerate_sps
-                // 10**3
+                // 10**3,
             ),  # n, samples
             round(self.data["V_pwr_good_enable_threshold_mV"] * 1e3),  # uV
             round(self.data["V_pwr_good_disable_threshold_mV"] * 1e3),  # uV
@@ -231,7 +231,8 @@ class VirtualSourceConfig:
         if c_store > 0 and c_out > 0:
             # first case: storage cap outside of en/dis-thresholds
             dV_output_en_thrs_mV = v_old - pow(
-                pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2), 0.5
+                pow(v_old, 2) - (c_out / c_store) * pow(v_out, 2),
+                0.5,
             )
 
             # second case: storage cap below v_out (only different for enabled buck),
@@ -292,13 +293,14 @@ class VirtualSourceConfig:
         checks against limits of algorithm
         """
         base_name = self.data.get(
-            "converter_base", "neutral"
+            "converter_base",
+            "neutral",
         )  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
             raise ValueError(
                 f"[{self.name}] loop detected in 'base'-inheritance-system "
-                f"@ '{base_name}' already in {self._inheritance}"
+                f"@ '{base_name}' already in {self._inheritance}",
             )
         else:
             self._inheritance.append(base_name)
@@ -317,7 +319,7 @@ class VirtualSourceConfig:
             self.data = config_stash
         else:
             raise NotImplementedError(
-                f"[{self.name}] converter base '{base_name}' is unknown to system"
+                f"[{self.name}] converter base '{base_name}' is unknown to system",
             )
 
         # General
@@ -380,7 +382,10 @@ class VirtualSourceConfig:
         self._check_num("Constant_us_per_nF_n28", 4.29e9, verbose=verbose)
 
     def _check_num(
-        self, setting_key: str, max_value: float = None, verbose: bool = True
+        self,
+        setting_key: str,
+        max_value: float = None,
+        verbose: bool = True,
     ) -> NoReturn:
         try:
             set_value = self.data[setting_key]
@@ -395,20 +400,23 @@ class VirtualSourceConfig:
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
                 f"[{self.name}] '{setting_key}' must a single positive number, "
-                f"but is '{set_value}'"
+                f"but is '{set_value}'",
             )
         if set_value < 0:
             raise NotImplementedError(
-                f"[{self.name}] {setting_key} = {set_value}, but must be >= 0"
+                f"[{self.name}] {setting_key} = {set_value}, but must be >= 0",
             )
         if (max_value is not None) and (set_value > max_value):
             raise NotImplementedError(
-                f"[{self.name}] {setting_key} = {set_value}, but must be <= {max_value}"
+                f"[{self.name}] {setting_key} = {set_value}, but must be <= {max_value}",
             )
         self.data[setting_key] = set_value
 
     def _check_list(
-        self, setting_key: str, max_value: float = 1023, verbose: bool = True
+        self,
+        setting_key: str,
+        max_value: float = 1023,
+        verbose: bool = True,
     ) -> NoReturn:
         default = flatten_dict_list(self._config_base[setting_key])
         try:
@@ -428,7 +436,7 @@ class VirtualSourceConfig:
         ):
             raise NotImplementedError(
                 f"[{self.name}] {setting_key} must a list of {len(default)} values, "
-                f"within range of [{0}; {max_value}]"
+                f"within range of [{0}; {max_value}]",
             )
         self.data[setting_key] = values
 

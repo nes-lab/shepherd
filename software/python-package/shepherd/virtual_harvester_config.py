@@ -52,7 +52,6 @@ class VirtualHarvesterConfig:
         samplerate_sps: int = 100_000,
         emu_cfg: Optional[dict] = None,
     ):
-
         self.samplerate_sps = samplerate_sps
         self.for_emulation = emu_cfg is not None
         def_path = Path(__file__).parent.resolve() / self._def_file
@@ -79,7 +78,7 @@ class VirtualHarvesterConfig:
             else:
                 raise NotImplementedError(
                     f"[{self.name}] Config was set to '{setting}', "
-                    f"but definition missing in '{self._def_file}'"
+                    f"but definition missing in '{self._def_file}'",
                 )
 
         if setting is None:
@@ -97,7 +96,7 @@ class VirtualHarvesterConfig:
         else:
             raise NotImplementedError(
                 f"[{self.name}] {type(setting)}'{setting}' could not be handled. "
-                f"In case of file-path -> does it exist?"
+                f"In case of file-path -> does it exist?",
             )
 
         if self.for_emulation:
@@ -106,12 +105,12 @@ class VirtualHarvesterConfig:
                     self.data[element] = emu_cfg[element]
                 else:
                     raise TypeError(
-                        f"[{self.name}] Config from Input-File was faulty ({element} missing)"
+                        f"[{self.name}] Config from Input-File was faulty ({element} missing)",
                     )
 
             if self.data["dtype"] == "isc_voc":
                 raise TypeError(
-                    f"[{self.name}] vHarvester can't handle 'isc_voc' format during emulation yet"
+                    f"[{self.name}] vHarvester can't handle 'isc_voc' format during emulation yet",
                 )
 
         if self.data_min is None:
@@ -125,13 +124,12 @@ class VirtualHarvesterConfig:
         )
 
     def _check_and_complete(self, verbose: bool = True) -> NoReturn:
-
         base_name = self.data.get("base", "neutral")  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
             raise ValueError(
                 f"[{self.name}] loop detected in 'base'-inheritance-system "
-                f"@ '{base_name}' already in {self._inheritance}"
+                f"@ '{base_name}' already in {self._inheritance}",
             )
         else:
             self._inheritance.append(base_name)
@@ -150,7 +148,7 @@ class VirtualHarvesterConfig:
             self.data = config_stash
         else:
             raise NotImplementedError(
-                f"[{self.name}] converter-base '{base_name}' is unknown to system"
+                f"[{self.name}] converter-base '{base_name}' is unknown to system",
             )
 
         self.data["algorithm_num"] = 0
@@ -160,7 +158,10 @@ class VirtualHarvesterConfig:
         self._check_num("algorithm_num", verbose=verbose)
 
         self._check_num(
-            "window_size", 16, 2_000, verbose=verbose
+            "window_size",
+            16,
+            2_000,
+            verbose=verbose,
         )  # TODO: why this narrow limit?
 
         self._check_num("voltage_min_mV", 0, 5_000, verbose=verbose)
@@ -178,7 +179,9 @@ class VirtualHarvesterConfig:
         )
 
         current_limit_uA = 10**6 * self._cal.convert_raw_to_value(
-            "harvester", "adc_current", 4
+            "harvester",
+            "adc_current",
+            4,
         )
         self._check_num("current_limit_uA", current_limit_uA, 50_000, verbose=verbose)
 
@@ -188,7 +191,9 @@ class VirtualHarvesterConfig:
                 / self.data["window_size"]
             )
         v_step_min_mV = 10**3 * self._cal.convert_raw_to_value(
-            "harvester", "dac_voltage_b", 4
+            "harvester",
+            "dac_voltage_b",
+            4,
         )
         self._check_num("voltage_step_mV", v_step_min_mV, 1_000_000, verbose=verbose)
 
@@ -208,10 +213,16 @@ class VirtualHarvesterConfig:
             time_min_ms = max(time_min_ms, window_ms)
 
         self._check_num(
-            "interval_ms", 0.01, 1_000_000, verbose=verbose
+            "interval_ms",
+            0.01,
+            1_000_000,
+            verbose=verbose,
         )  # creates param if missing
         self._check_num(
-            "duration_ms", 0.01, 1_000_000, verbose=verbose
+            "duration_ms",
+            0.01,
+            1_000_000,
+            verbose=verbose,
         )  # creates param if missing
         ratio_old = self.data["duration_ms"] / self.data["interval_ms"]
         self._check_num("interval_ms", time_min_ms, 1_000_000, verbose=verbose)
@@ -286,7 +297,7 @@ class VirtualHarvesterConfig:
         if not isinstance(set_value, (int, float)) or (set_value < 0):
             raise NotImplementedError(
                 f"[{self.name}] '{setting_key}' must a single positive number, "
-                f"but is '{set_value}'"
+                f"but is '{set_value}'",
             )
         self.data[setting_key] = set_value
 
@@ -301,12 +312,12 @@ class VirtualHarvesterConfig:
         if self.for_emulation and self.data["algorithm_num"] <= algorithms["ivcurve"]:
             raise ValueError(
                 f"[{self.name}] Select valid harvest-algorithm for emulator, "
-                f"current usage = {self._inheritance}"
+                f"current usage = {self._inheritance}",
             )
         elif self.data["algorithm_num"] < algorithms["ivcurve"]:
             raise ValueError(
                 f"[{self.name}] Select valid harvest-algorithm for harvester, "
-                f"current usage = {self._inheritance}"
+                f"current usage = {self._inheritance}",
             )
 
         setlist = [
@@ -315,7 +326,7 @@ class VirtualHarvesterConfig:
             round(
                 self.data["window_samples"]
                 if self.for_emulation
-                else self.data["window_size"]
+                else self.data["window_size"],
             ),
             round(self.data["voltage_mV"] * 1e3),  # uV
             round(self.data["voltage_min_mV"] * 1e3),  # uV
@@ -323,13 +334,13 @@ class VirtualHarvesterConfig:
             round(self.data["voltage_step_mV"] * 1e3),  # uV
             round(self.data["current_limit_uA"] * 1e3),  # nA
             round(
-                max(0, min(255, self.data["setpoint_n"] * 256))
+                max(0, min(255, self.data["setpoint_n"] * 256)),
             ),  # n8 -> 0..1 is mapped to 0..255
             round(
-                self.data["interval_ms"] * self.samplerate_sps // 10**3
+                self.data["interval_ms"] * self.samplerate_sps // 10**3,
             ),  # n, samples
             round(
-                self.data["duration_ms"] * self.samplerate_sps // 10**3
+                self.data["duration_ms"] * self.samplerate_sps // 10**3,
             ),  # n, samples
             round(self.data["wait_cycles"]),  # n, samples
         ]

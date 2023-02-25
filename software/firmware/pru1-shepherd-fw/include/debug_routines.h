@@ -115,5 +115,21 @@ static void inline debug_loop_delays(const uint32_t shepherd_state)
 }
 #endif
 
+#ifdef GPIO_SPEED_TEST
+static void inline debug_gpio_sweep(void)
+{
+    int32_t value;
+    for (int32_t iter = 2048; iter > 0; iter >>= 1u)
+    {
+        value = iter;
+        while (value--) __delay_cycles(1);
+        GPIO_TOGGLE(GPIO_BATOK);
+        value = iter;
+        while (value--) __delay_cycles(1);
+        GPIO_TOGGLE(GPIO_BATOK);
+    }
+}
+#endif
+
 
 #endif //PRU1_DEBUG_ROUTINES_H_

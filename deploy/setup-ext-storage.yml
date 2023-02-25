@@ -28,7 +28,9 @@
         state: present
 
     - name: Read device information
-      parted: 'device=/dev/{{ storage_dev }} unit=MiB'
+      community.general.parted:
+        device: '/dev/{{ storage_dev }}'
+        unit: 'MiB'
       register: dev_info
 
     - name: Unmount external storage
@@ -37,14 +39,14 @@
       changed_when: true
 
     - name: Remove all partitions from disk
-      parted:
+      community.general.parted:
         device: '/dev/{{ storage_dev }}'
         number: '{{ item.num }}'
         state: absent
       with_items: '{{ dev_info.partitions }}'
 
     - name: Create a new primary partition
-      parted:
+      community.general.parted:
         device: '/dev/{{ storage_dev }}'
         number: 1
         state: present

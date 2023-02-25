@@ -78,7 +78,7 @@ class LogReader:
                 self._logger.info("File is available now")
             else:
                 self._logger.error(
-                    "File is faulty! Will try to open but there might be dragons"
+                    "File is faulty! Will try to open but there might be dragons",
                 )
 
         self.ds_time = self.h5file["data"]["time"]
@@ -139,7 +139,9 @@ class LogReader:
         if end_n is None:
             end_n = int(self.ds_time.shape[0] // self.samples_per_buffer)
         self._logger.debug(
-            "Reading blocks from %d to %d from source-file", start_n, end_n
+            "Reading blocks from %d to %d from source-file",
+            start_n,
+            end_n,
         )
         for i in range(start_n, end_n):
             idx_start = i * self.samples_per_buffer
@@ -207,7 +209,8 @@ class LogReader:
         for attr in ["mode"]:
             if attr not in self.h5file.attrs.keys():
                 self._logger.error(
-                    "attribute '%s' not found in file (@Validator)", attr
+                    "attribute '%s' not found in file (@Validator)",
+                    attr,
                 )
                 return False
             if self.h5file.attrs["mode"] not in self.mode_dtype_dict:
@@ -216,7 +219,8 @@ class LogReader:
         for attr in ["window_samples", "datatype"]:
             if attr not in self.h5file["data"].attrs.keys():
                 self._logger.error(
-                    "attribute '%s' not found in data-group (@Validator)", attr
+                    "attribute '%s' not found in data-group (@Validator)",
+                    attr,
                 )
                 return False
         for dset in ["time", "current", "voltage"]:
@@ -241,14 +245,14 @@ class LogReader:
 
         if self.get_datatype() == "ivcurve" and self.get_window_samples() < 1:
             self._logger.error(
-                "window size / samples is < 1 -> invalid for ivcurves-datatype (@Validator)"
+                "window size / samples is < 1 -> invalid for ivcurves-datatype (@Validator)",
             )
             return False
 
         # soft-criteria:
         if self.get_datatype() != "ivcurve" and self.get_window_samples() > 0:
             self._logger.warning(
-                "window size / samples is > 0 despite not using the ivcurves-datatype (@Validator)"
+                "window size / samples is > 0 despite not using the ivcurves-datatype (@Validator)",
             )
         # same length of datasets:
         ds_time_size = self.h5file["data"]["time"].shape[0]
@@ -266,7 +270,7 @@ class LogReader:
         remaining_size = ds_time_size % self.samples_per_buffer
         if remaining_size != 0:
             self._logger.warning(
-                "datasets are not aligned with buffer-size (@Validator)"
+                "datasets are not aligned with buffer-size (@Validator)",
             )
         # check compression
         for dset in ["time", "current", "voltage"]:

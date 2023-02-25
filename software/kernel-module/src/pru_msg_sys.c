@@ -1,10 +1,10 @@
-#include "pru_comm.h"
+#include "pru_mem_interface.h"
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 #include <linux/mutex.h>
 
-#include "pru_mem_msg_sys.h"
+#include "pru_msg_sys.h"
 
 /***************************************************************/
 /***************************************************************/
@@ -66,31 +66,33 @@ uint8_t get_msg_from_pru(struct ProtoMsg *const element)
 
 struct hrtimer              coordinator_loop_timer;
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart);
-
+static u8                   timers_active          = 0;
+static u8                   init_done              = 0;
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
-const static unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
+static const unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
                                                       50000u,  20000u,  10000u};
-const static size_t         coord_timer_steps_ns_size =
+static const size_t         coord_timer_steps_ns_size =
         sizeof(coord_timer_steps_ns) / sizeof(coord_timer_steps_ns[0]);
 
 
 /***************************************************************/
 /***************************************************************/
 
-int mem_msg_sys_exit(void)
+void msg_sys_exit(void)
 {
     hrtimer_cancel(&coordinator_loop_timer);
-    return 0;
+    init_done     = 0;
+    timers_active = 0;
+    printk(KERN_INFO "shprd.k: msg-system exited");
 }
 
-int mem_msg_sys_reset(void)
+void msg_sys_reset(void)
 {
     ring_init(&msg_ringbuf_from_pru);
     ring_init(&msg_ringbuf_to_pru);
-    return 0;
 }
 
-int mem_msg_sys_test(void)
+void msg_sys_test(void)
 {
     struct ProtoMsg msg1 = {.id       = MSG_TO_PRU,
                             .unread   = 0u,
@@ -109,30 +111,65 @@ int mem_msg_sys_test(void)
     msg2.type                = MSG_TEST;
     msg2.buffer_block_period = 3;
     pru1_comm_send_sync_reply(&msg2); // error-pipeline pru1
-    return 0;
 }
 
-int mem_msg_sys_init(void)
+void msg_sys_init(void)
 {
-    struct timespec ts_now;
-    uint64_t        now_ns_system;
-
-    mem_msg_sys_reset();
+    if (init_done)
+    {
+        printk(KERN_ERR "shprd.k: msg-system init requested -> can't init twice!");
+        return;
+    }
 
     hrtimer_init(&coordinator_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     coordinator_loop_timer.function = &coordinator_callback;
+
+    init_done                       = 1;
+    printk(KERN_INFO "shprd.k: msg-system initialized");
+
+    msg_sys_start();
+    msg_sys_test();
+}
+
+
+void msg_sys_pause(void)
+{
+    if (!timers_active)
+    {
+        printk(KERN_ERR "shprd.k: msg-system pause requested -> sys not running!");
+        return;
+    }
+    timers_active = 0;
+    printk(KERN_INFO "shprd.k: msg-system paused");
+}
+
+void msg_sys_start(void)
+{
+    struct timespec ts_now;
+    uint64_t        now_ns_system;
 
     /* Timestamp system clock */
     getnstimeofday(&ts_now);
     now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
 
+    if (!init_done)
+    {
+        printk(KERN_ERR "shprd.k: msg-system start requested without prior init");
+        return;
+    }
+    if (timers_active)
+    {
+        printk(KERN_ERR "shprd.k: msg-system start requested -> but already running!");
+        return;
+    }
+
+    msg_sys_reset();
+
     hrtimer_start(&coordinator_loop_timer, ns_to_ktime(now_ns_system + coord_timer_steps_ns[0]),
                   HRTIMER_MODE_ABS);
 
-    printk(KERN_INFO "shprd.k: msg-system initialized");
-    mem_msg_sys_test();
-
-    return 0;
+    timers_active = 1;
+    printk(KERN_INFO "shprd.k: msg-system started");
 }
 
 /***************************************************************/
@@ -148,6 +185,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 
     /* Timestamp system clock */
     getnstimeofday(&ts_now);
+
+    if (!timers_active) return HRTIMER_NORESTART;
 
     for (iter = 0; iter < 6; ++iter) /* 3 should be enough, 6 has safety-margin included */
     {

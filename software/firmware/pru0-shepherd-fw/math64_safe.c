@@ -1,7 +1,7 @@
 #include "math64_safe.h"
 
 #ifdef __CYTHON__
-uint32_t msb_position(const uint32_t value)
+uint32_t msb_position(uint32_t value)
 {
     uint32_t pos = 0;
     while (value > 0)

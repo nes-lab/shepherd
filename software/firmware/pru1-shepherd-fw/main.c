@@ -183,8 +183,9 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem,
 	*/
     if ((shared_mem->shepherd_state != STATE_RUNNING) || (shared_mem->gpio_edges == NULL))
     {
-        prev_gpio_status           = 0x00;
-        shared_mem->gpio_pin_state = read_r31() & GPIO_MASK;
+        prev_gpio_status = 0x00;
+        shared_mem->gpio_pin_state =
+                (read_r31() | (shared_mem->vsource_batok_pin_value << GPIO_BATOK_POS)) & GPIO_MASK;
         return;
     }
     else if (shared_mem->vsource_skip_gpio_logging) { return; }

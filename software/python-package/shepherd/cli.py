@@ -88,7 +88,7 @@ def cli(ctx=None, verbose: int = 2):
         raise RuntimeError("Failed to access sysFS -> is the kernel module loaded?")
     except PermissionError:
         raise RuntimeError(
-            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?"
+            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?",
         )
 
 
@@ -140,10 +140,12 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 
 
 @cli.command(
-    short_help="Runs a mode with given parameters. Mainly for use with config file."
+    short_help="Runs a mode with given parameters. Mainly for use with config file.",
 )
 @click.option(
-    "--mode", default="harvester", type=click.Choice(["harvester", "emulator"])
+    "--mode",
+    default="harvester",
+    type=click.Choice(["harvester", "emulator"]),
 )
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option(
@@ -154,13 +156,12 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 )
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 def run(mode, parameters: Dict, verbose):
-
     set_verbose_level(verbose)
 
     if not isinstance(parameters, Dict):
         raise click.BadParameter(
             f"parameter-argument is not dict, but {type(parameters)} "
-            "(last occurred with v8-alpha-version of click-lib)"
+            "(last occurred with v8-alpha-version of click-lib)",
         )
 
     # TODO: test input parameters before - crashes because of wrong parameters are ugly
@@ -209,7 +210,10 @@ def run(mode, parameters: Dict, verbose):
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+    "--use_cal_default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
 )
 @click.option(
     "--start_time",
@@ -239,7 +243,7 @@ def harvester(
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data"
+    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data",
 )
 @click.argument("input_path", type=click.Path(exists=True))
 @click.option(
@@ -257,7 +261,10 @@ def harvester(
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default", "-c", is_flag=True, help="Use default calibration values"
+    "--use_cal_default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
 )
 @click.option(
     "--start_time",
@@ -381,80 +388,79 @@ def eeprom():
 
 @eeprom.command(short_help="Write data to EEPROM")
 @click.option(
-    "--infofile",
+    "--info_file",
     "-i",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with cape info",
 )
 @click.option(
     "--version",
     "-v",
     type=click.STRING,
-    default="22A0",
-    help="Cape version number, 4 Char, e.g. 22A0, reflecting hardware revision",
+    default="24A0",
+    help="Cape version number, max 4 Char, e.g. 22A0, reflecting hardware revision",
 )
 @click.option(
     "--serial_number",
     "-s",
     type=click.STRING,
-    help="Cape serial number, 12 Char, e.g. 2021w28i0001, reflecting year, week of year, increment",
+    help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
 )
 @click.option(
-    "--cal-file",
+    "--cal_date",
+    "-d",
+    type=click.STRING,
+    help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
+)
+@click.option(
+    "--cal_file",
     "-c",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with calibration data",
 )
-@click.option(
-    "--use_cal_default",
-    is_flag=True,
-    help="Use default calibration data (skip eeprom)",
-)
-def write(infofile, version, serial_number, cal_file, use_cal_default):
-    if infofile is not None:
-        if serial_number is not None or version is not None:
-            raise click.UsageError(
-                "--infofile and --version/--serial_number" " are mutually exclusive"
-            )
-        cape_data = CapeData.from_yaml(infofile)
+def write(info_file, version, serial_number, cal_date, cal_file):
+    if info_file is not None:
+        cape_data = CapeData.from_yaml(info_file)
+        # overwrite fields that were provided additionally
+        if version is not None:
+            cape_data.data["version"] = version
+        if serial_number is not None:
+            cape_data.data["serial_number"] = serial_number
+        if cal_date is not None:
+            cape_data.data["cal_date"] = cal_date
         with EEPROM() as storage:
             storage.write_cape_data(cape_data)
-    elif serial_number is not None or version is not None:
-        if version is None or serial_number is None:
-            raise click.UsageError("--version and --serial_number are required")
-        cape_data = CapeData.from_values(serial_number, version)
+    else:
+        if version is None:
+            raise click.UsageError("--version is required")
+        if serial_number is None:
+            raise click.UsageError("--serial_number is required")
+        if cal_date is None:
+            raise click.UsageError("--cal_date is required")
+        cape_data = CapeData.from_values(serial_number, version, cal_date)
         with EEPROM() as storage:
             storage.write_cape_data(cape_data)
 
     if cal_file is not None:
-        if use_cal_default:
-            raise click.UsageError(
-                "--use_cal_default and --cal-file are mutually exclusive"
-            )
         cal = CalibrationData.from_yaml(cal_file)
-        with EEPROM() as storage:
-            storage.write_calibration(cal)
-    if use_cal_default:
-        cal = CalibrationData.from_default()
         with EEPROM() as storage:
             storage.write_calibration(cal)
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
 @click.option(
-    "--infofile",
+    "--info_file",
     "-i",
     type=click.Path(),
     help="If provided, cape info data is dumped to this file",
 )
 @click.option(
-    "--cal-file",
+    "--cal_file",
     "-c",
     type=click.Path(),
     help="If provided, calibration data is dumped to this file",
 )
-def read(infofile, cal_file):
-
+def read(info_file, cal_file):
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
@@ -462,8 +468,8 @@ def read(infofile, cal_file):
         cape_data = storage.read_cape_data()
         cal = storage.read_calibration()
 
-    if infofile:
-        with open(infofile, "w") as f:
+    if info_file:
+        with open(info_file, "w") as f:
             f.write(repr(cape_data))
     else:
         logger.info(repr(cape_data))
@@ -478,9 +484,12 @@ def read(infofile, cal_file):
 @eeprom.command(
     short_help="Convert calibration measurements to calibration data, "
     "where FILENAME is YAML-formatted file "
-    "containing calibration measurements"
+    "containing calibration measurements",
 )
-@click.argument("filename", type=click.Path(exists=True))
+@click.argument(
+    "filename",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
 @click.option(
     "--output_path",
     "-o",
@@ -488,7 +497,6 @@ def read(infofile, cal_file):
     help="Path to resulting YAML-formatted calibration data file",
 )
 def make(filename, output_path):
-
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
@@ -503,7 +511,6 @@ def make(filename, output_path):
 @cli.command(short_help="Start zerorpc server")
 @click.option("--port", "-p", type=click.INT, default=4242)
 def rpc(port):
-
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     logger.info("Shepherd Debug Interface: Initialized")
@@ -538,7 +545,10 @@ def launcher(led, button):
     short_help="Programmer for Target-Controller",
     context_settings={"ignore_unknown_options": True},
 )
-@click.argument("firmware-file", type=click.Path(exists=True, dir_okay=False))
+@click.argument(
+    "firmware-file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
 @click.option(
     "--sel_a/--sel_b",
     default=True,
@@ -552,7 +562,11 @@ def launcher(led, button):
     help="Target supply voltage",
 )
 @click.option(
-    "--speed", "-s", type=click.INT, default=1_000_000, help="Programming-Datarate"
+    "--speed",
+    "-s",
+    type=click.INT,
+    default=1_000_000,
+    help="Programming-Datarate",
 )
 @click.option(
     "--target",
@@ -561,8 +575,12 @@ def launcher(led, button):
     default="nrf52",
     help="Target chip",
 )
-def programmer(firmware_file, sel_a, voltage, speed, target):
-
+@click.option(
+    "--prog1/--prog2",
+    default=True,
+    help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
+)
+def programmer(firmware_file, sel_a, voltage, speed, target, prog1):
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)
@@ -574,11 +592,18 @@ def programmer(firmware_file, sel_a, voltage, speed, target):
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
 
+        protocol_dict = {
+            "nrf52": "SWD",
+            "msp430": "SBW",
+        }
+        sysfs_interface.load_pru0_firmware(protocol_dict[target])
+
         try:
             sd.shared_mem.write_firmware(fw.read())
-            sysfs_interface.write_programmer_ctrl(
-                target, speed, 22, 23, 26, 27
-            )  # TODO: pins-nums are placeholders
+            if prog1:
+                sysfs_interface.write_programmer_ctrl(target, speed, 5, 4, 10)
+            else:
+                sysfs_interface.write_programmer_ctrl(target, speed, 8, 9, 11)
             logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
         except OSError:
@@ -593,8 +618,10 @@ def programmer(firmware_file, sel_a, voltage, speed, target):
             time.sleep(1)
             state = sysfs_interface.check_programmer()
         logger.info(
-            "Finished Programming!,\tctrl = %s", sysfs_interface.read_programmer_ctrl()
+            "Finished Programming!,\tctrl = %s",
+            sysfs_interface.read_programmer_ctrl(),
         )
+        sysfs_interface.load_pru0_firmware("shepherd")
 
 
 if __name__ == "__main__":

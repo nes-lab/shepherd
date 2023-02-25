@@ -43,7 +43,8 @@ def data_h5(tmp_path):
 def test_cli_harvest(shepherd_up, cli_runner, tmp_path):
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
-        cli, ["-vvv", "harvester", "-f", "-d", "10", "-o", str(store)]
+        cli,
+        ["-vvv", "harvester", "-f", "-d", "10", "-o", str(store)],
     )
     assert res.exit_code == 0
     assert store.exists()
@@ -226,7 +227,10 @@ def test_cli_emulate_with_bq25570(shepherd_up, cli_runner, tmp_path, data_h5):
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_virtsource_emulate_wrong_option(
-    shepherd_up, cli_runner, tmp_path, data_h5
+    shepherd_up,
+    cli_runner,
+    tmp_path,
+    data_h5,
 ):
     here = Path(__file__).absolute().parent
     file_path = here / "example_config_virtsource.yml"

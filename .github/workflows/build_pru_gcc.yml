@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # as in roles/sheep/vars/main.yml
-      gcc_pru_cc_release: "pru-elf-2022.05.amd64"
+      gcc_pru_cc_release: "pru-elf-2023.01.amd64"
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
-      link_gcc: "https://github.com/dinuxbg/gnupru/releases/latest/download/"
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2023.01/"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
-      PRU_GCC: "${{ github.workspace }}/pru-elf-2022.05.amd64"
+      PRU_GCC: "${{ github.workspace }}/pru-elf" # was /pru-elf-2022.05.amd64 before
       PRU_GCC_SUPPORT: "${{ github.workspace }}/pru-software-support-package"
 
     steps:
@@ -51,15 +51,21 @@ jobs:
         working-directory: "${{ github.workspace }}"
 
       - name: Build PRU0 🧱
-        run: make
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-fw.elf
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
       - name: Build PRU1 🧱
-        run: make
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru1-shepherd-fw.elf
         working-directory: "software/firmware/pru1-shepherd-fw/"
 
       - name: Build SWD Programmer 🧱
-        run: make
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SWD-fw.elf
         working-directory: "software/firmware/pru0-programmer/"
 
       - name: Clean Programmer 🧹
@@ -67,5 +73,7 @@ jobs:
         working-directory: "software/firmware/pru0-programmer/"
 
       - name: Build SBW Programmer 🧱
-        run: make PROTO=SBW
+        run: |
+          make PROTO=SBW
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SBW-fw.elf
         working-directory: "software/firmware/pru0-programmer/"

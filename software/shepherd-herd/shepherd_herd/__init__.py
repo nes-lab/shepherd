@@ -9,23 +9,14 @@ images to target sensor nodes.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+from .herd import Herd
+from .herd import logger
+from .herd import set_verbose_level
 
-from .sheep_control import check_sheep
-from .sheep_control import configure_sheep
-from .sheep_control import find_consensus_time
-from .sheep_control import logger
-from .sheep_control import poweroff_sheep
-from .sheep_control import start_sheep
-from .sheep_control import stop_sheep
-
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 __all__ = [
+    "Herd",
     "logger",
-    "find_consensus_time",
-    "start_sheep",
-    "check_sheep",
-    "stop_sheep",
-    "configure_sheep",
-    "poweroff_sheep",
+    "set_verbose_level",
 ]

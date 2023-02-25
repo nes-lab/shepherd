@@ -1,5 +1,12 @@
 ---
 
+- name: Test if Node has Access to Internet (essential)
+  ansible.builtin.wait_for:
+    host: github.com
+    port: 80
+    state: started
+    timeout: 5
+
 - name: Update SSL-Certificates
   ansible.builtin.command: 'update-ca-certificates -f -v'
   changed_when: true
@@ -36,6 +43,7 @@
 - name: SCRIPT - Update Bootloader
   ansible.builtin.shell:
     cmd: 'yes | /opt/scripts/tools/developers/update_bootloader.sh'
+  changed_when: true
   when: update_bootloader | bool
 
 - name: Uname - Get Kernel-Version
@@ -62,6 +70,12 @@
 - name: Include performance-modifications
   ansible.builtin.include_tasks:
     file: performance.yml
+
+- name: Restart device
+  # not needed, but easier for debugging
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
 
 - name: Cleanup Beaglebone
   ansible.builtin.include_role:

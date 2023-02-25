@@ -25,12 +25,13 @@ logger = logging.getLogger("shp.eeprom")
 
 eeprom_format = {
     "header": {"offset": 0, "size": 4, "type": "binary"},
-    "eeprom_revision": {"offset": 4, "size": 2, "type": "ascii"},
+    "eeprom_revision": {"offset": 4, "size": 2, "type": "str"},
     "board_name": {"offset": 6, "size": 32, "type": "str"},
-    "version": {"offset": 38, "size": 4, "type": "ascii"},
+    "version": {"offset": 38, "size": 4, "type": "str"},
     "manufacturer": {"offset": 42, "size": 16, "type": "str"},
     "part_number": {"offset": 58, "size": 16, "type": "str"},
-    "serial_number": {"offset": 76, "size": 12, "type": "ascii"},
+    "serial_number": {"offset": 76, "size": 12, "type": "str"},
+    "cal_date": {"offset": 88, "size": 12, "type": "str"},
 }
 
 # The shepherd calibration data is stored in binary format
@@ -51,24 +52,32 @@ class CapeData:
         self.data = data
 
     @classmethod
-    def from_values(cls, serial_number: str, version: str = "00B0"):
+    def from_values(
+        cls,
+        serial_number: str,
+        version: str = "24B0",
+        cal_date: str = "2022-01-01",
+    ):
         """Build the object from defaults and user-provided values
 
         Args:
+
             serial_number (str): Cape serial number according to BeagleBone
                 specification, e.g. 0119XXXX0001
-            version (str): Cape version, e.g. 00A0
+            version (str): Cape version, e.g. 24B0 for board-revision
+            cal_date: YYYY-MM-DD
 
         """
 
         data = {
             "header": b"\xAA\x55\x33\xEE",
-            "eeprom_revision": "A1",
+            "eeprom_revision": "A2",
             "board_name": "BeagleBone SHEPHERD Cape",
             "version": version,
             "manufacturer": "NES TU DRESDEN",
             "part_number": "BB-SHPRD",
             "serial_number": serial_number,
+            "cal_date": cal_date,
         }
         return cls(data)
 
@@ -204,10 +213,11 @@ class EEPROM:
         if key not in eeprom_format:
             raise KeyError(f"{ key } is not a valid EEPROM parameter")
         if eeprom_format[key]["type"] == "ascii":
+            # TODO: ascii not used anymore -> why limit some fields to exact length?
             if len(value) != eeprom_format[key]["size"]:
                 raise ValueError(
                     f"Value { value } has wrong size. "
-                    f"Required size is { eeprom_format[key]['size'] }"
+                    f"Required size is { eeprom_format[key]['size'] }",
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         elif eeprom_format[key]["type"] == "str":
@@ -216,7 +226,7 @@ class EEPROM:
             elif len(value) > eeprom_format[key]["size"]:
                 raise ValueError(
                     f"Value { value } is longer than maximum "
-                    f"size { eeprom_format[key]['size'] }"
+                    f"size { eeprom_format[key]['size'] }",
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         else:
@@ -254,7 +264,7 @@ class EEPROM:
             raise ValueError(
                 f"WriteCal: data-size is wrong! "
                 f"expected = {calibration_data_format['size']} bytes, "
-                f"but got {len(data_serialized)}"
+                f"but got {len(data_serialized)}",
             )
         self._write(calibration_data_format["offset"], data_serialized)
 
@@ -265,7 +275,8 @@ class EEPROM:
             CalibrationData object containing data extracted from EEPROM
         """
         data = self._read(
-            calibration_data_format["offset"], calibration_data_format["size"]
+            calibration_data_format["offset"],
+            calibration_data_format["size"],
         )
         try:
             cal = CalibrationData.from_bytestr(data)
@@ -273,6 +284,6 @@ class EEPROM:
         except struct.error:
             cal = CalibrationData.from_default()
             logger.warning(
-                "EEPROM seems to have no usable data - will set calibration from default-values"
+                "EEPROM seems to have no usable data - will set calibration from default-values",
             )
         return cal

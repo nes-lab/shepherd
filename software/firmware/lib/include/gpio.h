@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 #ifdef __CYTHON__
-  #define read_r30()          (0)
+  #define read_r30()          (0u)
   #define write_r30(pin_mask) (pin_mask) // mockups
-  #define read_r31()          (0)
+  #define read_r31()          (0u)
   #define write_r31(pin_mask) (pin_mask)
 
 #elif defined(__GNUC__)

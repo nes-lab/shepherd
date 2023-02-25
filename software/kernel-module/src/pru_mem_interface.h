@@ -1,5 +1,5 @@
-#ifndef PRU_COMM_H_
-#define PRU_COMM_H_
+#ifndef PRU_MEM_INTERFACE_H_
+#define PRU_MEM_INTERFACE_H_
 #include "commons.h"
 
 /**
@@ -10,14 +10,15 @@
  * Maps the shared memory structure within the PRU's 'shared RAM' memory
  * region.
  */
-int                pru_comm_init(void);
+void               mem_interface_init(void);
 /**
  * Clean up communication between our kernel module and the PRUs.
  *
- * @see pru_comm_init()
+ * @see mem_interface_init()
  */
-int                pru_comm_exit(void);
+void               mem_interface_exit(void);
 
+void               mem_interface_reset(void);
 /**
  * Trigger a system event on the PRUs
  *
@@ -26,7 +27,7 @@ int                pru_comm_exit(void);
  * events to communicate time-critical events from this Linux kernel module to
  * the PRUs
  */
-int                pru_comm_trigger(unsigned int system_event);
+void               mem_interface_trigger(unsigned int system_event);
 
 /**
  * Schedule start of the actual sampling at a later point in time
@@ -38,14 +39,14 @@ int                pru_comm_trigger(unsigned int system_event);
  *
  * @param start_time_second desired system time in seconds at which PRUs should start sampling/replaying
  */
-int                pru_comm_schedule_delayed_start(unsigned int start_time_second);
+int                mem_interface_schedule_delayed_start(unsigned int start_time_second);
 
 /**
  * Cancel a previously scheduled 'delayed start'
  *
- * @see pru_comm_trigger()
+ * @see mem_interface_trigger()
  */
-int                pru_comm_cancel_delayed_start(void);
+int                mem_interface_cancel_delayed_start(void);
 
 /**
  * Read the 'shepherd state' from the PRUs
@@ -54,7 +55,7 @@ int                pru_comm_cancel_delayed_start(void);
  * the state from the shared memory structure, we can check in which state
  * the PRUs actually are.
  */
-enum ShepherdState pru_comm_get_state(void);
+enum ShepherdState mem_interface_get_state(void);
 /**
  * Set the 'shepherd state'
  *
@@ -65,7 +66,7 @@ enum ShepherdState pru_comm_get_state(void);
  * @param state new shepherd state
  * @see SharedMem
  */
-int                pru_comm_set_state(enum ShepherdState state);
+void               mem_interface_set_state(enum ShepherdState state);
 
 /**
  * Reads the buffer period from the PRUs
@@ -79,7 +80,7 @@ int                pru_comm_set_state(enum ShepherdState state);
  *
  * @returns Buffer period in nanoseconds
  */
-unsigned int       pru_comm_get_buffer_period_ns(void);
+unsigned int       mem_interface_get_buffer_period_ns(void);
 
 /**
  * Receives Sync-Messages from PRU1
@@ -111,4 +112,4 @@ unsigned char      pru0_comm_send_msg(struct ProtoMsg *const msg);
 unsigned char      pru0_comm_check_send_status(void);
 
 
-#endif /* PRU_COMM_H_ */
+#endif /* PRU_MEM_INTERFACE_H_ */

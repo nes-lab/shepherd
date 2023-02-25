@@ -2,6 +2,16 @@
 #define __COMMONS_H_
 #include <linux/types.h>
 
+// base: /lib/firmware/am335x-pru*
+// sudo sh -c 'echo am335x-pru0-programmer-SWD-fw > /sys/class/remoteproc/remoteproc1/firmware'
+// sudo sh -c 'echo prog-swd > /sys/shepherd/pru0_firmware'
+#define PRU_FW_DEFAULT               ("am335x-pru%u-shepherd-fw")
+#define PRU0_FW_DEFAULT              ("am335x-pru0-shepherd-fw")
+#define PRU1_FW_DEFAULT              ("am335x-pru1-shepherd-fw")
+#define PRU0_FW_PRG_SWD              ("am335x-pru0-programmer-SWD-fw")
+#define PRU0_FW_PRG_SBW              ("am335x-pru0-programmer-SBW-fw")
+
+
 // NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
 
 /**
@@ -106,16 +116,19 @@ enum ProgrammerTarget
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl
 {
-    int32_t  state; // <0: Programmer state, >0: number of bytes written
+    int32_t  state;
     /* Target chip to be programmed */
     uint32_t target;
     uint32_t datarate;     // baud
     uint32_t datasize;     // bytes
-    uint32_t pin_tck;      // clock-output
-    uint32_t pin_tdio;     // io for swd & sbw, only input for JTAG (TDI)
-    uint32_t pin_tdo;      // data-output, only for JTAG
-    uint32_t pin_tms;      // mode, only for JTAG
-} __attribute__((packed)); // TODO: pin_X can be u8, state/protocol u8,
+    uint32_t pin_tck;      // clock-out for JTAG, SBW, SWD
+    uint32_t pin_tdio;     // data-io for SWD & SBW, input-only for JTAG (TDI)
+    uint32_t pin_dir_tdio; // direction (HIGH == Output to target)
+    /* pins below only for JTAG */
+    uint32_t pin_tdo;      // data-output for JTAG
+    uint32_t pin_tms;      // mode for JTAG
+    uint32_t pin_dir_tms;  // direction (HIGH == Output to target)
+} __attribute__((packed)); // TODO: pin_X can be u8,
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset
  * numbers for hw-rev2.0

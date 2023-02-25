@@ -4,7 +4,7 @@
     name: software-properties-common
     state: present
     update_cache: true
-    when: false
+  when: false
 
 - name: Add nginx stable repository from PPA and install its signing key on Debian target
   ansible.builtin.apt_repository:

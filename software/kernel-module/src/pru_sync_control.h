@@ -1,5 +1,5 @@
-#ifndef __SYNC_CTRL_H_
-#define __SYNC_CTRL_H_
+#ifndef __PRU_SYNC_CONTROL_H_
+#define __PRU_SYNC_CONTROL_H_
 
 #include "commons.h"
 
@@ -14,8 +14,11 @@ void reset_prev_timestamp(void);
  * triggers an interrupt on PRU0
  */
 int  sync_init(uint32_t timer_period_ns);
-int  sync_exit(void);
-int  sync_reset(void);
+void sync_exit(void);
+void sync_reset(void);
+
+void sync_pause(void);
+void sync_start(void);
 
 /**
  * Control loop
@@ -55,4 +58,4 @@ struct sync_data_s
 
 extern struct sync_data_s *sync_data;
 
-#endif /* __SYNC_CTRL_H_ */
+#endif /* __PRU_SYNC_CONTROL_H_ */

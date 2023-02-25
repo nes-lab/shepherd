@@ -64,6 +64,8 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     // TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
     // TODO: check that ConfigParams are used in SubFns if applicable
     // TODO: divide lib into IVC and ADC Parts
+
+    // TODO: embed cfg->current_limit_nA as a limiter if resources allow for it
 }
 
 uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
@@ -303,6 +305,7 @@ static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_
     buffer->values_current[sample_idx] = current_adc;
     buffer->values_voltage[sample_idx] = voltage_adc;
 }
+
 
 /* // TODO: do we need a constant-current-version?
 const uint32_t current_nA = cal_conv_adc_raw_to_nA(current_adc); // TODO: could be simplified by providing raw-value in cfg

@@ -198,7 +198,8 @@ u64 u32 x fn_name
 
 - generate size-map of mem-regions
 	- GCC: `pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'`
-	- CGT: ?
+      - `pru-size gen_gcc/pru0-shepherd-fw.elf`
+    - CGT: should also be compatible with pru-nm or `pru-size gen/pru-shepherd-fw.out`
 	- do sizes look plausible?
 	- how does the result compare to Ti compiler?
 	- working pru1-compilation may provide clues - is it also increasing size?

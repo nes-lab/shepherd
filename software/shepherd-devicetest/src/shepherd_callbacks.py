@@ -32,7 +32,7 @@ def schedule_refresh() -> NoReturn:
     global refresh_interval, refresh_next
     if refresh_next <= dpg.get_frame_count():
         refresh_next = round(
-            dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate()
+            dpg.get_frame_count() + refresh_interval * dpg.get_frame_rate(),
         )
         dpg.set_frame_callback(frame=refresh_next, callback=window_refresh_callback)
 
@@ -255,7 +255,7 @@ dac_channels = (
         [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
         [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
         [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
-        [8, "emulator", "dac_voltage_b", "Emulator Rail B"],
+        [8, "emulator", "dac_voltage_b", "Emulator Rail B (ADC)"],
     ]
 )
 
@@ -310,13 +310,34 @@ def adc_refresh() -> NoReturn:
 # GPIO functionality
 #################################
 
-gpio_channels = [str(val) for val in list(range(9)) + ["None"]]
+# gpio_channels = [str(val) for val in list(range(9)) + ["None"]]
+gpio_channels = [
+    "io0",
+    "io1",
+    "io2",
+    "io3",
+    "i4",
+    "i5",
+    "i6",
+    "ser_i",
+    "ser_io",
+    "pr1_o",
+    "pr1_io",
+    "pr2_o",
+    "pr2_io",
+    "None",
+]
+gpio_dir_channels = {"0to3": 0, "ser_io": 8, "pr1": 10, "pr2": 12}
 
 
 def gpio_refresh() -> NoReturn:
     global shepherd_io
     value = shepherd_io.gpi_read()
-    dpg.set_value("gpio_output", value)
+    dpg.set_value("gpio_output", f"{value}  binary: {value:>10b}")
+    for name, pin in gpio_dir_channels.items():
+        dpg.set_value(f"en_dir_{name}", shepherd_io.get_gpio_direction(pin))
+    for index, name in enumerate(gpio_channels[:-1]):
+        dpg.set_value(f"gpio_read_{name}", shepherd_io.get_gpio_state(index))
     # print(f"refreshed {value}")
 
 
@@ -325,6 +346,11 @@ def gpio_callback(sender, element_data, user_data) -> NoReturn:
     value = gpio_channels.index(element_data)
     shepherd_io.set_gpio_one_high(value)
     gpio_refresh()
+
+
+def gpio_dir_callback(sender, element_data, user_data) -> NoReturn:
+    global shepherd_io
+    shepherd_io.set_gpio_direction(user_data, element_data)
 
 
 def gpio_batok_callback(sender, en_state, user_data) -> NoReturn:

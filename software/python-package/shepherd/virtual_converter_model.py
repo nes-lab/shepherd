@@ -35,12 +35,16 @@ class PruCalibration:
 
     def conv_adc_raw_to_uV(self, voltage_raw: int) -> float:
         return self.cal.convert_raw_to_value(
-            "emulator", "adc_voltage_b", voltage_raw
+            "emulator",
+            "adc_voltage_b",
+            voltage_raw,
         ) * (10**6)
 
     def conv_uV_to_dac_raw(self, voltage_uV: float) -> int:
         dac_raw = self.cal.convert_value_to_raw(
-            "emulator", "dac_voltage_b", float(voltage_uV) / (10**6)
+            "emulator",
+            "dac_voltage_b",
+            float(voltage_uV) / (10**6),
         )
         if dac_raw > (2**16) - 1:
             dac_raw = (2**16) - 1
@@ -114,7 +118,6 @@ class KernelConverterStruct:
 
 
 class VirtualConverterModel:
-
     _cfg: KernelConverterStruct = None
 
     # CONVERTER STATE
@@ -146,7 +149,6 @@ class VirtualConverterModel:
     vsource_skip_gpio_logging: bool = False
 
     def __init__(self, config: KernelConverterStruct, calibration: PruCalibration):
-
         self._cal = calibration
         self._cfg = config
 
@@ -267,7 +269,6 @@ class VirtualConverterModel:
         return round(self.V_mid_uV)  # Python-specific, added for easier testing
 
     def update_states_and_output(self) -> int:
-
         self.sample_count += 1
         check_thresholds = self.sample_count >= self._cfg.interval_check_thresholds_n
 

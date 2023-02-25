@@ -129,7 +129,7 @@ https://www.contributor-covenant.org/translations.
 
 ## Example SPI - naming scheme to use
 
-- primary / controller
-- secondary / periphery
+- primary / **controller**
+- secondary / **periphery** / target
 - MISO -> POCI (periphery out, controller in)
 - MOSI -> PICO (periphery in, controller out)

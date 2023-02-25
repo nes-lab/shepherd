@@ -3,7 +3,7 @@
 do_delete_recordings: false
 do_remove_software: true
 do_zero_free_space: false
-
+required_kernel_regex: '^4\.19.*$'
 
 #### software to remove ####
 
