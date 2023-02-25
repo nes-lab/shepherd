@@ -58,7 +58,7 @@
 
 - name: APT - Upgrade all packages to the latest version
   ansible.builtin.apt:
-    upgrade: full # TODO: was "dist" but this changed also the kernel back to 5.10
+    upgrade: full # was "dist" but this changed also the kernel back to 5.10
     update_cache: true
 
 - name: "CFG - Set timezone to {{ timezone }}"

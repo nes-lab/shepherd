@@ -128,11 +128,11 @@ Further playbooks:
 Installation - simplified & more detailed
 ------------------------------------------
 
-The following steps set up a single shepherd-node by using an already prepared shepherd-image. It cuts away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but linux users can easily adapt, as mostly WSL is used.
+The following steps set up a single shepherd-node by using a ready-to-use shepherd-image. It cuts away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but linux users can easily adapt, as mostly WSL is used.
 
 As new hardware and unknown software can be intimidating the steps were also `filmed and put on youtube <https://youtu.be/UPEH7QODm8A>`_ for comparing the progress.
 
-First step is downloading the `current shepherd-image <https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx>`_ and flashing it to a micro-sd-card with balenaEtcher in admin mode (note: other tools like rufus don't work). Select the (still compressed ``.img.xz``) image and choose the drive before flashing.
+First step is downloading the `current shepherd-image <https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx>`_ and flashing it to a micro-sd-card with balenaEtcher in admin mode (note: other tools like rufus probably don't work). Select the (still compressed ``.img.xz``) image and choose the drive before flashing.
 
 Insert the sd-card into the Beaglebone, connect the device via ethernet-cable to your router and finally power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
 
