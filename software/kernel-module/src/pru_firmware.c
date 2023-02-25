@@ -37,7 +37,7 @@ int                            load_pru_firmware(u8 pru_num, const char *file_na
 
 int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 {
-    int ret = 0;
+    int       ret       = 0;
     static u8 init_done = 0;
 
     /* pause sub-services */
