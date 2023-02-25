@@ -1,7 +1,7 @@
 ---
 
 - name: Optimize Boot by removing outdated initrd - find files with Wildcard
-  # ansible.builtin.command: "rm -rf /boot/initrd.img*"
+  # similar to "rm -rf /boot/initrd.img*"
   ansible.builtin.find:
     paths: '/boot'
     patterns: 'initrd.img*'

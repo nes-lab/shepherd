@@ -28,6 +28,7 @@
 
 - name: Install PRU Code Generation tools
   ansible.builtin.command: "{{ dl_cgt_ret.dest }}"
+  # TODO: could be replaced with builtin.script
   become: true
   register: inst_cgt_ret
   retries: 3 # TODO: experimental, this step failed recently on 2/4 nodes

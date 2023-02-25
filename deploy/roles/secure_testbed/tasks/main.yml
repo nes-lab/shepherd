@@ -96,7 +96,7 @@
 # TODO: uEnv has UART enabled
 
 - name: SYS - Find and disable world-writables
-  ansible.builtin.command:
+  ansible.builtin.shell:
     cmd: 'find / -xdev -perm +o=w ! \( -type d -perm +o=t \) ! -type l -ok chmod -v o-w {} \;'
   changed_when: true
 

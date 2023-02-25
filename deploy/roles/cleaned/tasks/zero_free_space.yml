@@ -10,8 +10,7 @@
   changed_when: true
 
 - name: Determine free space
-  ansible.builtin.command:
-    cmd: 'df -m /opt/ --output\=avail'
+  ansible.builtin.command: 'df -m /opt/ --output\=avail'
   register: opt_freespace_mb
   changed_when: false
 
