@@ -66,6 +66,8 @@ Or you use the playbook described in "alternative 1".
 Building the docs
 -----------------
 
+**Note**: Docs are automatically built with Github actions after changes on main-branch.
+
 Make sure you have the python requirements installed:
 
 .. code-block:: bash
@@ -104,7 +106,7 @@ You should always make sure the tests are passing before committing your code.
 
 To run the full range of python tests, have a copy of the source code on a BeagleBone.
 Build and install from source (see `Development setup`_ for more).
-Change into the ``software/python-package`` directory and run the following commands to:
+Change into the ``software/python-package`` directory on the BeagleBone and run the following commands to:
 
 - install dependencies of tests
 - run testbench
@@ -115,9 +117,9 @@ Change into the ``software/python-package`` directory and run the following comm
 
     sudo pytest
 
-Some tests (~40) are hardware-independent, while most of them require a beaglebone to work (~100). The testbench detects the BeagleBone automatically. A small subset (~8) tests writing & configuring the EEPROM on the shepherd cape and must be enabled manually (``sudo pytest --eeprom-write``)
+Some tests (~40) are hardware-independent, while most of them require a beaglebone to work (~100). The testbench detects the BeagleBone automatically. A small subset of tests (~8) are writing & configuring the EEPROM on the shepherd cape and must be enabled manually (``sudo pytest --eeprom-write``)
 
-**Note:** Recently the testbench had trouble running through completely and therefore losing the debug-output. It is probably caused by repeatedly loading & unloading the shepherd kernel module. The following commands allow to :
+The following commands allow to:
 
 - run single tests,
 - whole test-files or
@@ -131,21 +133,19 @@ Some tests (~40) are hardware-independent, while most of them require a beaglebo
 
     sudo pytest --maxfail=1
 
+It is also recommended to **run the testbench of the herd-tool prior to releasing a new version**. See `project-page <https://github.com/orgua/shepherd/tree/main/software/shepherd-herd#testbench>`_ for more info.
+
 
 Releasing
 ---------
 
 Before committing to the repository please run our `pre-commit <https://pre-commit.com/>`_-workflow described in `Codestyle`_.
 
-Once you have a clean stable version of code, you should decide if your release is a patch, minor or major (see `Semantic Versioning <https://semver.org/>`_). Make sure you're on the main branch and have a clean working directory.
+Once you have a clean, stable and tested version of code, you should decide if your release is a patch, minor or major (see `Semantic Versioning <https://semver.org/>`_).
 Use ``bump2version`` to update the version number across the repository:
 
 .. code-block:: bash
 
     bump2version --tag patch
 
-Finally, push the changes and the tag to trigger the CI pipeline to build and deploy new debian packages to the server:
-
-.. code-block:: bash
-
-    git push origin main --tags
+Finally, open a pull-request to allow merging your changes into the main-branch and to trigger the test-pipeline.

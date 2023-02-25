@@ -1,3 +1,7 @@
+
+[![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
+[![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 # shepherd-herd
 
 *shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
@@ -195,13 +199,12 @@ shepherd-herd poweroff --restart
 
 ## Testbench
 
-For testing `shepherd-herd` there must be a valid `herd.yml` at one of the three mentioned locations (look at [simplified usage](#Usage)) with accessible sheep-nodes. Navigate your shell into the package-folder `/shepherd/software/shepherd-herd/` and run:
+For testing `shepherd-herd` there must be a valid `herd.yml` at one of the three mentioned locations (look at [simplified usage](#Usage)) with accessible sheep-nodes (at least one). Navigate your host-shell into the package-folder `/shepherd/software/shepherd-herd/` and run the following commands for setup and running the testbench (~ 30 tests):
 
 ```Shell
+pip3 install ./[tests]
 pytest
 ```
-
-**Note:** keep the herd small for the tests as the current implementation does not parallelize connections to the nodes.
 
 ## ToDo
 
