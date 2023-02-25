@@ -43,7 +43,7 @@
     path: "{{ item }}"
     state: absent
   with_items: "{{ files_fw.files | map(attribute='path') }}"
-  when: false # TODO: Disabled for now, needs testing
+  when: true # TODO: needs testing
 
 - name: Uname - Get Kernel-Version
   ansible.builtin.command: 'uname --kernel-release'
