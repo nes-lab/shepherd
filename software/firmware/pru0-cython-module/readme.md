@@ -45,6 +45,20 @@ This should be the correct command, but it fails to clean up some pieces.
 python setup.py clean --all
 ```
 
+### To Run Pytest
+
+Since pytest doesn't recognize Cython(.pyx) directly:
+
+Install - Pytest
+```shell
+pip install pytest-cython
+```
+
+To Run - Pytest
+```Shell
+pytest3 test_module.py
+```
+
 ### TODO
 
 done:
