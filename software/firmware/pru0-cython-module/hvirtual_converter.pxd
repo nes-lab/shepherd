@@ -18,6 +18,8 @@ cdef extern from "math64_safe.h":
 	cdef uint32_t msb_position(uint32_t value)
 
 cdef extern from "commons.h":
+	cpdef enum:
+		LUT_SIZE = 12
 	cdef struct ConverterConfig:
 		uint32_t converter_mode
 		uint32_t interval_startup_delay_drain_n
@@ -43,17 +45,8 @@ cdef extern from "commons.h":
 		uint32_t LUT_input_V_min_log2_uV
 		uint32_t LUT_input_I_min_log2_nA
 		uint32_t LUT_output_I_min_log2_nA
-
-"""
-cdef extern from "commons.h":
-	cdef struct ConverterConfig
-	#ctypedef struct ConverterConfig test
-"""
-"""
-cdef extern from "commons.h":
-	cdef struct ConverterConfig:
-		pass
-"""
+		uint8_t  LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE]
+		uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE]
 
 cdef extern from "virtual_converter.h":
 
@@ -74,3 +67,7 @@ cdef extern from "virtual_converter.h":
 	cdef uint32_t get_V_intermediate_raw()
 	cdef uint32_t get_I_mid_out_nA()
 	cdef uint32_t get_state_log_intermediate()
+	
+cdef extern from "math64_safe.h":	
+	cdef uint64_t mul64(uint64_t value1, uint64_t value2)
+	cdef uint64_t add64(uint64_t value1, uint64_t value2)

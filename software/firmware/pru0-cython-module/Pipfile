@@ -6,12 +6,16 @@ name = "pypi"
 [packages]
 cython = "*"
 setuptools = "*"
-shepherd = {editable = true, path = "../../python-package[test]"}
 
 [dev-packages]
+pytest = "*"
 
 [requires]
 python_version = "3"
 
 [pipenv]
 allow_prereleases = true
+
+[packages.shepherd]
+editable = true
+path = "../../python-package[test]"

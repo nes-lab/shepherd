@@ -3,6 +3,7 @@ import shutil
 
 from Cython.Build import cythonize
 from setuptools import Extension
+
 from setuptools import setup
 
 # copy source files over to avoid mixup of absolute and relative paths
@@ -18,7 +19,7 @@ for src in external_src:
 
 
 module_vconv = Extension(
-    name="virtual_converter",
+    name="Cvirtual_converter",
     sources=[
         "Cvirtual_converter.pyx",
         "build/virtual_converter.c",
@@ -44,4 +45,7 @@ setup(
         [module_vconv],
         annotate=True,
     ),
+    
 )
+
+
