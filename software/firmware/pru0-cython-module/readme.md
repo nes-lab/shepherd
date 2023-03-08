@@ -76,7 +76,6 @@ done:
 - guessed the interface of the module for testing.py
 
 todo:
-- testing.py fails -> Segmentation Fault
-	- while trying to access any function in testing.py from .pxy
-- Structure functionality
-	- to be tested for functionality once testing.py issue is sorted
+- Implement pytest for all the functions, and compare it with a credible root function (instead of Magic-values).
+- While the format of "structures" in .pyx cythonizes, however when it runs through the python interpreter during testing, incurs incompatibility.
+- Add Virtual_Harvester
