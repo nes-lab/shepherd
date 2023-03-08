@@ -78,4 +78,4 @@ done:
 todo:
 - Implement pytest for all the functions, and compare it with a credible root function (instead of Magic-values).
 - While the format of "structures" in .pyx cythonizes, however when it runs through the python interpreter during testing, incurs incompatibility.
-- Add Virtual_Harvester
+- Add Virtual_Harvester - To be added in setup.py and all functions need to be captured.
