@@ -37,17 +37,9 @@ pip3 install ./
 python3 testing.py
 ```
 
-### Cleanup
-
-This should be the correct command, but it fails to clean up some pieces.
-
-```Shell
-python setup.py clean --all
-```
-
 ### To Run Pytest
 
-Since pytest doesn't recognize Cython(.pyx) directly:
+Since pytest doesn't recognize Cython(.pyx) directly, before importing (.pyx) in test_module.py :
 
 Install - Pytest
 ```shell
@@ -57,6 +49,14 @@ pip install pytest-cython
 To Run - Pytest
 ```Shell
 pytest3 test_module.py
+```
+
+### Cleanup
+
+This should be the correct command, but it fails to clean up some pieces.
+
+```Shell
+python setup.py clean --all
 ```
 
 ### TODO
