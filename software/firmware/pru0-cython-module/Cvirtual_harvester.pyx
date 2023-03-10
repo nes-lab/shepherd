@@ -17,7 +17,7 @@ The language used here is a special mix of C and Python. However it will look fa
 
 # internal variables
 cdef uint32_t voltage_set_uV = 0
-cdef bool is_rising = False
+cdef uint32_t is_rising = False
 
 cdef uint32_t voltage_hold = 0
 cdef uint32_t current_hold = 0
@@ -29,4 +29,4 @@ cdef uint32_t interval_step = 1 << 30
 cdef uint32_t volt_step_uV = 0
 cdef uint32_t power_last_raw = 0 
 
-cdef const volatile HarvesterConfig *cfg
+cdef hvirtual_harvester.HarvesterConfig 	*cfg
