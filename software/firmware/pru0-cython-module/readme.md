@@ -48,7 +48,7 @@ pip install pytest-cython
 
 To Run - Pytest
 ```Shell
-pytest3 test_module.py
+pytest-3 test_module.py
 ```
 
 ### Cleanup
@@ -88,8 +88,9 @@ done:
 - transformed .pyx-file into class -> still without data-transformations
 - updated install-instructions
 - guessed the interface of the module for testing.py
+- Add Virtual_Harvester - To be added in setup.py
 
 todo:
 - Implement pytest for all the functions, and compare it with a credible root function (instead of Magic-values).
 - While the format of "structures" in .pyx cythonizes, however when it runs through the python interpreter during testing, incurs incompatibility.
-- Add Virtual_Harvester - To be added in setup.py and all functions need to be captured.
+- Add Virtual_Harvester, functions
