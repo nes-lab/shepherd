@@ -20,3 +20,4 @@ non_essential_packages_f: ['ti-sgx-*', 'eject', 'iw', 'initramfs*']
 non_essential_packages_g: ['vim-runtime', 'humanity-icon-theme', 'python3-sympy']
 # - add: libjpeg*,? part of sheep-install
 # NOTE: 'libx11*' part of python3-h5py
+# TODO: don't remove initramfs anymore
