@@ -6,7 +6,7 @@ import numpy as np
 from .logger import logger
 
 
-def plot_calibration(measurements: dict, calibration: dict, file_name: Path):
+def plot_calibration(measurements: dict, calibration: dict, file_name: Path) -> None:
     for component in ["harvester", "emulator"]:
         for channel in ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]:
             try:

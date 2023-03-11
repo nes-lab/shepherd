@@ -1,17 +1,22 @@
+from typing import Tuple
+from typing import TypeVar
+from typing import Union
+
+import numpy as np
 import pandas as pd
 from scipy import stats
 
 from .logger import logger
 
+T_calc = TypeVar("T_calc", np.ndarray, float)
+
 
 class Calibration:
-    c_gain: float = 1
-    c_offset: float = 0
-    v_gain: float = 1
-    v_offset: float = 0
-
     def __init__(self):
-        pass
+        self.c_gain: float = 1
+        self.c_offset: float = 0
+        self.v_gain: float = 1
+        self.v_offset: float = 0
 
     @classmethod
     def from_measurement(cls, result: pd.DataFrame):
@@ -21,7 +26,9 @@ class Calibration:
         return cal
 
     @staticmethod
-    def measurements_to_calibration(ref, raw) -> tuple:
+    def measurements_to_calibration(
+        ref: Union[pd.Series, float], raw: Union[pd.Series, float]
+    ) -> Tuple[float, float]:
         result = stats.linregress(raw, ref)
         offset = float(result.intercept)
         gain = float(result.slope)
@@ -98,8 +105,8 @@ class Calibration:
         logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
         self.v_gain, self.v_offset = gain, offset
 
-    def convert_current_raw_to_A(self, c_raw):
+    def convert_current_raw_to_A(self, c_raw: T_calc) -> T_calc:
         return c_raw * self.c_gain + self.c_offset
 
-    def convert_voltage_raw_to_V(self, v_raw):
+    def convert_voltage_raw_to_V(self, v_raw: T_calc) -> T_calc:
         return v_raw * self.v_gain + self.v_offset

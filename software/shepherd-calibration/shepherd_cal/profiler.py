@@ -10,10 +10,13 @@ This program verifies a proper function of the shepherd frontends for emulator a
 """
 import itertools
 import time
+from typing import List
+from typing import Tuple
 
 import msgpack
 import msgpack_numpy
 import numpy as np
+from keithley2600.keithley_driver import KeithleyClass
 
 import shepherd.calibration_default as cal_def
 
@@ -35,16 +38,15 @@ INSTR_PROFILE_SHP = """
 
 
 class Profiler:
-    _cal: Calibrator = None
-    voltage_V: np.ndarray = None
-    currents_A: list = None
-
     def __init__(self, calibrator: Calibrator, short: bool = False):
-        self._cal = calibrator
+        self._cal: Calibrator = calibrator
 
         if short:
-            self.voltages_V = np.append([5.0, 0.05], np.arange(0.0, 5.1, 0.4))
-            self.currents_A = [
+            self.voltages_V: np.ndarray = np.append(
+                [5.0, 0.05],
+                np.arange(0.0, 5.1, 0.4),
+            )
+            self.currents_A: List[float] = [
                 0e-6,
                 1e-6,
                 2e-6,
@@ -66,8 +68,8 @@ class Profiler:
                 50e-3,
             ]
         else:
-            self.voltages_V = np.append([0.05], np.arange(0.0, 5.1, 0.2))
-            self.currents_A = [
+            self.voltages_V: np.ndarray = np.append([0.05], np.arange(0.0, 5.1, 0.2))
+            self.currents_A: List[float] = [
                 0e-6,
                 1e-6,
                 2e-6,
@@ -92,7 +94,12 @@ class Profiler:
                 50e-3,
             ]
 
-    def measure_emulator_setpoint(self, smu, voltage_V: float, current_A: float = 0):
+    def measure_emulator_setpoint(
+        self,
+        smu: KeithleyClass,
+        voltage_V: float,
+        current_A: float = 0,
+    ) -> Tuple[np.ndarray, float, float]:
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
         # negative current, because smu acts as a drain
@@ -141,7 +148,12 @@ class Profiler:
         return adc_currents_raw, smu_voltage, current_A
 
     # TODO: the two meas-FNs could be the same if pru would fill
-    def measure_harvester_setpoint(self, smu, voltage_V: float, current_A: float = 0):
+    def measure_harvester_setpoint(
+        self,
+        smu: KeithleyClass,
+        voltage_V: float,
+        current_A: float = 0,
+    ) -> Tuple[np.ndarray, np.ndarray, float, float]:
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
         # SMU as current-source

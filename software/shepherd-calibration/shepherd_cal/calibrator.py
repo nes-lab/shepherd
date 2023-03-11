@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import time
 from pathlib import Path
-from typing import NoReturn
+from typing import Dict
 from typing import Optional
+from typing import Union
 
 import msgpack
 import msgpack_numpy
@@ -11,6 +12,8 @@ import yaml
 import zerorpc
 from fabric import Connection
 from keithley2600 import Keithley2600
+from keithley2600.keithley_driver import Keithley2600Base
+from keithley2600.keithley_driver import KeithleyClass
 
 from shepherd.calibration import CalibrationData
 from shepherd.calibration_default import dac_voltage_to_raw
@@ -41,38 +44,31 @@ INSTR_4WIRE = "- NOTE: be sure to use 4-Wire-Cabling to SMU for improved results
 
 
 class Calibrator:
-    _cnx: Connection = None
-    _host: str = None
-    sheep: zerorpc.Client = None
-    kth: type(Keithley2600) = None
-
-    _pwrline_cycles: float = None
-    _mode_4wire: bool = None
-
     def __init__(
         self,
-        host,
-        user,
-        password: str = None,
-        smu_ip: str = None,
+        host: str,
+        user: str,
+        password: Optional[str] = None,
+        smu_ip: Optional[str] = None,
         mode_4wire: bool = True,
         pwrline_cycles: float = 16,
     ):
+        fabric_args: Dict[str, str] = {}
         if password is not None:
-            fabric_args = {"password": password}
-        else:
-            fabric_args = {}
+            fabric_args["password"] = password
 
-        self._mode_4wire = mode_4wire
-        self._pwrline_cycles = min(max(pwrline_cycles, 0.001), 25)
+        self._mode_4wire: bool = mode_4wire
+        self._pwrline_cycles: float = min(max(pwrline_cycles, 0.001), 25)
 
-        self._host = host
-        self.sheep = zerorpc.Client(timeout=60, heartbeat=20)
-        self._cnx = Connection(host, user=user, connect_kwargs=fabric_args)
+        self._host: str = host
+        self.sheep: zerorpc.Client = zerorpc.Client(timeout=60, heartbeat=20)
+        self._cnx: Connection = Connection(host, user=user, connect_kwargs=fabric_args)
         # TODO: check connection or else .sudo below throws socket.gaierror when sheep unavail
 
-        if smu_ip is not None:
-            self.kth = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
+        if smu_ip is None:
+            raise ValueError("Please provide an IP for the SMU")
+
+        self.kth: Keithley2600Base = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
 
         # enter
         self._cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
@@ -87,14 +83,16 @@ class Calibrator:
         self._cnx.close()
         del self._cnx
 
-    def set_smu_auto_on(self, smu) -> NoReturn:
+    def set_smu_auto_on(self, smu: KeithleyClass) -> None:
         smu.source.output = smu.OUTPUT_ON
         smu.measure.autozero = smu.AUTOZERO_AUTO
         smu.measure.autorangev = smu.AUTORANGE_ON
         smu.measure.autorangei = smu.AUTORANGE_ON
         smu.measure.nplc = self._pwrline_cycles
 
-    def set_smu_to_vsource(self, smu, value_v: float, limit_i: float) -> float:
+    def set_smu_to_vsource(
+        self, smu: KeithleyClass, value_v: float, limit_i: float
+    ) -> float:
         value_v = min(max(value_v, 0.0), 5.0)
         limit_i = min(max(limit_i, -0.050), 0.050)
         smu.sense = smu.SENSE_REMOTE if self._mode_4wire else smu.SENSE_LOCAL
@@ -105,7 +103,9 @@ class Calibrator:
         self.set_smu_auto_on(smu)
         return value_v
 
-    def set_smu_to_isource(self, smu, value_i: float, limit_v: float = 5.0) -> float:
+    def set_smu_to_isource(
+        self, smu: KeithleyClass, value_i: float, limit_v: float = 5.0
+    ) -> float:
         value_i = min(max(value_i, -0.050), 0.050)
         limit_v = min(max(limit_v, 0.0), 5.0)
         smu.sense = smu.SENSE_REMOTE if self._mode_4wire else smu.SENSE_LOCAL
@@ -117,13 +117,13 @@ class Calibrator:
         return value_i
 
     @staticmethod
-    def reject_outliers(data, m=2.0):
+    def reject_outliers(data: np.ndarray, m: float = 2.0):
         d = np.abs(data - np.median(data))
         mdev = np.median(d)
         s = d / mdev if mdev else 0.0
         return data[s < m]
 
-    def measure_harvester_adc_voltage(self, smu) -> list:
+    def measure_harvester_adc_voltage(self, smu: KeithleyClass) -> list:
         smu_current_A = 0.1e-3
         smu_voltages_V = np.linspace(0.3, 2.5, 12)
         dac_voltage_V = 4.5
@@ -177,7 +177,7 @@ class Calibrator:
 
     def measure_harvester_adc_current(
         self,
-        smu,
+        smu: KeithleyClass,
     ) -> list:  # TODO: combine with previous FN
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
         dac_voltage_V = 2.5
@@ -226,7 +226,7 @@ class Calibrator:
         self.sheep.switch_shepherd_mode(mode_old)
         return results
 
-    def measure_emulator_current(self, smu) -> list:
+    def measure_emulator_current(self, smu: KeithleyClass) -> list:
         sm_currents_A = [10e-6, 30e-6, 100e-6, 300e-6, 1e-3, 3e-3, 10e-3]
         dac_voltage_V = 2.5
 
@@ -272,7 +272,9 @@ class Calibrator:
         self.sheep.switch_shepherd_mode(mode_old)
         return results
 
-    def measure_dac_voltage(self, smu, dac_bitmask, drain: bool = False) -> list:
+    def measure_dac_voltage(
+        self, smu: KeithleyClass, dac_bitmask: int, drain: bool = False
+    ) -> list:
         smu_current_A = 0.1e-3
         if drain:  # for emulator
             smu_current_A = -smu_current_A
@@ -358,8 +360,16 @@ class Calibrator:
         )
         return results
 
-    def write(self, cal_file: str, serial: str, version: str, cal_date: str):
+    def write(
+        self,
+        cal_file: Union[str, Path],
+        serial: str,
+        version: str,
+        cal_date: str,
+    ):
         temp_file = "/tmp/calib.yml"  # noqa: S108
+        if isinstance(cal_file, str):
+            cal_file = Path(cal_file)
         with open(cal_file) as stream:
             content = yaml.safe_load(stream)
             cal_std = content.get("node", "unknown")
@@ -418,12 +428,12 @@ class Calibrator:
         out_dict = {"node": meas_data["node"], "calibration": calib_dict}
         res_repr = yaml.dump(out_dict, default_flow_style=False)
         if cal_file is None:
-            cal_file = meas_file.stem + "_cal.yml"
+            cal_file = Path(meas_file.stem + "_cal.yml")
         if not isinstance(cal_file, Path):
             cal_file = Path(cal_file)
 
         if cal_file.exists():
-            ValueError(f"Calibration File already exists ({cal_file})")
+            raise ValueError(f"Calibration File already exists ({cal_file})")
         with open(cal_file, "w") as f:
             f.write(res_repr)
         return cal_file

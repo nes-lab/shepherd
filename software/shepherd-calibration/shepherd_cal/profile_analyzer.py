@@ -1,12 +1,17 @@
 import os
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 
 from .profile import Profile
 
 
-def analyze_directory(folder_path: Path, stats_path: Path, do_plots: bool = False):
+def analyze_directory(
+    folder_path: Path,
+    stats_path: Path,
+    do_plots: bool = False,
+) -> None:
     stats_list = []
     stat_names = []
     if stats_path is None:
@@ -21,13 +26,13 @@ def analyze_directory(folder_path: Path, stats_path: Path, do_plots: bool = Fals
         if "origin" in stats_base.columns:
             stat_names = stats_base["origin"].tolist()
 
-    files: list = []
+    files: List[str] = []
     if folder_path.is_file():
-        files = [folder_path]
+        files.append(str(folder_path))
     elif folder_path.is_dir():
-        files = os.listdir(folder_path)
+        files = files + os.listdir(folder_path)
     else:
-        ValueError(f"Provided Path is neither directory or file ({folder_path})")
+        raise ValueError(f"Provided Path is neither directory or file ({folder_path})")
 
     for file in files:
         fpath = Path(file)
@@ -38,7 +43,7 @@ def analyze_directory(folder_path: Path, stats_path: Path, do_plots: bool = Fals
         if fpath.stem in stat_names:
             continue
 
-        profile = Profile(file)
+        profile = Profile(fpath)
         stats_list.append(profile.get_stats())
 
         if do_plots:

@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 from time import time
+from typing import Dict
+from typing import Optional
 
 import click
 import numpy as np
@@ -28,7 +30,7 @@ from .profiler import Profiler
 )
 @click.version_option()
 # @click.pass_context
-def cli(verbose):
+def cli(verbose: int):
     set_verbose_level(verbose)
 
 
@@ -48,12 +50,12 @@ def calibration():
     "measure",
     short_help="Measure calibration-data from shepherd cape with Keithley SMU",
 )
-@click.argument("host", type=str)
-@click.option("--user", "-u", type=str, default="jane", help="Host Username")
+@click.argument("host", type=click.STRING)
+@click.option("--user", "-u", type=click.STRING, default="jane", help="Host Username")
 @click.option(
     "--password",
     "-p",
-    type=str,
+    type=click.STRING,
     default=None,
     help="Host User Password -> only needed when key-credentials are missing",
 )
@@ -65,7 +67,7 @@ def calibration():
 )
 @click.option(
     "--smu-ip",
-    type=str,
+    type=click.STRING,
     default="192.168.1.108",
     help="IP of SMU-Device in network",
 )
@@ -78,20 +80,20 @@ def calibration():
 )
 @click.option(
     "--smu-nplc",
-    type=float,
+    type=click.FLOAT,
     default=16,
     help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)",
 )
 def cal_measure(
-    host,
-    user,
-    password,
-    outfile,
-    smu_ip,
-    harvester,
-    emulator,
-    smu_2wire,
-    smu_nplc,
+    host: str,
+    user: str,
+    password: str,
+    outfile: Path,
+    smu_ip: str,
+    harvester: bool,
+    emulator: bool,
+    smu_2wire: bool,
+    smu_nplc: float,
 ):
     smu_4wire = not smu_2wire
     if not any([harvester, emulator]):
@@ -151,18 +153,18 @@ def cal_measure(
     is_flag=True,
     help="generate plots that contain data points and calibration model",
 )
-def cal_convert(infile, outfile, plot: bool):
+def cal_convert(infile: Path, outfile: Optional[Path], plot: bool):
     outfile = Calibrator.convert(infile, outfile, plot)
     logger.info("Cal-File was written to '%s'", outfile)
 
 
 @calibration.command("write", short_help="Write calibration-data to shepherd cape")
-@click.argument("host", type=str)
-@click.option("--user", "-u", type=str, default="joe")
+@click.argument("host", type=click.STRING)
+@click.option("--user", "-u", type=click.STRING, default="joe")
 @click.option(
     "--password",
     "-p",
-    type=str,
+    type=click.STRING,
     default=None,
     help="Host User Password -> only needed when key-credentials are missing",
 )
@@ -196,14 +198,14 @@ def cal_convert(infile, outfile, plot: bool):
     help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
 def cal_write(
-    host,
-    user,
-    password,
-    cal_file,
-    measurement_file,
-    version,
-    serial_number,
-    cal_date,
+    host: str,
+    user: str,
+    password: str,
+    cal_file: Path,
+    measurement_file: Path,
+    version: str,
+    serial_number: str,
+    cal_date: str,
 ):
     if not any([cal_file, measurement_file]):
         raise click.UsageError("provide one of cal-file or measurement-file")
@@ -220,16 +222,16 @@ def cal_write(
 
 
 @calibration.command("read", short_help="Read calibration-data from shepherd cape")
-@click.argument("host", type=str)
-@click.option("--user", "-u", type=str, default="jane")
+@click.argument("host", type=click.STRING)
+@click.option("--user", "-u", type=click.STRING, default="jane")
 @click.option(
     "--password",
     "-p",
-    type=str,
+    type=click.STRING,
     default=None,
     help="Host User Password -> only needed when key-credentials are missing",
 )
-def cal_read(host, user, password):
+def cal_read(host: str, user: str, password: str):
     shpcal = Calibrator(host, user, password)
     shpcal.read()
 
@@ -248,12 +250,12 @@ def profile():
     "measure",
     short_help="Measure profile-data from shepherd cape with Keithley SMU",
 )
-@click.argument("host", type=str)
-@click.option("--user", "-u", type=str, default="joe", help="Host Username")
+@click.argument("host", type=click.STRING)
+@click.option("--user", "-u", type=click.STRING, default="joe", help="Host Username")
 @click.option(
     "--password",
     "-p",
-    type=str,
+    type=click.STRING,
     default=None,
     help="Host User Password -> only needed when key-credentials are missing",
 )
@@ -265,7 +267,7 @@ def profile():
 )
 @click.option(
     "--smu-ip",
-    type=str,
+    type=click.STRING,
     default="192.168.1.108",
     help="IP of SMU-Device in network",
 )
@@ -276,7 +278,7 @@ def profile():
 )
 @click.option(
     "--smu-nplc",
-    type=float,
+    type=click.FLOAT,
     default=16,
     help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)",
 )
@@ -295,17 +297,17 @@ def profile():
     help="remove user-interaction (setup prompt)",
 )
 def profile_measure(
-    host,
-    user,
-    password,
-    outfile,
-    smu_ip,
-    smu_2wire,
-    smu_nplc,
-    harvester,
-    emulator,
-    short,
-    quiet,
+    host: str,
+    user: str,
+    password: str,
+    outfile: Path,
+    smu_ip: str,
+    smu_2wire: bool,
+    smu_nplc: float,
+    harvester: bool,
+    emulator: bool,
+    short: bool,
+    quiet: bool,
 ):
     if not any([harvester, emulator]):
         harvester = True
@@ -325,7 +327,8 @@ def profile_measure(
 
     shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
     profiler = Profiler(shpcal, short)
-    results_hrv = results_emu_a = results_emu_b = None
+    # results_hrv = results_emu_a = results_emu_b = None. TODO: check function, replaced by dict
+    results: Dict[str, np.ndarray] = {}
 
     if not quiet:
         click.echo(INSTR_PROFILE_SHP)
@@ -339,16 +342,14 @@ def profile_measure(
         click.confirm("Confirm that everything is set up ...", default=True)
 
     if harvester:
-        results_hrv = profiler.measure_harvester()
+        results["hrv"] = profiler.measure_harvester()
     if emulator:
-        results_emu_a = profiler.measure_emulator_a()
-        results_emu_b = profiler.measure_emulator_b()
+        results["emu_a"] = profiler.measure_emulator_a()
+        results["emu_b"] = profiler.measure_emulator_b()
 
     np.savez_compressed(
         file_path,
-        emu_a=results_emu_a,
-        emu_b=results_emu_b,
-        hrv=results_hrv,
+        **results,
     )
     logger.info("Data was written to '%s'", file_path)
     logger.debug("Profiling took %.1f s", time() - time_now)
@@ -371,7 +372,7 @@ def profile_measure(
     is_flag=True,
     help="generate plots that visualize the profile",
 )
-def profile_analyze(infile, outfile, plot):
+def profile_analyze(infile: Path, outfile: Path, plot: bool):
     """
 
     Args:
