@@ -91,7 +91,10 @@ class Calibrator:
         smu.measure.nplc = self._pwrline_cycles
 
     def set_smu_to_vsource(
-        self, smu: KeithleyClass, value_v: float, limit_i: float
+        self,
+        smu: KeithleyClass,
+        value_v: float,
+        limit_i: float,
     ) -> float:
         value_v = min(max(value_v, 0.0), 5.0)
         limit_i = min(max(limit_i, -0.050), 0.050)
@@ -104,7 +107,10 @@ class Calibrator:
         return value_v
 
     def set_smu_to_isource(
-        self, smu: KeithleyClass, value_i: float, limit_v: float = 5.0
+        self,
+        smu: KeithleyClass,
+        value_i: float,
+        limit_v: float = 5.0,
     ) -> float:
         value_i = min(max(value_i, -0.050), 0.050)
         limit_v = min(max(limit_v, 0.0), 5.0)
@@ -273,7 +279,10 @@ class Calibrator:
         return results
 
     def measure_dac_voltage(
-        self, smu: KeithleyClass, dac_bitmask: int, drain: bool = False
+        self,
+        smu: KeithleyClass,
+        dac_bitmask: int,
+        drain: bool = False,
     ) -> list:
         smu_current_A = 0.1e-3
         if drain:  # for emulator

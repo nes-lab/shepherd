@@ -4,11 +4,12 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from scipy import stats
 
 from .logger import logger
 
-T_calc = TypeVar("T_calc", np.ndarray, float)
+T_calc = TypeVar("T_calc", NDArray[np.float64], float)
 
 
 class Calibration:
@@ -27,7 +28,8 @@ class Calibration:
 
     @staticmethod
     def measurements_to_calibration(
-        ref: Union[pd.Series, float], raw: Union[pd.Series, float]
+        ref: Union[pd.Series, float],
+        raw: Union[pd.Series, float],
     ) -> Tuple[float, float]:
         result = stats.linregress(raw, ref)
         offset = float(result.intercept)

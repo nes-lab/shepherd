@@ -100,7 +100,9 @@ class Profile:
         else:
             cal = Calibration().from_measurement(data_df)
 
-        data_df["c_shp_A"] = cal.convert_current_raw_to_A(data_df.c_shp_raw)
+        data_df["c_shp_A"] = cal.convert_current_raw_to_A(data_df.c_shp_raw.to_numpy())
+        raise ValueError("Test ME")
+        # TODO: test prev. typecast to_numpy
         data_df["c_shp_A"] = data_df.c_shp_A.apply(lambda x: x if x >= -1e-3 else -1e-3)
 
         # fix the known case of missing SMU (PART 2)
@@ -244,6 +246,8 @@ class Profile:
         filter_str = "_filtered" if filtered else ""
         c_gain = self.cals[component].c_gain
         x = 1e3 * data[elem_dict["voltage_ref_V"], :]
+        raise ValueError("Test ME")
+        # TODO: can probably be data[elem_dict["voltage_ref_V"]]
         y = []
         dyn = []
         vol = []
