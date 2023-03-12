@@ -10,6 +10,9 @@ twine = "*"
 bump2version = "*"
 pre-commit = "*"
 build = "*"
+coverage = "*"
+pyright = "*"
+pandas-stubs = "*"
 
 [packages]
 # NOTE: pip does not install these packages with as editable (-e), but pipenv does
@@ -29,10 +32,9 @@ pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
 #schemdraw = "*"
-coverage = "*"
+pandas-stubs = "*"
 
 [pipenv]
 allow_prereleases = false
-
 #[requires]
 #python_version = "3"

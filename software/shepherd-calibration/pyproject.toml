@@ -1,3 +1,14 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.pyright]
+root = "./"
+include = ['./shepherd_cal', ]
+pythonVersion = "3.8"
+pythonPlatform = "All"
+# strict = ["./"]
+#reportUnknownParameterType = true
+#reportUnknownArgumentType = true
+#reportUnknownMemberType = true
+reportMissingParameterType = true
