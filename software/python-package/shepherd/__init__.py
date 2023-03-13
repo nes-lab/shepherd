@@ -272,17 +272,13 @@ class ShepherdDebug(ShepherdIO):
     with the ADC and DAC.
     """
 
-    # offer a default cali for debugging, TODO: maybe also try to read from eeprom
-    _cal: CalibrationData = None
-    _io: TargetIO = None
-    W_inp_fWs: float = 0.0
-    W_out_fWs: float = 0.0
-
     def __init__(self, use_io: bool = True):
         super().__init__("debug")
 
-        if use_io:
-            self._io = TargetIO()
+        self._io: TargetIO = TargetIO() if use_io else None
+
+        # offer a default cali for debugging
+        self._cal: CalibrationData = CalibrationData.from_default()
 
         try:
             with EEPROM() as storage:
@@ -292,12 +288,13 @@ class ShepherdDebug(ShepherdIO):
             logger.warning(
                 "Couldn't read calibration from EEPROM (Val). Falling back to default values.",
             )
-            self._cal = CalibrationData.from_default()
         except FileNotFoundError:
             logger.warning(
                 "Couldn't read calibration from EEPROM (FS). Falling back to default values.",
             )
-            self._cal = CalibrationData.from_default()
+
+        self.W_inp_fWs: float = 0.0
+        self.W_out_fWs: float = 0.0
 
     def __enter__(self):
         super().__enter__()

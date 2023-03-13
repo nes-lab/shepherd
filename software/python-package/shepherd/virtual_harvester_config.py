@@ -38,8 +38,6 @@ class VirtualHarvesterConfig:
           -> steps * (1 + wait_cycles)
     """
 
-    data: dict = {}
-    data_min: dict = {}
     name: str = "vHarvester"
     _dtype_default: str = "ivcurve"  # fallback in case of Setting = None
     _def_file = "virtual_harvester_defs.yml"
@@ -80,6 +78,8 @@ class VirtualHarvesterConfig:
                     f"but definition missing in '{self._def_file}'",
                 )
 
+        self.data: dict = {}
+        self.data_min: dict = {}
         if setting is None:
             self._inheritance.append(self._dtype_default)
             self.data = self._config_defs[self._dtype_default]

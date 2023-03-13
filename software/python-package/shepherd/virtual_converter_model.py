@@ -117,68 +117,47 @@ class KernelConverterStruct:
 
 
 class VirtualConverterModel:
-    _cfg: KernelConverterStruct = None
-
-    # CONVERTER STATE
-    interval_startup_disabled_drain_n: int = None
-    enable_storage: bool = None
-    V_input_uV: float = None
-
-    # Boost converter
-    enable_boost: bool = None
-    enable_log_mid: bool = None
-    P_inp_fW: float = None
-    P_out_fW: float = None
-    V_mid_uV: float = None
-
-    # Buck converter
-    enable_buck: bool = None
-    V_out_dac_uV: float = None
-    V_out_dac_raw: int = None
-
-    # hysteresis
-    V_enable_output_threshold_uV: float = None
-    V_disable_output_threshold_uV: float = None
-    dV_enable_output_uV: float = None
-    power_good: bool = None
-
-    # pulled from update_states_and_output() due to easier static init
-    sample_count: int = 0xFFFFFFF0
-    is_outputting: bool = True
-    vsource_skip_gpio_logging: bool = False
-
     def __init__(self, config: KernelConverterStruct, calibration: PruCalibration):
-        self._cal = calibration
-        self._cfg = config
+        self._cal: PruCalibration = calibration
+        self._cfg: KernelConverterStruct = config
 
         # boost internal state
-        self.V_input_uV = 0.0
-        self.P_inp_fW = 0.0
-        self.P_out_fW = 0.0
-        self.interval_startup_disabled_drain_n = (
+        self.V_input_uV: float = 0.0
+        self.P_inp_fW: float = 0.0
+        self.P_out_fW: float = 0.0
+        self.interval_startup_disabled_drain_n: int = (
             self._cfg.interval_startup_delay_drain_n
         )
 
         # container for the stored energy
-        self.V_mid_uV = self._cfg.V_intermediate_init_uV
+        self.V_mid_uV: float = self._cfg.V_intermediate_init_uV
 
         # buck internal state
-        self.enable_storage = (int(self._cfg.converter_mode) & 0b0001) > 0
-        self.enable_boost = (int(self._cfg.converter_mode) & 0b0010) > 0
-        self.enable_buck = (int(self._cfg.converter_mode) & 0b0100) > 0
-        self.enable_log_mid = (int(self._cfg.converter_mode) & 0b1000) > 0
+        self.enable_storage: bool = (int(self._cfg.converter_mode) & 0b0001) > 0
+        self.enable_boost: bool = (int(self._cfg.converter_mode) & 0b0010) > 0
+        self.enable_buck: bool = (int(self._cfg.converter_mode) & 0b0100) > 0
+        self.enable_log_mid: bool = (int(self._cfg.converter_mode) & 0b1000) > 0
 
-        self.V_out_dac_uV = self._cfg.V_output_uV
-        self.V_out_dac_raw = self._cal.conv_uV_to_dac_raw(self._cfg.V_output_uV)
-        self.power_good = True
+        self.V_out_dac_uV: float = self._cfg.V_output_uV
+        self.V_out_dac_raw: int = self._cal.conv_uV_to_dac_raw(self._cfg.V_output_uV)
+        self.power_good: bool = True
 
         # prepare hysteresis-thresholds
-        self.dV_enable_output_uV = self._cfg.dV_enable_output_uV
-        self.V_enable_output_threshold_uV = self._cfg.V_enable_output_threshold_uV
-        self.V_disable_output_threshold_uV = self._cfg.V_disable_output_threshold_uV
+        self.dV_enable_output_uV: float = self._cfg.dV_enable_output_uV
+        self.V_enable_output_threshold_uV: float = (
+            self._cfg.V_enable_output_threshold_uV
+        )
+        self.V_disable_output_threshold_uV: float = (
+            self._cfg.V_disable_output_threshold_uV
+        )
 
         if self.dV_enable_output_uV > self.V_enable_output_threshold_uV:
             self.V_enable_output_threshold_uV = self.dV_enable_output_uV
+
+        # pulled from update_states_and_output() due to easier static init
+        self.sample_count: int = 0xFFFFFFF0
+        self.is_outputting: bool = True
+        self.vsource_skip_gpio_logging: bool = False
 
     def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
         # Next 2 lines are Python-specific

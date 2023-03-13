@@ -16,6 +16,7 @@ import time
 from collections import namedtuple
 from itertools import product
 from pathlib import Path
+from typing import Optional
 from typing import Union
 
 import h5py
@@ -78,14 +79,7 @@ class LogWriter:
     #  -> comparison / benchmarks https://www.h5py.org/lzf/
     # NOTE: for quick and easy performance improvements:
     #       remove compression for monitor-datasets, or even group_value
-    compression_algo = None
-    sys_log_enabled = True
-    sys_log_intervall_ns = 1 * (10**9)  # step-size is 1 s
-    sys_log_next_ns = 0
     uart_path = "/dev/ttyO1"
-    dmesg_mon_t = None
-    ptp4l_mon_t = None
-    uart_mon_t = None
 
     mode_default: str = "harvester"
     datatype_default: str = "ivsample"
@@ -151,6 +145,7 @@ class LogWriter:
         self._write_gpio = (not skip_gpio) and ("emulat" in self._mode)
         self._write_uart = Path(self.uart_path).exists()
 
+        self.compression_algo: Union[None, str, int] = None
         if output_compression in [None, "lzf", 1]:  # order of recommendation
             self.compression_algo = output_compression
 
@@ -168,12 +163,20 @@ class LogWriter:
         )
 
         # initial sysutil-reading and delta-history
+        self.sys_log_enabled: bool = True
+        self.sys_log_intervall_ns: int = 1 * (10**9)  # step-size is 1 s
+        self.sys_log_next_ns: int = 0
         if psutil.disk_io_counters() is None:
             # fake or virtual hardware detected
             self.sys_log_enabled = False
         else:
             self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
             self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
+
+        self.dmesg_mon_t: Optional[threading.Thread] = None
+        self.ptp4l_mon_t: Optional[threading.Thread] = None
+        self.uart_mon_t: Optional[threading.Thread] = None
+
         # Optimization: allowing larger more efficient resizes
         #               (before .resize() was called per element)
         # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1

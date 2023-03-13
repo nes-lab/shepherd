@@ -37,40 +37,14 @@ class KernelHarvesterStruct:
 
 
 class VirtualHarvesterModel:
-    _cfg: KernelHarvesterStruct = None
-
     HRV_IVCURVE: int = 2**4
     HRV_CV: int = 2**8
     HRV_MPPT_VOC: int = 2**12
     HRV_MPPT_PO: int = 2**13
     HRV_MPPT_OPT: int = 2**14
 
-    # INIT static vars: CV
-    voltage_last: int = 0
-    current_last: int = 0
-    compare_last: int = 0
-
-    # INIT static vars: VOC
-    age_now: int = 0
-    voc_now: int = 0
-    age_nxt: int = 0
-    voc_nxt: int = 0
-
-    # INIT static vars: PO
-    # already done: interval step
-    power_last: int = 0
-
-    # INIT static vars: OPT
-    # already done: age_now, age_nxt
-    power_now: int = 0
-    voltage_now: int = 0
-    current_now: int = 0
-    power_nxt: int = 0
-    voltage_nxt: int = 0
-    current_nxt: int = 0
-
     def __init__(self, config: KernelHarvesterStruct):
-        self._cfg = config
+        self._cfg: KernelHarvesterStruct = config
 
         # INIT global vars: shared states
         self.voltage_set_uV: int = self._cfg.voltage_uV + 1
@@ -88,6 +62,30 @@ class VirtualHarvesterModel:
         self.voltage_hold: int = 0
         self.current_hold: int = 0
         self.voltage_step_x4_uV: int = self._cfg.voltage_step_uV * 4
+
+        # INIT static vars: CV
+        self.voltage_last: int = 0
+        self.current_last: int = 0
+        self.compare_last: int = 0
+
+        # INIT static vars: VOC
+        self.age_now: int = 0
+        self.voc_now: int = 0
+        self.age_nxt: int = 0
+        self.voc_nxt: int = 0
+
+        # INIT static vars: PO
+        # already done: interval step
+        self.power_last: int = 0
+
+        # INIT static vars: OPT
+        # already done: age_now, age_nxt
+        self.power_now: int = 0
+        self.voltage_now: int = 0
+        self.current_now: int = 0
+        self.power_nxt: int = 0
+        self.voltage_nxt: int = 0
+        self.current_nxt: int = 0
 
     def iv_sample(self, _voltage_uV: int, _current_nA: int) -> tuple:
         if self._cfg.window_size <= 1:

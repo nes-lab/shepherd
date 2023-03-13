@@ -31,47 +31,51 @@ class LogReader:
     """
 
     samples_per_buffer: int = 10_000
-    samplerate_sps: int = 100_000
-    sample_interval_ns: int = int(10**9 // samplerate_sps)
-    sample_interval_s: float = 1 / samplerate_sps
-
-    max_elements: int = (
-        40 * samplerate_sps
-    )  # per iteration (40s full res, < 200 MB RAM use)
+    samplerate_sps_default: int = 100_000
 
     mode_dtype_dict = {
         "harvester": ["ivsample", "ivcurve", "isc_voc"],
         "emulator": ["ivsample"],
     }
 
-    runtime_s: float = None
-    file_size: int = None
-    data_rate: float = None
-
-    _logger: logging.Logger = logging.getLogger("shp.datalog.reader")
-
-    h5file: h5py.File = None
-    ds_time: h5py.Dataset = None
-    ds_voltage: h5py.Dataset = None
-    ds_current: h5py.Dataset = None
-    _cal: dict = None  # dict[str, dict]
-
     def __init__(self, file_path: Optional[Path], verbose: Optional[bool] = True):
-        self._skip_open = file_path is None  # for access by writer-class
-        if not self._skip_open:
-            self._file_path = Path(file_path)
+        if not hasattr(self, "_file_path"):
+            self._file_path: Optional[Path] = None
+            if isinstance(file_path, (Path, str)):
+                self._file_path = Path(file_path)
+
+        if not hasattr(self, "_logger"):
+            self._logger: logging.Logger = logging.getLogger("shp.datalog.reader")
         if verbose is not None:
             self._logger.setLevel(logging.INFO if verbose else logging.WARNING)
 
-    def __enter__(self):
-        if not self._skip_open:
+        self.samplerate_sps: int = self.samplerate_sps_default
+        self.sample_interval_ns: int = int(10**9 // self.samplerate_sps)
+        self.sample_interval_s: float = 1 / self.samplerate_sps
+
+        self.max_elements: int = (
+            40 * self.samplerate_sps
+        )  # per iteration (40s full res, < 200 MB RAM use)
+
+        # init stats
+        self.runtime_s: float = 0
+        self.file_size: int = 0
+        self.data_rate: float = 0
+
+        # open file (if not already done by writer)
+        self._reader_opened: bool = False
+        if not hasattr(self, "h5file"):
+            if not isinstance(self._file_path, Path):
+                raise ValueError("Provide a valid Path-Object to Reader!")
             if not self._file_path.exists():
                 raise FileNotFoundError(
                     errno.ENOENT,
                     os.strerror(errno.ENOENT),
                     self._file_path.name,
                 )
-            self.h5file = h5py.File(self._file_path, "r")
+
+            self.h5file = h5py.File(self._file_path, "r")  # = readonly
+            self._reader_opened = True
 
             if self.is_valid():
                 self._logger.info("File is available now")
@@ -80,11 +84,14 @@ class LogReader:
                     "File is faulty! Will try to open but there might be dragons",
                 )
 
-        self.ds_time = self.h5file["data"]["time"]
-        self.ds_voltage = self.h5file["data"]["voltage"]
-        self.ds_current = self.h5file["data"]["current"]
+        if not isinstance(self.h5file, h5py.File):
+            raise TypeError("Type of opened file is not h5py.File")
 
-        self._cal = CalibrationData.from_default()
+        self.ds_time: h5py.Dataset = self.h5file["data"]["time"]
+        self.ds_voltage: h5py.Dataset = self.h5file["data"]["voltage"]
+        self.ds_current: h5py.Dataset = self.h5file["data"]["current"]
+
+        self._cal: Dict[str, Dict[str, float]] = CalibrationData.from_default()
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             cal_channel = cal_channel_hrv_dict[channel]
             self._cal["harvester"][cal_channel][parameter] = self.h5file["data"][
@@ -93,14 +100,15 @@ class LogReader:
 
         self._refresh_file_stats()
 
-        if not self._skip_open:
+        if file_path is not None:
+            # file opened by this reader
             self._logger.info(
                 "Reading data from '%s'\n"
-                "\t- runtime %.2f s\n"
+                "\t- runtime %s s\n"
                 "\t- mode = %s\n"
-                "\t- window_size = %d\n"
-                "\t- size = %d MiB\n"
-                "\t- rate = %d KiB/s",
+                "\t- window_size = %s\n"
+                "\t- size = %s MiB\n"
+                "\t- rate = %s KiB/s",
                 self._file_path,
                 self.runtime_s,
                 self.get_mode(),
@@ -108,10 +116,12 @@ class LogReader:
                 round(self.file_size / 2**20),
                 round(self.data_rate / 2**10),
             )
+
+    def __enter__(self):
         return self
 
     def __exit__(self, *exc):
-        if not self._skip_open:
+        if self._reader_opened:
             self.h5file.close()
 
     def _refresh_file_stats(self) -> None:

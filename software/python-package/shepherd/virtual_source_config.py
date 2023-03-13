@@ -1,6 +1,7 @@
 import copy
 import logging
 from pathlib import Path
+from typing import Optional
 from typing import Union
 
 import yaml
@@ -44,9 +45,6 @@ class VirtualSourceConfig:
     name: str = "vSource"
     _def_file = "virtual_source_defs.yml"
 
-    data: dict = {}
-    data_min: dict = None
-
     def __init__(
         self,
         setting: Union[dict, str, Path] = None,
@@ -88,12 +86,13 @@ class VirtualSourceConfig:
                     f"but definition missing in '{self._def_file}'",
                 )
 
+        self.data_min: Optional[dict] = None
         if setting is None:
-            self.data = {}
+            self.data: dict = {}
         elif isinstance(setting, VirtualSourceConfig):
             self._inheritance.append(self.name + "-Element")
             self.data = setting.data
-            self.data_min = setting.data_min
+            self.data_min: dict = setting.data_min
             self.samplerate_sps = setting.samplerate_sps
         elif isinstance(setting, dict):
             self._inheritance.append("parameter-dict")

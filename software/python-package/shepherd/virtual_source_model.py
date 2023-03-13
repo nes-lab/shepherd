@@ -24,26 +24,18 @@ from .virtual_source_config import VirtualSourceConfig
 class VirtualSourceModel:
     """part of sampling.c"""
 
-    _cal: CalibrationData = None
-    _prc: PruCalibration = None
-    hrv: VirtualHarvesterModel = None
-    cnv: VirtualConverterModel = None
-
-    W_inp_fWs = 0.0
-    W_out_fWs = 0.0
-
     def __init__(
         self,
         vs_setting: Union[dict, VirtualSourceConfig],
         cal_data: CalibrationData,
         input_setting: Optional[dict],
     ):
-        self._cal = cal_data
-        self._prc = PruCalibration(cal_data)
+        self._cal: CalibrationData = cal_data
+        self._prc: PruCalibration = PruCalibration(cal_data)
 
         vs_config = VirtualSourceConfig(vs_setting)
         vc_struct = KernelConverterStruct(vs_config)
-        self.cnv = VirtualConverterModel(vc_struct, self._prc)
+        self.cnv: VirtualConverterModel = VirtualConverterModel(vc_struct, self._prc)
 
         vh_config = VirtualHarvesterConfig(
             vs_config.get_harvester(),
@@ -52,7 +44,10 @@ class VirtualSourceModel:
         )
 
         vh_struct = KernelHarvesterStruct(vh_config)
-        self.hrv = VirtualHarvesterModel(vh_struct)
+        self.hrv: VirtualHarvesterModel = VirtualHarvesterModel(vh_struct)
+
+        self.W_inp_fWs: float = 0.0
+        self.W_out_fWs: float = 0.0
 
     def iterate_sampling(self, V_inp_uV: int = 0, I_inp_nA: int = 0, A_out_nA: int = 0):
         """

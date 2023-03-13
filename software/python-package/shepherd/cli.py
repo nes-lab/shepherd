@@ -14,6 +14,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Dict
+from typing import Optional
 
 import click
 import click_config_file
@@ -56,7 +57,7 @@ logger.addHandler(consoleHandler)
 #       "sheep harvester config"
 
 
-def yamlprovider(file_path: str, cmd_name) -> Dict:
+def yamlprovider(file_path: str, cmd_name: str) -> dict:
     logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
     with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
@@ -72,7 +73,7 @@ def yamlprovider(file_path: str, cmd_name) -> Dict:
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click.pass_context
-def cli(ctx=None, verbose: int = 2):
+def cli(ctx: click.Context = None, verbose: int = 2):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder
 
     Args:
@@ -155,7 +156,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click_config_file.configuration_option(provider=yamlprovider, implicit=False)
-def run(mode, parameters: Dict, verbose):
+def run(mode: str, parameters: dict, verbose: int):
     set_verbose_level(verbose)
 
     if not isinstance(parameters, Dict):
@@ -198,7 +199,7 @@ def run(mode, parameters: Dict, verbose):
 @click.option(
     "--algorithm",
     "-a",
-    type=str,
+    type=click.STRING,
     default=None,
     help="Choose one of the predefined virtual harvesters",
 )
@@ -223,13 +224,13 @@ def run(mode, parameters: Dict, verbose):
 )
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
 def harvester(
-    output_path,
-    algorithm,
-    duration,
-    force_overwrite,
-    use_cal_default,
-    start_time,
-    warn_only,
+    output_path: Path,
+    algorithm: Optional[str],
+    duration: Optional[float],
+    force_overwrite: bool,
+    use_cal_default: bool,
+    start_time: Optional[float],
+    warn_only: bool,
 ):
     run_recorder(
         output_path=Path(output_path),
@@ -279,19 +280,20 @@ def harvester(
 )
 @click.option(
     "--io_target",
-    type=str,
+    type=click.Choice(["A", "B"]),
     default="A",
     help="Choose Target 'A' or 'B' that gets connected to IO",
 )
 @click.option(
     "--pwr_target",
-    type=str,
+    type=click.Choice(["A", "B"]),
     default="A",
     help="Choose (main)Target 'A' or 'B' that gets connected to virtual Source / current-monitor",
 )
 @click.option(
     "--aux_voltage",
     "-x",
+    type=click.FLOAT,
     default=0.0,
     help="Set Voltage of auxiliary Power Source (second target). \n"
     "- set 0-4.5 for specific const voltage, \n"
@@ -301,14 +303,15 @@ def harvester(
 @click.option(
     "--virtsource",
     "-a",  # -v & -s already taken, so keep it consistent with hrv (algorithm)
+    type=click.STRING,
     default="direct",
     help="Use the desired setting for the virtual source, provide yaml or name like BQ25570",
 )
 @click.option(
     "--uart_baudrate",
     "-b",
-    default=None,
     type=click.INT,
+    default=None,
     help="Enable UART-Logging for target by setting a baudrate",
 )
 @click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
@@ -334,23 +337,23 @@ def harvester(
     "instead of output-voltage and -current",
 )
 def emulator(
-    input_path,
-    output_path,
-    duration,
-    force_overwrite,
-    use_cal_default,
-    start_time,
-    enable_io,
-    io_target,
-    pwr_target,
-    aux_voltage,
-    virtsource,
-    uart_baudrate,
-    warn_only,
-    skip_log_voltage,
-    skip_log_current,
-    skip_log_gpio,
-    log_mid_voltage,
+    input_path: Path,
+    output_path: Path,
+    duration: Optional[float],
+    force_overwrite: bool,
+    use_cal_default: bool,
+    start_time: Optional[float],
+    enable_io: bool,
+    io_target: str,
+    pwr_target: str,
+    aux_voltage: float,
+    virtsource: str,
+    uart_baudrate: Optional[int],
+    warn_only: bool,
+    skip_log_voltage: bool,
+    skip_log_current: bool,
+    skip_log_gpio: bool,
+    log_mid_voltage: bool,
 ):
     if output_path is None:
         pl_store = None
@@ -397,8 +400,7 @@ def eeprom():
     "--version",
     "-v",
     type=click.STRING,
-    default="24A0",
-    help="Cape version number, max 4 Char, e.g. 22A0, reflecting hardware revision",
+    help="Cape version number, max 4 Char, e.g. 24A0, reflecting hardware revision",
 )
 @click.option(
     "--serial_number",
@@ -418,7 +420,13 @@ def eeprom():
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with calibration data",
 )
-def write(info_file, version, serial_number, cal_date, cal_file):
+def write(
+    info_file: Optional[Path],
+    version: Optional[str],
+    serial_number: Optional[str],
+    cal_date: Optional[str],
+    cal_file: Optional[Path],
+):
     if info_file is not None:
         cape_data = CapeData.from_yaml(info_file)
         # overwrite fields that were provided additionally
@@ -428,18 +436,18 @@ def write(info_file, version, serial_number, cal_date, cal_file):
             cape_data.data["serial_number"] = serial_number
         if cal_date is not None:
             cape_data.data["cal_date"] = cal_date
-        with EEPROM() as storage:
-            storage.write_cape_data(cape_data)
     else:
-        if version is None:
-            raise click.UsageError("--version is required")
-        if serial_number is None:
-            raise click.UsageError("--serial_number is required")
-        if cal_date is None:
-            raise click.UsageError("--cal_date is required")
         cape_data = CapeData.from_values(serial_number, version, cal_date)
-        with EEPROM() as storage:
-            storage.write_cape_data(cape_data)
+
+    if "version" not in cape_data.data:
+        raise click.UsageError("--version is required")
+    if "serial_number" not in cape_data.data:
+        raise click.UsageError("--serial_number is required")
+    if "cal_date" not in cape_data.data:
+        raise click.UsageError("--cal_date is required")
+
+    with EEPROM() as storage:
+        storage.write_cape_data(cape_data)
 
     if cal_file is not None:
         cal = CalibrationData.from_yaml(cal_file)
@@ -460,7 +468,7 @@ def write(info_file, version, serial_number, cal_date, cal_file):
     type=click.Path(),
     help="If provided, calibration data is dumped to this file",
 )
-def read(info_file, cal_file):
+def read(info_file: Optional[Path], cal_file: Optional[Path]):
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
@@ -496,7 +504,7 @@ def read(info_file, cal_file):
     type=click.Path(),
     help="Path to resulting YAML-formatted calibration data file",
 )
-def make(filename, output_path):
+def make(filename: Path, output_path: Optional[Path]):
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
@@ -510,7 +518,7 @@ def make(filename, output_path):
 
 @cli.command(short_help="Start zerorpc server")
 @click.option("--port", "-p", type=click.INT, default=4242)
-def rpc(port):
+def rpc(port: Optional[int]):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     logger.info("Shepherd Debug Interface: Initialized")
@@ -536,7 +544,7 @@ def rpc(port):
 @cli.command(short_help="Start shepherd launcher")
 @click.option("--led", "-l", type=click.INT, default=22)
 @click.option("--button", "-b", type=click.INT, default=65)
-def launcher(led, button):
+def launcher(led: int, button: int):
     with Launcher(button, led) as launch:
         launch.run()
 
@@ -580,7 +588,14 @@ def launcher(led, button):
     default=True,
     help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
 )
-def programmer(firmware_file, sel_a, voltage, speed, target, prog1):
+def programmer(
+    firmware_file: Path,
+    sel_a: bool,
+    voltage: float,
+    speed: int,
+    target: str,
+    prog1: bool,
+):
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)

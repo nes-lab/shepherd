@@ -372,8 +372,6 @@ class ShepherdIO:
 
     # This _instance-element is part of the singleton implementation
     _instance = None
-    _buffer_period = 0.1  # placeholder
-    shared_mem: SharedMem = None
 
     def __new__(cls, *args, **kwds):
         """Implements singleton class."""
@@ -399,6 +397,9 @@ class ShepherdIO:
         else:
             self.component = "emulator"
         self.gpios = {}
+
+        self.shared_mem: Optional[SharedMem] = None
+        self._buffer_period: float = 0.1  # placeholder value
 
     def __del__(self):
         ShepherdIO._instance = None

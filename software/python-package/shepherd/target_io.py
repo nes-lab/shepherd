@@ -30,11 +30,14 @@ prog2_io = 11   # P8_32, GPIO0[11]
 :copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+from typing import Dict
+from typing import List
+
 from periphery import GPIO
 
 from .logger_config import logger
 
-target_pins = [  # pin-order from target-connector
+target_pins: List[Dict] = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},
     {"name": "gpio1", "pin": 27, "dir": 78},
     {"name": "gpio2", "pin": 46, "dir": 78},
@@ -52,11 +55,6 @@ target_pins = [  # pin-order from target-connector
 
 
 class TargetIO:
-    gpios = {}
-    pin_names = []
-    pin_count = 0
-    dirs = {}
-
     def __init__(self):
         """Initializes relevant variables.
 
@@ -64,10 +62,12 @@ class TargetIO:
 
         """
         dir_pins = {pin["dir"] for pin in target_pins if isinstance(pin["dir"], int)}
+        self.dirs: Dict[int, GPIO] = {}
         for pin in dir_pins:
             self.dirs[pin] = GPIO(pin, "out")
             self.dirs[pin].write(True)  # True == Output to target
 
+        self.gpios: Dict[str, GPIO] = {}
         for pin_info in target_pins:
             if pin_info["dir"] == "I":
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "in")
@@ -75,8 +75,8 @@ class TargetIO:
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "out")
                 self.gpios[pin_info["name"]].write(False)  # init LOW
 
-        self.pin_names = [pin["name"] for pin in target_pins]
-        self.pin_count = len(target_pins)
+        self.pin_names: List[str] = [pin["name"] for pin in target_pins]
+        self.pin_count: int = len(target_pins)
 
     def one_high(self, num: int) -> None:
         """Sets exactly one, the wanted pin_num, HIGH, the others to LOW

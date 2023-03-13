@@ -81,7 +81,7 @@ class CapeData:
         return cls(data)
 
     @classmethod
-    def from_yaml(cls, filename: Path) -> None:
+    def from_yaml(cls, filename: Path):
         """Build the object from a yaml file
 
         Args:
@@ -127,8 +127,6 @@ class EEPROM:
 
     """
 
-    _write_protect_pin: GPIO = None
-
     def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49):
         """Initializes EEPROM by bus number and address.
 
@@ -138,7 +136,7 @@ class EEPROM:
                 by DIP switch
         """
         self.dev_path = f"/sys/bus/i2c/devices/{bus_num}" f"-{address:04X}/eeprom"
-        self._write_protect_pin = GPIO(wp_pin, "out")
+        self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
     def __enter__(self):
