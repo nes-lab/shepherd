@@ -1,93 +1,177 @@
 import threading
-from threading import Thread, Event
-import datetime
-from time import sleep
-from threading import Lock
+import time
 import random
 
-#Event to detect the end of write operation
-stop_event = threading.Event()
+#writing and reading pointers 
+writing_ts_py = 0
+reading_ts_pru = 0
 
-###Variable Definition
+#access to the buffer
+access = "PY_W"
 
-#List of Data to be written by the host(Values taken just for a reference)
-data_list_write = [1,2,3,4,5,6,7,8,9,0,9,10,11,12,13,14,15,16,0]        #To Note: 0 is treated as the end of the message   
+#list of data supervised by the supervisor thread
+data_written = []
+data_processed = []
+data_read = []
 
-#List of processed data to be read by the host
-data_list_read = []
 
-#List containing the start and end point of a message
-end_points = [0]
-
-#Function to write the variable and process the data{
-# Parameters: 
-#   host_message: data_list_write as defined above
-#   iteration_value: states the number of times the information should be written(Analogous to multiple information)}
-
-def write_variable(host_message,iteration_value):
-    global write_pointer                             #To detect the end of each message
-    write_pointer = 0                                
-
-    ## Writing the same data multiple times to create a scenario of multiple messages
-    for i in range(iteration_value):
-                        
-        for index,data in enumerate(host_message): 
-            print(f"\n [Writing Thread]: Message from the host is: {data} at time {datetime.datetime.now()}")
+class RingBuffer:
+    def __init__(self, capacity):
+        self.buffer = [None] * capacity
+        self.capacity = capacity
+        self.write_size = 0
+        self.read_size = 0
+        self.write_index = 0
+        self.read_index = 0
+        self.lock = threading.Lock()
+        self.condition = threading.Condition(self.lock)
+        
+    def append(self, value):
+        with self.lock:
+            self.buffer[self.write_index] = value
+            self.write_index = (self.write_index + 1) % self.capacity
+            if self.write_size < self.capacity:
+                self.write_size += 1
             
-            #Processing and storing the data{
-            # Squaring the data just as an example of data processing}
-            data_list_read.append(data**2)
+            self.condition.notify_all()
 
-            #Checking the end point of a message
-            if data == 0:
-                write_pointer = write_pointer +1              #Detects the end point of the latest information
-                end_points.append(len(data_list_read))         #Storing the end point of each information
-                                
-    #Setting up the stop event to close the read operation                             
-    sleep(1)
-    stop_event.set()
-    print('\n Writing Stopped')
 
-#Function to read the processed data to the host
-def read_variable():
-    read_pointer = 0              #Local variable to keep track with the latest index in order to trigger read pointer
-    while True:
-        while read_pointer < write_pointer:    #Condition to trigger reading operation
+    def get(self):
+        with self.lock:
+            value = self.buffer[self.read_index]
+            self.read_index = (self.read_index+ 1) % self.capacity
+
+            if self.read_size < self.capacity:
+                self.read_size += 1
+
+            self.condition.notify_all()
+            return value
+    
+    def isFull(self):
+        if self.write_size == self.capacity:
+            self.write_size = 0
+            return True
+        else:
+            return False
+    
+    def isEmpty(self):
+        if self.read_size == self.capacity:
+            self.read_size = 0
+            return True
+        else:
+            return False
+
+
+
+class write_by_python(threading.Thread):
+    def __init__(self, buffer):
+        threading.Thread.__init__(self)
+        self.buffer = buffer
+
+    def run(self):
+        global access
+        global data_written
+        global writing_ts_py
+        while True:
+            if access == "PY_W":
+                data = random.sample(range(1, 5), 2)
+                writing_ts_py = self.buffer.write_index
+                result = [(writing_ts_py, x) for x in data]
+                self.buffer.append(result)
+                data_written.append(result)
+                if buffer.isFull():
+                    access = "PRU_R"
+                    
+                
+class read_by_pru(threading.Thread):
+    def __init__(self, buffer):
+        threading.Thread.__init__(self)
+        self.buffer = buffer
+        
+
+    def run(self):
+        while True:
+            global access
+            global reading_ts_pru
+            global data_processed
+            if access == "PRU_R":
+                reading_ts_pru = self.buffer.read_index
+                values = self.buffer.get()
+                processed_result=[]
+                for tuple in values:
+                    processed_result.append((tuple[0], tuple[1]**2)) 
+
+                #print(f"[PRU]: read_index = \t {reading_ts_pru} and write_index = \t {self.buffer.write_index}")
+                
+                self.buffer.append(processed_result)
+                data_processed.append(processed_result)
+
+                if self.buffer.isEmpty() and self.buffer.isFull():
+                    access = "PY_R"
+                
+        
+
+
+class read_by_python(threading.Thread):
+    def __init__(self,buffer):
+        threading.Thread.__init__(self)
+        self.buffer = buffer
+
+    def run(self):
+        global access
+        global data_read
+        while True:
+            if access == "PY_R":
+                values = self.buffer.get()
+                data_read.append(values)
+                #print("[Reading by Python]: Data read = \t",values)
+                if self.buffer.isEmpty():
+                    access = "PY_W"      
+                #print("[Reading by Python]: read_index = \t",self.buffer.read_index)
+
+        
+class SupervisorThread(threading.Thread):
+    def __init__(self, buffer):
+        threading.Thread.__init__(self)
+        self.buffer = buffer
+        self.every_data=[]
+        
+    def run(self):
+        global data_written, data_processed, data_read
+        while True:
+            global writing_ts_py, reading_ts_pru
+            if writing_ts_py < reading_ts_pru:
+                print(f"SupervisorThread]Error: The reading pointer{reading_ts_pru} exceeded the writing pointer {writing_ts_py}")
+                exit()
+
+            if data_read !=  data_processed:
+                if len(data_read) == len(data_processed):
+                    print(f"[SupervisorThread]Error: Mismatch in data processed by PRU {len(data_processed)} \n and data read by Python: {len(data_read)} \n")
+                    exit()
+
             
-            #updating temp_index to latest_index in order to avoid multiple reads
-            read_pointer = write_pointer       
 
-            #Checking if start and end point is detected before printing the information
-            while len(end_points)>1:
-                read_data = data_list_read[end_points[0]:end_points[1]]
-                print(f"\n [Reading Thread]: Message to the host is: {read_data} at time {datetime.datetime.now()}")
-                
-                #Popping out the starting point of each information 
-                #The end point of each message would be the start point of the next message
-                
-                end_points.pop(0)   
+# Create the shared buffers
+buffer = RingBuffer(10)
 
-        #Waiting for writing function to inform the end of communication   
-        if stop_event.is_set():
-            break
-    print('\n Reading Stopped')
+# Create the writer thread
+python_write = write_by_python(buffer)
+python_write.start()
 
 
-#Defining two threads{
-# t_write for writing and t_read for reading the data}
+# Create the reader thread
+pru_read = read_by_pru(buffer)
+pru_read.start()
 
-t_write = Thread(target=write_variable, args=(data_list_write, 2))
-t_read = Thread(target=read_variable, args=())
+python_read = read_by_python(buffer)
+python_read.start()
 
-#Starting both the threads
-t_write.start()
-t_read.start()
+# Create the supervisor thread
+supervisor = SupervisorThread(buffer)
+supervisor.start()
 
-#Joining both the threads
-t_write.join()
-t_read.join()
-
-
-
-
-
+# Wait for all threads to finish
+python_write.join()
+pru_read.join()
+python_read.join()
+supervisor.join()
