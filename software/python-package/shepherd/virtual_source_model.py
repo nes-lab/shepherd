@@ -9,7 +9,6 @@ NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
 """
 from typing import Optional
-from typing import Union
 
 from .calibration import CalibrationData
 from .virtual_converter_model import KernelConverterStruct
@@ -18,6 +17,7 @@ from .virtual_converter_model import VirtualConverterModel
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_harvester_model import KernelHarvesterStruct
 from .virtual_harvester_model import VirtualHarvesterModel
+from .virtual_source_config import T_vSrc
 from .virtual_source_config import VirtualSourceConfig
 
 
@@ -26,7 +26,7 @@ class VirtualSourceModel:
 
     def __init__(
         self,
-        vs_setting: Union[dict, VirtualSourceConfig],
+        vs_setting: Optional[T_vSrc],
         cal_data: CalibrationData,
         input_setting: Optional[dict],
     ):

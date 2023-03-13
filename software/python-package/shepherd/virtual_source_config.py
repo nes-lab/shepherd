@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import copy
 import logging
 from pathlib import Path
-from typing import Optional
-from typing import Union
+from typing import TypeVar
 
 import yaml
 
@@ -47,9 +48,9 @@ class VirtualSourceConfig:
 
     def __init__(
         self,
-        setting: Union[dict, str, Path] = None,
+        setting: T_vSrc | None = None,
         samplerate_sps: int = 100_000,
-        log_intermediate_voltage: bool = None,
+        log_intermediate_voltage: bool | None = None,
     ):
         """Container for VS Settings, Data will be checked and completed
 
@@ -62,7 +63,7 @@ class VirtualSourceConfig:
         with open(def_path) as def_data:
             self._config_defs = yaml.safe_load(def_data)["virtsources"]
             self._config_base = self._config_defs["neutral"]
-        self._inheritance = []
+        self._inheritance: list[str] = []
 
         if isinstance(setting, str) and Path(setting).exists():
             setting = Path(setting)
@@ -86,10 +87,11 @@ class VirtualSourceConfig:
                     f"but definition missing in '{self._def_file}'",
                 )
 
-        self.data_min: Optional[dict] = None
+        self.data_min: dict | None = None
         if setting is None:
             self.data: dict = {}
         elif isinstance(setting, VirtualSourceConfig):
+            # TODO: replace by .from_instance() below
             self._inheritance.append(self.name + "-Element")
             self.data = setting.data
             self.data_min: dict = setting.data_min
@@ -118,6 +120,12 @@ class VirtualSourceConfig:
             self.name,
             self._inheritance,
         )
+
+    @classmethod
+    def from_instance(cls, instance):  # type: ignore
+        vsrc: VirtualSourceConfig = instance
+        vsrc._inheritance.append(vsrc.name + "-Element")
+        vsrc.check_and_complete()
 
     def export_for_sysfs(self) -> list:
         """prepares virtual-converter settings for PRU core (a lot of unit-conversions)
@@ -443,3 +451,6 @@ class VirtualSourceConfig:
 
     def get_harvester(self) -> str:
         return self.data["harvester"]
+
+
+T_vSrc = TypeVar("T_vSrc", VirtualSourceConfig, dict, str, Path)

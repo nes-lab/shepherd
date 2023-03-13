@@ -13,7 +13,10 @@ through Linux I2C device driver.
 import logging
 import os
 import struct
+from datetime import datetime
 from pathlib import Path
+from typing import Dict
+from typing import Optional
 
 import yaml
 from periphery import GPIO
@@ -53,9 +56,9 @@ class CapeData:
     @classmethod
     def from_values(
         cls,
-        serial_number: str,
-        version: str = "24B0",
-        cal_date: str = "2022-01-01",
+        serial_number: Optional[str],
+        version: Optional[str] = None,
+        cal_date: Optional[str] = None,
     ):
         """Build the object from defaults and user-provided values
 
@@ -68,7 +71,14 @@ class CapeData:
 
         """
 
-        data = {
+        if serial_number in [None, ""]:
+            raise ValueError("Please provide a valid Serial-Number")
+        if version in [None, ""]:
+            version = "24B0"
+        if cal_date in [None, ""]:
+            cal_date = datetime.now().strftime("%Y-%m-%d")
+
+        data: Dict[str, str] = {
             "header": b"\xAA\x55\x33\xEE",
             "eeprom_revision": "A2",
             "board_name": "BeagleBone SHEPHERD Cape",

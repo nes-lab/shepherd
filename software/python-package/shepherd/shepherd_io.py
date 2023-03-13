@@ -688,7 +688,10 @@ class ShepherdIO:
         """
         return sfs.read_dac_aux_voltage(cal_settings)
 
-    def send_calibration_settings(self, cal_settings: CalibrationData) -> None:
+    def send_calibration_settings(
+        self,
+        cal_settings: Optional[CalibrationData],
+    ) -> None:
         """Sends calibration settings to PRU core
 
         For the virtual source it is required to have the calibration settings.

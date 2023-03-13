@@ -73,7 +73,7 @@ def yamlprovider(file_path: str, cmd_name: str) -> dict:
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click.pass_context
-def cli(ctx: click.Context = None, verbose: int = 2):
+def cli(ctx: click.Context, verbose: int = 2):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder
 
     Args:
@@ -597,6 +597,11 @@ def programmer(
     prog1: bool,
 ):
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
+        if sd.shared_mem is None:
+            raise RuntimeError(
+                "shared-mem was NOT initialized (by entering context of Emulator()",
+            )
+
         sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)
         sd.select_target_for_io_interface(sel_a=sel_a)

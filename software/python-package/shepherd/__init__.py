@@ -14,8 +14,9 @@ import sys
 import time
 from contextlib import ExitStack
 from pathlib import Path
+from typing import NoReturn
 from typing import Optional
-from typing import Union
+from typing import Tuple
 
 import invoke
 import msgpack
@@ -27,6 +28,7 @@ from . import sysfs_interface
 from .calibration import CalibrationData
 from .datalog import ExceptionRecord
 from .datalog import LogWriter
+from .datalog import T_compr
 from .datalog_reader import LogReader
 from .eeprom import EEPROM
 from .eeprom import CapeData
@@ -37,7 +39,9 @@ from .shepherd_io import DataBuffer
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
 from .target_io import TargetIO
+from .virtual_harvester_config import T_vHrv
 from .virtual_harvester_config import VirtualHarvesterConfig
+from .virtual_source_config import T_vSrc
 from .virtual_source_config import VirtualSourceConfig
 
 __version__ = "0.4.4"
@@ -83,8 +87,8 @@ class Recorder(ShepherdIO):
     def __init__(
         self,
         shepherd_mode: str = "harvester",
-        harvester: Union[dict, str, Path, VirtualHarvesterConfig] = None,
-        calibration: CalibrationData = None,
+        harvester: Optional[T_vHrv] = None,
+        calibration: Optional[CalibrationData] = None,
     ):
         logger.debug("Recorder-Init in %s-mode", shepherd_mode)
         self.samplerate_sps = (
@@ -158,21 +162,23 @@ class Emulator(ShepherdIO):
     def __init__(
         self,
         shepherd_mode: str = "emulator",
-        initial_buffers: list = None,
-        calibration_recording: CalibrationData = None,
+        initial_buffers: Optional[list] = None,
+        calibration_recording: Optional[CalibrationData] = None,
         # TODO: make clearer that this is "THE RECORDING"
-        calibration_emulator: CalibrationData = None,
+        calibration_emulator: Optional[CalibrationData] = None,
         enable_io: bool = False,
         io_target: str = "A",
         pwr_target: str = "A",
         aux_target_voltage: float = 0.0,
-        vsource: Union[dict, str, Path, VirtualSourceConfig] = None,
-        log_intermediate_voltage: bool = None,
-        infile_vh_cfg: dict = None,
+        vsource: Optional[T_vSrc] = None,
+        log_intermediate_voltage: Optional[bool] = None,
+        infile_vh_cfg: Optional[dict] = None,
     ):
         logger.debug("Emulator-Init in %s-mode", shepherd_mode)
         super().__init__(shepherd_mode)
-        self._initial_buffers = initial_buffers
+        if initial_buffers is None:
+            raise ValueError("initial buffers must be provided")
+        self._initial_buffers: list = initial_buffers
 
         if calibration_emulator is None:
             calibration_emulator = CalibrationData.from_default()
@@ -241,8 +247,7 @@ class Emulator(ShepherdIO):
         return self
 
     def return_buffer(self, index, buffer, verbose: bool = False):
-        if verbose:
-            ts_start = time.time()
+        ts_start = time.time() if verbose else 0
 
         # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
         voltage_transformed = (buffer.voltage * self._v_gain + self._v_offset).astype(
@@ -251,7 +256,10 @@ class Emulator(ShepherdIO):
         current_transformed = (buffer.current * self._i_gain + self._i_offset).astype(
             "u4",
         )
-
+        if self.shared_mem is None:
+            raise RuntimeError(
+                "shared-mem was NOT initialized (by entering context of Emulator()",
+            )
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         super()._return_buffer(index)
         if verbose:
@@ -275,7 +283,7 @@ class ShepherdDebug(ShepherdIO):
     def __init__(self, use_io: bool = True):
         super().__init__("debug")
 
-        self._io: TargetIO = TargetIO() if use_io else None
+        self._io: Optional[TargetIO] = TargetIO() if use_io else None
 
         # offer a default cali for debugging
         self._cal: CalibrationData = CalibrationData.from_default()
@@ -371,7 +379,11 @@ class ShepherdDebug(ShepherdIO):
         message = channels | value
         super()._send_msg(commons.MSG_DBG_DAC, message)
 
-    def get_buffer(self, timeout_n: float = None, verbose: bool = False):
+    def get_buffer(
+        self,
+        timeout_n: Optional[float] = None,
+        verbose: bool = False,
+    ) -> NoReturn:
         raise NotImplementedError("Method not implemented for debugging mode")
 
     def dbg_fn_test(self, factor: int, mode: int) -> int:
@@ -436,7 +448,11 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_inp_pW
 
-    def cnv_charge(self, input_voltage_uV: int, input_current_nA: int) -> (int, int):
+    def cnv_charge(
+        self,
+        input_voltage_uV: int,
+        input_current_nA: int,
+    ) -> Tuple[int, int]:
         self._send_msg(
             commons.MSG_DBG_VSRC_CHARGE,
             [int(input_voltage_uV), int(input_current_nA)],
@@ -459,7 +475,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def cnv_drain(self, current_adc_raw: int) -> (int, int):
+    def cnv_drain(self, current_adc_raw: int) -> Tuple[int, int]:
         self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_DRAIN:
@@ -673,13 +689,13 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
 
 def run_recorder(
     output_path: Path,
-    duration: float = None,
-    harvester: Union[dict, str, Path, VirtualHarvesterConfig] = None,
+    duration: Optional[float] = None,
+    harvester: Optional[T_vHrv] = None,
     force_overwrite: bool = False,
     use_cal_default: bool = False,
-    start_time: float = None,
+    start_time: Optional[float] = None,
     warn_only: bool = False,
-    output_compression=None,
+    output_compression: Optional[T_compr] = None,
 ):
     """Starts recording.
 
@@ -774,7 +790,8 @@ def run_recorder(
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 log_writer.write_exception(err_rec)
                 if not warn_only:
-                    raise
+                    raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                continue
 
             if (hrv_buf.timestamp_ns / 1e9) >= ts_end:
                 break
@@ -785,23 +802,23 @@ def run_recorder(
 
 def run_emulator(
     input_path: Path,
-    output_path: Path = None,
-    duration: float = None,
+    output_path: Optional[Path] = None,
+    duration: Optional[float] = None,
     force_overwrite: bool = False,
     use_cal_default: bool = False,
-    start_time: float = None,
+    start_time: Optional[float] = None,
     enable_io: bool = False,
     io_target: str = "A",
     pwr_target: str = "A",
     aux_target_voltage: float = 0.0,
-    virtsource: Union[dict, str, Path, VirtualSourceConfig] = None,
-    log_intermediate_voltage: bool = None,
-    uart_baudrate: int = None,
+    virtsource: Optional[T_vSrc] = None,
+    log_intermediate_voltage: Optional[bool] = None,
+    uart_baudrate: Optional[int] = None,
     warn_only: bool = False,
     skip_log_voltage: bool = False,
     skip_log_current: bool = False,
     skip_log_gpio: bool = False,
-    output_compression=None,
+    output_compression: Optional[T_compr] = None,
 ):
     """Starts emulator.
 
@@ -854,6 +871,7 @@ def run_emulator(
         10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
     )
 
+    log_writer: Optional[LogWriter] = None
     if output_path is not None:
         if not output_path.is_absolute():
             output_path = output_path.absolute()
@@ -894,7 +912,7 @@ def run_emulator(
     # TODO: new reader allow to check mode and dtype of recording (should be emu, ivcurves)
 
     with ExitStack() as stack:
-        if output_path is not None:
+        if log_writer is not None:
             stack.enter_context(log_writer)
             # TODO: these are no real contextmanagers, open with "with", do proper exit
             # add hostname to file
@@ -926,7 +944,7 @@ def run_emulator(
             infile_vh_cfg=log_reader.get_hrv_config(),
         )
         stack.enter_context(emu)
-        if output_path is not None:
+        if log_writer is not None:
             log_writer.embed_config(emu.vs_cfg.data)
         emu.start(start_time, wait_blocking=False)
         logger.info("waiting %.2f s until start", start_time - time.time())
@@ -953,15 +971,16 @@ def run_emulator(
                 logger.warning("Caught an Exception", exc_info=e)
 
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
-                if output_path is not None:
+                if log_writer is not None:
                     log_writer.write_exception(err_rec)
                 if not warn_only:
-                    raise
+                    raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                continue
 
             if emu_buf.timestamp_ns / 1e9 >= ts_end:
                 break
 
-            if output_path is not None:
+            if log_writer is not None:
                 log_writer.write_buffer(emu_buf)
 
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
@@ -973,7 +992,7 @@ def run_emulator(
                 idx, emu_buf = emu.get_buffer(verbose=verbose)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
                     break
-                if output_path is not None:
+                if log_writer is not None:
                     log_writer.write_buffer(emu_buf)
             except ShepherdIOException as e:
                 # We're done when the PRU has processed all emulation data buffers
@@ -981,4 +1000,4 @@ def run_emulator(
                     break
                 else:
                     if not warn_only:
-                        raise
+                        raise RuntimeError("Caught unforgivable ShepherdIO-Exception")

@@ -186,6 +186,7 @@ class CalibrationData:
                 else:
                     gain = 1.0
                 offset = 0
+                rval = 0
                 try:
                     sample_pts = meas_data["measurements"][component][channel]
                     x = np.empty(len(sample_pts))
@@ -212,7 +213,7 @@ class CalibrationData:
                         gain,
                     )
 
-                if ("rval" in locals()) and (rval < 0.999):
+                if rval < 0.999:
                     logger.warning(
                         "Calibration may be faulty -> Correlation coefficient "
                         "(rvalue) = %.6f is too low for %s-%s",

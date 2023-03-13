@@ -17,6 +17,7 @@ from collections import namedtuple
 from itertools import product
 from pathlib import Path
 from typing import Optional
+from typing import TypeVar
 from typing import Union
 
 import h5py
@@ -42,11 +43,13 @@ ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"
 
 monitors_end = threading.Event()
 
+T_compr = TypeVar("T_compr", str, int)
+
 
 def unique_path(base_path: Union[str, Path], suffix: str):
     counter = 0
     while True:
-        path = base_path.with_suffix(f".{ counter }{ suffix }")
+        path = Path(base_path).with_suffix(f".{ counter }{ suffix }")
         if not path.exists():
             return path
         counter += 1
@@ -92,15 +95,15 @@ class LogWriter:
         self,
         file_path: Path,
         calibration_data: CalibrationData,
-        mode: str = None,
-        datatype: str = None,
+        mode: Optional[str] = None,
+        datatype: Optional[str] = None,
         force_overwrite: bool = False,
         samples_per_buffer: int = 10_000,
         samplerate_sps: int = 100_000,
         skip_voltage: bool = False,
         skip_current: bool = False,
         skip_gpio: bool = False,
-        output_compression: Union[None, str, int] = None,
+        output_compression: Optional[T_compr] = None,
     ):
         file_path = Path(file_path)
         if force_overwrite or not file_path.exists():
@@ -605,7 +608,7 @@ class LogWriter:
             # TODO: add temp, not working:
             #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
-    def start_monitors(self, uart_baudrate: int = 0) -> None:
+    def start_monitors(self, uart_baudrate: Optional[int] = None) -> None:
         self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
         self.dmesg_mon_t.start()
         self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
@@ -617,7 +620,11 @@ class LogWriter:
         )
         self.uart_mon_t.start()
 
-    def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> None:
+    def monitor_uart(
+        self,
+        baudrate: Optional[int],
+        poll_intervall: float = 0.01,
+    ) -> None:
         # TODO: TEST - Not final, goal: raw bytes in hdf5
         # - uart is bytes-type -> storing in hdf5 is hard,
         #   tried 'S' and opaque-type -> failed with errors
