@@ -201,13 +201,13 @@ def harvester(
 )
 @click.option(
     "--io_target",
-    type=click.STRING,
+    type=click.Choice(["A", "B"]),
     default="A",
     help="Choose Target that gets connected to IO",
 )
 @click.option(
     "--pwr_target",
-    type=click.STRING,
+    type=click.Choice(["A", "B"]),
     default="A",
     help="Choose (main)Target that gets connected to virtual Source / current-monitor",
 )
@@ -220,6 +220,7 @@ def harvester(
 @click.option(
     "--virtsource",
     "-a",  # -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
+    type=click.STRING,
     default="direct",
     help="Use the desired setting for the virtual source",
 )
@@ -330,14 +331,17 @@ def stop(ctx: click.Context) -> None:
 @click.option(
     "--remote_path",
     "-r",
-    default=Herd.path_default,
     type=click.Path(),
+    default=Herd.path_default,
     help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.pass_context
 def distribute(
-    ctx: click.Context, filename: Path, remote_path: Path, force_overwrite: bool
+    ctx: click.Context,
+    filename: Path,
+    remote_path: Path,
+    force_overwrite: bool,
 ):
     ctx.obj["herd"].put_file(filename, remote_path, force_overwrite)
 
@@ -426,7 +430,11 @@ def retrieve(
     help="Enable/disable power and debug access to the target",
 )
 @click.option(
-    "--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage"
+    "--voltage",
+    "-v",
+    type=click.FLOAT,
+    default=3.0,
+    help="Target supply voltage",
 )
 @click.option(
     "--sel_a/--sel_b",

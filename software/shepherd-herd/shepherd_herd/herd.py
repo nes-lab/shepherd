@@ -142,7 +142,11 @@ class Herd:
 
     @staticmethod
     def thread_run(
-        cnx: Connection, sudo: bool, cmd: str, results: dict, index: int
+        cnx: Connection,
+        sudo: bool,
+        cmd: str,
+        results: dict,
+        index: int,
     ) -> None:
         if sudo:
             results[index] = cnx.sudo(cmd, warn=True, hide=True)
@@ -165,7 +169,10 @@ class Herd:
 
     @staticmethod
     def thread_put(
-        cnx: Connection, src: Union[Path, StringIO], dst: Path, force_overwrite: bool
+        cnx: Connection,
+        src: Union[Path, StringIO],
+        dst: Path,
+        force_overwrite: bool,
     ):
         if isinstance(src, StringIO):
             filename = dst.name
