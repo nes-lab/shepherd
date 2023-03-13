@@ -146,7 +146,7 @@ class SupervisorThread(threading.Thread):
 
             if data_read !=  data_processed:
                 if len(data_read) == len(data_processed):
-                    print(f"[SupervisorThread]Error: Mismatch in data processed by PRU {len(data_processed)} \n and data read by Python: {len(data_read)} \n")
+                    print(f"[SupervisorThread]Error: Mismatch in data processed by PRU and data read by Python\n")
                     exit()
 
             
