@@ -14,7 +14,6 @@ import logging
 import os
 import struct
 from pathlib import Path
-from typing import NoReturn
 
 import yaml
 from periphery import GPIO
@@ -82,7 +81,7 @@ class CapeData:
         return cls(data)
 
     @classmethod
-    def from_yaml(cls, filename: Path) -> NoReturn:
+    def from_yaml(cls, filename: Path) -> None:
         """Build the object from a yaml file
 
         Args:
@@ -159,7 +158,7 @@ class EEPROM:
         os.lseek(self.fd, address, 0)
         return os.read(self.fd, n_bytes)
 
-    def _write(self, address: int, buffer: bytes) -> NoReturn:
+    def _write(self, address: int, buffer: bytes) -> None:
         """Writes binary data from byte buffer to given address.
 
         Args:
@@ -232,7 +231,7 @@ class EEPROM:
         else:
             self._write(eeprom_format[key]["offset"], value)
 
-    def write_cape_data(self, cape_data: CapeData) -> NoReturn:
+    def write_cape_data(self, cape_data: CapeData) -> None:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:
@@ -252,7 +251,7 @@ class EEPROM:
             data[key] = self[key]
         return CapeData(data)
 
-    def write_calibration(self, calibration_data: CalibrationData) -> NoReturn:
+    def write_calibration(self, calibration_data: CalibrationData) -> None:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:

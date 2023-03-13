@@ -13,7 +13,6 @@ import os
 import time
 from threading import Event
 from threading import Thread
-from typing import NoReturn
 
 # allow importing shepherd on x86
 try:
@@ -88,7 +87,7 @@ class Launcher:
         self.gpio_led.close()
         self.gpio_button.close()
 
-    def run(self) -> NoReturn:
+    def run(self) -> None:
         """Infinite loop waiting for button presses.
 
         Waits for falling edge on configured button pin. On detection of the
@@ -177,7 +176,7 @@ class Launcher:
 
         return new_state
 
-    def initiate_shutdown(self, timeout: int = 5) -> NoReturn:
+    def initiate_shutdown(self, timeout: int = 5) -> None:
         """Initiates system shutdown.
 
         Args:
@@ -201,7 +200,7 @@ class Launcher:
         logger.info("shutting down now")
         self.manager.PowerOff()
 
-    def ack_watchdog(self) -> NoReturn:
+    def ack_watchdog(self) -> None:
         """prevent system-reset from watchdog
         hw-rev2 has a watchdog that can turn on the BB every ~60 min
 

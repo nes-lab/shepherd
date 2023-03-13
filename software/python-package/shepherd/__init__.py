@@ -14,7 +14,6 @@ import sys
 import time
 from contextlib import ExitStack
 from pathlib import Path
-from typing import NoReturn
 from typing import Optional
 from typing import Union
 
@@ -524,7 +523,7 @@ class ShepherdDebug(ShepherdIO):
     # to have trouble with inheritance and runtime inclusion
 
     @staticmethod
-    def set_shepherd_state(state: bool) -> NoReturn:
+    def set_shepherd_state(state: bool) -> None:
         if state:
             sysfs_interface.set_start()
         else:
@@ -534,16 +533,16 @@ class ShepherdDebug(ShepherdIO):
     def get_shepherd_state() -> str:
         return sysfs_interface.get_state()
 
-    def set_shepherd_pcb_power(self, state: bool) -> NoReturn:
+    def set_shepherd_pcb_power(self, state: bool) -> None:
         self._set_shepherd_pcb_power(state)
 
-    def select_target_for_power_tracking(self, sel_a: bool) -> NoReturn:
+    def select_target_for_power_tracking(self, sel_a: bool) -> None:
         self.select_main_target_for_power("A" if sel_a else "B")
 
-    def select_target_for_io_interface(self, sel_a: bool) -> NoReturn:
+    def select_target_for_io_interface(self, sel_a: bool) -> None:
         self.select_main_target_for_io("A" if sel_a else "B")
 
-    def set_io_level_converter(self, state) -> NoReturn:
+    def set_io_level_converter(self, state) -> None:
         self.set_target_io_level_conv(state)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
@@ -552,7 +551,7 @@ class ShepherdDebug(ShepherdIO):
     def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
         return self._cal.convert_value_to_raw(component, channel, value)
 
-    def set_gpio_one_high(self, num: int) -> NoReturn:
+    def set_gpio_one_high(self, num: int) -> None:
         if not (self._io is None):
             self._io.one_high(num)
         else:
@@ -565,7 +564,7 @@ class ShepherdDebug(ShepherdIO):
             logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return False
 
-    def set_gpio_direction(self, num: int, pdir: bool) -> NoReturn:
+    def set_gpio_direction(self, num: int, pdir: bool) -> None:
         if not (self._io is None):
             self._io.set_pin_direction(num, pdir)
         else:
@@ -585,13 +584,13 @@ class ShepherdDebug(ShepherdIO):
             logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
             return []
 
-    def set_power_state_emulator(self, state: bool) -> NoReturn:
+    def set_power_state_emulator(self, state: bool) -> None:
         super().set_power_state_emulator(state)
 
-    def set_power_state_recorder(self, state: bool) -> NoReturn:
+    def set_power_state_recorder(self, state: bool) -> None:
         super().set_power_state_recorder(state)
 
-    def reinitialize_prus(self) -> NoReturn:
+    def reinitialize_prus(self) -> None:
         super().reinitialize_prus()
 
     def get_power_state_shepherd(self) -> bool:
@@ -613,7 +612,7 @@ class ShepherdDebug(ShepherdIO):
         return self.gpios["target_io_en"].read()
 
     @staticmethod
-    def set_aux_target_voltage_raw(voltage_raw, also_main: bool = False) -> NoReturn:
+    def set_aux_target_voltage_raw(voltage_raw, also_main: bool = False) -> None:
         sysfs_interface.write_dac_aux_voltage_raw(voltage_raw | (int(also_main) << 20))
 
     def switch_shepherd_mode(self, mode: str) -> str:

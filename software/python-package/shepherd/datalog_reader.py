@@ -12,7 +12,6 @@ import os
 from itertools import product
 from pathlib import Path
 from typing import Dict
-from typing import NoReturn
 from typing import Optional
 
 import h5py
@@ -115,7 +114,7 @@ class LogReader:
         if not self._skip_open:
             self.h5file.close()
 
-    def _refresh_file_stats(self) -> NoReturn:
+    def _refresh_file_stats(self) -> None:
         """update internal states, helpful after resampling or other changes in data-group"""
         self.h5file.flush()
         if self.ds_time.shape[0] > 1:

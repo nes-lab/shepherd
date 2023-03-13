@@ -1,7 +1,6 @@
 import copy
 import logging
 from pathlib import Path
-from typing import NoReturn
 from typing import Optional
 from typing import Union
 
@@ -123,7 +122,7 @@ class VirtualHarvesterConfig:
             self._inheritance,
         )
 
-    def _check_and_complete(self, verbose: bool = True) -> NoReturn:
+    def _check_and_complete(self, verbose: bool = True):
         base_name = self.data.get("base", "neutral")  # 2nd val = default if key missing
 
         if base_name in self._inheritance:
@@ -265,7 +264,7 @@ class VirtualHarvesterConfig:
         min_value: float = 0,
         max_value: float = 2**32 - 1,
         verbose: bool = True,
-    ) -> NoReturn:
+    ) -> None:
         try:
             set_value = self.data[setting_key]
         except KeyError:

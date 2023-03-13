@@ -30,8 +30,6 @@ prog2_io = 11   # P8_32, GPIO0[11]
 :copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-from typing import NoReturn
-
 from periphery import GPIO
 
 from .logger_config import logger
@@ -80,7 +78,7 @@ class TargetIO:
         self.pin_names = [pin["name"] for pin in target_pins]
         self.pin_count = len(target_pins)
 
-    def one_high(self, num: int) -> NoReturn:
+    def one_high(self, num: int) -> None:
         """Sets exactly one, the wanted pin_num, HIGH, the others to LOW
 
         Args:

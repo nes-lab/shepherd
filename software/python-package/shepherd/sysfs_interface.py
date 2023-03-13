@@ -11,7 +11,6 @@ provided by the shepherd kernel module
 import logging
 import time
 from pathlib import Path
-from typing import NoReturn
 from typing import Optional
 
 from . import calibration_default
@@ -37,7 +36,7 @@ shepherd_modes = [
 ]
 
 
-def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
+def wait_for_state(wanted_state: str, timeout: float) -> None:
     """Waits until shepherd is in specified state.
 
     Polls the sysfs 'state' attribute until it contains the target state or
@@ -62,7 +61,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> NoReturn:
         time.sleep(0.1)
 
 
-def set_start(start_time: float = None) -> NoReturn:
+def set_start(start_time: float = None) -> None:
     """Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from
@@ -88,7 +87,7 @@ def set_start(start_time: float = None) -> NoReturn:
             f.write("start")
 
 
-def set_stop(force: bool = False) -> NoReturn:
+def set_stop(force: bool = False) -> None:
     """Stops shepherd.
 
     Writes 'stop' to the 'state' sysfs attribute in order to transition from
@@ -103,7 +102,7 @@ def set_stop(force: bool = False) -> NoReturn:
         f.write("stop")
 
 
-def write_mode(mode: str, force: bool = False) -> NoReturn:
+def write_mode(mode: str, force: bool = False) -> None:
     """Sets the shepherd mode.
 
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
@@ -131,7 +130,7 @@ def write_mode(mode: str, force: bool = False) -> NoReturn:
 def write_dac_aux_voltage(
     calibration_settings: Optional[CalibrationData],
     voltage: float,
-) -> NoReturn:
+) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
@@ -177,7 +176,7 @@ def write_dac_aux_voltage(
     write_dac_aux_voltage_raw(output)
 
 
-def write_dac_aux_voltage_raw(voltage_raw: int) -> NoReturn:
+def write_dac_aux_voltage_raw(voltage_raw: int) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
@@ -230,7 +229,7 @@ def read_dac_aux_voltage_raw() -> int:
 
 def write_calibration_settings(
     cal_pru: dict,
-) -> NoReturn:  # more precise dict[str, int], trouble with py3.6
+) -> None:  # more precise dict[str, int], trouble with py3.6
     """Sends the calibration settings to the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -283,7 +282,7 @@ def read_calibration_settings() -> (
     return cal_pru
 
 
-def write_virtual_converter_settings(settings: list) -> NoReturn:
+def write_virtual_converter_settings(settings: list) -> None:
     """Sends the virtual-converter settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
@@ -324,7 +323,7 @@ def read_virtual_converter_settings() -> list:
     return int_settings
 
 
-def write_virtual_harvester_settings(settings: list) -> NoReturn:
+def write_virtual_harvester_settings(settings: list) -> None:
     """Sends the settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
@@ -360,7 +359,7 @@ def read_virtual_harvester_settings() -> list:
     return int_settings
 
 
-def write_pru_msg(msg_type: int, values: list) -> NoReturn:
+def write_pru_msg(msg_type: int, values: list) -> None:
     """
     :param msg_type:
     :param values:
@@ -445,12 +444,12 @@ def read_programmer_ctrl() -> list:
     return parameters
 
 
-def write_programmer_datasize(value: int) -> NoReturn:
+def write_programmer_datasize(value: int) -> None:
     with open(sysfs_path / "programmer/datasize", "w") as file:
         file.write(str(value))
 
 
-def start_programmer() -> NoReturn:
+def start_programmer() -> None:
     with open(sysfs_path / "programmer/state", "w") as file:
         file.write("start")
     # force a pru-reset to jump into programming routine
@@ -469,7 +468,7 @@ pru0_firmwares = [
 ]
 
 
-def load_pru0_firmware(value: str = "shepherd") -> NoReturn:
+def load_pru0_firmware(value: str = "shepherd") -> None:
     """
 
     Args:

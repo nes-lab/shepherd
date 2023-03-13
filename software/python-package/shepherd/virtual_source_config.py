@@ -1,7 +1,6 @@
 import copy
 import logging
 from pathlib import Path
-from typing import NoReturn
 from typing import Union
 
 import yaml
@@ -180,7 +179,7 @@ class VirtualSourceConfig:
             ],
         ]
 
-    def calculate_internal_states(self) -> NoReturn:
+    def calculate_internal_states(self) -> None:
         """
         add the following internal variables:
         - converter_mode
@@ -286,7 +285,7 @@ class VirtualSourceConfig:
                 "V_intermediate_disable_threshold_mV"
             ]
 
-    def check_and_complete(self, verbose: bool = True) -> NoReturn:
+    def check_and_complete(self, verbose: bool = True) -> None:
         """
         checks virtual-source-settings for present values,
         adds default values to missing ones,
@@ -386,7 +385,7 @@ class VirtualSourceConfig:
         setting_key: str,
         max_value: float = None,
         verbose: bool = True,
-    ) -> NoReturn:
+    ) -> None:
         try:
             set_value = self.data[setting_key]
         except KeyError:
@@ -417,7 +416,7 @@ class VirtualSourceConfig:
         setting_key: str,
         max_value: float = 1023,
         verbose: bool = True,
-    ) -> NoReturn:
+    ) -> None:
         default = flatten_dict_list(self._config_base[setting_key])
         try:
             values = flatten_dict_list(self.data[setting_key])

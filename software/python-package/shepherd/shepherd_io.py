@@ -15,7 +15,6 @@ import os
 import struct
 import time
 import weakref
-from typing import NoReturn
 from typing import Optional
 from typing import Union
 
@@ -204,7 +203,7 @@ class SharedMem:
         """
         # The buffers are organized as an array in shared memory
         if not (0 <= index < self.n_buffers):
-            ValueError(
+            raise ValueError(
                 f"out of bound access (i={index}), tried reading from SharedMEM-Buffer",
             )
         buffer_offset = index * self.buffer_size
@@ -335,9 +334,9 @@ class SharedMem:
             pru0_util_max,
         )
 
-    def write_buffer(self, index: int, voltage, current) -> NoReturn:
+    def write_buffer(self, index: int, voltage, current) -> None:
         if not (0 <= index < self.n_buffers):
-            ValueError(
+            raise ValueError(
                 f"out of bound access (i={index}), tried writing to SharedMEM-Buffer",
             )
         buffer_offset = self.buffer_size * index
@@ -349,7 +348,7 @@ class SharedMem:
     def write_firmware(self, data: bytes):
         data_size = len(data)
         if data_size > self.size:
-            ValueError("firmware file is larger than the SharedMEM-Buffer")
+            raise ValueError("firmware file is larger than the SharedMEM-Buffer")
         sfs.write_programmer_datasize(data_size)
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
@@ -466,7 +465,7 @@ class ShepherdIO:
         self._cleanup()
 
     @staticmethod
-    def _send_msg(msg_type: int, values: Union[int, list]) -> NoReturn:
+    def _send_msg(msg_type: int, values: Union[int, list]) -> None:
         """Sends a formatted message to PRU0.
 
         Args:
@@ -501,7 +500,7 @@ class ShepherdIO:
             except sfs.SysfsInterfaceException:
                 break
 
-    def start(self, start_time: float = None, wait_blocking: bool = True) -> NoReturn:
+    def start(self, start_time: float = None, wait_blocking: bool = True) -> None:
         """Starts sampling either now or at later point in time.
 
         Args:
@@ -515,7 +514,7 @@ class ShepherdIO:
             self.wait_for_start(3_000_000)
 
     @staticmethod
-    def wait_for_start(timeout: float) -> NoReturn:
+    def wait_for_start(timeout: float) -> None:
         """Waits until shepherd has started sampling.
 
         Args:
@@ -523,7 +522,7 @@ class ShepherdIO:
         """
         sfs.wait_for_state("running", timeout)
 
-    def reinitialize_prus(self) -> NoReturn:
+    def reinitialize_prus(self) -> None:
         sfs.set_stop(force=True)  # forces idle
         sfs.wait_for_state("idle", 5)
 
@@ -553,7 +552,7 @@ class ShepherdIO:
         self._set_shepherd_pcb_power(False)
         logger.debug("Shepherd hardware is now powered down")
 
-    def _set_shepherd_pcb_power(self, state: bool) -> NoReturn:
+    def _set_shepherd_pcb_power(self, state: bool) -> None:
         """Controls state of power supplies on shepherd cape.
 
         Args:
@@ -563,7 +562,7 @@ class ShepherdIO:
         logger.debug("Set power-supplies of shepherd-pcb to %s", state_str)
         self.gpios["en_shepherd"].write(state)
 
-    def set_power_state_recorder(self, state: bool) -> NoReturn:
+    def set_power_state_recorder(self, state: bool) -> None:
         """
         triggered pin is currently connected to ADCs reset-line
         NOTE: this might be extended to DAC as well
@@ -575,7 +574,7 @@ class ShepherdIO:
         logger.debug("Set Recorder of shepherd-pcb to %s", state_str)
         self.gpios["en_recorder"].write(state)
 
-    def set_power_state_emulator(self, state: bool) -> NoReturn:
+    def set_power_state_emulator(self, state: bool) -> None:
         """
         triggered pin is currently connected to ADCs reset-line
         NOTE: this might be extended to DAC as well
@@ -587,7 +586,7 @@ class ShepherdIO:
         logger.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
 
-    def select_main_target_for_power(self, target: str) -> NoReturn:
+    def select_main_target_for_power(self, target: str) -> None:
         """
         choose which targets (A or B) gets the supply with current-monitor,
 
@@ -619,7 +618,7 @@ class ShepherdIO:
         if current_state != "idle":
             self.start(wait_blocking=True)
 
-    def select_main_target_for_io(self, target: str) -> NoReturn:
+    def select_main_target_for_io(self, target: str) -> None:
         """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
         shepherd hw-rev2 has two ports for targets and can switch independently
@@ -642,7 +641,7 @@ class ShepherdIO:
         logger.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(value)
 
-    def set_target_io_level_conv(self, state: bool) -> NoReturn:
+    def set_target_io_level_conv(self, state: bool) -> None:
         """Enables or disables the GPIO level converter to targets.
 
         The shepherd cape has bidirectional logic level translators (LSF0108)
@@ -663,7 +662,7 @@ class ShepherdIO:
     def set_aux_target_voltage(
         cal_settings: Optional[CalibrationData],
         voltage: float,
-    ) -> NoReturn:
+    ) -> None:
         """Enables or disables the voltage for the second target
 
         The shepherd cape has two DAC-Channels that each serve as power supply for a target
@@ -688,7 +687,7 @@ class ShepherdIO:
         """
         return sfs.read_dac_aux_voltage(cal_settings)
 
-    def send_calibration_settings(self, cal_settings: CalibrationData) -> NoReturn:
+    def send_calibration_settings(self, cal_settings: CalibrationData) -> None:
         """Sends calibration settings to PRU core
 
         For the virtual source it is required to have the calibration settings.
@@ -706,7 +705,7 @@ class ShepherdIO:
     @staticmethod
     def send_virtual_converter_settings(
         settings: VirtualSourceConfig,
-    ) -> NoReturn:
+    ) -> None:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
@@ -718,7 +717,7 @@ class ShepherdIO:
     @staticmethod
     def send_virtual_harvester_settings(
         settings: VirtualHarvesterConfig,
-    ) -> NoReturn:
+    ) -> None:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
@@ -727,7 +726,7 @@ class ShepherdIO:
         """
         sfs.write_virtual_harvester_settings(settings.export_for_sysfs())
 
-    def _return_buffer(self, index: int) -> NoReturn:
+    def _return_buffer(self, index: int) -> None:
         """Returns a buffer to the PRU
 
         After reading the content of a buffer and potentially filling it with

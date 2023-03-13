@@ -13,7 +13,6 @@ Compromises:
 """
 
 import math
-from typing import NoReturn
 
 from .calibration import CalibrationData
 from .virtual_source_config import VirtualSourceConfig
@@ -332,13 +331,13 @@ class VirtualConverterModel:
             pos_c = self._cfg.LUT_size - 1
         return self._cfg.LUT_out_inv_efficiency_n4[pos_c] / (2**4)
 
-    def set_P_input_fW(self, value: float) -> NoReturn:
+    def set_P_input_fW(self, value: float) -> None:
         self.P_inp_fW = value
 
-    def set_P_output_fW(self, value: float) -> NoReturn:
+    def set_P_output_fW(self, value: float) -> None:
         self.P_out_fW = value
 
-    def set_V_intermediate_uV(self, value: float) -> NoReturn:
+    def set_V_intermediate_uV(self, value: float) -> None:
         self.V_mid_uV = value
 
     def get_P_input_fW(self) -> int:

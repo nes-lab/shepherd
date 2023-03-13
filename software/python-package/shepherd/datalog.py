@@ -16,7 +16,6 @@ import time
 from collections import namedtuple
 from itertools import product
 from pathlib import Path
-from typing import NoReturn
 from typing import Union
 
 import h5py
@@ -406,7 +405,7 @@ class LogWriter:
             return self._h5file.attrs["mode"]
         return ""
 
-    def embed_config(self, data: dict) -> NoReturn:
+    def embed_config(self, data: dict) -> None:
         """
         Important Step to get a self-describing Output-File
         Note: the window_samples-size is important for reconstruction
@@ -483,7 +482,7 @@ class LogWriter:
         logger.info("closing hdf5 file")
         self._h5file.close()
 
-    def write_buffer(self, buffer: DataBuffer) -> NoReturn:
+    def write_buffer(self, buffer: DataBuffer) -> None:
         """Writes data from buffer to file.
 
         Args:
@@ -543,7 +542,7 @@ class LogWriter:
 
         self.log_sys_stats()
 
-    def write_exception(self, exception: ExceptionRecord) -> NoReturn:
+    def write_exception(self, exception: ExceptionRecord) -> None:
         """Writes an exception to the hdf5 file.
             TODO: use this fn to log exceptions, redirect logger.error() ?
             TODO: there is a concrete ShepherdIOException(Exception)
@@ -560,7 +559,7 @@ class LogWriter:
         self.xcpt_grp["message"][self.xcpt_pos] = exception.message
         self.xcpt_pos += 1
 
-    def log_sys_stats(self) -> NoReturn:
+    def log_sys_stats(self) -> None:
         """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
@@ -603,7 +602,7 @@ class LogWriter:
             # TODO: add temp, not working:
             #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
-    def start_monitors(self, uart_baudrate: int = 0) -> NoReturn:
+    def start_monitors(self, uart_baudrate: int = 0) -> None:
         self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
         self.dmesg_mon_t.start()
         self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
@@ -615,7 +614,7 @@ class LogWriter:
         )
         self.uart_mon_t.start()
 
-    def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> NoReturn:
+    def monitor_uart(self, baudrate: int, poll_intervall: float = 0.01) -> None:
         # TODO: TEST - Not final, goal: raw bytes in hdf5
         # - uart is bytes-type -> storing in hdf5 is hard,
         #   tried 'S' and opaque-type -> failed with errors
@@ -768,7 +767,7 @@ class LogWriter:
         grp: h5py.Group,
         length: int,
         chunks: Union[bool, tuple] = True,
-    ) -> NoReturn:
+    ) -> None:
         grp.create_dataset(
             "time",
             (length,),

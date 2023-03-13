@@ -1,5 +1,4 @@
 import logging
-from typing import NoReturn
 
 # Set default logging handler to avoid "No handler found" warnings.
 logger = logging.getLogger("shp")
@@ -12,7 +11,7 @@ def get_verbose_level() -> int:
     return verbose_level
 
 
-def set_verbose_level(verbose: int) -> NoReturn:
+def set_verbose_level(verbose: int) -> None:
     # performance-critical, <4 reduces chatter during main-loop
     # needed to differentiate DEBUG-Modes -> '3' only ON during init, '4' also ON during main-run
     global verbose_level
