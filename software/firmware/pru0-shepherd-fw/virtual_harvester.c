@@ -174,7 +174,7 @@ static void harvest_adc_isc_voc(struct SampleBuffer *const buffer, const uint32_
         else voltage_hold = voltage_adc;
 
         /* prepare next state-change */
-        is_rising ^= 1u;
+        is_rising ^= 1u; // reverse direction
         settle_steps = cfg->wait_cycles_n;
     }
     else settle_steps--;

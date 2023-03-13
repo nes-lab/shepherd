@@ -8,9 +8,12 @@ data
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+from __future__ import annotations
+
 import logging
 import struct
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import yaml
@@ -64,6 +67,9 @@ def convert_value_to_raw(
     return int((value - cal_dict["offset"]) / cal_dict["gain"])
 
 
+T_cal = Dict[str, Dict[str, Dict[str, float]]]
+
+
 class CalibrationData:
     """Represents SHEPHERD calibration data.
 
@@ -75,7 +81,7 @@ class CalibrationData:
     """
 
     def __init__(self, cal_dict: dict):
-        self.data = cal_dict
+        self.data: T_cal = cal_dict
 
     def __getitem__(self, key: str):
         return self.data[key]
@@ -102,7 +108,7 @@ class CalibrationData:
             ">" + val_count * "d",
             data,
         )  # X double float, big endian
-        cal_dict = {}
+        cal_dict: T_cal = {}
         counter = 0
         for component in cal_component_list:
             cal_dict[component] = {}
@@ -125,7 +131,7 @@ class CalibrationData:
         Returns:
             CalibrationData object with default calibration values.
         """
-        cal_dict = {}
+        cal_dict: T_cal = {}
         for component in cal_component_list:
             cal_dict[component] = {}
             for ch_index, channel in enumerate(cal_channel_list):
@@ -171,7 +177,7 @@ class CalibrationData:
         with open(filename) as stream:
             meas_data = yaml.safe_load(stream)
 
-        cal_dict = {}
+        cal_dict: T_cal = {}
 
         for component in cal_component_list:
             cal_dict[component] = {}

@@ -51,7 +51,7 @@ class VirtualHarvesterModel:
         # self.settle_steps: int = 0  # adc_ivcurve
         self.interval_step: int = 2**30
 
-        self.is_rising: bool = self._cfg.hrv_mode & (2**1)
+        self.is_rising: bool = (self._cfg.hrv_mode & (2**1)) != 0
 
         # PO-Relevant, iv & adc
         self.volt_step_uV: int = self._cfg.voltage_step_uV
@@ -163,7 +163,7 @@ class VirtualHarvesterModel:
                     self.voltage_set_uV -= self.volt_step_uV
                 self.volt_step_uV *= 2
             else:
-                self.is_rising ^= 1
+                self.is_rising = not self.is_rising
                 self.volt_step_uV = self._cfg.voltage_step_uV
                 if self.is_rising:
                     self.voltage_set_uV += self.volt_step_uV
@@ -174,11 +174,11 @@ class VirtualHarvesterModel:
 
             if self.voltage_set_uV >= self._cfg.voltage_max_uV:
                 self.voltage_set_uV = self._cfg.voltage_max_uV
-                self.is_rising = 0
+                self.is_rising = False
                 self.volt_step_uV = self._cfg.voltage_step_uV
             if self.voltage_set_uV <= self._cfg.voltage_min_uV:
                 self.voltage_set_uV = self._cfg.voltage_min_uV
-                self.is_rising = 1
+                self.is_rising = True
                 self.volt_step_uV = self._cfg.voltage_step_uV
 
         return self.iv_cv(_voltage_uV, _current_nA)

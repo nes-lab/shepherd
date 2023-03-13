@@ -159,15 +159,15 @@ class VirtualConverterModel:
         self.is_outputting: bool = True
         self.vsource_skip_gpio_logging: bool = False
 
-    def calc_inp_power(self, input_voltage_uV: int, input_current_nA: int) -> int:
+    def calc_inp_power(self, input_voltage_uV: float, input_current_nA: float) -> int:
         # Next 2 lines are Python-specific
-        input_voltage_uV = max(0, input_voltage_uV)
-        input_current_nA = max(0, input_current_nA)
+        input_voltage_uV = max(0.0, input_voltage_uV)
+        input_current_nA = max(0.0, input_current_nA)
 
         if input_voltage_uV > self._cfg.V_input_drop_uV:
             input_voltage_uV -= self._cfg.V_input_drop_uV
         else:
-            input_voltage_uV = 0
+            input_voltage_uV = 0.0
 
         if input_voltage_uV > self._cfg.V_input_max_uV:
             input_voltage_uV = self._cfg.V_input_max_uV
@@ -179,13 +179,13 @@ class VirtualConverterModel:
 
         if self.enable_boost:
             if input_voltage_uV < self._cfg.V_input_boost_threshold_uV:
-                input_voltage_uV = 0
+                input_voltage_uV = 0.0
             if input_voltage_uV > self.V_mid_uV:
                 input_voltage_uV = self.V_mid_uV
         elif not self.enable_storage:
             # direct connection
             self.V_mid_uV = input_voltage_uV
-            input_voltage_uV = 0
+            input_voltage_uV = 0.0
         else:
             if input_voltage_uV > self.V_mid_uV:
                 V_diff_uV = input_voltage_uV - self.V_mid_uV
@@ -195,7 +195,7 @@ class VirtualConverterModel:
                 else:
                     input_voltage_uV -= V_drop_uV
             else:
-                input_voltage_uV = 0
+                input_voltage_uV = 0.0
 
         if self.enable_boost:
             eta_inp = self.get_input_efficiency(input_voltage_uV, input_current_nA)
@@ -290,7 +290,7 @@ class VirtualConverterModel:
         )
         return self.V_out_dac_raw
 
-    def get_input_efficiency(self, voltage_uV: int, current_nA: int) -> float:
+    def get_input_efficiency(self, voltage_uV: float, current_nA: float) -> float:
         voltage_n = int(voltage_uV / (2**self._cfg.LUT_input_V_min_log2_uV))
         current_n = int(current_nA / (2**self._cfg.LUT_input_I_min_log2_nA))
         pos_v = int(voltage_n) if (voltage_n > 0) else 0  # V-Scale is Linear!
@@ -303,7 +303,7 @@ class VirtualConverterModel:
             2**8
         )
 
-    def get_output_inv_efficiency(self, current_nA) -> float:
+    def get_output_inv_efficiency(self, current_nA: float) -> float:
         current_n = int(current_nA / (2**self._cfg.LUT_output_I_min_log2_nA))
         pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
         if pos_c >= self._cfg.LUT_size:

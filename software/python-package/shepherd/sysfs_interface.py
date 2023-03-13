@@ -12,6 +12,7 @@ import logging
 import time
 from pathlib import Path
 from typing import Optional
+from typing import Union
 
 from . import calibration_default
 from .calibration import CalibrationData
@@ -36,7 +37,7 @@ shepherd_modes = [
 ]
 
 
-def wait_for_state(wanted_state: str, timeout: float) -> None:
+def wait_for_state(wanted_state: str, timeout: float) -> float:
     """Waits until shepherd is in specified state.
 
     Polls the sysfs 'state' attribute until it contains the target state or
@@ -61,7 +62,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> None:
         time.sleep(0.1)
 
 
-def set_start(start_time: float = None) -> None:
+def set_start(start_time: Union[float, int, None] = None) -> None:
     """Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from

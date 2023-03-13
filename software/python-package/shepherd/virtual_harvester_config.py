@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
+from typing import Optional
 from typing import TypeVar
 
 import yaml
@@ -46,9 +47,9 @@ class VirtualHarvesterConfig:
 
     def __init__(
         self,
-        setting: T_vHrv | None = None,
+        setting: Optional[T_vHrv] = None,
         samplerate_sps: int = 100_000,
-        emu_cfg: dict | None = None,
+        emu_cfg: Optional[dict[str, float]] = None,
     ):
         self.samplerate_sps = samplerate_sps
         self.for_emulation = emu_cfg is not None
@@ -99,7 +100,7 @@ class VirtualHarvesterConfig:
                 f"In case of file-path -> does it exist?",
             )
 
-        if self.for_emulation:
+        if isinstance(emu_cfg, dict):
             for element in ["dtype", "window_samples"]:
                 if element in emu_cfg:
                     self.data[element] = emu_cfg[element]

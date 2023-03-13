@@ -258,7 +258,7 @@ class Emulator(ShepherdIO):
         )
         if self.shared_mem is None:
             raise RuntimeError(
-                "shared-mem was NOT initialized (by entering context of Emulator()",
+                "shared-mem NOT initialized -> enter context of ShepherdIO-Obj",
             )
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         super()._return_buffer(index)

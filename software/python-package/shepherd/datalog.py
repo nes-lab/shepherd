@@ -16,6 +16,7 @@ import time
 from collections import namedtuple
 from itertools import product
 from pathlib import Path
+from typing import IO
 from typing import Optional
 from typing import TypeVar
 from typing import Union
@@ -173,7 +174,7 @@ class LogWriter:
             # fake or virtual hardware detected
             self.sys_log_enabled = False
         else:
-            self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])
+            self.sysutil_io_last = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
             self.sysutil_nw_last = np.array(psutil.net_io_counters()[0:2])
 
         self.dmesg_mon_t: Optional[threading.Thread] = None
@@ -278,7 +279,7 @@ class LogWriter:
                 dtype="u2",
                 maxshape=(None,),
                 chunks=True,
-                compression=LogWriter.compression_algo,
+                compression=self.compression_algo,
             )
             self.gpio_grp["value"].attrs["unit"] = "n"
             self.gpio_grp["value"].attrs["description"] = yaml.safe_dump(
@@ -594,7 +595,7 @@ class LogWriter:
                 int(100 * mem_stat[1] / mem_stat[0]),
                 int(mem_stat[2]),
             ]
-            sysutil_io_now = np.array(psutil.disk_io_counters()[0:4])
+            sysutil_io_now = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
             self.sysutil_grp["io"][self.sysutil_pos, :] = (
                 sysutil_io_now - self.sysutil_io_last
             )
@@ -700,8 +701,12 @@ class LogWriter:
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
+        if not hasattr(proc_dmesg, "stdout"):
+            raise OSError("Connection to dmesg failed")
+        if not isinstance(proc_dmesg.stdout, IO):
+            raise OSError("Connection to dmesg failed")
         tevent = threading.Event()
-        for line in iter(proc_dmesg.stdout.readline, ""):
+        for line in iter(proc_dmesg.stdout.readline, ""):  # type: ignore
             if monitors_end.is_set():
                 break
             line = str(line).strip()[:128]
@@ -739,6 +744,10 @@ class LogWriter:
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
+        if not hasattr(proc_ptp4l, "stdout"):
+            raise OSError("Connection to ptp4l failed")
+        if not isinstance(proc_ptp4l.stdout, IO):
+            raise OSError("Connection to ptp4l failed")
         tevent = threading.Event()
         for line in iter(proc_ptp4l.stdout.readline, ""):
             if monitors_end:

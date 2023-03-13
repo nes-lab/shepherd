@@ -12,6 +12,7 @@ import os
 from itertools import product
 from pathlib import Path
 from typing import Dict
+from typing import Generator
 from typing import Optional
 
 import h5py
@@ -91,7 +92,7 @@ class LogReader:
         self.ds_voltage: h5py.Dataset = self.h5file["data"]["voltage"]
         self.ds_current: h5py.Dataset = self.h5file["data"]["current"]
 
-        self._cal: Dict[str, Dict[str, float]] = CalibrationData.from_default()
+        self._cal = CalibrationData.from_default()
         for channel, parameter in product(["current", "voltage"], cal_parameter_list):
             cal_channel = cal_channel_hrv_dict[channel]
             self._cal["harvester"][cal_channel][parameter] = self.h5file["data"][
@@ -126,6 +127,8 @@ class LogReader:
 
     def _refresh_file_stats(self) -> None:
         """update internal states, helpful after resampling or other changes in data-group"""
+        if not isinstance(self._file_path, Path):
+            raise ValueError("Provide a valid Path-Object to Reader!")
         self.h5file.flush()
         if self.ds_time.shape[0] > 1:
             self.sample_interval_ns = int(self.ds_time[1] - self.ds_time[0])
@@ -135,7 +138,9 @@ class LogReader:
         self.file_size = self._file_path.stat().st_size
         self.data_rate = self.file_size / self.runtime_s if self.runtime_s > 0 else 0
 
-    def read_buffers(self, start_n: int = 0, end_n: int = None) -> tuple:
+    def read_buffers(
+        self, start_n: int = 0, end_n: Optional[int] = None
+    ) -> Generator[tuple, None, None]:
         """Generator that reads the specified range of buffers from the hdf5 file.
         can be configured on first call
 
@@ -155,14 +160,14 @@ class LogReader:
         for i in range(start_n, end_n):
             idx_start = i * self.samples_per_buffer
             idx_end = idx_start + self.samples_per_buffer
-
+            # provide RAW-values
             yield (
                 self.ds_time[idx_start:idx_end],
                 self.ds_voltage[idx_start:idx_end],
                 self.ds_current[idx_start:idx_end],
             )
 
-    def get_calibration_data(self) -> dict:
+    def get_calibration_data(self) -> CalibrationData:
         """Reads calibration-data from hdf5 file.
 
         :return: Calibration data as CalibrationData object

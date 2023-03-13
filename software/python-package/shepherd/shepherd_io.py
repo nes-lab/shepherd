@@ -79,8 +79,8 @@ class DataBuffer:
         self,
         voltage: np.ndarray,
         current: np.ndarray,
-        timestamp_ns: int = None,
-        gpio_edges: GPIOEdges = None,
+        timestamp_ns: Optional[int] = None,
+        gpio_edges: Optional[GPIOEdges] = None,
         util_mean: float = 0,
         util_max: float = 0,
     ):
@@ -186,8 +186,10 @@ class SharedMem:
         return self
 
     def __exit__(self, *args):
-        self.mapped_mem.close()
-        os.close(self.devmem_fd)
+        if self.mapped_mem is not None:
+            self.mapped_mem.close()
+        if self.devmem_fd is not None:
+            os.close(self.devmem_fd)
 
     def read_buffer(self, index: int, verbose: bool = False) -> DataBuffer:
         """Extracts buffer from shared memory.
@@ -501,7 +503,9 @@ class ShepherdIO:
             except sfs.SysfsInterfaceException:
                 break
 
-    def start(self, start_time: float = None, wait_blocking: bool = True) -> None:
+    def start(
+        self, start_time: Optional[float] = None, wait_blocking: bool = True
+    ) -> None:
         """Starts sampling either now or at later point in time.
 
         Args:
@@ -759,6 +763,11 @@ class ShepherdIO:
             TimeoutException: If no message is received within
                 specified timeout
         """
+        if self.shared_mem is None:
+            raise RuntimeError(
+                "shared-mem NOT initialized -> enter context of ShepherdIO-Obj",
+            )
+
         while True:
             msg_type, value = self._get_msg(timeout_n)
             value = value[0]

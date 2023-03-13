@@ -127,6 +127,10 @@ class TargetIO:
         elif isinstance(dir_param, int):
             dir_pin = self.dirs[dir_param]
             return not dir_pin.read()
+        else:
+            raise RuntimeError(
+                "Something went wrong - could not determine pin-direction"
+            )
 
     def set_pin_direction(self, num: int, pdir: bool) -> bool:
         """
@@ -158,3 +162,4 @@ class TargetIO:
                     self.gpios[pin].direction = "out"
 
             return True
+        return False

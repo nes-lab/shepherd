@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
+from typing import Optional
 from typing import TypeVar
 
 import yaml
@@ -48,9 +49,9 @@ class VirtualSourceConfig:
 
     def __init__(
         self,
-        setting: T_vSrc | None = None,
+        setting: Optional[T_vSrc] = None,
         samplerate_sps: int = 100_000,
-        log_intermediate_voltage: bool | None = None,
+        log_intermediate_voltage: Optional[bool] = None,
     ):
         """Container for VS Settings, Data will be checked and completed
 
@@ -87,14 +88,14 @@ class VirtualSourceConfig:
                     f"but definition missing in '{self._def_file}'",
                 )
 
-        self.data_min: dict | None = None
+        self.data_min: Optional[dict] = None
         if setting is None:
             self.data: dict = {}
         elif isinstance(setting, VirtualSourceConfig):
             # TODO: replace by .from_instance() below
             self._inheritance.append(self.name + "-Element")
             self.data = setting.data
-            self.data_min: dict = setting.data_min
+            self.data_min = setting.data_min
             self.samplerate_sps = setting.samplerate_sps
         elif isinstance(setting, dict):
             self._inheritance.append("parameter-dict")
@@ -390,7 +391,7 @@ class VirtualSourceConfig:
     def _check_num(
         self,
         setting_key: str,
-        max_value: float = None,
+        max_value: Optional[float] = None,
         verbose: bool = True,
     ) -> None:
         try:
