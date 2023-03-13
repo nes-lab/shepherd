@@ -2,10 +2,12 @@ import sys
 import telnetlib
 import time
 from pathlib import Path
+from typing import Optional
 
 import click
 import click_config_file
 import yaml
+from fabric import Connection
 
 from .herd import Herd
 from .herd import logger
@@ -18,7 +20,7 @@ from .herd import set_verbose_level
 #  - arguments can be configured in a dict and standardized across tools
 
 
-def yamlprovider(file_path, cmd_name):
+def yamlprovider(file_path: str, cmd_name: str):
     logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
     with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
@@ -29,55 +31,62 @@ def yamlprovider(file_path, cmd_name):
 @click.option(
     "--inventory",
     "-i",
-    type=str,
+    type=click.STRING,
     default="",
     help="List of target hosts as comma-separated string or path to ansible-style yaml file",
 )
 @click.option(
     "--limit",
     "-l",
-    type=str,
+    type=click.STRING,
     default="",
     help="Comma-separated list of hosts to limit execution to",
 )
-@click.option("--user", "-u", type=str, help="User name for login to nodes")
+@click.option("--user", "-u", type=click.STRING, help="User name for login to nodes")
 @click.option(
-    "--key-filename",
+    "--key-filepath",
     "-k",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="Path to private ssh key file",
 )
 @click.option("-v", "--verbose", count=True, default=2)
 @click.pass_context
-def cli(ctx, inventory, limit, user, key_filename, verbose) -> click.Context:
+def cli(
+    ctx: click.Context,
+    inventory: str,
+    limit: str,
+    user: Optional[str],
+    key_filepath: Optional[Path],
+    verbose: int,
+) -> click.Context:
     """A primary set of options to configure how to interface the herd
 
     :param ctx:
     :param inventory:
     :param limit:
     :param user:
-    :param key_filename:
+    :param key_filepath:
     :param verbose:
     :return:
     """
     set_verbose_level(verbose)
-    ctx.obj["herd"] = Herd(inventory, limit, user, key_filename)
+    ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
     return ctx  # calm linter
 
 
 @cli.command(short_help="Power off shepherd nodes")
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
-def poweroff(ctx, restart):
+def poweroff(ctx: click.Context, restart: bool):
     exit_code = ctx.obj["herd"].poweroff(restart)
     sys.exit(exit_code)
 
 
 @cli.command(short_help="Run COMMAND on the shell")
 @click.pass_context
-@click.argument("command", type=str)
+@click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-def run(ctx, command, sudo):
+def run(ctx: click.Context, command: str, sudo: bool):
     replies = ctx.obj["herd"].run_cmd(sudo, command)
     for i, hostname in enumerate(ctx.obj["herd"].hostnames.values()):
         click.echo(f"\n************** {hostname} **************")
@@ -98,7 +107,7 @@ def run(ctx, command, sudo):
 @click.option(
     "--algorithm",
     "-a",
-    type=str,
+    type=click.STRING,
     default=None,
     help="Choose one of the predefined virtual harvesters",
 )
@@ -123,13 +132,13 @@ def run(ctx, command, sudo):
 )
 @click.pass_context
 def harvester(
-    ctx,
-    output_path,
-    algorithm,
-    duration,
-    force_overwrite,
-    use_cal_default,
-    no_start,
+    ctx: click.Context,
+    output_path: Path,
+    algorithm: Optional[str],
+    duration: Optional[float],
+    force_overwrite: bool,
+    use_cal_default: bool,
+    no_start: bool,
 ):
     fp_output = Path(output_path)
     if not fp_output.is_absolute():
@@ -192,20 +201,20 @@ def harvester(
 )
 @click.option(
     "--io_target",
-    type=str,
+    type=click.STRING,
     default="A",
     help="Choose Target that gets connected to IO",
 )
 @click.option(
     "--pwr_target",
-    type=str,
+    type=click.STRING,
     default="A",
     help="Choose (main)Target that gets connected to virtual Source / current-monitor",
 )
 @click.option(
     "--aux_voltage",
     "-x",
-    type=float,
+    type=click.FLOAT,
     help="Set Voltage of auxiliary Power Source (second target)",
 )
 @click.option(
@@ -223,18 +232,18 @@ def harvester(
 )
 @click.pass_context
 def emulator(
-    ctx,
-    input_path,
-    output_path,
-    duration,
-    force_overwrite,
-    use_cal_default,
-    enable_io,
-    io_target,
-    pwr_target,
-    aux_voltage,
-    virtsource,
-    no_start,
+    ctx: click.Context,
+    input_path: Path,
+    output_path: Path,
+    duration: Optional[float],
+    force_overwrite: bool,
+    use_cal_default: bool,
+    enable_io: bool,
+    io_target: str,
+    pwr_target: str,
+    aux_voltage: Optional[float],
+    virtsource: str,
+    no_start: bool,
 ):
     fp_input = Path(input_path)
     if not fp_input.is_absolute():
@@ -281,7 +290,7 @@ def emulator(
     short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)",
 )
 @click.pass_context
-def start(ctx) -> None:
+def start(ctx: click.Context) -> None:
     if ctx.obj["herd"].check_state():
         logger.info("Shepherd still active, will skip this command!")
         sys.exit(1)
@@ -294,7 +303,7 @@ def start(ctx) -> None:
 
 @cli.command(short_help="Information about current shepherd measurement")
 @click.pass_context
-def check(ctx) -> None:
+def check(ctx: click.Context) -> None:
     if ctx.obj["herd"].check_state():
         logger.info("Shepherd still active!")
         sys.exit(1)
@@ -304,7 +313,7 @@ def check(ctx) -> None:
 
 @cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
-def stop(ctx) -> None:
+def stop(ctx: click.Context) -> None:
     exit_code = ctx.obj["herd"].stop_measurement()
     logger.info("Shepherd stopped.")
     if exit_code > 0:
@@ -327,7 +336,9 @@ def stop(ctx) -> None:
 )
 @click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.pass_context
-def distribute(ctx, filename, remote_path, force_overwrite):
+def distribute(
+    ctx: click.Context, filename: Path, remote_path: Path, force_overwrite: bool
+):
     ctx.obj["herd"].put_file(filename, remote_path, force_overwrite)
 
 
@@ -364,7 +375,15 @@ def distribute(ctx, filename, remote_path, force_overwrite):
     help="Stop the on-going harvest/emulation process before retrieving the data",
 )
 @click.pass_context
-def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> None:
+def retrieve(
+    ctx: click.Context,
+    filename: Path,
+    outdir: Path,
+    timestamp: bool,
+    separate: bool,
+    delete: bool,
+    force_stop: bool,
+) -> None:
     """
 
     :param ctx: context
@@ -397,7 +416,7 @@ def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> 
 @click.option(
     "--port",
     "-p",
-    type=int,
+    type=click.INT,
     default=4444,
     help="Port on which OpenOCD should listen for telnet",
 )
@@ -406,14 +425,16 @@ def retrieve(ctx, filename, outdir, timestamp, separate, delete, force_stop) -> 
     default=True,
     help="Enable/disable power and debug access to the target",
 )
-@click.option("--voltage", "-v", type=float, default=3.0, help="Target supply voltage")
+@click.option(
+    "--voltage", "-v", type=click.FLOAT, default=3.0, help="Target supply voltage"
+)
 @click.option(
     "--sel_a/--sel_b",
     default=True,
     help="Choose (main)Target that gets connected to virtual Source",
 )
 @click.pass_context
-def target(ctx, port, on, voltage, sel_a):
+def target(ctx: click.Context, port: int, on: bool, voltage: float, sel_a: bool):
     # TODO: dirty workaround for deprecated openOCD code
     #   - also no usage of cnx.put, cnx.get, cnx.run, cnx.sudo left
     ctx.obj["openocd_telnet_port"] = port
@@ -443,7 +464,7 @@ def target(ctx, port, on, voltage, sel_a):
 
 # @target.result_callback()  # TODO: disabled for now: errors in recent click-versions
 @click.pass_context
-def process_result(ctx, result, **kwargs):
+def process_result(ctx: click.Context, result, **kwargs):  # type: ignore
     if not kwargs["on"]:
         replies1 = ctx.obj["herd"].run_cmd(
             sudo=True,
@@ -460,7 +481,7 @@ def process_result(ctx, result, **kwargs):
         sys.exit(exit_code)
 
 
-def start_openocd(cnx, hostname, timeout=30):
+def start_openocd(cnx: Connection, hostname: str, timeout: float = 30):
     # TODO: why start a whole telnet-session? we can just flash and verify firmware by remote-cmd
     # TODO: bad design for parallelization, but deprecated anyway
     cnx.sudo("systemctl start shepherd-openocd", hide=True, warn=True)
@@ -486,7 +507,7 @@ def start_openocd(cnx, hostname, timeout=30):
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.pass_context
-def flash(ctx, image):
+def flash(ctx: click.Context, image: Path):
     for cnx in ctx.obj["herd"].group:
         hostname = ctx.obj["herd"].hostnames[cnx.host]
         cnx.put(image, "/tmp/target_image.bin")  # noqa: S108
@@ -503,7 +524,7 @@ def flash(ctx, image):
 
 @target.command(short_help="Halts the target")
 @click.pass_context
-def halt(ctx):
+def halt(ctx: click.Context):
     for cnx in ctx.obj["herd"].group:
         hostname = ctx.obj["herd"].hostnames[cnx.host]
 
@@ -515,7 +536,7 @@ def halt(ctx):
 
 @target.command(short_help="Erases the target")
 @click.pass_context
-def erase(ctx):
+def erase(ctx: click.Context):
     for cnx in ctx.obj["herd"].group:
         hostname = ctx.obj["herd"].hostnames[cnx.host]
 
@@ -529,7 +550,7 @@ def erase(ctx):
 
 @target.command(short_help="Resets the target")
 @click.pass_context
-def reset(ctx):
+def reset(ctx: click.Context):
     for cnx in ctx.obj["herd"].group:
         hostname = ctx.obj["herd"].hostnames[cnx.host]
         with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
@@ -578,7 +599,14 @@ def reset(ctx):
     help="Target chip",
 )
 @click.pass_context
-def programmer(ctx, firmware_file, sel_a, voltage, speed, target):
+def programmer(
+    ctx: click.Context,
+    firmware_file: Path,
+    sel_a: bool,
+    voltage: float,
+    speed: int,
+    target: str,
+):
     temp_file = "/tmp/target_image.bin"  # noqa: S108
     ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
     command = (

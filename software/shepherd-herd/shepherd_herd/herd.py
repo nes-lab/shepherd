@@ -7,9 +7,14 @@ import threading
 import time
 from io import StringIO
 from pathlib import Path
+from typing import Dict
 from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import yaml
+from fabric import Connection
 from fabric import Group
 
 consoleHandler = logging.StreamHandler()
@@ -33,9 +38,6 @@ def set_verbose_level(verbose: int = 2) -> None:
 
 
 class Herd:
-    group: Group = None
-    hostnames: dict = None
-
     _remote_paths_allowed = [
         Path("/var/shepherd/recordings/"),  # default
         Path("/var/shepherd/"),
@@ -51,18 +53,17 @@ class Herd:
         self,
         inventory: str = "",
         limit: str = "",
-        user=None,
-        key_filename=None,
+        user: Optional[str] = None,
+        key_filepath: Optional[Path] = None,
     ):
+        limits_list: Optional[List[str]] = None
         if limit.rstrip().endswith(","):
-            limit = limit.split(",")[:-1]
-        else:
-            limit = None
+            limits_list = limit.split(",")[:-1]
 
         if inventory.rstrip().endswith(","):
             hostlist = inventory.split(",")[:-1]
-            if limit is not None:
-                hostlist = list(set(hostlist) & set(limit))
+            if limits_list is not None:
+                hostlist = list(set(hostlist) & set(limits_list))
             hostnames = {hostname: hostname for hostname in hostlist}
 
         else:
@@ -90,9 +91,9 @@ class Herd:
                     raise FileNotFoundError(f"Couldn't read inventory file {host_path}")
 
             hostlist = []
-            hostnames = {}
+            hostnames: Dict[str, str] = {}
             for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-                if isinstance(limit, List) and (hostname not in limit):
+                if isinstance(limits_list, List) and (hostname not in limits_list):
                     continue
 
                 if "ansible_host" in hostvars:
@@ -114,12 +115,12 @@ class Herd:
                 "Provide remote hosts (either inventory empty or limit does not match)",
             )
 
-        connect_kwargs = {}
-        if key_filename is not None:
-            connect_kwargs["key_filename"] = key_filename
+        connect_kwargs: Dict[str, str] = {}
+        if key_filepath is not None:
+            connect_kwargs["key_filename"] = str(key_filepath)
 
-        self.group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
-        self.hostnames = hostnames
+        self.group: Group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
+        self.hostnames: Dict[str, str] = hostnames
         logger.debug("Sheep-Herd consists of %d nodes", len(self.group))
         if len(self.group) < 1:
             raise ValueError("No remote targets found in list!")
@@ -131,7 +132,7 @@ class Herd:
                 cnx.close()
                 del cnx
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         if key in self.hostnames:
             return self.hostnames[key]
         raise KeyError
@@ -140,7 +141,9 @@ class Herd:
         return self.hostnames
 
     @staticmethod
-    def thread_run(cnx, sudo: bool, cmd: str, results: dict, index: int) -> None:
+    def thread_run(
+        cnx: Connection, sudo: bool, cmd: str, results: dict, index: int
+    ) -> None:
         if sudo:
             results[index] = cnx.sudo(cmd, warn=True, hide=True)
         else:
@@ -161,7 +164,9 @@ class Herd:
         return results
 
     @staticmethod
-    def thread_put(cnx, src: [Path, StringIO], dst: Path, force_overwrite: bool):
+    def thread_put(
+        cnx: Connection, src: Union[Path, StringIO], dst: Path, force_overwrite: bool
+    ):
         if isinstance(src, StringIO):
             filename = dst.name
         else:
@@ -180,8 +185,8 @@ class Herd:
 
     def put_file(
         self,
-        src: [StringIO, Path, str],
-        dst: [Path, str],
+        src: Union[StringIO, Path, str],
+        dst: Union[Path, str],
         force_overwrite: bool = False,
     ) -> None:
         if isinstance(src, StringIO):
@@ -221,13 +226,13 @@ class Herd:
             del thread  # ... overcautious
 
     @staticmethod
-    def thread_get(cnx, src: Path, dst: Path):
+    def thread_get(cnx: Connection, src: Path, dst: Path):
         cnx.get(str(src), local=str(dst))
 
     def get_file(
         self,
-        src: [Path, str],
-        dst_dir: [Path, str],
+        src: Union[Path, str],
+        dst_dir: Union[Path, str],
         timestamp: bool = False,
         separate: bool = False,
         delete_src: bool = False,
@@ -307,7 +312,7 @@ class Herd:
         del threads
         return failed_retrieval
 
-    def find_consensus_time(self) -> (int, float):
+    def find_consensus_time(self) -> Tuple[int, float]:
         """Finds a start time in the future when all nodes should start service
 
         In order to run synchronously, all nodes should start at the same time.
