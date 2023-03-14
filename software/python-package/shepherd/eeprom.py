@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 from typing import Optional
+from typing import Union
 
 import yaml
 from periphery import GPIO
@@ -50,7 +51,7 @@ class CapeData:
     `See<https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
     """
 
-    def __init__(self, data):
+    def __init__(self, data: dict):
         self.data = data
 
     @classmethod
@@ -78,7 +79,7 @@ class CapeData:
         if cal_date in [None, ""]:
             cal_date = datetime.now().strftime("%Y-%m-%d")
 
-        data: Dict[str, str] = {
+        data: Dict[str, Union[str, bytes, None]] = {
             "header": b"\xAA\x55\x33\xEE",
             "eeprom_revision": "A2",
             "board_name": "BeagleBone SHEPHERD Cape",
@@ -110,7 +111,7 @@ class CapeData:
 
         return cls(data)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         return self.data[key]
 
     def __repr__(self):
@@ -153,7 +154,7 @@ class EEPROM:
         self.fd = os.open(self.dev_path, os.O_RDWR | os.O_SYNC)
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # type: ignore
         os.close(self.fd)
 
     def _read(self, address: int, n_bytes: int) -> bytes:
@@ -185,7 +186,7 @@ class EEPROM:
             raise
         self._write_protect_pin.write(True)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """Retrieves attribute from EEPROM.
 
         Args:
@@ -205,7 +206,7 @@ class EEPROM:
         else:
             return raw_data
 
-    def __setitem__(self, key: str, value):
+    def __setitem__(self, key: str, value):  # type: ignore
         """Writes attribute to EEPROM.
 
         Args:

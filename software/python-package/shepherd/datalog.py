@@ -428,7 +428,7 @@ class LogWriter:
         if "window_samples" in data:
             self.data_grp.attrs["window_samples"] = data["window_samples"]
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc):  # type: ignore
         global monitors_end
         monitors_end.set()
         time.sleep(0.1)
@@ -798,6 +798,6 @@ class LogWriter:
         grp["time"].attrs["unit"] = "ns"
         grp["time"].attrs["description"] = "system time [ns]"
 
-    def __setitem__(self, key, item):
+    def __setitem__(self, key: str, item):  # type: ignore
         """Offer a convenient interface to store any relevant key-value data"""
         return self._h5file.attrs.__setitem__(key, item)

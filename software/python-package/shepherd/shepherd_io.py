@@ -56,13 +56,13 @@ class GPIOEdges:
     together with the corresponding timestamp
     """
 
-    def __init__(self, timestamps_ns: np.ndarray = None, values: np.ndarray = None):
-        if timestamps_ns is None:
-            self.timestamps_ns = np.empty(0)
-            self.values = np.empty(0)
-        else:
-            self.timestamps_ns = timestamps_ns
-            self.values = values
+    def __init__(
+        self,
+        timestamps_ns: Optional[np.ndarray] = None,
+        values: Optional[np.ndarray] = None,
+    ):
+        self.timestamps_ns = timestamps_ns if timestamps_ns is not None else np.empty(0)
+        self.values = values if values is not None else np.empty(0)
 
     def __len__(self):
         return min(self.values.size, self.timestamps_ns.size)
@@ -84,7 +84,7 @@ class DataBuffer:
         util_mean: float = 0,
         util_max: float = 0,
     ):
-        self.timestamp_ns = timestamp_ns
+        self.timestamp_ns = timestamp_ns if timestamp_ns is not None else 0
         self.voltage = voltage
         self.current = current
         if gpio_edges is not None:
@@ -130,9 +130,6 @@ class SharedMem:
         self.samples_per_buffer = int(samples_per_buffer)
         self.prev_timestamp: int = 0
 
-        self.mapped_mem = None
-        self.devmem_fd = None
-
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
             # Header: 32 bit canary, 32 bit counter, 64 bit timestamp
@@ -169,7 +166,6 @@ class SharedMem:
                 f"from pru-reported size ({self.buffer_size * self.n_buffers} vs. {self.size})",
             )
 
-    def __enter__(self):
         self.devmem_fd = os.open(
             "/dev/mem",
             os.O_RDWR | os.O_SYNC,
@@ -183,9 +179,10 @@ class SharedMem:
             offset=self.address,
         )
 
+    def __enter__(self):
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # type: ignore
         if self.mapped_mem is not None:
             self.mapped_mem.close()
         if self.devmem_fd is not None:
@@ -336,7 +333,12 @@ class SharedMem:
             pru0_util_max,
         )
 
-    def write_buffer(self, index: int, voltage, current) -> None:
+    def write_buffer(
+        self,
+        index: int,
+        voltage: np.ndarray,
+        current: np.ndarray,
+    ) -> None:
         if not (0 <= index < self.n_buffers):
             raise ValueError(
                 f"out of bound access (i={index}), tried writing to SharedMEM-Buffer",
@@ -344,8 +346,8 @@ class SharedMem:
         buffer_offset = self.buffer_size * index
         # Seek buffer location in memory and skip 12B header
         self.mapped_mem.seek(buffer_offset + 12)
-        self.mapped_mem.write(voltage)
-        self.mapped_mem.write(current)
+        self.mapped_mem.write(voltage.tobytes())
+        self.mapped_mem.write(current.tobytes())
 
     def write_firmware(self, data: bytes):
         data_size = len(data)
@@ -375,7 +377,7 @@ class ShepherdIO:
     # This _instance-element is part of the singleton implementation
     _instance = None
 
-    def __new__(cls, *args, **kwds):
+    def __new__(cls, *args, **kwds):  # type: ignore
         """Implements singleton class."""
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)
@@ -400,7 +402,7 @@ class ShepherdIO:
             self.component = "emulator"
         self.gpios = {}
 
-        self.shared_mem: Optional[SharedMem] = None
+        # self.shared_mem: Optional[SharedMem] = None # noqa: E800
         self._buffer_period: float = 0.1  # placeholder value
 
     def __del__(self):
@@ -463,7 +465,7 @@ class ShepherdIO:
         sfs.wait_for_state("idle", 3)
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # type: ignore
         logger.info("Now exiting ShepherdIO")
         self._cleanup()
 
@@ -504,7 +506,9 @@ class ShepherdIO:
                 break
 
     def start(
-        self, start_time: Optional[float] = None, wait_blocking: bool = True
+        self,
+        start_time: Optional[float] = None,
+        wait_blocking: bool = True,
     ) -> None:
         """Starts sampling either now or at later point in time.
 
@@ -763,10 +767,6 @@ class ShepherdIO:
             TimeoutException: If no message is received within
                 specified timeout
         """
-        if self.shared_mem is None:
-            raise RuntimeError(
-                "shared-mem NOT initialized -> enter context of ShepherdIO-Obj",
-            )
 
         while True:
             msg_type, value = self._get_msg(timeout_n)

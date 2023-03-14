@@ -597,11 +597,6 @@ def programmer(
     prog1: bool,
 ):
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
-        if sd.shared_mem is None:
-            raise RuntimeError(
-                "shared-mem NOT initialized -> enter context of ShepherdIO-Obj",
-            )
-
         sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)
         sd.select_target_for_io_interface(sel_a=sel_a)

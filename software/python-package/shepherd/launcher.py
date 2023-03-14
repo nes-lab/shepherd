@@ -19,12 +19,12 @@ try:
     import dbus
     from periphery import GPIO
 except ModuleNotFoundError:
-    print("WARNING: Packages missing - shp.launcher will not work")  # noqa: T201
+    print("WARNING: dbus-package missing - shp.launcher will not work")  # noqa: T201
 
 logger = logging.getLogger("shp.launcher")
 
 
-def call_repeatedly(interval, func, *args):
+def call_repeatedly(interval: float, func, *args):  # type: ignore
     stopped = Event()
 
     def loop():
@@ -83,7 +83,7 @@ class Launcher:
 
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc):  # type: ignore
         self.gpio_led.close()
         self.gpio_button.close()
 

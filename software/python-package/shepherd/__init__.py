@@ -246,7 +246,7 @@ class Emulator(ShepherdIO):
 
         return self
 
-    def return_buffer(self, index, buffer, verbose: bool = False):
+    def return_buffer(self, index: int, buffer: DataBuffer, verbose: bool = False):
         ts_start = time.time() if verbose else 0
 
         # Convert raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
@@ -256,10 +256,7 @@ class Emulator(ShepherdIO):
         current_transformed = (buffer.current * self._i_gain + self._i_offset).astype(
             "u4",
         )
-        if self.shared_mem is None:
-            raise RuntimeError(
-                "shared-mem NOT initialized -> enter context of ShepherdIO-Obj",
-            )
+
         self.shared_mem.write_buffer(index, voltage_transformed, current_transformed)
         super()._return_buffer(index)
         if verbose:
@@ -555,7 +552,7 @@ class ShepherdDebug(ShepherdIO):
     def select_target_for_io_interface(self, sel_a: bool) -> None:
         self.select_main_target_for_io("A" if sel_a else "B")
 
-    def set_io_level_converter(self, state) -> None:
+    def set_io_level_converter(self, state: bool) -> None:
         self.set_target_io_level_conv(state)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
@@ -625,7 +622,7 @@ class ShepherdDebug(ShepherdIO):
         return self.gpios["target_io_en"].read()
 
     @staticmethod
-    def set_aux_target_voltage_raw(voltage_raw, also_main: bool = False) -> None:
+    def set_aux_target_voltage_raw(voltage_raw: int, also_main: bool = False) -> None:
         sysfs_interface.write_dac_aux_voltage_raw(voltage_raw | (int(also_main) << 20))
 
     def switch_shepherd_mode(self, mode: str) -> str:
@@ -770,7 +767,7 @@ def run_recorder(
 
         logger.info("shepherd started!")
 
-        def exit_gracefully(*args):
+        def exit_gracefully(*args):  # type: ignore
             stack.close()
             sys.exit(0)
 
@@ -933,7 +930,7 @@ def run_emulator(
         emu = Emulator(
             shepherd_mode=mode,  # TODO: this should not be needed anymore
             initial_buffers=init_buffers,
-            calibration_recording=CalibrationData(log_reader.get_calibration_data()),
+            calibration_recording=log_reader.get_calibration_data(),
             calibration_emulator=cal,
             enable_io=enable_io,
             io_target=io_target,
@@ -952,7 +949,7 @@ def run_emulator(
 
         logger.info("shepherd started!")
 
-        def exit_gracefully(*args):
+        def exit_gracefully(*args):  # type: ignore
             stack.close()
             sys.exit(0)
 

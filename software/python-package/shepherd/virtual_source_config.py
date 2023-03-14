@@ -11,24 +11,28 @@ import yaml
 logger = logging.getLogger("shp.srcConfig")
 
 
-def flatten_dict_list(dl) -> list:
-    """small helper FN to convert (multi-dimensional) dicts or lists to 1D list
+def flatten_list(dl: list) -> list:
+    """small helper FN to convert (multi-dimensional) lists to 1D list
 
     Args:
-        dl: (multi-dimensional) dicts or lists
+        dl: (multi-dimensional) lists
     Returns:
         1D list
     """
-    if len(dl) == 1:
-        if isinstance(dl[0], list):
-            result = flatten_dict_list(dl[0])
+    if isinstance(dl, list):
+        if len(dl) < 1:
+            return dl
+        if len(dl) == 1:
+            if isinstance(dl[0], list):
+                return flatten_list(dl[0])
+            else:
+                return dl
+        elif isinstance(dl[0], list):
+            return flatten_list(dl[0]) + flatten_list(dl[1:])
         else:
-            result = dl
-    elif isinstance(dl[0], list):
-        result = flatten_dict_list(dl[0]) + flatten_dict_list(dl[1:])
+            return [dl[0]] + flatten_list(dl[1:])
     else:
-        result = [dl[0]] + flatten_dict_list(dl[1:])
-    return result
+        return [dl]
 
 
 class VirtualSourceConfig:
@@ -425,9 +429,9 @@ class VirtualSourceConfig:
         max_value: float = 1023,
         verbose: bool = True,
     ) -> None:
-        default = flatten_dict_list(self._config_base[setting_key])
+        default = flatten_list(self._config_base[setting_key])
         try:
-            values = flatten_dict_list(self.data[setting_key])
+            values = flatten_list(self.data[setting_key])
         except KeyError:
             values = default
             if verbose:

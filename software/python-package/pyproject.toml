@@ -7,3 +7,4 @@ root = "./"
 include = ['./shepherd', ]
 pythonVersion = "3.8"
 pythonPlatform = "Linux"
+reportMissingParameterType = true

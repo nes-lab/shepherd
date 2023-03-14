@@ -129,7 +129,7 @@ class TargetIO:
             return not dir_pin.read()
         else:
             raise RuntimeError(
-                "Something went wrong - could not determine pin-direction"
+                "Something went wrong - could not determine pin-direction",
             )
 
     def set_pin_direction(self, num: int, pdir: bool) -> bool:

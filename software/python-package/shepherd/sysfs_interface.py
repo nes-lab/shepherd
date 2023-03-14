@@ -360,7 +360,7 @@ def read_virtual_harvester_settings() -> list:
     return int_settings
 
 
-def write_pru_msg(msg_type: int, values: list) -> None:
+def write_pru_msg(msg_type: int, values: Union[list, float, int]) -> None:
     """
     :param msg_type:
     :param values:

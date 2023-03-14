@@ -121,7 +121,7 @@ class LogReader:
     def __enter__(self):
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc):  # type: ignore
         if self._reader_opened:
             self.h5file.close()
 
@@ -139,7 +139,9 @@ class LogReader:
         self.data_rate = self.file_size / self.runtime_s if self.runtime_s > 0 else 0
 
     def read_buffers(
-        self, start_n: int = 0, end_n: Optional[int] = None
+        self,
+        start_n: int = 0,
+        end_n: Optional[int] = None,
     ) -> Generator[tuple, None, None]:
         """Generator that reads the specified range of buffers from the hdf5 file.
         can be configured on first call
@@ -305,7 +307,7 @@ class LogReader:
             self._logger.warning("Hostname was not set (@Validator)")
         return True
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """returns attribute or (if none found) a handle for a group or dataset (if found)
 
         :param key: attribute, group, dataset
