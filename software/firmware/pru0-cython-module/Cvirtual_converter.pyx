@@ -12,8 +12,15 @@ import pyximport
 import math
 
 """
-The language used here is a special mix of C and Python. However it will look fairly familiar to Python developers.
+The language used here is a special mix of C and Python. However it will look fairly familiar to Python developers
 """
+
+"""
+	Cython doesn't allow python decorators like @staticmethod directly, so we will use ctypedef to declare and define static C functions, it can be used only when we declare the static function in a seperate .h
+"""
+ctypedef uint32_t (*get_input_efficiency_n8)(uint32_t, uint32_t)
+ctypedef uint32_t (*get_output_inv_efficiency_n4)(uint32_t)
+
 
 cpdef enum:
 	DIV_SHIFT 	= 17
@@ -60,29 +67,7 @@ cdef class VirtualConverter:
 		return hvirtual_converter.get_P_output_fW()
 		
 	def get_I_mid_out_nA(self):
-		return hvirtual_converter.get_I_mid_out_nA()			
-
-	""" Added temporarily to check static function callability, without using exact py-objects(due to some errors) by replacing it with random numbers """
-	@staticmethod
-	def get_input_efficiency_n8(self, voltage_uV: int, current_nA: int) -> int:
-		voltage_n = int(voltage_uV / (2**1))
-		current_n = int(current_nA / (2**1))
-		pos_v = int(voltage_n) if (voltage_n > 0) else 0  # V-Scale is Linear!
-		pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
-		if pos_v >= hvirtual_converter.LUT_SIZE:
-			pos_v = hvirtual_converter.LUT_SIZE - 1
-		if pos_c >= hvirtual_converter.LUT_SIZE:
-			pos_c = hvirtual_converter.LUT_SIZE - 1
-		return (1*hvirtual_converter.LUT_SIZE + pos_c) / (2**8)
-		
-	@staticmethod
-	def get_output_inv_efficiency_n4(self, current_nA) -> int:
-		current_n = int(current_nA / (2**1))
-		pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
-		if pos_c >= hvirtual_converter.LUT_SIZE:
-			pos_c = hvirtual_converter.LUT_SIZE- 1
-		return  1/(2**4)
-	""" check ends here """
+		return hvirtual_converter.get_I_mid_out_nA()
 	
 	@staticmethod
 	def div_uV_n4(self, power_fW_n4, voltage_uV):
@@ -173,26 +158,4 @@ def __init__(self, vs_config: list):
 	self.config.LUT_inp_efficiency_n8[hvirtual_converter.LUT_SIZE][hvirtual_converter.LUT_SIZE]   = vs_config[23]
 	self.config.LUT_out_inv_efficiency_n4[hvirtual_converter.LUT_SIZE] 				= vs_config[24]		
 	hvirtual_converter.converter_initialize(config)
-"""
-	
-"""
-@staticmethod
-def get_input_efficiency_n8(self, voltage_uV: int, current_nA: int) -> int:
-	voltage_n = int(voltage_uV / (2**self.config.LUT_input_V_min_log2_uV))
-	current_n = int(current_nA / (2**self.config.LUT_input_I_min_log2_nA))
-	pos_v = int(voltage_n) if (voltage_n > 0) else 0  # V-Scale is Linear!
-	pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
-	if pos_v >= hvirtual_converter.LUT_SIZE:
-		pos_v = hvirtual_converter.LUT_SIZE - 1
-	if pos_c >= hvirtual_converter.LUT_SIZE:
-		pos_c = hvirtual_converter.LUT_SIZE - 1
-	return self.config.LUT_inp_efficiency_n8[pos_v * hvirtual_converter.LUT_SIZE + pos_c] / (2**8)
-	
-@staticmethod
-def get_output_inv_efficiency_n4(self, current_nA) -> int:
-	current_n = int(current_nA / (2**self.config.LUT_output_I_min_log2_nA))
-	pos_c = int(math.log2(current_n)) if (current_n > 0) else 0
-	if pos_c >= hvirtual_converter.LUT_SIZE:
-		pos_c = hvirtual_converter.LUT_SIZE- 1
-	return self.config.LUT_out_inv_efficiency_n4[pos_c] / (2**4)
-"""			
+"""	
