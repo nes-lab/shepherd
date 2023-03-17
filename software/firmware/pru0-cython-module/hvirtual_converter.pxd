@@ -7,6 +7,10 @@ from libc.stdint cimport uint64_t
 from libc.stdlib cimport free
 from libc.stdlib cimport malloc
 
+#ctypedef int (*MyStatic_div_uV_n4_Ptr)(uint64_t, uint32_t)
+
+#cdef extern from "vc_static_header.h":
+#	MyStatic_div_uV_n4_Ptr my_static_div_uV_n4_ptr "div_uV_n4"(uint64_t, uint32_t)
 
 cdef extern from "calibration.h":
 	cdef uint32_t cal_conv_adc_raw_to_nA(uint32_t current_raw)
@@ -51,6 +55,8 @@ cdef extern from "commons.h":
 cdef extern from "virtual_converter.h":
 
 	# Function declarations from virtual_converter.h
+	
+	cdef uint64_t div_uV_n4_wrapper(uint64_t power_fW_n4, uint32_t voltage_uV)
 	cdef void converter_initialize(ConverterConfig *config)
 	cdef void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA)
 	cdef void converter_calc_out_power(uint32_t current_adc_raw)

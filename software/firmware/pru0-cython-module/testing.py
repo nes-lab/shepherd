@@ -21,7 +21,7 @@ class Test_VirtualConverter():
 		return self.access.get_I_mid_out_nA() 
 		
 	def Test_div_uV_n4(self):
-		return self.access.div_uV_n4(self, 100000, 2000000)
+		return self.access.div_uV_n4(4000000, 2000000)
 	
 	def Test_Method8(self):
 		return self.access.converter_calc_out_power(100000)

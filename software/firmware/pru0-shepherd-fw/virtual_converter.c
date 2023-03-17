@@ -37,6 +37,9 @@ static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
     return mul64((power_fW_n4 >> 10u), LUT_div_uV_n27[lut_pos]) >> 17u;
 }
 
+uint64_t div_uV_n4_wrapper(const uint64_t power_fW_n4, const uint32_t voltage_uV) {
+    return div_uV_n4(power_fW_n4, voltage_uV);
+}
 
 /* data-structure that hold the state - variables for local / direct use */
 struct ConverterState

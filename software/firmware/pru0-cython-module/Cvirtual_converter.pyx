@@ -23,7 +23,7 @@ ctypedef uint32_t (*get_output_inv_efficiency_n4)(uint32_t)
 
 
 cpdef enum:
-	DIV_SHIFT 	= 17
+	DIV_SHIFT 		= 17
 	DIV_LUT_SIZE	= 40
 	
 cdef uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] 
@@ -69,13 +69,12 @@ cdef class VirtualConverter:
 	def get_I_mid_out_nA(self):
 		return hvirtual_converter.get_I_mid_out_nA()
 	
-	@staticmethod
-	def div_uV_n4(self, power_fW_n4, voltage_uV):
-		lut_pos = int(voltage_uV / (2**DIV_SHIFT))
-		if lut_pos >= DIV_LUT_SIZE:
-			lut_pos = DIV_LUT_SIZE - 1
-		return hvirtual_converter.mul64((power_fW_n4 >> 10u), (LUT_div_uV_n27[lut_pos]) >> 17)
+	#def cython_div_uV_n4(self, power_fW_n4, voltage_uV):
+	#	return hvirtual_converter.my_static_div_uV_n4_ptr(power_fW_n4, voltage_uV)
 	
+	def div_uV_n4(self, power_fW_n4, voltage_uV):
+		return hvirtual_converter.div_uV_n4_wrapper(power_fW_n4, voltage_uV)
+
 	def converter_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int):
 		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
 

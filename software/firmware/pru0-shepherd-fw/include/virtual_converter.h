@@ -23,6 +23,8 @@ bool_ft  get_state_log_intermediate(void);
 
 void     set_batok_pin(volatile struct SharedMem *shared_mem, bool_ft value);
 
+uint64_t div_uV_n4_static_wrapper(const uint64_t power_fW_n4, const uint32_t voltage_uV);
+
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC
