@@ -89,8 +89,10 @@ done:
 - updated install-instructions
 - guessed the interface of the module for testing.py
 - Add Virtual_Harvester - To be added in setup.py
+- Included wrapper functions in virtual_converter.c to access static functions in C in .pyx
 
 todo:
 - Implement pytest for all the functions, and compare it with a credible root function (instead of Magic-values).
 - While the format of "structures" in .pyx cythonizes, however when it runs through the python interpreter during testing, incurs incompatibility.
 - Add Virtual_Harvester, functions
+- Review of the created wrapper functions, since it altered source file(.c)

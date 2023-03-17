@@ -41,6 +41,14 @@ uint64_t div_uV_n4_wrapper(const uint64_t power_fW_n4, const uint32_t voltage_uV
     return div_uV_n4(power_fW_n4, voltage_uV);
 }
 
+uint32_t get_input_efficiency_n8_wrapper(uint32_t voltage_uV, uint32_t current_nA) {
+    return get_input_efficiency_n8(voltage_uV, current_nA);
+}
+
+uint32_t get_output_inv_efficiency_n4_wrapper(uint32_t current_nA) {
+    return get_output_inv_efficiency_n4(current_nA);
+}
+
 /* data-structure that hold the state - variables for local / direct use */
 struct ConverterState
 {

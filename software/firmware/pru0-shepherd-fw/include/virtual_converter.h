@@ -22,9 +22,9 @@ uint32_t get_I_mid_out_nA(void);
 bool_ft  get_state_log_intermediate(void);
 
 void     set_batok_pin(volatile struct SharedMem *shared_mem, bool_ft value);
-
 uint64_t div_uV_n4_static_wrapper(const uint64_t power_fW_n4, const uint32_t voltage_uV);
-
+uint32_t get_input_efficiency_n8_wrapper(uint32_t voltage_uV, uint32_t current_nA);
+uint32_t get_output_inv_efficiency_n4_wrapper(uint32_t current_nA);
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC

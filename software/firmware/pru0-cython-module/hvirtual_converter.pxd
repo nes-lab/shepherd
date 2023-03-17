@@ -7,10 +7,6 @@ from libc.stdint cimport uint64_t
 from libc.stdlib cimport free
 from libc.stdlib cimport malloc
 
-#ctypedef int (*MyStatic_div_uV_n4_Ptr)(uint64_t, uint32_t)
-
-#cdef extern from "vc_static_header.h":
-#	MyStatic_div_uV_n4_Ptr my_static_div_uV_n4_ptr "div_uV_n4"(uint64_t, uint32_t)
 
 cdef extern from "calibration.h":
 	cdef uint32_t cal_conv_adc_raw_to_nA(uint32_t current_raw)
@@ -56,7 +52,6 @@ cdef extern from "virtual_converter.h":
 
 	# Function declarations from virtual_converter.h
 	
-	cdef uint64_t div_uV_n4_wrapper(uint64_t power_fW_n4, uint32_t voltage_uV)
 	cdef void converter_initialize(ConverterConfig *config)
 	cdef void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA)
 	cdef void converter_calc_out_power(uint32_t current_adc_raw)
@@ -73,6 +68,9 @@ cdef extern from "virtual_converter.h":
 	cdef uint32_t get_V_intermediate_raw()
 	cdef uint32_t get_I_mid_out_nA()
 	cdef uint32_t get_state_log_intermediate()
+	cdef uint64_t div_uV_n4_wrapper(uint64_t power_fW_n4, uint32_t voltage_uV)
+	cdef uint32_t get_input_efficiency_n8_wrapper(uint32_t voltage_uV, uint32_t current_nA)
+	cdef uint32_t get_output_inv_efficiency_n4_wrapper(uint32_t current_nA)
 	
 cdef extern from "math64_safe.h":	
 	cdef uint64_t mul64(uint64_t value1, uint64_t value2)

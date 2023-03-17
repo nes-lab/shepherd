@@ -29,16 +29,26 @@ cpdef enum:
 cdef uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] 
 LUT_div_uV_n27[:] = [16383, 683, 410, 293, 228, 186, 158, 137, 120, 108, 98, 89, 82, 76, 71, 66, 62, 59, 55, 53, 50, 48, 46, 44, 42, 40, 39, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 27, 26]
 
-"""	A Trial for structure	"""
+"""	Structure definition	"""
 cdef struct ConverterState:
 	uint64_t V_mid_uV_n32
 	uint64_t P_out_fW_n4
 	uint32_t V_out_dac_uV
 	uint32_t interval_startup_disabled_drain_n
-	uint32_t enable_buck
+	bint enable_storage
+	uint32_t V_input_uV
+	bint enable_boost
+	bint enable_log_mid
+	uint64_t P_inp_fW_n8
+	bint enable_buck
+	uint32_t V_out_dac_raw
+	uint64_t V_enable_output_threshold_uV_n32
+	uint64_t V_disable_output_threshold_uV_n32
+	uint64_t dV_enable_output_uV_n32
+	bint power_good
 
-"""	Declaring variables pointing to structs	"""
-cdef ConverterState 				state
+"""	Declaring variables to access structure members	"""
+cdef ConverterState 						state
 cdef hvirtual_converter.ConverterConfig 	*cfg
 cdef:
 	void converter_initialize(hvirtual_converter.ConverterConfig *config) except *:
@@ -69,11 +79,14 @@ cdef class VirtualConverter:
 	def get_I_mid_out_nA(self):
 		return hvirtual_converter.get_I_mid_out_nA()
 	
-	#def cython_div_uV_n4(self, power_fW_n4, voltage_uV):
-	#	return hvirtual_converter.my_static_div_uV_n4_ptr(power_fW_n4, voltage_uV)
-	
 	def div_uV_n4(self, power_fW_n4, voltage_uV):
 		return hvirtual_converter.div_uV_n4_wrapper(power_fW_n4, voltage_uV)
+		
+	def get_input_efficiency_n8(self, voltage_uV, current_nA):	
+		return hvirtual_converter.get_input_efficiency_n8_wrapper(voltage_uV, current_nA)
+		
+	def get_output_inv_efficiency_n4(self, current_nA):	
+		return hvirtual_converter.get_output_inv_efficiency_n4_wrapper(current_nA)
 
 	def converter_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int):
 		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
