@@ -15,13 +15,6 @@ import math
 The language used here is a special mix of C and Python. However it will look fairly familiar to Python developers
 """
 
-"""
-	Cython doesn't allow python decorators like @staticmethod directly, so we will use ctypedef to declare and define static C functions, it can be used only when we declare the static function in a seperate .h
-"""
-ctypedef uint32_t (*get_input_efficiency_n8)(uint32_t, uint32_t)
-ctypedef uint32_t (*get_output_inv_efficiency_n4)(uint32_t)
-
-
 cpdef enum:
 	DIV_SHIFT 		= 17
 	DIV_LUT_SIZE	= 40
@@ -45,19 +38,12 @@ cdef struct ConverterState:
 	uint64_t V_enable_output_threshold_uV_n32
 	uint64_t V_disable_output_threshold_uV_n32
 	uint64_t dV_enable_output_uV_n32
-	bint power_good
+	bint power_good # The bint type is used for the boolean fields, as it maps to the C bool type.
 
 """	Declaring variables to access structure members	"""
-cdef ConverterState 						state
-cdef hvirtual_converter.ConverterConfig 	*cfg
-cdef:
-	void converter_initialize(hvirtual_converter.ConverterConfig *config) except *:
-		cfg					 = config
-		state.V_mid_uV_n32			 = cfg.V_intermediate_init_uV << 32	# can add 2**32 as an alternate to shifting, to represent signed to unsigned
-		state.P_out_fW_n4 			 = 0
-		state.V_out_dac_uV			 = cfg.V_output_uV
-		state.interval_startup_disabled_drain_n = cfg.interval_startup_delay_drain_n
-		state.enable_buck                       = (cfg.converter_mode & 0b0100) > 0
+cdef ConverterState state 
+cdef hvirtual_converter.ConverterConfig config_struct
+cdef hvirtual_converter.SharedMem sharedMem_struct
 		
 """
 This section looks like a regular Python function — because it just creates a Python function that has access to the C functions. These are Python-Wrappers...
@@ -66,7 +52,52 @@ This section looks like a regular Python function — because it just creates a 
 cdef class VirtualConverter:
 	def __init__(self):
 		pass
-        
+		
+	def conv_initialize(self, config): # Tracability Done.
+		global config_struct, state
+		config_struct = config
+		hvirtual_converter.converter_initialize(&config_struct)
+		
+		# Initialize state
+		state.V_input_uV = 0u
+		state.P_inp_fW_n8 = 0ull
+		state.P_out_fW_n4 = 0ull
+		state.interval_startup_disabled_drain_n = config_struct.interval_startup_delay_drain_n
+
+		# container for the stored energy:
+		state.V_mid_uV_n32 = (<uint64_t> config_struct.V_intermediate_init_uV) << 32u
+
+		# Buck Boost
+		state.enable_storage = (config_struct.converter_mode & 0b0001) > 0
+		state.enable_boost = (config_struct.converter_mode & 0b0010) > 0
+		state.enable_buck = (config_struct.converter_mode & 0b0100) > 0
+		state.enable_log_mid = (config_struct.converter_mode & 0b1000) > 0
+
+		state.V_out_dac_uV = config_struct.V_output_uV
+		state.V_out_dac_raw = hvirtual_converter.cal_conv_uV_to_dac_raw(config_struct.V_output_uV)
+		state.power_good = True
+
+		# prepare hysteresis-thresholds
+		state.dV_enable_output_uV_n32 = (<uint64_t> config_struct.dV_enable_output_uV) << 32u
+		state.V_enable_output_threshold_uV_n32 = (<uint64_t> config_struct.V_enable_output_threshold_uV) << 32u
+		state.V_disable_output_threshold_uV_n32 = (<uint64_t> config_struct.V_disable_output_threshold_uV) << 32u
+
+		if state.dV_enable_output_uV_n32 > state.V_enable_output_threshold_uV_n32:
+			state.V_enable_output_threshold_uV_n32 = state.dV_enable_output_uV_n32
+	
+	def converter_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int): # Tracability Done.
+		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
+
+	def converter_calc_out_power(self, current_adc_raw): # Tracability Done.
+		return hvirtual_converter.converter_calc_out_power(current_adc_raw)
+		
+	def converter_update_cap_storage(self): # Tracability Done.
+		return hvirtual_converter.converter_update_cap_storage()
+		
+	#def converter_update_states_and_output(self, shared_mem):
+		#cdef hvirtual_converter.SharedMem* sharedMem_struct = <SharedMem*>shared_mem
+	#	return hvirtual_converter.converter_update_states_and_output(sharedMem_struct)
+		
 	def get_V_intermediate_uV(self):
 		return hvirtual_converter.get_V_intermediate_uV()
 	
@@ -79,37 +110,21 @@ cdef class VirtualConverter:
 	def get_I_mid_out_nA(self):
 		return hvirtual_converter.get_I_mid_out_nA()
 	
-	def div_uV_n4(self, power_fW_n4, voltage_uV):
+	def div_uV_n4(self, power_fW_n4, voltage_uV): # Tracability Done.
 		return hvirtual_converter.div_uV_n4_wrapper(power_fW_n4, voltage_uV)
 		
-	def get_input_efficiency_n8(self, voltage_uV, current_nA):	
+	def get_input_efficiency_n8(self, voltage_uV, current_nA): # Tracability Done.	
 		return hvirtual_converter.get_input_efficiency_n8_wrapper(voltage_uV, current_nA)
 		
-	def get_output_inv_efficiency_n4(self, current_nA):	
+	def get_output_inv_efficiency_n4(self, current_nA):	# Tracability Done.
 		return hvirtual_converter.get_output_inv_efficiency_n4_wrapper(current_nA)
-
-	def converter_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int):
-		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
-
-	def converter_calc_out_power(self, current_adc_raw)-> int:
-		cdef uint64_t V_mid_uV_n4  = state.V_mid_uV_n32 >> 28
-		cdef uint64_t P_leak_fW_n4 = hvirtual_converter.mul64(cfg.I_intermediate_leak_nA, V_mid_uV_n4)
-		cdef uint32_t I_out_nA     = hvirtual_converter.cal_conv_adc_raw_to_nA(current_adc_raw)
-		
-		cdef uint32_t eta_inv_out_n4 = VirtualConverter.get_output_inv_efficiency_n4(I_out_nA) if (state.enable_buck) else (1 << 4)
-		state.P_out_fW_n4 = hvirtual_converter.add64(hvirtual_converter.mul64(eta_inv_out_n4 * state.V_out_dac_uV, I_out_nA), P_leak_fW_n4)
-		if (state.interval_startup_disabled_drain_n > 0):
-			state.interval_startup_disabled_drain_n-=1
-			state.P_out_fW_n4 = 0
-		return state.P_out_fW_n4
-		#return hvirtual_converter.converter_calc_out_power(current_adc_raw)	
 
 	def get_V_intermediate_raw(self):
 		return hvirtual_converter.get_V_intermediate_raw()
 
 	def set_V_intermediate_uV(self, C_uV):
 		hvirtual_converter.set_V_intermediate_uV(C_uV)
-
+		
 	"""	Added from Calibration.c to debug testing.py	"""
 	def cal_conv_adc_raw_to_nA(self, current_raw):
 		return hvirtual_converter.cal_conv_adc_raw_to_nA(current_raw)
@@ -123,51 +138,3 @@ cdef class VirtualConverter:
 	def add64(self, value1, value2):
 		return hvirtual_converter.add64(value1, value2)
 		
-###########################################################################################################################################
-
-"""	This section is back-up for trial, once the functions are fixed and tested it will be removed		"""
-			
-###########################################################################################################################################			
-# static function handling
-# cdef uint32_t get_input_efficiency_n8(const uint32_t voltage_uV, const uint32_t current_nA)
-
-# structure declaration
-# cdef const hvirtual_converter.ConverterConfig *cfg
-# ctypedef hvirtual_converter.ConverterConfig *const config
-"""
-def __init__(self):
-	cdef hvirtual_converter.ConverterConfig* config
-	hvirtual_converter.converter_initialize(config)
-"""
-# TODO: each FN now needs data-conversion from python-objects to c-objects and reverse for return-values
-"""
-def __init__(self, vs_config: list):
-	cdef hvirtual_converter.ConverterConfig* config
-	self.config.converter_mode 			 						= vs_config[0]
-	self.config.interval_startup_delay_drain_n	 						= vs_config[1]
-	self.config.V_input_max_uV			 						= vs_config[2]
-	self.config.I_input_max_nA			 						= vs_config[3]
-	self.config.V_input_drop_uV			 						= vs_config[4]
-	self.config.R_input_kOhm_n22		 							= vs_config[5]
-	self.config.Constant_us_per_nF_n28		 						= vs_config[6]
-	self.config.V_intermediate_init_uV		 						= vs_config[7]
-	self.config.I_intermediate_leak_nA		 						= vs_config[8]
-	self.config.V_enable_output_threshold_uV	 						= vs_config[9]
-	self.config.V_disable_output_threshold_uV	 						= vs_config[10]
-	self.config.dV_enable_output_uV		 						= vs_config[11]
-	self.config.interval_check_thresholds_n	 						= vs_config[12]
-	self.config.V_pwr_good_enable_threshold_uV 	 						= vs_config[13]
-	self.config.V_pwr_good_disable_threshold_uV	 						= vs_config[14]
-	self.config.immediate_pwr_good_signal	 							= vs_config[15]
-	self.config.V_output_log_gpio_threshold_uV	 						= vs_config[16]
-	self.config.V_input_boost_threshold_uV	 							= vs_config[16]
-	self.config.V_intermediate_max_uV		 						= vs_config[17]
-	self.config.V_output_uV			 						= vs_config[18]
-	self.config.V_buck_drop_uV			 						= vs_config[19]
-	self.config.LUT_input_V_min_log2_uV		 						= vs_config[20]
-	self.config.LUT_input_I_min_log2_nA		 						= vs_config[21]
-	self.config.LUT_output_I_min_log2_nA	 							= vs_config[22]
-	self.config.LUT_inp_efficiency_n8[hvirtual_converter.LUT_SIZE][hvirtual_converter.LUT_SIZE]   = vs_config[23]
-	self.config.LUT_out_inv_efficiency_n4[hvirtual_converter.LUT_SIZE] 				= vs_config[24]		
-	hvirtual_converter.converter_initialize(config)
-"""	
