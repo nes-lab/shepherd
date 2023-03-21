@@ -40,10 +40,6 @@ cdef struct ConverterState:
 	uint64_t dV_enable_output_uV_n32
 	bint power_good # The bint type is used for the boolean fields, as it maps to the C bool type.
 
-"""	Declaring variables to access structure members	"""
-cdef ConverterState state 
-cdef hvirtual_converter.ConverterConfig config_struct
-cdef hvirtual_converter.SharedMem sharedMem_struct
 		
 """
 This section looks like a regular Python function — because it just creates a Python function that has access to the C functions. These are Python-Wrappers...
@@ -54,36 +50,16 @@ cdef class VirtualConverter:
 		pass
 		
 	def conv_initialize(self, config): # Tracability Done.
-		global config_struct, state
-		config_struct = config
+		cdef hvirtual_converter.ConverterConfig config_struct
+		config_struct.interval_startup_delay_drain_n = config['interval_startup_delay_drain_n']
+		config_struct.V_intermediate_init_uV = config['V_intermediate_init_uV']
+		config_struct.converter_mode = config['converter_mode']
+		config_struct.V_output_uV = config['V_output_uV']
+		config_struct.dV_enable_output_uV = config['dV_enable_output_uV']
+		config_struct.V_enable_output_threshold_uV = config['V_enable_output_threshold_uV']
+		config_struct.V_disable_output_threshold_uV = config['V_disable_output_threshold_uV']
+
 		hvirtual_converter.converter_initialize(&config_struct)
-		
-		# Initialize state
-		state.V_input_uV = 0u
-		state.P_inp_fW_n8 = 0ull
-		state.P_out_fW_n4 = 0ull
-		state.interval_startup_disabled_drain_n = config_struct.interval_startup_delay_drain_n
-
-		# container for the stored energy:
-		state.V_mid_uV_n32 = (<uint64_t> config_struct.V_intermediate_init_uV) << 32u
-
-		# Buck Boost
-		state.enable_storage = (config_struct.converter_mode & 0b0001) > 0
-		state.enable_boost = (config_struct.converter_mode & 0b0010) > 0
-		state.enable_buck = (config_struct.converter_mode & 0b0100) > 0
-		state.enable_log_mid = (config_struct.converter_mode & 0b1000) > 0
-
-		state.V_out_dac_uV = config_struct.V_output_uV
-		state.V_out_dac_raw = hvirtual_converter.cal_conv_uV_to_dac_raw(config_struct.V_output_uV)
-		state.power_good = True
-
-		# prepare hysteresis-thresholds
-		state.dV_enable_output_uV_n32 = (<uint64_t> config_struct.dV_enable_output_uV) << 32u
-		state.V_enable_output_threshold_uV_n32 = (<uint64_t> config_struct.V_enable_output_threshold_uV) << 32u
-		state.V_disable_output_threshold_uV_n32 = (<uint64_t> config_struct.V_disable_output_threshold_uV) << 32u
-
-		if state.dV_enable_output_uV_n32 > state.V_enable_output_threshold_uV_n32:
-			state.V_enable_output_threshold_uV_n32 = state.dV_enable_output_uV_n32
 	
 	def converter_calc_inp_power(self, input_voltage_uV: int, input_current_nA: int): # Tracability Done.
 		return hvirtual_converter.converter_calc_inp_power(input_voltage_uV, input_current_nA)
@@ -95,8 +71,8 @@ cdef class VirtualConverter:
 		return hvirtual_converter.converter_update_cap_storage()
 		
 	#def converter_update_states_and_output(self, shared_mem):
-		#cdef hvirtual_converter.SharedMem* sharedMem_struct = <SharedMem*>shared_mem
-	#	return hvirtual_converter.converter_update_states_and_output(sharedMem_struct)
+
+	#	return hvirtual_converter.converter_update_states_and_output(&shared_mem)
 		
 	def get_V_intermediate_uV(self):
 		return hvirtual_converter.get_V_intermediate_uV()
