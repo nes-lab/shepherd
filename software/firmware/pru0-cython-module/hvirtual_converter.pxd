@@ -159,10 +159,15 @@ cdef extern from "commons.h":
 		bint                     vsource_batok_pin_value
 		bint                     vsource_skip_gpio_logging
 
+
+cdef extern from "math64_safe.h":	
+	cdef uint64_t mul64(uint64_t value1, uint64_t value2)
+	cdef uint64_t add64(uint64_t value1, uint64_t value2)
+	
+	
 cdef extern from "virtual_converter.h":
 
 	# Function declarations from virtual_converter.h
-	
 	cdef void converter_initialize(ConverterConfig *config)
 	cdef void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA)
 	cdef void converter_calc_out_power(uint32_t current_adc_raw)
@@ -170,7 +175,7 @@ cdef extern from "virtual_converter.h":
 	cdef void set_P_input_fW(uint32_t P_fW)
 	cdef void set_P_output_fW(uint32_t P_fW)
 	cdef void set_V_intermediate_uV(uint32_t C_uV)
-	#cdef void set_batok_pin(volatile struct SharedMem * shared_mem, bool_ft value)
+	cdef void set_batok_pin(SharedMem *shared_mem, bint value)
 
 	cdef uint32_t converter_update_states_and_output(SharedMem *shared_mem)
 	cdef uint64_t get_P_input_fW()
@@ -178,11 +183,8 @@ cdef extern from "virtual_converter.h":
 	cdef uint32_t get_V_intermediate_uV()
 	cdef uint32_t get_V_intermediate_raw()
 	cdef uint32_t get_I_mid_out_nA()
-	cdef uint32_t get_state_log_intermediate()
+	cdef bint get_state_log_intermediate()
 	cdef uint64_t div_uV_n4_wrapper(uint64_t power_fW_n4, uint32_t voltage_uV)
 	cdef uint32_t get_input_efficiency_n8_wrapper(uint32_t voltage_uV, uint32_t current_nA)
 	cdef uint32_t get_output_inv_efficiency_n4_wrapper(uint32_t current_nA)
 	
-cdef extern from "math64_safe.h":	
-	cdef uint64_t mul64(uint64_t value1, uint64_t value2)
-	cdef uint64_t add64(uint64_t value1, uint64_t value2)

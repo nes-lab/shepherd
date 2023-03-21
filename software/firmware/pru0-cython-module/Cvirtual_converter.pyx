@@ -48,7 +48,10 @@ This section looks like a regular Python function — because it just creates a 
 cdef class VirtualConverter:
 	def __init__(self):
 		pass
-		
+	
+	def div_uV_n4(self, power_fW_n4, voltage_uV): # Tracability Done.
+		return hvirtual_converter.div_uV_n4_wrapper(power_fW_n4, voltage_uV)
+	
 	def conv_initialize(self, config): # Tracability Done.
 		cdef hvirtual_converter.ConverterConfig config_struct
 		config_struct.interval_startup_delay_drain_n = config['interval_startup_delay_drain_n']
@@ -70,36 +73,46 @@ cdef class VirtualConverter:
 	def converter_update_cap_storage(self): # Tracability Done.
 		return hvirtual_converter.converter_update_cap_storage()
 		
-	#def converter_update_states_and_output(self, shared_mem):
-
-	#	return hvirtual_converter.converter_update_states_and_output(&shared_mem)
-		
-	def get_V_intermediate_uV(self):
-		return hvirtual_converter.get_V_intermediate_uV()
-	
-	def get_P_input_fW(self):
-		return hvirtual_converter.get_P_input_fW()
-		
-	def get_P_output_fW(self):
-		return hvirtual_converter.get_P_output_fW()
-		
-	def get_I_mid_out_nA(self):
-		return hvirtual_converter.get_I_mid_out_nA()
-	
-	def div_uV_n4(self, power_fW_n4, voltage_uV): # Tracability Done.
-		return hvirtual_converter.div_uV_n4_wrapper(power_fW_n4, voltage_uV)
+	#def converter_update_states_and_output(self):
+	#	cdef hvirtual_converter.SharedMem *shared_mem_ptr
+	#	return hvirtual_converter.converter_update_states_and_output(shared_mem_ptr)
 		
 	def get_input_efficiency_n8(self, voltage_uV, current_nA): # Tracability Done.	
 		return hvirtual_converter.get_input_efficiency_n8_wrapper(voltage_uV, current_nA)
 		
 	def get_output_inv_efficiency_n4(self, current_nA):	# Tracability Done.
 		return hvirtual_converter.get_output_inv_efficiency_n4_wrapper(current_nA)
-
-	def get_V_intermediate_raw(self):
-		return hvirtual_converter.get_V_intermediate_raw()
-
+	
+	def set_P_input_fW(self, P_fW):
+		return hvirtual_converter.set_P_input_fW(P_fW)
+		
+	def set_P_output_fW(self, P_fW):
+		return hvirtual_converter.set_P_output_fW(P_fW)
+	
 	def set_V_intermediate_uV(self, C_uV):
 		hvirtual_converter.set_V_intermediate_uV(C_uV)
+		
+	def get_P_input_fW(self):
+		return hvirtual_converter.get_P_input_fW()
+	
+	def get_P_output_fW(self):
+		return hvirtual_converter.get_P_output_fW()
+	
+	def get_V_intermediate_uV(self):
+		return hvirtual_converter.get_V_intermediate_uV()
+	
+	def get_V_intermediate_raw(self):
+		return hvirtual_converter.get_V_intermediate_raw()
+		
+	#def set_batok_pin(self, SharedMem *shared_mem, bint value):
+	#	return hvirtual_converter.set_batok_pin()
+		
+	def get_I_mid_out_nA(self):
+		return hvirtual_converter.get_I_mid_out_nA()
+	
+	def get_state_log_intermediate(self):
+		return hvirtual_converter.get_state_log_intermediate()
+		
 		
 	"""	Added from Calibration.c to debug testing.py	"""
 	def cal_conv_adc_raw_to_nA(self, current_raw):
@@ -110,6 +123,7 @@ cdef class VirtualConverter:
 	"""	Added from math64_safe.c to use in div_uV_n4	"""
 	def mul64(self, value1, value2):
 		return hvirtual_converter.mul64(value1, value2)
+		
 	"""	Added from math64_safe.c to use in converter_calc_out_power	"""
 	def add64(self, value1, value2):
 		return hvirtual_converter.add64(value1, value2)
