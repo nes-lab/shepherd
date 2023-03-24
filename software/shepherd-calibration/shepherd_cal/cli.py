@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from pathlib import Path
 from time import time
@@ -8,6 +9,7 @@ import click
 import numpy as np
 import yaml
 
+from . import __version__
 from .calibrator import INSTR_4WIRE
 from .calibrator import INSTR_CAL_EMU
 from .calibrator import INSTR_CAL_HRV
@@ -29,9 +31,15 @@ from .profiler import Profiler
     help="4 Levels",
 )
 @click.version_option()
+@click.pass_context
 # @click.pass_context
-def cli(verbose: int):
+def cli(ctx: click.Context, verbose: int):
     set_verbose_level(verbose)
+    logger.info("Shepherd-Cal v%s", __version__)
+    logger.debug("Python v%s", sys.version)
+    logger.debug("Click v%s", click.__version__)
+    if not ctx.invoked_subcommand:
+        click.echo("Please specify a valid command")
 
 
 # #############################################################################

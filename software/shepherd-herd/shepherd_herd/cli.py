@@ -9,6 +9,7 @@ import click_config_file
 import yaml
 from fabric import Connection
 
+from . import __version__
 from .herd import Herd
 from .herd import logger
 from .herd import set_verbose_level
@@ -58,7 +59,7 @@ def cli(
     user: Optional[str],
     key_filepath: Optional[Path],
     verbose: int,
-) -> click.Context:
+) -> click.Context:  # TODO: return type can be removed?!?
     """A primary set of options to configure how to interface the herd
 
     :param ctx:
@@ -70,6 +71,12 @@ def cli(
     :return:
     """
     set_verbose_level(verbose)
+    logger.info("Shepherd-Data v%s", __version__)
+    logger.debug("Python v%s", sys.version)
+    logger.debug("Click v%s", click.__version__)
+    if not ctx.invoked_subcommand:
+        click.echo("Please specify a valid command")
+
     ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
     return ctx  # calm linter
 

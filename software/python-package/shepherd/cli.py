@@ -24,6 +24,7 @@ import zerorpc
 from periphery import GPIO
 
 from . import ShepherdDebug
+from . import __version__
 from . import get_verbose_level
 from . import run_emulator
 from . import run_recorder
@@ -82,6 +83,12 @@ def cli(ctx: click.Context, verbose: int = 2):
     Returns:
     """
     set_verbose_level(verbose)
+    logger.info("Shepherd-Sheep v%s", __version__)
+    logger.debug("Python v%s", sys.version)
+    logger.debug("Click v%s", click.__version__)
+    if not ctx.invoked_subcommand:
+        click.echo("Please specify a valid command")
+
     # test for correct usage -> fail early!
     try:
         sysfs_interface.get_mode()
