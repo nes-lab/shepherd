@@ -23,14 +23,14 @@ By keeping this part of the hardware separate from the main shepherd cape, we al
 
 The harvesting capelet connects to the shepherd cape via three headers.
 Two headers connect directly on top the left half of the pins of the P8 and P9 headers on the BeagleBone.
-The third header is the custom, 4-pin (2x2) connection P6 between the capelet and the cape in the upper left part of the PCB.
+The third header is the custom, 4-pin (2×2) connection P6 between the capelet and the cape in the upper left part of the PCB.
 
 There are two reference harvesting capelets, one for solar harvesting (hardware/capelets/solar) and one for kinetic harvesting (hardware/capelets/kinetic).
 
 .. table:: Header P6 pinout
 
     ========== =========================================
-    Pin number Description
+    Pin        Description
     ========== =========================================
     1          (optional) custom voltage from spare DAC
     2          Ground
@@ -48,7 +48,7 @@ The target capelet connects to the shepherd cape via the dedicated headers P10 &
 .. table:: Header P10 / P11 pinout
 
     ========== ====================================================================================
-    Pin number Description (Rx/TX always with reference to BBone)
+    Pin        Description (Rx/TX always with reference to BBone)
     ========== ====================================================================================
     1          Ground
     2          Emulator-Output V_Target

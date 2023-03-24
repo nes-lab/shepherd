@@ -17,7 +17,7 @@ Each ``Shepherd Node`` produces:
 
 The datalib allows to plot parts of the ivsample-recording -> `CLI-Interface -> Plot IVSamples <https://github.com/orgua/shepherd-datalib#cli-interface>`_. Multiplots for several recordings are supported, as well as prior downsampling.
 
-There is a very basic implementation of a `viewer based on DPG <https://github.com/orgua/shepherd_v2_planning/blob/main/scratch/shepherd_dataview/viewer.py>`_. It is limited to one recording, only IVSamples and is not optimized at all. So recordings >60s are challenging because there is no downsampling depending on the zoom-levels.
+There is a basic implementation of a `viewer based on DPG <https://github.com/orgua/shepherd_v2_planning/blob/main/scratch/shepherd_dataview/viewer.py>`_. It is limited to one recording, only IVSamples and is not optimized at all. So recordings >60s are challenging because there is no downsampling depending on the zoom-levels.
 
 The Saleae Logic tool has an `open api <https://support.saleae.com/extensions/api-documentation>`_ and file format, but does only support gpio- and voltage-traces. Shepherd features also current-traces or derived power-traces.
 

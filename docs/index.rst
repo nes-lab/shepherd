@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root 'toctree' directive.
 
-Welcome to SHEPHERD's documentation!
+Welcome to SHEPHERD's documentation
 ====================================
 
 To learn how *shepherd* enables research into the most challenging problems of coordinating battery-less sensor nodes, take a look at our `paper <https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf>`_.

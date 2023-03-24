@@ -1,7 +1,7 @@
 VirtCap Internals (TODO - old)
 ====================
 
-The overall approach of VirtCap emulation is very similar to regular emulation.
+The overall approach of VirtCap emulation is similar to regular emulation.
 Main difference is that the output is not a dac voltage / current,
 but switching the LDO output on and off.
 The output switch should be connected to ``P8_11``.

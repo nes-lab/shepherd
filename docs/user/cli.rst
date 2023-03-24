@@ -43,4 +43,4 @@ shepherd-sheep
 Examples
 ********
 
-Coming soon...
+Coming soon …

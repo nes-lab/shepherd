@@ -11,7 +11,7 @@ Introduction
   - emulating that energy environment for a connected wireless node (target MCU)
 
 - focus is on the emulation part as this is most constrained
-- the PRUs are sampling an ADC, writing to a DAC and reading GPIO .... and calculating some real-time math (virtual power source)
+- the PRUs are sampling an ADC, writing to a DAC and reading GPIO … and calculating some real-time math (virtual power source)
 - the linux side is controlled by a python-program that has a direct memory interface to the PRUs -> that program supplies input data and collects the resulting measurement stream
 - (side-info) there is an optional second communication channel to a kernel module (python and PRU can each talk to that module) controlling most of the state-machine
 
@@ -42,7 +42,7 @@ Timings for reference (emulation, data from mid 2021):
 Goals
 -----
 
-- our goal is to remove overhead, bottle-necks and boost the performance mainly for the gpio sampling to reliable frequencies, hopefully in the range of 8 - 16 MHz
+- our goal is to remove overhead, bottle-necks and boost the performance mainly for the gpio sampling to reliable frequencies in the range of 8 - 16 MHz
 - the gpio sampling is currently varying from 840 kHz to 5.7 MHz with a mean of 2.2 MHz
 - the main point of attack will be
 
@@ -72,7 +72,7 @@ Known Constraints
   - currently the PRU reads the voltage- and current-value in two OPs (design-flaw)
 
 - PRUs have only 8 kB private RAM and 12 kB shared RAM (between the two PRUs)
-- there might be more ...
+- there might be more …
 
 Hardware Needed
 ---------------

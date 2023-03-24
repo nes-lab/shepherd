@@ -1,7 +1,7 @@
 GPS-Time-Synchronisation
 ========================
 
-The ultimate goal is to precisely synchronize all Linux system clocks in the network to global time obtained from a GPS receiver.
+The goal is to precisely synchronize all Linux system clocks in the network to global time obtained from a GPS receiver.
 Note how the following description traverses the clock hierarchy top-down starting with the GPS receiver down to the linux clock on the host node.
 
 
@@ -29,7 +29,7 @@ Configuring GNSS module
 -----------------------
 
 The u-blox GPS receiver can be configured to optimize its performance. To do this directly form the host node the python the python script: ``ubloxmsg_exchange`` was
-written (see https://github.com/kugelbit/ubx-packet-exchange). The configuration files can be found under ``config_files``.  To this end the following configurations were set:
+written (see https://github.com/kugelbit/ubx-packet-exchange). The configuration files can be found under ``config_files``. To this end the following configurations were set:
 
 - SBAS was disabled for better timing information
 - The stationary mode was enabled to get a better percussion and a stable performance
@@ -85,6 +85,6 @@ if you want to see what's going on you can run the services in DEBUG-Mode:
 
 Pitfalls
 --------
-- For a good result (fast and stable fixes) it is very import to provide a clear sky view to the gps-caplet.
+- For a good result (fast and stable fixes) it is import to provide a clear sky view to the gps-caplet.
 - The are lot of possible configuration options for the u-blox chip (see  SAM-M8Q Receiver Description) that may furthre optimize performance. For more research in this direction use the u-blox u-center software.
 - The currently used u-blox chip does not support the u-blox time mode. This mode can increase the timing accuracy (see u-blox M8 Receiver Description).

@@ -33,8 +33,8 @@ Therefore your network should have a DHCP server.
 Hardware setup
 --------------
 
-Stack the cape on top of the BeagleBone. The two 23x2 headers of the cape plug into the BeagleBone (P8 and P9).
-Stack the harvesting capelet on top of the shepherd cape. The capelet is left-aligned on the same 23x2, but using just two 11x2 headers. Pay attention to the 2x2 header P6 (on the cape) for the correct orientation.
+Stack the cape on top of the BeagleBone. The two 23×2 headers of the cape plug into the BeagleBone (P8 and P9).
+Stack the harvesting capelet on top of the shepherd cape. The capelet is left-aligned on the same 23×2, but using just two 11×2 headers. Pay attention to the 2×2 header P6 (on the cape) for the correct orientation.
 
 Stack the target capelet on top of the shepherd cape. The cape offers two ports P10 and P11 on the right side, also labeled as A & B.
 

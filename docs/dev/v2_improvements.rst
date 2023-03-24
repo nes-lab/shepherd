@@ -10,7 +10,7 @@ Shepherd is a testbed for the batteryless Internet of Things, allowing to record
 Previous description is still correct, in detail:
 
 - embedded linux board with analog frontend serves as a shepherd node
-- harvesting-circuit can record an energy trace from a energy-source like solar, thermoelectric, ...
+- harvesting-circuit can record an energy trace from a energy-source like solar, thermoelectric, …
 - emulation-circuit replays the energy-trace for a real target (user programmable uController) and records the drawn energy
 
 **Version 1** is build around a BQ25504-IC (plus capacitor) as harvester for recording and emulating various environments. This is a valid approach, but limited by design:
@@ -30,7 +30,7 @@ Virtual Source
    :width: 100.0%
    :alt: fully customizable power supply toolchain
 
-- full customization per config-parameters (e.g. boost-voltage, capacitor size, ...)
+- full customization per config-parameters (e.g. boost-voltage, capacitor size, …)
 
   - currently 10 parameters for the harvester, and
   - 29 parameters for the converter-stage
@@ -272,7 +272,7 @@ Virtual Source
 
 - enable minimum threshold voltage for input
 - disable maximum threshold for boost-output (intermediate voltage)
-- efficiency factor with 2D-LUT (12x12),
+- efficiency factor with 2D-LUT (12×12),
 
   - depending on input voltage & current
   - thresholds are configurable in 2^n steps
@@ -329,9 +329,9 @@ Pins to Target
 
 .. rubric:: Sampling frequency of gpio-monitor
 
-- legacy	   -> 160 kHz ... up to 1.5 ... 2.9 MHz
+- legacy	   -> 160 kHz … up to 1.5 … 2.9 MHz
 - intermediate -> relatively stable 4.03 MHz, min: 602 kHz, max: 4.55 MHz
-- current code ... tbd
+- current code … tbd
 
 .. rubric:: Electrical side
 
