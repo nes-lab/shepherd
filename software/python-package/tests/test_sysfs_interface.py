@@ -8,7 +8,7 @@ from shepherd import VirtualHarvesterConfig
 from shepherd import VirtualSourceConfig
 from shepherd import sysfs_interface
 from shepherd.calibration import CalibrationData
-from shepherd.virtual_source_config import flatten_dict_list
+from shepherd.virtual_source_config import flatten_list
 
 
 @pytest.fixture
@@ -171,11 +171,11 @@ def test_initial_virtsource_settings(shepherd_up):
         list(range(12 * 12)),
         list(range(12)),
     ]
-    values_1d = flatten_dict_list(vsource_settings)
+    values_1d = flatten_list(vsource_settings)
     assert sysfs_interface.read_virtual_converter_settings() == values_1d
 
 
 def test_writing_virtsource_settings(shepherd_up, virtsource_settings):
     sysfs_interface.write_virtual_converter_settings(virtsource_settings)
-    values_1d = flatten_dict_list(virtsource_settings)
+    values_1d = flatten_list(virtsource_settings)
     assert sysfs_interface.read_virtual_converter_settings() == values_1d
