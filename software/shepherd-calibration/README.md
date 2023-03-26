@@ -2,6 +2,14 @@
 
 *shepherd-cal* is the command line utility for calibrating and profiling a shepherd cape.
 
+---
+
+**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
+
+**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+
+---
+
 ## Installation
 
 *shepherd-cal* is a pure python package and currently NOT available on PyPI.

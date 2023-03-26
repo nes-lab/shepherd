@@ -1,11 +1,17 @@
+# Shepherd-Herd
 
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-# shepherd-herd
+*Shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
 
-*shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
+---
 
+**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
+
+**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+
+---
 
 ## Installation
 
@@ -31,7 +37,7 @@ This list of hosts is provided with the `-i` option, that takes either the path 
 
 For example, save the following file in your current working directory as an ansible style, YAML-formatted inventory file named `herd.yml`.
 
-```
+```yaml
 sheep:
   hosts:
     sheep0:

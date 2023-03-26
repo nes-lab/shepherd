@@ -16,7 +16,7 @@ pandas-stubs = "*"
 
 [packages]
 # NOTE: pip does not install these packages with as editable (-e), but pipenv does
-shepherd = {editable = true, path = "./software/python-package[test]"}
+shepherd = {editable = true, extras = ["test"], path = "./software/python-package"}
 shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
 shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
 sphinx = "*"
