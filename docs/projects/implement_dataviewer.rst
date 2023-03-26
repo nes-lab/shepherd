@@ -1,5 +1,7 @@
-Implementation of a Dataviewer for Shepherd-Recordings
-======================================================
+Dataviewer
+============
+
+*Implementation of a Dataviewer for Shepherd-Recordings*
 
 The Shepherd-Testbed produces voltage-, current and gpio-traces that can be post-processed by a `datalib <https://github.com/orgua/shepherd-datalib>`_. The datalib serves as a documentation for the internal h5-structure for shepherd as well as a tool for creating, reading and modifying the recordings. There is also some basic plotting implemented based on matplotlib, but a fast and responsive data-viewer would be extremely helpful as recordings can span over several days and may include up to 30 - 100 shepherd-nodes.
 

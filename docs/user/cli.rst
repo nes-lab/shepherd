@@ -23,7 +23,7 @@ Depending on your use-case you may not even need to directly interact with it!
 shepherd-herd
 -------------
 
-.. click:: shepherd_herd:cli
+.. click:: shepherd_herd.cli:cli
    :prog: shepherd-herd
    :show-nested:
 

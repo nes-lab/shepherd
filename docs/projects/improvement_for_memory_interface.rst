@@ -1,5 +1,7 @@
-Improvements for the Memory Interface between PRU and user space
-================================================================
+Memory Interface
+=================
+
+*Improvements for the Memory Interface between PRU and user space*
 
 Introduction
 ------------
@@ -33,9 +35,9 @@ Timings for reference (emulation, data from mid 2021):
 - ~ 8'000 ns for the virtual source calculations (worst case)
 - ~ 800 ns for buffer-swap (only every 100 ms)
 
-    - 400 ns prepare buffer
-    - 200 ns mutex-part / gpio-swap
-    - 200 ns send full buffer
+   - 400 ns prepare buffer
+   - 200 ns mutex-part / gpio-swap
+   - 200 ns send full buffer
 
 - 720 ns for writing to DAC
 

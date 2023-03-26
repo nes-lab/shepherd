@@ -11,13 +11,9 @@ To get a basic understanding of what shepherd does, read the :doc:`user/basics`.
 If you have the hardware on your desk and want to get started, read :doc:`user/getting_started`.
 To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd-cli` command line utility.
 
-
-User Guide
---------------
-
-
 .. toctree::
    :maxdepth: 2
+   :caption: User Guide
 
    user/basics
    user/getting_started
@@ -27,25 +23,23 @@ User Guide
    user/data_format
    user/api
    user/performance
-   user/virtcap
-
-Developer Guide
----------------------
+   user/virtual_source
 
 .. toctree::
    :maxdepth: 2
+   :caption: Developer Guide
 
    dev/contributing
    dev/data_handling
    dev/sysfs
    dev/gps_sync
-   dev/virtcap
-   dev/improvement_for_memory_interface.rst
+   dev/virtual_source
    dev/v2_improvements
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 2
+   :caption: Student-Projects
+
+   projects/implement_dataviewer.rst
+   projects/improvement_for_memory_interface.rst

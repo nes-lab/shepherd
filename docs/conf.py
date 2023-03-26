@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.realpath("../software/shepherd-herd"))
 # -- Project information -----------------------------------------------------
 
 project = "SHEPHERD"
-project_copyright = "2019-2022, Networked Embedded Systems Lab, TU Dresden"
-author = "Kai Geissdoerfer"
+project_copyright = "2019-2023, Networked Embedded Systems Lab, TU Dresden"
+author = "Kai Geissdoerfer, Ingmar Splitt"
 
 
 # -- General configuration ---------------------------------------------------
@@ -26,7 +26,13 @@ author = "Kai Geissdoerfer"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.napoleon", "sphinx_click.ext", "sphinx.ext.mathjax"]
+extensions = [
+    "sphinx.ext.napoleon",
+    "sphinx_click.ext",
+    "sphinx.ext.mathjax",
+    "sphinx_sitemap",
+    "sphinx_rtd_theme",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -40,9 +46,21 @@ autodoc_mock_imports = ["dbus"]
 
 # -- Options for HTML output -------------------------------------------------
 
+html_title = project
+html_collapsible_definitions = True
+html_copy_source = False
+
+html_permalinks_icon = "<span>#</span>"
+
+html_theme = "sphinx_rtd_theme"
+html_theme_options = {}
+github_url = "https://github.com/orgua/shepherd"
+
+html_baseurl = "https://orgua.github.io/shepherd/"
+html_extra_path = ["robots.txt"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_theme = "sphinx_rtd_theme"
+sitemap_url_scheme = "{link}"

@@ -1,5 +1,8 @@
-VirtCap Internals (TODO - old)
-====================
+Virtual Source Internals
+=========================
+
+.. warning::
+   This data is old! TODO: Update
 
 The overall approach of VirtCap emulation is similar to regular emulation.
 Main difference is that the output is not a dac voltage / current,
