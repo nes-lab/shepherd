@@ -7,6 +7,14 @@
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+---
+
+**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
+
+**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+
+---
+
 Batteryless sensor nodes depend on harvesting energy from their environment.
 Developing solutions involving groups of batteryless nodes requires a tool to analyze, understand and replicate spatio-temporal harvesting conditions.
 *shepherd* is a testbed for the batteryless Internet of Things, allowing to record harvesting conditions at multiple points in space over time.
