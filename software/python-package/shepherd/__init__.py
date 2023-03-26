@@ -78,10 +78,12 @@ class Recorder(ShepherdIO):
     shepherd. Configures all hardware and initializes the communication
     with kernel module and PRUs.
 
+    # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
+
     Args:
         shepherd_mode (str): Should be 'harvester' to record harvesting data
         harvester: name, path or object to a virtual harvester setting
-        # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
+
     """
 
     def __init__(
@@ -144,8 +146,7 @@ class Emulator(ShepherdIO):
 
     Args:
         shepherd_mode:
-        initial_buffers: recorded data
-            TODO: initial_ is not the best name, is this a yield/generator?
+        initial_buffers: recorded data,
         calibration_recording (CalibrationData): Shepherd calibration data
             belonging to the IV data that is being emulated
         calibration_emulator (CalibrationData): Shepherd calibration data
