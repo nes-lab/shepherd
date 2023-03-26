@@ -12,16 +12,17 @@ pre-commit = "*"
 build = "*"
 coverage = "*"
 pyright = "*"
-pandas-stubs = "*"
+pandas-stubs = "*"  # for pyright
 
 [packages]
-# NOTE: pip does not install these packages with as editable (-e), but pipenv does
+# NOTE: pip fails installing these packages as editable (-e), but pipenv needs it
 shepherd = {editable = true, extras = ["test"], path = "./software/python-package"}
 shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
 shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
+sphinx-sitemap = "*"
 matplotlib = "*"
 pandas = "*"
 keithley2600 = "*"
@@ -31,8 +32,6 @@ fabric = "*"
 pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
-#schemdraw = "*"
-pandas-stubs = "*"
 
 [pipenv]
 allow_prereleases = false
