@@ -16,9 +16,9 @@ pandas-stubs = "*"  # for pyright
 
 [packages]
 # NOTE: pip fails installing these packages as editable (-e), but pipenv needs it
-shepherd = {editable = true, extras = ["test"], path = "./software/python-package"}
-shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
-shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
+shepherd = {editable = true, extras = ["dev", "test"], path = "./software/python-package"}
+shepherd-herd = {editable = true, extras = ["dev", "test"], path = "./software/shepherd-herd"}
+shepherd-cal = {editable = true, extras = ["dev"], path = "./software/shepherd-calibration"}
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
