@@ -135,4 +135,4 @@
 #define P9_42B(mode)                  AM33XX_IOPAD(0x09a0, mode) /* B12: mcasp0_aclkr */
 #define P9_92(mode)                   AM33XX_IOPAD(0x09a0, mode) /* B12: mcasp0_aclkr */
 
-#endif //PRU1_AM335X_PINCTRL_H
+#endif                                                           //PRU1_AM335X_PINCTRL_H

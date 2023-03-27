@@ -90,9 +90,9 @@ static inline uint32_t sample_hrv_ADCs(struct SampleBuffer *const buffer, const 
 uint32_t sample(volatile struct SharedMem *const shared_mem,
                 struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
 {
-    switch (mode) // reordered to prioritize longer routines
+    switch (mode)            // reordered to prioritize longer routines
     {
-        case MODE_EMULATOR: // ~ ## ns, TODO: test timing for new revision
+        case MODE_EMULATOR:  // ~ ## ns, TODO: test timing for new revision
             return sample_emulator(shared_mem, current_buffer_far);
         case MODE_HARVESTER: // ~ ## ns
             return sample_adc_harvester(current_buffer_far, shared_mem->analog_sample_counter);
