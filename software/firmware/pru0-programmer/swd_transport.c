@@ -89,7 +89,7 @@ static int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8
 }
 
 /* Writes a word during host to target phase of SWD transfer */
-static int data_write(uint32_t *const data)
+static int data_write(const uint32_t *const data)
 {
     int parity_cnt = 0;
     for (int i = 0; i < TP_TCV_WIDTH; i++)
@@ -107,7 +107,7 @@ static int data_write(uint32_t *const data)
 }
 
 /* Reads a word during target to host phase of SWD transfer */
-static int data_read(uint32_t *data)
+static int data_read(uint32_t *const data)
 {
     int parity_cnt = 0;
     *data          = 0;
@@ -133,7 +133,7 @@ static int data_read(uint32_t *data)
  *
  * @returns result of transfer in terms of SWD acknowledgment
  */
-static int transceive(swd_header_t *const header, uint32_t *data)
+static int transceive(const swd_header_t *const header, uint32_t *const data)
 {
     int i;
     int rc;
@@ -162,7 +162,7 @@ static int transceive(swd_header_t *const header, uint32_t *data)
     return rc;
 }
 
-int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int retries)
+int transport_read(uint32_t *const dst, swd_port_t port, uint8_t addr, unsigned int retries)
 {
     int rc;
     header_init(&hdr, port, SWD_RW_R, addr);

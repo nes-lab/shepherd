@@ -229,7 +229,7 @@ class SharedMem:
                 f"CANARY of SampleBuffer was harmed! Is 0x{canary1:X}, expected 0x0F0F0F0F",
             )
 
-        # sanity-check of received timestamp,
+        # verify received timestamp,
         # TODO: python knows the desired duration between timestamps
         if self.prev_timestamp > 0:
             diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6

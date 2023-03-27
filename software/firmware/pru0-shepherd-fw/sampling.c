@@ -149,7 +149,7 @@ static void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
     __delay_cycles(12);
 
     /* (redundant) GAIN=2 for DAC-B and GAIN=2 for DAC-A (see DAC8562T datasheet Table 17) */
-    dac_write(cs_pin, (0x2u << DAC_ADDR_OFFSET) | (0U << 0U));
+    dac_write(cs_pin, 0x2u << DAC_ADDR_OFFSET); // | (0U << 0U)
     __delay_cycles(12);
 
     /* LDAC pin inactive for DAC-B and DAC-A -> synchronous mode / update on 24th clk cycle (see DAC8562T datasheet Table 17) */
