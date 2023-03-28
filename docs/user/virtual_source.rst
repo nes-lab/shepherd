@@ -6,7 +6,7 @@ Virtual Source
 ==============
 
 .. warning::
-   This data is old! TODO: Update
+   This information is old. The current implementation is more complex.
 
 Emulator
 ---------

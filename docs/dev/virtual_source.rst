@@ -2,7 +2,7 @@ Virtual Source Internals
 =========================
 
 .. warning::
-   This data is old! TODO: Update
+   This information is old. The current implementation is more complex.
 
 The overall approach of VirtCap emulation is similar to regular emulation.
 Main difference is that the output is not a dac voltage / current,

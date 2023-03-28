@@ -74,7 +74,6 @@ Clone the shepherd repository to your machine:
 Add an inventory file in the ``inventory`` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
 Just start by editing the provided ``inventory/herd.yml`` example.
 Pick a username that you want to use to login to the nodes and assign as ``ansible_user`` variable.
-[**TODO:** update description with roles].
 
 .. code-block:: yaml
 
@@ -88,6 +87,18 @@ Pick a username that you want to use to login to the nodes and assign as ``ansib
           ansible_host: 192.168.1.102
       vars:
         ansible_user: jane
+      ptp_servers:
+        hosts:
+          sheep:
+      ptp_clients:
+        hosts:
+          sheep[2:30]:
+
+.. note::
+    Deployment supports roles that can be assigned directly in ``herd.yml``.
+    The example above shows how to use them exemplary by setting up ``sheep0`` as a PTP-Server (``ptp_servers``) and the remaining nodes as Clients (``ptp_clients``).
+    Additional roles are called ``ntp_clients``, ``gps_clients`` and ``secured``. The last one is used to reduce the attack surface when used in a testbed by removing default accounts, open ports and other listeners.
+
 
 We'll use `Ansible <https://www.ansible.com/>`_ to roll out a basic configuration to the nodes.
 This includes setting the hostname, adding the user, allowing password-less ssh access and sudo without password.

@@ -16,7 +16,7 @@
 
 ### Overflow - help from dinuxbg
 
-Raising [this issue](https://github.com/dinuxbg/gnupru/issues/43) helped a lot!
+Raising [this issue](https://github.com/dinuxbg/gnupru/issues/43) helped a lot.
 
 - compiling code with `uint32`-only (replaced `uint64`) works!
 - compiling u32 with `-fno-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
@@ -168,7 +168,7 @@ change target in makefile
 	- removing `inline` from our codebase brings overflow back to 2672 bytes
 	- that is strange!
 
-- direct compare the biggest FNs
+- direct compare of the biggest FNs
   - u64-heavy Fns grow by factor 1.6 to 2.4
 
 ```

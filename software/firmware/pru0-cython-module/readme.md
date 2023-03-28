@@ -52,13 +52,13 @@ done:
 - implemented some compile-constants alter behavior of c-code (no hw-dependency)
 - used established folder-structure ... this code can now live in shepherd/software/firmware/pru0-cython-module
 - switched to cython-prerelease to allow "volatile" (pipenv usage)
-- use py3 code in cython -> language_level=... in .pyx file
+- use py3 code in cython -> language_level=… in .pyx file
 - more detailed / explicit cython-config in setup.py
 - some more FNs uncommented (/activated) in .pyx/pxd
 - changed import in pyx-file to "cimport hvirtual_converter" to allow py-FNs with same name as c-FNs
-  - are same names wanted??? this change was just a guess
+  - are same names wanted? this change was just a guess
 - wrote a readme to help using the code
-- ... lib compiles
+- … lib compiles
 
 - Fixed the earlier issues with testing.py:
 	- added few cdefs[from "calibration.h", "math64_safe.h"]
@@ -68,7 +68,6 @@ done:
 - Fixed issues with structure by:
 	- adding cdefs
 	- introducing class to handle it as a python object
-	- see second point in todo
 
 - made setup.py more modular and explicit
 - transformed .pyx-file into class -> still without data-transformations
