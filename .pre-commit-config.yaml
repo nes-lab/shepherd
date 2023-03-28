@@ -35,7 +35,8 @@ repos:
     rev: v0.12.1
     hooks:
       - id: validate-pyproject
-        args: ["./software/python-package/pyproject.toml"]
+        # files: "./software/python-package/pyproject.toml"
+
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -102,13 +103,19 @@ repos:
         files: \.(yaml|yml)$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.2"
+    rev: "v2.2.4"
     hooks:
       - id: codespell
         exclude: \.(sch|brd|lbr)$
 
+  - repo: https://github.com/amperser/proselint
+    rev: '0.13.0'
+    hooks:
+      - id: proselint
+        types_or: ["markdown", "rst"]
+
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: 'v15.0.7'
+    rev: 'v16.0.0'
     hooks:
       - id: clang-format
         types_or: [c++, c]
@@ -160,12 +167,6 @@ repos:
 #    hooks:
 #      - id: ruff
 #        args: ["--fix", "--exit-non-zero-on-fix"]
-
-#  - repo: https://github.com/amperser/proselint
-#    rev: '0.13.0'
-#    hooks:
-#      - id: proselint
-#        args: ["docs/user/* docs/dev/* docs/projects/*"]
 
 # default_language_version:
 #    python: python3.8
