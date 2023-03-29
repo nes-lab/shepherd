@@ -18,7 +18,7 @@ typedef enum
     DRV_ERR_PROTECTED = 1,
 } drv_err_t;
 
-typedef int (*fn_open_t)(uint8_t, uint8_t, uint32_t);
+typedef int (*fn_open_t)(uint8_t, uint8_t, uint8_t, uint32_t);
 typedef int (*fn_erase_t)(void);
 typedef int (*fn_read_t)(uint32_t *dst, uint32_t address);
 typedef int (*fn_write_t)(uint32_t address, uint32_t data);

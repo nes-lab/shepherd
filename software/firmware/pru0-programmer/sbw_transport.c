@@ -100,6 +100,7 @@ static gpio_state_t tdo_rd(void)
 {
     gpio_state_t res;
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
+    sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
     __delay_var_cycles(clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
@@ -107,6 +108,7 @@ static gpio_state_t tdo_rd(void)
     __delay_var_cycles(clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
+    sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_OUT);
 
     return res;
@@ -115,11 +117,13 @@ static gpio_state_t tdo_rd(void)
 static void tdo_sbw(void)
 {
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
+    sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
     __delay_var_cycles(clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
+    sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_OUT);
 }
 
@@ -211,6 +215,7 @@ gpio_state_t get_tclk(void) { return tclk_state; }
 int          sbw_transport_disconnect(void)
 {
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
+    sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
     sys_gpio_cfg_dir(pins.sbw_tck, GPIO_DIR_IN);
 
     tclk_state = GPIO_STATE_LOW;
@@ -219,8 +224,12 @@ int          sbw_transport_disconnect(void)
 
 int sbw_transport_connect(void)
 {
+    sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
+    sys_gpio_cfg_dir(pins.sbw_dir, GPIO_DIR_OUT);
+
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_OUT);
+
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
     sys_gpio_cfg_dir(pins.sbw_tck, GPIO_DIR_OUT);
 
@@ -228,10 +237,11 @@ int sbw_transport_connect(void)
     return 0;
 }
 
-int sbw_transport_init(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint32_t f_clk)
+int sbw_transport_init(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint8_t pin_sbw_dir, const uint32_t f_clk)
 {
     pins.sbw_tck     = pin_sbw_tck;
     pins.sbw_tdio    = pin_sbw_tdio;
+    pins.sbw_dir     = pin_sbw_dir;
 
     /*
 	 * Ignore the f_clk parameter and make sure that clock frequency is around 500k. This number is taken from

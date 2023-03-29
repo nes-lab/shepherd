@@ -63,9 +63,8 @@ void programmer(volatile struct SharedMem *const    shared_mem,
         pc->state = PRG_STATE_ERR_GENERIC;
         goto exit;
     }
-    // TODO: pc->pin_dir_tdio needs to be handled in each driver
 
-    if (drv->open(pc->pin_tck, pc->pin_tdio, pc->datarate) != DRV_ERR_OK)
+    if (drv->open(pc->pin_tck, pc->pin_tdio, pc->pin_dir_tdio, pc->datarate) != DRV_ERR_OK)
     {
         pc->state = PRG_STATE_ERR_OPEN;
         goto exit;

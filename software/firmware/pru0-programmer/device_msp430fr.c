@@ -522,14 +522,15 @@ static int close()
  *
  * @param pin_swdclk pin number for SBWTCK signal. Note: Only supports pins of GPIO port 0.
  * @param pin_swdio pin number for SBWTDIO signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swdio pin number for direction signal for TDIO. Note: Only supports pins of GPIO port 0.
  * @param f_clk frequency of SBWTCK signal
  *
  * @returns DRV_ERR_OK on success
  */
-static int open(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint32_t f_clk)
+static int open(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint8_t pin_sbw_dir, const uint32_t f_clk)
 {
     dev_dsc_t dsc;
-    sbw_transport_init(pin_sbw_tck, pin_sbw_tdio, f_clk);
+    sbw_transport_init(pin_sbw_tck, pin_sbw_tdio, pin_sbw_dir, f_clk);
     sbw_transport_connect();
 
     if (GetDevice_430Xv2(&dsc) != SC_ERR_NONE) return DRV_ERR_GENERIC;

@@ -171,16 +171,17 @@ static int verify(uint32_t address, uint32_t data)
  *
  * @param pin_swd_clk pin number for SWDCLK signal. Note: Only supports pins of GPIO port 0.
  * @param pin_swd_io pin number for SWDIO signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swd_dir pin number for direction signal for SWD_IO. Note: Only supports pins of GPIO port 0.
  * @param f_clk frequency of SWDCLK signal
  *
  * @returns DRV_ERR_OK on success
  */
-static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint32_t f_clk)
+static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint8_t pin_swd_dir, const uint32_t f_clk)
 {
     uint32_t data;
 
-    if (transport_init(pin_swd_clk, pin_swd_io, f_clk)) return DRV_ERR_GENERIC;
-    if (transport_reset()) return DRV_ERR_GENERIC;
+    if (swd_transport_init(pin_swd_clk, pin_swd_io, pin_swd_dir, f_clk)) return DRV_ERR_GENERIC;
+    if (swd_transport_reset()) return DRV_ERR_GENERIC;
     /* Dummy read */
     if (dp_read(&data, DP_REG_DPIDR)) return DRV_ERR_GENERIC;
 
@@ -196,7 +197,7 @@ static int close(void)
     nvm_wp_enable();
     dev_continue();
     ap_exit();
-    transport_release();
+    swd_transport_release();
     return DRV_ERR_OK;
 }
 
