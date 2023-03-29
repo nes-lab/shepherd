@@ -1,27 +1,27 @@
 #include "intelhex.h"
 
 static char        *fptr;
-static unsigned int reader_addr;
+static uint32_t reader_addr;
 
 typedef enum
 {
-    IHEX_REC_TYPE_DATA  = 0,
-    IHEX_REC_TYPE_EOF   = 1,
-    IHEX_REC_TYPE_ESAR  = 2,
-    IHEX_REC_TYPE_START = 3,
-    IHEX_REC_TYPE_ELAR  = 4,
-    IHEX_REC_TYPE_SLAR  = 5
+    IHEX_REC_TYPE_DATA  = 0u,
+    IHEX_REC_TYPE_EOF   = 1u,
+    IHEX_REC_TYPE_ESAR  = 2u,
+    IHEX_REC_TYPE_START = 3u,
+    IHEX_REC_TYPE_ELAR  = 4u,
+    IHEX_REC_TYPE_SLAR  = 5u
 } ihex_rec_type_t;
 
 enum ihex_error
 {
-    IHEX_ERR_OK       = 0,
-    IHEX_ERR_START    = 1,
-    IHEX_ERR_CHECKSUM = 2,
-    IHEX_ERR_END      = 3
+    IHEX_ERR_OK       = 0u,
+    IHEX_ERR_START    = 1u,
+    IHEX_ERR_CHECKSUM = 2u,
+    IHEX_ERR_END      = 3u
 };
 
-static inline void         ihex_init(char *file_mem) { fptr = file_mem; }
+static inline void         ihex_init(char *const file_mem) { fptr = file_mem; }
 
 /* converts ascii-encoded hex value to number */
 static inline unsigned int x2u(char x)
@@ -40,7 +40,7 @@ static inline uint8_t read_byte(char **ptr)
 }
 
 /* reads a single record from ihex file in memory */
-static int ihex_get_rec(ihex_rec_t *rec)
+static int ihex_get_rec(ihex_rec_t *const rec)
 {
     unsigned int i;
 
@@ -80,7 +80,7 @@ static int ihex_get_rec(ihex_rec_t *rec)
     else return -IHEX_ERR_END;
 }
 
-int ihex_reader_init(char *file_mem)
+int ihex_reader_init(char *const file_mem)
 {
     ihex_init(file_mem);
     reader_addr = 0;
@@ -88,7 +88,7 @@ int ihex_reader_init(char *file_mem)
 }
 
 /* consecutive calls read data from hexfile block by block */
-ihex_ret_t ihex_reader_get(ihex_mem_block_t *block)
+ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
 {
     int               rc;
     static ihex_rec_t rec;
@@ -105,7 +105,7 @@ ihex_ret_t ihex_reader_get(ihex_mem_block_t *block)
         }
         else if (rec.type == IHEX_REC_TYPE_ESAR)
         {
-            unsigned int segment = ((unsigned int) rec.data[0] << 4) + rec.data[1];
+            unsigned int segment = ((unsigned int) rec.data[0] << 4u) + rec.data[1];
             reader_addr += segment;
         }
         else if (rec.type == IHEX_REC_TYPE_EOF) { return IHEX_RET_DONE; }

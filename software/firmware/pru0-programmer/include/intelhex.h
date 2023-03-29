@@ -5,9 +5,9 @@
 
 typedef struct
 {
-    unsigned int len;
-    unsigned int address;
-    unsigned int type;
+    uint32_t len;
+    uint32_t address;
+    uint32_t type;
     uint8_t      data[256];
 } ihex_rec_t;
 
@@ -20,7 +20,7 @@ typedef enum
 typedef struct
 {
     uint32_t     address;
-    unsigned int len;
+    uint32_t len;
     uint8_t     *data;
 } ihex_mem_block_t;
 

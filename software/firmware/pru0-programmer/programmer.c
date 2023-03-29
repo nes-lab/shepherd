@@ -17,9 +17,9 @@ int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
     uint32_t     dst     = block->address;
 
     /* Number of words in this block */
-    unsigned int n_words = block->len / drv->word_width_bytes;
+    uint32_t n_words = block->len / drv->word_width_bytes;
 
-    for (unsigned int i = 0; i < n_words; i++)
+    for (uint32_t i = 0; i < n_words; i++)
     {
         uint32_t data = *((uint32_t *) src);
         if (drv->write(dst, data) != DRV_ERR_OK) return PRG_STATE_ERR_WRITE;

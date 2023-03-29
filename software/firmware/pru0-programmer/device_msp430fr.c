@@ -47,17 +47,17 @@
 #include "sbw_transport.h"
 
 #define ACTIVATE_MAGIC_PATTERN
-#define DISABLE_JTAG_SIGNATURE_WRITE 1
-#define MAX_ENTRY_TRY                7
+#define DISABLE_JTAG_SIGNATURE_WRITE (1u)
+#define MAX_ENTRY_TRY                (7u)
 
-#define FR4xx_LOCKREGISTER           0x160
-#define SAFE_FRAM_PC                 0x0004
+#define FR4xx_LOCKREGISTER           (0x160)
+#define SAFE_FRAM_PC                 (0x0004)
 
-#define FRAM_LOW                     0xC400
-#define FRAM_HIGH                    0xFFFF
+#define FRAM_LOW                     (0xC400)
+#define FRAM_HIGH                    (0xFFFF)
 
-#define JTAG_SIGNATURE_LOW           0xFF80
-#define JTAG_SIGNATURE_HIGH          0xFF88
+#define JTAG_SIGNATURE_LOW           (0xFF80)
+#define JTAG_SIGNATURE_HIGH          (0xFF88)
 
 typedef struct
 {
@@ -70,21 +70,21 @@ typedef struct
 /**
  * Loads a given address into the target CPU's program counter (PC).
  *
- * @param Addr destination address
+ * @param addr destination address
  *
  */
-static void SetPC_430Xv2(uint32_t Addr)
+static void SetPC_430Xv2(const uint32_t addr)
 {
     uint16_t Mova;
     uint16_t Pc_l;
 
     Mova = 0x0080;
-    Mova += (uint16_t) ((Addr >> 8) & 0x00000F00);
-    Pc_l = (uint16_t) ((Addr & 0xFFFF));
+    Mova += (uint16_t) ((addr >> 8u) & 0x00000F00);
+    Pc_l = (uint16_t) ((addr & 0xFFFF));
 
     // Check Full-Emulation-State at the beginning
     IR_Shift(IR_CNTRL_SIG_CAPTURE);
-    if (DR_Shift16(0) & 0x0301)
+    if (DR_Shift16(0u) & 0x0301)
     {
         // MOVA #imm20, PC
         clr_tclk_sbw();
@@ -113,11 +113,11 @@ static void SetPC_430Xv2(uint32_t Addr)
 /**
  * Writes one byte/uint16_t at a given address ( <0xA00)
  *
- * @param Format F_BYTE or F_WORD
- * @param Addr Address of data to be written
- * @param Data Data to be written
+ * @param format F_BYTE or F_WORD
+ * @param addr Address of data to be written
+ * @param data data to be written
  */
-static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
+static int WriteMem_430Xv2(const uint16_t format, uint32_t addr, uint16_t data)
 {
     // Check Init State at the beginning
     IR_Shift(IR_CNTRL_SIG_CAPTURE);
@@ -125,15 +125,15 @@ static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
 
     clr_tclk_sbw();
     IR_Shift(IR_CNTRL_SIG_16BIT);
-    if (Format == F_WORD) { DR_Shift16(0x0500); }
+    if (format == F_WORD) { DR_Shift16(0x0500); }
     else { DR_Shift16(0x0510); }
     IR_Shift(IR_ADDR_16BIT);
-    DR_Shift20(Addr);
+    DR_Shift20(addr);
 
     set_tclk_sbw();
     // New style: Only apply data during clock high phase
     IR_Shift(IR_DATA_TO_ADDR);
-    DR_Shift16(Data); // Shift in 16 bits
+    DR_Shift16(data); // Shift in 16 bits
     clr_tclk_sbw();
     IR_Shift(IR_CNTRL_SIG_16BIT);
     DR_Shift16(0x0501);
@@ -149,12 +149,12 @@ static int WriteMem_430Xv2(uint16_t Format, uint32_t Addr, uint16_t Data)
 /**
  * Reads one byte/word from a given address in memory
  *
- * @param Format F_BYTE or F_WORD
- * @param Addr Address of data to be written
+ * @param format F_BYTE or F_WORD
+ * @param addr Address of data to be written
  *
  * @returns Data from device
  */
-uint16_t ReadMem_430Xv2(uint16_t Format, uint32_t Addr)
+uint16_t ReadMem_430Xv2(const uint16_t format, uint32_t addr)
 {
     uint16_t TDOword = 0;
     delay_ms(1);
@@ -165,7 +165,7 @@ uint16_t ReadMem_430Xv2(uint16_t Format, uint32_t Addr)
         // Read Memory
         clr_tclk_sbw();
         IR_Shift(IR_CNTRL_SIG_16BIT);
-        if (Format == F_WORD)
+        if (format == F_WORD)
         {
             DR_Shift16(0x0501); // Set uint16_t read
         }
@@ -174,7 +174,7 @@ uint16_t ReadMem_430Xv2(uint16_t Format, uint32_t Addr)
             DR_Shift16(0x0511); // Set byte read
         }
         IR_Shift(IR_ADDR_16BIT);
-        DR_Shift20(Addr); // Set address
+        DR_Shift20(addr); // Set address
         IR_Shift(IR_DATA_TO_ADDR);
         set_tclk_sbw();
         clr_tclk_sbw();
@@ -265,7 +265,7 @@ static int ExecutePOR_430Xv2(void)
  */
 static int SyncJtag_AssertPor(void)
 {
-    int i = 0;
+    uint8_t i = 0u;
 
     IR_Shift(IR_CNTRL_SIG_16BIT);
     DR_Shift16(0x1501); // Set device into JTAG mode + read
@@ -277,9 +277,9 @@ static int SyncJtag_AssertPor(void)
         return (SC_ERR_GENERIC);
     }
     // wait for sync
-    while (!(DR_Shift16(0) & 0x0200) && i < 50) { i++; };
+    while (!(DR_Shift16(0) & 0x0200) && i < 50u) { i++; };
     // continues if sync was successful
-    if (i >= 50) { return (SC_ERR_GENERIC); }
+    if (i >= 50u) { return (SC_ERR_GENERIC); }
     // execute a Power-On-Reset
     if (ExecutePOR_430Xv2() != SC_ERR_NONE) { return (SC_ERR_GENERIC); }
 
@@ -296,8 +296,8 @@ static int SyncJtag_AssertPor(void)
 static int GetJtagID(uint16_t *jtag_id)
 {
     // uint16_t JtagId = 0;  //initialize JtagId with an invalid value
-    int i;
-    for (i = 0; i < MAX_ENTRY_TRY; i++)
+    uint8_t i;
+    for (i = 0u; i < MAX_ENTRY_TRY; i++)
     {
         // release JTAG/TEST signals to safely reset the test logic
         StopJtag();
@@ -324,7 +324,7 @@ static int GetJtagID(uint16_t *jtag_id)
     {
         // if connected device is MSP4305438 JTAG Mailbox is not usable
 #ifdef ACTIVATE_MAGIC_PATTERN
-        for (i = 0; i < MAX_ENTRY_TRY; i++)
+        for (i = 0u; i < MAX_ENTRY_TRY; i++)
         {
             // if no JTAG ID is returns -> apply magic pattern to stop user cd
             // execution
@@ -358,7 +358,7 @@ static int GetJtagID(uint16_t *jtag_id)
  *
  * @returns STATUS_OK if correct JTAG ID was returned, STATUS_ERROR otherwise
  */
-static int GetCoreipIdXv2(uint16_t *core_id, uint32_t *device_id_ptr)
+static int GetCoreipIdXv2(uint16_t *const core_id, uint32_t *const device_id_ptr)
 {
     IR_Shift(IR_COREIP_ID);
     *core_id = DR_Shift16(0);
@@ -377,7 +377,7 @@ static int GetCoreipIdXv2(uint16_t *core_id, uint32_t *device_id_ptr)
  *
  * @returns SC_ERR_GENERIC if fuse is blown, incorrect JTAG ID or synchronizing time-out; SC_ERR_NONE otherwise
  */
-static int GetDevice_430Xv2(dev_dsc_t *dsc)
+static int GetDevice_430Xv2(dev_dsc_t *const dsc)
 {
     if (GetJtagID(&dsc->jtag_id) != SC_ERR_NONE) { return SC_ERR_GENERIC; }
     if (IsLockKeyProgrammed() != SC_ERR_NONE) // Stop here if fuse is already blown
@@ -399,12 +399,12 @@ static int GetDevice_430Xv2(dev_dsc_t *dsc)
 /**
  * Release the target device from JTAG control
  *
- * @param Addr 0xFFFE: Perform Reset, means Load Reset Vector into PC, otherwise: Load Addr into PC
+ * @param addr 0xFFFE: Perform Reset, means Load Reset Vector into PC, otherwise: Load addr into PC
  */
-static int ReleaseDevice_430Xv2(uint32_t Addr)
+static int ReleaseDevice_430Xv2(const uint32_t addr)
 {
     uint16_t shiftResult = 0;
-    switch (Addr)
+    switch (addr)
     {
         case V_BOR:
 
@@ -426,7 +426,7 @@ static int ReleaseDevice_430Xv2(uint32_t Addr)
 
         default:
 
-            SetPC_430Xv2(Addr); // Set target CPU's PC
+            SetPC_430Xv2(addr); // Set target CPU's PC
             // prepare release & release
             set_tclk_sbw();
             IR_Shift(IR_CNTRL_SIG_16BIT);
@@ -469,22 +469,22 @@ static int DisableMpu_430Xv2(void)
         MPUCTL0             = ReadMem_430Xv2(F_WORD, 0x05A0);
 
         // check MPUENA bit: if MPU is not enabled just return no error
-        if ((MPUCTL0 & 0x1) == 0) { return (SC_ERR_NONE); }
+        if ((MPUCTL0 & 0x1u) == 0u) { return (SC_ERR_NONE); }
         // check MPULOCK bit: if MPULOCK is set write access to all MPU
         // registers is disabled until a POR/BOR occurs
-        if ((MPUCTL0 & 0x3) != 0x1)
+        if ((MPUCTL0 & 0x3u) != 0x1u)
         {
             // feed in magic pattern to stop code execution after BOR
             if (i_WriteJmbIn16(STOP_DEVICE) == SC_ERR_GENERIC) { return (SC_ERR_GENERIC); }
             // Apply BOR to reset the device
             set_sbwtck(GPIO_STATE_HIGH);
-            delay_ms(20);
+            delay_ms(20u);
             set_sbwtck(GPIO_STATE_LOW);
 
             set_sbwtdio(GPIO_STATE_HIGH);
-            delay_ms(20);
+            delay_ms(20u);
             set_sbwtdio(GPIO_STATE_LOW);
-            delay_ms(20);
+            delay_ms(20u);
 
             // connect to device again, apply entry sequence
             ConnectJTAG();
@@ -504,7 +504,7 @@ static int DisableMpu_430Xv2(void)
 
         MPUCTL0 = ReadMem_430Xv2(F_WORD, 0x05A0);
         // now check if MPU is disabled
-        if ((MPUCTL0 & 0x1) == 0) { return SC_ERR_NONE; }
+        if ((MPUCTL0 & 0x1u) == 0u) { return SC_ERR_NONE; }
         return SC_ERR_GENERIC;
     }
 }
@@ -526,10 +526,10 @@ static int close()
  *
  * @returns DRV_ERR_OK on success
  */
-static int open(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsigned int f_clk)
+static int open(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint32_t f_clk)
 {
     dev_dsc_t dsc;
-    sbw_transport_init(pin_sbwtck, pin_sbwtdio, f_clk);
+    sbw_transport_init(pin_sbw_tck, pin_sbw_tdio, f_clk);
     sbw_transport_connect();
 
     if (GetDevice_430Xv2(&dsc) != SC_ERR_NONE) return DRV_ERR_GENERIC;
@@ -570,7 +570,7 @@ static int write(uint32_t address, uint32_t data)
  * @param dst pointer to destination
  * @param addr target memory address
  */
-static int read(uint32_t *dst, uint32_t address)
+static int read(uint32_t *const dst, uint32_t address)
 {
     *dst = (uint32_t) ReadMem_430Xv2(F_WORD, (uint16_t) address);
     return DRV_ERR_OK;
@@ -582,7 +582,7 @@ static int read(uint32_t *dst, uint32_t address)
  * @param addr target memory address
  * @param data expected memory content
  */
-static int verify(uint32_t address, uint32_t data)
+static int verify(uint32_t address, const uint32_t data)
 {
     uint16_t read_back = ReadMem_430Xv2(F_WORD, (uint16_t) address);
 
@@ -594,7 +594,7 @@ static int verify(uint32_t address, uint32_t data)
 static int erase()
 {
     /* No real erase on FRAM -> emulate FLASH erase */
-    for (unsigned int address = FRAM_LOW; address < FRAM_HIGH; address += 2)
+    for (uint32_t address = FRAM_LOW; address < FRAM_HIGH; address += 2)
     {
         int ret = write(address, 0xFFFF);
 
@@ -613,5 +613,5 @@ device_driver_t msp430fr_driver = {
         .read             = read,
         .verify           = verify,
         .close            = close,
-        .word_width_bytes = 2,
+        .word_width_bytes = 2u,
 };

@@ -22,7 +22,7 @@ typedef enum
  *
  * @returns 0 on success
  */
-int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int retries);
+int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, uint32_t retries);
 
 /**
  * Writes a word to the specified address of the specified port. Checks for the acknowledgment
@@ -35,7 +35,7 @@ int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int re
  *
  * @returns 0 on success
  */
-int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int retries);
+int transport_write(swd_port_t port, uint8_t addr, uint32_t data, uint32_t retries);
 
 /**
  * Initializes transport layer
@@ -46,7 +46,7 @@ int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int r
  *
  * @returns 0 on success
  */
-int transport_init(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk);
+int transport_init(uint8_t pin_swdclk, uint8_t pin_swdio, uint32_t f_clk);
 
 /**
  * Puts SWDIO and SWDCLK signals to High-Z

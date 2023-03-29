@@ -124,18 +124,18 @@ typedef enum
     GPIO_STATE_HIGH = 1u
 } gpio_state_t;
 
-static inline void sys_gpio_cfg_dir(unsigned int pin, gpio_dir_t dir)
+static inline void sys_gpio_cfg_dir(const uint8_t pin, const gpio_dir_t dir)
 {
-    if (dir == GPIO_DIR_OUT) CT_GPIO0.GPIO_OE &= ~(1 << pin);
-    else CT_GPIO0.GPIO_OE |= (1 << pin);
+    if (dir == GPIO_DIR_OUT) CT_GPIO0.GPIO_OE &= ~(1u << pin);
+    else CT_GPIO0.GPIO_OE |= (1u << pin);
 }
-static inline void sys_gpio_set(unsigned int pin, gpio_state_t state)
+static inline void sys_gpio_set(const uint8_t pin, const gpio_state_t state)
 {
-    if (state) CT_GPIO0.GPIO_SETDATAOUT = (1 << pin);
-    else CT_GPIO0.GPIO_CLEARDATAOUT = (1 << pin);
+    if (state) CT_GPIO0.GPIO_SETDATAOUT = (1u << pin);
+    else CT_GPIO0.GPIO_CLEARDATAOUT = (1u << pin);
 }
 
-static inline gpio_state_t sys_gpio_get(unsigned int pin)
+static inline gpio_state_t sys_gpio_get(const uint8_t pin)
 {
     return (gpio_state_t) (CT_GPIO0.GPIO_DATAIN >> pin) & 1u;
 }

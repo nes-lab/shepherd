@@ -3,22 +3,22 @@
 #include "sys_gpio.h"
 
 /* bit width of SWD transfer -> always 32 bit */
-#define TP_TCV_WIDTH 32
+#define TP_TCV_WIDTH (32u)
 
 /* Selects direction of SWD transfer */
 typedef enum
 {
     /* Host to target */
-    SWD_RW_W = 0,
+    SWD_RW_W = 0u,
     /* Target to host */
-    SWD_RW_R = 1,
+    SWD_RW_R = 1u,
 } swd_rw_t;
 
 typedef enum
 {
-    SWD_ACK_OK    = 0x1,
-    SWD_ACK_WAIT  = 0x2,
-    SWD_ACK_FAULT = 0x4,
+    SWD_ACK_OK    = 0x1u,
+    SWD_ACK_WAIT  = 0x2u,
+    SWD_ACK_FAULT = 0x4u,
 } swd_ack_t;
 
 typedef uint8_t     swd_header_t;
@@ -26,29 +26,30 @@ static swd_header_t hdr;
 
 static struct
 {
-    unsigned int swdclk;
-    unsigned int swdio;
+    uint8_t swd_clk;
+    uint8_t swd_io;
+    uint8_t swd_dir;
 } pins;
 
-static unsigned int clk_delay_cycles;
+static uint32_t clk_delay_cycles;
 
 /* SWD write bit routine */
 static void         iow(gpio_state_t swdio_state)
 {
-    sys_gpio_set(pins.swdio, swdio_state);
-    sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+    sys_gpio_set(pins.swd_io, swdio_state);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
-    sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_HIGH);
     __delay_var_cycles(clk_delay_cycles);
 }
 
 /* SWD read bit routine */
 static int ior(void)
 {
-    sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
-    int ret = sys_gpio_get(pins.swdio);
-    sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
+    int ret = sys_gpio_get(pins.swd_io);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_HIGH);
     __delay_var_cycles(clk_delay_cycles);
     return ret;
 }
@@ -56,11 +57,11 @@ static int ior(void)
 /* SWD turn-around cycle: Control is handed over from host to target or vice versa. */
 static void iotrn(gpio_dir_t dir)
 {
-    sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
-    sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+    sys_gpio_cfg_dir(pins.swd_io, GPIO_DIR_IN);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
-    sys_gpio_set(pins.swdclk, GPIO_STATE_HIGH);
-    if (dir == GPIO_DIR_OUT) sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_HIGH);
+    if (dir == GPIO_DIR_OUT) sys_gpio_cfg_dir(pins.swd_io, GPIO_DIR_OUT);
 
     __delay_var_cycles(clk_delay_cycles);
 }
@@ -73,9 +74,9 @@ static void iotrn(gpio_dir_t dir)
  * @param rw read or write access
  * @param addr port address
  */
-static int header_init(swd_header_t *header, swd_port_t port, swd_rw_t rw, uint8_t addr)
+static int header_init(swd_header_t *header, const swd_port_t port, const swd_rw_t rw, const uint8_t addr)
 {
-    *header       = 0x81 | ((addr & 0xC) << 1) | (port << 1) | (rw << 2);
+    *header       = 0x81u | ((addr & 0xCu) << 1u) | (port << 1u) | (rw << 2u);
 
     int bit_count = 0;
     int i;
@@ -158,11 +159,11 @@ static int transceive(const swd_header_t *const header, uint32_t *const data)
         iotrn(GPIO_DIR_OUT);
         rc = data_write(data);
     }
-    sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
     return rc;
 }
 
-int transport_read(uint32_t *const dst, swd_port_t port, uint8_t addr, unsigned int retries)
+int transport_read(uint32_t *const dst, swd_port_t port, uint8_t addr, uint32_t retries)
 {
     int rc;
     header_init(&hdr, port, SWD_RW_R, addr);
@@ -176,7 +177,7 @@ int transport_read(uint32_t *const dst, swd_port_t port, uint8_t addr, unsigned 
     return -rc;
 }
 
-int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int retries)
+int transport_write(swd_port_t port, uint8_t addr, uint32_t data, uint32_t retries)
 {
     int rc;
     header_init(&hdr, port, SWD_RW_W, addr);
@@ -185,48 +186,48 @@ int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int r
         if (rc <= 0) return rc;
         retries--;
     }
-    while (retries > 0);
+    while (retries > 0u);
     return -rc;
 }
 
 int transport_reset(void)
 {
-    sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_OUT);
-    sys_gpio_set(pins.swdio, GPIO_STATE_HIGH);
+    sys_gpio_cfg_dir(pins.swd_io, GPIO_DIR_OUT);
+    sys_gpio_set(pins.swd_io, GPIO_STATE_HIGH);
 
-    for (int i = 0; i < 56; i++) { iow(GPIO_STATE_HIGH); }
+    for (uint8_t i = 0u; i < 56u; i++) { iow(GPIO_STATE_HIGH); }
 
     /* JTAG -> SWD sequence */
     uint16_t tmp = 0x79E7;
-    for (int i = 15; i >= 0; i--) { iow((tmp >> i) & 0x01); }
+    for (int i = 15; i >= 0; i--) { iow((tmp >> i) & 0x01u); }
 
-    for (int i = 0; i < 56; i++) { iow(GPIO_STATE_HIGH); }
+    for (uint8_t i = 0u; i < 56u; i++) { iow(GPIO_STATE_HIGH); }
 
-    for (int i = 0; i < 16; i++) { iow(GPIO_STATE_LOW); }
+    for (uint8_t i = 0u; i < 16u; i++) { iow(GPIO_STATE_LOW); }
     return 0;
 }
 
-int transport_init(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk)
+int transport_init(const uint8_t pin_swdclk, const uint8_t pin_swdio, uint32_t f_clk)
 {
-    pins.swdclk      = pin_swdclk;
-    pins.swdio       = pin_swdio;
+    pins.swd_clk     = pin_swdclk;
+    pins.swd_io      = pin_swdio;
 
-    clk_delay_cycles = F_CPU / f_clk / 2;
+    clk_delay_cycles = F_CPU / f_clk / 2u;
 
-    sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
-    sys_gpio_cfg_dir(pins.swdclk, GPIO_DIR_OUT);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
+    sys_gpio_cfg_dir(pins.swd_clk, GPIO_DIR_OUT);
 
-    sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
+    sys_gpio_cfg_dir(pins.swd_io, GPIO_DIR_IN);
 
     return 0;
 }
 
 int transport_release()
 {
-    sys_gpio_cfg_dir(pins.swdclk, GPIO_DIR_IN);
-    sys_gpio_cfg_dir(pins.swdio, GPIO_DIR_IN);
-    sys_gpio_set(pins.swdio, GPIO_STATE_LOW);
-    sys_gpio_set(pins.swdclk, GPIO_STATE_LOW);
+    sys_gpio_cfg_dir(pins.swd_clk, GPIO_DIR_IN);
+    sys_gpio_cfg_dir(pins.swd_io, GPIO_DIR_IN);
+    sys_gpio_set(pins.swd_io, GPIO_STATE_LOW);
+    sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
 
     return 0;
 }

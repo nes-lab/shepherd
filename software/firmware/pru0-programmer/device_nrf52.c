@@ -84,7 +84,7 @@ static int dev_reset_halt()
     if (rc != 0) return rc;
 
     uint32_t data;
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint8_t i = 0; i < 5u; i++)
     {
         if ((rc = mem_read(&data, CoreDebug_BASE + offsetof(CoreDebug_Type, DHCSR)))) return rc;
 
@@ -96,7 +96,7 @@ static int dev_reset_halt()
 }
 
 /* Waits for non-volatile memory controller to be ready for a new write */
-static int nvm_wait(unsigned int retries)
+static int nvm_wait(uint32_t retries)
 {
     int      rc;
     uint32_t ready;
@@ -169,17 +169,17 @@ static int verify(uint32_t address, uint32_t data)
  * Prepares the nRF52 for access. After execution, the core should be reset, halted
  * and ready to receive writes to the non-volatile flash memory.
  *
- * @param pin_swdclk pin number for SWDCLK signal. Note: Only supports pins of GPIO port 0.
- * @param pin_swdio pin number for SWDIO signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swd_clk pin number for SWDCLK signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swd_io pin number for SWDIO signal. Note: Only supports pins of GPIO port 0.
  * @param f_clk frequency of SWDCLK signal
  *
  * @returns DRV_ERR_OK on success
  */
-static int open(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk)
+static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint32_t f_clk)
 {
     uint32_t data;
 
-    if (transport_init(pin_swdclk, pin_swdio, f_clk)) return DRV_ERR_GENERIC;
+    if (transport_init(pin_swd_clk, pin_swd_io, f_clk)) return DRV_ERR_GENERIC;
     if (transport_reset()) return DRV_ERR_GENERIC;
     /* Dummy read */
     if (dp_read(&data, DP_REG_DPIDR)) return DRV_ERR_GENERIC;
@@ -207,5 +207,5 @@ device_driver_t nrf52_driver = {
         .verify           = verify,
         .close            = close,
         .read             = mem_read,
-        .word_width_bytes = 4,
+        .word_width_bytes = 4u,
 };
