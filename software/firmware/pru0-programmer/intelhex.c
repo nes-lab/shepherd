@@ -1,6 +1,6 @@
 #include "intelhex.h"
 
-static char        *fptr;
+static char    *fptr;
 static uint32_t reader_addr;
 
 typedef enum
@@ -42,21 +42,21 @@ static inline uint8_t read_byte(char **ptr)
 /* reads a single record from ihex file in memory */
 static int ihex_get_rec(ihex_rec_t *const rec)
 {
-    unsigned int i;
+    uint32_t i;
 
     if (*(fptr++) != ':') return -IHEX_ERR_START;
 
-    rec->len             = read_byte(&fptr);
+    rec->len         = read_byte(&fptr);
 
     /* next is a 16-bit address */
-    uint8_t addr_h       = read_byte(&fptr);
-    uint8_t addr_l       = read_byte(&fptr);
-    rec->address         = (addr_h << 8) | addr_l;
+    uint8_t addr_h   = read_byte(&fptr);
+    uint8_t addr_l   = read_byte(&fptr);
+    rec->address     = (addr_h << 8) | addr_l;
 
-    rec->type            = read_byte(&fptr);
+    rec->type        = read_byte(&fptr);
 
     /* sum up the bytes for calculating the checksum later */
-    unsigned int counter = rec->len + addr_h + addr_l + rec->type;
+    uint32_t counter = rec->len + addr_h + addr_l + rec->type;
 
     for (i = 0; i < rec->len; i++)
     {
@@ -64,13 +64,13 @@ static int ihex_get_rec(ihex_rec_t *const rec)
         counter += rec->data[i];
     }
 
-    unsigned int checksum = read_byte(&fptr);
+    uint8_t checksum = read_byte(&fptr);
     counter += checksum;
 
-    int  rc      = ((counter & 0xFF) == 0) ? 0 : -2;
+    const int rc      = ((counter & 0xFF) == 0) ? 0 : -2;
 
     /* end of line can be one or two characters */
-    char lineend = *(fptr++);
+    char      lineend = *(fptr++);
     if (lineend == 0x0D)
     {
         if (*(fptr++) == 0x0A) return rc;
@@ -105,7 +105,7 @@ ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
         }
         else if (rec.type == IHEX_REC_TYPE_ESAR)
         {
-            unsigned int segment = ((unsigned int) rec.data[0] << 4u) + rec.data[1];
+            uint32_t segment = ((unsigned int) rec.data[0] << 4u) + rec.data[1];
             reader_addr += segment;
         }
         else if (rec.type == IHEX_REC_TYPE_EOF) { return IHEX_RET_DONE; }

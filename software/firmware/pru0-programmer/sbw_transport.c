@@ -41,7 +41,7 @@
 #include "delay.h"
 
 static gpio_state_t tclk_state = GPIO_STATE_LOW;
-static uint32_t clk_delay_cycles;
+static uint32_t     clk_delay_cycles;
 
 static struct
 {
@@ -237,7 +237,8 @@ int sbw_transport_connect(void)
     return 0;
 }
 
-int sbw_transport_init(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint8_t pin_sbw_dir, const uint32_t f_clk)
+int sbw_transport_init(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio,
+                       const uint8_t pin_sbw_dir, const uint32_t f_clk)
 {
     pins.sbw_tck     = pin_sbw_tck;
     pins.sbw_tdio    = pin_sbw_tdio;

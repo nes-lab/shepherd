@@ -47,7 +47,8 @@ int swd_transport_write(swd_port_t port, uint8_t addr, uint32_t data, uint32_t r
  *
  * @returns 0 on success
  */
-int swd_transport_init(uint8_t pin_swd_clk, uint8_t pin_swd_io, uint8_t pin_swd_dir, uint32_t f_clk);
+int swd_transport_init(uint8_t pin_swd_clk, uint8_t pin_swd_io, uint8_t pin_swd_dir,
+                       uint32_t f_clk);
 
 /**
  * Puts SWDIO and SWDCLK signals to High-Z

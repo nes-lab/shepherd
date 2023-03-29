@@ -13,8 +13,8 @@
 /* Writes block from hex file to target via driver */
 int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
 {
-    uint8_t     *src     = block->data;
-    uint32_t     dst     = block->address;
+    uint8_t *src     = block->data;
+    uint32_t dst     = block->address;
 
     /* Number of words in this block */
     uint32_t n_words = block->len / drv->word_width_bytes;

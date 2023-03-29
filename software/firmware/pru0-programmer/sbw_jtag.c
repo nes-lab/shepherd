@@ -252,7 +252,7 @@ void EntrySequences_RstHigh_SBW()
     // Reset Test logic
     set_sbwtdio(GPIO_STATE_LOW); // put device in normal operation: Reset = 0
     set_sbwtck(GPIO_STATE_LOW);  // TEST pin = 0
-    delay_ms(1u);                 // wait 1ms (minimum: 100us)
+    delay_ms(1u);                // wait 1ms (minimum: 100us)
 
     // SpyBiWire entry sequence
     set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
@@ -269,7 +269,7 @@ void EntrySequences_RstLow_SBW()
 {
     set_sbwtck(GPIO_STATE_LOW);
     set_sbwtdio(GPIO_STATE_LOW); // Added for Low RST
-    delay_us(800ul);               // delay min 800us - clr SBW controller
+    delay_us(800ul);             // delay min 800us - clr SBW controller
     set_sbwtck(GPIO_STATE_HIGH);
     delay_us(50u);
 
@@ -277,7 +277,7 @@ void EntrySequences_RstLow_SBW()
     // Reset Test logic
     set_sbwtdio(GPIO_STATE_LOW); // put device in normal operation: Reset = 0
     set_sbwtck(GPIO_STATE_LOW);  // TEST pin = 0
-    delay_ms(1u);                 // wait 1ms (minimum: 100us)
+    delay_ms(1u);                // wait 1ms (minimum: 100us)
 
     // SpyBiWire entry sequence
     set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1

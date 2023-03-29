@@ -27,14 +27,14 @@ typedef int (*fn_close_t)(void);
 
 typedef struct
 {
-    fn_open_t    open;
-    fn_erase_t   erase;
-    fn_read_t    read;
-    fn_write_t   write;
-    fn_verify_t  verify;
-    fn_close_t   close;
+    fn_open_t   open;
+    fn_erase_t  erase;
+    fn_read_t   read;
+    fn_write_t  write;
+    fn_verify_t verify;
+    fn_close_t  close;
     /* processor word width */
-    uint8_t      word_width_bytes;
+    uint8_t     word_width_bytes;
 } device_driver_t;
 
 extern device_driver_t nrf52_driver;

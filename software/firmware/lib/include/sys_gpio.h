@@ -140,4 +140,10 @@ static inline gpio_state_t sys_gpio_get(const uint8_t pin)
     return (gpio_state_t) (CT_GPIO0.GPIO_DATAIN >> pin) & 1u;
 }
 
-#endif //PRU_SYS_GPIO_H_
+// faster versions below, only works with mask = (1u << pin)
+#define SYS_GPIO_SET_DIR_IN(mask)  CT_GPIO0.GPIO_OE |= mask;
+#define SYS_GPIO_SET_DIR_OUT(mask) CT_GPIO0.GPIO_OE &= ~mask;
+#define SYS_GPIO_SET_HIGH(mask)    CT_GPIO0.GPIO_SETDATAOUT = mask;
+#define SYS_GPIO_SET_LOW(mask)     CT_GPIO0.GPIO_CLEARDATAOUT = mask;
+
+#endif //PRU_SYS_GPIO_H

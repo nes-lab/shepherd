@@ -48,9 +48,9 @@ static int mem_read(uint32_t *dst, uint32_t addr)
 /* Halts the core */
 static int dev_halt()
 {
-    int rc = mem_write(CoreDebug_BASE + offsetof(CoreDebug_Type, DHCSR),
-                       (0xA05Fu << CoreDebug_DHCSR_DBGKEY_Pos) | CoreDebug_DHCSR_C_HALT_Msk |
-                               CoreDebug_DHCSR_C_DEBUGEN_Msk);
+    const int rc = mem_write(CoreDebug_BASE + offsetof(CoreDebug_Type, DHCSR),
+                             (0xA05Fu << CoreDebug_DHCSR_DBGKEY_Pos) | CoreDebug_DHCSR_C_HALT_Msk |
+                                     CoreDebug_DHCSR_C_DEBUGEN_Msk);
 
     return rc;
 }
@@ -111,8 +111,7 @@ static int nvm_wait(uint32_t retries)
 /* Disables write-protection of non-volatile flash memory */
 static int nvm_wp_disable(void)
 {
-    int rc;
-    rc = mem_write(NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, CONFIG), NVMC_CONFIG_WEN_Msk);
+    const int rc = mem_write(NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, CONFIG), NVMC_CONFIG_WEN_Msk);
     if (rc != 0) return rc;
 
     return nvm_wait(64);
@@ -176,7 +175,8 @@ static int verify(uint32_t address, uint32_t data)
  *
  * @returns DRV_ERR_OK on success
  */
-static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint8_t pin_swd_dir, const uint32_t f_clk)
+static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint8_t pin_swd_dir,
+                const uint32_t f_clk)
 {
     uint32_t data;
 

@@ -527,7 +527,8 @@ static int close()
  *
  * @returns DRV_ERR_OK on success
  */
-static int open(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint8_t pin_sbw_dir, const uint32_t f_clk)
+static int open(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uint8_t pin_sbw_dir,
+                const uint32_t f_clk)
 {
     dev_dsc_t dsc;
     sbw_transport_init(pin_sbw_tck, pin_sbw_tdio, pin_sbw_dir, f_clk);
@@ -597,7 +598,7 @@ static int erase()
     /* No real erase on FRAM -> emulate FLASH erase */
     for (uint32_t address = FRAM_LOW; address < FRAM_HIGH; address += 2)
     {
-        int ret = write(address, 0xFFFF);
+        const int ret = write(address, 0xFFFF);
 
         if ((ret != DRV_ERR_OK) && (ret != DRV_ERR_PROTECTED)) return DRV_ERR_GENERIC;
     }

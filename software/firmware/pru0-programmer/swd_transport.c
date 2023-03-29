@@ -34,7 +34,7 @@ static struct
 static uint32_t clk_delay_cycles;
 
 /* SWD write bit routine */
-static void         iow(gpio_state_t swdio_state)
+static void     iow(gpio_state_t swdio_state)
 {
     sys_gpio_set(pins.swd_io, swdio_state);
     sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
@@ -44,11 +44,11 @@ static void         iow(gpio_state_t swdio_state)
 }
 
 /* SWD read bit routine */
-static int ior(void)
+static gpio_state_t ior(void)
 {
     sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
     __delay_var_cycles(clk_delay_cycles);
-    int ret = sys_gpio_get(pins.swd_io);
+    const gpio_state_t ret = sys_gpio_get(pins.swd_io);
     sys_gpio_set(pins.swd_clk, GPIO_STATE_HIGH);
     __delay_var_cycles(clk_delay_cycles);
     return ret;
@@ -80,17 +80,17 @@ static void iotrn(gpio_dir_t dir)
  * @param rw read or write access
  * @param addr port address
  */
-static int header_init(swd_header_t *header, const swd_port_t port, const swd_rw_t rw, const uint8_t addr)
+static int header_init(swd_header_t *header, const swd_port_t port, const swd_rw_t rw,
+                       const uint8_t addr)
 {
-    *header       = 0x81u | ((addr & 0xCu) << 1u) | (port << 1u) | (rw << 2u);
+    *header           = 0x81u | ((addr & 0xCu) << 1u) | (port << 1u) | (rw << 2u);
 
-    int bit_count = 0;
-    int i;
-    for (i = 1; i < 5; i++)
+    uint8_t bit_count = 0u;
+    for (uint8_t i = 1u; i < 5u; i++)
     {
-        if (*header & (0x01 << i)) bit_count++;
+        if (*header & (0x01u << i)) bit_count++;
     }
-    if (bit_count % 2) *header |= (1 << 5);
+    if (bit_count % 2u) *header |= (1u << 5u);
 
     return 0;
 }
@@ -98,8 +98,8 @@ static int header_init(swd_header_t *header, const swd_port_t port, const swd_rw
 /* Writes a word during host to target phase of SWD transfer */
 static int data_write(const uint32_t *const data)
 {
-    int parity_cnt = 0;
-    for (int i = 0; i < TP_TCV_WIDTH; i++)
+    uint8_t parity_cnt = 0u;
+    for (uint8_t i = 0u; i < TP_TCV_WIDTH; i++)
     {
         if (*data & (1u << i))
         {
@@ -116,18 +116,18 @@ static int data_write(const uint32_t *const data)
 /* Reads a word during target to host phase of SWD transfer */
 static int data_read(uint32_t *const data)
 {
-    int parity_cnt = 0;
-    *data          = 0;
-    for (int i = 0; i < TP_TCV_WIDTH; i++)
+    uint8_t parity_cnt = 0u;
+    *data              = 0u;
+    for (uint8_t i = 0u; i < TP_TCV_WIDTH; i++)
     {
         if (ior())
         {
-            *data |= 1 << i;
+            *data |= 1u << i;
             parity_cnt++;
         }
     }
-    int parity = ior();
-    if ((parity_cnt % 2) != parity) return -1;
+    const uint8_t parity = ior();
+    if ((parity_cnt % 2u) != parity) return -1;
     return 0;
 }
 
@@ -142,13 +142,13 @@ static int data_read(uint32_t *const data)
  */
 static int transceive(const swd_header_t *const header, uint32_t *const data)
 {
-    int i;
-    int rc;
+    uint8_t i;
+    int     rc;
 
-    for (i = 0; i < 8; i++) { iow((*header >> i) & 0x1); }
+    for (i = 0; i < 8u; i++) { iow((*header >> i) & 0x1); }
     iotrn(GPIO_DIR_IN);
-    uint8_t ack = 0;
-    for (i = 0; i < 3; i++) { ack |= ior() << i; }
+    uint8_t ack = 0u;
+    for (i = 0; i < 3u; i++) { ack |= ior() << i; }
     if (ack != SWD_ACK_OK)
     {
         iotrn(GPIO_DIR_OUT);
