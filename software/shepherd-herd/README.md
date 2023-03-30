@@ -56,13 +56,13 @@ nmap -sn 192.168.1.1-64
 After setting up the inventory, use shepherd-herd to check if all your nodes are responding correctly:
 
 ```Shell
-shepherd-herd -i herd.yml run echo 'hello'
+shepherd-herd -i herd.yml run "echo 'hello'"
 ```
 
 Or, equivalently define the list of hosts on the command line
 
 ```Shell
-shepherd-herd -i sheep0,sheep1,sheep2, run echo 'hello'
+shepherd-herd -i sheep0,sheep1,sheep2, run "echo 'hello'"
 ```
 
 To **simplify usage** it is recommended to set up the `herd.yml` in either of these directories (with falling lookup priority):
@@ -74,13 +74,13 @@ To **simplify usage** it is recommended to set up the `herd.yml` in either of th
 From then on you can just call:
 
 ```Shell
-shepherd-herd run echo 'hello'
+shepherd-herd run "echo 'hello'"
 ```
 
 Or select individual sheep from the herd:
 
 ```Shell
-shepherd-herd --limit sheep0,sheep2, run echo 'hello'
+shepherd-herd --limit sheep0,sheep2, run "echo 'hello'"
 ```
 
 ## Examples
@@ -166,8 +166,9 @@ Manually **starting** a pre-configured measurement can be done via:
 shepherd-herd start
 ```
 
-Note 1: config is loading from `/etc/shepherd/config.yml`
-Note 2: start is only loosely synchronized
+**Note 1**: configuration is loading from `/etc/shepherd/config.yml`.
+
+**Note 2**: the start is not synchronized itself (you have to define a start-time in config).
 
 The current state of the measurement can be **checked** with (console printout and return code):
 

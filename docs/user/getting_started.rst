@@ -46,8 +46,8 @@ Same applies to the power-output of the Beaglebone. Therefore the cape offers an
 The DHCP server and your machine (for installation/control) must be connected to the same network.
 
 
-Installation
-------------
+Installation - Full Guide
+--------------------------
 
 Prepare the SD-cards.
 If you plan to install the OS and shepherd software on the onboard EMMC flash, you can prepare one SD card and sequentially flash the nodes.
@@ -139,7 +139,7 @@ Further playbooks:
 Installation - ready-to-use image
 ------------------------------------------
 
-The following guide sets up a single shepherd-node by using a ready-to-use shepherd-image. The steps are more detailed and try to simplify the process for new users by cutting away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but linux users can easily adapt, as mostly WSL is used.
+The following guide sets up a single shepherd-node by using a ready-to-use shepherd-image. The steps are more detailed and try to simplify the process for new users by cutting away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but Linux users can easily adapt.
 
 As new hardware and unknown software can be intimidating the steps were also `filmed and put on youtube <https://youtu.be/UPEH7QODm8A>`_ for comparing the progress.
 
@@ -182,9 +182,23 @@ If the tests are positive it is safe to use the image as is from sd-card. Altern
 
 After the command finishes shut down the Beaglebone either by ``sudo shutdown now`` or by pushing the button next to the network socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches except that ``mount`` now shows mmcblk1p1 (eMMC) as root-directory.
 
-For password-less entry & usage of the Beaglebone we prepared an ``ansible playbook``. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide from previous section).
+For password-less entry & usage of the Beaglebone we prepared an ``ansible playbook``. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide from previous section) and also configured the ``herd.yml`` in consultation with the full installation guide.
 
 .. code-block:: bash
 
     # execute in shepherd-repo on host
     ansible-playbook ./deploy/setup_pwless_ssh_for_host.yml
+
+Now that the Software ready a basic test of the shepherd-framework can be run. It is possible to start a pre-configured harvesting demo, even without a cape. This can be done either on the Beaglebone itself:
+
+.. code-block:: bash
+
+    sudo shepherd-sheep run --config /etc/shepherd/example_config_harvester.yml
+
+or on the host by installing and using `shepherd-herd <https://pypi.org/project/shepherd-herd/>`_. After following the linked installation guide the same test can be run with:
+
+.. code-block:: bash
+
+    shepherd-herd start
+
+Note that this will load a slightly different configuration-file (``/etc/shepherd/config.yml``).
