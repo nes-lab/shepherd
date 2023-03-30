@@ -83,7 +83,7 @@ static int dev_reset_halt()
                    (0x05FA << SCB_AIRCR_VECTKEY_Pos) | SCB_AIRCR_SYSRESETREQ_Msk);
     if (rc != 0) return rc;
 
-    uint32_t data;
+    uint32_t data = 0u;
     for (uint8_t i = 0; i < 5u; i++)
     {
         if ((rc = mem_read(&data, CoreDebug_BASE + offsetof(CoreDebug_Type, DHCSR)))) return rc;
@@ -99,7 +99,7 @@ static int dev_reset_halt()
 static int nvm_wait(uint32_t retries)
 {
     int      rc;
-    uint32_t ready;
+    uint32_t ready = 0u;
     do {
         if ((rc = mem_read(&ready, NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, READY)))) return rc;
         if (--retries == 0) return -1;
@@ -158,7 +158,7 @@ static int nvm_write(uint32_t dst, uint32_t data)
  */
 static int verify(uint32_t address, uint32_t data)
 {
-    uint32_t read_back;
+    uint32_t read_back = 0u;
     if (mem_read(&read_back, address) != DRV_ERR_OK) return DRV_ERR_GENERIC;
     if (data == read_back) return DRV_ERR_OK;
     else return DRV_ERR_VERIFY;
@@ -178,7 +178,7 @@ static int verify(uint32_t address, uint32_t data)
 static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint8_t pin_swd_dir,
                 const uint32_t f_clk)
 {
-    uint32_t data;
+    uint32_t data = 0u;
 
     if (swd_transport_init(pin_swd_clk, pin_swd_io, pin_swd_dir, f_clk)) return DRV_ERR_GENERIC;
     if (swd_transport_reset()) return DRV_ERR_GENERIC;

@@ -1,18 +1,18 @@
 #include "swd_dap.h"
 #include "swd_transport.h"
 
-int dp_write(dp_reg_t reg, uint32_t val) { return transport_write(SWD_PORT_DP, reg, val, 5u); }
+int dp_write(dp_reg_t reg, uint32_t val) { return swd_transport_write(SWD_PORT_DP, reg, val, 5u); }
 
-int ap_write(ap_reg_t reg, uint32_t val) { return transport_write(SWD_PORT_AP, reg, val, 5u); }
+int ap_write(ap_reg_t reg, uint32_t val) { return swd_transport_write(SWD_PORT_AP, reg, val, 5u); }
 
-int dp_read(uint32_t *dst, dp_reg_t reg) { return transport_read(dst, SWD_PORT_DP, reg, 5u); }
+int dp_read(uint32_t *dst, dp_reg_t reg) { return swd_transport_read(dst, SWD_PORT_DP, reg, 5u); }
 
-int ap_read(uint32_t *dst, ap_reg_t reg) { return transport_read(dst, SWD_PORT_AP, reg, 5u); }
+int ap_read(uint32_t *dst, ap_reg_t reg) { return swd_transport_read(dst, SWD_PORT_AP, reg, 5u); }
 
 int ap_init()
 {
     int      rc;
-    uint32_t data;
+    uint32_t data = 0u;
 
     if ((rc = dp_write(DP_REG_ABORT, 0x0000001E))) return rc;
     if ((rc = dp_write(DP_REG_SELECT, 0x0))) return rc;
