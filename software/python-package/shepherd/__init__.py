@@ -44,7 +44,7 @@ from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import T_vSrc
 from .virtual_source_config import VirtualSourceConfig
 
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 __all__ = [
     "LogReader",
