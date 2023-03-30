@@ -51,6 +51,11 @@ def yamlprovider(file_path: str, cmd_name: str):
     help="Path to private ssh key file",
 )
 @click.option("-v", "--verbose", count=True, default=2)
+@click.option(
+    "--version",
+    is_flag=True,
+    help="Prints version-infos (combinable with -v)",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -59,21 +64,14 @@ def cli(
     user: Optional[str],
     key_filepath: Optional[Path],
     verbose: int,
+    version: bool,
 ) -> click.Context:  # TODO: return type can be removed?!?
-    """A primary set of options to configure how to interface the herd
-
-    :param ctx:
-    :param inventory:
-    :param limit:
-    :param user:
-    :param key_filepath:
-    :param verbose:
-    :return:
-    """
+    """A primary set of options to configure how to interface the herd"""
     set_verbose_level(verbose)
-    logger.info("Shepherd-Data v%s", __version__)
-    logger.debug("Python v%s", sys.version)
-    logger.debug("Click v%s", click.__version__)
+    if version:
+        logger.info("Shepherd-Herd v%s", __version__)
+        logger.debug("Python v%s", sys.version)
+        logger.debug("Click v%s", click.__version__)
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 

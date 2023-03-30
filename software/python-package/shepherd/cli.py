@@ -73,19 +73,19 @@ def yamlprovider(file_path: str, cmd_name: str) -> dict:
     default=2,
     help="4 Levels, but level 4 has serious performance impact",
 )
+@click.option(
+    "--version",
+    is_flag=True,
+    help="Prints version-infos (combinable with -v)",
+)
 @click.pass_context
-def cli(ctx: click.Context, verbose: int = 2):
-    """Shepherd: Synchronized Energy Harvesting Emulator and Recorder
-
-    Args:
-        ctx:
-        verbose:
-    Returns:
-    """
+def cli(ctx: click.Context, verbose: int, version: bool):
+    """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     set_verbose_level(verbose)
-    logger.info("Shepherd-Sheep v%s", __version__)
-    logger.debug("Python v%s", sys.version)
-    logger.debug("Click v%s", click.__version__)
+    if version:
+        logger.info("Shepherd-Sheep v%s", __version__)
+        logger.debug("Python v%s", sys.version)
+        logger.debug("Click v%s", click.__version__)
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 

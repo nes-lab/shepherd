@@ -126,7 +126,9 @@ class Herd:
             raise ValueError("No remote targets found in list!")
 
     def __del__(self):
-        # ... overcautious
+        # ... overcautious closing of connections
+        if not isinstance(self.group, Group):
+            return
         with contextlib.suppress(TypeError):
             for cnx in self.group:
                 cnx.close()
