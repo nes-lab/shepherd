@@ -140,7 +140,7 @@ printEnd:
 	@stat -L -c %s $(TARGET_PATH)
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Internal statistics of ELF'
+	@echo 'Statistics of ELF-Internals'
 	@echo ''
 	@$(CROSS_COMPILE)size $(TARGET_PATH)
 	@echo ''

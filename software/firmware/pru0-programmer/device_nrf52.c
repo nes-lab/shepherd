@@ -33,7 +33,7 @@ static int mem_write(uint32_t addr, uint32_t data)
  * @param dst pointer to destination
  * @param addr target memory address
  */
-static int mem_read(uint32_t *dst, uint32_t addr)
+static int mem_read(uint32_t *const dst, uint32_t addr)
 {
     int rc;
 

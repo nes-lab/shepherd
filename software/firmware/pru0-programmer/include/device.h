@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+
 typedef enum
 {
     DRV_ERR_TIMEOUT   = -3,
@@ -37,7 +38,12 @@ typedef struct
     uint8_t     word_width_bytes;
 } device_driver_t;
 
+#ifdef SWD_SUPPORT
 extern device_driver_t nrf52_driver;
+#endif
+#ifdef SBW_SUPPORT
 extern device_driver_t msp430fr_driver;
+#endif
+
 
 #endif /* __PROG_DEVICE_H_ */

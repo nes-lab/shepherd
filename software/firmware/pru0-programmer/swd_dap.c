@@ -1,13 +1,25 @@
 #include "swd_dap.h"
 #include "swd_transport.h"
 
-int dp_write(dp_reg_t reg, uint32_t val) { return swd_transport_write(SWD_PORT_DP, reg, val, 5u); }
+int dp_write(const dp_reg_t reg, uint32_t val)
+{
+    return swd_transport_write(SWD_PORT_DP, reg, val, 5u);
+}
 
-int ap_write(ap_reg_t reg, uint32_t val) { return swd_transport_write(SWD_PORT_AP, reg, val, 5u); }
+int ap_write(const ap_reg_t reg, uint32_t val)
+{
+    return swd_transport_write(SWD_PORT_AP, reg, val, 5u);
+}
 
-int dp_read(uint32_t *dst, dp_reg_t reg) { return swd_transport_read(dst, SWD_PORT_DP, reg, 5u); }
+int dp_read(uint32_t *const dst, const dp_reg_t reg)
+{
+    return swd_transport_read(dst, SWD_PORT_DP, reg, 5u);
+}
 
-int ap_read(uint32_t *dst, ap_reg_t reg) { return swd_transport_read(dst, SWD_PORT_AP, reg, 5u); }
+int ap_read(uint32_t *const dst, const ap_reg_t reg)
+{
+    return swd_transport_read(dst, SWD_PORT_AP, reg, 5u);
+}
 
 int ap_init()
 {

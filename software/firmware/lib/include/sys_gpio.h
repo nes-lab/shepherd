@@ -145,5 +145,6 @@ static inline gpio_state_t sys_gpio_get(const uint8_t pin)
 #define SYS_GPIO_SET_DIR_OUT(mask) CT_GPIO0.GPIO_OE &= ~mask;
 #define SYS_GPIO_SET_HIGH(mask)    CT_GPIO0.GPIO_SETDATAOUT = mask;
 #define SYS_GPIO_SET_LOW(mask)     CT_GPIO0.GPIO_CLEARDATAOUT = mask;
+// TODO: make FNs out of these and use them (saves 2 OPs per call)
 
 #endif //PRU_SYS_GPIO_H

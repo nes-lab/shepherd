@@ -1,14 +1,15 @@
 #include "programmer.h"
+
+// select a primary programming-mode when none is chosen
+#if !(defined(SWD_SUPPORT) || defined(SBW_SUPPORT))
+  #define SWD_SUPPORT
+#endif
+
 #include "device.h"
 #include "intelhex.h"
 #include "swd_transport.h"
 #include "sys_gpio.h"
 #include <stdint.h>
-
-#if !(defined(SWD_SUPPORT) || defined(SBW_SUPPORT))
-// select a primary programming-mode when none is chosen
-  #define SWD_SUPPORT
-#endif
 
 /* Writes block from hex file to target via driver */
 int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)

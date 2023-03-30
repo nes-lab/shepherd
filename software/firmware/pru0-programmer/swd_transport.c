@@ -80,7 +80,7 @@ static void iotrn(gpio_dir_t dir)
  * @param rw read or write access
  * @param addr port address
  */
-static int header_init(swd_header_t *header, const swd_port_t port, const swd_rw_t rw,
+static int header_init(swd_header_t *const header, const swd_port_t port, const swd_rw_t rw,
                        const uint8_t addr)
 {
     *header           = 0x81u | ((addr & 0xCu) << 1u) | (port << 1u) | (rw << 2u);
@@ -169,7 +169,8 @@ static int transceive(const swd_header_t *const header, uint32_t *const data)
     return rc;
 }
 
-int swd_transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, uint32_t retries)
+int swd_transport_read(uint32_t *const dst, const swd_port_t port, const uint8_t addr,
+                       uint32_t retries)
 {
     int rc;
     header_init(&hdr, port, SWD_RW_R, addr);
@@ -183,7 +184,7 @@ int swd_transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, uint32_t re
     return -rc;
 }
 
-int swd_transport_write(swd_port_t port, uint8_t addr, uint32_t data, uint32_t retries)
+int swd_transport_write(const swd_port_t port, const uint8_t addr, uint32_t data, uint32_t retries)
 {
     int rc;
     header_init(&hdr, port, SWD_RW_W, addr);
