@@ -25,6 +25,7 @@ from periphery import GPIO
 
 from . import ShepherdDebug
 from . import __version__
+from . import check_system
 from . import get_verbose_level
 from . import run_emulator
 from . import run_recorder
@@ -89,16 +90,6 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 
-    # test for correct usage -> fail early!
-    try:
-        sysfs_interface.get_mode()
-    except FileNotFoundError:
-        raise RuntimeError("Failed to access sysFS -> is the kernel module loaded?")
-    except PermissionError:
-        raise RuntimeError(
-            "Failed to access sysFS -> is shepherd-sheep run with 'sudo'?",
-        )
-
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
 @click.option("--on/--off", default=True)
@@ -120,6 +111,7 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     help="Choose (main)Target that gets connected to virtual Source",
 )
 def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
+    check_system()
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base

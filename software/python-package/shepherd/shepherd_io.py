@@ -21,6 +21,7 @@ from typing import Union
 import numpy as np
 from periphery import GPIO
 
+from . import check_system
 from . import commons
 from . import sysfs_interface as sfs
 from .calibration import CalibrationData
@@ -392,6 +393,8 @@ class ShepherdIO:
         Args:
             mode (str): Shepherd mode, see sysfs_interface for more
         """
+        check_system()
+
         if not sfs.pru0_firmware_is_default():
             sfs.load_pru0_firmware("shepherd")
 
