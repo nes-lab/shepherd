@@ -38,6 +38,7 @@ from .logger_config import set_verbose_level
 from .shepherd_io import DataBuffer
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
+from .sysfs_interface import check_sys_access
 from .target_io import TargetIO
 from .virtual_harvester_config import T_vHrv
 from .virtual_harvester_config import VirtualHarvesterConfig
@@ -69,22 +70,6 @@ __all__ = [
 
 logger = logging.getLogger("shp")
 set_verbose_level(verbose=1)
-
-
-def check_system() -> None:
-    try:  # test for correct usage -> fail early!
-        sysfs_interface.get_mode()
-    except FileNotFoundError:
-        logger.error(
-            "RuntimeError: Failed to access sysFS -> is the kernel module loaded?",
-        )
-        sys.exit(1)
-    except PermissionError:
-        logger.error(
-            "RuntimeError: Failed to access sysFS -> is shepherd-sheep run with 'sudo'?",
-        )
-        sys.exit(1)
-    # TODO: if this (log.error & exit) behaves ok it could replace most "raise Errors" in code
 
 
 class Recorder(ShepherdIO):
@@ -727,7 +712,7 @@ def run_recorder(
         output_compression: "lzf" recommended, alternatives are "gzip" (level 4) or gzip-level 1-9
     """
     mode = "harvester"
-    check_system()
+    check_sys_access()
     cal_data = retrieve_calibration(use_cal_default)
 
     if start_time is None:
@@ -864,7 +849,7 @@ def run_emulator(
             gzip-level 1-9
     """
     mode = "emulator"
-    check_system()
+    check_sys_access()
     cal = retrieve_calibration(use_cal_default)
 
     if start_time is None:

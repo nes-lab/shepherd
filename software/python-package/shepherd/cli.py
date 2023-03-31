@@ -25,7 +25,6 @@ from periphery import GPIO
 
 from . import ShepherdDebug
 from . import __version__
-from . import check_system
 from . import get_verbose_level
 from . import run_emulator
 from . import run_recorder
@@ -36,10 +35,13 @@ from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
 from .shepherd_io import gpio_pin_nums
+from .sysfs_interface import check_sys_access
 
 logger = logging.getLogger("shp.cli")
 consoleHandler = logging.StreamHandler()
-logger.addHandler(consoleHandler)
+# logger.handlers = []  # not clean, but removes doubles
+# logger.addHandler(consoleHandler)
+
 
 # TODO: correct docs
 # --length -l is now --duration -d ->
@@ -87,6 +89,7 @@ def cli(ctx: click.Context, verbose: int, version: bool):
         logger.info("Shepherd-Sheep v%s", __version__)
         logger.debug("Python v%s", sys.version)
         logger.debug("Click v%s", click.__version__)
+    check_sys_access()
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 
@@ -111,7 +114,6 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     help="Choose (main)Target that gets connected to virtual Source",
 )
 def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
-    check_system()
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base
@@ -587,6 +589,11 @@ def launcher(led: int, button: int):
     default=True,
     help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
 )
+@click.option(
+    "--simulate",
+    is_flag=True,
+    help="dry-run the programmer - no data gets written",
+)
 def programmer(
     firmware_file: Path,
     sel_a: bool,
@@ -594,6 +601,7 @@ def programmer(
     speed: int,
     target: str,
     prog1: bool,
+        simulate: bool
 ):
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
@@ -614,6 +622,8 @@ def programmer(
 
         try:
             sd.shared_mem.write_firmware(fw.read())
+            if simulate:
+                target = "dummy"
             if prog1:
                 sysfs_interface.write_programmer_ctrl(target, speed, 5, 4, 10)
             else:

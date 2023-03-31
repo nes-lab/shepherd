@@ -21,11 +21,11 @@ from typing import Union
 import numpy as np
 from periphery import GPIO
 
-from . import check_system
 from . import commons
 from . import sysfs_interface as sfs
 from .calibration import CalibrationData
 from .calibration import cal_component_list
+from .sysfs_interface import check_sys_access
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
 
@@ -393,7 +393,7 @@ class ShepherdIO:
         Args:
             mode (str): Shepherd mode, see sysfs_interface for more
         """
-        check_system()
+        check_sys_access()
 
         if not sfs.pru0_firmware_is_default():
             sfs.load_pru0_firmware("shepherd")

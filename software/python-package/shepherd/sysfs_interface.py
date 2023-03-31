@@ -9,6 +9,7 @@ provided by the shepherd kernel module
 :license: MIT, see LICENSE for more details.
 """
 import logging
+import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -35,6 +36,22 @@ shepherd_modes = [
     "emu_adc_read",
     "debug",
 ]
+
+
+def check_sys_access() -> None:
+    try:  # test for correct usage -> fail early!
+        get_mode()
+    except FileNotFoundError:
+        logger.error(
+            "RuntimeError: Failed to access sysFS -> is the kernel module loaded?",
+        )
+        sys.exit(1)
+    except PermissionError:
+        logger.error(
+            "RuntimeError: Failed to access sysFS -> is shepherd-sheep run with 'sudo'?",
+        )
+        sys.exit(1)
+    # TODO: if this (log.error & exit) behaves ok it could replace most "raise Errors" in code
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> float:
