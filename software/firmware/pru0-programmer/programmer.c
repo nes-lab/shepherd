@@ -47,10 +47,8 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     pc->state = PRG_STATE_INITIALIZING;
 
     /* check for validity */
-    if ((pc->datasize >= shared_mem->mem_size) ||
-        (pc->pin_tck == pc->pin_tdio) ||
-        (pc->pin_tck == pc->pin_dir_tdio) ||
-        (pc->pin_tdio == pc->pin_dir_tdio) ||
+    if ((pc->datasize >= shared_mem->mem_size) || (pc->pin_tck == pc->pin_tdio) ||
+        (pc->pin_tck == pc->pin_dir_tdio) || (pc->pin_tdio == pc->pin_dir_tdio) ||
         (pc->datarate > 1000000))
     {
         pc->state = PRG_STATE_ERR_GENERIC;

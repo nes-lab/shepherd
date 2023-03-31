@@ -601,7 +601,7 @@ def programmer(
     speed: int,
     target: str,
     prog1: bool,
-        simulate: bool
+    simulate: bool,
 ):
     with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
