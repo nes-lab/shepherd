@@ -436,9 +436,9 @@ def write_programmer_ctrl(
     pin_tck: int,
     pin_tdio: int,
     pin_dir_tdio: int,
-    pin_tdo: Optional[int] = None,
-    pin_tms: Optional[int] = None,
-    pin_dir_tms: Optional[int] = None,
+    pin_tdo: int = 0,
+    pin_tms: int = 0,
+    pin_dir_tms: int = 0,
 ):
     args = locals()
     for num, attribute in enumerate(prog_attribs):
