@@ -45,7 +45,9 @@ static int mem_read(uint32_t *const dst, uint32_t addr)
     return ap_read(dst, AP_REG_DRW);
 }
 
+
 /* Halts the core */
+/*
 static int dev_halt()
 {
     const int rc = mem_write(CoreDebug_BASE + offsetof(CoreDebug_Type, DHCSR),
@@ -54,6 +56,7 @@ static int dev_halt()
 
     return rc;
 }
+ */
 
 /* Continues execution */
 static int dev_continue()

@@ -90,11 +90,10 @@ int ihex_reader_init(char *const file_mem)
 /* consecutive calls read data from hexfile block by block */
 ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
 {
-    int               rc;
     static ihex_rec_t rec;
     while (1)
     {
-        if ((rc = ihex_get_rec(&rec)) != 0) return rc;
+        if (ihex_get_rec(&rec) != 0) return IHEX_RET_ERR;
 
         if (rec.type == IHEX_REC_TYPE_DATA)
         {

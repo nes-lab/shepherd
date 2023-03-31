@@ -14,7 +14,8 @@ typedef struct
 typedef enum
 {
     IHEX_RET_OK   = 0u,
-    IHEX_RET_DONE = 1u
+    IHEX_RET_DONE = 1u,
+    IHEX_RET_ERR  = 2u
 } ihex_ret_t;
 
 typedef struct

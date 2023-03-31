@@ -593,9 +593,10 @@ static int verify(const uint32_t data, uint32_t address)
 }
 
 /* Emulates a flash erase by sequentially setting memory to 1s */
+/*
 static int erase()
 {
-    /* No real erase on FRAM -> emulate FLASH erase */
+    // No real erase on FRAM -> emulate FLASH erase
     for (uint32_t address = FRAM_LOW; address < FRAM_HIGH; address += 2)
     {
         const int ret = write(0xFFFF, address);
@@ -604,6 +605,7 @@ static int erase()
     }
     return DRV_ERR_OK;
 }
+*/
 
 /* FRAM doesn't need erase before write -> just ignore function call */
 static int      dummy_erase() { return DRV_ERR_OK; }

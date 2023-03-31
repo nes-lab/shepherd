@@ -145,7 +145,7 @@ static int transceive(const swd_header_t *const header, uint32_t *const data)
     uint8_t i;
     int     rc;
 
-    for (i = 0; i < 8u; i++) { iow((*header >> i) & 0x1); }
+    for (i = 0u; i < 8u; i++) { iow((gpio_state_t) ((*header >> i) & 0x1)); }
     iotrn(GPIO_DIR_IN);
     uint8_t ack = 0u;
     for (i = 0; i < 3u; i++) { ack |= ior() << i; }
@@ -207,7 +207,7 @@ int swd_transport_reset(void)
 
     /* JTAG -> SWD sequence */
     uint16_t tmp = 0x79E7;
-    for (int i = 15; i >= 0; i--) { iow((tmp >> i) & 0x01u); }
+    for (int i = 15; i >= 0; i--) { iow((gpio_state_t) ((tmp >> i) & 0x01u)); }
 
     for (uint8_t i = 0u; i < 56u; i++) { iow(GPIO_STATE_HIGH); }
 
