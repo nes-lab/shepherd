@@ -51,7 +51,7 @@ static int ihex_get_rec(ihex_rec_t *const rec)
     /* next is a 16-bit address */
     uint8_t addr_h   = read_byte(&fptr);
     uint8_t addr_l   = read_byte(&fptr);
-    rec->address     = (addr_h << 8) | addr_l;
+    rec->address     = (addr_h << 8u) | addr_l;
 
     rec->type        = read_byte(&fptr);
 

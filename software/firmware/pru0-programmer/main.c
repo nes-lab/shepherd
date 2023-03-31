@@ -235,7 +235,7 @@ int main(void)
     shared_memory->converter_settings.converter_mode = 0u;
     shared_memory->harvester_settings.algorithm      = 0u;
     shared_memory->programmer_ctrl.state             = PRG_STATE_IDLE;
-    shared_memory->programmer_ctrl.target            = PRG_TARGET_NRF52;
+    shared_memory->programmer_ctrl.target            = PRG_TARGET_NONE;
 
     shared_memory->pru1_sync_outbox.unread           = 0u;
     shared_memory->pru1_sync_inbox.unread            = 0u;

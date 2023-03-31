@@ -142,12 +142,12 @@ static int nvm_erase(void)
  * @param data word to be written
  *
  */
-static int nvm_write(uint32_t dst, uint32_t data)
+static int nvm_write(uint32_t data, uint32_t address)
 {
     int rc;
     if ((rc = nvm_wait(64))) return rc;
 
-    return mem_write(dst, data);
+    return mem_write(address, data);
 }
 
 /**
@@ -156,7 +156,7 @@ static int nvm_write(uint32_t dst, uint32_t data)
  * @param addr target memory address
  * @param data expected memory content
  */
-static int verify(uint32_t address, uint32_t data)
+static int verify(uint32_t data, uint32_t address)
 {
     uint32_t read_back = 0u;
     if (mem_read(&read_back, address) != DRV_ERR_OK) return DRV_ERR_GENERIC;

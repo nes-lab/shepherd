@@ -8,15 +8,15 @@
  * */
 
 const struct ProgrammerCtrl    ProgrammerCtrl_default    = {.state        = PRG_STATE_IDLE,
-                                                            .target       = PRG_TARGET_NRF52,
-                                                            .datarate     = 1000000u,
+                                                            .target       = PRG_TARGET_NONE,
+                                                            .datarate     = 1000000ul,
                                                             .datasize     = 0u,
-                                                            .pin_tck      = 1001u,
-                                                            .pin_tdio     = 1002u,
-                                                            .pin_dir_tdio = 1003u,
-                                                            .pin_tdo      = 1004u,
-                                                            .pin_tms      = 1005u,
-                                                            .pin_dir_tms  = 1006u};
+                                                            .pin_tck      = 1001ul,
+                                                            .pin_tdio     = 1002ul,
+                                                            .pin_dir_tdio = 1003ul,
+                                                            .pin_tdo      = 1004ul,
+                                                            .pin_tms      = 1005ul,
+                                                            .pin_dir_tms  = 1006ul};
 
 const struct CalibrationConfig CalibrationConfig_default = {.adc_current_factor_nA_n8      = 255u,
                                                             .adc_current_offset_nA         = -1,

@@ -710,6 +710,7 @@ static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribu
 
     if (strncmp(buffer, "nrf52", 5) == 0) value = PRG_TARGET_NRF52;
     else if (strncmp(buffer, "msp430", 6) == 0) value = PRG_TARGET_MSP430;
+    else if (strncmp(buffer, "dummy", 5) == 0) value = PRG_TARGET_DUMMY;
     else
     {
         printk(KERN_INFO "shprd.k: setting programmer-target failed -> unknown value");

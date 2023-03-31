@@ -112,8 +112,10 @@ enum ProgrammerState
 
 enum ProgrammerTarget
 {
-    PRG_TARGET_MSP430,
-    PRG_TARGET_NRF52,
+    PRG_TARGET_NONE = 0u,
+    PRG_TARGET_MSP430 = 1u,
+    PRG_TARGET_NRF52 = 2u,
+    PRG_TARGET_DUMMY = 3u,
 };
 
 struct GPIOEdges

@@ -19,11 +19,11 @@ typedef enum
     DRV_ERR_PROTECTED = 1,
 } drv_err_t;
 
-typedef int (*fn_open_t)(uint8_t, uint8_t, uint8_t, uint32_t);
+typedef int (*fn_open_t)(uint8_t, uint8_t, uint8_t, uint32_t f_clk);
 typedef int (*fn_erase_t)(void);
 typedef int (*fn_read_t)(uint32_t *dst, uint32_t address);
-typedef int (*fn_write_t)(uint32_t address, uint32_t data);
-typedef int (*fn_verify_t)(uint32_t address, uint32_t data);
+typedef int (*fn_write_t)(uint32_t data, uint32_t address);
+typedef int (*fn_verify_t)(uint32_t data, uint32_t address);
 typedef int (*fn_close_t)(void);
 
 typedef struct
@@ -44,6 +44,6 @@ extern device_driver_t nrf52_driver;
 #ifdef SBW_SUPPORT
 extern device_driver_t msp430fr_driver;
 #endif
-
+extern device_driver_t dummy_driver;
 
 #endif /* __PROG_DEVICE_H_ */

@@ -553,7 +553,7 @@ static int open(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio, const uin
  * @param data word to be written
  *
  */
-static int write(uint32_t address, uint32_t data)
+static int write(uint32_t data, uint32_t address)
 {
 #if DISABLE_JTAG_SIGNATURE_WRITE
     /* Prevent write to JTAG signature region -> this would disable JTAG access */
@@ -584,7 +584,7 @@ static int read(uint32_t *const dst, uint32_t address)
  * @param addr target memory address
  * @param data expected memory content
  */
-static int verify(uint32_t address, const uint32_t data)
+static int verify(const uint32_t data, uint32_t address)
 {
     uint16_t read_back = ReadMem_430Xv2(F_WORD, (uint16_t) address);
 
@@ -598,7 +598,7 @@ static int erase()
     /* No real erase on FRAM -> emulate FLASH erase */
     for (uint32_t address = FRAM_LOW; address < FRAM_HIGH; address += 2)
     {
-        const int ret = write(address, 0xFFFF);
+        const int ret = write(0xFFFF, address);
 
         if ((ret != DRV_ERR_OK) && (ret != DRV_ERR_PROTECTED)) return DRV_ERR_GENERIC;
     }
