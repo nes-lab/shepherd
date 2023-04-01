@@ -32,6 +32,7 @@ fabric = "*"
 pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
+chromalog = "*"
 
 [pipenv]
 allow_prereleases = false

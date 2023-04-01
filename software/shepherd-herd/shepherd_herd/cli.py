@@ -65,7 +65,7 @@ def cli(
     key_filepath: Optional[Path],
     verbose: int,
     version: bool,
-) -> click.Context:  # TODO: return type can be removed?!?
+):
     """A primary set of options to configure how to interface the herd"""
     set_verbose_level(verbose)
     if version:
@@ -76,7 +76,6 @@ def cli(
         click.echo("Please specify a valid command")
 
     ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
-    return ctx  # calm linter
 
 
 @cli.command(short_help="Power off shepherd nodes")
@@ -598,11 +597,11 @@ def reset(ctx: click.Context):
     help="Target supply voltage",
 )
 @click.option(
-    "--speed",
-    "-s",
+    "--datarate",
+    "-d",
     type=click.INT,
-    default=1_000_000,
-    help="Programming-Datarate",
+    default=500_000,
+    help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
     "--target",
@@ -611,23 +610,39 @@ def reset(ctx: click.Context):
     default="nrf52",
     help="Target chip",
 )
+@click.option(
+    "--prog1/--prog2",
+    default=True,
+    help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
+)
+@click.option(
+    "--simulate",
+    is_flag=True,
+    help="dry-run the programmer - no data gets written",
+)
 @click.pass_context
 def programmer(
     ctx: click.Context,
     firmware_file: Path,
     sel_a: bool,
     voltage: float,
-    speed: int,
+    datarate: int,
     target: str,
+    prog1: bool,
+    simulate: bool,
 ):
     temp_file = "/tmp/target_image.bin"  # noqa: S108
     ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
     command = (
-        f"shepherd-sheep programmer {temp_file} --sel_{'a' if sel_a else 'b'} "
-        f"-v {voltage} -s {speed} -t {target}"
+        f"shepherd-sheep programmer --sel_{'a' if sel_a else 'b'} "
+        f"-v {voltage} -d {datarate} -t {target} "
+        f"--prog{'1' if prog1 else '2'} {'--simulate' if simulate else ''} "
+        f"{temp_file}"
     )
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
     exit_code = max([reply.exited for reply in replies.values()])
+    if exit_code:
+        logger.error("Programming - Procedure failed - will exit now!")
     sys.exit(exit_code)
 
 

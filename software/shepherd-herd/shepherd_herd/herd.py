@@ -13,13 +13,13 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
+import chromalog
 import yaml
 from fabric import Connection
 from fabric import Group
 
-consoleHandler = logging.StreamHandler()
+chromalog.basicConfig(format="%(message)s")
 logger = logging.getLogger("shepherd-herd")
-logger.addHandler(consoleHandler)
 verbose_level = 0
 # Note: defined here to avoid circular import
 

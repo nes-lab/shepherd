@@ -441,6 +441,7 @@ def write_programmer_ctrl(
     pin_dir_tms: int = 0,
 ):
     args = locals()
+    logger.debug("set programmerCTRL")
     for num, attribute in enumerate(prog_attribs):
         value = args[attribute]
         if value is None:
@@ -450,7 +451,7 @@ def write_programmer_ctrl(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug("set programmer-%s = '%s'", attribute, value)
+            logger.debug("\t%s = '%s'", attribute, value)
             file.write(str(value))
 
 

@@ -182,12 +182,34 @@ If the measurement runs indefinitely or something different came up, and you wan
 shepherd-herd -l sheep1 stop
 ```
 
-### Programming Targets
+### Programming Targets (pru-programmer)
 
-Flash a firmware image `firmware_img.bin` that is stored on the local machine in your current working directory to the attached sensor nodes:
+The integrated programmer allows flashing a firmware image to an MSP430FR (SBW) or nRF52 (SWD) and shares the interface with `shepherd-sheep`. This example writes the image `firmware_img.hex` to a MSP430 on target port B and its programming port 2:
 
 ```Shell
-shepherd-herd target flash firmware_img.bin
+shepherd-herd programmer --target msp430 --sel_b --prog2 firmware_img.hex
+```
+
+To check available options and arguments call
+
+```Shell
+shepherd-herd programmer --help
+```
+
+The options default to:
+- nRF52 as Target
+- Target Port A
+- Programming Port 1
+- 3 V Target Supply
+- 500 kbit/s
+
+
+### Programming Targets (not maintained OpenOCD Interface)
+
+Flash a firmware image `firmware_img.hex` that is stored on the local machine in your current working directory to the attached sensor nodes:
+
+```Shell
+shepherd-herd target flash firmware_img.hex
 ```
 
 Reset the sensor nodes:
@@ -215,5 +237,4 @@ pytest
 
 ## ToDo
 
-- add programming-option to test
-- add new pru-programmer to interface
+- None

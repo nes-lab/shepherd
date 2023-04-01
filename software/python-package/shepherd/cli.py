@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict
 from typing import Optional
 
+import chromalog
 import click
 import click_config_file
 import gevent
@@ -37,11 +38,8 @@ from .launcher import Launcher
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 
+chromalog.basicConfig()
 logger = logging.getLogger("shp.cli")
-consoleHandler = logging.StreamHandler()
-# not clean, but removes doubles
-#  logger.handlers = []
-# logger.addHandler(consoleHandler)
 
 
 # TODO: correct docs
@@ -80,7 +78,7 @@ def yamlprovider(file_path: str, cmd_name: str) -> dict:
 @click.option(
     "--version",
     is_flag=True,
-    help="Prints version-infos (combinable with -v)",
+    help="Prints version-info (combinable with -v)",
 )
 @click.pass_context
 def cli(ctx: click.Context, verbose: int, version: bool):
@@ -572,11 +570,11 @@ def launcher(led: int, button: int):
     help="Target supply voltage",
 )
 @click.option(
-    "--speed",
-    "-s",
+    "--datarate",
+    "-d",
     type=click.INT,
-    default=1_000_000,
-    help="Programming-Datarate",
+    default=500_000,
+    help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
     "--target",
@@ -599,7 +597,7 @@ def programmer(
     firmware_file: Path,
     sel_a: bool,
     voltage: float,
-    speed: int,
+    datarate: int,
     target: str,
     prog1: bool,
     simulate: bool,
@@ -627,9 +625,9 @@ def programmer(
             if simulate:
                 target = "dummy"
             if prog1:
-                sysfs_interface.write_programmer_ctrl(target, speed, 5, 4, 10)
+                sysfs_interface.write_programmer_ctrl(target, datarate, 5, 4, 10)
             else:
-                sysfs_interface.write_programmer_ctrl(target, speed, 8, 9, 11)
+                sysfs_interface.write_programmer_ctrl(target, datarate, 8, 9, 11)
             logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
         except OSError:

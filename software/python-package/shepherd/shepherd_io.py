@@ -217,10 +217,10 @@ class SharedMem:
         )
         if verbose:
             logger.debug(
-                "Retrieved buffer #%d  (@+0x%06X) "
+                "Retrieved buffer #%d  (@+%s) "
                 "with len %d and timestamp %d ms @%.3f sys_ts",
                 index,
-                index * self.buffer_size,
+                f"0x{(index * self.buffer_size):06X}",
                 n_samples,
                 buffer_timestamp // 1000000,
                 time.time(),
@@ -435,9 +435,9 @@ class ShepherdIO:
             mem_size = sfs.get_mem_size()
 
             logger.debug(
-                "Shared memory address: \t0x%08X, size: %d byte",
-                mem_address,
-                mem_size,
+                "Shared memory address: \t%s, size: %d byte",
+                f"0x{mem_address:08X}",
+                int(mem_size),
             )
 
             # Ask PRU for size of individual buffers

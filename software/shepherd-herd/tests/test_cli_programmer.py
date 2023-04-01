@@ -1,8 +1,7 @@
 from pathlib import Path
 
 import pytest
-
-from shepherd.cli import cli
+from shepherd_herd.cli import cli
 
 # NOTE: (almost) direct copy between shepherd-herd & python-package
 
@@ -24,7 +23,7 @@ def firmware_empty(tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_minimal(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_minimal(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [
@@ -39,7 +38,7 @@ def test_cli_program_minimal(shepherd_up, cli_runner, firmware_example):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_swd_explicit(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [
@@ -62,7 +61,7 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, firmware_example):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit_short(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_swd_explicit_short(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [
@@ -85,7 +84,7 @@ def test_cli_program_swd_explicit_short(shepherd_up, cli_runner, firmware_exampl
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_sbw_explicit(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_sbw_explicit(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [
@@ -108,7 +107,7 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, firmware_example):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_a(shepherd_up, cli_runner, firmware_empty):
+def test_cli_program_file_defective_a(stopped_herd, cli_runner, firmware_empty):
     res = cli_runner.invoke(
         cli,
         [
@@ -123,7 +122,7 @@ def test_cli_program_file_defective_a(shepherd_up, cli_runner, firmware_empty):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path):
+def test_cli_program_file_defective_b(stopped_herd, cli_runner, tmp_path):
     res = cli_runner.invoke(
         cli,
         [
@@ -138,7 +137,7 @@ def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path):
+def test_cli_program_file_defective_c(stopped_herd, cli_runner, tmp_path):
     res = cli_runner.invoke(
         cli,
         [
@@ -153,7 +152,7 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_datarate_invalid_a(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_datarate_invalid_a(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [
@@ -170,7 +169,7 @@ def test_cli_program_datarate_invalid_a(shepherd_up, cli_runner, firmware_exampl
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_datarate_invalid_b(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_datarate_invalid_b(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [
@@ -187,7 +186,7 @@ def test_cli_program_datarate_invalid_b(shepherd_up, cli_runner, firmware_exampl
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_target_invalid(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_target_invalid(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
         cli,
         [

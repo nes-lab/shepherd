@@ -1,6 +1,9 @@
 import logging
 
+import chromalog
+
 # Set default logging handler to avoid "No handler found" warnings.
+chromalog.basicConfig(format="%(message)s")
 logger = logging.getLogger("shp")
 logger.addHandler(logging.NullHandler())
 verbose_level: int = 0
@@ -35,9 +38,9 @@ def set_verbose_level(verbose: int) -> None:
         logging.logProcesses = 0
 
     if verbose > 2:
-        logging.basicConfig(format="%(name)s %(levelname)s: %(message)s")
+        chromalog.basicConfig(format="%(name)s %(levelname)s: %(message)s")
     else:
-        logging.basicConfig(format="%(message)s")
+        chromalog.basicConfig(format="%(message)s")
 
 
 # short reminder for format-strings:
