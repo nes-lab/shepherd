@@ -39,7 +39,8 @@ from .sysfs_interface import check_sys_access
 
 logger = logging.getLogger("shp.cli")
 consoleHandler = logging.StreamHandler()
-# logger.handlers = []  # not clean, but removes doubles
+# not clean, but removes doubles
+#  logger.handlers = []
 # logger.addHandler(consoleHandler)
 
 
@@ -613,6 +614,7 @@ def programmer(
         sysfs_interface.write_dac_aux_voltage(cal, voltage)
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
+        failed = False
 
         protocol_dict = {
             "nrf52": "SWD",
@@ -631,21 +633,25 @@ def programmer(
             logger.info("Programmer initialized, will start now")
             sysfs_interface.start_programmer()
         except OSError:
-            logger.exception(
-                "Failed to initialize Programmer, shepherdState = %s",
-                sysfs_interface.get_state(),
-            )
-            return
+            logger.error("OSError - Failed to initialize Programmer")
+            failed = True
         state = sysfs_interface.check_programmer()
-        while state != "idle":
+        while state != "idle" and not failed:
             logger.info("Programming in progress,\tstate = %s", state)
             time.sleep(1)
             state = sysfs_interface.check_programmer()
-        logger.info(
-            "Finished Programming!,\tctrl = %s",
-            sysfs_interface.read_programmer_ctrl(),
-        )
+            if "error" in state:
+                logger.error("SystemError - Failed during Programming")
+                failed = True
         sysfs_interface.load_pru0_firmware("shepherd")
+        if failed:
+            logger.info("Programming - Procedure failed - will exit now!")
+        else:
+            logger.info("Finished Programming!")
+        logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
+        logger.debug("\tprogrammerState = %s", state)
+        logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+        sys.exit(int(failed))
 
 
 if __name__ == "__main__":

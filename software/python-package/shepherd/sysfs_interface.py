@@ -443,14 +443,14 @@ def write_programmer_ctrl(
     args = locals()
     for num, attribute in enumerate(prog_attribs):
         value = args[attribute]
+        if value is None:
+            continue
         if num > 0 and ((value < 0) or (value >= 2**32)):
             raise SysfsInterfaceException(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
-        if value is None:
-            continue
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug("set programmer/%s = '%s'", attribute, value)
+            logger.debug("set programmer-%s = '%s'", attribute, value)
             file.write(str(value))
 
 

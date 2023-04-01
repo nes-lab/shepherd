@@ -1,9 +1,8 @@
 from pathlib import Path
-from shepherd.cli import cli
 
 import pytest
 
-from shepherd import CalibrationData
+from shepherd.cli import cli
 
 
 @pytest.fixture
@@ -17,7 +16,7 @@ def firmware_example():
 def firmware_empty(tmp_path):
     store_path = tmp_path / "firmware_null.hex"
     with open(store_path, "w") as f:
-        pass
+        f.write("")
     return store_path
 
 
@@ -45,9 +44,35 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, firmware_example):
             "-vvv",
             "programmer",
             "--sel_a",
-            "--voltage", "2.0",
-            "--speed", "600000",
-            "--target", "nrf52",
+            "--voltage",
+            "2.0",
+            "--speed",
+            "600000",
+            "--target",
+            "nrf52",
+            "--prog1",
+            "--simulate",
+            str(firmware_example),
+        ],
+    )
+    assert res.exit_code == 0
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_cli_program_swd_explicit_short(shepherd_up, cli_runner, firmware_example):
+    res = cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "programmer",
+            "--sel_a",
+            "-v",
+            "2.0",
+            "-s",
+            "600000",
+            "-t",
+            "nrf52",
             "--prog1",
             "--simulate",
             str(firmware_example),
@@ -65,9 +90,12 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, firmware_example):
             "-vvv",
             "programmer",
             "--sel_b",
-            "--voltage", "1.5",
-            "--speed", "300000",
-            "--target", "msp430",
+            "--voltage",
+            "1.5",
+            "--speed",
+            "300000",
+            "--target",
+            "msp430",
             "--prog2",
             "--simulate",
             str(firmware_example),
@@ -129,7 +157,8 @@ def test_cli_program_datarate_invalid_a(shepherd_up, cli_runner, firmware_exampl
         [
             "-vvv",
             "programmer",
-            "--speed", "2000000",
+            "--speed",
+            "2000000",
             "--simulate",
             str(firmware_example),
         ],
@@ -145,7 +174,8 @@ def test_cli_program_datarate_invalid_b(shepherd_up, cli_runner, firmware_exampl
         [
             "-vvv",
             "programmer",
-            "--speed", "0",
+            "--speed",
+            "0",
             "--simulate",
             str(firmware_example),
         ],
@@ -161,7 +191,8 @@ def test_cli_program_target_invalid(shepherd_up, cli_runner, firmware_example):
         [
             "-vvv",
             "programmer",
-            "--target", "arduino",
+            "--target",
+            "arduino",
             "--simulate",
             str(firmware_example),
         ],
