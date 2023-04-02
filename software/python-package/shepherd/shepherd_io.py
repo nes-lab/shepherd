@@ -13,6 +13,7 @@ import logging
 import mmap
 import os
 import struct
+import subprocess  # noqa: S404
 import time
 import weakref
 from typing import Optional
@@ -48,6 +49,28 @@ class ShepherdIOException(Exception):
         super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
         self.id_num = id_num
         self.value = value
+
+
+def load_kernel_module():
+    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
+    time.sleep(3)
+
+
+def remove_kernel_module():
+    ret = 1
+    while ret > 0:
+        ret = subprocess.run(  # noqa: S607 S603
+            ["modprobe", "-rf", "shepherd"],
+            timeout=60,
+            capture_output=True,
+        ).returncode
+        time.sleep(1)
+    time.sleep(1)
+
+
+def reload_kernel_module():
+    remove_kernel_module()
+    load_kernel_module()
 
 
 class GPIOEdges:

@@ -36,6 +36,7 @@ from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
 from .shepherd_io import gpio_pin_nums
+from .shepherd_io import reload_kernel_module
 from .sysfs_interface import check_sys_access
 
 chromalog.basicConfig()
@@ -641,7 +642,6 @@ def programmer(
             if "error" in state:
                 logger.error("SystemError - Failed during Programming")
                 failed = True
-        sysfs_interface.load_pru0_firmware("shepherd")
         if failed:
             logger.info("Programming - Procedure failed - will exit now!")
         else:
@@ -649,7 +649,19 @@ def programmer(
         logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
         logger.debug("\tprogrammerState = %s", state)
         logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
-        sys.exit(int(failed))
+    if False:
+        reload_kernel_module()  # precaution: pru-driver seems to lock up after some fw-switches
+    else:
+        sysfs_interface.load_pru0_firmware("shepherd")
+    sys.exit(int(failed))
+
+
+@cli.command(
+    short_help="Reloads the shepherd-kernel-module",
+    context_settings={"ignore_unknown_options": True},
+)
+def fix():
+    reload_kernel_module()
 
 
 if __name__ == "__main__":

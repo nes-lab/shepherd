@@ -631,10 +631,10 @@ def programmer(
     prog1: bool,
     simulate: bool,
 ):
-    temp_file = "/tmp/target_image.bin"  # noqa: S108
+    temp_file = "/tmp/target_image.hex"  # noqa: S108
     ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
     command = (
-        f"shepherd-sheep programmer --sel_{'a' if sel_a else 'b'} "
+        f"shepherd-sheep -vvv programmer --sel_{'a' if sel_a else 'b'} "
         f"-v {voltage} -d {datarate} -t {target} "
         f"--prog{'1' if prog1 else '2'} {'--simulate' if simulate else ''} "
         f"{temp_file}"
@@ -643,6 +643,11 @@ def programmer(
     exit_code = max([reply.exited for reply in replies.values()])
     if exit_code:
         logger.error("Programming - Procedure failed - will exit now!")
+        for i, hostname in enumerate(ctx.obj["herd"].hostnames.values()):
+            if replies[i].exited != 0:
+                logger.info("\n************** %s (failed) **************", hostname)
+                logger.info(replies[i].stdout)
+                logger.info("exit-code = %s", replies[i].exited)
     sys.exit(exit_code)
 
 

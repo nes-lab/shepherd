@@ -4,6 +4,7 @@ import pytest
 from shepherd_herd.cli import cli
 
 # NOTE: (almost) direct copy between shepherd-herd & python-package
+# differences: import _herd, .mark.hardware, shepherd_up / stopped_herd
 
 
 @pytest.fixture
@@ -21,7 +22,6 @@ def firmware_empty(tmp_path):
     return store_path
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_minimal(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
@@ -36,7 +36,6 @@ def test_cli_program_minimal(stopped_herd, cli_runner, firmware_example):
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_swd_explicit(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
@@ -59,7 +58,6 @@ def test_cli_program_swd_explicit(stopped_herd, cli_runner, firmware_example):
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_swd_explicit_short(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
@@ -82,7 +80,6 @@ def test_cli_program_swd_explicit_short(stopped_herd, cli_runner, firmware_examp
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_sbw_explicit(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
@@ -105,7 +102,6 @@ def test_cli_program_sbw_explicit(stopped_herd, cli_runner, firmware_example):
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_file_defective_a(stopped_herd, cli_runner, firmware_empty):
     res = cli_runner.invoke(
@@ -120,7 +116,6 @@ def test_cli_program_file_defective_a(stopped_herd, cli_runner, firmware_empty):
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_file_defective_b(stopped_herd, cli_runner, tmp_path):
     res = cli_runner.invoke(
@@ -135,7 +130,6 @@ def test_cli_program_file_defective_b(stopped_herd, cli_runner, tmp_path):
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_file_defective_c(stopped_herd, cli_runner, tmp_path):
     res = cli_runner.invoke(
@@ -150,7 +144,6 @@ def test_cli_program_file_defective_c(stopped_herd, cli_runner, tmp_path):
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_a(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
@@ -167,7 +160,6 @@ def test_cli_program_datarate_invalid_a(stopped_herd, cli_runner, firmware_examp
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_b(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(
@@ -184,7 +176,6 @@ def test_cli_program_datarate_invalid_b(stopped_herd, cli_runner, firmware_examp
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_target_invalid(stopped_herd, cli_runner, firmware_example):
     res = cli_runner.invoke(

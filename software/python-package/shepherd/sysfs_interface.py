@@ -499,12 +499,23 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
             choice = firmware
     with open(sysfs_path / "pru0_firmware", "w") as file:
         logger.debug("set pru0-firmware to '%s'", choice)
-        file.write(choice)
+        try:
+            file.write(choice)
+        except OSError:
+            raise OSError(
+                "PRU-Driver is locked up -> restart node or kernel-module to fix"
+            )
+    time.sleep(2)
 
 
 def pru0_firmware_is_default() -> bool:
     with open(sysfs_path / "pru0_firmware") as file:
-        return file.read().rstrip() in pru0_firmwares[0]
+        try:
+            return file.read().rstrip() in pru0_firmwares[0]
+        except OSError:
+            raise OSError(
+                "PRU-Driver is locked up -> restart node or kernel-module to fix"
+            )
 
 
 attribs = [

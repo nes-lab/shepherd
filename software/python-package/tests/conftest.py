@@ -1,10 +1,11 @@
 import gc
-import subprocess  # noqa: S404
-import time
 from contextlib import suppress
 from pathlib import Path
 
 import pytest
+
+from shepherd.shepherd_io import load_kernel_module
+from shepherd.shepherd_io import remove_kernel_module
 
 
 def check_beagleboard():
@@ -57,24 +58,6 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_fake)
 
 
-def load_kernel_module():
-    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
-    time.sleep(3)
-
-
-def remove_kernel_module():
-    ret = 1
-    while ret > 0:
-        ret = subprocess.run(  # noqa: S607 S603
-            ["modprobe", "-rf", "shepherd"],
-            timeout=60,
-            capture_output=True,
-        ).returncode
-        time.sleep(1)
-    gc.collect()  # precaution
-    time.sleep(3)
-
-
 @pytest.fixture()
 def shepherd_up(fake_hardware, shepherd_down):
     if fake_hardware is not None:
@@ -112,6 +95,7 @@ def shepherd_up(fake_hardware, shepherd_down):
         load_kernel_module()
         yield
         remove_kernel_module()
+        gc.collect()  # precaution
 
 
 @pytest.fixture()

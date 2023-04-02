@@ -218,9 +218,7 @@ class Herd:
             for path_allowed in self._remote_paths_allowed:
                 if str(dst_path).startswith(str(path_allowed)):
                     is_allowed = True
-            if is_allowed:
-                logger.info("Remote dest path = %s", dst_path)
-            else:
+            if not is_allowed:
                 raise NameError(f"provided path was forbidden ('{dst_path}')")
 
         threads = {}
