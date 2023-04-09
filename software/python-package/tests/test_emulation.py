@@ -119,7 +119,7 @@ def test_emulate_fn(tmp_path, data_h5, shepherd_up):
         virtsource="direct",
     )
 
-    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5) as hf_hrvst:
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrvst:
         assert hf_emu["data"]["time"].shape[0] == hf_hrvst["data"]["time"].shape[0]
         assert hf_emu["data"]["time"][0] == start_time * 10**9
 

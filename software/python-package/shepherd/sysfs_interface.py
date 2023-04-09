@@ -9,6 +9,7 @@ provided by the shepherd kernel module
 :license: MIT, see LICENSE for more details.
 """
 import logging
+import subprocess  # noqa: S404
 import sys
 import time
 from pathlib import Path
@@ -38,17 +39,39 @@ shepherd_modes = [
 ]
 
 
+def load_kernel_module():
+    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
+    time.sleep(3)
+
+
+def remove_kernel_module():
+    ret = 1
+    while ret > 0:
+        ret = subprocess.run(  # noqa: S607 S603
+            ["modprobe", "-rf", "shepherd"],
+            timeout=60,
+            capture_output=True,
+        ).returncode
+        time.sleep(1)
+    time.sleep(1)
+
+
+def reload_kernel_module():
+    remove_kernel_module()
+    load_kernel_module()
+
+
 def check_sys_access() -> None:
     try:  # test for correct usage -> fail early!
         get_mode()
     except FileNotFoundError:
         logger.error(
-            "RuntimeError: Failed to access sysFS -> is the kernel module loaded?",
+            "RuntimeError: Failed to access sysFS -> make sure shepherd kernel module is active!",
         )
         sys.exit(1)
     except PermissionError:
         logger.error(
-            "RuntimeError: Failed to access sysFS -> is shepherd-sheep run with 'sudo'?",
+            "RuntimeError: Failed to access sysFS -> run shepherd-sheep with 'sudo'!",
         )
         sys.exit(1)
     # TODO: if this (log.error & exit) behaves ok it could replace most "raise Errors" in code
@@ -488,34 +511,64 @@ pru0_firmwares = [
 
 
 def load_pru0_firmware(value: str = "shepherd") -> None:
-    """
+    """Swap firmwares
+    NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
+    WORKAROUND: catch lockup, restart shp-module until successful
 
     Args:
         value: unique part of valid file-name like shepherd, swd, sbw (not case sensitive)
     """
-    choice = pru0_firmwares[0]  # default
+    request = pru0_firmwares[0]  # default
     for firmware in pru0_firmwares:
         if value.lower() in firmware.lower():
-            choice = firmware
-    with open(sysfs_path / "pru0_firmware", "w") as file:
-        logger.debug("set pru0-firmware to '%s'", choice)
+            request = firmware
+    logger.debug("Will set pru0-firmware to '%s'", request)
+    count = 1
+    while count < 6:
         try:
-            file.write(choice)
+            with open(sysfs_path / "pru0_firmware", "w") as file:
+                file.write(request)
+            time.sleep(2)
+            with open(sysfs_path / "pru0_firmware") as file:
+                result = file.read().rstrip()
+            if result == request:
+                return
+            else:
+                logger.error(
+                    "Requested PRU-FW (%s) was not set (is '%s')", request, result
+                )
         except OSError:
-            raise OSError(
-                "PRU-Driver is locked up -> restart node or kernel-module to fix"
+            logger.warning(
+                "PRU-Driver is locked up (during pru-fw change)"
+                " -> will restart kernel-module (n=%d)",
+                count,
             )
-    time.sleep(2)
+            reload_kernel_module()
+            count += 1
+    raise OSError(
+        "PRU-Driver still locked up (during pru-fw change)"
+        " -> consider restarting node"
+    )
 
 
 def pru0_firmware_is_default() -> bool:
-    with open(sysfs_path / "pru0_firmware") as file:
+    count = 1
+    while count < 6:
         try:
-            return file.read().rstrip() in pru0_firmwares[0]
+            with open(sysfs_path / "pru0_firmware") as file:
+                return file.read().rstrip() in pru0_firmwares[0]
         except OSError:
-            raise OSError(
-                "PRU-Driver is locked up -> restart node or kernel-module to fix"
+            logger.warning(
+                "PRU-Driver is locked up (during pru-fw read)"
+                " -> will restart kernel-module (n=%d)",
+                count,
             )
+            reload_kernel_module()
+            count += 1
+    raise OSError(
+        "PRU-Driver still locked up (during pru-fw read)"
+        " -> consider restarting node"
+    )
 
 
 attribs = [

@@ -208,7 +208,7 @@ class LogWriter:
         """Initializes the structure of the HDF5 file
 
         HDF5 is hierarchically structured and before writing data, we have to
-        setup this structure, i.e. creating the right groups with corresponding
+        set up this structure, i.e. creating the right groups with corresponding
         data types. We will store 3 types of data in a LogWriter database: The
         actual IV samples recorded either from the harvester (during recording)
         or the target (during emulation). Any log messages, that can be used to
@@ -671,7 +671,7 @@ class LogWriter:
             logger.error(  # noqa: G200
                 "[UartMonitor] PySerial ValueError '%s' - "
                 "couldn't configure serial-port '%s' "
-                "with baudrate=%d -> will skip logging",
+                "with baudrate=%d -> will not be logged",
                 e,
                 self.uart_path,
                 baudrate,
@@ -679,7 +679,7 @@ class LogWriter:
         except serial.SerialException as e:
             logger.error(  # noqa: G200
                 "[UartMonitor] pySerial SerialException '%s - "
-                "Couldn't open Serial-Port '%s' to target -> will skip logging",
+                "Couldn't open Serial-Port '%s' to target -> will not be logged",
                 e,
                 self.uart_path,
             )
@@ -701,10 +701,11 @@ class LogWriter:
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
-        if not hasattr(proc_dmesg, "stdout"):
-            raise OSError("Connection to dmesg failed")
-        if not isinstance(proc_dmesg.stdout, IO):
-            raise OSError("Connection to dmesg failed")
+        if (not hasattr(proc_dmesg, "stdout")) or (
+            not isinstance(proc_dmesg.stdout, IO)
+        ):
+            logger.error("[DmesgMonitor] Setup failed -> will not be logged")
+            return
         tevent = threading.Event()
         for line in iter(proc_dmesg.stdout.readline, ""):  # type: ignore
             if monitors_end.is_set():
@@ -744,10 +745,11 @@ class LogWriter:
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
-        if not hasattr(proc_ptp4l, "stdout"):
-            raise OSError("Connection to ptp4l failed")
-        if not isinstance(proc_ptp4l.stdout, IO):
-            raise OSError("Connection to ptp4l failed")
+        if (not hasattr(proc_ptp4l, "stdout")) or (
+            not isinstance(proc_ptp4l.stdout, IO)
+        ):
+            logger.error("[PTP4lMonitor] Setup failed -> will not be logged")
+            return
         tevent = threading.Event()
         for line in iter(proc_ptp4l.stdout.readline, ""):
             if monitors_end:

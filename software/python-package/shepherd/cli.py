@@ -35,9 +35,10 @@ from .calibration import CalibrationData
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
+from .shepherd_io import get_shared_mem
 from .shepherd_io import gpio_pin_nums
-from .shepherd_io import reload_kernel_module
 from .sysfs_interface import check_sys_access
+from .sysfs_interface import reload_kernel_module
 
 chromalog.basicConfig()
 logger = logging.getLogger("shp.cli")
@@ -79,7 +80,7 @@ def yamlprovider(file_path: str, cmd_name: str) -> dict:
 @click.option(
     "--version",
     is_flag=True,
-    help="Prints version-info (combinable with -v)",
+    help="Prints version-info at start (combinable with -v)",
 )
 @click.pass_context
 def cli(ctx: click.Context, verbose: int, version: bool):
@@ -582,7 +583,7 @@ def launcher(led: int, button: int):
     "-t",
     type=click.Choice(["nrf52", "msp430"]),
     default="nrf52",
-    help="Target chip",
+    help="Target MCU",
 )
 @click.option(
     "--prog1/--prog2",
@@ -603,7 +604,7 @@ def programmer(
     prog1: bool,
     simulate: bool,
 ):
-    with ShepherdDebug(use_io=False) as sd, open(firmware_file, "rb") as fw:
+    with ShepherdDebug(use_io=False) as sd:
         sd.select_target_for_power_tracking(sel_a=not sel_a)
         sd.set_power_state_emulator(True)
         sd.select_target_for_io_interface(sel_a=sel_a)
@@ -613,16 +614,17 @@ def programmer(
         sysfs_interface.write_dac_aux_voltage(cal, voltage)
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
-        failed = False
 
-        protocol_dict = {
-            "nrf52": "SWD",
-            "msp430": "SBW",
-        }
-        sysfs_interface.load_pru0_firmware(protocol_dict[target])
+    protocol_dict = {
+        "nrf52": "SWD",
+        "msp430": "SBW",
+    }
+    sysfs_interface.load_pru0_firmware(protocol_dict[target])
+    failed = False
 
+    with get_shared_mem() as sm, open(firmware_file, "rb") as fw:
         try:
-            sd.shared_mem.write_firmware(fw.read())
+            sm.write_firmware(fw.read())
             if simulate:
                 target = "dummy"
             if prog1:
@@ -635,24 +637,23 @@ def programmer(
             logger.error("OSError - Failed to initialize Programmer")
             failed = True
         state = sysfs_interface.check_programmer()
-        while state != "idle" and not failed:
-            logger.info("Programming in progress,\tstate = %s", state)
-            time.sleep(1)
-            state = sysfs_interface.check_programmer()
-            if "error" in state:
-                logger.error("SystemError - Failed during Programming")
-                failed = True
-        if failed:
-            logger.info("Programming - Procedure failed - will exit now!")
-        else:
-            logger.info("Finished Programming!")
-        logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
-        logger.debug("\tprogrammerState = %s", state)
-        logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
-    if False:
-        reload_kernel_module()  # precaution: pru-driver seems to lock up after some fw-switches
+
+    while state != "idle" and not failed:
+        logger.info("Programming in progress,\tstate = %s", state)
+        time.sleep(1)
+        state = sysfs_interface.check_programmer()
+        if "error" in state:
+            logger.error("SystemError - Failed during Programming")
+            failed = True
+    if failed:
+        logger.info("Programming - Procedure failed - will exit now!")
     else:
-        sysfs_interface.load_pru0_firmware("shepherd")
+        logger.info("Finished Programming!")
+    logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
+    logger.debug("\tprogrammerState = %s", state)
+    logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+
+    sysfs_interface.load_pru0_firmware("shepherd")
     sys.exit(int(failed))
 
 

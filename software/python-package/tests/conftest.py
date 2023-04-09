@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from shepherd.shepherd_io import load_kernel_module
-from shepherd.shepherd_io import remove_kernel_module
+from shepherd.sysfs_interface import load_kernel_module
+from shepherd.sysfs_interface import remove_kernel_module
 
 
 def check_beagleboard():

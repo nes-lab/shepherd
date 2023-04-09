@@ -75,11 +75,11 @@ set_verbose_level(verbose=1)
 class Recorder(ShepherdIO):
     """API for recording data with shepherd.
 
-    Provides an easy to use, high-level interface for recording data with
+    Provides an easy-to-use, high-level interface for recording data with
     shepherd. Configures all hardware and initializes the communication
     with kernel module and PRUs.
 
-    # TODO: DAC-Calibration would be nice to have, in case of active mppt even both adc-cal
+    # TODO: DAC-Calibration would be nice to have, in case of active MPPT even both adc-cal
 
     Args:
         shepherd_mode (str): Should be 'harvester' to record harvesting data

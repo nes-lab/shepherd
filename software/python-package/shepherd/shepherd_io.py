@@ -13,7 +13,6 @@ import logging
 import mmap
 import os
 import struct
-import subprocess  # noqa: S404
 import time
 import weakref
 from typing import Optional
@@ -49,28 +48,6 @@ class ShepherdIOException(Exception):
         super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
         self.id_num = id_num
         self.value = value
-
-
-def load_kernel_module():
-    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
-    time.sleep(3)
-
-
-def remove_kernel_module():
-    ret = 1
-    while ret > 0:
-        ret = subprocess.run(  # noqa: S607 S603
-            ["modprobe", "-rf", "shepherd"],
-            timeout=60,
-            capture_output=True,
-        ).returncode
-        time.sleep(1)
-    time.sleep(1)
-
-
-def reload_kernel_module():
-    remove_kernel_module()
-    load_kernel_module()
 
 
 class GPIOEdges:
@@ -563,7 +540,8 @@ class ShepherdIO:
 
     def _cleanup(self):
         logger.debug("ShepherdIO is commanded to power down / cleanup")
-        while sfs.get_state() != "idle":
+        count = 1
+        while count < 6 and sfs.get_state() != "idle":
             try:
                 sfs.set_stop(force=True)
             except sfs.SysfsInterfaceException:
@@ -576,6 +554,11 @@ class ShepherdIO:
                 logger.warning(
                     "CleanupRoutine - caused an exception while waiting for PRU to go to idle",
                 )
+            count += 1
+        if sfs.get_state() != "idle":
+            logger.warning(
+                "CleanupRoutine - gave up changing state, still '%s'", sfs.get_state()
+            )
         self.set_aux_target_voltage(None, 0.0)
 
         if self.shared_mem is not None:
@@ -837,3 +820,26 @@ class ShepherdIO:
                     f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
                     f"got { msg_type }[{ value }]",
                 )
+
+
+def get_shared_mem() -> SharedMem:
+    # TODO: could replace code in ShepherdIO
+    # Ask PRU for base address of shared mem (reserved with remoteproc)
+    mem_address = sfs.get_mem_address()
+    # Ask PRU for size of shared memory (reserved with remoteproc)
+    mem_size = sfs.get_mem_size()
+
+    logger.debug(
+        "Shared memory address: \t%s, size: %d byte",
+        f"0x{mem_address:08X}",
+        int(mem_size),
+    )
+
+    shared_mem = SharedMem(
+        mem_address,
+        mem_size,
+        sfs.get_n_buffers(),
+        sfs.get_samples_per_buffer(),
+    )
+
+    return shared_mem  # use in context (enter, exit)
