@@ -15,13 +15,18 @@ from typing import Union
 
 import chromalog
 import yaml
-from fabric import Connection
+from fabric import Connection, Result
 from fabric import Group
 
 chromalog.basicConfig(format="%(message)s")
 logger = logging.getLogger("shepherd-herd")
 verbose_level = 0
-# Note: defined here to avoid circular import
+# Note: defined here to avoid circular import 
+
+
+def get_verbose_level() -> int:
+    global verbose_level
+    return max(1, verbose_level)
 
 
 def set_verbose_level(verbose: int = 2) -> None:
@@ -34,7 +39,7 @@ def set_verbose_level(verbose: int = 2) -> None:
     elif verbose > 2:
         logger.setLevel(logging.DEBUG)
     global verbose_level
-    verbose_level = verbose
+    verbose_level = min(3, verbose)
 
 
 class Herd:
@@ -127,7 +132,7 @@ class Herd:
 
     def __del__(self):
         # ... overcautious closing of connections
-        if not isinstance(self.group, Group):
+        if not hasattr(self, "group") or not isinstance(self.group, Group):
             return
         with contextlib.suppress(TypeError):
             for cnx in self.group:
@@ -147,7 +152,7 @@ class Herd:
         cnx: Connection,
         sudo: bool,
         cmd: str,
-        results: dict,
+        results: dict[int, Result],
         index: int,
     ) -> None:
         if sudo:
@@ -155,9 +160,10 @@ class Herd:
         else:
             results[index] = cnx.run(cmd, warn=True, hide=True)
 
-    def run_cmd(self, sudo: bool, cmd: str) -> dict:
-        results = {}
+    def run_cmd(self, sudo: bool, cmd: str) -> dict[int, Result]:
+        results: dict[int, Result] = {}
         threads = {}
+        logger.debug("Sheep-CMD = %s", cmd)
         for i, cnx in enumerate(self.group):
             threads[i] = threading.Thread(
                 target=self.thread_run,
@@ -168,6 +174,18 @@ class Herd:
             thread.join()
             del thread  # ... overcautious
         return results
+
+    def print_output(self, replies: dict[int, Result], req_log_level: int) -> None:
+        for i, hostname in enumerate(self.hostnames.values()):
+            if verbose_level < req_log_level and replies[i].exited == 0:
+                continue
+            if len(replies[i].stdout) > 0:
+                logger.info("\n************** %s - stdout **************", hostname)
+                logger.info(replies[i].stdout)
+            if len(replies[i].stderr) > 0:
+                logger.error("\n~~~~~~~~~~~~~~ %s - stderr ~~~~~~~~~~~~~~", hostname)
+                logger.error(replies[i].stderr)
+            logger.info("Exit-code of %s = %s", hostname, replies[i].exited)
 
     @staticmethod
     def thread_put(
@@ -358,6 +376,7 @@ class Herd:
             parameters (dict): Parameters for shepherd-sheep
         """
         global verbose_level
+        config_path = "/etc/shepherd/config.yml"
         config_dict = {
             "mode": mode,
             "verbose": verbose_level,
@@ -365,14 +384,14 @@ class Herd:
         }
         config_yml = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
 
-        logger.debug("Rolling out the following config:\n\n%s", config_yml)
+        logger.debug("Rolling out the following config to '%s':\n\n%s", config_path, config_yml)
 
         if self.check_state(warn=True):
             raise Exception("shepherd still active!")
 
         self.put_file(
             StringIO(config_yml),
-            "/etc/shepherd/config.yml",
+            config_path,
             force_overwrite=True,
         )
 
@@ -407,6 +426,7 @@ class Herd:
             return 1
         else:
             replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
+            self.print_output(replies, 3)  # min debug level
             return max([reply.exited for reply in replies.values()])
 
     def stop_measurement(self) -> int:

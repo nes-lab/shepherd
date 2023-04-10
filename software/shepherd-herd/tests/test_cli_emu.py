@@ -16,6 +16,7 @@ def test_emu_prepare(cli_runner, stopped_herd, tmp_path) -> None:
         [
             "-vvv",
             "distribute",
+            "--force_overwrite",
             str(test_file),
         ],
     )

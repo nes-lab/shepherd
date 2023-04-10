@@ -10,7 +10,7 @@ import yaml
 from fabric import Connection
 
 from . import __version__
-from .herd import Herd
+from .herd import Herd, get_verbose_level
 from .herd import logger
 from .herd import set_verbose_level
 
@@ -50,7 +50,7 @@ def yamlprovider(file_path: str, cmd_name: str):
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="Path to private ssh key file",
 )
-@click.option("-v", "--verbose", count=True, default=2)
+@click.option("-v", "--verbose", count=True, type=click.INT, default=2)
 @click.option(
     "--version",
     is_flag=True,
@@ -92,10 +92,7 @@ def poweroff(ctx: click.Context, restart: bool):
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def run(ctx: click.Context, command: str, sudo: bool):
     replies = ctx.obj["herd"].run_cmd(sudo, command)
-    for i, hostname in enumerate(ctx.obj["herd"].hostnames.values()):
-        click.echo(f"\n************** {hostname} **************")
-        click.echo(replies[i].stdout)
-        click.echo(f"exit-code = {replies[i].exited}")
+    ctx.obj["herd"].print_output(replies, 2)  # info-level
     exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
 
@@ -155,6 +152,7 @@ def harvester(
         "force_overwrite": force_overwrite,
         "use_cal_default": use_cal_default,
     }
+    parameter_dict = {key: val for key, val in parameter_dict.items() if val is not None}
 
     ts_start = delay = 0
     if not no_start:
@@ -265,6 +263,7 @@ def emulator(
         "aux_target_voltage": aux_voltage,
         "virtsource": virtsource,
     }
+    parameter_dict = {key: val for key, val in parameter_dict.items() if val is not None}
 
     if output_path is not None:
         fp_output = Path(output_path)
@@ -454,7 +453,7 @@ def target(ctx: click.Context, port: int, on: bool, voltage: float, sel_a: bool)
     if on or ctx.invoked_subcommand:
         ctx.obj["herd"].run_cmd(
             sudo=True,
-            cmd=f"shepherd-sheep target-power --on --voltage {voltage} --{sel_target}",
+            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} target-power --on --voltage {voltage} --{sel_target}",
         )
         for cnx in ctx.obj["herd"].group:
             start_openocd(cnx, ctx.obj["herd"].hostnames[cnx.host])
@@ -465,7 +464,7 @@ def target(ctx: click.Context, port: int, on: bool, voltage: float, sel_a: bool)
         )
         replies2 = ctx.obj["herd"].run_cmd(
             sudo=True,
-            cmd="shepherd-sheep target-power --off",
+            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} target-power --off",
         )
         exit_code = max(
             [reply.exited for reply in replies1.values()]
@@ -484,7 +483,7 @@ def process_result(ctx: click.Context, result, **kwargs):  # type: ignore
         )
         replies2 = ctx.obj["herd"].run_cmd(
             sudo=True,
-            cmd="shepherd-sheep target-power --off",
+            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} target-power --off",
         )
         exit_code = max(
             [reply.exited for reply in replies1.values()]
@@ -608,7 +607,7 @@ def reset(ctx: click.Context):
     "-t",
     type=click.Choice(["nrf52", "msp430"]),
     default="nrf52",
-    help="Target chip",
+    help="Target MCU",
 )
 @click.option(
     "--prog1/--prog2",
@@ -634,7 +633,7 @@ def programmer(
     temp_file = "/tmp/target_image.hex"  # noqa: S108
     ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
     command = (
-        f"shepherd-sheep -vvv programmer --sel_{'a' if sel_a else 'b'} "
+        f"shepherd-sheep -{'v' * get_verbose_level()} programmer --sel_{'a' if sel_a else 'b'} "
         f"-v {voltage} -d {datarate} -t {target} "
         f"--prog{'1' if prog1 else '2'} {'--simulate' if simulate else ''} "
         f"{temp_file}"
@@ -643,11 +642,7 @@ def programmer(
     exit_code = max([reply.exited for reply in replies.values()])
     if exit_code:
         logger.error("Programming - Procedure failed - will exit now!")
-        for i, hostname in enumerate(ctx.obj["herd"].hostnames.values()):
-            if replies[i].exited != 0:
-                logger.info("\n************** %s (failed) **************", hostname)
-                logger.info(replies[i].stdout)
-                logger.info("exit-code = %s", replies[i].exited)
+    ctx.obj["herd"].print_output(replies, 3)  # requires debug level
     sys.exit(exit_code)
 
 

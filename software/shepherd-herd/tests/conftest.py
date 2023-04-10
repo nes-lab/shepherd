@@ -80,3 +80,13 @@ def local_herd(tmp_path) -> Path:
 def stopped_herd(cli_runner):
     cli_runner.invoke(cli, ["-vvv", "stop"])
     wait_for_end(cli_runner)
+    # make sure kernel module is active
+    cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "run",
+            "--sudo",
+            "'modprobe -a shepherd'",
+        ],
+    )
