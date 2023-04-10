@@ -10,7 +10,8 @@ import yaml
 from fabric import Connection
 
 from . import __version__
-from .herd import Herd, get_verbose_level
+from .herd import Herd
+from .herd import get_verbose_level
 from .herd import logger
 from .herd import set_verbose_level
 
@@ -152,7 +153,9 @@ def harvester(
         "force_overwrite": force_overwrite,
         "use_cal_default": use_cal_default,
     }
-    parameter_dict = {key: val for key, val in parameter_dict.items() if val is not None}
+    parameter_dict = {
+        key: val for key, val in parameter_dict.items() if val is not None
+    }
 
     ts_start = delay = 0
     if not no_start:
@@ -263,7 +266,9 @@ def emulator(
         "aux_target_voltage": aux_voltage,
         "virtsource": virtsource,
     }
-    parameter_dict = {key: val for key, val in parameter_dict.items() if val is not None}
+    parameter_dict = {
+        key: val for key, val in parameter_dict.items() if val is not None
+    }
 
     if output_path is not None:
         fp_output = Path(output_path)
@@ -453,7 +458,8 @@ def target(ctx: click.Context, port: int, on: bool, voltage: float, sel_a: bool)
     if on or ctx.invoked_subcommand:
         ctx.obj["herd"].run_cmd(
             sudo=True,
-            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} target-power --on --voltage {voltage} --{sel_target}",
+            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} "
+            f"target-power --on --voltage {voltage} --{sel_target}",
         )
         for cnx in ctx.obj["herd"].group:
             start_openocd(cnx, ctx.obj["herd"].hostnames[cnx.host])

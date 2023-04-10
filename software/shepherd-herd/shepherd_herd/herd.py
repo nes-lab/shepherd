@@ -15,13 +15,14 @@ from typing import Union
 
 import chromalog
 import yaml
-from fabric import Connection, Result
+from fabric import Connection
 from fabric import Group
+from fabric import Result
 
 chromalog.basicConfig(format="%(message)s")
 logger = logging.getLogger("shepherd-herd")
 verbose_level = 0
-# Note: defined here to avoid circular import 
+# Note: defined here to avoid circular import
 
 
 def get_verbose_level() -> int:
@@ -384,7 +385,11 @@ class Herd:
         }
         config_yml = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
 
-        logger.debug("Rolling out the following config to '%s':\n\n%s", config_path, config_yml)
+        logger.debug(
+            "Rolling out the following config to '%s':\n\n%s",
+            config_path,
+            config_yml,
+        )
 
         if self.check_state(warn=True):
             raise Exception("shepherd still active!")

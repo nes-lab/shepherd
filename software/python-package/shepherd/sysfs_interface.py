@@ -468,7 +468,9 @@ def write_programmer_ctrl(
     pin_set = set(pin_list)
 
     if sum([pin > 0 for pin in pin_list[0:3]]) < 3:
-        raise ValueError("the first 3 programmer pins (tck, tdio, dir_tdio) have to be set!")
+        raise ValueError(
+            "the first 3 programmer pins (tck, tdio, dir_tdio) have to be set!",
+        )
     if sum([pin > 0 for pin in pin_list]) != sum([pin > 0 for pin in pin_set]):
         raise ValueError("all programming pins need unique pin-numbers!")
     if datarate == 0 or datarate > 1_000_000:
@@ -547,7 +549,9 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
                 return
             else:
                 logger.error(
-                    "Requested PRU-FW (%s) was not set (is '%s')", request, result
+                    "Requested PRU-FW (%s) was not set (is '%s')",
+                    request,
+                    result,
                 )
         except OSError:
             logger.warning(
@@ -559,7 +563,7 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
             count += 1
     raise OSError(
         "PRU-Driver still locked up (during pru-fw change)"
-        " -> consider restarting node"
+        " -> consider restarting node",
     )
 
 
@@ -579,7 +583,7 @@ def pru0_firmware_is_default() -> bool:
             count += 1
     raise OSError(
         "PRU-Driver still locked up (during pru-fw read)"
-        " -> consider restarting node"
+        " -> consider restarting node",
     )
 
 

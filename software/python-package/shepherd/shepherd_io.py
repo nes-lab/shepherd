@@ -559,7 +559,8 @@ class ShepherdIO:
             count += 1
         if sfs.get_state() != "idle":
             logger.warning(
-                "CleanupRoutine - gave up changing state, still '%s'", sfs.get_state()
+                "CleanupRoutine - gave up changing state, still '%s'",
+                sfs.get_state(),
             )
         self.set_aux_target_voltage(None, 0.0)
 

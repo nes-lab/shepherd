@@ -47,10 +47,10 @@ target_pins: List[Dict] = [  # pin-order from target-connector
     {"name": "gpio6", "pin": 81, "dir": "I"},
     {"name": "uart_rx", "pin": 14, "dir": "I"},
     {"name": "uart_tx", "pin": 15, "dir": 79},
-    {"name": "prog1_clk", "pin": 5, "dir": "O"},
-    {"name": "prog1_io", "pin": 4, "dir": 10},
-    {"name": "prog2_clk", "pin": 8, "dir": "O"},
-    {"name": "prog2_io", "pin": 9, "dir": 11},
+    {"name": "prog1_clk", "pin": 5, "dir": "O"},  # P9_17
+    {"name": "prog1_io", "pin": 4, "dir": 10},  # P9_18, dir = P8_31
+    {"name": "prog2_clk", "pin": 8, "dir": "O"},  # P8_35
+    {"name": "prog2_io", "pin": 9, "dir": 11},  # P8_33, dir = P8_32
 ]
 
 

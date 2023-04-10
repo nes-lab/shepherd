@@ -637,7 +637,7 @@ def programmer(
             logger.error("OSError - Failed to initialize Programmer")
             failed = True
         except ValueError as xpt:
-            logger.error("ValueError: %s", str(xpt))
+            logger.exception("ValueError: %s", str(xpt))  # noqa: G200
             failed = True
 
     state = "init"
