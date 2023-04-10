@@ -636,8 +636,11 @@ def programmer(
         except OSError:
             logger.error("OSError - Failed to initialize Programmer")
             failed = True
-        state = sysfs_interface.check_programmer()
+        except ValueError as xpt:
+            logger.error("ValueError: %s", str(xpt))
+            failed = True
 
+    state = "init"
     while state != "idle" and not failed:
         logger.info("Programming in progress,\tstate = %s", state)
         time.sleep(1)

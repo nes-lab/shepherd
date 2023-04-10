@@ -18,7 +18,7 @@ def set_verbose_level(verbose: int) -> None:
     # performance-critical, <4 reduces chatter during main-loop
     # needed to differentiate DEBUG-Modes -> '3' only ON during init, '4' also ON during main-run
     global verbose_level
-    verbose_level = verbose
+    verbose_level = min(3, verbose)
 
     if verbose == 0:
         logger.setLevel(logging.ERROR)

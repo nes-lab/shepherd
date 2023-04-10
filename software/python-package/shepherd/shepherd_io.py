@@ -354,6 +354,8 @@ class SharedMem:
         data_size = len(data)
         if data_size > self.size:
             raise ValueError("firmware file is larger than the SharedMEM-Buffer")
+        if data_size < 1:
+            raise ValueError("firmware file is empty")
         sfs.write_programmer_datasize(data_size)
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)

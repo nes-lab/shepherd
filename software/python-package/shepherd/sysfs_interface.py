@@ -463,6 +463,18 @@ def write_programmer_ctrl(
     pin_tms: int = 0,
     pin_dir_tms: int = 0,
 ):
+    # check for validity
+    pin_list = [pin_tck, pin_tdio, pin_dir_tdio, pin_tdo, pin_tms, pin_dir_tms]
+    pin_set = set(pin_list)
+
+    if sum([pin > 0 for pin in pin_list[0:3]]) < 3:
+        raise ValueError("the first 3 programmer pins (tck, tdio, dir_tdio) have to be set!")
+    if sum([pin > 0 for pin in pin_list]) != sum([pin > 0 for pin in pin_set]):
+        raise ValueError("all programming pins need unique pin-numbers!")
+    if datarate == 0 or datarate > 1_000_000:
+        raise ValueError("Programming datarate must be within: 0 < datarate < 1 MB/s!")
+
+    # processing
     args = locals()
     logger.debug("set programmerCTRL")
     for num, attribute in enumerate(prog_attribs):
