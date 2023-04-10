@@ -221,7 +221,9 @@ int swd_transport_init(uint8_t pin_swd_clk, uint8_t pin_swd_io, uint8_t pin_swd_
     pins.swd_io      = pin_swd_io;
     pins.swd_dir     = pin_swd_dir;
 
-    clk_delay_cycles = F_CPU / f_clk / 2u;
+    clk_delay_cycles = (F_CPU / f_clk / 2u) - 10u;
+    // -> correct overhead of ~10 OPs so resulting delay cycles should be 200 - 10
+    // f_clk = 500 kHz results in 477 kHz max
 
     sys_gpio_set(pins.swd_clk, GPIO_STATE_LOW);
     sys_gpio_cfg_dir(pins.swd_clk, GPIO_DIR_OUT);

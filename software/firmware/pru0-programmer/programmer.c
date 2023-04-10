@@ -52,7 +52,7 @@ void programmer(volatile struct SharedMem *const    shared_mem,
 #ifdef SBW_SUPPORT
     if (pc->target == PRG_TARGET_MSP430) drv = &msp430fr_driver;
 #endif
-    if (pc->target == PRG_TARGET_DUMMY) drv = &dummy_driver;
+    else if (pc->target == PRG_TARGET_DUMMY) drv = &dummy_driver;
     else
     {
         pc->state = PRG_STATE_ERR_GENERIC;
