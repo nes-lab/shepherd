@@ -113,7 +113,7 @@ cdef extern from "commons.h":
 		uint8_t 	reserved[1] 	# Alignment with memory, (bytes)mod4	
 		uint32_t 	value[2] 		# Actual Content of message
 		
-	ctypedef struct SyncMsg:
+	cdef struct SyncMsg:
 		uint8_t  id
 		uint8_t  unread
 		uint8_t  type
@@ -123,7 +123,7 @@ cdef extern from "commons.h":
 		uint32_t compensation_steps
 		uint64_t next_timestamp_ns
 
-	ctypedef struct SharedMem:
+	cdef struct SharedMem:
 		uint32_t                 shepherd_state
 		uint32_t                 shepherd_mode
 		uint32_t                 dac_auxiliary_voltage_raw
