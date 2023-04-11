@@ -35,7 +35,6 @@ from .calibration import CalibrationData
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
-from .shepherd_io import get_shared_mem
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import reload_kernel_module
@@ -615,46 +614,47 @@ def programmer(
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
 
-    protocol_dict = {
-        "nrf52": "SWD",
-        "msp430": "SBW",
-    }
-    sysfs_interface.load_pru0_firmware(protocol_dict[target])
-    failed = False
+        protocol_dict = {
+            "nrf52": "SWD",
+            "msp430": "SBW",
+        }
+        sysfs_interface.load_pru0_firmware(protocol_dict[target])
+        failed = False
 
-    with get_shared_mem() as sm, open(firmware_file, "rb") as fw:
-        try:
-            sm.write_firmware(fw.read())
-            if simulate:
-                target = "dummy"
-            if prog1:
-                sysfs_interface.write_programmer_ctrl(target, datarate, 5, 4, 10)
-            else:
-                sysfs_interface.write_programmer_ctrl(target, datarate, 8, 9, 11)
-            logger.info("Programmer initialized, will start now")
-            sysfs_interface.start_programmer()
-        except OSError:
-            logger.error("OSError - Failed to initialize Programmer")
-            failed = True
-        except ValueError as xpt:
-            logger.exception("ValueError: %s", str(xpt))  # noqa: G200
-            failed = True
+        with open(firmware_file, "rb") as fw:
+            try:
+                sd.shared_mem.write_firmware(fw.read())
+                if simulate:
+                    target = "dummy"
+                if prog1:
+                    sysfs_interface.write_programmer_ctrl(target, datarate, 5, 4, 10)
+                else:
+                    sysfs_interface.write_programmer_ctrl(target, datarate, 8, 9, 11)
+                logger.info("Programmer initialized, will start now")
+                sysfs_interface.start_programmer()
+            except OSError:
+                logger.error("OSError - Failed to initialize Programmer")
+                failed = True
+            except ValueError as xpt:
+                logger.exception("ValueError: %s", str(xpt))  # noqa: G200
+                failed = True
 
-    state = "init"
-    while state != "idle" and not failed:
-        logger.info("Programming in progress,\tstate = %s", state)
-        time.sleep(1)
-        state = sysfs_interface.check_programmer()
-        if "error" in state:
-            logger.error("SystemError - Failed during Programming")
-            failed = True
-    if failed:
-        logger.info("Programming - Procedure failed - will exit now!")
-    else:
-        logger.info("Finished Programming!")
-    logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
-    logger.debug("\tprogrammerState = %s", state)
-    logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+        state = "init"
+        while state != "idle" and not failed:
+            logger.info("Programming in progress,\tstate = %s", state)
+            time.sleep(1)
+            state = sysfs_interface.check_programmer()
+            if "error" in state:
+                logger.error("SystemError - Failed during Programming")
+                failed = True
+            # TODO: programmer can hang in "starting", should restart automatically then
+        if failed:
+            logger.info("Programming - Procedure failed - will exit now!")
+        else:
+            logger.info("Finished Programming!")
+        logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
+        logger.debug("\tprogrammerState = %s", state)
+        logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
 
     sysfs_interface.load_pru0_firmware("shepherd")
     sys.exit(int(failed))

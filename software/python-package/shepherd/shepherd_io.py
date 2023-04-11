@@ -410,6 +410,14 @@ class ShepherdIO:
         # self.shared_mem: Optional[SharedMem] = None # noqa: E800
         self._buffer_period: float = 0.1  # placeholder value
 
+        # placeholders
+        self.mem_address = 0
+        self.mem_size = 0
+        self.samples_per_buffer = 0
+        self.buffer_period_ns = 0
+        self.n_buffers = 0
+        self.shared_mem: SharedMem
+
     def __del__(self):
         ShepherdIO._instance = None
 
@@ -431,36 +439,7 @@ class ShepherdIO:
             # clean up msg-channel provided by kernel module
             self._flush_msgs()
 
-            # Ask PRU for base address of shared mem (reserved with remoteproc)
-            mem_address = sfs.get_mem_address()
-            # Ask PRU for size of shared memory (reserved with remoteproc)
-            mem_size = sfs.get_mem_size()
-
-            logger.debug(
-                "Shared memory address: \t%s, size: %d byte",
-                f"0x{mem_address:08X}",
-                int(mem_size),
-            )
-
-            # Ask PRU for size of individual buffers
-            self.samples_per_buffer = sfs.get_samples_per_buffer()
-            logger.debug("Samples per buffer: \t%d", self.samples_per_buffer)
-
-            self.n_buffers = sfs.get_n_buffers()
-            logger.debug("Number of buffers: \t%d", self.n_buffers)
-
-            self.buffer_period_ns = sfs.get_buffer_period_ns()
-            self._buffer_period = self.buffer_period_ns / 1e9
-            logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
-
-            self.shared_mem = SharedMem(
-                mem_address,
-                mem_size,
-                self.n_buffers,
-                self.samples_per_buffer,
-            )
-
-            self.shared_mem.__enter__()
+            self.refresh_shared_mem()
 
         except Exception:
             logger.exception("ShepherdIO.Init caught an exception -> exit now")
@@ -540,6 +519,40 @@ class ShepherdIO:
         sfs.set_stop(force=True)  # forces idle
         sfs.wait_for_state("idle", 5)
 
+    def refresh_shared_mem(self):
+        if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMem):
+            self.shared_mem.__exit__()
+
+        # Ask PRU for base address of shared mem (reserved with remoteproc)
+        self.mem_address = sfs.get_mem_address()
+        # Ask PRU for size of shared memory (reserved with remoteproc)
+        self.mem_size = sfs.get_mem_size()
+
+        logger.debug(
+            "Shared memory address: \t%s, size: %d byte",
+            f"0x{self.mem_address:08X}",
+            int(self.mem_size),
+        )
+
+        # Ask PRU for size of individual buffers
+        self.samples_per_buffer = sfs.get_samples_per_buffer()
+        logger.debug("Samples per buffer: \t%d", self.samples_per_buffer)
+
+        self.n_buffers = sfs.get_n_buffers()
+        logger.debug("Number of buffers: \t%d", self.n_buffers)
+
+        self.buffer_period_ns = sfs.get_buffer_period_ns()
+        self._buffer_period = self.buffer_period_ns / 1e9
+        logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
+
+        self.shared_mem = SharedMem(
+            self.mem_address,
+            self.mem_size,
+            self.n_buffers,
+            self.samples_per_buffer,
+        )
+        self.shared_mem.__enter__()
+
     def _cleanup(self):
         logger.debug("ShepherdIO is commanded to power down / cleanup")
         count = 1
@@ -548,18 +561,20 @@ class ShepherdIO:
                 sfs.set_stop(force=True)
             except sfs.SysfsInterfaceException:
                 logger.exception(
-                    "CleanupRoutine - caused an exception while trying to stop PRU",
+                    "CleanupRoutine caused an exception while trying to stop PRU (n=%d)",
+                    count,
                 )
             try:
                 sfs.wait_for_state("idle", 3.0)
             except sfs.SysfsInterfaceException:
                 logger.warning(
-                    "CleanupRoutine - caused an exception while waiting for PRU to go to idle",
+                    "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
+                    count,
                 )
             count += 1
         if sfs.get_state() != "idle":
             logger.warning(
-                "CleanupRoutine - gave up changing state, still '%s'",
+                "CleanupRoutine gave up changing state, still '%s'",
                 sfs.get_state(),
             )
         self.set_aux_target_voltage(None, 0.0)
@@ -823,26 +838,3 @@ class ShepherdIO:
                     f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
                     f"got { msg_type }[{ value }]",
                 )
-
-
-def get_shared_mem() -> SharedMem:
-    # TODO: could replace code in ShepherdIO
-    # Ask PRU for base address of shared mem (reserved with remoteproc)
-    mem_address = sfs.get_mem_address()
-    # Ask PRU for size of shared memory (reserved with remoteproc)
-    mem_size = sfs.get_mem_size()
-
-    logger.debug(
-        "Shared memory address: \t%s, size: %d byte",
-        f"0x{mem_address:08X}",
-        int(mem_size),
-    )
-
-    shared_mem = SharedMem(
-        mem_address,
-        mem_size,
-        sfs.get_n_buffers(),
-        sfs.get_samples_per_buffer(),
-    )
-
-    return shared_mem  # use in context (enter, exit)
