@@ -15,6 +15,7 @@ from typing import Optional
 from typing import Union
 
 from periphery import GPIO
+from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
 from . import sysfs_interface as sfs
@@ -303,7 +304,10 @@ class ShepherdIO:
         logger.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
 
-    def select_main_target_for_power(self, target: str) -> None:
+    def select_main_target_for_power(
+        self,
+        target: Union[TargetPort, bool, None],
+    ) -> None:
         """
         choose which targets (A or B) gets the supply with current-monitor,
 
@@ -317,16 +321,14 @@ class ShepherdIO:
         if current_state != "idle":
             self.reinitialize_prus()
         if target is None:
-            target = "A"
-        if isinstance(target, bool):
-            # to keep compatible with old implementation
-            target = "A" if target else "B"
-        if target.lower() == "a":
             value = True
-        elif target.lower() == "b":
-            value = False
+        elif isinstance(target, TargetPort):
+            # to keep compatible with old implementation
+            value = target == TargetPort.A
+        elif isinstance(target, bool):
+            value = target
         else:
-            raise ValueError(f"Parameter 'pwr_target' must be A or B (was {target})")
+            raise ValueError(f"Parameter 'pwr_port' must be A or B (was {target})")
         logger.debug(
             "Set routing for (main) supply with current-monitor to target %s",
             target,
@@ -335,7 +337,7 @@ class ShepherdIO:
         if current_state != "idle":
             self.start(wait_blocking=True)
 
-    def select_main_target_for_io(self, target: str) -> None:
+    def select_main_target_for_io(self, target: Union[TargetPort, bool, None]) -> None:
         """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
         shepherd hw-rev2 has two ports for targets and can switch independently
@@ -345,16 +347,14 @@ class ShepherdIO:
             target: A or B for that specific Target-Port
         """
         if target is None:
-            target = "A"
-        if isinstance(target, bool):
-            # to keep compatible with old implementation
-            target = "A" if target else "B"
-        if target.lower() == "a":
             value = True
-        elif target.lower() == "b":
-            value = False
+        elif isinstance(target, TargetPort):
+            # to keep compatible with old implementation
+            value = target == TargetPort.A
+        elif isinstance(target, bool):
+            value = target
         else:
-            raise ValueError(f"Parameter 'io_target' must be A or B (was {target})")
+            raise ValueError(f"Parameter 'io_port' must be A or B (was {target})")
         logger.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(value)
 

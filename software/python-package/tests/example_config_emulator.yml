@@ -9,22 +9,22 @@ parameters:
   output_path: /var/shepherd/recordings/emu_test.h5
   output_compression: lzf
   duration: 10
-  virtsource: # provide path, name (ie. default, BQ25570) or parameters
-    converter_base: BQ25570
+  virtual_source: # provide path, name (ie. default, BQ25570) or parameters
+    inherit_from: BQ25570
     V_output_mV: 3300
   force_overwrite: true
   use_cal_default: false
   enable_io: true # regarding io level translators
-  io_target: A  # either Port A or B
-  pwr_target: A
-  aux_voltage: 3.3
-    # aux_voltage options:
-    # - None to disable (0 V),
-    # - 0-4.5 for specific const Voltage,
-    # - "mid" will output intermediate voltage (vsource storage cap),
-    # - true or "main" to mirror main target voltage
-  uart_baudrate: 9600 # set None to disable uart-logging for target
-  skip_log_voltage: false
-  skip_log_current: false
-  skip_log_gpio: false
+  io_port: A  # either Port A or B
+  pwr_port: A
+  voltage_aux: 3.3
+  # ⤷ aux_voltage options:
+  #   - 0-4.5 for specific const Voltage (0 V = disabled),
+  #   - "mid" will output intermediate voltage (storage cap of vsource),
+  #   - "main" will mirror main target voltage
+  gpio_tracing:
+    uart_baudrate: 9600 # set None to disable uart-logging for target
+  power_tracing:
+    voltage: true
+    current: true
 verbose: 2

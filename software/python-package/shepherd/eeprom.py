@@ -295,3 +295,24 @@ class EEPROM:
                 "EEPROM seems to have no usable data - will set calibration from default-values",
             )
         return cal
+
+
+def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
+    if use_default_cal:
+        return CalibrationData.from_default()
+    else:
+        try:
+            with EEPROM() as storage:
+                return storage.read_calibration()
+        except ValueError:
+            logger.warning(
+                "Couldn't read calibration from EEPROM (ValueError). "
+                "Falling back to default values.",
+            )
+            return CalibrationData.from_default()
+        except FileNotFoundError:
+            logger.warning(
+                "Couldn't read calibration from EEPROM (FileNotFoundError). "
+                "Falling back to default values.",
+            )
+            return CalibrationData.from_default()

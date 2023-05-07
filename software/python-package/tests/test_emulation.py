@@ -5,16 +5,17 @@ import h5py
 import numpy as np
 import pytest
 import yaml
+from shepherd_core.data_models.testbed import TargetPort
 
 from shepherd import CalibrationData
-from shepherd import ShepherdEmulator
 from shepherd import LogWriter
 from shepherd import ShepherdDebug
+from shepherd import ShepherdEmulator
 from shepherd import ShepherdIOException
 from shepherd import run_emulator
 from shepherd import sysfs_interface
 from shepherd.datalog_reader import LogReader as ShpReader
-from shepherd.shepherd_io import DataBuffer
+from shepherd.shared_memory import DataBuffer
 from shepherd.shepherd_io import VirtualSourceConfig
 
 
@@ -130,7 +131,7 @@ def test_target_pins(shepherd_up):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     shepherd_io.start()
-    shepherd_io.select_main_target_for_power("A")
+    shepherd_io.select_main_target_for_power(TargetPort.A)
 
     dac_channels = [
         # combination of debug channel number, voltage_index, cal_component, cal_channel
@@ -152,14 +153,14 @@ def test_target_pins(shepherd_up):
 
     shepherd_io.set_target_io_level_conv(True)
 
-    shepherd_io.select_main_target_for_io("A")
+    shepherd_io.select_main_target_for_io(TargetPort.A)
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
         assert response & (2 ** pru_responses[io_index])
 
-    shepherd_io.select_main_target_for_io("B")
+    shepherd_io.select_main_target_for_io(TargetPort.B)
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)

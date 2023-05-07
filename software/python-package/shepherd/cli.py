@@ -23,12 +23,13 @@ import gevent
 import yaml
 import zerorpc
 from periphery import GPIO
+from shepherd_core.data_models.task import EmulationTask
 
 from . import ShepherdDebug
 from . import __version__
 from . import get_verbose_level
 from . import run_emulator
-from . import run_recorder
+from . import run_harvester
 from . import set_verbose_level
 from . import sysfs_interface
 from .calibration import CalibrationData
@@ -56,9 +57,8 @@ logger = logging.getLogger("shp.cli")
 # - default-cal -> use_cal_default
 # - start-time -> start_time
 # - sheep run record -> sheep run harvester, same with sheep record
-# TODO: clean up internal naming only have harvest/emulate to
-#       use harvester/emulator, even the commands should be
-#       "sheep harvester config"
+# - cleaned up internal naming (only harvester/emulator instead of record)
+# - TODO: even the commands should be "sheep harvester config"
 
 
 def yamlprovider(file_path: str, cmd_name: str) -> dict:
@@ -171,20 +171,10 @@ def run(mode: str, parameters: dict, verbose: int):
     if mode == "harvester":
         if "output_path" in parameters:
             parameters["output_path"] = Path(parameters["output_path"])
-        run_recorder(**parameters)
+        run_harvester(**parameters)
     elif mode == "emulator":
-        if ("output_path" in parameters) and (parameters["output_path"] is not None):
-            parameters["output_path"] = Path(parameters["output_path"])
-        if "input_path" in parameters:
-            parameters["input_path"] = Path(parameters["input_path"])
-        emu_translator = {
-            "aux_voltage": "aux_target_voltage",
-        }
-        for key, value in emu_translator.items():
-            if key in parameters:
-                parameters[value] = parameters[key]
-                parameters.pop(key)
-        run_emulator(**parameters)
+        cfg = EmulationTask(**parameters)
+        run_emulator(cfg)
     else:
         raise click.BadParameter(f"command '{mode}' not supported")
 
@@ -233,7 +223,7 @@ def harvester(
     start_time: Optional[float],
     warn_only: bool,
 ):
-    run_recorder(
+    run_harvester(
         output_path=Path(output_path),
         harvester=algorithm,
         duration=duration,
@@ -241,144 +231,6 @@ def harvester(
         use_cal_default=use_cal_default,
         start_time=start_time,
         warn_only=warn_only,
-    )
-
-
-@cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data",
-)
-@click.argument("input_path", type=click.Path(exists=True))
-@click.option(
-    "--output_path",
-    "-o",
-    type=click.Path(),
-    default="/var/shepherd/recordings/",
-    help="Dir or file path for storing the power consumption data",
-)
-@click.option(
-    "--duration",
-    "-d",
-    type=click.FLOAT,
-    help="Duration of recording in seconds",
-)
-@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option(
-    "--use_cal_default",
-    "-c",
-    is_flag=True,
-    help="Use default calibration values",
-)
-@click.option(
-    "--start_time",
-    "-s",
-    type=click.FLOAT,
-    help="Desired start time in unix epoch time",
-)
-@click.option(
-    "--enable_io/--disable_io",
-    default=True,
-    help="Switch the GPIO level converter to targets on/off",
-)
-@click.option(
-    "--io_target",
-    type=click.Choice(["A", "B"]),
-    default="A",
-    help="Choose Target 'A' or 'B' that gets connected to IO",
-)
-@click.option(
-    "--pwr_target",
-    type=click.Choice(["A", "B"]),
-    default="A",
-    help="Choose (main)Target 'A' or 'B' that gets connected to virtual Source / current-monitor",
-)
-@click.option(
-    "--aux_voltage",
-    "-x",
-    type=click.FLOAT,
-    default=0.0,
-    help="Set Voltage of auxiliary Power Source (second target). \n"
-    "- set 0-4.5 for specific const voltage, \n"
-    "- 'mid' for intermediate voltage (vsource storage cap), \n"
-    "- True or 'main' to mirror main target voltage",
-)
-@click.option(
-    "--virtsource",
-    "-a",  # -v & -s already taken, so keep it consistent with hrv (algorithm)
-    type=click.STRING,
-    default="direct",
-    help="Use the desired setting for the virtual source, provide yaml or name like BQ25570",
-)
-@click.option(
-    "--uart_baudrate",
-    "-b",
-    type=click.INT,
-    default=None,
-    help="Enable UART-Logging for target by setting a baudrate",
-)
-@click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
-@click.option(
-    "--skip_log_voltage",
-    is_flag=True,
-    help="reduce file-size by omitting voltage-logging",
-)
-@click.option(
-    "--skip_log_current",
-    is_flag=True,
-    help="reduce file-size by omitting current-logging",
-)
-@click.option(
-    "--skip_log_gpio",
-    is_flag=True,
-    help="reduce file-size by omitting gpio-logging",
-)
-@click.option(
-    "--log_mid_voltage",
-    is_flag=True,
-    help="record / log virtual intermediate (cap-)voltage and -current (out) "
-    "instead of output-voltage and -current",
-)
-def emulator(
-    input_path: Path,
-    output_path: Path,
-    duration: Optional[float],
-    force_overwrite: bool,
-    use_cal_default: bool,
-    start_time: Optional[float],
-    enable_io: bool,
-    io_target: str,
-    pwr_target: str,
-    aux_voltage: float,
-    virtsource: str,
-    uart_baudrate: Optional[int],
-    warn_only: bool,
-    skip_log_voltage: bool,
-    skip_log_current: bool,
-    skip_log_gpio: bool,
-    log_mid_voltage: bool,
-):
-    if output_path is None:
-        pl_store = None
-    else:
-        pl_store = Path(output_path)
-
-    run_emulator(
-        input_path=Path(input_path),
-        output_path=pl_store,
-        duration=duration,
-        force_overwrite=force_overwrite,
-        use_cal_default=use_cal_default,
-        start_time=start_time,
-        enable_io=enable_io,
-        io_target=io_target,
-        pwr_target=pwr_target,
-        aux_target_voltage=aux_voltage,
-        virtsource=virtsource,
-        log_intermediate_voltage=log_mid_voltage,
-        uart_baudrate=uart_baudrate,
-        warn_only=warn_only,
-        skip_log_voltage=skip_log_voltage,
-        skip_log_current=skip_log_current,
-        skip_log_gpio=skip_log_gpio,
     )
 
 

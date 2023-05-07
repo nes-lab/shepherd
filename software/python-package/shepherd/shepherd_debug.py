@@ -6,6 +6,7 @@ from typing import Tuple
 import msgpack
 import msgpack_numpy
 import numpy
+from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
 from . import sysfs_interface
@@ -299,10 +300,10 @@ class ShepherdDebug(ShepherdIO):
         self._set_shepherd_pcb_power(state)
 
     def select_target_for_power_tracking(self, sel_a: bool) -> None:
-        self.select_main_target_for_power("A" if sel_a else "B")
+        self.select_main_target_for_power(TargetPort.A if sel_a else TargetPort.B)
 
     def select_target_for_io_interface(self, sel_a: bool) -> None:
-        self.select_main_target_for_io("A" if sel_a else "B")
+        self.select_main_target_for_io(TargetPort.A if sel_a else TargetPort.B)
 
     def set_io_level_converter(self, state: bool) -> None:
         self.set_target_io_level_conv(state)
