@@ -35,7 +35,7 @@ from typing import List
 
 from periphery import GPIO
 
-from .logger_config import logger
+from .logger import logger
 
 target_pins: List[Dict] = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},
