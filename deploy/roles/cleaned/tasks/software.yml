@@ -11,6 +11,7 @@
     path: "{{ item }}"
     state: absent
   with_items: "{{ files_init.files | map(attribute='path') }}"
+  when: false
 
 - name: Delete unused firmware (by beaglebone, slightly risky) - A
   ansible.builtin.file:
@@ -76,3 +77,4 @@
     - "{{ non_essential_packages_e }}"
     - "{{ non_essential_packages_f }}"
     - "{{ non_essential_packages_g }}"
+    - "{{ non_essential_packages_h }}"
