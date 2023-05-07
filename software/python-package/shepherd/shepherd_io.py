@@ -380,7 +380,8 @@ class ShepherdIO:
     # This _instance-element is part of the singleton implementation
     _instance = None
 
-    def __new__(cls, *args, **kwds):  # type: ignore
+    @classmethod
+    def __new__(cls, *args, **kwds):
         """Implements singleton class."""
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)

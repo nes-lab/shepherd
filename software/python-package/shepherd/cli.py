@@ -599,7 +599,7 @@ def programmer(
     sel_a: bool,
     voltage: float,
     datarate: int,
-    target: str,
+    target: str,  # TODO: replace by protocol
     prog1: bool,
     simulate: bool,
 ):
