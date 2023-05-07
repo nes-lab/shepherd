@@ -20,7 +20,7 @@ from . import commons
 from . import sysfs_interface as sfs
 from .calibration import CalibrationData
 from .calibration import cal_component_list
-from .shepherd_sharedmem import SharedMem
+from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
@@ -97,7 +97,7 @@ class ShepherdIO:
         self.samples_per_buffer = 0
         self.buffer_period_ns = 0
         self.n_buffers = 0
-        self.shared_mem: SharedMem
+        self.shared_mem: SharedMemory
 
     def __del__(self):
         ShepherdIO._instance = None
@@ -201,7 +201,7 @@ class ShepherdIO:
         sfs.wait_for_state("idle", 5)
 
     def refresh_shared_mem(self):
-        if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMem):
+        if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMemory):
             self.shared_mem.__exit__()
 
         # Ask PRU for base address of shared mem (reserved with remoteproc)
@@ -226,7 +226,7 @@ class ShepherdIO:
         self._buffer_period = self.buffer_period_ns / 1e9
         logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
 
-        self.shared_mem = SharedMem(
+        self.shared_mem = SharedMemory(
             self.mem_address,
             self.mem_size,
             self.n_buffers,

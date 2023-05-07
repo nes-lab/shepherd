@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 from shepherd import CalibrationData
-from shepherd import Emulator
+from shepherd import ShepherdEmulator
 from shepherd import LogWriter
 from shepherd import ShepherdDebug
 from shepherd import ShepherdIOException
@@ -70,7 +70,7 @@ def emulator(request, shepherd_up, shp_reader, virtsource_settings_yml):
         DataBuffer(voltage=dsv, current=dsc)
         for _, dsv, dsc in shp_reader.read_buffers(end_n=fifo_buffer_size)
     ]
-    emu = Emulator(
+    emu = ShepherdEmulator(
         calibration_recording=CalibrationData(shp_reader.get_calibration_data()),
         calibration_emulator=CalibrationData.from_default(),
         initial_buffers=init_buffers,

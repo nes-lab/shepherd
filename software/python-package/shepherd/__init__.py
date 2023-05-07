@@ -31,10 +31,10 @@ from .logger import get_verbose_level
 from .logger import logger
 from .logger import set_verbose_level
 from .shepherd_debug import ShepherdDebug
-from .shepherd_emulator import Emulator
+from .shepherd_emulator import ShepherdEmulator
 from .shepherd_io import ShepherdIOException
-from .shepherd_recorder import Recorder
-from .shepherd_sharedmem import DataBuffer
+from .shepherd_harvester import ShepherdHarvester
+from .shared_memory import DataBuffer
 from .sysfs_interface import check_sys_access
 from .target_io import TargetIO
 from .virtual_harvester_config import T_vHrv
@@ -57,11 +57,11 @@ __all__ = [
     "set_verbose_level",
     "get_verbose_level",
     "logger",
-    "Recorder",
-    "Emulator",
+    "ShepherdHarvester",
+    "ShepherdEmulator",
     "ShepherdDebug",
     "run_emulator",
-    "run_recorder",
+    "run_harvester",
 ]
 
 
@@ -86,7 +86,7 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
             return CalibrationData.from_default()
 
 
-def run_recorder(
+def run_harvester(
     output_path: Path,
     duration: Optional[float] = None,
     harvester: Optional[T_vHrv] = None,
@@ -134,7 +134,9 @@ def run_recorder(
         10**9 * samples_per_buffer // sysfs_interface.get_buffer_period_ns()
     )
 
-    recorder = Recorder(shepherd_mode=mode, harvester=harvester, calibration=cal_data)
+    recorder = ShepherdHarvester(
+        shepherd_mode=mode, harvester=harvester, calibration=cal_data
+    )
     log_writer = LogWriter(
         file_path=store_path,
         calibration_data=cal_data,
@@ -331,7 +333,7 @@ def run_emulator(
             for _, dsv, dsc in log_reader.read_buffers(end_n=fifo_buffer_size)
         ]
 
-        emu = Emulator(
+        emu = ShepherdEmulator(
             shepherd_mode=mode,  # TODO: this should not be needed anymore
             initial_buffers=init_buffers,
             calibration_recording=log_reader.get_calibration_data(),

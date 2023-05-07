@@ -63,7 +63,7 @@ class DataBuffer:
         return min(self.voltage.size, self.current.size)
 
 
-class SharedMem:
+class SharedMemory:
     """Represents shared RAM used to exchange data between PRUs and userspace.
 
     A large area of contiguous memory is allocated through remoteproc. The PRUs

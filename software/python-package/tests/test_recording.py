@@ -6,8 +6,8 @@ import pytest
 
 from shepherd import CalibrationData
 from shepherd import LogWriter
-from shepherd import Recorder
-from shepherd import run_recorder
+from shepherd import ShepherdHarvester
+from shepherd import run_harvester
 
 
 @pytest.fixture(params=["harvester"])  # TODO: there is a second mode now
@@ -29,7 +29,7 @@ def log_writer(tmp_path, mode):
 
 @pytest.fixture()
 def recorder(request, shepherd_up, mode):
-    rec = Recorder(shepherd_mode=mode)
+    rec = ShepherdHarvester(shepherd_mode=mode)
     request.addfinalizer(rec.__del__)
     rec.__enter__()
     request.addfinalizer(rec.__exit__)
@@ -38,7 +38,7 @@ def recorder(request, shepherd_up, mode):
 
 @pytest.mark.hardware
 def test_instantiation(shepherd_up):
-    rec = Recorder()
+    rec = ShepherdHarvester()
     rec.__enter__()
     assert rec is not None
     rec.__exit__()
@@ -61,7 +61,7 @@ def test_recorder(log_writer, recorder):
 def test_record_fn(tmp_path, shepherd_up):
     output = tmp_path / "rec.h5"
     start_time = int(time.time() + 10)
-    run_recorder(
+    run_harvester(
         output_path=output,
         duration=10,
         force_overwrite=True,

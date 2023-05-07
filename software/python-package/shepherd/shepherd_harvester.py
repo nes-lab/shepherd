@@ -9,8 +9,8 @@ from .virtual_harvester_config import T_vHrv
 from .virtual_harvester_config import VirtualHarvesterConfig
 
 
-class Recorder(ShepherdIO):
-    """API for recording data with shepherd.
+class ShepherdHarvester(ShepherdIO):
+    """API for recording a harvest with shepherd.
 
     Provides an easy-to-use, high-level interface for recording data with
     shepherd. Configures all hardware and initializes the communication

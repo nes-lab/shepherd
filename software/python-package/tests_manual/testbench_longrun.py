@@ -2,7 +2,7 @@ from pathlib import Path
 
 from shepherd import logger
 from shepherd import run_emulator
-from shepherd import run_recorder
+from shepherd import run_harvester
 
 # run with
 # sudo python3 /opt/shepherd/software/python-package/tests_manual/testbench_longrun.py
@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     if not file_rec.exists():
         logger.info("Start harvesting")
-        run_recorder(
+        run_harvester(
             output_path=file_rec,
             duration=duration,
             force_overwrite=True,

@@ -5,13 +5,13 @@ from . import sysfs_interface
 from .calibration import CalibrationData
 from .logger import logger
 from .shepherd_io import ShepherdIO
-from .shepherd_sharedmem import DataBuffer
+from .shared_memory import DataBuffer
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import T_vSrc
 from .virtual_source_config import VirtualSourceConfig
 
 
-class Emulator(ShepherdIO):
+class ShepherdEmulator(ShepherdIO):
     """API for emulating data with shepherd.
 
     Provides an easy to use, high-level interface for emulating data with
