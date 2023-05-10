@@ -7,8 +7,7 @@ from typing import Optional
 from typing import TypeVar
 
 import yaml
-
-from .calibration import CalibrationData
+from shepherd_core import CalibrationHarvester
 
 logger = logging.getLogger("shp.hrvConfig")
 
@@ -43,7 +42,7 @@ class VirtualHarvesterConfig:
     name: str = "vHarvester"
     _dtype_default: str = "ivcurve"  # fallback in case of Setting = None
     _def_file = "virtual_harvester_defs.yml"
-    _cal = CalibrationData.from_default()
+    _cal = CalibrationHarvester()
 
     def __init__(
         self,
@@ -179,11 +178,7 @@ class VirtualHarvesterConfig:
             verbose=verbose,
         )
 
-        current_limit_uA = 10**6 * self._cal.convert_raw_to_value(
-            "harvester",
-            "adc_current",
-            4,
-        )
+        current_limit_uA = 10**6 * self._cal.adc_C_Hrv.raw_to_si(4)
         self._check_num("current_limit_uA", current_limit_uA, 50_000, verbose=verbose)
 
         if "voltage_step_mV" not in self.data:
@@ -191,11 +186,7 @@ class VirtualHarvesterConfig:
                 abs(self.data["voltage_max_mV"] - self.data["voltage_min_mV"])
                 / self.data["window_size"]
             )
-        v_step_min_mV = 10**3 * self._cal.convert_raw_to_value(
-            "harvester",
-            "dac_voltage_b",
-            4,
-        )
+        v_step_min_mV = 10**3 * self._cal.dac_V_Hrv.raw_to_si(4)
         self._check_num("voltage_step_mV", v_step_min_mV, 1_000_000, verbose=verbose)
 
         self._check_num("setpoint_n", 0, 1, verbose=verbose)

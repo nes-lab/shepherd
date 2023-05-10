@@ -1,25 +1,25 @@
 import time
 from itertools import product
+from pathlib import Path
 
 import h5py
 import numpy as np
 import pytest
+from shepherd_core import BaseReader as ShpReader
+from shepherd_core import CalibrationCape
+from shepherd_core import CalibrationHarvester
 
-from shepherd import CalibrationData
 from shepherd import LogWriter
-from shepherd.calibration import cal_channel_hrv_dict
-from shepherd.calibration import cal_parameter_list
 from shepherd.datalog import ExceptionRecord
-from shepherd.datalog_reader import LogReader as ShpReader
-from shepherd.shepherd_io import DataBuffer
+from shepherd.shared_memory import DataBuffer
 
 
-def random_data(length):
+def random_data(length: int) -> np.ndarray:
     return np.random.randint(0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture()
-def data_buffer():
+def data_buffer() -> DataBuffer:
     len_ = 10_000
     voltage = random_data(len_)
     current = random_data(len_)
@@ -28,9 +28,9 @@ def data_buffer():
 
 
 @pytest.fixture
-def data_h5(tmp_path):
+def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "record_example.h5"
-    with LogWriter(name, CalibrationData.from_default()) as store:
+    with LogWriter(name, CalibrationHarvester()) as store:
         store["hostname"] = "Pinky"
         for i in range(100):
             len_ = 10_000
@@ -40,28 +40,27 @@ def data_h5(tmp_path):
 
 
 @pytest.fixture
-def calibration_data():
-    cd = CalibrationData.from_default()
-    return cd
+def cal_cape() -> CalibrationCape:
+    return CalibrationCape()
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_create_logwriter(mode, tmp_path, calibration_data):
+def test_create_logwriter(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / f"{ mode }.h5"
-    h = LogWriter(file_path=d, calibration_data=calibration_data, mode=mode)
+    h = LogWriter(file_path=d, cal_=cal_cape[mode], mode=mode)
     assert not d.exists()
     h.__enter__()
     assert d.exists()
     h.__exit__()
 
 
-def test_create_logwriter_with_force(tmp_path, calibration_data):
+def test_create_logwriter_with_force(tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / "harvest.h5"
     d.touch()
     stat = d.stat()
     time.sleep(0.1)
 
-    h = LogWriter(file_path=d, calibration_data=calibration_data, force_overwrite=False)
+    h = LogWriter(file_path=d, cal_=cal_cape.harvester, force_overwrite=False)
     h.__enter__()
     h.__exit__()
     # This should have created the following alternative file:
@@ -69,7 +68,7 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
     assert h.store_path == d_altered
     assert d_altered.exists()
 
-    h = LogWriter(file_path=d, calibration_data=calibration_data, force_overwrite=True)
+    h = LogWriter(file_path=d, cal_=cal_cape.harvester, force_overwrite=True)
     h.__enter__()
     h.__exit__()
     new_stat = d.stat()
@@ -77,9 +76,11 @@ def test_create_logwriter_with_force(tmp_path, calibration_data):
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
+def test_logwriter_data(
+    mode, tmp_path: Path, data_buffer, cal_cape: CalibrationCape
+) -> None:
     d = tmp_path / "harvest.h5"
-    with LogWriter(file_path=d, calibration_data=calibration_data, mode=mode) as log:
+    with LogWriter(file_path=d, cal_=cal_cape.harvester, mode=mode) as log:
         log.write_buffer(data_buffer)
 
     with h5py.File(d, "r") as written:
@@ -92,30 +93,30 @@ def test_logwriter_data(mode, tmp_path, data_buffer, calibration_data):
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_calibration_logging(mode, tmp_path, calibration_data):
+def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / "recording.h5"
-    with LogWriter(file_path=d, mode=mode, calibration_data=calibration_data) as _:
+    with LogWriter(file_path=d, mode=mode, cal_=cal_cape.harvester) as _:
         pass
 
-    h5store = h5py.File(
-        d,
-        "r",
-    )  # hint: shpReader would be more direct, but less untouched
+    h5store = h5py.File(d, "r")
+    # hint: shpReader would be more direct, but less untouched
 
     for channel_entry, parameter in product(
-        cal_channel_hrv_dict.items(),
-        cal_parameter_list,
+        ["voltage", "current", "time"],
+        ["gain", "offset"],
     ):
         assert (
             h5store["data"][channel_entry[0]].attrs[parameter]
-            == calibration_data[mode][channel_entry[1]][parameter]
+            == cal_cape[mode][channel_entry[1]][parameter]
         )
 
 
-def test_exception_logging(tmp_path, data_buffer, calibration_data):
+def test_exception_logging(
+    tmp_path: Path, data_buffer: DataBuffer, cal_cape: CalibrationCape
+) -> None:
     d = tmp_path / "harvest.h5"
 
-    with LogWriter(file_path=d, calibration_data=calibration_data) as writer:
+    with LogWriter(file_path=d, cal_=cal_cape.harvester) as writer:
         writer.write_buffer(data_buffer)
 
         ts = int(time.time() * 1000)
@@ -142,10 +143,10 @@ def test_exception_logging(tmp_path, data_buffer, calibration_data):
         assert writer.xcpt_grp["time"][1] == ts + 1
 
 
-def test_key_value_store(tmp_path, calibration_data):
+def test_key_value_store(tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / "harvest.h5"
 
-    with LogWriter(file_path=d, calibration_data=calibration_data) as writer:
+    with LogWriter(file_path=d, cal_=cal_cape.harvester) as writer:
         writer["some string"] = "this is a string"
         writer["some value"] = 5
 
@@ -155,17 +156,19 @@ def test_key_value_store(tmp_path, calibration_data):
 
 
 @pytest.mark.timeout(2)
-def test_logwriter_performance(tmp_path, data_buffer, calibration_data):
+def test_logwriter_performance(
+    tmp_path: Path, data_buffer: DataBuffer, cal_cape: CalibrationCape
+) -> None:
     d = tmp_path / "harvest_perf.h5"
     with LogWriter(
         file_path=d,
         force_overwrite=True,
-        calibration_data=calibration_data,
+        cal_=cal_cape.harvester,
     ) as log:
         log.write_buffer(data_buffer)
 
 
-def test_reader_performance(data_h5):
+def test_reader_performance(data_h5: Path) -> None:
     read_durations = []
     with ShpReader(file_path=data_h5) as reader:
         past = time.time()

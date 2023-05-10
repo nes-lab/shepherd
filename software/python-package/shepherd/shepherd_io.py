@@ -15,12 +15,12 @@ from typing import Optional
 from typing import Union
 
 from periphery import GPIO
+from shepherd_core import CalibrationEmulator
+from shepherd_core import CalibrationHarvester
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
 from . import sysfs_interface as sfs
-from .calibration import CalibrationData
-from .calibration import cal_component_list
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
 from .virtual_harvester_config import VirtualHarvesterConfig
@@ -83,8 +83,8 @@ class ShepherdIO:
             sfs.load_pru0_firmware("shepherd")
 
         self.mode = mode
-        if mode in cal_component_list:
-            self.component = mode
+        if mode in ["harvester", "emulator"]:
+            self.component = mode  # TODO: still needed?
         else:
             self.component = "emulator"
         self.gpios = {}
@@ -259,7 +259,7 @@ class ShepherdIO:
                 "CleanupRoutine gave up changing state, still '%s'",
                 sfs.get_state(),
             )
-        self.set_aux_target_voltage(None, 0.0)
+        self.set_aux_target_voltage(0.0)
 
         if self.shared_mem is not None:
             self.shared_mem.__exit__()
@@ -377,36 +377,36 @@ class ShepherdIO:
 
     @staticmethod
     def set_aux_target_voltage(
-        cal_settings: Optional[CalibrationData],
         voltage: float,
+        cal_emu: Optional[CalibrationEmulator] = None,
     ) -> None:
         """Enables or disables the voltage for the second target
 
         The shepherd cape has two DAC-Channels that each serve as power supply for a target
 
         Args:
-            cal_settings: CalibrationData, TODO: should it be a class-variable?
+            cal_emu: CalibrationEmulator,
             voltage (float): Desired output voltage in volt. Providing 0 or
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        sfs.write_dac_aux_voltage(cal_settings, voltage)
+        sfs.write_dac_aux_voltage(voltage, cal_emu)
 
     @staticmethod
-    def get_aux_voltage(cal_settings: CalibrationData) -> float:
+    def get_aux_voltage(cal_emu: Optional[CalibrationEmulator] = None) -> float:
         """Reads the auxiliary voltage (dac channel B) from the PRU core.
 
         Args:
-            cal_settings: dict with offset/gain
+            cal_emu: dict with offset/gain
 
         Returns:
             aux voltage
         """
-        return sfs.read_dac_aux_voltage(cal_settings)
+        return sfs.read_dac_aux_voltage(cal_emu)
 
     def send_calibration_settings(
         self,
-        cal_settings: Optional[CalibrationData],
+        cal_: Union[CalibrationEmulator, CalibrationHarvester, None],
     ) -> None:
         """Sends calibration settings to PRU core
 
@@ -414,12 +414,16 @@ class ShepherdIO:
         Note: to apply these settings the pru has to do a re-init (reset)
 
         Args:
-            cal_settings (CalibrationData): Contains the device's
+            cal_ (CalibrationEmulation or CalibrationHarvester): Contains the device's
             calibration settings.
         """
-        if cal_settings is None:
-            cal_settings = CalibrationData.from_default()
-        cal_dict = cal_settings.export_for_sysfs(self.component)
+        if not cal_:
+            cal_ = (
+                CalibrationHarvester()
+                if self.component == "harvester"
+                else CalibrationEmulator()
+            )
+        cal_dict = cal_.export_for_sysfs()
         sfs.write_calibration_settings(cal_dict)
 
     @staticmethod

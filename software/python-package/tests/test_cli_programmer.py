@@ -9,14 +9,14 @@ from shepherd.cli import cli
 
 
 @pytest.fixture
-def firmware_example():
+def fw_example() -> Path:
     here = Path(__file__).absolute()
     name = "firmware_nrf52_powered.hex"
     return here.parent / name
 
 
 @pytest.fixture
-def firmware_empty(tmp_path):
+def fw_empty(tmp_path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
     with open(store_path, "w") as f:
         f.write("")
@@ -25,14 +25,14 @@ def firmware_empty(tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_minimal(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_minimal(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
             "programmer",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
@@ -40,7 +40,7 @@ def test_cli_program_minimal(shepherd_up, cli_runner, firmware_example):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -55,7 +55,7 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, firmware_example):
             "nrf52",
             "--prog1",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
@@ -63,7 +63,9 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, firmware_example):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit_short(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_swd_explicit_short(
+    shepherd_up, cli_runner, fw_example: Path
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -78,7 +80,7 @@ def test_cli_program_swd_explicit_short(shepherd_up, cli_runner, firmware_exampl
             "nrf52",
             "--prog1",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
@@ -86,7 +88,7 @@ def test_cli_program_swd_explicit_short(shepherd_up, cli_runner, firmware_exampl
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_sbw_explicit(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -101,7 +103,7 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, firmware_example):
             "msp430",
             "--prog2",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
@@ -109,14 +111,14 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, firmware_example):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_a(shepherd_up, cli_runner, firmware_empty):
+def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
             "programmer",
             "--simulate",
-            str(firmware_empty),
+            str(fw_empty),
         ],
     )
     assert res.exit_code != 0
@@ -124,7 +126,7 @@ def test_cli_program_file_defective_a(shepherd_up, cli_runner, firmware_empty):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path):
+def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -139,7 +141,7 @@ def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path):
+def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -154,7 +156,9 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path):
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_datarate_invalid_a(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_datarate_invalid_a(
+    shepherd_up, cli_runner, fw_example: Path
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -163,7 +167,7 @@ def test_cli_program_datarate_invalid_a(shepherd_up, cli_runner, firmware_exampl
             "--datarate",
             "2000000",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code != 0
@@ -171,7 +175,9 @@ def test_cli_program_datarate_invalid_a(shepherd_up, cli_runner, firmware_exampl
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_datarate_invalid_b(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_datarate_invalid_b(
+    shepherd_up, cli_runner, fw_example: Path
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -180,7 +186,7 @@ def test_cli_program_datarate_invalid_b(shepherd_up, cli_runner, firmware_exampl
             "--datarate",
             "0",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code != 0
@@ -188,7 +194,7 @@ def test_cli_program_datarate_invalid_b(shepherd_up, cli_runner, firmware_exampl
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_target_invalid(shepherd_up, cli_runner, firmware_example):
+def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -197,7 +203,7 @@ def test_cli_program_target_invalid(shepherd_up, cli_runner, firmware_example):
             "--target",
             "arduino",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code != 0

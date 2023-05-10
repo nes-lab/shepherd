@@ -23,16 +23,19 @@ import gevent
 import yaml
 import zerorpc
 from periphery import GPIO
+from shepherd_core import CalibrationCape
+from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import ProgrammingTask
 
 from . import ShepherdDebug
 from . import __version__
 from . import get_verbose_level
 from . import run_emulator
 from . import run_harvester
+from . import run_programmer
 from . import set_verbose_level
 from . import sysfs_interface
-from .calibration import CalibrationData
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
@@ -58,7 +61,8 @@ logger = logging.getLogger("shp.cli")
 # - start-time -> start_time
 # - sheep run record -> sheep run harvester, same with sheep record
 # - cleaned up internal naming (only harvester/emulator instead of record)
-# - TODO: even the commands should be "sheep harvester config"
+#   - TODO: even the commands should be "sheep harvester config"
+# - redone programmer, emulation
 
 
 def yamlprovider(file_path: str, cmd_name: str) -> dict:
@@ -132,9 +136,8 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(gpio_pass)
         logger.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
-    cal = CalibrationData.from_default()
     logger.info("Target Voltage \t= %.3f V", voltage)
-    sysfs_interface.write_dac_aux_voltage(cal, voltage)
+    sysfs_interface.write_dac_aux_voltage(voltage)
     sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
     logger.info("Re-Initialized PRU to finalize settings")
@@ -303,7 +306,7 @@ def write(
         storage.write_cape_data(cape_data)
 
     if cal_file is not None:
-        cal = CalibrationData.from_yaml(cal_file)
+        cal = CalibrationCape.from_file(cal_file)
         with EEPROM() as storage:
             storage.write_calibration(cal)
 
@@ -361,12 +364,11 @@ def make(filename: Path, output_path: Optional[Path]):
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
-    cd = CalibrationData.from_measurements(filename)
+    cal_cape = CalMeasurementCape.from_file(filename).to_cal()
     if output_path is None:
-        logger.info(repr(cd))
+        logger.info(repr(cal_cape))
     else:
-        with open(output_path, "w") as f:
-            f.write(repr(cd))
+        cal_cape.to_file(output_path)
 
 
 @cli.command(short_help="Start zerorpc server")
@@ -411,9 +413,18 @@ def launcher(led: int, button: int):
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.option(
-    "--sel_a/--sel_b",
-    default=True,
-    help="Choose Target-Port for programming",
+    "--target-port",
+    "-t",
+    type=click.Choice(["A", "B"]),
+    default="A",
+    help="Choose Target-Port of Cape for programming",
+)
+@click.option(
+    "--mcu-port",
+    "-m",
+    type=click.INT,
+    default=1,
+    help="Choose MCU on Target-Port (only valid for SBW & SWD)",
 )
 @click.option(
     "--voltage",
@@ -430,86 +441,25 @@ def launcher(led: int, button: int):
     help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
-    "--target",
+    "--mcu_type",
     "-t",
     type=click.Choice(["nrf52", "msp430"]),
     default="nrf52",
     help="Target MCU",
 )
 @click.option(
-    "--prog1/--prog2",
-    default=True,
-    help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
-)
-@click.option(
     "--simulate",
     is_flag=True,
     help="dry-run the programmer - no data gets written",
 )
-def programmer(
-    firmware_file: Path,
-    sel_a: bool,
-    voltage: float,
-    datarate: int,
-    target: str,  # TODO: replace by protocol
-    prog1: bool,
-    simulate: bool,
-):
-    with ShepherdDebug(use_io=False) as sd:
-        sd.select_target_for_power_tracking(sel_a=not sel_a)
-        sd.set_power_state_emulator(True)
-        sd.select_target_for_io_interface(sel_a=sel_a)
-        sd.set_io_level_converter(True)
-
-        cal = CalibrationData.from_default()
-        sysfs_interface.write_dac_aux_voltage(cal, voltage)
-        # switching target may restart pru
-        sysfs_interface.wait_for_state("idle", 5)
-
-        protocol_dict = {
-            "nrf52": "SWD",
-            "msp430": "SBW",
-        }
-        sysfs_interface.load_pru0_firmware(protocol_dict[target])
-        failed = False
-
-        with open(firmware_file, "rb") as fw:
-            try:
-                sd.shared_mem.write_firmware(fw.read())
-                if simulate:
-                    target = "dummy"
-                if prog1:
-                    sysfs_interface.write_programmer_ctrl(target, datarate, 5, 4, 10)
-                else:
-                    sysfs_interface.write_programmer_ctrl(target, datarate, 8, 9, 11)
-                logger.info("Programmer initialized, will start now")
-                sysfs_interface.start_programmer()
-            except OSError:
-                logger.error("OSError - Failed to initialize Programmer")
-                failed = True
-            except ValueError as xpt:
-                logger.exception("ValueError: %s", str(xpt))  # noqa: G200
-                failed = True
-
-        state = "init"
-        while state != "idle" and not failed:
-            logger.info("Programming in progress,\tstate = %s", state)
-            time.sleep(1)
-            state = sysfs_interface.check_programmer()
-            if "error" in state:
-                logger.error("SystemError - Failed during Programming")
-                failed = True
-            # TODO: programmer can hang in "starting", should restart automatically then
-        if failed:
-            logger.info("Programming - Procedure failed - will exit now!")
-        else:
-            logger.info("Finished Programming!")
-        logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
-        logger.debug("\tprogrammerState = %s", state)
-        logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
-
-    sysfs_interface.load_pru0_firmware("shepherd")
-    sys.exit(int(failed))
+def programmer(**kwargs):
+    protocol_dict = {
+        "nrf52": "SWD",
+        "msp430": "SBW",
+    }
+    kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
+    cfg = ProgrammingTask(**kwargs)
+    run_programmer(cfg)
 
 
 @cli.command(

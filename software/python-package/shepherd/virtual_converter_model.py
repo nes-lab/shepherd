@@ -13,23 +13,21 @@ Compromises:
 """
 
 import math
+from typing import Optional
 
-from .calibration import CalibrationData
+from shepherd_core import CalibrationEmulator
+
 from .virtual_source_config import VirtualSourceConfig
 
 
 class PruCalibration:
     """part of calibration.h"""
 
-    _cal_default: CalibrationData = CalibrationData.from_default()
-
-    def __init__(self, config: CalibrationData = _cal_default):
-        self.cal = config
+    def __init__(self, cal_emu: Optional[CalibrationEmulator] = None):
+        self.cal = cal_emu if cal_emu else CalibrationEmulator()
 
     def conv_adc_raw_to_nA(self, current_raw: int) -> float:
-        return self.cal.convert_raw_to_value("emulator", "adc_current", current_raw) * (
-            10**9
-        )
+        return self.cal.adc_C_A.raw_to_si(current_raw) * (10**9)
         # TODO: add feature "negative residue compensation" to here
 
     def conv_adc_raw_to_uV(self, voltage_raw: int) -> float:
@@ -38,13 +36,10 @@ class PruCalibration:
             "adc_voltage_b",
             voltage_raw,
         ) * (10**6)
+        # TODO: something is wrong here, adc can't meas voltage
 
     def conv_uV_to_dac_raw(self, voltage_uV: float) -> int:
-        dac_raw = self.cal.convert_value_to_raw(
-            "emulator",
-            "dac_voltage_b",
-            float(voltage_uV) / (10**6),
-        )
+        dac_raw = self.cal.dac_V_A.si_to_raw(float(voltage_uV) / (10**6))
         if dac_raw > (2**16) - 1:
             dac_raw = (2**16) - 1
         return dac_raw

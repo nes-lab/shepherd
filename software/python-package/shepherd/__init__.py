@@ -17,13 +17,13 @@ from typing import Optional
 
 import invoke
 from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import ProgrammingTask
+from shepherd_core.data_models.testbed import TargetPort
 
 from . import sysfs_interface
-from .calibration import CalibrationData
 from .datalog import ExceptionRecord
 from .datalog import LogWriter
 from .datalog import T_compr
-from .datalog_reader import LogReader
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .eeprom import retrieve_calibration
@@ -44,11 +44,9 @@ from .virtual_source_config import VirtualSourceConfig
 __version__ = "0.4.5"
 
 __all__ = [
-    "LogReader",
     "LogWriter",
     "EEPROM",
     "CapeData",
-    "CalibrationData",
     "VirtualSourceConfig",
     "VirtualHarvesterConfig",
     "TargetIO",
@@ -105,7 +103,7 @@ def run_harvester(
 
     mode = "harvester"
     check_sys_access()
-    cal_data = retrieve_calibration(use_cal_default)
+    cal_hrv = retrieve_calibration(use_cal_default).harvester
 
     if start_time is None:
         start_time = round(time.time() + 10)
@@ -130,11 +128,11 @@ def run_harvester(
     recorder = ShepherdHarvester(
         shepherd_mode=mode,
         harvester=harvester,
-        calibration=cal_data,
+        cal_=cal_hrv,
     )
     log_writer = LogWriter(
         file_path=store_path,
-        calibration_data=cal_data,
+        cal_=cal_hrv,
         mode=mode,
         datatype=recorder.harvester.data["dtype"],  # is there a cleaner way?
         force_overwrite=force_overwrite,
@@ -197,3 +195,70 @@ def run_emulator(cfg: EmulationTask):
 
     emu = ShepherdEmulator(cfg=cfg)
     stack.enter_context(emu)
+    emu.run()
+
+
+def run_programmer(cfg: ProgrammingTask):
+    with ShepherdDebug(use_io=False) as sd:
+        sd.select_target_for_power_tracking(sel_a=cfg.target_port != TargetPort.A)
+        sd.set_power_state_emulator(True)
+        sd.select_main_target_for_io(cfg.target_port)
+        sd.set_io_level_converter(True)
+
+        sysfs_interface.write_dac_aux_voltage(cfg.voltage)
+        # switching target may restart pru
+        sysfs_interface.wait_for_state("idle", 5)
+
+        sysfs_interface.load_pru0_firmware(cfg.protocol)
+        failed = False
+
+        with open(cfg.firmware_file, "rb") as fw:
+            try:
+                sd.shared_mem.write_firmware(fw.read())
+                target = cfg.mcu_type
+                if cfg.simulate:
+                    target = "dummy"
+                if cfg.mcu_port == 1:
+                    sysfs_interface.write_programmer_ctrl(
+                        target,
+                        cfg.datarate,
+                        5,
+                        4,
+                        10,
+                    )
+                else:
+                    sysfs_interface.write_programmer_ctrl(
+                        target,
+                        cfg.datarate,
+                        8,
+                        9,
+                        11,
+                    )
+                logger.info("Programmer initialized, will start now")
+                sysfs_interface.start_programmer()
+            except OSError:
+                logger.error("OSError - Failed to initialize Programmer")
+                failed = True
+            except ValueError as xpt:
+                logger.exception("ValueError: %s", str(xpt))  # noqa: G200
+                failed = True
+
+        state = "init"
+        while state != "idle" and not failed:
+            logger.info("Programming in progress,\tstate = %s", state)
+            time.sleep(1)
+            state = sysfs_interface.check_programmer()
+            if "error" in state:
+                logger.error("SystemError - Failed during Programming")
+                failed = True
+            # TODO: programmer can hang in "starting", should restart automatically then
+        if failed:
+            logger.info("Programming - Procedure failed - will exit now!")
+        else:
+            logger.info("Finished Programming!")
+        logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
+        logger.debug("\tprogrammerState = %s", state)
+        logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+
+    sysfs_interface.load_pru0_firmware("shepherd")
+    sys.exit(int(failed))

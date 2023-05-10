@@ -3,8 +3,8 @@ import time
 import h5py
 import numpy as np
 import pytest
+from shepherd_core import CalibrationHarvester
 
-from shepherd import CalibrationData
 from shepherd import LogWriter
 from shepherd import ShepherdHarvester
 from shepherd import run_harvester
@@ -17,10 +17,9 @@ def mode(request):
 
 @pytest.fixture()
 def log_writer(tmp_path, mode):
-    cal = CalibrationData.from_default()
     with LogWriter(
         mode=mode,
-        calibration_data=cal,
+        cal_=CalibrationHarvester(),
         force_overwrite=True,
         file_path=tmp_path / "test.h5",
     ) as lw:
@@ -28,7 +27,7 @@ def log_writer(tmp_path, mode):
 
 
 @pytest.fixture()
-def recorder(request, shepherd_up, mode):
+def harvester(request, shepherd_up, mode) -> ShepherdHarvester:
     rec = ShepherdHarvester(shepherd_mode=mode)
     request.addfinalizer(rec.__del__)
     rec.__enter__()
@@ -37,7 +36,7 @@ def recorder(request, shepherd_up, mode):
 
 
 @pytest.mark.hardware
-def test_instantiation(shepherd_up):
+def test_instantiation(shepherd_up) -> None:
     rec = ShepherdHarvester()
     rec.__enter__()
     assert rec is not None
@@ -46,19 +45,19 @@ def test_instantiation(shepherd_up):
 
 
 @pytest.mark.hardware
-def test_recorder(log_writer, recorder):
-    recorder.start(wait_blocking=False)
-    recorder.wait_for_start(15)
+def test_harvester(log_writer, harvester: ShepherdHarvester) -> None:
+    harvester.start(wait_blocking=False)
+    harvester.wait_for_start(15)
 
     for _ in range(100):
-        idx, buf = recorder.get_buffer()
+        idx, buf = harvester.get_buffer()
         log_writer.write_buffer(buf)
-        recorder.return_buffer(idx)
+        harvester.return_buffer(idx)
 
 
 @pytest.mark.hardware  # TODO extend with new harvester-options
 @pytest.mark.timeout(40)
-def test_record_fn(tmp_path, shepherd_up):
+def test_harvester_fn(tmp_path, shepherd_up) -> None:
     output = tmp_path / "rec.h5"
     start_time = int(time.time() + 10)
     run_harvester(

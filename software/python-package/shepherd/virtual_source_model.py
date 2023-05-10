@@ -10,7 +10,8 @@ NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 """
 from typing import Optional
 
-from .calibration import CalibrationData
+from shepherd_core import CalibrationEmulator
+
 from .virtual_converter_model import KernelConverterStruct
 from .virtual_converter_model import PruCalibration
 from .virtual_converter_model import VirtualConverterModel
@@ -27,11 +28,11 @@ class VirtualSourceModel:
     def __init__(
         self,
         vs_setting: Optional[T_vSrc],
-        cal_data: CalibrationData,
+        cal_emu: CalibrationEmulator,
         input_setting: Optional[dict],
     ):
-        self._cal: CalibrationData = cal_data
-        self._prc: PruCalibration = PruCalibration(cal_data)
+        self._cal: CalibrationEmulator = cal_emu
+        self._prc: PruCalibration = PruCalibration(cal_emu)
 
         vs_config = VirtualSourceConfig(vs_setting)
         vc_struct = KernelConverterStruct(vs_config)
@@ -64,19 +65,12 @@ class VirtualSourceModel:
         P_inp_fW = self.cnv.calc_inp_power(V_inp_uV, I_inp_nA)
 
         # fake ADC read
-        A_out_raw = self._cal.convert_value_to_raw(
-            "emulator",
-            "adc_current",
-            A_out_nA * 10**-9,
-        )
+        A_out_raw = self._cal.adc_C_A.si_to_raw(A_out_nA * 10**-9)
 
         P_out_fW = self.cnv.calc_out_power(A_out_raw)
         self.cnv.update_cap_storage()
         V_out_raw = self.cnv.update_states_and_output()
-        V_out_uV = int(
-            self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
-            * 10**6,
-        )
+        V_out_uV = int(self._cal.dac_V_A.raw_to_si(V_out_raw) * 10**6)
 
         self.W_inp_fWs += P_inp_fW
         self.W_out_fWs += P_out_fW

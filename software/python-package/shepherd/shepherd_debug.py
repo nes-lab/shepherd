@@ -6,11 +6,12 @@ from typing import Tuple
 import msgpack
 import msgpack_numpy
 import numpy
+from shepherd_core import CalibrationCape
+from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
 from . import sysfs_interface
-from .calibration import CalibrationData
 from .eeprom import EEPROM
 from .logger import logger
 from .shepherd_io import ShepherdIO
@@ -36,7 +37,7 @@ class ShepherdDebug(ShepherdIO):
         self._io: Optional[TargetIO] = TargetIO() if use_io else None
 
         # offer a default cali for debugging
-        self._cal: CalibrationData = CalibrationData.from_default()
+        self._cal: CalibrationCape = CalibrationCape()
 
         try:
             with EEPROM() as storage:
@@ -149,12 +150,12 @@ class ShepherdDebug(ShepherdIO):
     def vsource_init(
         self,
         vs_settings: VirtualSourceConfig,
-        cal_data: CalibrationData,
+        cal_emu: CalibrationEmulator,
         input_setting: Optional[dict],
     ):
         vs_config = VirtualSourceConfig(vs_settings)
         super().send_virtual_converter_settings(vs_config)
-        super().send_calibration_settings(cal_data)
+        super().send_calibration_settings(cal_emu)
 
         vh_config = VirtualHarvesterConfig(
             vs_config.get_harvester(),
@@ -176,7 +177,7 @@ class ShepherdDebug(ShepherdIO):
         # TEST-SIMPLIFICATION - code below is not part of main pru-code
         self.W_inp_fWs = 0.0
         self.W_out_fWs = 0.0
-        self._cal = cal_data
+        self._cal = CalibrationCape(emulator=cal_emu, harvester=self._cal.harvester)
 
     def cnv_calc_inp_power(
         self,
@@ -259,18 +260,11 @@ class ShepherdDebug(ShepherdIO):
     def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
         # NOTE: this includes the harvester
         P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
-        A_out_raw = self._cal.convert_value_to_raw(
-            "emulator",
-            "adc_current",
-            A_out_nA * 10**-9,
-        )
+        A_out_raw = self._cal.emulator.adc_C_A.si_to_raw(A_out_nA * 10**-9)
         P_out_fW = self.cnv_calc_out_power(A_out_raw)
         self.cnv_update_cap_storage()
         V_out_raw = self.cnv_update_states_and_output()
-        V_out_uV = int(
-            self._cal.convert_raw_to_value("emulator", "dac_voltage_b", V_out_raw)
-            * 10**6,
-        )
+        V_out_uV = int(self._cal.emulator.dac_V_A.raw_to_si(V_out_raw) * 10**6)
         self.W_inp_fWs += P_inp_fW
         self.W_out_fWs += P_out_fW
         return V_out_uV
@@ -309,10 +303,10 @@ class ShepherdDebug(ShepherdIO):
         self.set_target_io_level_conv(state)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
-        return self._cal.convert_raw_to_value(component, channel, raw)
+        return self._cal[component][channel].raw_to_si(raw)
 
     def convert_value_to_raw(self, component: str, channel: str, value: float) -> int:
-        return self._cal.convert_value_to_raw(component, channel, value)
+        return self._cal[component][channel].si_to_raw(value)
 
     def set_gpio_one_high(self, num: int) -> None:
         if not (self._io is None):

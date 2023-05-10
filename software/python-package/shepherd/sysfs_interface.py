@@ -16,8 +16,7 @@ from pathlib import Path
 from typing import Optional
 from typing import Union
 
-from . import calibration_default
-from .calibration import CalibrationData
+from shepherd_core import CalibrationEmulator
 
 logger = logging.getLogger("shp.interface")
 sysfs_path = Path("/sys/shepherd")
@@ -169,14 +168,14 @@ def write_mode(mode: str, force: bool = False) -> None:
 
 
 def write_dac_aux_voltage(
-    calibration_settings: Optional[CalibrationData],
     voltage: float,
+    cal_emu: Optional[CalibrationEmulator] = None,
 ) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
         :param voltage: desired voltage in volt
-        :param calibration_settings: optional set to convert volt to raw
+        :param cal_emu: optional set to convert volt to raw
     """
     if (voltage is None) or (voltage is False):
         voltage = 0.0
@@ -198,15 +197,9 @@ def write_dac_aux_voltage(
         raise SysfsInterfaceException(f"sending voltage with negative value: {voltage}")
     if voltage > 5.0:
         raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage}")
-
-    if calibration_settings is None:
-        output = calibration_default.dac_voltage_to_raw(voltage)
-    else:
-        output = calibration_settings.convert_value_to_raw(
-            "emulator",
-            "dac_voltage_b",
-            voltage,
-        )
+    if not cal_emu:
+        cal_emu = CalibrationEmulator()
+    output = int(cal_emu.dac_V_A.si_to_raw(voltage))
 
     logger.debug(
         "Set voltage of supply for auxiliary Target to %.3f V (raw=%d)",
@@ -233,24 +226,19 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> None:
         f.write(str(voltage_raw))
 
 
-def read_dac_aux_voltage(cal_settings: CalibrationData) -> float:
+def read_dac_aux_voltage(cal_emu: Optional[CalibrationEmulator] = None) -> float:
     """Reads the auxiliary voltage (dac channel B) from the PRU core.
 
     Args:
-        cal_settings: dict with offset/gain
+        cal_emu: dict with offset/gain
 
     Returns:
         aux voltage
     """
     value_raw = read_dac_aux_voltage_raw()
-    if cal_settings is None:
-        voltage = calibration_default.dac_raw_to_voltage(value_raw)
-    else:
-        voltage = cal_settings.convert_raw_to_value(
-            "emulator",
-            "dac_voltage_b",
-            value_raw,
-        )
+    if not cal_emu:
+        cal_emu = CalibrationEmulator()
+    voltage = cal_emu.dac_V_A.raw_to_si(value_raw)
     return voltage
 
 

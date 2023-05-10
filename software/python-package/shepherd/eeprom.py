@@ -21,8 +21,7 @@ from typing import Union
 
 import yaml
 from periphery import GPIO
-
-from .calibration import CalibrationData
+from shepherd_core import CalibrationCape
 
 logger = logging.getLogger("shp.eeprom")
 
@@ -47,6 +46,8 @@ class CapeData:
     According to BeagleBone specifications, each cape should host an EEPROM
     that contains some standardized information about the type of cape,
     manufacturer, version etc.
+
+    TODO: could inherit from ShpModel
 
     `See<https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
     """
@@ -260,14 +261,14 @@ class EEPROM:
             data[key] = self[key]
         return CapeData(data)
 
-    def write_calibration(self, calibration_data: CalibrationData) -> None:
+    def write_calibration(self, cal_cape: CalibrationCape) -> None:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:
-            calibration_data (CalibrationData): Calibration data that is going
+            cal_cape (CalibrationCape): Calibration data that is going
                 to be stored in EEPROM
         """
-        data_serialized = calibration_data.to_bytestr()
+        data_serialized = cal_cape.to_bytestr()
         if len(data_serialized) != calibration_data_format["size"]:
             raise ValueError(
                 f"WriteCal: data-size is wrong! "
@@ -276,30 +277,30 @@ class EEPROM:
             )
         self._write(calibration_data_format["offset"], data_serialized)
 
-    def read_calibration(self) -> CalibrationData:
+    def read_calibration(self) -> CalibrationCape:
         """Reads and returns shepherd calibration data from EEPROM
 
         Returns:
-            CalibrationData object containing data extracted from EEPROM
+            CalibrationCape object containing data extracted from EEPROM
         """
         data = self._read(
             calibration_data_format["offset"],
             calibration_data_format["size"],
         )
         try:
-            cal = CalibrationData.from_bytestr(data)
+            cal = CalibrationCape.from_bytestr(data)
             logger.debug("EEPROM provided calibration-settings")
         except struct.error:
-            cal = CalibrationData.from_default()
+            cal = CalibrationCape()
             logger.warning(
                 "EEPROM seems to have no usable data - will set calibration from default-values",
             )
         return cal
 
 
-def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
+def retrieve_calibration(use_default_cal: bool = False) -> CalibrationCape:
     if use_default_cal:
-        return CalibrationData.from_default()
+        return CalibrationCape()
     else:
         try:
             with EEPROM() as storage:
@@ -309,10 +310,10 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationData:
                 "Couldn't read calibration from EEPROM (ValueError). "
                 "Falling back to default values.",
             )
-            return CalibrationData.from_default()
+            return CalibrationCape()
         except FileNotFoundError:
             logger.warning(
                 "Couldn't read calibration from EEPROM (FileNotFoundError). "
                 "Falling back to default values.",
             )
-            return CalibrationData.from_default()
+            return CalibrationCape()

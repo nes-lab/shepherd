@@ -5,14 +5,15 @@ from datetime import datetime
 from typing import Optional
 
 import invoke
+from shepherd_core import BaseReader
+from shepherd_core import CalibrationPair
+from shepherd_core import CalibrationSeries
 from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
 from . import sysfs_interface
-from .calibration import CalibrationData
 from .datalog import ExceptionRecord
 from .datalog import LogWriter
-from .datalog_reader import LogReader
 from .eeprom import retrieve_calibration
 from .logger import get_verbose_level
 from .logger import logger
@@ -47,23 +48,31 @@ class ShepherdEmulator(ShepherdIO):
 
         if not cfg.input_path.exists():
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
-        self.reader = LogReader(cfg.input_path, verbose=self.verbose)
+        self.reader = BaseReader(cfg.input_path, verbose=self.verbose)
         self.stack.enter_context(self.reader)
         # TODO: new reader allows to check mode and dtype of recording (should be emu, ivcurves)
 
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
-            cal_inp = CalibrationData.from_default()
+            cal_inp = CalibrationSeries()
             logger.warning(
                 "No calibration data from emulation-input (harvest) provided"
                 " - using defaults",
             )
-        self._v_gain = 1e6 * cal_inp["harvester"]["adc_voltage"]["gain"]
-        self._v_offset = 1e6 * cal_inp["harvester"]["adc_voltage"]["offset"]
-        self._i_gain = 1e9 * cal_inp["harvester"]["adc_current"]["gain"]
-        self._i_offset = 1e9 * cal_inp["harvester"]["adc_current"]["offset"]
 
-        self.cal_hw = retrieve_calibration(cfg.use_cal_default)
+        # PRU expects values in SI: uV and nV
+        self.cal_pru = CalibrationSeries(
+            voltage=CalibrationPair(
+                gain=1e6 * cal_inp.voltage.gain,
+                offset=1e6 * cal_inp.voltage.offset,
+            ),
+            current=CalibrationPair(
+                gain=1e9 * cal_inp.current.gain,
+                offset=1e9 * cal_inp.current.offset,
+            ),
+        )
+
+        self.cal_emu = retrieve_calibration(cfg.use_cal_default).emulator
 
         if cfg.time_start is None:
             self.start_time = round(time.time() + 10)
@@ -107,7 +116,7 @@ class ShepherdEmulator(ShepherdIO):
                 force_overwrite=cfg.force_overwrite,
                 mode="emulator",
                 datatype="ivsample",
-                calibration_data=self.cal_hw,
+                cal_=self.cal_emu,
                 samples_per_buffer=self.samples_per_buffer,
                 samplerate_sps=self.samplerate_sps,
                 output_compression=cfg.output_compression,
@@ -119,7 +128,7 @@ class ShepherdEmulator(ShepherdIO):
         super().set_power_state_emulator(True)
 
         # TODO: why are there wrappers? just directly access
-        super().send_calibration_settings(self.cal_hw)
+        super().send_calibration_settings(self.cal_emu)
         super().send_virtual_converter_settings(self.vs_cfg)
         super().send_virtual_harvester_settings(self.vh_cfg)
 
@@ -128,7 +137,7 @@ class ShepherdEmulator(ShepherdIO):
         super().set_target_io_level_conv(self.cfg.enable_io)
         super().select_main_target_for_io(self.cfg.io_port)
         super().select_main_target_for_power(self.cfg.io_port)
-        super().set_aux_target_voltage(self.cal_hw, self.cfg.voltage_aux)
+        super().set_aux_target_voltage(self.cfg.voltage_aux, self.cal_emu)
 
         if self.writer is not None:
             self.stack.enter_context(self.writer)
@@ -160,8 +169,8 @@ class ShepherdEmulator(ShepherdIO):
         ts_start = time.time() if verbose else 0
 
         # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        v_tf = (buffer.voltage * self._v_gain + self._v_offset).astype("u4")
-        c_tf = (buffer.current * self._i_gain + self._i_offset).astype("u4")
+        v_tf = self.cal_pru.voltage.raw_to_si(buffer.voltage).astype("u4")
+        c_tf = self.cal_pru.current.raw_to_si(buffer.current).astype("u4")
 
         self.shared_mem.write_buffer(index, v_tf, c_tf)
         super()._return_buffer(index)

@@ -8,7 +8,7 @@ from shepherd.sysfs_interface import load_kernel_module
 from shepherd.sysfs_interface import remove_kernel_module
 
 
-def check_beagleboard():
+def check_beagleboard() -> bool:
     with suppress(Exception), open("/proc/cpuinfo") as info:
         if "AM33XX" in info.read():
             return True
@@ -32,7 +32,7 @@ def fake_hardware(request):
         yield None
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     parser.addoption(
         "--eeprom-write",
         action="store_true",
@@ -41,7 +41,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config, items) -> None:
     skip_fake = pytest.mark.skip(reason="cannot be faked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
     skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
@@ -99,6 +99,6 @@ def shepherd_up(fake_hardware, shepherd_down):
 
 
 @pytest.fixture()
-def shepherd_down(fake_hardware):
+def shepherd_down(fake_hardware) -> None:
     if fake_hardware is None:
         remove_kernel_module()

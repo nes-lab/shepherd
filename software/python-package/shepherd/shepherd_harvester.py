@@ -1,8 +1,11 @@
 import time
 from typing import Optional
+from typing import Union
+
+from shepherd_core import CalibrationEmulator
+from shepherd_core import CalibrationHarvester
 
 from . import sysfs_interface
-from .calibration import CalibrationData
 from .logger import logger
 from .shepherd_io import ShepherdIO
 from .virtual_harvester_config import T_vHrv
@@ -28,7 +31,8 @@ class ShepherdHarvester(ShepherdIO):
         self,
         shepherd_mode: str = "harvester",
         harvester: Optional[T_vHrv] = None,
-        calibration: Optional[CalibrationData] = None,
+        cal_: Union[CalibrationHarvester, CalibrationEmulator, None] = None,
+        # TODO: reale hrv and emu needed?
     ):
         logger.debug("Recorder-Init in %s-mode", shepherd_mode)
         self.samplerate_sps = (
@@ -37,7 +41,7 @@ class ShepherdHarvester(ShepherdIO):
             // sysfs_interface.get_buffer_period_ns()
         )
         self.harvester = VirtualHarvesterConfig(harvester, self.samplerate_sps)
-        self.calibration = calibration
+        self.calibration = cal_
         super().__init__(shepherd_mode)
 
     def __enter__(self):

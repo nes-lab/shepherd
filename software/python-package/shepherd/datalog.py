@@ -26,14 +26,13 @@ import numpy as np
 import psutil as psutil
 import serial
 import yaml
+from shepherd_core import CalibrationEmulator
+from shepherd_core import CalibrationHarvester
+from shepherd_core import CalibrationSeries
 
-from .calibration import CalibrationData
-from .calibration import cal_channel_emu_dict
-from .calibration import cal_channel_hrv_dict
-from .calibration import cal_parameter_list
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .commons import MAX_GPIO_EVT_PER_BUFFER
-from .shepherd_io import DataBuffer
+from .shared_memory import DataBuffer
 
 logger = logging.getLogger("shp.datalog.writer")
 
@@ -62,7 +61,7 @@ class LogWriter:
 
     Args:
         file_path (Path): Name of the HDF5 file that data will be written to
-        calibration_data (CalibrationData): Data is written as raw ADC
+        cal_ (CalibrationEmulator or CalibrationHarvester): Data is written as raw ADC
             values. We need calibration data in order to convert to physical
             units later.
         mode (str): Indicates if this is data from harvester or emulator
@@ -95,7 +94,7 @@ class LogWriter:
     def __init__(
         self,
         file_path: Path,
-        calibration_data: CalibrationData,
+        cal_: Union[CalibrationEmulator, CalibrationHarvester],
         mode: Optional[str] = None,
         datatype: Optional[str] = None,
         force_overwrite: bool = False,
@@ -137,7 +136,7 @@ class LogWriter:
         self._mode = self.mode_default if (mode is None) else mode
         self._datatype = self.datatype_default if (datatype is None) else datatype
 
-        self.calibration_data = calibration_data
+        self.calibration_data = CalibrationSeries.from_cal(cal_)
         self.chunk_shape = (samples_per_buffer,)
         self.samplerate_sps = int(samplerate_sps)
         self.sample_interval_ns = int(10**9 // samplerate_sps)
