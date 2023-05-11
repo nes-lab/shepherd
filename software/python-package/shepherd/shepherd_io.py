@@ -17,7 +17,8 @@ from typing import Union
 from periphery import GPIO
 from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationHarvester
-from shepherd_core.data_models import GpioTracing, PowerTracing
+from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
@@ -72,7 +73,12 @@ class ShepherdIO:
         else:
             raise IndexError("ShepherdIO already exists")
 
-    def __init__(self, mode: str, trace_iv: Optional[PowerTracing], trace_gpio: Optional[GpioTracing]):
+    def __init__(
+        self,
+        mode: str,
+        trace_iv: Optional[PowerTracing],
+        trace_gpio: Optional[GpioTracing],
+    ):
         """Initializes relevant variables.
 
         Args:

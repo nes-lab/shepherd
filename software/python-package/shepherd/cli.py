@@ -23,6 +23,7 @@ import yaml
 import zerorpc
 from periphery import GPIO
 from shepherd_core import CalibrationCape
+from shepherd_core import set_verbose_level
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import ProgrammingTask
@@ -33,7 +34,6 @@ from . import get_verbose_level
 from . import run_emulator
 from . import run_harvester
 from . import run_programmer
-from shepherd_core import set_verbose_level
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData

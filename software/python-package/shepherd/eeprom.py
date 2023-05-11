@@ -21,6 +21,7 @@ from typing import Union
 import yaml
 from periphery import GPIO
 from shepherd_core import CalibrationCape
+
 from . import logger
 
 eeprom_format = {

@@ -8,14 +8,14 @@ import invoke
 from shepherd_core import BaseReader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
+from shepherd_core import get_verbose_level
 from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
 from . import sysfs_interface
+from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
-from .eeprom import retrieve_calibration
-from shepherd_core import get_verbose_level
 from .logger import logger
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
@@ -89,7 +89,6 @@ class ShepherdEmulator(ShepherdIO):
         # TODO: complete rebuild vs_cfg and vh_cfg
         log_iv = cfg.power_tracing is not None
         log_cap = log_iv and cfg.power_tracing.intermediate_voltage
-        log_gpio = cfg.gpio_tracing is not None
         # TODO: write gpio-mask
 
         self.vs_cfg = VirtualSourceConfig(

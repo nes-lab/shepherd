@@ -12,10 +12,10 @@ from shepherd_core.data_models import VirtualSource
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 
-from shepherd import Writer
 from shepherd import ShepherdDebug
 from shepherd import ShepherdEmulator
 from shepherd import ShepherdIOException
+from shepherd import Writer
 from shepherd import run_emulator
 from shepherd import sysfs_interface
 from shepherd.shared_memory import DataBuffer

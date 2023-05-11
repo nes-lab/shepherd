@@ -8,7 +8,8 @@ import msgpack_numpy
 import numpy
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
-from shepherd_core.data_models import PowerTracing, GpioTracing
+from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons

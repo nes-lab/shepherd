@@ -17,17 +17,19 @@ from typing import Optional
 
 import invoke
 from shepherd_core import Compression
+from shepherd_core import get_verbose_level
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import sysfs_interface
-from .h5_writer import ExceptionRecord
-from .h5_writer import Writer
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .eeprom import retrieve_calibration
+from .h5_writer import ExceptionRecord
+from .h5_writer import Writer
 from .launcher import Launcher
+from .logger import logger
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
@@ -37,8 +39,6 @@ from .target_io import TargetIO
 from .virtual_harvester_config import T_vHrv
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
-from shepherd_core import get_verbose_level
-from .logger import logger
 
 __version__ = "0.4.5"
 

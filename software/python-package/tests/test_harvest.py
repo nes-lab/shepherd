@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 from shepherd_core import CalibrationHarvester
 
-from shepherd import Writer
 from shepherd import ShepherdHarvester
+from shepherd import Writer
 from shepherd import run_harvester
 
 
