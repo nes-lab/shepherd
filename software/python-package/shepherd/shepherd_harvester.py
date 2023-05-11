@@ -4,6 +4,7 @@ from typing import Union
 
 from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationHarvester
+from shepherd_core.data_models import PowerTracing, GpioTracing
 
 from . import sysfs_interface
 from .logger import logger
@@ -42,7 +43,7 @@ class ShepherdHarvester(ShepherdIO):
         )
         self.harvester = VirtualHarvesterConfig(harvester, self.samplerate_sps)
         self.calibration = cal_
-        super().__init__(shepherd_mode)
+        super().__init__(shepherd_mode, trace_iv=PowerTracing(), trace_gpio=GpioTracing())
 
     def __enter__(self):
         super().__enter__()

@@ -38,6 +38,7 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
     }
 }
 
+/* currently only used by harvester (as emu has no adc for measuring voltage) */
 uint32_t cal_conv_adc_raw_to_uV(const uint32_t voltage_raw)
 {
     const uint32_t V_uV = mul32(voltage_raw, cal->adc_voltage_factor_uV_n8) >> 8u;

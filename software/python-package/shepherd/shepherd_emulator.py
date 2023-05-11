@@ -12,8 +12,8 @@ from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
 from . import sysfs_interface
-from .sheep_writer import ExceptionRecord
-from .sheep_writer import SheepWriter
+from .h5_writer import ExceptionRecord
+from .h5_writer import Writer
 from .eeprom import retrieve_calibration
 from shepherd_core import get_verbose_level
 from .logger import logger
@@ -39,7 +39,7 @@ class ShepherdEmulator(ShepherdIO):
         mode: str = "emulator",
     ):
         logger.debug("Emulator-Init in %s-mode", mode)
-        super().__init__(mode)
+        super().__init__(mode, trace_iv=cfg.power_tracing, trace_gpio=cfg.gpio_tracing)
         self.cfg = cfg
         self.stack = ExitStack()
 
@@ -87,11 +87,13 @@ class ShepherdEmulator(ShepherdIO):
         self.fifo_buffer_size = sysfs_interface.get_n_buffers()
 
         # TODO: complete rebuild vs_cfg and vh_cfg
-        log_cap = (
-            cfg.power_tracing is not None and cfg.power_tracing.intermediate_voltage
-        )
+        log_iv = cfg.power_tracing is not None
+        log_cap = log_iv and cfg.power_tracing.intermediate_voltage
+        log_gpio = cfg.gpio_tracing is not None
+        # TODO: write gpio-mask
+
         self.vs_cfg = VirtualSourceConfig(
-            cfg.virtual_source,
+            cfg.virtual_source.dict(),
             self.samplerate_sps,
             log_cap,
         )
@@ -101,7 +103,7 @@ class ShepherdEmulator(ShepherdIO):
             emu_cfg=self.reader.get_hrv_config(),
         )
 
-        self.writer: Optional[SheepWriter] = None
+        self.writer: Optional[Writer] = None
         if cfg.output_path is not None:
             store_path = cfg.output_path.absolute()
             if store_path.is_dir():
@@ -109,10 +111,8 @@ class ShepherdEmulator(ShepherdIO):
                 timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
                 # ⤷ closest to ISO 8601, avoids ":"
                 store_path = store_path / f"emu_{timestring}.h5"
-            self.writer = SheepWriter(
+            self.writer = Writer(
                 file_path=store_path,
-                pwr_cfg=cfg.power_tracing,
-                gpio_cfg=cfg.gpio_tracing,
                 force_overwrite=cfg.force_overwrite,
                 mode="emulator",
                 datatype="ivsample",
@@ -147,7 +147,7 @@ class ShepherdEmulator(ShepherdIO):
                 x for x in res.stdout if x.isprintable()
             ).strip()
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
-            self.writer.set_config(self.vs_cfg.data)
+            self.writer.store_config(self.vs_cfg.data)
 
         # Preload emulator with data
         time.sleep(1)

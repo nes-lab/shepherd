@@ -8,6 +8,7 @@ import msgpack_numpy
 import numpy
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
+from shepherd_core.data_models import PowerTracing, GpioTracing
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
@@ -32,7 +33,7 @@ class ShepherdDebug(ShepherdIO):
     """
 
     def __init__(self, use_io: bool = True):
-        super().__init__("debug")
+        super().__init__("debug", trace_iv=PowerTracing(), trace_gpio=GpioTracing())
 
         self._io: Optional[TargetIO] = TargetIO() if use_io else None
 

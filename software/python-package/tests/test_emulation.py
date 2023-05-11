@@ -12,7 +12,7 @@ from shepherd_core.data_models import VirtualSource
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 
-from shepherd import LogWriter
+from shepherd import Writer
 from shepherd import ShepherdDebug
 from shepherd import ShepherdEmulator
 from shepherd import ShepherdIOException
@@ -38,7 +38,7 @@ def vsrc_cfg() -> dict:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "record_example.h5"
-    with LogWriter(store_path, CalibrationCape().harvester) as store:
+    with Writer(store_path, cal_data=CalibrationCape().harvester) as store:
         store["hostname"] = "Inky"
         for i in range(100):
             len_ = 10_000
@@ -50,11 +50,11 @@ def data_h5(tmp_path: Path) -> Path:
 @pytest.fixture()
 def log_writer(tmp_path: Path):
     cal = CalibrationCape().emulator
-    with LogWriter(
+    with Writer(
         force_overwrite=True,
         file_path=tmp_path / "test.h5",
         mode="emulator",
-        cal_=cal,
+        cal_data=cal,
     ) as lw:
         yield lw
 

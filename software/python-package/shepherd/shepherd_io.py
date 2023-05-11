@@ -17,6 +17,7 @@ from typing import Union
 from periphery import GPIO
 from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationHarvester
+from shepherd_core.data_models import GpioTracing, PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
@@ -71,7 +72,7 @@ class ShepherdIO:
         else:
             raise IndexError("ShepherdIO already exists")
 
-    def __init__(self, mode: str):
+    def __init__(self, mode: str, trace_iv: Optional[PowerTracing], trace_gpio: Optional[GpioTracing]):
         """Initializes relevant variables.
 
         Args:
@@ -91,6 +92,9 @@ class ShepherdIO:
 
         # self.shared_mem: Optional[SharedMem] = None # noqa: E800
         self._buffer_period: float = 0.1  # placeholder value
+
+        self.trace_iv = trace_iv
+        self.trace_gpio = trace_gpio
 
         # placeholders
         self.mem_address = 0
@@ -232,6 +236,8 @@ class ShepherdIO:
             self.mem_size,
             self.n_buffers,
             self.samples_per_buffer,
+            self.trace_iv,
+            self.trace_gpio,
         )
         self.shared_mem.__enter__()
 
@@ -418,11 +424,10 @@ class ShepherdIO:
             calibration settings.
         """
         if not cal_:
-            cal_ = (
-                CalibrationHarvester()
-                if self.component == "harvester"
-                else CalibrationEmulator()
-            )
+            if self.component == "harvester":
+                cal_ = CalibrationHarvester()
+            else:
+                cal_ = CalibrationEmulator()
         cal_dict = cal_.export_for_sysfs()
         sfs.write_calibration_settings(cal_dict)
 

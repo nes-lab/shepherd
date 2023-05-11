@@ -31,12 +31,7 @@ class PruCalibration:
         # TODO: add feature "negative residue compensation" to here
 
     def conv_adc_raw_to_uV(self, voltage_raw: int) -> float:
-        return self.cal.convert_raw_to_value(
-            "emulator",
-            "adc_voltage_b",
-            voltage_raw,
-        ) * (10**6)
-        # TODO: something is wrong here, adc can't meas voltage
+        raise RuntimeError("This Fn should not been used")
 
     def conv_uV_to_dac_raw(self, voltage_uV: float) -> int:
         dac_raw = self.cal.dac_V_A.si_to_raw(float(voltage_uV) / (10**6))

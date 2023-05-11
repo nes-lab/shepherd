@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from shepherd_core import CalibrationHarvester
 
-from shepherd import LogWriter
+from shepherd import Writer
 from shepherd import ShepherdHarvester
 from shepherd import run_harvester
 
@@ -17,9 +17,9 @@ def mode(request):
 
 @pytest.fixture()
 def log_writer(tmp_path, mode):
-    with LogWriter(
+    with Writer(
         mode=mode,
-        cal_=CalibrationHarvester(),
+        cal_data=CalibrationHarvester(),
         force_overwrite=True,
         file_path=tmp_path / "test.h5",
     ) as lw:

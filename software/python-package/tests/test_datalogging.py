@@ -9,8 +9,8 @@ from shepherd_core import BaseReader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationHarvester
 
-from shepherd import LogWriter
-from shepherd.datalog import ExceptionRecord
+from shepherd import Writer
+from shepherd.h5_writer import ExceptionRecord
 from shepherd.shared_memory import DataBuffer
 
 
@@ -30,7 +30,7 @@ def data_buffer() -> DataBuffer:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "record_example.h5"
-    with LogWriter(name, CalibrationHarvester()) as store:
+    with Writer(name, cal_data=CalibrationHarvester()) as store:
         store["hostname"] = "Pinky"
         for i in range(100):
             len_ = 10_000
@@ -45,30 +45,30 @@ def cal_cape() -> CalibrationCape:
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_create_logwriter(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
+def test_create_h5writer(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / f"{ mode }.h5"
-    h = LogWriter(file_path=d, cal_=cal_cape[mode], mode=mode)
+    h = Writer(file_path=d, cal_data=cal_cape[mode], mode=mode)
     assert not d.exists()
     h.__enter__()
     assert d.exists()
     h.__exit__()
 
 
-def test_create_logwriter_with_force(tmp_path: Path, cal_cape: CalibrationCape) -> None:
+def test_create_h5writer_with_force(tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / "harvest.h5"
     d.touch()
     stat = d.stat()
     time.sleep(0.1)
 
-    h = LogWriter(file_path=d, cal_=cal_cape.harvester, force_overwrite=False)
+    h = Writer(file_path=d, cal_data=cal_cape.harvester, force_overwrite=False)
     h.__enter__()
     h.__exit__()
     # This should have created the following alternative file:
     d_altered = tmp_path / "harvest.0.h5"
-    assert h.store_path == d_altered
+    assert h.file_path == d_altered
     assert d_altered.exists()
 
-    h = LogWriter(file_path=d, cal_=cal_cape.harvester, force_overwrite=True)
+    h = Writer(file_path=d, cal_data=cal_cape.harvester, force_overwrite=True)
     h.__enter__()
     h.__exit__()
     new_stat = d.stat()
@@ -76,14 +76,14 @@ def test_create_logwriter_with_force(tmp_path: Path, cal_cape: CalibrationCape) 
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_logwriter_data(
+def test_h5writer_data(
     mode,
     tmp_path: Path,
     data_buffer,
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest.h5"
-    with LogWriter(file_path=d, cal_=cal_cape.harvester, mode=mode) as log:
+    with Writer(file_path=d, cal_data=cal_cape.harvester, mode=mode) as log:
         log.write_buffer(data_buffer)
 
     with h5py.File(d, "r") as written:
@@ -98,7 +98,7 @@ def test_logwriter_data(
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / "recording.h5"
-    with LogWriter(file_path=d, mode=mode, cal_=cal_cape.harvester) as _:
+    with Writer(file_path=d, mode=mode, cal_data=cal_cape.harvester) as _:
         pass
 
     h5store = h5py.File(d, "r")
@@ -121,7 +121,7 @@ def test_exception_logging(
 ) -> None:
     d = tmp_path / "harvest.h5"
 
-    with LogWriter(file_path=d, cal_=cal_cape.harvester) as writer:
+    with Writer(file_path=d, cal_data=cal_cape.harvester) as writer:
         writer.write_buffer(data_buffer)
 
         ts = int(time.time() * 1000)
@@ -151,7 +151,7 @@ def test_exception_logging(
 def test_key_value_store(tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / "harvest.h5"
 
-    with LogWriter(file_path=d, cal_=cal_cape.harvester) as writer:
+    with Writer(file_path=d, cal_data=cal_cape.harvester) as writer:
         writer["some string"] = "this is a string"
         writer["some value"] = 5
 
@@ -161,16 +161,16 @@ def test_key_value_store(tmp_path: Path, cal_cape: CalibrationCape) -> None:
 
 
 @pytest.mark.timeout(2)
-def test_logwriter_performance(
+def test_h5writer_performance(
     tmp_path: Path,
     data_buffer: DataBuffer,
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest_perf.h5"
-    with LogWriter(
+    with Writer(
         file_path=d,
         force_overwrite=True,
-        cal_=cal_cape.harvester,
+        cal_data=cal_cape.harvester,
     ) as log:
         log.write_buffer(data_buffer)
 

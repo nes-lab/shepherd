@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
+from shepherd_core.data_models import PowerTracing, GpioTracing
 
 from . import commons
 from . import sysfs_interface as sfs
@@ -80,6 +81,8 @@ class SharedMemory:
         size: int,
         n_buffers: int,
         samples_per_buffer: int,
+        trace_iv: Optional[PowerTracing],
+        trace_gpio: Optional[GpioTracing],
     ):
         """Initializes relevant parameters for shared memory area.
 
@@ -94,6 +97,9 @@ class SharedMemory:
         self.n_buffers = int(n_buffers)
         self.samples_per_buffer = int(samples_per_buffer)
         self.prev_timestamp: int = 0
+
+        self.trace_iv = trace_iv
+        self.trace_gpio = trace_gpio
 
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
@@ -247,7 +253,7 @@ class SharedMemory:
                 n_gpio_events,
             )
             # TODO: should be exception, also
-            #  put into LogWriter.write_exception() with ShepherdIOException
+            #  put into Writer.write_exception() with ShepherdIOException
             n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
         gpio_timestamps_ns = np.frombuffer(

@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 from shepherd_core import CalibrationHarvester
 
-from shepherd import LogWriter
+from shepherd import Writer
 from shepherd.cli import cli
 from shepherd.shared_memory import DataBuffer
 
@@ -29,7 +29,7 @@ def random_data(length: int) -> np.ndarray:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
-    with LogWriter(store_path, CalibrationHarvester()) as store:
+    with Writer(store_path, cal_data=CalibrationHarvester()) as store:
         store["hostname"] = "Blinky"
         for i in range(100):
             len_ = 10_000

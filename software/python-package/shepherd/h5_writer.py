@@ -8,6 +8,7 @@ HDF5 files.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+import logging
 import subprocess  # noqa: S404
 import threading
 import time
@@ -26,6 +27,7 @@ from shepherd_core import BaseWriter
 from shepherd_core import CalibrationEmulator as CalEmu
 from shepherd_core import CalibrationHarvester as CalHrv
 from shepherd_core import CalibrationSeries as CalSeries
+from shepherd_core.data_models import SystemLogging, GpioTracing
 from shepherd_core.data_models.task import Compression
 
 from .commons import GPIO_LOG_BIT_POSITIONS
@@ -39,7 +41,7 @@ ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"
 monitors_end = threading.Event()
 
 
-class SheepWriter(BaseWriter):
+class Writer(BaseWriter):
     """Stores data coming from PRU's in HDF5 format
        TODO: replace with shepherd_data.Writer to fully support new datatype
 
@@ -136,6 +138,8 @@ class SheepWriter(BaseWriter):
         self.dmesg_inc = 100
         self.xcpt_pos = 0
         self.xcpt_inc = 100
+        self.slog_pos = 0
+        self.slog_inc = 100
         self.timesync_pos = 0
         self.timesync_inc = inc_duration
         # NOTE for possible optimization: align resize with chunk-size
@@ -146,13 +150,14 @@ class SheepWriter(BaseWriter):
 
         HDF5 is hierarchically structured and before writing data, we have to
         set up this structure, i.e. creating the right groups with corresponding
-        data types. We will store 3 types of data in a LogWriter database: The
+        data types. We will store 3 types of data in a Writer database: The
         actual IV samples recorded either from the harvester (during recording)
         or the target (during emulation). Any log messages, that can be used to
         store relevant events or tag some parts of the recorded data. And lastly
         the state of the GPIO pins.
 
         """
+        super().__enter__()
         # Create group for gpio data
         self.gpio_grp = self.h5file.create_group("gpio")
         self.add_dataset_time(self.gpio_grp, self.gpio_inc)
@@ -191,6 +196,19 @@ class SheepWriter(BaseWriter):
             chunks=True,
         )
         self.xcpt_grp["value"].attrs["unit"] = "n"
+
+        # Shepherd-logging-handler
+        self.slog_grp = self.h5file.create_group("shepherd-log")
+        self.add_dataset_time(self.xcpt_grp, self.slog_inc)
+        self.slog_grp.create_dataset(
+            "message",
+            (self.slog_inc,),
+            dtype=h5py.special_dtype(
+                vlen=str,
+            ),  # TODO: switch to string_dtype() (h5py >v3.0)
+            maxshape=(None,),
+            chunks=True,
+        )
 
         # UART-Logger
         if self._write_uart:
@@ -306,6 +324,8 @@ class SheepWriter(BaseWriter):
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
         self.xcpt_grp["message"].resize((self.xcpt_pos,))
         self.xcpt_grp["value"].resize((self.xcpt_pos,))
+        self.slog_grp["time"].resize((self.slog_pos,))
+        self.slog_grp["message"].resize((self.slog_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
         self.timesync_grp["value"].resize((self.timesync_pos, 3))
 
@@ -328,17 +348,15 @@ class SheepWriter(BaseWriter):
                     self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
-        runtime = round(self.grp_data["time"].shape[0] / self.samplerate_sps, 1)
+
         gpio_events = self.gpio_grp["time"].shape[0]
+        xcpt_events = self.xcpt_grp["time"].shape[0]
+        super().__exit__()
         self._logger.info(
-            "flushing hdf5 file (%d s iv-data, %d gpio-events, %d xcpt-events)",
-            runtime,
+            "  -> Sheep captured %d gpio-events, %d xcpt-events",
             gpio_events,
-            self.xcpt_grp["time"].shape[0],
+            xcpt_events,
         )
-        self.h5file.flush()
-        self._logger.info("closing hdf5 file")
-        self.h5file.close()
 
     def add_dataset_time(
         self,
@@ -427,6 +445,17 @@ class SheepWriter(BaseWriter):
         self.xcpt_grp["message"][self.xcpt_pos] = exception.message
         self.xcpt_pos += 1
 
+    def write(self, message: str):
+        """ Allows to add Writer as Stream for StreamHandler
+        """
+        if self.slog_pos >= self.slog_grp["time"].shape[0]:
+            data_length = self.slog_grp["time"].shape[0] + self.slog_inc
+            self.slog_grp["time"].resize((data_length,))
+            self.slog_grp["message"].resize((data_length,))
+        self.slog_grp["time"][self.slog_pos] = int(time.time() * (10**9))
+        self.slog_grp["message"][self.slog_pos] = message
+        self.slog_pos += 1
+
     def log_sys_stats(self) -> None:
         """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
@@ -470,17 +499,24 @@ class SheepWriter(BaseWriter):
             # TODO: add temp, not working:
             #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
-    def start_monitors(self, uart_baudrate: Optional[int] = None) -> None:
-        self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
-        self.dmesg_mon_t.start()
-        self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
-        self.ptp4l_mon_t.start()
-        self.uart_mon_t = threading.Thread(
-            target=self.monitor_uart,
-            args=(uart_baudrate,),
-            daemon=True,
-        )
-        self.uart_mon_t.start()
+    def start_monitors(self,
+                       sys: Optional[SystemLogging] = None,
+                       gpio: Optional[GpioTracing] = None) -> None:
+        if sys is not None and sys.dmesg:
+            self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
+            self.dmesg_mon_t.start()
+        if sys is not None and sys.ptp:
+            self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
+            self.ptp4l_mon_t.start()
+        if sys is not None and sys.shepherd:
+            self._logger.addHandler(logging.StreamHandler(stream=self))
+        if gpio is not None and gpio.uart_decode:
+            self.uart_mon_t = threading.Thread(
+                target=self.monitor_uart,
+                args=(gpio.uart_baudrate,),
+                daemon=True,
+            )
+            self.uart_mon_t.start()
 
     def monitor_uart(
         self,

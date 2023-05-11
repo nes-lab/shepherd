@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from shepherd_core import CalibrationHarvester
 
-from shepherd import LogWriter
+from shepherd import Writer
 from shepherd.shared_memory import DataBuffer
 
 tmp_path = Path("/var/shepherd/recordings")
@@ -15,7 +15,7 @@ def random_data(length):
     return np.random.randint(0, high=2**18, size=length, dtype="u4")
 
 
-with LogWriter(store_path, CalibrationHarvester()) as store:
+with Writer(store_path, cal_data=CalibrationHarvester()) as store:
     store["hostname"] = "Blinky"
     for i in range(100):
         len_ = 10_000

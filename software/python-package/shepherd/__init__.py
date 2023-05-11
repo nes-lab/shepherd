@@ -22,8 +22,8 @@ from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import sysfs_interface
-from .sheep_writer import ExceptionRecord
-from .sheep_writer import SheepWriter
+from .h5_writer import ExceptionRecord
+from .h5_writer import Writer
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .eeprom import retrieve_calibration
@@ -43,7 +43,7 @@ from .logger import logger
 __version__ = "0.4.5"
 
 __all__ = [
-    "SheepWriter",
+    "Writer",
     "EEPROM",
     "CapeData",
     "VirtualSourceConfig",
@@ -127,7 +127,7 @@ def run_harvester(
         harvester=harvester,
         cal_=cal_hrv,
     )
-    log_writer = SheepWriter(
+    log_writer = Writer(
         file_path=store_path,
         cal_data=cal_hrv,
         mode=mode,
@@ -147,7 +147,7 @@ def run_harvester(
     # in_stream has to be disabled to avoid trouble with pytest
     res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
     log_writer["hostname"] = "".join(x for x in res.stdout if x.isprintable()).strip()
-    log_writer.set_config(recorder.harvester.data)
+    log_writer.store_config(recorder.harvester.data)
     log_writer.start_monitors()
 
     recorder.start(start_time, wait_blocking=False)

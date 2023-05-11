@@ -179,7 +179,8 @@ struct CalibrationConfig
     uint32_t adc_current_factor_nA_n8; // n8 means normalized to 2^8 (representing 1.0)
     /* Offset of current-adc */
     int32_t  adc_current_offset_nA;
-    /* Gain of voltage-adc for converting between SI-Unit and raw value */
+    /* Gain of voltage-adc for converting between SI-Unit and raw value,
+     * NOTE: currently only used by harvester (as emu has no adc for measuring voltage)  */
     uint32_t adc_voltage_factor_uV_n8; // n8 means normalized to 2^8 (representing 1.0)
     /* Offset of voltage-adc */
     int32_t  adc_voltage_offset_uV;
