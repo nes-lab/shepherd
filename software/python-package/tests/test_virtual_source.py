@@ -63,7 +63,9 @@ def pru_vsource(
 
 @pytest.fixture
 def pyt_vsource(
-    vs_config, cal_cape: CalibrationCape, inp_hrv_cfg
+    vs_config,
+    cal_cape: CalibrationCape,
+    inp_hrv_cfg,
 ) -> VirtualSourceModel:
     return VirtualSourceModel(
         vs_config,

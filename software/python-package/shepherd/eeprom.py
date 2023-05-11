@@ -10,7 +10,6 @@ through Linux I2C device driver.
 :license: MIT, see LICENSE for more details.
 """
 
-import logging
 import os
 import struct
 from datetime import datetime
@@ -22,8 +21,7 @@ from typing import Union
 import yaml
 from periphery import GPIO
 from shepherd_core import CalibrationCape
-
-logger = logging.getLogger("shp.eeprom")
+from . import logger
 
 eeprom_format = {
     "header": {"offset": 0, "size": 4, "type": "binary"},

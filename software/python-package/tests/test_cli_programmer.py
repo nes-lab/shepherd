@@ -64,7 +64,9 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_swd_explicit_short(
-    shepherd_up, cli_runner, fw_example: Path
+    shepherd_up,
+    cli_runner,
+    fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -157,7 +159,9 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_a(
-    shepherd_up, cli_runner, fw_example: Path
+    shepherd_up,
+    cli_runner,
+    fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -176,7 +180,9 @@ def test_cli_program_datarate_invalid_a(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_b(
-    shepherd_up, cli_runner, fw_example: Path
+    shepherd_up,
+    cli_runner,
+    fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,

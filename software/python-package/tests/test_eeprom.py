@@ -60,7 +60,8 @@ def eeprom_with_data(eeprom_retained: EEPROM, data_example: CapeData) -> EEPROM:
 
 @pytest.fixture()
 def eeprom_with_calibration(
-    eeprom_retained: EEPROM, cal_cape: CalibrationCape
+    eeprom_retained: EEPROM,
+    cal_cape: CalibrationCape,
 ) -> EEPROM:
     eeprom_retained.write_calibration(cal_cape)
     return eeprom_retained

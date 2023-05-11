@@ -77,7 +77,10 @@ def test_create_logwriter_with_force(tmp_path: Path, cal_cape: CalibrationCape) 
 
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_logwriter_data(
-    mode, tmp_path: Path, data_buffer, cal_cape: CalibrationCape
+    mode,
+    tmp_path: Path,
+    data_buffer,
+    cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest.h5"
     with LogWriter(file_path=d, cal_=cal_cape.harvester, mode=mode) as log:
@@ -112,7 +115,9 @@ def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) ->
 
 
 def test_exception_logging(
-    tmp_path: Path, data_buffer: DataBuffer, cal_cape: CalibrationCape
+    tmp_path: Path,
+    data_buffer: DataBuffer,
+    cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest.h5"
 
@@ -157,7 +162,9 @@ def test_key_value_store(tmp_path: Path, cal_cape: CalibrationCape) -> None:
 
 @pytest.mark.timeout(2)
 def test_logwriter_performance(
-    tmp_path: Path, data_buffer: DataBuffer, cal_cape: CalibrationCape
+    tmp_path: Path,
+    data_buffer: DataBuffer,
+    cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest_perf.h5"
     with LogWriter(

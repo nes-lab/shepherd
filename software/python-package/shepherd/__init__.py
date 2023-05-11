@@ -16,21 +16,18 @@ from pathlib import Path
 from typing import Optional
 
 import invoke
+from shepherd_core import Compression
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import sysfs_interface
-from .datalog import ExceptionRecord
-from .datalog import LogWriter
-from .datalog import T_compr
+from .sheep_writer import ExceptionRecord
+from .sheep_writer import SheepWriter
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .eeprom import retrieve_calibration
 from .launcher import Launcher
-from .logger import get_verbose_level
-from .logger import logger
-from .logger import set_verbose_level
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
@@ -40,26 +37,26 @@ from .target_io import TargetIO
 from .virtual_harvester_config import T_vHrv
 from .virtual_harvester_config import VirtualHarvesterConfig
 from .virtual_source_config import VirtualSourceConfig
+from shepherd_core import get_verbose_level
+from .logger import logger
 
 __version__ = "0.4.5"
 
 __all__ = [
-    "LogWriter",
+    "SheepWriter",
     "EEPROM",
     "CapeData",
     "VirtualSourceConfig",
     "VirtualHarvesterConfig",
     "TargetIO",
     "Launcher",
-    "set_verbose_level",
-    "get_verbose_level",
-    "logger",
     "ShepherdHarvester",
     "ShepherdEmulator",
     "ShepherdDebug",
     "run_emulator",
     "run_harvester",
     "ShepherdIOException",
+    "logger",
 ]
 
 
@@ -71,7 +68,7 @@ def run_harvester(
     use_cal_default: bool = False,
     start_time: Optional[float] = None,
     warn_only: bool = False,
-    output_compression: Optional[T_compr] = None,
+    output_compression: Optional[Compression] = Compression.default,
 ):
     """Starts recording.
     TODO: refactor the same way as emulator:
@@ -130,15 +127,15 @@ def run_harvester(
         harvester=harvester,
         cal_=cal_hrv,
     )
-    log_writer = LogWriter(
+    log_writer = SheepWriter(
         file_path=store_path,
-        cal_=cal_hrv,
+        cal_data=cal_hrv,
         mode=mode,
         datatype=recorder.harvester.data["dtype"],  # is there a cleaner way?
         force_overwrite=force_overwrite,
         samples_per_buffer=samples_per_buffer,
         samplerate_sps=samplerate_sps,
-        output_compression=output_compression,
+        compression=output_compression,
     )
 
     # performance-critical, <4 reduces chatter during main-loop
@@ -150,7 +147,7 @@ def run_harvester(
     # in_stream has to be disabled to avoid trouble with pytest
     res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
     log_writer["hostname"] = "".join(x for x in res.stdout if x.isprintable()).strip()
-    log_writer.embed_config(recorder.harvester.data)
+    log_writer.set_config(recorder.harvester.data)
     log_writer.start_monitors()
 
     recorder.start(start_time, wait_blocking=False)

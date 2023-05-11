@@ -12,10 +12,10 @@ from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
 from . import sysfs_interface
-from .datalog import ExceptionRecord
-from .datalog import LogWriter
+from .sheep_writer import ExceptionRecord
+from .sheep_writer import SheepWriter
 from .eeprom import retrieve_calibration
-from .logger import get_verbose_level
+from shepherd_core import get_verbose_level
 from .logger import logger
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
@@ -101,7 +101,7 @@ class ShepherdEmulator(ShepherdIO):
             emu_cfg=self.reader.get_hrv_config(),
         )
 
-        self.writer: Optional[LogWriter] = None
+        self.writer: Optional[SheepWriter] = None
         if cfg.output_path is not None:
             store_path = cfg.output_path.absolute()
             if store_path.is_dir():
@@ -109,17 +109,17 @@ class ShepherdEmulator(ShepherdIO):
                 timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
                 # ⤷ closest to ISO 8601, avoids ":"
                 store_path = store_path / f"emu_{timestring}.h5"
-            self.writer = LogWriter(
+            self.writer = SheepWriter(
                 file_path=store_path,
                 pwr_cfg=cfg.power_tracing,
                 gpio_cfg=cfg.gpio_tracing,
                 force_overwrite=cfg.force_overwrite,
                 mode="emulator",
                 datatype="ivsample",
-                cal_=self.cal_emu,
+                cal_data=self.cal_emu,
                 samples_per_buffer=self.samples_per_buffer,
                 samplerate_sps=self.samplerate_sps,
-                output_compression=cfg.output_compression,
+                compression=cfg.output_compression,
             )
 
     def __enter__(self):
@@ -147,7 +147,7 @@ class ShepherdEmulator(ShepherdIO):
                 x for x in res.stdout if x.isprintable()
             ).strip()
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
-            self.writer.embed_config(self.vs_cfg.data)
+            self.writer.set_config(self.vs_cfg.data)
 
         # Preload emulator with data
         time.sleep(1)

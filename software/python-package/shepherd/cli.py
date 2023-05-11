@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Dict
 from typing import Optional
 
-import chromalog
 import click
 import click_config_file
 import gevent
@@ -34,7 +33,7 @@ from . import get_verbose_level
 from . import run_emulator
 from . import run_harvester
 from . import run_programmer
-from . import set_verbose_level
+from shepherd_core import set_verbose_level
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData
@@ -43,8 +42,7 @@ from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import reload_kernel_module
 
-chromalog.basicConfig()
-logger = logging.getLogger("shp.cli")
+logger = logging.getLogger("ShpCLI")
 
 
 # TODO: correct docs

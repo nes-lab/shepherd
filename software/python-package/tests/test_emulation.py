@@ -119,7 +119,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up) -> None:
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
         assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
         assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(
-            start_time
+            start_time,
         )
 
 
