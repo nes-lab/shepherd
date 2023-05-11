@@ -27,7 +27,8 @@ from shepherd_core import BaseWriter
 from shepherd_core import CalibrationEmulator as CalEmu
 from shepherd_core import CalibrationHarvester as CalHrv
 from shepherd_core import CalibrationSeries as CalSeries
-from shepherd_core.data_models import SystemLogging, GpioTracing
+from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression
 
 from .commons import GPIO_LOG_BIT_POSITIONS
@@ -423,6 +424,7 @@ class Writer(BaseWriter):
                 f"max = {buffer.util_max} % "
                 f"-> WARNING: broken real-time-condition"
             )
+            # TODO: store pru-util? probably yes
             expt = ExceptionRecord(int(time.time() * 1e9), warn_msg, 42)
             self.write_exception(expt)
 
@@ -446,8 +448,7 @@ class Writer(BaseWriter):
         self.xcpt_pos += 1
 
     def write(self, message: str):
-        """ Allows to add Writer as Stream for StreamHandler
-        """
+        """Allows to add Writer as Stream for StreamHandler"""
         if self.slog_pos >= self.slog_grp["time"].shape[0]:
             data_length = self.slog_grp["time"].shape[0] + self.slog_inc
             self.slog_grp["time"].resize((data_length,))
@@ -499,9 +500,11 @@ class Writer(BaseWriter):
             # TODO: add temp, not working:
             #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
 
-    def start_monitors(self,
-                       sys: Optional[SystemLogging] = None,
-                       gpio: Optional[GpioTracing] = None) -> None:
+    def start_monitors(
+        self,
+        sys: Optional[SystemLogging] = None,
+        gpio: Optional[GpioTracing] = None,
+    ) -> None:
         if sys is not None and sys.dmesg:
             self.dmesg_mon_t = threading.Thread(target=self.monitor_dmesg, daemon=True)
             self.dmesg_mon_t.start()

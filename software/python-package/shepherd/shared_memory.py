@@ -5,8 +5,10 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+import numpy
 import numpy as np
-from shepherd_core.data_models import PowerTracing, GpioTracing
+from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models import PowerTracing
 
 from . import commons
 from . import sysfs_interface as sfs
@@ -99,7 +101,13 @@ class SharedMemory:
         self.prev_timestamp: int = 0
 
         self.trace_iv = trace_iv
-        self.trace_gpio = trace_gpio
+        self.trace_gp = trace_gpio
+        # placeholders:
+        self.ts_start_iv: int = 0
+        self.ts_start_gp: int = 0
+        self.ts_stop_iv: int = 0
+        self.ts_stop_gp: int = 0
+        self.ts_unset: bool = True
 
         # With knowledge of structure of each buffer, we calculate its total size
         self.buffer_size = (
@@ -158,6 +166,15 @@ class SharedMemory:
             self.mapped_mem.close()
         if self.devmem_fd is not None:
             os.close(self.devmem_fd)
+
+    def config_tracers(self, timestamp_ns: int) -> None:
+        if self.trace_iv is not None:
+            self.ts_start_iv = timestamp_ns + int(self.trace_iv.delay * 1e9)
+            self.ts_stop_iv = self.ts_start_iv + int(self.trace_iv.duration * 1e9)
+        if self.trace_gp is not None:
+            self.ts_start_gp = timestamp_ns + int(self.trace_gp.delay * 1e9)
+            self.ts_stop_gp = self.ts_start_gp + int(self.trace_gp.duration * 1e9)
+        self.ts_unset = False
 
     def read_buffer(self, index: int, verbose: bool = False) -> DataBuffer:
         """Extracts buffer from shared memory.
@@ -223,20 +240,27 @@ class SharedMemory:
                 )
         self.prev_timestamp = buffer_timestamp
 
-        # Each buffer contains (n=) samples_per_buffer values. We have 2 variables
-        # (voltage and current), thus samples_per_buffer/2 samples per variable
-        voltage = np.frombuffer(
-            self.mapped_mem,
-            "=u4",
-            count=self.samples_per_buffer,
-            offset=buffer_offset + self.voltage_offset,
-        )
-        current = np.frombuffer(
-            self.mapped_mem,
-            "=u4",
-            count=self.samples_per_buffer,
-            offset=buffer_offset + self.current_offset,
-        )
+        if self.ts_unset and buffer_timestamp > 0:
+            self.config_tracers(buffer_timestamp)
+
+        if self.ts_start_iv <= buffer_timestamp <= self.ts_stop_iv:
+            # Each buffer contains (n=) samples_per_buffer values. We have 2 variables
+            # (voltage and current), thus samples_per_buffer/2 samples per variable
+            voltage = np.frombuffer(
+                self.mapped_mem,
+                "=u4",
+                count=self.samples_per_buffer,
+                offset=buffer_offset + self.voltage_offset,
+            )
+            current = np.frombuffer(
+                self.mapped_mem,
+                "=u4",
+                count=self.samples_per_buffer,
+                offset=buffer_offset + self.current_offset,
+            )
+        else:
+            voltage = np.empty(0, dtype=np.uint32)
+            current = np.empty(0, dtype=np.uint32)
 
         # Read the number of gpio events in the buffer
         self.mapped_mem.seek(buffer_offset + self.gpio_offset)
@@ -256,19 +280,24 @@ class SharedMemory:
             #  put into Writer.write_exception() with ShepherdIOException
             n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
-        gpio_timestamps_ns = np.frombuffer(
-            self.mapped_mem,
-            "=u8",
-            count=n_gpio_events,
-            offset=buffer_offset + self.gpio_ts_offset,
-        )
+        if self.ts_start_iv <= buffer_timestamp <= self.ts_stop_iv:
+            gpio_timestamps_ns = np.frombuffer(
+                self.mapped_mem,
+                "=u8",
+                count=n_gpio_events,
+                offset=buffer_offset + self.gpio_ts_offset,
+            )
 
-        gpio_values = np.frombuffer(
-            self.mapped_mem,
-            "=u2",
-            count=n_gpio_events,
-            offset=buffer_offset + self.gpio_vl_offset,
-        )
+            gpio_values = np.frombuffer(
+                self.mapped_mem,
+                "=u2",
+                count=n_gpio_events,
+                offset=buffer_offset + self.gpio_vl_offset,
+            )
+        else:
+            gpio_timestamps_ns = np.empty(0, dtype=np.uint64)
+            gpio_values = np.empty(0, dtype=np.uint16)
+
         gpio_edges = GPIOEdges(gpio_timestamps_ns, gpio_values)
 
         # pru0 util
