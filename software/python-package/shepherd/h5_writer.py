@@ -44,7 +44,6 @@ monitors_end = threading.Event()
 
 class Writer(BaseWriter):
     """Stores data coming from PRU's in HDF5 format
-       TODO: replace with shepherd_data.Writer to fully support new datatype
 
     Args:
         file_path (Path): Name of the HDF5 file that data will be written to
@@ -132,7 +131,7 @@ class Writer(BaseWriter):
         self.gpio_pos = 0
         self.gpio_inc = MAX_GPIO_EVT_PER_BUFFER
         self.sysutil_pos = 0
-        self.sysutil_inc = inc_duration
+        self.sysutil_inc = inc_duration * 1
         self.uart_pos = 0
         self.uart_inc = 100
         self.dmesg_pos = 0
@@ -142,7 +141,7 @@ class Writer(BaseWriter):
         self.slog_pos = 0
         self.slog_inc = 100
         self.timesync_pos = 0
-        self.timesync_inc = inc_duration
+        self.timesync_inc = inc_duration * 1
         # NOTE for possible optimization: align resize with chunk-size
         #      -> rely on autochunking -> inc = h5ds.chunks
 

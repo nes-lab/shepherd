@@ -136,7 +136,7 @@ def run_harvester(
         samples_per_buffer=samples_per_buffer,
         samplerate_sps=samplerate_sps,
         compression=output_compression,
-    )
+    )  # TODO: add window_samples
 
     # performance-critical, <4 reduces chatter during main-loop
     verbose = get_verbose_level() >= 4

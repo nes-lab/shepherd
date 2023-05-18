@@ -8,7 +8,7 @@ virtsources:
     # General Config
     enable_boost: false # if false -> v_intermediate = v_input, output-switch-hysteresis is still usable
     enable_buck: false # if false -> v_output = v_intermediate
-    log_intermediate_voltage: false # record / log virtual intermediate (cap-)voltage and -current (out) instead of output-voltage and -current
+    log_intermediate_voltage: false
 
     interval_startup_delay_drain_ms: 0
 
