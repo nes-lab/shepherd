@@ -11,7 +11,8 @@ parameters:
   output_compression: 1  # should be 1 (level 1 gzip), lzf, or None (order of recommendation)
   virtual_source: # provide path, name (ie. default, BQ25570) or parameters
     inherit_from: BQ25570
-    harvester: mppt_bq_solar
+    harvester:
+      name: mppt_bq_solar
     V_intermediate_init_mV: 3600
     V_buck_drop_mV: 0
     V_output_mV: 3000
@@ -24,7 +25,7 @@ parameters:
     # aux_voltage options:
     # - None to disable (0 V),
     # - 0-4.5 for specific const Voltage,
-    # - "mid" will output intermediate voltage (vsource storage cap),
+    # - "buffer" will output intermediate voltage (vsource storage cap),
     # - true or "main" to mirror main target voltage
   gpio_tracing:
     uart_decode: true

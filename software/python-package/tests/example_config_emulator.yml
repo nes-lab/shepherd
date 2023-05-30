@@ -20,7 +20,7 @@ parameters:
   voltage_aux: 3.3
   # ⤷ aux_voltage options:
   #   - 0-4.5 for specific const Voltage (0 V = disabled),
-  #   - "mid" will output intermediate voltage (storage cap of vsource),
+  #   - "buffer" will output intermediate voltage (storage cap of vsource),
   #   - "main" will mirror main target voltage
   gpio_tracing:
     uart_baudrate: 9600 # set None to disable uart-logging for target

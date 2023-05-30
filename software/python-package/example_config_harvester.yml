@@ -9,7 +9,8 @@ parameters:
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
   output_path: /var/shepherd/recordings/hrv.h5
   output_compression: 1  # should be 1 (level 1 gzip), lzf, or None (order of recommendation)
-  harvester: ivcurves
+  virtual_harvester:
+    name: ivcurves
   use_cal_default: true
   force_overwrite: false
 verbose: 2 # serious performance impact for value > 3
