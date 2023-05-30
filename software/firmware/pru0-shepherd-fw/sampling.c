@@ -30,7 +30,7 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     const uint32_t current_sample_counter = shared_mem->analog_sample_counter;
     shared_mem->analog_sample_counter++; // increment early to trigger pru1 to fetch new data
 
-    sample_iv_harvester(&input_voltage_uV, &input_current_nA);
+    sample_ivcurve_harvester(&input_voltage_uV, &input_current_nA);
 
     converter_calc_inp_power(input_voltage_uV, input_current_nA);
 
