@@ -22,17 +22,17 @@ static uint32_t                               power_last_raw     = 0u; // adc_mp
 static const volatile struct HarvesterConfig *cfg;
 
 // to be used with harvester-frontend
-static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint32_tsample_idx);
-static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_tsample_idx);
-static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_tsample_idx);
-static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_tsample_idx);
-static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint32_tsample_idx);
+static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx);
 
 // to be used in virtual harvester (part of emulator)
-static void harvest_ivcurve_2_cv(uint32_t *constp_voltage_uV, uint32_t *constp_current_nA);
-static void harvest_ivcurve_2_mppt_voc(uint32_t *constp_voltage_uV, uint32_t *constp_current_nA);
-static void harvest_ivcurve_2_mppt_po(uint32_t *constp_voltage_uV, uint32_t *constp_current_nA);
-static void harvest_ivcurve_2_mppt_opt(uint32_t *constp_voltage_uV, uint32_t *constp_current_nA);
+static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 
 #define HRV_ISC_VOC  (1u << 3u)
 #define HRV_IVCURVE  (1u << 4u)
