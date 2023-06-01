@@ -23,10 +23,7 @@ int                            load_pru_firmware(u8 pru_num, const char *file_na
 
     if (shp_pdata->rproc_prus[pru_num]->state == RPROC_RUNNING)
     {
-        if ((ret = rproc_shutdown(shp_pdata->rproc_prus[pru_num])))
-        {
-            printk(KERN_ERR "shprd.k: Couldn't shutdown PRU%d", pru_num);
-        }
+        rproc_shutdown(shp_pdata->rproc_prus[pru_num]);
     }
 
     sprintf(shp_pdata->rproc_prus[pru_num]->firmware, file_name);
