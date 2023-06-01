@@ -85,11 +85,8 @@ def shepherd_up(fake_hardware, shepherd_down):
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
         here = Path(__file__).absolute().parent
-        shpk = here.parent / "shepherd"
-        fake_hardware.add_real_file(here / "example_config_harvester.yml")
-        fake_hardware.add_real_file(here / "example_config_virtsource.yml")
-        fake_hardware.add_real_file(shpk / "virtual_harvester_defs.yml")
-        fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
+        fake_hardware.add_real_file(here / "_test_config_harvest.yaml")
+        fake_hardware.add_real_file(here / "_test_config_virtsource.yaml")
         yield
     else:
         load_kernel_module()

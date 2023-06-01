@@ -2,40 +2,58 @@ import time
 from pathlib import Path
 
 import pytest
-import yaml
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
+from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.task import HarvestTask
 
-from shepherd import VirtualHarvesterConfig
-from shepherd import VirtualSourceConfig
 from shepherd import sysfs_interface
-from shepherd.virtual_source_config import flatten_list
 
 
 @pytest.fixture
-def virtsource_settings() -> list:
+def cnv_cfg() -> ConverterPRUConfig:
     here = Path(__file__).absolute()
-    name = "example_config_virtsource.yml"
-    file_path = here.parent / name
-    with open(file_path) as config_data:
-        vs_dict = yaml.safe_load(config_data)["virtsource"]
-
-    vs_set = VirtualSourceConfig(vs_dict)
-    vs_list = vs_set.export_for_sysfs()
-    return vs_list
+    name = "_test_config_virtsource.yaml"
+    path = here.parent / name
+    src_cfg = VirtualSourceConfig.from_file(path)
+    cnv_pru = ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate_node=False)
+    return cnv_pru
 
 
 @pytest.fixture
-def harvester_settings() -> list:
+def hrv_cfg() -> HarvesterPRUConfig:
     here = Path(__file__).absolute()
-    name = "example_config_harvester.yml"
-    file_path = here.parent / name
-    with open(file_path) as config_data:
-        hrv_dict = yaml.safe_load(config_data)["parameters"]["harvester"]
+    name = "_test_config_harvest.yaml"
+    path = here.parent / name
+    hrv_cfg = HarvestTask.from_file(path)
+    hrv_pru = HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
+    return hrv_pru
 
-    hrv_set = VirtualHarvesterConfig(hrv_dict)
-    hrv_list = hrv_set.export_for_sysfs()
-    return hrv_list
+
+def flatten_list(dl: list) -> list:
+    """small helper FN to convert (multi-dimensional) lists to 1D list
+
+    Args:
+        dl: (multi-dimensional) lists
+    Returns:
+        1D list
+    """
+    if isinstance(dl, list):
+        if len(dl) < 1:
+            return dl
+        if len(dl) == 1:
+            if isinstance(dl[0], list):
+                return flatten_list(dl[0])
+            else:
+                return dl
+        elif isinstance(dl[0], list):
+            return flatten_list(dl[0]) + flatten_list(dl[1:])
+        else:
+            return [dl[0]] + flatten_list(dl[1:])
+    else:
+        return [dl]
 
 
 @pytest.fixture()
@@ -159,9 +177,11 @@ def test_initial_harvester_settings(shepherd_up):
     assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
-def test_writing_harvester_settings(shepherd_up, harvester_settings):
-    sysfs_interface.write_virtual_harvester_settings(harvester_settings)
-    assert sysfs_interface.read_virtual_harvester_settings() == harvester_settings
+def test_writing_harvester_settings(shepherd_up, hrv_cfg):
+    sysfs_interface.write_virtual_harvester_settings(hrv_cfg)
+    assert sysfs_interface.read_virtual_harvester_settings() == list(
+        hrv_cfg.dict().values()
+    )
 
 
 @pytest.mark.hardware
@@ -176,7 +196,7 @@ def test_initial_virtsource_settings(shepherd_up):
     assert sysfs_interface.read_virtual_converter_settings() == values_1d
 
 
-def test_writing_virtsource_settings(shepherd_up, virtsource_settings):
-    sysfs_interface.write_virtual_converter_settings(virtsource_settings)
-    values_1d = flatten_list(virtsource_settings)
+def test_writing_virtsource_settings(shepherd_up, cnv_cfg):
+    sysfs_interface.write_virtual_converter_settings(cnv_cfg)
+    values_1d = flatten_list(list(hrv_cfg.dict().values()))
     assert sysfs_interface.read_virtual_converter_settings() == values_1d

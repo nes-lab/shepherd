@@ -9,6 +9,9 @@ from shepherd_core import BaseReader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core import get_verbose_level
+from shepherd_core.data_models import EnergyDType
+from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
@@ -20,8 +23,6 @@ from .logger import logger
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
-from .virtual_harvester_config import VirtualHarvesterConfig
-from .virtual_source_config import VirtualSourceConfig
 
 
 class ShepherdEmulator(ShepherdIO):
@@ -38,8 +39,12 @@ class ShepherdEmulator(ShepherdIO):
         cfg: EmulationTask,
         mode: str = "emulator",
     ):
-        logger.debug("Emulator-Init in %s-mode", mode)
-        super().__init__(mode, trace_iv=cfg.power_tracing, trace_gpio=cfg.gpio_tracing)
+        logger.debug("ShepherdEmulator-Init in %s-mode", mode)
+        super().__init__(
+            mode=mode,
+            trace_iv=cfg.power_tracing,
+            trace_gpio=cfg.gpio_tracing,
+        )
         self.cfg = cfg
         self.stack = ExitStack()
 
@@ -50,7 +55,14 @@ class ShepherdEmulator(ShepherdIO):
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
         self.reader = BaseReader(cfg.input_path, verbose=self.verbose)
         self.stack.enter_context(self.reader)
-        # TODO: new reader allows to check mode and dtype of recording (should be emu, ivcurves)
+        if self.reader.get_mode() != "harvester":
+            msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
+            if self.cfg.abort_on_error:
+                raise ValueError(msg)
+            else:
+                logger.error(msg)
+        if not self.reader.is_valid() and self.cfg.abort_on_error:
+            raise RuntimeError("Input-File is not valid!")
 
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
@@ -79,27 +91,23 @@ class ShepherdEmulator(ShepherdIO):
         else:
             self.start_time = cfg.time_start.timestamp()
 
-        # TODO: are these used more than once?
         self.samples_per_buffer = sysfs_interface.get_samples_per_buffer()
         self.samplerate_sps = (
             10**9 * self.samples_per_buffer // sysfs_interface.get_buffer_period_ns()
         )
         self.fifo_buffer_size = sysfs_interface.get_n_buffers()
-
-        # TODO: complete rebuild vs_cfg and vh_cfg
-        log_iv = cfg.power_tracing is not None
-        log_cap = log_iv and cfg.power_tracing.intermediate_voltage
         # TODO: write gpio-mask
 
-        self.vs_cfg = VirtualSourceConfig(
-            cfg.virtual_source.dict(),
-            self.samplerate_sps,
-            log_cap,
+        log_iv = cfg.power_tracing is not None
+        log_cap = log_iv and cfg.power_tracing.intermediate_voltage
+        self.cnv_pru = ConverterPRUConfig.from_vsrc(
+            data=cfg.virtual_source,
+            log_intermediate_node=log_cap,
         )
-        self.vh_cfg = VirtualHarvesterConfig(
-            self.vs_cfg.get_harvester(),
-            self.samplerate_sps,
-            emu_cfg=self.reader.get_hrv_config(),
+        self.hrv_pru = HarvesterPRUConfig.from_vhrv(
+            data=cfg.virtual_source.harvester,
+            for_emu=False,
+            dtype_in=self.reader.get_datatype(),
         )
 
         self.writer: Optional[Writer] = None
@@ -113,8 +121,8 @@ class ShepherdEmulator(ShepherdIO):
             self.writer = Writer(
                 file_path=store_path,
                 force_overwrite=cfg.force_overwrite,
-                mode="emulator",
-                datatype="ivsample",
+                mode=mode,
+                datatype=EnergyDType.ivsample,
                 cal_data=self.cal_emu,
                 samples_per_buffer=self.samples_per_buffer,
                 samplerate_sps=self.samplerate_sps,
@@ -128,8 +136,8 @@ class ShepherdEmulator(ShepherdIO):
 
         # TODO: why are there wrappers? just directly access
         super().send_calibration_settings(self.cal_emu)
-        super().send_virtual_converter_settings(self.vs_cfg)
-        super().send_virtual_harvester_settings(self.vh_cfg)
+        super().send_virtual_converter_settings(self.cnv_pru)
+        super().send_virtual_harvester_settings(self.hrv_pru)
 
         super().reinitialize_prus()  # needed for ADCs
 
@@ -146,7 +154,7 @@ class ShepherdEmulator(ShepherdIO):
                 x for x in res.stdout if x.isprintable()
             ).strip()
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
-            self.writer.store_config(self.vs_cfg.data)
+            self.writer.store_config(self.cfg.dict())
 
         # Preload emulator with data
         time.sleep(1)
@@ -157,7 +165,7 @@ class ShepherdEmulator(ShepherdIO):
         for idx, buffer in enumerate(init_buffers):
             self.return_buffer(idx, buffer, verbose=True)
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
-            # could be as low as ~ 10us
+            # ⤷ could be as low as ~ 10us
         return self
 
     def __exit__(self):
@@ -191,6 +199,7 @@ class ShepherdEmulator(ShepherdIO):
         else:
             ts_end = self.start_time + self.cfg.duration.total_seconds()
 
+        # Main Loop
         for _, dsv, dsc in self.reader.read_buffers(start_n=self.fifo_buffer_size):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose)

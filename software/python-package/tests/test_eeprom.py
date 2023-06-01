@@ -13,9 +13,9 @@ def cal_cape() -> CalibrationCape:
 
 
 @pytest.fixture
-def data_example_yml() -> Path:
+def data_example_yaml() -> Path:
     here = Path(__file__).absolute()
-    name = "example_capedata.yml"
+    name = "_test_capedata.yaml"
     return here.parent / name
 
 
@@ -67,8 +67,8 @@ def eeprom_with_calibration(
     return eeprom_retained
 
 
-def test_from_yaml(data_example_yml: Path) -> None:
-    data = CapeData.from_yaml(data_example_yml)
+def test_from_yaml(data_example_yaml) -> None:
+    data = CapeData.from_yaml(data_example_yaml)
     assert data["serial_number"] == "0521XXXX0001"
 
 

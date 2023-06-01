@@ -1,5 +1,5 @@
-model: VirtualSource
-fields:
+model: VirtualSourceConfig
+parameters:
   # crosscheck against check_and_complete() in virt_source_data.py to see:
   # - what is required
   # - the limits and default values

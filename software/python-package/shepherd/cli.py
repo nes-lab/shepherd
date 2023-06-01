@@ -23,14 +23,13 @@ import yaml
 import zerorpc
 from periphery import GPIO
 from shepherd_core import CalibrationCape
+from shepherd_core import get_verbose_level
 from shepherd_core import set_verbose_level
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
-from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import EmulationTask, HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 
-from . import ShepherdDebug
 from . import __version__
-from . import get_verbose_level
 from . import run_emulator
 from . import run_harvester
 from . import run_programmer
@@ -38,6 +37,7 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
+from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import reload_kernel_module
@@ -147,8 +147,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
 )
 @click.option(
     "--mode",
-    default="harvester",
-    type=click.Choice(["harvester", "emulator"]),
+    type=click.Choice(["harvest", "emulation"]),
 )
 @click.option("--parameters", default={}, type=click.UNPROCESSED)
 @click.option(
@@ -167,72 +166,15 @@ def run(mode: str, parameters: dict, verbose: int):
             "(last occurred with v8-alpha-version of click-lib)",
         )
 
-    # TODO: test input parameters before - crashes because of wrong parameters are ugly
     logger.debug("CLI did process run()")
     if mode == "harvester":
-        if "output_path" in parameters:
-            parameters["output_path"] = Path(parameters["output_path"])
-        run_harvester(**parameters)
+        cfg = HarvestTask(**parameters)
+        run_harvester(cfg)
     elif mode == "emulator":
         cfg = EmulationTask(**parameters)
         run_emulator(cfg)
     else:
         raise click.BadParameter(f"command '{mode}' not supported")
-
-
-@cli.command(short_help="Record IV data from a harvest-source")
-@click.option(
-    "--output_path",
-    "-o",
-    type=click.Path(),
-    default="/var/shepherd/recordings/",
-    help="Dir or file path for resulting hdf5 file",
-)
-@click.option(
-    "--algorithm",
-    "-a",
-    type=click.STRING,
-    default=None,
-    help="Choose one of the predefined virtual harvesters",
-)
-@click.option(
-    "--duration",
-    "-d",
-    type=click.FLOAT,
-    help="Duration of recording in seconds",
-)
-@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
-@click.option(
-    "--use_cal_default",
-    "-c",
-    is_flag=True,
-    help="Use default calibration values",
-)
-@click.option(
-    "--start_time",
-    "-s",
-    type=click.FLOAT,
-    help="Desired start time in unix epoch time",
-)
-@click.option("--warn-only/--no-warn-only", default=True, help="Warn only on errors")
-def harvester(
-    output_path: Path,
-    algorithm: Optional[str],
-    duration: Optional[float],
-    force_overwrite: bool,
-    use_cal_default: bool,
-    start_time: Optional[float],
-    warn_only: bool,
-):
-    run_harvester(
-        output_path=Path(output_path),
-        harvester=algorithm,
-        duration=duration,
-        force_overwrite=force_overwrite,
-        use_cal_default=use_cal_default,
-        start_time=start_time,
-        warn_only=warn_only,
-    )
 
 
 @cli.group(
@@ -283,7 +225,7 @@ def write(
 ):
     if info_file is not None:
         cape_data = CapeData.from_yaml(info_file)
-        # overwrite fields that were provided additionally
+        # overwrite parameters that were provided additionally
         if version is not None:
             cape_data.data["version"] = version
         if serial_number is not None:

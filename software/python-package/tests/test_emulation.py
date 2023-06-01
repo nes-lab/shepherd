@@ -4,11 +4,11 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-import yaml
 from shepherd_core import BaseReader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationSeries
-from shepherd_core.data_models import VirtualSource
+from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models import fixtures
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 
@@ -26,13 +26,11 @@ def random_data(length) -> np.ndarray:
 
 
 @pytest.fixture
-def vsrc_cfg() -> dict:
+def src_cfg() -> VirtualSourceConfig:
     here = Path(__file__).absolute()
-    name = "example_config_virtsource.yml"
+    name = "_test_config_virtsource.yaml"
     file_path = here.parent / name
-    with open(file_path) as config_data:
-        full_config = yaml.safe_load(config_data)
-    return full_config["virtsource"]
+    return VirtualSourceConfig.from_file(file_path)
 
 
 @pytest.fixture
@@ -48,7 +46,7 @@ def data_h5(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def log_writer(tmp_path: Path):
+def writer(tmp_path: Path):
     cal = CalibrationCape().emulator
     with Writer(
         force_overwrite=True,
@@ -66,10 +64,15 @@ def shp_reader(data_h5: Path):
 
 
 @pytest.fixture()
-def emulator(request, shepherd_up, data_h5: Path, vsrc_cfg: dict) -> ShepherdEmulator:
+def emulator(
+    request,
+    shepherd_up,
+    data_h5: Path,
+    src_cfg: VirtualSourceConfig,
+) -> ShepherdEmulator:
     cfg_emu = EmulationTask(
         input_path=data_h5,
-        virtual_source=vsrc_cfg,
+        virtual_source=src_cfg,
     )
     emu = ShepherdEmulator(cfg_emu)
     request.addfinalizer(emu.__del__)
@@ -79,19 +82,19 @@ def emulator(request, shepherd_up, data_h5: Path, vsrc_cfg: dict) -> ShepherdEmu
 
 
 @pytest.mark.hardware
-def test_emulation(log_writer, shp_reader, emulator: ShepherdEmulator) -> None:
+def test_emulation(writer, shp_reader, emulator: ShepherdEmulator) -> None:
     emulator.start(wait_blocking=False)
     fifo_buffer_size = sysfs_interface.get_n_buffers()
     emulator.wait_for_start(15)
     for _, dsv, dsc in shp_reader.read_buffers(start_n=fifo_buffer_size):
         idx, emu_buf = emulator.get_buffer()
-        log_writer.write_buffer(emu_buf)
+        writer.write_buffer(emu_buf)
         hrv_buf = DataBuffer(voltage=dsv, current=dsc)
         emulator.return_buffer(idx, hrv_buf)
 
     for _ in range(fifo_buffer_size):
         idx, emu_buf = emulator.get_buffer()
-        log_writer.write_buffer(emu_buf)
+        writer.write_buffer(emu_buf)
 
     with pytest.raises(ShepherdIOException):
         idx, emu_buf = emulator.get_buffer()
@@ -101,6 +104,7 @@ def test_emulation(log_writer, shp_reader, emulator: ShepherdEmulator) -> None:
 def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
+    fixtures.load()
     emu_cfg = EmulationTask(
         input_path=data_h5,
         output_path=output,
@@ -112,7 +116,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up) -> None:
         io_port="A",
         pwr_port="A",
         voltage_aux=2.5,
-        virtual_source=VirtualSource(name="direct"),
+        virtual_source=VirtualSourceConfig(name="direct"),
     )
     run_emulator(emu_cfg)
 

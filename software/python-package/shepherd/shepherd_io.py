@@ -3,7 +3,6 @@ shepherd.shepherd_io
 ~~~~~
 Interface layer, abstracting low-level functionality provided by PRUs and
 kernel module. User-space part of the double-buffered data exchange protocol.
-TODO: these files are getting to big, ~ 1000 LOC, refactor into class_X.py
 
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
@@ -15,18 +14,19 @@ from typing import Optional
 from typing import Union
 
 from periphery import GPIO
+from pydantic import validate_arguments
 from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationHarvester
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
+from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
 from . import sysfs_interface as sfs
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
-from .virtual_harvester_config import VirtualHarvesterConfig
-from .virtual_source_config import VirtualSourceConfig
 
 logger = logging.getLogger("shp.io")
 
@@ -416,6 +416,7 @@ class ShepherdIO:
         """
         return sfs.read_dac_aux_voltage(cal_emu)
 
+    @validate_arguments
     def send_calibration_settings(
         self,
         cal_: Union[CalibrationEmulator, CalibrationHarvester, None],
@@ -439,7 +440,7 @@ class ShepherdIO:
 
     @staticmethod
     def send_virtual_converter_settings(
-        settings: VirtualSourceConfig,
+        settings: ConverterPRUConfig,
     ) -> None:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
@@ -447,11 +448,11 @@ class ShepherdIO:
 
         :param settings: Contains the settings for the virtual source.
         """
-        sfs.write_virtual_converter_settings(settings.export_for_sysfs())
+        sfs.write_virtual_converter_settings(settings)
 
     @staticmethod
     def send_virtual_harvester_settings(
-        settings: VirtualHarvesterConfig,
+        settings: HarvesterPRUConfig,
     ) -> None:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
@@ -459,7 +460,7 @@ class ShepherdIO:
 
         :param settings: Contains the settings for the virtual source.
         """
-        sfs.write_virtual_harvester_settings(settings.export_for_sysfs())
+        sfs.write_virtual_harvester_settings(settings)
 
     def _return_buffer(self, index: int) -> None:
         """Returns a buffer to the PRU

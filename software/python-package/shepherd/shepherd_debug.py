@@ -8,8 +8,12 @@ import msgpack_numpy
 import numpy
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
+from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
+from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
@@ -19,8 +23,6 @@ from .logger import logger
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
 from .target_io import TargetIO
-from .virtual_harvester_config import VirtualHarvesterConfig
-from .virtual_source_config import VirtualSourceConfig
 
 
 class ShepherdDebug(ShepherdIO):
@@ -151,22 +153,25 @@ class ShepherdDebug(ShepherdIO):
 
     def vsource_init(
         self,
-        vs_settings: VirtualSourceConfig,
+        src_cfg: VirtualSourceConfig,
         cal_emu: CalibrationEmulator,
-        input_setting: Optional[dict],
+        log_intermediate: bool = False,
+        dtype_in: EnergyDType = EnergyDType.ivsample,
+        window_size: Optional[int] = None,
     ):
-        vs_config = VirtualSourceConfig(vs_settings)
-        super().send_virtual_converter_settings(vs_config)
         super().send_calibration_settings(cal_emu)
+        src_pru = ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate)
+        super().send_virtual_converter_settings(src_pru)
 
-        vh_config = VirtualHarvesterConfig(
-            vs_config.get_harvester(),
-            vs_config.samplerate_sps,
-            emu_cfg=input_setting,
+        hrv_pru = HarvesterPRUConfig.from_vhrv(
+            data=src_cfg.harvester,
+            for_emu=True,
+            dtype_in=dtype_in,
+            window_size=window_size,
         )
-
-        super().send_virtual_harvester_settings(vh_config)
+        super().send_virtual_harvester_settings(hrv_pru)
         time.sleep(0.5)
+
         super().start()
         super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation

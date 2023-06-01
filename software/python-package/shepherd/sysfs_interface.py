@@ -16,7 +16,10 @@ from pathlib import Path
 from typing import Optional
 from typing import Union
 
+from pydantic import validate_arguments
 from shepherd_core import CalibrationEmulator
+from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 
 logger = logging.getLogger("shp.interface")
 sysfs_path = Path("/sys/shepherd")
@@ -167,8 +170,9 @@ def write_mode(mode: str, force: bool = False) -> None:
         f.write(mode)
 
 
+@validate_arguments
 def write_dac_aux_voltage(
-    voltage: float,
+    voltage: Union[float, str, None],
     cal_emu: Optional[CalibrationEmulator] = None,
 ) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
@@ -183,7 +187,7 @@ def write_dac_aux_voltage(
         # set bit 20 (during pru-reset) and therefore link both adc-channels
         write_dac_aux_voltage_raw(2**20)
         return
-    elif isinstance(voltage, str) and "mid" in voltage.lower():
+    elif isinstance(voltage, str) and "buffer" in voltage.lower():
         # set bit 21 (during pru-reset) and therefore output
         # intermediate (storage cap) voltage on second channel
         write_dac_aux_voltage_raw(2**21)
@@ -311,12 +315,14 @@ def read_calibration_settings() -> (
     return cal_pru
 
 
-def write_virtual_converter_settings(settings: list) -> None:
+@validate_arguments
+def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
     """Sends the virtual-converter settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
 
     """
+    settings = list(settings.dict().values())
     logger.debug(
         "Writing virtual converter to sysfs_interface, first values are %s",
         settings[0:3],
@@ -352,12 +358,14 @@ def read_virtual_converter_settings() -> list:
     return int_settings
 
 
-def write_virtual_harvester_settings(settings: list) -> None:
+@validate_arguments
+def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
     """Sends the settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
 
     """
+    settings = list(settings.dict().values())
     logger.debug(
         "Writing virtual harvester to sysfs_interface, first values are %s",
         settings[0:3],

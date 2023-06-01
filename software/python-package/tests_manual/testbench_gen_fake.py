@@ -24,6 +24,6 @@ with Writer(store_path, cal_data=CalibrationHarvester()) as store:
 
 # run with
 # sudo shepherd-sheep -vvv emulator -d 10 --force_overwrite
-#   --virtsource /opt/shepherd/software/python-package/tests/example_config_virtsource.yml
+#   --virtsource /opt/shepherd/software/python-package/tests/_test_config_virtsource.yaml
 #   -o /var/shepherd/recordings/out.h5 /var/shepherd/recordings/harvest_example.h5
 # echo $?

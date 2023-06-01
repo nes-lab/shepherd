@@ -1,0 +1,21 @@
+mode: emulation
+parameters:
+  input_path: /var/shepherd/recordings/hrv_test.h5
+  output_path: /var/shepherd/recordings/emu_test.h5
+  output_compression: lzf
+  duration: 10
+  virtual_source:
+    inherit_from: BQ25570
+    V_output_mV: 3300
+  force_overwrite: true
+  use_cal_default: false
+  enable_io: true
+  io_port: A
+  pwr_port: A
+  voltage_aux: 3.3
+  gpio_tracing:
+    uart_baudrate: 9600
+  power_tracing:
+    voltage: true
+    current: true
+verbose: 2

@@ -1,7 +1,7 @@
 # This is an example configuration for shepherd.
-# Instead of modifying, better make a copy and name it config.yml
+# Instead of modifying, better make a copy and name it config.yaml
 # Behavior: emulate a BQ-Controller for target A, enable io-connection
-mode: emulator
+mode: emulation
 parameters:
   input_path: /var/shepherd/recordings/hrv.h5
   # output_path:

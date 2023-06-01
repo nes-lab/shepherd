@@ -5,7 +5,6 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-import numpy
 import numpy as np
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
