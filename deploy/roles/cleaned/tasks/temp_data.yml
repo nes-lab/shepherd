@@ -9,6 +9,7 @@
 - name: Clean apt-caches - C
   ansible.builtin.apt:
     clean: true
+  when: false # ansible states that "clean" parameter does not exist
 
 - name: Clean pip-caches - A
   ansible.builtin.file:
