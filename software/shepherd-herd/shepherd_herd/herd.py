@@ -377,7 +377,7 @@ class Herd:
             parameters (dict): Parameters for shepherd-sheep
         """
         global verbose_level
-        config_path = "/etc/shepherd/config.yml"
+        config_path = "/etc/shepherd/config.yaml"
         config_dict = {
             "mode": mode,
             "verbose": verbose_level,

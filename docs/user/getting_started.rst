@@ -193,7 +193,7 @@ Now that the Software ready a basic test of the shepherd-framework can be run. I
 
 .. code-block:: bash
 
-    sudo shepherd-sheep run --config /etc/shepherd/example_config_harvester.yml
+    sudo shepherd-sheep run --config /etc/shepherd/example_config_harvest.yaml
 
 or on the host by installing and using `shepherd-herd <https://pypi.org/project/shepherd-herd/>`_. After following the linked installation guide the same test can be run with:
 
@@ -201,4 +201,4 @@ or on the host by installing and using `shepherd-herd <https://pypi.org/project/
 
     shepherd-herd start
 
-Note that this will load a slightly different configuration-file (``/etc/shepherd/config.yml``).
+Note that this will load a slightly different configuration-file (``/etc/shepherd/config.yaml``).

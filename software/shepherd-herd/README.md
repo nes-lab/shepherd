@@ -110,7 +110,7 @@ Explanation:
 - file will be stored to `/var/shepherd/recordings/hrv.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
 
-For more harvesting algorithms see [virtual_harvester_defs.yml](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd/virtual_harvester_defs.yml).
+For more harvesting algorithms see [virtual_harvester_fixture.yaml](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester_fixture.yaml).
 
 ### Emulation
 
@@ -129,7 +129,7 @@ Explanation:
 - file will be stored to `/var/shepherd/recordings/emu.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
 
-For more virtual source models see [virtual_source_defs.yml](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd/virtual_source_defs.yml).
+For more virtual source models see [virtual_source_fixture.yaml](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source_fixture.yaml).
 
 ### Data distribution & retrieval
 

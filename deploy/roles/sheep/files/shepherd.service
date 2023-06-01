@@ -2,7 +2,7 @@
 Description=Harvest/Emulation with SHEPHERD
 
 [Service]
-ExecStart=/usr/local/bin/shepherd-sheep run -vv --config /etc/shepherd/config.yml
+ExecStart=/usr/local/bin/shepherd-sheep run -vv --config /etc/shepherd/config.yaml
 Restart=no
 
 # NOTE: verbose (-vv) exec is wanted -> good for eventual debugging
