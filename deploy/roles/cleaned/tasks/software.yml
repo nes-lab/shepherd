@@ -79,3 +79,4 @@
     - "{{ non_essential_packages_f }}"
     - "{{ non_essential_packages_g }}"
     - "{{ non_essential_packages_h }}"
+    - "{{ non_essential_packages_i }}"
