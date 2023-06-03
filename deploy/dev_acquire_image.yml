@@ -13,27 +13,17 @@
         do_delete_recordings: true
         do_remove_software: false
         do_zero_free_space: true
+        cmd_ssh: "ssh {{ ansible_user }}@{{ inventory_hostname }}"
+        image_name: "shepherd-ubuntu-22.04.2-console-armhf-{{ ansible_date_time.date }}-4g.img.gz"
 
     - name: Display post cleanup message
       ansible.builtin.debug:
-        msg: "ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of=image.img.xz"
-
-    - name: Display ssh
-      ansible.builtin.debug:
-        msg: "{{ ansible_user }}@{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
-
-    - name: Display file
-      ansible.builtin.debug:
-        msg: "shepherd-{{ ansible_date_time.date }}-{{ inventory_hostname }}_mmcblk1.img.gz"
+        msg: "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of={{ image_name }}"
 
 # TODO: test - do actual command
 # hostvars[inventory_hostname]['ansible_default_ipv4']['address']
-# ansible_user
-# inventory_hostname
-# ansible_date_time.date = 2015-07-09
 
 # base: 1.7 gb used, 1.7 gb free, 51% usage
-# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1 | gzip -1 -' | dd of=image.img.gz -> 742 mb 1600s broken image
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | gzip -1 - | dd of=image.img.gz -> 742 mb 1300s
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz -> 466 mb 1320s
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image3.img.xz -> 466 mb 1333s
@@ -46,4 +36,3 @@
 # safe without xz, mount, change uEnv.txt, umount, xz
 # sudo mkdir /mnt/image
 # sudo mount -o loop /home/NAME/Downloads/image.dd /mnt/image
-# TODO: delete Journal?
