@@ -45,6 +45,7 @@
     cmd: 'yes | /opt/scripts/tools/developers/update_bootloader.sh'
   changed_when: true
   when: update_bootloader | bool
+  failed_when: false # certificate may be invalid
 
 - name: Uname - Get Kernel-Version
   ansible.builtin.command: 'uname --kernel-release'
