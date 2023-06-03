@@ -29,18 +29,19 @@
     regexp: "#?deb .*.rcn-ee.*.focal.*$"
     line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ focal main"
     state: present
-- name: APT - update cache
+- name: APT - update cache & install hardcoded kernel
   ansible.builtin.apt:
+    name: "linux-image-4.19.94-ti-r73"
+    state: present
     update_cache: true
 
 - name: "SCRIPT - Switch to newest release of Kernel Branch {{ default_kernel_branch }}"
   ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}'
-  when: update_kernel | bool
+  when: false # update_kernel | bool
   changed_when: true
   failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
   # this was failing for ubuntu 22.04 -> apt install linux-image-4.19 ... .280-bone76 (with -bone, without -rt-)
-  # -> added back focal-repo (see above)
-
+  # -> added back focal-repo (see above) but it still fails to downgrade -> disable for now and hardcode (above)
 
 - name: Grow root partition to drive-size
   ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'

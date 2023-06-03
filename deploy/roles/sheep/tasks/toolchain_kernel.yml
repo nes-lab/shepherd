@@ -9,8 +9,7 @@
   ansible.builtin.apt:
     name:
       [
-        "linux-headers-{{ kernelrelease.stdout.strip() }}", # TODO: done by bootstrap / maintenance
-        "linux-firmware", # TODO: is already there
+        "linux-headers-{{ kernelrelease.stdout.strip() }}", # redundancy, 1st done by maintenance
         "dkms",
       ]
     state: present
