@@ -15,7 +15,7 @@
         "chrony",
         "pps-tools",
         "linux-headers-{{ kernelrelease.stdout.strip() }}",
-        "dkms",
+        # "dkms", # TODO: test removal - should not be needed - installs huge secondary gcc
       ]
     state: present
     update_cache: true

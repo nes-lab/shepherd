@@ -23,5 +23,9 @@ non_essential_packages_f: ['bb-u-boot-am57xx-evm', 'sancloud-firmware']
 non_essential_packages_g: ['wireless-*', 'ofono', 'bluez', 'rfkill', 'rtl8*']
 non_essential_packages_h: ['acpid', 'alsa-utils', 'libasound*', 'seeed-modules-*', 'can-utils', 'eject']
 non_essential_packages_i: ['ti-sgx-*', 'vim-runtime', 'humanity-icon-theme', 'python3-sympy'] # 'initramfs*'
+# test-stage
+non_essential_packages_j: ['dkms']
 # - add: libjpeg*,? part of sheep-install
 # NOTE: 'libx11*' part of python3-h5py
+# TODO: ubuntu 22.04 with shp has gcc-11 & -12 installed -> gcc-12 for dkms and -11 for same and everything else
+# workaround: dkms seems not to be needed

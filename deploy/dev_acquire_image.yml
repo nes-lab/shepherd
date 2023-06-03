@@ -16,7 +16,7 @@
 
     - name: Display post cleanup message
       ansible.builtin.debug:
-        msg: "ssh jane@10.0.0.10 'sudo dd if=/dev/mmcblk1 | xz -6 -' | dd of=image.img.xz"
+        msg: "ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of=image.img.xz"
 
     - name: Display ssh
       ansible.builtin.debug:
@@ -24,7 +24,7 @@
 
     - name: Display file
       ansible.builtin.debug:
-        msg: "{{ ansible_date_time.date }}_{{ inventory_hostname }}_mmcblk1.img.gz"
+        msg: "shepherd-{{ ansible_date_time.date }}-{{ inventory_hostname }}_mmcblk1.img.gz"
 
 # TODO: test - do actual command
 # hostvars[inventory_hostname]['ansible_default_ipv4']['address']

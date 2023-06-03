@@ -11,6 +11,10 @@
     clean: true
   when: false # ansible states that "clean" parameter does not exist
 
+- name: Clean apt-caches - D - builtin.apt seems broken
+  ansible.builtin.command: 'apt autoclean'
+  changed_when: true
+
 - name: Clean pip-caches - A
   ansible.builtin.file:
     path: "/root/.cache/pip"
@@ -21,6 +25,13 @@
     path: "~/.cache/pip"
     state: absent
   become: false
+
+- name: Clean Journal-Logs - A - liberate
+  ansible.builtin.command: 'journalctl --flush --rotate'
+  changed_when: true
+- name: Clean Journal-Logs - B - delete
+  ansible.builtin.command: 'journalctl --vacuum-time=1s'
+  changed_when: true
 
 - name: Find Logs and other tmp-files
   ansible.builtin.find:
