@@ -25,8 +25,8 @@
 
 - name: Add back rcn-ee-repo for ubuntu focal (for ti-version of linux 4.19.94)
   ansible.builtin.lineinfile:
-    dest: "/boot/uEnv.txt"
-    regexp: "#?deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ focal.*$"
+    dest: "/etc/apt/sources.list"
+    regexp: "#?deb .*.rcn-ee.*.focal.*$"
     line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ focal main"
     state: present
 - name: APT - update cache
