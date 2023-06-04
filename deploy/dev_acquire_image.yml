@@ -4,6 +4,10 @@
   become: true
   gather_facts: true
 
+  vars:
+    cmd_ssh: "ssh {{ ansible_user }}@{{ inventory_hostname }}"
+    image_name: "shepherd-ubuntu-22.04.2-console-armhf-{{ ansible_date_time.date }}-4g.img.gz"
+
   tasks:
 
     - name: Cleanup Beaglebone
@@ -13,10 +17,9 @@
         do_delete_recordings: true
         do_remove_software: false
         do_zero_free_space: true
-        cmd_ssh: "ssh {{ ansible_user }}@{{ inventory_hostname }}"
-        image_name: "shepherd-ubuntu-22.04.2-console-armhf-{{ ansible_date_time.date }}-4g.img.gz"
 
-    - name: Display post cleanup message
+
+    - name: Last Step - run the following backup-command manually
       ansible.builtin.debug:
         msg: "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of={{ image_name }}"
 
@@ -28,6 +31,7 @@
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz -> 466 mb 1320s
 # ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image3.img.xz -> 466 mb 1333s
 # ssh jane@10.0.0.11 'sudo dd if=/dev/mmcblk1' | xz -6 - |  dd of=image.img.xz         -> 384 mb  785s
+# ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | xz -6 - |  dd of=image.img.xz         -> 384 mb  785s
 # base: 1.4 gb used, 2.0 gb free, 41 % usage -> 363 mb,
 # - remove gcc-8, fw/iw
 # base: 1.2 gb used, 2.2 gb free, 36 % usage -> 326 mb,
