@@ -129,24 +129,15 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 
     while (1)
     {
-        // take a snapshot of current triggers until something happens -> ensures prioritized handling
-        // edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
-        // NOTE: pru1 manages the irq, but pru0 reacts to it directly -> less jitter
-        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()))
-            ; // read iep-reg -> 12 cycles, 60 ns
+        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()));
 
         // Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
         {
             GPIO_OFF(SPI_CS_ADCs_MASK);
-            // determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
             __delay_cycles(100 / 5);
             GPIO_ON(SPI_CS_ADCs_MASK);
-            // TODO: look at asm-code, is there still potential for optimization?
-            // TODO: make sure that 1 us passes before trying to get that value
         }
-        // timestamp pru0 to monitor utilization
-        const uint32_t timer_start = iep_get_cnt_val();
 
         // Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
         if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
@@ -170,22 +161,10 @@ void event_loop(volatile struct SharedMem *const shared_mem,
             /* The actual sampling was done here */
             shared_mem->analog_sample_counter++;
 
-            if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
-            {
-                /* Did the Linux kernel module ask for reset? */
-                if (shared_mem->shepherd_state == STATE_RESET) return;
-            }
-            else
-            {
-                /* only handle kernel-communications if this is not the last sample */
-                //GPIO_ON(DEBUG_PIN0_MASK);
-                handle_kernel_com(shared_mem, free_buffers_ptr);
-                //GPIO_OFF(DEBUG_PIN0_MASK);
-            }
+            /* Did the Linux kernel module ask for reset? */
+            if (shared_mem->shepherd_state == STATE_RESET) return;
+            handle_kernel_com(shared_mem, free_buffers_ptr);
         }
-
-        // record loop-duration -> gets further processed by pru1
-        shared_mem->pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
     }
 }
 
@@ -262,8 +241,6 @@ int main(void)
 reset:
     send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
     shared_memory->pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
-
-    ring_init(&free_buffers);
 
     ring_init(&free_buffers);
 
