@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from typing import Dict
 from typing import Optional
+from typing import Union
 
 import click
 import click_config_file
@@ -22,12 +23,14 @@ import yaml
 import zerorpc
 from periphery import GPIO
 from shepherd_core import CalibrationCape
-from .logger import get_verbose_level
-from .logger import set_verbose_level
+from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
+from shepherd_core.data_models.task import TestbedTasks
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 
 from . import __version__
@@ -38,7 +41,9 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
+from .logger import get_verbose_level
 from .logger import log
+from .logger import set_verbose_level
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
@@ -166,14 +171,61 @@ def run(mode: str, parameters: dict, verbose: int):
         )
 
     log.debug("CLI did process run()")
-    if mode == "harvester":
+    if mode == "harvest":
         cfg = HarvestTask(**parameters)
         run_harvester(cfg)
-    elif mode == "emulator":
+    elif mode == "emulation":
         cfg = EmulationTask(**parameters)
         run_emulator(cfg)
     else:
         raise click.BadParameter(f"command '{mode}' not supported")
+
+
+@cli.command(
+    short_help="Runs a task or set of tasks with provided config file.",
+)
+@click.option(
+    "--config",
+    "-i",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    help="YAML-formatted file with Config-Data",
+)
+def task(config: Union[Path, ShpModel]):
+    if isinstance(config, Path):
+        with open(config) as shp_file:
+            shp_dict = yaml.safe_load(shp_file)
+        shp_wrap = Wrapper(**shp_dict)
+    elif isinstance(config, ShpModel):
+        shp_wrap = Wrapper(
+            model=type(config).__name__,
+            parameters=config.dict(),
+        )
+    else:
+        raise ValueError("had unknown input: %s", type(config))
+
+    if shp_wrap.model == TestbedTasks:
+        tbt = TestbedTasks(**shp_wrap.parameters)
+        content = tbt.observer_tasks
+    elif shp_wrap.model == EmulationTask.__name__:
+        content = [EmulationTask(**shp_wrap.parameters)]
+    elif shp_wrap.model == HarvestTask.__name__:
+        content = [HarvestTask(**shp_wrap.parameters)]
+    elif shp_wrap.model == FirmwareModTask.__name__:
+        content = [FirmwareModTask(**shp_wrap.parameters)]
+    elif shp_wrap.model == ProgrammingTask.__name__:
+        content = [ProgrammingTask(**shp_wrap.parameters)]
+    else:
+        raise ValueError("had unknown task: %s", shp_wrap.model)
+
+    for element in content:
+        if isinstance(element, EmulationTask):
+            run_emulator(element)
+        elif isinstance(element, HarvestTask):
+            run_harvester(element)
+        elif isinstance(element, ProgrammingTask):
+            run_programmer(element)
+        else:
+            raise ValueError("Task not implemented: %s", type(element))
 
 
 @cli.group(
@@ -391,7 +443,7 @@ def launcher(led: int, button: int):
     is_flag=True,
     help="dry-run the programmer - no data gets written",
 )
-def programmer(**kwargs):
+def program(**kwargs):
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,

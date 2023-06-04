@@ -120,11 +120,17 @@ def run_programmer(cfg: ProgrammingTask):
 
         state = "init"
         while state != "idle" and not failed:
-            log.info("Programming in progress,\tstate = %s", state)
+            log.info(
+                "Programming in progress,\tpgm_state = %s, shp_state = %s",
+                state,
+                sysfs_interface.get_state(),
+            )
             time.sleep(1)
             state = sysfs_interface.check_programmer()
             if "error" in state:
-                log.error("SystemError - Failed during Programming, state = %s", state)
+                log.error(
+                    "SystemError - Failed during Programming, p_state = %s", state
+                )
                 failed = True
             # TODO: programmer can hang in "starting", should restart automatically then
         if failed:

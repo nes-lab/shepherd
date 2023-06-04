@@ -8,6 +8,8 @@ import click
 import click_config_file
 import yaml
 from fabric import Connection
+from shepherd_core.data_models.task import ProgrammingTask
+from shepherd_core.data_models.testbed import ProgrammerProtocol
 
 from . import __version__
 from .herd import Herd
@@ -590,9 +592,18 @@ def reset(ctx: click.Context):
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.option(
-    "--sel_a/--sel_b",
-    default=True,
-    help="Choose Target-Port for programming",
+    "--target-port",
+    "-p",
+    type=click.Choice(["A", "B"]),
+    default="A",
+    help="Choose Target-Port of Cape for programming",
+)
+@click.option(
+    "--mcu-port",
+    "-m",
+    type=click.INT,
+    default=1,
+    help="Choose MCU on Target-Port (only valid for SBW & SWD)",
 )
 @click.option(
     "--voltage",
@@ -609,16 +620,11 @@ def reset(ctx: click.Context):
     help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
-    "--target",
+    "--mcu-type",
     "-t",
     type=click.Choice(["nrf52", "msp430"]),
     default="nrf52",
     help="Target MCU",
-)
-@click.option(
-    "--prog1/--prog2",
-    default=True,
-    help="Choose Programming-Pins of Target-Port (only valid for SBW & SWD)",
 )
 @click.option(
     "--simulate",
@@ -626,22 +632,22 @@ def reset(ctx: click.Context):
     help="dry-run the programmer - no data gets written",
 )
 @click.pass_context
-def programmer(
-    ctx: click.Context,
-    firmware_file: Path,
-    sel_a: bool,
-    voltage: float,
-    datarate: int,
-    target: str,
-    prog1: bool,
-    simulate: bool,
-):
+def program(**kwargs):
+    ctx = kwargs.pop("ctx")
     temp_file = "/tmp/target_image.hex"  # noqa: S108
-    ctx.obj["herd"].put_file(firmware_file, temp_file, force_overwrite=True)
+
+    ctx.obj["herd"].put_file(kwargs["firmware-file"], temp_file, force_overwrite=True)
+    protocol_dict = {
+        "nrf52": ProgrammerProtocol.swd,
+        "msp430": ProgrammerProtocol.sbw,
+    }
+    kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
+    cfg = ProgrammingTask(**kwargs)
+
     command = (
-        f"shepherd-sheep -{'v' * get_verbose_level()} programmer --sel_{'a' if sel_a else 'b'} "
-        f"-v {voltage} -d {datarate} -t {target} "
-        f"--prog{'1' if prog1 else '2'} {'--simulate' if simulate else ''} "
+        f"shepherd-sheep -{'v' * get_verbose_level()} program --target-port {cfg.target_port} "
+        f"-v {cfg.voltage} -d {cfg.datarate} --mcu-type {cfg.mcu_type} "
+        f"--mcu-port {cfg.mcu_port} {'--simulate' if cfg.simulate else ''} "
         f"{temp_file}"
     )
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)

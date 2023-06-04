@@ -199,7 +199,7 @@ class Writer(BaseWriter):
 
         # Shepherd-logging-handler
         self.slog_grp = self.h5file.create_group("shepherd-log")
-        self.add_dataset_time(self.xcpt_grp, self.slog_inc)
+        self.add_dataset_time(self.slog_grp, self.slog_inc)
         self.slog_grp.create_dataset(
             "message",
             (self.slog_inc,),

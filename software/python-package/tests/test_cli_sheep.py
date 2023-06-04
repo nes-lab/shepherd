@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from shepherd_core import CalibrationHarvester
+from shepherd_core.data_models.task import HarvestTask
 
 from shepherd import Writer
 from shepherd.cli import cli
@@ -38,90 +39,48 @@ def data_h5(tmp_path: Path) -> Path:
     return store_path
 
 
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_cli_harvest(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli,
-        ["-vvv", "harvester", "-f", "-d", "10", "-o", str(store)],
-    )
-    assert res.exit_code == 0
-    assert store.exists()
+@pytest.fixture
+def path_hrv(tmp_path: Path) -> Path:
+    return tmp_path / "cfg.yaml"
+
+
+@pytest.fixture
+def path_h5(tmp_path: Path) -> Path:
+    return tmp_path / "out.h5"
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_harvest_no_cal(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "harvester",
-            "-d",
-            "10",
-            "--force_overwrite",
-            "--use_cal_default",
-            "-o",
-            str(store),
-        ],
-    )
-
+def test_cli_harvest_no_cal(
+    shepherd_up, cli_runner, path_hrv: Path, path_h5: Path
+) -> None:
+    HarvestTask(
+        output_path=path_h5,
+        force_overwrite=True,
+        duration=10,
+        use_cal_default=True,
+    ).to_file(path_hrv)
+    res = cli_runner.invoke(cli, ["-vvv", "task", str(path_hrv)])
     assert res.exit_code == 0
-    assert store.exists()
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_harvest_parameters_long(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    store = tmp_path / "out.h5"
-    start_time = round(time.time() + 10)
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "harvester",
-            "--duration",
-            "10",
-            "--start_time",
-            f"{start_time}",
-            "--force_overwrite",
-            "--use_cal_default",
-            "--warn-only",
-            "--output_path",
-            f"{str(store)}",
-        ],
-    )
-
+def test_cli_harvest_parameters_most(
+    shepherd_up, cli_runner, path_hrv: Path, path_h5: Path
+) -> None:
+    HarvestTask(
+        output_path=path_h5,
+        force_overwrite=True,
+        duration=10,
+        use_cal_default=True,
+        time_start=round(time.time() + 10),
+        abort_on_errors=False,
+    ).to_file(path_hrv)
+    res = cli_runner.invoke(cli, ["-vvv", "task", str(path_hrv)])
     assert res.exit_code == 0
-    assert store.exists()
-
-
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    store = tmp_path / "out.h5"
-    start_time = round(time.time() + 10)
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "harvester",
-            "-d",
-            "10",
-            "-s",
-            f"{start_time}",
-            "-f",
-            "-c",
-            "--no-warn-only",
-            "-o",
-            str(store),
-        ],
-    )
-
-    assert res.exit_code == 0
-    assert store.exists()
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
@@ -129,13 +88,17 @@ def test_cli_harvest_parameters_short(shepherd_up, cli_runner, tmp_path: Path) -
 def test_cli_harvest_parameters_minimal(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
+    path_hrv: Path,
+    path_h5: Path,
 ) -> None:
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(cli, ["harvester", "-f", "-d", "10", "-o", str(store)])
-
+    HarvestTask(
+        output_path=path_h5,
+        force_overwrite=True,
+        duration=10,
+    ).to_file(path_hrv)
+    res = cli_runner.invoke(cli, ["-vvv", "task", str(path_hrv)])
     assert res.exit_code == 0
-    assert store.exists()
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware

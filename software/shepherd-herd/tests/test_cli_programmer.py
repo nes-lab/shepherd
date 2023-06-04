@@ -8,121 +8,137 @@ from shepherd_herd.cli import cli
 
 
 @pytest.fixture
-def firmware_example():
+def fw_example() -> Path:
     here = Path(__file__).absolute()
     name = "firmware_nrf52_powered.hex"
     return here.parent / name
 
 
 @pytest.fixture
-def firmware_empty(tmp_path):
+def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
     with open(store_path, "w") as f:
         f.write("")
     return store_path
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_minimal(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_minimal(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
-            "--sel_a",
+            "program",
+            "--target-port",
+            "A",
             "--voltage",
             "2.0",
             "--datarate",
             "600000",
-            "--target",
+            "--mcu-type",
             "nrf52",
-            "--prog1",
+            "--mcu-port",
+            "1",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit_short(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_swd_explicit_short(
+    shepherd_up,
+    cli_runner,
+    fw_example: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
-            "--sel_a",
+            "program",
+            "-p",
+            "A",
             "-v",
             "2.0",
             "-d",
             "600000",
             "-t",
             "nrf52",
-            "--prog1",
+            "-m",
+            "1",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_sbw_explicit(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
-            "--sel_b",
+            "program",
+            "--target-port",
+            "B",
             "--voltage",
             "1.5",
             "--datarate",
             "300000",
-            "--target",
+            "--mcu-type",
             "msp430",
-            "--prog2",
+            "--mcu-port",
+            "2",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code == 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_a(stopped_herd, cli_runner, firmware_empty):
+def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
-            str(firmware_empty),
+            str(fw_empty),
         ],
     )
     assert res.exit_code != 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_b(stopped_herd, cli_runner, tmp_path):
+def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
             str(tmp_path),  # Directory
         ],
@@ -130,13 +146,14 @@ def test_cli_program_file_defective_b(stopped_herd, cli_runner, tmp_path):
     assert res.exit_code != 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c(stopped_herd, cli_runner, tmp_path):
+def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
             str(tmp_path / "file_abc.bin"),  # non_existing file
         ],
@@ -144,49 +161,60 @@ def test_cli_program_file_defective_c(stopped_herd, cli_runner, tmp_path):
     assert res.exit_code != 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_datarate_invalid_a(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_datarate_invalid_a(
+    shepherd_up,
+    cli_runner,
+    fw_example: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--datarate",
-            "2000000",
+            "2000000",  # too fast
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code != 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_datarate_invalid_b(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_datarate_invalid_b(
+    shepherd_up,
+    cli_runner,
+    fw_example: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--datarate",
-            "0",
+            "0",  # impossible
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code != 0
 
 
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_target_invalid(stopped_herd, cli_runner, firmware_example):
+def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "programmer",
-            "--target",
+            "program",
+            "--mcu-type",
             "arduino",
             "--simulate",
-            str(firmware_example),
+            str(fw_example),
         ],
     )
     assert res.exit_code != 0

@@ -30,7 +30,7 @@ def test_cli_program_minimal(shepherd_up, cli_runner, fw_example: Path) -> None:
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
             str(fw_example),
         ],
@@ -45,7 +45,7 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--target-port",
             "A",
             "--voltage",
@@ -74,7 +74,7 @@ def test_cli_program_swd_explicit_short(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "-p",
             "A",
             "-v",
@@ -99,7 +99,7 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--target-port",
             "B",
             "--voltage",
@@ -124,7 +124,7 @@ def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
             str(fw_empty),
         ],
@@ -139,7 +139,7 @@ def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
             str(tmp_path),  # Directory
         ],
@@ -154,7 +154,7 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--simulate",
             str(tmp_path / "file_abc.bin"),  # non_existing file
         ],
@@ -173,7 +173,7 @@ def test_cli_program_datarate_invalid_a(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--datarate",
             "2000000",  # too fast
             "--simulate",
@@ -194,7 +194,7 @@ def test_cli_program_datarate_invalid_b(
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--datarate",
             "0",  # impossible
             "--simulate",
@@ -211,7 +211,7 @@ def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_example: Path) -
         cli,
         [
             "-vvv",
-            "programmer",
+            "program",
             "--mcu-type",
             "arduino",
             "--simulate",

@@ -4,7 +4,6 @@ import time
 from contextlib import ExitStack
 
 import invoke
-from .logger import get_verbose_level
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 
@@ -12,6 +11,7 @@ from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
+from .logger import get_verbose_level
 from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException

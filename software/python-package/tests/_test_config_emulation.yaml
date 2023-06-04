@@ -2,7 +2,7 @@ mode: emulation
 parameters:
   input_path: /var/shepherd/recordings/hrv_test.h5
   output_path: /var/shepherd/recordings/emu_test.h5
-  output_compression: lzf
+  output_compression: null
   duration: 10
   virtual_source:
     inherit_from: BQ25570

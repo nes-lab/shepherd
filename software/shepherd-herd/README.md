@@ -187,13 +187,13 @@ shepherd-herd -l sheep1 stop
 The integrated programmer allows flashing a firmware image to an MSP430FR (SBW) or nRF52 (SWD) and shares the interface with `shepherd-sheep`. This example writes the image `firmware_img.hex` to a MSP430 on target port B and its programming port 2:
 
 ```Shell
-shepherd-herd programmer --target msp430 --sel_b --prog2 firmware_img.hex
+shepherd-herd program --mcu-type msp430 --target-port B --mcu-port 2 firmware_img.hex
 ```
 
 To check available options and arguments call
 
 ```Shell
-shepherd-herd programmer --help
+shepherd-herd program --help
 ```
 
 The options default to:

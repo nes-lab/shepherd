@@ -8,7 +8,6 @@ import invoke
 from shepherd_core import BaseReader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
-from .logger import get_verbose_level
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
@@ -19,6 +18,7 @@ from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
+from .logger import get_verbose_level
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
