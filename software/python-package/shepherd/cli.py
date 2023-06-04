@@ -26,7 +26,8 @@ from shepherd_core import CalibrationCape
 from shepherd_core import get_verbose_level
 from shepherd_core import set_verbose_level
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
-from shepherd_core.data_models.task import EmulationTask, HarvestTask
+from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 
 from . import __version__

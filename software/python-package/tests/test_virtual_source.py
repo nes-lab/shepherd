@@ -101,7 +101,9 @@ def difference_percent(val1: float, val2: float, offset: float) -> float:
 @pytest.mark.hardware
 @pytest.mark.src_name("./_test_config_virtsource.yaml")
 def test_vsource_add_charge(
-    pru_vsource: ShepherdDebug, pyt_vsource: VirtualSourceModel, reference_vss: dict
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
+    reference_vss: dict,
 ) -> None:
     # set desired end-voltage of storage-cap:
     V_cap_mV = 3500
@@ -158,7 +160,9 @@ def test_vsource_add_charge(
 @pytest.mark.hardware
 @pytest.mark.src_name("./_test_config_virtsource.yaml")
 def test_vsource_drain_charge(
-    pru_vsource: ShepherdDebug, pyt_vsource: VirtualSourceModel, reference_vss: dict
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
+    reference_vss: dict,
 ) -> None:
     # set desired end-voltage of storage-cap - low enough to disable output
     V_cap_mV = 2300
@@ -236,7 +240,8 @@ def test_vsource_drain_charge(
 @pytest.mark.hardware
 @pytest.mark.src_name("direct")  # easiest case: v_inp == v_out, current not
 def test_vsource_direct(
-    pru_vsource: ShepherdDebug, pyt_vsource: VirtualSourceModel
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
 ) -> None:
     for voltage_mV in [0, 100, 500, 1000, 2000, 3000, 4000, 4500]:
         V_pru_mV = pru_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
@@ -253,7 +258,8 @@ def test_vsource_direct(
 @pytest.mark.hardware
 @pytest.mark.src_name("diode+capacitor")
 def test_vsource_diodecap(
-    pru_vsource: ShepherdDebug, pyt_vsource: VirtualSourceModel
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
 ) -> None:
     voltages_mV = [1000, 1100, 1500, 2000, 2500, 3000, 3500, 4000, 4500]
 

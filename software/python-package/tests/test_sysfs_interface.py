@@ -180,7 +180,7 @@ def test_initial_harvester_settings(shepherd_up):
 def test_writing_harvester_settings(shepherd_up, hrv_cfg):
     sysfs_interface.write_virtual_harvester_settings(hrv_cfg)
     assert sysfs_interface.read_virtual_harvester_settings() == list(
-        hrv_cfg.dict().values()
+        hrv_cfg.dict().values(),
     )
 
 
