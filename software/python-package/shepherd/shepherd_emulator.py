@@ -8,7 +8,7 @@ import invoke
 from shepherd_core import BaseReader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
-from shepherd_core import get_verbose_level
+from .logger import get_verbose_level
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
@@ -141,9 +141,9 @@ class ShepherdEmulator(ShepherdIO):
 
         super().reinitialize_prus()  # needed for ADCs
 
-        super().set_target_io_level_conv(self.cfg.enable_io)
-        super().select_main_target_for_io(self.cfg.io_port)
-        super().select_main_target_for_power(self.cfg.io_port)
+        super().set_io_level_converter(self.cfg.enable_io)
+        super().select_port_for_io_interface(self.cfg.io_port)
+        super().select_port_for_power_tracking(self.cfg.io_port)
         super().set_aux_target_voltage(self.cfg.voltage_aux, self.cal_emu)
 
         if self.writer is not None:

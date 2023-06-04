@@ -8,7 +8,6 @@ provided by the shepherd kernel module
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import logging
 import subprocess  # noqa: S404
 import sys
 import time
@@ -21,7 +20,8 @@ from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 
-log = logging.getLogger("shp.interface")
+from .logger import log
+
 sysfs_path = Path("/sys/shepherd")
 
 
@@ -43,6 +43,7 @@ shepherd_modes = [
 
 def load_kernel_module():
     subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
+    log.debug("activated shepherd kernel module")
     time.sleep(3)
 
 
@@ -55,6 +56,7 @@ def remove_kernel_module():
             capture_output=True,
         ).returncode
         time.sleep(1)
+    log.debug("deactivated shepherd kernel module")
     time.sleep(1)
 
 
@@ -67,16 +69,25 @@ def check_sys_access() -> None:
     try:  # test for correct usage -> fail early!
         get_mode()
     except FileNotFoundError:
-        log.error(
-            "RuntimeError: Failed to access sysFS -> make sure shepherd kernel module is active!",
-        )
-        sys.exit(1)
+        try:
+            log.error(
+                "Failed to access sysFS -> "
+                "will try to activate shepherd kernel module",
+            )
+            load_kernel_module()
+            check_sys_access()
+        except FileNotFoundError:
+            log.error(
+                "RuntimeError: Failed to access sysFS -> "
+                "make sure shepherd kernel module is active!",
+            )
+            sys.exit(1)
     except PermissionError:
         log.error(
-            "RuntimeError: Failed to access sysFS -> run shepherd-sheep with 'sudo'!",
+            "RuntimeError: Failed to access sysFS -> "
+            "run shepherd-sheep with 'sudo'!",
         )
         sys.exit(1)
-    # TODO: if this (log.error & exit) behaves ok it could replace most "raise Errors" in code
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> float:

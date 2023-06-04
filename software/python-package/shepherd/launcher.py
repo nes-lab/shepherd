@@ -8,7 +8,6 @@ Relies on systemd service.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import logging
 import os
 import time
 from threading import Event
@@ -17,7 +16,7 @@ from threading import Thread
 import dbus
 from periphery import GPIO
 
-log = logging.getLogger("shp.launcher")
+from .logger import log
 
 
 def call_repeatedly(interval: float, func, *args):  # type: ignore
@@ -103,8 +102,8 @@ class Launcher:
             if not self.get_state():
                 time.sleep(0.25)
                 if self.gpio_button.poll(timeout=5):
-                    logging.debug("falling edge detected")
-                    logging.info("shutdown requested")
+                    log.debug("falling edge detected")
+                    log.info("shutdown requested")
                     self.initiate_shutdown()
                     self.gpio_led.write(False)
                     time.sleep(3)

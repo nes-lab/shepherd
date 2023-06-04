@@ -298,16 +298,16 @@ class ShepherdDebug(ShepherdIO):
         return sysfs_interface.get_state()
 
     def set_shepherd_pcb_power(self, state: bool) -> None:
-        self._set_shepherd_pcb_power(state)
+        super()._set_shepherd_pcb_power(state)
 
-    def select_target_for_power_tracking(self, sel_a: bool) -> None:
-        self.select_main_target_for_power(TargetPort.A if sel_a else TargetPort.B)
+    def select_port_for_power_tracking(self, target: TargetPort) -> None:
+        super().select_port_for_power_tracking(target)
 
-    def select_target_for_io_interface(self, sel_a: bool) -> None:
-        self.select_main_target_for_io(TargetPort.A if sel_a else TargetPort.B)
+    def select_port_for_io_interface(self, target: TargetPort) -> None:
+        super().select_port_for_io_interface(target)
 
     def set_io_level_converter(self, state: bool) -> None:
-        self.set_target_io_level_conv(state)
+        super().set_io_level_converter(state)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
         return self._cal[component][channel].raw_to_si(raw)

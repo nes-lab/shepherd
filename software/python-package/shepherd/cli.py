@@ -8,7 +8,6 @@ functionality to a command line user.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import logging
 import signal
 import sys
 import time
@@ -23,12 +22,13 @@ import yaml
 import zerorpc
 from periphery import GPIO
 from shepherd_core import CalibrationCape
-from shepherd_core import get_verbose_level
-from shepherd_core import set_verbose_level
+from .logger import get_verbose_level
+from .logger import set_verbose_level
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
+from shepherd_core.data_models.testbed import ProgrammerProtocol
 
 from . import __version__
 from . import run_emulator
@@ -38,13 +38,11 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
+from .logger import log
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import reload_kernel_module
-
-log = logging.getLogger("ShpCLI")
-
 
 # TODO: correct docs
 # --length -l is now --duration -d ->
@@ -355,7 +353,7 @@ def launcher(led: int, button: int):
 )
 @click.option(
     "--target-port",
-    "-t",
+    "-p",
     type=click.Choice(["A", "B"]),
     default="A",
     help="Choose Target-Port of Cape for programming",
@@ -382,7 +380,7 @@ def launcher(led: int, button: int):
     help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
-    "--mcu_type",
+    "--mcu-type",
     "-t",
     type=click.Choice(["nrf52", "msp430"]),
     default="nrf52",
@@ -395,8 +393,8 @@ def launcher(led: int, button: int):
 )
 def programmer(**kwargs):
     protocol_dict = {
-        "nrf52": "SWD",
-        "msp430": "SBW",
+        "nrf52": ProgrammerProtocol.swd,
+        "msp430": ProgrammerProtocol.sbw,
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     cfg = ProgrammingTask(**kwargs)

@@ -16,7 +16,7 @@ def fw_example() -> Path:
 
 
 @pytest.fixture
-def fw_empty(tmp_path) -> Path:
+def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
     with open(store_path, "w") as f:
         f.write("")
@@ -46,14 +46,16 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
         [
             "-vvv",
             "programmer",
-            "--sel_a",
+            "--target-port",
+            "A",
             "--voltage",
             "2.0",
             "--datarate",
             "600000",
-            "--target",
+            "--mcu-type",
             "nrf52",
-            "--prog1",
+            "--mcu-port",
+            "1",
             "--simulate",
             str(fw_example),
         ],
@@ -73,14 +75,16 @@ def test_cli_program_swd_explicit_short(
         [
             "-vvv",
             "programmer",
-            "--sel_a",
+            "-p",
+            "A",
             "-v",
             "2.0",
             "-d",
             "600000",
             "-t",
             "nrf52",
-            "--prog1",
+            "-m",
+            "1",
             "--simulate",
             str(fw_example),
         ],
@@ -96,14 +100,16 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
         [
             "-vvv",
             "programmer",
-            "--sel_b",
+            "--target-port",
+            "B",
             "--voltage",
             "1.5",
             "--datarate",
             "300000",
-            "--target",
+            "--mcu-type",
             "msp430",
-            "--prog2",
+            "--mcu-port",
+            "2",
             "--simulate",
             str(fw_example),
         ],
@@ -169,7 +175,7 @@ def test_cli_program_datarate_invalid_a(
             "-vvv",
             "programmer",
             "--datarate",
-            "2000000",
+            "2000000",  # too fast
             "--simulate",
             str(fw_example),
         ],
@@ -190,7 +196,7 @@ def test_cli_program_datarate_invalid_b(
             "-vvv",
             "programmer",
             "--datarate",
-            "0",
+            "0",  # impossible
             "--simulate",
             str(fw_example),
         ],
@@ -206,7 +212,7 @@ def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_example: Path) -
         [
             "-vvv",
             "programmer",
-            "--target",
+            "--mcu-type",
             "arduino",
             "--simulate",
             str(fw_example),

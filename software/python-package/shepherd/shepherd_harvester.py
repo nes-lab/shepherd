@@ -4,7 +4,7 @@ import time
 from contextlib import ExitStack
 
 import invoke
-from shepherd_core import get_verbose_level
+from .logger import get_verbose_level
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 

@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from shepherd import logger
+from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import HarvestTask
+
+from shepherd import log
 from shepherd import run_emulator
 from shepherd import run_harvester
 
@@ -15,31 +19,33 @@ if __name__ == "__main__":
     file_emu2 = benchmark_path / "benchmark_emu2.h5"
 
     if not file_rec.exists():
-        logger.info("Start harvesting")
-        run_harvester(
+        log.info("Start harvesting")
+        hrv = HarvestTask(
             output_path=file_rec,
             duration=duration,
             force_overwrite=True,
             use_cal_default=True,
         )
+        run_harvester(hrv)
 
-    logger.info("Starting Emulation1, only logging of SysUtil-Stats")
-    run_emulator(
+    log.info("Starting Emulation1, only logging of SysUtil-Stats")
+    emu1 = EmulationTask(
         input_path=file_rec,
         output_path=file_emu1,
         duration=duration,
         force_overwrite=True,
-        virtsource="BQ25570s",
-        skip_log_gpio=True,
-        skip_log_current=True,
-        skip_log_voltage=True,
+        virtual_source=VirtualSourceConfig(name="BQ25570s"),
+        power_tracing=None,
+        gpio_tracing=None,
     )
+    run_emulator(emu1)
 
-    logger.info("Starting Emulation2, ")
-    run_emulator(
+    log.info("Starting Emulation2, ")
+    emu2 = EmulationTask(
         input_path=file_rec,
         output_path=file_emu2,
         duration=duration,
         force_overwrite=True,
-        virtsource="BQ25570s",
+        virtual_source=VirtualSourceConfig(name="BQ25570s"),
     )
+    run_emulator(emu2)

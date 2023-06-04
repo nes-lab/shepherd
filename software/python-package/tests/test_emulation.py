@@ -133,7 +133,7 @@ def test_target_pins(shepherd_up) -> None:
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     shepherd_io.start()
-    shepherd_io.select_main_target_for_power(TargetPort.A)
+    shepherd_io.select_port_for_power_tracking(TargetPort.A)
 
     dac_channels = [
         # combination of debug channel number, voltage_index, cal_component, cal_channel
@@ -153,16 +153,16 @@ def test_target_pins(shepherd_up) -> None:
         value_raw = shepherd_io.convert_value_to_raw(dac_cfg[1], dac_cfg[2], 2.0)
         shepherd_io.dac_write(dac_cfg[0], value_raw)
 
-    shepherd_io.set_target_io_level_conv(True)
+    shepherd_io.set_io_level_converter(True)
 
-    shepherd_io.select_main_target_for_io(TargetPort.A)
+    shepherd_io.select_port_for_io_interface(TargetPort.A)
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)
         response = int(shepherd_io.gpi_read())
         assert response & (2 ** pru_responses[io_index])
 
-    shepherd_io.select_main_target_for_io(TargetPort.B)
+    shepherd_io.select_port_for_io_interface(TargetPort.B)
 
     for io_index, io_channel in enumerate(gpio_channels):
         shepherd_io.set_gpio_one_high(io_channel)

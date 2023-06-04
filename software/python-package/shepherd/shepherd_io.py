@@ -7,7 +7,6 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import logging
 import time
 import weakref
 from typing import Optional
@@ -25,10 +24,9 @@ from shepherd_core.data_models.testbed import TargetPort
 
 from . import commons
 from . import sysfs_interface as sfs
+from .logger import log
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
-
-log = logging.getLogger("shp.io")
 
 ID_ERR_TIMEOUT = 100
 
@@ -119,7 +117,7 @@ class ShepherdIO:
                 self.gpios[name] = GPIO(pin, "out")
 
             self._set_shepherd_pcb_power(True)
-            self.set_target_io_level_conv(False)
+            self.set_io_level_converter(False)
 
             log.debug("Shepherd hardware is powered up")
 
@@ -276,7 +274,7 @@ class ShepherdIO:
         if self.shared_mem is not None:
             self.shared_mem.__exit__()
 
-        self.set_target_io_level_conv(False)
+        self.set_io_level_converter(False)
         self.set_power_state_emulator(False)
         self.set_power_state_recorder(False)
         self._set_shepherd_pcb_power(False)
@@ -303,6 +301,8 @@ class ShepherdIO:
         state_str = "enabled" if state else "disabled"
         log.debug("Set Recorder of shepherd-pcb to %s", state_str)
         self.gpios["en_recorder"].write(state)
+        if state:
+            time.sleep(0.3)
 
     def set_power_state_emulator(self, state: bool) -> None:
         """
@@ -315,8 +315,24 @@ class ShepherdIO:
         state_str = "enabled" if state else "disabled"
         log.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
+        if state:
+            time.sleep(0.3)
 
-    def select_main_target_for_power(
+    @staticmethod
+    def convert_target_port_to_bool(target: Union[TargetPort, str, bool, None]) -> bool:
+        if target is None:
+            return True
+        elif isinstance(target, str):
+            return TargetPort[target] == TargetPort.A
+        elif isinstance(target, TargetPort):
+            return target == TargetPort.A
+        elif isinstance(target, bool):
+            return target
+        raise ValueError(
+            f"Parameter 'target' must be A or B (was {target}, type {type(target)})",
+        )
+
+    def select_port_for_power_tracking(
         self,
         target: Union[TargetPort, bool, None],
     ) -> None:
@@ -332,15 +348,7 @@ class ShepherdIO:
         current_state = sfs.get_state()
         if current_state != "idle":
             self.reinitialize_prus()
-        if target is None:
-            value = True
-        elif isinstance(target, TargetPort):
-            # to keep compatible with old implementation
-            value = target == TargetPort.A
-        elif isinstance(target, bool):
-            value = target
-        else:
-            raise ValueError(f"Parameter 'pwr_port' must be A or B (was {target})")
+        value = self.convert_target_port_to_bool(target)
         log.debug(
             "Set routing for (main) supply with current-monitor to target %s",
             target,
@@ -349,7 +357,10 @@ class ShepherdIO:
         if current_state != "idle":
             self.start(wait_blocking=True)
 
-    def select_main_target_for_io(self, target: Union[TargetPort, bool, None]) -> None:
+    def select_port_for_io_interface(
+        self,
+        target: Union[TargetPort, bool, None],
+    ) -> None:
         """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
         shepherd hw-rev2 has two ports for targets and can switch independently
@@ -358,19 +369,11 @@ class ShepherdIO:
         Args:
             target: A or B for that specific Target-Port
         """
-        if target is None:
-            value = True
-        elif isinstance(target, TargetPort):
-            # to keep compatible with old implementation
-            value = target == TargetPort.A
-        elif isinstance(target, bool):
-            value = target
-        else:
-            raise ValueError(f"Parameter 'io_port' must be A or B (was {target})")
+        value = self.convert_target_port_to_bool(target)
         log.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(value)
 
-    def set_target_io_level_conv(self, state: bool) -> None:
+    def set_io_level_converter(self, state: bool) -> None:
         """Enables or disables the GPIO level converter to targets.
 
         The shepherd cape has bidirectional logic level translators (LSF0108)

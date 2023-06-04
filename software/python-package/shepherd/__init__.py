@@ -15,7 +15,6 @@ from contextlib import ExitStack
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
-from shepherd_core.data_models.testbed import TargetPort
 
 from . import sysfs_interface
 from .eeprom import EEPROM
@@ -75,9 +74,9 @@ def run_emulator(cfg: EmulationTask) -> None:
 
 def run_programmer(cfg: ProgrammingTask):
     with ShepherdDebug(use_io=False) as sd:
-        sd.select_target_for_power_tracking(sel_a=cfg.target_port != TargetPort.A)
+        sd.select_port_for_power_tracking(cfg.target_port)
         sd.set_power_state_emulator(True)
-        sd.select_main_target_for_io(cfg.target_port)
+        sd.select_port_for_io_interface(cfg.target_port)
         sd.set_io_level_converter(True)
 
         sysfs_interface.write_dac_aux_voltage(cfg.voltage)
@@ -85,6 +84,7 @@ def run_programmer(cfg: ProgrammingTask):
         sysfs_interface.wait_for_state("idle", 5)
 
         sysfs_interface.load_pru0_firmware(cfg.protocol)
+        sd.refresh_shared_mem()  # address might have changed
         failed = False
 
         with open(cfg.firmware_file, "rb") as fw:
@@ -124,7 +124,7 @@ def run_programmer(cfg: ProgrammingTask):
             time.sleep(1)
             state = sysfs_interface.check_programmer()
             if "error" in state:
-                log.error("SystemError - Failed during Programming")
+                log.error("SystemError - Failed during Programming, state = %s", state)
                 failed = True
             # TODO: programmer can hang in "starting", should restart automatically then
         if failed:
