@@ -11,6 +11,7 @@
       [
         "linux-headers-{{ kernelrelease.stdout.strip() }}", # redundancy, 1st done by maintenance
         # "dkms", # TODO: test removal - should not be needed - installs huge secondary gcc
+        "bb-cape-overlays",  # not a part of ubuntu 22.4, also missing from default repo (readd ee/focal)
       ]
     state: present
     update_cache: true

@@ -59,3 +59,13 @@
     }
   become: true
   tags: device-tree
+
+- name: Enable default uEnv-command
+  ansible.builtin.lineinfile:
+    dest: "/boot/uEnv.txt"
+    regexp: "#?cmdline=coherent.*. quiet$"
+    line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 quiet"
+    state: present  # TODO: also usable to enable overlayFS / read-only root
+  become: true
+  tags: device-tree
+
