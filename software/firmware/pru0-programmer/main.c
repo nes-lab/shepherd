@@ -129,7 +129,8 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 
     while (1)
     {
-        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()));
+        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()))
+            ;
 
         // Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
@@ -251,11 +252,14 @@ reset:
     /* Make sure the mutex is clear */
     simple_mutex_exit(&shared_memory->gpio_edges_mutex);
 
-    if (shared_memory->programmer_ctrl.state == PRG_STATE_STARTING)
+    while (shared_memory->shepherd_state == STATE_IDLE)
     {
-        programmer(shared_memory, buffers_far);
+        if (shared_memory->programmer_ctrl.state == PRG_STATE_STARTING)
+        {
+            programmer(shared_memory, buffers_far);
+        }
+        // else event_loop(shared_memory, &free_buffers);
     }
-    else event_loop(shared_memory, &free_buffers);
 
     goto reset;
 }

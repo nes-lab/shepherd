@@ -52,7 +52,10 @@ def path_h5(tmp_path: Path) -> Path:
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_no_cal(
-    shepherd_up, cli_runner, path_hrv: Path, path_h5: Path
+    shepherd_up,
+    cli_runner,
+    path_hrv: Path,
+    path_h5: Path,
 ) -> None:
     HarvestTask(
         output_path=path_h5,
@@ -68,7 +71,10 @@ def test_cli_harvest_no_cal(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_parameters_most(
-    shepherd_up, cli_runner, path_hrv: Path, path_h5: Path
+    shepherd_up,
+    cli_runner,
+    path_hrv: Path,
+    path_h5: Path,
 ) -> None:
     HarvestTask(
         output_path=path_h5,

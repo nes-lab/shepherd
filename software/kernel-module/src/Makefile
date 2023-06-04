@@ -30,5 +30,5 @@ clean:
 
 install: all
 	@echo 'Installing kernel module'
-	@sudo mkdir /lib/modules/$(KVERSION)/extra/
+	-@sudo mkdir /lib/modules/$(KVERSION)/extra/
 	@sudo cp $(TARGET).ko /lib/modules/$(KVERSION)/extra/

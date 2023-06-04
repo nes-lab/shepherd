@@ -129,10 +129,10 @@ def run_programmer(cfg: ProgrammingTask):
             state = sysfs_interface.check_programmer()
             if "error" in state:
                 log.error(
-                    "SystemError - Failed during Programming, p_state = %s", state
+                    "SystemError - Failed during Programming, p_state = %s",
+                    state,
                 )
                 failed = True
-            # TODO: programmer can hang in "starting", should restart automatically then
         if failed:
             log.info("Programming - Procedure failed - will exit now!")
         else:
