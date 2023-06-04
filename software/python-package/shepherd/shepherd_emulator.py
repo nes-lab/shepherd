@@ -19,7 +19,7 @@ from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
-from .logger import logger
+from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
@@ -39,7 +39,7 @@ class ShepherdEmulator(ShepherdIO):
         cfg: EmulationTask,
         mode: str = "emulator",
     ):
-        logger.debug("ShepherdEmulator-Init in %s-mode", mode)
+        log.debug("ShepherdEmulator-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
             trace_iv=cfg.power_tracing,
@@ -60,14 +60,14 @@ class ShepherdEmulator(ShepherdIO):
             if self.cfg.abort_on_error:
                 raise ValueError(msg)
             else:
-                logger.error(msg)
+                log.error(msg)
         if not self.reader.is_valid() and self.cfg.abort_on_error:
             raise RuntimeError("Input-File is not valid!")
 
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
             cal_inp = CalibrationSeries()
-            logger.warning(
+            log.warning(
                 "No calibration data from emulation-input (harvest) provided"
                 " - using defaults",
             )
@@ -182,7 +182,7 @@ class ShepherdEmulator(ShepherdIO):
         self.shared_mem.write_buffer(index, v_tf, c_tf)
         super()._return_buffer(index)
         if verbose:
-            logger.debug(
+            log.debug(
                 "Sending emu-buffer #%d to PRU took %.2f ms",
                 index,
                 1e3 * (time.time() - ts_start),
@@ -190,9 +190,9 @@ class ShepherdEmulator(ShepherdIO):
 
     def run(self):
         self.start(self.start_time, wait_blocking=False)
-        logger.info("waiting %.2f s until start", self.start_time - time.time())
+        log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        logger.info("shepherd started!")
+        log.info("shepherd started!")
 
         if self.cfg.duration is None:
             ts_end = sys.float_info.max
@@ -204,7 +204,7 @@ class ShepherdEmulator(ShepherdIO):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose)
             except ShepherdIOException as e:
-                logger.warning("Caught an Exception", exc_info=e)
+                log.warning("Caught an Exception", exc_info=e)
 
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 if self.writer is not None:

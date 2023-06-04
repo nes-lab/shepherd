@@ -17,7 +17,7 @@ from threading import Thread
 import dbus
 from periphery import GPIO
 
-logger = logging.getLogger("shp.launcher")
+log = logging.getLogger("shp.launcher")
 
 
 def call_repeatedly(interval: float, func, *args):  # type: ignore
@@ -60,7 +60,7 @@ class Launcher:
         self.gpio_button = GPIO(self.pin_button, "in")
         self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
         self.gpio_button.edge = "falling"
-        logger.debug("configured gpio")
+        log.debug("configured gpio")
         self.cancel_wd_timer = call_repeatedly(interval=600, func=self.ack_watchdog)
 
         sys_bus = dbus.SystemBus()
@@ -75,7 +75,7 @@ class Launcher:
             "org.freedesktop.systemd1",
             str(shepherd_object),
         )
-        logger.debug("configured dbus for systemd")
+        log.debug("configured dbus for systemd")
 
         return self
 
@@ -91,7 +91,7 @@ class Launcher:
         press while idle causes system shutdown.
         """
         while True:
-            logger.info("waiting for falling edge..")
+            log.info("waiting for falling edge..")
             self.gpio_led.write(True)
             if not self.gpio_button.poll():
                 # NOTE poll is suspected to exit after ~ 1-2 weeks running
@@ -99,7 +99,7 @@ class Launcher:
                 # TODO observe behavior, hopefully this change fixes the bug
                 continue
             self.gpio_led.write(False)
-            logger.debug("edge detected")
+            log.debug("edge detected")
             if not self.get_state():
                 time.sleep(0.25)
                 if self.gpio_button.poll(timeout=5):
@@ -136,7 +136,7 @@ class Launcher:
             if time.time() > ts_end:
                 raise TimeoutError("Timed out waiting for service state")
 
-        logger.debug("service ActiveState: %s", systemd_state)
+        log.debug("service ActiveState: %s", systemd_state)
 
         if systemd_state == "active":
             return True
@@ -153,15 +153,15 @@ class Launcher:
         active_state = self.get_state()
 
         if requested_state == active_state:
-            logger.debug("service already in requested state")
+            log.debug("service already in requested state")
             self.gpio_led.write(active_state)
             return
 
         if active_state:
-            logger.info("stopping service")
+            log.info("stopping service")
             self.manager.StopUnit("shepherd.service", "fail")
         else:
-            logger.info("starting service")
+            log.info("starting service")
             self.manager.StartUnit("shepherd.service", "fail")
 
         time.sleep(1)
@@ -179,21 +179,21 @@ class Launcher:
             timeout (int): Number of seconds to wait before powering off
                 system
         """
-        logger.debug("initiating shutdown routine..")
+        log.debug("initiating shutdown routine..")
         time.sleep(0.25)
         for _ in range(timeout):
             if self.gpio_button.poll(timeout=0.5):
-                logger.debug("edge detected")
-                logger.info("shutdown canceled")
+                log.debug("edge detected")
+                log.info("shutdown canceled")
                 return
             self.gpio_led.write(True)
             if self.gpio_button.poll(timeout=0.5):
-                logger.debug("edge detected")
-                logger.info("shutdown canceled")
+                log.debug("edge detected")
+                log.info("shutdown canceled")
                 return
             self.gpio_led.write(False)
         os.sync()
-        logger.info("shutting down now")
+        log.info("shutting down now")
         self.manager.PowerOff()
 
     def ack_watchdog(self) -> None:
@@ -204,4 +204,4 @@ class Launcher:
         self.gpio_ack_watchdog.write(True)
         time.sleep(0.002)
         self.gpio_ack_watchdog.write(False)
-        logger.debug("Signaled ACK to Watchdog")
+        log.debug("Signaled ACK to Watchdog")

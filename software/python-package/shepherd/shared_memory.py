@@ -11,7 +11,7 @@ from shepherd_core.data_models import PowerTracing
 
 from . import commons
 from . import sysfs_interface as sfs
-from .logger import logger
+from .logger import log
 
 
 @dataclass
@@ -137,7 +137,7 @@ class SharedMemory:
             self.gpio_offset + 8 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
         )
 
-        logger.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
+        log.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
         if self.buffer_size * self.n_buffers != self.size:
             raise BufferError(
                 "Py-estimated mem-size for buffers is different "
@@ -202,7 +202,7 @@ class SharedMemory:
             self.mapped_mem.read(16),
         )
         if verbose:
-            logger.debug(
+            log.debug(
                 "Retrieved buffer #%d  (@+%s) "
                 "with len %d and timestamp %d ms @%.3f sys_ts",
                 index,
@@ -221,19 +221,19 @@ class SharedMemory:
         if self.prev_timestamp > 0:
             diff_ms = (buffer_timestamp - self.prev_timestamp) // 10**6
             if buffer_timestamp == 0:
-                logger.error("ZERO      timestamp detected after recv it from PRU")
+                log.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
-                logger.error(
+                log.error(
                     "BACKWARDS timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
             elif diff_ms < 95:
-                logger.error(
+                log.error(
                     "TOO SMALL timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
             elif diff_ms > 105:
-                logger.error(
+                log.error(
                     "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
@@ -271,7 +271,7 @@ class SharedMemory:
             )
 
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
-            logger.error(
+            log.error(
                 "Size of gpio_events out of range with %d entries",
                 n_gpio_events,
             )
@@ -308,7 +308,7 @@ class SharedMemory:
             pru0_util_mean = 0.1
         if verbose:
             if (pru0_util_mean > 95) or (pru0_util_max > 100):
-                logger.warning(
+                log.warning(
                     "Pru0 Loop-Util: mean = %d %%, max = %d %% "
                     "-> WARNING: broken real-time-condition",
                     pru0_util_mean,
@@ -317,7 +317,7 @@ class SharedMemory:
                 # TODO: raise ShepherdIOException or add this info into output-file?
                 #  WRONG PLACE HERE
             else:
-                logger.info(
+                log.info(
                     "Pru0 Loop-Util: mean = %d %%, max = %d %%",
                     pru0_util_mean,
                     pru0_util_max,
@@ -357,7 +357,7 @@ class SharedMemory:
         sfs.write_programmer_datasize(data_size)
         self.mapped_mem.seek(0)
         self.mapped_mem.write(data)
-        logger.debug(
+        log.debug(
             "wrote Firmware-Data to SharedMEM-Buffer (size = %d bytes)",
             data_size,
         )

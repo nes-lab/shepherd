@@ -35,7 +35,7 @@ from typing import List
 
 from periphery import GPIO
 
-from .logger import logger
+from .logger import log
 
 target_pins: List[Dict] = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},
@@ -110,7 +110,7 @@ class TargetIO:
             return False
         pin_name = target_pins[num]["name"]
         if self.gpios[pin_name].direction == "in":
-            logger.warning("Error: pin %s was input, shouldn't be", pin_name)
+            log.warning("Error: pin %s was input, shouldn't be", pin_name)
         self.gpios[pin_name].write(state)
         return True
 

@@ -28,7 +28,7 @@ from . import sysfs_interface as sfs
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
 
-logger = logging.getLogger("shp.io")
+log = logging.getLogger("shp.io")
 
 ID_ERR_TIMEOUT = 100
 
@@ -121,11 +121,11 @@ class ShepherdIO:
             self._set_shepherd_pcb_power(True)
             self.set_target_io_level_conv(False)
 
-            logger.debug("Shepherd hardware is powered up")
+            log.debug("Shepherd hardware is powered up")
 
             # If shepherd hasn't been terminated properly
             self.reinitialize_prus()
-            logger.debug("Switching to '%s'-mode", self.mode)
+            log.debug("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
 
             # clean up msg-channel provided by kernel module
@@ -134,7 +134,7 @@ class ShepherdIO:
             self.refresh_shared_mem()
 
         except Exception:
-            logger.exception("ShepherdIO.Init caught an exception -> exit now")
+            log.exception("ShepherdIO.Init caught an exception -> exit now")
             self._cleanup()
             raise
 
@@ -142,7 +142,7 @@ class ShepherdIO:
         return self
 
     def __exit__(self, *args):  # type: ignore
-        logger.info("Now exiting ShepherdIO")
+        log.info("Now exiting ShepherdIO")
         self._cleanup()
 
     @staticmethod
@@ -193,7 +193,7 @@ class ShepherdIO:
             wait_blocking (bool): If true, block until start has completed
         """
         if isinstance(start_time, (float, int)):
-            logger.debug("asking kernel module for start at %.2f", start_time)
+            log.debug("asking kernel module for start at %.2f", start_time)
         sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
@@ -220,7 +220,7 @@ class ShepherdIO:
         # Ask PRU for size of shared memory (reserved with remoteproc)
         self.mem_size = sfs.get_mem_size()
 
-        logger.debug(
+        log.debug(
             "Shared memory address: \t%s, size: %d byte",
             f"0x{self.mem_address:08X}",
             int(self.mem_size),
@@ -228,14 +228,14 @@ class ShepherdIO:
 
         # Ask PRU for size of individual buffers
         self.samples_per_buffer = sfs.get_samples_per_buffer()
-        logger.debug("Samples per buffer: \t%d", self.samples_per_buffer)
+        log.debug("Samples per buffer: \t%d", self.samples_per_buffer)
 
         self.n_buffers = sfs.get_n_buffers()
-        logger.debug("Number of buffers: \t%d", self.n_buffers)
+        log.debug("Number of buffers: \t%d", self.n_buffers)
 
         self.buffer_period_ns = sfs.get_buffer_period_ns()
         self._buffer_period = self.buffer_period_ns / 1e9
-        logger.debug("Buffer period: \t\t%.3f s", self._buffer_period)
+        log.debug("Buffer period: \t\t%.3f s", self._buffer_period)
 
         self.shared_mem = SharedMemory(
             self.mem_address,
@@ -248,26 +248,26 @@ class ShepherdIO:
         self.shared_mem.__enter__()
 
     def _cleanup(self):
-        logger.debug("ShepherdIO is commanded to power down / cleanup")
+        log.debug("ShepherdIO is commanded to power down / cleanup")
         count = 1
         while count < 6 and sfs.get_state() != "idle":
             try:
                 sfs.set_stop(force=True)
             except sfs.SysfsInterfaceException:
-                logger.exception(
+                log.exception(
                     "CleanupRoutine caused an exception while trying to stop PRU (n=%d)",
                     count,
                 )
             try:
                 sfs.wait_for_state("idle", 3.0)
             except sfs.SysfsInterfaceException:
-                logger.warning(
+                log.warning(
                     "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
                     count,
                 )
             count += 1
         if sfs.get_state() != "idle":
-            logger.warning(
+            log.warning(
                 "CleanupRoutine gave up changing state, still '%s'",
                 sfs.get_state(),
             )
@@ -280,7 +280,7 @@ class ShepherdIO:
         self.set_power_state_emulator(False)
         self.set_power_state_recorder(False)
         self._set_shepherd_pcb_power(False)
-        logger.debug("Shepherd hardware is now powered down")
+        log.debug("Shepherd hardware is now powered down")
 
     def _set_shepherd_pcb_power(self, state: bool) -> None:
         """Controls state of power supplies on shepherd cape.
@@ -289,7 +289,7 @@ class ShepherdIO:
             state (bool): True for on, False for off
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug("Set power-supplies of shepherd-pcb to %s", state_str)
+        log.debug("Set power-supplies of shepherd-pcb to %s", state_str)
         self.gpios["en_shepherd"].write(state)
 
     def set_power_state_recorder(self, state: bool) -> None:
@@ -301,7 +301,7 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug("Set Recorder of shepherd-pcb to %s", state_str)
+        log.debug("Set Recorder of shepherd-pcb to %s", state_str)
         self.gpios["en_recorder"].write(state)
 
     def set_power_state_emulator(self, state: bool) -> None:
@@ -313,7 +313,7 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        logger.debug("Set Emulator of shepherd-pcb to %s", state_str)
+        log.debug("Set Emulator of shepherd-pcb to %s", state_str)
         self.gpios["en_emulator"].write(state)
 
     def select_main_target_for_power(
@@ -341,7 +341,7 @@ class ShepherdIO:
             value = target
         else:
             raise ValueError(f"Parameter 'pwr_port' must be A or B (was {target})")
-        logger.debug(
+        log.debug(
             "Set routing for (main) supply with current-monitor to target %s",
             target,
         )
@@ -367,7 +367,7 @@ class ShepherdIO:
             value = target
         else:
             raise ValueError(f"Parameter 'io_port' must be A or B (was {target})")
-        logger.debug("Set routing for IO to Target %s", target)
+        log.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(value)
 
     def set_target_io_level_conv(self, state: bool) -> None:
@@ -384,7 +384,7 @@ class ShepherdIO:
         if state is None:
             state = False
         state_str = "enabled" if state else "disabled"
-        logger.debug("Set target-io level converter to %s", state_str)
+        log.debug("Set target-io level converter to %s", state_str)
         self.gpios["target_io_en"].write(state)
 
     @staticmethod
@@ -500,7 +500,7 @@ class ShepherdIO:
                 ts_start = time.time()
                 buf = self.shared_mem.read_buffer(value, verbose)
                 if verbose:
-                    logger.debug(
+                    log.debug(
                         "Processing buffer #%d from shared memory took %.2f ms",
                         value,
                         1e3 * (time.time() - ts_start),
@@ -508,7 +508,7 @@ class ShepherdIO:
                 return value, buf
 
             elif msg_type == commons.MSG_DBG_PRINT:
-                logger.info("Received cmd to print: %d", value)
+                log.info("Received cmd to print: %d", value)
                 continue
 
             elif msg_type == commons.MSG_DEP_ERR_INCMPLT:

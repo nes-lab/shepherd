@@ -21,7 +21,7 @@ from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 
-logger = logging.getLogger("shp.interface")
+log = logging.getLogger("shp.interface")
 sysfs_path = Path("/sys/shepherd")
 
 
@@ -67,12 +67,12 @@ def check_sys_access() -> None:
     try:  # test for correct usage -> fail early!
         get_mode()
     except FileNotFoundError:
-        logger.error(
+        log.error(
             "RuntimeError: Failed to access sysFS -> make sure shepherd kernel module is active!",
         )
         sys.exit(1)
     except PermissionError:
-        logger.error(
+        log.error(
             "RuntimeError: Failed to access sysFS -> run shepherd-sheep with 'sudo'!",
         )
         sys.exit(1)
@@ -115,7 +115,7 @@ def set_start(start_time: Union[float, int, None] = None) -> None:
         start_time (int): Desired start time in unix time
     """
     current_state = get_state()
-    logger.debug("current state of shepherd kernel module: %s", current_state)
+    log.debug("current state of shepherd kernel module: %s", current_state)
     if current_state != "idle":
         raise SysfsInterfaceException(f"Cannot start from state { current_state }")
 
@@ -123,10 +123,10 @@ def set_start(start_time: Union[float, int, None] = None) -> None:
         if isinstance(start_time, float):
             start_time = int(start_time)
         if isinstance(start_time, int):
-            logger.debug("writing start-time = %d to sysfs", start_time)
+            log.debug("writing start-time = %d to sysfs", start_time)
             f.write(f"{start_time}")
         else:  # unknown type
-            logger.debug("writing 'start' to sysfs")
+            log.debug("writing 'start' to sysfs")
             f.write("start")
 
 
@@ -165,7 +165,7 @@ def write_mode(mode: str, force: bool = False) -> None:
                 f"Cannot set mode when shepherd is { get_state() }",
             )
 
-    logger.debug("sysfs/mode: '%s'", mode)
+    log.debug("sysfs/mode: '%s'", mode)
     with open(sysfs_path / "mode", "w") as f:
         f.write(mode)
 
@@ -191,7 +191,7 @@ def write_dac_aux_voltage(
         # set bit 21 (during pru-reset) and therefore output
         # intermediate (storage cap) voltage on second channel
         write_dac_aux_voltage_raw(2**21)
-        logger.warning(
+        log.warning(
             "Second DAC-Channel puts out intermediate emulation voltage (@Cap) "
             "-> this might break realtime",
         )
@@ -205,7 +205,7 @@ def write_dac_aux_voltage(
         cal_emu = CalibrationEmulator()
     output = int(cal_emu.dac_V_A.si_to_raw(voltage))
 
-    logger.debug(
+    log.debug(
         "Set voltage of supply for auxiliary Target to %.3f V (raw=%d)",
         voltage,
         output,
@@ -221,12 +221,12 @@ def write_dac_aux_voltage_raw(voltage_raw: int) -> None:
         voltage_raw: desired voltage as raw int for DAC
     """
     if voltage_raw >= (2**16):
-        logger.info(
+        log.info(
             "DAC: sending raw-voltage above possible limit of 16bit-value "
             "-> this might trigger commands",
         )
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
-        logger.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
+        log.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))
 
 
@@ -288,7 +288,7 @@ def write_calibration_settings(
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        logger.debug("Sending calibration settings: %s", output)
+        log.debug("Sending calibration settings: %s", output)
         f.write(output)
 
 
@@ -323,7 +323,7 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
 
     """
     settings = list(settings.dict().values())
-    logger.debug(
+    log.debug(
         "Writing virtual converter to sysfs_interface, first values are %s",
         settings[0:3],
     )
@@ -366,7 +366,7 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
 
     """
     settings = list(settings.dict().values())
-    logger.debug(
+    log.debug(
         "Writing virtual harvester to sysfs_interface, first values are %s",
         settings[0:3],
     )
@@ -474,7 +474,7 @@ def write_programmer_ctrl(
 
     # processing
     args = locals()
-    logger.debug("set programmerCTRL")
+    log.debug("set programmerCTRL")
     for num, attribute in enumerate(prog_attribs):
         value = args[attribute]
         if value is None:
@@ -484,7 +484,7 @@ def write_programmer_ctrl(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
         with open(sysfs_path / "programmer" / attribute, "w") as file:
-            logger.debug("\t%s = '%s'", attribute, value)
+            log.debug("\t%s = '%s'", attribute, value)
             file.write(str(value))
 
 
@@ -532,7 +532,7 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
     for firmware in pru0_firmwares:
         if value.lower() in firmware.lower():
             request = firmware
-    logger.debug("Will set pru0-firmware to '%s'", request)
+    log.debug("Will set pru0-firmware to '%s'", request)
     count = 1
     while count < 6:
         try:
@@ -544,13 +544,13 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
             if result == request:
                 return
             else:
-                logger.error(
+                log.error(
                     "Requested PRU-FW (%s) was not set (is '%s')",
                     request,
                     result,
                 )
         except OSError:
-            logger.warning(
+            log.warning(
                 "PRU-Driver is locked up (during pru-fw change)"
                 " -> will restart kernel-module (n=%d)",
                 count,
@@ -570,7 +570,7 @@ def pru0_firmware_is_default() -> bool:
             with open(sysfs_path / "pru0_firmware") as file:
                 return file.read().rstrip() in pru0_firmwares[0]
         except OSError:
-            logger.warning(
+            log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
                 " -> will restart kernel-module (n=%d)",
                 count,

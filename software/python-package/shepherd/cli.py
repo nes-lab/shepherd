@@ -43,7 +43,7 @@ from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import reload_kernel_module
 
-logger = logging.getLogger("ShpCLI")
+log = logging.getLogger("ShpCLI")
 
 
 # TODO: correct docs
@@ -65,7 +65,7 @@ logger = logging.getLogger("ShpCLI")
 
 
 def yamlprovider(file_path: str, cmd_name: str) -> dict:
-    logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
+    log.info("reading config from %s, cmd=%s", file_path, cmd_name)
     with open(file_path) as config_data:
         full_config = yaml.safe_load(config_data)
     return full_config
@@ -89,9 +89,9 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     set_verbose_level(verbose)
     if version:
-        logger.info("Shepherd-Sheep v%s", __version__)
-        logger.debug("Python v%s", sys.version)
-        logger.debug("Click v%s", click.__version__)
+        log.info("Shepherd-Sheep v%s", __version__)
+        log.debug("Python v%s", sys.version)
+        log.debug("Click v%s", click.__version__)
     check_sys_access()
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
@@ -123,23 +123,23 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
-        logger.info("Shepherd-State \t= %s", "enabled" if on else "disabled")
+        log.info("Shepherd-State \t= %s", "enabled" if on else "disabled")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(not sel_a)  # switched because rail A is AUX
-        logger.info("Select Target \t= %s", "A" if sel_a else "B")
+        log.info("Select Target \t= %s", "A" if sel_a else "B")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(sel_a)
     for pin_name in ["target_io_en"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(gpio_pass)
-        logger.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
-    logger.info("Target Voltage \t= %.3f V", voltage)
+        log.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
+    log.info("Target Voltage \t= %.3f V", voltage)
     sysfs_interface.write_dac_aux_voltage(voltage)
     sysfs_interface.write_mode("emulator", force=True)
     sysfs_interface.set_stop(force=True)  # forces reset
-    logger.info("Re-Initialized PRU to finalize settings")
+    log.info("Re-Initialized PRU to finalize settings")
     # NOTE: this FN needs persistent IO, (old GPIO-Lib)
 
 
@@ -167,7 +167,7 @@ def run(mode: str, parameters: dict, verbose: int):
             "(last occurred with v8-alpha-version of click-lib)",
         )
 
-    logger.debug("CLI did process run()")
+    log.debug("CLI did process run()")
     if mode == "harvester":
         cfg = HarvestTask(**parameters)
         run_harvester(cfg)
@@ -277,13 +277,13 @@ def read(info_file: Optional[Path], cal_file: Optional[Path]):
         with open(info_file, "w") as f:
             f.write(repr(cape_data))
     else:
-        logger.info(repr(cape_data))
+        log.info(repr(cape_data))
 
     if cal_file:
         with open(cal_file, "w") as f:
             f.write(repr(cal))
     else:
-        logger.info(repr(cal))
+        log.info(repr(cal))
 
 
 @eeprom.command(
@@ -307,7 +307,7 @@ def make(filename: Path, output_path: Optional[Path]):
 
     cal_cape = CalMeasurementCape.from_file(filename).to_cal()
     if output_path is None:
-        logger.info(repr(cal_cape))
+        log.info(repr(cal_cape))
     else:
         cal_cape.to_file(output_path)
 
@@ -317,7 +317,7 @@ def make(filename: Path, output_path: Optional[Path]):
 def rpc(port: Optional[int]):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
-    logger.info("Shepherd Debug Interface: Initialized")
+    log.info("Shepherd Debug Interface: Initialized")
     time.sleep(1)
 
     server = zerorpc.Server(shepherd_io)
@@ -333,7 +333,7 @@ def rpc(port: Optional[int]):
     gevent.signal_handler(signal.SIGINT, stop_server)
 
     shepherd_io.start()
-    logger.info("Shepherd RPC Interface: Started")
+    log.info("Shepherd RPC Interface: Started")
     server.run()
 
 

@@ -19,7 +19,7 @@ from shepherd_core.data_models.testbed import TargetPort
 from . import commons
 from . import sysfs_interface
 from .eeprom import EEPROM
-from .logger import logger
+from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
 from .target_io import TargetIO
@@ -48,11 +48,11 @@ class ShepherdDebug(ShepherdIO):
                 storage.read_cape_data()
                 self._cal = storage.read_calibration()
         except ValueError:
-            logger.warning(
+            log.warning(
                 "Couldn't read calibration from EEPROM (Val). Falling back to default values.",
             )
         except FileNotFoundError:
-            logger.warning(
+            log.warning(
                 "Couldn't read calibration from EEPROM (FS). Falling back to default values.",
             )
 
@@ -319,33 +319,33 @@ class ShepherdDebug(ShepherdIO):
         if not (self._io is None):
             self._io.one_high(num)
         else:
-            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
+            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def get_gpio_state(self, num: int) -> bool:
         if not (self._io is None):
             return self._io.get_pin_state(num)
         else:
-            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
+            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return False
 
     def set_gpio_direction(self, num: int, pdir: bool) -> None:
         if not (self._io is None):
             self._io.set_pin_direction(num, pdir)
         else:
-            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
+            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def get_gpio_direction(self, num: int) -> bool:
         if not (self._io is None):
             return self._io.get_pin_direction(num)
         else:
-            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
+            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
             return True
 
     def get_gpio_info(self) -> list:
         if not (self._io is None):
             return self._io.pin_names
         else:
-            logger.debug("Error: IO is not enabled in this shepherd-debug-instance")
+            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
             return []
 
     def set_power_state_emulator(self, state: bool) -> None:

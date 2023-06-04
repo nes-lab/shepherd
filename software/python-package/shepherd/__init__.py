@@ -22,7 +22,7 @@ from .eeprom import EEPROM
 from .eeprom import CapeData
 from .h5_writer import Writer
 from .launcher import Launcher
-from .logger import logger
+from .logger import log
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
@@ -43,7 +43,7 @@ __all__ = [
     "run_emulator",
     "run_harvester",
     "ShepherdIOException",
-    "logger",
+    "log",
 ]
 
 
@@ -109,31 +109,31 @@ def run_programmer(cfg: ProgrammingTask):
                         9,
                         11,
                     )
-                logger.info("Programmer initialized, will start now")
+                log.info("Programmer initialized, will start now")
                 sysfs_interface.start_programmer()
             except OSError:
-                logger.error("OSError - Failed to initialize Programmer")
+                log.error("OSError - Failed to initialize Programmer")
                 failed = True
             except ValueError as xpt:
-                logger.exception("ValueError: %s", str(xpt))  # noqa: G200
+                log.exception("ValueError: %s", str(xpt))  # noqa: G200
                 failed = True
 
         state = "init"
         while state != "idle" and not failed:
-            logger.info("Programming in progress,\tstate = %s", state)
+            log.info("Programming in progress,\tstate = %s", state)
             time.sleep(1)
             state = sysfs_interface.check_programmer()
             if "error" in state:
-                logger.error("SystemError - Failed during Programming")
+                log.error("SystemError - Failed during Programming")
                 failed = True
             # TODO: programmer can hang in "starting", should restart automatically then
         if failed:
-            logger.info("Programming - Procedure failed - will exit now!")
+            log.info("Programming - Procedure failed - will exit now!")
         else:
-            logger.info("Finished Programming!")
-        logger.debug("\tshepherdState   = %s", sysfs_interface.get_state())
-        logger.debug("\tprogrammerState = %s", state)
-        logger.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+            log.info("Finished Programming!")
+        log.debug("\tshepherdState   = %s", sysfs_interface.get_state())
+        log.debug("\tprogrammerState = %s", state)
+        log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
 
     sysfs_interface.load_pru0_firmware("shepherd")
     sys.exit(int(failed))

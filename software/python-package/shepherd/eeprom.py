@@ -22,7 +22,7 @@ import yaml
 from periphery import GPIO
 from shepherd_core import CalibrationCape
 
-from . import logger
+from .logger import log
 
 eeprom_format = {
     "header": {"offset": 0, "size": 4, "type": "binary"},
@@ -182,7 +182,7 @@ class EEPROM:
         try:
             os.write(self.fd, buffer)
         except TimeoutError:
-            logger.error("Timeout writing to EEPROM. Is write protection disabled?")
+            log.error("Timeout writing to EEPROM. Is write protection disabled?")
             raise
         self._write_protect_pin.write(True)
 
@@ -288,10 +288,10 @@ class EEPROM:
         )
         try:
             cal = CalibrationCape.from_bytestr(data)
-            logger.debug("EEPROM provided calibration-settings")
+            log.debug("EEPROM provided calibration-settings")
         except struct.error:
             cal = CalibrationCape()
-            logger.warning(
+            log.warning(
                 "EEPROM seems to have no usable data - will set calibration from default-values",
             )
         return cal
@@ -305,13 +305,13 @@ def retrieve_calibration(use_default_cal: bool = False) -> CalibrationCape:
             with EEPROM() as storage:
                 return storage.read_calibration()
         except ValueError:
-            logger.warning(
+            log.warning(
                 "Couldn't read calibration from EEPROM (ValueError). "
                 "Falling back to default values.",
             )
             return CalibrationCape()
         except FileNotFoundError:
-            logger.warning(
+            log.warning(
                 "Couldn't read calibration from EEPROM (FileNotFoundError). "
                 "Falling back to default values.",
             )

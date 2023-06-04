@@ -12,7 +12,7 @@ from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
-from .logger import logger
+from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
 
@@ -34,7 +34,7 @@ class ShepherdHarvester(ShepherdIO):
         cfg: HarvestTask,
         mode: str = "harvester",
     ):
-        logger.debug("ShepherdHarvester-Init in %s-mode", mode)
+        log.debug("ShepherdHarvester-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
             trace_iv=cfg.power_tracing,
@@ -128,14 +128,14 @@ class ShepherdHarvester(ShepherdIO):
         """
         super()._return_buffer(index)
         if verbose:
-            logger.debug("Sent empty buffer #%s to PRU", index)
+            log.debug("Sent empty buffer #%s to PRU", index)
 
     def run(self) -> None:
         self.start(self.start_time, wait_blocking=False)
 
-        logger.info("waiting %.2f s until start", self.start_time - time.time())
+        log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        logger.info("shepherd started!")
+        log.info("shepherd started!")
 
         if self.cfg.duration is None:
             ts_end = sys.float_info.max
@@ -146,7 +146,7 @@ class ShepherdHarvester(ShepherdIO):
             try:
                 idx, hrv_buf = self.get_buffer(verbose=self.verbose)
             except ShepherdIOException as e:
-                logger.warning("Caught an Exception", exc_info=e)
+                log.warning("Caught an Exception", exc_info=e)
 
                 err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
                 self.writer.write_exception(err_rec)
