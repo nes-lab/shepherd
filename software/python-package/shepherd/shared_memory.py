@@ -3,6 +3,7 @@ import os
 import struct
 import time
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Optional
 
 import numpy as np
@@ -169,10 +170,16 @@ class SharedMemory:
     def config_tracers(self, timestamp_ns: int) -> None:
         if self.trace_iv is not None:
             self.ts_start_iv = timestamp_ns + int(self.trace_iv.delay * 1e9)
-            self.ts_stop_iv = self.ts_start_iv + int(self.trace_iv.duration * 1e9)
+            if self.trace_iv.duration is not None:
+                self.ts_stop_iv = self.ts_start_iv + int(self.trace_iv.duration * 1e9)
+            else:
+                self.ts_stop_iv = self.ts_start_iv + timedelta(days=250).seconds
         if self.trace_gp is not None:
             self.ts_start_gp = timestamp_ns + int(self.trace_gp.delay * 1e9)
-            self.ts_stop_gp = self.ts_start_gp + int(self.trace_gp.duration * 1e9)
+            if self.trace_gp.duration is not None:
+                self.ts_stop_gp = self.ts_start_gp + int(self.trace_gp.duration * 1e9)
+            else:
+                self.ts_stop_gp = self.ts_start_gp + timedelta(days=250).seconds
         self.ts_unset = False
 
     def read_buffer(self, index: int, verbose: bool = False) -> DataBuffer:
