@@ -41,6 +41,30 @@ shepherd_modes = [
 ]
 
 
+def flatten_list(dl: list) -> list:
+    """small helper FN to convert (multi-dimensional) lists to 1D list
+
+    Args:
+        dl: (multi-dimensional) lists
+    Returns:
+        1D list
+    """
+    if isinstance(dl, list):
+        if len(dl) < 1:
+            return dl
+        if len(dl) == 1:
+            if isinstance(dl[0], list):
+                return flatten_list(dl[0])
+            else:
+                return dl
+        elif isinstance(dl[0], list):
+            return flatten_list(dl[0]) + flatten_list(dl[1:])
+        else:
+            return [dl[0]] + flatten_list(dl[1:])
+    else:
+        return [dl]
+
+
 def load_kernel_module():
     subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
     log.debug("activated shepherd kernel module")
@@ -299,7 +323,7 @@ def write_calibration_settings(
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        log.debug("Sending calibration settings: %s", output)
+        log.debug("Sending calibration settings:\n%s", output)
         f.write(output)
 
 
@@ -344,6 +368,7 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
         if isinstance(setting, int):
             output += f"{setting} \n"
         elif isinstance(setting, list):
+            setting = flatten_list(setting)
             setting = [str(i) for i in setting]
             output += " ".join(setting) + " \n"
         else:
@@ -352,7 +377,6 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
             )
 
     wait_for_state("idle", 3.0)
-
     with open(sysfs_path / "virtual_converter_settings", "w") as file:
         file.write(output)
 
