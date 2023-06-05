@@ -24,7 +24,7 @@ def src_cfg(request) -> VirtualSourceConfig:
             if Path(src_name).exists():
                 path = Path(src_name)
             else:
-                here = Path(__file__).absolute()
+                here = Path(__file__).resolve()
                 path = here.parent / src_name
             return VirtualSourceConfig.from_file(path)
         else:

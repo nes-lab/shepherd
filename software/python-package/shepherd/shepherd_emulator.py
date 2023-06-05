@@ -53,7 +53,7 @@ class ShepherdEmulator(ShepherdIO):
 
         if not cfg.input_path.exists():
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
-        self.reader = BaseReader(cfg.input_path, verbose=self.verbose)
+        self.reader = BaseReader(cfg.input_path, verbose=get_verbose_level() > 2)
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
@@ -112,7 +112,7 @@ class ShepherdEmulator(ShepherdIO):
 
         self.writer: Optional[Writer] = None
         if cfg.output_path is not None:
-            store_path = cfg.output_path.absolute()
+            store_path = cfg.output_path.resolve()
             if store_path.is_dir():
                 timestamp = datetime.fromtimestamp(self.start_time)
                 timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
@@ -127,6 +127,7 @@ class ShepherdEmulator(ShepherdIO):
                 samples_per_buffer=self.samples_per_buffer,
                 samplerate_sps=self.samplerate_sps,
                 compression=cfg.output_compression,
+                verbose=get_verbose_level() > 2,
             )
 
     def __enter__(self):
@@ -154,7 +155,8 @@ class ShepherdEmulator(ShepherdIO):
                 x for x in res.stdout if x.isprintable()
             ).strip()
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
-            self.writer.store_config(self.cfg.dict())
+            self.writer.store_config(self.cfg.virtual_source.dict())
+            # TODO: restore to .cfg.dict() -> fails for yaml-repr of path
 
         # Preload emulator with data
         time.sleep(1)

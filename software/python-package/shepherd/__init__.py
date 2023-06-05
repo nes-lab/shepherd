@@ -26,6 +26,7 @@ from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
 from .shepherd_io import ShepherdIOException
+from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
 __version__ = "0.4.5"
@@ -43,6 +44,7 @@ __all__ = [
     "run_harvester",
     "ShepherdIOException",
     "log",
+    "flatten_list",
 ]
 
 
@@ -87,7 +89,7 @@ def run_programmer(cfg: ProgrammingTask):
         sd.refresh_shared_mem()  # address might have changed
         failed = False
 
-        with open(cfg.firmware_file, "rb") as fw:
+        with open(cfg.firmware_file.resolve(), "rb") as fw:
             try:
                 sd.shared_mem.write_firmware(fw.read())
                 target = cfg.mcu_type

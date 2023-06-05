@@ -9,12 +9,13 @@ from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConf
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 
+from shepherd import flatten_list
 from shepherd import sysfs_interface
 
 
 @pytest.fixture
 def cnv_cfg() -> ConverterPRUConfig:
-    here = Path(__file__).absolute()
+    here = Path(__file__).resolve()
     name = "_test_config_virtsource.yaml"
     path = here.parent / name
     src_cfg = VirtualSourceConfig.from_file(path)
@@ -24,36 +25,12 @@ def cnv_cfg() -> ConverterPRUConfig:
 
 @pytest.fixture
 def hrv_cfg() -> HarvesterPRUConfig:
-    here = Path(__file__).absolute()
+    here = Path(__file__).resolve()
     name = "_test_config_harvest.yaml"
     path = here.parent / name
     hrv_cfg = HarvestTask.from_file(path)
     hrv_pru = HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
     return hrv_pru
-
-
-def flatten_list(dl: list) -> list:
-    """small helper FN to convert (multi-dimensional) lists to 1D list
-
-    Args:
-        dl: (multi-dimensional) lists
-    Returns:
-        1D list
-    """
-    if isinstance(dl, list):
-        if len(dl) < 1:
-            return dl
-        if len(dl) == 1:
-            if isinstance(dl[0], list):
-                return flatten_list(dl[0])
-            else:
-                return dl
-        elif isinstance(dl[0], list):
-            return flatten_list(dl[0]) + flatten_list(dl[1:])
-        else:
-            return [dl[0]] + flatten_list(dl[1:])
-    else:
-        return [dl]
 
 
 @pytest.fixture()

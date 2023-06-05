@@ -27,7 +27,7 @@ def random_data(length) -> np.ndarray:
 
 @pytest.fixture
 def src_cfg() -> VirtualSourceConfig:
-    here = Path(__file__).absolute()
+    here = Path(__file__).resolve()
     name = "_test_config_virtsource.yaml"
     file_path = here.parent / name
     return VirtualSourceConfig.from_file(file_path)

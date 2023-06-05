@@ -116,7 +116,7 @@ class ShepherdIO:
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
 
-            self._set_shepherd_pcb_power(True)
+            self.set_shepherd_pcb_power(True)
             self.set_io_level_converter(False)
 
             log.debug("Shepherd hardware is powered up")
@@ -277,18 +277,20 @@ class ShepherdIO:
         self.set_io_level_converter(False)
         self.set_power_state_emulator(False)
         self.set_power_state_recorder(False)
-        self._set_shepherd_pcb_power(False)
+        self.set_shepherd_pcb_power(False)
         log.debug("Shepherd hardware is now powered down")
 
-    def _set_shepherd_pcb_power(self, state: bool) -> None:
+    def set_shepherd_pcb_power(self, state: bool) -> None:
         """Controls state of power supplies on shepherd cape.
 
         Args:
             state (bool): True for on, False for off
         """
         state_str = "enabled" if state else "disabled"
-        log.debug("Set power-supplies of shepherd-pcb to %s", state_str)
+        log.debug("Set power-supplies of shepherd-cape to %s", state_str)
         self.gpios["en_shepherd"].write(state)
+        if state:
+            time.sleep(0.5)
 
     def set_power_state_recorder(self, state: bool) -> None:
         """
@@ -299,7 +301,7 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        log.debug("Set Recorder of shepherd-pcb to %s", state_str)
+        log.debug("Set Recorder of shepherd-cape to %s", state_str)
         self.gpios["en_recorder"].write(state)
         if state:
             time.sleep(0.3)
@@ -313,7 +315,7 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        log.debug("Set Emulator of shepherd-pcb to %s", state_str)
+        log.debug("Set Emulator of shepherd-cape to %s", state_str)
         self.gpios["en_emulator"].write(state)
         if state:
             time.sleep(0.3)

@@ -10,7 +10,7 @@ from shepherd.cli import cli
 
 @pytest.fixture
 def fw_example() -> Path:
-    here = Path(__file__).absolute()
+    here = Path(__file__).resolve()
     name = "firmware_nrf52_powered.hex"
     return here.parent / name
 
@@ -18,7 +18,7 @@ def fw_example() -> Path:
 @pytest.fixture
 def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
-    with open(store_path, "w") as f:
+    with open(store_path.resolve(), "w") as f:
         f.write("")
     return store_path
 

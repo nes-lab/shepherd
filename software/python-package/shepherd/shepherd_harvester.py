@@ -64,7 +64,7 @@ class ShepherdHarvester(ShepherdIO):
             dtype_in=None,
         )
 
-        store_path = cfg.output_path.absolute()
+        store_path = cfg.output_path.resolve()
         if store_path.is_dir():
             timestamp = datetime.datetime.fromtimestamp(self.start_time)
             timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
@@ -81,6 +81,7 @@ class ShepherdHarvester(ShepherdIO):
             force_overwrite=cfg.force_overwrite,
             samples_per_buffer=self.samples_per_buffer,
             samplerate_sps=self.samplerate_sps,
+            verbose=get_verbose_level() > 2,
         )
 
     def __enter__(self):
@@ -101,7 +102,8 @@ class ShepherdHarvester(ShepherdIO):
         self.writer["hostname"] = "".join(
             x for x in res.stdout if x.isprintable()
         ).strip()
-        self.writer.store_config(self.cfg.dict())
+        self.writer.store_config(self.cfg.virtual_harvester.dict())
+        # TODO: restore to .cfg.dict() -> fails for yaml-repr of path
         self.writer.start_monitors(self.cfg.sys_logging)
 
         # Give the PRU empty buffers to begin with

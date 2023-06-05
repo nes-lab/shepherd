@@ -110,7 +110,7 @@ def test_cli_harvest_parameters_minimal(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here / "_test_config_harvest.yaml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
@@ -123,7 +123,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
     cli_runner,
     tmp_path: Path,
 ) -> None:
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here.parent / "example_config_harvest.yaml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
@@ -159,7 +159,7 @@ def test_cli_emulate_with_custom_virtsource(
     tmp_path: Path,
     data_h5: Path,
 ) -> None:
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here / "_test_config_virtsource.yaml"
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
@@ -219,7 +219,7 @@ def test_cli_virtsource_emulate_wrong_option(
     tmp_path: Path,
     data_h5: Path,
 ) -> None:
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here / "_test_config_virtsource.yaml"
     store = tmp_path / "out.h5"
     res = cli_runner.invoke(
@@ -274,7 +274,7 @@ def test_cli_emulate_parameters_long(
     data_h5: Path,
 ) -> None:
     store = tmp_path / "out.h5"
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here / "_test_config_virtsource.yaml"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
@@ -321,7 +321,7 @@ def test_cli_emulate_parameters_short(
     data_h5: Path,
 ) -> None:
     store = tmp_path / "out.h5"
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here / "_test_config_virtsource.yaml"
     start_time = round(time.time() + 10)
     res = cli_runner.invoke(
@@ -377,7 +377,7 @@ def test_cli_emulate_parameters_minimal(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here / "_test_config_emulation.yaml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
     assert res.exit_code == 0
@@ -390,7 +390,7 @@ def test_cli_emulate_preconf_etc_shp_examples(
     cli_runner,
     tmp_path: Path,
 ) -> None:
-    here = Path(__file__).absolute().parent
+    here = Path(__file__).resolve().parent
     file_path = here.parent / "example_config_emulation.yaml"
     res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
     assert res.exit_code == 0

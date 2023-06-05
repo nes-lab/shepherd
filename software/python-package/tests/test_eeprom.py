@@ -14,7 +14,7 @@ def cal_cape() -> CalibrationCape:
 
 @pytest.fixture
 def data_example_yaml() -> Path:
-    here = Path(__file__).absolute()
+    here = Path(__file__).resolve()
     name = "_test_capedata.yaml"
     return here.parent / name
 

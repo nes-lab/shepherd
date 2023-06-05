@@ -182,17 +182,18 @@ def run(mode: str, parameters: dict, verbose: int):
 
 
 @cli.command(
-    short_help="Runs a task or set of tasks with provided config file.",
+    short_help="Runs a task or set of tasks with provided config/task file.",
 )
-@click.option(
-    "--config",
-    "-i",
+@click.argument(
+    "config",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
-    help="YAML-formatted file with Config-Data",
 )
 def task(config: Union[Path, ShpModel]):
+    if isinstance(config, str):
+        config = Path(config)
+
     if isinstance(config, Path):
-        with open(config) as shp_file:
+        with open(config.resolve()) as shp_file:
             shp_dict = yaml.safe_load(shp_file)
         shp_wrap = Wrapper(**shp_dict)
     elif isinstance(config, ShpModel):
@@ -324,13 +325,13 @@ def read(info_file: Optional[Path], cal_file: Optional[Path]):
         cal = storage.read_calibration()
 
     if info_file:
-        with open(info_file, "w") as f:
+        with open(Path(info_file).resolve(), "w") as f:
             f.write(repr(cape_data))
     else:
         log.info(repr(cape_data))
 
     if cal_file:
-        with open(cal_file, "w") as f:
+        with open(Path(cal_file).resolve(), "w") as f:
             f.write(repr(cal))
     else:
         log.info(repr(cal))

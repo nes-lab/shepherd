@@ -101,7 +101,7 @@ class CapeData:
 
         """
         data = {"header": b"\xAA\x55\x33\xEE"}
-        with open(filename) as stream:
+        with open(Path(filename).resolve()) as stream:
             yaml_dict = yaml.safe_load(stream)
 
         data.update(yaml_dict)
@@ -119,7 +119,7 @@ class CapeData:
         for key in self.data:
             if eeprom_format[key]["type"] in ["ascii", "str"]:
                 print_dict[key] = self.data[key]
-        return yaml.dump(print_dict, default_flow_style=False)
+        return yaml.safe_dump(print_dict, default_flow_style=False)
 
     def keys(self):
         return self.data.keys()

@@ -298,7 +298,7 @@ class ShepherdDebug(ShepherdIO):
         return sysfs_interface.get_state()
 
     def set_shepherd_pcb_power(self, state: bool) -> None:
-        super()._set_shepherd_pcb_power(state)
+        super().set_shepherd_pcb_power(state)
 
     def select_port_for_power_tracking(self, target: TargetPort) -> None:
         super().select_port_for_power_tracking(target)
