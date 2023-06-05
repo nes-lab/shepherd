@@ -12,6 +12,7 @@ through Linux I2C device driver.
 
 import os
 import struct
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
@@ -19,10 +20,13 @@ from typing import Optional
 from typing import Union
 
 import yaml
-from periphery import GPIO
 from shepherd_core import CalibrationCape
 
 from .logger import log
+
+# allow importing shepherd on x86 - for testing
+with suppress(ModuleNotFoundError):
+    from periphery import GPIO
 
 eeprom_format = {
     "header": {"offset": 0, "size": 4, "type": "binary"},

@@ -170,7 +170,7 @@ class ShepherdEmulator(ShepherdIO):
             # ⤷ could be as low as ~ 10us
         return self
 
-    def __exit__(self):
+    def __exit__(self, *args):  # type: ignore
         self.stack.close()
         super().__exit__()
 

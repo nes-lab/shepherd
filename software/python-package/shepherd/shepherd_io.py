@@ -9,10 +9,10 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 """
 import time
 import weakref
+from contextlib import suppress
 from typing import Optional
 from typing import Union
 
-from periphery import GPIO
 from pydantic import validate_arguments
 from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationHarvester
@@ -27,6 +27,11 @@ from . import sysfs_interface as sfs
 from .logger import log
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
+
+# allow importing shepherd on x86 - for testing
+with suppress(ModuleNotFoundError):
+    from periphery import GPIO
+
 
 ID_ERR_TIMEOUT = 100
 
@@ -219,9 +224,9 @@ class ShepherdIO:
         self.mem_size = sfs.get_mem_size()
 
         log.debug(
-            "Shared memory address: \t%s, size: %d byte",
-            f"0x{self.mem_address:08X}",
-            int(self.mem_size),
+            "Shared memory address: \t0x%08X, size: %d byte",
+            self.mem_address,
+            self.mem_size,
         )
 
         # Ask PRU for size of individual buffers
@@ -290,7 +295,7 @@ class ShepherdIO:
         log.debug("Set power-supplies of shepherd-cape to %s", state_str)
         self.gpios["en_shepherd"].write(state)
         if state:
-            time.sleep(0.5)
+            time.sleep(0.5)  # time to stabilize voltage-drop
 
     def set_power_state_recorder(self, state: bool) -> None:
         """
@@ -304,7 +309,7 @@ class ShepherdIO:
         log.debug("Set Recorder of shepherd-cape to %s", state_str)
         self.gpios["en_recorder"].write(state)
         if state:
-            time.sleep(0.3)
+            time.sleep(0.3)  # time to stabilize voltage-drop
 
     def set_power_state_emulator(self, state: bool) -> None:
         """
@@ -318,7 +323,7 @@ class ShepherdIO:
         log.debug("Set Emulator of shepherd-cape to %s", state_str)
         self.gpios["en_emulator"].write(state)
         if state:
-            time.sleep(0.3)
+            time.sleep(0.3)  # time to stabilize voltage-drop
 
     @staticmethod
     def convert_target_port_to_bool(target: Union[TargetPort, str, bool, None]) -> bool:

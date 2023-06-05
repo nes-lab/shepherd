@@ -10,13 +10,16 @@ Relies on systemd service.
 """
 import os
 import time
+from contextlib import suppress
 from threading import Event
 from threading import Thread
 
-import dbus
-from periphery import GPIO
-
 from .logger import log
+
+# allow importing shepherd on x86 - for testing
+with suppress(ModuleNotFoundError):
+    import dbus
+    from periphery import GPIO
 
 
 def call_repeatedly(interval: float, func, *args):  # type: ignore

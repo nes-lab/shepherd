@@ -210,10 +210,10 @@ class SharedMemory:
         )
         if verbose:
             log.debug(
-                "Retrieved buffer #%d  (@+%s) "
+                "Retrieved buffer #%d  (@+0x%06X) "
                 "with len %d and timestamp %d ms @%.3f sys_ts",
                 index,
-                f"0x{(index * self.buffer_size):06X}",
+                index * self.buffer_size,
                 n_samples,
                 buffer_timestamp // 1000000,
                 time.time(),

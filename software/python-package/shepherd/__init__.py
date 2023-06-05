@@ -65,6 +65,7 @@ def run_harvester(cfg: HarvestTask) -> None:
     hrv = ShepherdHarvester(cfg=cfg)
     stack.enter_context(hrv)
     hrv.run()
+    stack.close()
 
 
 def run_emulator(cfg: EmulationTask) -> None:
@@ -72,6 +73,7 @@ def run_emulator(cfg: EmulationTask) -> None:
     emu = ShepherdEmulator(cfg=cfg)
     stack.enter_context(emu)
     emu.run()
+    stack.close()
 
 
 def run_programmer(cfg: ProgrammingTask):

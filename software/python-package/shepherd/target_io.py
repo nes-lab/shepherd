@@ -30,12 +30,16 @@ prog2_io = 11   # P8_32, GPIO0[11]
 :copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+from contextlib import suppress
 from typing import Dict
 from typing import List
 
-from periphery import GPIO
-
 from .logger import log
+
+# allow importing shepherd on x86 - for testing
+with suppress(ModuleNotFoundError):
+    from periphery import GPIO
+
 
 target_pins: List[Dict] = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},

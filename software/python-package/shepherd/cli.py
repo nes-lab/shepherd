@@ -21,7 +21,6 @@ import click_config_file
 import gevent
 import yaml
 import zerorpc
-from periphery import GPIO
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
@@ -48,6 +47,13 @@ from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import reload_kernel_module
+
+# allow importing shepherd on x86 - for testing
+try:
+    from periphery import GPIO
+except ModuleNotFoundError:
+    print("WARNING: Packages missing - hardware-access will not work")  # noqa: T201
+
 
 # TODO: correct docs
 # --length -l is now --duration -d ->
