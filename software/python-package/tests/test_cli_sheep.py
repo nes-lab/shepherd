@@ -11,11 +11,16 @@ same test. Either find a solution or put every CLI call in a separate test.
 :license: MIT, see LICENSE for more details.
 """
 import time
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pytest
 from shepherd_core import CalibrationHarvester
+from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models import PowerTracing
+from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 
 from shepherd import Writer
@@ -40,7 +45,7 @@ def data_h5(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def path_hrv(tmp_path: Path) -> Path:
+def path_yaml(tmp_path: Path) -> Path:
     return tmp_path / "cfg.yaml"
 
 
@@ -49,12 +54,17 @@ def path_h5(tmp_path: Path) -> Path:
     return tmp_path / "out.h5"
 
 
+@pytest.fixture
+def path_here() -> Path:
+    return Path(__file__).resolve().parent
+
+
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_no_cal(
     shepherd_up,
     cli_runner,
-    path_hrv: Path,
+    path_yaml,
     path_h5: Path,
 ) -> None:
     HarvestTask(
@@ -62,8 +72,8 @@ def test_cli_harvest_no_cal(
         force_overwrite=True,
         duration=10,
         use_cal_default=True,
-    ).to_file(path_hrv)
-    res = cli_runner.invoke(cli, ["-vvv", "task", str(path_hrv)])
+    ).to_file(path_yaml)
+    res = cli_runner.invoke(cli, ["-vvv", "task", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -73,7 +83,7 @@ def test_cli_harvest_no_cal(
 def test_cli_harvest_parameters_most(
     shepherd_up,
     cli_runner,
-    path_hrv: Path,
+    path_yaml,
     path_h5: Path,
 ) -> None:
     HarvestTask(
@@ -81,10 +91,10 @@ def test_cli_harvest_parameters_most(
         force_overwrite=True,
         duration=10,
         use_cal_default=True,
-        time_start=round(time.time() + 10),
-        abort_on_errors=False,
-    ).to_file(path_hrv)
-    res = cli_runner.invoke(cli, ["-vvv", "task", str(path_hrv)])
+        time_start=datetime.fromtimestamp(round(time.time() + 10)),
+        abort_on_error=False,
+    ).to_file(path_yaml)
+    res = cli_runner.invoke(cli, ["-vvv", "task", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -94,25 +104,24 @@ def test_cli_harvest_parameters_most(
 def test_cli_harvest_parameters_minimal(
     shepherd_up,
     cli_runner,
-    path_hrv: Path,
+    path_yaml,
     path_h5: Path,
 ) -> None:
     HarvestTask(
         output_path=path_h5,
         force_overwrite=True,
         duration=10,
-    ).to_file(path_hrv)
-    res = cli_runner.invoke(cli, ["-vvv", "task", str(path_hrv)])
+    ).to_file(path_yaml)
+    res = cli_runner.invoke(cli, ["-vvv", "task", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    here = Path(__file__).resolve().parent
-    file_path = here / "_test_config_harvest.yaml"
-    res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
+def test_cli_harvest_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
+    file_path = path_here / "_test_config_harvest.yaml"
+    res = cli_runner.invoke(cli, ["run", "--config", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -121,34 +130,35 @@ def test_cli_harvest_preconfigured(shepherd_up, cli_runner, tmp_path: Path) -> N
 def test_cli_harvest_preconf_etc_shp_examples(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
+    path_here: Path,
 ) -> None:
-    here = Path(__file__).resolve().parent
-    file_path = here.parent / "example_config_harvest.yaml"
+    file_path = path_here.parent / "example_config_harvest.yaml"
     res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
     assert res.exit_code == 0
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate(shepherd_up, cli_runner, tmp_path: Path, data_h5: Path) -> None:
-    store = tmp_path / "out.h5"
+def test_cli_emulate(
+    shepherd_up, cli_runner, data_h5: Path, path_h5: Path, path_yaml: Path
+) -> None:
+    EmulationTask(
+        duration=10,
+        force_overwrite=True,
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+    ).to_file(path_yaml)
+
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "--force_overwrite",
-            "-o",
-            str(store),
-            str(data_h5),
+            "task",
+            path_yaml.as_posix(),
         ],
     )
-
     assert res.exit_code == 0
-    assert store.exists()
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
@@ -156,30 +166,31 @@ def test_cli_emulate(shepherd_up, cli_runner, tmp_path: Path, data_h5: Path) -> 
 def test_cli_emulate_with_custom_virtsource(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
     data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
+    path_here: Path,
 ) -> None:
-    here = Path(__file__).resolve().parent
-    file_path = here / "_test_config_virtsource.yaml"
-    store = tmp_path / "out.h5"
+    EmulationTask(
+        duration=10,
+        force_overwrite=True,
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+        virtual_source=VirtualSourceConfig.from_file(
+            path_here / "_test_config_virtsource.yaml"
+        ),
+    ).to_file(path_yaml)
+
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "--force_overwrite",
-            "--virtsource",
-            str(file_path),
-            "-o",
-            str(store),
-            str(data_h5),
+            "task",
+            path_yaml.as_posix(),
         ],
     )
-
     assert res.exit_code == 0
-    assert store.exists()
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
@@ -187,56 +198,29 @@ def test_cli_emulate_with_custom_virtsource(
 def test_cli_emulate_with_bq25570(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
     data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
+    path_here: Path,
 ) -> None:
-    store = tmp_path / "out.h5"
+    EmulationTask(
+        duration=10,
+        force_overwrite=True,
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+        virtual_source=VirtualSourceConfig(name="BQ25570"),
+    ).to_file(path_yaml)
+
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "--force_overwrite",
-            "--virtsource",
-            "BQ25570",
-            "-o",
-            str(store),
-            str(data_h5),
+            "task",
+            path_yaml.as_posix(),
         ],
     )
-
     assert res.exit_code == 0
-    assert store.exists()
-
-
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_cli_virtsource_emulate_wrong_option(
-    shepherd_up,
-    cli_runner,
-    tmp_path: Path,
-    data_h5: Path,
-) -> None:
-    here = Path(__file__).resolve().parent
-    file_path = here / "_test_config_virtsource.yaml"
-    store = tmp_path / "out.h5"
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "--virtWrong",
-            str(file_path),
-            "-o",
-            str(store),
-            str(data_h5),
-        ],
-    )
-    assert res.exit_code != 0
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
@@ -244,25 +228,29 @@ def test_cli_virtsource_emulate_wrong_option(
 def test_cli_emulate_aux_voltage(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
     data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
+    path_here: Path,
 ) -> None:
-    store = tmp_path / "out.h5"
+    EmulationTask(
+        duration=10,
+        force_overwrite=True,
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+        voltage_aux=2.5,
+    ).to_file(path_yaml)
+
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "--aux_voltage",
-            "2.5",
-            "-o",
-            str(store),
-            str(data_h5),
+            "task",
+            path_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
@@ -270,87 +258,37 @@ def test_cli_emulate_aux_voltage(
 def test_cli_emulate_parameters_long(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
     data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
+    path_here: Path,
 ) -> None:
-    store = tmp_path / "out.h5"
-    here = Path(__file__).resolve().parent
-    file_path = here / "_test_config_virtsource.yaml"
-    start_time = round(time.time() + 10)
+    EmulationTask(
+        duration=10,
+        force_overwrite=True,
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+        voltage_aux=2.5,
+        time_start=datetime.fromtimestamp(round(time.time() + 10)),
+        use_cal_default=True,
+        enable_io=True,
+        io_port="B",
+        pwr_port="B",
+        abort_on_error=False,
+        gpio_tracing=GpioTracing(uart_baudrate=9600),
+        power_tracing=PowerTracing(discard_current=True, discard_voltage=True),
+    ).to_file(path_yaml)
+
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulator",
-            "--duration",
-            "10",
-            "--start_time",
-            str(start_time),
-            "--aux_voltage",
-            "2.5",
-            "--force_overwrite",
-            "--use_cal_default",
-            "--enable_io",
-            "--io_target",
-            "A",
-            "--pwr_target",
-            "A",
-            "--warn-only",
-            "--virtsource",
-            str(file_path),
-            "--output_path",
-            str(store),
-            "--uart_baudrate",
-            "9600",
-            "--log_mid_voltage",
-            "--skip_log_voltage",
-            "--skip_log_current",
-            "--skip_log_gpio",
-            str(data_h5),
+            "task",
+            path_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
-
-
-@pytest.mark.hardware
-@pytest.mark.timeout(60)
-def test_cli_emulate_parameters_short(
-    shepherd_up,
-    cli_runner,
-    tmp_path: Path,
-    data_h5: Path,
-) -> None:
-    store = tmp_path / "out.h5"
-    here = Path(__file__).resolve().parent
-    file_path = here / "_test_config_virtsource.yaml"
-    start_time = round(time.time() + 10)
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "-s",
-            str(start_time),
-            "-x",
-            "2.5",
-            "-f",
-            "-c",
-            "--disable_io",
-            "--io_target",
-            "B",
-            "--pwr_target",
-            "B",
-            "--no-warn-only",
-            "-a",
-            str(file_path),
-            "-o",
-            str(store),
-            str(data_h5),
-        ],
-    )
-    assert res.exit_code == 0
+    assert path_h5.exists()
 
 
 @pytest.mark.hardware
