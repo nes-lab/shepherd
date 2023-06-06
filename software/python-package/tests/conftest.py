@@ -23,7 +23,7 @@ def check_beagleboard() -> bool:
 )
 def fake_hardware(request):
     if request.param == "fake_hardware":
-        request.fixturenames.append("fs")
+        request.fixturenames.append("fs")  # needs pyfakefs installed
         fake_sysfs = request.getfixturevalue("fs")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc1")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc2")

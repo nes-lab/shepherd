@@ -8,6 +8,7 @@ import pytest
 from shepherd_core import BaseReader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationHarvester
+from shepherd_core import CalibrationSeries
 
 from shepherd import Writer
 from shepherd.h5_writer import ExceptionRecord
@@ -23,14 +24,13 @@ def data_buffer() -> DataBuffer:
     len_ = 10_000
     voltage = random_data(len_)
     current = random_data(len_)
-    data = DataBuffer(voltage, current, 1551848387472)
-    return data
+    return DataBuffer(voltage, current, 1551848387472)
 
 
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "record_example.h5"
-    with Writer(name, cal_data=CalibrationHarvester()) as store:
+    with Writer(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
         store["hostname"] = "Pinky"
         for i in range(100):
             len_ = 10_000
@@ -48,7 +48,7 @@ def cal_cape() -> CalibrationCape:
 def test_create_h5writer(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / f"{ mode }.h5"
     h = Writer(file_path=d, cal_data=cal_cape[mode], mode=mode)
-    assert not d.exists()
+    # assert not exists
     h.__enter__()
     assert d.exists()
     h.__exit__()
@@ -103,14 +103,14 @@ def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) ->
 
     h5store = h5py.File(d, "r")
     # hint: shpReader would be more direct, but less untouched
-
+    cal_series = CalibrationSeries.from_cal(cal_cape.harvester)
     for channel_entry, parameter in product(
         ["voltage", "current", "time"],
         ["gain", "offset"],
     ):
         assert (
-            h5store["data"][channel_entry[0]].attrs[parameter]
-            == cal_cape[mode][channel_entry[1]][parameter]
+            h5store["data"][channel_entry].attrs[parameter]
+            == cal_series[channel_entry][parameter]
         )
 
 

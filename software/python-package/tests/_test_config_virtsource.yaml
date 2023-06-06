@@ -1,4 +1,4 @@
-model: VirtualSourceConfig
+datatype: VirtualSourceConfig
 parameters:
   # crosscheck against check_and_complete() in virt_source_data.py to see:
   # - what is required
@@ -10,7 +10,6 @@ parameters:
   inherit_from: neutral # to complete undefined vars, bases: neutral, direct, BQ25504 (boost), BQ25570 (boost-buck)
   enable_boost: true # if false -> v_storage becomes v_input, output-switch-hysteresis is still usable
   enable_buck: true # if false -> v_output becomes v_storage
-  log_intermediate_voltage: false # record / log virtual intermediate (cap-)voltage and -current (out) instead of output-voltage and -current
 
   interval_startup_delay_drain_ms: 0
 

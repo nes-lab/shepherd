@@ -175,5 +175,5 @@ def test_initial_virtsource_settings(shepherd_up):
 
 def test_writing_virtsource_settings(shepherd_up, cnv_cfg):
     sysfs_interface.write_virtual_converter_settings(cnv_cfg)
-    values_1d = flatten_list(list(hrv_cfg.dict().values()))
+    values_1d = flatten_list(list(cnv_cfg.dict().values()))
     assert sysfs_interface.read_virtual_converter_settings() == values_1d

@@ -1,7 +1,7 @@
 # This is an example configuration for shepherd.
 # Instead of modifying, better make a copy and name it config.yaml
 # Behavior: record data for 20s or until stopped by ctrl+c
-mode: harvest
+datatype: HarvestTask
 parameters:
   duration: 20
   # output_path:
@@ -13,4 +13,4 @@ parameters:
     name: ivcurves
   use_cal_default: true
   force_overwrite: false
-verbose: 2 # serious performance impact for value > 3
+  verbose: 2 # serious performance impact for value > 3

@@ -140,7 +140,11 @@ def test_cli_harvest_preconf_etc_shp_examples(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate(
-    shepherd_up, cli_runner, data_h5: Path, path_h5: Path, path_yaml: Path
+    shepherd_up,
+    cli_runner,
+    data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -177,7 +181,7 @@ def test_cli_emulate_with_custom_virtsource(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         virtual_source=VirtualSourceConfig.from_file(
-            path_here / "_test_config_virtsource.yaml"
+            path_here / "_test_config_virtsource.yaml",
         ),
     ).to_file(path_yaml)
 
@@ -201,7 +205,6 @@ def test_cli_emulate_with_bq25570(
     data_h5: Path,
     path_h5: Path,
     path_yaml: Path,
-    path_here: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -231,7 +234,6 @@ def test_cli_emulate_aux_voltage(
     data_h5: Path,
     path_h5: Path,
     path_yaml: Path,
-    path_here: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -261,7 +263,6 @@ def test_cli_emulate_parameters_long(
     data_h5: Path,
     path_h5: Path,
     path_yaml: Path,
-    path_here: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -296,17 +297,20 @@ def test_cli_emulate_parameters_long(
 def test_cli_emulate_parameters_minimal(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
     data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
 ) -> None:
-    store = tmp_path / "out.h5"
+    EmulationTask(
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+    ).to_file(path_yaml)
     res = cli_runner.invoke(
         cli,
         [
-            "emulator",
-            "-o",
-            str(store),
-            str(data_h5),
+            "-vvv",
+            "task",
+            path_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -314,10 +318,9 @@ def test_cli_emulate_parameters_minimal(
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path: Path) -> None:
-    here = Path(__file__).resolve().parent
-    file_path = here / "_test_config_emulation.yaml"
-    res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
+def test_cli_emulate_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
+    file_path = path_here / "_test_config_emulation.yaml"
+    res = cli_runner.invoke(cli, ["task", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -326,11 +329,10 @@ def test_cli_emulate_preconfigured(shepherd_up, cli_runner, tmp_path: Path) -> N
 def test_cli_emulate_preconf_etc_shp_examples(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
+    path_here: Path,
 ) -> None:
-    here = Path(__file__).resolve().parent
-    file_path = here.parent / "example_config_emulation.yaml"
-    res = cli_runner.invoke(cli, ["run", "--config", str(file_path)])
+    file_path = path_here.parent / "example_config_emulation.yaml"
+    res = cli_runner.invoke(cli, ["task", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -339,22 +341,22 @@ def test_cli_emulate_preconf_etc_shp_examples(
 def test_cli_emulate_aux_voltage_fail(
     shepherd_up,
     cli_runner,
-    tmp_path: Path,
     data_h5: Path,
+    path_h5: Path,
+    path_yaml: Path,
 ) -> None:
-    store = tmp_path / "out.h5"
+    EmulationTask(
+        duration=10,
+        input_path=data_h5.as_posix(),
+        output_path=path_h5.as_posix(),
+        voltage_aux=5.5,
+    ).to_file(path_yaml)
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
-            "emulator",
-            "-d",
-            "10",
-            "--aux_voltage",
-            "5.5",
-            "-o",
-            str(store),
-            str(data_h5),
+            "task",
+            path_yaml.as_posix(),
         ],
     )
     assert res.exit_code != 0

@@ -1,7 +1,7 @@
 # This is an example configuration for shepherd.
 # Instead of modifying, better make a copy and name it config.yaml
 # Behavior: emulate a BQ-Controller for target A, enable io-connection
-mode: emulation
+datatype: EmulationTask
 parameters:
   input_path: /var/shepherd/recordings/hrv.h5
   # output_path:
@@ -31,6 +31,6 @@ parameters:
     uart_decode: true
     uart_baudrate: 9600
   power_tracing:
-    voltage: true
-    current: true
-verbose: 2 # serious performance impact for value > 3
+    discard_voltage: false
+    discard_current: false
+  verbose: 2 # serious performance impact for value > 3

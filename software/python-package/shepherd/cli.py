@@ -204,25 +204,25 @@ def task(config: Union[Path, ShpModel]):
         shp_wrap = Wrapper(**shp_dict)
     elif isinstance(config, ShpModel):
         shp_wrap = Wrapper(
-            model=type(config).__name__,
+            datatype=type(config).__name__,
             parameters=config.dict(),
         )
     else:
         raise ValueError("had unknown input: %s", type(config))
 
-    if shp_wrap.model == TestbedTasks:
+    if shp_wrap.datatype == TestbedTasks:
         tbt = TestbedTasks(**shp_wrap.parameters)
         content = tbt.observer_tasks
-    elif shp_wrap.model == EmulationTask.__name__:
+    elif shp_wrap.datatype == EmulationTask.__name__:
         content = [EmulationTask(**shp_wrap.parameters)]
-    elif shp_wrap.model == HarvestTask.__name__:
+    elif shp_wrap.datatype == HarvestTask.__name__:
         content = [HarvestTask(**shp_wrap.parameters)]
-    elif shp_wrap.model == FirmwareModTask.__name__:
+    elif shp_wrap.datatype == FirmwareModTask.__name__:
         content = [FirmwareModTask(**shp_wrap.parameters)]
-    elif shp_wrap.model == ProgrammingTask.__name__:
+    elif shp_wrap.datatype == ProgrammingTask.__name__:
         content = [ProgrammingTask(**shp_wrap.parameters)]
     else:
-        raise ValueError("had unknown task: %s", shp_wrap.model)
+        raise ValueError("had unknown task: %s", shp_wrap.datatype)
 
     for element in content:
         if isinstance(element, EmulationTask):

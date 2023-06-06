@@ -1,22 +1,24 @@
 ---
-node: sheep0
-measurements:
+datatype: CalMeasurementCape
+parameters:
+  host: sheep0
+  cape: xyz1
   emulator:
-    adc_current:
+    adc_C_A:
       - reference_si: 0.0001
         shepherd_raw: 12200.890875
       - reference_si: 0.001
         shepherd_raw: 16241.6197275
       - reference_si: 0.01
         shepherd_raw: 56584.8815475
-    adc_voltage:
+    adc_C_B:
       - reference_si: 0.0001
         shepherd_raw: 26742.3364625
       - reference_si: 0.001
         shepherd_raw: 26745.5752275
       - reference_si: 0.01
         shepherd_raw: 26686.6722025
-    dac_voltage_a:
+    dac_V_A:
       - reference_si: 1.1001223333333334
         shepherd_raw: 14417
       - reference_si: 1.5000393333333335
@@ -25,7 +27,7 @@ measurements:
         shepherd_raw: 24903
       - reference_si: 2.2999213333333333
         shepherd_raw: 30146
-    dac_voltage_b:
+    dac_V_B:
       - reference_si: 1.1013723333333332
         shepherd_raw: 14417
       - reference_si: 1.5005499999999994
@@ -35,14 +37,14 @@ measurements:
       - reference_si: 2.2993090000000005
         shepherd_raw: 30146
   harvester:
-    adc_current:
+    adc_C_Hrv:
       - reference_si: 0.0001
         shepherd_raw: 12220.2901675
       - reference_si: 0.001
         shepherd_raw: 16258.9669725
       - reference_si: 0.01
         shepherd_raw: 56641.8383725
-    adc_voltage:
+    adc_V_Sense:
       - reference_si: 1.1
         shepherd_raw: 56349.5640425
       - reference_si: 1.5000000000000002
@@ -51,7 +53,7 @@ measurements:
         shepherd_raw: 97330.176865
       - reference_si: 2.3
         shepherd_raw: 117821.158815
-    dac_voltage_a:
+    dac_V_Sim:
       - reference_si: 1.1003463333333332
         shepherd_raw: 14417
       - reference_si: 1.5004753333333336
@@ -60,7 +62,7 @@ measurements:
         shepherd_raw: 24903
       - reference_si: 2.3007579999999996
         shepherd_raw: 30146
-    dac_voltage_b:
+    dac_V_Hrv:
       - reference_si: 1.0999603333333332
         shepherd_raw: 14417
       - reference_si: 1.499944333333333

@@ -1,28 +1,30 @@
-node: sheep0
-calibration:
+datatype: CalibrationCape
+parameters:
+  host: sheep0
+  cape: xyz1
   emulator:
-    adc_current:
+    adc_C_A:
       gain: 2.2306053900482405e-07
       offset: -0.0026222400965270985
-    adc_voltage:
+    adc_C_B:
       gain: 2.2306053900482405e-07
       offset: -0.0026222400965270985
-    dac_voltage_a:
+    dac_V_A:
       gain: 7.62628031430141e-05
       offset: 0.0007950027045164898
-    dac_voltage_b:
+    dac_V_B:
       gain: 7.63173766566708e-05
       offset: -0.0010936558576905009
   harvester:
-    adc_current:
+    adc_C_Hrv:
       gain: 2.228708065317991e-07
       offset: -0.0026241147072037603
-    adc_voltage:
+    adc_V_Sense:
       gain: 1.952036492090002e-05
       offset: 7.75784958272352e-05
-    dac_voltage_a:
+    dac_V_Sim:
       gain: 7.630261527071238e-05
       offset: 0.0004594023208512876
-    dac_voltage_b:
+    dac_V_Hrv:
       gain: 7.62877291921811e-05
       offset: 0.000281481899873981

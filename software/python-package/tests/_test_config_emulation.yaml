@@ -1,4 +1,4 @@
-mode: emulation
+datatype: EmulationTask
 parameters:
   input_path: /var/shepherd/recordings/hrv_test.h5
   output_path: /var/shepherd/recordings/emu_test.h5
@@ -16,6 +16,6 @@ parameters:
   gpio_tracing:
     uart_baudrate: 9600
   power_tracing:
-    voltage: true
-    current: true
-verbose: 2
+    discard_voltage: false
+    discard_current: false
+  verbose: 2
