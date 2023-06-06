@@ -3,7 +3,7 @@
 # Behavior: record data for 20s or until stopped by ctrl+c
 datatype: HarvestTask
 parameters:
-  duration: 20
+  duration: 10
   # output_path:
   # - providing a directory -> file is named hrv_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5

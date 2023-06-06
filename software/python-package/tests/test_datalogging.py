@@ -31,7 +31,7 @@ def data_buffer() -> DataBuffer:
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "record_example.h5"
     with Writer(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
-        store["hostname"] = "Pinky"
+        store.store_hostname("Pinky")
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)

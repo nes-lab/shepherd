@@ -99,9 +99,9 @@ class ShepherdHarvester(ShepherdIO):
 
         res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
         # ⤷ in_stream has to be disabled to avoid trouble with pytest
-        self.writer["hostname"] = "".join(
+        self.writer.store_hostname("".join(
             x for x in res.stdout if x.isprintable()
-        ).strip()
+        ).strip())
         self.writer.store_config(self.cfg.virtual_harvester.dict())
         # TODO: restore to .cfg.dict() -> fails for yaml-repr of path
         self.writer.start_monitors(self.cfg.sys_logging)

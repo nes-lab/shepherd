@@ -37,7 +37,7 @@ def src_cfg() -> VirtualSourceConfig:
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "record_example.h5"
     with Writer(store_path, cal_data=CalibrationCape().harvester) as store:
-        store["hostname"] = "Inky"
+        store.store_hostname("Inky")
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)
@@ -73,6 +73,7 @@ def emulator(
     cfg_emu = EmulationTask(
         input_path=data_h5,
         virtual_source=src_cfg,
+        verbose=3,
     )
     emu = ShepherdEmulator(cfg_emu)
     request.addfinalizer(emu.__del__)
@@ -117,6 +118,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up) -> None:
         pwr_port="A",
         voltage_aux=2.5,
         virtual_source=VirtualSourceConfig(name="direct"),
+        verbose=3,
     )
     run_emulator(emu_cfg)
 

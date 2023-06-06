@@ -37,6 +37,7 @@ if __name__ == "__main__":
         virtual_source=VirtualSourceConfig(name="BQ25570s"),
         power_tracing=None,
         gpio_tracing=None,
+        verbose=3,
     )
     run_emulator(emu1)
 
@@ -47,5 +48,6 @@ if __name__ == "__main__":
         duration=duration,
         force_overwrite=True,
         virtual_source=VirtualSourceConfig(name="BQ25570s"),
+        verbose=3,
     )
     run_emulator(emu2)

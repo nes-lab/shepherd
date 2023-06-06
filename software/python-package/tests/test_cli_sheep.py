@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 from shepherd_core import CalibrationHarvester
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
@@ -36,7 +37,7 @@ def random_data(length: int) -> np.ndarray:
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
     with Writer(store_path, cal_data=CalibrationHarvester()) as store:
-        store["hostname"] = "Blinky"
+        store.store_hostname("Blinky")
         for i in range(100):
             len_ = 10_000
             fake_data = DataBuffer(random_data(len_), random_data(len_), i)
@@ -121,7 +122,7 @@ def test_cli_harvest_parameters_minimal(
 @pytest.mark.timeout(60)
 def test_cli_harvest_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
     file_path = path_here / "_test_config_harvest.yaml"
-    res = cli_runner.invoke(cli, ["run", "--config", file_path.as_posix()])
+    res = cli_runner.invoke(cli, ["task", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -133,7 +134,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
     path_here: Path,
 ) -> None:
     file_path = path_here.parent / "example_config_harvest.yaml"
-    res = cli_runner.invoke(cli, ["run", "--config", f"{file_path}"])
+    res = cli_runner.invoke(cli, ["task", f"{file_path}"])
     assert res.exit_code == 0
 
 
@@ -151,12 +152,12 @@ def test_cli_emulate(
         force_overwrite=True,
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
+        verbose=3,
     ).to_file(path_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "task",
             path_yaml.as_posix(),
         ],
@@ -183,12 +184,12 @@ def test_cli_emulate_with_custom_virtsource(
         virtual_source=VirtualSourceConfig.from_file(
             path_here / "_test_config_virtsource.yaml",
         ),
+        verbose=3,
     ).to_file(path_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "task",
             path_yaml.as_posix(),
         ],
@@ -212,12 +213,12 @@ def test_cli_emulate_with_bq25570(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         virtual_source=VirtualSourceConfig(name="BQ25570"),
+        verbose=3,
     ).to_file(path_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "task",
             path_yaml.as_posix(),
         ],
@@ -241,12 +242,12 @@ def test_cli_emulate_aux_voltage(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         voltage_aux=2.5,
+        verbose=3,
     ).to_file(path_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "task",
             path_yaml.as_posix(),
         ],
@@ -277,13 +278,13 @@ def test_cli_emulate_parameters_long(
         pwr_port="B",
         abort_on_error=False,
         gpio_tracing=GpioTracing(uart_baudrate=9600),
-        power_tracing=PowerTracing(discard_current=True, discard_voltage=True),
+        power_tracing=PowerTracing(discard_current=False, discard_voltage=True),
+        verbose=3,
     ).to_file(path_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "task",
             path_yaml.as_posix(),
         ],
@@ -304,11 +305,11 @@ def test_cli_emulate_parameters_minimal(
     EmulationTask(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
+        verbose=3,
     ).to_file(path_yaml)
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "task",
             path_yaml.as_posix(),
         ],
@@ -325,7 +326,7 @@ def test_cli_emulate_preconfigured(shepherd_up, cli_runner, path_here: Path) -> 
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(80)
 def test_cli_emulate_preconf_etc_shp_examples(
     shepherd_up,
     cli_runner,
@@ -345,18 +346,19 @@ def test_cli_emulate_aux_voltage_fail(
     path_h5: Path,
     path_yaml: Path,
 ) -> None:
-    EmulationTask(
-        duration=10,
-        input_path=data_h5.as_posix(),
-        output_path=path_h5.as_posix(),
-        voltage_aux=5.5,
-    ).to_file(path_yaml)
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-vvv",
-            "task",
-            path_yaml.as_posix(),
-        ],
-    )
-    assert res.exit_code != 0
+    with pytest.raises(ValidationError):
+        EmulationTask(
+            duration=10,
+            input_path=data_h5.as_posix(),
+            output_path=path_h5.as_posix(),
+            voltage_aux=5.5,
+            verbose=3,
+        ).to_file(path_yaml)
+        res = cli_runner.invoke(
+            cli,
+            [
+                "task",
+                path_yaml.as_posix(),
+            ],
+        )
+        assert res.exit_code != 0

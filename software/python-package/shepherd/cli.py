@@ -225,6 +225,9 @@ def task(config: Union[Path, ShpModel]):
         raise ValueError("had unknown task: %s", shp_wrap.datatype)
 
     for element in content:
+        if hasattr(element, "verbose") and isinstance(element.verbose, int):
+            set_verbose_level(element.verbose)
+
         if isinstance(element, EmulationTask):
             run_emulator(element)
         elif isinstance(element, HarvestTask):

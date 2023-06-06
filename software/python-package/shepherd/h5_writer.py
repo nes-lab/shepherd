@@ -30,6 +30,7 @@ from shepherd_core import CalibrationSeries as CalSeries
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression
+from shepherd_core.data_models.task.emulation import c_translate
 
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .commons import MAX_GPIO_EVT_PER_BUFFER
@@ -82,6 +83,9 @@ class Writer(BaseWriter):
         # hopefully overwrite defaults from Reader
         self.samples_per_buffer: int = samples_per_buffer  # TODO: test
         self.samplerate_sps: int = samplerate_sps
+
+        if compression is None:  # TODO: temp fix for core <= 23.06.03
+            compression = Compression.null
 
         # TODO: derive verbose-state
         super().__init__(
