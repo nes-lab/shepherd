@@ -1,7 +1,11 @@
-[submodule "software/shepherd-datalib"]
+[submodule "datalib"]
 	path = software/shepherd-datalib
 	url = https://github.com/orgua/shepherd-datalib.git
 
-[submodule "software/shepherd-webservice"]
+[submodule "webservice"]
 	path = software/shepherd-webservice
 	url = https://github.com/orgua/shepherd_webservice.git
+
+[submodule "targets"]
+	path = software/shepherd-targets
+	url = https://github.com/orgua/shepherd-targets.git
