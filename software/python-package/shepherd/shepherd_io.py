@@ -224,8 +224,9 @@ class ShepherdIO:
         self.mem_size = sfs.get_mem_size()
 
         log.debug(
-            "Shared memory address: \t0x%08X, size: %d byte",
-            self.mem_address,
+            "Shared memory address: \t%s, size: %d byte",
+            f"0x{self.mem_address:08X}",
+            # ⤷ not directly in message because of colorizer
             self.mem_size,
         )
 

@@ -210,10 +210,11 @@ class SharedMemory:
         )
         if verbose:
             log.debug(
-                "Retrieved buffer #%d  (@+0x%06X) "
+                "Retrieved buffer #%d  (@+%s) "
                 "with len %d and timestamp %d ms @%.3f sys_ts",
                 index,
-                index * self.buffer_size,
+                f"0x{(index * self.buffer_size):06X}",
+                # ⤷ not directly in message because of colorizer
                 n_samples,
                 buffer_timestamp // 1000000,
                 time.time(),

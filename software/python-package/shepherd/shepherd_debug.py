@@ -2,6 +2,7 @@ import time
 from typing import NoReturn
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import msgpack
 import msgpack_numpy
@@ -300,7 +301,10 @@ class ShepherdDebug(ShepherdIO):
     def set_shepherd_pcb_power(self, state: bool) -> None:
         super().set_shepherd_pcb_power(state)
 
-    def select_port_for_power_tracking(self, target: TargetPort) -> None:
+    def select_port_for_power_tracking(
+        self,
+        target: Union[TargetPort, bool, None],
+    ) -> None:
         super().select_port_for_power_tracking(target)
 
     def select_port_for_io_interface(self, target: TargetPort) -> None:

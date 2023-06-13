@@ -78,7 +78,9 @@ def run_emulator(cfg: EmulationTask) -> None:
 
 def run_programmer(cfg: ProgrammingTask):
     with ShepherdDebug(use_io=False) as sd:
-        sd.select_port_for_power_tracking(cfg.target_port)
+        sd.select_port_for_power_tracking(
+            not sd.convert_target_port_to_bool(cfg.target_port),
+        )
         sd.set_power_state_emulator(True)
         sd.select_port_for_io_interface(cfg.target_port)
         sd.set_io_level_converter(True)

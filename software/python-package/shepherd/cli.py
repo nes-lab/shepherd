@@ -121,25 +121,28 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     help="Route UART, Programmer-Pins and other GPIO to this target",
 )
 @click.option(
-    "--sel_a/--sel_b",
-    default=True,
-    help="Choose (main)Target that gets connected to virtual Source",
+    "--target-port",
+    "-p",
+    type=click.Choice(["A", "B"]),
+    default="A",
+    help="Choose Target-Port of Cape for powering",
 )
-def target_power(on: bool, voltage: float, gpio_pass: bool, sel_a: bool):
+def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base
+    a_is_aux = "a" in target_port.lower()
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(on)
         log.info("Shepherd-State \t= %s", "enabled" if on else "disabled")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(not sel_a)  # switched because rail A is AUX
-        log.info("Select Target \t= %s", "A" if sel_a else "B")
+        pin.write(not a_is_aux)  # switched because rail A is AUX
+        log.info("Select Target \t= %s", "A" if a_is_aux else "B")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(sel_a)
+        pin.write(a_is_aux)
     for pin_name in ["target_io_en"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
         pin.write(gpio_pass)
