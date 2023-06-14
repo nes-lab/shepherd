@@ -36,7 +36,11 @@ def src_cfg() -> VirtualSourceConfig:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "record_example.h5"
-    with Writer(store_path, cal_data=CalibrationCape().harvester) as store:
+    with Writer(
+        store_path,
+        cal_data=CalibrationCape().harvester,
+        force_overwrite=True,
+    ) as store:
         store.store_hostname("Inky")
         for i in range(100):
             len_ = 10_000
@@ -87,7 +91,7 @@ def test_emulation(writer, shp_reader, emulator: ShepherdEmulator) -> None:
     emulator.start(wait_blocking=False)
     fifo_buffer_size = sysfs_interface.get_n_buffers()
     emulator.wait_for_start(15)
-    for _, dsv, dsc in shp_reader.read_buffers(start_n=fifo_buffer_size):
+    for _, dsv, dsc in shp_reader.read_buffers(start_n=fifo_buffer_size, is_raw=True):
         idx, emu_buf = emulator.get_buffer()
         writer.write_buffer(emu_buf)
         hrv_buf = DataBuffer(voltage=dsv, current=dsc)

@@ -36,7 +36,11 @@ def random_data(length: int) -> np.ndarray:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
-    with Writer(store_path, cal_data=CalibrationHarvester()) as store:
+    with Writer(
+        store_path,
+        cal_data=CalibrationHarvester(),
+        force_overwrite=True,
+    ) as store:
         store.store_hostname("Blinky")
         for i in range(100):
             len_ = 10_000

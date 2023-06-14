@@ -29,7 +29,7 @@ def src_cfg(request) -> VirtualSourceConfig:
             return VirtualSourceConfig.from_file(path)
         else:
             fixtures.load()
-            VirtualSourceConfig(name=src_name)
+            return VirtualSourceConfig(name=src_name)
     else:
         assert 0
 

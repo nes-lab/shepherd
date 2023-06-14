@@ -22,6 +22,7 @@ from .eeprom import CapeData
 from .h5_writer import Writer
 from .launcher import Launcher
 from .logger import log
+from .logger import set_verbose_level
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
@@ -61,6 +62,7 @@ def context_stack() -> ExitStack:
 
 
 def run_harvester(cfg: HarvestTask) -> None:
+    set_verbose_level(cfg.verbose)
     stack = context_stack()
     hrv = ShepherdHarvester(cfg=cfg)
     stack.enter_context(hrv)
@@ -69,6 +71,7 @@ def run_harvester(cfg: HarvestTask) -> None:
 
 
 def run_emulator(cfg: EmulationTask) -> None:
+    set_verbose_level(cfg.verbose)
     stack = context_stack()
     emu = ShepherdEmulator(cfg=cfg)
     stack.enter_context(emu)
@@ -77,6 +80,7 @@ def run_emulator(cfg: EmulationTask) -> None:
 
 
 def run_programmer(cfg: ProgrammingTask):
+    set_verbose_level(cfg.verbose)
     with ShepherdDebug(use_io=False) as sd:
         sd.select_port_for_power_tracking(
             not sd.convert_target_port_to_bool(cfg.target_port),

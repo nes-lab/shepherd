@@ -162,7 +162,10 @@ class ShepherdEmulator(ShepherdIO):
         time.sleep(1)
         init_buffers = [
             DataBuffer(voltage=dsv, current=dsc)
-            for _, dsv, dsc in self.reader.read_buffers(end_n=self.fifo_buffer_size)
+            for _, dsv, dsc in self.reader.read_buffers(
+                end_n=self.fifo_buffer_size,
+                is_raw=True,
+            )
         ]
         for idx, buffer in enumerate(init_buffers):
             self.return_buffer(idx, buffer, verbose=True)
@@ -199,10 +202,15 @@ class ShepherdEmulator(ShepherdIO):
         if self.cfg.duration is None:
             ts_end = sys.float_info.max
         else:
-            ts_end = self.start_time + self.cfg.duration.total_seconds()
+            duration_s = self.cfg.duration.total_seconds()
+            ts_end = self.start_time + duration_s
+            log.debug("Duration = %s (forced runtime)", duration_s)
 
         # Main Loop
-        for _, dsv, dsc in self.reader.read_buffers(start_n=self.fifo_buffer_size):
+        for _, dsv, dsc in self.reader.read_buffers(
+            start_n=self.fifo_buffer_size,
+            is_raw=True,
+        ):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose)
             except ShepherdIOException as e:

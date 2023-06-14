@@ -18,7 +18,7 @@ def mode(request) -> str:
 
 
 @pytest.fixture()
-def log_writer(tmp_path: Path, mode: str):
+def writer(tmp_path: Path, mode: str):
     with Writer(
         mode=mode,
         cal_data=CalibrationHarvester(),

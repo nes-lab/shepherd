@@ -142,7 +142,9 @@ class ShepherdHarvester(ShepherdIO):
         if self.cfg.duration is None:
             ts_end = sys.float_info.max
         else:
-            ts_end = self.start_time + self.cfg.duration.total_seconds()
+            duration_s = self.cfg.duration.total_seconds()
+            ts_end = self.start_time + duration_s
+            log.debug("Duration = %s (forced runtime)", duration_s)
 
         while True:
             try:

@@ -13,4 +13,6 @@ def get_verbose_level() -> int:
 
 
 def set_verbose_level(verbose: int) -> None:
+    global verbose_level
+    verbose_level = min(max(verbose, 0), 3)
     set_log_verbose_level(log, verbose)
