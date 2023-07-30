@@ -54,8 +54,8 @@
 #endif
 
 struct pru_irq_rsc my_irq_rsc = {
-        0,                                      /* type = 0 */
-        1,                                      /* number of system events being mapped */
+        0, /* type = 0 */
+        1, /* number of system events being mapped */
         {
                 {HOST_PRU_EVT_TIMESTAMP, 0, 0}, /* {sysevt, channel, host interrupt} */
         },

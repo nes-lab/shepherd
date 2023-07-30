@@ -84,7 +84,7 @@ uint32_t sys_adc_readwrite(const uint32_t cs_pin, const uint32_t val)
 {
     // TODO: follow chapter 24.3.11.3
     // just a proof of concept
-    SYS_SPI.CH0CTRL_bit.EN = 0;            // enables the channel
+    SYS_SPI.CH0CTRL_bit.EN = 0; // enables the channel
     GPIO_ON(cs_pin);
     SYS_SPI.TX0             = val;         // page4944, if empty CH0STAT.TXS is set
     const uint32_t rx_value = SYS_SPI.RX0; // if full CH0STAT.RXS is set

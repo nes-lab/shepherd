@@ -265,9 +265,9 @@ struct HarvesterConfig // TODO: should get canary
     uint32_t voltage_step_uV;  // for window-based algo like ivcurve
     uint32_t current_limit_nA; // lower bound to detect zero current
     uint32_t setpoint_n8;
-    uint32_t interval_n;       // between measurements
-    uint32_t duration_n;       // of measurement
-    uint32_t wait_cycles_n;    // for DAC to settle
+    uint32_t interval_n;    // between measurements
+    uint32_t duration_n;    // of measurement
+    uint32_t wait_cycles_n; // for DAC to settle
 } __attribute__((packed));
 
 /* Format of Message-Protocol between PRUs & Kernel Module */

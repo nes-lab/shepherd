@@ -48,7 +48,7 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     cfg                = config;
     voltage_set_uV     = cfg->voltage_uV + 1u; // deliberately off for cv-version
     settle_steps       = 0u;
-    interval_step      = 1u << 30u;            // deliberately out of bounds
+    interval_step      = 1u << 30u; // deliberately out of bounds
 
     // TODO: hrv_mode-bit0 is "emulation"-detector
     is_rising          = (cfg->hrv_mode >> 1u) & 1u;

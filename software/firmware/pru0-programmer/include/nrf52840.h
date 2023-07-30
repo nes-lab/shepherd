@@ -237,7 +237,7 @@ typedef struct
     uint32_t POWERCLR; /*!< (@ 0x00000008) Description cluster: RAMn power control
                         clear register */
     uint32_t RESERVED;
-} POWER_RAM_Type;      /*!< Size = 16 (0x10) */
+} POWER_RAM_Type; /*!< Size = 16 (0x10) */
 
 /**
  * @brief UART_PSEL [PSEL] (Unspecified)
@@ -542,7 +542,7 @@ typedef struct
     uint32_t ENDDELAY; /*!< (@ 0x0000000C) Description cluster: Time added after
                         the sequence         */
     uint32_t RESERVED[4];
-} PWM_SEQ_Type;        /*!< Size = 32 (0x20) */
+} PWM_SEQ_Type; /*!< Size = 32 (0x20) */
 
 /**
  * @brief PWM_PSEL [PSEL] (Unspecified)
@@ -587,7 +587,7 @@ typedef struct
                     region n as defined by start address ACL[n].ADDR and size
                     ACL[n].SIZE                                       */
     uint32_t RESERVED;
-} ACL_ACL_Type;    /*!< Size = 16 (0x10) */
+} ACL_ACL_Type; /*!< Size = 16 (0x10) */
 
 /**
  * @brief PPI_TASKS_CHG [TASKS_CHG] (Channel group tasks)
@@ -664,7 +664,7 @@ typedef struct
                                        n */
     uint32_t END;   /*!< (@ 0x00000004) Description cluster: End address of region n */
     uint32_t RESERVED[2];
-} MWU_REGION_Type;  /*!< Size = 16 (0x10) */
+} MWU_REGION_Type; /*!< Size = 16 (0x10) */
 
 /**
  * @brief MWU_PREGION [PREGION] (Unspecified)
@@ -736,7 +736,7 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t EPIN[8];  /*!< (@ 0x00000000) Description collection: IN endpoint
+    uint32_t EPIN[8]; /*!< (@ 0x00000000) Description collection: IN endpoint
                        halted status. Can be used as is as response to a
                        GetStatus() request to endpoint. */
     uint32_t RESERVED;
@@ -767,7 +767,7 @@ typedef struct
     uint32_t AMOUNT; /*!< (@ 0x00000008) Description cluster: Number of bytes
                       transferred in the last transaction */
     uint32_t RESERVED[2];
-} USBD_EPIN_Type;    /*!< Size = 20 (0x14) */
+} USBD_EPIN_Type; /*!< Size = 20 (0x14) */
 
 /**
  * @brief USBD_ISOIN [ISOIN] (Unspecified)
@@ -791,7 +791,7 @@ typedef struct
     uint32_t AMOUNT; /*!< (@ 0x00000008) Description cluster: Number of bytes
                       transferred in the last transaction */
     uint32_t RESERVED[2];
-} USBD_EPOUT_Type;   /*!< Size = 20 (0x14) */
+} USBD_EPOUT_Type; /*!< Size = 20 (0x14) */
 
 /**
  * @brief USBD_ISOOUT [ISOOUT] (Unspecified)
@@ -847,7 +847,7 @@ typedef struct
     uint32_t IO3; /*!< (@ 0x00000018) Pin select for serial data IO3.   */
 } QSPI_PSEL_Type; /*!< Size = 28 (0x1c) */
 
-/** @} */         /* End of group Device_Peripheral_clusters */
+/** @} */ /* End of group Device_Peripheral_clusters */
 
 /* ===========================================================================================================================
  */
@@ -872,12 +872,12 @@ typedef struct
  */
 
 typedef struct
-{                                   /*!< (@ 0x10000000) FICR Structure */
+{ /*!< (@ 0x10000000) FICR Structure */
     uint32_t          RESERVED[4];
     uint32_t          CODEPAGESIZE; /*!< (@ 0x00000010) Code memory page size */
     uint32_t          CODESIZE;     /*!< (@ 0x00000014) Code memory size     */
     uint32_t          RESERVED1[18];
-    uint32_t          DEVICEID[2];  /*!< (@ 0x00000060) Description collection: Device
+    uint32_t          DEVICEID[2]; /*!< (@ 0x00000060) Description collection: Device
                            identifier                  */
     uint32_t          RESERVED2[6];
     uint32_t          ER[4]; /*!< (@ 0x00000080) Description collection: Encryption root, word
@@ -888,19 +888,19 @@ typedef struct
     uint32_t          DEVICEADDR[2];  /*!< (@ 0x000000A4) Description collection: Device
                               address n                   */
     uint32_t          RESERVED3[21];
-    FICR_INFO_Type    INFO;           /*!< (@ 0x00000100) Device info */
+    FICR_INFO_Type    INFO; /*!< (@ 0x00000100) Device info */
     uint32_t          RESERVED4[143];
-    uint32_t          PRODTEST[3];    /*!< (@ 0x00000350) Description collection: Production
+    uint32_t          PRODTEST[3]; /*!< (@ 0x00000350) Description collection: Production
                            test signature
                                                  n */
     uint32_t          RESERVED5[42];
-    FICR_TEMP_Type    TEMP;           /*!< (@ 0x00000404) Registers storing factory TEMP module
+    FICR_TEMP_Type    TEMP; /*!< (@ 0x00000404) Registers storing factory TEMP module
                           linearization coefficients */
     uint32_t          RESERVED6[2];
-    FICR_NFC_Type     NFC;            /*!< (@ 0x00000450) Unspecified */
+    FICR_NFC_Type     NFC; /*!< (@ 0x00000450) Unspecified */
     uint32_t          RESERVED7[488];
-    FICR_TRNG90B_Type TRNG90B;        /*!< (@ 0x00000C00) NIST800-90B RNG calibration data   */
-} NRF_FICR_Type;                      /*!< Size = 3104 (0xc20) */
+    FICR_TRNG90B_Type TRNG90B; /*!< (@ 0x00000C00) NIST800-90B RNG calibration data   */
+} NRF_FICR_Type;               /*!< Size = 3104 (0xc20) */
 
 /* ===========================================================================================================================
  */
@@ -914,9 +914,9 @@ typedef struct
  */
 
 typedef struct
-{                          /*!< (@ 0x10001000) UICR Structure */
+{ /*!< (@ 0x10001000) UICR Structure */
     uint32_t RESERVED[5];
-    uint32_t NRFFW[13];    /*!< (@ 0x00000014) Description collection: Reserved for
+    uint32_t NRFFW[13]; /*!< (@ 0x00000014) Description collection: Reserved for
                          Nordic firmware design */
     uint32_t RESERVED1[2];
     uint32_t NRFHW[12];    /*!< (@ 0x00000050) Description collection: Reserved for
@@ -931,9 +931,9 @@ typedef struct
                          functionality:   NFC antenna or GPIO   */
     uint32_t DEBUGCTRL;    /*!< (@ 0x00000210) Processor debug control */
     uint32_t RESERVED3[60];
-    uint32_t REGOUT0;      /*!< (@ 0x00000304) GPIO reference voltage / external output
+    uint32_t REGOUT0; /*!< (@ 0x00000304) GPIO reference voltage / external output
                        supply voltage in high voltage mode */
-} NRF_UICR_Type;           /*!< Size = 776 (0x308)    */
+} NRF_UICR_Type;      /*!< Size = 776 (0x308)    */
 
 /* ===========================================================================================================================
  */
@@ -947,52 +947,52 @@ typedef struct
  */
 
 typedef struct
-{                                 /*!< (@ 0x40000000) CLOCK Structure */
-    uint32_t TASKS_HFCLKSTART;    /*!< (@ 0x00000000) Start HFXO crystal oscillator */
-    uint32_t TASKS_HFCLKSTOP;     /*!< (@ 0x00000004) Stop HFXO crystal oscillator       */
-    uint32_t TASKS_LFCLKSTART;    /*!< (@ 0x00000008) Start LFCLK */
-    uint32_t TASKS_LFCLKSTOP;     /*!< (@ 0x0000000C) Stop LFCLK  */
-    uint32_t TASKS_CAL;           /*!< (@ 0x00000010) Start calibration of LFRC        */
-    uint32_t TASKS_CTSTART;       /*!< (@ 0x00000014) Start calibration timer    */
-    uint32_t TASKS_CTSTOP;        /*!< (@ 0x00000018) Stop calibration timer     */
+{                              /*!< (@ 0x40000000) CLOCK Structure */
+    uint32_t TASKS_HFCLKSTART; /*!< (@ 0x00000000) Start HFXO crystal oscillator */
+    uint32_t TASKS_HFCLKSTOP;  /*!< (@ 0x00000004) Stop HFXO crystal oscillator       */
+    uint32_t TASKS_LFCLKSTART; /*!< (@ 0x00000008) Start LFCLK */
+    uint32_t TASKS_LFCLKSTOP;  /*!< (@ 0x0000000C) Stop LFCLK  */
+    uint32_t TASKS_CAL;        /*!< (@ 0x00000010) Start calibration of LFRC        */
+    uint32_t TASKS_CTSTART;    /*!< (@ 0x00000014) Start calibration timer    */
+    uint32_t TASKS_CTSTOP;     /*!< (@ 0x00000018) Stop calibration timer     */
     uint32_t RESERVED[57];
     uint32_t EVENTS_HFCLKSTARTED; /*!< (@ 0x00000100) HFXO crystal oscillator
                                    started                            */
     uint32_t EVENTS_LFCLKSTARTED; /*!< (@ 0x00000104) LFCLK started */
     uint32_t RESERVED1;
-    uint32_t EVENTS_DONE;         /*!< (@ 0x0000010C) Calibration of LFRC completed */
-    uint32_t EVENTS_CTTO;         /*!< (@ 0x00000110) Calibration timer timeout */
+    uint32_t EVENTS_DONE; /*!< (@ 0x0000010C) Calibration of LFRC completed */
+    uint32_t EVENTS_CTTO; /*!< (@ 0x00000110) Calibration timer timeout */
     uint32_t RESERVED2[5];
-    uint32_t EVENTS_CTSTARTED;    /*!< (@ 0x00000128) Calibration timer has been
+    uint32_t EVENTS_CTSTARTED; /*!< (@ 0x00000128) Calibration timer has been
                                 started and is ready to process new tasks */
-    uint32_t EVENTS_CTSTOPPED;    /*!< (@ 0x0000012C) Calibration timer has been
+    uint32_t EVENTS_CTSTOPPED; /*!< (@ 0x0000012C) Calibration timer has been
                                 stopped and is ready to process new tasks */
     uint32_t RESERVED3[117];
-    uint32_t INTENSET;            /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;            /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED4[63];
-    uint32_t HFCLKRUN;            /*!< (@ 0x00000408) Status indicating that HFCLKSTART task
+    uint32_t HFCLKRUN;  /*!< (@ 0x00000408) Status indicating that HFCLKSTART task
                          has been  triggered  */
-    uint32_t HFCLKSTAT;           /*!< (@ 0x0000040C) HFCLK status */
+    uint32_t HFCLKSTAT; /*!< (@ 0x0000040C) HFCLK status */
     uint32_t RESERVED5;
-    uint32_t LFCLKRUN;            /*!< (@ 0x00000414) Status indicating that LFCLKSTART task
+    uint32_t LFCLKRUN;     /*!< (@ 0x00000414) Status indicating that LFCLKSTART task
                          has been  triggered  */
-    uint32_t LFCLKSTAT;           /*!< (@ 0x00000418) LFCLK status */
-    uint32_t LFCLKSRCCOPY;        /*!< (@ 0x0000041C) Copy of LFCLKSRC register, set when
+    uint32_t LFCLKSTAT;    /*!< (@ 0x00000418) LFCLK status */
+    uint32_t LFCLKSRCCOPY; /*!< (@ 0x0000041C) Copy of LFCLKSRC register, set when
                             LFCLKSTART task was triggered */
     uint32_t RESERVED6[62];
-    uint32_t LFCLKSRC;            /*!< (@ 0x00000518) Clock source for the LFCLK */
+    uint32_t LFCLKSRC; /*!< (@ 0x00000518) Clock source for the LFCLK */
     uint32_t RESERVED7[3];
-    uint32_t HFXODEBOUNCE;        /*!< (@ 0x00000528) HFXO debounce time. The HFXO is started
+    uint32_t HFXODEBOUNCE; /*!< (@ 0x00000528) HFXO debounce time. The HFXO is started
                        by triggering the TASKS_HFCLKSTART task. */
     uint32_t RESERVED8[3];
-    uint32_t CTIV;                /*!< (@ 0x00000538) Calibration timer interval */
+    uint32_t CTIV; /*!< (@ 0x00000538) Calibration timer interval */
     uint32_t RESERVED9[8];
-    uint32_t TRACECONFIG;         /*!< (@ 0x0000055C) Clocking options for the trace port
+    uint32_t TRACECONFIG; /*!< (@ 0x0000055C) Clocking options for the trace port
                            debug interface        */
     uint32_t RESERVED10[21];
-    uint32_t LFRCMODE;            /*!< (@ 0x000005B4) LFRC mode configuration */
-} NRF_CLOCK_Type;                 /*!< Size = 1464 (0x5b8)    */
+    uint32_t LFRCMODE; /*!< (@ 0x000005B4) LFRC mode configuration */
+} NRF_CLOCK_Type;      /*!< Size = 1464 (0x5b8)    */
 
 /* ===========================================================================================================================
  */
@@ -1006,13 +1006,13 @@ typedef struct
  */
 
 typedef struct
-{                                      /*!< (@ 0x40000000) POWER Structure */
+{ /*!< (@ 0x40000000) POWER Structure */
     uint32_t       RESERVED[30];
-    uint32_t       TASKS_CONSTLAT;     /*!< (@ 0x00000078) Enable Constant Latency mode */
-    uint32_t       TASKS_LOWPWR;       /*!< (@ 0x0000007C) Enable Low-power mode (variable
+    uint32_t       TASKS_CONSTLAT; /*!< (@ 0x00000078) Enable Constant Latency mode */
+    uint32_t       TASKS_LOWPWR;   /*!< (@ 0x0000007C) Enable Low-power mode (variable
                               latency)                   */
     uint32_t       RESERVED1[34];
-    uint32_t       EVENTS_POFWARN;     /*!< (@ 0x00000108) Power failure warning */
+    uint32_t       EVENTS_POFWARN; /*!< (@ 0x00000108) Power failure warning */
     uint32_t       RESERVED2[2];
     uint32_t       EVENTS_SLEEPENTER;  /*!< (@ 0x00000114) CPU entered WFI/WFE sleep  */
     uint32_t       EVENTS_SLEEPEXIT;   /*!< (@ 0x00000118) CPU exited WFI/WFE sleep   */
@@ -1022,31 +1022,31 @@ typedef struct
                                   VBUS                           */
     uint32_t       EVENTS_USBPWRRDY;   /*!< (@ 0x00000124) USB 3.3 V supply ready   */
     uint32_t       RESERVED3[119];
-    uint32_t       INTENSET;           /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t       INTENCLR;           /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t       INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t       INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t       RESERVED4[61];
-    uint32_t       RESETREAS;          /*!< (@ 0x00000400) Reset reason */
+    uint32_t       RESETREAS; /*!< (@ 0x00000400) Reset reason */
     uint32_t       RESERVED5[9];
-    uint32_t       RAMSTATUS;          /*!< (@ 0x00000428) Deprecated register - RAM status
+    uint32_t       RAMSTATUS; /*!< (@ 0x00000428) Deprecated register - RAM status
                          register                  */
     uint32_t       RESERVED6[3];
-    uint32_t       USBREGSTATUS;       /*!< (@ 0x00000438) USB supply status */
+    uint32_t       USBREGSTATUS; /*!< (@ 0x00000438) USB supply status */
     uint32_t       RESERVED7[49];
-    uint32_t       SYSTEMOFF;          /*!< (@ 0x00000500) System OFF register */
+    uint32_t       SYSTEMOFF; /*!< (@ 0x00000500) System OFF register */
     uint32_t       RESERVED8[3];
-    uint32_t       POFCON;             /*!< (@ 0x00000510) Power-fail comparator configuration */
+    uint32_t       POFCON; /*!< (@ 0x00000510) Power-fail comparator configuration */
     uint32_t       RESERVED9[2];
-    uint32_t       GPREGRET;           /*!< (@ 0x0000051C) General purpose retention register */
-    uint32_t       GPREGRET2;          /*!< (@ 0x00000520) General purpose retention register */
+    uint32_t       GPREGRET;  /*!< (@ 0x0000051C) General purpose retention register */
+    uint32_t       GPREGRET2; /*!< (@ 0x00000520) General purpose retention register */
     uint32_t       RESERVED10[21];
-    uint32_t       DCDCEN;             /*!< (@ 0x00000578) Enable DC/DC converter for REG1 stage */
+    uint32_t       DCDCEN; /*!< (@ 0x00000578) Enable DC/DC converter for REG1 stage */
     uint32_t       RESERVED11;
-    uint32_t       DCDCEN0;            /*!< (@ 0x00000580) Enable DC/DC converter for REG0 stage */
+    uint32_t       DCDCEN0; /*!< (@ 0x00000580) Enable DC/DC converter for REG0 stage */
     uint32_t       RESERVED12[47];
-    uint32_t       MAINREGSTATUS;      /*!< (@ 0x00000640) Main supply status */
+    uint32_t       MAINREGSTATUS; /*!< (@ 0x00000640) Main supply status */
     uint32_t       RESERVED13[175];
-    POWER_RAM_Type RAM[9];             /*!< (@ 0x00000900) Unspecified */
-} NRF_POWER_Type;                      /*!< Size = 2448 (0x990)        */
+    POWER_RAM_Type RAM[9]; /*!< (@ 0x00000900) Unspecified */
+} NRF_POWER_Type;          /*!< Size = 2448 (0x990)        */
 
 /* ===========================================================================================================================
  */
@@ -1060,19 +1060,19 @@ typedef struct
  */
 
 typedef struct
-{                         /*!< (@ 0x50000000) P0 Structure */
+{ /*!< (@ 0x50000000) P0 Structure */
     uint32_t RESERVED[321];
-    uint32_t OUT;         /*!< (@ 0x00000504) Write GPIO port    */
-    uint32_t OUTSET;      /*!< (@ 0x00000508) Set individual bits in GPIO port */
-    uint32_t OUTCLR;      /*!< (@ 0x0000050C) Clear individual bits in GPIO port */
-    uint32_t IN;          /*!< (@ 0x00000510) Read GPIO port     */
-    uint32_t DIR;         /*!< (@ 0x00000514) Direction of GPIO pins    */
-    uint32_t DIRSET;      /*!< (@ 0x00000518) DIR set register */
-    uint32_t DIRCLR;      /*!< (@ 0x0000051C) DIR clear register */
-    uint32_t LATCH;       /*!< (@ 0x00000520) Latch register indicating what GPIO pins
+    uint32_t OUT;        /*!< (@ 0x00000504) Write GPIO port    */
+    uint32_t OUTSET;     /*!< (@ 0x00000508) Set individual bits in GPIO port */
+    uint32_t OUTCLR;     /*!< (@ 0x0000050C) Clear individual bits in GPIO port */
+    uint32_t IN;         /*!< (@ 0x00000510) Read GPIO port     */
+    uint32_t DIR;        /*!< (@ 0x00000514) Direction of GPIO pins    */
+    uint32_t DIRSET;     /*!< (@ 0x00000518) DIR set register */
+    uint32_t DIRCLR;     /*!< (@ 0x0000051C) DIR clear register */
+    uint32_t LATCH;      /*!< (@ 0x00000520) Latch register indicating what GPIO pins
                       that  have met the criteria set in the PIN_CNF[n].SENSE
                                              registers  */
-    uint32_t DETECTMODE;  /*!< (@ 0x00000524) Select between default DETECT signal
+    uint32_t DETECTMODE; /*!< (@ 0x00000524) Select between default DETECT signal
                           behavior and LDETECT mode */
     uint32_t RESERVED1[118];
     uint32_t PIN_CNF[32]; /*!< (@ 0x00000700) Description collection:
@@ -1091,38 +1091,38 @@ typedef struct
  */
 
 typedef struct
-{                               /*!< (@ 0x40001000) RADIO Structure            */
-    uint32_t TASKS_TXEN;        /*!< (@ 0x00000000) Enable RADIO in TX mode      */
-    uint32_t TASKS_RXEN;        /*!< (@ 0x00000004) Enable RADIO in RX mode      */
-    uint32_t TASKS_START;       /*!< (@ 0x00000008) Start RADIO     */
-    uint32_t TASKS_STOP;        /*!< (@ 0x0000000C) Stop RADIO      */
-    uint32_t TASKS_DISABLE;     /*!< (@ 0x00000010) Disable RADIO   */
-    uint32_t TASKS_RSSISTART;   /*!< (@ 0x00000014) Start the RSSI and take one
+{                             /*!< (@ 0x40001000) RADIO Structure            */
+    uint32_t TASKS_TXEN;      /*!< (@ 0x00000000) Enable RADIO in TX mode      */
+    uint32_t TASKS_RXEN;      /*!< (@ 0x00000004) Enable RADIO in RX mode      */
+    uint32_t TASKS_START;     /*!< (@ 0x00000008) Start RADIO     */
+    uint32_t TASKS_STOP;      /*!< (@ 0x0000000C) Stop RADIO      */
+    uint32_t TASKS_DISABLE;   /*!< (@ 0x00000010) Disable RADIO   */
+    uint32_t TASKS_RSSISTART; /*!< (@ 0x00000014) Start the RSSI and take one
                                single sample of the receive signal strength */
-    uint32_t TASKS_RSSISTOP;    /*!< (@ 0x00000018) Stop the RSSI measurement  */
-    uint32_t TASKS_BCSTART;     /*!< (@ 0x0000001C) Start the bit counter   */
-    uint32_t TASKS_BCSTOP;      /*!< (@ 0x00000020) Stop the bit counter    */
-    uint32_t TASKS_EDSTART;     /*!< (@ 0x00000024) Start the energy detect
+    uint32_t TASKS_RSSISTOP;  /*!< (@ 0x00000018) Stop the RSSI measurement  */
+    uint32_t TASKS_BCSTART;   /*!< (@ 0x0000001C) Start the bit counter   */
+    uint32_t TASKS_BCSTOP;    /*!< (@ 0x00000020) Stop the bit counter    */
+    uint32_t TASKS_EDSTART;   /*!< (@ 0x00000024) Start the energy detect
                                measurement used in IEEE   802.15.4 mode   */
-    uint32_t TASKS_EDSTOP;      /*!< (@ 0x00000028) Stop the energy detect measurement */
-    uint32_t TASKS_CCASTART;    /*!< (@ 0x0000002C) Start the clear channel
+    uint32_t TASKS_EDSTOP;    /*!< (@ 0x00000028) Stop the energy detect measurement */
+    uint32_t TASKS_CCASTART;  /*!< (@ 0x0000002C) Start the clear channel
                               assessment used in IEEE 802.15.4 mode */
-    uint32_t TASKS_CCASTOP;     /*!< (@ 0x00000030) Stop the clear channel assessment */
+    uint32_t TASKS_CCASTOP;   /*!< (@ 0x00000030) Stop the clear channel assessment */
     uint32_t RESERVED[51];
-    uint32_t EVENTS_READY;      /*!< (@ 0x00000100) RADIO has ramped up and is ready to
+    uint32_t EVENTS_READY;    /*!< (@ 0x00000100) RADIO has ramped up and is ready to
                             be started             */
-    uint32_t EVENTS_ADDRESS;    /*!< (@ 0x00000104) Address sent or received */
-    uint32_t EVENTS_PAYLOAD;    /*!< (@ 0x00000108) Packet payload sent or received  */
-    uint32_t EVENTS_END;        /*!< (@ 0x0000010C) Packet sent or received */
-    uint32_t EVENTS_DISABLED;   /*!< (@ 0x00000110) RADIO has been disabled */
-    uint32_t EVENTS_DEVMATCH;   /*!< (@ 0x00000114) A device address match occurred
+    uint32_t EVENTS_ADDRESS;  /*!< (@ 0x00000104) Address sent or received */
+    uint32_t EVENTS_PAYLOAD;  /*!< (@ 0x00000108) Packet payload sent or received  */
+    uint32_t EVENTS_END;      /*!< (@ 0x0000010C) Packet sent or received */
+    uint32_t EVENTS_DISABLED; /*!< (@ 0x00000110) RADIO has been disabled */
+    uint32_t EVENTS_DEVMATCH; /*!< (@ 0x00000114) A device address match occurred
                                on the last received packet */
-    uint32_t EVENTS_DEVMISS;    /*!< (@ 0x00000118) No device address match occurred
+    uint32_t EVENTS_DEVMISS;  /*!< (@ 0x00000118) No device address match occurred
                                on the last  received packet  */
-    uint32_t EVENTS_RSSIEND;    /*!< (@ 0x0000011C) Sampling of receive signal
+    uint32_t EVENTS_RSSIEND;  /*!< (@ 0x0000011C) Sampling of receive signal
                                strength complete               */
     uint32_t RESERVED1[2];
-    uint32_t EVENTS_BCMATCH;    /*!< (@ 0x00000128) Bit counter reached bit count
+    uint32_t EVENTS_BCMATCH; /*!< (@ 0x00000128) Bit counter reached bit count
                               value                        */
     uint32_t RESERVED2;
     uint32_t EVENTS_CRCOK;      /*!< (@ 0x00000130) Packet received with CRC ok */
@@ -1148,66 +1148,66 @@ typedef struct
                                to be started  RX path  */
     uint32_t EVENTS_MHRMATCH;   /*!< (@ 0x0000015C) MAC header match found */
     uint32_t RESERVED3[2];
-    uint32_t EVENTS_SYNC;       /*!< (@ 0x00000168) Preamble indicator.   */
-    uint32_t EVENTS_PHYEND;     /*!< (@ 0x0000016C) Generated in Ble_LR125Kbit,
+    uint32_t EVENTS_SYNC;   /*!< (@ 0x00000168) Preamble indicator.   */
+    uint32_t EVENTS_PHYEND; /*!< (@ 0x0000016C) Generated in Ble_LR125Kbit,
                              Ble_LR500Kbit and Ieee802154_250Kbit modes when
                              last bit is sent on air. */
     uint32_t RESERVED4[36];
-    uint32_t SHORTS;            /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t RESERVED5[64];
-    uint32_t INTENSET;          /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;          /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED6[61];
-    uint32_t CRCSTATUS;         /*!< (@ 0x00000400) CRC status */
+    uint32_t CRCSTATUS; /*!< (@ 0x00000400) CRC status */
     uint32_t RESERVED7;
-    uint32_t RXMATCH;           /*!< (@ 0x00000408) Received address */
-    uint32_t RXCRC;             /*!< (@ 0x0000040C) CRC field of previously received packet    */
-    uint32_t DAI;               /*!< (@ 0x00000410) Device address match index */
-    uint32_t PDUSTAT;           /*!< (@ 0x00000414) Payload status */
+    uint32_t RXMATCH; /*!< (@ 0x00000408) Received address */
+    uint32_t RXCRC;   /*!< (@ 0x0000040C) CRC field of previously received packet    */
+    uint32_t DAI;     /*!< (@ 0x00000410) Device address match index */
+    uint32_t PDUSTAT; /*!< (@ 0x00000414) Payload status */
     uint32_t RESERVED8[59];
-    uint32_t PACKETPTR;         /*!< (@ 0x00000504) Packet pointer */
-    uint32_t FREQUENCY;         /*!< (@ 0x00000508) Frequency */
-    uint32_t TXPOWER;           /*!< (@ 0x0000050C) Output power   */
-    uint32_t MODE;              /*!< (@ 0x00000510) Data rate and modulation      */
-    uint32_t PCNF0;             /*!< (@ 0x00000514) Packet configuration register 0     */
-    uint32_t PCNF1;             /*!< (@ 0x00000518) Packet configuration register 1     */
-    uint32_t BASE0;             /*!< (@ 0x0000051C) Base address 0     */
-    uint32_t BASE1;             /*!< (@ 0x00000520) Base address 1     */
-    uint32_t PREFIX0;           /*!< (@ 0x00000524) Prefixes bytes for logical addresses 0-3 */
-    uint32_t PREFIX1;           /*!< (@ 0x00000528) Prefixes bytes for logical addresses 4-7 */
-    uint32_t TXADDRESS;         /*!< (@ 0x0000052C) Transmit address select   */
-    uint32_t RXADDRESSES;       /*!< (@ 0x00000530) Receive address select */
-    uint32_t CRCCNF;            /*!< (@ 0x00000534) CRC configuration      */
-    uint32_t CRCPOLY;           /*!< (@ 0x00000538) CRC polynomial     */
-    uint32_t CRCINIT;           /*!< (@ 0x0000053C) CRC initial value     */
+    uint32_t PACKETPTR;   /*!< (@ 0x00000504) Packet pointer */
+    uint32_t FREQUENCY;   /*!< (@ 0x00000508) Frequency */
+    uint32_t TXPOWER;     /*!< (@ 0x0000050C) Output power   */
+    uint32_t MODE;        /*!< (@ 0x00000510) Data rate and modulation      */
+    uint32_t PCNF0;       /*!< (@ 0x00000514) Packet configuration register 0     */
+    uint32_t PCNF1;       /*!< (@ 0x00000518) Packet configuration register 1     */
+    uint32_t BASE0;       /*!< (@ 0x0000051C) Base address 0     */
+    uint32_t BASE1;       /*!< (@ 0x00000520) Base address 1     */
+    uint32_t PREFIX0;     /*!< (@ 0x00000524) Prefixes bytes for logical addresses 0-3 */
+    uint32_t PREFIX1;     /*!< (@ 0x00000528) Prefixes bytes for logical addresses 4-7 */
+    uint32_t TXADDRESS;   /*!< (@ 0x0000052C) Transmit address select   */
+    uint32_t RXADDRESSES; /*!< (@ 0x00000530) Receive address select */
+    uint32_t CRCCNF;      /*!< (@ 0x00000534) CRC configuration      */
+    uint32_t CRCPOLY;     /*!< (@ 0x00000538) CRC polynomial     */
+    uint32_t CRCINIT;     /*!< (@ 0x0000053C) CRC initial value     */
     uint32_t RESERVED9;
-    uint32_t TIFS;              /*!< (@ 0x00000544) Interframe spacing in us       */
-    uint32_t RSSISAMPLE;        /*!< (@ 0x00000548) RSSI sample */
+    uint32_t TIFS;       /*!< (@ 0x00000544) Interframe spacing in us       */
+    uint32_t RSSISAMPLE; /*!< (@ 0x00000548) RSSI sample */
     uint32_t RESERVED10;
-    uint32_t STATE;             /*!< (@ 0x00000550) Current radio state       */
-    uint32_t DATAWHITEIV;       /*!< (@ 0x00000554) Data whitening initial value */
+    uint32_t STATE;       /*!< (@ 0x00000550) Current radio state       */
+    uint32_t DATAWHITEIV; /*!< (@ 0x00000554) Data whitening initial value */
     uint32_t RESERVED11[2];
-    uint32_t BCC;               /*!< (@ 0x00000560) Bit counter compare */
+    uint32_t BCC; /*!< (@ 0x00000560) Bit counter compare */
     uint32_t RESERVED12[39];
-    uint32_t DAB[8];            /*!< (@ 0x00000600) Description collection: Device address
+    uint32_t DAB[8];       /*!< (@ 0x00000600) Description collection: Device address
                       base segment
                                              n */
-    uint32_t DAP[8];            /*!< (@ 0x00000620) Description collection: Device address prefix
+    uint32_t DAP[8];       /*!< (@ 0x00000620) Description collection: Device address prefix
                                         n */
-    uint32_t DACNF;             /*!< (@ 0x00000640) Device address match configuration */
-    uint32_t MHRMATCHCONF;      /*!< (@ 0x00000644) Search pattern configuration */
-    uint32_t MHRMATCHMAS;       /*!< (@ 0x00000648) Pattern mask  */
+    uint32_t DACNF;        /*!< (@ 0x00000640) Device address match configuration */
+    uint32_t MHRMATCHCONF; /*!< (@ 0x00000644) Search pattern configuration */
+    uint32_t MHRMATCHMAS;  /*!< (@ 0x00000648) Pattern mask  */
     uint32_t RESERVED13;
-    uint32_t MODECNF0;          /*!< (@ 0x00000650) Radio mode configuration register 0 */
+    uint32_t MODECNF0; /*!< (@ 0x00000650) Radio mode configuration register 0 */
     uint32_t RESERVED14[3];
-    uint32_t SFD;               /*!< (@ 0x00000660) IEEE 802.15.4 start of frame delimiter */
-    uint32_t EDCNT;             /*!< (@ 0x00000664) IEEE 802.15.4 energy detect loop count */
-    uint32_t EDSAMPLE;          /*!< (@ 0x00000668) IEEE 802.15.4 energy detect level */
-    uint32_t CCACTRL;           /*!< (@ 0x0000066C) IEEE 802.15.4 clear channel assessment
+    uint32_t SFD;      /*!< (@ 0x00000660) IEEE 802.15.4 start of frame delimiter */
+    uint32_t EDCNT;    /*!< (@ 0x00000664) IEEE 802.15.4 energy detect loop count */
+    uint32_t EDSAMPLE; /*!< (@ 0x00000668) IEEE 802.15.4 energy detect level */
+    uint32_t CCACTRL;  /*!< (@ 0x0000066C) IEEE 802.15.4 clear channel assessment
                         control             */
     uint32_t RESERVED15[611];
-    uint32_t POWER;             /*!< (@ 0x00000FFC) Peripheral power control */
-} NRF_RADIO_Type;               /*!< Size = 4096 (0x1000) */
+    uint32_t POWER; /*!< (@ 0x00000FFC) Peripheral power control */
+} NRF_RADIO_Type;   /*!< Size = 4096 (0x1000) */
 
 /* ===========================================================================================================================
  */
@@ -1237,29 +1237,29 @@ typedef struct
     uint32_t       RESERVED2[4];
     uint32_t       EVENTS_TXDRDY; /*!< (@ 0x0000011C) Data sent from TXD */
     uint32_t       RESERVED3;
-    uint32_t       EVENTS_ERROR;  /*!< (@ 0x00000124) Error detected */
+    uint32_t       EVENTS_ERROR; /*!< (@ 0x00000124) Error detected */
     uint32_t       RESERVED4[7];
-    uint32_t       EVENTS_RXTO;   /*!< (@ 0x00000144) Receiver timeout */
+    uint32_t       EVENTS_RXTO; /*!< (@ 0x00000144) Receiver timeout */
     uint32_t       RESERVED5[46];
-    uint32_t       SHORTS;        /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t       SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t       RESERVED6[64];
-    uint32_t       INTENSET;      /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t       INTENCLR;      /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t       INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t       INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t       RESERVED7[93];
-    uint32_t       ERRORSRC;      /*!< (@ 0x00000480) Error source */
+    uint32_t       ERRORSRC; /*!< (@ 0x00000480) Error source */
     uint32_t       RESERVED8[31];
-    uint32_t       ENABLE;        /*!< (@ 0x00000500) Enable UART */
+    uint32_t       ENABLE; /*!< (@ 0x00000500) Enable UART */
     uint32_t       RESERVED9;
-    UART_PSEL_Type PSEL;          /*!< (@ 0x00000508) Unspecified */
-    uint32_t       RXD;           /*!< (@ 0x00000518) RXD register        */
-    uint32_t       TXD;           /*!< (@ 0x0000051C) TXD register        */
+    UART_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
+    uint32_t       RXD;  /*!< (@ 0x00000518) RXD register        */
+    uint32_t       TXD;  /*!< (@ 0x0000051C) TXD register        */
     uint32_t       RESERVED10;
-    uint32_t       BAUDRATE;      /*!< (@ 0x00000524) Baud rate. Accuracy depends on the
+    uint32_t       BAUDRATE; /*!< (@ 0x00000524) Baud rate. Accuracy depends on the
                         HFCLK source selected. */
     uint32_t       RESERVED11[17];
-    uint32_t       CONFIG;        /*!< (@ 0x0000056C) Configuration of parity and hardware flow
+    uint32_t       CONFIG; /*!< (@ 0x0000056C) Configuration of parity and hardware flow
                       control          */
-} NRF_UART_Type;                  /*!< Size = 1392 (0x570)   */
+} NRF_UART_Type;           /*!< Size = 1392 (0x570)   */
 
 /* ===========================================================================================================================
  */
@@ -1273,35 +1273,35 @@ typedef struct
  */
 
 typedef struct
-{                                     /*!< (@ 0x40002000) UARTE0 Structure          */
-    uint32_t        TASKS_STARTRX;    /*!< (@ 0x00000000) Start UART receiver */
-    uint32_t        TASKS_STOPRX;     /*!< (@ 0x00000004) Stop UART receiver  */
-    uint32_t        TASKS_STARTTX;    /*!< (@ 0x00000008) Start UART transmitter */
-    uint32_t        TASKS_STOPTX;     /*!< (@ 0x0000000C) Stop UART transmitter  */
+{                                  /*!< (@ 0x40002000) UARTE0 Structure          */
+    uint32_t        TASKS_STARTRX; /*!< (@ 0x00000000) Start UART receiver */
+    uint32_t        TASKS_STOPRX;  /*!< (@ 0x00000004) Stop UART receiver  */
+    uint32_t        TASKS_STARTTX; /*!< (@ 0x00000008) Start UART transmitter */
+    uint32_t        TASKS_STOPTX;  /*!< (@ 0x0000000C) Stop UART transmitter  */
     uint32_t        RESERVED[7];
-    uint32_t        TASKS_FLUSHRX;    /*!< (@ 0x0000002C) Flush RX FIFO into RX buffer */
+    uint32_t        TASKS_FLUSHRX; /*!< (@ 0x0000002C) Flush RX FIFO into RX buffer */
     uint32_t        RESERVED1[52];
-    uint32_t        EVENTS_CTS;       /*!< (@ 0x00000100) CTS is activated (set low). Clear To
+    uint32_t        EVENTS_CTS;    /*!< (@ 0x00000100) CTS is activated (set low). Clear To
                            Send.                 */
-    uint32_t        EVENTS_NCTS;      /*!< (@ 0x00000104) CTS is deactivated (set high). Not
+    uint32_t        EVENTS_NCTS;   /*!< (@ 0x00000104) CTS is deactivated (set high). Not
                            Clear To Send.          */
-    uint32_t        EVENTS_RXDRDY;    /*!< (@ 0x00000108) Data received in RXD (but
+    uint32_t        EVENTS_RXDRDY; /*!< (@ 0x00000108) Data received in RXD (but
                              potentially not yet transferred to Data RAM) */
     uint32_t        RESERVED2;
-    uint32_t        EVENTS_ENDRX;     /*!< (@ 0x00000110) Receive buffer is filled up */
+    uint32_t        EVENTS_ENDRX; /*!< (@ 0x00000110) Receive buffer is filled up */
     uint32_t        RESERVED3[2];
-    uint32_t        EVENTS_TXDRDY;    /*!< (@ 0x0000011C) Data sent from TXD */
-    uint32_t        EVENTS_ENDTX;     /*!< (@ 0x00000120) Last TX byte transmitted  */
-    uint32_t        EVENTS_ERROR;     /*!< (@ 0x00000124) Error detected  */
+    uint32_t        EVENTS_TXDRDY; /*!< (@ 0x0000011C) Data sent from TXD */
+    uint32_t        EVENTS_ENDTX;  /*!< (@ 0x00000120) Last TX byte transmitted  */
+    uint32_t        EVENTS_ERROR;  /*!< (@ 0x00000124) Error detected  */
     uint32_t        RESERVED4[7];
-    uint32_t        EVENTS_RXTO;      /*!< (@ 0x00000144) Receiver timeout */
+    uint32_t        EVENTS_RXTO; /*!< (@ 0x00000144) Receiver timeout */
     uint32_t        RESERVED5;
     uint32_t        EVENTS_RXSTARTED; /*!< (@ 0x0000014C) UART receiver has started */
     uint32_t        EVENTS_TXSTARTED; /*!< (@ 0x00000150) UART transmitter has started */
     uint32_t        RESERVED6;
     uint32_t        EVENTS_TXSTOPPED; /*!< (@ 0x00000158) Transmitter stopped */
     uint32_t        RESERVED7[41];
-    uint32_t        SHORTS;   /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t        SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t        RESERVED8[63];
     uint32_t        INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
     uint32_t        INTENSET; /*!< (@ 0x00000304) Enable interrupt */
@@ -1310,20 +1310,20 @@ typedef struct
     uint32_t        ERRORSRC; /*!< (@ 0x00000480) Error source Note : this register is
                         read / write one to clear. */
     uint32_t        RESERVED10[31];
-    uint32_t        ENABLE;   /*!< (@ 0x00000500) Enable UART */
+    uint32_t        ENABLE; /*!< (@ 0x00000500) Enable UART */
     uint32_t        RESERVED11;
-    UARTE_PSEL_Type PSEL;     /*!< (@ 0x00000508) Unspecified */
+    UARTE_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t        RESERVED12[3];
     uint32_t        BAUDRATE; /*!< (@ 0x00000524) Baud rate. Accuracy depends on the
                         HFCLK source selected. */
     uint32_t        RESERVED13[3];
-    UARTE_RXD_Type  RXD;      /*!< (@ 0x00000534) RXD EasyDMA channel */
+    UARTE_RXD_Type  RXD; /*!< (@ 0x00000534) RXD EasyDMA channel */
     uint32_t        RESERVED14;
-    UARTE_TXD_Type  TXD;      /*!< (@ 0x00000544) TXD EasyDMA channel */
+    UARTE_TXD_Type  TXD; /*!< (@ 0x00000544) TXD EasyDMA channel */
     uint32_t        RESERVED15[7];
-    uint32_t        CONFIG;   /*!< (@ 0x0000056C) Configuration of parity and hardware flow
+    uint32_t        CONFIG; /*!< (@ 0x0000056C) Configuration of parity and hardware flow
                       control          */
-} NRF_UARTE_Type;             /*!< Size = 1392 (0x570)  */
+} NRF_UARTE_Type;           /*!< Size = 1392 (0x570)  */
 
 /* ===========================================================================================================================
  */
@@ -1337,25 +1337,25 @@ typedef struct
  */
 
 typedef struct
-{                               /*!< (@ 0x40003000) SPI0 Structure */
+{ /*!< (@ 0x40003000) SPI0 Structure */
     uint32_t      RESERVED[66];
     uint32_t      EVENTS_READY; /*!< (@ 0x00000108) TXD byte sent and RXD byte received */
     uint32_t      RESERVED1[126];
-    uint32_t      INTENSET;     /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t      INTENCLR;     /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t      INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t      INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t      RESERVED2[125];
-    uint32_t      ENABLE;       /*!< (@ 0x00000500) Enable SPI */
+    uint32_t      ENABLE; /*!< (@ 0x00000500) Enable SPI */
     uint32_t      RESERVED3;
-    SPI_PSEL_Type PSEL;         /*!< (@ 0x00000508) Unspecified */
+    SPI_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t      RESERVED4;
-    uint32_t      RXD;          /*!< (@ 0x00000518) RXD register */
-    uint32_t      TXD;          /*!< (@ 0x0000051C) TXD register */
+    uint32_t      RXD; /*!< (@ 0x00000518) RXD register */
+    uint32_t      TXD; /*!< (@ 0x0000051C) TXD register */
     uint32_t      RESERVED5;
-    uint32_t      FREQUENCY;    /*!< (@ 0x00000524) SPI frequency. Accuracy depends on the
+    uint32_t      FREQUENCY; /*!< (@ 0x00000524) SPI frequency. Accuracy depends on the
                          HFCLK source selected. */
     uint32_t      RESERVED6[11];
-    uint32_t      CONFIG;       /*!< (@ 0x00000554) Configuration register */
-} NRF_SPI_Type;                 /*!< Size = 1368 (0x558)    */
+    uint32_t      CONFIG; /*!< (@ 0x00000554) Configuration register */
+} NRF_SPI_Type;           /*!< Size = 1368 (0x558)    */
 
 /* ===========================================================================================================================
  */
@@ -1369,54 +1369,54 @@ typedef struct
  */
 
 typedef struct
-{                                      /*!< (@ 0x40003000) SPIM0 Structure */
+{ /*!< (@ 0x40003000) SPIM0 Structure */
     uint32_t           RESERVED[4];
-    uint32_t           TASKS_START;    /*!< (@ 0x00000010) Start SPI transaction */
-    uint32_t           TASKS_STOP;     /*!< (@ 0x00000014) Stop SPI transaction  */
+    uint32_t           TASKS_START; /*!< (@ 0x00000010) Start SPI transaction */
+    uint32_t           TASKS_STOP;  /*!< (@ 0x00000014) Stop SPI transaction  */
     uint32_t           RESERVED1;
-    uint32_t           TASKS_SUSPEND;  /*!< (@ 0x0000001C) Suspend SPI transaction */
-    uint32_t           TASKS_RESUME;   /*!< (@ 0x00000020) Resume SPI transaction  */
+    uint32_t           TASKS_SUSPEND; /*!< (@ 0x0000001C) Suspend SPI transaction */
+    uint32_t           TASKS_RESUME;  /*!< (@ 0x00000020) Resume SPI transaction  */
     uint32_t           RESERVED2[56];
     uint32_t           EVENTS_STOPPED; /*!< (@ 0x00000104) SPI transaction has stopped */
     uint32_t           RESERVED3[2];
-    uint32_t           EVENTS_ENDRX;   /*!< (@ 0x00000110) End of RXD buffer reached */
+    uint32_t           EVENTS_ENDRX; /*!< (@ 0x00000110) End of RXD buffer reached */
     uint32_t           RESERVED4;
-    uint32_t           EVENTS_END;   /*!< (@ 0x00000118) End of RXD buffer and TXD buffer reached */
+    uint32_t           EVENTS_END; /*!< (@ 0x00000118) End of RXD buffer and TXD buffer reached */
     uint32_t           RESERVED5;
     uint32_t           EVENTS_ENDTX; /*!< (@ 0x00000120) End of TXD buffer reached */
     uint32_t           RESERVED6[10];
     uint32_t           EVENTS_STARTED; /*!< (@ 0x0000014C) Transaction started */
     uint32_t           RESERVED7[44];
-    uint32_t           SHORTS;    /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t           SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t           RESERVED8[64];
-    uint32_t           INTENSET;  /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t           INTENCLR;  /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t           INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t           INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t           RESERVED9[61];
     uint32_t           STALLSTAT; /*!< (@ 0x00000400) Stall status for EasyDMA RAM accesses.
                          The fields in this register is set to STALL by hardware
                                                 whenever a stall occurres and
                          can be cleared (set to NOSTALL) by the CPU. */
     uint32_t           RESERVED10[63];
-    uint32_t           ENABLE;    /*!< (@ 0x00000500) Enable SPIM */
+    uint32_t           ENABLE; /*!< (@ 0x00000500) Enable SPIM */
     uint32_t           RESERVED11;
-    SPIM_PSEL_Type     PSEL;      /*!< (@ 0x00000508) Unspecified */
+    SPIM_PSEL_Type     PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t           RESERVED12[3];
     uint32_t           FREQUENCY; /*!< (@ 0x00000524) SPI frequency. Accuracy depends on the
                          HFCLK source selected. */
     uint32_t           RESERVED13[3];
-    SPIM_RXD_Type      RXD;       /*!< (@ 0x00000534) RXD EasyDMA channel */
-    SPIM_TXD_Type      TXD;       /*!< (@ 0x00000544) TXD EasyDMA channel */
-    uint32_t           CONFIG;    /*!< (@ 0x00000554) Configuration register   */
+    SPIM_RXD_Type      RXD;    /*!< (@ 0x00000534) RXD EasyDMA channel */
+    SPIM_TXD_Type      TXD;    /*!< (@ 0x00000544) TXD EasyDMA channel */
+    uint32_t           CONFIG; /*!< (@ 0x00000554) Configuration register   */
     uint32_t           RESERVED14[2];
-    SPIM_IFTIMING_Type IFTIMING;  /*!< (@ 0x00000560) Unspecified */
-    uint32_t           CSNPOL;    /*!< (@ 0x00000568) Polarity of CSN output             */
-    uint32_t           PSELDCX;   /*!< (@ 0x0000056C) Pin select for DCX signal            */
-    uint32_t           DCXCNT;    /*!< (@ 0x00000570) DCX configuration             */
+    SPIM_IFTIMING_Type IFTIMING; /*!< (@ 0x00000560) Unspecified */
+    uint32_t           CSNPOL;   /*!< (@ 0x00000568) Polarity of CSN output             */
+    uint32_t           PSELDCX;  /*!< (@ 0x0000056C) Pin select for DCX signal            */
+    uint32_t           DCXCNT;   /*!< (@ 0x00000570) DCX configuration             */
     uint32_t           RESERVED15[19];
-    uint32_t           ORC;       /*!< (@ 0x000005C0) Byte transmitted after TXD.MAXCNT bytes have
+    uint32_t           ORC; /*!< (@ 0x000005C0) Byte transmitted after TXD.MAXCNT bytes have
                                           been transmitted in the case when
                    RXD.MAXCNT is greater than TXD.MAXCNT */
-} NRF_SPIM_Type;                  /*!< Size = 1476 (0x5c4) */
+} NRF_SPIM_Type;            /*!< Size = 1476 (0x5c4) */
 
 /* ===========================================================================================================================
  */
@@ -1430,40 +1430,40 @@ typedef struct
  */
 
 typedef struct
-{                                   /*!< (@ 0x40003000) SPIS0 Structure */
+{ /*!< (@ 0x40003000) SPIS0 Structure */
     uint32_t       RESERVED[9];
-    uint32_t       TASKS_ACQUIRE;   /*!< (@ 0x00000024) Acquire SPI semaphore */
-    uint32_t       TASKS_RELEASE;   /*!< (@ 0x00000028) Release SPI semaphore, enabling
+    uint32_t       TASKS_ACQUIRE; /*!< (@ 0x00000024) Acquire SPI semaphore */
+    uint32_t       TASKS_RELEASE; /*!< (@ 0x00000028) Release SPI semaphore, enabling
                              the SPI slave to acquire it */
     uint32_t       RESERVED1[54];
-    uint32_t       EVENTS_END;      /*!< (@ 0x00000104) Granted transaction completed */
+    uint32_t       EVENTS_END; /*!< (@ 0x00000104) Granted transaction completed */
     uint32_t       RESERVED2[2];
-    uint32_t       EVENTS_ENDRX;    /*!< (@ 0x00000110) End of RXD buffer reached */
+    uint32_t       EVENTS_ENDRX; /*!< (@ 0x00000110) End of RXD buffer reached */
     uint32_t       RESERVED3[5];
     uint32_t       EVENTS_ACQUIRED; /*!< (@ 0x00000128) Semaphore acquired */
     uint32_t       RESERVED4[53];
-    uint32_t       SHORTS;          /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t       SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t       RESERVED5[64];
-    uint32_t       INTENSET;        /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t       INTENCLR;        /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t       INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t       INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t       RESERVED6[61];
-    uint32_t       SEMSTAT;         /*!< (@ 0x00000400) Semaphore status register */
+    uint32_t       SEMSTAT; /*!< (@ 0x00000400) Semaphore status register */
     uint32_t       RESERVED7[15];
-    uint32_t       STATUS;          /*!< (@ 0x00000440) Status from last transaction */
+    uint32_t       STATUS; /*!< (@ 0x00000440) Status from last transaction */
     uint32_t       RESERVED8[47];
-    uint32_t       ENABLE;          /*!< (@ 0x00000500) Enable SPI slave */
+    uint32_t       ENABLE; /*!< (@ 0x00000500) Enable SPI slave */
     uint32_t       RESERVED9;
-    SPIS_PSEL_Type PSEL;            /*!< (@ 0x00000508) Unspecified */
+    SPIS_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t       RESERVED10[7];
-    SPIS_RXD_Type  RXD;             /*!< (@ 0x00000534) Unspecified */
-    SPIS_TXD_Type  TXD;             /*!< (@ 0x00000544) Unspecified */
-    uint32_t       CONFIG;          /*!< (@ 0x00000554) Configuration register   */
+    SPIS_RXD_Type  RXD;    /*!< (@ 0x00000534) Unspecified */
+    SPIS_TXD_Type  TXD;    /*!< (@ 0x00000544) Unspecified */
+    uint32_t       CONFIG; /*!< (@ 0x00000554) Configuration register   */
     uint32_t       RESERVED11;
-    uint32_t       DEF;             /*!< (@ 0x0000055C) Default character. Character clocked out in
+    uint32_t       DEF; /*!< (@ 0x0000055C) Default character. Character clocked out in
                    case of an ignored transaction. */
     uint32_t       RESERVED12[24];
-    uint32_t       ORC;             /*!< (@ 0x000005C0) Over-read character  */
-} NRF_SPIS_Type;                    /*!< Size = 1476 (0x5c4) */
+    uint32_t       ORC; /*!< (@ 0x000005C0) Over-read character  */
+} NRF_SPIS_Type;        /*!< Size = 1476 (0x5c4) */
 
 /* ===========================================================================================================================
  */
@@ -1477,47 +1477,47 @@ typedef struct
  */
 
 typedef struct
-{                                   /*!< (@ 0x40003000) TWI0 Structure          */
-    uint32_t      TASKS_STARTRX;    /*!< (@ 0x00000000) Start TWI receive sequence */
+{                                /*!< (@ 0x40003000) TWI0 Structure          */
+    uint32_t      TASKS_STARTRX; /*!< (@ 0x00000000) Start TWI receive sequence */
     uint32_t      RESERVED;
-    uint32_t      TASKS_STARTTX;    /*!< (@ 0x00000008) Start TWI transmit sequence */
+    uint32_t      TASKS_STARTTX; /*!< (@ 0x00000008) Start TWI transmit sequence */
     uint32_t      RESERVED1[2];
-    uint32_t      TASKS_STOP;       /*!< (@ 0x00000014) Stop TWI transaction */
+    uint32_t      TASKS_STOP; /*!< (@ 0x00000014) Stop TWI transaction */
     uint32_t      RESERVED2;
-    uint32_t      TASKS_SUSPEND;    /*!< (@ 0x0000001C) Suspend TWI transaction */
-    uint32_t      TASKS_RESUME;     /*!< (@ 0x00000020) Resume TWI transaction  */
+    uint32_t      TASKS_SUSPEND; /*!< (@ 0x0000001C) Suspend TWI transaction */
+    uint32_t      TASKS_RESUME;  /*!< (@ 0x00000020) Resume TWI transaction  */
     uint32_t      RESERVED3[56];
-    uint32_t      EVENTS_STOPPED;   /*!< (@ 0x00000104) TWI stopped  */
-    uint32_t      EVENTS_RXDREADY;  /*!< (@ 0x00000108) TWI RXD byte received */
+    uint32_t      EVENTS_STOPPED;  /*!< (@ 0x00000104) TWI stopped  */
+    uint32_t      EVENTS_RXDREADY; /*!< (@ 0x00000108) TWI RXD byte received */
     uint32_t      RESERVED4[4];
-    uint32_t      EVENTS_TXDSENT;   /*!< (@ 0x0000011C) TWI TXD byte sent */
+    uint32_t      EVENTS_TXDSENT; /*!< (@ 0x0000011C) TWI TXD byte sent */
     uint32_t      RESERVED5;
-    uint32_t      EVENTS_ERROR;     /*!< (@ 0x00000124) TWI error */
+    uint32_t      EVENTS_ERROR; /*!< (@ 0x00000124) TWI error */
     uint32_t      RESERVED6[4];
-    uint32_t      EVENTS_BB;        /*!< (@ 0x00000138) TWI byte boundary, generated before
+    uint32_t      EVENTS_BB; /*!< (@ 0x00000138) TWI byte boundary, generated before
                          each byte that is sent or received */
     uint32_t      RESERVED7[3];
     uint32_t      EVENTS_SUSPENDED; /*!< (@ 0x00000148) TWI entered the suspended state */
     uint32_t      RESERVED8[45];
-    uint32_t      SHORTS;           /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t      SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t      RESERVED9[64];
-    uint32_t      INTENSET;         /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t      INTENCLR;         /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t      INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t      INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t      RESERVED10[110];
-    uint32_t      ERRORSRC;         /*!< (@ 0x000004C4) Error source */
+    uint32_t      ERRORSRC; /*!< (@ 0x000004C4) Error source */
     uint32_t      RESERVED11[14];
-    uint32_t      ENABLE;           /*!< (@ 0x00000500) Enable TWI */
+    uint32_t      ENABLE; /*!< (@ 0x00000500) Enable TWI */
     uint32_t      RESERVED12;
-    TWI_PSEL_Type PSEL;             /*!< (@ 0x00000508) Unspecified */
+    TWI_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t      RESERVED13[2];
-    uint32_t      RXD;              /*!< (@ 0x00000518) RXD register */
-    uint32_t      TXD;              /*!< (@ 0x0000051C) TXD register */
+    uint32_t      RXD; /*!< (@ 0x00000518) RXD register */
+    uint32_t      TXD; /*!< (@ 0x0000051C) TXD register */
     uint32_t      RESERVED14;
-    uint32_t      FREQUENCY;        /*!< (@ 0x00000524) TWI frequency. Accuracy depends on the
+    uint32_t      FREQUENCY; /*!< (@ 0x00000524) TWI frequency. Accuracy depends on the
                          HFCLK source selected. */
     uint32_t      RESERVED15[24];
-    uint32_t      ADDRESS;          /*!< (@ 0x00000588) Address used in the TWI transfer */
-} NRF_TWI_Type;                     /*!< Size = 1420 (0x58c)     */
+    uint32_t      ADDRESS; /*!< (@ 0x00000588) Address used in the TWI transfer */
+} NRF_TWI_Type;            /*!< Size = 1420 (0x58c)     */
 
 /* ===========================================================================================================================
  */
@@ -1531,20 +1531,20 @@ typedef struct
  */
 
 typedef struct
-{                                    /*!< (@ 0x40003000) TWIM0 Structure          */
-    uint32_t       TASKS_STARTRX;    /*!< (@ 0x00000000) Start TWI receive sequence */
+{                                 /*!< (@ 0x40003000) TWIM0 Structure          */
+    uint32_t       TASKS_STARTRX; /*!< (@ 0x00000000) Start TWI receive sequence */
     uint32_t       RESERVED;
-    uint32_t       TASKS_STARTTX;    /*!< (@ 0x00000008) Start TWI transmit sequence */
+    uint32_t       TASKS_STARTTX; /*!< (@ 0x00000008) Start TWI transmit sequence */
     uint32_t       RESERVED1[2];
-    uint32_t       TASKS_STOP;       /*!< (@ 0x00000014) Stop TWI transaction. Must be issued
+    uint32_t       TASKS_STOP; /*!< (@ 0x00000014) Stop TWI transaction. Must be issued
                           while the TWI master is not suspended. */
     uint32_t       RESERVED2;
-    uint32_t       TASKS_SUSPEND;    /*!< (@ 0x0000001C) Suspend TWI transaction */
-    uint32_t       TASKS_RESUME;     /*!< (@ 0x00000020) Resume TWI transaction  */
+    uint32_t       TASKS_SUSPEND; /*!< (@ 0x0000001C) Suspend TWI transaction */
+    uint32_t       TASKS_RESUME;  /*!< (@ 0x00000020) Resume TWI transaction  */
     uint32_t       RESERVED3[56];
-    uint32_t       EVENTS_STOPPED;   /*!< (@ 0x00000104) TWI stopped */
+    uint32_t       EVENTS_STOPPED; /*!< (@ 0x00000104) TWI stopped */
     uint32_t       RESERVED4[7];
-    uint32_t       EVENTS_ERROR;     /*!< (@ 0x00000124) TWI error */
+    uint32_t       EVENTS_ERROR; /*!< (@ 0x00000124) TWI error */
     uint32_t       RESERVED5[8];
     uint32_t       EVENTS_SUSPENDED; /*!< (@ 0x00000148) Last byte has been sent out
                                 after the SUSPEND task has been issued, TWI
@@ -1552,31 +1552,31 @@ typedef struct
     uint32_t       EVENTS_RXSTARTED; /*!< (@ 0x0000014C) Receive sequence started */
     uint32_t       EVENTS_TXSTARTED; /*!< (@ 0x00000150) Transmit sequence started */
     uint32_t       RESERVED6[2];
-    uint32_t       EVENTS_LASTRX;    /*!< (@ 0x0000015C) Byte boundary, starting to receive
+    uint32_t       EVENTS_LASTRX; /*!< (@ 0x0000015C) Byte boundary, starting to receive
                              the last byte           */
-    uint32_t       EVENTS_LASTTX;    /*!< (@ 0x00000160) Byte boundary, starting to
+    uint32_t       EVENTS_LASTTX; /*!< (@ 0x00000160) Byte boundary, starting to
                              transmit the last byte */
     uint32_t       RESERVED7[39];
-    uint32_t       SHORTS;           /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t       SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t       RESERVED8[63];
-    uint32_t       INTEN;            /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t       INTENSET;         /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t       INTENCLR;         /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t       INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t       INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t       INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t       RESERVED9[110];
-    uint32_t       ERRORSRC;         /*!< (@ 0x000004C4) Error source */
+    uint32_t       ERRORSRC; /*!< (@ 0x000004C4) Error source */
     uint32_t       RESERVED10[14];
-    uint32_t       ENABLE;           /*!< (@ 0x00000500) Enable TWIM */
+    uint32_t       ENABLE; /*!< (@ 0x00000500) Enable TWIM */
     uint32_t       RESERVED11;
-    TWIM_PSEL_Type PSEL;             /*!< (@ 0x00000508) Unspecified */
+    TWIM_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t       RESERVED12[5];
-    uint32_t       FREQUENCY;        /*!< (@ 0x00000524) TWI frequency. Accuracy depends on the
+    uint32_t       FREQUENCY; /*!< (@ 0x00000524) TWI frequency. Accuracy depends on the
                          HFCLK source selected. */
     uint32_t       RESERVED13[3];
-    TWIM_RXD_Type  RXD;              /*!< (@ 0x00000534) RXD EasyDMA channel */
-    TWIM_TXD_Type  TXD;              /*!< (@ 0x00000544) TXD EasyDMA channel */
+    TWIM_RXD_Type  RXD; /*!< (@ 0x00000534) RXD EasyDMA channel */
+    TWIM_TXD_Type  TXD; /*!< (@ 0x00000544) TXD EasyDMA channel */
     uint32_t       RESERVED14[13];
-    uint32_t       ADDRESS;          /*!< (@ 0x00000588) Address used in the TWI transfer */
-} NRF_TWIM_Type;                     /*!< Size = 1420 (0x58c)    */
+    uint32_t       ADDRESS; /*!< (@ 0x00000588) Address used in the TWI transfer */
+} NRF_TWIM_Type;            /*!< Size = 1420 (0x58c)    */
 
 /* ===========================================================================================================================
  */
@@ -1590,54 +1590,54 @@ typedef struct
  */
 
 typedef struct
-{                                    /*!< (@ 0x40003000) TWIS0 Structure */
+{ /*!< (@ 0x40003000) TWIS0 Structure */
     uint32_t       RESERVED[5];
-    uint32_t       TASKS_STOP;       /*!< (@ 0x00000014) Stop TWI transaction */
+    uint32_t       TASKS_STOP; /*!< (@ 0x00000014) Stop TWI transaction */
     uint32_t       RESERVED1;
-    uint32_t       TASKS_SUSPEND;    /*!< (@ 0x0000001C) Suspend TWI transaction */
-    uint32_t       TASKS_RESUME;     /*!< (@ 0x00000020) Resume TWI transaction  */
+    uint32_t       TASKS_SUSPEND; /*!< (@ 0x0000001C) Suspend TWI transaction */
+    uint32_t       TASKS_RESUME;  /*!< (@ 0x00000020) Resume TWI transaction  */
     uint32_t       RESERVED2[3];
-    uint32_t       TASKS_PREPARERX;  /*!< (@ 0x00000030) Prepare the TWI slave to respond
+    uint32_t       TASKS_PREPARERX; /*!< (@ 0x00000030) Prepare the TWI slave to respond
                                to a write command        */
-    uint32_t       TASKS_PREPARETX;  /*!< (@ 0x00000034) Prepare the TWI slave to respond
+    uint32_t       TASKS_PREPARETX; /*!< (@ 0x00000034) Prepare the TWI slave to respond
                                to a read command         */
     uint32_t       RESERVED3[51];
-    uint32_t       EVENTS_STOPPED;   /*!< (@ 0x00000104) TWI stopped */
+    uint32_t       EVENTS_STOPPED; /*!< (@ 0x00000104) TWI stopped */
     uint32_t       RESERVED4[7];
-    uint32_t       EVENTS_ERROR;     /*!< (@ 0x00000124) TWI error */
+    uint32_t       EVENTS_ERROR; /*!< (@ 0x00000124) TWI error */
     uint32_t       RESERVED5[9];
     uint32_t       EVENTS_RXSTARTED; /*!< (@ 0x0000014C) Receive sequence started */
     uint32_t       EVENTS_TXSTARTED; /*!< (@ 0x00000150) Transmit sequence started */
     uint32_t       RESERVED6[4];
-    uint32_t       EVENTS_WRITE;     /*!< (@ 0x00000164) Write command received */
-    uint32_t       EVENTS_READ;      /*!< (@ 0x00000168) Read command received  */
+    uint32_t       EVENTS_WRITE; /*!< (@ 0x00000164) Write command received */
+    uint32_t       EVENTS_READ;  /*!< (@ 0x00000168) Read command received  */
     uint32_t       RESERVED7[37];
-    uint32_t       SHORTS;           /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t       SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t       RESERVED8[63];
-    uint32_t       INTEN;            /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t       INTENSET;         /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t       INTENCLR;         /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t       INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t       INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t       INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t       RESERVED9[113];
-    uint32_t       ERRORSRC;         /*!< (@ 0x000004D0) Error source */
-    uint32_t       MATCH;            /*!< (@ 0x000004D4) Status register indicating which address
+    uint32_t       ERRORSRC; /*!< (@ 0x000004D0) Error source */
+    uint32_t       MATCH;    /*!< (@ 0x000004D4) Status register indicating which address
                      had a match */
     uint32_t       RESERVED10[10];
-    uint32_t       ENABLE;           /*!< (@ 0x00000500) Enable TWIS */
+    uint32_t       ENABLE; /*!< (@ 0x00000500) Enable TWIS */
     uint32_t       RESERVED11;
-    TWIS_PSEL_Type PSEL;             /*!< (@ 0x00000508) Unspecified */
+    TWIS_PSEL_Type PSEL; /*!< (@ 0x00000508) Unspecified */
     uint32_t       RESERVED12[9];
-    TWIS_RXD_Type  RXD;              /*!< (@ 0x00000534) RXD EasyDMA channel */
-    TWIS_TXD_Type  TXD;              /*!< (@ 0x00000544) TXD EasyDMA channel */
+    TWIS_RXD_Type  RXD; /*!< (@ 0x00000534) RXD EasyDMA channel */
+    TWIS_TXD_Type  TXD; /*!< (@ 0x00000544) TXD EasyDMA channel */
     uint32_t       RESERVED13[13];
-    uint32_t       ADDRESS[2];       /*!< (@ 0x00000588) Description collection: TWI slave
+    uint32_t       ADDRESS[2]; /*!< (@ 0x00000588) Description collection: TWI slave
                           address n                */
     uint32_t       RESERVED14;
-    uint32_t       CONFIG;           /*!< (@ 0x00000594) Configuration register for the address
+    uint32_t       CONFIG; /*!< (@ 0x00000594) Configuration register for the address
                       match mechanism */
     uint32_t       RESERVED15[10];
-    uint32_t       ORC;              /*!< (@ 0x000005C0) Over-read character. Character sent out in
+    uint32_t       ORC; /*!< (@ 0x000005C0) Over-read character. Character sent out in
                     case  of an over-read of the transmit buffer.  */
-} NRF_TWIS_Type;                     /*!< Size = 1476 (0x5c4) */
+} NRF_TWIS_Type;        /*!< Size = 1476 (0x5c4) */
 
 /* ===========================================================================================================================
  */
@@ -1667,7 +1667,7 @@ typedef struct
     uint32_t              TASKS_GOSLEEP; /*!< (@ 0x00000028) Force state machine to SLEEP_A
                              state                       */
     uint32_t              RESERVED2[53];
-    uint32_t              EVENTS_READY;  /*!< (@ 0x00000100) The NFCT peripheral is ready to
+    uint32_t              EVENTS_READY;         /*!< (@ 0x00000100) The NFCT peripheral is ready to
                             receive and send frames */
     uint32_t              EVENTS_FIELDDETECTED; /*!< (@ 0x00000104) Remote NFC field detected     */
     uint32_t              EVENTS_FIELDLOST;     /*!< (@ 0x00000108) Remote NFC field lost    */
@@ -1680,7 +1680,7 @@ typedef struct
     uint32_t              EVENTS_RXFRAMEEND;    /*!< (@ 0x00000118) Received data has been checked
                                  (CRC, parity) and transferred to RAM, and
                                  EasyDMA has ended accessing the RX buffer */
-    uint32_t              EVENTS_ERROR;   /*!< (@ 0x0000011C) NFC error reported. The ERRORSTATUS
+    uint32_t              EVENTS_ERROR; /*!< (@ 0x0000011C) NFC error reported. The ERRORSTATUS
                             register contains details on the source of the
                             error.               */
     uint32_t              RESERVED3[2];
@@ -1702,21 +1702,21 @@ typedef struct
     uint32_t              EVENTS_STARTED;   /*!< (@ 0x00000150) EasyDMA is ready to receive or
                                 send frames.                */
     uint32_t              RESERVED6[43];
-    uint32_t              SHORTS;   /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t              SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t              RESERVED7[63];
     uint32_t              INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
     uint32_t              INTENSET; /*!< (@ 0x00000304) Enable interrupt */
     uint32_t              INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t              RESERVED8[62];
-    uint32_t              ERRORSTATUS;    /*!< (@ 0x00000404) NFC Error Status register */
+    uint32_t              ERRORSTATUS; /*!< (@ 0x00000404) NFC Error Status register */
     uint32_t              RESERVED9;
-    NFCT_FRAMESTATUS_Type FRAMESTATUS;    /*!< (@ 0x0000040C) Unspecified */
-    uint32_t              NFCTAGSTATE;    /*!< (@ 0x00000410) NfcTag state register */
+    NFCT_FRAMESTATUS_Type FRAMESTATUS; /*!< (@ 0x0000040C) Unspecified */
+    uint32_t              NFCTAGSTATE; /*!< (@ 0x00000410) NfcTag state register */
     uint32_t              RESERVED10[3];
-    uint32_t              SLEEPSTATE;     /*!< (@ 0x00000420) Sleep state during automatic
+    uint32_t              SLEEPSTATE; /*!< (@ 0x00000420) Sleep state during automatic
                           collision resolution          */
     uint32_t              RESERVED11[6];
-    uint32_t              FIELDPRESENT;   /*!< (@ 0x0000043C) Indicates the presence or not of a
+    uint32_t              FIELDPRESENT; /*!< (@ 0x0000043C) Indicates the presence or not of a
                             valid field             */
     uint32_t              RESERVED12[49];
     uint32_t              FRAMEDELAYMIN;  /*!< (@ 0x00000504) Minimum frame delay  */
@@ -1725,12 +1725,12 @@ typedef struct
                               Frame Delay Timer           */
     uint32_t              PACKETPTR;      /*!< (@ 0x00000510) Packet pointer for TXD and RXD data
                          storage in Data RAM */
-    uint32_t              MAXLEN;      /*!< (@ 0x00000514) Size of the RAM buffer allocated to TXD
+    uint32_t              MAXLEN; /*!< (@ 0x00000514) Size of the RAM buffer allocated to TXD
                         and RXD   data storage each   */
-    NFCT_TXD_Type         TXD;         /*!< (@ 0x00000518) Unspecified */
-    NFCT_RXD_Type         RXD;         /*!< (@ 0x00000520) Unspecified */
+    NFCT_TXD_Type         TXD;    /*!< (@ 0x00000518) Unspecified */
+    NFCT_RXD_Type         RXD;    /*!< (@ 0x00000520) Unspecified */
     uint32_t              RESERVED13[26];
-    uint32_t              NFCID1_LAST; /*!< (@ 0x00000590) Last NFCID1 part (4, 7 or 10 bytes
+    uint32_t              NFCID1_LAST;      /*!< (@ 0x00000590) Last NFCID1 part (4, 7 or 10 bytes
                            ID)                     */
     uint32_t              NFCID1_2ND_LAST;  /*!< (@ 0x00000594) Second last NFCID1 part (7 or 10
                                bytes ID)                 */
@@ -1771,15 +1771,15 @@ typedef struct
     uint32_t EVENTS_IN[8]; /*!< (@ 0x00000100) Description collection: Event
                             generated from pin specified in CONFIG[n].PSEL */
     uint32_t RESERVED3[23];
-    uint32_t EVENTS_PORT;  /*!< (@ 0x0000017C) Event generated from multiple input
+    uint32_t EVENTS_PORT; /*!< (@ 0x0000017C) Event generated from multiple input
                            GPIO pins with SENSE mechanism enabled */
     uint32_t RESERVED4[97];
-    uint32_t INTENSET;     /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;     /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED5[129];
-    uint32_t CONFIG[8];    /*!< (@ 0x00000510) Description collection: Configuration for
+    uint32_t CONFIG[8]; /*!< (@ 0x00000510) Description collection: Configuration for
                       OUT[n],   SET[n] and CLR[n] tasks and IN[n] event   */
-} NRF_GPIOTE_Type;         /*!< Size = 1328 (0x530) */
+} NRF_GPIOTE_Type;      /*!< Size = 1328 (0x530) */
 
 /* ===========================================================================================================================
  */
@@ -1803,7 +1803,7 @@ typedef struct
     uint32_t             TASKS_CALIBRATEOFFSET; /*!< (@ 0x0000000C) Starts offset
                                      auto-calibration */
     uint32_t             RESERVED[60];
-    uint32_t             EVENTS_STARTED;        /*!< (@ 0x00000100) The SAADC has started */
+    uint32_t             EVENTS_STARTED;    /*!< (@ 0x00000100) The SAADC has started */
     uint32_t             EVENTS_END;        /*!< (@ 0x00000104) The SAADC has filled up the result
                            buffer                  */
     uint32_t             EVENTS_DONE;       /*!< (@ 0x00000108) A conversion task has been
@@ -1816,26 +1816,26 @@ typedef struct
     uint32_t             EVENTS_STOPPED;       /*!< (@ 0x00000114) The SAADC has stopped  */
     SAADC_EVENTS_CH_Type EVENTS_CH[8];         /*!< (@ 0x00000118) Peripheral events. */
     uint32_t             RESERVED1[106];
-    uint32_t             INTEN;                /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t             INTENSET;             /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t             INTENCLR;             /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t             INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t             INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t             INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t             RESERVED2[61];
-    uint32_t             STATUS;               /*!< (@ 0x00000400) Status */
+    uint32_t             STATUS; /*!< (@ 0x00000400) Status */
     uint32_t             RESERVED3[63];
-    uint32_t             ENABLE;               /*!< (@ 0x00000500) Enable or disable SAADC */
+    uint32_t             ENABLE; /*!< (@ 0x00000500) Enable or disable SAADC */
     uint32_t             RESERVED4[3];
-    SAADC_CH_Type        CH[8];                /*!< (@ 0x00000510) Unspecified */
+    SAADC_CH_Type        CH[8]; /*!< (@ 0x00000510) Unspecified */
     uint32_t             RESERVED5[24];
-    uint32_t             RESOLUTION;           /*!< (@ 0x000005F0) Resolution configuration */
-    uint32_t             OVERSAMPLE;           /*!< (@ 0x000005F4) Oversampling configuration. The
+    uint32_t             RESOLUTION; /*!< (@ 0x000005F0) Resolution configuration */
+    uint32_t             OVERSAMPLE; /*!< (@ 0x000005F4) Oversampling configuration. The
                           RESOLUTION is applied before averaging, thus for high
                                                  OVERSAMPLE a higher RESOLUTION
                           should be used. */
     uint32_t             SAMPLERATE; /*!< (@ 0x000005F8) Controls normal or continuous sample
                           rate                  */
     uint32_t             RESERVED6[12];
-    SAADC_RESULT_Type    RESULT;     /*!< (@ 0x0000062C) RESULT EasyDMA channel */
-} NRF_SAADC_Type;                    /*!< Size = 1592 (0x638)           */
+    SAADC_RESULT_Type    RESULT; /*!< (@ 0x0000062C) RESULT EasyDMA channel */
+} NRF_SAADC_Type;                /*!< Size = 1592 (0x638)           */
 
 /* ===========================================================================================================================
  */
@@ -1849,35 +1849,35 @@ typedef struct
  */
 
 typedef struct
-{                               /*!< (@ 0x40008000) TIMER0 Structure        */
-    uint32_t TASKS_START;       /*!< (@ 0x00000000) Start Timer */
-    uint32_t TASKS_STOP;        /*!< (@ 0x00000004) Stop Timer  */
-    uint32_t TASKS_COUNT;       /*!< (@ 0x00000008) Increment Timer (Counter mode only) */
-    uint32_t TASKS_CLEAR;       /*!< (@ 0x0000000C) Clear time    */
-    uint32_t TASKS_SHUTDOWN;    /*!< (@ 0x00000010) Deprecated register - Shut down
+{                            /*!< (@ 0x40008000) TIMER0 Structure        */
+    uint32_t TASKS_START;    /*!< (@ 0x00000000) Start Timer */
+    uint32_t TASKS_STOP;     /*!< (@ 0x00000004) Stop Timer  */
+    uint32_t TASKS_COUNT;    /*!< (@ 0x00000008) Increment Timer (Counter mode only) */
+    uint32_t TASKS_CLEAR;    /*!< (@ 0x0000000C) Clear time    */
+    uint32_t TASKS_SHUTDOWN; /*!< (@ 0x00000010) Deprecated register - Shut down
                               timer                      */
     uint32_t RESERVED[11];
-    uint32_t TASKS_CAPTURE[6];  /*!< (@ 0x00000040) Description collection: Capture
+    uint32_t TASKS_CAPTURE[6]; /*!< (@ 0x00000040) Description collection: Capture
                                 Timer value to CC[n] register */
     uint32_t RESERVED1[58];
     uint32_t EVENTS_COMPARE[6]; /*!< (@ 0x00000140) Description collection:
                                  Compare event on CC[n] match */
     uint32_t RESERVED2[42];
-    uint32_t SHORTS;            /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t RESERVED3[64];
-    uint32_t INTENSET;          /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;          /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED4[126];
-    uint32_t MODE;              /*!< (@ 0x00000504) Timer mode selection    */
-    uint32_t BITMODE;           /*!< (@ 0x00000508) Configure the number of bits used by the
+    uint32_t MODE;    /*!< (@ 0x00000504) Timer mode selection    */
+    uint32_t BITMODE; /*!< (@ 0x00000508) Configure the number of bits used by the
                        TIMER             */
     uint32_t RESERVED5;
-    uint32_t PRESCALER;         /*!< (@ 0x00000510) Timer prescaler register */
+    uint32_t PRESCALER; /*!< (@ 0x00000510) Timer prescaler register */
     uint32_t RESERVED6[11];
-    uint32_t CC[6];             /*!< (@ 0x00000540) Description collection: Capture/Compare
+    uint32_t CC[6]; /*!< (@ 0x00000540) Description collection: Capture/Compare
                      register
                                             n */
-} NRF_TIMER_Type;               /*!< Size = 1368 (0x558) */
+} NRF_TIMER_Type;   /*!< Size = 1368 (0x558) */
 
 /* ===========================================================================================================================
  */
@@ -1891,32 +1891,32 @@ typedef struct
  */
 
 typedef struct
-{                               /*!< (@ 0x4000B000) RTC0 Structure             */
-    uint32_t TASKS_START;       /*!< (@ 0x00000000) Start RTC COUNTER      */
-    uint32_t TASKS_STOP;        /*!< (@ 0x00000004) Stop RTC COUNTER       */
-    uint32_t TASKS_CLEAR;       /*!< (@ 0x00000008) Clear RTC COUNTER      */
-    uint32_t TASKS_TRIGOVRFLW;  /*!< (@ 0x0000000C) Set COUNTER to 0xFFFFF0 */
+{                              /*!< (@ 0x4000B000) RTC0 Structure             */
+    uint32_t TASKS_START;      /*!< (@ 0x00000000) Start RTC COUNTER      */
+    uint32_t TASKS_STOP;       /*!< (@ 0x00000004) Stop RTC COUNTER       */
+    uint32_t TASKS_CLEAR;      /*!< (@ 0x00000008) Clear RTC COUNTER      */
+    uint32_t TASKS_TRIGOVRFLW; /*!< (@ 0x0000000C) Set COUNTER to 0xFFFFF0 */
     uint32_t RESERVED[60];
-    uint32_t EVENTS_TICK;       /*!< (@ 0x00000100) Event on COUNTER increment   */
-    uint32_t EVENTS_OVRFLW;     /*!< (@ 0x00000104) Event on COUNTER overflow */
+    uint32_t EVENTS_TICK;   /*!< (@ 0x00000100) Event on COUNTER increment   */
+    uint32_t EVENTS_OVRFLW; /*!< (@ 0x00000104) Event on COUNTER overflow */
     uint32_t RESERVED1[14];
     uint32_t EVENTS_COMPARE[4]; /*!< (@ 0x00000140) Description collection:
                                  Compare event on CC[n] match */
     uint32_t RESERVED2[109];
-    uint32_t INTENSET;          /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;          /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED3[13];
-    uint32_t EVTEN;             /*!< (@ 0x00000340) Enable or disable event routing    */
-    uint32_t EVTENSET;          /*!< (@ 0x00000344) Enable event routing */
-    uint32_t EVTENCLR;          /*!< (@ 0x00000348) Disable event routing */
+    uint32_t EVTEN;    /*!< (@ 0x00000340) Enable or disable event routing    */
+    uint32_t EVTENSET; /*!< (@ 0x00000344) Enable event routing */
+    uint32_t EVTENCLR; /*!< (@ 0x00000348) Disable event routing */
     uint32_t RESERVED4[110];
-    uint32_t COUNTER;           /*!< (@ 0x00000504) Current COUNTER value   */
-    uint32_t PRESCALER;         /*!< (@ 0x00000508) 12 bit prescaler for COUNTER frequency
+    uint32_t COUNTER;   /*!< (@ 0x00000504) Current COUNTER value   */
+    uint32_t PRESCALER; /*!< (@ 0x00000508) 12 bit prescaler for COUNTER frequency
                          (32768/(PRESCALER+1)).Mu t be written when RTC is
                          stopped                           */
     uint32_t RESERVED5[13];
-    uint32_t CC[4];             /*!< (@ 0x00000540) Description collection: Compare register n */
-} NRF_RTC_Type;                 /*!< Size = 1360 (0x550) */
+    uint32_t CC[4]; /*!< (@ 0x00000540) Description collection: Compare register n */
+} NRF_RTC_Type;     /*!< Size = 1360 (0x550) */
 
 /* ===========================================================================================================================
  */
@@ -1930,38 +1930,38 @@ typedef struct
  */
 
 typedef struct
-{                            /*!< (@ 0x4000C000) TEMP Structure        */
-    uint32_t TASKS_START;    /*!< (@ 0x00000000) Start temperature measurement */
-    uint32_t TASKS_STOP;     /*!< (@ 0x00000004) Stop temperature measurement  */
+{                         /*!< (@ 0x4000C000) TEMP Structure        */
+    uint32_t TASKS_START; /*!< (@ 0x00000000) Start temperature measurement */
+    uint32_t TASKS_STOP;  /*!< (@ 0x00000004) Stop temperature measurement  */
     uint32_t RESERVED[62];
     uint32_t EVENTS_DATARDY; /*!< (@ 0x00000100) Temperature measurement complete,
                               data ready               */
     uint32_t RESERVED1[128];
-    uint32_t INTENSET;       /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;       /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED2[127];
-    int32_t  TEMP;           /*!< (@ 0x00000508) Temperature in degC (0.25deg steps) */
+    int32_t  TEMP; /*!< (@ 0x00000508) Temperature in degC (0.25deg steps) */
     uint32_t RESERVED3[5];
-    uint32_t A0;             /*!< (@ 0x00000520) Slope of 1st piece wise linear function */
-    uint32_t A1;             /*!< (@ 0x00000524) Slope of 2nd piece wise linear function */
-    uint32_t A2;             /*!< (@ 0x00000528) Slope of 3rd piece wise linear function */
-    uint32_t A3;             /*!< (@ 0x0000052C) Slope of 4th piece wise linear function */
-    uint32_t A4;             /*!< (@ 0x00000530) Slope of 5th piece wise linear function */
-    uint32_t A5;             /*!< (@ 0x00000534) Slope of 6th piece wise linear function */
+    uint32_t A0; /*!< (@ 0x00000520) Slope of 1st piece wise linear function */
+    uint32_t A1; /*!< (@ 0x00000524) Slope of 2nd piece wise linear function */
+    uint32_t A2; /*!< (@ 0x00000528) Slope of 3rd piece wise linear function */
+    uint32_t A3; /*!< (@ 0x0000052C) Slope of 4th piece wise linear function */
+    uint32_t A4; /*!< (@ 0x00000530) Slope of 5th piece wise linear function */
+    uint32_t A5; /*!< (@ 0x00000534) Slope of 6th piece wise linear function */
     uint32_t RESERVED4[2];
-    uint32_t B0;             /*!< (@ 0x00000540) y-intercept of 1st piece wise linear function */
-    uint32_t B1;             /*!< (@ 0x00000544) y-intercept of 2nd piece wise linear function */
-    uint32_t B2;             /*!< (@ 0x00000548) y-intercept of 3rd piece wise linear function */
-    uint32_t B3;             /*!< (@ 0x0000054C) y-intercept of 4th piece wise linear function */
-    uint32_t B4;             /*!< (@ 0x00000550) y-intercept of 5th piece wise linear function */
-    uint32_t B5;             /*!< (@ 0x00000554) y-intercept of 6th piece wise linear function */
+    uint32_t B0; /*!< (@ 0x00000540) y-intercept of 1st piece wise linear function */
+    uint32_t B1; /*!< (@ 0x00000544) y-intercept of 2nd piece wise linear function */
+    uint32_t B2; /*!< (@ 0x00000548) y-intercept of 3rd piece wise linear function */
+    uint32_t B3; /*!< (@ 0x0000054C) y-intercept of 4th piece wise linear function */
+    uint32_t B4; /*!< (@ 0x00000550) y-intercept of 5th piece wise linear function */
+    uint32_t B5; /*!< (@ 0x00000554) y-intercept of 6th piece wise linear function */
     uint32_t RESERVED5[2];
-    uint32_t T0;             /*!< (@ 0x00000560) End point of 1st piece wise linear function */
-    uint32_t T1;             /*!< (@ 0x00000564) End point of 2nd piece wise linear function */
-    uint32_t T2;             /*!< (@ 0x00000568) End point of 3rd piece wise linear function */
-    uint32_t T3;             /*!< (@ 0x0000056C) End point of 4th piece wise linear function */
-    uint32_t T4;             /*!< (@ 0x00000570) End point of 5th piece wise linear function */
-} NRF_TEMP_Type;             /*!< Size = 1396 (0x574) */
+    uint32_t T0; /*!< (@ 0x00000560) End point of 1st piece wise linear function */
+    uint32_t T1; /*!< (@ 0x00000564) End point of 2nd piece wise linear function */
+    uint32_t T2; /*!< (@ 0x00000568) End point of 3rd piece wise linear function */
+    uint32_t T3; /*!< (@ 0x0000056C) End point of 4th piece wise linear function */
+    uint32_t T4; /*!< (@ 0x00000570) End point of 5th piece wise linear function */
+} NRF_TEMP_Type; /*!< Size = 1396 (0x574) */
 
 /* ===========================================================================================================================
  */
@@ -1975,23 +1975,23 @@ typedef struct
  */
 
 typedef struct
-{                           /*!< (@ 0x4000D000) RNG Structure        */
-    uint32_t TASKS_START;   /*!< (@ 0x00000000) Task starting the random number
+{                         /*!< (@ 0x4000D000) RNG Structure        */
+    uint32_t TASKS_START; /*!< (@ 0x00000000) Task starting the random number
                            generator                  */
-    uint32_t TASKS_STOP;    /*!< (@ 0x00000004) Task stopping the random number
+    uint32_t TASKS_STOP;  /*!< (@ 0x00000004) Task stopping the random number
                            generator                  */
     uint32_t RESERVED[62];
     uint32_t EVENTS_VALRDY; /*!< (@ 0x00000100) Event being generated for every new
                         random number written to the VALUE register */
     uint32_t RESERVED1[63];
-    uint32_t SHORTS;        /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t RESERVED2[64];
-    uint32_t INTENSET;      /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;      /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED3[126];
-    uint32_t CONFIG;        /*!< (@ 0x00000504) Configuration register */
-    uint32_t VALUE;         /*!< (@ 0x00000508) Output random number  */
-} NRF_RNG_Type;             /*!< Size = 1292 (0x50c)    */
+    uint32_t CONFIG; /*!< (@ 0x00000504) Configuration register */
+    uint32_t VALUE;  /*!< (@ 0x00000508) Output random number  */
+} NRF_RNG_Type;      /*!< Size = 1292 (0x50c)    */
 
 /* ===========================================================================================================================
  */
@@ -2005,20 +2005,20 @@ typedef struct
  */
 
 typedef struct
-{                             /*!< (@ 0x4000E000) ECB Structure           */
-    uint32_t TASKS_STARTECB;  /*!< (@ 0x00000000) Start ECB block encrypt */
-    uint32_t TASKS_STOPECB;   /*!< (@ 0x00000004) Abort a possible executing ECB
+{                            /*!< (@ 0x4000E000) ECB Structure           */
+    uint32_t TASKS_STARTECB; /*!< (@ 0x00000000) Start ECB block encrypt */
+    uint32_t TASKS_STOPECB;  /*!< (@ 0x00000004) Abort a possible executing ECB
                               operation                   */
     uint32_t RESERVED[62];
     uint32_t EVENTS_ENDECB;   /*!< (@ 0x00000100) ECB block encrypt complete   */
     uint32_t EVENTS_ERRORECB; /*!< (@ 0x00000104) ECB block encrypt aborted
                                because of a STOPECB task or due to an error */
     uint32_t RESERVED1[127];
-    uint32_t INTENSET;        /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;        /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED2[126];
-    uint32_t ECBDATAPTR;      /*!< (@ 0x00000504) ECB block encrypt memory pointers */
-} NRF_ECB_Type;               /*!< Size = 1288 (0x508)   */
+    uint32_t ECBDATAPTR; /*!< (@ 0x00000504) ECB block encrypt memory pointers */
+} NRF_ECB_Type;          /*!< Size = 1288 (0x508)   */
 
 /* ===========================================================================================================================
  */
@@ -2032,29 +2032,29 @@ typedef struct
  */
 
 typedef struct
-{                                /*!< (@ 0x4000F000) AAR Structure        */
-    uint32_t TASKS_START;        /*!< (@ 0x00000000) Start resolving addresses based on
+{                         /*!< (@ 0x4000F000) AAR Structure        */
+    uint32_t TASKS_START; /*!< (@ 0x00000000) Start resolving addresses based on
                            IRKs specified in the IRK data structure */
     uint32_t RESERVED;
-    uint32_t TASKS_STOP;         /*!< (@ 0x00000008) Stop resolving addresses */
+    uint32_t TASKS_STOP; /*!< (@ 0x00000008) Stop resolving addresses */
     uint32_t RESERVED1[61];
     uint32_t EVENTS_END;         /*!< (@ 0x00000100) Address resolution procedure complete */
     uint32_t EVENTS_RESOLVED;    /*!< (@ 0x00000104) Address resolved    */
     uint32_t EVENTS_NOTRESOLVED; /*!< (@ 0x00000108) Address not resolved */
     uint32_t RESERVED2[126];
-    uint32_t INTENSET;           /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;           /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED3[61];
-    uint32_t STATUS;             /*!< (@ 0x00000400) Resolution status */
+    uint32_t STATUS; /*!< (@ 0x00000400) Resolution status */
     uint32_t RESERVED4[63];
-    uint32_t ENABLE;             /*!< (@ 0x00000500) Enable AAR */
-    uint32_t NIRK;               /*!< (@ 0x00000504) Number of IRKs   */
-    uint32_t IRKPTR;             /*!< (@ 0x00000508) Pointer to IRK data structure */
+    uint32_t ENABLE; /*!< (@ 0x00000500) Enable AAR */
+    uint32_t NIRK;   /*!< (@ 0x00000504) Number of IRKs   */
+    uint32_t IRKPTR; /*!< (@ 0x00000508) Pointer to IRK data structure */
     uint32_t RESERVED5;
-    uint32_t ADDRPTR;            /*!< (@ 0x00000510) Pointer to the resolvable address    */
-    uint32_t SCRATCHPTR;         /*!< (@ 0x00000514) Pointer to data area used for
+    uint32_t ADDRPTR;    /*!< (@ 0x00000510) Pointer to the resolvable address    */
+    uint32_t SCRATCHPTR; /*!< (@ 0x00000514) Pointer to data area used for
                           temporary storage            */
-} NRF_AAR_Type;                  /*!< Size = 1304 (0x518)        */
+} NRF_AAR_Type;          /*!< Size = 1304 (0x518)        */
 
 /* ===========================================================================================================================
  */
@@ -2078,30 +2078,30 @@ typedef struct
                              register with the contents of the RATEOVERRIDE
                              register for any ongoing encryption/decryption */
     uint32_t RESERVED[60];
-    uint32_t EVENTS_ENDKSGEN;    /*!< (@ 0x00000100) Key-stream generation complete */
-    uint32_t EVENTS_ENDCRYPT;    /*!< (@ 0x00000104) Encrypt/decrypt complete */
-    uint32_t EVENTS_ERROR;       /*!< (@ 0x00000108) Deprecated register - CCM error
+    uint32_t EVENTS_ENDKSGEN; /*!< (@ 0x00000100) Key-stream generation complete */
+    uint32_t EVENTS_ENDCRYPT; /*!< (@ 0x00000104) Encrypt/decrypt complete */
+    uint32_t EVENTS_ERROR;    /*!< (@ 0x00000108) Deprecated register - CCM error
                                event                      */
     uint32_t RESERVED1[61];
-    uint32_t SHORTS;             /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t RESERVED2[64];
-    uint32_t INTENSET;           /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;           /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED3[61];
-    uint32_t MICSTATUS;          /*!< (@ 0x00000400) MIC check result */
+    uint32_t MICSTATUS; /*!< (@ 0x00000400) MIC check result */
     uint32_t RESERVED4[63];
-    uint32_t ENABLE;             /*!< (@ 0x00000500) Enable */
-    uint32_t MODE;               /*!< (@ 0x00000504) Operation mode   */
-    uint32_t CNFPTR;             /*!< (@ 0x00000508) Pointer to data structure holding AES key
+    uint32_t ENABLE;        /*!< (@ 0x00000500) Enable */
+    uint32_t MODE;          /*!< (@ 0x00000504) Operation mode   */
+    uint32_t CNFPTR;        /*!< (@ 0x00000508) Pointer to data structure holding AES key
                       and NONCE vector */
-    uint32_t INPTR;              /*!< (@ 0x0000050C) Input pointer  */
-    uint32_t OUTPTR;             /*!< (@ 0x00000510) Output pointer */
-    uint32_t SCRATCHPTR;         /*!< (@ 0x00000514) Pointer to data area used for
+    uint32_t INPTR;         /*!< (@ 0x0000050C) Input pointer  */
+    uint32_t OUTPTR;        /*!< (@ 0x00000510) Output pointer */
+    uint32_t SCRATCHPTR;    /*!< (@ 0x00000514) Pointer to data area used for
                              temporary storage            */
-    uint32_t MAXPACKETSIZE;      /*!< (@ 0x00000518) Length of key-stream generated
+    uint32_t MAXPACKETSIZE; /*!< (@ 0x00000518) Length of key-stream generated
                              when MODE.LENGTH = Extended. */
-    uint32_t RATEOVERRIDE;       /*!< (@ 0x0000051C) Data rate override setting.  */
-} NRF_CCM_Type;                  /*!< Size = 1312 (0x520)           */
+    uint32_t RATEOVERRIDE;  /*!< (@ 0x0000051C) Data rate override setting.  */
+} NRF_CCM_Type;             /*!< Size = 1312 (0x520)           */
 
 /* ===========================================================================================================================
  */
@@ -2115,24 +2115,24 @@ typedef struct
  */
 
 typedef struct
-{                            /*!< (@ 0x40010000) WDT Structure        */
-    uint32_t TASKS_START;    /*!< (@ 0x00000000) Start the watchdog */
+{                         /*!< (@ 0x40010000) WDT Structure        */
+    uint32_t TASKS_START; /*!< (@ 0x00000000) Start the watchdog */
     uint32_t RESERVED[63];
     uint32_t EVENTS_TIMEOUT; /*!< (@ 0x00000100) Watchdog timeout */
     uint32_t RESERVED1[128];
-    uint32_t INTENSET;       /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;       /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED2[61];
-    uint32_t RUNSTATUS;      /*!< (@ 0x00000400) Run status */
-    uint32_t REQSTATUS;      /*!< (@ 0x00000404) Request status */
+    uint32_t RUNSTATUS; /*!< (@ 0x00000400) Run status */
+    uint32_t REQSTATUS; /*!< (@ 0x00000404) Request status */
     uint32_t RESERVED3[63];
-    uint32_t CRV;            /*!< (@ 0x00000504) Counter reload value    */
-    uint32_t RREN;           /*!< (@ 0x00000508) Enable register for reload request
+    uint32_t CRV;    /*!< (@ 0x00000504) Counter reload value    */
+    uint32_t RREN;   /*!< (@ 0x00000508) Enable register for reload request
                       registers               */
-    uint32_t CONFIG;         /*!< (@ 0x0000050C) Configuration register */
+    uint32_t CONFIG; /*!< (@ 0x0000050C) Configuration register */
     uint32_t RESERVED4[60];
-    uint32_t RR[8];          /*!< (@ 0x00000600) Description collection: Reload request n    */
-} NRF_WDT_Type;              /*!< Size = 1568 (0x620) */
+    uint32_t RR[8]; /*!< (@ 0x00000600) Description collection: Reload request n    */
+} NRF_WDT_Type;     /*!< Size = 1568 (0x620) */
 
 /* ===========================================================================================================================
  */
@@ -2160,22 +2160,22 @@ typedef struct
     uint32_t       EVENTS_DBLRDY;    /*!< (@ 0x0000010C) Double displacement(s) detected */
     uint32_t       EVENTS_STOPPED;   /*!< (@ 0x00000110) QDEC has been stopped */
     uint32_t       RESERVED1[59];
-    uint32_t       SHORTS;           /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t       SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t       RESERVED2[64];
-    uint32_t       INTENSET;         /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t       INTENCLR;         /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t       INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t       INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t       RESERVED3[125];
-    uint32_t       ENABLE;           /*!< (@ 0x00000500) Enable the quadrature decoder    */
-    uint32_t       LEDPOL;           /*!< (@ 0x00000504) LED output pin polarity    */
-    uint32_t       SAMPLEPER;        /*!< (@ 0x00000508) Sample period */
-    int32_t        SAMPLE;           /*!< (@ 0x0000050C) Motion sample value     */
-    uint32_t       REPORTPER;        /*!< (@ 0x00000510) Number of samples to be taken before
+    uint32_t       ENABLE;    /*!< (@ 0x00000500) Enable the quadrature decoder    */
+    uint32_t       LEDPOL;    /*!< (@ 0x00000504) LED output pin polarity    */
+    uint32_t       SAMPLEPER; /*!< (@ 0x00000508) Sample period */
+    int32_t        SAMPLE;    /*!< (@ 0x0000050C) Motion sample value     */
+    uint32_t       REPORTPER; /*!< (@ 0x00000510) Number of samples to be taken before
                          REPORTRDY and DBLRDY events can be generated */
-    int32_t        ACC;        /*!< (@ 0x00000514) Register accumulating the valid transitions */
-    int32_t        ACCREAD;    /*!< (@ 0x00000518) Snapshot of the ACC register, updated by
+    int32_t        ACC;       /*!< (@ 0x00000514) Register accumulating the valid transitions */
+    int32_t        ACCREAD;   /*!< (@ 0x00000518) Snapshot of the ACC register, updated by
                       the READCLRACC or RDCLRACC task */
-    QDEC_PSEL_Type PSEL;       /*!< (@ 0x0000051C) Unspecified */
-    uint32_t       DBFEN;      /*!< (@ 0x00000528) Enable input debounce filters      */
+    QDEC_PSEL_Type PSEL;      /*!< (@ 0x0000051C) Unspecified */
+    uint32_t       DBFEN;     /*!< (@ 0x00000528) Enable input debounce filters      */
     uint32_t       RESERVED4[5];
     uint32_t       LEDPRE;     /*!< (@ 0x00000540) Time period the LED is switched ON prior
                       to sampling       */
@@ -2207,24 +2207,24 @@ typedef struct
     uint32_t EVENTS_UP;    /*!< (@ 0x00000108) Upward crossing   */
     uint32_t EVENTS_CROSS; /*!< (@ 0x0000010C) Downward or upward crossing */
     uint32_t RESERVED1[60];
-    uint32_t SHORTS;       /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t RESERVED2[63];
-    uint32_t INTEN;        /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t INTENSET;     /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;     /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED3[61];
-    uint32_t RESULT;       /*!< (@ 0x00000400) Compare result */
+    uint32_t RESULT; /*!< (@ 0x00000400) Compare result */
     uint32_t RESERVED4[63];
-    uint32_t ENABLE;       /*!< (@ 0x00000500) COMP enable */
-    uint32_t PSEL;         /*!< (@ 0x00000504) Pin select   */
-    uint32_t REFSEL;       /*!< (@ 0x00000508) Reference source select for single-ended
+    uint32_t ENABLE;    /*!< (@ 0x00000500) COMP enable */
+    uint32_t PSEL;      /*!< (@ 0x00000504) Pin select   */
+    uint32_t REFSEL;    /*!< (@ 0x00000508) Reference source select for single-ended
                       mode              */
-    uint32_t EXTREFSEL;    /*!< (@ 0x0000050C) External reference select */
+    uint32_t EXTREFSEL; /*!< (@ 0x0000050C) External reference select */
     uint32_t RESERVED5[8];
-    uint32_t TH;           /*!< (@ 0x00000530) Threshold configuration for hysteresis unit */
-    uint32_t MODE;         /*!< (@ 0x00000534) Mode configuration */
-    uint32_t HYST;         /*!< (@ 0x00000538) Comparator hysteresis enable */
-} NRF_COMP_Type;           /*!< Size = 1340 (0x53c) */
+    uint32_t TH;   /*!< (@ 0x00000530) Threshold configuration for hysteresis unit */
+    uint32_t MODE; /*!< (@ 0x00000534) Mode configuration */
+    uint32_t HYST; /*!< (@ 0x00000538) Comparator hysteresis enable */
+} NRF_COMP_Type;   /*!< Size = 1340 (0x53c) */
 
 /* ===========================================================================================================================
  */
@@ -2248,22 +2248,22 @@ typedef struct
     uint32_t EVENTS_UP;    /*!< (@ 0x00000108) Upward crossing    */
     uint32_t EVENTS_CROSS; /*!< (@ 0x0000010C) Downward or upward crossing */
     uint32_t RESERVED1[60];
-    uint32_t SHORTS;       /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t RESERVED2[64];
-    uint32_t INTENSET;     /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;     /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t RESERVED3[61];
-    uint32_t RESULT;       /*!< (@ 0x00000400) Compare result */
+    uint32_t RESULT; /*!< (@ 0x00000400) Compare result */
     uint32_t RESERVED4[63];
-    uint32_t ENABLE;       /*!< (@ 0x00000500) Enable LPCOMP    */
-    uint32_t PSEL;         /*!< (@ 0x00000504) Input pin select      */
-    uint32_t REFSEL;       /*!< (@ 0x00000508) Reference select    */
-    uint32_t EXTREFSEL;    /*!< (@ 0x0000050C) External reference select */
+    uint32_t ENABLE;    /*!< (@ 0x00000500) Enable LPCOMP    */
+    uint32_t PSEL;      /*!< (@ 0x00000504) Input pin select      */
+    uint32_t REFSEL;    /*!< (@ 0x00000508) Reference select    */
+    uint32_t EXTREFSEL; /*!< (@ 0x0000050C) External reference select */
     uint32_t RESERVED5[4];
-    uint32_t ANADETECT;    /*!< (@ 0x00000520) Analog detect configuration */
+    uint32_t ANADETECT; /*!< (@ 0x00000520) Analog detect configuration */
     uint32_t RESERVED6[5];
-    uint32_t HYST;         /*!< (@ 0x00000538) Comparator hysteresis enable   */
-} NRF_LPCOMP_Type;         /*!< Size = 1340 (0x53c) */
+    uint32_t HYST; /*!< (@ 0x00000538) Comparator hysteresis enable   */
+} NRF_LPCOMP_Type; /*!< Size = 1340 (0x53c) */
 
 /* ===========================================================================================================================
  */
@@ -2277,8 +2277,8 @@ typedef struct
  */
 
 typedef struct
-{                                  /*!< (@ 0x40014000) EGU0 Structure              */
-    uint32_t TASKS_TRIGGER[16];    /*!< (@ 0x00000000) Description collection:
+{                               /*!< (@ 0x40014000) EGU0 Structure              */
+    uint32_t TASKS_TRIGGER[16]; /*!< (@ 0x00000000) Description collection:
                                  Trigger n for triggering the corresponding
                                  TRIGGERED[n] event                       */
     uint32_t RESERVED[48];
@@ -2286,10 +2286,10 @@ typedef struct
                                     Event number n generated by triggering the
                                     corresponding TRIGGER[n] task */
     uint32_t RESERVED1[112];
-    uint32_t INTEN;                /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t INTENSET;             /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t INTENCLR;             /*!< (@ 0x00000308) Disable interrupt */
-} NRF_EGU_Type;                    /*!< Size = 780 (0x30c)      */
+    uint32_t INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
+} NRF_EGU_Type;        /*!< Size = 780 (0x30c)      */
 
 /* ===========================================================================================================================
  */
@@ -2319,18 +2319,18 @@ typedef struct
  */
 
 typedef struct
-{                                       /*!< (@ 0x4001C000) PWM0 Structure */
+{ /*!< (@ 0x4001C000) PWM0 Structure */
     uint32_t      RESERVED;
-    uint32_t      TASKS_STOP;           /*!< (@ 0x00000004) Stops PWM pulse generation on all
+    uint32_t      TASKS_STOP;        /*!< (@ 0x00000004) Stops PWM pulse generation on all
                           channels at the end of current PWM period, and stops
                                                 sequence playback */
-    uint32_t      TASKS_SEQSTART[2];    /*!< (@ 0x00000008) Description collection: Loads
+    uint32_t      TASKS_SEQSTART[2]; /*!< (@ 0x00000008) Description collection: Loads
                                  the first PWM value on all enabled channels
                                  from sequence n, and starts playing that
                                  sequence at the rate defined in SEQ[n]REFRESH
                                  and/or DECODER.MODE. Causes PWM generation to
                                  start if not running.             */
-    uint32_t      TASKS_NEXTSTEP;       /*!< (@ 0x00000010) Steps by one value in the current
+    uint32_t      TASKS_NEXTSTEP;    /*!< (@ 0x00000010) Steps by one value in the current
                               sequence on all enabled channels if
                               DECODER.MODE=NextStep. Does not cause PWM
                               generation to start if not running. */
@@ -2347,11 +2347,11 @@ typedef struct
     uint32_t      EVENTS_LOOPSDONE;     /*!< (@ 0x0000011C) Concatenated sequences have been
                            played the amount of times defined in LOOP.CNT */
     uint32_t      RESERVED2[56];
-    uint32_t      SHORTS;     /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t      SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t      RESERVED3[63];
-    uint32_t      INTEN;      /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t      INTENSET;   /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t      INTENCLR;   /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t      INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t      INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t      INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t      RESERVED4[125];
     uint32_t      ENABLE;     /*!< (@ 0x00000500) PWM module enable register */
     uint32_t      MODE;       /*!< (@ 0x00000504) Selects operating mode of the wave counter */
@@ -2361,9 +2361,9 @@ typedef struct
     uint32_t      DECODER;    /*!< (@ 0x00000510) Configuration of the decoder    */
     uint32_t      LOOP;       /*!< (@ 0x00000514) Number of playbacks of a loop       */
     uint32_t      RESERVED5[2];
-    PWM_SEQ_Type  SEQ[2];     /*!< (@ 0x00000520) Unspecified */
-    PWM_PSEL_Type PSEL;       /*!< (@ 0x00000560) Unspecified  */
-} NRF_PWM_Type;               /*!< Size = 1392 (0x570)        */
+    PWM_SEQ_Type  SEQ[2]; /*!< (@ 0x00000520) Unspecified */
+    PWM_PSEL_Type PSEL;   /*!< (@ 0x00000560) Unspecified  */
+} NRF_PWM_Type;           /*!< Size = 1392 (0x570)        */
 
 /* ===========================================================================================================================
  */
@@ -2377,9 +2377,9 @@ typedef struct
  */
 
 typedef struct
-{                                   /*!< (@ 0x4001D000) PDM Structure        */
-    uint32_t        TASKS_START;    /*!< (@ 0x00000000) Starts continuous PDM transfer */
-    uint32_t        TASKS_STOP;     /*!< (@ 0x00000004) Stops PDM transfer  */
+{                                /*!< (@ 0x4001D000) PDM Structure        */
+    uint32_t        TASKS_START; /*!< (@ 0x00000000) Starts continuous PDM transfer */
+    uint32_t        TASKS_STOP;  /*!< (@ 0x00000004) Stops PDM transfer  */
     uint32_t        RESERVED[62];
     uint32_t        EVENTS_STARTED; /*!< (@ 0x00000100) PDM transfer has started */
     uint32_t        EVENTS_STOPPED; /*!< (@ 0x00000104) PDM transfer has finished */
@@ -2388,24 +2388,24 @@ typedef struct
                                                  a STOP task has been received)
                           to Data RAM                 */
     uint32_t        RESERVED1[125];
-    uint32_t        INTEN;          /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t        INTENSET;       /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t        INTENCLR;       /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t        INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t        INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t        INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t        RESERVED2[125];
-    uint32_t        ENABLE;         /*!< (@ 0x00000500) PDM module enable register     */
-    uint32_t        PDMCLKCTRL;     /*!< (@ 0x00000504) PDM clock generator control */
-    uint32_t        MODE;           /*!< (@ 0x00000508) Defines the routing of the connected PDM
+    uint32_t        ENABLE;     /*!< (@ 0x00000500) PDM module enable register     */
+    uint32_t        PDMCLKCTRL; /*!< (@ 0x00000504) PDM clock generator control */
+    uint32_t        MODE;       /*!< (@ 0x00000508) Defines the routing of the connected PDM
                     microphones' signals */
     uint32_t        RESERVED3[3];
-    uint32_t        GAINL;          /*!< (@ 0x00000518) Left output gain adjustment */
-    uint32_t        GAINR;          /*!< (@ 0x0000051C) Right output gain adjustment */
-    uint32_t        RATIO;          /*!< (@ 0x00000520) Selects the ratio between PDM_CLK and
+    uint32_t        GAINL; /*!< (@ 0x00000518) Left output gain adjustment */
+    uint32_t        GAINR; /*!< (@ 0x0000051C) Right output gain adjustment */
+    uint32_t        RATIO; /*!< (@ 0x00000520) Selects the ratio between PDM_CLK and
                      output sample rate. Change PDMCLKCTRL accordingly. */
     uint32_t        RESERVED4[7];
-    PDM_PSEL_Type   PSEL;           /*!< (@ 0x00000540) Unspecified */
+    PDM_PSEL_Type   PSEL; /*!< (@ 0x00000540) Unspecified */
     uint32_t        RESERVED5[6];
-    PDM_SAMPLE_Type SAMPLE;         /*!< (@ 0x00000560) Unspecified */
-} NRF_PDM_Type;                     /*!< Size = 1384 (0x568)           */
+    PDM_SAMPLE_Type SAMPLE; /*!< (@ 0x00000560) Unspecified */
+} NRF_PDM_Type;             /*!< Size = 1384 (0x568)           */
 
 /* ===========================================================================================================================
  */
@@ -2419,7 +2419,7 @@ typedef struct
  */
 
 typedef struct
-{                        /*!< (@ 0x4001E000) ACL Structure */
+{ /*!< (@ 0x4001E000) ACL Structure */
     uint32_t     RESERVED[512];
     ACL_ACL_Type ACL[8]; /*!< (@ 0x00000800) Unspecified */
 } NRF_ACL_Type;          /*!< Size = 2176 (0x880)        */
@@ -2436,19 +2436,19 @@ typedef struct
  */
 
 typedef struct
-{                       /*!< (@ 0x4001E000) NVMC Structure */
+{ /*!< (@ 0x4001E000) NVMC Structure */
     uint32_t RESERVED[256];
-    uint32_t READY;     /*!< (@ 0x00000400) Ready flag */
+    uint32_t READY; /*!< (@ 0x00000400) Ready flag */
     uint32_t RESERVED1;
     uint32_t READYNEXT; /*!< (@ 0x00000408) Ready flag */
     uint32_t RESERVED2[62];
-    uint32_t CONFIG;    /*!< (@ 0x00000504) Configuration register */
+    uint32_t CONFIG; /*!< (@ 0x00000504) Configuration register */
 
     union
     {
-        uint32_t ERASEPAGE;       /*!< (@ 0x00000508) Register for erasing a page in code
+        uint32_t ERASEPAGE; /*!< (@ 0x00000508) Register for erasing a page in code
                            area                   */
-        uint32_t ERASEPCR1;       /*!< (@ 0x00000508) Deprecated register - Register for
+        uint32_t ERASEPCR1; /*!< (@ 0x00000508) Deprecated register - Register for
                       erasing a page in code area. Equivalent to ERASEPAGE. */
     };
     uint32_t ERASEALL;            /*!< (@ 0x0000050C) Register for erasing all non-volatile
@@ -2462,11 +2462,11 @@ typedef struct
     uint32_t ERASEPAGEPARTIALCFG; /*!< (@ 0x0000051C) Register for partial erase
                                    configuration                   */
     uint32_t RESERVED3[8];
-    uint32_t ICACHECNF;           /*!< (@ 0x00000540) I-code cache configuration register. */
+    uint32_t ICACHECNF; /*!< (@ 0x00000540) I-code cache configuration register. */
     uint32_t RESERVED4;
-    uint32_t IHIT;                /*!< (@ 0x00000548) I-code cache hit counter.  */
-    uint32_t IMISS;               /*!< (@ 0x0000054C) I-code cache miss counter. */
-} NRF_NVMC_Type;                  /*!< Size = 1360 (0x550)  */
+    uint32_t IHIT;  /*!< (@ 0x00000548) I-code cache hit counter.  */
+    uint32_t IMISS; /*!< (@ 0x0000054C) I-code cache miss counter. */
+} NRF_NVMC_Type;    /*!< Size = 1360 (0x550)  */
 
 /* ===========================================================================================================================
  */
@@ -2483,16 +2483,16 @@ typedef struct
 {                                    /*!< (@ 0x4001F000) PPI Structure                   */
     PPI_TASKS_CHG_Type TASKS_CHG[6]; /*!< (@ 0x00000000) Channel group tasks */
     uint32_t           RESERVED[308];
-    uint32_t           CHEN;         /*!< (@ 0x00000500) Channel enable register    */
-    uint32_t           CHENSET;      /*!< (@ 0x00000504) Channel enable set register */
-    uint32_t           CHENCLR;      /*!< (@ 0x00000508) Channel enable clear register */
+    uint32_t           CHEN;    /*!< (@ 0x00000500) Channel enable register    */
+    uint32_t           CHENSET; /*!< (@ 0x00000504) Channel enable set register */
+    uint32_t           CHENCLR; /*!< (@ 0x00000508) Channel enable clear register */
     uint32_t           RESERVED1;
-    PPI_CH_Type        CH[20];       /*!< (@ 0x00000510) PPI Channel */
+    PPI_CH_Type        CH[20]; /*!< (@ 0x00000510) PPI Channel */
     uint32_t           RESERVED2[148];
-    uint32_t           CHG[6];       /*!< (@ 0x00000800) Description collection: Channel group n */
+    uint32_t           CHG[6]; /*!< (@ 0x00000800) Description collection: Channel group n */
     uint32_t           RESERVED3[62];
-    PPI_FORK_Type      FORK[32];     /*!< (@ 0x00000910) Fork */
-} NRF_PPI_Type;                      /*!< Size = 2448 (0x990)           */
+    PPI_FORK_Type      FORK[32]; /*!< (@ 0x00000910) Fork */
+} NRF_PPI_Type;                  /*!< Size = 2448 (0x990)           */
 
 /* ===========================================================================================================================
  */
@@ -2506,30 +2506,30 @@ typedef struct
  */
 
 typedef struct
-{                                              /*!< (@ 0x40020000) MWU Structure */
+{ /*!< (@ 0x40020000) MWU Structure */
     uint32_t                RESERVED[64];
-    MWU_EVENTS_REGION_Type  EVENTS_REGION[4];  /*!< (@ 0x00000100) Peripheral events. */
+    MWU_EVENTS_REGION_Type  EVENTS_REGION[4]; /*!< (@ 0x00000100) Peripheral events. */
     uint32_t                RESERVED1[16];
     MWU_EVENTS_PREGION_Type EVENTS_PREGION[2]; /*!< (@ 0x00000160) Peripheral events. */
     uint32_t                RESERVED2[100];
-    uint32_t                INTEN;             /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t                INTENSET;          /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t                INTENCLR;          /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t                INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t                INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t                INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t                RESERVED3[5];
-    uint32_t                NMIEN;             /*!< (@ 0x00000320) Enable or disable interrupt    */
-    uint32_t                NMIENSET;          /*!< (@ 0x00000324) Enable interrupt */
-    uint32_t                NMIENCLR;          /*!< (@ 0x00000328) Disable interrupt */
+    uint32_t                NMIEN;    /*!< (@ 0x00000320) Enable or disable interrupt    */
+    uint32_t                NMIENSET; /*!< (@ 0x00000324) Enable interrupt */
+    uint32_t                NMIENCLR; /*!< (@ 0x00000328) Disable interrupt */
     uint32_t                RESERVED4[53];
-    MWU_PERREGION_Type      PERREGION[2];      /*!< (@ 0x00000400) Unspecified */
+    MWU_PERREGION_Type      PERREGION[2]; /*!< (@ 0x00000400) Unspecified */
     uint32_t                RESERVED5[64];
     uint32_t                REGIONEN;    /*!< (@ 0x00000510) Enable/disable regions watch    */
     uint32_t                REGIONENSET; /*!< (@ 0x00000514) Enable regions watch */
     uint32_t                REGIONENCLR; /*!< (@ 0x00000518) Disable regions watch */
     uint32_t                RESERVED6[57];
-    MWU_REGION_Type         REGION[4];   /*!< (@ 0x00000600) Unspecified */
+    MWU_REGION_Type         REGION[4]; /*!< (@ 0x00000600) Unspecified */
     uint32_t                RESERVED7[32];
-    MWU_PREGION_Type        PREGION[2];  /*!< (@ 0x000006C0) Unspecified */
-} NRF_MWU_Type;                          /*!< Size = 1760 (0x6e0)                */
+    MWU_PREGION_Type        PREGION[2]; /*!< (@ 0x000006C0) Unspecified */
+} NRF_MWU_Type;                         /*!< Size = 1760 (0x6e0)                */
 
 /* ===========================================================================================================================
  */
@@ -2543,10 +2543,10 @@ typedef struct
  */
 
 typedef struct
-{                                    /*!< (@ 0x40025000) I2S Structure        */
-    uint32_t        TASKS_START;     /*!< (@ 0x00000000) Starts continuous I2S transfer. Also
+{                                /*!< (@ 0x40025000) I2S Structure        */
+    uint32_t        TASKS_START; /*!< (@ 0x00000000) Starts continuous I2S transfer. Also
                            starts MCK generator when this is enabled. */
-    uint32_t        TASKS_STOP;      /*!< (@ 0x00000004) Stops I2S transfer. Also stops MCK
+    uint32_t        TASKS_STOP;  /*!< (@ 0x00000004) Stops I2S transfer. Also stops MCK
                            generator.  Triggering this task will cause the STOPPED
                                                  event to be generated.  */
     uint32_t        RESERVED[63];
@@ -2563,21 +2563,21 @@ typedef struct
                                will be generated for every RXTXD.MAXCNT words
                                that are sent on the SDOUT pin. */
     uint32_t        RESERVED2[122];
-    uint32_t        INTEN;           /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t        INTENSET;        /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t        INTENCLR;        /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t        INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t        INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t        INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t        RESERVED3[125];
-    uint32_t        ENABLE;          /*!< (@ 0x00000500) Enable I2S module.        */
-    I2S_CONFIG_Type CONFIG;          /*!< (@ 0x00000504) Unspecified */
+    uint32_t        ENABLE; /*!< (@ 0x00000500) Enable I2S module.        */
+    I2S_CONFIG_Type CONFIG; /*!< (@ 0x00000504) Unspecified */
     uint32_t        RESERVED4[3];
-    I2S_RXD_Type    RXD;             /*!< (@ 0x00000538) Unspecified */
+    I2S_RXD_Type    RXD; /*!< (@ 0x00000538) Unspecified */
     uint32_t        RESERVED5;
-    I2S_TXD_Type    TXD;             /*!< (@ 0x00000540) Unspecified */
+    I2S_TXD_Type    TXD; /*!< (@ 0x00000540) Unspecified */
     uint32_t        RESERVED6[3];
-    I2S_RXTXD_Type  RXTXD;           /*!< (@ 0x00000550) Unspecified */
+    I2S_RXTXD_Type  RXTXD; /*!< (@ 0x00000550) Unspecified */
     uint32_t        RESERVED7[3];
-    I2S_PSEL_Type   PSEL;            /*!< (@ 0x00000560) Unspecified */
-} NRF_I2S_Type;                      /*!< Size = 1396 (0x574)       */
+    I2S_PSEL_Type   PSEL; /*!< (@ 0x00000560) Unspecified */
+} NRF_I2S_Type;           /*!< Size = 1396 (0x574)       */
 
 /* ===========================================================================================================================
  */
@@ -2607,7 +2607,7 @@ typedef struct
  */
 
 typedef struct
-{                                         /*!< (@ 0x40027000) USBD Structure */
+{ /*!< (@ 0x40027000) USBD Structure */
     uint32_t         RESERVED;
     uint32_t         TASKS_STARTEPIN[8];  /*!< (@ 0x00000004) Description collection:
                                    Captures the EPIN[n].PTR  and EPIN[n].MAXCNT
@@ -2635,53 +2635,53 @@ typedef struct
     uint32_t         TASKS_DPDMNODRIVE;   /*!< (@ 0x0000005C) Stops forcing D+ and D- lines
                                  into any state (USB engine takes control) */
     uint32_t         RESERVED1[40];
-    uint32_t         EVENTS_USBRESET;     /*!< (@ 0x00000100) Signals that a USB reset
+    uint32_t         EVENTS_USBRESET;    /*!< (@ 0x00000100) Signals that a USB reset
                                condition has been detected on USB lines */
-    uint32_t         EVENTS_STARTED;      /*!< (@ 0x00000104) Confirms that the EPIN[n].PTR and
+    uint32_t         EVENTS_STARTED;     /*!< (@ 0x00000104) Confirms that the EPIN[n].PTR and
                          EPIN[n].MAXCNT, or EPOUT[n].PTR and EPOUT[n].MAXCNT
                          registers have been captured on all endpoints reported
                                                 in the EPSTATUS register */
-    uint32_t         EVENTS_ENDEPIN[8];   /*!< (@ 0x00000108) Description collection: The
+    uint32_t         EVENTS_ENDEPIN[8];  /*!< (@ 0x00000108) Description collection: The
                                   whole EPIN[n] buffer  has been consumed. The RAM
                                   buffer can be  accessed safely by software.  */
-    uint32_t         EVENTS_EP0DATADONE;  /*!< (@ 0x00000128) An acknowledged data transfer
+    uint32_t         EVENTS_EP0DATADONE; /*!< (@ 0x00000128) An acknowledged data transfer
                                   has taken place on the control endpoint */
-    uint32_t         EVENTS_ENDISOIN;     /*!< (@ 0x0000012C) The whole ISOIN buffer has been
+    uint32_t         EVENTS_ENDISOIN;    /*!< (@ 0x0000012C) The whole ISOIN buffer has been
                                consumed. The RAM buffer can be accessed safely
                                by software.             */
-    uint32_t         EVENTS_ENDEPOUT[8];  /*!< (@ 0x00000130) Description collection: The whole
+    uint32_t         EVENTS_ENDEPOUT[8]; /*!< (@ 0x00000130) Description collection: The whole
                              EPOUT[n] buffer has been consumed. The RAM buffer
                              can be accessed safely by software. */
-    uint32_t         EVENTS_ENDISOOUT;    /*!< (@ 0x00000150) The whole ISOOUT buffer has
+    uint32_t         EVENTS_ENDISOOUT;   /*!< (@ 0x00000150) The whole ISOOUT buffer has
                                 been consumed. The RAM buffer can be accessed
                                 safely by software.             */
-    uint32_t         EVENTS_SOF;          /*!< (@ 0x00000154) Signals that a SOF (start of frame)
+    uint32_t         EVENTS_SOF;         /*!< (@ 0x00000154) Signals that a SOF (start of frame)
                           condition has been detected on USB lines */
-    uint32_t         EVENTS_USBEVENT;     /*!< (@ 0x00000158) An event or an error not covered
+    uint32_t         EVENTS_USBEVENT;    /*!< (@ 0x00000158) An event or an error not covered
                                by specific events has occurred. Check EVENTCAUSE
                                register to find the cause. */
-    uint32_t         EVENTS_EP0SETUP;     /*!< (@ 0x0000015C) A valid SETUP token has been received
+    uint32_t         EVENTS_EP0SETUP;    /*!< (@ 0x0000015C) A valid SETUP token has been received
                           (and acknowledged) on the control endpoint */
-    uint32_t         EVENTS_EPDATA; /*!< (@ 0x00000160) A data transfer has occurred on a data
+    uint32_t         EVENTS_EPDATA;      /*!< (@ 0x00000160) A data transfer has occurred on a data
                         endpoint, indicated by the EPDATASTATUS register */
     uint32_t         RESERVED2[39];
-    uint32_t         SHORTS;        /*!< (@ 0x00000200) Shortcuts between local events and tasks */
+    uint32_t         SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
     uint32_t         RESERVED3[63];
-    uint32_t         INTEN;         /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t         INTENSET;      /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t         INTENCLR;      /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t         INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t         INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t         INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t         RESERVED4[61];
-    uint32_t         EVENTCAUSE;    /*!< (@ 0x00000400) Details on what caused the USBEVENT
+    uint32_t         EVENTCAUSE; /*!< (@ 0x00000400) Details on what caused the USBEVENT
                           event                  */
     uint32_t         RESERVED5[7];
-    USBD_HALTED_Type HALTED;        /*!< (@ 0x00000420) Unspecified */
+    USBD_HALTED_Type HALTED; /*!< (@ 0x00000420) Unspecified */
     uint32_t         RESERVED6;
-    uint32_t         EPSTATUS;      /*!< (@ 0x00000468) Provides information on which
+    uint32_t         EPSTATUS;     /*!< (@ 0x00000468) Provides information on which
                             endpoint's EasyDMA     registers have been captured     */
-    uint32_t         EPDATASTATUS;  /*!< (@ 0x0000046C) Provides information on which
+    uint32_t         EPDATASTATUS; /*!< (@ 0x0000046C) Provides information on which
                             endpoint(s) an acknowledged data transfer has
                             occurred (EPDATA event) */
-    uint32_t         USBADDR;       /*!< (@ 0x00000470) Device USB address      */
+    uint32_t         USBADDR;      /*!< (@ 0x00000470) Device USB address      */
     uint32_t         RESERVED7[3];
     uint32_t         BMREQUESTTYPE; /*!< (@ 0x00000480) SETUP data, byte 0, bmRequestType   */
     uint32_t         BREQUEST;      /*!< (@ 0x00000484) SETUP data, byte 1, bRequest   */
@@ -2693,32 +2693,32 @@ typedef struct
     uint32_t         WLENGTHH;      /*!< (@ 0x0000049C) SETUP data, byte 7, MSB of wLength   */
     USBD_SIZE_Type   SIZE;          /*!< (@ 0x000004A0) Unspecified */
     uint32_t         RESERVED8[15];
-    uint32_t         ENABLE;        /*!< (@ 0x00000500) Enable USB    */
-    uint32_t         USBPULLUP;     /*!< (@ 0x00000504) Control of the USB pull-up */
-    uint32_t         DPDMVALUE;     /*!< (@ 0x00000508) State D+ and D- lines will be forced
+    uint32_t         ENABLE;    /*!< (@ 0x00000500) Enable USB    */
+    uint32_t         USBPULLUP; /*!< (@ 0x00000504) Control of the USB pull-up */
+    uint32_t         DPDMVALUE; /*!< (@ 0x00000508) State D+ and D- lines will be forced
                          into by the DPDMDRIVE task. The DPDMNODRIVE task
                                                 reverts the control of the lines
                          to MAC IP (no forcing). */
-    uint32_t         DTOGGLE;       /*!< (@ 0x0000050C) Data toggle control and status   */
-    uint32_t         EPINEN;        /*!< (@ 0x00000510) Endpoint IN enable    */
-    uint32_t         EPOUTEN;       /*!< (@ 0x00000514) Endpoint OUT enable   */
-    uint32_t         EPSTALL;       /*!< (@ 0x00000518) STALL endpoints   */
-    uint32_t         ISOSPLIT;      /*!< (@ 0x0000051C) Controls the split of ISO buffers  */
-    uint32_t         FRAMECNTR;     /*!< (@ 0x00000520) Returns the current value of the start
+    uint32_t         DTOGGLE;   /*!< (@ 0x0000050C) Data toggle control and status   */
+    uint32_t         EPINEN;    /*!< (@ 0x00000510) Endpoint IN enable    */
+    uint32_t         EPOUTEN;   /*!< (@ 0x00000514) Endpoint OUT enable   */
+    uint32_t         EPSTALL;   /*!< (@ 0x00000518) STALL endpoints   */
+    uint32_t         ISOSPLIT;  /*!< (@ 0x0000051C) Controls the split of ISO buffers  */
+    uint32_t         FRAMECNTR; /*!< (@ 0x00000520) Returns the current value of the start
                          of frame counter */
     uint32_t         RESERVED9[2];
-    uint32_t         LOWPOWER;      /*!< (@ 0x0000052C) Controls USBD peripheral low power mode
+    uint32_t         LOWPOWER;    /*!< (@ 0x0000052C) Controls USBD peripheral low power mode
                         during USB suspend */
-    uint32_t         ISOINCONFIG;   /*!< (@ 0x00000530) Controls the response of the ISO IN
+    uint32_t         ISOINCONFIG; /*!< (@ 0x00000530) Controls the response of the ISO IN
                            endpoint to an IN token when no data is ready to be
                            sent */
     uint32_t         RESERVED10[51];
-    USBD_EPIN_Type   EPIN[8];       /*!< (@ 0x00000600) Unspecified */
-    USBD_ISOIN_Type  ISOIN;         /*!< (@ 0x000006A0) Unspecified  */
+    USBD_EPIN_Type   EPIN[8]; /*!< (@ 0x00000600) Unspecified */
+    USBD_ISOIN_Type  ISOIN;   /*!< (@ 0x000006A0) Unspecified  */
     uint32_t         RESERVED11[21];
-    USBD_EPOUT_Type  EPOUT[8];      /*!< (@ 0x00000700) Unspecified */
-    USBD_ISOOUT_Type ISOOUT;        /*!< (@ 0x000007A0) Unspecified  */
-} NRF_USBD_Type;                    /*!< Size = 1964 (0x7ac)            */
+    USBD_EPOUT_Type  EPOUT[8]; /*!< (@ 0x00000700) Unspecified */
+    USBD_ISOOUT_Type ISOOUT;   /*!< (@ 0x000007A0) Unspecified  */
+} NRF_USBD_Type;               /*!< Size = 1964 (0x7ac)            */
 
 /* ===========================================================================================================================
  */
@@ -2742,37 +2742,37 @@ typedef struct
                                 erase operation                */
     uint32_t        TASKS_DEACTIVATE; /*!< (@ 0x00000010) Deactivate QSPI interface */
     uint32_t        RESERVED[59];
-    uint32_t        EVENTS_READY;     /*!< (@ 0x00000100) QSPI peripheral is ready. This event
+    uint32_t        EVENTS_READY; /*!< (@ 0x00000100) QSPI peripheral is ready. This event
                        will be generated as a response to any QSPI task. */
     uint32_t        RESERVED1[127];
-    uint32_t        INTEN;            /*!< (@ 0x00000300) Enable or disable interrupt    */
-    uint32_t        INTENSET;         /*!< (@ 0x00000304) Enable interrupt */
-    uint32_t        INTENCLR;         /*!< (@ 0x00000308) Disable interrupt */
+    uint32_t        INTEN;    /*!< (@ 0x00000300) Enable or disable interrupt    */
+    uint32_t        INTENSET; /*!< (@ 0x00000304) Enable interrupt */
+    uint32_t        INTENCLR; /*!< (@ 0x00000308) Disable interrupt */
     uint32_t        RESERVED2[125];
-    uint32_t        ENABLE;           /*!< (@ 0x00000500) Enable QSPI peripheral and acquire the
+    uint32_t        ENABLE;    /*!< (@ 0x00000500) Enable QSPI peripheral and acquire the
                       pins selected in PSELn registers */
-    QSPI_READ_Type  READ;             /*!< (@ 0x00000504) Unspecified   */
-    QSPI_WRITE_Type WRITE;            /*!< (@ 0x00000510) Unspecified */
-    QSPI_ERASE_Type ERASE;            /*!< (@ 0x0000051C) Unspecified */
-    QSPI_PSEL_Type  PSEL;             /*!< (@ 0x00000524) Unspecified   */
-    uint32_t        XIPOFFSET;        /*!< (@ 0x00000540) Address offset into the external
+    QSPI_READ_Type  READ;      /*!< (@ 0x00000504) Unspecified   */
+    QSPI_WRITE_Type WRITE;     /*!< (@ 0x00000510) Unspecified */
+    QSPI_ERASE_Type ERASE;     /*!< (@ 0x0000051C) Unspecified */
+    QSPI_PSEL_Type  PSEL;      /*!< (@ 0x00000524) Unspecified   */
+    uint32_t        XIPOFFSET; /*!< (@ 0x00000540) Address offset into the external
                             memory for Execute    in Place operation.    */
-    uint32_t        IFCONFIG0;        /*!< (@ 0x00000544) Interface configuration.    */
+    uint32_t        IFCONFIG0; /*!< (@ 0x00000544) Interface configuration.    */
     uint32_t        RESERVED3[46];
-    uint32_t        IFCONFIG1;        /*!< (@ 0x00000600) Interface configuration. */
-    uint32_t        STATUS;           /*!< (@ 0x00000604) Status register.    */
+    uint32_t        IFCONFIG1; /*!< (@ 0x00000600) Interface configuration. */
+    uint32_t        STATUS;    /*!< (@ 0x00000604) Status register.    */
     uint32_t        RESERVED4[3];
-    uint32_t        DPMDUR;           /*!< (@ 0x00000614) Set the duration required to enter/exit
+    uint32_t        DPMDUR; /*!< (@ 0x00000614) Set the duration required to enter/exit
                       deep power-down mode (DPM). */
     uint32_t        RESERVED5[3];
-    uint32_t        ADDRCONF;         /*!< (@ 0x00000624) Extended address configuration. */
+    uint32_t        ADDRCONF; /*!< (@ 0x00000624) Extended address configuration. */
     uint32_t        RESERVED6[3];
-    uint32_t        CINSTRCONF;       /*!< (@ 0x00000634) Custom instruction configuration
+    uint32_t        CINSTRCONF; /*!< (@ 0x00000634) Custom instruction configuration
                           register.                 */
-    uint32_t        CINSTRDAT0;       /*!< (@ 0x00000638) Custom instruction data register 0. */
-    uint32_t        CINSTRDAT1;       /*!< (@ 0x0000063C) Custom instruction data register 1.    */
-    uint32_t        IFTIMING;         /*!< (@ 0x00000640) SPI interface timing. */
-} NRF_QSPI_Type;                      /*!< Size = 1604 (0x644)     */
+    uint32_t        CINSTRDAT0; /*!< (@ 0x00000638) Custom instruction data register 0. */
+    uint32_t        CINSTRDAT1; /*!< (@ 0x0000063C) Custom instruction data register 1.    */
+    uint32_t        IFTIMING;   /*!< (@ 0x00000640) SPI interface timing. */
+} NRF_QSPI_Type;                /*!< Size = 1604 (0x644)     */
 
 /* ===========================================================================================================================
  */
@@ -2786,9 +2786,9 @@ typedef struct
  */
 
 typedef struct
-{                                 /*!< (@ 0x5002A000) CC_HOST_RGF Structure */
+{ /*!< (@ 0x5002A000) CC_HOST_RGF Structure */
     uint32_t RESERVED[1678];
-    uint32_t HOST_CRYPTOKEY_SEL;  /*!< (@ 0x00001A38) AES hardware key select */
+    uint32_t HOST_CRYPTOKEY_SEL; /*!< (@ 0x00001A38) AES hardware key select */
     uint32_t RESERVED1[4];
     uint32_t HOST_IOT_KPRTL_LOCK; /*!< (@ 0x00001A4C) This write-once register is the
                               K_PRTL lock register. When this register is set,
@@ -2826,12 +2826,12 @@ typedef struct
  */
 
 typedef struct
-{                      /*!< (@ 0x5002A000) CRYPTOCELL Structure */
+{ /*!< (@ 0x5002A000) CRYPTOCELL Structure */
     uint32_t RESERVED[320];
     uint32_t ENABLE;   /*!< (@ 0x00000500) Enable CRYPTOCELL subsystem     */
 } NRF_CRYPTOCELL_Type; /*!< Size = 1284 (0x504) */
 
-/** @} */              /* End of group Device_Peripheral_peripherals */
+/** @} */ /* End of group Device_Peripheral_peripherals */
 
 /* ===========================================================================================================================
  */
@@ -3005,7 +3005,7 @@ typedef struct
   #define NRF_PWM3             ((NRF_PWM_Type *) NRF_PWM3_BASE)
   #define NRF_SPIM3            ((NRF_SPIM_Type *) NRF_SPIM3_BASE)
 
-#endif    /* NRF52840_H */
+#endif /* NRF52840_H */
 
 /** @} */ /* End of group nrf52840 */
 

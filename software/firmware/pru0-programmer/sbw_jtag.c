@@ -112,7 +112,7 @@ static uint32_t AllShifts(const uint16_t format, uint32_t data)
         if (tdo) TDOword++;
         if (i > 1) TDOword <<= 1; // TDO could be any port pin
     }
-    tmsh_tdih();                  // update IR
+    tmsh_tdih(); // update IR
     if (get_tclk()) { tmsl_tdih(); }
     else { tmsl_tdil(); }
 
@@ -257,7 +257,7 @@ void EntrySequences_RstHigh_SBW()
     // SpyBiWire entry sequence
     set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
     delay_us(5u);
-    set_sbwtck(GPIO_STATE_HIGH);  // TEST pin = 1
+    set_sbwtck(GPIO_STATE_HIGH); // TEST pin = 1
     delay_us(5u);
     // initial 1 PIN_SBWTCKs to enter sbw-mode
     set_sbwtck(GPIO_STATE_LOW);
@@ -282,7 +282,7 @@ void EntrySequences_RstLow_SBW()
     // SpyBiWire entry sequence
     set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
     delay_us(5u);
-    set_sbwtck(GPIO_STATE_HIGH);  // TEST pin = 1
+    set_sbwtck(GPIO_STATE_HIGH); // TEST pin = 1
     delay_us(5u);
     // initial 1 PIN_SBWTCKs to enter sbw-mode
     set_sbwtck(GPIO_STATE_LOW);
