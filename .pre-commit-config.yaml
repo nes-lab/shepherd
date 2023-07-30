@@ -21,18 +21,18 @@ repos:
       - id: fix-byte-order-marker
 
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.4.0
+    rev: v3.0.0
     hooks:
       - id: add-trailing-comma
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.33.0
+    rev: v0.35.0
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.12.1
+    rev: v0.13
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -44,7 +44,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.7.0
     hooks:
       - id: black
 
@@ -60,13 +60,13 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.9.0
     hooks:
       - id: pyupgrade
         args: ["--py38-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
+    rev: 6.1.0
     hooks:
       - id: flake8
         additional_dependencies:
@@ -110,7 +110,7 @@ repos:
 #        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.2.5
     hooks:
       - id: codespell
         exclude: \.(sch|brd|lbr)$
@@ -122,7 +122,7 @@ repos:
 #        types_or: ["markdown", "rst"]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v16.0.0
+    rev: v16.0.6
     hooks:
       - id: clang-format
         types_or: [c++, c]

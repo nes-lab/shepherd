@@ -33,6 +33,7 @@ pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
 chromalog = "*"
+setuptools = "*"
 
 [pipenv]
 allow_prereleases = false
