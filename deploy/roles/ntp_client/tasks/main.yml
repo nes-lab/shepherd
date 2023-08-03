@@ -1,4 +1,4 @@
-- name: Disable GPS and PTP services (some entries will fail)
+- name: Disable GPS and PTP services
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: stopped

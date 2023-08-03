@@ -25,7 +25,7 @@
     - ptp
     - conf
 
-- name: Enable ptp services (some entries will fail)
+- name: Enable ptp services
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: restarted

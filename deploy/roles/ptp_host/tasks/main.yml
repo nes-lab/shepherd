@@ -6,19 +6,6 @@
     state: present
   tags: ptp
 
-- name: Delete old systemd overlay directories, TODO remove later
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-    owner: "{{ ansible_user }}"
-    mode: 'a+rwx'
-  loop:
-    - /etc/systemd/system/phc2sys@.service.d/
-    - /etc/systemd/system/ptp4l@.service.d/
-  tags:
-    - ptp
-    - conf
-
 - name: Deploy systemd overlay files
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -32,7 +19,7 @@
     - ptp
     - conf
 
-- name: Disable services (some entries will fail)
+- name: Disable services -> will be activated again by server/client-role
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: stopped
@@ -46,4 +33,4 @@
     - ptp
     - conf
   # manual: sudo systemctl restart ptp4l@eth0
-  # status: sudo journalctl -u ptp4l@eth0
+  # status: sudo journalctl -u ptp4l@eth0 -f
