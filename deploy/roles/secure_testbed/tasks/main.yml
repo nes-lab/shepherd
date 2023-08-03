@@ -22,7 +22,7 @@
     - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 1m'}
     - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 3'}
     - {regex: '^.*PermitRootLogin.*$', line: 'PermitRootLogin no'}
-#      - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # TODO: disabled for debug
+    - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # disable for debug
     - {regex: '^.*PermitEmptyPasswords.*$', line: 'PermitEmptyPasswords no'}
     - {regex: '^.*UsePAM.*$', line: 'UsePAM yes'}
     - {regex: '^.*PubkeyAuthentication.*$', line: 'PubkeyAuthentication yes'}
