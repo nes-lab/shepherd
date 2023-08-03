@@ -18,19 +18,6 @@
   tags:
     - ptp
     - conf
-
-- name: Disable services -> will be activated again by server/client-role
-  ansible.builtin.systemd:
-    name: "{{ item }}"
-    state: stopped
-    enabled: false
-    daemon_reload: true
-  loop:
-    - phc2sys@eth0.service
-    - ptp4l@eth0.service
-  failed_when: false  # services may not exist
-  tags:
-    - ptp
-    - conf
+  # Tests
   # manual: sudo systemctl restart ptp4l@eth0
   # status: sudo journalctl -u ptp4l@eth0 -f

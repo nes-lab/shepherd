@@ -1,8 +1,9 @@
 [Unit]
 Description=Synchronize system clock or PTP hardware clock (PHC)
 Documentation=man:phc2sys
-Requires=ptp4l@%i.device.service
-After=ptp4l@%i.device.service
+# Requires=ptp4l@%i.device.service
+# After=ptp4l@%i.device.service
+# -> restarts phc2sys constantly ... just use the wait-option
 Before=time-sync.target
 
 [Service]
