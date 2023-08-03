@@ -1,0 +1,17 @@
+[Unit]
+Description=Precision Time Protocol (PTP) service for %I
+Documentation=man:ptp4l
+After=sys-subsystem-net-devices-%i.device
+
+[Service]
+Type=simple
+# ExecStart=/usr/sbin/ptp4l -f /etc/linuxptp/ptp4l.conf -i %I
+ExecStart=/usr/sbin/ptp4l -A -2 -f /etc/linuxptp/ptp4l.conf -i %I
+# -2 -> IEEE 802.3 Network Transport
+# -A -> Auto Delay Mechanism (E2E first, then maybe P2P
+RestartSec=3
+Restart=on-failure
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

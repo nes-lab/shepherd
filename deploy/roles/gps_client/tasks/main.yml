@@ -18,8 +18,6 @@
     enabled: false
     daemon_reload: true
   loop:
-    - phc2sys.service # TODO: these fail in recent ubuntu nightlies, linuxptp switched to servive-templates, keep old style for now
-    - ptp4l.service
     - phc2sys@eth0.service
     - ptp4l@eth0.service
   when: '"ptp_clients" not in group_names and "ptp_servers" not in group_names'

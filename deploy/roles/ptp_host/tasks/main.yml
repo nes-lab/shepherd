@@ -6,33 +6,28 @@
     state: present
   tags: ptp
 
-- name: Create systemd overlay directories
+- name: Delete old systemd overlay directories, TODO remove later
   ansible.builtin.file:
     path: "{{ item }}"
-    state: directory
+    state: absent
     owner: "{{ ansible_user }}"
     mode: 'a+rwx'
   loop:
-    - /etc/systemd/system/phc2sys.service.d/
-    - /etc/systemd/system/ptp4l.service.d/
+    - /etc/systemd/system/phc2sys@.service.d/
+    - /etc/systemd/system/ptp4l@.service.d/
   tags:
     - ptp
     - conf
 
 - name: Deploy systemd overlay files
   ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "/etc/systemd/system/{{ item.dest }}"
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/"
+    # originals are kept in /lib/systemd/system/
     mode: '0644'
   loop:
-    - {
-      src: "phc2sys_mands.conf",
-      dest: "phc2sys.service.d/phc2sys_mands.conf",
-    }
-    - {
-      src: "ptp_restart.conf",
-      dest: "ptp4l.service.d/ptp_restart.conf"
-    }
+    - "phc2sys@.service"
+    - "ptp4l@.service"
   tags:
     - ptp
     - conf
@@ -44,11 +39,11 @@
     enabled: false
     daemon_reload: true
   loop:
-    - phc2sys.service # TODO: these fail in recent ubuntu nightlies, linuxptp switched to servive-templates, keep old style for now
-    - ptp4l.service
     - phc2sys@eth0.service
     - ptp4l@eth0.service
   failed_when: false  # services may not exist
   tags:
     - ptp
     - conf
+  # manual: sudo systemctl restart ptp4l@eth0
+  # status: sudo journalctl -u ptp4l@eth0
