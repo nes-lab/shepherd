@@ -1,4 +1,15 @@
 ---
+### detect if already installed -> check last OP of this role
+- name: Detect Install-Status (last OP of sheep-role)
+  ansible.builtin.lineinfile:
+    dest: "/etc/modules"
+    regexp: "#?shepherd.*$"
+    line: "shepherd"
+    state: present
+  check_mode: true  # file will not be altered
+  changed_when: false
+  register: installation
+
 
 ### Install & Config
 - name: Configure Shepherd - Pre-Phase
@@ -9,7 +20,9 @@
     - config_overlays.yml
   loop_control:
     loop_var: file_item
-  when: install_basics | bool
+  when:  # NOTE: all have to be true (AND)
+    - install_basics | bool
+    - not installation.found
   tags:
     - install
 
@@ -21,7 +34,9 @@
     - toolchain_py.yml
   loop_control:
     loop_var: file_item
-  when: install_basics | bool
+  when:
+    - install_basics | bool
+    - not installation.found
   tags:
     - install
 
@@ -31,6 +46,7 @@
   when:
     - install_basics | bool
     - install_ti_tools | bool
+    - not installation.found
   tags:
     - install
 
@@ -40,6 +56,7 @@
   when:
     - install_basics | bool
     - install_gcc_tools | bool
+    - not installation.found
   tags:
     - install
 
@@ -47,7 +64,9 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
-  when: install_basics | bool
+  when:
+    - install_basics | bool
+    - not installation.found
 
 ### Build
 - name: Build Shepherd-Software
@@ -68,11 +87,13 @@
   ansible.builtin.include_tasks:
     file: "{{ file_item }}"
   loop:
-    - config_shepherd.yml
     - config_systemd.yml
+    - config_shepherd.yml
   loop_control:
     loop_var: file_item
-  when: install_basics | bool
+  when:
+    - install_basics | bool
+    - not installation.found
   tags:
     - install
 
@@ -80,4 +101,6 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
-  when: install_basics | bool
+  when:
+    - install_basics | bool
+    - not installation.found

@@ -27,7 +27,7 @@
   hosts: sheep
   become: true
   roles:
-    - sheep
+    - sheep  # NOTE: will only be installed once (later only sw-rebuild)
 
 - name: Role - PTP-Client
   hosts: ptp_clients
