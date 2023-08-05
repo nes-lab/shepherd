@@ -167,27 +167,27 @@ class SharedMemory:
         if self.devmem_fd is not None:
             os.close(self.devmem_fd)
 
+    @staticmethod
+    def timedelta_to_ns(delta: Optional[timedelta], default_s: int = 0) -> int:
+        if isinstance(delta, timedelta):
+            return int(delta.total_seconds() * 10**9)
+        else:
+            return int(timedelta(seconds=default_s).total_seconds() * 10**9)
+
     def config_tracers(self, timestamp_ns: int) -> None:
         if self.trace_iv is not None:
-            self.ts_start_iv = timestamp_ns + int(self.trace_iv.delay * 10**9)
-            if self.trace_iv.duration not in [0, None]:
-                self.ts_stop_iv = self.ts_start_iv + int(
-                    self.trace_iv.duration * 10**9,
-                )
-            else:
-                self.ts_stop_iv = self.ts_start_iv + int(
-                    timedelta(days=200).total_seconds() * 10**9,
-                )
+            self.ts_start_iv = timestamp_ns + self.timedelta_to_ns(self.trace_iv.delay)
+            self.ts_stop_iv = self.ts_start_iv + self.timedelta_to_ns(
+                self.trace_iv.duration,
+                10**6,
+            )
         if self.trace_gp is not None:
-            self.ts_start_gp = timestamp_ns + int(self.trace_gp.delay * 10**9)
-            if self.trace_gp.duration not in [0, None]:
-                self.ts_stop_gp = self.ts_start_gp + int(
-                    self.trace_gp.duration * 10**9,
-                )
-            else:
-                self.ts_stop_gp = self.ts_start_gp + int(
-                    timedelta(days=200).total_seconds() * 10**9,
-                )
+            self.ts_start_gp = timestamp_ns + self.timedelta_to_ns(self.trace_gp.delay)
+            self.ts_stop_gp = self.ts_start_gp + self.timedelta_to_ns(
+                self.trace_gp.duration,
+                10**6,
+            )
+        # ⤷ duration defaults to ~ 100 days (10**6 seconds)
         log.debug(
             "Tracers Time-Boundaries set to IV[%s, %s], GPIO[%s, %s]",
             self.ts_start_iv,
