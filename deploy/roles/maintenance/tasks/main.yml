@@ -37,7 +37,7 @@
 
 - name: "SCRIPT - Switch to newest release of Kernel Branch {{ default_kernel_branch }}"
   ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}'
-  when: false # update_kernel | bool
+  when: false # maintenance_update_kernel | bool
   changed_when: true
   failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
   # this was failing for ubuntu 22.04 -> apt install linux-image-4.19 ... .280-bone76 (with -bone, without -rt-)
@@ -45,20 +45,21 @@
 
 - name: Grow root partition to drive-size
   ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
-  when: update_kernel | bool # NOTE: condition not correct, but works for now
+  when: maintenance_update_kernel | bool # NOTE: condition not correct, but works for now
   changed_when: true
 
 - name: Restart device
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
-  when: update_kernel | bool
+  when: maintenance_update_kernel | bool
 
 - name: SCRIPT - Update Bootloader
-  ansible.builtin.shell:
-    cmd: 'yes | /opt/scripts/tools/developers/update_bootloader.sh'
+  ansible.builtin.shell: |
+    set -o pipefail # <- prevents surprises
+    yes | /opt/scripts/tools/developers/update_bootloader.sh
   changed_when: true
-  when: update_bootloader | bool
+  when: maintenance_update_bootloader | bool
   failed_when: false # certificate may be invalid
 
 - name: Uname - Get Kernel-Version
@@ -94,11 +95,11 @@
 
 - name: Cleanup Beaglebone
   ansible.builtin.include_role:
-    name: cleaned
+    name: cleaning
   vars:
-    do_delete_recordings: false
-    do_zero_free_space: false
-  when: delete_unused_files | bool
+    cleaning_delete_recordings: false
+    cleaning_zero_free_space: false
+  when: maintenance_delete_unused_files | bool
 
 - name: Restart device
   ansible.builtin.reboot:

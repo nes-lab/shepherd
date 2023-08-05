@@ -12,11 +12,11 @@
 
     - name: Cleanup Beaglebone
       ansible.builtin.include_role:
-        name: cleaned
+        name: cleaning
       vars:
-        do_delete_recordings: true
-        do_remove_software: false
-        do_zero_free_space: true
+        cleaning_delete_recordings: true
+        cleaning_remove_software: false
+        cleaning_zero_free_space: true
 
 
     - name: Last Step - run the following backup-command manually

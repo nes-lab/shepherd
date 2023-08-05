@@ -21,7 +21,7 @@
   loop_control:
     loop_var: file_item
   when:  # NOTE: all have to be true (AND)
-    - install_basics | bool
+    - sheep_install_basics | bool
     - not installation.found
   tags:
     - install
@@ -35,7 +35,7 @@
   loop_control:
     loop_var: file_item
   when:
-    - install_basics | bool
+    - sheep_install_basics | bool
     - not installation.found
   tags:
     - install
@@ -44,7 +44,7 @@
   ansible.builtin.include_tasks:
     file: toolchain_pru_ti.yml
   when:
-    - install_basics | bool
+    - sheep_install_basics | bool
     - install_ti_tools | bool
     - not installation.found
   tags:
@@ -54,7 +54,7 @@
   ansible.builtin.include_tasks:
     file: toolchain_pru_gcc.yml
   when:
-    - install_basics | bool
+    - sheep_install_basics | bool
     - install_gcc_tools | bool
     - not installation.found
   tags:
@@ -65,7 +65,7 @@
     connect_timeout: 20
     reboot_timeout: 200
   when:
-    - install_basics | bool
+    - sheep_install_basics | bool
     - not installation.found
 
 ### Build
@@ -92,7 +92,7 @@
   loop_control:
     loop_var: file_item
   when:
-    - install_basics | bool
+    - sheep_install_basics | bool
     - not installation.found
   tags:
     - install
@@ -102,5 +102,5 @@
     connect_timeout: 20
     reboot_timeout: 200
   when:
-    - install_basics | bool
+    - sheep_install_basics | bool
     - not installation.found

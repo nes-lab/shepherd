@@ -5,15 +5,15 @@ shepherd_data_path: /var/shepherd/recordings
 shepherd_config_path: /etc/shepherd
 
 ### program flow
-install_basics: true
-install_gcc_tools: false
-install_ti_tools: true
+sheep_install_basics: true
+sheep_install_gcc_tools: false
+sheep_install_ti_tools: true
 # NOTE: GCC is alpha-stage as pru0-firmware does not correctly compile
 
-shepherd_branch: main
-refresh_source: false
-rebuild_kernel_module: true
-rebuild_python_package: true
+sheep_shepherd_branch: main
+sheep_refresh_source: false
+sheep_rebuild_kernel_module: true
+sheep_rebuild_python_package: true
 
 ### GCC ######
 gcc_tools_path: /usr/share/shepherd-tools

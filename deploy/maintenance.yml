@@ -14,16 +14,16 @@
 
     - name: Maintain Beaglebone
       ansible.builtin.include_role:
-        name: maintained
+        name: maintenance
       vars:
-        update_kernel: true
-        update_bootloader: true
-        delete_unused_files: false  # see below
+        maintenance_update_kernel: true
+        maintenance_update_bootloader: true
+        maintenance_delete_unused_files: false  # see below
 
     - name: Cleanup Beaglebone
       ansible.builtin.include_role:
-        name: cleaned
+        name: cleaning
       vars:
-        do_delete_recordings: "{{ delete_recordings }}"
-        do_remove_software: true
-        do_zero_free_space: false
+        cleaning_delete_recordings: "{{ delete_recordings }}"
+        cleaning_remove_software: true
+        cleaning_zero_free_space: false

@@ -1,8 +1,9 @@
 ---
 
 - name: Look for Kernel Module
-  ansible.builtin.shell:
-    cmd: 'lsmod | grep shepherd'
+  ansible.builtin.shell: |
+    set -o pipefail # <- prevents surprises
+    lsmod | grep shepherd
   register: kmod_ret
   failed_when: false
   changed_when: false
@@ -51,7 +52,7 @@
   tags:
     - install
     - python
-  when: rebuild_python_package | bool
+  when: sheep_rebuild_python_package | bool
   # TODO: maybe not needed
 
 - name: Get full path of repository
@@ -72,7 +73,7 @@
     rsync_opts:
       - "--exclude=.eggs"
       - "--exclude=__pycache__"
-  when: refresh_source | bool
+  when: sheep_refresh_source | bool
 
 - name: Own shepherd codebase
   ansible.builtin.file:

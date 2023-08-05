@@ -2,7 +2,7 @@
 
 - name: Refresh list of kernel modules
   ansible.builtin.command: 'depmod -a'
-  when: rebuild_kernel_module | bool
+  when: sheep_rebuild_kernel_module | bool
   changed_when: true
   tags:
     - install

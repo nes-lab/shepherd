@@ -111,8 +111,9 @@
     reboot_timeout: 200
 
 - name: INFO - check for port-listeners (look for open ports beside of SSHd)
-  ansible.builtin.shell:
-    cmd: 'netstat -apn | grep LISTEN'
+  ansible.builtin.shell: |
+    set -o pipefail # <- prevents surprises
+    netstat -apn | grep LISTEN
   changed_when: false
   register: netstat
 

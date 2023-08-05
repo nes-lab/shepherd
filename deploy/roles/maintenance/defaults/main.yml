@@ -1,9 +1,9 @@
 ---
 
 # user can control rule by altering these vars from outside
-update_kernel: false
-update_bootloader: false
-delete_unused_files: true
+maintenance_update_kernel: false
+maintenance_update_bootloader: false
+maintenance_delete_unused_files: true
 
 # rule config
 default_kernel_branch: lts-4_19

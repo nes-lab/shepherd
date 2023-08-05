@@ -4,7 +4,7 @@
   community.general.make:
     chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
     target: install
-  when: rebuild_kernel_module | bool
+  when: sheep_rebuild_kernel_module | bool
   tags:
     - install
 
@@ -90,4 +90,4 @@
   tags:
     - install
     - python
-  when: rebuild_python_package | bool
+  when: sheep_rebuild_python_package | bool
