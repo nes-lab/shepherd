@@ -637,7 +637,7 @@ class Writer(BaseWriter):
         cmd_ptp4l = [
             "sudo",
             "journalctl",
-            "--unit=ptp4l",
+            "--unit=ptp4l@eth0",
             "--follow",
             "--lines=1",
             "--output=short-precise",
