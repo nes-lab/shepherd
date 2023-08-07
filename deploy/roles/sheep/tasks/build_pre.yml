@@ -1,9 +1,8 @@
 ---
 
 - name: Look for Kernel Module
-  ansible.builtin.shell: |
-    set -o pipefail # <- prevents surprises
-    lsmod | grep shepherd
+  ansible.builtin.shell: |  # pipefail-setting prevents surprises
+    set -o pipefail && lsmod | grep shepherd
   register: kmod_ret
   failed_when: false
   changed_when: false

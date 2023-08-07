@@ -7,9 +7,7 @@
     line: "shepherd"
     state: present
   check_mode: true  # file will not be altered
-  changed_when: false
-  register: installation
-
+  register: detector
 
 ### Install & Config
 - name: Configure Shepherd - Pre-Phase
@@ -22,7 +20,7 @@
     loop_var: file_item
   when:  # NOTE: all have to be true (AND)
     - sheep_install_basics | bool
-    - not installation.found
+    - detector.changed
   tags:
     - install
 
@@ -36,7 +34,7 @@
     loop_var: file_item
   when:
     - sheep_install_basics | bool
-    - not installation.found
+    - detector.changed
   tags:
     - install
 
@@ -45,8 +43,8 @@
     file: toolchain_pru_ti.yml
   when:
     - sheep_install_basics | bool
-    - install_ti_tools | bool
-    - not installation.found
+    - sheep_install_ti_tools | bool
+    - detector.changed
   tags:
     - install
 
@@ -55,8 +53,8 @@
     file: toolchain_pru_gcc.yml
   when:
     - sheep_install_basics | bool
-    - install_gcc_tools | bool
-    - not installation.found
+    - sheep_install_gcc_tools | bool
+    - detector.changed
   tags:
     - install
 
@@ -66,7 +64,7 @@
     reboot_timeout: 200
   when:
     - sheep_install_basics | bool
-    - not installation.found
+    - detector.changed
 
 ### Build
 - name: Build Shepherd-Software
@@ -93,7 +91,7 @@
     loop_var: file_item
   when:
     - sheep_install_basics | bool
-    - not installation.found
+    - detector.changed
   tags:
     - install
 
@@ -103,4 +101,4 @@
     reboot_timeout: 200
   when:
     - sheep_install_basics | bool
-    - not installation.found
+    - detector.changed
