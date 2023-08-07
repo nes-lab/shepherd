@@ -427,10 +427,15 @@ def retrieve(
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
     file_path = Path("/var/shepherd/inventory.yaml")
-    ctx.obj["herd"].run_cmd(sudo=True, cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}")
+    ctx.obj["herd"].run_cmd(
+        sudo=True,
+        cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+    )
     server_inv = Inventory.collect()
     server_inv.to_file(path=output_path / "inventory_server.yaml", minimal=True)
-    failed = ctx.obj["herd"].get_file(file_path, output_path, timestamp=False, separate=False, delete_src=True)
+    failed = ctx.obj["herd"].get_file(
+        file_path, output_path, timestamp=False, separate=False, delete_src=True
+    )
     # TODO: best case - add all to one file or a new inventories-model?
     sys.exit(failed)
 
