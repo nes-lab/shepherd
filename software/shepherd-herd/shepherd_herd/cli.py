@@ -10,6 +10,7 @@ import yaml
 from fabric import Connection
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
+from shepherd_core.inventory import Inventory
 
 from . import __version__
 from .herd import Herd
@@ -415,6 +416,22 @@ def retrieve(
             raise Exception("shepherd still active after timeout")
 
     failed = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
+    sys.exit(failed)
+
+
+@cli.command(short_help="Collects information about the hosts")
+@click.argument(
+    "output_path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+)
+@click.pass_context
+def inventorize(ctx: click.Context, output_path: Path) -> None:
+    file_path = Path("/var/shepherd/inventory.yaml")
+    ctx.obj["herd"].run_cmd(sudo=True, cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}")
+    server_inv = Inventory.collect()
+    server_inv.to_file(path=output_path / "inventory_server.yaml", minimal=True)
+    failed = ctx.obj["herd"].get_file(file_path, output_path, timestamp=False, separate=False, delete_src=True)
+    # TODO: best case - add all to one file or a new inventories-model?
     sys.exit(failed)
 
 

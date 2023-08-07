@@ -31,6 +31,7 @@ from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.task import TestbedTasks
 from shepherd_core.data_models.testbed import ProgrammerProtocol
+from shepherd_core.inventory import Inventory
 
 from . import __version__
 from . import run_emulator
@@ -188,6 +189,7 @@ def run(mode: str, parameters: dict, verbose: int):
         run_emulator(cfg)
     else:
         raise click.BadParameter(f"command '{mode}' not supported")
+    # TODO: probably not needed anymore, once task-cmd is running
 
 
 @cli.command(
@@ -398,6 +400,19 @@ def rpc(port: Optional[int]):
     shepherd_io.start()
     log.info("Shepherd RPC Interface: Started")
     server.run()
+
+
+@cli.command(short_help="Collects information about this host")
+@click.option(
+    "--output_path",
+    "-o",
+    type=click.Path(file_okay=True, dir_okay=False),
+    default=Path("/var/shepherd/inventory.yaml"),
+    help="Path to resulting YAML-formatted calibration data file",
+)
+def inventorize(output_path: Path) -> None:
+    sheep_inv = Inventory.collect()
+    sheep_inv.to_file(path=output_path, minimal=True)
 
 
 @cli.command(short_help="Start shepherd launcher")
