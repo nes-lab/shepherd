@@ -1,3 +1,4 @@
+import platform
 import sys
 import time
 from contextlib import ExitStack
@@ -150,10 +151,7 @@ class ShepherdEmulator(ShepherdIO):
         if self.writer is not None:
             self.stack.enter_context(self.writer)
             # add hostname to file
-            res = invoke.run("hostname", hide=True, warn=True, in_stream=False)
-            self.writer.store_hostname(
-                "".join(x for x in res.stdout if x.isprintable()).strip(),
-            )
+            self.writer.store_hostname(platform.node().strip())
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
             self.writer.store_config(self.cfg.virtual_source.dict())
             # TODO: restore to .cfg.dict() -> fails for yaml-repr of path
