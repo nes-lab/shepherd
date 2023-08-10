@@ -434,7 +434,11 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
     server_inv = Inventory.collect()
     server_inv.to_file(path=Path(output_path) / "inventory_server.yaml", minimal=True)
     failed = ctx.obj["herd"].get_file(
-        file_path, output_path, timestamp=False, separate=False, delete_src=True
+        file_path,
+        output_path,
+        timestamp=False,
+        separate=False,
+        delete_src=True,
     )
     # TODO: best case - add all to one file or a new inventories-model?
     sys.exit(failed)

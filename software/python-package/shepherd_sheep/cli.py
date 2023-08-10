@@ -23,16 +23,14 @@ import yaml
 import zerorpc
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models import ShpModel
-from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import EmulationTask
-from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
-from shepherd_core.data_models.task import TestbedTasks
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
 
+from shepherd_sheep.task_handling import task_handler
 from . import __version__
 from . import run_emulator
 from . import run_harvester
@@ -53,7 +51,7 @@ from .sysfs_interface import reload_kernel_module
 try:
     from periphery import GPIO
 except ModuleNotFoundError:
-    print("WARNING: Packages missing - hardware-access will not work")  # noqa: T201
+    print("WARNING: Periphery-Package missing - hardware-access will not work")  # noqa: T201
 
 
 # TODO: correct docs
@@ -195,52 +193,13 @@ def run(mode: str, parameters: dict, verbose: int):
 @cli.command(
     short_help="Runs a task or set of tasks with provided config/task file.",
 )
-@click.argument(
+@click.argument(   # TODO: to option - with default
     "config",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
 def task(config: Union[Path, ShpModel]):
-    if isinstance(config, str):
-        config = Path(config)
+    task_handler(config)
 
-    if isinstance(config, Path):
-        with open(config.resolve()) as shp_file:
-            shp_dict = yaml.safe_load(shp_file)
-        shp_wrap = Wrapper(**shp_dict)
-    elif isinstance(config, ShpModel):
-        shp_wrap = Wrapper(
-            datatype=type(config).__name__,
-            parameters=config.dict(),
-        )
-    else:
-        raise ValueError("had unknown input: %s", type(config))
-
-    if shp_wrap.datatype == TestbedTasks:
-        tbt = TestbedTasks(**shp_wrap.parameters)
-        content = tbt.observer_tasks
-    elif shp_wrap.datatype == EmulationTask.__name__:
-        content = [EmulationTask(**shp_wrap.parameters)]
-    elif shp_wrap.datatype == HarvestTask.__name__:
-        content = [HarvestTask(**shp_wrap.parameters)]
-    elif shp_wrap.datatype == FirmwareModTask.__name__:
-        content = [FirmwareModTask(**shp_wrap.parameters)]
-    elif shp_wrap.datatype == ProgrammingTask.__name__:
-        content = [ProgrammingTask(**shp_wrap.parameters)]
-    else:
-        raise ValueError("had unknown task: %s", shp_wrap.datatype)
-
-    for element in content:
-        if hasattr(element, "verbose") and isinstance(element.verbose, int):
-            set_verbose_level(element.verbose)
-
-        if isinstance(element, EmulationTask):
-            run_emulator(element)
-        elif isinstance(element, HarvestTask):
-            run_harvester(element)
-        elif isinstance(element, ProgrammingTask):
-            run_programmer(element)
-        else:
-            raise ValueError("Task not implemented: %s", type(element))
 
 
 @cli.group(
