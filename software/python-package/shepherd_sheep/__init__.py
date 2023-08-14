@@ -16,15 +16,17 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import Union
 
-from shepherd_core.data_models import ShpModel, FirmwareDType
-from shepherd_core.data_models.task import EmulationTask, FirmwareModTask
+from shepherd_core.data_models import FirmwareDType
+from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models.content import extract_firmware
+from shepherd_core.data_models.content import firmware_to_hex
+from shepherd_core.data_models.content import modify_firmware
+from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
-from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.task import extract_tasks
-from shepherd_core.data_models.content import extract_firmware
-from shepherd_core.data_models.content import modify_firmware
-from shepherd_core.data_models.content import firmware_to_hex
+from shepherd_core.data_models.task import prepare_task
 
 from . import sysfs_interface
 from .eeprom import EEPROM
@@ -53,6 +55,9 @@ __all__ = [
     "ShepherdDebug",
     "run_emulator",
     "run_harvester",
+    "run_programmer",
+    "run_firmware_mod",
+    "run_task",
     "ShepherdIOException",
     "log",
     "flatten_list",
@@ -60,7 +65,7 @@ __all__ = [
 
 
 def context_stack() -> ExitStack:
-    """ Enables a nicer Exit-Behaviour
+    """Enables a nicer Exit-Behaviour
 
     Returns: an exit-stack to use optionally
     """

@@ -21,6 +21,7 @@ import click_config_file
 import gevent
 import yaml
 import zerorpc
+from shepherd_core import logger as log
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
@@ -30,11 +31,11 @@ from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
 
-from shepherd_sheep.task_handling import task_handler
 from . import __version__
 from . import run_emulator
 from . import run_harvester
 from . import run_programmer
+from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData
@@ -51,7 +52,7 @@ from .sysfs_interface import reload_kernel_module
 try:
     from periphery import GPIO
 except ModuleNotFoundError:
-    print("WARNING: Periphery-Package missing - hardware-access will not work")  # noqa: T201
+    log.warning("Periphery-Package missing - hardware-access will not work")
 
 
 # TODO: correct docs
@@ -193,13 +194,12 @@ def run(mode: str, parameters: dict, verbose: int):
 @cli.command(
     short_help="Runs a task or set of tasks with provided config/task file.",
 )
-@click.argument(   # TODO: to option - with default
+@click.argument(  # TODO: to option - with default
     "config",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
 def task(config: Union[Path, ShpModel]):
-    task_handler(config)
-
+    run_task(config)
 
 
 @cli.group(
