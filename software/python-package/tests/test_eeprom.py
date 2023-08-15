@@ -2,9 +2,8 @@ from pathlib import Path
 
 import pytest
 from shepherd_core import CalibrationCape
-
-from shepherd import EEPROM
-from shepherd import CapeData
+from shepherd_sheep import EEPROM
+from shepherd_sheep import CapeData
 
 
 @pytest.fixture()

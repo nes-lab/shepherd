@@ -1,8 +1,7 @@
 from pathlib import Path
 
 import pytest
-
-from shepherd.cli import cli
+from shepherd_sheep.cli import cli
 
 # NOTE: (almost) direct copy between shepherd-herd & python-package
 # differences: import _herd, .mark.hardware, shepherd_up / stopped_herd

@@ -8,9 +8,8 @@ from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
-
-from shepherd import flatten_list
-from shepherd import sysfs_interface
+from shepherd_sheep import flatten_list
+from shepherd_sheep import sysfs_interface
 
 
 @pytest.fixture

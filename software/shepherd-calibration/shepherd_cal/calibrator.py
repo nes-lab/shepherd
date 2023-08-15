@@ -14,9 +14,8 @@ from fabric import Connection
 from keithley2600 import Keithley2600
 from keithley2600.keithley_driver import Keithley2600Base
 from keithley2600.keithley_driver import KeithleyClass
-
-from shepherd.calibration import CalibrationData
-from shepherd.calibration_default import dac_voltage_to_raw
+from shepherd_core.calibration_hw_def import dac_voltage_to_raw
+from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 
 from .calibration_plot import plot_calibration
 from .logger import logger
@@ -429,12 +428,14 @@ class Calibrator:
             meas_data = yaml.safe_load(stream)
             meas_dict = meas_data["measurements"]
 
-        calib_dict = CalibrationData.from_measurements(meas_file).data
+        cal_meas = CalMeasurementCape.from_file(meas_file)
+        cal_dict = cal_meas.to_cal().dict(exclude_unset=True, exclude_defaults=True)
+        # TODO: test if the move to shepherd_core is done correctly
 
         if do_plot:
-            plot_calibration(meas_dict, calib_dict, meas_file)
+            plot_calibration(meas_dict, cal_dict, meas_file)
 
-        out_dict = {"node": meas_data["node"], "calibration": calib_dict}
+        out_dict = {"node": meas_data["node"], "calibration": cal_dict}
         res_repr = yaml.dump(out_dict, default_flow_style=False)
         if cal_file is None:
             cal_file = Path(meas_file.stem + "_cal.yml")

@@ -6,10 +6,9 @@ import numpy as np
 import pytest
 from shepherd_core import CalibrationHarvester
 from shepherd_core.data_models.task import HarvestTask
-
-from shepherd import ShepherdHarvester
-from shepherd import Writer
-from shepherd import run_harvester
+from shepherd_sheep import ShepherdHarvester
+from shepherd_sheep import Writer
+from shepherd_sheep import run_harvester
 
 
 @pytest.fixture(params=["harvester"])  # TODO: there is a second mode now

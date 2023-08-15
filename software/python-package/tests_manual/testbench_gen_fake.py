@@ -3,9 +3,8 @@ from pathlib import Path
 
 import numpy as np
 from shepherd_core import CalibrationHarvester
-
-from shepherd import Writer
-from shepherd.shared_memory import DataBuffer
+from shepherd_sheep import Writer
+from shepherd_sheep.shared_memory import DataBuffer
 
 tmp_path = Path("/var/shepherd/recordings")
 store_path = tmp_path / "harvest_example.h5"

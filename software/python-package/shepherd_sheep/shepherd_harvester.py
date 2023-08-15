@@ -4,7 +4,6 @@ import sys
 import time
 from contextlib import ExitStack
 
-import invoke
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 

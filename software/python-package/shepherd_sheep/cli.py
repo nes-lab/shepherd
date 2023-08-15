@@ -21,7 +21,6 @@ import click_config_file
 import gevent
 import yaml
 import zerorpc
-from shepherd_core import logger as log
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape

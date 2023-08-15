@@ -3,9 +3,8 @@ from contextlib import suppress
 from pathlib import Path
 
 import pytest
-
-from shepherd.sysfs_interface import load_kernel_module
-from shepherd.sysfs_interface import remove_kernel_module
+from shepherd_sheep.sysfs_interface import load_kernel_module
+from shepherd_sheep.sysfs_interface import remove_kernel_module
 
 
 def check_beagleboard() -> bool:

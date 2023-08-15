@@ -9,10 +9,9 @@ from shepherd_core import BaseReader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationHarvester
 from shepherd_core import CalibrationSeries
-
-from shepherd import Writer
-from shepherd.h5_writer import ExceptionRecord
-from shepherd.shared_memory import DataBuffer
+from shepherd_sheep import Writer
+from shepherd_sheep.h5_writer import ExceptionRecord
+from shepherd_sheep.shared_memory import DataBuffer
 
 
 def random_data(length: int) -> np.ndarray:

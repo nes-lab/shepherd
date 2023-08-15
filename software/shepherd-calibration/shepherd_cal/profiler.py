@@ -16,9 +16,8 @@ from typing import Tuple
 import msgpack
 import msgpack_numpy
 import numpy as np
+import shepherd_core.calibration_hw_def as cal_def
 from keithley2600.keithley_driver import KeithleyClass
-
-import shepherd.calibration_default as cal_def
 
 from .calibrator import Calibrator
 from .logger import logger

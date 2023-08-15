@@ -8,17 +8,15 @@ from shepherd_core import BaseReader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationSeries
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models import fixtures
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
-
-from shepherd import ShepherdDebug
-from shepherd import ShepherdEmulator
-from shepherd import ShepherdIOException
-from shepherd import Writer
-from shepherd import run_emulator
-from shepherd import sysfs_interface
-from shepherd.shared_memory import DataBuffer
+from shepherd_sheep import ShepherdDebug
+from shepherd_sheep import ShepherdEmulator
+from shepherd_sheep import ShepherdIOException
+from shepherd_sheep import Writer
+from shepherd_sheep import run_emulator
+from shepherd_sheep import sysfs_interface
+from shepherd_sheep.shared_memory import DataBuffer
 
 
 def random_data(length) -> np.ndarray:
@@ -109,7 +107,6 @@ def test_emulation(writer, shp_reader, emulator: ShepherdEmulator) -> None:
 def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
-    fixtures.load()
     emu_cfg = EmulationTask(
         input_path=data_h5,
         output_path=output,

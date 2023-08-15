@@ -5,10 +5,8 @@ from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models import fixtures
 from shepherd_core.vsource import VirtualSourceModel
-
-from shepherd import ShepherdDebug
+from shepherd_sheep import ShepherdDebug
 
 
 @pytest.fixture
@@ -28,7 +26,6 @@ def src_cfg(request) -> VirtualSourceConfig:
                 path = here.parent / src_name
             return VirtualSourceConfig.from_file(path)
         else:
-            fixtures.load()
             return VirtualSourceConfig(name=src_name)
     else:
         assert 0

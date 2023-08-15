@@ -18,15 +18,15 @@ from typing import Union
 
 from shepherd_core.data_models import FirmwareDType
 from shepherd_core.data_models import ShpModel
-from shepherd_core.data_models.content import extract_firmware
-from shepherd_core.data_models.content import firmware_to_hex
-from shepherd_core.data_models.content import modify_firmware
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
+from shepherd_core.fw_tools import extract_firmware
+from shepherd_core.fw_tools import firmware_to_hex
+from shepherd_core.fw_tools import modify_uid
 
 from . import sysfs_interface
 from .eeprom import EEPROM
@@ -103,7 +103,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> None:
     set_verbose_level(cfg.verbose)
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
-        modify_firmware(file_path, cfg.custom_id)
+        modify_uid(file_path, cfg.custom_id)
         file_path = firmware_to_hex(file_path)
     if file_path.as_posix() != cfg.firmware_file.as_posix():
         shutil.move(file_path, cfg.firmware_file)
