@@ -94,7 +94,7 @@ def check_sys_access() -> None:
         get_mode()
     except FileNotFoundError:
         try:
-            log.error(
+            log.warning(
                 "Failed to access sysFS -> "
                 "will try to activate shepherd kernel module",
             )

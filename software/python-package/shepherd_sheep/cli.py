@@ -12,27 +12,20 @@ import signal
 import sys
 import time
 from pathlib import Path
-from typing import Dict
 from typing import Optional
 from typing import Union
 
 import click
-import click_config_file
 import gevent
-import yaml
 import zerorpc
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
-from shepherd_core.data_models.task import EmulationTask
-from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
 
 from . import __version__
-from . import run_emulator
-from . import run_harvester
 from . import run_programmer
 from . import run_task
 from . import sysfs_interface
@@ -72,13 +65,6 @@ except ModuleNotFoundError:
 # - redone programmer, emulation
 
 
-def yamlprovider(file_path: str, cmd_name: str) -> dict:
-    log.info("reading config from %s, cmd=%s", file_path, cmd_name)
-    with open(file_path) as config_data:
-        full_config = yaml.safe_load(config_data)
-    return full_config
-
-
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "-v",
@@ -115,7 +101,7 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     help="Target supply voltage",
 )
 @click.option(
-    "--gpio_pass/--gpio_omit",
+    "--gpio-pass/--gpio-omit",
     default=True,
     help="Route UART, Programmer-Pins and other GPIO to this target",
 )
@@ -155,49 +141,14 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
 
 
 @cli.command(
-    short_help="Runs a mode with given parameters. Mainly for use with config file.",
+    short_help="Runs a task or set of tasks with provided config/task file (YAML).",
 )
-@click.option(
-    "--mode",
-    type=click.Choice(["harvest", "emulation"]),
-)
-@click.option("--parameters", default={}, type=click.UNPROCESSED)
-@click.option(
-    "-v",
-    "--verbose",
-    count=True,
-    help="4 Levels, but level 4 has serious performance impact",
-)
-@click_config_file.configuration_option(provider=yamlprovider, implicit=False)
-def run(mode: str, parameters: dict, verbose: int):
-    set_verbose_level(verbose)
-
-    if not isinstance(parameters, Dict):
-        raise click.BadParameter(
-            f"parameter-argument is not dict, but {type(parameters)} "
-            "(last occurred with v8-alpha-version of click-lib)",
-        )
-
-    log.debug("CLI did process run()")
-    if mode == "harvest":
-        cfg = HarvestTask(**parameters)
-        run_harvester(cfg)
-    elif mode == "emulation":
-        cfg = EmulationTask(**parameters)
-        run_emulator(cfg)
-    else:
-        raise click.BadParameter(f"command '{mode}' not supported")
-    # TODO: probably not needed anymore, once task-cmd is running
-
-
-@cli.command(
-    short_help="Runs a task or set of tasks with provided config/task file.",
-)
-@click.argument(  # TODO: to option - with default
+@click.argument(
     "config",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    default=Path("/etc/shepherd/config.yaml"),
 )
-def task(config: Union[Path, ShpModel]):
+def run(config: Union[Path, ShpModel]):
     run_task(config)
 
 
@@ -211,7 +162,7 @@ def eeprom():
 
 @eeprom.command(short_help="Write data to EEPROM")
 @click.option(
-    "--info_file",
+    "--info-file",
     "-i",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with cape info",
@@ -223,19 +174,19 @@ def eeprom():
     help="Cape version number, max 4 Char, e.g. 24A0, reflecting hardware revision",
 )
 @click.option(
-    "--serial_number",
+    "--serial-number",
     "-s",
     type=click.STRING,
     help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
 )
 @click.option(
-    "--cal_date",
+    "--cal-date",
     "-d",
     type=click.STRING,
     help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
 )
 @click.option(
-    "--cal_file",
+    "--cal-file",
     "-c",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="YAML-formatted file with calibration data",
@@ -266,8 +217,12 @@ def write(
     if "cal_date" not in cape_data.data:
         raise click.UsageError("--cal_date is required")
 
-    with EEPROM() as storage:
-        storage.write_cape_data(cape_data)
+    try:
+        with EEPROM() as storage:
+            storage.write_cape_data(cape_data)
+    except FileNotFoundError:
+        log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
+        exit(2)
 
     if cal_file is not None:
         cal = CalibrationCape.from_file(cal_file)
@@ -277,24 +232,33 @@ def write(
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
 @click.option(
-    "--info_file",
+    "--info-file",
     "-i",
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     help="If provided, cape info data is dumped to this file",
 )
 @click.option(
-    "--cal_file",
+    "--cal-file",
     "-c",
-    type=click.Path(),
+    type=click.Path(dir_okay=False),
     help="If provided, calibration data is dumped to this file",
 )
 def read(info_file: Optional[Path], cal_file: Optional[Path]):
     if get_verbose_level() < 2:
         set_verbose_level(2)
 
-    with EEPROM() as storage:
-        cape_data = storage.read_cape_data()
-        cal = storage.read_calibration()
+    try:
+        with EEPROM() as storage:
+            cape_data = storage.read_cape_data()
+            cal = storage.read_calibration()
+    except ValueError:
+        log.warning(
+            "Reading from EEPROM failed (Val) -> no plausible data found",
+        )
+        exit(2)
+    except FileNotFoundError:
+        log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
+        exit(3)
 
     if info_file:
         with open(Path(info_file).resolve(), "w") as f:
@@ -319,7 +283,7 @@ def read(info_file: Optional[Path], cal_file: Optional[Path]):
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
 @click.option(
-    "--output_path",
+    "--output-path",
     "-o",
     type=click.Path(),
     help="Path to resulting YAML-formatted calibration data file",
@@ -362,7 +326,7 @@ def rpc(port: Optional[int]):
 
 @cli.command(short_help="Collects information about this host")
 @click.option(
-    "--output_path",
+    "--output-path",
     "-o",
     type=click.Path(file_okay=True, dir_okay=False),
     default=Path("/var/shepherd/inventory.yaml"),
@@ -382,7 +346,7 @@ def launcher(led: int, button: int):
 
 
 @cli.command(
-    short_help="Programmer for Target-Controller",
+    short_help="Programmer for Target-Controller (flashes intel Hex)",
     context_settings={"ignore_unknown_options": True},
 )
 @click.argument(

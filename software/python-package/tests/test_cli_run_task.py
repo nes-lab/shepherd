@@ -18,11 +18,15 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 from shepherd_core import CalibrationHarvester
+from shepherd_core.data_models import Firmware
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
+from shepherd_core.data_models.task import ProgrammingTask
+from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_sheep import Writer
 from shepherd_sheep.cli import cli
 from shepherd_sheep.shared_memory import DataBuffer
@@ -77,7 +81,7 @@ def test_cli_harvest_no_cal(
         duration=10,
         use_cal_default=True,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-vvv", "task", path_yaml.as_posix()])
+    res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -98,7 +102,7 @@ def test_cli_harvest_parameters_most(
         time_start=datetime.fromtimestamp(round(time.time() + 10)),
         abort_on_error=False,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-vvv", "task", path_yaml.as_posix()])
+    res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -116,7 +120,7 @@ def test_cli_harvest_parameters_minimal(
         force_overwrite=True,
         duration=10,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-vvv", "task", path_yaml.as_posix()])
+    res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -125,7 +129,7 @@ def test_cli_harvest_parameters_minimal(
 @pytest.mark.timeout(60)
 def test_cli_harvest_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
     file_path = path_here / "_test_config_harvest.yaml"
-    res = cli_runner.invoke(cli, ["task", file_path.as_posix()])
+    res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -137,7 +141,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
     path_here: Path,
 ) -> None:
     file_path = path_here.parent / "example_config_harvest.yaml"
-    res = cli_runner.invoke(cli, ["task", f"{file_path}"])
+    res = cli_runner.invoke(cli, ["run", f"{file_path}"])
     assert res.exit_code == 0
 
 
@@ -161,7 +165,7 @@ def test_cli_emulate(
     res = cli_runner.invoke(
         cli,
         [
-            "task",
+            "run",
             path_yaml.as_posix(),
         ],
     )
@@ -193,7 +197,7 @@ def test_cli_emulate_with_custom_virtsource(
     res = cli_runner.invoke(
         cli,
         [
-            "task",
+            "run",
             path_yaml.as_posix(),
         ],
     )
@@ -222,7 +226,7 @@ def test_cli_emulate_with_bq25570(
     res = cli_runner.invoke(
         cli,
         [
-            "task",
+            "run",
             path_yaml.as_posix(),
         ],
     )
@@ -251,7 +255,7 @@ def test_cli_emulate_aux_voltage(
     res = cli_runner.invoke(
         cli,
         [
-            "task",
+            "run",
             path_yaml.as_posix(),
         ],
     )
@@ -288,7 +292,7 @@ def test_cli_emulate_parameters_long(
     res = cli_runner.invoke(
         cli,
         [
-            "task",
+            "run",
             path_yaml.as_posix(),
         ],
     )
@@ -313,7 +317,7 @@ def test_cli_emulate_parameters_minimal(
     res = cli_runner.invoke(
         cli,
         [
-            "task",
+            "run",
             path_yaml.as_posix(),
         ],
     )
@@ -324,7 +328,7 @@ def test_cli_emulate_parameters_minimal(
 @pytest.mark.timeout(60)
 def test_cli_emulate_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
     file_path = path_here / "_test_config_emulation.yaml"
-    res = cli_runner.invoke(cli, ["task", file_path.as_posix()])
+    res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -336,7 +340,7 @@ def test_cli_emulate_preconf_etc_shp_examples(
     path_here: Path,
 ) -> None:
     file_path = path_here.parent / "example_config_emulation.yaml"
-    res = cli_runner.invoke(cli, ["task", file_path.as_posix()])
+    res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
 
 
@@ -360,8 +364,69 @@ def test_cli_emulate_aux_voltage_fail(
         res = cli_runner.invoke(
             cli,
             [
-                "task",
+                "run",
                 path_yaml.as_posix(),
             ],
         )
         assert res.exit_code != 0
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_cli_fw_mod_task(
+    shepherd_up,
+    cli_runner,
+    tmp_path: Path,
+    path_here: Path,
+) -> None:
+    path_yaml = tmp_path / "test_config_fw_mod.yaml"
+    path_file = tmp_path / "nrf52_demo_rf.hex"
+    fw = Firmware.from_firmware(
+        file=path_here / "firmware_nrf52_demo_rf.elf",
+        name="firmware_nrf52_demo_rf",
+        owner="example",
+        group="test",
+    )
+    path_yaml = FirmwareModTask(
+        data=fw.data,
+        data_type=fw.data_type,
+        custom_id=666,
+        firmware_file=path_file,
+    ).to_file(path_yaml)
+    res = cli_runner.invoke(
+        cli,
+        [
+            "run",
+            path_yaml.as_posix(),
+        ],
+    )
+    assert res.exit_code == 0
+    assert path_file.exists()
+    assert path_file.is_file()
+
+
+@pytest.mark.hardware
+@pytest.mark.timeout(60)
+def test_cli_programming(
+    shepherd_up,
+    cli_runner,
+    path_here: Path,
+    tmp_path: Path,
+) -> None:
+    path_file = path_here / "firmware_nrf52_sleep.hex"
+    path_yaml = tmp_path / "test_config_programmer.yaml"
+    ProgrammingTask(
+        firmware_file=path_file.as_posix(),
+        mcu_type="nrf52",
+        protocol=ProgrammerProtocol.SWD,
+        simulate=True,
+        verbose=4,
+    ).to_file(path_yaml)
+    res = cli_runner.invoke(
+        cli,
+        [
+            "run",
+            path_yaml.as_posix(),
+        ],
+    )
+    assert res.exit_code == 0

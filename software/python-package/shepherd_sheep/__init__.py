@@ -39,6 +39,7 @@ from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
 from .shepherd_io import ShepherdIOException
+from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
@@ -101,6 +102,7 @@ def run_emulator(cfg: EmulationTask) -> None:
 def run_firmware_mod(cfg: FirmwareModTask) -> None:
     _ = context_stack()
     set_verbose_level(cfg.verbose)
+    check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
         modify_uid(file_path, cfg.custom_id)
@@ -196,7 +198,8 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> None:
         log.error("Task-Set was not usable for this observer '%s'", observer_name)
         return
 
-    # TODO: currently not handled: time_prep, root_path, abort_on_error (but used in emuTask)
+    # TODO: parameters currently not handled:
+    #   time_prep, root_path, abort_on_error (but used in emuTask)
 
     for element in content:
         if element is None:
