@@ -89,17 +89,21 @@ def reload_kernel_module():
     load_kernel_module()
 
 
-def check_sys_access() -> None:
+def check_sys_access(iteration: int = 1) -> None:
+    iter_max: int = 5
     try:  # test for correct usage -> fail early!
         get_mode()
     except FileNotFoundError:
         try:
+            if iteration > iter_max:
+                sys.exit(1)
             log.warning(
                 "Failed to access sysFS -> "
-                "will try to activate shepherd kernel module",
+                "will try to activate shepherd kernel module (attempt %d/%d)",
+                iteration, iter_max,
             )
             load_kernel_module()
-            check_sys_access()
+            check_sys_access(iteration+1)
         except FileNotFoundError:
             log.error(
                 "RuntimeError: Failed to access sysFS -> "

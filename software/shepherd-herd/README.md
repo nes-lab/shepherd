@@ -56,13 +56,13 @@ nmap -sn 192.168.1.1-64
 After setting up the inventory, use shepherd-herd to check if all your nodes are responding correctly:
 
 ```Shell
-shepherd-herd -i herd.yml run "echo 'hello'"
+shepherd-herd -i herd.yml shell-cmd "echo 'hello'"
 ```
 
 Or, equivalently define the list of hosts on the command line
 
 ```Shell
-shepherd-herd -i sheep0,sheep1,sheep2, run "echo 'hello'"
+shepherd-herd -i sheep0,sheep1,sheep2, shell-cmd "echo 'hello'"
 ```
 
 To **simplify usage** it is recommended to set up the `herd.yml` in either of these directories (with falling lookup priority):
@@ -74,13 +74,13 @@ To **simplify usage** it is recommended to set up the `herd.yml` in either of th
 From then on you can just call:
 
 ```Shell
-shepherd-herd run "echo 'hello'"
+shepherd-herd shell "echo 'hello'"
 ```
 
 Or select individual sheep from the herd:
 
 ```Shell
-shepherd-herd --limit sheep0,sheep2, run "echo 'hello'"
+shepherd-herd --limit sheep0,sheep2, shell "echo 'hello'"
 ```
 
 ## Examples
@@ -100,7 +100,7 @@ shepherd-herd harvester -a cv20 -d 30 -o hrv.h5
 or with long arguments as alternative
 
 ```Shell
-shepherd-herd harvester --algorithm cv20 --duration 30.0 --output_path hrv.h5
+shepherd-herd harvester --algorithm cv20 --duration 30.0 --output-path hrv.h5
 ```
 
 Explanation:
@@ -123,8 +123,8 @@ shepherd-herd emulator --virtsource BQ25504 -o emu.h5 hrv.h5
 Explanation:
 
 - duration (`-d`) will be that of input file (`hrv.h5`)
-- target port A will be selected for current-monitoring and io-routing (implicit `--enable_io --io_target A --pwr_target A`)
-- second target port will stay unpowered (add `--aux_voltage` for that)
+- target port A will be selected for current-monitoring and io-routing (implicit `--enable-io --io-target A --pwr-target A`)
+- second target port will stay unpowered (add `--aux-voltage` for that)
 - virtual source will be configured as BQ25504-Converter
 - file will be stored to `/var/shepherd/recordings/emu.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)

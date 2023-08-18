@@ -22,24 +22,22 @@ def fw_empty(tmp_path: Path) -> Path:
     return store_path
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_minimal(shepherd_up, cli_runner, fw_example: Path) -> None:
+def test_cli_program_minimal(cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
             "program",
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> None:
+def test_cli_program_swd_explicit( cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -56,16 +54,14 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
             "--mcu-port",
             "1",
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_swd_explicit_short(
-    shepherd_up,
     cli_runner,
     fw_example: Path,
 ) -> None:
@@ -85,15 +81,14 @@ def test_cli_program_swd_explicit_short(
             "-m",
             "1",
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_example: Path) -> None:
+def test_cli_program_sbw_explicit(cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -110,45 +105,42 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_example: Path) -> 
             "--mcu-port",
             "2",
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -> None:
+def test_cli_program_file_defective_a(cli_runner, fw_empty: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
             "program",
             "--simulate",
-            str(fw_empty),
+            fw_empty.as_posix(),
         ],
     )
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_b(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "-vvv",
             "program",
             "--simulate",
-            str(tmp_path),  # Directory
+            tmp_path.as_posix(),  # Directory
         ],
     )
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_c( cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -161,11 +153,9 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_a(
-    shepherd_up,
-    cli_runner,
+        cli_runner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
@@ -176,17 +166,15 @@ def test_cli_program_datarate_invalid_a(
             "--datarate",
             "2000000",  # too fast
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_b(
-    shepherd_up,
-    cli_runner,
+        cli_runner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
@@ -197,15 +185,14 @@ def test_cli_program_datarate_invalid_b(
             "--datarate",
             "0",  # impossible
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_example: Path) -> None:
+def test_cli_program_target_invalid(cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -214,7 +201,7 @@ def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_example: Path) -
             "--mcu-type",
             "arduino",
             "--simulate",
-            str(fw_example),
+            fw_example.as_posix(),
         ],
     )
     assert res.exit_code != 0

@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 import telnetlib
 import time
@@ -5,12 +6,13 @@ from pathlib import Path
 from typing import Optional
 
 import click
-import click_config_file
-import yaml
 from fabric import Connection
+from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
+from shepherd_core.data_models.testbed import TargetPort
 
 from . import __version__
 from .herd import Herd
@@ -23,13 +25,6 @@ from .herd import set_verbose_level
 #  https://click.palletsprojects.com/en/8.1.x/documentation/#command-short-help
 #  - document arguments in their docstring (has no help=)
 #  - arguments can be configured in a dict and standardized across tools
-
-
-def yamlprovider(file_path: str, cmd_name: str):
-    logger.info("reading config from %s, cmd=%s", file_path, cmd_name)
-    with open(file_path) as config_data:
-        full_config = yaml.safe_load(config_data)
-    return full_config
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
@@ -94,26 +89,55 @@ def poweroff(ctx: click.Context, restart: bool):
 @click.pass_context
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-def run(ctx: click.Context, command: str, sudo: bool):
+def shell_cmd(ctx: click.Context, command: str, sudo: bool):
     replies = ctx.obj["herd"].run_cmd(sudo, command)
     ctx.obj["herd"].print_output(replies, 2)  # info-level
     exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
 
 
+@cli.command(
+    short_help="Runs a task or set of tasks with provided config/task file (YAML).",
+)
+@click.argument(
+    "config",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
+@click.option("--online", "-o", is_flag=True, help="Wait and receive output")
+@click.pass_context
+def run(ctx: click.Context, config: Path, online: bool):
+    if online:
+        remote_path = Path("/etc/shepherd/config_for_herd.yaml")
+        ctx.obj["herd"].put_file(config, remote_path, force_overwrite=True)
+        command = f"shepherd-sheep -{'v' * get_verbose_level()} run {remote_path.as_posix()}"
+        replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
+        exit_code = max([reply.exited for reply in replies.values()])
+        if exit_code:
+            logger.error("Programming - Procedure failed - will exit now!")
+        ctx.obj["herd"].print_output(replies, 3)  # requires debug level
+        sys.exit(exit_code)
+    else:
+        remote_path = Path("/etc/shepherd/config.yaml")
+        ctx.obj["herd"].put_file(config, remote_path, force_overwrite=True)
+        exit_code = ctx.obj["herd"].start_measurement()
+        logger.info("Shepherd started.")
+        if exit_code > 0:
+            logger.debug("-> max exit-code = %d", exit_code)
+
+
 @cli.command(short_help="Record IV data from a harvest-source")
 @click.option(
-    "--output_path",
+    "--output-path",
     "-o",
     type=click.Path(),
     default=Herd.path_default,
     help="Dir or file path for resulting hdf5 file",
 )
 @click.option(
-    "--algorithm",
+    "--virtual-harvester",
     "-a",
     type=click.STRING,
-    default=None,
+    default="mppt_opt",
     help="Choose one of the predefined virtual harvesters",
 )
 @click.option(
@@ -122,9 +146,9 @@ def run(ctx: click.Context, command: str, sudo: bool):
     type=click.FLOAT,
     help="Duration of recording in seconds",
 )
-@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default",
+    "--use-cal-default",
     "-c",
     is_flag=True,
     help="Use default calibration values",
@@ -136,42 +160,30 @@ def run(ctx: click.Context, command: str, sudo: bool):
     help="Start shepherd synchronized after uploading config",
 )
 @click.pass_context
-def harvester(
+def harvest(
     ctx: click.Context,
-    output_path: Path,
-    algorithm: Optional[str],
-    duration: Optional[float],
-    force_overwrite: bool,
-    use_cal_default: bool,
     no_start: bool,
+    **kwargs,
 ):
-    fp_output = Path(output_path)
-    if not fp_output.is_absolute():
-        fp_output = Herd.path_default / output_path
+    for path in ["output_path"]:
+        file_path = Path(kwargs[path])
+        if not file_path.is_absolute():
+            kwargs[path] = Herd.path_default / file_path
 
-    parameter_dict = {
-        "output_path": str(fp_output),
-        "harvester": algorithm,
-        "duration": duration,
-        "force_overwrite": force_overwrite,
-        "use_cal_default": use_cal_default,
-    }
-    parameter_dict = {
-        key: val for key, val in parameter_dict.items() if val is not None
-    }
+    if kwargs.get("virtual_harvester") is not None:
+        kwargs["virtual_harvester"] = {"name": kwargs["virtual_harvester"]}
 
-    ts_start = delay = 0
+    ts_start = datetime.now().astimezone()
+    delay = 0
     if not no_start:
         ts_start, delay = ctx.obj["herd"].find_consensus_time()
-        parameter_dict["start_time"] = ts_start
+        kwargs["time_start"] = ts_start
 
-    ctx.obj["herd"].configure_measurement(
-        "harvester",
-        parameter_dict,
-    )
+    task = HarvestTask(**kwargs)
+    ctx.obj["herd"].transfer_task(task)
 
     if not no_start:
-        logger.info("Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay)
+        logger.info("Scheduling start of shepherd: %s (in ~ %.2f s)", ts_start.isoformat(), delay)
         exit_code = ctx.obj["herd"].start_measurement()
         logger.info("Shepherd started.")
         if exit_code > 0:
@@ -179,11 +191,12 @@ def harvester(
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file containing harvesting data",
+    short_help="Emulate data, where INPUT is an hdf5 file on the sheep containing harvesting data",
 )
-@click.argument("input_path", type=click.Path())
+@click.argument("input-path", type=click.Path(file_okay=True, dir_okay=False, readable=True))
+# TODO: switch to local file for input?
 @click.option(
-    "--output_path",
+    "--output-path",
     "-o",
     type=click.Path(),
     default=Herd.path_default,
@@ -195,44 +208,44 @@ def harvester(
     type=click.FLOAT,
     help="Duration of recording in seconds",
 )
-@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.option(
-    "--use_cal_default",
+    "--use-cal-default",
     "-c",
     is_flag=True,
     help="Use default calibration values",
 )
 @click.option(
-    "--enable_io/--disable_io",
+    "--enable-io/--disable-io",
     default=True,
     help="Switch the GPIO level converter to targets on/off",
 )
 @click.option(
-    "--io_target",
+    "--io-port",
     type=click.Choice(["A", "B"]),
     default="A",
     help="Choose Target that gets connected to IO",
 )
 @click.option(
-    "--pwr_target",
+    "--pwr-port",
     type=click.Choice(["A", "B"]),
     default="A",
     help="Choose (main)Target that gets connected to virtual Source / current-monitor",
 )
 @click.option(
-    "--aux_voltage",
+    "--voltage-aux",
     "-x",
     type=click.FLOAT,
+    default=0.0,
     help="Set Voltage of auxiliary Power Source (second target)",
 )
 @click.option(
-    "--virtsource",
+    "--virtual-source",
     "-a",  # -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
     type=click.STRING,
     default="direct",
     help="Use the desired setting for the virtual source",
 )
-@click_config_file.configuration_option(provider=yamlprovider, implicit=False)
 @click.option(
     "--no-start",
     "-n",
@@ -240,58 +253,33 @@ def harvester(
     help="Start shepherd synchronized after uploading config",
 )
 @click.pass_context
-def emulator(
+def emulate(
     ctx: click.Context,
-    input_path: Path,
-    output_path: Path,
-    duration: Optional[float],
-    force_overwrite: bool,
-    use_cal_default: bool,
-    enable_io: bool,
-    io_target: str,
-    pwr_target: str,
-    aux_voltage: Optional[float],
-    virtsource: str,
     no_start: bool,
+    **kwargs,
 ):
-    fp_input = Path(input_path)
-    if not fp_input.is_absolute():
-        fp_input = Herd.path_default / input_path
+    for path in ["input_path", "output_path"]:
+        file_path = Path(kwargs[path])
+        if not file_path.is_absolute():
+            kwargs[path] = Herd.path_default / file_path
 
-    parameter_dict = {
-        "input_path": str(fp_input),
-        "force_overwrite": force_overwrite,
-        "duration": duration,
-        "use_cal_default": use_cal_default,
-        "enable_io": enable_io,
-        "io_target": io_target,
-        "pwr_target": pwr_target,
-        "aux_target_voltage": aux_voltage,
-        "virtsource": virtsource,
-    }
-    parameter_dict = {
-        key: val for key, val in parameter_dict.items() if val is not None
-    }
+    for port in ["io_port", "pwr_port"]:
+        kwargs[port] = TargetPort[kwargs[port]]
 
-    if output_path is not None:
-        fp_output = Path(output_path)
-        if not fp_output.is_absolute():
-            fp_output = Herd.path_default / output_path
+    if kwargs.get("virtual_source") is not None:
+        kwargs["virtual_source"] = {"name": kwargs["virtual_source"]}
 
-        parameter_dict["output_path"] = str(fp_output)
-
-    ts_start = delay = 0
+    ts_start = datetime.now().astimezone()
+    delay = 0
     if not no_start:
         ts_start, delay = ctx.obj["herd"].find_consensus_time()
-        parameter_dict["start_time"] = ts_start
+        kwargs["time_start"] = ts_start
 
-    ctx.obj["herd"].configure_measurement(
-        "emulator",
-        parameter_dict,
-    )
+    task = EmulationTask(**kwargs)
+    ctx.obj["herd"].transfer_task(task)
 
     if not no_start:
-        logger.info("Scheduling start of shepherd at %d (in ~ %.2f s)", ts_start, delay)
+        logger.info("Scheduling start of shepherd: %s (in ~ %.2f s)", ts_start.isoformat(), delay)
         exit_code = ctx.obj["herd"].start_measurement()
         logger.info("Shepherd started.")
         if exit_code > 0:
@@ -313,7 +301,7 @@ def start(ctx: click.Context) -> None:
             logger.debug("-> max exit-code = %d", exit_code)
 
 
-@cli.command(short_help="Information about current shepherd measurement")
+@cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
 def check(ctx: click.Context) -> None:
     if ctx.obj["herd"].check_state():
@@ -340,13 +328,13 @@ def stop(ctx: click.Context) -> None:
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.option(
-    "--remote_path",
+    "--remote-path",
     "-r",
     type=click.Path(),
     default=Herd.path_default,
     help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
 )
-@click.option("--force_overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
 @click.pass_context
 def distribute(
     ctx: click.Context,
@@ -363,6 +351,8 @@ def distribute(
     "outdir",
     type=click.Path(
         exists=True,
+        file_okay=False,
+        dir_okay=True,
     ),
 )
 @click.option(
@@ -421,7 +411,7 @@ def retrieve(
 
 @cli.command(short_help="Collects information about the hosts")
 @click.argument(
-    "output_path",
+    "output-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.pass_context
@@ -611,7 +601,7 @@ def reset(ctx: click.Context):
 
 @cli.command(
     short_help="Programmer for Target-Controller",
-    context_settings={"ignore_unknown_options": True},
+    #context_settings={"ignore_unknown_options": True},
 )
 @click.argument(
     "firmware-file",
@@ -658,24 +648,21 @@ def reset(ctx: click.Context):
     help="dry-run the programmer - no data gets written",
 )
 @click.pass_context
-def program(**kwargs):
-    ctx = kwargs.pop("ctx")
-    temp_file = "/tmp/target_image.hex"  # noqa: S108
+def program(ctx: click.Context, **kwargs):
+    tmp_file = "/tmp/target_image.hex"  # noqa: S108
+    cfg_path = Path("/etc/shepherd/config_for_herd.yaml")
 
-    ctx.obj["herd"].put_file(kwargs["firmware-file"], temp_file, force_overwrite=True)
+    ctx.obj["herd"].put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
-    cfg = ProgrammingTask(**kwargs)
+    kwargs["firmware_file"] = Path(tmp_file)
+    task = ProgrammingTask(**kwargs)
+    ctx.obj["herd"].transfer_task(task, cfg_path)
 
-    command = (
-        f"shepherd-sheep -{'v' * get_verbose_level()} program --target-port {cfg.target_port} "
-        f"-v {cfg.voltage} -d {cfg.datarate} --mcu-type {cfg.mcu_type} "
-        f"--mcu-port {cfg.mcu_port} {'--simulate' if cfg.simulate else ''} "
-        f"{temp_file}"
-    )
+    command = f"shepherd-sheep -{'v' * get_verbose_level()} run {cfg_path.as_posix()}"
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
     exit_code = max([reply.exited for reply in replies.values()])
     if exit_code:

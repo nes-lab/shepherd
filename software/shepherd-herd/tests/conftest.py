@@ -34,8 +34,8 @@ def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
 def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
     store_path = file_path / file_name
 
-    with Writer(store_path, compression=0) as file:
-        file.set_hostname("artificial")
+    with Writer(store_path, compression=None) as file:
+        file.store_hostname("artificial")
         duration_s = 2
         repetitions = 10
         timestamp_vector = np.arange(0.0, duration_s, file.sample_interval_ns / 1e9)

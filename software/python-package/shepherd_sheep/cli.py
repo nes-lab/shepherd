@@ -148,7 +148,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     default=Path("/etc/shepherd/config.yaml"),
 )
-def run(config: Union[Path, ShpModel]):
+def run(config: Path):
     run_task(config)
 
 

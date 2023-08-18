@@ -12,12 +12,16 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+from datetime import datetime
+from datetime import timedelta
 
 import chromalog
 import yaml
 from fabric import Connection
 from fabric import Group
 from fabric import Result
+from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models import Wrapper
 
 chromalog.basicConfig(format="%(message)s")
 logger = logging.getLogger("shepherd-herd")
@@ -53,7 +57,7 @@ class Herd:
     path_default = _remote_paths_allowed[0]
 
     timestamp_diff_allowed = 10
-    start_delay_s = 20
+    start_delay_s = 30
 
     def __init__(
         self,
@@ -338,7 +342,7 @@ class Herd:
         del threads
         return failed_retrieval
 
-    def find_consensus_time(self) -> Tuple[int, float]:
+    def find_consensus_time(self) -> Tuple[datetime, float]:
         """Finds a start time in the future when all nodes should start service
 
         In order to run synchronously, all nodes should start at the same time.
@@ -347,56 +351,54 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date +%s")
-        ts_nows = [float(reply.stdout) for reply in replies.values()]
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
-        ts_diff = ts_max - ts_min
+        ts_diff = ts_max.timestamp() - ts_min.timestamp()
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
             raise Exception(
                 f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
-
         # We need to estimate a future point in time such that all nodes are ready
-        ts_start = ts_max + self.start_delay_s
-        return int(ts_start), float(self.start_delay_s + ts_diff / 2)
+        ts_start = ts_max + timedelta(seconds=self.start_delay_s)
+        return ts_start, float(self.start_delay_s + ts_diff / 2)
 
-    def configure_measurement(
+    def transfer_task(
         self,
-        mode: str,
-        parameters: dict,
+        task: ShpModel,
+            remote_path: Path = Path("/etc/shepherd/config.yaml"),
     ) -> None:
-        """Configures shepherd service on the group of hosts.
+        """brings shepherd tasks to the group of hosts / sheep.
 
         Rolls out a configuration file according to the given command and parameters
         service.
 
-        Args:
-            mode (str): What shepherd is supposed to do. One of 'harvester' or 'emulator'.
-            parameters (dict): Parameters for shepherd-sheep
         """
         global verbose_level
-        config_path = "/etc/shepherd/config.yaml"
-        config_dict = {
-            "mode": mode,
-            "verbose": verbose_level,
-            "parameters": parameters,
-        }
-        config_yml = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
-
-        logger.debug(
-            "Rolling out the following config to '%s':\n\n%s",
-            config_path,
-            config_yml,
+        task_dict = task.dict(exclude_unset=True, exclude_defaults=True)
+        task_wrap = Wrapper(
+            datatype=type(task).__name__,
+            created=datetime.now(),
+            parameters=task_dict,
         )
-
+        task_yaml = yaml.safe_dump(
+            task_wrap.dict(exclude_unset=True, exclude_defaults=True),
+            default_flow_style=False,
+            sort_keys=False,
+        )
         if self.check_state(warn=True):
             raise Exception("shepherd still active!")
 
+        logger.debug(
+            "Rolling out the following config to '%s':\n\n%s",
+            remote_path.as_posix(),
+            task_yaml,
+        )
         self.put_file(
-            StringIO(config_yml),
-            config_path,
+            StringIO(task_yaml),
+            remote_path,
             force_overwrite=True,
         )
 
@@ -443,7 +445,7 @@ class Herd:
             logger.debug("-> max exit-code = %d", exit_code)
         return exit_code
 
-    def poweroff(self, restart: bool) -> bool:
+    def poweroff(self, restart: bool) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
             replies = self.run_cmd(sudo=True, cmd="reboot")

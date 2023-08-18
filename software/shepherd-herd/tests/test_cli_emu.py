@@ -16,8 +16,8 @@ def test_emu_prepare(cli_runner, stopped_herd, tmp_path) -> None:
         [
             "-vvv",
             "distribute",
-            "--force_overwrite",
-            str(test_file),
+            "--force-overwrite",
+            test_file.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -30,8 +30,8 @@ def test_emu_example(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "emulator",
-            "--virtsource",
+            "emulate",
+            "--virtual-source",
             "BQ25504",
             "-o",
             "pytest_emu.h5",
@@ -48,8 +48,8 @@ def test_emu_example_fail(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "emulator",
-            "--virtsource",
+            "emulate",
+            "--virtual-source",
             "BQ25504",
             "-o",
             "pytest_emu.h5",
@@ -57,7 +57,7 @@ def test_emu_example_fail(cli_runner, stopped_herd) -> None:
         ],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner, timeout=15)
+    wait_for_end(cli_runner, timeout=40)  # TODO: was 15 but got worse with core-lib
 
 
 @pytest.mark.timeout(120)
@@ -65,7 +65,7 @@ def test_emu_minimal(cli_runner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulator",
+            "emulate",
             "pytest_src.h5",
         ],
     )
@@ -79,21 +79,21 @@ def test_emu_all_args_long(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "emulator",
+            "emulate",
             "--duration",
             "10",
-            "--force_overwrite",
-            "--use_cal_default",
-            "--enable_io",
-            "--io_target",
+            "--force-overwrite",
+            "--use-cal-default",
+            "--enable-io",
+            "--io-port",
             "A",
-            "--pwr_target",
+            "--pwr-port",
             "A",
-            "--aux_voltage",
+            "--voltage-aux",
             "1.6",
-            "--virtsource",
+            "--virtual-source",
             "BQ25504",
-            "--output_path",
+            "--output-path",
             "pytest_emu.h5",
             "pytest_src.h5",
         ],
@@ -109,15 +109,15 @@ def test_emu_all_args_short(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "emulator",
+            "emulate",
             "-d",
             "10",
             "-f",
             "-c",
-            "--disable_io",
-            "--io_target",
+            "--disable-io",
+            "--io-port",
             "B",
-            "--pwr_target",
+            "--pwr-port",
             "B",
             "-x",
             "1.4",
@@ -138,7 +138,7 @@ def test_emu_no_start(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "emulator",
+            "emulate",
             "-d",
             "20",
             "-o",
@@ -163,7 +163,7 @@ def test_emu_force_stop(cli_runner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulator",
+            "emulate",
             "pytest_src.h5",
         ],
     )

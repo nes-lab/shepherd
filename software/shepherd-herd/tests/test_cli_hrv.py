@@ -12,7 +12,7 @@ def test_hrv_example(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "harvester",
+            "harvest",
             "-a",
             "cv20",
             "-d",
@@ -31,16 +31,16 @@ def test_hrv_example_fail(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "harvester",
-            "--algorithm",
+            "harvest",
+            "--virtual-harvester",
             "ceeeveeeee",
             "--duration",
             "10",
-            "--output_path",
+            "--output-path",
             "pytest_hrv.h5",
         ],
     )
-    assert res.exit_code == 0
+    assert res.exit_code != 0
     wait_for_end(cli_runner, timeout=15)
 
 
@@ -48,7 +48,7 @@ def test_hrv_example_fail(cli_runner, stopped_herd) -> None:
 def test_hrv_minimal(cli_runner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
-        ["harvester"],
+        ["harvest"],
     )
     assert res.exit_code == 0
     time.sleep(10)
@@ -67,14 +67,14 @@ def test_hrv_all_args_long(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "harvester",
-            "--algorithm",
+            "harvest",
+            "--virtual-harvester",
             "cv33",
             "--duration",
             "10",
-            "--force_overwrite",
-            "--use_cal_default",
-            "--output_path",
+            "--force-overwrite",
+            "--use-cal-default",
+            "--output-path",
             "pytest_hrv.h5",
         ],
     )
@@ -88,7 +88,7 @@ def test_hrv_all_args_short(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "harvester",
+            "harvest",
             "-a",
             "cv33",
             "-d",
@@ -110,7 +110,7 @@ def test_hrv_no_start(cli_runner, stopped_herd) -> None:
         cli,
         [
             "-vvv",
-            "harvester",
+            "harvest",
             "-d",
             "10",
             "--no-start",
