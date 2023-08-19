@@ -11,7 +11,7 @@ https://jiffyclub.github.io/snakeviz/
 pip install snakeviz
 snakeviz cprofile.log
 
-Alternative visualisation:
+Alternative visualization:
 https://github.com/nschloe/tuna
 pip install tuna
 tuna cprofile.log
@@ -40,7 +40,8 @@ if just_import:
     prof.run("from shepherd_core.data_models.task import EmulationTask")
 else:
     # NOTE: using prof.enable() & .disable() produced garbage
-    prof.run("""
+    prof.run(
+        """
 from shepherd_sheep.cli import cli
 from click.testing import CliRunner
 cli_runner = CliRunner()
@@ -48,9 +49,9 @@ res = cli_runner.invoke(
     cli,
     ['inventorize'],
 )
-    """)
+    """,
+    )
 
-print(f"Routine took {time.time() - time_start} s")
+print(f"Routine took {time.time() - time_start} s")  # noqa: T201
 prof.create_stats()
 prof.dump_stats(path_log)
-
