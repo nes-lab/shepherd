@@ -195,7 +195,7 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> None:
         wrapper = prepare_task(cfg, observer_name)
         content = extract_tasks(wrapper)
     except ValueError as xcp:
-        log.error(
+        log.error(  # noqa: G200
             "Task-Set was not usable for this observer '%s', with original error = %s",
             observer_name,
             xcp,

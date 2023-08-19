@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional
 from typing import Union
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
@@ -210,7 +210,7 @@ def write_mode(mode: str, force: bool = False) -> None:
         f.write(mode)
 
 
-@validate_arguments
+@validate_call
 def write_dac_aux_voltage(
     voltage: Union[float, str, None],
     cal_emu: Optional[CalibrationEmulator] = None,
@@ -355,14 +355,14 @@ def read_calibration_settings() -> (
     return cal_pru
 
 
-@validate_arguments
+@validate_call
 def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
     """Sends the virtual-converter settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    settings = list(settings.dict().values())
+    settings = list(settings.model_dump().values())
     log.debug(
         "Writing virtual converter to sysfs_interface, first values are %s",
         settings[0:3],
@@ -398,14 +398,14 @@ def read_virtual_converter_settings() -> list:
     return int_settings
 
 
-@validate_arguments
+@validate_call
 def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
     """Sends the settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    settings = list(settings.dict().values())
+    settings = list(settings.model_dump().values())
     log.debug(
         "Writing virtual harvester to sysfs_interface, first values are %s",
         settings[0:3],

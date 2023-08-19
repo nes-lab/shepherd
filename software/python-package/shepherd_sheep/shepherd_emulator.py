@@ -152,7 +152,7 @@ class ShepherdEmulator(ShepherdIO):
             # add hostname to file
             self.writer.store_hostname(platform.node().strip())
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
-            self.writer.store_config(self.cfg.virtual_source.dict())
+            self.writer.store_config(self.cfg.virtual_source.model_dump())
             # TODO: restore to .cfg.dict() -> fails for yaml-repr of path
 
         # Preload emulator with data

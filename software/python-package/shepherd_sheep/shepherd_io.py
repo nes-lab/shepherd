@@ -13,7 +13,7 @@ from contextlib import suppress
 from typing import Optional
 from typing import Union
 
-from pydantic import validate_arguments
+from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationHarvester
 from shepherd_core.data_models import GpioTracing
@@ -427,7 +427,7 @@ class ShepherdIO:
         """
         return sfs.read_dac_aux_voltage(cal_emu)
 
-    @validate_arguments
+    @validate_call
     def send_calibration_settings(
         self,
         cal_: Union[CalibrationEmulator, CalibrationHarvester, None],
