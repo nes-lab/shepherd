@@ -1,7 +1,7 @@
-from datetime import datetime
 import sys
 import telnetlib
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -11,8 +11,8 @@ from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
-from shepherd_core.inventory import Inventory
 from shepherd_core.data_models.testbed import TargetPort
+from shepherd_core.inventory import Inventory
 
 from . import __version__
 from .herd import Herd
@@ -109,7 +109,9 @@ def run(ctx: click.Context, config: Path, online: bool):
     if online:
         remote_path = Path("/etc/shepherd/config_for_herd.yaml")
         ctx.obj["herd"].put_file(config, remote_path, force_overwrite=True)
-        command = f"shepherd-sheep -{'v' * get_verbose_level()} run {remote_path.as_posix()}"
+        command = (
+            f"shepherd-sheep -{'v' * get_verbose_level()} run {remote_path.as_posix()}"
+        )
         replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
         exit_code = max([reply.exited for reply in replies.values()])
         if exit_code:
@@ -183,7 +185,11 @@ def harvest(
     ctx.obj["herd"].transfer_task(task)
 
     if not no_start:
-        logger.info("Scheduling start of shepherd: %s (in ~ %.2f s)", ts_start.isoformat(), delay)
+        logger.info(
+            "Scheduling start of shepherd: %s (in ~ %.2f s)",
+            ts_start.isoformat(),
+            delay,
+        )
         exit_code = ctx.obj["herd"].start_measurement()
         logger.info("Shepherd started.")
         if exit_code > 0:
@@ -193,7 +199,10 @@ def harvest(
 @cli.command(
     short_help="Emulate data, where INPUT is an hdf5 file on the sheep containing harvesting data",
 )
-@click.argument("input-path", type=click.Path(file_okay=True, dir_okay=False, readable=True))
+@click.argument(
+    "input-path",
+    type=click.Path(file_okay=True, dir_okay=False, readable=True),
+)
 # TODO: switch to local file for input?
 @click.option(
     "--output-path",
@@ -279,7 +288,11 @@ def emulate(
     ctx.obj["herd"].transfer_task(task)
 
     if not no_start:
-        logger.info("Scheduling start of shepherd: %s (in ~ %.2f s)", ts_start.isoformat(), delay)
+        logger.info(
+            "Scheduling start of shepherd: %s (in ~ %.2f s)",
+            ts_start.isoformat(),
+            delay,
+        )
         exit_code = ctx.obj["herd"].start_measurement()
         logger.info("Shepherd started.")
         if exit_code > 0:
@@ -601,7 +614,6 @@ def reset(ctx: click.Context):
 
 @cli.command(
     short_help="Programmer for Target-Controller",
-    #context_settings={"ignore_unknown_options": True},
 )
 @click.argument(
     "firmware-file",

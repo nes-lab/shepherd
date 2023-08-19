@@ -5,6 +5,8 @@ import contextlib
 import logging
 import threading
 import time
+from datetime import datetime
+from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from typing import Dict
@@ -12,8 +14,6 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from datetime import datetime
-from datetime import timedelta
 
 import chromalog
 import yaml
@@ -352,7 +352,9 @@ class Herd:
         """
         # Get the current time on each target node
         replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
-        ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
+        ts_nows = [
+            datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()
+        ]
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
         ts_diff = ts_max.timestamp() - ts_min.timestamp()
@@ -368,7 +370,7 @@ class Herd:
     def transfer_task(
         self,
         task: ShpModel,
-            remote_path: Path = Path("/etc/shepherd/config.yaml"),
+        remote_path: Path = Path("/etc/shepherd/config.yaml"),
     ) -> None:
         """brings shepherd tasks to the group of hosts / sheep.
 

@@ -37,7 +37,7 @@ def test_cli_program_minimal(cli_runner, fw_example: Path) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit( cli_runner, fw_example: Path) -> None:
+def test_cli_program_swd_explicit(cli_runner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -140,7 +140,7 @@ def test_cli_program_file_defective_b(cli_runner, tmp_path: Path) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c( cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_c(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -155,7 +155,7 @@ def test_cli_program_file_defective_c( cli_runner, tmp_path: Path) -> None:
 
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_a(
-        cli_runner,
+    cli_runner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
@@ -174,7 +174,7 @@ def test_cli_program_datarate_invalid_a(
 
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_b(
-        cli_runner,
+    cli_runner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(

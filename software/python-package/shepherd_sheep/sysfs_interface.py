@@ -100,10 +100,11 @@ def check_sys_access(iteration: int = 1) -> None:
             log.warning(
                 "Failed to access sysFS -> "
                 "will try to activate shepherd kernel module (attempt %d/%d)",
-                iteration, iter_max,
+                iteration,
+                iter_max,
             )
             load_kernel_module()
-            check_sys_access(iteration+1)
+            check_sys_access(iteration + 1)
         except FileNotFoundError:
             log.error(
                 "RuntimeError: Failed to access sysFS -> "

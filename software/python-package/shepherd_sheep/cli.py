@@ -13,13 +13,11 @@ import sys
 import time
 from pathlib import Path
 from typing import Optional
-from typing import Union
 
 import click
 import gevent
 import zerorpc
 from shepherd_core import CalibrationCape
-from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
