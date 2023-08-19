@@ -20,7 +20,7 @@ def extract_first_sheep(herd_path: Path) -> str:
 
 def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
     ts_start = time.time()
-    while cli_run.invoke(cli, ["-vvv", "check"]).exit_code > 0:
+    while cli_run.invoke(cli, ["-vvv", "status"]).exit_code > 0:
         duration = time.time() - ts_start
         if duration > timeout:
             raise TimeoutError(f"Shepherd ran into timeout ({timeout} s)")

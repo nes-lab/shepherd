@@ -127,4 +127,4 @@ def test_hrv_no_start(cli_runner, stopped_herd) -> None:
     wait_for_end(cli_runner, tmin=15)
 
 
-# TODO: retrieve & check with datalib (length & validity)
+# TODO: retrieve & verify with datalib (length & validity)

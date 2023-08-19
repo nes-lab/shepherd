@@ -27,7 +27,7 @@ For install from local sources:
 
 ```Shell
 cd shepherd/software/shepherd-herd/
-pip3 install ./
+pip3 install . -U
 ```
 
 ## Usage
@@ -74,13 +74,13 @@ To **simplify usage** it is recommended to set up the `herd.yml` in either of th
 From then on you can just call:
 
 ```Shell
-shepherd-herd shell "echo 'hello'"
+shepherd-herd shell-cmd "echo 'hello'"
 ```
 
 Or select individual sheep from the herd:
 
 ```Shell
-shepherd-herd --limit sheep0,sheep2, shell "echo 'hello'"
+shepherd-herd --limit sheep0,sheep2, shell-cmd "echo 'hello'"
 ```
 
 ## Examples
@@ -94,18 +94,18 @@ For a full list of supported commands and options, run ```shepherd-herd --help``
 Simultaneously start harvesting the connected energy sources on the nodes:
 
 ```Shell
-shepherd-herd harvester -a cv20 -d 30 -o hrv.h5
+shepherd-herd harvest -a cv20 -d 30 -o hrv.h5
 ```
 
 or with long arguments as alternative
 
 ```Shell
-shepherd-herd harvester --algorithm cv20 --duration 30.0 --output-path hrv.h5
+shepherd-herd harvest --virtual-harvester cv20 --duration 30.0 --output-path hrv.h5
 ```
 
 Explanation:
 
-- uses cv33 algorithm (constant voltage 2.0 V)
+- uses cv20 algorithm as virtual harvester (constant voltage 2.0 V)
 - duration is 30s
 - file will be stored to `/var/shepherd/recordings/hrv.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
@@ -117,14 +117,14 @@ For more harvesting algorithms see [virtual_harvester_fixture.yaml](https://gith
 Use the previously recorded harvest for emulating an energy environment for the attached sensor nodes and monitor their power consumption and GPIO events:
 
 ```Shell
-shepherd-herd emulator --virtsource BQ25504 -o emu.h5 hrv.h5
+shepherd-herd emulate --virtual-source BQ25504 -o emu.h5 hrv.h5
 ```
 
 Explanation:
 
 - duration (`-d`) will be that of input file (`hrv.h5`)
-- target port A will be selected for current-monitoring and io-routing (implicit `--enable-io --io-target A --pwr-target A`)
-- second target port will stay unpowered (add `--aux-voltage` for that)
+- target port A will be selected for current-monitoring and io-routing (implicit `--enable-io --io-port A --pwr-port A`)
+- second target port will stay unpowered (add `--voltage-aux` for that)
 - virtual source will be configured as BQ25504-Converter
 - file will be stored to `/var/shepherd/recordings/emu.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
@@ -173,7 +173,7 @@ shepherd-herd start
 The current state of the measurement can be **checked** with (console printout and return code):
 
 ```Shell
-shepherd-herd check
+shepherd-herd status
 ```
 
 If the measurement runs indefinitely or something different came up, and you want to **stop** forcefully:

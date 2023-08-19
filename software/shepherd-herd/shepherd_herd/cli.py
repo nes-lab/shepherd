@@ -304,7 +304,7 @@ def emulate(
 )
 @click.pass_context
 def start(ctx: click.Context) -> None:
-    if ctx.obj["herd"].check_state():
+    if ctx.obj["herd"].check_status():
         logger.info("Shepherd still active, will skip this command!")
         sys.exit(1)
     else:
@@ -316,8 +316,8 @@ def start(ctx: click.Context) -> None:
 
 @cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
-def check(ctx: click.Context) -> None:
-    if ctx.obj["herd"].check_state():
+def status(ctx: click.Context) -> None:
+    if ctx.obj["herd"].check_status():
         logger.info("Shepherd still active!")
         sys.exit(1)
     else:

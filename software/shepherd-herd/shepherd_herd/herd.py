@@ -370,7 +370,7 @@ class Herd:
     def transfer_task(
         self,
         task: ShpModel,
-        remote_path: Path = Path("/etc/shepherd/config.yaml"),
+        remote_path: Union[Path, str] = "/etc/shepherd/config.yaml",
     ) -> None:
         """brings shepherd tasks to the group of hosts / sheep.
 
@@ -390,8 +390,10 @@ class Herd:
             default_flow_style=False,
             sort_keys=False,
         )
-        if self.check_state(warn=True):
+        if self.check_status(warn=True):
             raise Exception("shepherd still active!")
+        if not isinstance(remote_path, Path):
+            remote_path = Path(remote_path)
 
         logger.debug(
             "Rolling out the following config to '%s':\n\n%s",
@@ -404,7 +406,7 @@ class Herd:
             force_overwrite=True,
         )
 
-    def check_state(self, warn: bool = False) -> bool:
+    def check_status(self, warn: bool = False) -> bool:
         """Returns true ss long as one instance is still measuring
 
         :param warn:
@@ -430,7 +432,7 @@ class Herd:
 
     def start_measurement(self) -> int:
         """Starts shepherd service on the group of hosts."""
-        if self.check_state(warn=True):
+        if self.check_status(warn=True):
             logger.info("-> won't start while shepherd-instances are active")
             return 1
         else:
@@ -460,8 +462,8 @@ class Herd:
 
     def await_stop(self, timeout: int = 30) -> bool:
         ts_end = time.time() + timeout
-        while self.check_state():
+        while self.check_status():
             if time.time() > ts_end:
-                return self.check_state(warn=True)
+                return self.check_status(warn=True)
             time.sleep(1)
         return False
