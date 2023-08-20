@@ -80,6 +80,7 @@ def test_cli_harvest_no_cal(
         force_overwrite=True,
         duration=10,
         use_cal_default=True,
+        verbose=3,
     ).to_file(path_yaml)
     res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
@@ -99,8 +100,9 @@ def test_cli_harvest_parameters_most(
         force_overwrite=True,
         duration=10,
         use_cal_default=True,
-        time_start=datetime.fromtimestamp(round(time.time() + 10)),
+        time_start=datetime.fromtimestamp(round(time.time() + 20)),
         abort_on_error=False,
+        verbose=3,
     ).to_file(path_yaml)
     res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
@@ -119,6 +121,7 @@ def test_cli_harvest_parameters_minimal(
         output_path=path_h5,
         force_overwrite=True,
         duration=10,
+        verbose=3,
     ).to_file(path_yaml)
     res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
@@ -278,7 +281,7 @@ def test_cli_emulate_parameters_long(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         voltage_aux=2.5,
-        time_start=datetime.fromtimestamp(round(time.time() + 10)),
+        time_start=datetime.fromtimestamp(round(time.time() + 20)),
         use_cal_default=True,
         enable_io=True,
         io_port="B",
@@ -392,6 +395,7 @@ def test_cli_fw_mod_task(
         data_type=fw.data_type,
         custom_id=666,
         firmware_file=path_file,
+        verbose=3,
     ).to_file(path_yaml)
     res = cli_runner.invoke(
         cli,

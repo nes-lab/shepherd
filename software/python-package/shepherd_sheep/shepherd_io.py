@@ -71,10 +71,12 @@ class ShepherdIO:
         """Implements singleton class."""
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)
-            ShepherdIO._instance = weakref.ref(new_class)
+            ShepherdIO._instance = new_class
+            # was raising on reuse and stored weakref.ref before
             return new_class
         else:
-            raise IndexError("ShepherdIO already exists")
+            log.debug("ShepherdIO-Singleton reused")
+            return ShepherdIO._instance
 
     def __init__(
         self,
@@ -114,6 +116,7 @@ class ShepherdIO:
         self.shared_mem: SharedMemory
 
     def __del__(self):
+        log.debug("Now deleting ShepherdIO")
         ShepherdIO._instance = None
 
     def __enter__(self):
@@ -279,6 +282,7 @@ class ShepherdIO:
 
         if self.shared_mem is not None:
             self.shared_mem.__exit__()
+            self.shared_mem = None
 
         self.set_io_level_converter(False)
         self.set_power_state_emulator(False)

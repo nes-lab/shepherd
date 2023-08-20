@@ -71,36 +71,22 @@ def context_stack() -> ExitStack:
     Returns: an exit-stack to use optionally
     """
     stack = ExitStack()
-
-    def exit_gracefully(*args):  # type: ignore
-        stack.close()
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, exit_gracefully)
-    signal.signal(signal.SIGINT, exit_gracefully)
     return stack
 
 
 def run_harvester(cfg: HarvestTask) -> None:
-    stack = context_stack()
     set_verbose_level(cfg.verbose)
-    hrv = ShepherdHarvester(cfg=cfg)
-    stack.enter_context(hrv)
-    hrv.run()
-    stack.close()
+    with ShepherdHarvester(cfg=cfg) as hrv:
+        hrv.run()
 
 
 def run_emulator(cfg: EmulationTask) -> None:
-    stack = context_stack()
     set_verbose_level(cfg.verbose)
-    emu = ShepherdEmulator(cfg=cfg)
-    stack.enter_context(emu)
-    emu.run()
-    stack.close()
+    with ShepherdEmulator(cfg=cfg) as emu:
+        emu.run()
 
 
 def run_firmware_mod(cfg: FirmwareModTask) -> None:
-    _ = context_stack()
     set_verbose_level(cfg.verbose)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
@@ -112,7 +98,6 @@ def run_firmware_mod(cfg: FirmwareModTask) -> None:
 
 
 def run_programmer(cfg: ProgrammingTask):
-    _ = context_stack()
     set_verbose_level(cfg.verbose)
     with ShepherdDebug(use_io=False) as sd:
         sd.select_port_for_power_tracking(
@@ -189,7 +174,6 @@ def run_programmer(cfg: ProgrammingTask):
 
 
 def run_task(cfg: Union[ShpModel, Path, str]) -> None:
-    _ = context_stack()
     observer_name = platform.node().strip()
     try:
         wrapper = prepare_task(cfg, observer_name)
@@ -208,6 +192,9 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> None:
     for element in content:
         if element is None:
             continue
+
+        e_dict = element.model_dump(exclude_defaults=True, exclude_unset=True)
+        log.debug(f"Starting run with %s", e_dict)
 
         if isinstance(element, EmulationTask):
             run_emulator(element)

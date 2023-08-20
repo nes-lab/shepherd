@@ -449,8 +449,10 @@ class Writer(BaseWriter):
         self.xcpt_grp["message"][self.xcpt_pos] = exception.message
         self.xcpt_pos += 1
 
-    def write(self, message: str):
+    def write(self, message: str) -> None:
         """Allows to add Writer as Stream for StreamHandler"""
+        if not hasattr(self, "slog_grp") or "time" not in self.slog_grp.keys():
+            return
         if self.slog_pos >= self.slog_grp["time"].shape[0]:
             data_length = self.slog_grp["time"].shape[0] + self.slog_inc
             self.slog_grp["time"].resize((data_length,))

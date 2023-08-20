@@ -62,6 +62,10 @@ except ModuleNotFoundError:
 #   - TODO: even the commands should be "sheep harvester config"
 # - redone programmer, emulation
 
+def exit_gracefully(*args):  # type: ignore
+    log.warning("Aborted!")
+    sys.exit(0)
+
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
@@ -79,6 +83,9 @@ except ModuleNotFoundError:
 @click.pass_context
 def cli(ctx: click.Context, verbose: int, version: bool):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
+    signal.signal(signal.SIGTERM, exit_gracefully)
+    signal.signal(signal.SIGINT, exit_gracefully)
+
     set_verbose_level(verbose)
     if version:
         log.info("Shepherd-Sheep v%s", __version__)
