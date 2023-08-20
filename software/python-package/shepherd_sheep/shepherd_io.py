@@ -8,7 +8,6 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 :license: MIT, see LICENSE for more details.
 """
 import time
-import weakref
 from contextlib import suppress
 from typing import Optional
 from typing import Union
@@ -150,6 +149,7 @@ class ShepherdIO:
     def __exit__(self, *args):  # type: ignore
         log.info("Now exiting ShepherdIO")
         self._cleanup()
+        ShepherdIO._instance = None
 
     @staticmethod
     def _send_msg(msg_type: int, values: Union[int, list]) -> None:

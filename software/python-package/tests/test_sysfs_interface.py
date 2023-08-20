@@ -24,10 +24,8 @@ def cnv_cfg() -> ConverterPRUConfig:
 
 @pytest.fixture
 def hrv_cfg() -> HarvesterPRUConfig:
-    here = Path(__file__).resolve()
-    name = "_test_config_harvest.yaml"
-    path = here.parent / name
-    hrv_cfg = HarvestTask.from_file(path)
+    path = Path(__file__).parent / "_test_config_harvest.yaml"
+    hrv_cfg = HarvestTask.from_file(path.as_posix())
     hrv_pru = HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
     return hrv_pru
 
@@ -153,6 +151,7 @@ def test_initial_harvester_settings(shepherd_up):
     assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
+@pytest.mark.hardware  # TODO: could also run with fakehardware, but triggers pydantic-error
 def test_writing_harvester_settings(shepherd_up, hrv_cfg):
     sysfs_interface.write_virtual_harvester_settings(hrv_cfg)
     assert sysfs_interface.read_virtual_harvester_settings() == list(

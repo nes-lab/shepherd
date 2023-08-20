@@ -12,7 +12,9 @@ def get_verbose_level() -> int:
     return verbose_level
 
 
-def set_verbose_level(verbose: int) -> None:
+def increase_verbose_level(verbose: int) -> None:
+    # local -vvv option overrules setting in task
     global verbose_level
-    verbose_level = min(max(verbose, 0), 3)
-    set_log_verbose_level(log, verbose)
+    if verbose > verbose_level:
+        verbose_level = min(max(verbose, 0), 3)
+        set_log_verbose_level(log, verbose)

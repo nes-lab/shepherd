@@ -30,9 +30,8 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .eeprom import CapeData
 from .launcher import Launcher
-from .logger import get_verbose_level
+from .logger import increase_verbose_level
 from .logger import log
-from .logger import set_verbose_level
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
@@ -62,6 +61,7 @@ except ModuleNotFoundError:
 #   - TODO: even the commands should be "sheep harvester config"
 # - redone programmer, emulation
 
+
 def exit_gracefully(*args):  # type: ignore
     log.warning("Aborted!")
     sys.exit(0)
@@ -86,7 +86,7 @@ def cli(ctx: click.Context, verbose: int, version: bool):
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
-    set_verbose_level(verbose)
+    increase_verbose_level(verbose)
     if version:
         log.info("Shepherd-Sheep v%s", __version__)
         log.debug("Python v%s", sys.version)
@@ -249,8 +249,7 @@ def write(
     help="If provided, calibration data is dumped to this file",
 )
 def read(info_file: Optional[Path], cal_file: Optional[Path]):
-    if get_verbose_level() < 2:
-        set_verbose_level(2)
+    increase_verbose_level(2)
 
     try:
         with EEPROM() as storage:
@@ -294,9 +293,7 @@ def read(info_file: Optional[Path], cal_file: Optional[Path]):
     help="Path to resulting YAML-formatted calibration data file",
 )
 def make(filename: Path, output_path: Optional[Path]):
-    if get_verbose_level() < 2:
-        set_verbose_level(2)
-
+    increase_verbose_level(2)
     cal_cape = CalMeasurementCape.from_file(filename).to_cal()
     if output_path is None:
         log.info(repr(cal_cape))

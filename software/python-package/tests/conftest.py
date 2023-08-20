@@ -84,6 +84,7 @@ def shepherd_up(fake_hardware, shepherd_down):
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
         here = Path(__file__).resolve().parent
+        fake_hardware.add_real_file(here / "_test_config_emulation.yaml")
         fake_hardware.add_real_file(here / "_test_config_harvest.yaml")
         fake_hardware.add_real_file(here / "_test_config_virtsource.yaml")
         yield

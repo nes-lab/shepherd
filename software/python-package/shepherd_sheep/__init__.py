@@ -9,7 +9,6 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import platform
 import shutil
-import signal
 import sys
 import time
 from contextlib import ExitStack
@@ -33,8 +32,8 @@ from .eeprom import EEPROM
 from .eeprom import CapeData
 from .h5_writer import Writer
 from .launcher import Launcher
+from .logger import increase_verbose_level
 from .logger import log
-from .logger import set_verbose_level
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
@@ -64,30 +63,37 @@ __all__ = [
     "flatten_list",
 ]
 
-
-def context_stack() -> ExitStack:
-    """Enables a nicer Exit-Behaviour
-
-    Returns: an exit-stack to use optionally
-    """
-    stack = ExitStack()
-    return stack
+# NOTE:
+#   ExitStack enables a cleaner Exit-Behaviour
+#   -> ShepherdIo.exit should always be called
 
 
 def run_harvester(cfg: HarvestTask) -> None:
-    set_verbose_level(cfg.verbose)
-    with ShepherdHarvester(cfg=cfg) as hrv:
+    stack = ExitStack()
+    increase_verbose_level(cfg.verbose)
+    try:
+        hrv = ShepherdHarvester(cfg=cfg)
+        stack.enter_context(hrv)
         hrv.run()
+    except SystemExit:
+        pass
+    stack.close()
 
 
 def run_emulator(cfg: EmulationTask) -> None:
-    set_verbose_level(cfg.verbose)
-    with ShepherdEmulator(cfg=cfg) as emu:
+    stack = ExitStack()
+    increase_verbose_level(cfg.verbose)
+    try:
+        emu = ShepherdEmulator(cfg=cfg)
+        stack.enter_context(emu)
         emu.run()
+    except SystemExit:
+        pass
+    stack.close()
 
 
 def run_firmware_mod(cfg: FirmwareModTask) -> None:
-    set_verbose_level(cfg.verbose)
+    increase_verbose_level(cfg.verbose)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
@@ -98,26 +104,31 @@ def run_firmware_mod(cfg: FirmwareModTask) -> None:
 
 
 def run_programmer(cfg: ProgrammingTask):
-    set_verbose_level(cfg.verbose)
-    with ShepherdDebug(use_io=False) as sd:
-        sd.select_port_for_power_tracking(
-            not sd.convert_target_port_to_bool(cfg.target_port),
+    stack = ExitStack()
+    increase_verbose_level(cfg.verbose)
+    failed = False
+
+    try:
+        dbg = ShepherdDebug(use_io=False)
+        stack.enter_context(dbg)
+
+        dbg.select_port_for_power_tracking(
+            not dbg.convert_target_port_to_bool(cfg.target_port),
         )
-        sd.set_power_state_emulator(True)
-        sd.select_port_for_io_interface(cfg.target_port)
-        sd.set_io_level_converter(True)
+        dbg.set_power_state_emulator(True)
+        dbg.select_port_for_io_interface(cfg.target_port)
+        dbg.set_io_level_converter(True)
 
         sysfs_interface.write_dac_aux_voltage(cfg.voltage)
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
 
         sysfs_interface.load_pru0_firmware(cfg.protocol)
-        sd.refresh_shared_mem()  # address might have changed
-        failed = False
+        dbg.refresh_shared_mem()  # address might have changed
 
         with open(cfg.firmware_file.resolve(), "rb") as fw:
             try:
-                sd.shared_mem.write_firmware(fw.read())
+                dbg.shared_mem.write_firmware(fw.read())
                 target = cfg.mcu_type
                 if cfg.simulate:
                     target = "dummy"
@@ -168,6 +179,9 @@ def run_programmer(cfg: ProgrammingTask):
         log.debug("\tshepherdState   = %s", sysfs_interface.get_state())
         log.debug("\tprogrammerState = %s", state)
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+    except SystemExit:
+        pass
+    stack.close()
 
     sysfs_interface.load_pru0_firmware("shepherd")
     sys.exit(int(failed))
@@ -194,7 +208,7 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> None:
             continue
 
         e_dict = element.model_dump(exclude_defaults=True, exclude_unset=True)
-        log.debug(f"Starting run with %s", e_dict)
+        log.debug("Starting run with %s", e_dict)
 
         if isinstance(element, EmulationTask):
             run_emulator(element)
