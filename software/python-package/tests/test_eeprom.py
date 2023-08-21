@@ -1,7 +1,7 @@
 import pytest
 from shepherd_core import CalibrationCape
+from shepherd_core.data_models.base.calibration import CapeData
 from shepherd_sheep import EEPROM
-from shepherd_sheep import CapeData
 
 
 @pytest.fixture()

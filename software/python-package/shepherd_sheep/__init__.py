@@ -29,7 +29,6 @@ from shepherd_core.fw_tools import modify_uid
 
 from . import sysfs_interface
 from .eeprom import EEPROM
-from .eeprom import CapeData
 from .h5_writer import Writer
 from .launcher import Launcher
 from .logger import increase_verbose_level
@@ -47,7 +46,6 @@ __version__ = "0.4.5"
 __all__ = [
     "Writer",
     "EEPROM",
-    "CapeData",
     "TargetIO",
     "Launcher",
     "ShepherdHarvester",

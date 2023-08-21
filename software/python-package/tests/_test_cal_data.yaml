@@ -1,7 +1,8 @@
 datatype: CalibrationCape
 parameters:
   host: sheep0
-  cape: xyz1
+  cape:
+    serial_number: xyz1
   emulator:
     adc_C_A:
       gain: 2.2306053900482405e-07

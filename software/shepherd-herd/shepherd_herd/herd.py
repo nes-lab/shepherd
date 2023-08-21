@@ -379,14 +379,14 @@ class Herd:
 
         """
         global verbose_level
-        task_dict = task.dict(exclude_unset=True, exclude_defaults=True)
+        task_dict = task.model_dump(exclude_unset=True, exclude_defaults=True)
         task_wrap = Wrapper(
             datatype=type(task).__name__,
             created=datetime.now(),
             parameters=task_dict,
         )
         task_yaml = yaml.safe_dump(
-            task_wrap.dict(exclude_unset=True, exclude_defaults=True),
+            task_wrap.model_dump(exclude_unset=True, exclude_defaults=True),
             default_flow_style=False,
             sort_keys=False,
         )

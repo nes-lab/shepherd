@@ -1,4 +1,6 @@
-from typing import Tuple, Optional, Dict
+from typing import Dict
+from typing import Optional
+from typing import Tuple
 from typing import TypeVar
 from typing import Union
 
@@ -6,7 +8,8 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from scipy import stats
-from shepherd_core import CalibrationSeries, CalibrationPair
+from shepherd_core import CalibrationPair
+from shepherd_core import CalibrationSeries
 
 from .logger import logger
 
@@ -14,7 +17,6 @@ T_calc = TypeVar("T_calc", NDArray[np.float64], float)
 
 
 class ProfileCalibration(CalibrationSeries):
-
     @classmethod
     def from_measurement(cls, result: pd.DataFrame):
         values: Dict[str, CalibrationPair] = {}
