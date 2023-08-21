@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List
+from typing import Optional
 
 import pandas as pd
 
@@ -9,7 +10,7 @@ from .profile import Profile
 
 def analyze_directory(
     folder_path: Path,
-    stats_path: Path,
+    stats_path: Optional[Path] = None,
     do_plots: bool = False,
 ) -> None:
     stats_list = []

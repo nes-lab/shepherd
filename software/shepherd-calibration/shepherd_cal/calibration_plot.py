@@ -2,15 +2,22 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shepherd_core import CalibrationCape
+from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 
 from .logger import logger
 
 
-def plot_calibration(measurements: dict, calibration: dict, file_name: Path) -> None:
+def plot_calibration(
+    measurements: CalMeasurementCape,
+    calibration: CalibrationCape,
+    file_name: Path,
+) -> None:
     for component in ["harvester", "emulator"]:
-        for channel in ["dac_voltage_a", "dac_voltage_b", "adc_current", "adc_voltage"]:
+        msr_component = measurements[component]
+        for channel in msr_component.keys():
             try:
-                sample_points = measurements[component][channel]
+                sample_points = msr_component[channel]
                 xp = np.empty(len(sample_points))
                 yp = np.empty(len(sample_points))
                 for i, point in enumerate(sample_points):
@@ -37,6 +44,6 @@ def plot_calibration(measurements: dict, calibration: dict, file_name: Path) -> 
             fig.set_figwidth(11)
             fig.set_figheight(10)
             fig.tight_layout()
-            plt.savefig(Path(file_name).stem + f"_plot_{component}_{channel}.png")
+            plt.savefig(Path(file_name).stem + f".plot_{component}_{channel}.png")
             plt.close(fig)
             plt.clf()

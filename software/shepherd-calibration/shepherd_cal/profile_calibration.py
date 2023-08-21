@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional, Dict
 from typing import TypeVar
 from typing import Union
 
@@ -6,28 +6,28 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from scipy import stats
+from shepherd_core import CalibrationSeries, CalibrationPair
 
 from .logger import logger
 
 T_calc = TypeVar("T_calc", NDArray[np.float64], float)
 
 
-class Calibration:
-    def __init__(self):
-        self.c_gain: float = 1
-        self.c_offset: float = 0
-        self.v_gain: float = 1
-        self.v_offset: float = 0
+class ProfileCalibration(CalibrationSeries):
 
     @classmethod
     def from_measurement(cls, result: pd.DataFrame):
-        cal = Calibration()
-        cal.determine_current_cal(result)
-        cal.determine_voltage_cal(result)
-        return cal
+        values: Dict[str, CalibrationPair] = {}
+        cal_c = cls._determine_current_cal(result)
+        cal_v = cls._determine_voltage_cal(result)
+        if cal_c is not None:
+            values["current"] = cal_c
+        if cal_v is not None:
+            values["voltage"] = cal_v
+        return cls()
 
     @staticmethod
-    def measurements_to_calibration(
+    def _measurements_to_calibration(
         ref: Union[pd.Series, float],
         raw: Union[pd.Series, float],
     ) -> Tuple[float, float]:
@@ -41,7 +41,8 @@ class Calibration:
             )
         return float(gain), float(offset)
 
-    def determine_current_cal(self, result: pd.DataFrame):
+    @staticmethod
+    def _determine_current_cal(result: pd.DataFrame) -> Optional[CalibrationPair]:
         # chose first voltage above 2.4 V as base, currents range from 60 uA to 14 mA
         result = (
             result.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)
@@ -61,9 +62,9 @@ class Calibration:
             logger.warning(
                 "NOTE: skipped determining current_calibration (missing data)",
             )
-            return
+            return None
         try:
-            gain, offset = self.measurements_to_calibration(
+            gain, offset = ProfileCalibration._measurements_to_calibration(
                 result.c_ref_A,
                 result.c_shp_raw,
             )
@@ -71,11 +72,12 @@ class Calibration:
             logger.warning(
                 "NOTE: skipped determining current_calibration (failed linregress)",
             )
-            return
+            return None
         logger.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
-        self.c_gain, self.c_offset = gain, offset
+        return CalibrationPair(gain=gain, offset=offset)
 
-    def determine_voltage_cal(self, result: pd.DataFrame):
+    @staticmethod
+    def _determine_voltage_cal(result: pd.DataFrame) -> Optional[CalibrationPair]:
         # chose first current above 60 uA as base, voltages range from 0.3 V to 2.6 V
         result = (
             result.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)
@@ -93,9 +95,9 @@ class Calibration:
             logger.warning(
                 "NOTE: skipped determining voltage_calibration (missing data)",
             )
-            return
+            return None
         try:
-            gain, offset = self.measurements_to_calibration(
+            gain, offset = ProfileCalibration._measurements_to_calibration(
                 result.v_ref_V,
                 result.v_shp_raw,
             )
@@ -103,12 +105,6 @@ class Calibration:
             logger.warning(
                 "NOTE: skipped determining voltage_calibration (failed linregress)",
             )
-            return
+            return None
         logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
-        self.v_gain, self.v_offset = gain, offset
-
-    def convert_current_raw_to_A(self, c_raw: T_calc) -> T_calc:
-        return c_raw * self.c_gain + self.c_offset
-
-    def convert_voltage_raw_to_V(self, v_raw: T_calc) -> T_calc:
-        return v_raw * self.v_gain + self.v_offset
+        return CalibrationPair(gain=gain, offset=offset)

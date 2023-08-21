@@ -30,9 +30,9 @@ The Interface is not stable ATM, so explore the commands on your own:
 # to see the commands:
 shepherd-cal --help
 # help for individual commands, ie:
-shepherd-cal calibration -h
-shepherd-cal calibration measure -h
-shepherd-cal profile -h
+shepherd-cal calibration --help
+shepherd-cal calibration measure --help
+shepherd-cal profile --help
 ```
 
 It is currently possible to
@@ -49,13 +49,13 @@ For actual measurements the program will tell you how to connect the SMU to the 
 Calibration
 
 ```Shell
-shepherd-cal calibration measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41 -o sheep0_cape_v240b.yml
-shepherd-cal calibration write sheep0 -u jane -p 1234 -m sheep0_cape_v240b.yml -v 24B0 -s i1270057 -d 2022-11-11
+shepherd-cal calibration measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41 --cape-serial 22_1270060 --outfile sheep0_cape_v240b.yaml --verbose
+shepherd-cal calibration write sheep0 --user jane --password 1234 -m sheep0_cape_v240b.yml -v 24B0 -s i1270057 -d 2022-11-11
 ```
 
 Profiling
 
 ```Shell
-shepherd-cal profile measure sheep0 -u jane -p 1234 --smu-ip 10.0.0.41
-shepherd-cal profile analyze -o stats.csv --plot
+shepherd-cal profile measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41
+shepherd-cal profile analyze ./ --outfile stats.csv --plot
 ```

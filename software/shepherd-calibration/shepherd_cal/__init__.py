@@ -1,4 +1,3 @@
-from .calibration import Calibration
 from .calibration_plot import plot_calibration
 from .calibrator import Calibrator
 from .logger import logger
@@ -11,7 +10,6 @@ __version__ = "0.4.5"
 
 __all__ = [
     "Calibrator",
-    "Calibration",
     "Profiler",
     "Profile",
     "logger",
