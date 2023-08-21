@@ -13,14 +13,10 @@ through Linux I2C device driver.
 import os
 import struct
 from contextlib import suppress
-from datetime import datetime
-from pathlib import Path
-from typing import Dict
 from typing import Optional
-from typing import Union
 
-import yaml
-from shepherd_core import CalibrationCape
+from shepherd_core.data_models import CalibrationCape
+from shepherd_core.data_models import CapeData
 
 from .logger import log
 
@@ -41,96 +37,6 @@ eeprom_format = {
 
 # The shepherd calibration data is stored in binary format
 calibration_data_format = {"offset": 512, "size": 128, "type": "binary"}
-
-
-class CapeData:
-    """Representation of Beaglebone Cape information
-
-    According to BeagleBone specifications, each cape should host an EEPROM
-    that contains some standardized information about the type of cape,
-    manufacturer, version etc.
-
-    TODO: could inherit from ShpModel
-
-    `See<https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#824_EEPROM_Data_Format>`_
-    """
-
-    def __init__(self, data: dict):
-        self.data = data
-
-    @classmethod
-    def from_values(
-        cls,
-        serial_number: Optional[str],
-        version: Optional[str] = None,
-        cal_date: Optional[str] = None,
-    ):
-        """Build the object from defaults and user-provided values
-
-        Args:
-
-            serial_number (str): Cape serial number according to BeagleBone
-                specification, e.g. 0119XXXX0001
-            version (str): Cape version, e.g. 24B0 for board-revision
-            cal_date: YYYY-MM-DD
-
-        """
-
-        if serial_number in [None, ""]:
-            raise ValueError("Please provide a valid Serial-Number")
-        if version in [None, ""]:
-            version = "24B0"
-        if cal_date in [None, ""]:
-            cal_date = datetime.now().strftime("%Y-%m-%d")
-
-        data: Dict[str, Union[str, bytes, None]] = {
-            "header": b"\xAA\x55\x33\xEE",
-            "eeprom_revision": "A2",
-            "board_name": "BeagleBone SHEPHERD Cape",
-            "version": version,
-            "manufacturer": "NES TU DRESDEN",
-            "part_number": "BB-SHPRD",
-            "serial_number": serial_number,
-            "cal_date": cal_date,
-        }
-        return cls(data)
-
-    @classmethod
-    def from_yaml(cls, filename: Path):
-        """Build the object from a yaml file
-
-        Args:
-            filename (Path): Name of the yaml file. Should contain all
-                required properties
-
-        """
-        data = {"header": b"\xAA\x55\x33\xEE"}
-        with open(Path(filename).resolve()) as stream:
-            yaml_dict = yaml.safe_load(stream)
-
-        data.update(yaml_dict)
-        for key in eeprom_format:
-            if key not in data:
-                raise KeyError(f"Missing { key } from yaml file")
-
-        return cls(data)
-
-    def __getitem__(self, key: str):
-        return self.data[key]
-
-    def __repr__(self):
-        print_dict = {}
-        for key in self.data:
-            if eeprom_format[key]["type"] in ["ascii", "str"]:
-                print_dict[key] = self.data[key]
-        return yaml.safe_dump(print_dict, default_flow_style=False)
-
-    def keys(self):
-        return self.data.keys()
-
-    def items(self):
-        for key in self.data:
-            yield key, self.data[key]
 
 
 class EEPROM:
@@ -244,16 +150,18 @@ class EEPROM:
         else:
             self._write(eeprom_format[key]["offset"], value)
 
-    def write_cape_data(self, cape_data: CapeData) -> None:
+    def _write_cape_data(self, cape_data: Optional[CapeData]) -> None:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:
             cape_data (CapeData): Cape data that should be written
         """
+        if cape_data is None:
+            return
         for key, value in cape_data.items():
             self[key] = value
 
-    def read_cape_data(self) -> CapeData:
+    def _read_cape_data(self) -> CapeData:
         """Reads and returns BeagleBone cape data from EEPROM
 
         Returns:
@@ -262,7 +170,7 @@ class EEPROM:
         data = {}
         for key in eeprom_format:
             data[key] = self[key]
-        return CapeData(data)
+        return CapeData(**data)
 
     def write_calibration(self, cal_cape: CalibrationCape) -> None:
         """Writes complete BeagleBone cape data to EEPROM
@@ -279,6 +187,7 @@ class EEPROM:
                 f"but got {len(data_serialized)}",
             )
         self._write(calibration_data_format["offset"], data_serialized)
+        self._write_cape_data(cal_cape.cape)
 
     def read_calibration(self) -> CalibrationCape:
         """Reads and returns shepherd calibration data from EEPROM
@@ -290,8 +199,9 @@ class EEPROM:
             calibration_data_format["offset"],
             calibration_data_format["size"],
         )
+        cape = self._read_cape_data()
         try:
-            cal = CalibrationCape.from_bytestr(data)
+            cal = CalibrationCape.from_bytestr(data, cape)
             log.debug("EEPROM provided calibration-settings")
         except struct.error:
             cal = CalibrationCape()

@@ -10,7 +10,6 @@ from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
-from shepherd_sheep import CapeData
 
 
 @pytest.fixture
@@ -24,10 +23,6 @@ def test_file_cal_data(path_here: Path) -> None:
 
 def test_file_cal_meas(path_here: Path) -> None:
     CalMeasurementCape.from_file(path_here / "_test_cal_meas.yaml")
-
-
-def test_file_cape_data(path_here: Path) -> None:
-    CapeData.from_yaml(path_here / "_test_capedata.yaml")
 
 
 def test_file_emulation(path_here: Path) -> None:

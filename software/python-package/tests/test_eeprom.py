@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 from shepherd_core import CalibrationCape
 from shepherd_sheep import EEPROM
@@ -11,16 +9,9 @@ def cal_cape() -> CalibrationCape:
     return CalibrationCape()
 
 
-@pytest.fixture
-def data_example_yaml() -> Path:
-    here = Path(__file__).resolve()
-    name = "_test_capedata.yaml"
-    return here.parent / name
-
-
 @pytest.fixture()
-def data_example(cal_cape: CalibrationCape) -> CapeData:
-    return CapeData.from_values("011900000001", "00A0")
+def cape_data() -> CapeData:
+    return CapeData(serial_number="011900000001", version="00A0")
 
 
 @pytest.fixture()
@@ -52,8 +43,8 @@ def eeprom_retained(eeprom_open):
 
 
 @pytest.fixture()
-def eeprom_with_data(eeprom_retained: EEPROM, data_example: CapeData) -> EEPROM:
-    eeprom_retained.write_cape_data(data_example)
+def eeprom_with_data(eeprom_retained: EEPROM, cape_data: CapeData) -> EEPROM:
+    eeprom_retained._write_cape_data(cape_data)
     return eeprom_retained
 
 
@@ -64,11 +55,6 @@ def eeprom_with_calibration(
 ) -> EEPROM:
     eeprom_retained.write_calibration(cal_cape)
     return eeprom_retained
-
-
-def test_from_yaml(data_example_yaml) -> None:
-    data = CapeData.from_yaml(data_example_yaml)
-    assert data["serial_number"] == "0521XXXX0001"
 
 
 @pytest.mark.eeprom_write
@@ -87,15 +73,15 @@ def test_write_raw(eeprom_retained, data_test_string) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_value(eeprom_with_data, data_example) -> None:
+def test_read_value(eeprom_with_data, cape_data: CapeData) -> None:
     with pytest.raises(KeyError):
         _ = eeprom_with_data["some non-sense parameter"]
-    assert eeprom_with_data["version"] == data_example["version"]
+    assert eeprom_with_data["version"] == cape_data["version"]
 
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_write_value(eeprom_retained, data_example) -> None:
+def test_write_value(eeprom_retained, cape_data) -> None:
     with pytest.raises(KeyError):
         eeprom_retained["some non-sense parameter"] = "some data"
 
@@ -105,9 +91,9 @@ def test_write_value(eeprom_retained, data_example) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_write_capedata(eeprom_retained, data_example) -> None:
-    eeprom_retained.write_cape_data(data_example)
-    for key, value in data_example.items():
+def test_write_capedata(eeprom_retained, cape_data) -> None:
+    eeprom_retained._write_cape_data(cape_data)
+    for key, value in cape_data.items():
         if type(value) is str:
             assert eeprom_retained[key] == value.rstrip("\0")
         else:
@@ -116,10 +102,10 @@ def test_write_capedata(eeprom_retained, data_example) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_capedata(eeprom_with_data, data_example) -> None:
-    cape_data = eeprom_with_data.read_cape_data()
-    for key in data_example:
-        assert data_example[key] == cape_data[key]
+def test_read_capedata(eeprom_with_data, cape_data) -> None:
+    cape_data = eeprom_with_data._read_cape_data()
+    for key in cape_data.keys():
+        assert cape_data[key] == cape_data[key]
 
 
 @pytest.mark.eeprom_write

@@ -18,7 +18,6 @@ import click
 import gevent
 import zerorpc
 from shepherd_core import CalibrationCape
-from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
@@ -28,7 +27,6 @@ from . import run_programmer
 from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
-from .eeprom import CapeData
 from .launcher import Launcher
 from .logger import increase_verbose_level
 from .logger import log
@@ -165,95 +163,35 @@ def eeprom():
     pass
 
 
-@eeprom.command(short_help="Write data to EEPROM")
-@click.option(
-    "--info-file",
-    "-i",
+@eeprom.command(short_help="Write Calibration of Cape (YAML) to EEPROM")
+@click.argument(
+    "cal-file",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
-    help="YAML-formatted file with cape info",
-)
-@click.option(
-    "--version",
-    "-v",
-    type=click.STRING,
-    help="Cape version number, max 4 Char, e.g. 24A0, reflecting hardware revision",
-)
-@click.option(
-    "--serial-number",
-    "-s",
-    type=click.STRING,
-    help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
-)
-@click.option(
-    "--cal-date",
-    "-d",
-    type=click.STRING,
-    help="Cape calibration date, max 10 Char, e.g. 2022-01-21, reflecting year-month-day",
-)
-@click.option(
-    "--cal-file",
-    "-c",
-    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
-    help="YAML-formatted file with calibration data",
 )
 def write(
-    info_file: Optional[Path],
-    version: Optional[str],
-    serial_number: Optional[str],
-    cal_date: Optional[str],
     cal_file: Optional[Path],
 ):
-    if info_file is not None:
-        cape_data = CapeData.from_yaml(info_file)
-        # overwrite parameters that were provided additionally
-        if version is not None:
-            cape_data.data["version"] = version
-        if serial_number is not None:
-            cape_data.data["serial_number"] = serial_number
-        if cal_date is not None:
-            cape_data.data["cal_date"] = cal_date
-    else:
-        cape_data = CapeData.from_values(serial_number, version, cal_date)
-
-    if "version" not in cape_data.data:
-        raise click.UsageError("--version is required")
-    if "serial_number" not in cape_data.data:
-        raise click.UsageError("--serial_number is required")
-    if "cal_date" not in cape_data.data:
-        raise click.UsageError("--cal_date is required")
-
+    cal_cape = CalibrationCape.from_file(cal_file)
     try:
         with EEPROM() as storage:
-            storage.write_cape_data(cape_data)
+            storage.write_calibration(cal_cape)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
         exit(2)
 
-    if cal_file is not None:
-        cal = CalibrationCape.from_file(cal_file)
-        with EEPROM() as storage:
-            storage.write_calibration(cal)
-
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
 @click.option(
-    "--info-file",
-    "-i",
-    type=click.Path(dir_okay=False),
-    help="If provided, cape info data is dumped to this file",
-)
-@click.option(
     "--cal-file",
     "-c",
-    type=click.Path(dir_okay=False),
+    type=click.Path(dir_okay=False, executable=False),
     help="If provided, calibration data is dumped to this file",
 )
-def read(info_file: Optional[Path], cal_file: Optional[Path]):
+def read(cal_file: Optional[Path]):
     increase_verbose_level(2)
 
     try:
         with EEPROM() as storage:
-            cape_data = storage.read_cape_data()
             cal = storage.read_calibration()
     except ValueError:
         log.warning(
@@ -264,41 +202,10 @@ def read(info_file: Optional[Path], cal_file: Optional[Path]):
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
         exit(3)
 
-    if info_file:
-        with open(Path(info_file).resolve(), "w") as f:
-            f.write(repr(cape_data))
-    else:
-        log.info(repr(cape_data))
-
     if cal_file:
-        with open(Path(cal_file).resolve(), "w") as f:
-            f.write(repr(cal))
+        cal.to_file(cal_file)
     else:
         log.info(repr(cal))
-
-
-@eeprom.command(
-    short_help="Convert calibration measurements to calibration data, "
-    "where FILENAME is YAML-formatted file "
-    "containing calibration measurements",
-)
-@click.argument(
-    "filename",
-    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
-)
-@click.option(
-    "--output-path",
-    "-o",
-    type=click.Path(),
-    help="Path to resulting YAML-formatted calibration data file",
-)
-def make(filename: Path, output_path: Optional[Path]):
-    increase_verbose_level(2)
-    cal_cape = CalMeasurementCape.from_file(filename).to_cal()
-    if output_path is None:
-        log.info(repr(cal_cape))
-    else:
-        cal_cape.to_file(output_path)
 
 
 @cli.command(short_help="Start zerorpc server")

@@ -46,7 +46,6 @@ class ShepherdDebug(ShepherdIO):
 
         try:
             with EEPROM() as storage:
-                storage.read_cape_data()
                 self._cal = storage.read_calibration()
         except ValueError:
             log.warning(
