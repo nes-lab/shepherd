@@ -2,6 +2,8 @@
 - name: Install Shepherd-Software - Role-based
   hosts: sheep
   become: true
+  strategy: free
+  # ⤷ ansible won't wait for every host to continue next task
 
   pre_tasks:
 
@@ -27,7 +29,8 @@
   hosts: sheep
   become: true
   roles:
-    - sheep  # NOTE: will only be installed once (later only sw-rebuild)
+    - sheep
+  # ⤷ NOTE: will only be installed once (later only sw-rebuild)
 
 - name: Role - PTP-Client
   hosts: ptp_clients

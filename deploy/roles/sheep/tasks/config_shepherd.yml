@@ -40,6 +40,7 @@
     - install
     - python
 
+# Last operation in sheep-install -> installer uses it as detector / flag
 - name: Make Shepherd Module permanent
   ansible.builtin.lineinfile:
     dest: "/etc/modules"
