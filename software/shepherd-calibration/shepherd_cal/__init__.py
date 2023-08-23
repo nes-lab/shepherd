@@ -6,7 +6,7 @@ from .profile import Profile
 from .profile_analyzer import analyze_directory
 from .profiler import Profiler
 
-__version__ = "0.4.5"
+__version__ = "0.4.6"
 
 __all__ = [
     "Calibrator",
