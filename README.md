@@ -7,6 +7,14 @@
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+---
+
+**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
+
+**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+
+---
+
 Batteryless sensor nodes depend on harvesting energy from their environment.
 Developing solutions involving groups of batteryless nodes requires a tool to analyze, understand and replicate spatio-temporal harvesting conditions.
 *shepherd* is a testbed for the batteryless Internet of Things, allowing to record harvesting conditions at multiple points in space over time.
@@ -40,7 +48,7 @@ We assume that your local machine is connected to the same network, that the nod
 
 If you haven't done it yet, clone this repository to your local machine:
 
-```
+```shell
 git clone https://github.com/orgua/shepherd.git
 ```
 
@@ -50,7 +58,7 @@ The tools are hosted on `PyPI` and require Python version >= 3.6.
 You'll also need to have `sshpass` installed on your machine, which is available through the package management system of all major distributions.
 Install the tools using `pip`:
 
-```
+```shell
 pip3 install ansible shepherd-herd
 ```
 
@@ -59,7 +67,7 @@ Adjust it to reflect your setup.
 You can arbitrarily choose and assign the hostnames (sheep0, sheep1, in this example) and the ansible_user (jane in this example).
 [**TODO:** update description with roles].
 
-```
+```yaml
 sheep:
   hosts:
     sheep0:
@@ -74,13 +82,13 @@ sheep:
 
 Now run the `bootstrap.yml` *Ansible* playbook, which sets the hostname, creates a user and enables passwordless ssh and sudo:
 
-```
+```shell
 ansible-playbook deploy/bootstrap.yml
 ```
 
 Finally, use the `deploy.yml` playbook to setup the *shepherd* software with the configured roles from inventory:
 
-```
+```shell
 ansible-playbook deploy/deploy.yml
 ```
 
@@ -88,19 +96,19 @@ ansible-playbook deploy/deploy.yml
 
 Record two minutes of data:
 
-```
+```shell
 shepherd-herd harvester -d 120 -o recording.h5 -a mppt_voc
 ```
 The command starts the recording asynchronously and returns after all nodes have started recording.
 While the nodes are still recording (indicated by blinking of LED 1 and 2), prepare a directory on your local machine:
 
-```
+```shell
 mkdir ~/shepherd_recordings
 ```
 
 After the nodes stop blinking, you can retrieve the data to analyze it on your local machine:
 
-```
+```shell
 shepherd-herd retrieve recording.h5 ~/shepherd_recordings
 ```
 
@@ -108,7 +116,7 @@ For a detailed description of the [HDF5](https://en.wikipedia.org/wiki/Hierarchi
 
 Finally, replay the previously recorded data to the attached sensor nodes, recording their power consumption:
 
-```
+```shell
 shepherd-herd emulator -o consumption.h5 recording.h5
 ```
 

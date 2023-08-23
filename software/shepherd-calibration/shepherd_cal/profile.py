@@ -1,14 +1,15 @@
 from pathlib import Path
-from typing import NoReturn
+from typing import Dict
+from typing import List
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from .calibration import Calibration
 from .logger import logger
+from .profile_calibration import ProfileCalibration
 
-component_dict = {
+component_dict: Dict[str, str] = {
     "a": "emu_a",
     "emu_a": "emu_a",
     "b": "emu_b",
@@ -17,7 +18,7 @@ component_dict = {
     "hrv": "hrv",
 }
 
-elem_dict: dict = {
+elem_dict: Dict[str, int] = {
     "voltage_shp_V": 0,
     "voltage_shp_raw": 1,
     "voltage_ref_V": 2,
@@ -25,28 +26,38 @@ elem_dict: dict = {
     "current_shp_raw": 4,
     "current_ref_A": 5,
 }
-elem_list: list = ["v_shp_V", "v_shp_raw", "v_ref_V", "c_shp_A", "c_shp_raw", "c_ref_A"]
+elem_list: List[str] = [
+    "v_shp_V",
+    "v_shp_raw",
+    "v_ref_V",
+    "c_shp_A",
+    "c_shp_raw",
+    "c_ref_A",
+]
+
+# TODO: profiler should use CalibrationCape with CalibrationHarvester & CalibrationEmulator
 
 
 class Profile:
-    file_name: str = None
-    data: dict = {}
-    cals: dict = {}
-    results: dict = {}
-    stats: list = []
-    data_filters: dict = {}
-    res_filters: dict = {}
-
     def __init__(self, file: Path):
         if not isinstance(file, Path):
             file = Path(file)
         if file.suffix != ".npz":
             # TODO: is this useful?
-            file = file.stem + ".npz"
+            file = Path(file.stem + ".npz")
 
         logger.debug("processing '%s'", file)
-        meas_file = np.load(file, allow_pickle=True)
-        self.file_name = file.stem
+        meas_file = np.load(str(file), allow_pickle=True)
+        self.file_name: str = file.stem
+
+        self.data: Dict[str, pd.DataFrame] = {}
+        self.cals: Dict[str, ProfileCalibration] = {}
+
+        self.results: Dict[str, pd.DataFrame] = {}
+        self.stats: List[pd.DataFrame] = []
+
+        self.data_filters: Dict[str, pd.Series] = {}
+        self.res_filters: Dict[str, pd.Series] = {}
 
         for comp_i in component_dict:
             if comp_i not in meas_file:
@@ -57,11 +68,12 @@ class Profile:
             logger.debug("  component '%s'", comp_o)
 
             self._prepare_data(comp_o, meas_file[comp_i])
+            # ⤷ changes self.data !
             self._prepare_results(comp_o, self.data[comp_o])
             self._prepare_filters(comp_o)
             self._prepare_stats(comp_o, self.data[comp_o])
 
-    def _prepare_data(self, component: str, data_raw: np.ndarray) -> NoReturn:
+    def _prepare_data(self, component: str, data_raw: np.ndarray) -> None:
         data_pandas = pd.DataFrame(np.transpose(data_raw), columns=elem_list)
 
         # get the inner 100k-array out - similar to pd.ungroup, but without special cmd
@@ -88,9 +100,11 @@ class Profile:
             cal = self.cals["emu_a"]
             logger.debug("  -> replaced Cal of emu_b with _a")
         else:
-            cal = Calibration().from_measurement(data_df)
+            cal = ProfileCalibration.from_measurement(data_df)
 
-        data_df["c_shp_A"] = cal.convert_current_raw_to_A(data_df.c_shp_raw)
+        data_df["c_shp_A"] = cal.current.raw_to_si(data_df.c_shp_raw.to_numpy())
+        raise ValueError("Test ME")
+        # TODO: test prev. typecast to_numpy
         data_df["c_shp_A"] = data_df.c_shp_A.apply(lambda x: x if x >= -1e-3 else -1e-3)
 
         # fix the known case of missing SMU (PART 2)
@@ -112,7 +126,7 @@ class Profile:
         self.data[component] = data_df
         self.cals[component] = cal
 
-    def _prepare_results(self, component: str, data: pd.DataFrame) -> NoReturn:
+    def _prepare_results(self, component: str, data: pd.DataFrame) -> None:
         result = data.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)
         result["v_error_mean_mV"] = (
             data.groupby(by=["c_ref_A", "v_shp_V"])
@@ -148,7 +162,7 @@ class Profile:
 
     def _prepare_filters(self, component: str):
         data = self.data[component]
-        filter_c = (data.c_ref_A >= 3e-6) & (data.c_ref_A <= 40e-3)
+        filter_c = (data["c_ref_A"] >= 3e-6) & (data["c_ref_A"] <= 40e-3)
         filter_v = (data.v_shp_V >= 1.0) & (data.v_shp_V <= 3.9)
         self.data_filters[component] = filter_c & filter_v
         result = self.results[component]
@@ -156,7 +170,7 @@ class Profile:
         filter_v = (result.v_shp_V >= 1.0) & (result.v_shp_V <= 3.9)
         self.res_filters[component] = filter_c & filter_v
 
-    def _prepare_stats(self, component: str, data: pd.DataFrame) -> NoReturn:
+    def _prepare_stats(self, component: str, data: pd.DataFrame) -> None:
         """Statistics-Generator
         - every dataset is a row
         - v_diff_mean @all, @1-4V;0-40mA, over each voltage + each current
@@ -189,7 +203,7 @@ class Profile:
         if filtered:
             data = data[self.res_filters[component]]
         filter_str = "_filtered" if filtered else ""
-        c_gain = self.cals[component].c_gain
+        c_gain = self.cals[component].current.gain
         x = 1e3 * data.v_ref_V  # todo: transition not finished, same with above FN
         y = []
         stddev = []
@@ -232,8 +246,10 @@ class Profile:
         if filtered:
             data = data[self.res_filters[component]]
         filter_str = "_filtered" if filtered else ""
-        c_gain = self.cals[component].c_gain
+        c_gain = self.cals[component].current.gain
         x = 1e3 * data[elem_dict["voltage_ref_V"], :]
+        raise ValueError("Test ME")
+        # TODO: can probably be data[elem_dict["voltage_ref_V"]],
         y = []
         dyn = []
         vol = []
@@ -273,7 +289,7 @@ class Profile:
         fig.set_figheight(10)
         fig.tight_layout()
         plt.savefig(
-            self.file_name + "_scatter_dynamic_" + component + +filter_str + ".png",
+            self.file_name + "_scatter_dynamic_" + component + filter_str + ".png",
         )
         plt.close(fig)
         plt.clf()

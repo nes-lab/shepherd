@@ -1,11 +1,17 @@
+# Shepherd-Herd
 
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-# shepherd-herd
+*Shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
 
-*shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
+---
 
+**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
+
+**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+
+---
 
 ## Installation
 
@@ -21,7 +27,7 @@ For install from local sources:
 
 ```Shell
 cd shepherd/software/shepherd-herd/
-pip3 install ./
+pip3 install . -U
 ```
 
 ## Usage
@@ -31,7 +37,7 @@ This list of hosts is provided with the `-i` option, that takes either the path 
 
 For example, save the following file in your current working directory as an ansible style, YAML-formatted inventory file named `herd.yml`.
 
-```
+```yaml
 sheep:
   hosts:
     sheep0:
@@ -50,13 +56,13 @@ nmap -sn 192.168.1.1-64
 After setting up the inventory, use shepherd-herd to check if all your nodes are responding correctly:
 
 ```Shell
-shepherd-herd -i herd.yml run echo 'hello'
+shepherd-herd -i herd.yml shell-cmd "echo 'hello'"
 ```
 
 Or, equivalently define the list of hosts on the command line
 
 ```Shell
-shepherd-herd -i sheep0,sheep1,sheep2, run echo 'hello'
+shepherd-herd -i sheep0,sheep1,sheep2, shell-cmd "echo 'hello'"
 ```
 
 To **simplify usage** it is recommended to set up the `herd.yml` in either of these directories (with falling lookup priority):
@@ -68,13 +74,13 @@ To **simplify usage** it is recommended to set up the `herd.yml` in either of th
 From then on you can just call:
 
 ```Shell
-shepherd-herd run echo 'hello'
+shepherd-herd shell-cmd "echo 'hello'"
 ```
 
 Or select individual sheep from the herd:
 
 ```Shell
-shepherd-herd --limit sheep0,sheep2, run echo 'hello'
+shepherd-herd --limit sheep0,sheep2, shell-cmd "echo 'hello'"
 ```
 
 ## Examples
@@ -88,42 +94,42 @@ For a full list of supported commands and options, run ```shepherd-herd --help``
 Simultaneously start harvesting the connected energy sources on the nodes:
 
 ```Shell
-shepherd-herd harvester -a cv20 -d 30 -o hrv.h5
+shepherd-herd harvest -a cv20 -d 30 -o hrv.h5
 ```
 
 or with long arguments as alternative
 
 ```Shell
-shepherd-herd harvester --algorithm cv20 --duration 30.0 --output_path hrv.h5
+shepherd-herd harvest --virtual-harvester cv20 --duration 30.0 --output-path hrv.h5
 ```
 
 Explanation:
 
-- uses cv33 algorithm (constant voltage 2.0 V)
+- uses cv20 algorithm as virtual harvester (constant voltage 2.0 V)
 - duration is 30s
 - file will be stored to `/var/shepherd/recordings/hrv.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
 
-For more harvesting algorithms see [virtual_harvester_defs.yml](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd/virtual_harvester_defs.yml).
+For more harvesting algorithms see [virtual_harvester_fixture.yaml](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester_fixture.yaml).
 
 ### Emulation
 
 Use the previously recorded harvest for emulating an energy environment for the attached sensor nodes and monitor their power consumption and GPIO events:
 
 ```Shell
-shepherd-herd emulator --virtsource BQ25504 -o emu.h5 hrv.h5
+shepherd-herd emulate --virtual-source BQ25504 -o emu.h5 hrv.h5
 ```
 
 Explanation:
 
 - duration (`-d`) will be that of input file (`hrv.h5`)
-- target port A will be selected for current-monitoring and io-routing (implicit `--enable_io --io_target A --pwr_target A`)
-- second target port will stay unpowered (add `--aux_voltage` for that)
+- target port A will be selected for current-monitoring and io-routing (implicit `--enable-io --io-port A --pwr-port A`)
+- second target port will stay unpowered (add `--voltage-aux` for that)
 - virtual source will be configured as BQ25504-Converter
 - file will be stored to `/var/shepherd/recordings/emu.h5` and not forcefully overwritten if it already exists (add `-f` for that)
 - nodes will sync up and start immediately (otherwise add `--no-start`)
 
-For more virtual source models see [virtual_source_defs.yml](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd/virtual_source_defs.yml).
+For more virtual source models see [virtual_source_fixture.yaml](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source_fixture.yaml).
 
 ### Data distribution & retrieval
 
@@ -160,13 +166,14 @@ Manually **starting** a pre-configured measurement can be done via:
 shepherd-herd start
 ```
 
-Note 1: config is loading from `/etc/shepherd/config.yml`
-Note 2: start is only loosely synchronized
+**Note 1**: configuration is loading from `/etc/shepherd/config.yml`.
+
+**Note 2**: the start is not synchronized itself (you have to define a start-time in config).
 
 The current state of the measurement can be **checked** with (console printout and return code):
 
 ```Shell
-shepherd-herd check
+shepherd-herd status
 ```
 
 If the measurement runs indefinitely or something different came up, and you want to **stop** forcefully:
@@ -175,12 +182,34 @@ If the measurement runs indefinitely or something different came up, and you wan
 shepherd-herd -l sheep1 stop
 ```
 
-### Programming Targets
+### Programming Targets (pru-programmer)
 
-Flash a firmware image `firmware_img.bin` that is stored on the local machine in your current working directory to the attached sensor nodes:
+The integrated programmer allows flashing a firmware image to an MSP430FR (SBW) or nRF52 (SWD) and shares the interface with `shepherd-sheep`. This example writes the image `firmware_img.hex` to a MSP430 on target port B and its programming port 2:
 
 ```Shell
-shepherd-herd target flash firmware_img.bin
+shepherd-herd program --mcu-type msp430 --target-port B --mcu-port 2 firmware_img.hex
+```
+
+To check available options and arguments call
+
+```Shell
+shepherd-herd program --help
+```
+
+The options default to:
+- nRF52 as Target
+- Target Port A
+- Programming Port 1
+- 3 V Target Supply
+- 500 kbit/s
+
+
+### Programming Targets (not maintained OpenOCD Interface)
+
+Flash a firmware image `firmware_img.hex` that is stored on the local machine in your current working directory to the attached sensor nodes:
+
+```Shell
+shepherd-herd target flash firmware_img.hex
 ```
 
 Reset the sensor nodes:
@@ -208,5 +237,4 @@ pytest
 
 ## ToDo
 
-- add programming-option to test
-- add new pru-programmer to interface
+- None

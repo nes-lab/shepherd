@@ -710,6 +710,7 @@ static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribu
 
     if (strncmp(buffer, "nrf52", 5) == 0) value = PRG_TARGET_NRF52;
     else if (strncmp(buffer, "msp430", 6) == 0) value = PRG_TARGET_MSP430;
+    else if (strncmp(buffer, "dummy", 5) == 0) value = PRG_TARGET_DUMMY;
     else
     {
         printk(KERN_INFO "shprd.k: setting programmer-target failed -> unknown value");
@@ -796,11 +797,11 @@ static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attri
     /* NOTE: this does not work as expected as buffer contains xtra chars at the end
      * ignore for now and hardcode
      */
-    if ((strncmp(buffer, "prog-swd", 8) == 0) || (strncmp(buffer, "swd", 3) == 0))
+    if ((strncmp(buffer, "swd", 3) == 0) || (strncmp(buffer, PRU0_FW_PRG_SWD, 29) == 0))
     {
         swap_pru_firmware(PRU0_FW_PRG_SWD, "");
     }
-    else if ((strncmp(buffer, "prog-sbw", 8) == 0) || (strncmp(buffer, "sbw", 3) == 0))
+    else if ((strncmp(buffer, "sbw", 3) == 0) || (strncmp(buffer, PRU0_FW_PRG_SBW, 29) == 0))
     {
         swap_pru_firmware(PRU0_FW_PRG_SBW, "");
     }

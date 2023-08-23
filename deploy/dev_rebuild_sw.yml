@@ -16,8 +16,8 @@
       ansible.builtin.include_role:
         name: sheep
       vars:
-        install_basics: false
-        shepherd_branch: dev  # default: main
-        refresh_source: "{{ refresh_from_host }}"
-        rebuild_kernel_module: true  # default: true
-        rebuild_python_package: true # default: true
+        sheep_install_basics: false
+        sheep_shepherd_branch: dev  # default: main
+        sheep_refresh_source: "{{ refresh_from_host }}"
+        sheep_rebuild_kernel_module: true  # default: true
+        sheep_rebuild_python_package: true # default: true

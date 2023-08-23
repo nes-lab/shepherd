@@ -20,7 +20,7 @@ def extract_first_sheep(herd_path: Path) -> str:
 
 def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
     ts_start = time.time()
-    while cli_run.invoke(cli, ["-vvv", "check"]).exit_code > 0:
+    while cli_run.invoke(cli, ["-vvv", "status"]).exit_code > 0:
         duration = time.time() - ts_start
         if duration > timeout:
             raise TimeoutError(f"Shepherd ran into timeout ({timeout} s)")
@@ -34,8 +34,8 @@ def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
 def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
     store_path = file_path / file_name
 
-    with Writer(store_path, compression=0) as file:
-        file.set_hostname("artificial")
+    with Writer(store_path, compression=None) as file:
+        file.store_hostname("artificial")
         duration_s = 2
         repetitions = 10
         timestamp_vector = np.arange(0.0, duration_s, file.sample_interval_ns / 1e9)
@@ -80,3 +80,13 @@ def local_herd(tmp_path) -> Path:
 def stopped_herd(cli_runner):
     cli_runner.invoke(cli, ["-vvv", "stop"])
     wait_for_end(cli_runner)
+    # make sure kernel module is active
+    cli_runner.invoke(
+        cli,
+        [
+            "-vvv",
+            "run",
+            "--sudo",
+            "'modprobe -a shepherd'",
+        ],
+    )

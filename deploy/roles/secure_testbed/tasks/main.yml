@@ -22,7 +22,7 @@
     - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 1m'}
     - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 3'}
     - {regex: '^.*PermitRootLogin.*$', line: 'PermitRootLogin no'}
-#      - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # TODO: disabled for debug
+    - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # disable for debug
     - {regex: '^.*PermitEmptyPasswords.*$', line: 'PermitEmptyPasswords no'}
     - {regex: '^.*UsePAM.*$', line: 'UsePAM yes'}
     - {regex: '^.*PubkeyAuthentication.*$', line: 'PubkeyAuthentication yes'}
@@ -111,8 +111,8 @@
     reboot_timeout: 200
 
 - name: INFO - check for port-listeners (look for open ports beside of SSHd)
-  ansible.builtin.shell:
-    cmd: 'netstat -apn | grep LISTEN'
+  ansible.builtin.shell: |  # pipefail-setting prevents surprises
+    set -o pipefail && netstat -apn | grep LISTEN
   changed_when: false
   register: netstat
 

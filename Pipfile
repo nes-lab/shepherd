@@ -10,17 +10,21 @@ twine = "*"
 bump2version = "*"
 pre-commit = "*"
 build = "*"
+coverage = "*"
+pyright = "*"
+pandas-stubs = "*"  # for pyright
 
 [packages]
-# NOTE: pip does not install these packages with as editable (-e), but pipenv does
-shepherd = {editable = true, path = "./software/python-package[test]"}
-shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
-shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
+# NOTE: pip fails installing these packages as editable (-e), but pipenv needs it
+shepherd-sheep = {editable = true, extras = ["dev", "test"], path = "./software/python-package"}
+shepherd-herd = {editable = true, extras = ["dev", "test"], path = "./software/shepherd-herd"}
+shepherd-cal = {editable = true, extras = ["dev"], path = "./software/shepherd-calibration"}
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
+sphinx-sitemap = "*"
 matplotlib = "*"
-pandas = "*"
+pandas = "<2.0.0"
 keithley2600 = "*"
 numpy = "*"
 scipy = "*"
@@ -28,11 +32,10 @@ fabric = "*"
 pyyaml = "*"
 ansible = "*"
 dearpygui = "*"
-#schemdraw = "*"
-coverage = "*"
+chromalog = "*"
+setuptools = "*"
 
 [pipenv]
 allow_prereleases = false
-
 #[requires]
 #python_version = "3"

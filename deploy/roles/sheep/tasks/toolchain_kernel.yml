@@ -9,9 +9,9 @@
   ansible.builtin.apt:
     name:
       [
-        "linux-headers-{{ kernelrelease.stdout.strip() }}", # TODO: done by bootstrap / maintenance
-        "linux-firmware", # TODO: is already there
-        "dkms",
+        "linux-headers-{{ kernelrelease.stdout.strip() }}", # redundancy, 1st done by maintenance
+        # "dkms", # TODO: test removal - should not be needed - installs huge secondary gcc
+        "bb-cape-overlays",  # not a part of ubuntu 22.4, also missing from default repo (re-add ee/focal)
       ]
     state: present
     update_cache: true

@@ -16,14 +16,14 @@ To simplify usage you should set up an ansible style, YAML-formatted inventory f
 Refer to the example ``herd.yml`` file in the ``inventory`` directory of the shepherd repository.
 
 `Shepherd-sheep`_ is the command line utility for locally controlling a single shepherd node.
-Depending on your use-case you may not even need to directly interact with it!
+Depending on your use-case you may not even need to directly interact with it.
 
 .. _shepherd-herd-cli:
 
 shepherd-herd
 -------------
 
-.. click:: shepherd_herd:cli
+.. click:: shepherd_herd.cli:cli
    :prog: shepherd-herd
    :show-nested:
 
@@ -43,4 +43,4 @@ shepherd-sheep
 Examples
 ********
 
-Coming soon...
+Coming soon …

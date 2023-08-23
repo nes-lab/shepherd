@@ -1,74 +1,85 @@
 from pathlib import Path
 
 import pytest
-
-from shepherd import CalibrationData
-from shepherd import ShepherdDebug
-from shepherd import VirtualSourceConfig
-from shepherd.virtual_source_model import VirtualSourceModel
+from shepherd_core import CalibrationCape
+from shepherd_core import CalibrationEmulator
+from shepherd_core.data_models import EnergyDType
+from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.vsource import VirtualSourceModel
+from shepherd_sheep import ShepherdDebug
 
 
 @pytest.fixture
-def vs_config(request):
-    marker = request.node.get_closest_marker("vs_name")
+def src_cfg(request) -> VirtualSourceConfig:
+    marker = request.node.get_closest_marker("src_name")
     if marker is None:
-        vs_name = None
+        src_name = None
     else:
-        vs_name = marker.args[0]
+        src_name = marker.args[0]
 
-    if isinstance(vs_name, str):
-        if ".yml" in vs_name:
-            if Path(vs_name).exists():
-                vsc = Path(vs_name)
+    if isinstance(src_name, str):
+        if ".yaml" in src_name:
+            if Path(src_name).exists():
+                path = Path(src_name)
             else:
-                here = Path(__file__).absolute()
-                vsc = here.parent / vs_name
+                here = Path(__file__).resolve()
+                path = here.parent / src_name
+            return VirtualSourceConfig.from_file(path)
         else:
-            vsc = vs_name
+            return VirtualSourceConfig(name=src_name)
     else:
         assert 0
-    return VirtualSourceConfig(vsc)
 
 
 @pytest.fixture
-def inp_hrv_cfg(dtype: str = "ivsample", samples: int = 0):
-    return {"dtype": dtype, "window_samples": samples}
-
-
-@pytest.fixture
-def cal_config():
-    return CalibrationData.from_default()
+def cal_cape() -> CalibrationCape:
+    return CalibrationCape()
 
 
 @pytest.fixture()
-def pru_vsource(request, shepherd_up, vs_config, cal_config, inp_hrv_cfg):
+def pru_vsource(
+    request,
+    shepherd_up,
+    src_cfg: VirtualSourceConfig,
+    cal_cape: CalibrationCape,
+    dtype_in: EnergyDType = EnergyDType.ivsample,
+    window_size: int = 0,
+) -> ShepherdDebug:
     pru = ShepherdDebug()
     request.addfinalizer(pru.__del__)
     pru.__enter__()
     request.addfinalizer(pru.__exit__)
     pru.vsource_init(
-        vs_config,
-        cal_config,
-        inp_hrv_cfg,
+        src_cfg=src_cfg,
+        cal_emu=cal_cape.emulator,
+        log_intermediate=False,
+        dtype_in=dtype_in,
+        window_size=window_size,
     )  # TODO: extend to be real vsource
     return pru
 
 
 @pytest.fixture
-def pyt_vsource(vs_config, cal_config, inp_hrv_cfg):
+def pyt_vsource(
+    src_cfg: VirtualSourceConfig,
+    cal_cape: CalibrationCape,
+    dtype_in: EnergyDType = EnergyDType.ivsample,
+    window_size: int = 0,
+) -> VirtualSourceModel:
     return VirtualSourceModel(
-        vs_config,
-        cal_config,
-        inp_hrv_cfg,
-    )  # TODO: will be changed!!!!!!
+        vsrc=src_cfg,
+        cal_emu=cal_cape.emulator,
+        dtype_in=dtype_in,
+        window_size=window_size,
+    )
 
 
 @pytest.fixture
-def reference_vss():
-    # keep in sync with "example_config_virtsource.yml"
+def reference_vss() -> dict:
+    # keep in sync with "_test_config_virtsource.yaml"
     vss = {
         "C_intermediate_uF": 100 * (10**0),
-        "V_intermediate_mV": 3000,
+        "V_intermediate_init_mV": 3000,
         "eta_in": 0.5,
         "eta_out": 0.8,
         "I_intermediate_leak_nA": 9 * (10**0),
@@ -79,21 +90,27 @@ def reference_vss():
     return vss
 
 
-def difference_percent(val1, val2, offset):
+def difference_percent(val1: float, val2: float, offset: float) -> float:
     # offset is used for small numbers
     return round(100 * abs((val1 + offset) / (val2 + offset) - 1), 3)
 
 
 @pytest.mark.hardware
-@pytest.mark.vs_name("./example_config_virtsource.yml")
-def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
+@pytest.mark.src_name("./_test_config_virtsource.yaml")
+def test_vsource_add_charge(
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
+    reference_vss: dict,
+) -> None:
     # set desired end-voltage of storage-cap:
     V_cap_mV = 3500
     dt_s = 0.100
     V_inp_mV = 1000
-    dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_mV"]
+    dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_init_mV"]
     I_cIn_nA = dV_cap_mV * reference_vss["C_intermediate_uF"] / dt_s
-    P_inp_pW = I_cIn_nA * reference_vss["V_intermediate_mV"] / reference_vss["eta_in"]
+    P_inp_pW = (
+        I_cIn_nA * reference_vss["V_intermediate_init_mV"] / reference_vss["eta_in"]
+    )
     I_inp_nA = P_inp_pW / V_inp_mV
     # prepare fn-parameters
     V_inp_uV = int(V_inp_mV * 10**3)
@@ -121,8 +138,8 @@ def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
     pyt_vsource.cnv.calc_inp_power(0, 0)
     V_cap_pyt_mV = float(pyt_vsource.cnv.update_cap_storage()) * 10**-3
 
-    dVCap_pru = V_cap_pru_mV - reference_vss["V_intermediate_mV"]
-    dVCap_pyt = V_cap_pyt_mV - reference_vss["V_intermediate_mV"]
+    dVCap_pru = V_cap_pru_mV - reference_vss["V_intermediate_init_mV"]
+    dVCap_pyt = V_cap_pyt_mV - reference_vss["V_intermediate_init_mV"]
     deviation_pru = difference_percent(dVCap_pru, dV_cap_mV, 40)  # %
     deviation_pyt = difference_percent(dVCap_pyt, dV_cap_mV, 40)  # %
     deviation_rel = difference_percent(dVCap_pru, dVCap_pyt, 40)  # %
@@ -138,26 +155,28 @@ def test_vsource_add_charge(pru_vsource, pyt_vsource, reference_vss):
 
 
 @pytest.mark.hardware
-@pytest.mark.vs_name("./example_config_virtsource.yml")
-def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
+@pytest.mark.src_name("./_test_config_virtsource.yaml")
+def test_vsource_drain_charge(
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
+    reference_vss: dict,
+) -> None:
     # set desired end-voltage of storage-cap - low enough to disable output
     V_cap_mV = 2300
     dt_s = 0.50
 
-    dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_mV"]
+    dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_init_mV"]
     I_cOut_nA = (
         -dV_cap_mV * reference_vss["C_intermediate_uF"] / dt_s
         - reference_vss["I_intermediate_leak_nA"]
     )
-    P_out_pW = I_cOut_nA * reference_vss["V_intermediate_mV"] * reference_vss["eta_out"]
+    P_out_pW = (
+        I_cOut_nA * reference_vss["V_intermediate_init_mV"] * reference_vss["eta_out"]
+    )
     I_out_nA = P_out_pW / reference_vss["V_output_mV"]
     # prepare fn-parameters
-    cal = CalibrationData.from_default()
-    I_out_adc_raw = cal.convert_value_to_raw(
-        "emulator",
-        "adc_current",
-        I_out_nA * 10**-9,
-    )
+    cal = CalibrationEmulator()
+    I_out_adc_raw = cal.adc_C_A.si_to_raw(I_out_nA * 10**-9)
     n_samples = int(dt_s / reference_vss["t_sample_s"])
 
     print(
@@ -193,11 +212,11 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
     V_out_pyt_raw = pyt_vsource.cnv.update_states_and_output()
 
     dVCap_ref = (
-        reference_vss["V_intermediate_mV"]
+        reference_vss["V_intermediate_init_mV"]
         - reference_vss["V_intermediate_disable_threshold_mV"]
     )
-    dVCap_pru = reference_vss["V_intermediate_mV"] - V_mid_pru_mV
-    dVCap_pyt = reference_vss["V_intermediate_mV"] - V_mid_pyt_mV
+    dVCap_pru = reference_vss["V_intermediate_init_mV"] - V_mid_pru_mV
+    dVCap_pyt = reference_vss["V_intermediate_init_mV"] - V_mid_pyt_mV
     deviation_pru = difference_percent(dVCap_pru, dVCap_ref, 40)  # %
     deviation_pyt = difference_percent(dVCap_pyt, dVCap_ref, 40)  # %
     deviation_rel = difference_percent(dVCap_pyt, dVCap_pru, 40)  # %
@@ -216,8 +235,11 @@ def test_vsource_drain_charge(pru_vsource, pyt_vsource, reference_vss):
 
 
 @pytest.mark.hardware
-@pytest.mark.vs_name("direct")  # easiest case: v_inp == v_out, current not
-def test_vsource_direct(pru_vsource, pyt_vsource):
+@pytest.mark.src_name("direct")  # easiest case: v_inp == v_out, current not
+def test_vsource_direct(
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
+) -> None:
     for voltage_mV in [0, 100, 500, 1000, 2000, 3000, 4000, 4500]:
         V_pru_mV = pru_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
         V_pyt_mV = pyt_vsource.iterate_sampling(voltage_mV * 10**3, 0, 0) * 10**-3
@@ -231,8 +253,11 @@ def test_vsource_direct(pru_vsource, pyt_vsource):
 
 
 @pytest.mark.hardware
-@pytest.mark.vs_name("diode+capacitor")
-def test_vsource_diodecap(pru_vsource, pyt_vsource):
+@pytest.mark.src_name("diode+capacitor")
+def test_vsource_diodecap(
+    pru_vsource: ShepherdDebug,
+    pyt_vsource: VirtualSourceModel,
+) -> None:
     voltages_mV = [1000, 1100, 1500, 2000, 2500, 3000, 3500, 4000, 4500]
 
     # input with lower voltage should not change (open) output

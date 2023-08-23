@@ -1,13 +1,7 @@
-# install:
-#  pip3 install pre-commit
-#  sudo apt install cppcheck
-# run:
-#  pre-commit run -a
-# update deps:
-#  pre-commit autoupdate
-# TODO:
-# - auto-enable for repo on clone
-# - more hooks (clang-format,...) https://pre-commit.com/hooks.html
+# install     pip3 install pre-commit
+#             sudo apt install cppcheck
+# run         pre-commit run -a
+# update deps pre-commit autoupdate
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -27,9 +21,22 @@ repos:
       - id: fix-byte-order-marker
 
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.4.0
+    rev: v3.0.1
     hooks:
       - id: add-trailing-comma
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.35.0
+    hooks:
+      - id: markdownlint
+        args: ["--disable", "MD013"] # ignore line length
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.13
+    hooks:
+      - id: validate-pyproject
+        # files: "./software/python-package/pyproject.toml"
+
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -37,7 +44,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.7.0
     hooks:
       - id: black
 
@@ -53,13 +60,13 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.10.1
     hooks:
       - id: pyupgrade
-        args: ["--py38-plus"]
+        args: ["--py38-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
+    rev: 6.1.0
     hooks:
       - id: flake8
         additional_dependencies:
@@ -90,26 +97,39 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.13.1
+    rev: v6.17.2
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
 
+#  - repo: https://github.com/rstcheck/rstcheck
+#    rev: v6.1.2
+#    hooks:
+#      - id: rstcheck
+#        additional_dependencies: [ "rstcheck[sphinx,toml]" ]
+#        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
+
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.2"
+    rev: v2.2.5
     hooks:
       - id: codespell
         exclude: \.(sch|brd|lbr)$
 
+#  - repo: https://github.com/amperser/proselint
+#    rev: 0.13.0
+#    hooks:
+#      - id: proselint
+#        types_or: ["markdown", "rst"]
+
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: 'v15.0.7'
+    rev: v16.0.6
     hooks:
       - id: clang-format
         types_or: [c++, c]
 
   # cpp-check comes last! fails if uninstalled
   - repo: https://github.com/pocc/pre-commit-hooks
-    rev: "v1.3.5"
+    rev: v1.3.5
     hooks:
       - id: cppcheck
         args:
@@ -127,17 +147,33 @@ repos:
           - "--suppress=missingInclude"
           - "--suppress=unmatchedSuppression"
 
+########################## BETA SECTION #############################
+
 #     - id: clang-tidy
 #       args: [ "-checks=bugprone-,cert-,performance-,portability-"]
 # TODO: add more c-linters, but there are to many false positives
 
 #  - repo: https://github.com/pre-commit/mirrors-mypy
-#    rev: "v0.971"
+#    rev: v0.971
 #    hooks:
 #      - id: mypy
 # TODO: activate mypy -> some work to fix type-annotations
 # TODO: github.com/PyCQA/pydocstyle
 # TODO: github.com/PyCQA/pylint
+
+#  - repo: https://github.com/RobertCraigie/pyright-python
+#    rev: v1.1.298
+#    hooks:
+#    - id: pyright
+#      additional_dependencies:
+#      - shepherd-herd
+#      - shepherd-sheep
+
+#  - repo: https://github.com/charliermarsh/ruff-pre-commit
+#    rev: v0.0.257
+#    hooks:
+#      - id: ruff
+#        args: ["--fix", "--exit-non-zero-on-fix"]
 
 # default_language_version:
 #    python: python3.8

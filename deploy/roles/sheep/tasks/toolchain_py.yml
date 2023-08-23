@@ -6,7 +6,7 @@
       [
         "zlib1g-dev",
         "libjpeg-dev",
-        "python3-numpy",    # TODO: rethink apt usage. most of these are easier updatable per pip
+        "python3-numpy",
         "python3-scipy",
         "python3-zmq",
         "python3-gevent",
@@ -17,6 +17,15 @@
         "python3-msgpack",
         "libdbus-glib-1-dev",
         "libgirepository1.0-dev",
+        # pip on ubuntu 22.04 began to compile (forever) ... so use apt instead:
+        "python3-pytest",
+        "python3-pytest-click",
+        "python3-pytest-timeout",
+        "python3-pyfakefs",
+        "python3-coverage",
+        # normal shepherd-package
+        "python3-click",
+        "python3-psutil",
       ]
     state: present
     update_cache: true

@@ -1,5 +1,4 @@
 import os
-from typing import NoReturn
 
 import dearpygui.dearpygui as dpg
 import zerorpc
@@ -10,7 +9,7 @@ def include(filename):
     if os.path.exists(filename):
         execfile(filename)
     else:
-        os.error(f"File {filename} not found")
+        raise os.error(f"File {filename} not found")
 
 
 # include('../python-package/shepherd/calibration.py')
@@ -23,12 +22,12 @@ refresh_interval = 0.10  # s
 refresh_next = 0
 
 
-def program_start_callback(sender, data) -> NoReturn:
+def program_start_callback(sender, data) -> None:
     update_gui_elements()
     print("Program started")
 
 
-def schedule_refresh() -> NoReturn:
+def schedule_refresh() -> None:
     global refresh_interval, refresh_next
     if refresh_next <= dpg.get_frame_count():
         refresh_next = round(
@@ -37,7 +36,7 @@ def schedule_refresh() -> NoReturn:
         dpg.set_frame_callback(frame=refresh_next, callback=window_refresh_callback)
 
 
-def window_refresh_callback(sender, data, userdata) -> NoReturn:
+def window_refresh_callback(sender, data, userdata) -> None:
     global shepherd_io, shepherd_state
     if (shepherd_io is not None) and (shepherd_state is True):
         gpio_refresh()
@@ -45,7 +44,7 @@ def window_refresh_callback(sender, data, userdata) -> NoReturn:
     schedule_refresh()
 
 
-def update_gui_elements() -> NoReturn:
+def update_gui_elements() -> None:
     # TODO: DPG 0.8.x has trouble disabling items -> no themed feedback
     global shepherd_io, shepherd_state, state_dict
     if shepherd_io is not None:
@@ -90,7 +89,7 @@ def update_gui_elements() -> NoReturn:
     schedule_refresh()
 
 
-def refresh_rate_callback(sender, element_data, user_data) -> NoReturn:
+def refresh_rate_callback(sender, element_data, user_data) -> None:
     global refresh_interval
     refresh_interval = round(1.0 / float(element_data), 3)
     print(f"Wished for {element_data} fps, {refresh_interval} s")
@@ -133,7 +132,7 @@ def check_connection(rpc_client=None) -> bool:
     return True
 
 
-def connect_button_callback(sender, element_data, user_data) -> NoReturn:
+def connect_button_callback(sender, element_data, user_data) -> None:
     global shepherd_io, shepherd_cal
     host = dpg.get_value("host_name")
     if shepherd_io is None:
@@ -158,7 +157,7 @@ able_dict = {"Disabled": False, "Enabled": True}
 tgt_dict = {"Target A": True, "Target B": False}
 
 
-def shepherd_power_callback(sender, element_data, user_data) -> NoReturn:
+def shepherd_power_callback(sender, element_data, user_data) -> None:
     global shepherd_io, able_dict
     shepherd_io.set_shepherd_pcb_power(able_dict[element_data])
 
@@ -169,7 +168,7 @@ def update_power_state_shepherd():
     dpg.set_value("shepherd_pwr", list(able_dict.keys())[value])
 
 
-def shepherd_state_callback(sender, element_data, user_data) -> NoReturn:
+def shepherd_state_callback(sender, element_data, user_data) -> None:
     global shepherd_io, shepherd_state, state_dict
     shepherd_state = state_dict[element_data]
     shepherd_io.set_shepherd_state(shepherd_state)
@@ -181,7 +180,7 @@ def update_shepherd_state():
     dpg.set_value("shepherd_state", stateTrans_dict[shepherd_io.get_shepherd_state()])
 
 
-def target_power_callback(sender, element_data, user_data) -> NoReturn:
+def target_power_callback(sender, element_data, user_data) -> None:
     global shepherd_io, tgt_dict
     sel_a = tgt_dict[element_data]
     shepherd_io.select_target_for_power_tracking(sel_a)
@@ -193,7 +192,7 @@ def update_target_power():
     dpg.set_value("target_pwr", list(tgt_dict)[value])
 
 
-def target_io_callback(sender, element_data, user_data) -> NoReturn:
+def target_io_callback(sender, element_data, user_data) -> None:
     global shepherd_io, tgt_dict
     sel_a = tgt_dict[element_data]
     shepherd_io.select_target_for_io_interface(sel_a)
@@ -205,7 +204,7 @@ def update_target_io():
     dpg.set_value("target_io", list(tgt_dict)[value])
 
 
-def io_level_converter_callback(sender, element_data, user_data) -> NoReturn:
+def io_level_converter_callback(sender, element_data, user_data) -> None:
     global shepherd_io, able_dict
     state = able_dict[element_data]
     shepherd_io.set_io_level_converter(state)
@@ -217,27 +216,27 @@ def update_io_level_state():
     dpg.set_value("io_lvl_converter", list(able_dict.keys())[value])
 
 
-def set_power_state_emulator(sender, en_state, user_data) -> NoReturn:
+def set_power_state_emulator(sender, en_state, user_data) -> None:
     global shepherd_io
     shepherd_io.set_power_state_emulator(en_state)
 
 
-def update_power_state_emulator() -> NoReturn:
+def update_power_state_emulator() -> None:
     global shepherd_io
     dpg.set_value("gpio_nRes_EMU_ADC", shepherd_io.get_power_state_emulator())
 
 
-def set_power_state_recoder(sender, en_state, user_data) -> NoReturn:
+def set_power_state_recoder(sender, en_state, user_data) -> None:
     global shepherd_io
     shepherd_io.set_power_state_recorder(en_state)
 
 
-def update_power_state_recorder() -> NoReturn:
+def update_power_state_recorder() -> None:
     global shepherd_io
     dpg.set_value("gpio_nRes_REC_ADC", shepherd_io.get_power_state_recorder())
 
 
-def reinitialize_prus(sender, element_data, user_data) -> NoReturn:
+def reinitialize_prus(sender, element_data, user_data) -> None:
     global shepherd_io, shepherd_state
     shepherd_io.reinitialize_prus()
     shepherd_io.set_shepherd_state(shepherd_state)
@@ -260,14 +259,14 @@ dac_channels = (
 )
 
 
-def dac_en_callback(sender, en_state, user_value) -> NoReturn:
+def dac_en_callback(sender, en_state, user_value) -> None:
     global shepherd_io, dac_channels
     value = dpg.get_value(f"value_raw_dac{user_value}") if en_state else 0
     shepherd_io.dac_write(dac_channels[user_value][0], value)
     update_gui_elements()
 
 
-def dac_raw_callback(sender, value_raw, user_value) -> NoReturn:
+def dac_raw_callback(sender, value_raw, user_value) -> None:
     global shepherd_io, dac_channels
     dac_cfg = dac_channels[user_value]
     value_si = shepherd_io.convert_raw_to_value(dac_cfg[1], dac_cfg[2], value_raw)
@@ -276,7 +275,7 @@ def dac_raw_callback(sender, value_raw, user_value) -> NoReturn:
     shepherd_io.dac_write(dac_cfg[0], value_raw)
 
 
-def dac_val_callback(sender, value_mV, user_value) -> NoReturn:
+def dac_val_callback(sender, value_mV, user_value) -> None:
     global shepherd_io, dac_channels
     dac_cfg = dac_channels[user_value]
     value_raw = shepherd_io.convert_value_to_raw(dac_cfg[1], dac_cfg[2], value_mV / 1e3)
@@ -295,7 +294,7 @@ adc_channels = [  # combination of debug channel name, cal_component, cal_channe
 ]
 
 
-def adc_refresh() -> NoReturn:
+def adc_refresh() -> None:
     global shepherd_io
     for _iter, _val in enumerate(adc_channels):
         adc_cfg = _val
@@ -330,7 +329,7 @@ gpio_channels = [
 gpio_dir_channels = {"0to3": 0, "ser_io": 8, "pr1": 10, "pr2": 12}
 
 
-def gpio_refresh() -> NoReturn:
+def gpio_refresh() -> None:
     global shepherd_io
     value = shepherd_io.gpi_read()
     dpg.set_value("gpio_output", f"{value}  binary: {value:>10b}")
@@ -341,19 +340,19 @@ def gpio_refresh() -> NoReturn:
     # print(f"refreshed {value}")
 
 
-def gpio_callback(sender, element_data, user_data) -> NoReturn:
+def gpio_callback(sender, element_data, user_data) -> None:
     global shepherd_io
     value = gpio_channels.index(element_data)
     shepherd_io.set_gpio_one_high(value)
     gpio_refresh()
 
 
-def gpio_dir_callback(sender, element_data, user_data) -> NoReturn:
+def gpio_dir_callback(sender, element_data, user_data) -> None:
     global shepherd_io
     shepherd_io.set_gpio_direction(user_data, element_data)
 
 
-def gpio_batok_callback(sender, en_state, user_data) -> NoReturn:
+def gpio_batok_callback(sender, en_state, user_data) -> None:
     global shepherd_io
     shepherd_io.gp_set_batok(en_state)
     gpio_refresh()
@@ -384,18 +383,18 @@ def gpio_batok_callback(sender, en_state, user_data) -> NoReturn:
 # _set_shepherd_pcb_power
 
 
-def filter_update_callback(sender, element_data, user_data) -> NoReturn:
+def filter_update_callback(sender, element_data, user_data) -> None:
     print("filter_update_callback")
     # update_table()
 
 
-def update_buttons() -> NoReturn:
+def update_buttons() -> None:
     print("update_buttons")
 
 
-def update_button_callback(sender, element_data, user_data) -> NoReturn:
+def update_button_callback(sender, element_data, user_data) -> None:
     print("update_button_callback")
 
 
-def save_button_callback(sender, element_data, user_data) -> NoReturn:
+def save_button_callback(sender, element_data, user_data) -> None:
     print("connect_button_callback")

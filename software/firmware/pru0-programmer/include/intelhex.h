@@ -5,23 +5,24 @@
 
 typedef struct
 {
-    unsigned int len;
-    unsigned int address;
-    unsigned int type;
-    uint8_t      data[256];
+    uint32_t len;
+    uint32_t address;
+    uint32_t type;
+    uint8_t  data[256];
 } ihex_rec_t;
 
 typedef enum
 {
     IHEX_RET_OK   = 0u,
-    IHEX_RET_DONE = 1u
+    IHEX_RET_DONE = 1u,
+    IHEX_RET_ERR  = 2u
 } ihex_ret_t;
 
 typedef struct
 {
-    uint32_t     address;
-    unsigned int len;
-    uint8_t     *data;
+    uint32_t address;
+    uint32_t len;
+    uint8_t *data;
 } ihex_mem_block_t;
 
 int        ihex_reader_init(char *file_mem);

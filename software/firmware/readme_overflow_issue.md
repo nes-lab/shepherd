@@ -16,7 +16,7 @@
 
 ### Overflow - help from dinuxbg
 
-Raising [this issue](https://github.com/dinuxbg/gnupru/issues/43) helped a lot!
+Raising [this issue](https://github.com/dinuxbg/gnupru/issues/43) helped a lot.
 
 - compiling code with `uint32`-only (replaced `uint64`) works!
 - compiling u32 with `-fno-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
@@ -35,7 +35,7 @@ pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
 200002e0 00000074 t send_status.constprop.0
 20000474 00000078 t mul64
 200001a0 00000080 t harvester_initialize
-20000220 000000c0 t harvest_iv_cv
+20000220 000000c0 t harvest_ivcurve_2_cv
 200003a8 000000cc t dac8562_init
 200005c0 00001778 T main
 ```
@@ -45,21 +45,21 @@ pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
 ```
 [small objects omitted]
 200019d8 000000a0 t converter_calc_out_power
-20000590 000000c0 t harvest_iv_cv
+20000590 000000c0 t harvest_ivcurve_2_cv
 20000338 000000c4 t converter_initialize
 200003fc 000000dc t converter_update_cap_storage
 200018a8 000000ec t converter_calc_inp_power
-20000888 00000100 t harvest_iv_mppt_opt
-20000650 00000108 t harvest_iv_mppt_voc
+20000888 00000100 t harvest_ivcurve_2_mppt_opt
+20000650 00000108 t harvest_ivcurve_2_mppt_voc
 20001000 0000010c t handle_kernel_com.constprop.0.isra.0
-200012dc 00000120 t harvest_adc_mppt_voc
-20000758 00000130 t harvest_iv_mppt_po
-200011a0 0000013c t harvest_adc_ivcurve
+200012dc 00000120 t harvest_adc_2_mppt_voc
+20000758 00000130 t harvest_ivcurve_2_mppt_po
+200011a0 0000013c t harvest_adc_2_ivcurve
 20000a10 00000148 t converter_update_states_and_output.constprop.0
 20001a78 00000148 t sample_emulator.constprop.0
 20000e24 00000158 t handle_buffer_swap.constprop.0
 20001e1c 000001c0 T main
-200013fc 000001c4 t harvest_adc_mppt_po
+200013fc 000001c4 t harvest_adc_2_mppt_po
 20001678 000001cc t sample_init.constprop.0
 20001c04 00000218 t event_loop.constprop.0
 ```
@@ -89,7 +89,7 @@ change target in makefile
 200005e8 00000078 t cal_conv_uV_to_dac_raw
 200001f0 00000080 t harvester_initialize
 20000138 000000b8 t cal_conv_adc_raw_to_uV
-20000270 000000c0 t harvest_iv_cv
+20000270 000000c0 t harvest_ivcurve_2_cv
 200003f8 000000cc t dac8562_init
 200004c4 00000124 t mul64
 20000710 00002280 T main
@@ -119,7 +119,7 @@ change target in makefile
 200023e4 00000044 t sample.constprop.0
 20000340 00000050 t cal_conv_adc_raw_to_uV
 200008c0 00000050 t ring_put.constprop.0
-20000838 00000050 t sample_iv_harvester
+20000838 00000050 t sample_ivcurve_harvester
 20002858 00000054 T __gnu_ashldi3
 20002804 00000054 T __gnu_lshrdi3
 20002858 00000054 T __pruabi_lslll
@@ -138,24 +138,24 @@ change target in makefile
 20000b3c 00000078 t cal_conv_uV_to_dac_raw
 200003c0 00000080 t harvester_initialize
 200015ac 00000084 t sample_dbg_dac
-20001808 00000094 t harvest_adc_cv
+20001808 00000094 t harvest_adc_2_cv
 20000218 0000009c t add64
-20000440 000000c0 t harvest_iv_cv
+20000440 000000c0 t harvest_ivcurve_2_cv
 20000a78 000000c4 t cal_conv_adc_raw_to_nA
 2000173c 000000cc t dac8562_init
-20000738 00000100 t harvest_iv_mppt_opt
+20000738 00000100 t harvest_ivcurve_2_mppt_opt
 20002194 00000108 t converter_calc_out_power
-20000500 00000108 t harvest_iv_mppt_voc
+20000500 00000108 t harvest_ivcurve_2_mppt_voc
 20001630 0000010c t handle_kernel_com.constprop.0.isra.0
-200019d8 00000120 t harvest_adc_mppt_voc
+200019d8 00000120 t harvest_adc_2_mppt_voc
 20000954 00000124 t mul64
-20000608 00000130 t harvest_iv_mppt_po
-2000189c 0000013c t harvest_adc_ivcurve
+20000608 00000130 t harvest_ivcurve_2_mppt_po
+2000189c 0000013c t harvest_adc_2_ivcurve
 2000229c 00000148 t sample_emulator.constprop.0
 20001438 00000174 t handle_buffer_swap.constprop.0
 20000bb4 00000188 t converter_initialize
 20001fac 000001a4 t converter_calc_inp_power
-20001af8 000001c4 t harvest_adc_mppt_po
+20001af8 000001c4 t harvest_adc_2_mppt_po
 20002640 000001c4 T main
 20001d74 000001d4 t sample_init.constprop.0
 20000d60 0000020c t converter_update_states_and_output.constprop.0
@@ -168,27 +168,27 @@ change target in makefile
 	- removing `inline` from our codebase brings overflow back to 2672 bytes
 	- that is strange!
 
-- direct compare the biggest FNs
+- direct compare of the biggest FNs
   - u64-heavy Fns grow by factor 1.6 to 2.4
 
 ```
 u64 u32 x fn_name
 108 0a0 t converter_calc_out_power              -> 264 vs 160 bytes
-    0c0 t harvest_iv_cv
+    0c0 t harvest_ivcurve_2_cv
 188 0c4 t converter_initialize                  -> 392 vs 196 bytes
 214 0dc t converter_update_cap_storage          -> 532 vs 220 bytes
 1a4 0ec t converter_calc_inp_power              -> 420 vs 236 bytes
-100 100 t harvest_iv_mppt_opt
-120 108 t harvest_iv_mppt_voc
+100 100 t harvest_ivcurve_2_mppt_opt
+120 108 t harvest_ivcurve_2_mppt_voc
 10c 10c t handle_kernel_com
-120 120 t harvest_adc_mppt_voc
-130 130 t harvest_iv_mppt_po
-13c 13c t harvest_adc_ivcurve
+120 120 t harvest_adc_2_mppt_voc
+130 130 t harvest_ivcurve_2_mppt_po
+13c 13c t harvest_adc_2_ivcurve
 20c 148 t converter_update_states_and_output    -> 524 vs 328 bytes
 148 148 t sample_emulator
 174 158 t handle_buffer_swap
 1c4 1c0 T main
-1c4 1c4 t harvest_adc_mppt_po
+1c4 1c4 t harvest_adc_2_mppt_po
 1d4 1cc t sample_init
 218 218 t event_loop
 ```

@@ -1,0 +1,77 @@
+datatype: VirtualSourceConfig
+parameters:
+  # crosscheck against check_and_complete() in virt_source_data.py to see:
+  # - what is required
+  # - the limits and default values
+  # NOTE: input can be also float (ie. 2.3e-4), there is no proper int-formatting (like in py 1_000_000)
+  # TODO: find a way to process direct, boost, boost + buck, future: IV-Curves as input for same converter
+
+  # General Config
+  inherit_from: neutral # to complete undefined vars, bases: neutral, direct, BQ25504 (boost), BQ25570 (boost-buck)
+  enable_boost: true # if false -> v_storage becomes v_input, output-switch-hysteresis is still usable
+  enable_buck: true # if false -> v_output becomes v_storage
+
+  interval_startup_delay_drain_ms: 0
+
+  V_input_max_mV: 3000
+  I_input_max_mA: 100
+  V_input_drop_mV: 0  # simulate input-diode
+
+  C_intermediate_uF: 100  # primary storage-Cap
+  V_intermediate_init_mV: 3000 # allow a proper / fast startup
+  I_intermediate_leak_nA: 9
+
+  V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
+  V_pwr_good_disable_threshold_mV: 2400
+  immediate_pwr_good_signal: false  # 1: activate instant schmitt-trigger, 0: stay in interval for checking thresholds
+
+  C_output_uF: 1.0   # final (always last) stage to compensate undetectable current spikes when enabling power for target
+
+  # Extra
+  V_output_log_gpio_threshold_mV: 1400  # min voltage needed to enable recording changes in gpio-bank
+
+  # Boost Converter, ie. BQ25504
+  V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
+  V_intermediate_max_mV: 3600 # -> boost converter shuts off
+
+  LUT_input_efficiency: [
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ], # rows are current -> here a[V=0][:]
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+    [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ],
+  ] # input-array[12][12] depending on array[inp_voltage][log(inp_current)], influence of cap-voltage is not implemented
+  LUT_input_V_min_log2_uV: 7 # 2^7 = 128 uV -> array[0] is for inputs < 128 uV
+  LUT_input_I_min_log2_nA: 8 # 2^8 = 256 nA -> array[0] is for inputs < 256 nA
+
+  # Buck-Converter , ie. BQ25570
+  V_output_mV: 2000
+  V_buck_drop_mV: 0  # simulate LDO min voltage differential or output-diode
+
+  V_intermediate_enable_threshold_mV: 2600 # -> target gets connected (hysteresis-combo with next value)
+  V_intermediate_disable_threshold_mV: 2300 # -> target gets disconnected
+  interval_check_thresholds_ms: 64.0  # some BQs check every 64 ms if output should be disconnected
+
+  # TODO: add dropdown-voltage and option to keep output enabled
+  LUT_output_efficiency: [0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80]
+  # array[12] depending on output_current
+  LUT_output_I_min_log2_nA: 8  # 2^8 = 256 nA -> array[0] is for inputs < 256 nA, see notes on LUT_input for explanation
+
+  # Documentation for LUTs
+  # NOTE 1:
+  # - for clarity: rows are current, columns are voltage -> first row is array[V=0][:]
+  # NOTE 2:
+  # - input -> these 0..1-values will be transformed to 8bit internally, 1.0 represented by 255
+  # - output -> values are transformed to 2^4/value (inverse)
+  # NOTE 3:
+  # - distances between these 12 values in current-dimension are not linear but log2-Scale
+  # - Input Values smaller than Min-Limits below are directed to array[0]
+  # - array[1] is used for inputs from limit to 2*limit and so on
+  # - for limit V_min_log2_uV = 0 the range equals: array[0] is for < 1 uV, array[1] is for 1 uV, array[2] is for 2-3 uV, ... ,  array[12] is for >= 2048 uV

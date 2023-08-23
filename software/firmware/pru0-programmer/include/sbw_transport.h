@@ -33,8 +33,9 @@ void         set_sbwtdio(gpio_state_t state);
 /* Wrapper for setting SBWTCK pin */
 void         set_sbwtck(gpio_state_t state);
 
-int sbw_transport_init(unsigned int pin_sbwtck, unsigned int pin_sbwtdio, unsigned int f_clk);
-int sbw_transport_disconnect(void);
-int sbw_transport_connect(void);
+int          sbw_transport_init(uint8_t pin_sbw_tck, uint8_t pin_sbw_tdio, uint8_t pin_sbw_dir,
+                                uint32_t f_clk);
+int          sbw_transport_disconnect(void);
+int          sbw_transport_connect(void);
 
 #endif /* __PROG_SBW_TRANSPORT_H_ */

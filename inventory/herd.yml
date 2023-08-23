@@ -14,7 +14,7 @@ sheep:
 # - assign individually ("sheep0:") or as ranges ("sheep[2:10]:")
 # https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
 # example:
-# ntp_clients:
-#   hosts:
-#     sheep0:
-#     sheep[20:30]:
+ntp_clients:
+  hosts:
+    sheep0:
+#    sheep[20:30]:

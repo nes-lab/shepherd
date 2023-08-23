@@ -121,17 +121,18 @@ Some tests (~40) are hardware-independent, while most of them require a beaglebo
 
 The following commands allow to:
 
+- restartable run that exits for each error (perfect for debugging on slow BBone)
 - run single tests,
 - whole test-files or
-- end the testbench after x Errors.
 
 .. code-block:: bash
+
+    sudo pytest --stepwise
 
     sudo pytest tests/test_sheep_cli.py::test_cli_emulate_aux_voltage
 
     sudo pytest tests/test_sheep_cli.py
 
-    sudo pytest --maxfail=1
 
 It is also recommended to **run the testbench of the herd-tool prior to releasing a new version**. See `project-page <https://github.com/orgua/shepherd/tree/main/software/shepherd-herd#testbench>`_ for more info.
 

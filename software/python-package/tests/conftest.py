@@ -1,13 +1,13 @@
 import gc
-import subprocess  # noqa: S404
-import time
 from contextlib import suppress
 from pathlib import Path
 
 import pytest
+from shepherd_sheep.sysfs_interface import load_kernel_module
+from shepherd_sheep.sysfs_interface import remove_kernel_module
 
 
-def check_beagleboard():
+def check_beagleboard() -> bool:
     with suppress(Exception), open("/proc/cpuinfo") as info:
         if "AM33XX" in info.read():
             return True
@@ -22,7 +22,7 @@ def check_beagleboard():
 )
 def fake_hardware(request):
     if request.param == "fake_hardware":
-        request.fixturenames.append("fs")
+        request.fixturenames.append("fs")  # needs pyfakefs installed
         fake_sysfs = request.getfixturevalue("fs")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc1")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc2")
@@ -31,7 +31,7 @@ def fake_hardware(request):
         yield None
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     parser.addoption(
         "--eeprom-write",
         action="store_true",
@@ -40,7 +40,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config, items) -> None:
     skip_fake = pytest.mark.skip(reason="cannot be faked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
     skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
@@ -55,24 +55,6 @@ def pytest_collection_modifyitems(config, items):
             "fake_hardware" in item.keywords and "hardware" in item.keywords
         ):  # real_hardware:
             item.add_marker(skip_fake)
-
-
-def load_kernel_module():
-    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
-    time.sleep(3)
-
-
-def remove_kernel_module():
-    ret = 1
-    while ret > 0:
-        ret = subprocess.run(  # noqa: S607 S603
-            ["modprobe", "-rf", "shepherd"],
-            timeout=60,
-            capture_output=True,
-        ).returncode
-        time.sleep(1)
-    gc.collect()  # precaution
-    time.sleep(3)
 
 
 @pytest.fixture()
@@ -101,20 +83,19 @@ def shepherd_up(fake_hardware, shepherd_down):
         ]
         for file_, content in files:
             fake_hardware.create_file(file_, contents=content)
-        here = Path(__file__).absolute().parent
-        shpk = here.parent / "shepherd"
-        fake_hardware.add_real_file(here / "example_config_harvester.yml")
-        fake_hardware.add_real_file(here / "example_config_virtsource.yml")
-        fake_hardware.add_real_file(shpk / "virtual_harvester_defs.yml")
-        fake_hardware.add_real_file(shpk / "virtual_source_defs.yml")
+        here = Path(__file__).resolve().parent
+        fake_hardware.add_real_file(here / "_test_config_emulation.yaml")
+        fake_hardware.add_real_file(here / "_test_config_harvest.yaml")
+        fake_hardware.add_real_file(here / "_test_config_virtsource.yaml")
         yield
     else:
         load_kernel_module()
         yield
         remove_kernel_module()
+        gc.collect()  # precaution
 
 
 @pytest.fixture()
-def shepherd_down(fake_hardware):
+def shepherd_down(fake_hardware) -> None:
     if fake_hardware is None:
         remove_kernel_module()

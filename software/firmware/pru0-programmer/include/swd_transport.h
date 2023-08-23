@@ -22,7 +22,7 @@ typedef enum
  *
  * @returns 0 on success
  */
-int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int retries);
+int swd_transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, uint32_t retries);
 
 /**
  * Writes a word to the specified address of the specified port. Checks for the acknowledgment
@@ -35,27 +35,29 @@ int transport_read(uint32_t *dst, swd_port_t port, uint8_t addr, unsigned int re
  *
  * @returns 0 on success
  */
-int transport_write(swd_port_t port, uint8_t addr, uint32_t data, unsigned int retries);
+int swd_transport_write(swd_port_t port, uint8_t addr, uint32_t data, uint32_t retries);
 
 /**
  * Initializes transport layer
  *
- * @param pin_swdclk pin number for SWDCLK signal. Note: Only supports pins of GPIO port 0.
- * @param pin_swdio pin number for SWDIO signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swd_clk pin number for SWDCLK signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swd_io pin number for SWDIO signal. Note: Only supports pins of GPIO port 0.
+ * @param pin_swd_dir pin number for direction signal. Note: Only supports pins of GPIO port 0.
  * @param f_clk frequency of SWDCLK signal
  *
  * @returns 0 on success
  */
-int transport_init(unsigned int pin_swdclk, unsigned int pin_swdio, unsigned int f_clk);
+int swd_transport_init(uint8_t pin_swd_clk, uint8_t pin_swd_io, uint8_t pin_swd_dir,
+                       uint32_t f_clk);
 
 /**
  * Puts SWDIO and SWDCLK signals to High-Z
  */
-int transport_release(void);
+int swd_transport_release(void);
 
 /**
  * Outputs the JTAG reset sequence via SWD pins
  */
-int transport_reset(void);
+int swd_transport_reset(void);
 
 #endif /* __PROG_SWD_TRANSPORT_H_ */

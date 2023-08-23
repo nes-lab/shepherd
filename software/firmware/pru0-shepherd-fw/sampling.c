@@ -30,7 +30,7 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     const uint32_t current_sample_counter = shared_mem->analog_sample_counter;
     shared_mem->analog_sample_counter++; // increment early to trigger pru1 to fetch new data
 
-    sample_iv_harvester(&input_voltage_uV, &input_current_nA);
+    sample_ivcurve_harvester(&input_voltage_uV, &input_current_nA);
 
     converter_calc_inp_power(input_voltage_uV, input_current_nA);
 
@@ -149,7 +149,7 @@ static void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
     __delay_cycles(12);
 
     /* (redundant) GAIN=2 for DAC-B and GAIN=2 for DAC-A (see DAC8562T datasheet Table 17) */
-    dac_write(cs_pin, (0x2u << DAC_ADDR_OFFSET) | (0U << 0U));
+    dac_write(cs_pin, 0x2u << DAC_ADDR_OFFSET); // | (0U << 0U)
     __delay_cycles(12);
 
     /* LDAC pin inactive for DAC-B and DAC-A -> synchronous mode / update on 24th clk cycle (see DAC8562T datasheet Table 17) */

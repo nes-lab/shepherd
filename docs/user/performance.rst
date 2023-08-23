@@ -29,7 +29,7 @@ Some of the values were measured with an early prototype and may not accurately 
     +----------------------------+------------------------+----------------------+
     | Risetime                   | Emulator voltage       | 7 us                 |
     +                            +------------------------+----------------------+
-    |                            | Emulator current       | 19.2 us ??           |
+    |                            | Emulator current       | 19.2 us (?)          |
     +----------------------------+------------------------+----------------------+
     | Max. Burden voltage        | Harvest recorder       | 50.4 mV              |
     +                            +------------------------+----------------------+

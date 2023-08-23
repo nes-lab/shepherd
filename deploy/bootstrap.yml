@@ -64,6 +64,7 @@
         groups: sudo
         append: true
         generate_ssh_key: true
+        # password: "{{ default_password }}"
 
     - name: Enable and setup password-less ssh-login via authorized key from local file (prereq is run of ssh-keygen)
       ansible.posix.authorized_key:

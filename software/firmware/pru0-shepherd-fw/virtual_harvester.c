@@ -22,17 +22,17 @@ static uint32_t                               power_last_raw     = 0u; // adc_mp
 static const volatile struct HarvesterConfig *cfg;
 
 // to be used with harvester-frontend
-static void                                   harvest_adc_ivcurve(struct SampleBuffer *, uint32_t);
-static void                                   harvest_adc_isc_voc(struct SampleBuffer *, uint32_t);
-static void                                   harvest_adc_cv(struct SampleBuffer *, uint32_t);
-static void                                   harvest_adc_mppt_voc(struct SampleBuffer *, uint32_t);
-static void                                   harvest_adc_mppt_po(struct SampleBuffer *, uint32_t);
+static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx);
 
 // to be used in virtual harvester (part of emulator)
-static void harvest_iv_cv(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
-static void harvest_iv_mppt_voc(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
-static void harvest_iv_mppt_po(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
-static void harvest_iv_mppt_opt(uint32_t *p_voltage_uV, uint32_t *p_current_nA);
+static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 
 #define HRV_ISC_VOC  (1u << 3u)
 #define HRV_IVCURVE  (1u << 4u)
@@ -70,16 +70,16 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
 
 uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
-    if (cfg->algorithm >= HRV_MPPT_PO) harvest_adc_mppt_po(buffer, sample_idx);
-    else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_mppt_voc(buffer, sample_idx);
-    else if (cfg->algorithm >= HRV_CV) harvest_adc_cv(buffer, sample_idx);
-    else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_ivcurve(buffer, sample_idx);
-    else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_isc_voc(buffer, sample_idx);
+    if (cfg->algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(buffer, sample_idx);
+    else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_2_mppt_voc(buffer, sample_idx);
+    else if (cfg->algorithm >= HRV_CV) harvest_adc_2_cv(buffer, sample_idx);
+    else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_2_ivcurve(buffer, sample_idx);
+    else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(buffer, sample_idx);
     // todo: else send error to system
     return 0u;
 }
 
-static void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /* 	Set constant voltage and log resulting current
  * 	- ADC and DAC voltage should match but can vary, depending on calibration and load (no closed loop)
@@ -104,7 +104,7 @@ static void harvest_adc_cv(struct SampleBuffer *const buffer, const uint32_t sam
     buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-static void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /* 	Record iv-curves
  * 	- by controlling voltage with sawtooth
@@ -149,7 +149,7 @@ static void harvest_adc_ivcurve(struct SampleBuffer *const buffer, const uint32_
 }
 
 
-static void harvest_adc_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /* 	Record VOC & ISC
 	 * 	- open the circuit -> voltage will settle when set to MAX
@@ -174,7 +174,7 @@ static void harvest_adc_isc_voc(struct SampleBuffer *const buffer, const uint32_
         else voltage_hold = voltage_adc;
 
         /* prepare next state-change */
-        is_rising ^= 1u;
+        is_rising ^= 1u; // reverse direction
         settle_steps = cfg->wait_cycles_n;
     }
     else settle_steps--;
@@ -184,7 +184,7 @@ static void harvest_adc_isc_voc(struct SampleBuffer *const buffer, const uint32_
 }
 
 
-static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /*	Determine VOC and harvest
  * 	- first part of interval is used for determining the open circuit voltage
@@ -236,7 +236,7 @@ static void harvest_adc_mppt_voc(struct SampleBuffer *const buffer, const uint32
 }
 
 
-static void harvest_adc_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /*	perturb & observe
 	 * 	- move a voltage step every interval and evaluate power-increase
@@ -313,19 +313,19 @@ if (current_nA > cfg->current_limit_nA)
 */
 
 
-void sample_iv_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
+void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     // check for IVCurve-Input Indicator and use selected algo
     if (cfg->window_size <= 1) return;
-    else if (cfg->algorithm >= HRV_MPPT_OPT) harvest_iv_mppt_opt(p_voltage_uV, p_current_nA);
-    else if (cfg->algorithm >= HRV_MPPT_PO) harvest_iv_mppt_po(p_voltage_uV, p_current_nA);
-    else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_iv_mppt_voc(p_voltage_uV, p_current_nA);
-    else if (cfg->algorithm >= HRV_CV) harvest_iv_cv(p_voltage_uV, p_current_nA);
+    else if (cfg->algorithm >= HRV_MPPT_OPT) harvest_ivcurve_2_mppt_opt(p_voltage_uV, p_current_nA);
+    else if (cfg->algorithm >= HRV_MPPT_PO) harvest_ivcurve_2_mppt_po(p_voltage_uV, p_current_nA);
+    else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_ivcurve_2_mppt_voc(p_voltage_uV, p_current_nA);
+    else if (cfg->algorithm >= HRV_CV) harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
     // todo: else send error to system
 }
 
 
-static void harvest_iv_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
+static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     /* look for wanted constant voltage in an iv-curve-stream (constantly moving up or down in voltage, jumping back when limit reached)
 	 * - influencing parameters: voltage_uV (in init)
@@ -371,10 +371,10 @@ static void harvest_iv_cv(uint32_t *const p_voltage_uV, uint32_t *const p_curren
     *p_current_nA = current_hold;
 }
 
-static void harvest_iv_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
+static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     /* VOC - working on an iv-curve-stream, without complete curve-memory
-	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_iv_cv()
+	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_ivcurve_2_cv()
 	 *  - influencing parameters: interval_n, duration_n, current_limit_nA, voltage_min_uV, voltage_max_uV, setpoint_n8, window_size
 	 * 		   from init: (wait_cycles_n), voltage_uV (for cv())
 	 */
@@ -404,7 +404,7 @@ static void harvest_iv_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_
     }
 
     /* underlying cv-algo is doing the rest */
-    harvest_iv_cv(p_voltage_uV, p_current_nA);
+    harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
 
     /* emulate VOC Search @ beginning of interval duration */
     if (interval_step < cfg->duration_n)
@@ -415,10 +415,10 @@ static void harvest_iv_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_
     }
 }
 
-static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
+static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     /* Perturb & Observe
-	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_iv_cv()
+	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_ivcurve_2_cv()
 	 * - influencing parameters: interval_n, voltage_step_uV, voltage_max_uV, voltage_min_uV
 	 */
     static uint32_t power_last = 0u;
@@ -427,7 +427,7 @@ static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_c
     if (++interval_step >= cfg->interval_n) interval_step = 0u;
 
     /* underlying cv-algo is updating the current harvest-power */
-    harvest_iv_cv(p_voltage_uV, p_current_nA);
+    harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
     /* p_voltage_uV and p_current_nA are changed now! */
 
     if (interval_step == 0u)
@@ -442,11 +442,21 @@ static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_c
         }
         else
         {
-            /* got less power -> reverse direction */
-            is_rising ^= 1u;
-            volt_step_uV = cfg->voltage_step_uV;
-            if (is_rising) voltage_set_uV = add32(voltage_set_uV, volt_step_uV);
-            else voltage_set_uV = sub32(voltage_set_uV, volt_step_uV);
+            if ((power_now == 0) && (voltage_set_uV > 0))
+            {
+                /* lost tracking - or started with bad init */
+                is_rising      = 1u;
+                volt_step_uV   = cfg->voltage_step_uV;
+                voltage_set_uV = sub32(voltage_set_uV, voltage_step_x4_uV);
+            }
+            else
+            {
+                /* got less power -> reverse direction */
+                is_rising ^= 1u;
+                volt_step_uV = cfg->voltage_step_uV;
+                if (is_rising) voltage_set_uV = add32(voltage_set_uV, volt_step_uV);
+                else voltage_set_uV = sub32(voltage_set_uV, volt_step_uV);
+            }
         }
         power_last = power_now;
 
@@ -463,10 +473,16 @@ static void harvest_iv_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_c
             is_rising      = 1u;
             volt_step_uV   = cfg->voltage_step_uV;
         }
+        if (voltage_set_uV < cfg->voltage_step_uV)
+        {
+            voltage_set_uV = cfg->voltage_step_uV;
+            is_rising      = 1u;
+            volt_step_uV   = cfg->voltage_step_uV;
+        }
     }
 }
 
-static void harvest_iv_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
+static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     /* Derivate of VOC -> selects the highest power directly
 	 * - influencing parameters: window_size, voltage_min_uV, voltage_max_uV,

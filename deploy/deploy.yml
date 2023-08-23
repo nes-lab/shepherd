@@ -17,17 +17,17 @@
 
     - name: Update kernel, bootloader, software & cleanup afterwards
       ansible.builtin.include_role:
-        name: maintained
+        name: maintenance
       vars:
-        update_kernel: true
-        update_bootloader: true
-        delete_unused_files: true
+        maintenance_update_kernel: true
+        maintenance_update_bootloader: true
+        maintenance_delete_unused_files: true
 
 - name: Main-Software for Shepherd
   hosts: sheep
   become: true
   roles:
-    - sheep
+    - sheep  # NOTE: will only be installed once (later only sw-rebuild)
 
 - name: Role - PTP-Client
   hosts: ptp_clients
@@ -71,8 +71,8 @@
 
     - name: Cleanup after software
       ansible.builtin.include_role:
-        name: maintained
+        name: maintenance
       vars:
-        update_kernel: false
-        update_bootloader: false
-        delete_unused_files: true
+        maintenance_update_kernel: false
+        maintenance_update_bootloader: false
+        maintenance_delete_unused_files: true

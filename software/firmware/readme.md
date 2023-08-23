@@ -95,12 +95,12 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 - did read through gnupru github-issues, but found no clue
 - did read through large parts of gcc v12.1 doc (gcc.pdf) with no luck
 - enabling `-ffast-math` does nothing to our code-size (should only help with float-ops)
-- compiling code with `uint32`-only (replaced `uint64`) works!
+- compiling code with `uint32`-only (replaced `uint64`) works
 - compiling u32 with `-fno-inline` overflows by 300 byte -> clean out minor FNs to allow compiling
 - compiling original code (u64) with `-fno-inline` without size-hack reduces overflow from 2672 to 2276 bytes.
 	- is this a self-made inline-fuckup?
 	- removing `inline` from our codebase brings overflow back to 2672 bytes
-	- that is strange!
+	- that's strange
 - comparing functions-size between source with u64 and u32-mod
   - converter_xyz-Fns grow by factor 1.6 to 2.4
 - **issue report confirmed at least 2 gcc-bugs**

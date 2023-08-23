@@ -9,8 +9,8 @@
     mode: 'a+rw'
     remote_src: true
   loop:
-    - example_config_emulator.yml
-    - example_config_harvester.yml
+    - example_config_emulation.yaml
+    - example_config_harvest.yaml
   tags:
     - source-code
     - python
@@ -18,8 +18,8 @@
 
 - name: Deploy default configuration for launcher (harvest)
   ansible.builtin.copy:
-    src: "{{ shepherd_install_path }}/software/python-package/example_config_harvester.yml"
-    dest: "{{ shepherd_config_path }}/config.yml"
+    src: "{{ shepherd_install_path }}/software/python-package/example_config_harvest.yaml"
+    dest: "{{ shepherd_config_path }}/config.yaml"
     force: false
     owner: "{{ ansible_user }}"
     mode: 'a+rw'

@@ -33,8 +33,8 @@ Therefore your network should have a DHCP server.
 Hardware setup
 --------------
 
-Stack the cape on top of the BeagleBone. The two 23x2 headers of the cape plug into the BeagleBone (P8 and P9).
-Stack the harvesting capelet on top of the shepherd cape. The capelet is left-aligned on the same 23x2, but using just two 11x2 headers. Pay attention to the 2x2 header P6 (on the cape) for the correct orientation.
+Stack the cape on top of the BeagleBone. The two 23×2 headers of the cape plug into the BeagleBone (P8 and P9).
+Stack the harvesting capelet on top of the shepherd cape. The capelet is left-aligned on the same 23×2, but using just two 11×2 headers. Pay attention to the 2×2 header P6 (on the cape) for the correct orientation.
 
 Stack the target capelet on top of the shepherd cape. The cape offers two ports P10 and P11 on the right side, also labeled as A & B.
 
@@ -46,8 +46,8 @@ Same applies to the power-output of the Beaglebone. Therefore the cape offers an
 The DHCP server and your machine (for installation/control) must be connected to the same network.
 
 
-Installation
-------------
+Installation - Full Guide
+--------------------------
 
 Prepare the SD-cards.
 If you plan to install the OS and shepherd software on the onboard EMMC flash, you can prepare one SD card and sequentially flash the nodes.
@@ -74,7 +74,6 @@ Clone the shepherd repository to your machine:
 Add an inventory file in the ``inventory`` folder in the repository, assigning hostnames to the IP addresses of the shepherd nodes.
 Just start by editing the provided ``inventory/herd.yml`` example.
 Pick a username that you want to use to login to the nodes and assign as ``ansible_user`` variable.
-[**TODO:** update description with roles].
 
 .. code-block:: yaml
 
@@ -88,6 +87,18 @@ Pick a username that you want to use to login to the nodes and assign as ``ansib
           ansible_host: 192.168.1.102
       vars:
         ansible_user: jane
+      ptp_servers:
+        hosts:
+          sheep:
+      ptp_clients:
+        hosts:
+          sheep[2:30]:
+
+.. note::
+    Deployment supports roles that can be assigned directly in ``herd.yml``.
+    The example above shows how to use them exemplary by setting up ``sheep0`` as a PTP-Server (``ptp_servers``) and the remaining nodes as Clients (``ptp_clients``).
+    Additional roles are called ``ntp_clients``, ``gps_clients`` and ``secured``. The last one is used to reduce the attack surface when used in a testbed by removing default accounts, open ports and other listeners.
+
 
 We'll use `Ansible <https://www.ansible.com/>`_ to roll out a basic configuration to the nodes.
 This includes setting the hostname, adding the user, allowing password-less ssh access and sudo without password.
@@ -125,54 +136,69 @@ Further playbooks:
 
 .. _install-simple:
 
-Installation - simplified & more detailed
+Installation - ready-to-use image
 ------------------------------------------
 
-The following steps set up a single shepherd-node by using a ready-to-use shepherd-image. It cuts away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but linux users can easily adapt, as mostly WSL is used.
+The following guide sets up a single shepherd-node by using a ready-to-use shepherd-image. The steps are more detailed and try to simplify the process for new users by cutting away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but Linux users can easily adapt.
 
 As new hardware and unknown software can be intimidating the steps were also `filmed and put on youtube <https://youtu.be/UPEH7QODm8A>`_ for comparing the progress.
 
-First step is downloading the `current shepherd-image <https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx>`_ and flashing it to a micro-sd-card with balenaEtcher in admin mode (note: other tools like rufus probably don't work). Select the (still compressed ``.img.xz``) image and choose the drive before flashing.
+First step is downloading the `current shepherd-image <https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx>`_ and flashing it to a micro-sd-card with balenaEtcher in admin mode. Note that other tools like rufus probably don't work. Select the (still compressed ``.img.xz``) image and choose the appropriate drive before flashing.
 
-Insert the sd-card into the Beaglebone, connect the device via ethernet-cable to your router and finally power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
+Insert the finished sd-card into the Beaglebone, connect the device via ethernet-cable to your local network and finally power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
 
-After power-up all **LEDs** should light up for ~1s. From then on the outermost LED acts as a permanent heartbeat and the other 3 LEDs show different IO usage. Boot is finished when the LEDs stop being busy (~30s).
+After power-up all **LEDs** should light up immediately for ~1s. From then on the outermost LED acts as a permanent heartbeat and the other 3 LEDs show different IO usage. Boot is finished when the LEDs stop being busy (~30s). After that you can login.
 
-In most cases you can access the Beaglebone by using the hostname ``sheep0``. If that does not work you can check the list of network-devices compiled by your routers webinterface. Alternatively you can scan your local IP-space with an ip scanner, in our example the ``Angry IP Scanner`` was used. Look for the hostname ``sheep0`` or the MAC-Vendor ``Texas Instruments`` in the list. Be sure to use the IP-space of the correct network device.
+How to connect? There are at least 3 options. In most cases you can access the Beaglebone by using the hostname ``sheep0``. If that does not work you can check the list of network-devices compiled by your routers webinterface. Alternatively you can scan your local IP-space with an ip scanner, in our example the ``Angry IP Scanner`` was used. Look for the hostname ``sheep0`` or the MAC-Vendor ``Texas Instruments`` in the list. **Be sure to use the IP-space of the correct network device of your host device**.
 
 Configure WSL on Windows with a generic Ubuntu or just use the PowerShell if OpenSSH is installed as an optional feature (``settings > apps > optional features``).
 
-The commands below open a secure shell (ssh) to the Beaglebone. You have to accept a new fingerprint once before entering the password ``temppwd`` of the Beaglebone. The console will also tell you the password. Notice how the current console-line now begins with ``ubuntu@sheep0``. It means you are logged in and every issued command will be executed on the Beaglebone. To **quit the shell** type ``exit``.
+The commands below open a secure shell (ssh) to the Beaglebone. As its an unknown device you have to accept a new fingerprint (or host key) **once** before entering the password ``temppwd`` of the Beaglebone. The console will also tell you the password while trying to login. Notice how the current console-line now begins with ``ubuntu@sheep0``. It means you are logged in and every issued command will be executed on the Beaglebone. To **quit the shell** type ``exit`` (for later).
 
 .. code-block:: bash
 
+    # login via host-name (requires local DNS)
     ssh ubuntu@sheep0
     # or IP-based (replace IP from your setup)
     ssh ubuntu@10.0.0.10
 
-Now it is recommended to check if ubuntu was indeed started from the sd-card as the Beaglebone could contain an old OS.
+Now it is recommended to check if ubuntu was indeed started from the sd-card as the Beaglebone could contain and boot an old OS.
 
 .. code-block:: bash
 
     uname -a
-    # -> the string should contain "4.19" & "focal"
+    # ⤷ the string should contain "4.19" & "focal"
     ll /dev/mmc*
-    # -> should show mmcblk0* (SD-Card) and mmcblk1* (internal eMMC)
+    # ⤷ should show mmcblk0* (SD-Card) and mmcblk1* (internal eMMC)
     mount
-    # -> should show that /dev/mmcblk0p1 (SD-Card) is "/" (root-directory) usually on line 1
+    # ⤷ should show that /dev/mmcblk0p1 (SD-Card) is "/" (root-directory) usually on line 1
 
-If the tests are positive it is safe to use the image as is from sd-card. Alternatively it is also possible to copy the OS to the internal eMMC for improved performance. Note that the usual eMMC flasher does not work and ``dd`` must be used instead:
+If the tests are positive it is safe to use the image as is from sd-card. Alternatively it is also possible to copy the OS to the internal eMMC for improved performance. Note that the recommended eMMC flasher does not work, but ``dd`` can be used instead:
 
 .. code-block:: bash
 
     sudo dd if=/dev/mmcblk0p1 of=/dev/mmcblk1p1
-    # -> takes 10 - 20 min
+    # ⤷ takes 10 - 20 min
 
 After the command finishes shut down the Beaglebone either by ``sudo shutdown now`` or by pushing the button next to the network socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches except that ``mount`` now shows mmcblk1p1 (eMMC) as root-directory.
 
-For password-less entry & usage of the Beaglebone we prepared an ``ansible playbook``. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide from previous section).
+For password-less entry & usage of the Beaglebone we prepared an ``ansible playbook``. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide from previous section) and also configured the ``herd.yml`` in consultation with the full installation guide.
 
 .. code-block:: bash
 
     # execute in shepherd-repo on host
     ansible-playbook ./deploy/setup_pwless_ssh_for_host.yml
+
+Now that the Software ready a basic test of the shepherd-framework can be run. It is possible to start a pre-configured harvesting demo, even without a cape. This can be done either on the Beaglebone itself:
+
+.. code-block:: bash
+
+    sudo shepherd-sheep run --config /etc/shepherd/example_config_harvest.yaml
+
+or on the host by installing and using `shepherd-herd <https://pypi.org/project/shepherd-herd/>`_. After following the linked installation guide the same test can be run with:
+
+.. code-block:: bash
+
+    shepherd-herd start
+
+Note that this will load a slightly different configuration-file (``/etc/shepherd/config.yaml``).

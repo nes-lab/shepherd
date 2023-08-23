@@ -5,18 +5,33 @@ import contextlib
 import logging
 import threading
 import time
+from datetime import datetime
+from datetime import timedelta
 from io import StringIO
 from pathlib import Path
+from typing import Dict
 from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
+import chromalog
 import yaml
+from fabric import Connection
 from fabric import Group
+from fabric import Result
+from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models import Wrapper
 
-consoleHandler = logging.StreamHandler()
+chromalog.basicConfig(format="%(message)s")
 logger = logging.getLogger("shepherd-herd")
-logger.addHandler(consoleHandler)
 verbose_level = 0
 # Note: defined here to avoid circular import
+
+
+def get_verbose_level() -> int:
+    global verbose_level
+    return max(1, verbose_level)
 
 
 def set_verbose_level(verbose: int = 2) -> None:
@@ -29,13 +44,10 @@ def set_verbose_level(verbose: int = 2) -> None:
     elif verbose > 2:
         logger.setLevel(logging.DEBUG)
     global verbose_level
-    verbose_level = verbose
+    verbose_level = min(3, verbose)
 
 
 class Herd:
-    group: Group = None
-    hostnames: dict = None
-
     _remote_paths_allowed = [
         Path("/var/shepherd/recordings/"),  # default
         Path("/var/shepherd/"),
@@ -45,24 +57,23 @@ class Herd:
     path_default = _remote_paths_allowed[0]
 
     timestamp_diff_allowed = 10
-    start_delay_s = 20
+    start_delay_s = 30
 
     def __init__(
         self,
         inventory: str = "",
         limit: str = "",
-        user=None,
-        key_filename=None,
+        user: Optional[str] = None,
+        key_filepath: Optional[Path] = None,
     ):
+        limits_list: Optional[List[str]] = None
         if limit.rstrip().endswith(","):
-            limit = limit.split(",")[:-1]
-        else:
-            limit = None
+            limits_list = limit.split(",")[:-1]
 
         if inventory.rstrip().endswith(","):
             hostlist = inventory.split(",")[:-1]
-            if limit is not None:
-                hostlist = list(set(hostlist) & set(limit))
+            if limits_list is not None:
+                hostlist = list(set(hostlist) & set(limits_list))
             hostnames = {hostname: hostname for hostname in hostlist}
 
         else:
@@ -90,9 +101,9 @@ class Herd:
                     raise FileNotFoundError(f"Couldn't read inventory file {host_path}")
 
             hostlist = []
-            hostnames = {}
+            hostnames: Dict[str, str] = {}
             for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-                if isinstance(limit, List) and (hostname not in limit):
+                if isinstance(limits_list, List) and (hostname not in limits_list):
                     continue
 
                 if "ansible_host" in hostvars:
@@ -114,24 +125,26 @@ class Herd:
                 "Provide remote hosts (either inventory empty or limit does not match)",
             )
 
-        connect_kwargs = {}
-        if key_filename is not None:
-            connect_kwargs["key_filename"] = key_filename
+        connect_kwargs: Dict[str, str] = {}
+        if key_filepath is not None:
+            connect_kwargs["key_filename"] = str(key_filepath)
 
-        self.group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
-        self.hostnames = hostnames
+        self.group: Group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
+        self.hostnames: Dict[str, str] = hostnames
         logger.debug("Sheep-Herd consists of %d nodes", len(self.group))
         if len(self.group) < 1:
             raise ValueError("No remote targets found in list!")
 
     def __del__(self):
-        # ... overcautious
+        # ... overcautious closing of connections
+        if not hasattr(self, "group") or not isinstance(self.group, Group):
+            return
         with contextlib.suppress(TypeError):
             for cnx in self.group:
                 cnx.close()
                 del cnx
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         if key in self.hostnames:
             return self.hostnames[key]
         raise KeyError
@@ -140,15 +153,22 @@ class Herd:
         return self.hostnames
 
     @staticmethod
-    def thread_run(cnx, sudo: bool, cmd: str, results: dict, index: int) -> None:
+    def thread_run(
+        cnx: Connection,
+        sudo: bool,
+        cmd: str,
+        results: dict[int, Result],
+        index: int,
+    ) -> None:
         if sudo:
             results[index] = cnx.sudo(cmd, warn=True, hide=True)
         else:
             results[index] = cnx.run(cmd, warn=True, hide=True)
 
-    def run_cmd(self, sudo: bool, cmd: str) -> dict:
-        results = {}
+    def run_cmd(self, sudo: bool, cmd: str) -> dict[int, Result]:
+        results: dict[int, Result] = {}
         threads = {}
+        logger.debug("Sheep-CMD = %s", cmd)
         for i, cnx in enumerate(self.group):
             threads[i] = threading.Thread(
                 target=self.thread_run,
@@ -160,8 +180,25 @@ class Herd:
             del thread  # ... overcautious
         return results
 
+    def print_output(self, replies: dict[int, Result], req_log_level: int) -> None:
+        for i, hostname in enumerate(self.hostnames.values()):
+            if verbose_level < req_log_level and replies[i].exited == 0:
+                continue
+            if len(replies[i].stdout) > 0:
+                logger.info("\n************** %s - stdout **************", hostname)
+                logger.info(replies[i].stdout)
+            if len(replies[i].stderr) > 0:
+                logger.error("\n~~~~~~~~~~~~~~ %s - stderr ~~~~~~~~~~~~~~", hostname)
+                logger.error(replies[i].stderr)
+            logger.info("Exit-code of %s = %s", hostname, replies[i].exited)
+
     @staticmethod
-    def thread_put(cnx, src: [Path, StringIO], dst: Path, force_overwrite: bool):
+    def thread_put(
+        cnx: Connection,
+        src: Union[Path, StringIO],
+        dst: Path,
+        force_overwrite: bool,
+    ):
         if isinstance(src, StringIO):
             filename = dst.name
         else:
@@ -180,8 +217,8 @@ class Herd:
 
     def put_file(
         self,
-        src: [StringIO, Path, str],
-        dst: [Path, str],
+        src: Union[StringIO, Path, str],
+        dst: Union[Path, str],
         force_overwrite: bool = False,
     ) -> None:
         if isinstance(src, StringIO):
@@ -204,9 +241,7 @@ class Herd:
             for path_allowed in self._remote_paths_allowed:
                 if str(dst_path).startswith(str(path_allowed)):
                     is_allowed = True
-            if is_allowed:
-                logger.info("Remote dest path = %s", dst_path)
-            else:
+            if not is_allowed:
                 raise NameError(f"provided path was forbidden ('{dst_path}')")
 
         threads = {}
@@ -221,13 +256,13 @@ class Herd:
             del thread  # ... overcautious
 
     @staticmethod
-    def thread_get(cnx, src: Path, dst: Path):
+    def thread_get(cnx: Connection, src: Path, dst: Path):
         cnx.get(str(src), local=str(dst))
 
     def get_file(
         self,
-        src: [Path, str],
-        dst_dir: [Path, str],
+        src: Union[Path, str],
+        dst_dir: Union[Path, str],
         timestamp: bool = False,
         separate: bool = False,
         delete_src: bool = False,
@@ -307,7 +342,7 @@ class Herd:
         del threads
         return failed_retrieval
 
-    def find_consensus_time(self) -> (int, float):
+    def find_consensus_time(self) -> Tuple[datetime, float]:
         """Finds a start time in the future when all nodes should start service
 
         In order to run synchronously, all nodes should start at the same time.
@@ -316,55 +351,62 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date +%s")
-        ts_nows = [float(reply.stdout) for reply in replies.values()]
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        ts_nows = [
+            datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()
+        ]
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
-        ts_diff = ts_max - ts_min
+        ts_diff = ts_max.timestamp() - ts_min.timestamp()
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
             raise Exception(
                 f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
-
         # We need to estimate a future point in time such that all nodes are ready
-        ts_start = ts_max + self.start_delay_s
-        return int(ts_start), float(self.start_delay_s + ts_diff / 2)
+        ts_start = ts_max + timedelta(seconds=self.start_delay_s)
+        return ts_start, float(self.start_delay_s + ts_diff / 2)
 
-    def configure_measurement(
+    def transfer_task(
         self,
-        mode: str,
-        parameters: dict,
+        task: ShpModel,
+        remote_path: Union[Path, str] = "/etc/shepherd/config.yaml",
     ) -> None:
-        """Configures shepherd service on the group of hosts.
+        """brings shepherd tasks to the group of hosts / sheep.
 
         Rolls out a configuration file according to the given command and parameters
         service.
 
-        Args:
-            mode (str): What shepherd is supposed to do. One of 'harvester' or 'emulator'.
-            parameters (dict): Parameters for shepherd-sheep
         """
         global verbose_level
-        config_dict = {
-            "mode": mode,
-            "verbose": verbose_level,
-            "parameters": parameters,
-        }
-        config_yml = yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
-
-        logger.debug("Rolling out the following config:\n\n%s", config_yml)
-
-        if self.check_state(warn=True):
+        task_dict = task.model_dump(exclude_unset=True, exclude_defaults=True)
+        task_wrap = Wrapper(
+            datatype=type(task).__name__,
+            created=datetime.now(),
+            parameters=task_dict,
+        )
+        task_yaml = yaml.safe_dump(
+            task_wrap.model_dump(exclude_unset=True, exclude_defaults=True),
+            default_flow_style=False,
+            sort_keys=False,
+        )
+        if self.check_status(warn=True):
             raise Exception("shepherd still active!")
+        if not isinstance(remote_path, Path):
+            remote_path = Path(remote_path)
 
+        logger.debug(
+            "Rolling out the following config to '%s':\n\n%s",
+            remote_path.as_posix(),
+            task_yaml,
+        )
         self.put_file(
-            StringIO(config_yml),
-            "/etc/shepherd/config.yml",
+            StringIO(task_yaml),
+            remote_path,
             force_overwrite=True,
         )
 
-    def check_state(self, warn: bool = False) -> bool:
+    def check_status(self, warn: bool = False) -> bool:
         """Returns true ss long as one instance is still measuring
 
         :param warn:
@@ -390,11 +432,12 @@ class Herd:
 
     def start_measurement(self) -> int:
         """Starts shepherd service on the group of hosts."""
-        if self.check_state(warn=True):
+        if self.check_status(warn=True):
             logger.info("-> won't start while shepherd-instances are active")
             return 1
         else:
             replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
+            self.print_output(replies, 3)  # min debug level
             return max([reply.exited for reply in replies.values()])
 
     def stop_measurement(self) -> int:
@@ -406,7 +449,7 @@ class Herd:
             logger.debug("-> max exit-code = %d", exit_code)
         return exit_code
 
-    def poweroff(self, restart: bool) -> bool:
+    def poweroff(self, restart: bool) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
             replies = self.run_cmd(sudo=True, cmd="reboot")
@@ -419,8 +462,8 @@ class Herd:
 
     def await_stop(self, timeout: int = 30) -> bool:
         ts_end = time.time() + timeout
-        while self.check_state():
+        while self.check_status():
             if time.time() > ts_end:
-                return self.check_state(warn=True)
+                return self.check_status(warn=True)
             time.sleep(1)
         return False

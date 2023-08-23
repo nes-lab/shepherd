@@ -13,7 +13,7 @@ from .herd import Herd
 from .herd import logger
 from .herd import set_verbose_level
 
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 __all__ = [
     "Herd",

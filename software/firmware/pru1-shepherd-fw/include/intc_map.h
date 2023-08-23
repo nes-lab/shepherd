@@ -49,8 +49,8 @@
   #define __pru_irq_map /* */
 #else
   #define __pru_irq_map                                                                            \
-    __attribute__((section(".pru_irq_map"),                                                        \
-                   unavailable("pru_irq_map is for usage by the host only")))
+      __attribute__((section(".pru_irq_map"),                                                      \
+                     unavailable("pru_irq_map is for usage by the host only")))
 #endif
 
 struct pru_irq_rsc my_irq_rsc = {

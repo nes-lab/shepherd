@@ -42,7 +42,7 @@
 #include "ringbuffer.h"
 
 /* Definition for unused interrupts */
-#define HOST_UNUSED   255U
+#define HOST_UNUSED   (255U)
 
 #define SIZE_CARVEOUT (FIFO_BUFFER_SIZE * sizeof(struct SampleBuffer))
 

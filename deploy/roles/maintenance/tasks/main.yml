@@ -1,0 +1,107 @@
+---
+
+- name: Test if Node has Access to Internet (essential)
+  ansible.builtin.wait_for:
+    host: github.com
+    port: 80
+    state: started
+    timeout: 5
+
+- name: Update SSL-Certificates
+  ansible.builtin.command: 'update-ca-certificates -f -v'
+  changed_when: true
+
+- name: GIT - Clone & Update boot-script-tools from RobertCNelson
+  ansible.builtin.git:
+    repo: https://github.com/RobertCNelson/boot-scripts
+    dest: /opt/scripts
+    update: true
+    version: HEAD  # noqa latest[git]
+    force: true
+- name: Remove space-waster of boot-script-repo (free 13 of 27 mb)
+  ansible.builtin.file:
+    path: "/opt/scripts/device/" # ["/opt/scripts/.git/", "/opt/scripts/device/"]
+    state: absent
+
+- name: Add back rcn-ee-repo for ubuntu focal (for ti-version of linux 4.19.94)
+  ansible.builtin.lineinfile:
+    dest: "/etc/apt/sources.list"
+    regexp: "#?deb .*.rcn-ee.*.focal.*$"
+    line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ focal main"
+    state: present
+- name: APT - update cache & install hardcoded kernel
+  ansible.builtin.apt:
+    name: "linux-image-4.19.94-ti-r73"
+    state: present
+    update_cache: true
+
+- name: "SCRIPT - Switch to newest release of Kernel Branch {{ default_kernel_branch }}"
+  ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}'
+  when: false # maintenance_update_kernel | bool
+  changed_when: true
+  failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
+  # this was failing for ubuntu 22.04 -> apt install linux-image-4.19 ... .280-bone76 (with -bone, without -rt-)
+  # -> added back focal-repo (see above) but it still fails to downgrade -> disable for now and hardcode (above)
+
+- name: Grow root partition to drive-size
+  ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
+  when: maintenance_update_kernel | bool # NOTE: condition not correct, but works for now
+  changed_when: true
+
+- name: Restart device
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
+  when: maintenance_update_kernel | bool
+
+- name: SCRIPT - Update Bootloader
+  ansible.builtin.shell: |
+    set -o pipefail # <- prevents surprises
+    yes | /opt/scripts/tools/developers/update_bootloader.sh
+  changed_when: true
+  when: maintenance_update_bootloader | bool
+  failed_when: false # certificate may be invalid
+
+- name: Uname - Get Kernel-Version
+  ansible.builtin.command: 'uname --kernel-release'
+  register: kernelrelease
+  changed_when: false
+
+- name: APT - Install matching Kernel-Headers for running Kernel
+  ansible.builtin.apt:
+    name: 'linux-headers-{{ kernelrelease.stdout.strip() }}'
+    update_cache: true
+
+- name: APT - Upgrade all packages to the latest version
+  ansible.builtin.apt:
+    upgrade: full # was "dist" but this changed also the kernel back to 5.10
+    update_cache: true
+
+- name: "CFG - Set timezone to {{ timezone }}"
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+  # TODO: - name: CFG - Set CPU Governor to more relaxed state (powersave)
+
+- name: Include performance-modifications
+  ansible.builtin.include_tasks:
+    file: performance.yml
+
+- name: Restart device
+  # not needed, but easier for debugging
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
+
+- name: Cleanup Beaglebone
+  ansible.builtin.include_role:
+    name: cleaning
+  vars:
+    cleaning_delete_recordings: false
+    cleaning_zero_free_space: false
+  when: maintenance_delete_unused_files | bool
+
+- name: Restart device
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200

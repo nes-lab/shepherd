@@ -43,7 +43,7 @@ The implementation is parametrized and can therefore be altered on the fly, e.g.
 A second advantage of the circuit is that it allows to characterize the harvesting transducer and the energy scenario.
 A harvesting transducer is characterized by its IV-curve, determining the magnitude of current at a specific load voltage.
 By capturing a continuous stream of curves the energy scenario is recorded as well.
-This abstraction decouples the harvesting from the recording-process and postpones it to a later point in time. The harvesting-algorithm can therefore become part of the emulation-process.
+This abstraction decouples the harvesting from the recording-process and postpones it. The harvesting-algorithm can therefore become part of the emulation-process.
 
 A group of shepherd nodes can be deployed to the environment of interest to measure the energy that can be harvested at each node.
 The time-synchronization between the shepherd nodes allows to gather the readings from multiple nodes with respect to a common time-line.

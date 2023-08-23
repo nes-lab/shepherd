@@ -72,43 +72,43 @@ int IsLockKeyProgrammed(void)
 }
 
 /**
- * Shifts data into and out of the JTAG Data and Instruction register.
+ * Shifts data into and out of the JTAG data and Instruction register.
  *
  * Assumes that the TAP controller is in Shift-DR or Shift-IR state and,
  * bit by bit, shifts data into and out of the register.
  *
- * @param Format specifies length of the transfer
- * @param Data data to be shifted into the register
+ * @param format specifies length of the transfer
+ * @param data data to be shifted into the register
  *
  * @returns data shifted out of the register
  *
  */
-static uint32_t AllShifts(uint16_t Format, uint32_t Data)
+static uint32_t AllShifts(const uint16_t format, uint32_t data)
 {
-    uint32_t     TDOword = 0x00000000;
-    uint32_t     MSB     = 0x00000000;
+    uint32_t     TDOword = 0x00000000ul;
+    uint32_t     MSB     = 0x00000000ul;
     uint32_t     i;
 
     gpio_state_t tdo;
 
-    switch (Format)
+    switch (format)
     {
-        case F_BYTE: MSB = 0x00000080; break;
-        case F_WORD: MSB = 0x00008000; break;
-        case F_ADDR: MSB = 0x00080000; break;
-        case F_LONG: MSB = 0x80000000; break;
+        case F_BYTE: MSB = 0x00000080ul; break;
+        case F_WORD: MSB = 0x00008000ul; break;
+        case F_ADDR: MSB = 0x00080000ul; break;
+        case F_LONG: MSB = 0x80000000ul; break;
         default: // this is an unsupported format, function will just return 0
             return TDOword;
     }
     // shift in bits
-    for (i = Format; i > 0; i--)
+    for (i = format; i > 0; i--)
     {
         if (i == 1) // last bit requires TMS=1; TDO one bit before TDI
         {
-            tdo = ((Data & MSB) == 0) ? tmsh_tdil_tdo_rd() : tmsh_tdih_tdo_rd();
+            tdo = ((data & MSB) == 0) ? tmsh_tdil_tdo_rd() : tmsh_tdih_tdo_rd();
         }
-        else { tdo = ((Data & MSB) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd(); }
-        Data <<= 1;
+        else { tdo = ((data & MSB) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd(); }
+        data <<= 1;
         if (tdo) TDOword++;
         if (i > 1) TDOword <<= 1; // TDO could be any port pin
     }
@@ -117,7 +117,7 @@ static uint32_t AllShifts(uint16_t Format, uint32_t Data)
     else { tmsl_tdil(); }
 
     // de-scramble bits on a 20bit shift
-    if (Format == F_ADDR) { TDOword = ((TDOword << 16) + (TDOword >> 4)) & 0x000FFFFF; }
+    if (format == F_ADDR) { TDOword = ((TDOword << 16) + (TDOword >> 4)) & 0x000FFFFF; }
 
     return (TDOword);
 }
@@ -172,10 +172,10 @@ uint32_t DR_Shift20(uint32_t address)
 int i_ReadJmbOut(void)
 {
     uint16_t sJMBINCTL;
-    uint32_t lJMBOUT = 0;
+    uint32_t lJMBOUT = 0u;
     uint16_t sJMBOUT0, sJMBOUT1;
 
-    sJMBINCTL = 0;
+    sJMBINCTL = 0u;
 
     IR_Shift(IR_JMB_EXCHANGE); // start exchange
     lJMBOUT = DR_Shift16(sJMBINCTL);
@@ -185,28 +185,28 @@ int i_ReadJmbOut(void)
         sJMBINCTL |= JMB32B + OUTREQ;
         //lJMBOUT  = DR_Shift16(sJMBINCTL); // cppcheck
         DR_Shift16(sJMBINCTL);
-        sJMBOUT0 = (uint16_t) DR_Shift16(0);
-        sJMBOUT1 = (uint16_t) DR_Shift16(0);
-        lJMBOUT  = ((uint32_t) sJMBOUT1 << 16) + sJMBOUT0;
+        sJMBOUT0 = (uint16_t) DR_Shift16(0u);
+        sJMBOUT1 = (uint16_t) DR_Shift16(0u);
+        lJMBOUT  = ((uint32_t) sJMBOUT1 << 16u) + sJMBOUT0;
     }
     return lJMBOUT;
 }
 
-int i_WriteJmbIn16(uint16_t dataX)
+int i_WriteJmbIn16(const uint16_t dataX)
 {
     uint16_t sJMBINCTL;
     uint16_t sJMBIN0;
-    uint32_t Timeout = 0;
-    sJMBIN0          = (uint16_t) (dataX & 0x0000FFFF);
+    uint32_t Timeout = 0u;
+    sJMBIN0          = (uint16_t) (dataX & 0x0000FFFFul);
     sJMBINCTL        = INREQ;
 
     IR_Shift(IR_JMB_EXCHANGE);
     do {
         Timeout++;
-        if (Timeout >= 3000) { return SC_ERR_GENERIC; }
+        if (Timeout >= 3000ul) { return SC_ERR_GENERIC; }
     }
-    while (!(DR_Shift16(0x0000) & IN0RDY) && Timeout < 3000);
-    if (Timeout < 3000)
+    while (!(DR_Shift16(0x0000u) & IN0RDY) && Timeout < 3000ul);
+    if (Timeout < 3000ul)
     {
         DR_Shift16(sJMBINCTL);
         DR_Shift16(sJMBIN0);
@@ -218,22 +218,22 @@ int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY)
 {
     uint16_t sJMBINCTL;
     uint16_t sJMBIN0, sJMBIN1;
-    uint32_t Timeout = 0;
+    uint32_t Timeout = 0u;
 
-    sJMBIN0          = (uint16_t) (dataX & 0x0000FFFF);
-    sJMBIN1          = (uint16_t) (dataY & 0x0000FFFF);
+    sJMBIN0          = (uint16_t) (dataX & 0x0000FFFFul);
+    sJMBIN1          = (uint16_t) (dataY & 0x0000FFFFul);
     sJMBINCTL        = JMB32B | INREQ;
 
     IR_Shift(IR_JMB_EXCHANGE);
     do {
         Timeout++;
-        if (Timeout >= 3000) { return SC_ERR_GENERIC; }
+        if (Timeout >= 3000ul) { return SC_ERR_GENERIC; }
     }
-    while (!(DR_Shift16(0x0000) & IN0RDY) && Timeout < 3000);
+    while (!(DR_Shift16(0x0000u) & IN0RDY) && Timeout < 3000ul);
 
-    if (Timeout < 3000)
+    if (Timeout < 3000ul)
     {
-        sJMBINCTL = 0x11;
+        sJMBINCTL = 0x11u;
         DR_Shift16(sJMBINCTL);
         DR_Shift16(sJMBIN0);
         DR_Shift16(sJMBIN1);
@@ -244,24 +244,24 @@ int i_WriteJmbIn32(uint16_t dataX, uint16_t dataY)
 void EntrySequences_RstHigh_SBW()
 {
     set_sbwtck(GPIO_STATE_LOW);
-    delay_us(800); // delay min 800us - clr SBW controller
+    delay_us(800ul); // delay min 800us - clr SBW controller
     set_sbwtck(GPIO_STATE_HIGH);
-    delay_us(50);
+    delay_us(50u);
 
     // SpyBiWire entry sequence
     // Reset Test logic
     set_sbwtdio(GPIO_STATE_LOW); // put device in normal operation: Reset = 0
     set_sbwtck(GPIO_STATE_LOW);  // TEST pin = 0
-    delay_ms(1);                 // wait 1ms (minimum: 100us)
+    delay_ms(1u);                // wait 1ms (minimum: 100us)
 
     // SpyBiWire entry sequence
     set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
-    delay_us(5);
+    delay_us(5u);
     set_sbwtck(GPIO_STATE_HIGH); // TEST pin = 1
-    delay_us(5);
+    delay_us(5u);
     // initial 1 PIN_SBWTCKs to enter sbw-mode
     set_sbwtck(GPIO_STATE_LOW);
-    delay_us(5);
+    delay_us(5u);
     set_sbwtck(GPIO_STATE_HIGH);
 }
 
@@ -269,30 +269,30 @@ void EntrySequences_RstLow_SBW()
 {
     set_sbwtck(GPIO_STATE_LOW);
     set_sbwtdio(GPIO_STATE_LOW); // Added for Low RST
-    delay_us(800);               // delay min 800us - clr SBW controller
+    delay_us(800ul);             // delay min 800us - clr SBW controller
     set_sbwtck(GPIO_STATE_HIGH);
-    delay_us(50);
+    delay_us(50u);
 
     // SpyBiWire entry sequence
     // Reset Test logic
     set_sbwtdio(GPIO_STATE_LOW); // put device in normal operation: Reset = 0
     set_sbwtck(GPIO_STATE_LOW);  // TEST pin = 0
-    delay_ms(1);                 // wait 1ms (minimum: 100us)
+    delay_ms(1u);                // wait 1ms (minimum: 100us)
 
     // SpyBiWire entry sequence
     set_sbwtdio(GPIO_STATE_HIGH); // Reset = 1
-    delay_us(5);
+    delay_us(5u);
     set_sbwtck(GPIO_STATE_HIGH); // TEST pin = 1
-    delay_us(5);
+    delay_us(5u);
     // initial 1 PIN_SBWTCKs to enter sbw-mode
     set_sbwtck(GPIO_STATE_LOW);
-    delay_us(5);
+    delay_us(5u);
     set_sbwtck(GPIO_STATE_HIGH);
 }
 
 uint16_t magicPattern(void)
 {
-    uint16_t deviceJtagID = 0;
+    uint16_t deviceJtagID = 0u;
 
     // Enable the JTAG interface to the device.
     ConnectJTAG();
@@ -332,11 +332,11 @@ uint16_t magicPattern(void)
 void ConnectJTAG()
 {
     sbw_transport_connect();
-    delay_ms(15);
+    delay_ms(15u);
 }
 
 void StopJtag(void)
 {
     sbw_transport_disconnect();
-    delay_ms(15);
+    delay_ms(15u);
 }

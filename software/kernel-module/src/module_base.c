@@ -117,7 +117,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     /* Initialize synchronization mechanism between PRU1 and our clock */
     sync_init(mem_interface_get_buffer_period_ns());
 
-    /* Setup the sysfs interface for access from userspace */
+    /* Set up the sysfs interface for access from userspace */
     sysfs_interface_init();
 
     return 0;
@@ -165,5 +165,5 @@ module_platform_driver(shepherd_driver);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kai Geissdoerfer");
 MODULE_DESCRIPTION("Shepherd kernel module for time synchronization and data exchange to PRUs");
-MODULE_VERSION("0.4.4");
+MODULE_VERSION("0.4.5");
 // MODULE_ALIAS("rpmsg:rpmsg-shprd"); // TODO: is this still needed?
