@@ -77,6 +77,11 @@ def cli(
     ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
 
 
+# #############################################################################
+#                               Misc-Commands
+# #############################################################################
+
+
 @cli.command(short_help="Power off shepherd nodes")
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
@@ -96,6 +101,37 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool):
     sys.exit(exit_code)
 
 
+@cli.command(short_help="Collects information about the hosts")
+@click.argument(
+    "output-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    default=Path("./")
+)
+@click.pass_context
+def inventorize(ctx: click.Context, output_path: Path) -> None:
+    file_path = Path("/var/shepherd/inventory.yaml")
+    ctx.obj["herd"].run_cmd(
+        sudo=True,
+        cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+    )
+    server_inv = Inventory.collect()
+    server_inv.to_file(path=Path(output_path) / "inventory_server.yaml", minimal=True)
+    failed = ctx.obj["herd"].get_file(
+        file_path,
+        output_path,
+        timestamp=False,
+        separate=False,
+        delete_src=True,
+    )
+    # TODO: best case - add all to one file or a new inventories-model?
+    sys.exit(failed)
+
+
+# #############################################################################
+#                               Task-Handling
+# #############################################################################
+
+
 @cli.command(
     short_help="Runs a task or set of tasks with provided config/task file (YAML).",
 )
@@ -104,6 +140,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool):
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
 @click.option("--online", "-o", is_flag=True, help="Wait and receive output")
+# TODO: maybe --attached is more intuitive
 @click.pass_context
 def run(ctx: click.Context, config: Path, online: bool):
     if online:
@@ -299,6 +336,11 @@ def emulate(
             logger.debug("-> max exit-code = %d", exit_code)
 
 
+# #############################################################################
+#                               Controlling Measurements
+# #############################################################################
+
+
 @cli.command(
     short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)",
 )
@@ -331,6 +373,11 @@ def stop(ctx: click.Context) -> None:
     logger.info("Shepherd stopped.")
     if exit_code > 0:
         logger.debug("-> max exit-code = %d", exit_code)
+
+
+# #############################################################################
+#                               File Handling
+# #############################################################################
 
 
 @cli.command(
@@ -419,31 +466,6 @@ def retrieve(
             raise Exception("shepherd still active after timeout")
 
     failed = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
-    sys.exit(failed)
-
-
-@cli.command(short_help="Collects information about the hosts")
-@click.argument(
-    "output-path",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-)
-@click.pass_context
-def inventorize(ctx: click.Context, output_path: Path) -> None:
-    file_path = Path("/var/shepherd/inventory.yaml")
-    ctx.obj["herd"].run_cmd(
-        sudo=True,
-        cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
-    )
-    server_inv = Inventory.collect()
-    server_inv.to_file(path=Path(output_path) / "inventory_server.yaml", minimal=True)
-    failed = ctx.obj["herd"].get_file(
-        file_path,
-        output_path,
-        timestamp=False,
-        separate=False,
-        delete_src=True,
-    )
-    # TODO: best case - add all to one file or a new inventories-model?
     sys.exit(failed)
 
 
