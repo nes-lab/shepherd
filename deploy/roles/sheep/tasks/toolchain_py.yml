@@ -26,6 +26,9 @@
         # normal shepherd-package
         "python3-click",
         "python3-psutil",
+        # shepherd-core - database-support
+        "python3-zstd",
+        # "python3-sqlalchemy",  # TODO: temporary
       ]
     state: present
     update_cache: true
