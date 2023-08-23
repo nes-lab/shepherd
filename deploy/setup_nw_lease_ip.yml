@@ -1,0 +1,117 @@
+---
+# Problem: despite sending out MAC-Addresses, the IPs seem random for the TUD testbed
+
+- name: Bind / lease an IP for a specific MAC (repeat until all is fine)
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    MAC2IP: # hardcoded LUT with key: uppercase MAC & with '_' instead of ':'
+      18_62_E4_E4_41_8D: ["sheep01", "192.168.165.201"]
+      18_62_E4_D0_DE_3F: ["sheep02", "192.168.165.202"]
+      18_62_E4_D0_9E_6A: ["sheep03", "192.168.165.203"]
+      18_62_E4_D0_61_4D: ["sheep04", "192.168.165.204"]
+      18_62_E4_E3_6E_13: ["sheep05", "192.168.165.205"]
+      18_62_E4_D0_AF_0B: ["sheep06", "192.168.165.206"]
+      18_62_E4_E4_39_D7: ["sheep07", "192.168.165.207"]
+      18_62_E4_D0_E5_FB: ["sheep08", "192.168.165.208"]
+      18_62_E4_D0_D4_A9: ["sheep09", "192.168.165.209"]
+      18_62_E4_E4_24_C5: ["sheep10", "192.168.165.210"]
+      18_62_E4_E4_0E_5D: ["sheep11", "192.168.165.211"]
+      18_62_E4_D0_AA_F7: ["sheep12", "192.168.165.212"]
+      18_62_E4_D0_D7_70: ["sheep13", "192.168.165.213"]
+      18_62_E4_E3_89_43: ["sheep14", "192.168.165.214"]
+      18_62_E4_D0_BC_79: ["sheep15", "192.168.165.215"]
+      18_62_E4_D0_59_40: ["sheep16", "192.168.165.216"]
+      18_62_E4_E3_F8_00: ["sheep17", "192.168.165.217"]
+      18_62_E4_D0_DA_04: ["sheep18", "192.168.165.218"]
+      18_62_E4_D0_CB_D3: ["sheep19", "192.168.165.219"]
+      18_62_E4_D0_CB_B8: ["sheep20", "192.168.165.220"]
+      18_62_E4_D0_CE_79: ["sheep21", "192.168.165.221"]
+      18_62_E4_D1_16_76: ["sheep22", "192.168.165.222"]
+      18_62_E4_E3_B0_9D: ["sheep23", "192.168.165.223"]
+      18_62_E4_E4_2C_5D: ["sheep24", "192.168.165.224"]
+      18_62_E4_D0_C3_F6: ["sheep25", "192.168.165.225"]
+      18_62_E4_D0_B6_C1: ["sheep26", "192.168.165.226"]
+      18_62_E4_D0_C3_DB: ["sheep27", "192.168.165.227"]
+      18_62_E4_D0_C5_5E: ["sheep28", "192.168.165.228"]
+      18_62_E4_D0_E5_BF: ["sheep29", "192.168.165.229"]
+      18_62_E4_D1_27_47: ["sheep30", "192.168.165.230"]
+
+  tasks:
+
+    - name: Determine local MAC-Address
+      ansible.builtin.shell: # pipefail-setting prevents surprises
+        cmd: ip link show eth0 | grep link/ether | cut -d ' ' --fields=6
+      register: mac_ret
+      failed_when: false
+      changed_when: false
+
+    - name: reformat MAC-Address
+      ansible.builtin.set_fact:
+        mac_add: "{{ mac_ret.stdout | upper | replace(':','_') }}"
+
+    - name: Lookup new host-name & -ip
+      ansible.builtin.set_fact:
+        host_name: "{{ MAC2IP[mac_add][0] }}"
+        host_ip: "{{ MAC2IP[mac_add][1] }}"
+
+    - name: show new Name
+      ansible.builtin.debug:
+        var: host_name
+
+    - name: Configure a Lease for a specific IP
+      ansible.builtin.lineinfile:
+        dest: '/etc/dhcp/dhclient.conf'
+        regexp: "{{ item.regexpress }}"
+        line: "{{ item.replacement }}"
+        state: present
+      loop:
+        - {
+          regexpress: "^lease {.*$",
+          replacement: "lease {interface 'eth0'; fixed-address {{ host_ip }};}"
+        }
+
+    - name: Return current lease
+      ansible.builtin.shell:
+        cmd: dhclient -r -v eth0
+      failed_when: false
+      changed_when: true
+      when: false
+
+    - name: Delete lease-file
+      ansible.builtin.file:
+        path: "/var/lib/dhcp/dhclient.leases"
+        state: absent
+      when: host_name != inventory_hostname
+
+    - name: Set hostname (from MAC)
+      ansible.builtin.hostname:
+        name: "{{ MAC2IP[mac_add][0] }}"
+      when: host_name != inventory_hostname
+
+    - name: Adjust /etc/hosts (from MAC)
+      ansible.builtin.lineinfile:
+        dest: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+.+\.localdomain\s+.+'
+        line: "127.0.1.1  {{ host_name }}.localdomain  {{ host_name }}"
+        state: present
+      when: host_name != inventory_hostname
+
+    - name: Ask for new lease
+      ansible.builtin.shell:
+        cmd: dhclient -v eth0
+      failed_when: false
+      changed_when: true
+      when: host_name != inventory_hostname
+
+  post_tasks:
+
+    - name: Restart devices
+      ansible.builtin.reboot:
+        connect_timeout: 20
+        reboot_timeout: 100
+      failed_when: false
+      when: host_name != inventory_hostname
+      # these nodes could not come back - as the IPs are about to change
