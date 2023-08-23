@@ -21,7 +21,7 @@
     mode: a+x
   register: dl_cgt_ret
   become: true
-  retries: 3
+  retries: 5
   until: dl_cgt_ret is not failed
   tags:
     - pru-tools
@@ -31,7 +31,7 @@
   # TODO: could be replaced with builtin.script (host-script to remote target)
   become: true
   register: inst_cgt_ret
-  retries: 3 # TODO: experimental, this step failed recently on 2/4 nodes
+  retries: 5 # TODO: experimental, this step failed recently on 2/4 nodes
   until: inst_cgt_ret is not failed
   changed_when: true
   tags:
@@ -47,7 +47,7 @@
   become: true
   register: dl_pssp_ret
   until: dl_pssp_ret is not failed
-  retries: 3
+  retries: 5
   tags:
     - pru-tools
 

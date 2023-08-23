@@ -28,7 +28,6 @@
 - name: Main-Software for Shepherd
   hosts: sheep
   become: true
-  strategy: free
   roles:
     - sheep
   # ⤷ NOTE: will only be installed once (later only sw-rebuild)
