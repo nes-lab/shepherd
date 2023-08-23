@@ -43,7 +43,7 @@
 
     - name: Determine local MAC-Address
       ansible.builtin.shell: # pipefail-setting prevents surprises
-        cmd: ip link show eth0 | grep link/ether | cut -d ' ' --fields=6
+        cmd: "ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
       register: mac_ret
       failed_when: false
       changed_when: false
@@ -69,8 +69,7 @@
         state: present
 
     - name: Return current lease
-      ansible.builtin.shell:
-        cmd: dhclient -r -v eth0
+      ansible.builtin.shell: "dhclient -r -v eth0"
       failed_when: false
       changed_when: true
       when: false
@@ -95,8 +94,7 @@
       when: host_name != inventory_hostname
 
     - name: Ask for new lease
-      ansible.builtin.shell:
-        cmd: dhclient -v eth0
+      ansible.builtin.shell: "dhclient -v eth0"
       failed_when: false
       changed_when: true
       when: host_name != inventory_hostname

@@ -1,6 +1,7 @@
 ---
 - name: Base setup
   hosts: all
+  strategy: free
   vars:
     mount_path: /opt/shepherd-dev
   tasks:

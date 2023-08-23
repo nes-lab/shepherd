@@ -55,9 +55,8 @@
   when: maintenance_update_kernel | bool
 
 - name: SCRIPT - Update Bootloader
-  ansible.builtin.shell: |
-    set -o pipefail # <- prevents surprises
-    yes | /opt/scripts/tools/developers/update_bootloader.sh
+  ansible.builtin.shell: # pipefail-setting prevents surprises
+    cmd: "set -o pipefail && yes | /opt/scripts/tools/developers/update_bootloader.sh"
   changed_when: true
   when: maintenance_update_bootloader | bool
   failed_when: false # certificate may be invalid
