@@ -1,0 +1,42 @@
+---
+# Problem: fresh ubuntu-image just boots from sd-card, updating several sd-cards is a pain
+# Solution: flash image on cards, boot in testbed
+# NOTE: modify inventory to generic one:
+# sheep:
+#   hosts:
+#     192.168.165.[192:254]
+
+- name: Activate eMMC-Flasher on fresh Ubuntu-Images (on SD-Card, booted by BBone)
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    default_user: ubuntu
+    default_password: temppwd
+
+  pre_tasks:
+
+    - name: Switch ansible-config to use default-credentials of distribution
+      ansible.builtin.set_fact:
+        # special internal variables:
+        ansible_user: "{{ default_user }}"
+        ansible_password: "{{ default_password }}"
+        ansible_become_password: "{{ default_password }}"
+
+  tasks:
+
+    - name: Send MAC as unique ID
+      ansible.builtin.lineinfile:
+        dest: '/boot/uEnv.txt'
+        regexp: "#?cmdline=init=/usr/sbin/init-beagle-flasher.*$"
+        line: "cmdline=init=/usr/sbin/init-beagle-flasher"
+        state: present
+
+  post_tasks:
+
+    - name: Restart device
+      ansible.builtin.reboot:
+        connect_timeout: 20
+        reboot_timeout: 100
+      failed_when: false

@@ -64,14 +64,9 @@
     - name: Configure a Lease for a specific IP
       ansible.builtin.lineinfile:
         dest: '/etc/dhcp/dhclient.conf'
-        regexp: "{{ item.regexpress }}"
-        line: "{{ item.replacement }}"
+        regexp: "^lease {.*$"
+        line: "lease {interface 'eth0'; fixed-address {{ host_ip }};}"
         state: present
-      loop:
-        - {
-          regexpress: "^lease {.*$",
-          replacement: "lease {interface 'eth0'; fixed-address {{ host_ip }};}"
-        }
 
     - name: Return current lease
       ansible.builtin.shell:
