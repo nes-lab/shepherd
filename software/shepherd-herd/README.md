@@ -15,7 +15,7 @@
 
 ## Installation
 
-*shepherd-herd* is a pure python package and available on PyPI.
+*shepherd-herd* is a python package and available on [PyPI](https://pypi.org/project/shepherd_herd).
 Use your python package manager to install it.
 For example, using pip:
 
@@ -23,7 +23,7 @@ For example, using pip:
 pip3 install shepherd-herd
 ```
 
-For install directly from GitHub-Sources (here `dev`-branch:
+For install directly from GitHub-Sources (here `dev`-branch):
 
 ```Shell
  pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/shepherd-herd -U
@@ -89,7 +89,12 @@ Or select individual sheep from the herd:
 shepherd-herd --limit sheep0,sheep2, shell-cmd "echo 'hello'"
 ```
 
-## Examples
+## Library-Examples
+
+See [example-files](https://github.com/orgua/shepherd/tree/main/software/shepherd-herd/examples/) for details.
+
+
+## CLI-Examples
 
 Here, we just provide a selected set of examples of how to use *shepherd-herd*. It is assumed that the `herd.yml` is located at the recommended config path.
 
@@ -150,8 +155,8 @@ Explanation:
 - a set of tasks is send to the individual sheep and executed there
 - [tasks](https://github.com/orgua/shepherd-datalib/tree/main/shepherd_core/shepherd_core/data_models/task) currently range from
 
-  - modifying firmware / patching a node-id, 
-  - flashing firmware to the targets, 
+  - modifying firmware / patching a node-id,
+  - flashing firmware to the targets,
   - running an emulation- or harvest-task
   - these individual tasks can be bundled up in observer-tasks -> a task-set for one sheep
   - these observer-tasks can be bundled up once more into testbed-tasks

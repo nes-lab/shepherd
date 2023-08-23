@@ -105,7 +105,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool):
 @click.argument(
     "output-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    default=Path("./")
+    default=Path("./"),
 )
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
