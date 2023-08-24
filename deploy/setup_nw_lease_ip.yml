@@ -105,6 +105,7 @@
       ansible.builtin.reboot:
         connect_timeout: 20
         reboot_timeout: 100
+        post_reboot_delay: 30
       failed_when: false
       when: host_name != inventory_hostname
       # these nodes could not come back - as the IPs are about to change

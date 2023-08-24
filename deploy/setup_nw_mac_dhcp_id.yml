@@ -99,6 +99,7 @@
       ansible.builtin.reboot:
         connect_timeout: 20
         reboot_timeout: 100
+        post_reboot_delay: 30
       failed_when: false
       # these nodes should not come back - as the range is about to change
       # from here:

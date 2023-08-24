@@ -52,6 +52,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
   when: maintenance_update_kernel | bool
 
 - name: SCRIPT - Update Bootloader
@@ -91,6 +92,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
 
 - name: Cleanup Beaglebone
   ansible.builtin.include_role:
@@ -104,3 +106,4 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30

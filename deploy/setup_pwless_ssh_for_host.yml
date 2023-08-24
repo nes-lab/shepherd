@@ -27,3 +27,4 @@
       ansible.builtin.reboot:
         connect_timeout: 20
         reboot_timeout: 200
+        post_reboot_delay: 30
