@@ -14,7 +14,9 @@ from .calibrator import INSTR_CAL_EMU
 from .calibrator import INSTR_CAL_HRV
 from .calibrator import Calibrator
 from .cli_helper import cli_setup_callback
+from .cli_helper import emu_opt_t
 from .cli_helper import host_arg_t
+from .cli_helper import hrv_opt_t
 from .cli_helper import ifile_opt_t
 from .cli_helper import ofile_opt_t
 from .cli_helper import pass_opt_t
@@ -35,12 +37,9 @@ serial_opt_t = typer.Option(
     help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
 )
 version_opt_t = typer.Option(
-    default=None,
+    None,
     help="Cape version number, max 4 Char, e.g. 24B0, reflecting hardware revision",
 )
-
-hrv_opt_t = typer.Option(default=False, help="only handle harvester")
-emu_opt_t = typer.Option(default=False, help="only handle emulator")
 
 
 @cli_cal.command()

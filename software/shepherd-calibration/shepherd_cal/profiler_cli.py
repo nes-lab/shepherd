@@ -11,7 +11,9 @@ import typer
 from .calibrator import INSTR_4WIRE
 from .calibrator import Calibrator
 from .cli_helper import cli_setup_callback
+from .cli_helper import emu_opt_t
 from .cli_helper import host_arg_t
+from .cli_helper import hrv_opt_t
 from .cli_helper import ofile_opt_t
 from .cli_helper import pass_opt_t
 from .cli_helper import smu_2w_opt_t
@@ -29,10 +31,12 @@ cli_pro = typer.Typer(
     help="Sub-commands for profiling the analog frontends",
 )
 
-hrv_opt_t = typer.Option(default=False, help="only handle harvester")
-emu_opt_t = typer.Option(default=False, help="only handle emulator")
-short_opt_t = (typer.Option(default=False, help="reduce I&V steps (2x faster)"),)
-quiet_opt_t = typer.Option(default=False, help="unattended (setup prompt)")
+short_opt_t = typer.Option(
+    False, "--short", "-s", is_flag=True, help="reduce I&V steps (2x faster)"
+)
+quiet_opt_t = typer.Option(
+    False, "--quiet", "-q", is_flag=True, help="unattended (setup prompt)"
+)
 
 
 @cli_pro.command()
@@ -114,6 +118,7 @@ out_file_opt_t = typer.Option(
 )
 plot_opt_t = typer.Option(
     default=False,
+    is_flag=True,
     help="visualize the profile",
 )
 
