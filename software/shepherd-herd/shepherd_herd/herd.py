@@ -2,7 +2,6 @@
 Herd-Baseclass
 """
 import contextlib
-import logging
 import threading
 import time
 from datetime import datetime
@@ -15,7 +14,6 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import chromalog
 import yaml
 from fabric import Connection
 from fabric import Group
@@ -23,28 +21,7 @@ from fabric import Result
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
 
-chromalog.basicConfig(format="%(message)s")
-logger = logging.getLogger("shepherd-herd")
-verbose_level = 0
-# Note: defined here to avoid circular import
-
-
-def get_verbose_level() -> int:
-    global verbose_level
-    return max(1, verbose_level)
-
-
-def set_verbose_level(verbose: int = 2) -> None:
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-    global verbose_level
-    verbose_level = min(3, verbose)
+from .logger import logger
 
 
 class Herd:
@@ -61,17 +38,18 @@ class Herd:
 
     def __init__(
         self,
-        inventory: str = "",
-        limit: str = "",
+        inventory: Optional[str] = None,
+        limit: Optional[str] = None,
         user: Optional[str] = None,
         key_filepath: Optional[Path] = None,
     ):
         limits_list: Optional[List[str]] = None
-        if limit.rstrip().endswith(","):
-            limits_list = limit.split(",")[:-1]
-
-        if inventory.rstrip().endswith(","):
-            hostlist = inventory.split(",")[:-1]
+        if isinstance(limit, str):
+            limits_list = limit.split(",")
+            limits_list = [_host for _host in limits_list if len(_host) >= 1]
+        if isinstance(inventory, str):
+            hostlist = inventory.split(",")
+            hostlist = [_host for _host in hostlist if len(_host) >= 1]
             if limits_list is not None:
                 hostlist = list(set(hostlist) & set(limits_list))
             hostnames = {hostname: hostname for hostname in hostlist}
@@ -99,6 +77,7 @@ class Herd:
                     inventory_data = yaml.safe_load(stream)
                 except yaml.YAMLError:
                     raise FileNotFoundError(f"Couldn't read inventory file {host_path}")
+            logger.info("Used Shepherd-Inventory from '%s'", host_path.as_posix())
 
             hostlist = []
             hostnames: Dict[str, str] = {}
@@ -363,6 +342,8 @@ class Herd:
             raise Exception(
                 f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
+        if ts_max.tzinfo is None:
+            logger.error("Provided time from host should have time-zone data!")
         # We need to estimate a future point in time such that all nodes are ready
         ts_start = ts_max + timedelta(seconds=self.start_delay_s)
         return ts_start, float(self.start_delay_s + ts_diff / 2)

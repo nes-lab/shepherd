@@ -6,7 +6,8 @@ import numpy as np
 import pytest
 import yaml
 from shepherd_data import Writer
-from shepherd_herd.cli import cli
+from shepherd_herd.herd_cli import cli
+from typer.testing import CliRunner
 
 
 def extract_first_sheep(herd_path: Path) -> str:
@@ -18,9 +19,9 @@ def extract_first_sheep(herd_path: Path) -> str:
     return list(inventory_data["sheep"]["hosts"].keys())[0]
 
 
-def wait_for_end(cli_run, tmin: float = 0, timeout: float = 999) -> bool:
+def wait_for_end(cli_run: CliRunner, tmin: float = 0, timeout: float = 999) -> bool:
     ts_start = time.time()
-    while cli_run.invoke(cli, ["-vvv", "status"]).exit_code > 0:
+    while cli_run.invoke(cli, ["status", "-v"]).exit_code > 0:
         duration = time.time() - ts_start
         if duration > timeout:
             raise TimeoutError(f"Shepherd ran into timeout ({timeout} s)")
@@ -52,12 +53,12 @@ def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> 
 
 
 @pytest.fixture
-def data_h5_path(tmp_path) -> Path:
+def data_h5_path(tmp_path: Path) -> Path:
     return generate_h5_file(tmp_path)
 
 
 @pytest.fixture
-def local_herd(tmp_path) -> Path:
+def local_herd(tmp_path: Path) -> Path:
     # locations copied from herd.cli()
     inventories = [
         "/etc/shepherd/herd.yml",
@@ -77,15 +78,15 @@ def local_herd(tmp_path) -> Path:
 
 
 @pytest.fixture
-def stopped_herd(cli_runner):
-    cli_runner.invoke(cli, ["-vvv", "stop"])
+def stopped_herd(cli_runner: CliRunner):
+    cli_runner.invoke(cli, ["stop", "-v"])
     wait_for_end(cli_runner)
     # make sure kernel module is active
     cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "run",
+            "-v",
             "--sudo",
             "'modprobe -a shepherd'",
         ],

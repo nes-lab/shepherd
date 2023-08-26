@@ -1,21 +1,22 @@
 import time
 
 import pytest
-from shepherd_herd.cli import cli
+from shepherd_herd.herd_cli import cli
+from typer.testing import CliRunner
 
 from .conftest import generate_h5_file
 from .conftest import wait_for_end
 
 
 @pytest.mark.timeout(60)
-def test_emu_prepare(cli_runner, stopped_herd, tmp_path) -> None:
+def test_emu_prepare(cli_runner: CliRunner, stopped_herd, tmp_path) -> None:
     # distribute file and emulate from it in following tests
     test_file = generate_h5_file(tmp_path, "pytest_src.h5")
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "distribute",
+            "-v",
             "--force-overwrite",
             test_file.as_posix(),
         ],
@@ -25,12 +26,12 @@ def test_emu_prepare(cli_runner, stopped_herd, tmp_path) -> None:
 
 
 @pytest.mark.timeout(120)
-def test_emu_example(cli_runner, stopped_herd) -> None:
+def test_emu_example(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "emulate",
+            "-v",
             "--virtual-source",
             "BQ25504",
             "-o",
@@ -43,12 +44,12 @@ def test_emu_example(cli_runner, stopped_herd) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_emu_example_fail(cli_runner, stopped_herd) -> None:
+def test_emu_example_fail(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "emulate",
+            "-v",
             "--virtual-source",
             "BQ25504",
             "-o",
@@ -61,7 +62,7 @@ def test_emu_example_fail(cli_runner, stopped_herd) -> None:
 
 
 @pytest.mark.timeout(120)
-def test_emu_minimal(cli_runner, stopped_herd) -> None:
+def test_emu_minimal(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -74,12 +75,12 @@ def test_emu_minimal(cli_runner, stopped_herd) -> None:
 
 
 @pytest.mark.timeout(120)
-def test_emu_all_args_long(cli_runner, stopped_herd) -> None:
+def test_emu_all_args_long(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "emulate",
+            "-v",
             "--duration",
             "10",
             "--force-overwrite",
@@ -103,13 +104,13 @@ def test_emu_all_args_long(cli_runner, stopped_herd) -> None:
 
 
 @pytest.mark.timeout(120)
-def test_emu_all_args_short(cli_runner, stopped_herd) -> None:
+def test_emu_all_args_short(cli_runner: CliRunner, stopped_herd) -> None:
     # short arg or opposite bool val
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "emulate",
+            "-v",
             "-d",
             "10",
             "-f",
@@ -133,12 +134,12 @@ def test_emu_all_args_short(cli_runner, stopped_herd) -> None:
 
 
 @pytest.mark.timeout(150)
-def test_emu_no_start(cli_runner, stopped_herd) -> None:
+def test_emu_no_start(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
             "emulate",
+            "-v",
             "-d",
             "20",
             "-o",
@@ -152,14 +153,14 @@ def test_emu_no_start(cli_runner, stopped_herd) -> None:
     # manual start
     res = cli_runner.invoke(
         cli,
-        ["-vvv", "start"],
+        ["start", "-v"],
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=15)
 
 
 @pytest.mark.timeout(60)
-def test_emu_force_stop(cli_runner, stopped_herd) -> None:
+def test_emu_force_stop(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -172,7 +173,7 @@ def test_emu_force_stop(cli_runner, stopped_herd) -> None:
     # forced stop
     res = cli_runner.invoke(
         cli,
-        ["-vvv", "stop"],
+        ["stop", "-v"],
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=10)

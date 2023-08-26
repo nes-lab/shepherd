@@ -147,7 +147,7 @@ For more virtual source models see [virtual_source_fixture.yaml](https://github.
 An individual task or set of tasks can be generated from experiments via the [shepherd-core](https://pypi.org/project/shepherd-core/) of the [datalib](https://github.com/orgua/shepherd-datalib)
 
 ```Shell
-shepherd-herd run experiment_file.yaml --online
+shepherd-herd run experiment_file.yaml --attach
 ```
 
 Explanation:

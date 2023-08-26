@@ -73,8 +73,16 @@ ifile_opt_t = typer.Option(
 )
 
 hrv_opt_t = typer.Option(
-    False, "--harvester-only", "-h", is_flag=True, help="only handle harvester"
+    False,
+    "--harvester-only",
+    "-h",
+    is_flag=True,
+    help="only handle harvester",
 )
 emu_opt_t = typer.Option(
-    False, "--emulator-only", "-e", is_flag=True, help="only handle emulator"
+    False,
+    "--emulator-only",
+    "-e",
+    is_flag=True,
+    help="only handle emulator",
 )

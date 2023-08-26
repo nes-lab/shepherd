@@ -32,10 +32,18 @@ cli_pro = typer.Typer(
 )
 
 short_opt_t = typer.Option(
-    False, "--short", "-s", is_flag=True, help="reduce I&V steps (2x faster)"
+    False,
+    "--short",
+    "-s",
+    is_flag=True,
+    help="reduce I&V steps (2x faster)",
 )
 quiet_opt_t = typer.Option(
-    False, "--quiet", "-q", is_flag=True, help="unattended (setup prompt)"
+    False,
+    "--quiet",
+    "-q",
+    is_flag=True,
+    help="unattended (setup prompt)",
 )
 
 
