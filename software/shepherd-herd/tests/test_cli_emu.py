@@ -1,8 +1,8 @@
 import time
 
 import pytest
+from click.testing import CliRunner
 from shepherd_herd.herd_cli import cli
-from typer.testing import CliRunner
 
 from .conftest import generate_h5_file
 from .conftest import wait_for_end
@@ -15,8 +15,8 @@ def test_emu_prepare(cli_runner: CliRunner, stopped_herd, tmp_path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "distribute",
             "-v",
+            "distribute",
             "--force-overwrite",
             test_file.as_posix(),
         ],
@@ -30,8 +30,8 @@ def test_emu_example(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulate",
             "-v",
+            "emulate",
             "--virtual-source",
             "BQ25504",
             "-o",
@@ -48,8 +48,8 @@ def test_emu_example_fail(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulate",
             "-v",
+            "emulate",
             "--virtual-source",
             "BQ25504",
             "-o",
@@ -79,8 +79,8 @@ def test_emu_all_args_long(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulate",
             "-v",
+            "emulate",
             "--duration",
             "10",
             "--force-overwrite",
@@ -109,8 +109,8 @@ def test_emu_all_args_short(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulate",
             "-v",
+            "emulate",
             "-d",
             "10",
             "-f",
@@ -138,8 +138,8 @@ def test_emu_no_start(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "emulate",
             "-v",
+            "emulate",
             "-d",
             "20",
             "-o",
@@ -153,7 +153,7 @@ def test_emu_no_start(cli_runner: CliRunner, stopped_herd) -> None:
     # manual start
     res = cli_runner.invoke(
         cli,
-        ["start", "-v"],
+        ["-v", "start"],
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=15)
@@ -173,7 +173,7 @@ def test_emu_force_stop(cli_runner: CliRunner, stopped_herd) -> None:
     # forced stop
     res = cli_runner.invoke(
         cli,
-        ["stop", "-v"],
+        ["-v", "stop"],
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=10)

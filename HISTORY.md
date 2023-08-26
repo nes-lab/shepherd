@@ -4,9 +4,8 @@
 
 - ansible: speedup, bugfixes
 - ansible: script to activate emmc-flasher
-- herd: refactor, improve doc
-- herd uses typer for cli now
-- **tested**: ansible-installer
+- herd: refactor, improve doc, small bugfixes, general improvements, more functionality in herd-class
+- **tested**: ansible-installer, herd, sheep
 
 ## v0.4.5 - 2023.08.23
 

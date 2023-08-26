@@ -5,9 +5,14 @@ from shutil import copy
 import numpy as np
 import pytest
 import yaml
+from click.testing import CliRunner
 from shepherd_data import Writer
 from shepherd_herd.herd_cli import cli
-from typer.testing import CliRunner
+
+
+@pytest.fixture
+def cli_runner() -> CliRunner:
+    return CliRunner()
 
 
 def extract_first_sheep(herd_path: Path) -> str:
@@ -19,9 +24,9 @@ def extract_first_sheep(herd_path: Path) -> str:
     return list(inventory_data["sheep"]["hosts"].keys())[0]
 
 
-def wait_for_end(cli_run: CliRunner, tmin: float = 0, timeout: float = 999) -> bool:
+def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -> bool:
     ts_start = time.time()
-    while cli_run.invoke(cli, ["status", "-v"]).exit_code > 0:
+    while cli_runner.invoke(cli, ["-v", "status"]).exit_code > 0:
         duration = time.time() - ts_start
         if duration > timeout:
             raise TimeoutError(f"Shepherd ran into timeout ({timeout} s)")
@@ -79,14 +84,14 @@ def local_herd(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def stopped_herd(cli_runner: CliRunner):
-    cli_runner.invoke(cli, ["stop", "-v"])
+    cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active
     cli_runner.invoke(
         cli,
         [
-            "run",
             "-v",
+            "run",
             "--sudo",
             "'modprobe -a shepherd'",
         ],

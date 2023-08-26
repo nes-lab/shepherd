@@ -6,18 +6,22 @@ from typing import Optional
 
 import click
 import shepherd_core
-import typer
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.data_models.testbed import TargetPort
-from shepherd_core.inventory import Inventory
 
 from . import __version__
 from .herd import Herd
 from .logger import activate_verbose
 from .logger import logger as log
+
+# TODO:
+#  - click.command shorthelp can also just be the first sentence of docstring
+#  https://click.palletsprojects.com/en/8.1.x/documentation/#command-short-help
+#  - document arguments in their docstring (has no help=)
+#  - arguments can be configured in a dict and standardized across tools
 
 
 def exit_gracefully(*args) -> None:  # type: ignore
@@ -25,250 +29,171 @@ def exit_gracefully(*args) -> None:  # type: ignore
     sys.exit(0)
 
 
-def cli_setup_callback(verbose: bool = False, print_version: bool = False) -> None:
+@click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
+@click.option(
+    "--inventory",
+    "-i",
+    type=click.STRING,
+    default=None,
+    help="List of target hosts as comma-separated string or path to ansible-style yaml file",
+)
+@click.option(
+    "--limit",
+    "-l",
+    type=click.STRING,
+    default=None,
+    help="Comma-separated list of hosts to limit execution to",
+)
+@click.option(
+    "--user",
+    "-u",
+    type=click.STRING,
+    default=None,
+    help="User name for login to nodes",
+)
+@click.option(
+    "--key-filepath",
+    "-k",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    default=None,
+    help="Path to private ssh key file",
+)
+@click.option("-v", "--verbose", is_flag=True)
+@click.option(
+    "--version",
+    is_flag=True,
+    help="Prints version-infos (combinable with -v)",
+)
+@click.pass_context
+def cli(
+    ctx: click.Context,
+    inventory: Optional[str],
+    limit: Optional[str],
+    user: Optional[str],
+    key_filepath: Optional[Path],
+    verbose: bool,
+    version: bool,
+):
+    """A primary set of options to configure how to interface the herd"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
         activate_verbose()
 
-    if print_version:
+    if version:
         log.info("Shepherd-Cal v%s", __version__)
         log.debug("Shepherd-Core v%s", shepherd_core.__version__)
         log.debug("Python v%s", sys.version)
-        log.debug("Typer v%s", typer.__version__)
         log.debug("Click v%s", click.__version__)
 
+    if not ctx.invoked_subcommand:
+        click.echo("Please specify a valid command")
 
-cli = typer.Typer(help="Control-Instance for Shepherd-Testbed-Instances")
-
-# sheep-related params
-invent_opt_t = typer.Option(
-    None,
-    "-i",
-    help="List of target hosts as comma-separated string or path to ansible-style yaml config",
-)
-limit_opt_t = typer.Option(
-    None,
-    "-l",
-    help="Comma-separated list of hosts to limit execution to",
-)
-user_opt_t = typer.Option(None, "-u", help="User name for login to nodes")
-key_opt_t = typer.Option(None, "-k", help="Path to private ssh key file")
-verbose_opt_t = typer.Option(
-    False,
-    "-v",
-    is_flag=True,
-    help="Report at debug- instead of info-level",
-)
-version_opt_t = typer.Option(
-    False, is_flag=True, help="Prints version-infos (combinable with -v)"
-)
-# oddity -> first implicit parameters are (default, [longname,] shortname)
+    ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
 
 
 # #############################################################################
 #                               Misc-Commands
 # #############################################################################
 
-# unique inputs
-restart_opt_t = typer.Option(False, "-r", is_flag=True, help="Reboot")
-cmd_arg_t = typer.Argument(default=..., help="Shell-command to execute")
-sudo_opt_t = typer.Option(False, "-s", is_flag=True, help="Run command as superuser")
-opath_arg_t = typer.Argument(
-    default=Path("./"),
-    dir_okay=True,
-    file_okay=False,
-    exists=True,
-    help="save-file, will be generic with timestamp if not provided",
-)
 
-
-@cli.command(help="Power off shepherd nodes")
-def poweroff(
-    restart: bool = restart_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    exit_code = herd.poweroff(restart)
+@cli.command(short_help="Power off shepherd nodes")
+@click.option("--restart", "-r", is_flag=True, help="Reboot")
+@click.pass_context
+def poweroff(ctx: click.Context, restart: bool):
+    exit_code = ctx.obj["herd"].poweroff(restart)
     sys.exit(exit_code)
 
 
-@cli.command(help="Run COMMAND on the shell")
-def shell_cmd(
-    command: str = cmd_arg_t,
-    sudo: bool = sudo_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    replies = herd.run_cmd(sudo, command)
-    herd.print_output(replies, 2)  # info-level
+@cli.command(short_help="Run COMMAND on the shell")
+@click.pass_context
+@click.argument("command", type=click.STRING)
+@click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
+def shell_cmd(ctx: click.Context, command: str, sudo: bool):
+    replies = ctx.obj["herd"].run_cmd(sudo, command)
+    ctx.obj["herd"].print_output(replies, verbose=True)
     exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
 
 
-@cli.command(help="Collects information about the hosts")
-def inventorize(
-    output_path: Path = opath_arg_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-) -> None:
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
+@cli.command(short_help="Collects information about the hosts")
+@click.argument(
+    "output-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    default=Path("./"),
+)
+@click.pass_context
+def inventorize(ctx: click.Context, output_path: Path) -> None:
     file_path = Path("/var/shepherd/inventory.yaml")
-    herd.run_cmd(
+    ctx.obj["herd"].run_cmd(
         sudo=True,
         cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
     )
-    server_inv = Inventory.collect()
-    output_path = Path(output_path)
-    server_inv.to_file(path=Path(output_path) / "inventory_server.yaml", minimal=True)
-    failed = herd.get_file(
-        file_path,
-        output_path,
-        timestamp=False,
-        separate=False,
-        delete_src=True,
-    )
-    # TODO: best case - add all to one file or a new inventories-model?
+    failed = ctx.obj["herd"].inventorize(output_path)
     sys.exit(failed)
-    # TODO: decide how to handle this. there is a typer-fn for that, also just return?
 
 
 # #############################################################################
 #                               Task-Handling
 # #############################################################################
 
-cfg_arg_t = typer.Argument(
-    ...,
-    exists=True,
-    readable=True,
-    file_okay=True,
-    dir_okay=False,
-    help="YAML-file with wrapped Task-model",
-)
-attach_opt_t = typer.Option(False, "-a", is_flag=True, help="Wait and receive output")
-
 
 @cli.command(
-    help="Runs a task or set of tasks",
+    short_help="Runs a task or set of tasks with provided config/task file (YAML).",
 )
-def run(
-    config: Path = cfg_arg_t,
-    attach: bool = attach_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    if attach:
-        remote_path = Path("/etc/shepherd/config_for_herd.yaml")
-        herd.put_file(config, remote_path, force_overwrite=True)
-        command = f"shepherd-sheep -vvvv run {remote_path.as_posix()}"
-        replies = herd.run_cmd(sudo=True, cmd=command)
-        exit_code = max([reply.exited for reply in replies.values()])
-        if exit_code:
-            log.error("Programming - Procedure failed - will exit now!")
-        herd.print_output(replies, 3)  # requires debug level
-        sys.exit(exit_code)
-    else:
-        remote_path = Path("/etc/shepherd/config.yaml")
-        herd.put_file(config, remote_path, force_overwrite=True)
-        exit_code = herd.start_measurement()
-        log.info("Shepherd started.")
-        if exit_code > 0:
-            log.debug("-> max exit-code = %d", exit_code)
+@click.argument(
+    "config",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+)
+@click.option("--attach", "-a", is_flag=True, help="Wait and receive output")
+@click.pass_context
+def run(ctx: click.Context, config: Path, attach: bool):
+    exit_code = ctx.obj["herd"].run_task(config, attach)
+    sys.exit(exit_code)
 
 
-opath_opt_t = typer.Option(
-    Herd.path_default,
+@cli.command(short_help="Record IV data from a harvest-source")
+@click.option(
     "--output-path",
     "-o",
-    dir_okay=True,
-    file_okay=True,
-    exists=False,
+    type=click.Path(dir_okay=True, file_okay=True),
+    default=Herd.path_default,
     help="Dir or file path for resulting hdf5 file",
 )
-vhrv_opt_t = typer.Option(
-    "mppt_opt",
+@click.option(
     "--virtual-harvester",
     "-a",
+    type=click.STRING,
+    default=None,
     help="Choose one of the predefined virtual harvesters",
 )
-dur_opt_t = typer.Option(
-    None,
+@click.option(
     "--duration",
     "-d",
+    type=click.FLOAT,
+    default=None,
     help="Duration of recording in seconds",
 )
-force_ow_opt_t = typer.Option(
-    False, "--force-overwrite", "-f", is_flag=True, help="Overwrite existing file"
-)
-cal_opt_t = typer.Option(
-    False,
+@click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option(
     "--use-cal-default",
     "-c",
     is_flag=True,
     help="Use default calibration values",
 )
-nstart_opt_t = typer.Option(
-    False,
+@click.option(
     "--no-start",
     "-n",
     is_flag=True,
     help="Start shepherd synchronized after uploading config",
 )
-
-
-@cli.command(help="Record IV data from a harvest-source")
+@click.pass_context
 def harvest(
-    output_path: Path = opath_opt_t,
-    virtual_harvester: str = vhrv_opt_t,
-    duration: Optional[float] = dur_opt_t,
-    force_overwrite: bool = force_ow_opt_t,
-    use_cal_default: bool = cal_opt_t,
-    no_start: bool = nstart_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
+    ctx: click.Context,
+    no_start: bool,
+    **kwargs,
 ):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    kwargs = {
-        "output_path": output_path,
-        "virtual_harvester": virtual_harvester,
-        "duration": duration,
-        "force_overwrite": force_overwrite,
-        "use_cal_default": use_cal_default,
-    }
     for path in ["output_path"]:
         file_path = Path(kwargs[path])
         if not file_path.is_absolute():
@@ -280,11 +205,12 @@ def harvest(
     ts_start = datetime.now().astimezone()
     delay = 0
     if not no_start:
-        ts_start, delay = herd.find_consensus_time()
+        ts_start, delay = ctx.obj["herd"].find_consensus_time()
         kwargs["time_start"] = ts_start
 
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     task = HarvestTask(**kwargs)
-    herd.transfer_task(task)
+    ctx.obj["herd"].put_task(task)
 
     if not no_start:
         log.info(
@@ -292,86 +218,85 @@ def harvest(
             ts_start.isoformat(),
             delay,
         )
-        exit_code = herd.start_measurement()
+        exit_code = ctx.obj["herd"].start_measurement()
         log.info("Shepherd started.")
         if exit_code > 0:
             log.debug("-> max exit-code = %d", exit_code)
 
 
-# TODO: switch to local file for input?
-ifile_arg_t = typer.Argument(
-    ..., file_okay=True, dir_okay=False, exists=True, readable=True
+@cli.command(
+    short_help="Emulate data, where INPUT is an hdf5 file "
+    "on the sheep-host containing harvesting data",
 )
-
-en_io_opt_t = typer.Option(
-    True,
+@click.argument(
+    "input-path",
+    type=click.Path(file_okay=True, dir_okay=False),
+)
+# TODO: switch to local file for input?
+@click.option(
+    "--output-path",
+    "-o",
+    type=click.Path(dir_okay=True, file_okay=True),
+    default=Herd.path_default,
+    help="Dir or file path for resulting hdf5 file with load recordings",
+)
+@click.option(
+    "--duration",
+    "-d",
+    type=click.FLOAT,
+    default=None,
+    help="Duration of recording in seconds",
+)
+@click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.option(
+    "--use-cal-default",
+    "-c",
+    is_flag=True,
+    help="Use default calibration values",
+)
+@click.option(
     "--enable-io/--disable-io",
+    default=True,
     help="Switch the GPIO level converter to targets on/off",
 )
-pio_opt_t = typer.Option(
-    "A",
+@click.option(
     "--io-port",
-    click_type=click.Choice(["A", "B"]),
+    type=click.Choice(["A", "B"]),
+    default="A",
     help="Choose Target that gets connected to IO",
 )
-ppwr_opt_t = typer.Option(
-    "A",
+@click.option(
     "--pwr-port",
-    click_type=click.Choice(["A", "B"]),
+    type=click.Choice(["A", "B"]),
+    default="A",
     help="Choose (main)Target that gets connected to virtual Source / current-monitor",
 )
-vaux_opt_t = typer.Option(
-    0.0,
+@click.option(
     "--voltage-aux",
     "-x",
+    type=click.FLOAT,
+    default=0.0,
     help="Set Voltage of auxiliary Power Source (second target)",
 )
-# -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
-vsrc_opt_t = typer.Option(
-    "direct",
+@click.option(
     "--virtual-source",
-    "-a",
+    "-a",  # -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
+    type=click.STRING,
+    default=None,
     help="Use the desired setting for the virtual source",
 )
-
-
-@cli.command(
-    help="Emulate data, where INPUT is an hdf5 file on the sheep containing harvesting data",
+@click.option(
+    "--no-start",
+    "-n",
+    is_flag=True,
+    help="Start shepherd synchronized after uploading config",
 )
+@click.pass_context
 def emulate(
-    input_file: Path = ifile_arg_t,
-    output_path: Path = opath_opt_t,
-    duration: Optional[float] = dur_opt_t,
-    force_overwrite: bool = force_ow_opt_t,
-    use_cal_default: bool = cal_opt_t,
-    enable_io: bool = en_io_opt_t,
-    io_port: str = pio_opt_t,
-    pwr_port: str = ppwr_opt_t,
-    voltage_aux: str = vaux_opt_t,
-    virtual_source: str = vsrc_opt_t,
-    no_start: bool = nstart_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
+    ctx: click.Context,
+    no_start: bool,
+    **kwargs,
 ):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    kwargs = {
-        "input_file": input_file,
-        "output_path": output_path,
-        "duration": duration,
-        "force_overwrite": force_overwrite,
-        "use_cal_default": use_cal_default,
-        "enable_io": enable_io,
-        "io_port": io_port,
-        "pwr_port": pwr_port,
-        "voltage_aux": voltage_aux,
-        "virtual_source": virtual_source,
-    }
     for path in ["input_path", "output_path"]:
         file_path = Path(kwargs[path])
         if not file_path.is_absolute():
@@ -386,11 +311,12 @@ def emulate(
     ts_start = datetime.now().astimezone()
     delay = 0
     if not no_start:
-        ts_start, delay = herd.find_consensus_time()
+        ts_start, delay = ctx.obj["herd"].find_consensus_time()
         kwargs["time_start"] = ts_start
 
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     task = EmulationTask(**kwargs)
-    herd.transfer_task(task)
+    ctx.obj["herd"].put_task(task)
 
     if not no_start:
         log.info(
@@ -398,7 +324,7 @@ def emulate(
             ts_start.isoformat(),
             delay,
         )
-        exit_code = herd.start_measurement()
+        exit_code = ctx.obj["herd"].start_measurement()
         log.info("Shepherd started.")
         if exit_code > 0:
             log.debug("-> max exit-code = %d", exit_code)
@@ -410,58 +336,34 @@ def emulate(
 
 
 @cli.command(
-    help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)",
+    short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)",
 )
-def start(
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-) -> None:
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    if herd.check_status():
+@click.pass_context
+def start(ctx: click.Context) -> None:
+    if ctx.obj["herd"].check_status():
         log.info("Shepherd still active, will skip this command!")
         sys.exit(1)
     else:
-        exit_code = herd.start_measurement()
+        exit_code = ctx.obj["herd"].start_measurement()
         log.info("Shepherd started.")
         if exit_code > 0:
             log.debug("-> max exit-code = %d", exit_code)
 
 
-@cli.command(help="Information about current state of shepherd measurement")
-def status(
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-) -> None:
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    if herd.check_status():
+@cli.command(short_help="Information about current state of shepherd measurement")
+@click.pass_context
+def status(ctx: click.Context) -> None:
+    if ctx.obj["herd"].check_status():
         log.info("Shepherd still active!")
         sys.exit(1)
     else:
         log.info("Shepherd not active! (measurement is done)")
 
 
-@cli.command(help="Stops any harvest/emulation")
-def stop(
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-) -> None:
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    exit_code = herd.stop_measurement()
+@cli.command(short_help="Stops any harvest/emulation")
+@click.pass_context
+def stop(ctx: click.Context) -> None:
+    exit_code = ctx.obj["herd"].stop_measurement()
     log.info("Shepherd stopped.")
     if exit_code > 0:
         log.debug("-> max exit-code = %d", exit_code)
@@ -471,86 +373,93 @@ def stop(
 #                               File Handling
 # #############################################################################
 
-rpath_opt_t = typer.Option(
-    Herd.path_default,
-    "--remote-path",
-    "-r",
-    help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
-)
-
 
 @cli.command(
-    help="Uploads a file FILENAME to the remote node, stored in in REMOTE_PATH",
+    short_help="Uploads a file FILENAME to the remote node, stored in in REMOTE_PATH",
 )
+@click.argument(
+    "filename",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
+@click.option(
+    "--remote-path",
+    "-r",
+    type=click.Path(file_okay=True, dir_okay=True),
+    default=Herd.path_default,
+    help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
+)
+@click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
+@click.pass_context
 def distribute(
-    filename: Path = ifile_arg_t,
-    remote_path: Path = rpath_opt_t,
-    force_overwrite: bool = force_ow_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
+    ctx: click.Context,
+    filename: Path,
+    remote_path: Path,
+    force_overwrite: bool,
 ):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    herd.put_file(filename, remote_path, force_overwrite)
+    ctx.obj["herd"].put_file(filename, remote_path, force_overwrite)
 
 
-file_arg_t = typer.Argument(..., help=f"remote file with absolute path or relative in '{Herd.path_default.as_posix()}'")
-dout_arg_t = typer.Argument(..., exists=True,
+@cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
+@click.argument("filename", type=click.Path(file_okay=True, dir_okay=False))
+@click.argument(
+    "outdir",
+    type=click.Path(
+        exists=True,
         file_okay=False,
-        dir_okay=True, help="local path to put the files in 'outdir/[node-name]/filename'")
-ts_opt_t = typer.Option(False,
+        dir_okay=True,
+    ),
+)
+@click.option(
     "--timestamp",
     "-t",
     is_flag=True,
     help="Add current timestamp to measurement file",
 )
-sepa_opt_t = typer.Option(False, "--separate",
+@click.option(
+    "--separate",
     "-s",
     is_flag=True,
     help="Every remote node gets own subdirectory",
 )
-del_opt_t = typer.Option(False,
+@click.option(
     "--delete",
     "-d",
     is_flag=True,
     help="Delete the file from the remote filesystem after retrieval",
 )
-force_stop_opt_t = typer.Option(False, "--force-stop",
+@click.option(
+    "--force-stop",
     "-f",
     is_flag=True,
     help="Stop the on-going harvest/emulation process before retrieving the data",
 )
-
-
-@cli.command(help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
+@click.pass_context
 def retrieve(
-    filename: Path = file_arg_t,
-    outdir: Path = dout_arg_t,
-    timestamp: bool = ts_opt_t,
-    separate: bool = sepa_opt_t,
-    delete: bool = del_opt_t,
-    force_stop: bool = force_stop_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
+    ctx: click.Context,
+    filename: Path,
+    outdir: Path,
+    timestamp: bool,
+    separate: bool,
+    delete: bool,
+    force_stop: bool,
 ) -> None:
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
+    """
+
+    :param ctx: context
+    :param filename: remote file with absolute path or relative in '/var/shepherd/recordings/'
+    :param outdir: local path to put the files in 'outdir/[node-name]/filename'
+    :param timestamp:
+    :param separate:
+    :param delete:
+    :param force_stop:
+    """
+
     if force_stop:
-        herd.stop_measurement()
-        if herd.await_stop(timeout=30):
+        ctx.obj["herd"].stop_measurement()
+        if ctx.obj["herd"].await_stop(timeout=30):
             raise Exception("shepherd still active after timeout")
 
-    failed = herd.get_file(filename, outdir, timestamp, separate, delete)
+    failed = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
     sys.exit(failed)
 
 
@@ -558,85 +467,77 @@ def retrieve(
 #                               Pru Programmer
 # #############################################################################
 
-ifw_arg_t = typer.Argument(..., exists=True, file_okay=True, dir_okay=False, readable=True, help="Hex-File to program to target")
-tgt_port_opt_t = typer.Option("A", "--target-port",
+
+@cli.command(
+    short_help="Programmer for Target-Controller",
+)
+@click.argument(
+    "firmware-file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
+@click.option(
+    "--target-port",
     "-p",
-    click_type=click.Choice(["A", "B"]),
+    type=click.Choice(["A", "B"]),
+    default="A",
     help="Choose Target-Port of Cape for programming",
 )
-mcu_port_opt_t = typer.Option(1,
+@click.option(
     "--mcu-port",
     "-m",
+    type=click.INT,
+    default=1,
     help="Choose MCU on Target-Port (only valid for SBW & SWD)",
 )
-volt_opt_t = typer.Option(3.0,
+@click.option(
     "--voltage",
     "-v",
+    type=click.FLOAT,
+    default=None,
     help="Target supply voltage",
 )
-drate_opt_t = typer.Option(500_000,
+@click.option(
     "--datarate",
     "-d",
+    type=click.INT,
+    default=None,
     help="Bit rate of Programmer (bit/s)",
 )
-mcu_type_opt_t = typer.Option("nrf52",
+@click.option(
     "--mcu-type",
     "-t",
-    click_type=click.Choice(["nrf52", "msp430"]),
+    type=click.Choice(["nrf52", "msp430"]),
+    default="nrf52",
     help="Target MCU",
 )
-sim_opt_t = typer.Option(False,
+@click.option(
     "--simulate",
     is_flag=True,
     help="dry-run the programmer - no data gets written",
 )
-
-@cli.command(help="Programmer for Target-Controller")
-def program(  # TODO **kwargs,
-    firmware_file: Path = ifw_arg_t,
-    target_port: str = tgt_port_opt_t,
-    mcu_port: int = mcu_port_opt_t,
-        voltage: float = volt_opt_t,
-        datarate: int = drate_opt_t,
-        mcu_type: str = mcu_type_opt_t,
-        simulate: bool = sim_opt_t,
-    # sheep-related params
-    inventory: Optional[str] = invent_opt_t,
-    limit: Optional[str] = limit_opt_t,
-    user: Optional[str] = user_opt_t,
-    key_filepath: Optional[Path] = key_opt_t,
-    verbose: bool = verbose_opt_t,
-    version: bool = version_opt_t,
-):
-    cli_setup_callback(verbose, version)
-    herd = Herd(inventory, limit, user, key_filepath)
-    kwargs = {
-        "firmware_file": firmware_file,
-        "mcu_port": mcu_port,
-        "voltage": voltage,
-        "datarate": datarate,
-        "mcu_type": mcu_type,
-        "simulate": simulate,
-              }
+@click.pass_context
+def program(ctx: click.Context, **kwargs):
     tmp_file = "/tmp/target_image.hex"  # noqa: S108
     cfg_path = Path("/etc/shepherd/config_for_herd.yaml")
 
-    herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
+    ctx.obj["herd"].put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     kwargs["firmware_file"] = Path(tmp_file)
+
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     task = ProgrammingTask(**kwargs)
-    herd.transfer_task(task, cfg_path)
+    ctx.obj["herd"].put_task(task, cfg_path)
 
     command = f"shepherd-sheep -vvv run {cfg_path.as_posix()}"
-    replies = herd.run_cmd(sudo=True, cmd=command)
+    replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
     exit_code = max([reply.exited for reply in replies.values()])
     if exit_code:
         log.error("Programming - Procedure failed - will exit now!")
-    herd.print_output(replies, 3)  # requires debug level
+    ctx.obj["herd"].print_output(replies, verbose=False)
     sys.exit(exit_code)
 
 

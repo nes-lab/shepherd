@@ -1,8 +1,8 @@
 import time
 
 import pytest
+from click.testing import CliRunner
 from shepherd_herd.herd_cli import cli
-from typer.testing import CliRunner
 
 from .conftest import wait_for_end
 
@@ -12,8 +12,8 @@ def test_hrv_example(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "harvest",
             "-v",
+            "harvest",
             "-a",
             "cv20",
             "-d",
@@ -31,8 +31,8 @@ def test_hrv_example_fail(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "harvest",
             "-v",
+            "harvest",
             "--virtual-harvester",
             "ceeeveeeee",
             "--duration",
@@ -56,7 +56,7 @@ def test_hrv_minimal(cli_runner: CliRunner, stopped_herd) -> None:
     # forced stop
     res = cli_runner.invoke(
         cli,
-        ["stop", "-v"],
+        ["-v", "stop"],
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=10)
@@ -67,8 +67,8 @@ def test_hrv_all_args_long(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "harvest",
             "-v",
+            "harvest",
             "--virtual-harvester",
             "cv33",
             "--duration",
@@ -88,8 +88,8 @@ def test_hrv_all_args_short(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "harvest",
             "-v",
+            "harvest",
             "-a",
             "cv33",
             "-d",
@@ -110,19 +110,19 @@ def test_hrv_no_start(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "harvest",
             "-v",
+            "harvest",
             "-d",
             "10",
             "--no-start",
         ],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner, timeout=10)
+    wait_for_end(cli_runner, timeout=15)
     # manual start
     res = cli_runner.invoke(
         cli,
-        ["start", "-v"],
+        ["-v", "start"],
     )
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=15)
