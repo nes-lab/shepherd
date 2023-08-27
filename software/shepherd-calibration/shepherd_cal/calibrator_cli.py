@@ -40,6 +40,12 @@ version_opt_t = typer.Option(
     None,
     help="Cape version number, max 4 Char, e.g. 24B0, reflecting hardware revision",
 )
+write_opt_t = typer.Option(
+    False,
+    "--write",
+    is_flag=True,
+    help="program eeprom after measurement",
+)
 
 
 @cli_cal.command()
@@ -54,6 +60,7 @@ def measure(
     harvester: bool = hrv_opt_t,
     emulator: bool = emu_opt_t,
     cape_serial: str = serial_opt_t,
+    write: bool = write_opt_t,
     version: Optional[str] = version_opt_t,
     verbose: bool = verbose_opt_t,
 ):
@@ -71,7 +78,7 @@ def measure(
 
     results = {"host": host, "cape": cape}
 
-    shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    shp_cal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
 
     if harvester:
         click.echo(INSTR_CAL_HRV)
@@ -79,7 +86,7 @@ def measure(
             click.echo(INSTR_4WIRE)
         usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
-            results["harvester"] = shpcal.measure_harvester()
+            results["harvester"] = shp_cal.measure_harvester()
 
     if emulator:
         click.echo(INSTR_CAL_EMU)
@@ -87,10 +94,9 @@ def measure(
             click.echo(INSTR_4WIRE)
         usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
-            results["emulator"] = shpcal.measure_emulator()
+            results["emulator"] = shp_cal.measure_emulator()
 
     msr_cape = CalMeasurementCape(**results)
-    logger.info(msr_cape.model_dump())
 
     if outfile is None:
         timestamp = datetime.fromtimestamp(time())
@@ -102,8 +108,13 @@ def measure(
 
     outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]) + ".cal_data")
     cal_cape = msr_cape.to_cal()
+    logger.info("Measured Cal-Data:\n\n%s", str(cal_cape))
     cal_cape.to_file(outfile)
     logger.info("Saved Cal-Data to '%s'.", outfile)
+
+    if write:
+        shp_cal.write(outfile)
+        shp_cal.read()
 
     outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]))
     plot_calibration(msr_cape, cal_cape, outfile)

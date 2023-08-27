@@ -144,10 +144,7 @@ class Calibrator:
             dac_voltage_V,
             dac_voltage_raw,
         )
-        self.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_raw,
-            also_main=True,
-        )
+        self.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
 
         self.set_smu_to_vsource(smu, 0.0, smu_current_A)
 
@@ -202,10 +199,7 @@ class Calibrator:
             dac_voltage_V,
             dac_voltage_raw,
         )
-        self.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_raw,
-            also_main=True,
-        )
+        self.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
 
         self.set_smu_to_isource(smu, 0.0, 3.0)
 
@@ -252,9 +246,11 @@ class Calibrator:
         logger.debug(" -> setting dac-voltage to %s V", dac_voltage_V)
         # write both dac-channels of emulator
         self.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_to_raw(dac_voltage_V),
-            also_main=True,
-        )  # TODO: rpc seems to have trouble with named parameters, so 2**20 is a bugfix
+            dac_voltage_to_raw(dac_voltage_V),
+            True,
+        )  # =ch_link
+        # TODO: rpc seems to have trouble with named parameters,
+        #  so not using name ch_link is a bugfix
 
         self.set_smu_to_isource(smu, 0.0, 3.0)
 
@@ -368,9 +364,7 @@ class Calibrator:
         # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
         results["adc_C_B"] = self.measure_emulator_current(self.kth.smub)
 
-        self.sheep.select_port_for_power_tracking(
-            TargetPort.B,
-        )
+        self.sheep.select_port_for_power_tracking(TargetPort.B)
         # routes DAC.A to TGT.A to SMU-A
         logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
         results["dac_V_A"] = self.measure_dac_voltage(

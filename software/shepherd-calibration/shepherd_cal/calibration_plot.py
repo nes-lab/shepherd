@@ -17,7 +17,8 @@ def plot_calibration(
         msr_component = measurements[component]
         if msr_component is None:
             logger.info(
-                "NOTE: data for component '%s' not found - will skip plot", component
+                "NOTE: data for component '%s' not found - will skip plot",
+                component,
             )
             continue
         for channel in msr_component.keys():

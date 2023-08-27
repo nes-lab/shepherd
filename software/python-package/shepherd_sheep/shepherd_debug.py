@@ -379,8 +379,8 @@ class ShepherdDebug(ShepherdIO):
         return self.gpios["target_io_en"].read()
 
     @staticmethod
-    def set_aux_target_voltage_raw(voltage_raw: int, also_main: bool = False) -> None:
-        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw | (int(also_main) << 20))
+    def set_aux_target_voltage_raw(voltage_raw: int, ch_link: bool = False) -> None:
+        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw, ch_link)
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()

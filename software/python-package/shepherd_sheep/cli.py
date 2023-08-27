@@ -205,7 +205,7 @@ def read(cal_file: Optional[Path]):
         exit(3)
 
     if cal_file is None:
-        log.info("Retrieved Cal-Data:\n\n%s", cal)
+        log.info("Retrieved Cal-Data:\n\n%s", str(cal))
     else:
         cal.to_file(cal_file)
 

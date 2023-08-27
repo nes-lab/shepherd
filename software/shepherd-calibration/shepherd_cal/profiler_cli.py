@@ -30,10 +30,13 @@ cli_pro = typer.Typer(
     name="profile",
     help="Sub-commands for profiling the analog frontends",
 )
-
+serial_opt_t = typer.Option(
+    default=...,
+    help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
+)
 short_opt_t = typer.Option(
     False,
-    "--short",
+    "--short/--long",
     "-s",
     is_flag=True,
     help="reduce I&V steps (2x faster)",
@@ -59,6 +62,7 @@ def measure(
     harvester: bool = hrv_opt_t,
     emulator: bool = emu_opt_t,
     short: bool = short_opt_t,
+    cape_serial: str = serial_opt_t,
     quiet: bool = quiet_opt_t,
     verbose: bool = verbose_opt_t,
 ):
@@ -73,24 +77,23 @@ def measure(
     components = ("_emu" if emulator else "") + ("_hrv" if harvester else "")
     if outfile is None:
         timestamp = datetime.fromtimestamp(time_now)
-        timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
-        outfile = Path(f"./{timestring}_shepherd_cape")
+        timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
+        outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}")
     if short:
-        file_path = outfile.stem + "_profile_short" + components + ".npz"
+        file_path = outfile.stem + ".profile_short" + components + ".npz"
     else:
-        file_path = outfile.stem + "_profile_full" + components + ".npz"
+        file_path = outfile.stem + ".profile_full" + components + ".npz"
 
     shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
     profiler = Profiler(shpcal, short)
-    # results_hrv = results_emu_a = results_emu_b = None. TODO: check function, replaced by dict
-    results: Dict[str, np.ndarray] = {}
+    results: Dict[str, np.ndarray] = {"cape": cape_serial}
 
     if not quiet:
         click.echo(INSTR_PROFILE_SHP)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
         logger.info(
-            " -> Profiler will sweep through %d voltages and %d currents",
+            " -> Profiler will sweep through %d voltages and %d currents (each Channel)",
             len(profiler.voltages_V),
             len(profiler.currents_A),
         )

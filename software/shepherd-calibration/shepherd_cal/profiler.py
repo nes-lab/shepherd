@@ -112,10 +112,7 @@ class Profiler:
             "dac_V_A",
             voltage_V,
         )
-        self._cal.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_raw,
-            also_main=True,
-        )
+        self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
         adc_data = self._cal.sheep.sample_from_pru(10)
         adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[
             0
@@ -165,10 +162,7 @@ class Profiler:
             "dac_V_Hrv",
             voltage_V,
         )
-        self._cal.sheep.set_aux_target_voltage_raw(
-            (2**20) + dac_voltage_raw,
-            also_main=True,
-        )
+        self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
         adc_data = self._cal.sheep.sample_from_pru(10)
         adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[
             0
@@ -208,7 +202,7 @@ class Profiler:
         logger.info("Measurement - Harvester - Voltage & Current")
         if True:  # TODO: test if leakage is fixed
             self._cal.sheep.switch_shepherd_mode("hrv_adc_read")
-            self._cal.sheep.set_aux_target_voltage_raw((2**20) + 0, also_main=True)
+            self._cal.sheep.set_aux_target_voltage_raw(0, True)  # =ch_link
             self._cal.sheep.set_shepherd_pcb_power(False)
             time.sleep(2)
             self._cal.sheep.set_shepherd_pcb_power(True)
@@ -235,9 +229,9 @@ class Profiler:
             results[5][index] = c_smu_set
         # return to neutral mode
         self._cal.sheep.set_aux_target_voltage_raw(
-            (2**20) + cal_def.dac_voltage_to_raw(5.0),
-            also_main=True,
-        )
+            cal_def.dac_voltage_to_raw(5.0),
+            True,
+        )  # =ch_link
         return results
 
     def measure_emulator_a(self) -> np.ndarray:

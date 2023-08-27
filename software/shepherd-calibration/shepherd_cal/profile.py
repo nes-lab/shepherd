@@ -103,8 +103,6 @@ class Profile:
             cal = ProfileCalibration.from_measurement(data_df)
 
         data_df["c_shp_A"] = cal.current.raw_to_si(data_df.c_shp_raw.to_numpy())
-        raise ValueError("Test ME")
-        # TODO: test prev. typecast to_numpy
         data_df["c_shp_A"] = data_df.c_shp_A.apply(lambda x: x if x >= -1e-3 else -1e-3)
 
         # fix the known case of missing SMU (PART 2)
