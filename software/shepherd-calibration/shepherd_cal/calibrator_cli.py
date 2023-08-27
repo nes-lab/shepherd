@@ -94,8 +94,8 @@ def measure(
 
     if outfile is None:
         timestamp = datetime.fromtimestamp(time())
-        timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
-        outfile = Path(f"./{timestring}_shepherd_cape.measurement.yaml")
+        timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
+        outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}.measurement.yaml")
         logger.debug("No filename provided -> set to '%s'.", outfile)
     msr_cape.to_file(outfile)
     logger.info("Saved Cal-Measurement to '%s'.", outfile)

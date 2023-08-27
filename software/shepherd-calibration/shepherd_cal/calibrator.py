@@ -19,6 +19,7 @@ from shepherd_core.data_models.base.cal_measurement import CalMeasPairs
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementEmulator
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementHarvester
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementPair
+from shepherd_core.data_models.testbed.cape import TargetPort
 
 from .logger import logger
 
@@ -64,12 +65,13 @@ class Calibrator:
         self._host: str = host
         self.sheep: zerorpc.Client = zerorpc.Client(timeout=60, heartbeat=20)
         self._cnx: Connection = Connection(host, user=user, connect_kwargs=fabric_args)
-        # TODO: check connection or else .sudo below throws socket.gaierror when sheep unavail
+        # TODO: check connection or else .sudo below throws socket.error when sheep unavail
 
         if smu_ip is None:
-            raise ValueError("Please provide an IP for the SMU")
-
-        self.kth: Keithley2600Base = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
+            logger.debug("SMU: No IP provided, device not usable this session")
+            self.kth = None
+        else:
+            self.kth: Keithley2600Base = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
 
         # enter
         self._cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
@@ -173,7 +175,7 @@ class Calibrator:
             )
             logger.debug(
                 "  SMU-reference: %.4f V @ %.3f mA;"
-                "  adc-v: %.4f raw; adc-c: %.3f raw; filtered %.2f %% of values",
+                "  adc-v: %.4f raw; adc-c: %.3f raw; filtered out %.2f %% of values",
                 voltage_V,
                 smu_current_mA,
                 adc_voltage_raw,
@@ -357,18 +359,19 @@ class Calibrator:
         results: Dict[str, CalMeasPairs] = {}
         logger.info("Measurement - Emulator - ADC . Current - Target A")
         # targetA-Port will get the monitored dac-channel-b
-        self.sheep.select_target_for_power_tracking(True)
+        self.sheep.select_port_for_power_tracking(TargetPort.A)
         results["adc_C_A"] = self.measure_emulator_current(self.kth.smua)
 
         logger.info("Measurement - Emulator - ADC . Current - Target B")
         # targetB-Port will get the monitored dac-channel-b
-        self.sheep.select_target_for_power_tracking(False)
+        self.sheep.select_port_for_power_tracking(TargetPort.B)
         # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
         results["adc_C_B"] = self.measure_emulator_current(self.kth.smub)
 
-        self.sheep.select_target_for_power_tracking(
-            False,
-        )  # routes DAC.A to TGT.A to SMU-A
+        self.sheep.select_port_for_power_tracking(
+            TargetPort.B,
+        )
+        # routes DAC.A to TGT.A to SMU-A
         logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
         results["dac_V_A"] = self.measure_dac_voltage(
             self.kth.smua,
@@ -395,18 +398,22 @@ class Calibrator:
 
         self._cnx.put(cal_file, temp_file)  # noqa: S108
         logger.info("----------EEPROM WRITE------------")
+        logger.info("Local  file: %s", cal_file.as_posix())
+        logger.info("Remote file: %s", temp_file)
         result = self._cnx.sudo(
             f"shepherd-sheep -vvv eeprom write {temp_file}",
             warn=True,
             hide=True,
         )
         logger.info(result.stdout)
+        logger.info(result.stderr)
         logger.info("---------------------------------")
 
     def read(self):
         logger.info("----------EEPROM READ------------")
         result = self._cnx.sudo("shepherd-sheep -vvv eeprom read", warn=True, hide=True)
         logger.info(result.stdout)
+        logger.info(result.stderr)
         logger.info("---------------------------------")
 
     def retrieve(self, cal_file: Path):
@@ -417,4 +424,5 @@ class Calibrator:
             hide=True,
         )
         logger.info(result.stdout)
+        logger.info(result.stderr)
         self._cnx.get(temp_file, local=cal_file.as_posix())

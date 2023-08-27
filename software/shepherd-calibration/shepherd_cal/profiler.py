@@ -18,6 +18,7 @@ import msgpack_numpy
 import numpy as np
 import shepherd_core.calibration_hw_def as cal_def
 from keithley2600.keithley_driver import KeithleyClass
+from shepherd_core.data_models.testbed.cape import TargetPort
 
 from .calibrator import Calibrator
 from .logger import logger
@@ -108,7 +109,7 @@ class Profiler:
         # write both dac-channels of emulator
         dac_voltage_raw = self._cal.sheep.convert_value_to_raw(
             "emulator",
-            "dac_voltage_b",
+            "dac_V_A",
             voltage_V,
         )
         self._cal.sheep.set_aux_target_voltage_raw(
@@ -129,7 +130,7 @@ class Profiler:
             smu_voltage = voltage_V
             current_A = self._cal.sheep.convert_raw_to_value(
                 "emulator",
-                "adc_current",
+                "adc_C_A",
                 adc_current_raw,
             )
 
@@ -161,7 +162,7 @@ class Profiler:
         # write both dac-channels of emulator
         dac_voltage_raw = self._cal.sheep.convert_value_to_raw(
             "harvester",
-            "dac_voltage_b",
+            "dac_V_Hrv",
             voltage_V,
         )
         self._cal.sheep.set_aux_target_voltage_raw(
@@ -179,7 +180,7 @@ class Profiler:
         adc_voltage_raw = float(np.mean(adc_voltages_raw))
         voltage_adc_V = self._cal.sheep.convert_raw_to_value(
             "harvester",
-            "adc_voltage",
+            "adc_V_Sense",
             adc_voltage_raw,
         )
 
@@ -246,9 +247,8 @@ class Profiler:
             [6, len(self.voltages_V) * len(self.currents_A)],
             dtype=object,
         )
-        self._cal.sheep.select_target_for_power_tracking(
-            True,
-        )  # targetA-Port will get the monitored dac-channel-b
+        self._cal.sheep.select_port_for_power_tracking(TargetPort.A)
+        # targetA-Port will get the monitored dac-channel-b
         for index, (voltage, current) in enumerate(
             itertools.product(self.voltages_V, self.currents_A),
         ):
@@ -261,7 +261,7 @@ class Profiler:
             results[0][index] = voltage
             results[1][index] = self._cal.sheep.convert_value_to_raw(
                 "emulator",
-                "dac_voltage_b",
+                "dac_V_B",
                 voltage,
             )
             results[2][index] = v_meas
@@ -274,16 +274,15 @@ class Profiler:
         logger.info("Measurement - Emulator - Current - ADC Channel A - Target B")
         self._cal.sheep.switch_shepherd_mode("emu_adc_read")
         results = np.zeros([6, len(self.voltages_V)], dtype=object)
-        self._cal.sheep.select_target_for_power_tracking(
-            False,
-        )  # targetB-Port will get the monitored dac-channel-b
+        self._cal.sheep.select_port_for_power_tracking(TargetPort.B)
+        # targetB-Port will get the monitored dac-channel-b
         for index, voltage in enumerate(self.voltages_V):
             cdata, v_meas, c_shp = self.measure_emulator_setpoint(None, voltage)
             # order from Profiler.elem_dict
             results[0][index] = voltage
             results[1][index] = self._cal.sheep.convert_value_to_raw(
                 "emulator",
-                "dac_voltage_b",
+                "dac_V_B",
                 voltage,
             )
             results[2][index] = v_meas  # is equal to "voltage"-var
