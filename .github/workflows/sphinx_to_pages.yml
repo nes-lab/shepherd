@@ -25,6 +25,7 @@ jobs:
           pip3 install sphinxcontrib-applehelp sphinxcontrib-devhelp sphinxcontrib-htmlhelp
           pip3 install sphinxcontrib-jsmath sphinxcontrib-qthelp sphinxcontrib-serializinghtml
           pip3 install sphinx-sitemap
+          pip3 install sphinx-design sphinx-copybutton myst-parser
 
       - name: Build and Commit 🧱
         uses: sphinx-notes/pages@v2

@@ -13,7 +13,13 @@ Each shepherd node consists of 5 key components:
 .. figure:: pics/pcb_shepherd_cape_22_soldered.jpg
    :name: fig:cape_soldered
    :width: 100.0%
-   :alt: fully assembled shepherd cape
+   :alt: fully assembled shepherd cape v2.2
+
+.. figure:: ../media_recap/PCB_preview_v24.png
+   :name: fig:cape_rendered
+   :width: 100.0%
+   :alt: rendering of the shepherd cape v2.4
+
 
 Harvesting capelet
 ------------------

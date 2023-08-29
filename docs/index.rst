@@ -27,6 +27,16 @@ To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd
 
 .. toctree::
    :maxdepth: 2
+   :caption: Testbed & Tools
+
+   external/testbed.md
+   external/shepherd_core.md
+   external/shepherd_data.md
+   external/shepherd_targets.md
+   external/shepherd_webservice.md
+
+.. toctree::
+   :maxdepth: 2
    :caption: Developer Guide
 
    dev/contributing

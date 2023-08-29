@@ -32,6 +32,9 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_sitemap",
     "sphinx_rtd_theme",
+    "myst_parser",
+    "sphinx_design",
+    "sphinx_copybutton",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -43,6 +46,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 autodoc_mock_imports = ["dbus"]
 
+myst_enable_extensions = ["colon_fence"]
 
 # -- Options for HTML output -------------------------------------------------
 

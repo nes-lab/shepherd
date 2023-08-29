@@ -23,6 +23,9 @@ sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
+sphinx-design = "*"
+sphinx-copybutton = "*"
+#sphinx-autodoc2  # TODO: https://myst-parser.readthedocs.io/en/latest/intro.html#extending-sphinx
 matplotlib = "*"
 pandas = "<2.0.0"
 keithley2600 = "*"
@@ -34,6 +37,7 @@ ansible = "*"
 dearpygui = "*"
 chromalog = "*"
 setuptools = "*"
+myst-perser = "*"
 
 [pipenv]
 allow_prereleases = false
