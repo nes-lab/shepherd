@@ -32,7 +32,7 @@
     - sheep
   # ⤷ NOTE: will only be installed once (later only sw-rebuild)
 
-- name: Role - PTP-Client
+- name: Role - PTP-Client only (not recommended! all should be server as well)
   hosts: ptp_clients
   become: true
   strategy: free
