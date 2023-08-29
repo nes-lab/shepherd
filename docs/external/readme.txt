@@ -8,6 +8,6 @@ The `shepherd_*.md`-files are direct copies from the sub-projects:
 
 <https://github.com/orgua/shepherd_webservice/blob/main/README.md>
 
-TODO: 
+TODO:
 
 - add python-routine to grab / update these?
