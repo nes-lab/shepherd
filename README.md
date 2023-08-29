@@ -7,11 +7,9 @@
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
----
+**Documentation**: <https://orgua.github.io/shepherd/>
 
-**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
-
-**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+**Source Code**: <https://github.com/orgua/shepherd>
 
 ---
 
