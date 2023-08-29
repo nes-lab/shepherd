@@ -68,12 +68,12 @@ Step by step description for installing all prerequisites to compile the firmwar
 - Set the environment variables `SDK_ROOT` to the corresponding absolute path, e.g.: `export SDK_ROOT=/home/user/nRF5_SDK_17.0.2_d674dde/`
 - run `make`
 
-Refer to [the GitHub workflow](/.github/workflows/build_nrf.yml) for how to install the toolchain and build the project.
+Refer to [the GitHub workflow](https://github.com/orgua/shepherd-targets/tree/main/.github/workflows/build_nrf.yml) for how to install the toolchain and build the project.
 
 ### MSP430
 
-To build the code, you'll need the gcc toolchain for the MSP430 microcontroller series. Refer to [the GitHub workflow](/.github/workflows/build_msp.yml) for how to install the toolchain and build the project.
+To build the code, you'll need the gcc toolchain for the MSP430 microcontroller series. Refer to [the GitHub workflow](https://github.com/orgua/shepherd-targets/tree/main/.github/workflows/build_msp.yml) for how to install the toolchain and build the project.
 
 ### Controlling the Node-ID
 
-When an elf-firmware contains a ``SHEPHERD_NODE_ID`` the variable will patched with the actual target-ID before running the experiment. See the proposed [c-file](/nrf52_demo_rf/src/shepherd_node_id.c) for more information.
+When an elf-firmware contains a ``SHEPHERD_NODE_ID`` the variable will patched with the actual target-ID before running the experiment. See the proposed [c-file](https://github.com/orgua/shepherd-targets/tree/main/nrf52_demo_rf/src/shepherd_node_id.c) for more information.

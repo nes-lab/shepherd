@@ -66,7 +66,7 @@ shepherd-herd run tb_tasks_rf_survey.yaml
 
 ## Related & Useful Links
 
-- used [Hardware](../user/#hardware) (Shepherd Cape, available Targets)
+- used [Hardware](#hardware) (Shepherd Cape, available Targets)
 - available [firmwares for the targets](https://github.com/orgua/shepherd-targets)
     - adapted [Trafficbench](https://github.com/orgua/TrafficBench) for an [RF-survey](https://github.com/orgua/shepherd-targets/tree/main/nrf52_rf_survey)
     - the [Trafficbench pythontool](https://pypi.org/project/trafficbench)

@@ -1,3 +1,5 @@
+.. _data_format:
+
 Data format
 ===========
 
