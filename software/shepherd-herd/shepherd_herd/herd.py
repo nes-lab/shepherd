@@ -2,7 +2,6 @@
 Herd-Baseclass
 """
 import contextlib
-import logging
 import threading
 import time
 from datetime import datetime
@@ -15,36 +14,20 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import chromalog
 import yaml
 from fabric import Connection
 from fabric import Group
 from fabric import Result
+from pydantic import validate_call
+from shepherd_core import Inventory
+from shepherd_core import tb_client
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
+from shepherd_core.data_models.task import extract_tasks
+from shepherd_core.data_models.task import prepare_task
+from shepherd_core.data_models.testbed import Testbed
 
-chromalog.basicConfig(format="%(message)s")
-logger = logging.getLogger("shepherd-herd")
-verbose_level = 0
-# Note: defined here to avoid circular import
-
-
-def get_verbose_level() -> int:
-    global verbose_level
-    return max(1, verbose_level)
-
-
-def set_verbose_level(verbose: int = 2) -> None:
-    if verbose == 0:
-        logger.setLevel(logging.ERROR)
-    elif verbose == 1:
-        logger.setLevel(logging.WARNING)
-    elif verbose == 2:
-        logger.setLevel(logging.INFO)
-    elif verbose > 2:
-        logger.setLevel(logging.DEBUG)
-    global verbose_level
-    verbose_level = min(3, verbose)
+from .logger import logger
 
 
 class Herd:
@@ -61,24 +44,30 @@ class Herd:
 
     def __init__(
         self,
-        inventory: str = "",
-        limit: str = "",
+        inventory: Optional[str] = None,
+        limit: Optional[str] = None,
         user: Optional[str] = None,
         key_filepath: Optional[Path] = None,
     ):
         limits_list: Optional[List[str]] = None
-        if limit.rstrip().endswith(","):
-            limits_list = limit.split(",")[:-1]
-
-        if inventory.rstrip().endswith(","):
-            hostlist = inventory.split(",")[:-1]
+        if isinstance(limit, str):
+            limits_list = limit.split(",")
+            limits_list = [_host for _host in limits_list if len(_host) >= 1]
+        if (
+            isinstance(inventory, str)
+            and Path(inventory).exists()
+            and Path(inventory).is_file()
+        ):
+            inventory = Path(inventory)
+        if isinstance(inventory, str):
+            hostlist = inventory.split(",")
+            hostlist = [_host for _host in hostlist if len(_host) >= 1]
             if limits_list is not None:
                 hostlist = list(set(hostlist) & set(limits_list))
             hostnames = {hostname: hostname for hostname in hostlist}
-
         else:
             # look at all these directories for inventory-file
-            if inventory == "":
+            if inventory in ["", None]:
                 inventories = [
                     "/etc/shepherd/herd.yml",
                     "~/herd.yml",
@@ -98,7 +87,10 @@ class Herd:
                 try:
                     inventory_data = yaml.safe_load(stream)
                 except yaml.YAMLError:
-                    raise FileNotFoundError(f"Couldn't read inventory file {host_path}")
+                    raise FileNotFoundError(
+                        f"Couldn't read inventory file {host_path}, please provide a valid one",
+                    )
+            logger.debug("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
             hostnames: Dict[str, str] = {}
@@ -153,7 +145,7 @@ class Herd:
         return self.hostnames
 
     @staticmethod
-    def thread_run(
+    def _thread_run(
         cnx: Connection,
         sudo: bool,
         cmd: str,
@@ -165,13 +157,15 @@ class Herd:
         else:
             results[index] = cnx.run(cmd, warn=True, hide=True)
 
+    @validate_call
     def run_cmd(self, sudo: bool, cmd: str) -> dict[int, Result]:
+        """Run COMMAND on the shell -> Returns output-results"""
         results: dict[int, Result] = {}
         threads = {}
         logger.debug("Sheep-CMD = %s", cmd)
         for i, cnx in enumerate(self.group):
             threads[i] = threading.Thread(
-                target=self.thread_run,
+                target=self._thread_run,
                 args=(cnx, sudo, cmd, results, i),
             )
             threads[i].start()
@@ -180,9 +174,10 @@ class Herd:
             del thread  # ... overcautious
         return results
 
-    def print_output(self, replies: dict[int, Result], req_log_level: int) -> None:
+    def print_output(self, replies: dict[int, Result], verbose: bool = False) -> None:
+        """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
-            if verbose_level < req_log_level and replies[i].exited == 0:
+            if not verbose and replies[i].exited == 0:
                 continue
             if len(replies[i].stdout) > 0:
                 logger.info("\n************** %s - stdout **************", hostname)
@@ -193,7 +188,7 @@ class Herd:
             logger.info("Exit-code of %s = %s", hostname, replies[i].exited)
 
     @staticmethod
-    def thread_put(
+    def _thread_put(
         cnx: Connection,
         src: Union[Path, StringIO],
         dst: Path,
@@ -209,7 +204,7 @@ class Herd:
             dst = str(dst) + "/"
 
         tmp_path = Path("/tmp") / filename  # noqa: S108
-        logger.debug("TMP path for %s is %s", cnx.host, tmp_path)
+        logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
 
         cnx.put(src, str(tmp_path))  # noqa: S108
         xtr_arg = "-f" if force_overwrite else "-n"
@@ -247,7 +242,7 @@ class Herd:
         threads = {}
         for i, cnx in enumerate(self.group):
             threads[i] = threading.Thread(
-                target=self.thread_put,
+                target=self._thread_put,
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
             threads[i].start()
@@ -256,9 +251,10 @@ class Herd:
             del thread  # ... overcautious
 
     @staticmethod
-    def thread_get(cnx: Connection, src: Path, dst: Path):
+    def _thread_get(cnx: Connection, src: Path, dst: Path):
         cnx.get(str(src), local=str(dst))
 
+    @validate_call
     def get_file(
         self,
         src: Union[Path, str],
@@ -320,7 +316,7 @@ class Herd:
             )
 
             threads[i] = threading.Thread(
-                target=self.thread_get,
+                target=self._thread_get,
                 args=(cnx, src_path, dst_paths[i]),
             )
             threads[i].start()
@@ -363,49 +359,62 @@ class Herd:
             raise Exception(
                 f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
+        if ts_max.tzinfo is None:
+            logger.error("Provided time from host should have time-zone data!")
         # We need to estimate a future point in time such that all nodes are ready
         ts_start = ts_max + timedelta(seconds=self.start_delay_s)
         return ts_start, float(self.start_delay_s + ts_diff / 2)
 
-    def transfer_task(
+    @validate_call
+    def put_task(
         self,
-        task: ShpModel,
+        task: Union[Path, ShpModel],
         remote_path: Union[Path, str] = "/etc/shepherd/config.yaml",
     ) -> None:
-        """brings shepherd tasks to the group of hosts / sheep.
+        """transfers shepherd tasks to the group of hosts / sheep.
 
         Rolls out a configuration file according to the given command and parameters
         service.
 
         """
-        global verbose_level
-        task_dict = task.model_dump(exclude_unset=True, exclude_defaults=True)
-        task_wrap = Wrapper(
-            datatype=type(task).__name__,
-            created=datetime.now(),
-            parameters=task_dict,
-        )
-        task_yaml = yaml.safe_dump(
-            task_wrap.model_dump(exclude_unset=True, exclude_defaults=True),
-            default_flow_style=False,
-            sort_keys=False,
-        )
+        if isinstance(task, ShpModel):
+            task_dict = task.model_dump(exclude_unset=True, exclude_defaults=True)
+            task_wrap = Wrapper(
+                datatype=type(task).__name__,
+                created=datetime.now(),
+                parameters=task_dict,
+            )
+            task_yaml = yaml.safe_dump(
+                task_wrap.model_dump(exclude_unset=True, exclude_defaults=True),
+                default_flow_style=False,
+                sort_keys=False,
+            )
+            task = StringIO(task_yaml)
+        elif isinstance(task, Path):
+            if not task.is_file() or not task.exists():
+                raise ValueError("Task-Path must be existing file")
+            with open(task) as stream:
+                task_yaml = yaml.safe_load(stream)
+        else:
+            raise ValueError("Task must either be model or path to a model")
+
         if self.check_status(warn=True):
-            raise Exception("shepherd still active!")
+            raise RuntimeError("shepherd still active!")
         if not isinstance(remote_path, Path):
             remote_path = Path(remote_path)
 
-        logger.debug(
+        logger.info(
             "Rolling out the following config to '%s':\n\n%s",
             remote_path.as_posix(),
             task_yaml,
         )
         self.put_file(
-            StringIO(task_yaml),
+            task,
             remote_path,
             force_overwrite=True,
         )
 
+    @validate_call
     def check_status(self, warn: bool = False) -> bool:
         """Returns true ss long as one instance is still measuring
 
@@ -437,7 +446,7 @@ class Herd:
             return 1
         else:
             replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
-            self.print_output(replies, 3)  # min debug level
+            self.print_output(replies)
             return max([reply.exited for reply in replies.values()])
 
     def stop_measurement(self) -> int:
@@ -449,6 +458,7 @@ class Herd:
             logger.debug("-> max exit-code = %d", exit_code)
         return exit_code
 
+    @validate_call
     def poweroff(self, restart: bool) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
@@ -460,6 +470,7 @@ class Herd:
         exit_code = max([reply.exited for reply in replies.values()])
         return exit_code
 
+    @validate_call
     def await_stop(self, timeout: int = 30) -> bool:
         ts_end = time.time() + timeout
         while self.check_status():
@@ -467,3 +478,82 @@ class Herd:
                 return self.check_status(warn=True)
             time.sleep(1)
         return False
+
+    @validate_call
+    def inventorize(self, output_path: Path) -> bool:
+        """Collects information about the hosts, including the herd-server,
+        return True on failure
+        """
+        if output_path.is_file():
+            raise ValueError(
+                f"Inventorize needs a dir, not a file '{output_path.as_posix()}'",
+            )
+        file_path = Path("/var/shepherd/inventory.yaml")
+        self.run_cmd(
+            sudo=True,
+            cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+        )
+        server_inv = Inventory.collect()
+        output_path = Path(output_path)
+        server_inv.to_file(
+            path=Path(output_path) / "inventory_server.yaml",
+            minimal=True,
+        )
+        failed = self.get_file(
+            file_path,
+            output_path,
+            timestamp=False,
+            separate=False,
+            delete_src=True,
+        )
+        # TODO: best case - add all to one file or a new inventories-model?
+        return failed
+
+    @validate_call
+    def run_task(self, config: Union[Path, ShpModel], attach: bool = False) -> int:
+        if attach:
+            remote_path = Path("/etc/shepherd/config_for_herd.yaml")
+            self.put_task(config, remote_path)
+            command = f"shepherd-sheep -vvv run {remote_path.as_posix()}"
+            replies = self.run_cmd(sudo=True, cmd=command)
+            exit_code = max([reply.exited for reply in replies.values()])
+            if exit_code:
+                logger.error("Running Task failed - will exit now!")
+            self.print_output(replies, True)
+
+        else:
+            remote_path = Path("/etc/shepherd/config.yaml")
+            self.put_task(config, remote_path)
+            exit_code = self.start_measurement()
+            logger.info("Shepherd started.")
+            if exit_code > 0:
+                logger.debug("-> max exit-code = %d", exit_code)
+        return exit_code
+
+    @validate_call
+    def get_task_files(
+        self,
+        config: Union[Path, ShpModel],
+        dst_dir: Union[Path, str],
+        separate: bool = False,
+        delete_src: bool = False,
+    ) -> bool:
+        tbed_id = tb_client.query_ids("Testbed")[0]
+        tbed_di = tb_client.query_item("Testbed", tbed_id)
+        tbed = Testbed(**tbed_di)
+        if tbed.shared_storage:
+            logger.info("Data should be locally at: %s", {tbed.data_on_server})
+
+        wrap = prepare_task(config)
+        tasks = extract_tasks(wrap, no_task_sets=False)
+        failed = False
+        for task in tasks:
+            if hasattr(task, "output_path"):
+                logger.info("General remote path is: %s", task.output_path)
+                failed |= self.get_file(task.output_path, dst_dir, separate, delete_src)
+            if hasattr(task, "output_paths"):
+                for host, path in task.output_paths.items():
+                    logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
+                    raise RuntimeError("FN not finished, not needed ATM")  # TODO
+        return failed
+        pass

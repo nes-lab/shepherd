@@ -2,6 +2,7 @@
 - name: Update software & cleanup
   hosts: all
   become: true
+  strategy: free
 
   vars_prompt:
     # automatically skip prompt with argument: -e "delete_recordings=True"

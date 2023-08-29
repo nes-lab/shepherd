@@ -29,4 +29,4 @@ Database
 
 In the current implementation, all data is locally stored in the filesystem. This means, that for emulation, the harvesting data is first copied to the corresponding shepherd node. The sampled data (harvesting data for recording and load data for emulation) is also stored on each individual node first and later copied and merged to a central database. We use the popular HDF5 data format to store data and meta-information.
 
-See Chapter :doc:`data_format` for more details.
+See Chapter :doc:`../user/data_format` for more details.

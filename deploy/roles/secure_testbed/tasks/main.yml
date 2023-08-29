@@ -101,19 +101,20 @@
   changed_when: true
 
 - name: SYS - Prevent active User from creating new world writables
-  ansible.builtin.shell:
-    cmd: 'umask 002 && umask'
+  ansible.builtin.shell: 'umask 002 && umask'
   changed_when: true
 
 - name: Restart device
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
 
 - name: INFO - check for port-listeners (look for open ports beside of SSHd)
-  ansible.builtin.shell: |  # pipefail-setting prevents surprises
-    set -o pipefail && netstat -apn | grep LISTEN
+  ansible.builtin.shell: # pipefail-setting prevents surprises
+    cmd: "set -o pipefail && netstat -apn | grep LISTEN"
   changed_when: false
+  failed_when: false
   register: netstat
 
 - name: INFO - print listeners

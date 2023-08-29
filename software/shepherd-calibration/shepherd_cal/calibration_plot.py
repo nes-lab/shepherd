@@ -15,6 +15,12 @@ def plot_calibration(
 ) -> None:
     for component in ["harvester", "emulator"]:
         msr_component = measurements[component]
+        if msr_component is None:
+            logger.info(
+                "NOTE: data for component '%s' not found - will skip plot",
+                component,
+            )
+            continue
         for channel in msr_component.keys():
             try:
                 sample_points = msr_component[channel]
@@ -28,10 +34,17 @@ def plot_calibration(
                 xl = [xp[0], xp[-1]]
                 yl = [gain * xlp + offset for xlp in xl]
             except KeyError:
-                logger.info("NOTE: data was not found - will skip plot")
+                logger.info(
+                    "NOTE: data for channel '%s' was not found - will skip plot",
+                    channel,
+                )
                 continue
             except ValueError as e:
-                logger.info("NOTE: data was faulty - will skip plot", exc_info=e)
+                logger.info(
+                    "NOTE: data for channel '%s' was faulty - will skip plot",
+                    channel,
+                    exc_info=e,
+                )
                 continue
 
             fig, ax = plt.subplots()

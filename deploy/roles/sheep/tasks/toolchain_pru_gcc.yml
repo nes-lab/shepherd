@@ -23,7 +23,7 @@
   become: true
   register: dl_cc_ret
   until: dl_cc_ret is not failed
-  retries: 3
+  retries: 5
   tags:
     - pru-tools
 
@@ -45,7 +45,7 @@
   become: true
   register: dl_pssp_ret
   until: dl_pssp_ret is not failed
-  retries: 3
+  retries: 5
   tags:
     - pru-tools
 

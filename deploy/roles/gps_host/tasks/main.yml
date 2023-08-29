@@ -71,6 +71,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
   tags: gps
 
 - name: Set GPS-cape to enabled
@@ -85,6 +86,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
   tags: gps
 
 - name: Copy pps-gmtimer code
@@ -123,6 +125,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
   tags:
     - gps
     - device-tree

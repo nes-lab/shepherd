@@ -23,7 +23,7 @@ Depending on your use-case you may not even need to directly interact with it.
 shepherd-herd
 -------------
 
-.. click:: shepherd_herd.cli:cli
+.. click:: shepherd_herd.herd_cli:cli
    :prog: shepherd-herd
    :show-nested:
 
@@ -35,7 +35,7 @@ Installation, configuration and usage on the command-line is explained on the `P
 shepherd-sheep
 --------------
 
-.. click:: shepherd.cli:cli
+.. click:: shepherd_herd.herd_cli:cli
    :prog: shepherd-sheep
    :show-nested:
 

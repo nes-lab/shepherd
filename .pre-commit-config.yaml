@@ -97,7 +97,7 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.17.2
+    rev: v6.16.2  # v6.17.2 is trouble
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$

@@ -2,7 +2,7 @@
 
 - name: Look for Kernel Module
   ansible.builtin.shell:  # pipefail-setting prevents surprises
-    cmd: set -o pipefail && lsmod | grep shepherd
+    cmd: "set -o pipefail && lsmod | grep shepherd"
   register: kmod_ret
   failed_when: false
   changed_when: false

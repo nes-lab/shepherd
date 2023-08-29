@@ -173,6 +173,7 @@ def write(
 ):
     cal_cape = CalibrationCape.from_file(cal_file)
     try:
+        log.debug("Will write Cal-Data:\n\n%s", str(cal_cape))
         with EEPROM() as storage:
             storage.write_calibration(cal_cape)
     except FileNotFoundError:
@@ -185,6 +186,7 @@ def write(
     "--cal-file",
     "-c",
     type=click.Path(dir_okay=False, executable=False),
+    default=None,
     help="If provided, calibration data is dumped to this file",
 )
 def read(cal_file: Optional[Path]):
@@ -202,10 +204,10 @@ def read(cal_file: Optional[Path]):
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
         exit(3)
 
-    if cal_file:
-        cal.to_file(cal_file)
+    if cal_file is None:
+        log.info("Retrieved Cal-Data:\n\n%s", str(cal))
     else:
-        log.info(repr(cal))
+        cal.to_file(cal_file)
 
 
 @cli.command(short_help="Start zerorpc server")

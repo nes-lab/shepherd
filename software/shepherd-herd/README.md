@@ -15,12 +15,18 @@
 
 ## Installation
 
-*shepherd-herd* is a pure python package and available on PyPI.
+*shepherd-herd* is a python package and available on [PyPI](https://pypi.org/project/shepherd_herd).
 Use your python package manager to install it.
 For example, using pip:
 
 ```Shell
 pip3 install shepherd-herd
+```
+
+For install directly from GitHub-Sources (here `dev`-branch):
+
+```Shell
+ pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/shepherd-herd -U
 ```
 
 For install from local sources:
@@ -83,7 +89,12 @@ Or select individual sheep from the herd:
 shepherd-herd --limit sheep0,sheep2, shell-cmd "echo 'hello'"
 ```
 
-## Examples
+## Library-Examples
+
+See [example-files](https://github.com/orgua/shepherd/tree/main/software/shepherd-herd/examples/) for details.
+
+
+## CLI-Examples
 
 Here, we just provide a selected set of examples of how to use *shepherd-herd*. It is assumed that the `herd.yml` is located at the recommended config path.
 
@@ -131,7 +142,29 @@ Explanation:
 
 For more virtual source models see [virtual_source_fixture.yaml](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source_fixture.yaml).
 
-### Data distribution & retrieval
+### Generalized Task-Execution
+
+An individual task or set of tasks can be generated from experiments via the [shepherd-core](https://pypi.org/project/shepherd-core/) of the [datalib](https://github.com/orgua/shepherd-datalib)
+
+```Shell
+shepherd-herd run experiment_file.yaml --attach
+```
+
+Explanation:
+
+- a set of tasks is send to the individual sheep and executed there
+- [tasks](https://github.com/orgua/shepherd-datalib/tree/main/shepherd_core/shepherd_core/data_models/task) currently range from
+
+  - modifying firmware / patching a node-id,
+  - flashing firmware to the targets,
+  - running an emulation- or harvest-task
+  - these individual tasks can be bundled up in observer-tasks -> a task-set for one sheep
+  - these observer-tasks can be bundled up once more into testbed-tasks
+
+- `online` means the program stays attached to the task and shows cli-output of the sheep, once the measurements are done
+
+
+### File-distribution & retrieval
 
 Recordings and config-files can be **distributed** to the remote nodes via:
 
@@ -166,9 +199,9 @@ Manually **starting** a pre-configured measurement can be done via:
 shepherd-herd start
 ```
 
-**Note 1**: configuration is loading from `/etc/shepherd/config.yml`.
+**Note 1**: configuration is loading locally from `/etc/shepherd/config.yml`.
 
-**Note 2**: the start is not synchronized itself (you have to define a start-time in config).
+**Note 2**: the start is not synchronized itself (you have to set `time_start` in config).
 
 The current state of the measurement can be **checked** with (console printout and return code):
 
@@ -180,6 +213,14 @@ If the measurement runs indefinitely or something different came up, and you wan
 
 ```Shell
 shepherd-herd -l sheep1 stop
+```
+
+### Creating an Inventory
+
+Creating an overview for what's running on the individual sheep / hosts. An inventory-file is created for each host.
+
+```Shell
+shepherd-herd inventorize ./
 ```
 
 ### Programming Targets (pru-programmer)
@@ -197,6 +238,7 @@ shepherd-herd program --help
 ```
 
 The options default to:
+
 - nRF52 as Target
 - Target Port A
 - Programming Port 1
@@ -204,7 +246,7 @@ The options default to:
 - 500 kbit/s
 
 
-### Programming Targets (not maintained OpenOCD Interface)
+### Deprecated - Programming Targets (OpenOCD Interface)
 
 Flash a firmware image `firmware_img.hex` that is stored on the local machine in your current working directory to the attached sensor nodes:
 
@@ -225,6 +267,8 @@ Sheep can either be forced to power down completely or in this case reboot:
 ```Shell
 shepherd-herd poweroff --restart
 ```
+
+**NOTE**: Be sure to have physical access to the hardware for manually starting them again.
 
 ## Testbench
 

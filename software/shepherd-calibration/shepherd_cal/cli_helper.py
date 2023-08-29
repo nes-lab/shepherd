@@ -6,8 +6,8 @@ import shepherd_core
 import typer
 
 from . import __version__
+from .logger import activate_verbose
 from .logger import logger
-from .logger import set_verbose_level
 
 
 def exit_gracefully(*args):  # type: ignore
@@ -15,16 +15,19 @@ def exit_gracefully(*args):  # type: ignore
     sys.exit(0)
 
 
-def cli_setup_callback(verbose: bool) -> None:
+def cli_setup_callback(verbose: bool = False, print_version: bool = False) -> None:
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
-    set_verbose_level(3 if verbose else 2)
-    logger.info("Shepherd-Cal v%s", __version__)
-    logger.debug("Shepherd-Core v%s", shepherd_core.__version__)
-    logger.debug("Python v%s", sys.version)
-    logger.debug("Click v%s", click.__version__)
-    logger.debug("Typer v%s", typer.__version__)
+    if verbose:
+        activate_verbose()
+
+    if print_version:
+        logger.info("Shepherd-Cal v%s", __version__)
+        logger.debug("Shepherd-Core v%s", shepherd_core.__version__)
+        logger.debug("Python v%s", sys.version)
+        logger.debug("Typer v%s", typer.__version__)
+        logger.debug("Click v%s", click.__version__)
 
 
 # NOTE: typer.Option seems to imply Optional[type]
@@ -37,7 +40,9 @@ pass_opt_t = typer.Option(
 
 smu_ip_opt_t = typer.Option(default="192.168.1.108", help="IP of SMU-Device in network")
 smu_2w_opt_t = typer.Option(
-    default=False,
+    False,
+    "--smu-2wire/--smu-4wire",
+    is_flag=True,
     help="DON'T use 4wire-mode for measuring voltage (NOT recommended)",
 )
 smu_nc_opt_t = typer.Option(
@@ -45,7 +50,10 @@ smu_nc_opt_t = typer.Option(
     help="measurement duration in pwrline cycles (.001 to 25, but > 18 can cause error-msgs)",
 )
 verbose_opt_t = typer.Option(
-    default=False,
+    False,
+    "--verbose",
+    "-v",
+    is_flag=True,
     help="Activate debug- instead of info-level",
 )
 
@@ -62,4 +70,19 @@ ifile_opt_t = typer.Option(
     file_okay=True,
     exists=True,
     help="Input-YAML, wrapped data-model",
+)
+
+hrv_opt_t = typer.Option(
+    False,
+    "--harvester-only",
+    "-h",
+    is_flag=True,
+    help="only handle harvester",
+)
+emu_opt_t = typer.Option(
+    False,
+    "--emulator-only",
+    "-e",
+    is_flag=True,
+    help="only handle emulator",
 )

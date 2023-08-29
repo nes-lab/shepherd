@@ -115,7 +115,7 @@ Change into the ``software/python-package`` directory on the BeagleBone and run 
 
     sudo pip3 install ./[tests]
 
-    sudo pytest
+    sudo pytest-3
 
 Some tests (~40) are hardware-independent, while most of them require a beaglebone to work (~100). The testbench detects the BeagleBone automatically. A small subset of tests (~8) are writing & configuring the EEPROM on the shepherd cape and must be enabled manually (``sudo pytest --eeprom-write``)
 
@@ -127,11 +127,11 @@ The following commands allow to:
 
 .. code-block:: bash
 
-    sudo pytest --stepwise
+    sudo pytest-3 --stepwise
 
-    sudo pytest tests/test_sheep_cli.py::test_cli_emulate_aux_voltage
+    sudo pytest-3 tests/test_sheep_cli.py::test_cli_emulate_aux_voltage
 
-    sudo pytest tests/test_sheep_cli.py
+    sudo pytest-3 tests/test_sheep_cli.py
 
 
 It is also recommended to **run the testbench of the herd-tool prior to releasing a new version**. See `project-page <https://github.com/orgua/shepherd/tree/main/software/shepherd-herd#testbench>`_ for more info.
@@ -147,6 +147,6 @@ Use ``bump2version`` to update the version number across the repository:
 
 .. code-block:: bash
 
-    bump2version --tag patch
+    bump2version patch
 
 Finally, open a pull-request to allow merging your changes into the main-branch and to trigger the test-pipeline.

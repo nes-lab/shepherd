@@ -62,6 +62,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
   when:
     - sheep_install_basics | bool
     - detector.changed
@@ -99,6 +100,7 @@
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
+    post_reboot_delay: 30
   when:
     - sheep_install_basics | bool
     - detector.changed

@@ -32,7 +32,11 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_sitemap",
     "sphinx_rtd_theme",
+    "myst_parser",
+    "sphinx_design",
+    "sphinx_copybutton",
 ]
+# TODO: check other sphinx-pluging (mentioned in pipfile) & breathe
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -43,6 +47,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 autodoc_mock_imports = ["dbus"]
 
+myst_enable_extensions = ["colon_fence"]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -61,6 +66,6 @@ html_extra_path = ["robots.txt"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 sitemap_url_scheme = "{link}"

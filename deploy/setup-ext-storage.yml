@@ -11,8 +11,8 @@
         prompt: 'This will format your external storage at /dev/{{ storage_dev }}. All data will be lost. Press Ctrl+c and then "a" to abort'
 
     - name: Check root device
-      ansible.builtin.shell: |  # pipefail-setting prevents surprises
-        set -o pipefail && mount | grep ' / ' | cut -d' ' -f 1  # noqa command-instead-of-module
+      ansible.builtin.shell: # pipefail-setting prevents surprises
+        cmd: "set -o pipefail && mount | grep ' / ' | cut -d' ' -f 1  # noqa command-instead-of-module"
       register: root_dev
       changed_when: false
       # despite ansible-lints claim this is not doable with ansible.posix.mount

@@ -14,7 +14,9 @@ from .calibrator import INSTR_CAL_EMU
 from .calibrator import INSTR_CAL_HRV
 from .calibrator import Calibrator
 from .cli_helper import cli_setup_callback
+from .cli_helper import emu_opt_t
 from .cli_helper import host_arg_t
+from .cli_helper import hrv_opt_t
 from .cli_helper import ifile_opt_t
 from .cli_helper import ofile_opt_t
 from .cli_helper import pass_opt_t
@@ -35,12 +37,15 @@ serial_opt_t = typer.Option(
     help="Cape serial number, max 12 Char, e.g. HRV_EMU_1001, reflecting capability & increment",
 )
 version_opt_t = typer.Option(
-    default=None,
+    None,
     help="Cape version number, max 4 Char, e.g. 24B0, reflecting hardware revision",
 )
-
-hrv_opt_t = typer.Option(default=False, help="only handle harvester")
-emu_opt_t = typer.Option(default=False, help="only handle emulator")
+write_opt_t = typer.Option(
+    False,
+    "--write",
+    is_flag=True,
+    help="program eeprom after measurement",
+)
 
 
 @cli_cal.command()
@@ -55,6 +60,7 @@ def measure(
     harvester: bool = hrv_opt_t,
     emulator: bool = emu_opt_t,
     cape_serial: str = serial_opt_t,
+    write: bool = write_opt_t,
     version: Optional[str] = version_opt_t,
     verbose: bool = verbose_opt_t,
 ):
@@ -72,7 +78,7 @@ def measure(
 
     results = {"host": host, "cape": cape}
 
-    shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    shp_cal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
 
     if harvester:
         click.echo(INSTR_CAL_HRV)
@@ -80,7 +86,7 @@ def measure(
             click.echo(INSTR_4WIRE)
         usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
-            results["harvester"] = shpcal.measure_harvester()
+            results["harvester"] = shp_cal.measure_harvester()
 
     if emulator:
         click.echo(INSTR_CAL_EMU)
@@ -88,23 +94,27 @@ def measure(
             click.echo(INSTR_4WIRE)
         usr_conf = click.confirm("Confirm that everything is set up ...", default=True)
         if usr_conf:
-            results["emulator"] = shpcal.measure_emulator()
+            results["emulator"] = shp_cal.measure_emulator()
 
     msr_cape = CalMeasurementCape(**results)
-    logger.info(msr_cape.model_dump())
 
     if outfile is None:
         timestamp = datetime.fromtimestamp(time())
-        timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
-        outfile = Path(f"./{timestring}_shepherd_cape.measurement.yaml")
+        timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
+        outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}.measurement.yaml")
         logger.debug("No filename provided -> set to '%s'.", outfile)
     msr_cape.to_file(outfile)
     logger.info("Saved Cal-Measurement to '%s'.", outfile)
 
     outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]) + ".cal_data")
     cal_cape = msr_cape.to_cal()
+    logger.info("Measured Cal-Data:\n\n%s", str(cal_cape))
     cal_cape.to_file(outfile)
     logger.info("Saved Cal-Data to '%s'.", outfile)
+
+    if write:
+        shp_cal.write(outfile)
+        shp_cal.read()
 
     outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]))
     plot_calibration(msr_cape, cal_cape, outfile)

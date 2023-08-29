@@ -10,7 +10,7 @@ Recorder
 
 The recorder is used to configure all relevant hardware and software and to sample and extract data from the analog frontend.
 
-.. autoclass:: shepherd.Recorder
+.. autoclass:: shepherd_sheep.ShepherdHarvester
    :members:
    :inherited-members:
 
@@ -32,7 +32,7 @@ Emulator
 
 The emulator is used to replay previously recorded IV data to an attached sensor node.
 
-.. autoclass:: shepherd.Emulator
+.. autoclass:: shepherd_sheep.ShepherdEmulator
    :members:
    :inherited-members:
 
@@ -61,7 +61,7 @@ LogWriter
 
 The *LogWriter* is used to store IV data sampled with shepherd to an hdf5 file.
 
-.. autoclass:: shepherd.LogWriter
+.. autoclass:: shepherd_sheep.Writer
    :members:
 
 Usage:
@@ -84,7 +84,7 @@ The *Reader* for shepherd-files is used to read previously recorded data from an
 It can be used with the Emulator to replay recorded data to an attached sensor node.
 
 
-.. autoclass:: shepherd.LogReader
+.. autoclass:: shepherd_core.BaseReader
    :members:
 
 Usage:

@@ -225,12 +225,12 @@ def write_dac_aux_voltage(
         voltage = 0.0
     elif (voltage is True) or (isinstance(voltage, str) and "main" in voltage.lower()):
         # set bit 20 (during pru-reset) and therefore link both adc-channels
-        write_dac_aux_voltage_raw(2**20)
+        write_dac_aux_voltage_raw(0, ch_link=True)
         return
     elif isinstance(voltage, str) and "buffer" in voltage.lower():
         # set bit 21 (during pru-reset) and therefore output
         # intermediate (storage cap) voltage on second channel
-        write_dac_aux_voltage_raw(2**21)
+        write_dac_aux_voltage_raw(0, cap_out=True)
         log.warning(
             "Second DAC-Channel puts out intermediate emulation voltage (@Cap) "
             "-> this might break realtime",
@@ -254,17 +254,25 @@ def write_dac_aux_voltage(
     write_dac_aux_voltage_raw(output)
 
 
-def write_dac_aux_voltage_raw(voltage_raw: int) -> None:
+def write_dac_aux_voltage_raw(
+    voltage_raw: int,
+    ch_link: bool = False,
+    cap_out: bool = False,
+) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
+        cap_out: aux will output cap-voltage of vsrc
+        ch_link: switch both dac-channels
         voltage_raw: desired voltage as raw int for DAC
     """
     if voltage_raw >= (2**16):
         log.info(
-            "DAC: sending raw-voltage above possible limit of 16bit-value "
-            "-> this might trigger commands",
+            "DAC: sending raw-voltage above possible limit of 16bit-value, will limit",
         )
+        voltage_raw = min(voltage_raw, 2**16 - 1)
+    voltage_raw |= int(ch_link) << 20
+    voltage_raw |= int(cap_out) << 21
     with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
         log.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))

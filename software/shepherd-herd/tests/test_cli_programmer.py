@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import pytest
-from shepherd_herd.cli import cli
+from click.testing import CliRunner
+from shepherd_herd.herd_cli import cli
 
 # NOTE: (almost) direct copy between shepherd-herd & python-package
 # differences: import _herd, .mark.hardware, shepherd_up / stopped_herd
@@ -22,12 +23,12 @@ def fw_empty(tmp_path: Path) -> Path:
     return store_path
 
 
-@pytest.mark.timeout(60)
-def test_cli_program_minimal(cli_runner, fw_example: Path) -> None:
+@pytest.mark.timeout(80)
+def test_cli_program_minimal(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             fw_example.as_posix(),
@@ -36,12 +37,12 @@ def test_cli_program_minimal(cli_runner, fw_example: Path) -> None:
     assert res.exit_code == 0
 
 
-@pytest.mark.timeout(60)
-def test_cli_program_swd_explicit(cli_runner, fw_example: Path) -> None:
+@pytest.mark.timeout(80)
+def test_cli_program_swd_explicit(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--target-port",
             "A",
@@ -60,15 +61,15 @@ def test_cli_program_swd_explicit(cli_runner, fw_example: Path) -> None:
     assert res.exit_code == 0
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(80)
 def test_cli_program_swd_explicit_short(
-    cli_runner,
+    cli_runner: CliRunner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "-p",
             "A",
@@ -87,12 +88,12 @@ def test_cli_program_swd_explicit_short(
     assert res.exit_code == 0
 
 
-@pytest.mark.timeout(60)
-def test_cli_program_sbw_explicit(cli_runner, fw_example: Path) -> None:
+@pytest.mark.timeout(80)
+def test_cli_program_sbw_explicit(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--target-port",
             "B",
@@ -112,11 +113,11 @@ def test_cli_program_sbw_explicit(cli_runner, fw_example: Path) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_a(cli_runner, fw_empty: Path) -> None:
+def test_cli_program_file_defective_a(cli_runner: CliRunner, fw_empty: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             fw_empty.as_posix(),
@@ -126,11 +127,11 @@ def test_cli_program_file_defective_a(cli_runner, fw_empty: Path) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_b(cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_b(cli_runner: CliRunner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             tmp_path.as_posix(),  # Directory
@@ -140,11 +141,11 @@ def test_cli_program_file_defective_b(cli_runner, tmp_path: Path) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c(cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_c(cli_runner: CliRunner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             str(tmp_path / "file_abc.bin"),  # non_existing file
@@ -155,13 +156,13 @@ def test_cli_program_file_defective_c(cli_runner, tmp_path: Path) -> None:
 
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_a(
-    cli_runner,
+    cli_runner: CliRunner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--datarate",
             "2000000",  # too fast
@@ -174,13 +175,13 @@ def test_cli_program_datarate_invalid_a(
 
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_b(
-    cli_runner,
+    cli_runner: CliRunner,
     fw_example: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--datarate",
             "0",  # impossible
@@ -192,11 +193,11 @@ def test_cli_program_datarate_invalid_b(
 
 
 @pytest.mark.timeout(60)
-def test_cli_program_target_invalid(cli_runner, fw_example: Path) -> None:
+def test_cli_program_target_invalid(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--mcu-type",
             "arduino",

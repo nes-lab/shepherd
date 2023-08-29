@@ -42,7 +42,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dan Drown");
 MODULE_DESCRIPTION("PPS Client Driver using OMAP Timer hardware");
-MODULE_VERSION("0.4.5");
+MODULE_VERSION("0.4.6");
 
 struct pps_gmtimer_platform_data
 {

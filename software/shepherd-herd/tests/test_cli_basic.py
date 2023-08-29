@@ -2,14 +2,15 @@ import os
 from pathlib import Path
 
 import pytest
-from shepherd_herd.cli import cli
+from click.testing import CliRunner
+from shepherd_herd.herd_cli import cli
 
 from .conftest import extract_first_sheep
 from .conftest import generate_h5_file
 
 
 @pytest.mark.timeout(10)
-def test_run_standard(cli_runner) -> None:
+def test_run_standard(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -21,11 +22,11 @@ def test_run_standard(cli_runner) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_run_extra(cli_runner) -> None:
+def test_run_extra(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "shell-cmd",
             "date",
         ],
@@ -34,11 +35,11 @@ def test_run_extra(cli_runner) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_run_fail(cli_runner) -> None:
+def test_run_fail(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "shell-command",
             "date",
         ],
@@ -47,11 +48,11 @@ def test_run_fail(cli_runner) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_run_sudo(cli_runner) -> None:
+def test_run_sudo(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "shell-cmd",
             "-s",
             "echo 'it's me: $USER",
@@ -61,11 +62,11 @@ def test_run_sudo(cli_runner) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_run_sudo_long(cli_runner) -> None:
+def test_run_sudo_long(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "shell-cmd",
             "--sudo",
             "echo 'it's me: $USER",
@@ -75,13 +76,13 @@ def test_run_sudo_long(cli_runner) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_provide_inventory(cli_runner, local_herd: Path) -> None:
+def test_provide_inventory(cli_runner: CliRunner, local_herd: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
+            "-v",
             "-i",
             local_herd.as_posix(),
-            "-vvv",
             "shell-cmd",
             "date",
         ],
@@ -90,14 +91,13 @@ def test_provide_inventory(cli_runner, local_herd: Path) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_provide_inventory_long(cli_runner, local_herd: Path) -> None:
+def test_provide_inventory_long(cli_runner: CliRunner, local_herd: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
             "--inventory",
             local_herd.as_posix(),
             "--verbose",
-            "=3",
             "shell-cmd",
             "date",
         ],
@@ -106,7 +106,7 @@ def test_provide_inventory_long(cli_runner, local_herd: Path) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_provide_limit(cli_runner, local_herd: Path) -> None:
+def test_provide_limit(cli_runner: CliRunner, local_herd: Path) -> None:
     sheep = extract_first_sheep(local_herd)
     res = cli_runner.invoke(
         cli,
@@ -115,7 +115,7 @@ def test_provide_limit(cli_runner, local_herd: Path) -> None:
             local_herd.as_posix(),
             "-l",
             f"{sheep},",
-            "-vvv",
+            "-v",
             "shell-cmd",
             "date",
         ],
@@ -124,7 +124,7 @@ def test_provide_limit(cli_runner, local_herd: Path) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_provide_limit_long(cli_runner, local_herd: Path) -> None:
+def test_provide_limit_long(cli_runner: CliRunner, local_herd: Path) -> None:
     sheep = extract_first_sheep(local_herd)
     res = cli_runner.invoke(
         cli,
@@ -133,7 +133,7 @@ def test_provide_limit_long(cli_runner, local_herd: Path) -> None:
             local_herd.as_posix(),
             "--limit",
             f"{sheep},",
-            "-vvv",
+            "-v",
             "shell-cmd",
             "date",
         ],
@@ -142,15 +142,15 @@ def test_provide_limit_long(cli_runner, local_herd: Path) -> None:
 
 
 @pytest.mark.timeout(10)
-def test_provide_limit_fail(cli_runner, local_herd: Path) -> None:
+def test_provide_limit_fail(cli_runner: CliRunner, local_herd: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
+            "-v",
             "-i",
             local_herd.as_posix(),
             "-l",
             "MrMeeseeks,",
-            "-vvv",
             "shell-cmd",
             "date",
         ],
@@ -158,13 +158,13 @@ def test_provide_limit_fail(cli_runner, local_herd: Path) -> None:
     assert res.exit_code != 0
 
 
-def test_distribute_retrieve_std(cli_runner, tmp_path: Path) -> None:
+def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
     elem_count1 = len(os.listdir(tmp_path))
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "distribute",
             test_file.as_posix(),
         ],
@@ -173,7 +173,7 @@ def test_distribute_retrieve_std(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "retrieve",
             "-f",
             "-t",
@@ -188,7 +188,7 @@ def test_distribute_retrieve_std(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "retrieve",
             "-s",
             test_file.name,
@@ -201,14 +201,14 @@ def test_distribute_retrieve_std(cli_runner, tmp_path: Path) -> None:
     assert elem_count2 == elem_count3
 
 
-def test_distribute_retrieve_etc(cli_runner, tmp_path: Path) -> None:
+def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
     elem_count1 = len(os.listdir(tmp_path))
     dir_remote = "/etc/shepherd/"
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "distribute",
             "--remote-path",
             dir_remote,
@@ -219,7 +219,7 @@ def test_distribute_retrieve_etc(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "retrieve",
             "--force-stop",
             "--separate",
@@ -234,7 +234,7 @@ def test_distribute_retrieve_etc(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "retrieve",
             "--timestamp",
             dir_remote + test_file.name,
@@ -247,14 +247,14 @@ def test_distribute_retrieve_etc(cli_runner, tmp_path: Path) -> None:
     assert elem_count2 == elem_count3
 
 
-def test_distribute_retrieve_var(cli_runner, tmp_path: Path) -> None:
+def test_distribute_retrieve_var(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
     elem_count1 = len(os.listdir(tmp_path))
     dir_remote = "/var/shepherd/"
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "distribute",
             "-r",
             dir_remote,
@@ -265,7 +265,7 @@ def test_distribute_retrieve_var(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "retrieve",
             "--force-stop",
             "--separate",
@@ -280,7 +280,7 @@ def test_distribute_retrieve_var(cli_runner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "retrieve",
             "--timestamp",
             dir_remote + test_file.name,

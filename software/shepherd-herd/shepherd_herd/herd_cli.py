@@ -1,24 +1,21 @@
+import signal
 import sys
-import telnetlib
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import click
-from fabric import Connection
+import shepherd_core
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.data_models.testbed import TargetPort
-from shepherd_core.inventory import Inventory
 
 from . import __version__
 from .herd import Herd
-from .herd import get_verbose_level
-from .herd import logger
-from .herd import set_verbose_level
+from .logger import activate_verbose
+from .logger import logger as log
 
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring
@@ -27,29 +24,41 @@ from .herd import set_verbose_level
 #  - arguments can be configured in a dict and standardized across tools
 
 
+def exit_gracefully(*args) -> None:  # type: ignore
+    log.warning("Aborted!")
+    sys.exit(0)
+
+
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
     "--inventory",
     "-i",
     type=click.STRING,
-    default="",
+    default=None,
     help="List of target hosts as comma-separated string or path to ansible-style yaml file",
 )
 @click.option(
     "--limit",
     "-l",
     type=click.STRING,
-    default="",
+    default=None,
     help="Comma-separated list of hosts to limit execution to",
 )
-@click.option("--user", "-u", type=click.STRING, help="User name for login to nodes")
+@click.option(
+    "--user",
+    "-u",
+    type=click.STRING,
+    default=None,
+    help="User name for login to nodes",
+)
 @click.option(
     "--key-filepath",
     "-k",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    default=None,
     help="Path to private ssh key file",
 )
-@click.option("-v", "--verbose", count=True, type=click.INT, default=2)
+@click.option("-v", "--verbose", is_flag=True)
 @click.option(
     "--version",
     is_flag=True,
@@ -58,23 +67,35 @@ from .herd import set_verbose_level
 @click.pass_context
 def cli(
     ctx: click.Context,
-    inventory: str,
-    limit: str,
+    inventory: Optional[str],
+    limit: Optional[str],
     user: Optional[str],
     key_filepath: Optional[Path],
-    verbose: int,
+    verbose: bool,
     version: bool,
 ):
     """A primary set of options to configure how to interface the herd"""
-    set_verbose_level(verbose)
+    signal.signal(signal.SIGTERM, exit_gracefully)
+    signal.signal(signal.SIGINT, exit_gracefully)
+
+    if verbose:
+        activate_verbose()
+
     if version:
-        logger.info("Shepherd-Herd v%s", __version__)
-        logger.debug("Python v%s", sys.version)
-        logger.debug("Click v%s", click.__version__)
+        log.info("Shepherd-Cal v%s", __version__)
+        log.debug("Shepherd-Core v%s", shepherd_core.__version__)
+        log.debug("Python v%s", sys.version)
+        log.debug("Click v%s", click.__version__)
+
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 
     ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
+
+
+# #############################################################################
+#                               Misc-Commands
+# #############################################################################
 
 
 @cli.command(short_help="Power off shepherd nodes")
@@ -91,9 +112,31 @@ def poweroff(ctx: click.Context, restart: bool):
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def shell_cmd(ctx: click.Context, command: str, sudo: bool):
     replies = ctx.obj["herd"].run_cmd(sudo, command)
-    ctx.obj["herd"].print_output(replies, 2)  # info-level
+    ctx.obj["herd"].print_output(replies, verbose=True)
     exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
+
+
+@cli.command(short_help="Collects information about the hosts")
+@click.argument(
+    "output-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    default=Path("./"),
+)
+@click.pass_context
+def inventorize(ctx: click.Context, output_path: Path) -> None:
+    file_path = Path("/var/shepherd/inventory.yaml")
+    ctx.obj["herd"].run_cmd(
+        sudo=True,
+        cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+    )
+    failed = ctx.obj["herd"].inventorize(output_path)
+    sys.exit(failed)
+
+
+# #############################################################################
+#                               Task-Handling
+# #############################################################################
 
 
 @cli.command(
@@ -103,35 +146,18 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool):
     "config",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
-@click.option("--online", "-o", is_flag=True, help="Wait and receive output")
+@click.option("--attach", "-a", is_flag=True, help="Wait and receive output")
 @click.pass_context
-def run(ctx: click.Context, config: Path, online: bool):
-    if online:
-        remote_path = Path("/etc/shepherd/config_for_herd.yaml")
-        ctx.obj["herd"].put_file(config, remote_path, force_overwrite=True)
-        command = (
-            f"shepherd-sheep -{'v' * get_verbose_level()} run {remote_path.as_posix()}"
-        )
-        replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
-        exit_code = max([reply.exited for reply in replies.values()])
-        if exit_code:
-            logger.error("Programming - Procedure failed - will exit now!")
-        ctx.obj["herd"].print_output(replies, 3)  # requires debug level
-        sys.exit(exit_code)
-    else:
-        remote_path = Path("/etc/shepherd/config.yaml")
-        ctx.obj["herd"].put_file(config, remote_path, force_overwrite=True)
-        exit_code = ctx.obj["herd"].start_measurement()
-        logger.info("Shepherd started.")
-        if exit_code > 0:
-            logger.debug("-> max exit-code = %d", exit_code)
+def run(ctx: click.Context, config: Path, attach: bool):
+    exit_code = ctx.obj["herd"].run_task(config, attach)
+    sys.exit(exit_code)
 
 
 @cli.command(short_help="Record IV data from a harvest-source")
 @click.option(
     "--output-path",
     "-o",
-    type=click.Path(),
+    type=click.Path(dir_okay=True, file_okay=True),
     default=Herd.path_default,
     help="Dir or file path for resulting hdf5 file",
 )
@@ -139,13 +165,14 @@ def run(ctx: click.Context, config: Path, online: bool):
     "--virtual-harvester",
     "-a",
     type=click.STRING,
-    default="mppt_opt",
+    default=None,
     help="Choose one of the predefined virtual harvesters",
 )
 @click.option(
     "--duration",
     "-d",
     type=click.FLOAT,
+    default=None,
     help="Duration of recording in seconds",
 )
 @click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
@@ -181,33 +208,35 @@ def harvest(
         ts_start, delay = ctx.obj["herd"].find_consensus_time()
         kwargs["time_start"] = ts_start
 
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     task = HarvestTask(**kwargs)
-    ctx.obj["herd"].transfer_task(task)
+    ctx.obj["herd"].put_task(task)
 
     if not no_start:
-        logger.info(
+        log.info(
             "Scheduling start of shepherd: %s (in ~ %.2f s)",
             ts_start.isoformat(),
             delay,
         )
         exit_code = ctx.obj["herd"].start_measurement()
-        logger.info("Shepherd started.")
+        log.info("Shepherd started.")
         if exit_code > 0:
-            logger.debug("-> max exit-code = %d", exit_code)
+            log.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file on the sheep containing harvesting data",
+    short_help="Emulate data, where INPUT is an hdf5 file "
+    "on the sheep-host containing harvesting data",
 )
 @click.argument(
     "input-path",
-    type=click.Path(file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(file_okay=True, dir_okay=False),
 )
 # TODO: switch to local file for input?
 @click.option(
     "--output-path",
     "-o",
-    type=click.Path(),
+    type=click.Path(dir_okay=True, file_okay=True),
     default=Herd.path_default,
     help="Dir or file path for resulting hdf5 file with load recordings",
 )
@@ -215,6 +244,7 @@ def harvest(
     "--duration",
     "-d",
     type=click.FLOAT,
+    default=None,
     help="Duration of recording in seconds",
 )
 @click.option("--force-overwrite", "-f", is_flag=True, help="Overwrite existing file")
@@ -252,7 +282,7 @@ def harvest(
     "--virtual-source",
     "-a",  # -v & -s already taken for sheep, so keep it consistent with hrv (algorithm)
     type=click.STRING,
-    default="direct",
+    default=None,
     help="Use the desired setting for the virtual source",
 )
 @click.option(
@@ -284,19 +314,25 @@ def emulate(
         ts_start, delay = ctx.obj["herd"].find_consensus_time()
         kwargs["time_start"] = ts_start
 
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     task = EmulationTask(**kwargs)
-    ctx.obj["herd"].transfer_task(task)
+    ctx.obj["herd"].put_task(task)
 
     if not no_start:
-        logger.info(
+        log.info(
             "Scheduling start of shepherd: %s (in ~ %.2f s)",
             ts_start.isoformat(),
             delay,
         )
         exit_code = ctx.obj["herd"].start_measurement()
-        logger.info("Shepherd started.")
+        log.info("Shepherd started.")
         if exit_code > 0:
-            logger.debug("-> max exit-code = %d", exit_code)
+            log.debug("-> max exit-code = %d", exit_code)
+
+
+# #############################################################################
+#                               Controlling Measurements
+# #############################################################################
 
 
 @cli.command(
@@ -305,32 +341,37 @@ def emulate(
 @click.pass_context
 def start(ctx: click.Context) -> None:
     if ctx.obj["herd"].check_status():
-        logger.info("Shepherd still active, will skip this command!")
+        log.info("Shepherd still active, will skip this command!")
         sys.exit(1)
     else:
         exit_code = ctx.obj["herd"].start_measurement()
-        logger.info("Shepherd started.")
+        log.info("Shepherd started.")
         if exit_code > 0:
-            logger.debug("-> max exit-code = %d", exit_code)
+            log.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
 def status(ctx: click.Context) -> None:
     if ctx.obj["herd"].check_status():
-        logger.info("Shepherd still active!")
+        log.info("Shepherd still active!")
         sys.exit(1)
     else:
-        logger.info("Shepherd not active! (measurement is done)")
+        log.info("Shepherd not active! (measurement is done)")
 
 
 @cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
 def stop(ctx: click.Context) -> None:
     exit_code = ctx.obj["herd"].stop_measurement()
-    logger.info("Shepherd stopped.")
+    log.info("Shepherd stopped.")
     if exit_code > 0:
-        logger.debug("-> max exit-code = %d", exit_code)
+        log.debug("-> max exit-code = %d", exit_code)
+
+
+# #############################################################################
+#                               File Handling
+# #############################################################################
 
 
 @cli.command(
@@ -343,7 +384,7 @@ def stop(ctx: click.Context) -> None:
 @click.option(
     "--remote-path",
     "-r",
-    type=click.Path(),
+    type=click.Path(file_okay=True, dir_okay=True),
     default=Herd.path_default,
     help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
 )
@@ -359,7 +400,7 @@ def distribute(
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
-@click.argument("filename", type=click.Path())
+@click.argument("filename", type=click.Path(file_okay=True, dir_okay=False))
 @click.argument(
     "outdir",
     type=click.Path(
@@ -422,191 +463,6 @@ def retrieve(
     sys.exit(failed)
 
 
-@cli.command(short_help="Collects information about the hosts")
-@click.argument(
-    "output-path",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-)
-@click.pass_context
-def inventorize(ctx: click.Context, output_path: Path) -> None:
-    file_path = Path("/var/shepherd/inventory.yaml")
-    ctx.obj["herd"].run_cmd(
-        sudo=True,
-        cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
-    )
-    server_inv = Inventory.collect()
-    server_inv.to_file(path=Path(output_path) / "inventory_server.yaml", minimal=True)
-    failed = ctx.obj["herd"].get_file(
-        file_path,
-        output_path,
-        timestamp=False,
-        separate=False,
-        delete_src=True,
-    )
-    # TODO: best case - add all to one file or a new inventories-model?
-    sys.exit(failed)
-
-
-# #############################################################################
-#                               OpenOCD Programmer
-# #############################################################################
-
-
-@cli.group(
-    short_help="Remote programming/debugging of the target sensor node",
-    invoke_without_command=True,
-)
-@click.option(
-    "--port",
-    "-p",
-    type=click.INT,
-    default=4444,
-    help="Port on which OpenOCD should listen for telnet",
-)
-@click.option(
-    "--on/--off",
-    default=True,
-    help="Enable/disable power and debug access to the target",
-)
-@click.option(
-    "--voltage",
-    "-v",
-    type=click.FLOAT,
-    default=3.0,
-    help="Target supply voltage",
-)
-@click.option(
-    "--sel_a/--sel_b",
-    default=True,
-    help="Choose (main)Target that gets connected to virtual Source",
-)
-@click.pass_context
-def target(ctx: click.Context, port: int, on: bool, voltage: float, sel_a: bool):
-    # TODO: dirty workaround for deprecated openOCD code
-    #   - also no usage of cnx.put, cnx.get, cnx.run, cnx.sudo left
-    ctx.obj["openocd_telnet_port"] = port
-    sel_target = "sel_a" if sel_a else "sel_b"
-    if on or ctx.invoked_subcommand:
-        ctx.obj["herd"].run_cmd(
-            sudo=True,
-            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} "
-            f"target-power --on --voltage {voltage} --{sel_target}",
-        )
-        for cnx in ctx.obj["herd"].group:
-            start_openocd(cnx, ctx.obj["herd"].hostnames[cnx.host])
-    else:
-        replies1 = ctx.obj["herd"].run_cmd(
-            sudo=True,
-            cmd="systemctl stop shepherd-openocd",
-        )
-        replies2 = ctx.obj["herd"].run_cmd(
-            sudo=True,
-            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} target-power --off",
-        )
-        exit_code = max(
-            [reply.exited for reply in replies1.values()]
-            + [reply.exited for reply in replies2.values()],
-        )
-        sys.exit(exit_code)
-
-
-# @target.result_callback()  # TODO: disabled for now: errors in recent click-versions
-@click.pass_context
-def process_result(ctx: click.Context, result, **kwargs):  # type: ignore
-    if not kwargs["on"]:
-        replies1 = ctx.obj["herd"].run_cmd(
-            sudo=True,
-            cmd="systemctl stop shepherd-openocd",
-        )
-        replies2 = ctx.obj["herd"].run_cmd(
-            sudo=True,
-            cmd=f"shepherd-sheep -{'v' * get_verbose_level()} target-power --off",
-        )
-        exit_code = max(
-            [reply.exited for reply in replies1.values()]
-            + [reply.exited for reply in replies2.values()],
-        )
-        sys.exit(exit_code)
-
-
-def start_openocd(cnx: Connection, hostname: str, timeout: float = 30):
-    # TODO: why start a whole telnet-session? we can just flash and verify firmware by remote-cmd
-    # TODO: bad design for parallelization, but deprecated anyway
-    cnx.sudo("systemctl start shepherd-openocd", hide=True, warn=True)
-    ts_end = time.time() + timeout
-    while True:
-        openocd_status = cnx.sudo(
-            "systemctl status shepherd-openocd",
-            hide=True,
-            warn=True,
-        )
-        if openocd_status.exited == 0:
-            break
-        if time.time() > ts_end:
-            raise TimeoutError(f"Timed out waiting for openocd on host {hostname}")
-        else:
-            logger.debug("waiting for openocd on %s", hostname)
-            time.sleep(1)
-
-
-@target.command(short_help="Flashes the binary IMAGE file to the target")
-@click.argument(
-    "image",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-)
-@click.pass_context
-def flash(ctx: click.Context, image: Path):
-    for cnx in ctx.obj["herd"].group:
-        hostname = ctx.obj["herd"].hostnames[cnx.host]
-        cnx.put(image, "/tmp/target_image.bin")  # noqa: S108
-
-        with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug("connected to openocd on %s", hostname)
-            tn.write(b"program /tmp/target_image.bin verify reset\n")
-            res = tn.read_until(b"Verified OK", timeout=5)
-            if b"Verified OK" in res:
-                logger.info("flashed image on %s successfully", hostname)
-            else:
-                logger.error("failed flashing image on %s", hostname)
-
-
-@target.command(short_help="Halts the target")
-@click.pass_context
-def halt(ctx: click.Context):
-    for cnx in ctx.obj["herd"].group:
-        hostname = ctx.obj["herd"].hostnames[cnx.host]
-
-        with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug("connected to openocd on %s", hostname)
-            tn.write(b"halt\n")
-            logger.info("target halted on %s", hostname)
-
-
-@target.command(short_help="Erases the target")
-@click.pass_context
-def erase(ctx: click.Context):
-    for cnx in ctx.obj["herd"].group:
-        hostname = ctx.obj["herd"].hostnames[cnx.host]
-
-        with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug("connected to openocd on %s", hostname)
-            tn.write(b"halt\n")
-            logger.info("target halted on %s", hostname)
-            tn.write(b"nrf52 mass_erase\n")
-            logger.info("target erased on %s", hostname)
-
-
-@target.command(short_help="Resets the target")
-@click.pass_context
-def reset(ctx: click.Context):
-    for cnx in ctx.obj["herd"].group:
-        hostname = ctx.obj["herd"].hostnames[cnx.host]
-        with telnetlib.Telnet(cnx.host, ctx.obj["openocd_telnet_port"]) as tn:
-            logger.debug("connected to openocd on %s", hostname)
-            tn.write(b"reset\n")
-            logger.info("target reset on %s", hostname)
-
-
 # #############################################################################
 #                               Pru Programmer
 # #############################################################################
@@ -637,14 +493,14 @@ def reset(ctx: click.Context):
     "--voltage",
     "-v",
     type=click.FLOAT,
-    default=3.0,
+    default=None,
     help="Target supply voltage",
 )
 @click.option(
     "--datarate",
     "-d",
     type=click.INT,
-    default=500_000,
+    default=None,
     help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
@@ -671,15 +527,17 @@ def program(ctx: click.Context, **kwargs):
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     kwargs["firmware_file"] = Path(tmp_file)
-    task = ProgrammingTask(**kwargs)
-    ctx.obj["herd"].transfer_task(task, cfg_path)
 
-    command = f"shepherd-sheep -{'v' * get_verbose_level()} run {cfg_path.as_posix()}"
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
+    task = ProgrammingTask(**kwargs)
+    ctx.obj["herd"].put_task(task, cfg_path)
+
+    command = f"shepherd-sheep -vvv run {cfg_path.as_posix()}"
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
     exit_code = max([reply.exited for reply in replies.values()])
     if exit_code:
-        logger.error("Programming - Procedure failed - will exit now!")
-    ctx.obj["herd"].print_output(replies, 3)  # requires debug level
+        log.error("Programming - Procedure failed - will exit now!")
+    ctx.obj["herd"].print_output(replies, verbose=False)
     sys.exit(exit_code)
 
 
