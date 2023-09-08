@@ -551,8 +551,8 @@ class Herd:
             if hasattr(task, "output_path"):
                 logger.info("General remote path is: %s", task.output_path)
                 failed |= self.get_file(task.output_path, dst_dir, separate, delete_src)
-            if hasattr(task, "output_paths"):
-                for host, path in task.output_paths.items():
+            if hasattr(task, "get_output_paths"):
+                for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
                     raise RuntimeError("FN not finished, not needed ATM")  # TODO
         return failed

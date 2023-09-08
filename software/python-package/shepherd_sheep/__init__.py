@@ -17,6 +17,7 @@ from typing import Union
 
 from shepherd_core.data_models import FirmwareDType
 from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models.content.firmware import suffix_to_DType
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
@@ -66,31 +67,36 @@ __all__ = [
 #   -> ShepherdIo.exit should always be called
 
 
-def run_harvester(cfg: HarvestTask) -> None:
+def run_harvester(cfg: HarvestTask) -> bool:
     stack = ExitStack()
     increase_verbose_level(cfg.verbose)
+    failed = False
     try:
         hrv = ShepherdHarvester(cfg=cfg)
         stack.enter_context(hrv)
         hrv.run()
     except SystemExit:
-        pass
+        failed = True
     stack.close()
+    return failed
 
 
-def run_emulator(cfg: EmulationTask) -> None:
+def run_emulator(cfg: EmulationTask) -> bool:
     stack = ExitStack()
     increase_verbose_level(cfg.verbose)
+    failed = False
     try:
         emu = ShepherdEmulator(cfg=cfg)
         stack.enter_context(emu)
         emu.run()
     except SystemExit:
+        failed = True
         pass
     stack.close()
+    return failed
 
 
-def run_firmware_mod(cfg: FirmwareModTask) -> None:
+def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     increase_verbose_level(cfg.verbose)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
@@ -99,9 +105,10 @@ def run_firmware_mod(cfg: FirmwareModTask) -> None:
         file_path = firmware_to_hex(file_path)
     if file_path.as_posix() != cfg.firmware_file.as_posix():
         shutil.move(file_path, cfg.firmware_file)
+    return False
 
 
-def run_programmer(cfg: ProgrammingTask):
+def run_programmer(cfg: ProgrammingTask) -> bool:
     stack = ExitStack()
     increase_verbose_level(cfg.verbose)
     failed = False
@@ -124,10 +131,22 @@ def run_programmer(cfg: ProgrammingTask):
         sysfs_interface.load_pru0_firmware(cfg.protocol)
         dbg.refresh_shared_mem()  # address might have changed
 
+        d_type = suffix_to_DType.get(cfg.firmware_file.suffix.lower())
+        if d_type != FirmwareDType.base64_hex:
+            log.warning("Firmware seems not to be HEX - but will try to program anyway")
+
         with open(cfg.firmware_file.resolve(), "rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
-                target = cfg.mcu_type
+                target = cfg.mcu_type.lower()
+                if "msp430" in target:
+                    target = "msp430"
+                elif "nrf52" in target:
+                    target = "nrf52"
+                else:
+                    log.warning(
+                        "MCU-Type needs to be [msp430, nrf52] but was: %s", target
+                    )
                 if cfg.simulate:
                     target = "dummy"
                 if cfg.mcu_port == 1:
@@ -182,10 +201,10 @@ def run_programmer(cfg: ProgrammingTask):
     stack.close()
 
     sysfs_interface.load_pru0_firmware("shepherd")
-    sys.exit(int(failed))
+    return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 
-def run_task(cfg: Union[ShpModel, Path, str]) -> None:
+def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
     observer_name = platform.node().strip()
     try:
         wrapper = prepare_task(cfg, observer_name)
@@ -196,25 +215,27 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> None:
             observer_name,
             xcp,
         )
-        return
+        return True
 
+    log.debug("Got set of tasks: %s", [type(_e).__name__ for _e in content])
     # TODO: parameters currently not handled:
     #   time_prep, root_path, abort_on_error (but used in emuTask)
-
+    failed = False
     for element in content:
         if element is None:
             continue
 
-        e_dict = element.model_dump(exclude_defaults=True, exclude_unset=True)
-        log.debug("Starting run with %s", e_dict)
+        log.info("\n ####### Starting run with %s #######\n%s", type(element).__name__, str(element))
 
         if isinstance(element, EmulationTask):
-            run_emulator(element)
+            failed |= run_emulator(element)
         elif isinstance(element, HarvestTask):
-            run_harvester(element)
+            failed |= run_harvester(element)
         elif isinstance(element, FirmwareModTask):
-            run_firmware_mod(element)
+            failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            run_programmer(element)
+            failed |= run_programmer(element)
         else:
             raise ValueError("Task not implemented: %s", type(element))
+        # TODO: handle "failed": retry?
+    return failed

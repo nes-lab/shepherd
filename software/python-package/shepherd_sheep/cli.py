@@ -152,7 +152,8 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
     default=Path("/etc/shepherd/config.yaml"),
 )
 def run(config: Path):
-    run_task(config)
+    failed = run_task(config)
+    sys.exit(int(failed))
 
 
 @cli.group(
@@ -311,7 +312,8 @@ def program(**kwargs):
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     cfg = ProgrammingTask(**kwargs)
-    run_programmer(cfg)
+    failed = run_programmer(cfg)
+    sys.exit(int(failed))
 
 
 @cli.command(

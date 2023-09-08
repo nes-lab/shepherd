@@ -450,6 +450,7 @@ class ShepherdIO:
                 cal_ = CalibrationHarvester()
             else:
                 cal_ = CalibrationEmulator()
+        log.debug("Calibration-Settings:\n%s", cal_)
         cal_dict = cal_.export_for_sysfs()
         sfs.write_calibration_settings(cal_dict)
 

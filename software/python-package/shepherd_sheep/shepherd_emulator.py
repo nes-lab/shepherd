@@ -109,6 +109,7 @@ class ShepherdEmulator(ShepherdIO):
             for_emu=False,
             dtype_in=self.reader.get_datatype(),
         )
+        log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 
         self.writer: Optional[Writer] = None
         if cfg.output_path is not None:
