@@ -145,7 +145,8 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                     target = "nrf52"
                 else:
                     log.warning(
-                        "MCU-Type needs to be [msp430, nrf52] but was: %s", target
+                        "MCU-Type needs to be [msp430, nrf52] but was: %s",
+                        target,
                     )
                 if cfg.simulate:
                     target = "dummy"
@@ -225,7 +226,11 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
         if element is None:
             continue
 
-        log.info("\n ####### Starting run with %s #######\n%s", type(element).__name__, str(element))
+        log.info(
+            "\n ####### Starting run with %s #######\n%s",
+            type(element).__name__,
+            str(element),
+        )
 
         if isinstance(element, EmulationTask):
             failed |= run_emulator(element)
