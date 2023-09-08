@@ -24,10 +24,11 @@ Hardware v1.0 uses
 - MSP430FR5962 (TI)
 - RTC
 
-![Target_nRF_MSP430](./media/pcb_rendering_nRF_MSRP430_FRAM_Target.png)
+![Target_nRF_MSP430](./media/shepherd_nRF_FRAM_Target_v1.0_photo_front_with_header.jpg)
 
-BOM, gerber-files and schematics are available in the [PCB-Directory](https://github.com/orgua/shepherd-targets/tree/main/PCBs)
+BOM, gerber-files and schematics are available in the [PCB-Directory](https://github.com/orgua/shepherd-targets/tree/main/hardware). This folder also contains a guide for testing new target-PCBs.
 
+![Target_nRF_MSP430_render](./media/pcb_rendering_nRF_MSRP430_FRAM_Target.png)
 
 ### Features
 
