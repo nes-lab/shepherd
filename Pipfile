@@ -37,7 +37,7 @@ ansible = "*"
 dearpygui = "*"
 chromalog = "*"
 setuptools = "*"
-myst-perser = "*"
+myst-parser = "*"
 
 [pipenv]
 allow_prereleases = false
