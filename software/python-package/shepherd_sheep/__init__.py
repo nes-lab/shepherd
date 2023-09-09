@@ -9,7 +9,6 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import platform
 import shutil
-import sys
 import time
 from contextlib import ExitStack
 from pathlib import Path

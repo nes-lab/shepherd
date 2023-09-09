@@ -14,6 +14,7 @@ from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
+from .target_io import TargetIO, target_pins
 from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
@@ -130,6 +131,12 @@ class ShepherdEmulator(ShepherdIO):
                 compression=cfg.output_compression,
                 verbose=get_verbose_level() > 2,
             )
+
+        # hard-wire pin-direction until they are configurable
+        self._io: Optional[TargetIO] = TargetIO()
+        log.info("Setting variable GPIO to INPUT (actuation is not implemented yet)")
+        for pin in range(len(target_pins)):
+            self._io.set_pin_direction(pin, pdir=True)  # True = Inp
 
     def __enter__(self):
         super().__enter__()
