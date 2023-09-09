@@ -43,11 +43,16 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
 
     const uint32_t voltage_dac = converter_update_states_and_output(shared_mem);
 
-    if (dac_aux_link_to_main) /* set both channels with same voltage */
+    if (dac_aux_link_to_main)
     {
+        /* set both channels with same voltage */
         dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | voltage_dac);
     }
-    else /* only set main channel */ { dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | voltage_dac); }
+    else
+    {
+        /* only set main channel (CHANNEL B has current-monitor) */
+        dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
+    }
 
     if (dac_aux_link_to_mid)
     {
@@ -220,13 +225,12 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
         if (dac_aux_link_to_main)
             dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | dac_ch_a_voltage_raw);
         else dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | DAC_MAX_VAL);
-        dac_write(SPI_CS_HRV_DAC_PIN,
-                  DAC_CH_A_ADDR | dac_ch_a_voltage_raw); // TODO: write aux more often if needed
+        dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | dac_ch_a_voltage_raw);
+        // ⤷ TODO: write aux more often if needed
     }
 
-    ads8691_init(
-            SPI_CS_HRV_C_ADC_PIN,
-            use_harvester); // TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
+    ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
+    // ⤷ TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
     ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
