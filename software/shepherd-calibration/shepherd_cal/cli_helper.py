@@ -61,7 +61,7 @@ ofile_opt_t = typer.Option(
     default=None,
     dir_okay=False,
     file_okay=True,
-    exists=True,
+    exists=False,
     help="save-file, will be generic with timestamp if not provided",
 )
 ifile_opt_t = typer.Option(

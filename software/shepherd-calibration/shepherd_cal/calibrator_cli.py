@@ -118,7 +118,7 @@ def measure(
 
     outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]))
     plot_calibration(msr_cape, cal_cape, outfile)
-    logger.info("Plotted Data to '%s'.", outfile)
+    logger.info("Plotted data to '%s.xyz'.", outfile.name)
 
 
 @cli_cal.command()

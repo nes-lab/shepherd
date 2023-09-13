@@ -227,7 +227,7 @@ class Calibrator:
             )
             logger.debug(
                 "  SMU-reference: %.3f mA @ %.4f V;"
-                "  adc-c: %.4f raw; filtered %.2f %% of values",
+                "  adc-c: %.4f raw; filtered out %.2f %% of values",
                 1000 * current_A,
                 smu_voltage,
                 adc_current_raw,
@@ -280,7 +280,7 @@ class Calibrator:
             )
             logger.debug(
                 "  SMU-reference: %.3f mA @ %.4f V;"
-                "  adc-c: %.4f raw; filtered %.2f %% of values",
+                "  adc-c: %.4f raw; filtered out %.2f %% of values",
                 1000 * current_A,
                 smu_voltage,
                 adc_current_raw,
