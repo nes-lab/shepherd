@@ -4,7 +4,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from shepherd_core import BaseReader as ShpReader
+from shepherd_core import Reader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationSeries
 from shepherd_core.data_models import VirtualSourceConfig

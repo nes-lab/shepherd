@@ -5,7 +5,7 @@ from contextlib import ExitStack
 from datetime import datetime
 from typing import Optional
 
-from shepherd_core import BaseReader
+from shepherd_core import Reader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core.data_models import EnergyDType
@@ -54,7 +54,7 @@ class ShepherdEmulator(ShepherdIO):
 
         if not cfg.input_path.exists():
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
-        self.reader = BaseReader(cfg.input_path, verbose=get_verbose_level() > 2)
+        self.reader = Reader(cfg.input_path, verbose=get_verbose_level() > 2)
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"

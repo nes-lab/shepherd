@@ -23,7 +23,7 @@ import numpy as np
 import psutil as psutil
 import serial
 import yaml
-from shepherd_core import BaseWriter
+from shepherd_core import Writer as CoreWriter
 from shepherd_core import CalibrationEmulator as CalEmu
 from shepherd_core import CalibrationHarvester as CalHrv
 from shepherd_core import CalibrationSeries as CalSeries
@@ -42,7 +42,7 @@ ExceptionRecord = namedtuple("ExceptionRecord", ["timestamp", "message", "value"
 monitors_end = threading.Event()
 
 
-class Writer(BaseWriter):
+class Writer(CoreWriter):
     """Stores data coming from PRU's in HDF5 format
 
     Args:

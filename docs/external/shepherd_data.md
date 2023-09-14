@@ -33,9 +33,9 @@ pip install git+https://github.com/orgua/shepherd-datalib.git@dev#subdirectory=s
 ### Basic Usage (recommendation)
 
 ```python
-import shepherd_data as shpd
+import shepherd_data as sd
 
-with shpd.Reader("./hrv_sawtooth_1h.h5") as db:
+with sd.Reader("./hrv_sawtooth_1h.h5") as db:
     print(f"Mode: {db.get_mode()}")
     print(f"Window: {db.get_window_samples()}")
     print(f"Config: {db.get_config()}")
@@ -78,7 +78,7 @@ with shpd.Reader("./hrv_sawtooth_1h.h5") as db:
 
 ### Functionality Update (WIP)
 
-- `BaseReader`
+- Core.`Reader`
   - `__repr__()`
   - `read_buffers`
   - `get_calibration_data`
@@ -95,13 +95,13 @@ with shpd.Reader("./hrv_sawtooth_1h.h5") as db:
   - `get_metadata()`
   - `save_metadata()`
 
-- `BaseWriter(BaseReader)`
+- `Writer(Reader)` (core, data are the same)
   - `append_iv_data_raw`
   - `append_iv_data_si`
   - `store_config`
   - `store_hostname`
 
-- `Reader(BaseReader)`
+- data.`Reader(CoreReader)`
   - `save_csv()`
   - `save_log()`
   - `downsample()`
@@ -110,9 +110,6 @@ with shpd.Reader("./hrv_sawtooth_1h.h5") as db:
   - `assemble_plot()`
   - `plot_to_file()`
   - `multiplot_to_file()`
-
-- `Writer(BaseWriter)`
-  - (no extending methods)
 
 ## CLI-Interface
 
