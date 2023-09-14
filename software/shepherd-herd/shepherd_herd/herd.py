@@ -514,7 +514,7 @@ class Herd:
         if attach:
             remote_path = Path("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
-            command = f"shepherd-sheep -vvv run {remote_path.as_posix()}"
+            command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
             exit_code = max([reply.exited for reply in replies.values()])
             if exit_code:

@@ -31,7 +31,7 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .h5_writer import Writer
 from .launcher import Launcher
-from .logger import increase_verbose_level
+from .logger import set_verbosity, reset_verbosity
 from .logger import log
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
@@ -68,7 +68,7 @@ __all__ = [
 
 def run_harvester(cfg: HarvestTask) -> bool:
     stack = ExitStack()
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
     failed = False
     try:
         hrv = ShepherdHarvester(cfg=cfg)
@@ -82,7 +82,7 @@ def run_harvester(cfg: HarvestTask) -> bool:
 
 def run_emulator(cfg: EmulationTask) -> bool:
     stack = ExitStack()
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
     failed = False
     try:
         emu = ShepherdEmulator(cfg=cfg)
@@ -96,7 +96,7 @@ def run_emulator(cfg: EmulationTask) -> bool:
 
 
 def run_firmware_mod(cfg: FirmwareModTask) -> bool:
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
@@ -109,7 +109,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
 
 def run_programmer(cfg: ProgrammingTask) -> bool:
     stack = ExitStack()
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
     failed = False
 
     try:
@@ -241,5 +241,6 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
             failed |= run_programmer(element)
         else:
             raise ValueError("Task not implemented: %s", type(element))
+        reset_verbosity()
         # TODO: handle "failed": retry?
     return failed

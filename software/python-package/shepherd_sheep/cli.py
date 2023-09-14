@@ -28,7 +28,7 @@ from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .launcher import Launcher
-from .logger import increase_verbose_level
+from .logger import set_verbosity
 from .logger import log
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
@@ -69,8 +69,7 @@ def exit_gracefully(*args):  # type: ignore
 @click.option(
     "-v",
     "--verbose",
-    count=True,
-    default=2,
+    is_flag=True,
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click.option(
@@ -79,12 +78,13 @@ def exit_gracefully(*args):  # type: ignore
     help="Prints version-info at start (combinable with -v)",
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: int, version: bool):
+def cli(ctx: click.Context, verbose: bool, version: bool):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
-    increase_verbose_level(verbose)
+    if verbose:
+        set_verbosity()
     if version:
         log.info("Shepherd-Sheep v%s", __version__)
         log.debug("Python v%s", sys.version)
@@ -191,7 +191,7 @@ def write(
     help="If provided, calibration data is dumped to this file",
 )
 def read(cal_file: Optional[Path]):
-    increase_verbose_level(2)
+    set_verbosity()
 
     try:
         with EEPROM() as storage:

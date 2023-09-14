@@ -2,7 +2,7 @@
 Description=shepherd launcher
 
 [Service]
-ExecStart=/usr/local/bin/shepherd-sheep -vv launcher
+ExecStart=/usr/local/bin/shepherd-sheep -v launcher
 Restart=on-failure
 
 [Install]

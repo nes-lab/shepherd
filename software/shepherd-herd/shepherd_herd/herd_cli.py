@@ -14,7 +14,7 @@ from shepherd_core.data_models.testbed import TargetPort
 
 from . import __version__
 from .herd import Herd
-from .logger import activate_verbose
+from .logger import set_verbosity
 from .logger import logger as log
 
 # TODO:
@@ -79,7 +79,7 @@ def cli(
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
-        activate_verbose()
+        set_verbosity()
 
     if version:
         log.info("Shepherd-Cal v%s", __version__)
@@ -532,7 +532,7 @@ def program(ctx: click.Context, **kwargs):
     task = ProgrammingTask(**kwargs)
     ctx.obj["herd"].put_task(task, cfg_path)
 
-    command = f"shepherd-sheep -vvv run {cfg_path.as_posix()}"
+    command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
     replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
     exit_code = max([reply.exited for reply in replies.values()])
     if exit_code:

@@ -1,6 +1,6 @@
 from .calibration_plot import plot_calibration
 from .calibrator import Calibrator
-from .logger import activate_verbose
+from .logger import set_verbosity
 from .logger import logger
 from .profile import Profile
 from .profile_analyzer import analyze_directory
@@ -13,7 +13,7 @@ __all__ = [
     "Profiler",
     "Profile",
     "logger",
-    "activate_verbose",
+    "set_verbosity",
     "plot_calibration",
     "analyze_directory",
 ]

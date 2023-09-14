@@ -35,7 +35,7 @@ def test_cli_program_minimal(shepherd_up, cli_runner, fw_nrf: Path) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             fw_nrf.as_posix(),
@@ -50,7 +50,7 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_nrf: Path) -> None
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "--verbose",
             "program",
             "--target-port",
             "A",
@@ -79,7 +79,7 @@ def test_cli_program_swd_explicit_short(
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "-p",
             "A",
@@ -104,7 +104,7 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_msp: Path) -> None
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "--verbose",
             "program",
             "--target-port",
             "B",
@@ -129,7 +129,7 @@ def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             fw_empty.as_posix(),
@@ -144,7 +144,7 @@ def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             tmp_path.as_posix(),  # Directory
@@ -159,7 +159,7 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--simulate",
             str(tmp_path / "file_abc.bin"),  # non_existing file
@@ -178,7 +178,7 @@ def test_cli_program_datarate_invalid_a(
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--datarate",
             "2000000",  # too fast
@@ -199,7 +199,7 @@ def test_cli_program_datarate_invalid_b(
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--datarate",
             "0",  # impossible
@@ -216,7 +216,7 @@ def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_nrf: Path) -> No
     res = cli_runner.invoke(
         cli,
         [
-            "-vvv",
+            "-v",
             "program",
             "--mcu-type",
             "arduino",

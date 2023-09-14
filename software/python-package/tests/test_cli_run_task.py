@@ -82,7 +82,7 @@ def test_cli_harvest_no_cal(
         use_cal_default=True,
         verbose=3,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
+    res = cli_runner.invoke(cli, ["-v", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -104,7 +104,7 @@ def test_cli_harvest_parameters_most(
         abort_on_error=False,
         verbose=3,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
+    res = cli_runner.invoke(cli, ["-v", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -123,7 +123,7 @@ def test_cli_harvest_parameters_minimal(
         duration=10,
         verbose=3,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-vvv", "run", path_yaml.as_posix()])
+    res = cli_runner.invoke(cli, ["-v", "run", path_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 

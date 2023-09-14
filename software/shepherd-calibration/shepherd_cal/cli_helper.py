@@ -6,7 +6,7 @@ import shepherd_core
 import typer
 
 from . import __version__
-from .logger import activate_verbose
+from .logger import set_verbosity
 from .logger import logger
 
 
@@ -19,8 +19,7 @@ def cli_setup_callback(verbose: bool = False, print_version: bool = False) -> No
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
-    if verbose:
-        activate_verbose()
+    set_verbosity(verbose)
 
     if print_version:
         logger.info("Shepherd-Cal v%s", __version__)

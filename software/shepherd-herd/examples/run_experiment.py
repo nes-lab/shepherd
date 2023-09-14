@@ -88,7 +88,7 @@ if variant1:
     # more control
     remote_config = Path("/etc/shepherd/config_task.yaml")
     herd.put_file(path_tasks, dst=remote_config, force_overwrite=True)
-    command = f"shepherd-sheep -vvv run {remote_config.as_posix()}"
+    command = f"shepherd-sheep --verbose run {remote_config.as_posix()}"
     replies = herd.run_cmd(sudo=True, cmd=command)
     herd.print_output(replies, verbose=True)
 else:

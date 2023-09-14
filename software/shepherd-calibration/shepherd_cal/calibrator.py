@@ -395,7 +395,7 @@ class Calibrator:
         logger.info("Local  file: %s", cal_file.as_posix())
         logger.info("Remote file: %s", temp_file)
         result = self._cnx.sudo(
-            f"shepherd-sheep -vvv eeprom write {temp_file}",
+            f"shepherd-sheep --verbose eeprom write {temp_file}",
             warn=True,
             hide=True,
         )
@@ -405,7 +405,7 @@ class Calibrator:
 
     def read(self):
         logger.info("----------EEPROM READ------------")
-        result = self._cnx.sudo("shepherd-sheep -vvv eeprom read", warn=True, hide=True)
+        result = self._cnx.sudo("shepherd-sheep --verbose eeprom read", warn=True, hide=True)
         logger.info(result.stdout)
         logger.info(result.stderr)
         logger.info("---------------------------------")
@@ -413,7 +413,7 @@ class Calibrator:
     def retrieve(self, cal_file: Path):
         temp_file = "/tmp/calib.yaml"  # noqa: S108
         result = self._cnx.sudo(
-            f"shepherd-sheep -vvv eeprom read -c {temp_file}",
+            f"shepherd-sheep --verbose eeprom read -c {temp_file}",
             warn=True,
             hide=True,
         )

@@ -11,7 +11,7 @@ from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
-from .logger import get_verbose_level
+from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
@@ -43,8 +43,8 @@ class ShepherdHarvester(ShepherdIO):
         self.cfg = cfg
         self.stack = ExitStack()
 
-        # performance-critical, <4 reduces chatter during main-loop
-        self.verbose = get_verbose_level() >= 4
+        # performance-critical, allows deep insight between py<-->pru-communication
+        self.verbose_extra = False
 
         self.cal_hrv = retrieve_calibration(cfg.use_cal_default).harvester
 
@@ -81,7 +81,7 @@ class ShepherdHarvester(ShepherdIO):
             force_overwrite=cfg.force_overwrite,
             samples_per_buffer=self.samples_per_buffer,
             samplerate_sps=self.samplerate_sps,
-            verbose=get_verbose_level() > 2,
+            verbose=get_verbosity(),
         )
 
     def __enter__(self):
@@ -143,7 +143,7 @@ class ShepherdHarvester(ShepherdIO):
 
         while True:
             try:
-                idx, hrv_buf = self.get_buffer(verbose=self.verbose)
+                idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
             except ShepherdIOException as e:
                 log.warning("Caught an Exception", exc_info=e)
 
@@ -157,4 +157,4 @@ class ShepherdHarvester(ShepherdIO):
                 break
 
             self.writer.write_buffer(hrv_buf)
-            self.return_buffer(idx, verbose=self.verbose)
+            self.return_buffer(idx, verbose=self.verbose_extra)

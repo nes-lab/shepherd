@@ -3,8 +3,8 @@
 ## Usage
 
 ```Bash
-	sudo shepherd-sheep -vvv program --mcu-port 1 --mcu-type nrf52  firmware_nrf52_testable.hex
-	sudo shepherd-sheep -vvv program --mcu-port 2 --mcu-type msp430 firmware_msp430_testable.hex
+	sudo shepherd-sheep -v program --mcu-port 1 --mcu-type nrf52  firmware_nrf52_testable.hex
+	sudo shepherd-sheep -v program --mcu-port 2 --mcu-type msp430 firmware_msp430_testable.hex
 	sudo shepherd-sheep target-power
 	# alternatively run with "-p B" for the second target port
 ```

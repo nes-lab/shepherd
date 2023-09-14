@@ -19,7 +19,7 @@ from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
-from .logger import get_verbose_level
+from .logger import get_verbosity
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
@@ -49,12 +49,12 @@ class ShepherdEmulator(ShepherdIO):
         self.cfg = cfg
         self.stack = ExitStack()
 
-        # performance-critical, <4 reduces chatter during main-loop
-        self.verbose = get_verbose_level() >= 4
+        # performance-critical, allows deep insight between py<-->pru-communication
+        self.verbose_extra = False
 
         if not cfg.input_path.exists():
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
-        self.reader = Reader(cfg.input_path, verbose=get_verbose_level() > 2)
+        self.reader = Reader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
@@ -129,7 +129,7 @@ class ShepherdEmulator(ShepherdIO):
                 samples_per_buffer=self.samples_per_buffer,
                 samplerate_sps=self.samplerate_sps,
                 compression=cfg.output_compression,
-                verbose=get_verbose_level() > 2,
+                verbose=get_verbosity(),
             )
 
         # hard-wire pin-direction until they are configurable
@@ -217,7 +217,7 @@ class ShepherdEmulator(ShepherdIO):
             is_raw=True,
         ):
             try:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose)
+                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
             except ShepherdIOException as e:
                 log.warning("Caught an Exception", exc_info=e)
 
@@ -235,12 +235,12 @@ class ShepherdEmulator(ShepherdIO):
                 self.writer.write_buffer(emu_buf)
 
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
-            self.return_buffer(idx, hrvst_buf, self.verbose)
+            self.return_buffer(idx, hrvst_buf, self.verbose_extra)
 
         # Read all remaining buffers from PRU
         while True:
             try:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose)
+                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
                     break
                 if self.writer is not None:
