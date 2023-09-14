@@ -5,10 +5,10 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from shepherd_core import Reader as ShpReader
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationHarvester
 from shepherd_core import CalibrationSeries
+from shepherd_core import Reader as CoreReader
 from shepherd_sheep import Writer
 from shepherd_sheep.h5_writer import ExceptionRecord
 from shepherd_sheep.shared_memory import DataBuffer
@@ -101,7 +101,7 @@ def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) ->
         pass
 
     h5store = h5py.File(d, "r")
-    # hint: shpReader would be more direct, but less untouched
+    # hint: CoreReader would be more direct, but less untouched
     cal_series = CalibrationSeries.from_cal(cal_cape.harvester)
     for channel_entry, parameter in product(
         ["voltage", "current", "time"],
@@ -176,7 +176,7 @@ def test_h5writer_performance(
 
 def test_reader_performance(data_h5: Path) -> None:
     read_durations = []
-    with ShpReader(file_path=data_h5) as reader:
+    with CoreReader(file_path=data_h5) as reader:
         past = time.time()
         for _ in reader.read_buffers():
             now = time.time()

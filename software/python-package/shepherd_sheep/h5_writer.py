@@ -23,10 +23,10 @@ import numpy as np
 import psutil as psutil
 import serial
 import yaml
-from shepherd_core import Writer as CoreWriter
 from shepherd_core import CalibrationEmulator as CalEmu
 from shepherd_core import CalibrationHarvester as CalHrv
 from shepherd_core import CalibrationSeries as CalSeries
+from shepherd_core import Writer as CoreWriter
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression

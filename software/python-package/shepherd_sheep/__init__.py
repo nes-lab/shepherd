@@ -31,8 +31,9 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .h5_writer import Writer
 from .launcher import Launcher
-from .logger import set_verbosity, reset_verbosity
 from .logger import log
+from .logger import reset_verbosity
+from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester

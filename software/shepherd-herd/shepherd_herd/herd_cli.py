@@ -14,8 +14,8 @@ from shepherd_core.data_models.testbed import TargetPort
 
 from . import __version__
 from .herd import Herd
-from .logger import set_verbosity
 from .logger import logger as log
+from .logger import set_verbosity
 
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring

@@ -28,8 +28,8 @@ from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .launcher import Launcher
-from .logger import set_verbosity
 from .logger import log
+from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access

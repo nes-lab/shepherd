@@ -6,8 +6,8 @@ import shepherd_core
 import typer
 
 from . import __version__
-from .logger import set_verbosity
 from .logger import logger
+from .logger import set_verbosity
 
 
 def exit_gracefully(*args):  # type: ignore

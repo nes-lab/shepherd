@@ -10,9 +10,9 @@ images to target sensor nodes.
 :license: MIT, see LICENSE for more details.
 """
 from .herd import Herd
-from .logger import set_verbosity
 from .logger import get_verbosity
 from .logger import logger
+from .logger import set_verbosity
 
 __version__ = "0.4.6"
 

@@ -5,16 +5,15 @@ from contextlib import ExitStack
 from datetime import datetime
 from typing import Optional
 
-from shepherd_core import Reader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
+from shepherd_core import Reader as CoreReader
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
 
 from . import commons
-from .target_io import TargetIO, target_pins
 from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import ExceptionRecord
@@ -24,6 +23,8 @@ from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
+from .target_io import TargetIO
+from .target_io import target_pins
 
 
 class ShepherdEmulator(ShepherdIO):
@@ -54,7 +55,7 @@ class ShepherdEmulator(ShepherdIO):
 
         if not cfg.input_path.exists():
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
-        self.reader = Reader(cfg.input_path, verbose=get_verbosity())
+        self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"

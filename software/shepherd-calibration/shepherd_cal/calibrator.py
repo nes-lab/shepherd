@@ -405,7 +405,9 @@ class Calibrator:
 
     def read(self):
         logger.info("----------EEPROM READ------------")
-        result = self._cnx.sudo("shepherd-sheep --verbose eeprom read", warn=True, hide=True)
+        result = self._cnx.sudo(
+            "shepherd-sheep --verbose eeprom read", warn=True, hide=True
+        )
         logger.info(result.stdout)
         logger.info(result.stderr)
         logger.info("---------------------------------")
