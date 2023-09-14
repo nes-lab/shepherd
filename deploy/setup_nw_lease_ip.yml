@@ -7,7 +7,7 @@
   gather_facts: false
 
   vars:
-    MAC2IP: # hardcoded LUT with key: uppercase MAC & with '_' instead of ':'
+    mac_2_ip: # hardcoded LUT with key: uppercase MAC & with '_' instead of ':'
       18_62_E4_E4_41_8D: ["sheep01", "192.168.165.201"]
       18_62_E4_D0_DE_3F: ["sheep02", "192.168.165.202"]
       18_62_E4_D0_9E_6A: ["sheep03", "192.168.165.203"]
@@ -43,21 +43,21 @@
 
     - name: Determine local MAC-Address
       ansible.builtin.shell: # pipefail-setting prevents surprises
-        cmd: "ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
+        cmd: "set -o pipefail && ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
       register: mac_ret
       failed_when: false
       changed_when: false
 
-    - name: reformat MAC-Address
+    - name: Reformat MAC-Address
       ansible.builtin.set_fact:
-        mac_add: "{{ mac_ret.stdout | upper | replace(':','_') }}"
+        mac_add: "{{ mac_ret.stdout | upper | replace(':', '_') }}"
 
     - name: Lookup new host-name & -ip
       ansible.builtin.set_fact:
-        host_name: "{{ MAC2IP[mac_add][0] }}"
-        host_ip: "{{ MAC2IP[mac_add][1] }}"
+        host_name: "{{ mac_2_ip[mac_add][0] }}"
+        host_ip: "{{ mac_2_ip[mac_add][1] }}"
 
-    - name: show new Name
+    - name: Show new Name
       ansible.builtin.debug:
         var: host_name
 
@@ -69,7 +69,7 @@
         state: present
 
     - name: Return current lease
-      ansible.builtin.shell: "dhclient -r -v eth0"
+      ansible.builtin.command: "dhclient -r -v eth0"
       failed_when: false
       changed_when: true
       when: false
@@ -82,7 +82,7 @@
 
     - name: Set hostname (from MAC)
       ansible.builtin.hostname:
-        name: "{{ MAC2IP[mac_add][0] }}"
+        name: "{{ mac_2_ip[mac_add][0] }}"
       when: host_name != inventory_hostname
 
     - name: Adjust /etc/hosts (from MAC)
@@ -94,7 +94,7 @@
       when: host_name != inventory_hostname
 
     - name: Ask for new lease
-      ansible.builtin.shell: "dhclient -v eth0"
+      ansible.builtin.command: "dhclient -v eth0"
       failed_when: false
       changed_when: true
       when: host_name != inventory_hostname
