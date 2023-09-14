@@ -16,6 +16,9 @@ ExecStart=-/usr/sbin/phc2sys -rr -w -s %I
 # -rr 	sync realtime clock and also consider it as a time source
 # -w    wait for ptp4l
 # -s    main clock
+RestartSec=3
+Restart=on-failure
+StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target
