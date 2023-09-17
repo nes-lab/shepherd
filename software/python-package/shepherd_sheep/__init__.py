@@ -227,7 +227,7 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
             continue
 
         log.info(
-            "\n ####### Starting run with %s #######\n%s",
+            "\n####### Starting %s #######\n%s",
             type(element).__name__,
             str(element),
         )
