@@ -58,7 +58,7 @@ def exit_gracefully(*args) -> None:  # type: ignore
     default=None,
     help="Path to private ssh key file",
 )
-@click.option("-v", "--verbose", is_flag=True)
+@click.option("--verbose", "-v", is_flag=True)
 @click.option(
     "--version",
     is_flag=True,
