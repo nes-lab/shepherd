@@ -107,7 +107,9 @@ def measure(
     logger.info("Saved Cal-Measurement to '%s'.", outfile)
 
     if len(outfile.stem.split(".")) > 1:
-        outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]) + ".cal_data")
+        outfile = outfile.with_stem(
+            ".".join(outfile.stem.split(".")[0:-1]) + ".cal_data"
+        )
     else:
         outfile = outfile.with_stem(outfile.stem + ".cal_data")
 

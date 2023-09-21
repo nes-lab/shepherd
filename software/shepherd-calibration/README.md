@@ -51,11 +51,16 @@ Calibration
 ```Shell
 shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270060 --outfile sheep0_cape_v240b.yaml --verbose
 shepherd-cal calibration write sheep0 --user jane --cal-file sheep0_cape_v240b.yml --verbose
+# or new combined measure & write, specialized for the testbed
+shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --emulator-only --write --verbose --cape-serial 1270057
 ```
 
 Profiling
 
 ```Shell
-shepherd-cal profile measure sheep0 --user jane --password 1234 --smu-ip 10.0.0.41
+shepherd-cal profile measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270057
 shepherd-cal profile analyze ./ --outfile stats.csv --plot
+## specialized for the testbed
+shepherd-cal profile measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270057
+
 ```

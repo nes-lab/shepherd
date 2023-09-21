@@ -18,7 +18,6 @@ from typing import IO
 from typing import Optional
 from typing import Union
 
-from systemd import journal
 import h5py
 import numpy as np
 import psutil as psutil
@@ -564,7 +563,9 @@ class Writer(CoreWriter):
                                 data_length += self.uart_inc
                                 self.uart_grp["time"].resize((data_length,))
                                 self.uart_grp["message"].resize((data_length,))
-                            self.uart_grp["time"][self.uart_pos] = int(time.time() * 1e9)
+                            self.uart_grp["time"][self.uart_pos] = int(
+                                time.time() * 1e9
+                            )
                             self.uart_grp["message"][
                                 self.uart_pos
                             ] = output  # np.void(uart_rx)
