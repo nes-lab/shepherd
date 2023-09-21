@@ -106,7 +106,11 @@ def measure(
     msr_cape.to_file(outfile)
     logger.info("Saved Cal-Measurement to '%s'.", outfile)
 
-    outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]) + ".cal_data")
+    if len(outfile.stem.split(".")) > 1:
+        outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]) + ".cal_data")
+    else:
+        outfile = outfile.with_stem(outfile.stem + ".cal_data")
+
     cal_cape = msr_cape.to_cal()
     logger.info("Measured Cal-Data:\n\n%s", str(cal_cape))
     cal_cape.to_file(outfile)
