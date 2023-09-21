@@ -67,8 +67,8 @@ def exit_gracefully(*args):  # type: ignore
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
+"--verbose",
     "-v",
-    "--verbose",
     is_flag=True,
     help="4 Levels, but level 4 has serious performance impact",
 )

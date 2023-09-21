@@ -18,6 +18,7 @@ from typing import IO
 from typing import Optional
 from typing import Union
 
+from systemd import journal
 import h5py
 import numpy as np
 import psutil as psutil
@@ -58,7 +59,7 @@ class Writer(CoreWriter):
             nanoseconds
     """
 
-    uart_path = "/dev/ttyO1"
+    uart_path = "/dev/ttyS1"
 
     mode_dtype_dict = {
         "harvester": ["ivsample", "ivcurve", "isc_voc"],
@@ -270,7 +271,7 @@ class Writer(CoreWriter):
         )
         self.sysutil_grp["net"].attrs["unit"] = "n"
         self.sysutil_grp["net"].attrs["description"] = "nw_sent [byte], nw_recv [byte]"
-        self.sys_log_next_ns = int(time.time()) * (10**9)
+        self.sys_log_next_ns = int(time.time() * 1e9)
         self.log_sys_stats()
 
         # Create dmesg-Logger -> consists of a timestamp and a message
@@ -457,7 +458,7 @@ class Writer(CoreWriter):
             data_length = self.slog_grp["time"].shape[0] + self.slog_inc
             self.slog_grp["time"].resize((data_length,))
             self.slog_grp["message"].resize((data_length,))
-        self.slog_grp["time"][self.slog_pos] = int(time.time() * (10**9))
+        self.slog_grp["time"][self.slog_pos] = int(time.time() * 1e9)
         self.slog_grp["message"][self.slog_pos] = message
         self.slog_pos += 1
 
@@ -468,7 +469,7 @@ class Writer(CoreWriter):
         """
         if not self.sys_log_enabled:
             return
-        ts_now_ns = int(time.time() * (10**9))
+        ts_now_ns = int(time.time() * 1e9)
         if ts_now_ns >= self.sys_log_next_ns:
             data_length = self.sysutil_grp["time"].shape[0]
             if self.sysutil_pos >= data_length:
@@ -480,7 +481,7 @@ class Writer(CoreWriter):
                 self.sysutil_grp["net"].resize((data_length, 2))
             self.sys_log_next_ns += self.sys_log_interval_ns
             if self.sys_log_next_ns < ts_now_ns:
-                self.sys_log_next_ns = int(time.time()) * (10**9)
+                self.sys_log_next_ns = int(time.time() * 1e9)
             self.sysutil_grp["time"][self.sysutil_pos] = ts_now_ns
             self.sysutil_grp["cpu"][self.sysutil_pos] = int(
                 round(psutil.cpu_percent(0)),
@@ -563,9 +564,7 @@ class Writer(CoreWriter):
                                 data_length += self.uart_inc
                                 self.uart_grp["time"].resize((data_length,))
                                 self.uart_grp["message"].resize((data_length,))
-                            self.uart_grp["time"][self.uart_pos] = int(time.time()) * (
-                                10**9
-                            )
+                            self.uart_grp["time"][self.uart_pos] = int(time.time() * 1e9)
                             self.uart_grp["message"][
                                 self.uart_pos
                             ] = output  # np.void(uart_rx)
@@ -621,7 +620,7 @@ class Writer(CoreWriter):
                     data_length += self.dmesg_inc
                     self.dmesg_grp["time"].resize((data_length,))
                     self.dmesg_grp["message"].resize((data_length,))
-                self.dmesg_grp["time"][self.dmesg_pos] = int(time.time() * (10**9))
+                self.dmesg_grp["time"][self.dmesg_pos] = int(time.time() * 1e9)
                 self.dmesg_grp["message"][self.dmesg_pos] = line
             except OSError:
                 self._logger.error(
@@ -674,9 +673,7 @@ class Writer(CoreWriter):
                     data_length += self.timesync_inc
                     self.timesync_grp["time"].resize((data_length,))
                     self.timesync_grp["values"].resize((data_length, 3))
-                self.timesync_grp["time"][self.timesync_pos] = int(
-                    time.time() * (10**9),
-                )
+                self.timesync_grp["time"][self.timesync_pos] = int(time.time() * 1e9)
                 self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
             except OSError:
                 self._logger.error(
