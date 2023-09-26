@@ -25,13 +25,6 @@
         maintenance_update_bootloader: true
         maintenance_delete_unused_files: true
 
-- name: Main-Software for Shepherd
-  hosts: sheep
-  become: true
-  roles:
-    - sheep
-  # ⤷ NOTE: will only be installed once (later only sw-rebuild)
-
 - name: Role - PTP-Client only (not recommended! all should be server as well)
   hosts: ptp_clients
   become: true
@@ -69,6 +62,15 @@
   strategy: free
   roles:
     - secure_testbed
+
+- name: Main-Software for Shepherd
+  hosts: sheep
+  become: true
+  roles:
+    - sheep
+  # ⤷ NOTE: will only be installed once (later only sw-rebuild)
+  # NOTE: this was put to the end - so some kind of timekeeping is active till then
+  #       reason: 'make' fails in the past (after reboot)
 
 - name: Installation done! Now post-installation tasks
   hosts: sheep
