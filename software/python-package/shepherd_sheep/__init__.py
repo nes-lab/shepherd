@@ -114,7 +114,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
     failed = False
 
     try:
-        dbg = ShepherdDebug(use_io=False)
+        dbg = ShepherdDebug(use_io=False)  # TODO: this could all go into ShepherdDebug
         stack.enter_context(dbg)
 
         dbg.select_port_for_power_tracking(
@@ -197,6 +197,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         log.debug("\tshepherdState   = %s", sysfs_interface.get_state())
         log.debug("\tprogrammerState = %s", state)
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+        dbg.process_programming_messages()
     except SystemExit:
         pass
     stack.close()

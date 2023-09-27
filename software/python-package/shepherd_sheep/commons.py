@@ -14,6 +14,10 @@ MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14
 MSG_BUF_FROM_HOST = 0x01
 MSG_BUF_FROM_PRU = 0x02
 
+MSG_PGM_ERROR_WRITE = 0x93  # val0: addr, val1: data
+MSG_PGM_ERROR_VERIFY = 0x94  # val0: addr, val1: data(original)
+MSG_PGM_ERROR_PARSE = 0x96  # val0: ihex_return
+
 MSG_DBG_ADC = 0xA0
 MSG_DBG_DAC = 0xA1
 MSG_DBG_GPI = 0xA2

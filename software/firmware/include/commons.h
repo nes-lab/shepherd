@@ -35,25 +35,32 @@ enum MsgType
     MSG_NONE                      = 0x00u,
     MSG_BUF_FROM_HOST             = 0x01u,
     MSG_BUF_FROM_PRU              = 0x02u,
+    // Programmer
+    //MSG_PGM_ERROR_GENERIC         = 0x91u,
+    //MSG_PGM_ERROR_OPEN            = 0x92u,
+    MSG_PGM_ERROR_WRITE           = 0x93u, // val0: addr, val1: data
+    MSG_PGM_ERROR_VERIFY          = 0x94u, // val0: addr, val1: data (original)
+    //MSG_PGM_ERROR_ERASE           = 0x95u,
+    MSG_PGM_ERROR_PARSE           = 0x96u, // val0: ihex_return
     // DEBUG
     MSG_DBG_ADC                   = 0xA0u,
     MSG_DBG_DAC                   = 0xA1u,
     MSG_DBG_GPI                   = 0xA2u,
     MSG_DBG_GP_BATOK              = 0xA3u,
     MSG_DBG_PRINT                 = 0xA6u,
-    MSG_DBG_VSRC_P_INP            = 0xA8,
-    MSG_DBG_VSRC_P_OUT            = 0xA9,
-    MSG_DBG_VSRC_V_CAP            = 0xAA,
-    MSG_DBG_VSRC_V_OUT            = 0xAB,
-    MSG_DBG_VSRC_INIT             = 0xAC, // TODO: remove from pru-code
-    MSG_DBG_VSRC_CHARGE           = 0xAD,
-    MSG_DBG_VSRC_DRAIN            = 0xAE,
-    MSG_DBG_FN_TESTS              = 0xAF,
-    MSG_DBG_VSRC_HRV_P_INP        = 0xB1, // HRV + CNV in one go
+    MSG_DBG_VSRC_P_INP            = 0xA8u,
+    MSG_DBG_VSRC_P_OUT            = 0xA9u,
+    MSG_DBG_VSRC_V_CAP            = 0xAAu,
+    MSG_DBG_VSRC_V_OUT            = 0xABu,
+    MSG_DBG_VSRC_INIT             = 0xACu, // TODO: remove from pru-code
+    MSG_DBG_VSRC_CHARGE           = 0xADu,
+    MSG_DBG_VSRC_DRAIN            = 0xAEu,
+    MSG_DBG_FN_TESTS              = 0xAFu,
+    MSG_DBG_VSRC_HRV_P_INP        = 0xB1u, // HRV + CNV in one go
 
     /* KERNELSPACE (enum >=0xC0) */
     // STATUS
-    MSG_STATUS_RESTARTING_ROUTINE = 0xC0,
+    MSG_STATUS_RESTARTING_ROUTINE = 0xC0u,
     // ERROR
     MSG_ERROR                     = 0xE0u,
     MSG_ERR_MEMCORRUPTION         = 0xE1u,

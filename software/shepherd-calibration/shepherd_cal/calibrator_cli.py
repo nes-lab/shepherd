@@ -108,7 +108,7 @@ def measure(
 
     if len(outfile.stem.split(".")) > 1:
         outfile = outfile.with_stem(
-            ".".join(outfile.stem.split(".")[0:-1]) + ".cal_data"
+            ".".join(outfile.stem.split(".")[0:-1]) + ".cal_data",
         )
     else:
         outfile = outfile.with_stem(outfile.stem + ".cal_data")

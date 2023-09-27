@@ -7,12 +7,14 @@
 
 #include "device.h"
 #include "intelhex.h"
+#include "messenger.h"
 #include "swd_transport.h"
 #include "sys_gpio.h"
 #include <stdint.h>
 
 /* Writes block from hex file to target via driver */
-int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
+int write_to_target(volatile struct SharedMem *const shared_mem, device_driver_t *drv,
+                    ihex_mem_block_t *block)
 {
     uint8_t *src     = block->data;
     uint32_t addr    = block->address;
@@ -23,8 +25,17 @@ int write_to_target(device_driver_t *drv, ihex_mem_block_t *block)
     for (uint32_t i = 0; i < n_words; i++)
     {
         uint32_t data = *((uint32_t *) src);
-        if (drv->write(data, addr) != DRV_ERR_OK) return PRG_STATE_ERR_WRITE;
-        if (drv->verify(data, addr) != DRV_ERR_OK) return PRG_STATE_ERR_VERIFY;
+        if (drv->write(data, addr) != DRV_ERR_OK)
+        {
+            send_message(shared_mem, MSG_PGM_ERROR_WRITE, addr, data);
+            return PRG_STATE_ERR_WRITE;
+        }
+        if (drv->verify(data, addr) != DRV_ERR_OK)
+        {
+            // TODO: maybe switch to send out read-back data
+            send_message(shared_mem, MSG_PGM_ERROR_VERIFY, addr, data);
+            return PRG_STATE_ERR_VERIFY;
+        }
 
         src += drv->word_width_bytes;
         addr += drv->word_width_bytes;
@@ -81,7 +92,7 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     while ((ret = ihex_reader_get(&block)) == 0)
     {
         /* Write block data to target device memory */
-        if ((rc = write_to_target(drv, &block)) != 0)
+        if ((rc = write_to_target(shared_mem, drv, &block)) != 0)
         {
             pc->state = rc;
             goto exit;
@@ -91,6 +102,7 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     }
     if (ret != IHEX_RET_DONE)
     {
+        send_message(shared_mem, MSG_PGM_ERROR_PARSE, ret, 0u);
         pc->state = PRG_STATE_ERR_PARSE;
         goto exit;
     }
