@@ -30,7 +30,7 @@
     scp_server: dgw.zih.tu-dresden.de:/glw/shepherd_d
     nfs_server: vs-grp07.zih.tu-dresden.de:/shepherd_d
     # data will be stored in {{nfs_server}}/recordings/{{ansible_hostname}}/
-    data_path_local: /var/shepherd/recordings/
+    data_path_local: /var/shepherd/
 
   vars_prompt:
     - name: zih_user
