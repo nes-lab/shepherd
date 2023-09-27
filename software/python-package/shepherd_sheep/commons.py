@@ -52,5 +52,6 @@ GPIO_LOG_BIT_POSITIONS = {
     9: {"pru_reg": "r31_09", "name": "tgt_bat_ok",  "bb_pin": "P8_29", "sys_pin": "",      "sys_reg": ""},  # noqa: E501
 }
 # Note: this table is copied (for hdf5-reference) from pru1/main.c, HW-Rev2.4b
-# Note: datalib has gpio-models + data! this is now in shepherd_core/shepherd_core/data_models/testbed/gpio_fixture.yaml
+# Note: datalib has gpio-models + data! this lives now in
+#       shepherd_core/shepherd_core/data_models/testbed/gpio_fixture.yaml
 # fmt: on

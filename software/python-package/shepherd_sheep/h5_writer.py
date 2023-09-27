@@ -564,7 +564,7 @@ class Writer(CoreWriter):
                                 self.uart_grp["time"].resize((data_length,))
                                 self.uart_grp["message"].resize((data_length,))
                             self.uart_grp["time"][self.uart_pos] = int(
-                                time.time() * 1e9
+                                time.time() * 1e9,
                             )
                             self.uart_grp["message"][
                                 self.uart_pos

@@ -1,3 +1,4 @@
+import contextlib
 import time
 from typing import NoReturn
 from typing import Optional
@@ -421,7 +422,7 @@ class ShepherdDebug(ShepherdIO):
 
     def process_programming_messages(self) -> None:
         """Prints messages to console until timeout occurs"""
-        try:
+        with contextlib.suppress(ShepherdIOException):
             while True:
                 msg_type, values = self._get_msg(5)
                 if msg_type != commons.MSG_PGM_ERROR_WRITE:
@@ -447,5 +448,3 @@ class ShepherdDebug(ShepherdIO):
                         values[0],
                         values[1],
                     )
-        except ShepherdIOException:
-            pass
