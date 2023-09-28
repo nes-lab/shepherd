@@ -228,9 +228,9 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
             continue
 
         log.info(
-            "\n####### Starting %s #######\n%s",
+            "\n####### Starting %s #######\n%s [first 500 chars]",
             type(element).__name__,
-            str(element),
+            str(element)[:500],
         )
 
         if isinstance(element, EmulationTask):
