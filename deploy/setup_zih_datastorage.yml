@@ -98,14 +98,14 @@
 
     - name: Create temporary folder-structure
       ansible.builtin.file:
-        path: "/tmp/recordings/{{ ansible_hostname }}/"
+        path: "/tmp/experiments/{{ ansible_hostname }}/"
         state: directory
         mode: "a+rwx"
       become: false
 
-    - name: Create remote private recordings-directory
+    - name: Create remote private experiment-directory
       ansible.builtin.command:
-        cmd: "sshpass -e scp -o StrictHostKeyChecking=no -r /tmp/recordings {{ zih_user }}@{{ scp_server }}/"
+        cmd: "sshpass -e scp -o StrictHostKeyChecking=no -r /tmp/experiments {{ zih_user }}@{{ scp_server }}/"
       environment:
         SSHPASS: '{{ zih_password }}'
       become: false
@@ -116,16 +116,32 @@
 
     - name: Create local mount-directory
       ansible.builtin.file:
-        path: "{{ data_path_local }}/"
+        path: "{{ item }}/"
         state: directory
         owner: "{{ ansible_user }}"
         mode: 'a+rwx'
+      loop:
+        - "{{ data_path_local }}/experiments"
+        - "{{ data_path_local }}/content"
 
-    - name: Allow automatic Mounting
+    - name: Remove previous fstab-mountings
       ansible.builtin.lineinfile:
         dest: /etc/fstab
         regex: '^.*{{ nfs_server }}.*$'
-        line: '{{ nfs_server }}/recordings/{{ ansible_hostname }}/ {{ data_path_local }} nfs nfsvers=4,rw 0 1'
+        state: absent
+
+    - name: Allow automatic Mounting (Experiments)
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^.*{{ nfs_server }}/experiments.*$'
+        line: '{{ nfs_server }}/experiments/{{ ansible_hostname }}/ {{ data_path_local }}/experiments nfs nfsvers=4,rw 0 1'
+        state: present
+
+    - name: Allow automatic Mounting (Content, readonly)
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^.*{{ nfs_server }}/content.*$'
+        line: '{{ nfs_server }}/content/ {{ data_path_local }}/content nfs nfsvers=4,ro 0 1'
         state: present
 
     - name: Remove old automatic mounting
@@ -133,6 +149,8 @@
         dest: '/home/{{ ansible_user }}/.bashrc'
         regex: '^.*sshfs.*$'
         state: absent
+
+        # TODO: server mounts nfs_server directly
 
   post_tasks:
 
