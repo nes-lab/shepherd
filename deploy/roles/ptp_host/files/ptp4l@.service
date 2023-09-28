@@ -5,6 +5,7 @@ After=sys-subsystem-net-devices-%i.device
 
 [Service]
 Type=simple
+ExecStartPre=-/usr/sbin/ntpdate -b -s -u pool.ntp.org
 # ExecStart=/usr/sbin/ptp4l -f /etc/linuxptp/ptp4l.conf -i %I
 ExecStart=/usr/sbin/ptp4l -A -f /etc/linuxptp/ptp4l.conf -i %I
 # -2 -> IEEE 802.3 Network Transport, TODO: seems to produce "sheep03 ptp4l[4062]: [2837.436] port 1: bad message"

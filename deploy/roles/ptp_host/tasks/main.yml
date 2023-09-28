@@ -6,6 +6,13 @@
     state: present
   tags: ptp
 
+- name: Install ntpdate package
+  ansible.builtin.apt:
+    update_cache: true
+    name: ntpdate
+    state: present
+  tags: ptp
+
 - name: Deploy systemd overlay files
   ansible.builtin.copy:
     src: "{{ item }}"
