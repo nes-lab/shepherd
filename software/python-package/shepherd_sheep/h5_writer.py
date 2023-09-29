@@ -30,6 +30,7 @@ from shepherd_core import Writer as CoreWriter
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression
+# from systemd import journal
 
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .commons import MAX_GPIO_EVT_PER_BUFFER
@@ -605,9 +606,7 @@ class Writer(CoreWriter):
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
-        if (not hasattr(proc_dmesg, "stdout")) or (
-            not isinstance(proc_dmesg.stdout, IO)
-        ):
+        if (not hasattr(proc_dmesg, "stdout")) or (proc_dmesg.stdout is None):
             self._logger.error("[DmesgMonitor] Setup failed -> will not be logged")
             return
         tevent = threading.Event()
@@ -649,9 +648,7 @@ class Writer(CoreWriter):
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
-        if (not hasattr(proc_ptp4l, "stdout")) or (
-            not isinstance(proc_ptp4l.stdout, IO)
-        ):
+        if (not hasattr(proc_ptp4l, "stdout")) or (proc_ptp4l.stdout is None):
             self._logger.error("[PTP4lMonitor] Setup failed -> will not be logged")
             return
         tevent = threading.Event()
