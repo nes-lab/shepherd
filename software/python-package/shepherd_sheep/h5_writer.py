@@ -8,13 +8,11 @@ HDF5 files.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import logging
 import subprocess  # noqa: S404
 import threading
 import time
 from collections import namedtuple
 from pathlib import Path
-from typing import IO
 from typing import Optional
 from typing import Union
 
@@ -339,26 +337,26 @@ class Writer(CoreWriter):
 
         if self.dmesg_mon_t is not None:
             self._logger.info(
-                "terminate Dmesg-Monitor -> %d entries",
+                "   DmesgLog has %d entries",
                 self.dmesg_grp["time"].shape[0],
             )
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
             self._logger.info(
-                "terminate PTP4L-Monitor -> %d entries",
+                "   PTPLog has %d entries",
                 self.timesync_grp["time"].shape[0],
             )
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
             if self._write_uart:
                 self._logger.info(
-                    "terminate UART-Monitor -> %d entries",
+                    "   UARTLog has %d entries",
                     self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
         if self.logmsg_mon_t is not None:
             self._logger.info(
-                "terminate LogMsg-Monitor -> %d entries",
+                "   ShpLog has %d entries",
                 self.logmsg_grp["time"].shape[0],
             )
             self.logmsg_mon_t = None
@@ -652,7 +650,7 @@ class Writer(CoreWriter):
             return
         tevent = threading.Event()
         for line in iter(proc_ptp4l.stdout.readline, ""):
-            if monitors_end:
+            if monitors_end.is_set():
                 break
             try:
                 words = str(line).split()
@@ -685,12 +683,12 @@ class Writer(CoreWriter):
 
     def monitor_logmsg(self, poll_intervall: float = 1) -> None:
         global monitors_end
-        if not hasattr(self, "slog_grp") or "time" not in self.logmsg_grp.keys():
+        if not hasattr(self, "logmsg_grp") or "time" not in self.logmsg_grp.keys():
             return
         queue = get_message_queue()
         tevent = threading.Event()
 
-        while not monitors_end:
+        while not monitors_end.is_set():
             while queue.qsize() > 0:
                 rec = queue.get()
                 if self.logmsg_pos >= self.logmsg_grp["time"].shape[0]:

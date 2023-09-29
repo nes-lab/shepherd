@@ -9,7 +9,6 @@ log = logging.getLogger("Shp")
 queue = multiprocessing.Queue(-1)
 qhdl = logging.handlers.QueueHandler(queue)
 log.addHandler(qhdl)
-log.addHandler(logging.StreamHandler(sys.stdout))
 verbosity_state: bool = False
 log.setLevel(logging.INFO)
 qhdl.setLevel(logging.DEBUG)
