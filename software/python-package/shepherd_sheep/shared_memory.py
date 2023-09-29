@@ -302,7 +302,7 @@ class SharedMemory:
             #  put into Writer.write_exception() with ShepherdIOException
             n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
-        if self.ts_start_iv <= buffer_timestamp <= self.ts_stop_iv:
+        if self.ts_start_gp <= buffer_timestamp <= self.ts_stop_gp:
             gpio_timestamps_ns = np.frombuffer(
                 self.mapped_mem,
                 "=u8",
