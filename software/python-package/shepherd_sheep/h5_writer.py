@@ -335,20 +335,20 @@ class Writer(CoreWriter):
 
         if self.dmesg_mon_t is not None:
             self._logger.info(
-                "terminate Dmesg-Monitor, (%d entries)",
+                "terminate Dmesg-Monitor -> %d entries",
                 self.dmesg_grp["time"].shape[0],
             )
             self.dmesg_mon_t = None
         if self.ptp4l_mon_t is not None:
             self._logger.info(
-                "terminate PTP4L-Monitor, (%d entries)",
+                "terminate PTP4L-Monitor -> %d entries",
                 self.timesync_grp["time"].shape[0],
             )
             self.ptp4l_mon_t = None
         if self.uart_mon_t is not None:
             if self._write_uart:
                 self._logger.info(
-                    "terminate UART-Monitor, (%d entries)",
+                    "terminate UART-Monitor -> %d entries",
                     self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
@@ -590,7 +590,7 @@ class Writer(CoreWriter):
             )
         self._logger.debug("[UartMonitor] ended itself")
 
-    def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.1):
+    def monitor_dmesg(self, backlog: int = 40, poll_intervall: float = 0.2):
         # var1: ['dmesg', '--follow'] -> not enough control
         global monitors_end
         cmd_dmesg = [
@@ -622,6 +622,7 @@ class Writer(CoreWriter):
                     self.dmesg_grp["message"].resize((data_length,))
                 self.dmesg_grp["time"][self.dmesg_pos] = int(time.time() * 1e9)
                 self.dmesg_grp["message"][self.dmesg_pos] = line
+                self.dmesg_pos += 1
             except OSError:
                 self._logger.error(
                     "[DmesgMonitor] Caught a Write Error for Line: [%s] %s",
@@ -673,6 +674,7 @@ class Writer(CoreWriter):
                     self.timesync_grp["values"].resize((data_length, 3))
                 self.timesync_grp["time"][self.timesync_pos] = int(time.time() * 1e9)
                 self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
+                self.timesync_pos += 1
             except OSError:
                 self._logger.error(
                     "[PTP4lMonitor] Caught a Write Error for Line: [%s] %s",
@@ -681,3 +683,4 @@ class Writer(CoreWriter):
                 )
             tevent.wait(poll_intervall)  # rate limiter
         self._logger.debug("[PTP4lMonitor] ended itself")
+        # TODO: also add phc2sys
