@@ -138,6 +138,8 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
 
         # WORKAROUND that realigns hex for missguided programmer
         path_str = cfg.firmware_file.as_posix()
+        path_tmp = Path("/tmp/aligned.hex")
+        # tmp_path because firmware can be in readonly content-dir
         cmd = [
             "srec_cat",
             # BL51 hex files are not sorted for ascending addresses. Suppress this warning
@@ -159,12 +161,12 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             "-address-length=2",
             # generate a Intel hex file
             "-o",
-            path_str,
+            path_tmp.as_posix(),
             "-Intel",
         ]
         subprocess.run(cmd, timeout=30)  # noqa: S607 S603
 
-        with open(cfg.firmware_file.resolve(), "rb") as fw:
+        with open(path_tmp.as_posix(), "rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
                 target = cfg.mcu_type.lower()
