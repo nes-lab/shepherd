@@ -404,9 +404,8 @@ class Herd:
             remote_path = Path(remote_path)
 
         logger.info(
-            "Rolling out the following config to '%s':\n\n%s",
+            "Rolling out the config to '%s'",
             remote_path.as_posix(),
-            task_yaml,
         )
         self.put_file(
             task,
