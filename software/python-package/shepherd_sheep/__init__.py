@@ -9,6 +9,7 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import platform
 import shutil
+import subprocess  # noqa: S404
 import time
 from contextlib import ExitStack
 from pathlib import Path
@@ -135,6 +136,34 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         if d_type != FirmwareDType.base64_hex:
             log.warning("Firmware seems not to be HEX - but will try to program anyway")
 
+        # WORKAROUND that realigns hex for missguided programmer
+        path_str = cfg.firmware_file.as_posix()
+        cmd = [
+            "srec_cat",
+            # BL51 hex files are not sorted for ascending addresses. Suppress this warning
+            "-disable-sequence-warning",
+            # load input HEX file
+            path_str,
+            "-Intel",
+            # fill all incomplete 16-bit words with 0xFF. The range is limited to the application
+            "-fill",
+            "0xFF",
+            "-within",
+            path_str,
+            "-Intel",
+            "-range-padding",
+            "4",
+            # generate hex records with 16 byte data length (default 32 byte)
+            "-Output_Block_Size=16",
+            # generate 16-bit address records. Do no use for address ranges > 64K
+            "-address-length=2",
+            # generate a Intel hex file
+            "-o",
+            path_str,
+            "-Intel",
+        ]
+        subprocess.run(cmd, timeout=30)  # noqa: S607 S603
+
         with open(cfg.firmware_file.resolve(), "rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
@@ -227,10 +256,14 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
         if element is None:
             continue
 
+        element_str = str(element)
+        if len(element_str) > 500:
+            element_str = element_str[:500] + " [first 500 chars]"
+
         log.info(
-            "\n####### Starting %s #######\n%s [first 500 chars]",
+            "\n####### Starting %s #######\n%s\n",
             type(element).__name__,
-            str(element)[:500],
+            element_str,
         )
 
         if isinstance(element, EmulationTask):
