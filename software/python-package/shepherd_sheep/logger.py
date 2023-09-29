@@ -1,12 +1,18 @@
-import logging
+import logging.handlers
+import multiprocessing
+import sys
 from typing import Union
 
 from shepherd_core.logger import set_log_verbose_level
 
 log = logging.getLogger("Shp")
-log.addHandler(logging.NullHandler())
+queue = multiprocessing.Queue(-1)
+qhdl = logging.handlers.QueueHandler(queue)
+log.addHandler(qhdl)
+log.addHandler(logging.StreamHandler(sys.stdout))
 verbosity_state: bool = False
 log.setLevel(logging.INFO)
+qhdl.setLevel(logging.DEBUG)
 
 
 def get_verbosity() -> bool:
@@ -32,3 +38,11 @@ def reset_verbosity() -> None:
     if verbosity_state:
         return
     set_log_verbose_level(log, 2)
+
+
+def get_message_queue() -> multiprocessing.Queue:
+    """
+    read & delete with queue.get() -> element.message is the text
+    len is queue.qsize()
+    """
+    return queue

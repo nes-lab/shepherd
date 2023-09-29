@@ -30,11 +30,14 @@ from shepherd_core import Writer as CoreWriter
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression
-# from systemd import journal
 
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .commons import MAX_GPIO_EVT_PER_BUFFER
+from .logger import get_message_queue
 from .shared_memory import DataBuffer
+
+# from systemd import journal
+
 
 # An entry for an exception to be stored together with the data consists of a
 # timestamp, a custom message and an arbitrary integer value
@@ -123,6 +126,7 @@ class Writer(CoreWriter):
         self.dmesg_mon_t: Optional[threading.Thread] = None
         self.ptp4l_mon_t: Optional[threading.Thread] = None
         self.uart_mon_t: Optional[threading.Thread] = None
+        self.logmsg_mon_t: Optional[threading.Thread] = None
 
         # Optimization: allowing larger more efficient resizes
         #               (before .resize() was called per element)
@@ -142,7 +146,7 @@ class Writer(CoreWriter):
         self.dmesg_inc = 100
         self.xcpt_pos = 0
         self.xcpt_inc = 100
-        self.slog_pos = 0
+        self.logmsg_pos = 0
         self.slog_inc = 100
         self.timesync_pos = 0
         self.timesync_inc = inc_duration * 1
@@ -202,9 +206,9 @@ class Writer(CoreWriter):
         self.xcpt_grp["value"].attrs["unit"] = "n"
 
         # Shepherd-logging-handler
-        self.slog_grp = self.h5file.create_group("shepherd-log")
-        self.add_dataset_time(self.slog_grp, self.slog_inc)
-        self.slog_grp.create_dataset(
+        self.logmsg_grp = self.h5file.create_group("shepherd-log")
+        self.add_dataset_time(self.logmsg_grp, self.slog_inc)
+        self.logmsg_grp.create_dataset(
             "message",
             (self.slog_inc,),
             dtype=h5py.special_dtype(
@@ -328,8 +332,8 @@ class Writer(CoreWriter):
         self.xcpt_grp["time"].resize((self.xcpt_pos,))
         self.xcpt_grp["message"].resize((self.xcpt_pos,))
         self.xcpt_grp["value"].resize((self.xcpt_pos,))
-        self.slog_grp["time"].resize((self.slog_pos,))
-        self.slog_grp["message"].resize((self.slog_pos,))
+        self.logmsg_grp["time"].resize((self.logmsg_pos,))
+        self.logmsg_grp["message"].resize((self.logmsg_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
         self.timesync_grp["value"].resize((self.timesync_pos, 3))
 
@@ -352,6 +356,12 @@ class Writer(CoreWriter):
                     self.uart_grp["time"].shape[0],
                 )
             self.uart_mon_t = None
+        if self.logmsg_mon_t is not None:
+            self._logger.info(
+                "terminate LogMsg-Monitor -> %d entries",
+                self.logmsg_grp["time"].shape[0],
+            )
+            self.logmsg_mon_t = None
 
         gpio_events = self.gpio_grp["time"].shape[0]
         xcpt_events = self.xcpt_grp["time"].shape[0]
@@ -450,18 +460,6 @@ class Writer(CoreWriter):
         self.xcpt_grp["message"][self.xcpt_pos] = exception.message
         self.xcpt_pos += 1
 
-    def write(self, message: str) -> None:
-        """Allows to add Writer as Stream for StreamHandler"""
-        if not hasattr(self, "slog_grp") or "time" not in self.slog_grp.keys():
-            return
-        if self.slog_pos >= self.slog_grp["time"].shape[0]:
-            data_length = self.slog_grp["time"].shape[0] + self.slog_inc
-            self.slog_grp["time"].resize((data_length,))
-            self.slog_grp["message"].resize((data_length,))
-        self.slog_grp["time"][self.slog_pos] = int(time.time() * 1e9)
-        self.slog_grp["message"][self.slog_pos] = message
-        self.slog_pos += 1
-
     def log_sys_stats(self) -> None:
         """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
@@ -516,8 +514,6 @@ class Writer(CoreWriter):
         if sys is not None and sys.ptp:
             self.ptp4l_mon_t = threading.Thread(target=self.monitor_ptp4l, daemon=True)
             self.ptp4l_mon_t.start()
-        if sys is not None and sys.shepherd:
-            self._logger.addHandler(logging.StreamHandler(stream=self))
         if gpio is not None and gpio.uart_decode:
             self.uart_mon_t = threading.Thread(
                 target=self.monitor_uart,
@@ -525,6 +521,8 @@ class Writer(CoreWriter):
                 daemon=True,
             )
             self.uart_mon_t.start()
+        self.logmsg_mon_t = threading.Thread(target=self.monitor_logmsg, daemon=True)
+        self.logmsg_mon_t.start()
 
     def monitor_uart(
         self,
@@ -684,3 +682,23 @@ class Writer(CoreWriter):
             tevent.wait(poll_intervall)  # rate limiter
         self._logger.debug("[PTP4lMonitor] ended itself")
         # TODO: also add phc2sys
+
+    def monitor_logmsg(self, poll_intervall: float = 1) -> None:
+        global monitors_end
+        if not hasattr(self, "slog_grp") or "time" not in self.logmsg_grp.keys():
+            return
+        queue = get_message_queue()
+        tevent = threading.Event()
+
+        while not monitors_end:
+            while queue.qsize() > 0:
+                rec = queue.get()
+                if self.logmsg_pos >= self.logmsg_grp["time"].shape[0]:
+                    data_length = self.logmsg_grp["time"].shape[0] + self.slog_inc
+                    self.logmsg_grp["time"].resize((data_length,))
+                    self.logmsg_grp["message"].resize((data_length,))
+                self.logmsg_grp["time"][self.logmsg_pos] = int(rec.created * 1e9)
+                self.logmsg_grp["message"][self.logmsg_pos] = rec.message
+                self.logmsg_pos += 1
+            tevent.wait(poll_intervall)  # rate limiter
+        self._logger.debug("[LogMsgMonitor] ended itself")
