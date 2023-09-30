@@ -3,15 +3,27 @@ import multiprocessing
 import sys
 from typing import Union
 
+import chromalog
 from shepherd_core.logger import set_log_verbose_level
 
+# Top-Level Package-logger
 log = logging.getLogger("Shp")
+log.setLevel(logging.DEBUG)
+log.propagate = 0
+
+# handler for CLI
+console_handler = chromalog.ColorizingStreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+
+# Queue saves log for later putting it in hdf5-file
 queue = multiprocessing.Queue(-1)
-qhdl = logging.handlers.QueueHandler(queue)
-log.addHandler(qhdl)
+queue_handler = logging.handlers.QueueHandler(queue)
+queue_handler.setLevel(logging.DEBUG)
+
+# activate handlers
+log.addHandler(console_handler)
+log.addHandler(queue_handler)
 verbosity_state: bool = False
-log.setLevel(logging.INFO)
-qhdl.setLevel(logging.DEBUG)
 
 
 def get_verbosity() -> bool:
@@ -25,7 +37,7 @@ def set_verbosity(state: Union[bool, int] = True, temporary: bool = False) -> No
             return
     elif isinstance(state, int) and state < 3:
         return  # old format, will be replaced
-    set_log_verbose_level(log, 3)
+    set_log_verbose_level(console_handler, 3)
     if temporary:
         return
     global verbosity_state
@@ -36,7 +48,7 @@ def reset_verbosity() -> None:
     """Only done if it was increased temporary before"""
     if verbosity_state:
         return
-    set_log_verbose_level(log, 2)
+    set_log_verbose_level(console_handler, 2)
 
 
 def get_message_queue() -> multiprocessing.Queue:

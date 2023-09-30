@@ -138,7 +138,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
 
         # WORKAROUND that realigns hex for missguided programmer
         path_str = cfg.firmware_file.as_posix()
-        path_tmp = Path("/tmp/aligned.hex")
+        path_tmp = Path("/tmp/aligned.hex")  # noqa: S108
         # tmp_path because firmware can be in readonly content-dir
         cmd = [
             "srec_cat",
