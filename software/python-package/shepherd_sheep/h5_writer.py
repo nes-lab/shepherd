@@ -145,9 +145,10 @@ class Writer(CoreWriter):
         self.xcpt_pos = 0
         self.xcpt_inc = 100
         self.logmsg_pos = 0
-        self.slog_inc = 100
+        self.logmsg_inc = 100
         self.timesync_pos = 0
         self.timesync_inc = inc_duration * 1
+        # TODO: these params should be more local in monitors
         # NOTE for possible optimization: align resize with chunk-size
         #      -> rely on autochunking -> inc = h5ds.chunks
 
@@ -205,10 +206,10 @@ class Writer(CoreWriter):
 
         # Shepherd-logging-handler
         self.logmsg_grp = self.h5file.create_group("shepherd-log")
-        self.add_dataset_time(self.logmsg_grp, self.slog_inc)
+        self.add_dataset_time(self.logmsg_grp, self.logmsg_inc)
         self.logmsg_grp.create_dataset(
             "message",
-            (self.slog_inc,),
+            (self.logmsg_inc,),
             dtype=h5py.special_dtype(
                 vlen=str,
             ),  # TODO: switch to string_dtype() (h5py >v3.0)
@@ -664,7 +665,7 @@ class Writer(CoreWriter):
                 continue
             try:
                 data_length = self.timesync_grp["time"].shape[0]
-                if self.timesync_pos > data_length:
+                if self.timesync_pos >= data_length:
                     data_length += self.timesync_inc
                     self.timesync_grp["time"].resize((data_length,))
                     self.timesync_grp["values"].resize((data_length, 3))
@@ -691,8 +692,9 @@ class Writer(CoreWriter):
         while not monitors_end.is_set():
             while queue.qsize() > 0:
                 rec = queue.get()
+                data_length = self.logmsg_grp["time"].shape[0]
                 if self.logmsg_pos >= self.logmsg_grp["time"].shape[0]:
-                    data_length = self.logmsg_grp["time"].shape[0] + self.slog_inc
+                    data_length += self.logmsg_inc
                     self.logmsg_grp["time"].resize((data_length,))
                     self.logmsg_grp["message"].resize((data_length,))
                 self.logmsg_grp["time"][self.logmsg_pos] = int(rec.created * 1e9)
