@@ -291,14 +291,14 @@ class Writer(CoreWriter):
         self.timesync_grp = self.h5file.create_group("timesync")
         self.add_dataset_time(self.timesync_grp, self.timesync_inc)
         self.timesync_grp.create_dataset(
-            "value",
+            "values",
             (self.timesync_inc, 3),
             dtype="i8",
             maxshape=(None, 3),
             chunks=True,
         )
-        self.timesync_grp["value"].attrs["unit"] = "ns, Hz, ns"
-        self.timesync_grp["value"].attrs[
+        self.timesync_grp["values"].attrs["unit"] = "ns, Hz, ns"
+        self.timesync_grp["values"].attrs[
             "description"
         ] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
@@ -333,7 +333,7 @@ class Writer(CoreWriter):
         self.logmsg_grp["time"].resize((self.logmsg_pos,))
         self.logmsg_grp["message"].resize((self.logmsg_pos,))
         self.timesync_grp["time"].resize((self.timesync_pos,))
-        self.timesync_grp["value"].resize((self.timesync_pos, 3))
+        self.timesync_grp["values"].resize((self.timesync_pos, 3))
 
         if self.dmesg_mon_t is not None:
             self._logger.info(
@@ -556,7 +556,7 @@ class Writer(CoreWriter):
                         )
                         if len(output) > 0:
                             data_length = self.uart_grp["time"].shape[0]
-                            if self.sysutil_pos >= data_length:
+                            if self.uart_pos >= data_length:
                                 data_length += self.uart_inc
                                 self.uart_grp["time"].resize((data_length,))
                                 self.uart_grp["message"].resize((data_length,))
@@ -671,7 +671,7 @@ class Writer(CoreWriter):
                 self.timesync_grp["time"][self.timesync_pos] = int(time.time() * 1e9)
                 self.timesync_grp["values"][self.timesync_pos, :] = values[0:3]
                 self.timesync_pos += 1
-            except OSError:
+            except (OSError, KeyError):
                 self._logger.error(
                     "[PTP4lMonitor] Caught a Write Error for Line: [%s] %s",
                     type(line),
