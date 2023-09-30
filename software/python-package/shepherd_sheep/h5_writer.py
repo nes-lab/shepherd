@@ -550,11 +550,9 @@ class Writer(CoreWriter):
                     if monitors_end.is_set():
                         break
                     if uart.in_waiting > 0:
-                        output = (
-                            uart.read(uart.in_waiting)
-                            .decode("ascii", errors="replace")
-                            .replace("\x00", "")
-                        )
+                        # hdf5 can embed raw bytes, but can't handle nullbytes
+                        output = uart.read(uart.in_waiting).replace("\x00", "")
+                        # TODO: test, this had a .decode("ascii", errors="replace") inbetween
                         if len(output) > 0:
                             data_length = self.uart_grp["time"].shape[0]
                             if self.uart_pos >= data_length:
