@@ -31,7 +31,7 @@
     state: present
 - name: APT - update cache & install hardcoded kernel
   ansible.builtin.apt:
-    name: "linux-image-4.19.94-ti-r73"
+    name: "linux-image-4.19.94-ti-r7*"  # 2023-10-02: r74 was newest
     state: present
     update_cache: true
 
