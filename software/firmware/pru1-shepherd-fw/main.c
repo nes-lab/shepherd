@@ -200,7 +200,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem,
 
     if (gpio_diff > 0)
     {
-        DEBUG_GPIO_STATE_3;
+        DEBUG_GPIO_STATE_2;
         // local copy reduces reads to far-ram to current minimum
         const uint32_t cIDX = shared_mem->gpio_edges->idx;
 
@@ -412,21 +412,32 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             continue; // for more regular gpio-sampling
         }
 
-        /* Mem-Reading for PRU0 -> this can vary from 420 - 3000 (rare) */
+        /* Mem-Reading for PRU0 -> can vary from 530 - 5400 ns (rare) */
         if ((shared_mem->analog_sample_counter != shared_mem->analog_value_index) &&
             (shared_mem->sample_buffer != NULL) &&
             (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
         {
-            DEBUG_RAMRD_STATE_1;
-            const uint32_t value_index = shared_mem->analog_sample_counter;
-            shared_mem->analog_value_current =
-                    shared_mem->sample_buffer->values_current[value_index];
-            //if (value_index == 0u) DEBUG_RAMRD_STATE_0;
-            shared_mem->analog_value_voltage =
-                    shared_mem->sample_buffer->values_voltage[value_index];
-            //if (value_index == 0u) DEBUG_RAMRD_STATE_1;
-            shared_mem->analog_value_index = value_index;
+            // split reads to optimize gpio-tracing
+            static bool_ft first = true;
+            if (first)
+            {
+                DEBUG_RAMRD_STATE_1;
+                const uint32_t value_index = shared_mem->analog_sample_counter;
+                shared_mem->analog_value_current =
+                        shared_mem->sample_buffer->values_current[value_index];
+                first = false;
+            }
+            else
+            {
+                DEBUG_RAMRD_STATE_2;
+                const uint32_t value_index = shared_mem->analog_sample_counter;
+                shared_mem->analog_value_voltage =
+                        shared_mem->sample_buffer->values_voltage[value_index];
+                shared_mem->analog_value_index = value_index;
+                first                          = true;
+            }
             DEBUG_RAMRD_STATE_0;
+            continue;
         }
 
         /* remote gpio-triggering for pru0 */

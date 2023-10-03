@@ -2,11 +2,11 @@
 #define PRU1_DEBUG_ROUTINES_H_
 
 // Debug Code - Config, TODO: enable by makefile or compile-command for both PRUs
-#define DEBUG_GPIO_EN  0 // state1= gpio-checking, state2=writing data, state0=loop&event-routines
+#define DEBUG_GPIO_EN  1 // state1= gpio-checking, state2=writing data, state0=loop&event-routines
 #define DEBUG_EVENT_EN 0 // state1=Event1, s2=e2, s3=e3 (expensive part)
 #define DEBUG_LOOP_EN  0
-#define DEBUG_PGOOD_EN 1 // send power_good to LED1		-> default ON
-#define DEBUG_RAMRD_EN 1 // far ram read (for pru0) on LED0
+#define DEBUG_PGOOD_EN 0 // send power_good to LED1		-> default ON
+#define DEBUG_RAMRD_EN 0 // far ram read (for pru0) on LED0
 
 // Debug Code, state-changes add ~2 ticks (s1 & 2), ~1 ticks (s0 & s3)
 #define DEBUG_STATE_0  write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
@@ -47,11 +47,13 @@
 #endif
 
 #if (DEBUG_RAMRD_EN > 0)
-  #define DEBUG_RAMRD_STATE_0 write_r30(read_r30() & ~DEBUG_PIN0_MASK)
-  #define DEBUG_RAMRD_STATE_1 write_r30(read_r30() | DEBUG_PIN0_MASK)
+  #define DEBUG_RAMRD_STATE_0 DEBUG_STATE_0
+  #define DEBUG_RAMRD_STATE_1 DEBUG_STATE_1
+  #define DEBUG_RAMRD_STATE_2 DEBUG_STATE_2
 #else
   #define DEBUG_RAMRD_STATE_0
   #define DEBUG_RAMRD_STATE_1
+  #define DEBUG_RAMRD_STATE_2
 #endif
 
 
