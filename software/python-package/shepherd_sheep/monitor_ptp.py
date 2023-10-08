@@ -37,7 +37,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)
             self.thread = None
-        self.data["value"].resize((self.position, 3))
+        self.data["values"].resize((self.position, 3))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -89,4 +89,4 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     line,
                 )
             self.event.wait(self.poll_intervall)  # rate limiter
-        log.debug("[%s] ended itself", type(self).__name__)
+        log.debug("[%s] thread ended itself", type(self).__name__)

@@ -36,7 +36,7 @@ class UARTMonitor(Monitor):
             self.thread.start()
         else:
             log.error(
-                "[%s] was not started - '%s' is unavailable",
+                "[%s] will not start - '%s' is unavailable",
                 type(self).__name__,
                 self.uart,
             )
@@ -66,13 +66,13 @@ class UARTMonitor(Monitor):
         try:
             # open serial as non-exclusive
             with serial.Serial(self.uart, self.baudrate, timeout=0) as uart:
-                while True:
-                    if self.event.is_set():
-                        break
+                while not self.event.is_set():
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
-                        # TODO: test, this had a .decode("ascii", errors="replace") in between
+                        if self.event.is_set():
+                            # needed because uart.read is blocking
+                            break
                         if len(output) > 0:
                             data_length = self.data["time"].shape[0]
                             if self.position >= data_length:
@@ -103,4 +103,4 @@ class UARTMonitor(Monitor):
                 e,
                 self.uart,
             )
-        log.debug("[%s] ended itself", type(self).__name__)
+        log.debug("[%s] thread ended itself", type(self).__name__)

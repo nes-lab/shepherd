@@ -246,7 +246,9 @@ class Writer(CoreWriter):
         if gpio is not None and gpio.uart_decode:
             self.monitors.append(
                 UARTMonitor(
-                    self.uart_grp, self._compression, baudrate=gpio.uart_baudrate
-                )
+                    self.uart_grp,
+                    self._compression,
+                    baudrate=gpio.uart_baudrate,
+                ),
             )
         self.monitors.append(SheepMonitor(self.uart_grp, self._compression))

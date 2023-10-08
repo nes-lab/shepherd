@@ -102,7 +102,7 @@ class ShepherdHarvester(ShepherdIO):
         # Give the PRU empty buffers to begin with
         time.sleep(1)
         for i in range(self.n_buffers):
-            self.return_buffer(i, True)
+            self.return_buffer(i, False)
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
             # ⤷ could be as low as ~ 10us
         return self

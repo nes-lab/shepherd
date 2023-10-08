@@ -62,7 +62,7 @@ class SysUtilMonitor(Monitor):
 
         if psutil.disk_io_counters() is None:
             log.info(
-                "[%s] was not started - fake or virtual hardware detected",
+                "[%s] will not start - fake or virtual hardware detected",
                 type(self).__name__,
             )
         else:
@@ -110,18 +110,14 @@ class SysUtilMonitor(Monitor):
                     int(100 * mem_stat[1] / mem_stat[0]),
                     int(mem_stat[2]),
                 ]
-                sysutil_io_now = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
-                self.data["io"][self.position, :] = (
-                    sysutil_io_now - self.sysutil_io_last
-                )
-                self.sysutil_io_last = sysutil_io_now
-                sysutil_nw_now = np.array(psutil.net_io_counters()[0:2])
-                self.data["net"][self.position, :] = (
-                    sysutil_nw_now - self.sysutil_nw_last
-                )
-                self.sysutil_nw_last = sysutil_nw_now
+                io_now = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
+                self.data["io"][self.position, :] = io_now - self.io_last
+                self.io_last = io_now
+                nw_now = np.array(psutil.net_io_counters()[0:2])
+                self.data["net"][self.position, :] = nw_now - self.nw_last
+                self.nw_last = nw_now
                 self.position += 1
                 # TODO: add temp, not working:
                 #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
             self.event.wait(self.poll_intervall)  # rate limiter
-        log.debug("[%s] ended itself", type(self).__name__)
+        log.debug("[%s] thread ended itself", type(self).__name__)

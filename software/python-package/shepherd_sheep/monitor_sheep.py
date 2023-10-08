@@ -5,6 +5,7 @@ import h5py
 from shepherd_core import Compression
 
 from .logger import get_message_queue
+from .logger import log
 from .monitor_abc import Monitor
 
 
@@ -36,8 +37,7 @@ class SheepMonitor(Monitor):
         super().__exit__()
 
     def thread_fn(self) -> None:
-        # NOTE: this monitor is not ending itself on command (intentionally)
-        while True:
+        while not self.event.is_set():
             while self.queue.qsize() > 0:
                 rec = self.queue.get()
                 data_length = self.data["time"].shape[0]
@@ -49,3 +49,4 @@ class SheepMonitor(Monitor):
                 self.data["message"][self.position] = rec.message
                 self.position += 1
             self.event.wait(self.poll_intervall)  # rate limiter
+        log.debug("[%s] thread ended itself", type(self).__name__)

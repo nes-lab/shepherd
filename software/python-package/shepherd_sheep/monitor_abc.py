@@ -38,11 +38,15 @@ class Monitor(ABC):
         ] = "system time [s] = value * gain + (offset)"
         self.data["time"].attrs["gain"] = 1e-9
         self.data["time"].attrs["offset"] = 0
+        log.debug(
+            "[%s] was activated",
+            type(self).__name__,
+        )
 
     def __exit__(self, *exc):  # type: ignore
         self.data["time"].resize((self.position,))
         log.info(
-            "[%s] logged %d entries",
+            "[%s] recorded %d events",
             type(self).__name__,
             self.data["time"].shape[0],
         )

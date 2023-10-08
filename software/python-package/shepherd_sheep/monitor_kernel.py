@@ -78,4 +78,4 @@ class KernelMonitor(Monitor):
                     line,
                 )
             self.event.wait(self.poll_intervall)  # rate limiter
-        log.debug("[%s] ended itself", type(self).__name__)
+        log.debug("[%s] thread ended itself", type(self).__name__)
