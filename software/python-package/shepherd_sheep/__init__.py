@@ -10,6 +10,7 @@ Provides main API functionality for harvesting and emulating with shepherd.
 import platform
 import shutil
 import subprocess  # noqa: S404
+import tempfile
 import time
 from contextlib import ExitStack
 from pathlib import Path
@@ -132,13 +133,16 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         sysfs_interface.load_pru0_firmware(cfg.protocol)
         dbg.refresh_shared_mem()  # address might have changed
 
+        log.info("processing file %s", cfg.firmware_file.name)
         d_type = suffix_to_DType.get(cfg.firmware_file.suffix.lower())
         if d_type != FirmwareDType.base64_hex:
             log.warning("Firmware seems not to be HEX - but will try to program anyway")
 
-        # WORKAROUND that realigns hex for missguided programmer
+        # WORKAROUND that realigns hex for misguided programmer
         path_str = cfg.firmware_file.as_posix()
-        path_tmp = Path("/tmp/aligned.hex")  # noqa: S108
+        path_tmp = tempfile.TemporaryDirectory()
+        stack.enter_context(path_tmp)
+        file_tmp = Path(path_tmp.name) / "aligned.hex"
         # tmp_path because firmware can be in readonly content-dir
         cmd = [
             "srec_cat",
@@ -161,12 +165,16 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             "-address-length=2",
             # generate a Intel hex file
             "-o",
-            path_tmp.as_posix(),
+            file_tmp.as_posix(),
             "-Intel",
         ]
-        subprocess.run(cmd, timeout=30)  # noqa: S607 S603
+        ret = subprocess.run(cmd, timeout=30)  # noqa: S607 S603
+        if ret.returncode > 0:
+            log.error("Error during realignment (srec_cat): %s", ret.stderr)
+            failed = True
+            raise SystemExit
 
-        with open(path_tmp.as_posix(), "rb") as fw:
+        with open(file_tmp.as_posix(), "rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
                 target = cfg.mcu_type.lower()
