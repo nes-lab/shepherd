@@ -415,7 +415,7 @@ class Herd:
 
     @validate_call
     def check_status(self, warn: bool = False) -> bool:
-        """Returns true ss long as one instance is still measuring
+        """Returns true as long as one instance is still measuring
 
         :param warn:
         :return: True is one node is still active

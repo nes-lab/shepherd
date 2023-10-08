@@ -17,8 +17,8 @@
 #define IEP_CMP7      (7U)
 
 
-void     iep_init();
-void     iep_set_us(uint32_t value);
+void            iep_init();
+void            iep_set_us(uint32_t value);
 inline void     iep_reset();
 inline void     iep_start();
 inline void     iep_stop();

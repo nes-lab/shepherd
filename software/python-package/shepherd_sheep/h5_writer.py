@@ -34,8 +34,6 @@ from .commons import MAX_GPIO_EVT_PER_BUFFER
 from .logger import get_message_queue
 from .shared_memory import DataBuffer
 
-# from systemd import journal
-
 
 # An entry for an exception to be stored together with the data consists of a
 # timestamp, a custom message and an arbitrary integer value
@@ -552,7 +550,7 @@ class Writer(CoreWriter):
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
-                        # TODO: test, this had a .decode("ascii", errors="replace") inbetween
+                        # TODO: test, this had a .decode("ascii", errors="replace") in between
                         if len(output) > 0:
                             data_length = self.uart_grp["time"].shape[0]
                             if self.uart_pos >= data_length:
