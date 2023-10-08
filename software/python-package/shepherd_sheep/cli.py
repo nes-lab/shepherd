@@ -321,6 +321,7 @@ def program(**kwargs):
     context_settings={"ignore_unknown_options": True},
 )
 def fix():
+    set_verbosity()
     reload_kernel_module()
 
 
