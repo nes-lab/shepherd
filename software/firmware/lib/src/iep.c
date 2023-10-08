@@ -11,7 +11,7 @@ void iep_set_us(const uint32_t value)
     CT_IEP.TMR_CMP0 = value * 200U;
 }
 
-void iep_reset()
+inline void iep_reset()
 {
     /* Reset Count register */
     CT_IEP.TMR_CNT = 0xFFFFFFFF;

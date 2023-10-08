@@ -2,6 +2,7 @@
 #define INT_OPTIMIZED_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // short-cuts for fastest data-types on architecture
 // - pru needs 7 cycles and branch when int8 or int16 or int32 is used together in an OP
