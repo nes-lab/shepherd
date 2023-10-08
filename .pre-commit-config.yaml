@@ -4,7 +4,7 @@
 # update deps pre-commit autoupdate
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
@@ -60,7 +60,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.13.0
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args: ["--py38-plus", "--keep-runtime-typing"]
@@ -97,7 +97,7 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.20.0
+    rev: v6.20.3
     hooks:
       - id: ansible-lint
         files: \.(yaml|yml)$
@@ -110,7 +110,7 @@ repos:
 #        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
       - id: codespell
         exclude: \.(sch|brd|lbr)$
