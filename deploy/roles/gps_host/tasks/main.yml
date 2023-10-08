@@ -91,7 +91,7 @@
 
 - name: Copy pps-gmtimer code
   ansible.posix.synchronize:
-    src: "{{ pps_gmtimer_path }}"
+    src: "{{ gps_host_pps_gmtimer_path }}"
     dest: /opt/pps-gmtimer
   tags:
     - gps
@@ -107,7 +107,7 @@
 
 - name: Copy device tree overlay for GPS-Capelet
   ansible.posix.synchronize:
-    src: "{{ gps_overlay_path }}"
+    src: "{{ gps_host_gps_overlay_path }}"
     dest: "/opt/gps-overlay"
   tags:
     - gps

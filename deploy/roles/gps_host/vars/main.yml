@@ -1,3 +1,3 @@
 ---
-gps_overlay_path: '{{ role_path }}/../../../software/gps-overlay/'
-pps_gmtimer_path: '{{ role_path }}/../../../software/pps-gmtimer/src/'
+gps_host_gps_overlay_path: '{{ role_path }}/../../../software/gps-overlay/'
+gps_host_pps_gmtimer_path: '{{ role_path }}/../../../software/pps-gmtimer/src/'

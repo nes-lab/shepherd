@@ -1,7 +1,7 @@
 ---
 - name: Base setup
   hosts: all
-  strategy: free
+  strategy: free # noqa: run-once[play]
   vars:
     mount_path: /opt/shepherd-dev
   tasks:

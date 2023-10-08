@@ -7,16 +7,16 @@
     mode: 'a+rx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
   loop:
-    - "{{ gcc_tools_path }}/"
-    - "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}/" # TODO: probably just []/pru-elf now
+    - "{{ sheep_gcc_tools_path }}/"
+    - "{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}/" # TODO: probably just []/pru-elf now
   become: true
   tags:
     - pru-tools
 
 - name: Download and extract pru gcc cross compiler
   ansible.builtin.unarchive:
-    src: '{ gcc_pru_cc_link }/{{ gcc_pru_cc_release }}.tar.xz'
-    dest: "{{ gcc_tools_path }}" # archive is double-packed ... one folder will probably always be gcc_pru_cc_release
+    src: '{ sheep_gcc_pru_cc_link }/{{ sheep_gcc_pru_cc_release }}.tar.xz'
+    dest: "{{ sheep_gcc_tools_path }}" # archive is double-packed ... one folder will probably always be gcc_pru_cc_release
     remote_src: true
     mode: '0755'
     owner: "{{ ansible_user }}"
@@ -29,8 +29,8 @@
 
 - name: Apply Size-Hack for iMEM to make pru0 compile (fw not usable)
   ansible.builtin.copy:
-    src: "{{ shepherd_install_path }}/software/firmware/lib/am335xl.pru0"
-    dest: "{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}/pru-elf/lib/device-specs/" # TODO: probably just []/pru-elf/pru-elf/[] now
+    src: "{{ sheep_install_path }}/software/firmware/lib/am335xl.pru0"
+    dest: "{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}/pru-elf/lib/device-specs/" # TODO: probably just []/pru-elf/pru-elf/[] now
     remote_src: true
     owner: "{{ ansible_user }}"
     mode: '0666'
@@ -38,9 +38,9 @@
 - name: Clone PRU software support package (GCC PSSP)
   ansible.builtin.git:
     repo: 'https://github.com/dinuxbg/pru-software-support-package.git'
-    dest: "{{ gcc_pru_support_path }}"
+    dest: "{{ sheep_gcc_pru_support_path }}"
     update: true
-    version: "{{ gcc_pru_support_branch }}"
+    version: "{{ sheep_gcc_pru_support_branch }}"
     force: true
   become: true
   register: dl_pssp_ret
@@ -58,8 +58,8 @@
     state: present
   with_nested:
     - [
-      { name: PRU_GCC, value: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}' },
-      { name: PRU_GCC_SUPPORT, value: "{{ gcc_pru_support_path }}" }
+      { name: PRU_GCC, value: '{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}' },
+      { name: PRU_GCC_SUPPORT, value: "{{ sheep_gcc_pru_support_path }}" }
     ] # TODO: PRU_GCC probably just []/pru-elf now
     - ['/home/{{ ansible_user }}', '/root']
   become: true
@@ -68,7 +68,7 @@
 
 - name: Own tool path
   ansible.builtin.file:
-    path: "{{ gcc_tools_path }}/"
+    path: "{{ sheep_gcc_tools_path }}/"
     state: directory
     owner: "{{ ansible_user }}"
     recurse: true

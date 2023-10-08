@@ -7,15 +7,15 @@
     mode: 'a+rwx,u+w' # everyone can list and access files inside (+ owner can create & delete)
     owner: "{{ ansible_user }}"
   loop:
-    - "{{ ti_tools_path }}"
-    - "{{ ti_pru_cgt_path }}"
+    - "{{ sheep_ti_tools_path }}"
+    - "{{ sheep_ti_pru_cgt_path }}"
   become: true
   tags:
     - pru-tools
 
 - name: Download PRU Code Generation tools installer
   ansible.builtin.get_url:
-    url: "{{ ti_pru_cgt_installer }}"
+    url: "{{ sheep_ti_pru_cgt_installer }}"
     dest: "/tmp/"
     timeout: 120
     mode: a+x
@@ -40,9 +40,9 @@
 - name: Clone PRU software support package (Ti PSSP)
   ansible.builtin.git:
     repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
-    dest: "{{ ti_pru_support_path }}"
+    dest: "{{ sheep_ti_pru_support_path }}"
     update: true
-    version: "{{ ti_pru_support_tag }}"
+    version: "{{ sheep_ti_pru_support_tag }}"
     force: true
   become: true
   register: dl_pssp_ret
@@ -53,7 +53,7 @@
 
 - name: Prepare path to link binaries
   ansible.builtin.file:
-    path: '{{ ti_pru_cgt_path }}/bin/'
+    path: '{{ sheep_ti_pru_cgt_path }}/bin/'
     state: directory
     recurse: true
     owner: "{{ ansible_user }}"
@@ -70,8 +70,8 @@
     owner: "{{ ansible_user }}"
     mode: 'a+rx,u+w'
   loop:
-    - { src: /usr/bin/clpru, dest: '{{ ti_pru_cgt_path }}/bin/clpru' }
-    - { src: /usr/bin/lnkpru, dest: '{{ ti_pru_cgt_path }}/bin/lnkpru' }
+    - { src: /usr/bin/clpru, dest: '{{ sheep_ti_pru_cgt_path }}/bin/clpru' }
+    - { src: /usr/bin/lnkpru, dest: '{{ sheep_ti_pru_cgt_path }}/bin/lnkpru' }
   become: true
   tags:
     - pru-tools
@@ -85,8 +85,8 @@
     state: present
   with_nested:
     - [
-      { name: PRU_CGT, path: "{{ ti_pru_cgt_path }}" },
-      { name: PRU_CGT_SUPPORT, path: "{{ ti_pru_support_path }}" }
+      { name: PRU_CGT, path: "{{ sheep_ti_pru_cgt_path }}" },
+      { name: PRU_CGT_SUPPORT, path: "{{ sheep_ti_pru_support_path }}" }
     ]
     - ['/home/{{ ansible_user }}', '/root']
   become: true
@@ -95,7 +95,7 @@
 
 - name: Own tool path
   ansible.builtin.file:
-    path: "{{ ti_tools_path }}/"
+    path: "{{ sheep_ti_tools_path }}/"
     state: directory
     owner: "{{ ansible_user }}"
     recurse: true

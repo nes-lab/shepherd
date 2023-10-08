@@ -2,7 +2,7 @@
 
 - name: Build and install kernel module
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/kernel-module/src"
+    chdir: "{{ sheep_install_path }}/software/kernel-module/src"
     target: install
   when: sheep_rebuild_kernel_module | bool
   tags:
@@ -10,7 +10,7 @@
 
 - name: Clean PRU Firmware Source
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
+    chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: clean
   loop:
     - pru0-shepherd-fw
@@ -20,23 +20,23 @@
 
 - name: Build PRU firmware
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
+    chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: all
   loop:
     - pru0-shepherd-fw
     - pru1-shepherd-fw
     - pru0-programmer
   environment:
-    PRU_CGT: '{{ ti_pru_cgt_path }}'
-    PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
-    # PRU_GCC: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}' # TODO: probably just []/pru-elf now
-    # PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
+    PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
+    PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
+    # PRU_GCC: '{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}' # TODO: probably just []/pru-elf now
+    # PRU_GCC_SUPPORT: '{{ sheep_gcc_pru_support_path }}'
   become: false
   # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
 
 - name: Install PRU firmware
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/{{ item }}"
+    chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: install
   loop:
     - pru0-shepherd-fw
@@ -47,23 +47,23 @@
 # build second programmer
 - name: Clean PRU Firmware Source - Programmer 2 - SBW
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
+    chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: clean
 - name: Build PRU firmware - Programmer 2 - SBW
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
+    chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: all
     params:
       PROTO: SBW
   environment:
-    PRU_CGT: '{{ ti_pru_cgt_path }}'
-    PRU_CGT_SUPPORT: '{{ ti_pru_support_path }}'
-    # PRU_GCC: '{{ gcc_tools_path }}/{{ gcc_pru_cc_release }}' # TODO: probably just []/pru-elf now
-    # PRU_GCC_SUPPORT: '{{ gcc_pru_support_path }}'
+    PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
+    PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
+    # PRU_GCC: '{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}' # TODO: probably just []/pru-elf now
+    # PRU_GCC_SUPPORT: '{{ sheep_gcc_pru_support_path }}'
   become: false
 - name: Install PRU firmware - Programmer 2 - SBW
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/pru0-programmer"
+    chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: install
     params:
       PROTO: SBW
@@ -71,12 +71,12 @@
 
 - name: Clean shepherd device tree
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+    chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: clean
 
 - name: Build and install device tree overlay
   community.general.make:
-    chdir: "{{ shepherd_install_path }}/software/firmware/device-tree"
+    chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: install
   tags:
     - install
@@ -86,7 +86,7 @@
   ansible.builtin.pip:
     name: "./[test]"
     state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
-    chdir: '{{ shepherd_install_path }}/software/python-package'
+    chdir: '{{ sheep_install_path }}/software/python-package'
   tags:
     - install
     - python

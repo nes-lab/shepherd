@@ -46,7 +46,7 @@
   ansible.builtin.pip:
     name: "./"
     state: absent
-    chdir: '{{ shepherd_install_path }}/software/python-package'
+    chdir: '{{ sheep_install_path }}/software/python-package'
   failed_when: false
   tags:
     - install
@@ -64,7 +64,7 @@
 - name: Synchronize host shepherd dir to target
   ansible.posix.synchronize:
     src: "{{ repo_dir.stdout }}/"
-    dest: "{{ shepherd_install_path }}"
+    dest: "{{ sheep_install_path }}"
     delete: true
     owner: false
     group: false
@@ -76,7 +76,7 @@
 
 - name: Own shepherd codebase
   ansible.builtin.file:
-    path: "{{ shepherd_install_path }}/"
+    path: "{{ sheep_install_path }}/"
     state: directory
     owner: "{{ ansible_user }}"
     mode: "a+rw"
