@@ -48,7 +48,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             "journalctl",
             "--unit=ptp4l@eth0",
             "--follow",
-            "--lines=1",
+            "--lines=60",
             "--output=short-precise",
         ]  # for client
         proc_ptp4l = subprocess.Popen(  # noqa: S603

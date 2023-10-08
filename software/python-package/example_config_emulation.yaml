@@ -29,7 +29,7 @@ parameters:
     # - true or "main" to mirror main target voltage
   gpio_tracing:
     uart_decode: true
-    uart_baudrate: 9600
+    uart_baudrate: 115200
   power_tracing:
     discard_voltage: false
     discard_current: false

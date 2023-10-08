@@ -251,4 +251,4 @@ class Writer(CoreWriter):
                     baudrate=gpio.uart_baudrate,
                 ),
             )
-        self.monitors.append(SheepMonitor(self.uart_grp, self._compression))
+        self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))

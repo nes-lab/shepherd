@@ -15,7 +15,7 @@ class KernelMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Optional[Compression] = Compression.default,
-        backlog: int = 40,
+        backlog: int = 60,
     ):
         super().__init__(target, compression, poll_intervall=0.23)
         self.backlog = backlog

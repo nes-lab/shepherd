@@ -31,7 +31,16 @@ class UARTMonitor(Monitor):
         )
         self.data["message"].attrs["description"] = "raw ascii-bytes"
 
+        if (not isinstance(self.baudrate, int)) or (self.baudrate == 0):
+            return
+
         if Path(self.uart).exists():
+            log.info(
+                "[%s] starts with '%s' @ %d baud",
+                type(self).__name__,
+                self.uart,
+                self.baudrate,
+            )
             self.thread = threading.Thread(target=self.thread_fn, daemon=True)
             self.thread.start()
         else:
@@ -55,14 +64,6 @@ class UARTMonitor(Monitor):
         # - converting is producing ValueError on certain chars,
         #   errors="backslashreplace" does not help
         # TODO: eval https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
-        if (not isinstance(self.baudrate, int)) or (self.baudrate == 0):
-            return
-        log.debug(
-            "[%s] start on '%s' @ %d baud",
-            type(self).__name__,
-            self.uart,
-            self.baudrate,
-        )
         try:
             # open serial as non-exclusive
             with serial.Serial(self.uart, self.baudrate, timeout=0) as uart:
