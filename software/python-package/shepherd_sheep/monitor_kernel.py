@@ -1,3 +1,4 @@
+import os
 import subprocess  # noqa: S404
 import threading
 import time
@@ -17,7 +18,7 @@ class KernelMonitor(Monitor):
         compression: Optional[Compression] = Compression.default,
         backlog: int = 60,
     ):
-        super().__init__(target, compression, poll_intervall=0.23)
+        super().__init__(target, compression, poll_intervall=0.74)
         self.backlog = backlog
 
         self.data.create_dataset(
@@ -28,6 +29,24 @@ class KernelMonitor(Monitor):
             chunks=True,
         )
 
+        command = [
+            "sudo",
+            "journalctl",
+            "--dmesg",
+            "--follow",
+            f"--lines={self.backlog}",
+            "--output=short-precise",
+        ]
+        self.process = subprocess.Popen(  # noqa: S603
+            command,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        if (not hasattr(self.process, "stdout")) or (self.process.stdout is None):
+            log.error("[%s] Setup failed -> prevents logging", type(self).__name__)
+            return
+        os.set_blocking(self.process.stdout.fileno(), False)
+
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
@@ -36,30 +55,15 @@ class KernelMonitor(Monitor):
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)
             self.thread = None
+        self.process.terminate()
         self.data["message"].resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
-        # var1: ['dmesg', '--follow'] -> not enough control
-        cmd_dmesg = [
-            "sudo",
-            "journalctl",
-            "--dmesg",
-            "--follow",
-            f"--lines={self.backlog}",
-            "--output=short-precise",
-        ]
-        proc_dmesg = subprocess.Popen(  # noqa: S603
-            cmd_dmesg,
-            stdout=subprocess.PIPE,
-            universal_newlines=True,
-        )
-        if (not hasattr(proc_dmesg, "stdout")) or (proc_dmesg.stdout is None):
-            log.error("[%s] Setup failed -> prevents logging", type(self).__name__)
-            return
-        for line in iter(proc_dmesg.stdout.readline, ""):  # type: ignore
-            if self.event.is_set():
-                break
+        while not self.event.is_set():
+            line = self.process.stdout.readline()
+            if len(line) < 1:
+                continue
             line = str(line).strip()[:128]
             try:
                 data_length = self.data["time"].shape[0]

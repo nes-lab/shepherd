@@ -41,7 +41,7 @@ class SheepMonitor(Monitor):
             while self.queue.qsize() > 0:
                 rec = self.queue.get()
                 data_length = self.data["time"].shape[0]
-                if self.position >= self.data["time"].shape[0]:
+                if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
                     self.data["message"].resize((data_length,))

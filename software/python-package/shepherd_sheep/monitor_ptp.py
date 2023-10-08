@@ -1,3 +1,4 @@
+import os
 import subprocess  # noqa: S404
 import threading
 import time
@@ -16,7 +17,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         target: h5py.Group,
         compression: Optional[Compression] = Compression.default,
     ):
-        super().__init__(target, compression, poll_intervall=0.24)
+        super().__init__(target, compression, poll_intervall=0.72)
         self.data.create_dataset(
             "values",
             (self.increment, 3),
@@ -29,6 +30,24 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             "description"
         ] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
+        command = [
+            "sudo",
+            "journalctl",
+            "--unit=ptp4l@eth0",
+            "--follow",
+            "--lines=60",
+            "--output=short-precise",
+        ]  # for client
+        self.process = subprocess.Popen(  # noqa: S603
+            command,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        if (not hasattr(self.process, "stdout")) or (self.process.stdout is None):
+            log.error("[%s] Setup failed -> prevents logging", type(self).__name__)
+            return
+        os.set_blocking(self.process.stdout.fileno(), False)
+
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
@@ -37,31 +56,17 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)
             self.thread = None
+        self.process.terminate()
         self.data["values"].resize((self.position, 3))
         super().__exit__()
 
     def thread_fn(self) -> None:
         # example:
         # sheep1 ptp4l[378]: [821.629] main offset -4426 s2 freq +285889 path delay 12484
-        cmd_ptp4l = [
-            "sudo",
-            "journalctl",
-            "--unit=ptp4l@eth0",
-            "--follow",
-            "--lines=60",
-            "--output=short-precise",
-        ]  # for client
-        proc_ptp4l = subprocess.Popen(  # noqa: S603
-            cmd_ptp4l,
-            stdout=subprocess.PIPE,
-            universal_newlines=True,
-        )
-        if (not hasattr(proc_ptp4l, "stdout")) or (proc_ptp4l.stdout is None):
-            log.error("[%s] Setup failed -> prevents logging", type(self).__name__)
-            return
-        for line in iter(proc_ptp4l.stdout.readline, ""):
-            if self.event.is_set():
-                break
+        while not self.event.is_set():
+            line = self.process.stdout.readline()
+            if len(line) < 1:
+                continue
             try:
                 words = str(line).split()
                 i_start = words.index("offset")

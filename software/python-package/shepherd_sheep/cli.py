@@ -153,6 +153,8 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
 )
 def run(config: Path):
     failed = run_task(config)
+    if failed:
+        log.debug("Tasks signaled an error (failed).")
     sys.exit(int(failed))
 
 

@@ -53,7 +53,7 @@ def data_h5(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def path_yaml(tmp_path: Path) -> Path:
+def tmp_yaml(tmp_path: Path) -> Path:
     return tmp_path / "cfg.yaml"
 
 
@@ -72,7 +72,7 @@ def path_here() -> Path:
 def test_cli_harvest_no_cal(
     shepherd_up,
     cli_runner,
-    path_yaml,
+    tmp_yaml: Path,
     path_h5: Path,
 ) -> None:
     HarvestTask(
@@ -81,8 +81,8 @@ def test_cli_harvest_no_cal(
         duration=10,
         use_cal_default=True,
         verbose=3,
-    ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-v", "run", path_yaml.as_posix()])
+    ).to_file(tmp_yaml)
+    res = cli_runner.invoke(cli, ["-v", "run", tmp_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -92,7 +92,7 @@ def test_cli_harvest_no_cal(
 def test_cli_harvest_parameters_most(
     shepherd_up,
     cli_runner,
-    path_yaml,
+    tmp_yaml: Path,
     path_h5: Path,
 ) -> None:
     HarvestTask(
@@ -103,8 +103,8 @@ def test_cli_harvest_parameters_most(
         time_start=datetime.fromtimestamp(round(time.time() + 20)),
         abort_on_error=False,
         verbose=3,
-    ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-v", "run", path_yaml.as_posix()])
+    ).to_file(tmp_yaml)
+    res = cli_runner.invoke(cli, ["-v", "run", tmp_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -114,7 +114,7 @@ def test_cli_harvest_parameters_most(
 def test_cli_harvest_parameters_minimal(
     shepherd_up,
     cli_runner,
-    path_yaml,
+    tmp_yaml: Path,
     path_h5: Path,
 ) -> None:
     HarvestTask(
@@ -122,8 +122,8 @@ def test_cli_harvest_parameters_minimal(
         force_overwrite=True,
         duration=10,
         verbose=3,
-    ).to_file(path_yaml)
-    res = cli_runner.invoke(cli, ["-v", "run", path_yaml.as_posix()])
+    ).to_file(tmp_yaml)
+    res = cli_runner.invoke(cli, ["-v", "run", tmp_yaml.as_posix()])
     assert res.exit_code == 0
     assert path_h5.exists()
 
@@ -155,7 +155,7 @@ def test_cli_emulate(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -163,13 +163,13 @@ def test_cli_emulate(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         verbose=3,
-    ).to_file(path_yaml)
+    ).to_file(tmp_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
             "run",
-            path_yaml.as_posix(),
+            tmp_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -183,7 +183,7 @@ def test_cli_emulate_with_custom_virtsource(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
     path_here: Path,
 ) -> None:
     EmulationTask(
@@ -195,13 +195,14 @@ def test_cli_emulate_with_custom_virtsource(
             path_here / "_test_config_virtsource.yaml",
         ),
         verbose=3,
-    ).to_file(path_yaml)
+    ).to_file(tmp_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
+            "-v",
             "run",
-            path_yaml.as_posix(),
+            tmp_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -215,7 +216,7 @@ def test_cli_emulate_with_bq25570(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -224,13 +225,13 @@ def test_cli_emulate_with_bq25570(
         output_path=path_h5.as_posix(),
         virtual_source=VirtualSourceConfig(name="BQ25570"),
         verbose=3,
-    ).to_file(path_yaml)
+    ).to_file(tmp_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
             "run",
-            path_yaml.as_posix(),
+            tmp_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -244,7 +245,7 @@ def test_cli_emulate_aux_voltage(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -253,13 +254,13 @@ def test_cli_emulate_aux_voltage(
         output_path=path_h5.as_posix(),
         voltage_aux=2.5,
         verbose=3,
-    ).to_file(path_yaml)
+    ).to_file(tmp_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
             "run",
-            path_yaml.as_posix(),
+            tmp_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -273,7 +274,7 @@ def test_cli_emulate_parameters_long(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
 ) -> None:
     EmulationTask(
         duration=10,
@@ -290,13 +291,13 @@ def test_cli_emulate_parameters_long(
         gpio_tracing=GpioTracing(uart_baudrate=9600),
         power_tracing=PowerTracing(discard_current=False, discard_voltage=True),
         verbose=3,
-    ).to_file(path_yaml)
+    ).to_file(tmp_yaml)
 
     res = cli_runner.invoke(
         cli,
         [
             "run",
-            path_yaml.as_posix(),
+            tmp_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -310,18 +311,18 @@ def test_cli_emulate_parameters_minimal(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
 ) -> None:
     EmulationTask(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         verbose=3,
-    ).to_file(path_yaml)
+    ).to_file(tmp_yaml)
     res = cli_runner.invoke(
         cli,
         [
             "run",
-            path_yaml.as_posix(),
+            tmp_yaml.as_posix(),
         ],
     )
     assert res.exit_code == 0
@@ -354,7 +355,7 @@ def test_cli_emulate_aux_voltage_fail(
     cli_runner,
     data_h5: Path,
     path_h5: Path,
-    path_yaml: Path,
+    tmp_yaml: Path,
 ) -> None:
     with pytest.raises(ValidationError):
         EmulationTask(
@@ -363,12 +364,12 @@ def test_cli_emulate_aux_voltage_fail(
             output_path=path_h5.as_posix(),
             voltage_aux=5.5,
             verbose=3,
-        ).to_file(path_yaml)
+        ).to_file(tmp_yaml)
         res = cli_runner.invoke(
             cli,
             [
                 "run",
-                path_yaml.as_posix(),
+                tmp_yaml.as_posix(),
             ],
         )
         assert res.exit_code != 0

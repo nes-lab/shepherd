@@ -226,7 +226,7 @@ class Writer(CoreWriter):
 
         if (buffer.util_mean > 95) or (buffer.util_max > 100):
             self._logger.warning(
-                "WARNING: real-time critical, pru0 Loop-Util: mean = %d %, max = %d %",
+                "WARNING: timing critical, pru0 Loop-Util: mean = %d %%, max = %d %%",
                 buffer.util_mean,
                 buffer.util_max,
             )

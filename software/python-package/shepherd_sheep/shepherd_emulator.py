@@ -172,7 +172,7 @@ class ShepherdEmulator(ShepherdIO):
             )
         ]
         for idx, buffer in enumerate(init_buffers):
-            self.return_buffer(idx, buffer, verbose=True)
+            self.return_buffer(idx, buffer, verbose=False)
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
             # ⤷ could be as low as ~ 10us
         return self

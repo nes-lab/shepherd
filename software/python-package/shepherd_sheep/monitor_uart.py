@@ -19,7 +19,7 @@ class UARTMonitor(Monitor):
         uart: str = "/dev/ttyS1",
         baudrate: Optional[int] = None,
     ):
-        super().__init__(target, compression, poll_intervall=0.01)
+        super().__init__(target, compression, poll_intervall=0.05)
         self.uart = uart
         self.baudrate = baudrate
         self.data.create_dataset(

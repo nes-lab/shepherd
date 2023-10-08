@@ -51,7 +51,7 @@ parameters:
   LUT_input_V_min_log2_uV: 7 # 2^7 = 128 uV -> array[0] is for inputs < 128 uV
   LUT_input_I_min_log2_nA: 8 # 2^8 = 256 nA -> array[0] is for inputs < 256 nA
 
-  # Buck-Converter , ie. BQ25570
+  # Buck-Converter, ie. BQ25570
   V_output_mV: 2000
   V_buck_drop_mV: 0  # simulate LDO min voltage differential or output-diode
 
