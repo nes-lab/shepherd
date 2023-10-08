@@ -10,7 +10,6 @@ from shepherd_core import CalibrationHarvester
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_sheep import Writer
-from shepherd_sheep.h5_writer import ExceptionRecord
 from shepherd_sheep.shared_memory import DataBuffer
 
 
@@ -111,40 +110,6 @@ def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) ->
             h5store["data"][channel_entry].attrs[parameter]
             == cal_series[channel_entry][parameter]
         )
-
-
-def test_exception_logging(
-    tmp_path: Path,
-    data_buffer: DataBuffer,
-    cal_cape: CalibrationCape,
-) -> None:
-    d = tmp_path / "harvest.h5"
-
-    with Writer(file_path=d, cal_data=cal_cape.harvester) as writer:
-        writer.write_buffer(data_buffer)
-
-        ts = int(time.time() * 1000)
-        writer.write_exception(ExceptionRecord(ts, "there was an exception", 0))
-        writer.write_exception(
-            ExceptionRecord(ts + 1, "there was another exception", 1),
-        )
-
-        # Note: decode is needed at least for h5py < 3, and old dtype=h5py.special_dtype(vlen=str)
-        if isinstance(writer.xcpt_grp["message"][0], str):
-            assert writer.xcpt_grp["message"][0] == "there was an exception"
-            assert writer.xcpt_grp["message"][1] == "there was another exception"
-        else:
-            assert (
-                writer.xcpt_grp["message"][0].decode("UTF8") == "there was an exception"
-            )
-            assert (
-                writer.xcpt_grp["message"][1].decode("UTF8")
-                == "there was another exception"
-            )
-        assert writer.xcpt_grp["value"][0] == 0
-        assert writer.xcpt_grp["value"][1] == 1
-        assert writer.xcpt_grp["time"][0] == ts
-        assert writer.xcpt_grp["time"][1] == ts + 1
 
 
 def test_key_value_store(tmp_path: Path, cal_cape: CalibrationCape) -> None:

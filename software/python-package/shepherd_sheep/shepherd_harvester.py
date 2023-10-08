@@ -9,7 +9,6 @@ from shepherd_core.data_models.task import HarvestTask
 
 from . import sysfs_interface
 from .eeprom import retrieve_calibration
-from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
@@ -145,9 +144,6 @@ class ShepherdHarvester(ShepherdIO):
                 idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
             except ShepherdIOException as e:
                 log.warning("Caught an Exception", exc_info=e)
-
-                err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
-                self.writer.write_exception(err_rec)
                 if self.cfg.abort_on_error:
                     raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
                 continue
