@@ -18,6 +18,8 @@ import yaml
 from fabric import Connection
 from fabric import Group
 from fabric import Result
+from paramiko.ssh_exception import NoValidConnectionsError
+from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
 from shepherd_core import Inventory
 from shepherd_core import tb_client
@@ -152,13 +154,16 @@ class Herd:
         results: dict[int, Result],
         index: int,
     ) -> None:
-        if sudo:
-            results[index] = cnx.sudo(cmd, warn=True, hide=True)
-        else:
-            results[index] = cnx.run(cmd, warn=True, hide=True)
+        try:
+            if sudo:
+                results[index] = cnx.sudo(cmd, warn=True, hide=True)
+            else:
+                results[index] = cnx.run(cmd, warn=True, hide=True)
+        except (NoValidConnectionsError, SSHException):
+            logger.error("[%s] failed to run '%s'", cnx.host, cmd)
 
     @validate_call
-    def run_cmd(self, sudo: bool, cmd: str) -> dict[int, Result]:
+    def run_cmd(self, cmd: str, sudo: bool = False) -> dict[int, Result]:
         """Run COMMAND on the shell -> Returns output-results"""
         results: dict[int, Result] = {}
         threads = {}
@@ -205,10 +210,12 @@ class Herd:
 
         tmp_path = Path("/tmp") / filename  # noqa: S108
         logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
-
-        cnx.put(src, str(tmp_path))  # noqa: S108
-        xtr_arg = "-f" if force_overwrite else "-n"
-        cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
+        try:
+            cnx.put(src, str(tmp_path))  # noqa: S108
+            xtr_arg = "-f" if force_overwrite else "-n"
+            cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
+        except (NoValidConnectionsError, SSHException):
+            logger.error("[%s] failed to put to '%s'", cnx.host, dst.as_posix())
 
     def put_file(
         self,
@@ -252,7 +259,10 @@ class Herd:
 
     @staticmethod
     def _thread_get(cnx: Connection, src: Path, dst: Path):
-        cnx.get(str(src), local=str(dst))
+        try:
+            cnx.get(str(src), local=str(dst))
+        except (NoValidConnectionsError, SSHException):
+            logger.error("[%s] failed to get '%s'", cnx.host, src.as_posix())
 
     @validate_call
     def get_file(

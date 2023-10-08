@@ -8,6 +8,7 @@ verbosity_state: bool = False
 logger.addHandler(logging.NullHandler())
 set_log_verbose_level(logger, 2)
 # Note: defined here to avoid circular import
+# TODO: add queue and also save log to file
 
 
 def get_verbosity() -> bool:

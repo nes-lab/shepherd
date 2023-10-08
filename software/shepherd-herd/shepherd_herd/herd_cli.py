@@ -111,7 +111,7 @@ def poweroff(ctx: click.Context, restart: bool):
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def shell_cmd(ctx: click.Context, command: str, sudo: bool):
-    replies = ctx.obj["herd"].run_cmd(sudo, command)
+    replies = ctx.obj["herd"].run_cmd(sudo=sudo, cmd=command)
     ctx.obj["herd"].print_output(replies, verbose=True)
     exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
