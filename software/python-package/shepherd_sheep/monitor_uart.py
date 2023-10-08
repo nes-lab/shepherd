@@ -36,7 +36,9 @@ class UARTMonitor(Monitor):
             self.thread.start()
         else:
             log.error(
-                "[%s] was not started - '%s' not found", type(self).__name__, self.uart
+                "[%s] was not started - '%s' is unavailable",
+                type(self).__name__,
+                self.uart,
             )
 
     def __exit__(self, *exc):  # type: ignore

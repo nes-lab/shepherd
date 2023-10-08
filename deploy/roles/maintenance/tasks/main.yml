@@ -31,7 +31,7 @@
     state: present
 - name: APT - update cache & install hardcoded kernel
   ansible.builtin.apt:
-    name: "{{maintenance_kernel_pin }}"
+    name: "{{ maintenance_kernel_pin }}"
     state: present
     update_cache: true
 

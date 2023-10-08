@@ -50,6 +50,7 @@ class Writer(CoreWriter):
         samplerate_sps (int): Duration of a single shepherd buffer in
             nanoseconds
     """
+
     mode_dtype_dict = {
         "harvester": ["ivsample", "ivcurve", "isc_voc"],
         "emulator": ["ivsample"],
@@ -135,7 +136,9 @@ class Writer(CoreWriter):
             compression=self._compression,
         )
         self.gpio_grp["time"].attrs["unit"] = "s"
-        self.gpio_grp["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
+        self.gpio_grp["time"].attrs[
+            "description"
+        ] = "system time [s] = value * gain + (offset)"
         self.gpio_grp["time"].attrs["gain"] = 1e-9
         self.gpio_grp["time"].attrs["offset"] = 0
 
@@ -224,8 +227,8 @@ class Writer(CoreWriter):
         if (buffer.util_mean > 95) or (buffer.util_max > 100):
             self._logger.warning(
                 "WARNING: real-time critical, pru0 Loop-Util: mean = %d %, max = %d %",
-                            buffer.util_mean,
-                            buffer.util_max,
+                buffer.util_mean,
+                buffer.util_max,
             )
             # TODO: store pru-util? probably yes
 
@@ -241,5 +244,9 @@ class Writer(CoreWriter):
         if self.sysutil_log_enabled:
             self.monitors.append(SysUtilMonitor(self.sysutil_grp, self._compression))
         if gpio is not None and gpio.uart_decode:
-            self.monitors.append(UARTMonitor(self.uart_grp, self._compression, baudrate=gpio.uart_baudrate))
+            self.monitors.append(
+                UARTMonitor(
+                    self.uart_grp, self._compression, baudrate=gpio.uart_baudrate
+                )
+            )
         self.monitors.append(SheepMonitor(self.uart_grp, self._compression))
