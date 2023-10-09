@@ -1,5 +1,5 @@
 API
-===
+====
 
 The shepherd API offers high level access to shepherd's functionality and forms the base for the two command line utilities.
 Note that the API only converts local functionality on a single shepherd node.
@@ -57,7 +57,7 @@ Usage:
 
 
 HDF5-Writer
----------
+------------
 
 The *Writer* is used to store IV data sampled with shepherd to an hdf5 file.
 
@@ -66,8 +66,8 @@ The *Writer* is used to store IV data sampled with shepherd to an hdf5 file.
 
 Usage:
 
-
 .. code-block:: python
+
     from shepherd_sheep import Writer
 
     with Writer("mylog.h5") as writer, Recorder() as recorder:
@@ -91,6 +91,7 @@ It can be used with the Emulator to replay recorded data to an attached sensor n
 Usage:
 
 .. code-block:: python
+
     from shepherd_core import Reader
 
     with Reader("mylog.h5") as reader:
