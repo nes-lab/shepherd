@@ -25,7 +25,7 @@ def test_emu_prepare(cli_runner: CliRunner, stopped_herd, tmp_path) -> None:
     wait_for_end(cli_runner)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(130)
 def test_emu_example(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,

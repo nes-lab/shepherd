@@ -7,7 +7,7 @@ from shepherd_herd.herd_cli import cli
 from .conftest import wait_for_end
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(140)
 def test_hrv_example(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,

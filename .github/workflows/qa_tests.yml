@@ -22,11 +22,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies 🔧
         run: |
+          sudo apt update
           sudo apt install python3-msgpack
           sudo apt install cppcheck
           python3 -m pip install --upgrade pip msgpack
           pip3 install pylint pylint-exit pylint-pytest
-          sudo apt install ansible
+          pip3 install ansible -U
           ansible-galaxy collection install ansible.posix
           ansible-galaxy collection install community.general
         # NOTE: install-process fails without msgpack pre-installed
