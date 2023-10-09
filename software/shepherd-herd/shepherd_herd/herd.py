@@ -124,7 +124,10 @@ class Herd:
             connect_kwargs["key_filename"] = str(key_filepath)
 
         self.group: Group = Group(
-            *hostlist, user=user, connect_timeout=5, connect_kwargs=connect_kwargs
+            *hostlist,
+            user=user,
+            connect_timeout=5,
+            connect_kwargs=connect_kwargs,
         )
         self.hostnames: Dict[str, str] = hostnames
         self._open()
