@@ -1,6 +1,8 @@
 ---
 - name: Setup tmpfs and shepherd recordings on external storage
   hosts: all
+  collections:
+    - community.general
   vars:
     storage_dev: mmcblk0
   become: true

@@ -1,7 +1,7 @@
 ---
 
 galaxy_info:
-  description: Bring Kernel, Bootloader and Software to current Version and remove clutter afterwards
+  description: Install GPS-Synchronization - Linux learns understanding the PPS-Signal
   company: NES-Lab
   author: Ingmar
   license: MIT
@@ -13,4 +13,4 @@ galaxy_info:
     - name: Ubuntu
       versions: all
 collections:
-  - general.community
+  - ansible.posix

@@ -1,5 +1,6 @@
 ---
 # .ansible-lint
+profile: safety
 
 # This makes linter to fully ignore rules/tags listed below
 skip_list:
