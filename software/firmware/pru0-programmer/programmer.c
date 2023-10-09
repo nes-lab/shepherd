@@ -11,6 +11,7 @@
 #include "swd_transport.h"
 #include "sys_gpio.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 /* Writes block from hex file to target via driver */
 int write_to_target(volatile struct SharedMem *const shared_mem, device_driver_t *drv,
@@ -46,7 +47,7 @@ int write_to_target(volatile struct SharedMem *const shared_mem, device_driver_t
 void programmer(volatile struct SharedMem *const    shared_mem,
                 volatile struct SampleBuffer *const buffers_far)
 {
-    device_driver_t                      *drv;
+    device_driver_t                      *drv = NULL;
     int                                   ret;
     ihex_mem_block_t                      block;
 
@@ -111,5 +112,5 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     pc->state = PRG_STATE_IDLE;
 
 exit:
-    drv->close();
+    if (drv != NULL) drv->close();
 }
