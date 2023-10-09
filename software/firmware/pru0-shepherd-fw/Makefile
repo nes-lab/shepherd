@@ -10,12 +10,12 @@ BASE_PATH ?= ./..
 # include headers with -I or --include_path= (cgt-only)
 INCLUDE = -I./include
 
-# internal sources
-SOURCES = $(notdir $(wildcard ./*.c))
 # external sources - add manually
-SOURCES += $(BASE_PATH)/lib/src/simple_lock.c
+SOURCES = $(BASE_PATH)/lib/src/simple_lock.c
 SOURCES += $(BASE_PATH)/lib/src/iep.c
 SOURCES += $(BASE_PATH)/lib/src/ringbuffer.c
+# internal sources
+SOURCES += $(notdir $(wildcard ./*.c))
 
 # internal asm-sources
 ASM_SOURCES = $(notdir $(wildcard ./*.asm))

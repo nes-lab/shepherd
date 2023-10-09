@@ -2,5 +2,5 @@
 Description=shepherd zero rpc server
 
 [Service]
-ExecStart=/usr/local/bin/shepherd-sheep -vv rpc
+ExecStart=/usr/local/bin/shepherd-sheep -v rpc
 Restart=on-failure

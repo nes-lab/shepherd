@@ -5,9 +5,9 @@ from contextlib import ExitStack
 from datetime import datetime
 from typing import Optional
 
-from shepherd_core import BaseReader
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
+from shepherd_core import Reader as CoreReader
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
@@ -16,13 +16,14 @@ from shepherd_core.data_models.task import EmulationTask
 from . import commons
 from . import sysfs_interface
 from .eeprom import retrieve_calibration
-from .h5_writer import ExceptionRecord
 from .h5_writer import Writer
-from .logger import get_verbose_level
+from .logger import get_verbosity
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOException
+from .target_io import TargetIO
+from .target_io import target_pins
 
 
 class ShepherdEmulator(ShepherdIO):
@@ -48,12 +49,12 @@ class ShepherdEmulator(ShepherdIO):
         self.cfg = cfg
         self.stack = ExitStack()
 
-        # performance-critical, <4 reduces chatter during main-loop
-        self.verbose = get_verbose_level() >= 4
+        # performance-critical, allows deep insight between py<-->pru-communication
+        self.verbose_extra = False
 
         if not cfg.input_path.exists():
             raise ValueError(f"Input-File does not exist ({cfg.input_path})")
-        self.reader = BaseReader(cfg.input_path, verbose=get_verbose_level() > 2)
+        self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
@@ -109,6 +110,7 @@ class ShepherdEmulator(ShepherdIO):
             for_emu=False,
             dtype_in=self.reader.get_datatype(),
         )
+        log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 
         self.writer: Optional[Writer] = None
         if cfg.output_path is not None:
@@ -127,8 +129,14 @@ class ShepherdEmulator(ShepherdIO):
                 samples_per_buffer=self.samples_per_buffer,
                 samplerate_sps=self.samplerate_sps,
                 compression=cfg.output_compression,
-                verbose=get_verbose_level() > 2,
+                verbose=get_verbosity(),
             )
+
+        # hard-wire pin-direction until they are configurable
+        self._io: Optional[TargetIO] = TargetIO()
+        log.info("Setting variable GPIO to INPUT (actuation is not implemented yet)")
+        for pin in range(len(target_pins)):
+            self._io.set_pin_direction(pin, pdir=True)  # True = Inp
 
     def __enter__(self):
         super().__enter__()
@@ -152,8 +160,7 @@ class ShepherdEmulator(ShepherdIO):
             # add hostname to file
             self.writer.store_hostname(platform.node().strip())
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
-            self.writer.store_config(self.cfg.virtual_source.model_dump())
-            # TODO: restore to .cfg.dict() -> fails for yaml-repr of path
+            self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
         time.sleep(1)
@@ -165,7 +172,7 @@ class ShepherdEmulator(ShepherdIO):
             )
         ]
         for idx, buffer in enumerate(init_buffers):
-            self.return_buffer(idx, buffer, verbose=True)
+            self.return_buffer(idx, buffer, verbose=False)
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
             # ⤷ could be as low as ~ 10us
         return self
@@ -209,13 +216,10 @@ class ShepherdEmulator(ShepherdIO):
             is_raw=True,
         ):
             try:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose)
+                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
             except ShepherdIOException as e:
                 log.warning("Caught an Exception", exc_info=e)
 
-                err_rec = ExceptionRecord(int(time.time() * 1e9), str(e), e.value)
-                if self.writer is not None:
-                    self.writer.write_exception(err_rec)
                 if self.cfg.abort_on_error:
                     raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
                 continue
@@ -227,12 +231,12 @@ class ShepherdEmulator(ShepherdIO):
                 self.writer.write_buffer(emu_buf)
 
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
-            self.return_buffer(idx, hrvst_buf, self.verbose)
+            self.return_buffer(idx, hrvst_buf, self.verbose_extra)
 
         # Read all remaining buffers from PRU
         while True:
             try:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose)
+                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
                     break
                 if self.writer is not None:

@@ -3,15 +3,7 @@
 #include <stdint.h>
 
 
-void iep_set_us(const uint32_t value)
-{
-    iep_stop();
-    iep_reset();
-    /* Set compare value */
-    CT_IEP.TMR_CMP0 = value * 200U;
-}
-
-void iep_reset()
+inline void iep_reset()
 {
     /* Reset Count register */
     CT_IEP.TMR_CNT = 0xFFFFFFFF;
@@ -27,6 +19,14 @@ inline void iep_stop()
 {
     /* Disable counter */
     CT_IEP.TMR_GLB_CFG &= ~1U;
+}
+
+void iep_set_us(const uint32_t value)
+{
+    iep_stop();
+    iep_reset();
+    /* Set compare value */
+    CT_IEP.TMR_CMP0 = value * 200U;
 }
 
 

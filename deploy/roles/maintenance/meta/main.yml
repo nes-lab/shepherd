@@ -12,3 +12,5 @@ galaxy_info:
       versions: all
     - name: Ubuntu
       versions: all
+collections:
+  - general.community

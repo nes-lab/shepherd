@@ -9,7 +9,7 @@ def include(filename):
     if os.path.exists(filename):
         execfile(filename)
     else:
-        raise os.error(f"File {filename} not found")
+        raise OSError(f"File {filename} not found")
 
 
 # include('../python-package/shepherd/calibration.py')

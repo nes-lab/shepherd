@@ -6,32 +6,22 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_call:
 
 jobs:
-  build:
+  run-quality-assurance:
+    uses: ./.github/workflows/qa_test.yml
+  build-pages:
     runs-on: ubuntu-latest
+#    needs:
+#  - run-quality-assurance
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
     steps:
 
-      - name: Set up Python 🐍
-        uses: actions/setup-python@v4
-      - name: Checkout 🛎️
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
-
-      - name: Install dependencies 🔧
-        run: |
-          pip3 install sphinx sphinx-click sphinx-rtd-theme
-          pip3 install sphinxcontrib-applehelp sphinxcontrib-devhelp sphinxcontrib-htmlhelp
-          pip3 install sphinxcontrib-jsmath sphinxcontrib-qthelp sphinxcontrib-serializinghtml
-          pip3 install sphinx-sitemap
-          pip3 install sphinx-design sphinx-copybutton myst-parser
-
-      - name: Build and Commit 🧱
-        uses: sphinx-notes/pages@v2
-      - name: Push changes 📌
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: pages
-          force: true
+      - name: Build and Push Pages 🧱
+        uses: sphinx-notes/pages@v3

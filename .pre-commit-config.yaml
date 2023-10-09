@@ -4,7 +4,7 @@
 # update deps pre-commit autoupdate
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
@@ -21,22 +21,21 @@ repos:
       - id: fix-byte-order-marker
 
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v3.0.1
+    rev: v3.1.0
     hooks:
       - id: add-trailing-comma
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.35.0
+    rev: v0.37.0
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.13
+    rev: v0.14
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
-
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -44,7 +43,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.9.1
     hooks:
       - id: black
 
@@ -60,7 +59,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
         args: ["--py38-plus", "--keep-runtime-typing"]
@@ -97,10 +96,10 @@ repos:
           - flake8-assertive
 
   - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.16.2  # v6.17.2 is trouble
+    rev: v6.20.3
     hooks:
       - id: ansible-lint
-        files: \.(yaml|yml)$
+        #files: \.(yaml|yml)$
 
 #  - repo: https://github.com/rstcheck/rstcheck
 #    rev: v6.1.2
@@ -110,7 +109,7 @@ repos:
 #        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
       - id: codespell
         exclude: \.(sch|brd|lbr)$

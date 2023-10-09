@@ -1,31 +1,33 @@
-name: Repo-Tests
+name: Test for Quality Assurance
 
 on:
   push:
     branches: [ "main", "dev" ]
   pull_request:
     branches: [ "main" ]
+  workflow_call:
 
 jobs:
-  various-tests:
+  tests:
     runs-on: ubuntu-22.04 # TODO: -latest was 20.04 and had old packages
     strategy:
       matrix:
         python-version: ["3.11", "3.10", "3.9"]
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }} 🐍
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies 🔧
         run: |
+          sudo apt update
           sudo apt install python3-msgpack
           sudo apt install cppcheck
           python3 -m pip install --upgrade pip msgpack
           pip3 install pylint pylint-exit pylint-pytest
-          sudo apt install ansible
+          pip3 install ansible -U
           ansible-galaxy collection install ansible.posix
           ansible-galaxy collection install community.general
         # NOTE: install-process fails without msgpack pre-installed

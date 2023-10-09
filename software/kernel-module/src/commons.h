@@ -36,6 +36,13 @@ enum MsgType
     MSG_NONE                      = 0x00u,
     MSG_BUF_FROM_HOST             = 0x01u,
     MSG_BUF_FROM_PRU              = 0x02u,
+    // Programmer
+    //MSG_PGM_ERROR_GENERIC         = 0x91u,
+    //MSG_PGM_ERROR_OPEN            = 0x92u,
+    MSG_PGM_ERROR_WRITE           = 0x93u, // val0: addr, val1: data
+    MSG_PGM_ERROR_VERIFY          = 0x94u, // val0: addr, val1: data (original)
+    //MSG_PGM_ERROR_ERASE           = 0x95u,
+    MSG_PGM_ERROR_PARSE           = 0x96u, // val0: ihex_return
     // DEBUG
     MSG_DBG_ADC                   = 0xA0u,
     MSG_DBG_DAC                   = 0xA1u,

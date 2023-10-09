@@ -118,21 +118,17 @@ Hardware
 - screw-in power-socket or type-c connector
 
 
-.. rubric:: Shepherd Cape v2.3
-
-- 360 components, 55 unique - > tedious, but ok to hand-solder
-
-.. figure:: ../media_recap/pcb_picture_shepherd_cape_soldered.jpg
-   :name: fig:shpcape23
-   :width: 100.0%
-   :alt: fully assembled shepherd cape v2.3
-
-
 .. rubric:: Shepherd Cape v2.4
 
 - chip shortage forced us to a ultra fine pitch (350 um) -  risky and hard to hand-solder
+- 360 components, 55 unique - > tedious, but ok to hand-solder
 - switch to 6 layer due to higher gpio-count
 - 1 Free Pin left on BBone
+
+.. figure:: ../media_recap/shepherd_cape_v2.4b_photo_front_with_headers.jpg
+   :name: fig:shpcape24b
+   :width: 100.0%
+   :alt: photo of cape v2.4b
 
 .. figure:: ../media_recap/PCB_preview_v24.png
    :name: fig:shpcape24
@@ -140,14 +136,16 @@ Hardware
    :alt: 3D preview of cape v2.4
 
 
-.. rubric:: nRF52-Target v2.3
+.. rubric:: nRF52 FRAM Target v1.0
 
-- soon new Target with MSP430 (FRAM) & nRF52 on one PCB
+- Target with MSP430 (FRAM) & nRF52 on one PCB
 
-.. figure:: ../media_recap/pcb_picture_nRF_Target_reflowed.jpg
-   :name: fig:nrftarget23
+.. figure:: ../media_recap/shepherd_nRF_FRAM_Target_v1.0_photo_front_with_header.jpg
+   :name: fig:nrf52msp430target1
    :width: 100.0%
-   :alt: fully assembled nRF52-Target v2.3
+   :alt: fully assembled nRF52-MSP430-Target v1.0
+
+.. rubric::
 
 Harvester Circuit
 ~~~~~~~~~~~~~~~~~~

@@ -189,11 +189,11 @@ class SharedMemory:
             )
         # ⤷ duration defaults to ~ 100 days (10**6 seconds)
         log.debug(
-            "Tracers Time-Boundaries set to IV[%s, %s], GPIO[%s, %s]",
-            self.ts_start_iv,
-            self.ts_stop_iv,
-            self.ts_start_gp,
-            self.ts_stop_gp,
+            "[Tracer] time-boundaries set to IV[%.2f, %.2f], GPIO[%.2f, %.2f]",
+            self.ts_start_iv / 1e9,
+            self.ts_stop_iv / 1e9,
+            self.ts_start_gp / 1e9,
+            self.ts_stop_gp / 1e9,
         )
         self.ts_unset = False
 
@@ -302,7 +302,7 @@ class SharedMemory:
             #  put into Writer.write_exception() with ShepherdIOException
             n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
-        if self.ts_start_iv <= buffer_timestamp <= self.ts_stop_iv:
+        if self.ts_start_gp <= buffer_timestamp <= self.ts_stop_gp:
             gpio_timestamps_ns = np.frombuffer(
                 self.mapped_mem,
                 "=u8",

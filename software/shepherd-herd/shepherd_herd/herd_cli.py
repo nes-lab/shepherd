@@ -14,8 +14,8 @@ from shepherd_core.data_models.testbed import TargetPort
 
 from . import __version__
 from .herd import Herd
-from .logger import activate_verbose
 from .logger import logger as log
+from .logger import set_verbosity
 
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring
@@ -58,7 +58,7 @@ def exit_gracefully(*args) -> None:  # type: ignore
     default=None,
     help="Path to private ssh key file",
 )
-@click.option("-v", "--verbose", is_flag=True)
+@click.option("--verbose", "-v", is_flag=True)
 @click.option(
     "--version",
     is_flag=True,
@@ -79,7 +79,7 @@ def cli(
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
-        activate_verbose()
+        set_verbosity()
 
     if version:
         log.info("Shepherd-Cal v%s", __version__)
@@ -102,7 +102,8 @@ def cli(
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
 def poweroff(ctx: click.Context, restart: bool):
-    exit_code = ctx.obj["herd"].poweroff(restart)
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.poweroff(restart)
     sys.exit(exit_code)
 
 
@@ -111,9 +112,10 @@ def poweroff(ctx: click.Context, restart: bool):
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def shell_cmd(ctx: click.Context, command: str, sudo: bool):
-    replies = ctx.obj["herd"].run_cmd(sudo, command)
-    ctx.obj["herd"].print_output(replies, verbose=True)
-    exit_code = max([reply.exited for reply in replies.values()])
+    with ctx.obj["herd"] as herd:
+        replies = herd.run_cmd(sudo=sudo, cmd=command)
+        herd.print_output(replies, verbose=True)
+        exit_code = max([reply.exited for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -126,11 +128,12 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool):
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
     file_path = Path("/var/shepherd/inventory.yaml")
-    ctx.obj["herd"].run_cmd(
-        sudo=True,
-        cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
-    )
-    failed = ctx.obj["herd"].inventorize(output_path)
+    with ctx.obj["herd"] as herd:
+        herd.run_cmd(
+            sudo=True,
+            cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+        )
+        failed = herd.inventorize(output_path)
     sys.exit(failed)
 
 
@@ -149,7 +152,8 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
 @click.option("--attach", "-a", is_flag=True, help="Wait and receive output")
 @click.pass_context
 def run(ctx: click.Context, config: Path, attach: bool):
-    exit_code = ctx.obj["herd"].run_task(config, attach)
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.run_task(config, attach)
     sys.exit(exit_code)
 
 
@@ -194,34 +198,35 @@ def harvest(
     no_start: bool,
     **kwargs,
 ):
-    for path in ["output_path"]:
-        file_path = Path(kwargs[path])
-        if not file_path.is_absolute():
-            kwargs[path] = Herd.path_default / file_path
+    with ctx.obj["herd"] as herd:
+        for path in ["output_path"]:
+            file_path = Path(kwargs[path])
+            if not file_path.is_absolute():
+                kwargs[path] = Herd.path_default / file_path
 
-    if kwargs.get("virtual_harvester") is not None:
-        kwargs["virtual_harvester"] = {"name": kwargs["virtual_harvester"]}
+        if kwargs.get("virtual_harvester") is not None:
+            kwargs["virtual_harvester"] = {"name": kwargs["virtual_harvester"]}
 
-    ts_start = datetime.now().astimezone()
-    delay = 0
-    if not no_start:
-        ts_start, delay = ctx.obj["herd"].find_consensus_time()
-        kwargs["time_start"] = ts_start
+        ts_start = datetime.now().astimezone()
+        delay = 0
+        if not no_start:
+            ts_start, delay = herd.find_consensus_time()
+            kwargs["time_start"] = ts_start
 
-    kwargs = {key: value for key, value in kwargs.items() if value is not None}
-    task = HarvestTask(**kwargs)
-    ctx.obj["herd"].put_task(task)
+        kwargs = {key: value for key, value in kwargs.items() if value is not None}
+        task = HarvestTask(**kwargs)
+        herd.put_task(task)
 
-    if not no_start:
-        log.info(
-            "Scheduling start of shepherd: %s (in ~ %.2f s)",
-            ts_start.isoformat(),
-            delay,
-        )
-        exit_code = ctx.obj["herd"].start_measurement()
-        log.info("Shepherd started.")
-        if exit_code > 0:
-            log.debug("-> max exit-code = %d", exit_code)
+        if not no_start:
+            log.info(
+                "Scheduling start of shepherd: %s (in ~ %.2f s)",
+                ts_start.isoformat(),
+                delay,
+            )
+            exit_code = herd.start_measurement()
+            log.info("Shepherd started.")
+            if exit_code > 0:
+                log.debug("-> max exit-code = %d", exit_code)
 
 
 @cli.command(
@@ -297,37 +302,38 @@ def emulate(
     no_start: bool,
     **kwargs,
 ):
-    for path in ["input_path", "output_path"]:
-        file_path = Path(kwargs[path])
-        if not file_path.is_absolute():
-            kwargs[path] = Herd.path_default / file_path
+    with ctx.obj["herd"] as herd:
+        for path in ["input_path", "output_path"]:
+            file_path = Path(kwargs[path])
+            if not file_path.is_absolute():
+                kwargs[path] = Herd.path_default / file_path
 
-    for port in ["io_port", "pwr_port"]:
-        kwargs[port] = TargetPort[kwargs[port]]
+        for port in ["io_port", "pwr_port"]:
+            kwargs[port] = TargetPort[kwargs[port]]
 
-    if kwargs.get("virtual_source") is not None:
-        kwargs["virtual_source"] = {"name": kwargs["virtual_source"]}
+        if kwargs.get("virtual_source") is not None:
+            kwargs["virtual_source"] = {"name": kwargs["virtual_source"]}
 
-    ts_start = datetime.now().astimezone()
-    delay = 0
-    if not no_start:
-        ts_start, delay = ctx.obj["herd"].find_consensus_time()
-        kwargs["time_start"] = ts_start
+        ts_start = datetime.now().astimezone()
+        delay = 0
+        if not no_start:
+            ts_start, delay = herd.find_consensus_time()
+            kwargs["time_start"] = ts_start
 
-    kwargs = {key: value for key, value in kwargs.items() if value is not None}
-    task = EmulationTask(**kwargs)
-    ctx.obj["herd"].put_task(task)
+        kwargs = {key: value for key, value in kwargs.items() if value is not None}
+        task = EmulationTask(**kwargs)
+        herd.put_task(task)
 
-    if not no_start:
-        log.info(
-            "Scheduling start of shepherd: %s (in ~ %.2f s)",
-            ts_start.isoformat(),
-            delay,
-        )
-        exit_code = ctx.obj["herd"].start_measurement()
-        log.info("Shepherd started.")
-        if exit_code > 0:
-            log.debug("-> max exit-code = %d", exit_code)
+        if not no_start:
+            log.info(
+                "Scheduling start of shepherd: %s (in ~ %.2f s)",
+                ts_start.isoformat(),
+                delay,
+            )
+            exit_code = herd.start_measurement()
+            log.info("Shepherd started.")
+            if exit_code > 0:
+                log.debug("-> max exit-code = %d", exit_code)
 
 
 # #############################################################################
@@ -340,30 +346,37 @@ def emulate(
 )
 @click.pass_context
 def start(ctx: click.Context) -> None:
-    if ctx.obj["herd"].check_status():
-        log.info("Shepherd still active, will skip this command!")
-        sys.exit(1)
-    else:
-        exit_code = ctx.obj["herd"].start_measurement()
-        log.info("Shepherd started.")
-        if exit_code > 0:
-            log.debug("-> max exit-code = %d", exit_code)
+    ret = 0
+    with ctx.obj["herd"] as herd:
+        if herd.check_status():
+            log.info("Shepherd still active, will skip this command!")
+            ret = 1
+        else:
+            exit_code = herd.start_measurement()
+            log.info("Shepherd started.")
+            if exit_code > 0:
+                log.debug("-> max exit-code = %d", exit_code)
+    sys.exit(ret)
 
 
 @cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
 def status(ctx: click.Context) -> None:
-    if ctx.obj["herd"].check_status():
-        log.info("Shepherd still active!")
-        sys.exit(1)
-    else:
-        log.info("Shepherd not active! (measurement is done)")
+    ret = 0
+    with ctx.obj["herd"] as herd:
+        if herd.check_status():
+            log.info("Shepherd still active!")
+            ret = 1
+        else:
+            log.info("Shepherd not active! (measurement is done)")
+    sys.exit(ret)
 
 
 @cli.command(short_help="Stops any harvest/emulation")
 @click.pass_context
 def stop(ctx: click.Context) -> None:
-    exit_code = ctx.obj["herd"].stop_measurement()
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.stop_measurement()
     log.info("Shepherd stopped.")
     if exit_code > 0:
         log.debug("-> max exit-code = %d", exit_code)
@@ -396,7 +409,8 @@ def distribute(
     remote_path: Path,
     force_overwrite: bool,
 ):
-    ctx.obj["herd"].put_file(filename, remote_path, force_overwrite)
+    with ctx.obj["herd"] as herd:
+        herd.put_file(filename, remote_path, force_overwrite)
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
@@ -453,13 +467,13 @@ def retrieve(
     :param delete:
     :param force_stop:
     """
+    with ctx.obj["herd"] as herd:
+        if force_stop:
+            herd.stop_measurement()
+            if herd.await_stop(timeout=30):
+                raise Exception("shepherd still active after timeout")
 
-    if force_stop:
-        ctx.obj["herd"].stop_measurement()
-        if ctx.obj["herd"].await_stop(timeout=30):
-            raise Exception("shepherd still active after timeout")
-
-    failed = ctx.obj["herd"].get_file(filename, outdir, timestamp, separate, delete)
+        failed = herd.get_file(filename, outdir, timestamp, separate, delete)
     sys.exit(failed)
 
 
@@ -520,24 +534,25 @@ def program(ctx: click.Context, **kwargs):
     tmp_file = "/tmp/target_image.hex"  # noqa: S108
     cfg_path = Path("/etc/shepherd/config_for_herd.yaml")
 
-    ctx.obj["herd"].put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
-    protocol_dict = {
-        "nrf52": ProgrammerProtocol.swd,
-        "msp430": ProgrammerProtocol.sbw,
-    }
-    kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
-    kwargs["firmware_file"] = Path(tmp_file)
+    with ctx.obj["herd"] as herd:
+        herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
+        protocol_dict = {
+            "nrf52": ProgrammerProtocol.swd,
+            "msp430": ProgrammerProtocol.sbw,
+        }
+        kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
+        kwargs["firmware_file"] = Path(tmp_file)
 
-    kwargs = {key: value for key, value in kwargs.items() if value is not None}
-    task = ProgrammingTask(**kwargs)
-    ctx.obj["herd"].put_task(task, cfg_path)
+        kwargs = {key: value for key, value in kwargs.items() if value is not None}
+        task = ProgrammingTask(**kwargs)
+        herd.put_task(task, cfg_path)
 
-    command = f"shepherd-sheep -vvv run {cfg_path.as_posix()}"
-    replies = ctx.obj["herd"].run_cmd(sudo=True, cmd=command)
-    exit_code = max([reply.exited for reply in replies.values()])
-    if exit_code:
-        log.error("Programming - Procedure failed - will exit now!")
-    ctx.obj["herd"].print_output(replies, verbose=False)
+        command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
+        replies = herd.run_cmd(sudo=True, cmd=command)
+        exit_code = max([reply.exited for reply in replies.values()])
+        if exit_code:
+            log.error("Programming - Procedure failed - will exit now!")
+        herd.print_output(replies, verbose=False)
     sys.exit(exit_code)
 
 

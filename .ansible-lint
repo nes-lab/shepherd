@@ -1,13 +1,6 @@
 ---
 # .ansible-lint
-
-# This makes linter to fully ignore rules/tags listed below
-skip_list:
-  - yaml[brackets]
-  - schema[meta]
-
-# comment for brackets: virtual-source is formatted for readability
-# comment for schema[meta]: false positives for role/meta/min-ansible-version
+profile: safety
 
 # exclude_paths included in this file are parsed relative to this file's location
 # and not relative to the CWD of execution. CLI arguments passed to the --exclude
@@ -17,3 +10,7 @@ exclude_paths:
   - software/firmware/
   - software/shepherd-datalib
   - software/shepherd-webservice
+
+# Ansible-lint does not fail on warnings from the rules or tags listed below
+warn_list:
+  - syntax-check[specific]

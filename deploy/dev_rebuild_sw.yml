@@ -2,7 +2,6 @@
 - name: Refresh Src, compile and install PRU-Fw, restart Kernel-Module, reinstall py-package, without Reboot
   hosts: all
   become: true
-  strategy: free
 
   vars_prompt:
     # automatically skip prompt with argument: -e "refresh_from_host=True"

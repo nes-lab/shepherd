@@ -39,7 +39,7 @@ def analyze_directory(
         fpath = Path(file)
         if not os.path.isfile(file):
             continue
-        if "npz" not in fpath.suffix:
+        if "npz" not in fpath.suffix.lower():
             continue
         if fpath.stem in stat_names:
             continue

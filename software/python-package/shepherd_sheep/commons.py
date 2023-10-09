@@ -14,6 +14,10 @@ MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14
 MSG_BUF_FROM_HOST = 0x01
 MSG_BUF_FROM_PRU = 0x02
 
+MSG_PGM_ERROR_WRITE = 0x93  # val0: addr, val1: data
+MSG_PGM_ERROR_VERIFY = 0x94  # val0: addr, val1: data(original)
+MSG_PGM_ERROR_PARSE = 0x96  # val0: ihex_return
+
 MSG_DBG_ADC = 0xA0
 MSG_DBG_DAC = 0xA1
 MSG_DBG_GPI = 0xA2
@@ -48,4 +52,6 @@ GPIO_LOG_BIT_POSITIONS = {
     9: {"pru_reg": "r31_09", "name": "tgt_bat_ok",  "bb_pin": "P8_29", "sys_pin": "",      "sys_reg": ""},  # noqa: E501
 }
 # Note: this table is copied (for hdf5-reference) from pru1/main.c, HW-Rev2.4b
+# Note: datalib has gpio-models + data! this lives now in
+#       shepherd_core/shepherd_core/data_models/testbed/gpio_fixture.yaml
 # fmt: on

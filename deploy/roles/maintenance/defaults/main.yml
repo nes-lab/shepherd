@@ -6,5 +6,6 @@ maintenance_update_bootloader: false
 maintenance_delete_unused_files: true
 
 # rule config
-default_kernel_branch: lts-4_19
-timezone: Europe/Berlin
+maintenance_default_kernel: lts-4_19
+maintenance_kernel_pin: "linux-image-4.19.94-ti-r74"  # 2023-10-02: r74 was newest
+maintenance_timezone: Europe/Berlin

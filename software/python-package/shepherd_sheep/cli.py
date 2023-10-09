@@ -28,8 +28,8 @@ from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .launcher import Launcher
-from .logger import increase_verbose_level
 from .logger import log
+from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
@@ -67,10 +67,9 @@ def exit_gracefully(*args):  # type: ignore
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})
 @click.option(
-    "-v",
     "--verbose",
-    count=True,
-    default=2,
+    "-v",
+    is_flag=True,
     help="4 Levels, but level 4 has serious performance impact",
 )
 @click.option(
@@ -79,12 +78,13 @@ def exit_gracefully(*args):  # type: ignore
     help="Prints version-info at start (combinable with -v)",
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: int, version: bool):
+def cli(ctx: click.Context, verbose: bool, version: bool):
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
-    increase_verbose_level(verbose)
+    if verbose:
+        set_verbosity()
     if version:
         log.info("Shepherd-Sheep v%s", __version__)
         log.debug("Python v%s", sys.version)
@@ -152,7 +152,10 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
     default=Path("/etc/shepherd/config.yaml"),
 )
 def run(config: Path):
-    run_task(config)
+    failed = run_task(config)
+    if failed:
+        log.debug("Tasks signaled an error (failed).")
+    sys.exit(int(failed))
 
 
 @cli.group(
@@ -190,7 +193,7 @@ def write(
     help="If provided, calibration data is dumped to this file",
 )
 def read(cal_file: Optional[Path]):
-    increase_verbose_level(2)
+    set_verbosity()
 
     try:
         with EEPROM() as storage:
@@ -311,7 +314,8 @@ def program(**kwargs):
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     cfg = ProgrammingTask(**kwargs)
-    run_programmer(cfg)
+    failed = run_programmer(cfg)
+    sys.exit(int(failed))
 
 
 @cli.command(
@@ -319,6 +323,7 @@ def program(**kwargs):
     context_settings={"ignore_unknown_options": True},
 )
 def fix():
+    set_verbosity()
     reload_kernel_module()
 
 

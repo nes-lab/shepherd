@@ -240,10 +240,10 @@ int sbw_transport_connect(void)
 int sbw_transport_init(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio,
                        const uint8_t pin_sbw_dir, const uint32_t f_clk)
 {
-    pins.sbw_tck     = pin_sbw_tck;
-    pins.sbw_tdio    = pin_sbw_tdio;
-    pins.sbw_dir     = pin_sbw_dir;
-
+    pins.sbw_tck  = pin_sbw_tck;
+    pins.sbw_tdio = pin_sbw_tdio;
+    pins.sbw_dir  = pin_sbw_dir;
+    (void) f_clk; //Do nothing
     /*
 	 * Ignore the f_clk parameter and make sure that clock frequency is around 500k. This number is taken from
 	 * TI's slaa754 reference implementation and works reliably where other values do not work.

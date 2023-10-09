@@ -387,7 +387,6 @@ void event_loop(volatile struct SharedMem *const shared_mem,
                     GPIO_ON(DEBUG_PIN1_MASK);
                     sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far,
                                                         sample_buf_idx);
-                    GPIO_OFF(DEBUG_PIN1_MASK);
                 }
                 /* pre-reset counter, so pru1 can fetch data */
                 shared_mem->analog_sample_counter = 0u;
@@ -398,19 +397,12 @@ void event_loop(volatile struct SharedMem *const shared_mem,
                 /* only handle kernel-communications if this is not the last sample */
                 GPIO_ON(DEBUG_PIN1_MASK);
                 handle_kernel_com(shared_mem, free_buffers_ptr);
-                GPIO_OFF(DEBUG_PIN1_MASK);
             }
         }
 
         // record loop-duration -> gets further processed by pru1
         shared_mem->pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
-        /*
-		GPIO_OFF(DEBUG_PIN0_MASK);
-		if (shared_mem->pru0_ticks_per_sample >= 1950u)
-		{
-			// TODO: debug-artifact to find long loop-cycles
-			GPIO_TOGGLE(DEBUG_PIN0_MASK);
-		}*/
+        GPIO_OFF(DEBUG_PIN1_MASK);
     }
 }
 

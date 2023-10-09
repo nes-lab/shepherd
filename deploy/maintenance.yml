@@ -2,7 +2,7 @@
 - name: Update software & cleanup
   hosts: all
   become: true
-  strategy: free
+  strategy: free # noqa: run-once[play]
 
   vars_prompt:
     # automatically skip prompt with argument: -e "delete_recordings=True"

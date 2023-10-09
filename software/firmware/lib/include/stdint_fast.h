@@ -1,6 +1,7 @@
 #ifndef INT_OPTIMIZED_H_
 #define INT_OPTIMIZED_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 // short-cuts for fastest data-types on architecture

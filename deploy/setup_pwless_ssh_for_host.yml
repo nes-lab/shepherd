@@ -4,6 +4,9 @@
   become: true
   gather_facts: false
 
+  collections:
+    - ansible.posix
+
   vars_prompt:
     - name: current_password
       prompt: "Provide current target-password"

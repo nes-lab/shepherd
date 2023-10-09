@@ -4,6 +4,9 @@
   become: true
   gather_facts: false
 
+  collections:
+    - ansible.posix
+
   vars:
     default_user: ubuntu
     default_password: temppwd

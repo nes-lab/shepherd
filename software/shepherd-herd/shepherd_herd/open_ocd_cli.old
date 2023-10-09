@@ -63,7 +63,7 @@ def openocd_prepare(
     herd.run_cmd(sudo=True, cmd="systemctl start shepherd-openocd")
     herd.run_cmd(
         sudo=True,
-        cmd=f"shepherd-sheep -vvv "
+        cmd=f"shepherd-sheep --verbose "
         f"target-power --on --voltage {voltage} --target-port {target_port}",
     )
     ts_end = time.time() + timeout
@@ -92,7 +92,7 @@ def openocd_finish(herd: Herd) -> None:
     )
     replies2 = herd.run_cmd(
         sudo=True,
-        cmd="shepherd-sheep -vvv target-power --off",
+        cmd="shepherd-sheep --verbose target-power --off",
     )
     exit_code = max(
         [reply.exited for reply in replies1.values()]

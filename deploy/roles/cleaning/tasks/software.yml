@@ -55,13 +55,13 @@
   ansible.builtin.debug:
     msg:
       - "active   = {{ kernelrelease.stdout.strip() }}"
-      - "required = {{ required_kernel_regex }} (regex)"
+      - "required = {{ cleaning_required_kernel_regex }} (regex)"
 - name: Check for required Kernel-Version
   ansible.builtin.fail:
     msg: |
       Required Kernel-Version not active!
       -> update_kernel.sh failed or /boot/uEnv.txt got changed
-  when: kernelrelease.stdout.strip() is not ansible.builtin.search(required_kernel_regex)
+  when: kernelrelease.stdout.strip() is not ansible.builtin.search(cleaning_required_kernel_regex)
   # a wrong version would brick the image with the apt-task below
 
 - name: APT - Uninstall non-essential Packages
@@ -71,13 +71,13 @@
     purge: true
   failed_when: false
   with_items:
-    - "{{ non_essential_packages_a }}"
-    - "{{ non_essential_packages_b }}"
-    - "{{ non_essential_packages_c }}"
-    - "{{ non_essential_packages_d }}"
-    - "{{ non_essential_packages_e }}"
-    - "{{ non_essential_packages_f }}"
-    - "{{ non_essential_packages_g }}"
-    - "{{ non_essential_packages_h }}"
-    - "{{ non_essential_packages_i }}"
-    - "{{ non_essential_packages_j }}"
+    - "{{ cleaning_packages_a }}"
+    - "{{ cleaning_packages_b }}"
+    - "{{ cleaning_packages_c }}"
+    - "{{ cleaning_packages_d }}"
+    - "{{ cleaning_packages_e }}"
+    - "{{ cleaning_packages_f }}"
+    - "{{ cleaning_packages_g }}"
+    - "{{ cleaning_packages_h }}"
+    - "{{ cleaning_packages_i }}"
+    - "{{ cleaning_packages_j }}"

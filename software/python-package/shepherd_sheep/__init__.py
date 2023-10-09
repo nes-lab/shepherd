@@ -9,7 +9,8 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import platform
 import shutil
-import sys
+import subprocess  # noqa: S404
+import tempfile
 import time
 from contextlib import ExitStack
 from pathlib import Path
@@ -17,6 +18,7 @@ from typing import Union
 
 from shepherd_core.data_models import FirmwareDType
 from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models.content.firmware import suffix_to_DType
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
@@ -31,8 +33,9 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .h5_writer import Writer
 from .launcher import Launcher
-from .logger import increase_verbose_level
 from .logger import log
+from .logger import reset_verbosity
+from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
@@ -41,7 +44,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.4.6"
+__version__ = "0.7.0"
 
 __all__ = [
     "Writer",
@@ -66,32 +69,37 @@ __all__ = [
 #   -> ShepherdIo.exit should always be called
 
 
-def run_harvester(cfg: HarvestTask) -> None:
+def run_harvester(cfg: HarvestTask) -> bool:
     stack = ExitStack()
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
+    failed = False
     try:
         hrv = ShepherdHarvester(cfg=cfg)
         stack.enter_context(hrv)
         hrv.run()
     except SystemExit:
-        pass
+        failed = True
     stack.close()
+    return failed
 
 
-def run_emulator(cfg: EmulationTask) -> None:
+def run_emulator(cfg: EmulationTask) -> bool:
     stack = ExitStack()
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
+    failed = False
     try:
         emu = ShepherdEmulator(cfg=cfg)
         stack.enter_context(emu)
         emu.run()
     except SystemExit:
+        failed = True
         pass
     stack.close()
+    return failed
 
 
-def run_firmware_mod(cfg: FirmwareModTask) -> None:
-    increase_verbose_level(cfg.verbose)
+def run_firmware_mod(cfg: FirmwareModTask) -> bool:
+    set_verbosity(cfg.verbose, temporary=True)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
@@ -99,15 +107,16 @@ def run_firmware_mod(cfg: FirmwareModTask) -> None:
         file_path = firmware_to_hex(file_path)
     if file_path.as_posix() != cfg.firmware_file.as_posix():
         shutil.move(file_path, cfg.firmware_file)
+    return False
 
 
-def run_programmer(cfg: ProgrammingTask):
+def run_programmer(cfg: ProgrammingTask) -> bool:
     stack = ExitStack()
-    increase_verbose_level(cfg.verbose)
+    set_verbosity(cfg.verbose, temporary=True)
     failed = False
 
     try:
-        dbg = ShepherdDebug(use_io=False)
+        dbg = ShepherdDebug(use_io=False)  # TODO: this could all go into ShepherdDebug
         stack.enter_context(dbg)
 
         dbg.select_port_for_power_tracking(
@@ -124,10 +133,60 @@ def run_programmer(cfg: ProgrammingTask):
         sysfs_interface.load_pru0_firmware(cfg.protocol)
         dbg.refresh_shared_mem()  # address might have changed
 
-        with open(cfg.firmware_file.resolve(), "rb") as fw:
+        log.info("processing file %s", cfg.firmware_file.name)
+        d_type = suffix_to_DType.get(cfg.firmware_file.suffix.lower())
+        if d_type != FirmwareDType.base64_hex:
+            log.warning("Firmware seems not to be HEX - but will try to program anyway")
+
+        # WORKAROUND that realigns hex for misguided programmer
+        path_str = cfg.firmware_file.as_posix()
+        path_tmp = tempfile.TemporaryDirectory()
+        stack.enter_context(path_tmp)
+        file_tmp = Path(path_tmp.name) / "aligned.hex"
+        # tmp_path because firmware can be in readonly content-dir
+        cmd = [
+            "srec_cat",
+            # BL51 hex files are not sorted for ascending addresses. Suppress this warning
+            "-disable-sequence-warning",
+            # load input HEX file
+            path_str,
+            "-Intel",
+            # fill all incomplete 16-bit words with 0xFF. The range is limited to the application
+            "-fill",
+            "0xFF",
+            "-within",
+            path_str,
+            "-Intel",
+            "-range-padding",
+            "4",
+            # generate hex records with 16 byte data length (default 32 byte)
+            "-Output_Block_Size=16",
+            # generate 16-bit address records. Do no use for address ranges > 64K
+            "-address-length=2",
+            # generate a Intel hex file
+            "-o",
+            file_tmp.as_posix(),
+            "-Intel",
+        ]
+        ret = subprocess.run(cmd, timeout=30)  # noqa: S607 S603
+        if ret.returncode > 0:
+            log.error("Error during realignment (srec_cat): %s", ret.stderr)
+            failed = True
+            raise SystemExit
+
+        with open(file_tmp.as_posix(), "rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
-                target = cfg.mcu_type
+                target = cfg.mcu_type.lower()
+                if "msp430" in target:
+                    target = "msp430"
+                elif "nrf52" in target:
+                    target = "nrf52"
+                else:
+                    log.warning(
+                        "MCU-Type needs to be [msp430, nrf52] but was: %s",
+                        target,
+                    )
                 if cfg.simulate:
                     target = "dummy"
                 if cfg.mcu_port == 1:
@@ -177,15 +236,16 @@ def run_programmer(cfg: ProgrammingTask):
         log.debug("\tshepherdState   = %s", sysfs_interface.get_state())
         log.debug("\tprogrammerState = %s", state)
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
+        dbg.process_programming_messages()
     except SystemExit:
         pass
     stack.close()
 
     sysfs_interface.load_pru0_firmware("shepherd")
-    sys.exit(int(failed))
+    return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 
-def run_task(cfg: Union[ShpModel, Path, str]) -> None:
+def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
     observer_name = platform.node().strip()
     try:
         wrapper = prepare_task(cfg, observer_name)
@@ -196,25 +256,36 @@ def run_task(cfg: Union[ShpModel, Path, str]) -> None:
             observer_name,
             xcp,
         )
-        return
+        return True
 
+    log.debug("Got set of tasks: %s", [type(_e).__name__ for _e in content])
     # TODO: parameters currently not handled:
     #   time_prep, root_path, abort_on_error (but used in emuTask)
-
+    failed = False
     for element in content:
         if element is None:
             continue
 
-        e_dict = element.model_dump(exclude_defaults=True, exclude_unset=True)
-        log.debug("Starting run with %s", e_dict)
+        element_str = str(element)
+        if len(element_str) > 500:
+            element_str = element_str[:500] + " [first 500 chars]"
+
+        log.info(
+            "\n####### Starting %s #######\n%s\n",
+            type(element).__name__,
+            element_str,
+        )
 
         if isinstance(element, EmulationTask):
-            run_emulator(element)
+            failed |= run_emulator(element)
         elif isinstance(element, HarvestTask):
-            run_harvester(element)
+            failed |= run_harvester(element)
         elif isinstance(element, FirmwareModTask):
-            run_firmware_mod(element)
+            failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            run_programmer(element)
+            failed |= run_programmer(element)
         else:
             raise ValueError("Task not implemented: %s", type(element))
+        reset_verbosity()
+        # TODO: handle "failed": retry?
+    return failed

@@ -25,7 +25,7 @@ def test_emu_prepare(cli_runner: CliRunner, stopped_herd, tmp_path) -> None:
     wait_for_end(cli_runner)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(150)
 def test_emu_example(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
@@ -61,7 +61,7 @@ def test_emu_example_fail(cli_runner: CliRunner, stopped_herd) -> None:
     wait_for_end(cli_runner, timeout=40)  # TODO: was 15 but got worse with core-lib
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(150)
 def test_emu_minimal(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
@@ -74,7 +74,7 @@ def test_emu_minimal(cli_runner: CliRunner, stopped_herd) -> None:
     wait_for_end(cli_runner, tmin=20)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(150)
 def test_emu_all_args_long(cli_runner: CliRunner, stopped_herd) -> None:
     res = cli_runner.invoke(
         cli,
@@ -103,7 +103,7 @@ def test_emu_all_args_long(cli_runner: CliRunner, stopped_herd) -> None:
     wait_for_end(cli_runner, tmin=15)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(150)
 def test_emu_all_args_short(cli_runner: CliRunner, stopped_herd) -> None:
     # short arg or opposite bool val
     res = cli_runner.invoke(

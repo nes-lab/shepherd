@@ -1,7 +1,9 @@
 ---
 - name: Base setup
   hosts: all
-  strategy: free
+  strategy: free # noqa: run-once[play]
+  collections:
+    - ansible.posix
   vars:
     mount_path: /opt/shepherd-dev
   tasks:

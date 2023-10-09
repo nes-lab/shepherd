@@ -4,9 +4,11 @@ In the second half of 2023 a public instance of the Shepherd Testbed will go liv
 
 ## Planned Deployment
 
-![cfaed floor with marked node-positions](./media/cfaed_floorplan_mod.png)
-
 The initial deployment will be covering the ring of offices around the buildings ventilation system. The inner structure mostly blocks RF due to lots of metal vents. 10 - 12 shepherd observers will be used for the testrun.
+
+Below is a screenshot of the [Campus-Navigator](https://navigator.tu-dresden.de/etplan/bar/02) with marked node-positions.
+
+![cfaed floor with marked node-positions](./media/cfaed_floorplan_mod.png)
 
 ## Current Status
 

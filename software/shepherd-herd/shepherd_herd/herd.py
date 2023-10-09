@@ -18,6 +18,8 @@ import yaml
 from fabric import Connection
 from fabric import Group
 from fabric import Result
+from paramiko.ssh_exception import NoValidConnectionsError
+from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
 from shepherd_core import Inventory
 from shepherd_core import tb_client
@@ -90,7 +92,7 @@ class Herd:
                     raise FileNotFoundError(
                         f"Couldn't read inventory file {host_path}, please provide a valid one",
                     )
-            logger.debug("Shepherd-Inventory = '%s'", host_path.as_posix())
+            logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
             hostnames: Dict[str, str] = {}
@@ -121,11 +123,15 @@ class Herd:
         if key_filepath is not None:
             connect_kwargs["key_filename"] = str(key_filepath)
 
-        self.group: Group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
+        self.group: Group = Group(
+            *hostlist,
+            user=user,
+            connect_timeout=5,
+            connect_kwargs=connect_kwargs,
+        )
         self.hostnames: Dict[str, str] = hostnames
-        logger.debug("Sheep-Herd consists of %d nodes", len(self.group))
-        if len(self.group) < 1:
-            raise ValueError("No remote targets found in list!")
+
+        logger.info("Herd consists of %d sheep", len(self.group))
 
     def __del__(self):
         # ... overcautious closing of connections
@@ -136,6 +142,19 @@ class Herd:
                 cnx.close()
                 del cnx
 
+    def __enter__(self):
+        self._open()
+        if len(self.group) < 1:
+            raise ValueError("No remote sheep in current herd!")
+        return self
+
+    def __exit__(self, *args):  # type: ignore
+        if not hasattr(self, "group") or not isinstance(self.group, Group):
+            return
+        with contextlib.suppress(TypeError):
+            for cnx in self.group:
+                cnx.close()
+
     def __getitem__(self, key: str):
         if key in self.hostnames:
             return self.hostnames[key]
@@ -145,6 +164,32 @@ class Herd:
         return self.hostnames
 
     @staticmethod
+    def _thread_open(
+        cnx: Connection,
+    ) -> None:
+        if cnx.is_connected:
+            return
+        try:
+            cnx.open()
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to open connection -> will exclude node from inventory",
+                cnx.host,
+            )
+            cnx.close()
+
+    def _open(self) -> None:
+        """Open Connection on all Nodes"""
+        threads = {}
+        for i, cnx in enumerate(self.group):
+            threads[i] = threading.Thread(target=self._thread_open, args=[cnx])
+            threads[i].start()
+        for thread in threads.values():
+            thread.join()
+            del thread  # ... overcautious
+        self.group = [cnx for cnx in self.group if cnx.is_connected]
+
+    @staticmethod
     def _thread_run(
         cnx: Connection,
         sudo: bool,
@@ -152,14 +197,26 @@ class Herd:
         results: dict[int, Result],
         index: int,
     ) -> None:
-        if sudo:
-            results[index] = cnx.sudo(cmd, warn=True, hide=True)
-        else:
-            results[index] = cnx.run(cmd, warn=True, hide=True)
+        if not cnx.is_connected:
+            return
+        try:
+            if sudo:
+                results[index] = cnx.sudo(cmd, warn=True, hide=True)
+            else:
+                results[index] = cnx.run(cmd, warn=True, hide=True)
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to run '%s' -> will exclude node from inventory",
+                cnx.host,
+                cmd,
+            )
+            cnx.close()
 
     @validate_call
-    def run_cmd(self, sudo: bool, cmd: str) -> dict[int, Result]:
-        """Run COMMAND on the shell -> Returns output-results"""
+    def run_cmd(self, cmd: str, sudo: bool = False) -> dict[int, Result]:
+        """Run COMMAND on the shell -> Returns output-results
+        NOTE: in case of error on a node that corresponding dict value is unavailable
+        """
         results: dict[int, Result] = {}
         threads = {}
         logger.debug("Sheep-CMD = %s", cmd)
@@ -172,11 +229,15 @@ class Herd:
         for thread in threads.values():
             thread.join()
             del thread  # ... overcautious
+        if len(results) < 1:
+            raise RuntimeError("ZERO nodes answered - check your config")
         return results
 
     def print_output(self, replies: dict[int, Result], verbose: bool = False) -> None:
         """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
+            if not isinstance(replies.get(i), Result):
+                continue
             if not verbose and replies[i].exited == 0:
                 continue
             if len(replies[i].stdout) > 0:
@@ -203,12 +264,22 @@ class Herd:
         if dst.suffix == "" and not str(dst).endswith("/"):
             dst = str(dst) + "/"
 
+        if not cnx.is_connected:
+            return
+
         tmp_path = Path("/tmp") / filename  # noqa: S108
         logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
-
-        cnx.put(src, str(tmp_path))  # noqa: S108
-        xtr_arg = "-f" if force_overwrite else "-n"
-        cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
+        try:
+            cnx.put(src, str(tmp_path))  # noqa: S108
+            xtr_arg = "-f" if force_overwrite else "-n"
+            cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to put to '%s' -> will exclude node from inventory",
+                cnx.host,
+                dst.as_posix(),
+            )
+            cnx.close()
 
     def put_file(
         self,
@@ -252,7 +323,17 @@ class Herd:
 
     @staticmethod
     def _thread_get(cnx: Connection, src: Path, dst: Path):
-        cnx.get(str(src), local=str(dst))
+        if not cnx.is_connected:
+            return
+        try:
+            cnx.get(str(src), local=str(dst))
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to get '%s' -> will exclude node from inventory",
+                cnx.host,
+                src.as_posix(),
+            )
+            cnx.close()
 
     @validate_call
     def get_file(
@@ -294,6 +375,8 @@ class Herd:
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
+            if not isinstance(replies.get(i), Result):
+                continue
             hostname = self.hostnames[cnx.host]
             if replies[i].exited > 0:
                 logger.error(
@@ -378,14 +461,14 @@ class Herd:
 
         """
         if isinstance(task, ShpModel):
-            task_dict = task.model_dump(exclude_unset=True, exclude_defaults=True)
+            task_dict = task.model_dump(exclude_unset=True)
             task_wrap = Wrapper(
                 datatype=type(task).__name__,
                 created=datetime.now(),
                 parameters=task_dict,
             )
             task_yaml = yaml.safe_dump(
-                task_wrap.model_dump(exclude_unset=True, exclude_defaults=True),
+                task_wrap.model_dump(exclude_unset=True),
                 default_flow_style=False,
                 sort_keys=False,
             )
@@ -404,9 +487,8 @@ class Herd:
             remote_path = Path(remote_path)
 
         logger.info(
-            "Rolling out the following config to '%s':\n\n%s",
+            "Rolling out the config to '%s'",
             remote_path.as_posix(),
-            task_yaml,
         )
         self.put_file(
             task,
@@ -416,7 +498,7 @@ class Herd:
 
     @validate_call
     def check_status(self, warn: bool = False) -> bool:
-        """Returns true ss long as one instance is still measuring
+        """Returns true as long as one instance is still measuring
 
         :param warn:
         :return: True is one node is still active
@@ -425,6 +507,8 @@ class Herd:
         active = False
 
         for i, cnx in enumerate(self.group):
+            if not isinstance(replies.get(i), Result):
+                continue
             if replies[i].exited != 3:
                 active = True
                 if warn:
@@ -514,7 +598,7 @@ class Herd:
         if attach:
             remote_path = Path("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
-            command = f"shepherd-sheep -vvv run {remote_path.as_posix()}"
+            command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
             exit_code = max([reply.exited for reply in replies.values()])
             if exit_code:
@@ -551,8 +635,8 @@ class Herd:
             if hasattr(task, "output_path"):
                 logger.info("General remote path is: %s", task.output_path)
                 failed |= self.get_file(task.output_path, dst_dir, separate, delete_src)
-            if hasattr(task, "output_paths"):
-                for host, path in task.output_paths.items():
+            if hasattr(task, "get_output_paths"):
+                for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
                     raise RuntimeError("FN not finished, not needed ATM")  # TODO
         return failed

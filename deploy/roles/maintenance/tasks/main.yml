@@ -31,12 +31,12 @@
     state: present
 - name: APT - update cache & install hardcoded kernel
   ansible.builtin.apt:
-    name: "linux-image-4.19.94-ti-r73"
+    name: "{{ maintenance_kernel_pin }}"
     state: present
     update_cache: true
 
-- name: "SCRIPT - Switch to newest release of Kernel Branch {{ default_kernel_branch }}"
-  ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ default_kernel_branch }}'
+- name: "SCRIPT - Switch to newest release of Kernel Branch {{ maintenance_default_kernel }}"
+  ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ maintenance_default_kernel }}'
   when: false # maintenance_update_kernel | bool
   changed_when: true
   failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
@@ -77,9 +77,9 @@
     upgrade: full # was "dist" but this changed also the kernel back to 5.10
     update_cache: true
 
-- name: "CFG - Set timezone to {{ timezone }}"
+- name: "CFG - Set timezone to {{ maintenance_timezone }}"
   community.general.timezone:
-    name: "{{ timezone }}"
+    name: "{{ maintenance_timezone }}"
 
   # TODO: - name: CFG - Set CPU Governor to more relaxed state (powersave)
 

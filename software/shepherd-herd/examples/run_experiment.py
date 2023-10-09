@@ -52,6 +52,7 @@ xp1 = Experiment(
     name="meaningful Test-Name",
     time_start="2033-03-13 14:15:16",  # or: datetime.now() + timedelta(minutes=30)
     target_configs=target_cfgs,
+    duration=10,
 )
 
 
@@ -77,28 +78,27 @@ tb_tasks1.to_file(path_tasks)
 # ######################################################
 # alternative: use herd CLI
 
-herd = Herd(inventory="/etc/shepherd/herd.yml")
-# NOTE: that's one of the default paths for the inventory
-#       and therefore not needed here
+with Herd(inventory="/etc/shepherd/herd.yml") as herd:
+    # NOTE: that's one of the default paths for the inventory
+    #       and therefore not needed here
 
-variant1 = True
+    variant1 = True
 
-if variant1:
-    # more control
-    remote_config = Path("/etc/shepherd/config_task.yaml")
-    herd.put_file(path_tasks, dst=remote_config, force_overwrite=True)
-    command = f"shepherd-sheep -vvv run {remote_config.as_posix()}"
-    replies = herd.run_cmd(sudo=True, cmd=command)
-    herd.print_output(replies, verbose=True)
-else:
-    herd.run_task(tb_tasks1, attach=True)
+    if variant1:
+        # more control
+        remote_config = Path("/etc/shepherd/config_task.yaml")
+        herd.put_file(path_tasks, dst=remote_config, force_overwrite=True)
+        command = f"shepherd-sheep --verbose run {remote_config.as_posix()}"
+        replies = herd.run_cmd(sudo=True, cmd=command)
+        herd.print_output(replies, verbose=True)
+    else:
+        herd.run_task(tb_tasks1, attach=True)
 
+    # ######################################################
+    # PART 4: Retrieving files
+    # ######################################################
+    # alternative: use herd CLI
 
-# ######################################################
-# PART 4: Retrieving files
-# ######################################################
-# alternative: use herd CLI
-
-herd.get_task_files(tb_tasks1, dst_dir=path_local, delete_src=True)
-# NOTE1: sheep and herd-server both have access to the same nfs-drive
-# NOTE2: this routine is not finished
+    herd.get_task_files(tb_tasks1, dst_dir=path_local, delete_src=True)
+    # NOTE1: sheep and herd-server both have access to the same nfs-drive
+    # NOTE2: this routine is not finished

@@ -2,8 +2,8 @@
 
 - name: Deploy example configuration
   ansible.builtin.copy:
-    src: "{{ shepherd_install_path }}/software/python-package/{{ item }}"
-    dest: "{{ shepherd_config_path }}/"
+    src: "{{ sheep_install_path }}/software/python-package/{{ item }}"
+    dest: "{{ sheep_config_path }}/"
     force: false
     owner: "{{ ansible_user }}"
     mode: 'a+rw'
@@ -18,8 +18,8 @@
 
 - name: Deploy default configuration for launcher (harvest)
   ansible.builtin.copy:
-    src: "{{ shepherd_install_path }}/software/python-package/example_config_harvest.yaml"
-    dest: "{{ shepherd_config_path }}/config.yaml"
+    src: "{{ sheep_install_path }}/software/python-package/example_config_harvest.yaml"
+    dest: "{{ sheep_config_path }}/config.yaml"
     force: false
     owner: "{{ ansible_user }}"
     mode: 'a+rw'
