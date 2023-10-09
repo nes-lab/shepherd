@@ -130,10 +130,8 @@ class Herd:
             connect_kwargs=connect_kwargs,
         )
         self.hostnames: Dict[str, str] = hostnames
-        self._open()
-        logger.info("Sheep-Herd consists of %d nodes", len(self.group))
-        if len(self.group) < 1:
-            raise ValueError("No remote targets found in list!")
+
+        logger.info("Herd consists of %d sheep", len(self.group))
 
     def __del__(self):
         # ... overcautious closing of connections
@@ -143,6 +141,19 @@ class Herd:
             for cnx in self.group:
                 cnx.close()
                 del cnx
+
+    def __enter__(self):
+        self._open()
+        if len(self.group) < 1:
+            raise ValueError("No remote sheep in current herd!")
+        return self
+
+    def __exit__(self, *args):  # type: ignore
+        if not hasattr(self, "group") or not isinstance(self.group, Group):
+            return
+        with contextlib.suppress(TypeError):
+            for cnx in self.group:
+                cnx.close()
 
     def __getitem__(self, key: str):
         if key in self.hostnames:
