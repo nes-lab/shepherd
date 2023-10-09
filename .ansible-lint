@@ -23,5 +23,5 @@ exclude_paths:
 # TODO: workaround - seems to be an issue
 # https://github.com/ansible/ansible-lint/issues/3636
 mock_modules:
-  - ansible.posix
+#  - ansible.posix
   - community.general
