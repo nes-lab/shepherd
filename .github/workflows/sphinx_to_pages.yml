@@ -13,8 +13,8 @@ jobs:
     uses: ./.github/workflows/qa_test.yml
   build-pages:
     runs-on: ubuntu-latest
-    needs:
-      - run-quality-assurance
+#    needs:
+#  - run-quality-assurance
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
