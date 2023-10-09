@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   run-quality-assurance:
-    uses: ./.github/workflows/qa_test.yml
+    uses: ./.github/workflows/qa_tests.yml
   deploy:
 
     runs-on: ubuntu-latest
