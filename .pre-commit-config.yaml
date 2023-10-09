@@ -37,7 +37,6 @@ repos:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
 
-
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -100,9 +99,8 @@ repos:
     rev: v6.20.3
     hooks:
       - id: ansible-lint
-        files: \.(yaml|yml)$
-        args: ["using", "ansible.posix", "community.general"]
-        
+        #files: \.(yaml|yml)$
+
 #  - repo: https://github.com/rstcheck/rstcheck
 #    rev: v6.1.2
 #    hooks:

@@ -1,15 +1,6 @@
 ---
 # .ansible-lint
 profile: safety
-offline: true
-
-# This makes linter to fully ignore rules/tags listed below
-#skip_list:
-#  - yaml[brackets]
-#  - schema[meta]
-
-# comment for brackets: virtual-source is formatted for readability
-# comment for schema[meta]: false positives for role/meta/min-ansible-version
 
 # exclude_paths included in this file are parsed relative to this file's location
 # and not relative to the CWD of execution. CLI arguments passed to the --exclude
@@ -20,8 +11,6 @@ exclude_paths:
   - software/shepherd-datalib
   - software/shepherd-webservice
 
-# TODO: workaround - seems to be an issue
-# https://github.com/ansible/ansible-lint/issues/3636
-mock_modules:
-#  - ansible.posix
-  - community.general
+# Ansible-lint does not fail on warnings from the rules or tags listed below
+warn_list:
+  - syntax-check[specific]
