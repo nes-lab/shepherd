@@ -22,8 +22,8 @@ jobs:
   deploy:
 
     runs-on: ubuntu-latest
-#    needs:
-#      - run-quality-assurance
+    needs:
+      - run-quality-assurance
     env:
       herd_path: "./software/shepherd-herd"
 

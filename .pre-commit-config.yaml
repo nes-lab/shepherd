@@ -95,11 +95,12 @@ repos:
           ### Test-Improvements
           - flake8-assertive
 
-  - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.20.3
-    hooks:
-      - id: ansible-lint
-        #files: \.(yaml|yml)$
+# TODO: disable, until bug is resolved, maybe connected to
+# https://github.com/ansible/ansible-lint/issues/3636
+#  - repo: https://github.com/ansible-community/ansible-lint.git
+#    rev: v6.20.3
+#    hooks:
+#      - id: ansible-lint
 
 #  - repo: https://github.com/rstcheck/rstcheck
 #    rev: v6.1.2
