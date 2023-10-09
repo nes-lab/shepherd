@@ -92,7 +92,7 @@ class Herd:
                     raise FileNotFoundError(
                         f"Couldn't read inventory file {host_path}, please provide a valid one",
                     )
-            logger.debug("Shepherd-Inventory = '%s'", host_path.as_posix())
+            logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
             hostnames: Dict[str, str] = {}
@@ -123,9 +123,12 @@ class Herd:
         if key_filepath is not None:
             connect_kwargs["key_filename"] = str(key_filepath)
 
-        self.group: Group = Group(*hostlist, user=user, connect_kwargs=connect_kwargs)
+        self.group: Group = Group(
+            *hostlist, user=user, connect_timeout=5, connect_kwargs=connect_kwargs
+        )
         self.hostnames: Dict[str, str] = hostnames
-        logger.debug("Sheep-Herd consists of %d nodes", len(self.group))
+        self._open()
+        logger.info("Sheep-Herd consists of %d nodes", len(self.group))
         if len(self.group) < 1:
             raise ValueError("No remote targets found in list!")
 
@@ -147,6 +150,32 @@ class Herd:
         return self.hostnames
 
     @staticmethod
+    def _thread_open(
+        cnx: Connection,
+    ) -> None:
+        if cnx.is_connected:
+            return
+        try:
+            cnx.open()
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to open connection -> will exclude node from inventory",
+                cnx.host,
+            )
+            cnx.close()
+
+    def _open(self) -> None:
+        """Open Connection on all Nodes"""
+        threads = {}
+        for i, cnx in enumerate(self.group):
+            threads[i] = threading.Thread(target=self._thread_open, args=[cnx])
+            threads[i].start()
+        for thread in threads.values():
+            thread.join()
+            del thread  # ... overcautious
+        self.group = [cnx for cnx in self.group if cnx.is_connected]
+
+    @staticmethod
     def _thread_run(
         cnx: Connection,
         sudo: bool,
@@ -154,17 +183,26 @@ class Herd:
         results: dict[int, Result],
         index: int,
     ) -> None:
+        if not cnx.is_connected:
+            return
         try:
             if sudo:
                 results[index] = cnx.sudo(cmd, warn=True, hide=True)
             else:
                 results[index] = cnx.run(cmd, warn=True, hide=True)
-        except (NoValidConnectionsError, SSHException):
-            logger.error("[%s] failed to run '%s'", cnx.host, cmd)
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to run '%s' -> will exclude node from inventory",
+                cnx.host,
+                cmd,
+            )
+            cnx.close()
 
     @validate_call
     def run_cmd(self, cmd: str, sudo: bool = False) -> dict[int, Result]:
-        """Run COMMAND on the shell -> Returns output-results"""
+        """Run COMMAND on the shell -> Returns output-results
+        NOTE: in case of error on a node that corresponding dict value is unavailable
+        """
         results: dict[int, Result] = {}
         threads = {}
         logger.debug("Sheep-CMD = %s", cmd)
@@ -177,11 +215,15 @@ class Herd:
         for thread in threads.values():
             thread.join()
             del thread  # ... overcautious
+        if len(results) < 1:
+            raise RuntimeError("ZERO nodes answered - check your config")
         return results
 
     def print_output(self, replies: dict[int, Result], verbose: bool = False) -> None:
         """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
+            if not isinstance(replies.get(i), Result):
+                continue
             if not verbose and replies[i].exited == 0:
                 continue
             if len(replies[i].stdout) > 0:
@@ -208,14 +250,22 @@ class Herd:
         if dst.suffix == "" and not str(dst).endswith("/"):
             dst = str(dst) + "/"
 
+        if not cnx.is_connected:
+            return
+
         tmp_path = Path("/tmp") / filename  # noqa: S108
         logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
         try:
             cnx.put(src, str(tmp_path))  # noqa: S108
             xtr_arg = "-f" if force_overwrite else "-n"
             cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
-        except (NoValidConnectionsError, SSHException):
-            logger.error("[%s] failed to put to '%s'", cnx.host, dst.as_posix())
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to put to '%s' -> will exclude node from inventory",
+                cnx.host,
+                dst.as_posix(),
+            )
+            cnx.close()
 
     def put_file(
         self,
@@ -259,10 +309,17 @@ class Herd:
 
     @staticmethod
     def _thread_get(cnx: Connection, src: Path, dst: Path):
+        if not cnx.is_connected:
+            return
         try:
             cnx.get(str(src), local=str(dst))
-        except (NoValidConnectionsError, SSHException):
-            logger.error("[%s] failed to get '%s'", cnx.host, src.as_posix())
+        except (NoValidConnectionsError, SSHException, TimeoutError):
+            logger.error(
+                "[%s] failed to get '%s' -> will exclude node from inventory",
+                cnx.host,
+                src.as_posix(),
+            )
+            cnx.close()
 
     @validate_call
     def get_file(
@@ -304,6 +361,8 @@ class Herd:
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
+            if not isinstance(replies.get(i), Result):
+                continue
             hostname = self.hostnames[cnx.host]
             if replies[i].exited > 0:
                 logger.error(
@@ -434,6 +493,8 @@ class Herd:
         active = False
 
         for i, cnx in enumerate(self.group):
+            if not isinstance(replies.get(i), Result):
+                continue
             if replies[i].exited != 3:
                 active = True
                 if warn:
