@@ -4,9 +4,9 @@ profile: safety
 offline: true
 
 # This makes linter to fully ignore rules/tags listed below
-skip_list:
-  - yaml[brackets]
-  - schema[meta]
+#skip_list:
+#  - yaml[brackets]
+#  - schema[meta]
 
 # comment for brackets: virtual-source is formatted for readability
 # comment for schema[meta]: false positives for role/meta/min-ansible-version
@@ -19,3 +19,9 @@ exclude_paths:
   - software/firmware/
   - software/shepherd-datalib
   - software/shepherd-webservice
+
+# TODO: workaround - seems to be an issue
+# https://github.com/ansible/ansible-lint/issues/3636
+mock_modules:
+  - ansible.posix
+  - community.general
