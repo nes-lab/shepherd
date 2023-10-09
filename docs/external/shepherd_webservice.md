@@ -1,6 +1,6 @@
 # Webservice
 
-[![Repo-Tests](https://github.com/orgua/shepherd_webservice/actions/workflows/repo-tests.yml/badge.svg)](https://github.com/orgua/shepherd_webservice/actions/workflows/repo-tests.yml)
+[![QA-Tests](https://github.com/orgua/shepherd_webservice/actions/workflows/qa_tests.yml/badge.svg)](https://github.com/orgua/shepherd_webservice/actions/workflows/qa_tests.yml)
 
 **Documentation**: <https://orgua.github.io/shepherd/external/shepherd_webservice.html>
 
