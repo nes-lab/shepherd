@@ -28,6 +28,7 @@ class UARTMonitor(Monitor):
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
             chunks=True,
+            compression=compression,
         )
         self.data["message"].attrs["description"] = "raw ascii-bytes"
 

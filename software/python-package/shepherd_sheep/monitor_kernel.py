@@ -18,7 +18,7 @@ class KernelMonitor(Monitor):
         compression: Optional[Compression] = Compression.default,
         backlog: int = 60,
     ):
-        super().__init__(target, compression, poll_intervall=0.74)
+        super().__init__(target, compression, poll_intervall=0.52)
         self.backlog = backlog
 
         self.data.create_dataset(
@@ -63,6 +63,7 @@ class KernelMonitor(Monitor):
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
+                self.event.wait(self.poll_intervall)  # rate limiter
                 continue
             line = str(line).strip()[:128]
             try:
@@ -81,5 +82,4 @@ class KernelMonitor(Monitor):
                     type(line),
                     line,
                 )
-            self.event.wait(self.poll_intervall)  # rate limiter
         log.debug("[%s] thread ended itself", type(self).__name__)

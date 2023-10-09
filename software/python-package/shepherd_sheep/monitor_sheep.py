@@ -24,6 +24,17 @@ class SheepMonitor(Monitor):
             maxshape=(None,),
             chunks=True,
         )
+        self.data.create_dataset(
+            "level",
+            (self.increment,),
+            dtype="uint8",
+            maxshape=(None,),
+            chunks=True,
+        )
+        self.data["level"].attrs["unit"] = "n"
+        self.data["level"].attrs[
+            "description"
+        ] = "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
 
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
@@ -34,19 +45,23 @@ class SheepMonitor(Monitor):
             self.thread.join(timeout=self.poll_intervall)
             self.thread = None
         self.data["message"].resize((self.position,))
+        self.data["level"].resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
         while not self.event.is_set():
-            while self.queue.qsize() > 0:
+            if self.queue.qsize() > 0:
                 rec = self.queue.get()
                 data_length = self.data["time"].shape[0]
                 if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
                     self.data["message"].resize((data_length,))
+                    self.data["level"].resize((data_length,))
                 self.data["time"][self.position] = int(rec.created * 1e9)
                 self.data["message"][self.position] = rec.message
+                self.data["level"][self.position] = rec.levelno
                 self.position += 1
-            self.event.wait(self.poll_intervall)  # rate limiter
+            else:
+                self.event.wait(self.poll_intervall)  # rate limiter
         log.debug("[%s] thread ended itself", type(self).__name__)

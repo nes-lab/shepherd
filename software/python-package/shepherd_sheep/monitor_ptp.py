@@ -17,7 +17,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         target: h5py.Group,
         compression: Optional[Compression] = Compression.default,
     ):
-        super().__init__(target, compression, poll_intervall=0.72)
+        super().__init__(target, compression, poll_intervall=0.51)
         self.data.create_dataset(
             "values",
             (self.increment, 3),
@@ -66,6 +66,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
+                self.event.wait(self.poll_intervall)  # rate limiter
                 continue
             try:
                 words = str(line).split()
@@ -93,5 +94,4 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     type(line),
                     line,
                 )
-            self.event.wait(self.poll_intervall)  # rate limiter
         log.debug("[%s] thread ended itself", type(self).__name__)
