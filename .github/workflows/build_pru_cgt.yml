@@ -5,6 +5,7 @@ on:
     branches: [ "main", "dev" ]
   pull_request:
     branches: [ "main" ]
+  workflow_call:
 
 jobs:
 # TODO: compilation fails with: exec() error spawning acpiapru: No such file or directory
@@ -22,7 +23,7 @@ jobs:
     steps:
 
       - name: Checkout 🛎️
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install 32bit dependencies 🔧
         run: |
