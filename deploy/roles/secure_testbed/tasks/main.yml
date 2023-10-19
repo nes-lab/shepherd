@@ -31,10 +31,10 @@
     - {regex: '^.*ChallengeResponseAuthentication.*$', line: 'ChallengeResponseAuthentication no'}
     - {regex: '^.*X11Forwarding.*$', line: 'X11Forwarding no'}
     - {regex: '^.*AllowUsers.*$', line: 'AllowUsers {{ ansible_user }}'}
-    # select good AND exclude weak algorithms:
+    # select good AND exclude weak algorithms: TODO: just forbid
     - {regex: '^.*KexAlgorithms.*$', line: 'KexAlgorithms -ecdh-sha2*,diffie-hellman-group-exchange*,diffie-hellman-group14-sha1'}
     - {regex: '^.*HostKeyAlgorithms.*$', line: 'HostKeyAlgorithms -ecda-sha2*,ecdsa-sha2*'}
-    - {regex: '^.*Ciphers.*$', line: 'Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr'}
+    - {regex: '^.*Ciphers.*$', line: 'Ciphers -arcfour*,chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr'}
     - {regex: '^.*MACs.*$', line: 'MACs -umac-64*,hmac-sha1*,hmac-sha2-256,hmac-sha2-512,umac-128@open*'}
   # TODO: x11Forwarding is twice in file, one yes and one no
 
