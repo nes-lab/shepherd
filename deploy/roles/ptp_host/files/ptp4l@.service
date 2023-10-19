@@ -16,3 +16,6 @@ StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target
+
+# check with
+# sudo systemctl status ptp4l@eth0.service
