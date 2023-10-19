@@ -38,7 +38,7 @@
  * Macros to allow using the absolute physical address instead of the
  * padconf registers instead of the offset from padconf base.
  */
-#define OMAP_IOPAD_OFFSET(pa, offset) (((pa) &0xffff) - (offset))
+#define OMAP_IOPAD_OFFSET(pa, offset) (((pa) & 0xffff) - (offset))
 
 #define OMAP2420_CORE_IOPAD(pa, val)  OMAP_IOPAD_OFFSET((pa), 0x0030)(val)
 #define OMAP2430_CORE_IOPAD(pa, val)  OMAP_IOPAD_OFFSET((pa), 0x2030)(val)
