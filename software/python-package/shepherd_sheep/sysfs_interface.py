@@ -53,33 +53,46 @@ def flatten_list(dl: list) -> list:
         if len(dl) == 1:
             if isinstance(dl[0], list):
                 return flatten_list(dl[0])
-            else:
-                return dl
-        elif isinstance(dl[0], list):
+            return dl
+        if isinstance(dl[0], list):
             return flatten_list(dl[0]) + flatten_list(dl[1:])
-        else:
-            return [dl[0]] + flatten_list(dl[1:])
-    else:
-        return [dl]
+        return [dl[0], *flatten_list(dl[1:])]
+    return [dl]
 
 
-def load_kernel_module():
-    subprocess.run(["modprobe", "-a", "shepherd"], timeout=60)  # noqa: S607 S603
-    log.debug("activated shepherd kernel module")
-    time.sleep(3)
+def load_kernel_module() -> None:
+    _try = 6
+    while _try > 0:
+        ret = subprocess.run(
+            ["/usr/sbin/modprobe", "-a", "shepherd"],  # noqa: S603
+            timeout=60,
+            check=False,
+        ).returncode
+        if ret == 0:
+            log.debug("Activated shepherd kernel module")
+            time.sleep(3)
+            return
+        _try -= 1
+        time.sleep(1)
+    raise SystemError("Failed to load shepherd kernel module.")
 
 
-def remove_kernel_module():
-    ret = 1
-    while ret > 0:
-        ret = subprocess.run(  # noqa: S607 S603
-            ["modprobe", "-rf", "shepherd"],
+def remove_kernel_module() -> None:
+    _try = 6
+    while _try > 0:
+        ret = subprocess.run(
+            ["/usr/sbin/modprobe", "-rf", "shepherd"],  # noqa: S603
             timeout=60,
             capture_output=True,
+            check=False,
         ).returncode
+        if ret == 0:
+            log.debug("Deactivated shepherd kernel module")
+            time.sleep(1)
+            return
+        _try -= 1
         time.sleep(1)
-    log.debug("deactivated shepherd kernel module")
-    time.sleep(1)
+    raise SystemError("Failed to unload shepherd kernel module.")
 
 
 def reload_kernel_module():
@@ -142,7 +155,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
         time.sleep(0.1)
 
 
-def set_start(start_time: float | int | None = None) -> None:
+def set_start(start_time: float | int | None = None) -> None:  # noqa: PYI041
     """Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from
@@ -157,7 +170,7 @@ def set_start(start_time: float | int | None = None) -> None:
     if current_state != "idle":
         raise SysfsInterfaceException(f"Cannot start from state { current_state }")
 
-    with open(sysfs_path / "state", "w") as f:
+    with (sysfs_path / "state").open("w", encoding="utf-8") as f:
         if isinstance(start_time, float):
             start_time = int(start_time)
         if isinstance(start_time, int):
@@ -179,7 +192,7 @@ def set_stop(force: bool = False) -> None:
         if current_state != "running":
             raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
 
-    with open(sysfs_path / "state", "w") as f:
+    with (sysfs_path / "state").open("w", encoding="utf-8") as f:
         f.write("stop")
 
 
@@ -197,14 +210,13 @@ def write_mode(mode: str, force: bool = False) -> None:
     if force:
         set_stop(force=True)
         wait_for_state("idle", 5)
-    else:
-        if get_state() != "idle":
-            raise SysfsInterfaceException(
-                f"Cannot set mode when shepherd is { get_state() }",
-            )
+    elif get_state() != "idle":
+        raise SysfsInterfaceException(
+            f"Cannot set mode when shepherd is { get_state() }",
+        )
 
     log.debug("sysfs/mode: '%s'", mode)
-    with open(sysfs_path / "mode", "w") as f:
+    with (sysfs_path / "mode").open("w", encoding="utf-8") as f:
         f.write(mode)
 
 
@@ -271,7 +283,7 @@ def write_dac_aux_voltage_raw(
         voltage_raw = min(voltage_raw, 2**16 - 1)
     voltage_raw |= int(ch_link) << 20
     voltage_raw |= int(cap_out) << 21
-    with open(sysfs_path / "dac_auxiliary_voltage_raw", "w") as f:
+    with (sysfs_path / "dac_auxiliary_voltage_raw").open("w", encoding="utf-8") as f:
         log.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))
 
@@ -288,8 +300,7 @@ def read_dac_aux_voltage(cal_emu: CalibrationEmulator | None = None) -> float:
     value_raw = read_dac_aux_voltage_raw()
     if not cal_emu:
         cal_emu = CalibrationEmulator()
-    voltage = cal_emu.dac_V_A.raw_to_si(value_raw)
-    return voltage
+    return cal_emu.dac_V_A.raw_to_si(value_raw)
 
 
 def read_dac_aux_voltage_raw() -> int:
@@ -299,7 +310,7 @@ def read_dac_aux_voltage_raw() -> int:
 
     Returns: voltage as dac_raw
     """
-    with open(sysfs_path / "dac_auxiliary_voltage_raw") as f:
+    with (sysfs_path / "dac_auxiliary_voltage_raw").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -328,7 +339,7 @@ def write_calibration_settings(
         )
     wait_for_state("idle", 3.0)
 
-    with open(sysfs_path / "calibration_settings", "w") as f:
+    with (sysfs_path / "calibration_settings").open("w", encoding="utf-8") as f:
         output = (
             f"{int(cal_pru['adc_current_gain'])} {int(cal_pru['adc_current_offset'])} \n"
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
@@ -346,11 +357,11 @@ def read_calibration_settings() -> (
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    with open(sysfs_path / "calibration_settings") as f:
+    with (sysfs_path / "calibration_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
-    cal_pru = {
+    return {
         "adc_current_gain": int_settings[0],
         "adc_current_offset": int_settings[1],
         "adc_voltage_gain": int_settings[2],
@@ -358,7 +369,6 @@ def read_calibration_settings() -> (
         "dac_voltage_gain": int_settings[4],
         "dac_voltage_offset": int_settings[5],
     }
-    return cal_pru
 
 
 @validate_call
@@ -379,16 +389,18 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
         if isinstance(setting, int):
             output += f"{setting} \n"
         elif isinstance(setting, list):
-            setting = flatten_list(setting)
-            setting = [str(i) for i in setting]
-            output += " ".join(setting) + " \n"
+            _set = flatten_list(setting)
+            _set = [str(i) for i in _set]
+            output += " ".join(_set) + " \n"
         else:
             raise SysfsInterfaceException(
                 f"virtual-converter value {setting} has wrong type ({type(setting)})",
             )
 
     wait_for_state("idle", 3.0)
-    with open(sysfs_path / "virtual_converter_settings", "w") as file:
+    with (sysfs_path / "virtual_converter_settings").open(
+        "w", encoding="utf-8"
+    ) as file:
         file.write(output)
 
 
@@ -398,10 +410,9 @@ def read_virtual_converter_settings() -> list:
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    with open(sysfs_path / "virtual_converter_settings") as f:
+    with (sysfs_path / "virtual_converter_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
-    int_settings = [int(x) for x in settings.split()]
-    return int_settings
+    return [int(x) for x in settings.split()]
 
 
 @validate_call
@@ -426,7 +437,9 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
             )
 
     wait_for_state("idle", 3.0)
-    with open(sysfs_path / "virtual_harvester_settings", "w") as file:
+    with (sysfs_path / "virtual_harvester_settings").open(
+        "w", encoding="utf-8"
+    ) as file:
         file.write(output)
 
 
@@ -436,13 +449,12 @@ def read_virtual_harvester_settings() -> list:
     The  pru-algorithm uses these settings to configure emulator.
 
     """
-    with open(sysfs_path / "virtual_harvester_settings") as f:
+    with (sysfs_path / "virtual_harvester_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
-    int_settings = [int(x) for x in settings.split()]
-    return int_settings
+    return [int(x) for x in settings.split()]
 
 
-def write_pru_msg(msg_type: int, values: list | float | int) -> None:
+def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: PYI041
     """
     :param msg_type:
     :param values:
@@ -454,7 +466,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:
             f"and content (={msg_type})",
         )
 
-    if isinstance(values, (int, float)):
+    if isinstance(values, int | float):
         # catch all single ints and floats
         values = [int(values), 0]
     elif not isinstance(values, list):
@@ -467,7 +479,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:
                 f"expected u32 for type (={type(value)}) and content (={value})",
             )
 
-    with open(sysfs_path / "pru_msg_box", "w") as file:
+    with (sysfs_path / "pru_msg_box").open("w", encoding="utf-8") as file:
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
@@ -475,7 +487,7 @@ def read_pru_msg() -> tuple:
     """
     Returns:
     """
-    with open(sysfs_path / "pru_msg_box") as f:
+    with (sysfs_path / "pru_msg_box").open(encoding="utf-8") as f:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
@@ -529,7 +541,9 @@ def write_programmer_ctrl(
             raise SysfsInterfaceException(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
-        with open(sysfs_path / "programmer" / attribute, "w") as file:
+        with (sysfs_path / "programmer" / attribute).open(
+            "w", encoding="utf-8"
+        ) as file:
             log.debug("\t%s = '%s'", attribute, value)
             file.write(str(value))
 
@@ -537,25 +551,25 @@ def write_programmer_ctrl(
 def read_programmer_ctrl() -> list:
     parameters = []
     for attribute in prog_attribs:
-        with open(sysfs_path / "programmer" / attribute) as file:
+        with (sysfs_path / "programmer" / attribute).open(encoding="utf-8") as file:
             parameters.append(file.read().rstrip())
     return parameters
 
 
 def write_programmer_datasize(value: int) -> None:
-    with open(sysfs_path / "programmer/datasize", "w") as file:
+    with (sysfs_path / "programmer/datasize").open("w", encoding="utf-8") as file:
         file.write(str(value))
 
 
 def start_programmer() -> None:
-    with open(sysfs_path / "programmer/state", "w") as file:
+    with (sysfs_path / "programmer/state").open("w", encoding="utf-8") as file:
         file.write("start")
     # force a pru-reset to jump into programming routine
     set_stop(force=True)
 
 
 def check_programmer() -> str:
-    with open(sysfs_path / "programmer/state") as file:
+    with (sysfs_path / "programmer/state").open(encoding="utf-8") as file:
         return file.read().rstrip()
 
 
@@ -579,30 +593,29 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
         if value.lower() in firmware.lower():
             request = firmware
     log.debug("Will set pru0-firmware to '%s'", request)
-    count = 1
-    while count < 6:
+    _count = 1
+    while _count < 6:
         try:
-            with open(sysfs_path / "pru0_firmware", "w") as file:
+            with (sysfs_path / "pru0_firmware").open("w", encoding="utf-8") as file:
                 file.write(request)
             time.sleep(2)
-            with open(sysfs_path / "pru0_firmware") as file:
+            with (sysfs_path / "pru0_firmware").open(encoding="utf-8") as file:
                 result = file.read().rstrip()
             if result == request:
                 return
-            else:
-                log.error(
-                    "Requested PRU-FW (%s) was not set (is '%s')",
-                    request,
-                    result,
-                )
-        except OSError:
+            log.error(
+                "Requested PRU-FW (%s) was not set (is '%s')",
+                request,
+                result,
+            )
+        except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw change)"
                 " -> will restart kernel-module (n=%d)",
-                count,
+                _count,
             )
             reload_kernel_module()
-            count += 1
+            _count += 1
     raise OSError(
         "PRU-Driver still locked up (during pru-fw change)"
         " -> consider restarting node",
@@ -610,19 +623,19 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
 
 
 def pru0_firmware_is_default() -> bool:
-    count = 1
-    while count < 6:
+    _count = 1
+    while _count < 6:
         try:
-            with open(sysfs_path / "pru0_firmware") as file:
+            with (sysfs_path / "pru0_firmware").open(encoding="utf-8") as file:
                 return file.read().rstrip() in pru0_firmwares[0]
-        except OSError:
+        except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
                 " -> will restart kernel-module (n=%d)",
-                count,
+                _count,
             )
             reload_kernel_module()
-            count += 1
+            _count += 1
     raise OSError(
         "PRU-Driver still locked up (during pru-fw read)"
         " -> consider restarting node",
@@ -641,35 +654,35 @@ attribs = [
 
 
 def get_mode() -> str:
-    with open(sysfs_path / "mode") as f:
+    with (sysfs_path / "mode").open(encoding="utf-8") as f:
         return str(f.read().rstrip())
 
 
 def get_state() -> str:
-    with open(sysfs_path / "state") as f:
+    with (sysfs_path / "state").open(encoding="utf-8") as f:
         return str(f.read().rstrip())
 
 
 def get_n_buffers() -> int:
-    with open(sysfs_path / "n_buffers") as f:
+    with (sysfs_path / "n_buffers").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_buffer_period_ns() -> int:
-    with open(sysfs_path / "buffer_period_ns") as f:
+    with (sysfs_path / "buffer_period_ns").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_samples_per_buffer() -> int:
-    with open(sysfs_path / "samples_per_buffer") as f:
+    with (sysfs_path / "samples_per_buffer").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_address() -> int:
-    with open(sysfs_path / "memory/address") as f:
+    with (sysfs_path / "memory/address").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_size() -> int:
-    with open(sysfs_path / "memory/size") as f:
+    with (sysfs_path / "memory/size").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
