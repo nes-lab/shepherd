@@ -1,6 +1,7 @@
 import threading
 import time
 from pathlib import Path
+from types import TracebackType
 
 import h5py
 import serial
@@ -17,7 +18,7 @@ class UARTMonitor(Monitor):
         compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
         baudrate: int | None = None,
-    ):
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.05)
         self.uart = uart
         self.baudrate = baudrate
@@ -50,7 +51,13 @@ class UARTMonitor(Monitor):
                 self.uart,
             )
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)

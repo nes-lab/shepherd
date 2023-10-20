@@ -1,3 +1,4 @@
+from typing import Self
 from typing import TypeVar
 
 import numpy as np
@@ -14,7 +15,7 @@ T_calc = TypeVar("T_calc", NDArray[np.float64], float)
 
 class ProfileCalibration(CalibrationSeries):
     @classmethod
-    def from_measurement(cls, result: pd.DataFrame):
+    def from_measurement(cls, result: pd.DataFrame) -> Self:
         values: dict[str, CalibrationPair] = {}
         cal_c = cls._determine_current_cal(result)
         cal_v = cls._determine_voltage_cal(result)

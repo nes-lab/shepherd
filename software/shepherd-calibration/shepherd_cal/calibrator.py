@@ -51,7 +51,7 @@ class Calibrator:
         smu_ip: str | None = None,
         mode_4wire: bool = True,
         pwrline_cycles: float = 16,
-    ):
+    ) -> None:
         fabric_args: dict[str, str] = {}
         if password is not None:
             fabric_args["password"] = password
@@ -77,7 +77,7 @@ class Calibrator:
         if self.kth is not None:
             self.kth.reset()
 
-    def __del__(self):
+    def __del__(self) -> None:
         # ... overcautious
         self._cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
         self._cnx.close()
@@ -123,7 +123,7 @@ class Calibrator:
         return value_i
 
     @staticmethod
-    def reject_outliers(data: np.ndarray, m: float = 2.0):
+    def reject_outliers(data: np.ndarray, m: float = 2.0) -> np.ndarray:
         d = np.abs(data - np.median(data))
         mdev = np.median(d)
         s = d / mdev if mdev else 0.0
@@ -381,7 +381,7 @@ class Calibrator:
     def write(
         self,
         cal_file: str | Path,
-    ):
+    ) -> None:
         temp_file = "/tmp/calib.yaml"  # noqa: S108
         if isinstance(cal_file, str):
             cal_file = Path(cal_file)
@@ -400,7 +400,7 @@ class Calibrator:
         logger.info(result.stderr)
         logger.info("---------------------------------")
 
-    def read(self):
+    def read(self) -> None:
         logger.info("----------EEPROM READ------------")
         result = self._cnx.sudo(
             "shepherd-sheep --verbose eeprom read",
@@ -411,7 +411,7 @@ class Calibrator:
         logger.info(result.stderr)
         logger.info("---------------------------------")
 
-    def retrieve(self, cal_file: Path):
+    def retrieve(self, cal_file: Path) -> None:
         temp_file = "/tmp/calib.yaml"  # noqa: S108
         result = self._cnx.sudo(
             f"shepherd-sheep --verbose eeprom read -c {temp_file}",

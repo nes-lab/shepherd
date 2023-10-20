@@ -63,7 +63,7 @@ def measure(
     write: bool = write_opt_t,
     version: str | None = version_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Measure calibration-data for shepherd cape"""
     cli_setup_callback(verbose)
     smu_4wire = not smu_2wire
@@ -135,7 +135,7 @@ def write(
     cal_file: Path | None = ifile_opt_t,
     measurement_file: Path | None = ifile_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Write calibration-data to shepherd cape eeprom (choose cal- or measurement-file)"""
     cli_setup_callback(verbose)
     if not any([cal_file, measurement_file]):
@@ -163,7 +163,7 @@ def read(
     password: str | None = pass_opt_t,
     cal_file: Path | None = ofile_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Read calibration-data from shepherd cape"""
     cli_setup_callback(verbose)
     shpcal = Calibrator(host, user, password)

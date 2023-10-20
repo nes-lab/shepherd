@@ -9,7 +9,7 @@ from .profile import Profile
 def analyze_directory(
     folder_path: Path,
     stats_path: Path | None = None,
-        *,
+    *,
     do_plots: bool = False,
 ) -> None:
     stats_list = []

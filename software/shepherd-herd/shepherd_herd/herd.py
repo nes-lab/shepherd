@@ -8,7 +8,10 @@ from datetime import datetime
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
+from types import TracebackType
+from typing import Any
 from typing import ClassVar
+from typing import Self
 
 import yaml
 from fabric import Connection
@@ -47,7 +50,7 @@ class Herd:
         limit: str | None = None,
         user: str | None = None,
         key_filepath: Path | None = None,
-    ):
+    ) -> None:
         limits_list: list[str] | None = None
         if isinstance(limit, str):
             limits_list = limit.split(",")
@@ -130,7 +133,7 @@ class Herd:
 
         logger.info("Herd consists of %d sheep", len(self.group))
 
-    def __del__(self):
+    def __del__(self) -> None:
         # ... overcautious closing of connections
         if not hasattr(self, "group") or not isinstance(self.group, Group):
             return
@@ -139,25 +142,31 @@ class Herd:
                 cnx.close()
                 del cnx
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self._open()
         if len(self.group) < 1:
             raise ValueError("No remote sheep in current herd!")
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         if not hasattr(self, "group") or not isinstance(self.group, Group):
             return
         with contextlib.suppress(TypeError):
             for cnx in self.group:
                 cnx.close()
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Any:
         if key in self.hostnames:
             return self.hostnames[key]
         raise KeyError
 
-    def __repr__(self):
+    def __repr__(self) -> dict:
         return self.hostnames
 
     @staticmethod
@@ -230,7 +239,12 @@ class Herd:
             raise RuntimeError("ZERO nodes answered - check your config")
         return results
 
-    def print_output(self, replies: dict[int, Result], *, verbose: bool = False) -> None:
+    def print_output(
+        self,
+        replies: dict[int, Result],
+        *,
+        verbose: bool = False,
+    ) -> None:
         """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
             if not isinstance(replies.get(i), Result):
@@ -251,7 +265,7 @@ class Herd:
         src: Path | StringIO,
         dst: Path,
         force_overwrite: bool,  # noqa: FBT001
-    ):
+    ) -> None:
         if isinstance(src, StringIO):
             filename = dst.name
         else:
@@ -281,7 +295,8 @@ class Herd:
     def put_file(
         self,
         src: StringIO | Path | str,
-        dst: Path | str, *,
+        dst: Path | str,
+        *,
         force_overwrite: bool = False,
     ) -> None:
         if isinstance(src, StringIO):
@@ -319,7 +334,7 @@ class Herd:
             del thread  # ... overcautious
 
     @staticmethod
-    def _thread_get(cnx: Connection, src: Path, dst: Path):
+    def _thread_get(cnx: Connection, src: Path, dst: Path) -> None:
         if not cnx.is_connected:
             return
         try:
@@ -336,7 +351,8 @@ class Herd:
     def get_file(
         self,
         src: Path | str,
-        dst_dir: Path | str, *,
+        dst_dir: Path | str,
+        *,
         timestamp: bool = False,
         separate: bool = False,
         delete_src: bool = False,
@@ -613,7 +629,8 @@ class Herd:
     def get_task_files(
         self,
         config: Path | ShpModel,
-        dst_dir: Path | str, *,
+        dst_dir: Path | str,
+        *,
         separate: bool = False,
         delete_src: bool = False,
     ) -> bool:
@@ -629,7 +646,12 @@ class Herd:
         for task in tasks:
             if hasattr(task, "output_path"):
                 logger.info("General remote path is: %s", task.output_path)
-                failed |= self.get_file(task.output_path, dst_dir, separate=separate, delete_src=delete_src)
+                failed |= self.get_file(
+                    task.output_path,
+                    dst_dir,
+                    separate=separate,
+                    delete_src=delete_src,
+                )
             if hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)

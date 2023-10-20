@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -33,25 +34,21 @@ def cal_cape() -> CalibrationCape:
 
 @pytest.fixture()
 def pru_vsource(
-    request,
-    shepherd_up,
+    shepherd_up: None,
     src_cfg: VirtualSourceConfig,
     cal_cape: CalibrationCape,
     dtype_in: EnergyDType = EnergyDType.ivsample,
     window_size: int = 0,
-) -> ShepherdDebug:
-    pru = ShepherdDebug()
-    request.addfinalizer(pru.__del__)
-    pru.__enter__()
-    request.addfinalizer(pru.__exit__)
-    pru.vsource_init(
-        src_cfg=src_cfg,
-        cal_emu=cal_cape.emulator,
-        log_intermediate=False,
-        dtype_in=dtype_in,
-        window_size=window_size,
-    )  # TODO: extend to be real vsource
-    return pru
+) -> Generator[ShepherdDebug, None, None]:
+    with ShepherdDebug() as _d:
+        _d.vsource_init(
+            src_cfg=src_cfg,
+            cal_emu=cal_cape.emulator,
+            log_intermediate=False,
+            dtype_in=dtype_in,
+            window_size=window_size,
+        )  # TODO: extend to be real vsource
+        yield _d
 
 
 @pytest.fixture

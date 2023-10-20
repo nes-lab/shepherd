@@ -1,6 +1,7 @@
 import contextlib
 import time
 from typing import NoReturn
+from typing import Self
 
 import msgpack
 import msgpack_numpy
@@ -34,7 +35,7 @@ class ShepherdDebug(ShepherdIO):
     with the ADC and DAC.
     """
 
-    def __init__(self, use_io: bool = True):
+    def __init__(self, use_io: bool = True) -> None:
         super().__init__("debug", trace_iv=PowerTracing(), trace_gpio=GpioTracing())
 
         self._io: TargetIO | None = TargetIO() if use_io else None
@@ -57,14 +58,14 @@ class ShepherdDebug(ShepherdIO):
         self.W_inp_fWs: float = 0.0
         self.W_out_fWs: float = 0.0
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         super().__enter__()
         super().set_power_state_recorder(True)
         super().set_power_state_emulator(True)
         super().reinitialize_prus()
         return self
 
-    def adc_read(self, channel: str):
+    def adc_read(self, channel: str) -> int:
         """Reads value from specified ADC channel.
 
         Args:
@@ -113,10 +114,10 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0]
 
-    def gp_set_batok(self, value: int):
+    def gp_set_batok(self, value: int) -> None:
         super()._send_msg(commons.MSG_DBG_GP_BATOK, value)
 
-    def dac_write(self, channels: int, value: int):
+    def dac_write(self, channels: int, value: int) -> None:
         """Writes value to specified DAC channel, DAC8562
 
         Args:
@@ -156,9 +157,11 @@ class ShepherdDebug(ShepherdIO):
         log_intermediate: bool = False,
         dtype_in: EnergyDType = EnergyDType.ivsample,
         window_size: int | None = None,
-    ):
+    ) -> None:
         super().send_calibration_settings(cal_emu)
-        src_pru = ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate)
+        src_pru = ConverterPRUConfig.from_vsrc(
+            src_cfg, log_intermediate_node=log_intermediate
+        )
         super().send_virtual_converter_settings(src_pru)
 
         hrv_pru = HarvesterPRUConfig.from_vhrv(
@@ -262,7 +265,9 @@ class ShepherdDebug(ShepherdIO):
         return values[0]  # V_out_dac_raw
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
-    def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
+    def iterate_sampling(
+        self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0
+    ) -> int:
         # NOTE: this includes the harvester
         P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
         A_out_raw = self._cal.emulator.adc_C_A.si_to_raw(A_out_nA * 10**-9)
@@ -389,7 +394,7 @@ class ShepherdDebug(ShepherdIO):
             super().start(wait_blocking=True)
         return mode_old
 
-    def sample_from_pru(self, length_n_buffers: int = 10):
+    def sample_from_pru(self, length_n_buffers: int = 10) -> bytes | None:
         length_n_buffers = int(min(max(length_n_buffers, 1), 55))
         super().reinitialize_prus()
         time.sleep(0.1)

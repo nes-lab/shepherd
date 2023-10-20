@@ -16,7 +16,7 @@ include("../python-package/shepherd/calibration.py")
 # - id= is now tag=
 
 
-def assemble_window():
+def assemble_window() -> None:
     with dpg.window(
         tag="main",
         label="Shepherd Testing and Debug Tool",

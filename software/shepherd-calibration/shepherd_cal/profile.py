@@ -37,7 +37,7 @@ elem_list: list[str] = [
 
 
 class Profile:
-    def __init__(self, file: Path):
+    def __init__(self, file: Path) -> None:
         if not isinstance(file, Path):
             file = Path(file)
         if file.suffix != ".npz":
@@ -156,7 +156,7 @@ class Profile:
         )
         self.results[component] = result
 
-    def _prepare_filters(self, component: str):
+    def _prepare_filters(self, component: str) -> None:
         data = self.data[component]
         filter_c = (data["c_ref_A"] >= 3e-6) & (data["c_ref_A"] <= 40e-3)
         filter_v = (data.v_shp_V >= 1.0) & (data.v_shp_V <= 3.9)
@@ -194,7 +194,7 @@ class Profile:
     def get_stats(self) -> pd.DataFrame:
         return pd.concat(self.stats, axis=0, ignore_index=True)
 
-    def scatter_setpoints_stddev(self, component: str, filtered: bool = False):
+    def scatter_setpoints_stddev(self, component: str, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
@@ -237,7 +237,7 @@ class Profile:
         plt.close(fig)
         plt.clf()
 
-    def scatter_setpoints_dynamic(self, component: str, filtered: bool = False):
+    def scatter_setpoints_dynamic(self, component: str, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
@@ -290,7 +290,7 @@ class Profile:
         plt.close(fig)
         plt.clf()
 
-    def quiver_setpoints_offset(self, component: str, filtered: bool = False):
+    def quiver_setpoints_offset(self, component: str, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]

@@ -13,6 +13,7 @@ import time
 from contextlib import suppress
 from threading import Event
 from threading import Thread
+from types import TracebackType
 
 from .logger import log
 
@@ -22,10 +23,10 @@ with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
 
-def call_repeatedly(interval: float, func, *args):  # type: ignore
+def call_repeatedly(interval: float, func, *args):
     stopped = Event()
 
-    def loop():
+    def loop() -> None:
         while not stopped.wait(interval):
             # the first call is in `interval` secs
             func(*args)
@@ -51,13 +52,13 @@ class Launcher:
         pin_led: int = 22,
         pin_ack_watchdog: int = 68,
         service_name: str = "shepherd",
-    ):
+    ) -> None:
         self.pin_button = pin_button
         self.pin_led = pin_led
         self.pin_ack_watchdog = pin_ack_watchdog
         self.service_name = service_name
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
         self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
@@ -81,7 +82,13 @@ class Launcher:
 
         return self
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.gpio_led.close()
         self.gpio_button.close()
 
@@ -146,7 +153,7 @@ class Launcher:
             return False
         raise Exception(f"Unknown state { systemd_state }")
 
-    def set_service(self, requested_state: bool):
+    def set_service(self, requested_state: bool) -> bool:
         """Changes state of shepherd service.
 
         Args:

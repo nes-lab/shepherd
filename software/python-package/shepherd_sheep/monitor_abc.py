@@ -1,6 +1,7 @@
 import threading
 from abc import ABC
 from abc import abstractmethod
+from types import TracebackType
 
 import h5py
 from shepherd_core import Compression
@@ -42,7 +43,13 @@ class Monitor(ABC):
             type(self).__name__,
         )
 
-    def __exit__(self, *exc) -> None:  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.data["time"].resize((self.position,))
         log.info(
             "[%s] recorded %d events",

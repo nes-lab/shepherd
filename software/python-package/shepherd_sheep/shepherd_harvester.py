@@ -3,6 +3,8 @@ import platform
 import sys
 import time
 from contextlib import ExitStack
+from types import TracebackType
+from typing import Self
 
 from shepherd_core import local_tz
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
@@ -33,7 +35,7 @@ class ShepherdHarvester(ShepherdIO):
         self,
         cfg: HarvestTask,
         mode: str = "harvester",
-    ):
+    ) -> None:
         log.debug("ShepherdHarvester-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
@@ -84,7 +86,7 @@ class ShepherdHarvester(ShepherdIO):
             verbose=get_verbosity(),
         )
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         super().__enter__()
         super().set_power_state_emulator(False)
         super().set_power_state_recorder(True)
@@ -108,7 +110,13 @@ class ShepherdHarvester(ShepherdIO):
             # ⤷ could be as low as ~ 10us
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.stack.close()
         super().__exit__()
 
@@ -146,7 +154,7 @@ class ShepherdHarvester(ShepherdIO):
             except ShepherdIOException as e:
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception"
+                        "Caught unforgivable ShepherdIO-Exception",
                     ) from e
                 log.warning("Caught an Exception", exc_info=e)
                 continue

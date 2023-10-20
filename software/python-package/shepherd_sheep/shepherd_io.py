@@ -9,6 +9,8 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 """
 import time
 from contextlib import suppress
+from types import TracebackType
+from typing import Self
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -22,6 +24,7 @@ from shepherd_core.data_models.testbed import TargetPort
 from . import commons
 from . import sysfs_interface as sfs
 from .logger import log
+from .shared_memory import DataBuffer
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
 
@@ -43,7 +46,7 @@ gpio_pin_nums = {
 
 
 class ShepherdIOException(Exception):
-    def __init__(self, message: str, id_num: int = 0, value: int = 0):
+    def __init__(self, message: str, id_num: int = 0, value: int = 0) -> None:
         super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
         self.id_num = id_num
         self.value = value
@@ -64,7 +67,7 @@ class ShepherdIO:
     _instance = None
 
     @classmethod
-    def __new__(cls, *_args, **_kwds):
+    def __new__(cls, *_args, **_kwds) -> Self:
         """Implements singleton class."""
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)
@@ -79,7 +82,7 @@ class ShepherdIO:
         mode: str,
         trace_iv: PowerTracing | None,
         trace_gpio: GpioTracing | None,
-    ):
+    ) -> None:
         """Initializes relevant variables.
 
         Args:
@@ -110,11 +113,11 @@ class ShepherdIO:
         self.n_buffers = 0
         self.shared_mem: SharedMemory
 
-    def __del__(self):
+    def __del__(self) -> None:
         log.debug("Now deleting ShepherdIO")
         ShepherdIO._instance = None
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         try:
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
@@ -142,7 +145,13 @@ class ShepherdIO:
         sfs.wait_for_state("idle", 3)
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         log.info("Now exiting ShepherdIO")
         self._cleanup()
         ShepherdIO._instance = None
@@ -158,7 +167,7 @@ class ShepherdIO:
         """
         sfs.write_pru_msg(msg_type, values)
 
-    def _get_msg(self, timeout_n: int = 5):
+    def _get_msg(self, timeout_n: int = 5) -> tuple[int, list[int]]:
         """Tries to retrieve formatted message from PRU0.
 
         Args:
@@ -175,7 +184,7 @@ class ShepherdIO:
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
 
     @staticmethod
-    def _flush_msgs():
+    def _flush_msgs() -> None:
         """Flushes msg_channel by reading all available bytes."""
         while True:
             try:
@@ -214,7 +223,7 @@ class ShepherdIO:
         sfs.set_stop(force=True)  # forces idle
         sfs.wait_for_state("idle", 5)
 
-    def refresh_shared_mem(self):
+    def refresh_shared_mem(self) -> None:
         if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMemory):
             self.shared_mem.__exit__()
 
@@ -251,7 +260,7 @@ class ShepherdIO:
         )
         self.shared_mem.__enter__()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         log.debug("ShepherdIO is commanded to power down / cleanup")
         count = 1
         while count < 6 and sfs.get_state() != "idle":
@@ -487,7 +496,9 @@ class ShepherdIO:
         """
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
-    def get_buffer(self, timeout_n: int = 10, verbose: bool = False):
+    def get_buffer(
+        self, timeout_n: int = 10, verbose: bool = False
+    ) -> tuple[int, DataBuffer]:
         """Reads a data buffer from shared memory.
 
         Polls the msg-channel for a message from PRU0 and, if the message
@@ -506,8 +517,8 @@ class ShepherdIO:
         """
 
         while True:
-            msg_type, value = self._get_msg(timeout_n)
-            value = value[0]
+            msg_type, values = self._get_msg(timeout_n)
+            value = values[0]
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
                 ts_start = time.time()

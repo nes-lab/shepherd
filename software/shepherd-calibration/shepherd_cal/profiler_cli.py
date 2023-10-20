@@ -66,7 +66,7 @@ def measure(
     cape_serial: str = serial_opt_t,
     quiet: bool = quiet_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Measure profile-data for shepherd cape"""
     cli_setup_callback(verbose)
     if not any([harvester, emulator]):
@@ -141,7 +141,7 @@ def analyze(
     outfile: Path | None = out_file_opt_t,
     plot: bool = plot_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Analyze profile-data"""
     cli_setup_callback(verbose)
     analyze_directory(infiles, outfile, do_plots=plot)

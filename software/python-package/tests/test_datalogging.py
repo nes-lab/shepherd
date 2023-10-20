@@ -44,7 +44,7 @@ def cal_cape() -> CalibrationCape:
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_create_h5writer(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
+def test_create_h5writer(mode: str, tmp_path: Path, cal_cape: CalibrationCape) -> None:
     d = tmp_path / f"{ mode }.h5"
     h = Writer(file_path=d, cal_data=cal_cape[mode], mode=mode)
     # assert not exists
@@ -76,9 +76,9 @@ def test_create_h5writer_with_force(tmp_path: Path, cal_cape: CalibrationCape) -
 
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_h5writer_data(
-    mode,
+    mode: str,
     tmp_path: Path,
-    data_buffer,
+    data_buffer: DataBuffer,
     cal_cape: CalibrationCape,
 ) -> None:
     d = tmp_path / "harvest.h5"
@@ -95,7 +95,11 @@ def test_h5writer_data(
 
 
 @pytest.mark.parametrize("mode", ["harvester"])
-def test_calibration_logging(mode, tmp_path: Path, cal_cape: CalibrationCape) -> None:
+def test_calibration_logging(
+    mode: str,
+    tmp_path: Path,
+    cal_cape: CalibrationCape,
+) -> None:
     d = tmp_path / "recording.h5"
     with Writer(file_path=d, mode=mode, cal_data=cal_cape.harvester) as _:
         pass

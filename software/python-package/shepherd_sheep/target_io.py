@@ -57,7 +57,7 @@ target_pins: list[dict] = [  # pin-order from target-connector
 
 
 class TargetIO:
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes relevant variables.
 
         Args:

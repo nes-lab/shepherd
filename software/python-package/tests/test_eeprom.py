@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import pytest
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models.base.calibration import CapeData
@@ -20,7 +22,7 @@ def data_test_string() -> bytes:
 
 
 @pytest.fixture()
-def eeprom_open(request, fake_hardware):
+def eeprom_open(request, fake_hardware) -> Generator[EEPROM, None, None]:
     if fake_hardware is not None:
         fake_hardware.create_file("/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768)
         request.applymarker(
@@ -34,7 +36,7 @@ def eeprom_open(request, fake_hardware):
 
 
 @pytest.fixture()
-def eeprom_retained(eeprom_open):
+def eeprom_retained(eeprom_open: EEPROM) -> Generator[EEPROM, None, None]:
     data = eeprom_open._read(0, 1024)
     for i in range(256):
         eeprom_open._write(i * 4, b"\xDE\xAD\xBE\xEF")
@@ -43,29 +45,31 @@ def eeprom_retained(eeprom_open):
 
 
 @pytest.fixture()
-def eeprom_with_data(eeprom_retained: EEPROM, cape_data: CapeData) -> EEPROM:
+def eeprom_with_data(
+    eeprom_retained: EEPROM, cape_data: CapeData
+) -> Generator[EEPROM, None, None]:
     eeprom_retained._write_cape_data(cape_data)
-    return eeprom_retained
+    yield eeprom_retained
 
 
 @pytest.fixture()
 def eeprom_with_calibration(
     eeprom_retained: EEPROM,
     cal_cape: CalibrationCape,
-) -> EEPROM:
+) -> Generator[EEPROM, None, None]:
     eeprom_retained.write_calibration(cal_cape)
-    return eeprom_retained
+    yield eeprom_retained
 
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_raw(eeprom_open) -> None:
+def test_read_raw(eeprom_open: EEPROM) -> None:
     eeprom_open._read(0, 4)
 
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_write_raw(eeprom_retained, data_test_string) -> None:
+def test_write_raw(eeprom_retained: EEPROM, data_test_string: bytes) -> None:
     eeprom_retained._write(0, data_test_string)
     data = eeprom_retained._read(0, len(data_test_string))
     assert data == data_test_string
@@ -73,7 +77,7 @@ def test_write_raw(eeprom_retained, data_test_string) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_value(eeprom_with_data, cape_data: CapeData) -> None:
+def test_read_value(eeprom_with_data: EEPROM, cape_data: CapeData) -> None:
     with pytest.raises(KeyError):
         _ = eeprom_with_data["some non-sense parameter"]
     assert eeprom_with_data["version"] == cape_data["version"]
@@ -81,7 +85,7 @@ def test_read_value(eeprom_with_data, cape_data: CapeData) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_write_value(eeprom_retained, cape_data) -> None:
+def test_write_value(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
     with pytest.raises(KeyError):
         eeprom_retained["some non-sense parameter"] = "some data"
 
@@ -91,7 +95,7 @@ def test_write_value(eeprom_retained, cape_data) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_write_capedata(eeprom_retained, cape_data) -> None:
+def test_write_capedata(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
     eeprom_retained._write_cape_data(cape_data)
     for key, value in cape_data.items():
         if isinstance(value, str):
@@ -102,7 +106,7 @@ def test_write_capedata(eeprom_retained, cape_data) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_capedata(eeprom_with_data, cape_data: CapeData) -> None:
+def test_read_capedata(eeprom_with_data: EEPROM, cape_data: CapeData) -> None:
     cape_data = eeprom_with_data._read_cape_data()
     for key in cape_data.keys():
         assert cape_data[key] == cape_data[key]
@@ -110,7 +114,7 @@ def test_read_capedata(eeprom_with_data, cape_data: CapeData) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_write_calibration(eeprom_retained, cal_cape: CalibrationCape) -> None:
+def test_write_calibration(eeprom_retained: EEPROM, cal_cape: CalibrationCape) -> None:
     eeprom_retained.write_calibration(cal_cape)
     cal_restored = eeprom_retained.read_calibration()
     for component in ["harvester", "emulator"]:
@@ -119,7 +123,10 @@ def test_write_calibration(eeprom_retained, cal_cape: CalibrationCape) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_calibration(eeprom_with_calibration, cal_cape: CalibrationCape) -> None:
+def test_read_calibration(
+    eeprom_with_calibration: EEPROM,
+    cal_cape: CalibrationCape,
+) -> None:
     cal_restored = eeprom_with_calibration.read_calibration()
     for component in ["harvester", "emulator"]:
         assert cal_restored[component].get_hash() == cal_cape[component].get_hash()

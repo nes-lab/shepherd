@@ -3,6 +3,8 @@ import sys
 import time
 from contextlib import ExitStack
 from datetime import datetime
+from types import TracebackType
+from typing import Self
 
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
@@ -39,7 +41,7 @@ class ShepherdEmulator(ShepherdIO):
         self,
         cfg: EmulationTask,
         mode: str = "emulator",
-    ):
+    ) -> None:
         log.debug("ShepherdEmulator-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
@@ -137,7 +139,7 @@ class ShepherdEmulator(ShepherdIO):
         for pin in range(len(target_pins)):
             self._io.set_pin_direction(pin, pdir=True)  # True = Inp
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         super().__enter__()
         super().set_power_state_recorder(False)
         super().set_power_state_emulator(True)
@@ -176,11 +178,19 @@ class ShepherdEmulator(ShepherdIO):
             # ⤷ could be as low as ~ 10us
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.stack.close()
         super().__exit__()
 
-    def return_buffer(self, index: int, buffer: DataBuffer, verbose: bool = False):
+    def return_buffer(
+        self, index: int, buffer: DataBuffer, verbose: bool = False
+    ) -> None:
         ts_start = time.time() if verbose else 0
 
         # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
@@ -196,7 +206,7 @@ class ShepherdEmulator(ShepherdIO):
                 1e3 * (time.time() - ts_start),
             )
 
-    def run(self):
+    def run(self) -> None:
         self.start(self.start_time, wait_blocking=False)
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
@@ -219,7 +229,7 @@ class ShepherdEmulator(ShepherdIO):
             except ShepherdIOException as e:
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception"
+                        "Caught unforgivable ShepherdIO-Exception",
                     ) from e
                 log.warning("Caught an Exception", exc_info=e)
                 continue
@@ -247,5 +257,5 @@ class ShepherdEmulator(ShepherdIO):
                     break
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception"
+                        "Caught unforgivable ShepherdIO-Exception",
                     ) from e

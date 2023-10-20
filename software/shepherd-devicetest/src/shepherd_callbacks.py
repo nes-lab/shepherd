@@ -161,7 +161,7 @@ def shepherd_power_callback(sender, element_data, user_data) -> None:
         shepherd_io.set_shepherd_pcb_power(able_dict[element_data])
 
 
-def update_power_state_shepherd():
+def update_power_state_shepherd() -> None:
     if shepherd_io is not None:
         value = int(shepherd_io.get_power_state_shepherd())
         dpg.set_value("shepherd_pwr", list(able_dict.keys())[value])
@@ -174,7 +174,7 @@ def shepherd_state_callback(sender, element_data, user_data) -> None:
     update_gui_elements()
 
 
-def update_shepherd_state():
+def update_shepherd_state() -> None:
     dpg.set_value("shepherd_state", stateTrans_dict[shepherd_io.get_shepherd_state()])
 
 
@@ -183,7 +183,7 @@ def target_power_callback(sender, element_data, user_data) -> None:
     shepherd_io.select_port_for_power_tracking(port)
 
 
-def update_target_power():
+def update_target_power() -> None:
     value = int(not shepherd_io.get_main_target_for_power())
     dpg.set_value("target_pwr", list(tgt_dict)[value])  # TODO: twisted
 
@@ -193,7 +193,7 @@ def target_io_callback(sender, element_data, user_data) -> None:
     shepherd_io.select_port_for_io_interface(port)
 
 
-def update_target_io():
+def update_target_io() -> None:
     value = int(not shepherd_io.get_main_target_for_io())
     dpg.set_value("target_io", list(tgt_dict)[value])  # TODO: twisted
 
@@ -203,7 +203,7 @@ def io_level_converter_callback(sender, element_data, user_data) -> None:
     shepherd_io.set_io_level_converter(state)
 
 
-def update_io_level_state():
+def update_io_level_state() -> None:
     value = int(shepherd_io.get_target_io_level_conv())
     dpg.set_value("io_lvl_converter", list(able_dict.keys())[value])
 

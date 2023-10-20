@@ -4,6 +4,8 @@ import struct
 import time
 from dataclasses import dataclass
 from datetime import timedelta
+from types import TracebackType
+from typing import Self
 
 import numpy as np
 from shepherd_core.data_models import GpioTracing
@@ -26,11 +28,11 @@ class GPIOEdges:
         self,
         timestamps_ns: np.ndarray | None = None,
         values: np.ndarray | None = None,
-    ):
+    ) -> None:
         self.timestamps_ns = timestamps_ns if timestamps_ns is not None else np.empty(0)
         self.values = values if values is not None else np.empty(0)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return min(self.values.size, self.timestamps_ns.size)
 
 
@@ -50,7 +52,7 @@ class DataBuffer:
         gpio_edges: GPIOEdges | None = None,
         util_mean: float = 0,
         util_max: float = 0,
-    ):
+    ) -> None:
         self.timestamp_ns = timestamp_ns if timestamp_ns is not None else 0
         self.voltage = voltage
         self.current = current
@@ -61,7 +63,7 @@ class DataBuffer:
         self.util_mean = util_mean
         self.util_max = util_max
 
-    def __len__(self):
+    def __len__(self) -> int:
         return min(self.voltage.size, self.current.size)
 
 
@@ -84,7 +86,7 @@ class SharedMemory:
         samples_per_buffer: int,
         trace_iv: PowerTracing | None,
         trace_gpio: GpioTracing | None,
-    ):
+    ) -> None:
         """Initializes relevant parameters for shared memory area.
 
         Args:
@@ -157,10 +159,16 @@ class SharedMemory:
             offset=self.address,
         )
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         if self.mapped_mem is not None:
             self.mapped_mem.close()
         if self.devmem_fd is not None:
@@ -369,7 +377,7 @@ class SharedMemory:
         self.mapped_mem.write(voltage.tobytes())
         self.mapped_mem.write(current.tobytes())
 
-    def write_firmware(self, data: bytes):
+    def write_firmware(self, data: bytes) -> int:
         data_size = len(data)
         if data_size > self.size:
             raise ValueError("firmware file is larger than the SharedMEM-Buffer")

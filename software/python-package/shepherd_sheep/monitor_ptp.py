@@ -2,6 +2,7 @@ import os
 import subprocess  # noqa: S404
 import threading
 import time
+from types import TracebackType
 
 import h5py
 from shepherd_core import Compression
@@ -50,7 +51,13 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
-    def __exit__(self, *exc) -> None:  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)

@@ -83,7 +83,7 @@ def local_herd(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def stopped_herd(cli_runner: CliRunner):
+def stopped_herd(cli_runner: CliRunner) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active

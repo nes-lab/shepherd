@@ -9,8 +9,10 @@ HDF5 files.
 :license: MIT, see LICENSE for more details.
 """
 from pathlib import Path
+from types import TracebackType
 from typing import TYPE_CHECKING
 from typing import ClassVar
+from typing import Self
 
 if TYPE_CHECKING:
     import h5py
@@ -70,7 +72,7 @@ class Writer(CoreWriter):
         verbose: bool | None = True,
         samples_per_buffer: int = 10_000,
         samplerate_sps: int = 100_000,
-    ):
+    ) -> None:
         # hopefully overwrite defaults from Reader
         self.samples_per_buffer: int = samples_per_buffer  # TODO: test
         self.samplerate_sps: int = samplerate_sps
@@ -113,7 +115,7 @@ class Writer(CoreWriter):
         self.sysutil_log_enabled: bool = True
         self.monitors: list[Monitor] = []
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Initializes the structure of the HDF5 file
 
         HDF5 is hierarchically structured and before writing data, we have to
@@ -167,7 +169,13 @@ class Writer(CoreWriter):
 
         return self
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         # trim over-provisioned parts
         self.grp_data["time"].resize((self.data_pos,))
         self.grp_data["voltage"].resize((self.data_pos,))

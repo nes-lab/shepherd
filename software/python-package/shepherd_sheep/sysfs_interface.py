@@ -95,7 +95,7 @@ def remove_kernel_module() -> None:
     raise SystemError("Failed to unload shepherd kernel module.")
 
 
-def reload_kernel_module():
+def reload_kernel_module() -> None:
     remove_kernel_module()
     load_kernel_module()
 
@@ -399,7 +399,8 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
 
     wait_for_state("idle", 3.0)
     with (sysfs_path / "virtual_converter_settings").open(
-        "w", encoding="utf-8"
+        "w",
+        encoding="utf-8",
     ) as file:
         file.write(output)
 
@@ -438,7 +439,8 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
 
     wait_for_state("idle", 3.0)
     with (sysfs_path / "virtual_harvester_settings").open(
-        "w", encoding="utf-8"
+        "w",
+        encoding="utf-8",
     ) as file:
         file.write(output)
 
@@ -483,7 +485,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
-def read_pru_msg() -> tuple:
+def read_pru_msg() -> tuple[int, list[int]]:
     """
     Returns:
     """
@@ -516,7 +518,7 @@ def write_programmer_ctrl(
     pin_tdo: int = 0,
     pin_tms: int = 0,
     pin_dir_tms: int = 0,
-):
+) -> None:
     # check for validity
     pin_list = [pin_tck, pin_tdio, pin_dir_tdio, pin_tdo, pin_tms, pin_dir_tms]
     pin_set = set(pin_list)
@@ -542,7 +544,8 @@ def write_programmer_ctrl(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
         with (sysfs_path / "programmer" / attribute).open(
-            "w", encoding="utf-8"
+            "w",
+            encoding="utf-8",
         ) as file:
             log.debug("\t%s = '%s'", attribute, value)
             file.write(str(value))

@@ -38,7 +38,7 @@ INSTR_PROFILE_SHP = """
 
 
 class Profiler:
-    def __init__(self, calibrator: Calibrator, *, short: bool = False):
+    def __init__(self, calibrator: Calibrator, *, short: bool = False) -> None:
         self._cal: Calibrator = calibrator
 
         if short:

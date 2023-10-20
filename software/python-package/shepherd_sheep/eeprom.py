@@ -13,6 +13,8 @@ through Linux I2C device driver.
 import os
 import struct
 from contextlib import suppress
+from types import TracebackType
+from typing import Self
 
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CapeData
@@ -47,7 +49,7 @@ class EEPROM:
 
     """
 
-    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49):
+    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49) -> None:
         """Initializes EEPROM by bus number and address.
 
         Args:
@@ -59,12 +61,19 @@ class EEPROM:
         self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.fd = os.open(self.dev_path, os.O_RDWR | os.O_SYNC)
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         os.close(self.fd)
+        pass
 
     def _read(self, address: int, n_bytes: int) -> bytes:
         """Reads a given number of bytes from given address.
@@ -95,7 +104,7 @@ class EEPROM:
             raise
         self._write_protect_pin.write(True)
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> bytes | str:
         """Retrieves attribute from EEPROM.
 
         Args:
@@ -114,7 +123,7 @@ class EEPROM:
             return str_data[0].decode("utf-8")
         return raw_data
 
-    def __setitem__(self, key: str, value):  # type: ignore
+    def __setitem__(self, key: str, value: str | bytes) -> None:
         """Writes attribute to EEPROM.
 
         Args:

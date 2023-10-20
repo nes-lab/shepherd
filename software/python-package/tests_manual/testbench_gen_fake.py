@@ -10,7 +10,7 @@ tmp_path = Path("/var/shepherd/recordings")
 store_path = tmp_path / "harvest_example.h5"
 
 
-def random_data(length):
+def random_data(length: int) -> np.ndarray:
     rng = np.random.default_rng()
     return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 

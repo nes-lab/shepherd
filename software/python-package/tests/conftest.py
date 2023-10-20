@@ -1,8 +1,11 @@
 import gc
+from collections.abc import Generator
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 import pytest
+from click.testing import CliRunner
 from shepherd_sheep.sysfs_interface import load_kernel_module
 from shepherd_sheep.sysfs_interface import remove_kernel_module
 
@@ -20,7 +23,7 @@ def check_beagleboard() -> bool:
         pytest.param("fake_hardware", marks=pytest.mark.fake_hardware),
     ],
 )
-def fake_hardware(request):
+def fake_hardware(request) -> Generator[Any, None, None]:
     if request.param == "fake_hardware":
         request.fixturenames.append("fs")  # needs pyfakefs installed
         fake_sysfs = request.getfixturevalue("fs")
@@ -58,7 +61,7 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 @pytest.fixture()
-def shepherd_up(fake_hardware, shepherd_down):
+def shepherd_up(fake_hardware, shepherd_down: None) -> Generator[None, None, None]:
     if fake_hardware is not None:
         files = [
             ("/sys/shepherd/state", "idle"),
@@ -99,3 +102,8 @@ def shepherd_up(fake_hardware, shepherd_down):
 def shepherd_down(fake_hardware) -> None:
     if fake_hardware is None:
         remove_kernel_module()
+
+
+@pytest.fixture
+def cli_runner() -> CliRunner:
+    return CliRunner()
