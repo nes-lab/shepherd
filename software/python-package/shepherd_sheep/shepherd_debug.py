@@ -325,8 +325,7 @@ class ShepherdDebug(ShepherdIO):
     def get_gpio_state(self, num: int) -> bool:
         if self._io is not None:
             return self._io.get_pin_state(num)
-        else:
-            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
+        log.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return False
 
     def set_gpio_direction(self, num: int, pdir: bool) -> None:
@@ -338,16 +337,14 @@ class ShepherdDebug(ShepherdIO):
     def get_gpio_direction(self, num: int) -> bool:
         if self._io is not None:
             return self._io.get_pin_direction(num)
-        else:
-            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
-            return True
+        log.debug("Error: IO is not enabled in this shepherd-debug-instance")
+        return True
 
     def get_gpio_info(self) -> list:
         if self._io is not None:
             return self._io.pin_names
-        else:
-            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
-            return []
+        log.debug("Error: IO is not enabled in this shepherd-debug-instance")
+        return []
 
     def set_power_state_emulator(self, state: bool) -> None:
         super().set_power_state_emulator(state)

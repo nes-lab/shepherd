@@ -112,8 +112,7 @@ class EEPROM:
         if eeprom_format[key]["type"] == "str":
             str_data = raw_data.split(b"\x00")
             return str_data[0].decode("utf-8")
-        else:
-            return raw_data
+        return raw_data
 
     def __setitem__(self, key: str, value):  # type: ignore
         """Writes attribute to EEPROM.
@@ -213,19 +212,19 @@ class EEPROM:
 def retrieve_calibration(use_default_cal: bool = False) -> CalibrationCape:
     if use_default_cal:
         return CalibrationCape()
-    else:
-        try:
-            with EEPROM() as storage:
-                return storage.read_calibration()
-        except ValueError:
-            log.warning(
-                "Couldn't read calibration from EEPROM (ValueError). "
-                "Falling back to default values.",
-            )
-            return CalibrationCape()
-        except FileNotFoundError:
-            log.warning(
-                "Couldn't read calibration from EEPROM (FileNotFoundError). "
-                "Falling back to default values.",
-            )
-            return CalibrationCape()
+
+    try:
+        with EEPROM() as storage:
+            return storage.read_calibration()
+    except ValueError:
+        log.warning(
+            "Couldn't read calibration from EEPROM (ValueError). "
+            "Falling back to default values.",
+        )
+        return CalibrationCape()
+    except FileNotFoundError:
+        log.warning(
+            "Couldn't read calibration from EEPROM (FileNotFoundError). "
+            "Falling back to default values.",
+        )
+        return CalibrationCape()

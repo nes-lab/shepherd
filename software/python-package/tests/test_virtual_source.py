@@ -22,10 +22,8 @@ def src_cfg(request) -> VirtualSourceConfig:
                 here = Path(__file__).resolve()
                 path = here.parent / src_name
             return VirtualSourceConfig.from_file(path)
-        else:
-            return VirtualSourceConfig(name=src_name)
-    else:
-        assert 0
+        return VirtualSourceConfig(name=src_name)
+    raise AssertionError
 
 
 @pytest.fixture
@@ -74,7 +72,7 @@ def pyt_vsource(
 @pytest.fixture
 def reference_vss() -> dict:
     # keep in sync with "_test_config_virtsource.yaml"
-    vss = {
+    return {
         "C_intermediate_uF": 100 * (10**0),
         "V_intermediate_init_mV": 3000,
         "eta_in": 0.5,
@@ -84,7 +82,6 @@ def reference_vss() -> dict:
         "V_output_mV": 2000,
         "t_sample_s": 10 * (10**-6),
     }
-    return vss
 
 
 def difference_percent(val1: float, val2: float, offset: float) -> float:

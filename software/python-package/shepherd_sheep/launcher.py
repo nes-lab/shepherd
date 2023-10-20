@@ -142,7 +142,7 @@ class Launcher:
 
         if systemd_state == "active":
             return True
-        elif systemd_state == "inactive":
+        if systemd_state == "inactive":
             return False
         raise Exception(f"Unknown state { systemd_state }")
 

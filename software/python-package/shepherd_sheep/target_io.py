@@ -126,13 +126,12 @@ class TargetIO:
         dir_param = target_pins[num]["dir"]
         if isinstance(dir_param, str):
             return dir_param == "I"
-        elif isinstance(dir_param, int):
+        if isinstance(dir_param, int):
             dir_pin = self.dirs[dir_param]
             return not dir_pin.read()
-        else:
-            raise RuntimeError(
-                "Something went wrong - could not determine pin-direction",
-            )
+        raise RuntimeError(
+            "Something went wrong - could not determine pin-direction",
+        )
 
     def set_pin_direction(self, num: int, pdir: bool) -> bool:
         """
@@ -148,7 +147,7 @@ class TargetIO:
             # not changeable
             pin_state = dir_param == "I"
             return pin_state == pdir
-        elif isinstance(dir_param, int):
+        if isinstance(dir_param, int):
             pins_affected = [
                 pin["name"] for pin in target_pins if pin["dir"] == dir_param
             ]

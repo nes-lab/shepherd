@@ -170,8 +170,7 @@ class SharedMemory:
     def timedelta_to_ns(delta: timedelta | None, default_s: int = 0) -> int:
         if isinstance(delta, timedelta):
             return int(delta.total_seconds() * 10**9)
-        else:
-            return int(timedelta(seconds=default_s).total_seconds() * 10**9)
+        return int(timedelta(seconds=default_s).total_seconds() * 10**9)
 
     def config_tracers(self, timestamp_ns: int) -> None:
         if self.trace_iv is not None:

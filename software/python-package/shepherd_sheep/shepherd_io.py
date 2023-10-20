@@ -64,16 +64,15 @@ class ShepherdIO:
     _instance = None
 
     @classmethod
-    def __new__(cls, *args, **kwds):
+    def __new__(cls, *_args, **_kwds):
         """Implements singleton class."""
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)
             ShepherdIO._instance = new_class
             # was raising on reuse and stored weakref.ref before
             return new_class
-        else:
-            log.debug("ShepherdIO-Singleton reused")
-            return ShepherdIO._instance
+        log.debug("ShepherdIO-Singleton reused")
+        return ShepherdIO._instance
 
     def __init__(
         self,
@@ -332,11 +331,11 @@ class ShepherdIO:
     def convert_target_port_to_bool(target: TargetPort | str | bool | None) -> bool:
         if target is None:
             return True
-        elif isinstance(target, str):
+        if isinstance(target, str):
             return TargetPort[target] == TargetPort.A
-        elif isinstance(target, TargetPort):
+        if isinstance(target, TargetPort):
             return target == TargetPort.A
-        elif isinstance(target, bool):
+        if isinstance(target, bool):
             return target
         raise ValueError(
             f"Parameter 'target' must be A or B (was {target}, type {type(target)})",
@@ -521,31 +520,31 @@ class ShepherdIO:
                     )
                 return value, buf
 
-            elif msg_type == commons.MSG_DBG_PRINT:
+            if msg_type == commons.MSG_DBG_PRINT:
                 log.info("Received cmd to print: %d", value)
                 continue
 
-            elif msg_type == commons.MSG_DEP_ERR_INCMPLT:
+            if msg_type == commons.MSG_DEP_ERR_INCMPLT:
                 raise ShepherdIOException(
                     "Got incomplete buffer",
                     commons.MSG_DEP_ERR_INCMPLT,
                     value,
                 )
 
-            elif msg_type == commons.MSG_DEP_ERR_INVLDCMD:
+            if msg_type == commons.MSG_DEP_ERR_INVLDCMD:
                 raise ShepherdIOException(
                     "PRU received invalid command",
                     commons.MSG_DEP_ERR_INVLDCMD,
                     value,
                 )
-            elif msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
+            if msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
                 raise ShepherdIOException(
                     "PRU ran out of buffers",
                     commons.MSG_DEP_ERR_NOFREEBUF,
                     value,
                 )
-            else:
-                raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
-                    f"got { msg_type }[{ value }]",
-                )
+
+            raise ShepherdIOException(
+                f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
+                f"got { msg_type }[{ value }]",
+            )

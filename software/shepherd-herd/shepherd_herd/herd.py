@@ -525,10 +525,10 @@ class Herd:
         if self.check_status(warn=True):
             logger.info("-> won't start while shepherd-instances are active")
             return 1
-        else:
-            replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
-            self.print_output(replies)
-            return max([reply.exited for reply in replies.values()])
+
+        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
+        self.print_output(replies)
+        return max([reply.exited for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
@@ -548,8 +548,7 @@ class Herd:
         else:
             replies = self.run_cmd(sudo=True, cmd="poweroff")
             logger.info("Command for powering off nodes was issued")
-        exit_code = max([reply.exited for reply in replies.values()])
-        return exit_code
+        return max([reply.exited for reply in replies.values()])
 
     @validate_call
     def await_stop(self, timeout: int = 30) -> bool:
@@ -580,7 +579,7 @@ class Herd:
             path=Path(output_path) / "inventory_server.yaml",
             minimal=True,
         )
-        failed = self.get_file(
+        return self.get_file(
             file_path,
             output_path,
             timestamp=False,
@@ -588,7 +587,6 @@ class Herd:
             delete_src=True,
         )
         # TODO: best case - add all to one file or a new inventories-model?
-        return failed
 
     @validate_call
     def run_task(self, config: Path | ShpModel, attach: bool = False) -> int:
@@ -637,4 +635,3 @@ class Herd:
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
                     raise RuntimeError("FN not finished, not needed ATM")  # TODO
         return failed
-        pass

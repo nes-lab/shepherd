@@ -18,16 +18,14 @@ def cnv_cfg() -> ConverterPRUConfig:
     name = "_test_config_virtsource.yaml"
     path = here.parent / name
     src_cfg = VirtualSourceConfig.from_file(path)
-    cnv_pru = ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate_node=False)
-    return cnv_pru
+    return ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate_node=False)
 
 
 @pytest.fixture
 def hrv_cfg() -> HarvesterPRUConfig:
     path = Path(__file__).parent / "_test_config_harvest.yaml"
     hrv_cfg = HarvestTask.from_file(path.as_posix())
-    hrv_pru = HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
-    return hrv_pru
+    return HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
 
 
 @pytest.fixture()

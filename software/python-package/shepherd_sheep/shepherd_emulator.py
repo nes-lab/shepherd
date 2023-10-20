@@ -60,8 +60,7 @@ class ShepherdEmulator(ShepherdIO):
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
             if self.cfg.abort_on_error:
                 raise ValueError(msg)
-            else:
-                log.error(msg)
+            log.error(msg)
         if not self.reader.is_valid() and self.cfg.abort_on_error:
             raise RuntimeError("Input-File is not valid!")
 
