@@ -2,7 +2,6 @@ import os
 import subprocess  # noqa: S404
 import threading
 import time
-from typing import Optional
 
 import h5py
 from shepherd_core import Compression

@@ -3,7 +3,6 @@ import sys
 import time
 from contextlib import ExitStack
 from datetime import datetime
-from typing import Optional
 
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries

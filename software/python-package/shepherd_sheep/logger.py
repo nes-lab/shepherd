@@ -1,7 +1,6 @@
 import logging.handlers
 import multiprocessing
 import sys
-from typing import Union
 
 import chromalog
 from shepherd_core.logger import set_log_verbose_level

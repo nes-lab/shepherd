@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import time
 from pathlib import Path
-from typing import Dict
-from typing import Optional
-from typing import Union
 
 import msgpack
 import msgpack_numpy

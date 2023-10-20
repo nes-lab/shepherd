@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 logger = logging.getLogger("shp.calTool")
 logger.setLevel(logging.INFO)

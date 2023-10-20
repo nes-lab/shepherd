@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 from shepherd_core.logger import set_log_verbose_level
 

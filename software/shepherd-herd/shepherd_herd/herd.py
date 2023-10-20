@@ -8,11 +8,6 @@ from datetime import datetime
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import yaml
 from fabric import Connection
@@ -69,7 +64,7 @@ class Herd:
             hostnames = {hostname: hostname for hostname in hostlist}
         else:
             # look at all these directories for inventory-file
-            if inventory in ["", None]:
+            if inventory in {"", None}:
                 inventories = [
                     "/etc/shepherd/herd.yml",
                     "~/herd.yml",

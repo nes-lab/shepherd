@@ -1,5 +1,4 @@
 import threading
-from typing import Optional
 
 import h5py
 from shepherd_core import Compression

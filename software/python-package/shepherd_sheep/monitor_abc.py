@@ -1,7 +1,6 @@
 import threading
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
 
 import h5py
 from shepherd_core import Compression

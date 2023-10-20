@@ -9,3 +9,9 @@
 [submodule "targets"]
 	path = software/shepherd-targets
 	url = https://github.com/orgua/shepherd-targets.git
+
+# helpful commands:
+# git submodule update --init --recursive
+# git submodule update --recursive --remote
+# git submodule foreach git reset --hard
+

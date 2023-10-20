@@ -1,9 +1,6 @@
 import contextlib
 import time
 from typing import NoReturn
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import msgpack
 import msgpack_numpy
@@ -76,17 +73,17 @@ class ShepherdDebug(ShepherdIO):
         Returns:
             Binary ADC value read from corresponding channel
         """
-        if channel.lower() in ["hrv_a_in", "hrv_i_in", "a_in", "i_in"]:
+        if channel.lower() in {"hrv_a_in", "hrv_i_in", "a_in", "i_in"}:
             channel_no = 0
-        elif channel.lower() in ["hrv_v_in", "v_in"]:
+        elif channel.lower() in {"hrv_v_in", "v_in"}:
             channel_no = 1
-        elif channel.lower() in [
+        elif channel.lower() in {
             "emu",
             "emu_a_out",
             "emu_i_out",
             "a_out",
             "i_out",
-        ]:
+        }:
             channel_no = 2
         else:
             raise ValueError(f"ADC channel { channel } unknown")
@@ -320,33 +317,33 @@ class ShepherdDebug(ShepherdIO):
         return self._cal[component][channel].si_to_raw(value)
 
     def set_gpio_one_high(self, num: int) -> None:
-        if not (self._io is None):
+        if self._io is not None:
             self._io.one_high(num)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def get_gpio_state(self, num: int) -> bool:
-        if not (self._io is None):
+        if self._io is not None:
             return self._io.get_pin_state(num)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return False
 
     def set_gpio_direction(self, num: int, pdir: bool) -> None:
-        if not (self._io is None):
+        if self._io is not None:
             self._io.set_pin_direction(num, pdir)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def get_gpio_direction(self, num: int) -> bool:
-        if not (self._io is None):
+        if self._io is not None:
             return self._io.get_pin_direction(num)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
             return True
 
     def get_gpio_info(self) -> list:
-        if not (self._io is None):
+        if self._io is not None:
             return self._io.pin_names
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")

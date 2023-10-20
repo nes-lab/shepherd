@@ -9,9 +9,6 @@ HDF5 files.
 :license: MIT, see LICENSE for more details.
 """
 from pathlib import Path
-from typing import List
-from typing import Optional
-from typing import Union
 
 import h5py
 import numpy as np

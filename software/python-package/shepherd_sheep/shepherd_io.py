@@ -9,8 +9,6 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 """
 import time
 from contextlib import suppress
-from typing import Optional
-from typing import Union
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -94,7 +92,7 @@ class ShepherdIO:
             sfs.load_pru0_firmware("shepherd")
 
         self.mode = mode
-        if mode in ["harvester", "emulator"]:
+        if mode in {"harvester", "emulator"}:
             self.component = mode  # TODO: still needed?
         else:
             self.component = "emulator"

@@ -131,7 +131,7 @@ class Launcher:
                 "ActiveState",
                 dbus_interface="org.freedesktop.DBus.Properties",
             )
-            if systemd_state in ["deactivating", "activating"]:
+            if systemd_state in {"deactivating", "activating"}:
                 time.sleep(0.1)
             else:
                 break
@@ -157,7 +157,7 @@ class Launcher:
         if requested_state == active_state:
             log.debug("service already in requested state")
             self.gpio_led.write(active_state)
-            return
+            return None
 
         if active_state:
             log.info("stopping service")

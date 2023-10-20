@@ -31,8 +31,6 @@ prog2_io = 11   # P8_32, GPIO0[11]
 :license: MIT, see LICENSE for more details.
 """
 from contextlib import suppress
-from typing import Dict
-from typing import List
 
 from .logger import log
 

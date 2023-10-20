@@ -108,7 +108,7 @@ def test_cli_eeprom_read_min_arg_a(
             "read",
         ],
     )
-    assert res.exit_code in [0, 2, 3]
+    assert res.exit_code in {0, 2, 3}
 
 
 @pytest.mark.hardware
@@ -131,7 +131,7 @@ def test_cli_eeprom_read_min_arg_b(
             path_cal.as_posix(),
         ],
     )
-    assert res.exit_code in [0, 2, 3]
+    assert res.exit_code in {0, 2, 3}
 
 
 @pytest.mark.hardware
@@ -154,7 +154,7 @@ def test_cli_eeprom_read_explicit(
             path_cal.as_posix(),
         ],
     )
-    assert res.exit_code in [0, 2, 3]
+    assert res.exit_code in {0, 2, 3}
 
 
 @pytest.mark.hardware

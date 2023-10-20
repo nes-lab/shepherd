@@ -14,7 +14,6 @@ import tempfile
 import time
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Union
 
 from shepherd_core.data_models import FirmwareDType
 from shepherd_core.data_models import ShpModel
@@ -102,7 +101,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     set_verbosity(cfg.verbose, temporary=True)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
-    if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
+    if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
         modify_uid(file_path, cfg.custom_id)
         file_path = firmware_to_hex(file_path)
     if file_path.as_posix() != cfg.firmware_file.as_posix():

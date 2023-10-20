@@ -10,6 +10,6 @@ vscfg = VirtualSourceConfig()
 vccfg = ConverterPRUConfig.from_vsrc(data=vscfg)
 vconv = VirtualConverterModel(cfg=vccfg.export_for_sysfs())
 
-x = int(0)
+x = 0
 print(vconv.calc_out_power(x))
 print(vconv.calc_inp_power(5, 6))

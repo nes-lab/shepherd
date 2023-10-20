@@ -10,8 +10,6 @@ This program verifies a proper function of the shepherd frontends for emulator a
 """
 import itertools
 import time
-from typing import List
-from typing import Tuple
 
 import msgpack
 import msgpack_numpy

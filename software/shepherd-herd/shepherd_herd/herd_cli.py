@@ -2,7 +2,6 @@ import signal
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import click
 import shepherd_core

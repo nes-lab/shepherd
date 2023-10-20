@@ -274,7 +274,7 @@ def assemble_window():
             dpg.add_text(tag="text_B_gpio", default_value="PRU Input")
             dpg.add_spacer(width=16)
             dpg.add_input_text(
-                tag=f"gpio_output",
+                tag="gpio_output",
                 default_value="0",
                 readonly=True,
                 label="",

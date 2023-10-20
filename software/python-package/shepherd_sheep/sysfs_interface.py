@@ -12,8 +12,6 @@ import subprocess  # noqa: S404
 import sys
 import time
 from pathlib import Path
-from typing import Optional
-from typing import Union
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
