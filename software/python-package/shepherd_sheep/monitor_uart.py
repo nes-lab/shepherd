@@ -15,9 +15,9 @@ class UARTMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
-        baudrate: Optional[int] = None,
+        baudrate: int | None = None,
     ):
         super().__init__(target, compression, poll_intervall=0.05)
         self.uart = uart

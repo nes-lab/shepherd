@@ -40,7 +40,7 @@ class ShepherdDebug(ShepherdIO):
     def __init__(self, use_io: bool = True):
         super().__init__("debug", trace_iv=PowerTracing(), trace_gpio=GpioTracing())
 
-        self._io: Optional[TargetIO] = TargetIO() if use_io else None
+        self._io: TargetIO | None = TargetIO() if use_io else None
 
         # offer a default cali for debugging
         self._cal: CalibrationCape = CalibrationCape()
@@ -137,7 +137,7 @@ class ShepherdDebug(ShepherdIO):
 
     def get_buffer(
         self,
-        timeout_n: Optional[float] = None,
+        timeout_n: float | None = None,
         verbose: bool = False,
     ) -> NoReturn:
         raise NotImplementedError("Method not implemented for debugging mode")
@@ -158,7 +158,7 @@ class ShepherdDebug(ShepherdIO):
         cal_emu: CalibrationEmulator,
         log_intermediate: bool = False,
         dtype_in: EnergyDType = EnergyDType.ivsample,
-        window_size: Optional[int] = None,
+        window_size: int | None = None,
     ):
         super().send_calibration_settings(cal_emu)
         src_pru = ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate)
@@ -211,7 +211,7 @@ class ShepherdDebug(ShepherdIO):
         self,
         input_voltage_uV: int,
         input_current_nA: int,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         self._send_msg(
             commons.MSG_DBG_VSRC_CHARGE,
             [int(input_voltage_uV), int(input_current_nA)],
@@ -234,7 +234,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def cnv_drain(self, current_adc_raw: int) -> Tuple[int, int]:
+    def cnv_drain(self, current_adc_raw: int) -> tuple[int, int]:
         self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_DRAIN:
@@ -303,7 +303,7 @@ class ShepherdDebug(ShepherdIO):
 
     def select_port_for_power_tracking(
         self,
-        target: Union[TargetPort, bool, None],
+        target: TargetPort | bool | None,
     ) -> None:
         super().select_port_for_power_tracking(target)
 

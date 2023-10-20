@@ -52,8 +52,8 @@ write_opt_t = typer.Option(
 def measure(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    outfile: Optional[Path] = ofile_opt_t,
+    password: str | None = pass_opt_t,
+    outfile: Path | None = ofile_opt_t,
     smu_ip: str = smu_ip_opt_t,
     smu_2wire: bool = smu_2w_opt_t,
     smu_nplc: float = smu_nc_opt_t,
@@ -61,7 +61,7 @@ def measure(
     emulator: bool = emu_opt_t,
     cape_serial: str = serial_opt_t,
     write: bool = write_opt_t,
-    version: Optional[str] = version_opt_t,
+    version: str | None = version_opt_t,
     verbose: bool = verbose_opt_t,
 ):
     """Measure calibration-data for shepherd cape"""
@@ -131,9 +131,9 @@ def measure(
 def write(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    cal_file: Optional[Path] = ifile_opt_t,
-    measurement_file: Optional[Path] = ifile_opt_t,
+    password: str | None = pass_opt_t,
+    cal_file: Path | None = ifile_opt_t,
+    measurement_file: Path | None = ifile_opt_t,
     verbose: bool = verbose_opt_t,
 ):
     """Write calibration-data to shepherd cape eeprom (choose cal- or measurement-file)"""
@@ -160,8 +160,8 @@ def write(
 def read(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    cal_file: Optional[Path] = ofile_opt_t,
+    password: str | None = pass_opt_t,
+    cal_file: Path | None = ofile_opt_t,
     verbose: bool = verbose_opt_t,
 ):
     """Read calibration-data from shepherd cape"""

@@ -144,7 +144,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
         time.sleep(0.1)
 
 
-def set_start(start_time: Union[float, int, None] = None) -> None:
+def set_start(start_time: float | int | None = None) -> None:
     """Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from
@@ -212,8 +212,8 @@ def write_mode(mode: str, force: bool = False) -> None:
 
 @validate_call
 def write_dac_aux_voltage(
-    voltage: Union[float, str, None],
-    cal_emu: Optional[CalibrationEmulator] = None,
+    voltage: float | str | None,
+    cal_emu: CalibrationEmulator | None = None,
 ) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
 
@@ -278,7 +278,7 @@ def write_dac_aux_voltage_raw(
         f.write(str(voltage_raw))
 
 
-def read_dac_aux_voltage(cal_emu: Optional[CalibrationEmulator] = None) -> float:
+def read_dac_aux_voltage(cal_emu: CalibrationEmulator | None = None) -> float:
     """Reads the auxiliary voltage (dac channel B) from the PRU core.
 
     Args:
@@ -444,7 +444,7 @@ def read_virtual_harvester_settings() -> list:
     return int_settings
 
 
-def write_pru_msg(msg_type: int, values: Union[list, float, int]) -> None:
+def write_pru_msg(msg_type: int, values: list | float | int) -> None:
     """
     :param msg_type:
     :param values:

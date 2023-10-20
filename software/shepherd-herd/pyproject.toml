@@ -5,6 +5,6 @@ build-backend = "setuptools.build_meta"
 [tool.pyright]
 root = "./"
 include = ['./shepherd_herd', ]
-pythonVersion = "3.8"
+pythonVersion = "3.10"
 pythonPlatform = "All"
 reportMissingParameterType = true

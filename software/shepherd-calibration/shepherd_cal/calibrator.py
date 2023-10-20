@@ -50,12 +50,12 @@ class Calibrator:
         self,
         host: str,
         user: str,
-        password: Optional[str] = None,
-        smu_ip: Optional[str] = None,
+        password: str | None = None,
+        smu_ip: str | None = None,
         mode_4wire: bool = True,
         pwrline_cycles: float = 16,
     ):
-        fabric_args: Dict[str, str] = {}
+        fabric_args: dict[str, str] = {}
         if password is not None:
             fabric_args["password"] = password
 
@@ -337,7 +337,7 @@ class Calibrator:
         return results
 
     def measure_harvester(self) -> CalMeasurementHarvester:
-        results: Dict[str, CalMeasPairs] = {}
+        results: dict[str, CalMeasPairs] = {}
         logger.info("Measurement - Harvester - ADC . Voltage")
         results["adc_V_Sense"] = self.measure_harvester_adc_voltage(self.kth.smub)
 
@@ -352,7 +352,7 @@ class Calibrator:
         return CalMeasurementHarvester(**results)
 
     def measure_emulator(self) -> CalMeasurementEmulator:
-        results: Dict[str, CalMeasPairs] = {}
+        results: dict[str, CalMeasPairs] = {}
         logger.info("Measurement - Emulator - ADC . Current - Target A")
         # targetA-Port will get the monitored dac-channel-b
         self.sheep.select_port_for_power_tracking(TargetPort.A)
@@ -383,7 +383,7 @@ class Calibrator:
 
     def write(
         self,
-        cal_file: Union[str, Path],
+        cal_file: str | Path,
     ):
         temp_file = "/tmp/calib.yaml"  # noqa: S108
         if isinstance(cal_file, str):

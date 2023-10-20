@@ -80,8 +80,8 @@ class ShepherdIO:
     def __init__(
         self,
         mode: str,
-        trace_iv: Optional[PowerTracing],
-        trace_gpio: Optional[GpioTracing],
+        trace_iv: PowerTracing | None,
+        trace_gpio: GpioTracing | None,
     ):
         """Initializes relevant variables.
 
@@ -152,7 +152,7 @@ class ShepherdIO:
         ShepherdIO._instance = None
 
     @staticmethod
-    def _send_msg(msg_type: int, values: Union[int, list]) -> None:
+    def _send_msg(msg_type: int, values: int | list) -> None:
         """Sends a formatted message to PRU0.
 
         Args:
@@ -189,7 +189,7 @@ class ShepherdIO:
 
     def start(
         self,
-        start_time: Optional[float] = None,
+        start_time: float | None = None,
         wait_blocking: bool = True,
     ) -> None:
         """Starts sampling either now or at later point in time.
@@ -331,7 +331,7 @@ class ShepherdIO:
             time.sleep(0.3)  # time to stabilize voltage-drop
 
     @staticmethod
-    def convert_target_port_to_bool(target: Union[TargetPort, str, bool, None]) -> bool:
+    def convert_target_port_to_bool(target: TargetPort | str | bool | None) -> bool:
         if target is None:
             return True
         elif isinstance(target, str):
@@ -346,7 +346,7 @@ class ShepherdIO:
 
     def select_port_for_power_tracking(
         self,
-        target: Union[TargetPort, bool, None],
+        target: TargetPort | bool | None,
     ) -> None:
         """
         choose which targets (A or B) gets the supply with current-monitor,
@@ -371,7 +371,7 @@ class ShepherdIO:
 
     def select_port_for_io_interface(
         self,
-        target: Union[TargetPort, bool, None],
+        target: TargetPort | bool | None,
     ) -> None:
         """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
@@ -405,7 +405,7 @@ class ShepherdIO:
     @staticmethod
     def set_aux_target_voltage(
         voltage: float,
-        cal_emu: Optional[CalibrationEmulator] = None,
+        cal_emu: CalibrationEmulator | None = None,
     ) -> None:
         """Enables or disables the voltage for the second target
 
@@ -420,7 +420,7 @@ class ShepherdIO:
         sfs.write_dac_aux_voltage(voltage, cal_emu)
 
     @staticmethod
-    def get_aux_voltage(cal_emu: Optional[CalibrationEmulator] = None) -> float:
+    def get_aux_voltage(cal_emu: CalibrationEmulator | None = None) -> float:
         """Reads the auxiliary voltage (dac channel B) from the PRU core.
 
         Args:
@@ -434,7 +434,7 @@ class ShepherdIO:
     @validate_call
     def send_calibration_settings(
         self,
-        cal_: Union[CalibrationEmulator, CalibrationHarvester, None],
+        cal_: CalibrationEmulator | CalibrationHarvester | None,
     ) -> None:
         """Sends calibration settings to PRU core
 

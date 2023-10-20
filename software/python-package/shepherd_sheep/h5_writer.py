@@ -59,14 +59,14 @@ class Writer(CoreWriter):
     def __init__(
         self,
         file_path: Path,
-        mode: Optional[str] = None,
-        datatype: Optional[str] = None,
-        window_samples: Optional[int] = None,
-        cal_data: Union[CalSeries, CalEmu, CalHrv, None] = None,
+        mode: str | None = None,
+        datatype: str | None = None,
+        window_samples: int | None = None,
+        cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
         modify_existing: bool = False,
         force_overwrite: bool = False,
-        verbose: Optional[bool] = True,
+        verbose: bool | None = True,
         samples_per_buffer: int = 10_000,
         samplerate_sps: int = 100_000,
     ):
@@ -110,7 +110,7 @@ class Writer(CoreWriter):
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
-        self.monitors: List[Monitor] = []
+        self.monitors: list[Monitor] = []
 
     def __enter__(self):
         """Initializes the structure of the HDF5 file
@@ -234,8 +234,8 @@ class Writer(CoreWriter):
 
     def start_monitors(
         self,
-        sys: Optional[SystemLogging] = None,
-        gpio: Optional[GpioTracing] = None,
+        sys: SystemLogging | None = None,
+        gpio: GpioTracing | None = None,
     ) -> None:
         if sys is not None and sys.dmesg:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))

@@ -46,7 +46,7 @@ class Profiler:
                 [5.0, 0.05],
                 np.arange(0.0, 5.1, 0.4),
             )
-            self.currents_A: List[float] = [
+            self.currents_A: list[float] = [
                 0e-6,
                 1e-6,
                 2e-6,
@@ -69,7 +69,7 @@ class Profiler:
             ]
         else:
             self.voltages_V: np.ndarray = np.append([0.05], np.arange(0.0, 5.1, 0.2))
-            self.currents_A: List[float] = [
+            self.currents_A: list[float] = [
                 0e-6,
                 1e-6,
                 2e-6,
@@ -99,7 +99,7 @@ class Profiler:
         smu: KeithleyClass,
         voltage_V: float,
         current_A: float = 0,
-    ) -> Tuple[np.ndarray, float, float]:
+    ) -> tuple[np.ndarray, float, float]:
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
         # negative current, because smu acts as a drain
@@ -150,7 +150,7 @@ class Profiler:
         smu: KeithleyClass,
         voltage_V: float,
         current_A: float = 0,
-    ) -> Tuple[np.ndarray, np.ndarray, float, float]:
+    ) -> tuple[np.ndarray, np.ndarray, float, float]:
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
         # SMU as current-source

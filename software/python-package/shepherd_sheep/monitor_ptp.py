@@ -15,7 +15,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
     ):
         super().__init__(target, compression, poll_intervall=0.51)
         self.data.create_dataset(

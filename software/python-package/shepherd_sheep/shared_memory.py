@@ -25,8 +25,8 @@ class GPIOEdges:
 
     def __init__(
         self,
-        timestamps_ns: Optional[np.ndarray] = None,
-        values: Optional[np.ndarray] = None,
+        timestamps_ns: np.ndarray | None = None,
+        values: np.ndarray | None = None,
     ):
         self.timestamps_ns = timestamps_ns if timestamps_ns is not None else np.empty(0)
         self.values = values if values is not None else np.empty(0)
@@ -47,8 +47,8 @@ class DataBuffer:
         self,
         voltage: np.ndarray,
         current: np.ndarray,
-        timestamp_ns: Optional[int] = None,
-        gpio_edges: Optional[GPIOEdges] = None,
+        timestamp_ns: int | None = None,
+        gpio_edges: GPIOEdges | None = None,
         util_mean: float = 0,
         util_max: float = 0,
     ):
@@ -83,8 +83,8 @@ class SharedMemory:
         size: int,
         n_buffers: int,
         samples_per_buffer: int,
-        trace_iv: Optional[PowerTracing],
-        trace_gpio: Optional[GpioTracing],
+        trace_iv: PowerTracing | None,
+        trace_gpio: GpioTracing | None,
     ):
         """Initializes relevant parameters for shared memory area.
 
@@ -168,7 +168,7 @@ class SharedMemory:
             os.close(self.devmem_fd)
 
     @staticmethod
-    def timedelta_to_ns(delta: Optional[timedelta], default_s: int = 0) -> int:
+    def timedelta_to_ns(delta: timedelta | None, default_s: int = 0) -> int:
         if isinstance(delta, timedelta):
             return int(delta.total_seconds() * 10**9)
         else:

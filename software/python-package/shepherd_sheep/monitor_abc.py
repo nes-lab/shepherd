@@ -13,7 +13,7 @@ class Monitor(ABC):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
         poll_intervall: float = 0.25,
     ):
         self.data = target
@@ -21,7 +21,7 @@ class Monitor(ABC):
         self.position = 0
         self.increment = 100
         self.event = threading.Event()
-        self.thread: Optional[threading.Thread] = None
+        self.thread: threading.Thread | None = None
 
         # create time, others have to be created in main class
         self.data.create_dataset(

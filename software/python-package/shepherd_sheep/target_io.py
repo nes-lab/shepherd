@@ -41,7 +41,7 @@ with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
 
-target_pins: List[Dict] = [  # pin-order from target-connector
+target_pins: list[dict] = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},
     {"name": "gpio1", "pin": 27, "dir": 78},
     {"name": "gpio2", "pin": 46, "dir": 78},
@@ -66,12 +66,12 @@ class TargetIO:
 
         """
         dir_pins = {pin["dir"] for pin in target_pins if isinstance(pin["dir"], int)}
-        self.dirs: Dict[int, GPIO] = {}
+        self.dirs: dict[int, GPIO] = {}
         for pin in dir_pins:
             self.dirs[pin] = GPIO(pin, "out")
             self.dirs[pin].write(True)  # True == Output to target
 
-        self.gpios: Dict[str, GPIO] = {}
+        self.gpios: dict[str, GPIO] = {}
         for pin_info in target_pins:
             if pin_info["dir"] == "I":
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "in")
@@ -79,7 +79,7 @@ class TargetIO:
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "out")
                 self.gpios[pin_info["name"]].write(False)  # init LOW
 
-        self.pin_names: List[str] = [pin["name"] for pin in target_pins]
+        self.pin_names: list[str] = [pin["name"] for pin in target_pins]
         self.pin_count: int = len(target_pins)
 
     def one_high(self, num: int) -> None:

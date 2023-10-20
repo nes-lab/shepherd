@@ -10,7 +10,7 @@ from .profile import Profile
 
 def analyze_directory(
     folder_path: Path,
-    stats_path: Optional[Path] = None,
+    stats_path: Path | None = None,
     do_plots: bool = False,
 ) -> None:
     stats_list = []
@@ -27,7 +27,7 @@ def analyze_directory(
         if "origin" in stats_base.columns:
             stat_names = stats_base["origin"].tolist()
 
-    files: List[str] = []
+    files: list[str] = []
     if folder_path.is_file():
         files.append(str(folder_path))
     elif folder_path.is_dir():

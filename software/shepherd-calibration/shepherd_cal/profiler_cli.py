@@ -54,8 +54,8 @@ quiet_opt_t = typer.Option(
 def measure(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    outfile: Optional[Path] = ofile_opt_t,
+    password: str | None = pass_opt_t,
+    outfile: Path | None = ofile_opt_t,
     smu_ip: str = smu_ip_opt_t,
     smu_2wire: bool = smu_2w_opt_t,
     smu_nplc: float = smu_nc_opt_t,
@@ -86,7 +86,7 @@ def measure(
 
     shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
     profiler = Profiler(shpcal, short)
-    results: Dict[str, np.ndarray] = {"cape": cape_serial}
+    results: dict[str, np.ndarray] = {"cape": cape_serial}
 
     if not quiet:
         click.echo(INSTR_PROFILE_SHP)
@@ -137,7 +137,7 @@ plot_opt_t = typer.Option(
 @cli_pro.command()
 def analyze(
     infiles: Path = in_files_arg_t,
-    outfile: Optional[Path] = out_file_opt_t,
+    outfile: Path | None = out_file_opt_t,
     plot: bool = plot_opt_t,
     verbose: bool = verbose_opt_t,
 ):

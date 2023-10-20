@@ -13,7 +13,7 @@ class SheepMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
     ):
         super().__init__(target, compression, poll_intervall=0.25)
         self.queue = get_message_queue()

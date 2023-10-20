@@ -67,10 +67,10 @@ def exit_gracefully(*args) -> None:  # type: ignore
 @click.pass_context
 def cli(
     ctx: click.Context,
-    inventory: Optional[str],
-    limit: Optional[str],
-    user: Optional[str],
-    key_filepath: Optional[Path],
+    inventory: str | None,
+    limit: str | None,
+    user: str | None,
+    key_filepath: Path | None,
     verbose: bool,
     version: bool,
 ):

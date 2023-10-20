@@ -46,12 +46,12 @@ class Herd:
 
     def __init__(
         self,
-        inventory: Optional[str] = None,
-        limit: Optional[str] = None,
-        user: Optional[str] = None,
-        key_filepath: Optional[Path] = None,
+        inventory: str | None = None,
+        limit: str | None = None,
+        user: str | None = None,
+        key_filepath: Path | None = None,
     ):
-        limits_list: Optional[List[str]] = None
+        limits_list: list[str] | None = None
         if isinstance(limit, str):
             limits_list = limit.split(",")
             limits_list = [_host for _host in limits_list if len(_host) >= 1]
@@ -95,9 +95,9 @@ class Herd:
             logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
-            hostnames: Dict[str, str] = {}
+            hostnames: dict[str, str] = {}
             for hostname, hostvars in inventory_data["sheep"]["hosts"].items():
-                if isinstance(limits_list, List) and (hostname not in limits_list):
+                if isinstance(limits_list, list) and (hostname not in limits_list):
                     continue
 
                 if "ansible_host" in hostvars:
@@ -119,7 +119,7 @@ class Herd:
                 "Provide remote hosts (either inventory empty or limit does not match)",
             )
 
-        connect_kwargs: Dict[str, str] = {}
+        connect_kwargs: dict[str, str] = {}
         if key_filepath is not None:
             connect_kwargs["key_filename"] = str(key_filepath)
 
@@ -129,7 +129,7 @@ class Herd:
             connect_timeout=5,
             connect_kwargs=connect_kwargs,
         )
-        self.hostnames: Dict[str, str] = hostnames
+        self.hostnames: dict[str, str] = hostnames
 
         logger.info("Herd consists of %d sheep", len(self.group))
 
@@ -251,7 +251,7 @@ class Herd:
     @staticmethod
     def _thread_put(
         cnx: Connection,
-        src: Union[Path, StringIO],
+        src: Path | StringIO,
         dst: Path,
         force_overwrite: bool,
     ):
@@ -283,8 +283,8 @@ class Herd:
 
     def put_file(
         self,
-        src: Union[StringIO, Path, str],
-        dst: Union[Path, str],
+        src: StringIO | Path | str,
+        dst: Path | str,
         force_overwrite: bool = False,
     ) -> None:
         if isinstance(src, StringIO):
@@ -338,8 +338,8 @@ class Herd:
     @validate_call
     def get_file(
         self,
-        src: Union[Path, str],
-        dst_dir: Union[Path, str],
+        src: Path | str,
+        dst_dir: Path | str,
         timestamp: bool = False,
         separate: bool = False,
         delete_src: bool = False,
@@ -421,7 +421,7 @@ class Herd:
         del threads
         return failed_retrieval
 
-    def find_consensus_time(self) -> Tuple[datetime, float]:
+    def find_consensus_time(self) -> tuple[datetime, float]:
         """Finds a start time in the future when all nodes should start service
 
         In order to run synchronously, all nodes should start at the same time.
@@ -451,8 +451,8 @@ class Herd:
     @validate_call
     def put_task(
         self,
-        task: Union[Path, ShpModel],
-        remote_path: Union[Path, str] = "/etc/shepherd/config.yaml",
+        task: Path | ShpModel,
+        remote_path: Path | str = "/etc/shepherd/config.yaml",
     ) -> None:
         """transfers shepherd tasks to the group of hosts / sheep.
 
@@ -521,6 +521,7 @@ class Herd:
                         "shepherd still active on %s",
                         self.hostnames[cnx.host],
                     )
+                    # shepherd-herd -v shell-cmd -s "systemctl status shepherd"
         return active
 
     def start_measurement(self) -> int:
@@ -594,7 +595,7 @@ class Herd:
         return failed
 
     @validate_call
-    def run_task(self, config: Union[Path, ShpModel], attach: bool = False) -> int:
+    def run_task(self, config: Path | ShpModel, attach: bool = False) -> int:
         if attach:
             remote_path = Path("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
@@ -617,8 +618,8 @@ class Herd:
     @validate_call
     def get_task_files(
         self,
-        config: Union[Path, ShpModel],
-        dst_dir: Union[Path, str],
+        config: Path | ShpModel,
+        dst_dir: Path | str,
         separate: bool = False,
         delete_src: bool = False,
     ) -> bool:

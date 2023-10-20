@@ -19,7 +19,7 @@ T_calc = TypeVar("T_calc", NDArray[np.float64], float)
 class ProfileCalibration(CalibrationSeries):
     @classmethod
     def from_measurement(cls, result: pd.DataFrame):
-        values: Dict[str, CalibrationPair] = {}
+        values: dict[str, CalibrationPair] = {}
         cal_c = cls._determine_current_cal(result)
         cal_v = cls._determine_voltage_cal(result)
         if cal_c is not None:
@@ -30,9 +30,9 @@ class ProfileCalibration(CalibrationSeries):
 
     @staticmethod
     def _measurements_to_calibration(
-        ref: Union[pd.Series, float],
-        raw: Union[pd.Series, float],
-    ) -> Tuple[float, float]:
+        ref: pd.Series | float,
+        raw: pd.Series | float,
+    ) -> tuple[float, float]:
         result = stats.linregress(raw, ref)
         offset = float(result.intercept)
         gain = float(result.slope)
@@ -44,7 +44,7 @@ class ProfileCalibration(CalibrationSeries):
         return float(gain), float(offset)
 
     @staticmethod
-    def _determine_current_cal(result: pd.DataFrame) -> Optional[CalibrationPair]:
+    def _determine_current_cal(result: pd.DataFrame) -> CalibrationPair | None:
         # chose first voltage above 2.4 V as base, currents range from 60 uA to 14 mA
         result = (
             result.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)
@@ -79,7 +79,7 @@ class ProfileCalibration(CalibrationSeries):
         return CalibrationPair(gain=gain, offset=offset)
 
     @staticmethod
-    def _determine_voltage_cal(result: pd.DataFrame) -> Optional[CalibrationPair]:
+    def _determine_voltage_cal(result: pd.DataFrame) -> CalibrationPair | None:
         # chose first current above 60 uA as base, voltages range from 0.3 V to 2.6 V
         result = (
             result.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)

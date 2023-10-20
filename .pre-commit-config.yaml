@@ -62,7 +62,7 @@ repos:
     rev: v3.15.0
     hooks:
       - id: pyupgrade
-        args: ["--py38-plus", "--keep-runtime-typing"]
+        args: ["--py310-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0
@@ -97,6 +97,13 @@ repos:
 
           ### Load Config from ...
           - flake8-pyproject
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.1.1'
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+        # manual run: ruff check . --preview
 
 # TODO: disable, until bug is resolved, maybe connected to
 # https://github.com/ansible/ansible-lint/issues/3636
@@ -180,4 +187,4 @@ repos:
 #        args: ["--fix", "--exit-non-zero-on-fix"]
 
 # default_language_version:
-#    python: python3.8
+#    python: python3.10

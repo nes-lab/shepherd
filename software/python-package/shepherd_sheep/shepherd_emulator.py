@@ -112,7 +112,7 @@ class ShepherdEmulator(ShepherdIO):
         )
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 
-        self.writer: Optional[Writer] = None
+        self.writer: Writer | None = None
         if cfg.output_path is not None:
             store_path = cfg.output_path.resolve()
             if store_path.is_dir():
@@ -133,7 +133,7 @@ class ShepherdEmulator(ShepherdIO):
             )
 
         # hard-wire pin-direction until they are configurable
-        self._io: Optional[TargetIO] = TargetIO()
+        self._io: TargetIO | None = TargetIO()
         log.info("Setting variable GPIO to INPUT (actuation is not implemented yet)")
         for pin in range(len(target_pins)):
             self._io.set_pin_direction(pin, pdir=True)  # True = Inp

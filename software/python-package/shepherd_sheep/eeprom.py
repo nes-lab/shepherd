@@ -150,7 +150,7 @@ class EEPROM:
         else:
             self._write(eeprom_format[key]["offset"], value)
 
-    def _write_cape_data(self, cape_data: Optional[CapeData]) -> None:
+    def _write_cape_data(self, cape_data: CapeData | None) -> None:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:

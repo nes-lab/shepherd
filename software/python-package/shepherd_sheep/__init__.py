@@ -245,7 +245,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
     return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 
-def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
+def run_task(cfg: ShpModel | Path | str) -> bool:
     observer_name = platform.node().strip()
     try:
         wrapper = prepare_task(cfg, observer_name)

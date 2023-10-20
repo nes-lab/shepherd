@@ -172,7 +172,7 @@ def eeprom():
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
 def write(
-    cal_file: Optional[Path],
+    cal_file: Path | None,
 ):
     cal_cape = CalibrationCape.from_file(cal_file)
     try:
@@ -192,7 +192,7 @@ def write(
     default=None,
     help="If provided, calibration data is dumped to this file",
 )
-def read(cal_file: Optional[Path]):
+def read(cal_file: Path | None):
     set_verbosity()
 
     try:
@@ -215,7 +215,7 @@ def read(cal_file: Optional[Path]):
 
 @cli.command(short_help="Start zerorpc server")
 @click.option("--port", "-p", type=click.INT, default=4242)
-def rpc(port: Optional[int]):
+def rpc(port: int | None):
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     log.info("Shepherd Debug Interface: Initialized")

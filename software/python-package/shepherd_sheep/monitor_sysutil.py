@@ -15,7 +15,7 @@ class SysUtilMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
     ):
         super().__init__(target, compression, poll_intervall=0.3)
         self.log_interval_ns: int = 1 * (10**9)  # step-size is 1 s
