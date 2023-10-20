@@ -20,8 +20,6 @@ from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 
 from .logger import log
 
-sysfs_path = Path("/sys/shepherd")
-
 
 class SysfsInterfaceError(Exception):
     pass
@@ -30,13 +28,13 @@ class SysfsInterfaceError(Exception):
 # dedicated sampling modes
 # - _adc_read - modes are used per rpc (currently to calibrate the hardware)
 # TODO: what is with "None"?
-shepherd_modes = [
+shepherd_modes = {
     "harvester",
     "hrv_adc_read",
     "emulator",
     "emu_adc_read",
     "debug",
-]
+}
 
 
 def flatten_list(dl: list) -> list:
@@ -171,7 +169,7 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
         raise SysfsInterfaceError(f"Cannot start from state { current_state }")
 
     try:
-        with (sysfs_path / "state").open("w", encoding="utf-8") as f:
+        with Path("/sys/shepherd/state").open("w", encoding="utf-8") as f:
             if isinstance(start_time, float):
                 start_time = int(start_time)
             if isinstance(start_time, int):
@@ -197,7 +195,7 @@ def set_stop(force: bool = False) -> None:
         if current_state != "running":
             raise SysfsInterfaceError(f"Cannot stop from state { current_state }")
 
-    with (sysfs_path / "state").open("w", encoding="utf-8") as f:
+    with Path("/sys/shepherd/state").open("w", encoding="utf-8") as f:
         f.write("stop")
 
 
@@ -221,7 +219,7 @@ def write_mode(mode: str, force: bool = False) -> None:
         )
 
     log.debug("sysfs/mode: '%s'", mode)
-    with (sysfs_path / "mode").open("w", encoding="utf-8") as f:
+    with Path("/sys/shepherd/mode").open("w", encoding="utf-8") as f:
         f.write(mode)
 
 
@@ -288,7 +286,7 @@ def write_dac_aux_voltage_raw(
         voltage_raw = min(voltage_raw, 2**16 - 1)
     voltage_raw |= int(ch_link) << 20
     voltage_raw |= int(cap_out) << 21
-    with (sysfs_path / "dac_auxiliary_voltage_raw").open("w", encoding="utf-8") as f:
+    with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open("w", encoding="utf-8") as f:
         log.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))
 
@@ -315,7 +313,7 @@ def read_dac_aux_voltage_raw() -> int:
 
     Returns: voltage as dac_raw
     """
-    with (sysfs_path / "dac_auxiliary_voltage_raw").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -344,7 +342,7 @@ def write_calibration_settings(
         )
     wait_for_state("idle", 3.0)
 
-    with (sysfs_path / "calibration_settings").open("w", encoding="utf-8") as f:
+    with Path("/sys/shepherd/calibration_settings").open("w", encoding="utf-8") as f:
         output = (
             f"{int(cal_pru['adc_current_gain'])} {int(cal_pru['adc_current_offset'])} \n"
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
@@ -362,7 +360,7 @@ def read_calibration_settings() -> (
     The virtual-source algorithms use adc measurements and dac-output
 
     """
-    with (sysfs_path / "calibration_settings").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/calibration_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
 
     int_settings = [int(x) for x in settings.split()]
@@ -403,7 +401,7 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
             )
 
     wait_for_state("idle", 3.0)
-    with (sysfs_path / "virtual_converter_settings").open(
+    with Path("/sys/shepherd/virtual_converter_settings").open(
         "w",
         encoding="utf-8",
     ) as file:
@@ -416,7 +414,7 @@ def read_virtual_converter_settings() -> list:
     The pru-algorithm uses these settings to configure emulator.
 
     """
-    with (sysfs_path / "virtual_converter_settings").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/virtual_converter_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
     return [int(x) for x in settings.split()]
 
@@ -443,7 +441,7 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
             )
 
     wait_for_state("idle", 3.0)
-    with (sysfs_path / "virtual_harvester_settings").open(
+    with Path("/sys/shepherd/virtual_harvester_settings").open(
         "w",
         encoding="utf-8",
     ) as file:
@@ -456,7 +454,7 @@ def read_virtual_harvester_settings() -> list:
     The  pru-algorithm uses these settings to configure emulator.
 
     """
-    with (sysfs_path / "virtual_harvester_settings").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/virtual_harvester_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
     return [int(x) for x in settings.split()]
 
@@ -486,7 +484,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
                 f"expected u32 for type (={type(value)}) and content (={value})",
             )
 
-    with (sysfs_path / "pru_msg_box").open("w", encoding="utf-8") as file:
+    with Path("/sys/shepherd/pru_msg_box").open("w", encoding="utf-8") as file:
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
@@ -494,7 +492,7 @@ def read_pru_msg() -> tuple[int, list[int]]:
     """
     Returns:
     """
-    with (sysfs_path / "pru_msg_box").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/pru_msg_box").open(encoding="utf-8") as f:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
@@ -540,6 +538,7 @@ def write_programmer_ctrl(
     # processing
     args = locals()
     log.debug("set programmerCTRL")
+    prog_path = Path("/sys/shepherd/programmer")
     for num, attribute in enumerate(prog_attribs):
         value = args[attribute]
         if value is None:
@@ -548,7 +547,7 @@ def write_programmer_ctrl(
             raise SysfsInterfaceError(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
-        with (sysfs_path / "programmer" / attribute).open(
+        with (prog_path / attribute).open(
             "w",
             encoding="utf-8",
         ) as file:
@@ -558,26 +557,27 @@ def write_programmer_ctrl(
 
 def read_programmer_ctrl() -> list:
     parameters = []
+    prog_path = Path("/sys/shepherd/programmer")
     for attribute in prog_attribs:
-        with (sysfs_path / "programmer" / attribute).open(encoding="utf-8") as file:
+        with (prog_path / attribute).open(encoding="utf-8") as file:
             parameters.append(file.read().rstrip())
     return parameters
 
 
 def write_programmer_datasize(value: int) -> None:
-    with (sysfs_path / "programmer/datasize").open("w", encoding="utf-8") as file:
+    with Path("/sys/shepherd/programmer/datasize").open("w", encoding="utf-8") as file:
         file.write(str(value))
 
 
 def start_programmer() -> None:
-    with (sysfs_path / "programmer/state").open("w", encoding="utf-8") as file:
+    with Path("/sys/shepherd/programmer/state").open("w", encoding="utf-8") as file:
         file.write("start")
     # force a pru-reset to jump into programming routine
     set_stop(force=True)
 
 
 def check_programmer() -> str:
-    with (sysfs_path / "programmer/state").open(encoding="utf-8") as file:
+    with Path("/sys/shepherd/programmer/state").open(encoding="utf-8") as file:
         return file.read().rstrip()
 
 
@@ -604,10 +604,10 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
     _count = 1
     while _count < 6:
         try:
-            with (sysfs_path / "pru0_firmware").open("w", encoding="utf-8") as file:
+            with Path("/sys/shepherd/pru0_firmware").open("w", encoding="utf-8") as file:
                 file.write(request)
             time.sleep(2)
-            with (sysfs_path / "pru0_firmware").open(encoding="utf-8") as file:
+            with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
                 result = file.read().rstrip()
             if result == request:
                 return
@@ -634,7 +634,7 @@ def pru0_firmware_is_default() -> bool:
     _count = 1
     while _count < 6:
         try:
-            with (sysfs_path / "pru0_firmware").open(encoding="utf-8") as file:
+            with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
                 return file.read().rstrip() in pru0_firmwares[0]
         except OSError:  # noqa: PERF203
             log.warning(
@@ -662,35 +662,35 @@ attribs = [
 
 
 def get_mode() -> str:
-    with (sysfs_path / "mode").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/mode").open(encoding="utf-8") as f:
         return str(f.read().rstrip())
 
 
 def get_state() -> str:
-    with (sysfs_path / "state").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/state").open(encoding="utf-8") as f:
         return str(f.read().rstrip())
 
 
 def get_n_buffers() -> int:
-    with (sysfs_path / "n_buffers").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/n_buffers").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_buffer_period_ns() -> int:
-    with (sysfs_path / "buffer_period_ns").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/buffer_period_ns").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_samples_per_buffer() -> int:
-    with (sysfs_path / "samples_per_buffer").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/samples_per_buffer").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_address() -> int:
-    with (sysfs_path / "memory/address").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/memory/address").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
 def get_mem_size() -> int:
-    with (sysfs_path / "memory/size").open(encoding="utf-8") as f:
+    with Path("/sys/shepherd/memory/size").open(encoding="utf-8") as f:
         return int(f.read().rstrip())

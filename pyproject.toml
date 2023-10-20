@@ -83,7 +83,7 @@ statistics = true
 line-length = 100
 select = [
     "A",    # flake8-builtins
-#    "ANN", # flake8-annotations, TODO: turn on
+    "ANN", # flake8-annotations
     "ARG",  # flake8-unused-arguments
     "B",    # Bugbear
     "C",
@@ -96,7 +96,7 @@ select = [
     "ERA",  # eradicate commented out code
     "F",    # pyflakes
 #    "FA",   # flake8-future-annotations
-    "FBT",  # boolean traps
+#    "FBT",  # boolean traps
     "FLY",  # flynt
     "FURB", # refurb
     "G",    # flake8-logging-format
@@ -149,7 +149,7 @@ exclude= [  # external projects
 "*/tests/**" = ["ARG", "S", "D", "SLF001"]
 "*/examples/**" = ["INP001"]  # no namespace
 "software/shepherd-calibration/**" = ["ERA001"]  # comments
-"software/shepherd-devicetest/**" = ["ERA001", "ARG001", "PLW0603", "F405", "F403"]
+"software/shepherd-devicetest/**" = ["ERA001", "ARG001", "PLW0603", "F405", "F403", "ANN001"]
 "docs/**" = ["INP001"]
 
 [tool.ruff.mccabe]

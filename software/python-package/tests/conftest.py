@@ -6,9 +6,11 @@ from typing import Any
 
 import pytest
 from click.testing import CliRunner
+from pyfakefs.fake_filesystem_unittest import patchfs, Patcher
+
 from shepherd_sheep.sysfs_interface import load_kernel_module
 from shepherd_sheep.sysfs_interface import remove_kernel_module
-
+from shepherd_sheep import sysfs_interface
 
 def check_beagleboard() -> bool:
     with suppress(Exception), Path("/proc/cpuinfo").open(encoding="utf-8-sig") as info:
@@ -84,13 +86,14 @@ def shepherd_up(fake_hardware, shepherd_down: None) -> Generator[None, None, Non
             # TODO: design tests for programmer, also check if all hardware-tests need real hw
             #       -> there should be more tests that don't require a pru
         ]
-        for file_, content in files:
-            fake_hardware.create_file(file_, contents=content)
-        here = Path(__file__).resolve().parent
-        fake_hardware.add_real_file(here / "_test_config_emulation.yaml")
-        fake_hardware.add_real_file(here / "_test_config_harvest.yaml")
-        fake_hardware.add_real_file(here / "_test_config_virtsource.yaml")
-        yield
+        with Patcher(modules_to_reload=[sysfs_interface]) as patcher:
+            for file_, content in files:
+                patcher.fs.create_file(file_, contents=content)
+            here = Path(__file__).resolve().parent
+            patcher.fs.add_real_file(here / "_test_config_emulation.yaml")
+            patcher.fs.add_real_file(here / "_test_config_harvest.yaml")
+            patcher.fs.add_real_file(here / "_test_config_virtsource.yaml")
+            yield
     else:
         load_kernel_module()
         yield

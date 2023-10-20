@@ -88,9 +88,9 @@ class Writer(CoreWriter):
             window_samples,
             cal_data,
             compression,
-            modify_existing,
-            force_overwrite,
-            verbose,
+            modify_existing=modify_existing,
+            force_overwrite=force_overwrite,
+            verbose=verbose,
         )
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(

@@ -14,6 +14,8 @@ from contextlib import suppress
 from threading import Event
 from threading import Thread
 from types import TracebackType
+from typing import Callable
+
 from typing_extensions import Self
 
 from .logger import log
@@ -24,7 +26,7 @@ with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
 
-def call_repeatedly(interval: float, func, *args):
+def call_repeatedly(interval: float, func: Callable, *args) -> Callable:
     stopped = Event()
 
     def loop() -> None:
