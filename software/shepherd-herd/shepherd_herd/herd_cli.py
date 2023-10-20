@@ -3,7 +3,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import TypedDict
-from typing import Unpack
+from typing_extensions import Unpack
 
 import click
 import shepherd_core

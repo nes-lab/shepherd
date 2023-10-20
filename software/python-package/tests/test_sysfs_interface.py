@@ -58,7 +58,7 @@ def test_start(shepherd_up: None) -> None:
     sysfs_interface.set_start()
     time.sleep(5)
     assert sysfs_interface.get_state() == "running"
-    with pytest.raises(sysfs_interface.SysfsInterfaceException):
+    with pytest.raises(sysfs_interface.SysfsInterfaceError):
         sysfs_interface.set_start()
 
 
@@ -76,12 +76,12 @@ def test_start_delayed(shepherd_up: None) -> None:
     sysfs_interface.set_start(start_time)
 
     sysfs_interface.wait_for_state("armed", 1)
-    with pytest.raises(sysfs_interface.SysfsInterfaceException):
+    with pytest.raises(sysfs_interface.SysfsInterfaceError):
         sysfs_interface.wait_for_state("running", 3)
 
     sysfs_interface.wait_for_state("running", 3)
 
-    with pytest.raises(sysfs_interface.SysfsInterfaceException):
+    with pytest.raises(sysfs_interface.SysfsInterfaceError):
         sysfs_interface.set_start()
 
 
@@ -98,12 +98,12 @@ def test_initial_mode(shepherd_up: None) -> None:
 
 @pytest.mark.hardware
 def test_set_mode_fail_offline(shepherd_running: None) -> None:
-    with pytest.raises(sysfs_interface.SysfsInterfaceException):
+    with pytest.raises(sysfs_interface.SysfsInterfaceError):
         sysfs_interface.write_mode("harvester")
 
 
 def test_set_mode_fail_invalid(shepherd_up: None) -> None:
-    with pytest.raises(sysfs_interface.SysfsInterfaceException):
+    with pytest.raises(sysfs_interface.SysfsInterfaceError):
         sysfs_interface.write_mode("invalidmode")
 
 

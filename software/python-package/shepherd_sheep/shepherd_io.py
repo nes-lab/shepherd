@@ -10,7 +10,7 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 import time
 from contextlib import suppress
 from types import TracebackType
-from typing import Self
+from typing_extensions import Self
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -32,9 +32,6 @@ from .sysfs_interface import check_sys_access
 with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
-
-ID_ERR_TIMEOUT = 100
-
 gpio_pin_nums = {
     "target_pwr_sel": 31,
     "target_io_en": 60,
@@ -45,7 +42,9 @@ gpio_pin_nums = {
 }
 
 
-class ShepherdIOException(Exception):
+class ShepherdIOError(Exception):
+    ID_TIMEOUT = 100
+
     def __init__(self, message: str, id_num: int = 0, value: int = 0) -> None:
         super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
         self.id_num = id_num
@@ -178,10 +177,10 @@ class ShepherdIO:
         for _ in range(timeout_n):
             try:
                 return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceException:  # noqa: PERF203
+            except sfs.SysfsInterfaceError:  # noqa: PERF203
                 time.sleep(self._buffer_period)
                 continue
-        raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
+        raise ShepherdIOError("Timeout waiting for message", ShepherdIOError.ID_TIMEOUT)
 
     @staticmethod
     def _flush_msgs() -> None:
@@ -189,14 +188,14 @@ class ShepherdIO:
         while True:
             try:
                 sfs.read_pru_msg()
-            except sfs.SysfsInterfaceException:  # noqa: PERF203
+            except sfs.SysfsInterfaceError:  # noqa: PERF203
                 break
 
     def start(
         self,
         start_time: float | None = None,
         wait_blocking: bool = True,
-    ) -> None:
+    ) -> bool:
         """Starts sampling either now or at later point in time.
 
         Args:
@@ -205,9 +204,10 @@ class ShepherdIO:
         """
         if isinstance(start_time, float | int):
             log.debug("asking kernel module for start at %.2f", start_time)
-        sfs.set_start(start_time)
+        success = sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
+        return success
 
     @staticmethod
     def wait_for_start(timeout: float) -> None:
@@ -266,14 +266,14 @@ class ShepherdIO:
         while count < 6 and sfs.get_state() != "idle":
             try:
                 sfs.set_stop(force=True)
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceError:
                 log.exception(
                     "CleanupRoutine caused an exception while trying to stop PRU (n=%d)",
                     count,
                 )
             try:
                 sfs.wait_for_state("idle", 3.0)
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceError:
                 log.warning(
                     "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
                     count,
@@ -497,7 +497,9 @@ class ShepherdIO:
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
     def get_buffer(
-        self, timeout_n: int = 10, verbose: bool = False
+        self,
+        timeout_n: int = 10,
+        verbose: bool = False,
     ) -> tuple[int, DataBuffer]:
         """Reads a data buffer from shared memory.
 
@@ -536,26 +538,26 @@ class ShepherdIO:
                 continue
 
             if msg_type == commons.MSG_DEP_ERR_INCMPLT:
-                raise ShepherdIOException(
+                raise ShepherdIOError(
                     "Got incomplete buffer",
                     commons.MSG_DEP_ERR_INCMPLT,
                     value,
                 )
 
             if msg_type == commons.MSG_DEP_ERR_INVLDCMD:
-                raise ShepherdIOException(
+                raise ShepherdIOError(
                     "PRU received invalid command",
                     commons.MSG_DEP_ERR_INVLDCMD,
                     value,
                 )
             if msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
-                raise ShepherdIOException(
+                raise ShepherdIOError(
                     "PRU ran out of buffers",
                     commons.MSG_DEP_ERR_NOFREEBUF,
                     value,
                 )
 
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
                 f"got { msg_type }[{ value }]",
             )

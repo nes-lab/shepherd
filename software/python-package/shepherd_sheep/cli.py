@@ -13,7 +13,7 @@ import sys
 import time
 from pathlib import Path
 from typing import TypedDict
-from typing import Unpack
+from typing_extensions import Unpack
 
 import click
 import gevent
@@ -23,12 +23,12 @@ from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
 
+from . import Launcher
 from . import __version__
 from . import run_programmer
 from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
-from .launcher import Launcher
 from .logger import log
 from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
@@ -234,7 +234,9 @@ def rpc(port: int | None) -> None:
     gevent.signal_handler(signal.SIGTERM, stop_server)
     gevent.signal_handler(signal.SIGINT, stop_server)
 
-    shepherd_io.start()
+    success = shepherd_io.start()
+    if not success:
+        return
     log.info("Shepherd RPC Interface: Started")
     server.run()
 

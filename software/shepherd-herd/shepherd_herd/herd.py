@@ -11,7 +11,7 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any
 from typing import ClassVar
-from typing import Self
+from typing_extensions import Self
 
 import yaml
 from fabric import Connection

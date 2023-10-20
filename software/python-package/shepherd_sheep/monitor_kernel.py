@@ -78,6 +78,10 @@ class KernelMonitor(Monitor):
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
                     self.data["message"].resize((data_length,))
+            except RuntimeError:
+                log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
+                break
+            try:
                 self.data["time"][self.position] = int(time.time() * 1e9)
                 self.data["message"][self.position] = line
                 self.position += 1

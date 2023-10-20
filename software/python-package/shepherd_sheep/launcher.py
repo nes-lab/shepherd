@@ -14,6 +14,7 @@ from contextlib import suppress
 from threading import Event
 from threading import Thread
 from types import TracebackType
+from typing_extensions import Self
 
 from .logger import log
 
@@ -58,7 +59,7 @@ class Launcher:
         self.pin_ack_watchdog = pin_ack_watchdog
         self.service_name = service_name
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Self:
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
         self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
@@ -79,7 +80,6 @@ class Launcher:
             str(shepherd_object),
         )
         log.debug("configured dbus for systemd")
-
         return self
 
     def __exit__(
@@ -99,27 +99,30 @@ class Launcher:
         edge, shepherd service is either started or stopped. Double button
         press while idle causes system shutdown.
         """
-        while True:
-            log.info("waiting for falling edge..")
-            self.gpio_led.write(True)
-            if not self.gpio_button.poll():
-                # NOTE poll is suspected to exit after ~ 1-2 weeks running
-                #      -> fills mmc with random measurement
-                # TODO observe behavior, hopefully this change fixes the bug
-                continue
-            self.gpio_led.write(False)
-            log.debug("edge detected")
-            if not self.get_state():
-                time.sleep(0.25)
-                if self.gpio_button.poll(timeout=5):
-                    log.debug("falling edge detected")
-                    log.info("shutdown requested")
-                    self.initiate_shutdown()
-                    self.gpio_led.write(False)
-                    time.sleep(3)
+        try:
+            while True:
+                log.info("waiting for falling edge..")
+                self.gpio_led.write(True)
+                if not self.gpio_button.poll():
+                    # NOTE poll is suspected to exit after ~ 1-2 weeks running
+                    #      -> fills mmc with random measurement
+                    # TODO observe behavior, hopefully this change fixes the bug
                     continue
-            self.set_service(not self.get_state())
-            time.sleep(10)
+                self.gpio_led.write(False)
+                log.debug("edge detected")
+                if not self.get_state():
+                    time.sleep(0.25)
+                    if self.gpio_button.poll(timeout=5):
+                        log.debug("falling edge detected")
+                        log.info("shutdown requested")
+                        self.initiate_shutdown()
+                        self.gpio_led.write(False)
+                        time.sleep(3)
+                        continue
+                self.set_service(not self.get_state())
+                time.sleep(10)
+        except SystemExit:
+            return
 
     def get_state(self, timeout: float = 10) -> bool:
         """Queries systemd for state of shepherd service.
@@ -153,7 +156,7 @@ class Launcher:
             return False
         raise Exception(f"Unknown state { systemd_state }")
 
-    def set_service(self, requested_state: bool) -> bool:
+    def set_service(self, requested_state: bool) -> bool | None:
         """Changes state of shepherd service.
 
         Args:

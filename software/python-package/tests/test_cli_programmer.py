@@ -139,7 +139,9 @@ def test_cli_program_sbw_explicit(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_file_defective_a(
-    shepherd_up: None, cli_runner: CliRunner, fw_empty: Path
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_empty: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -156,7 +158,9 @@ def test_cli_program_file_defective_a(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_file_defective_b(
-    shepherd_up: None, cli_runner: CliRunner, tmp_path: Path
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    tmp_path: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -173,7 +177,9 @@ def test_cli_program_file_defective_b(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_file_defective_c(
-    shepherd_up: None, cli_runner: CliRunner, tmp_path: Path
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    tmp_path: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -232,7 +238,9 @@ def test_cli_program_datarate_invalid_b(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_target_invalid(
-    shepherd_up: None, cli_runner: CliRunner, fw_nrf: Path
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_nrf: Path,
 ) -> None:
     res = cli_runner.invoke(
         cli,

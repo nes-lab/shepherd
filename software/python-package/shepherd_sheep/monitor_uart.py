@@ -93,6 +93,8 @@ class UARTMonitor(Monitor):
                             self.data["message"][self.position] = output
                             self.position += 1
                     self.event.wait(self.poll_intervall)  # rate limiter
+        except RuntimeError:
+            log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
         except ValueError as e:
             log.error(  # noqa: G200
                 "[%s] PySerial ValueError '%s' - "

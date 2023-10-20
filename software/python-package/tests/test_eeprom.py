@@ -46,7 +46,8 @@ def eeprom_retained(eeprom_open: EEPROM) -> Generator[EEPROM, None, None]:
 
 @pytest.fixture()
 def eeprom_with_data(
-    eeprom_retained: EEPROM, cape_data: CapeData
+    eeprom_retained: EEPROM,
+    cape_data: CapeData,
 ) -> Generator[EEPROM, None, None]:
     eeprom_retained._write_cape_data(cape_data)
     yield eeprom_retained

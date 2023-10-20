@@ -4,7 +4,7 @@ import sys
 import time
 from contextlib import ExitStack
 from types import TracebackType
-from typing import Self
+from typing_extensions import Self
 
 from shepherd_core import local_tz
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
@@ -16,7 +16,7 @@ from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 
 
 class ShepherdHarvester(ShepherdIO):
@@ -135,8 +135,9 @@ class ShepherdHarvester(ShepherdIO):
             log.debug("Sent empty buffer #%s to PRU", index)
 
     def run(self) -> None:
-        self.start(self.start_time, wait_blocking=False)
-
+        success = self.start(self.start_time, wait_blocking=False)
+        if not success:
+            return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
         log.info("shepherd started!")
@@ -151,7 +152,10 @@ class ShepherdHarvester(ShepherdIO):
         while True:
             try:
                 idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
-            except ShepherdIOException as e:
+            except ShepherdIOError as e:
+                if e.id_num == ShepherdIOError.ID_TIMEOUT:
+                    log.error("Reception from PRU had a timeout -> begin to exit now")
+                    break
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
                         "Caught unforgivable ShepherdIO-Exception",

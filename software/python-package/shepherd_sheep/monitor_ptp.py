@@ -90,6 +90,10 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
                     self.data["values"].resize((data_length, 3))
+            except RuntimeError:
+                log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
+                break
+            try:
                 self.data["time"][self.position] = int(time.time() * 1e9)
                 self.data["values"][self.position, :] = values[0:3]
                 self.position += 1

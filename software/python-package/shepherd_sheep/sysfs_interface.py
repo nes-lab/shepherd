@@ -23,7 +23,7 @@ from .logger import log
 sysfs_path = Path("/sys/shepherd")
 
 
-class SysfsInterfaceException(Exception):
+class SysfsInterfaceError(Exception):
     pass
 
 
@@ -147,7 +147,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
             return time.time() - ts_start
 
         if time.time() - ts_start > timeout:
-            raise SysfsInterfaceException(
+            raise SysfsInterfaceError(
                 f"timed out waiting for state { wanted_state } - "
                 f"state is { current_state }",
             )
@@ -155,7 +155,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
         time.sleep(0.1)
 
 
-def set_start(start_time: float | int | None = None) -> None:  # noqa: PYI041
+def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
     """Starts shepherd.
 
     Writes 'start' to the 'state' sysfs attribute in order to transition from
@@ -168,17 +168,22 @@ def set_start(start_time: float | int | None = None) -> None:  # noqa: PYI041
     current_state = get_state()
     log.debug("current state of shepherd kernel module: %s", current_state)
     if current_state != "idle":
-        raise SysfsInterfaceException(f"Cannot start from state { current_state }")
+        raise SysfsInterfaceError(f"Cannot start from state { current_state }")
 
-    with (sysfs_path / "state").open("w", encoding="utf-8") as f:
-        if isinstance(start_time, float):
-            start_time = int(start_time)
-        if isinstance(start_time, int):
-            log.debug("writing start-time = %d to sysfs", start_time)
-            f.write(f"{start_time}")
-        else:  # unknown type
-            log.debug("writing 'start' to sysfs")
-            f.write("start")
+    try:
+        with (sysfs_path / "state").open("w", encoding="utf-8") as f:
+            if isinstance(start_time, float):
+                start_time = int(start_time)
+            if isinstance(start_time, int):
+                log.debug("writing start-time = %d to sysfs", start_time)
+                f.write(f"{start_time}")
+            else:  # unknown type
+                log.debug("writing 'start' to sysfs")
+                f.write("start")
+    except OSError:
+        log.error("Failed to write 'Start' to sysfs")
+        return False
+    return True
 
 
 def set_stop(force: bool = False) -> None:
@@ -190,7 +195,7 @@ def set_stop(force: bool = False) -> None:
     if not force:
         current_state = get_state()
         if current_state != "running":
-            raise SysfsInterfaceException(f"Cannot stop from state { current_state }")
+            raise SysfsInterfaceError(f"Cannot stop from state { current_state }")
 
     with (sysfs_path / "state").open("w", encoding="utf-8") as f:
         f.write("stop")
@@ -206,12 +211,12 @@ def write_mode(mode: str, force: bool = False) -> None:
     :param force:
     """
     if mode not in shepherd_modes:
-        raise SysfsInterfaceException("invalid value for mode")
+        raise SysfsInterfaceError("invalid value for mode")
     if force:
         set_stop(force=True)
         wait_for_state("idle", 5)
     elif get_state() != "idle":
-        raise SysfsInterfaceException(
+        raise SysfsInterfaceError(
             f"Cannot set mode when shepherd is { get_state() }",
         )
 
@@ -248,9 +253,9 @@ def write_dac_aux_voltage(
         return
 
     if voltage < 0.0:
-        raise SysfsInterfaceException(f"sending voltage with negative value: {voltage}")
+        raise SysfsInterfaceError(f"sending voltage with negative value: {voltage}")
     if voltage > 5.0:
-        raise SysfsInterfaceException(f"sending voltage above limit of 5V: {voltage}")
+        raise SysfsInterfaceError(f"sending voltage above limit of 5V: {voltage}")
     if not cal_emu:
         cal_emu = CalibrationEmulator()
     output = int(cal_emu.dac_V_A.si_to_raw(voltage))
@@ -326,15 +331,15 @@ def write_calibration_settings(
 
     """
     if cal_pru["adc_current_gain"] < 0:
-        raise SysfsInterfaceException(
+        raise SysfsInterfaceError(
             f"sending calibration with negative ADC-C-gain: {cal_pru['adc_current_gain']}",
         )
     if cal_pru["adc_voltage_gain"] < 0:
-        raise SysfsInterfaceException(
+        raise SysfsInterfaceError(
             f"sending calibration with negative ADC-V-gain: {cal_pru['adc_voltage_gain']}",
         )
     if cal_pru["dac_voltage_gain"] < 0:
-        raise SysfsInterfaceException(
+        raise SysfsInterfaceError(
             f"sending calibration with negative DAC-gain: {cal_pru['dac_voltage_gain']}",
         )
     wait_for_state("idle", 3.0)
@@ -393,7 +398,7 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
             _set = [str(i) for i in _set]
             output += " ".join(_set) + " \n"
         else:
-            raise SysfsInterfaceException(
+            raise SysfsInterfaceError(
                 f"virtual-converter value {setting} has wrong type ({type(setting)})",
             )
 
@@ -433,7 +438,7 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
         if isinstance(setting, int):
             output += f"{setting} \n"
         else:
-            raise SysfsInterfaceException(
+            raise SysfsInterfaceError(
                 f"virtual harvester value {setting} has wrong type ({type(setting)})",
             )
 
@@ -462,7 +467,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
     :param values:
     """
     if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255):
-        raise SysfsInterfaceException(
+        raise SysfsInterfaceError(
             f"pru_msg-type has invalid type, "
             f"expected u8 for type (={type(msg_type)}) "
             f"and content (={msg_type})",
@@ -476,7 +481,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
 
     for value in values:
         if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
-            raise SysfsInterfaceException(
+            raise SysfsInterfaceError(
                 f"pru_msg-value has invalid type, "
                 f"expected u32 for type (={type(value)}) and content (={value})",
             )
@@ -493,7 +498,7 @@ def read_pru_msg() -> tuple[int, list[int]]:
         message = f.read().rstrip()
     msg_parts = [int(x) for x in message.split()]
     if len(msg_parts) < 2:
-        raise SysfsInterfaceException("pru_msg was too short")
+        raise SysfsInterfaceError("pru_msg was too short")
     return msg_parts[0], msg_parts[1:]
 
 
@@ -540,7 +545,7 @@ def write_programmer_ctrl(
         if value is None:
             continue
         if num > 0 and ((value < 0) or (value >= 2**32)):
-            raise SysfsInterfaceException(
+            raise SysfsInterfaceError(
                 f"at least one parameter out of u32-bounds, value={value}",
             )
         with (sysfs_path / "programmer" / attribute).open(

@@ -4,7 +4,7 @@ import time
 from contextlib import ExitStack
 from datetime import datetime
 from types import TracebackType
-from typing import Self
+from typing_extensions import Self
 
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
@@ -23,7 +23,7 @@ from .logger import get_verbosity
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 from .target_io import TargetIO
 from .target_io import target_pins
 
@@ -189,7 +189,10 @@ class ShepherdEmulator(ShepherdIO):
         super().__exit__()
 
     def return_buffer(
-        self, index: int, buffer: DataBuffer, verbose: bool = False
+        self,
+        index: int,
+        buffer: DataBuffer,
+        verbose: bool = False,
     ) -> None:
         ts_start = time.time() if verbose else 0
 
@@ -207,7 +210,9 @@ class ShepherdEmulator(ShepherdIO):
             )
 
     def run(self) -> None:
-        self.start(self.start_time, wait_blocking=False)
+        success = self.start(self.start_time, wait_blocking=False)
+        if not success:
+            return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
         log.info("shepherd started!")
@@ -226,7 +231,7 @@ class ShepherdEmulator(ShepherdIO):
         ):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
-            except ShepherdIOException as e:
+            except ShepherdIOError as e:
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
                         "Caught unforgivable ShepherdIO-Exception",
@@ -251,11 +256,17 @@ class ShepherdEmulator(ShepherdIO):
                     break
                 if self.writer is not None:
                     self.writer.write_buffer(emu_buf)
-            except ShepherdIOException as e:
+            except ShepherdIOError as e:
                 # We're done when the PRU has processed all emulation data buffers
                 if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
+                    log.debug("Collected all Buffers from PRU -> begin to exit now")
                     break
+                if e.id_num == ShepherdIOError.ID_TIMEOUT:
+                    log.error("Reception from PRU had a timeout -> begin to exit now")
+                    break
+
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
                         "Caught unforgivable ShepherdIO-Exception",
                     ) from e
+                log.warning("Caught an Exception", exc_info=e)

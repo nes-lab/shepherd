@@ -58,12 +58,19 @@ class SheepMonitor(Monitor):
         while not self.event.is_set():
             if self.queue.qsize() > 0:
                 rec = self.queue.get()
-                data_length = self.data["time"].shape[0]
-                if self.position >= data_length:
-                    data_length += self.increment
-                    self.data["time"].resize((data_length,))
-                    self.data["message"].resize((data_length,))
-                    self.data["level"].resize((data_length,))
+                try:
+                    data_length = self.data["time"].shape[0]
+                    if self.position >= data_length:
+                        data_length += self.increment
+                        self.data["time"].resize((data_length,))
+                        self.data["message"].resize((data_length,))
+                        self.data["level"].resize((data_length,))
+                except RuntimeError:
+                    log.error(
+                        "[%s] HDF5-File unavailable - will stop",
+                        type(self).__name__,
+                    )
+                    break
                 self.data["time"][self.position] = int(rec.created * 1e9)
                 self.data["message"][self.position] = rec.message
                 self.data["level"][self.position] = rec.levelno

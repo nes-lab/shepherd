@@ -13,7 +13,7 @@ from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_sheep import ShepherdDebug
 from shepherd_sheep import ShepherdEmulator
-from shepherd_sheep import ShepherdIOException
+from shepherd_sheep import ShepherdIOError
 from shepherd_sheep import Writer
 from shepherd_sheep import run_emulator
 from shepherd_sheep import sysfs_interface
@@ -101,7 +101,7 @@ def test_emulation(
         idx, emu_buf = emulator.get_buffer()
         writer.write_buffer(emu_buf)
 
-    with pytest.raises(ShepherdIOException):
+    with pytest.raises(ShepherdIOError):
         _, _ = emulator.get_buffer()
 
 

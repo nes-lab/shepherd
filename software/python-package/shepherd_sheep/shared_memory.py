@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from datetime import timedelta
 from types import TracebackType
-from typing import Self
+from typing_extensions import Self
 
 import numpy as np
 from shepherd_core.data_models import GpioTracing
@@ -301,11 +301,10 @@ class SharedMemory:
 
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
             log.error(
-                "Size of gpio_events out of range with %d entries",
+                "Size of gpio_events out of range with %d entries (max=%d)",
                 n_gpio_events,
+                commons.MAX_GPIO_EVT_PER_BUFFER,
             )
-            # TODO: should be exception, also
-            #  put into Writer.write_exception() with ShepherdIOException
             n_gpio_events = commons.MAX_GPIO_EVT_PER_BUFFER
 
         if self.ts_start_gp <= buffer_timestamp <= self.ts_stop_gp:
@@ -335,22 +334,19 @@ class SharedMemory:
         pru0_util_mean = round(100 * pru0_sum_ticks / n_samples / 2000, 1)
         if pru0_util_mean > pru0_util_max:
             pru0_util_mean = 0.1
-        if verbose:
-            if (pru0_util_mean > 95) or (pru0_util_max > 100):
-                log.warning(
-                    "Pru0 Loop-Util: mean = %d %%, max = %d %% "
-                    "-> WARNING: broken real-time-condition",
-                    pru0_util_mean,
-                    pru0_util_max,
-                )
-                # TODO: raise ShepherdIOException or add this info into output-file?
-                #  WRONG PLACE HERE
-            else:
-                log.info(
-                    "Pru0 Loop-Util: mean = %d %%, max = %d %%",
-                    pru0_util_mean,
-                    pru0_util_max,
-                )
+        if (pru0_util_mean > 98) or (pru0_util_max > 100):
+            log.warning(
+                "Pru0 Loop-Util: mean = %d %%, max = %d %% "
+                "-> WARNING: probably broken real-time-condition",
+                pru0_util_mean,
+                pru0_util_max,
+            )
+        elif verbose:
+            log.info(
+                "Pru0 Loop-Util: mean = %d %%, max = %d %%",
+                pru0_util_mean,
+                pru0_util_max,
+            )
 
         return DataBuffer(
             voltage,

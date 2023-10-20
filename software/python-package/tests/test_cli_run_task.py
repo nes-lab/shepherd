@@ -338,7 +338,9 @@ def test_cli_emulate_parameters_minimal(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_preconfigured(
-    shepherd_up: None, cli_runner: CliRunner, path_here: Path
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    path_here: Path,
 ) -> None:
     file_path = path_here / "_test_config_emulation.yaml"
     res = cli_runner.invoke(cli, ["run", file_path.as_posix()])

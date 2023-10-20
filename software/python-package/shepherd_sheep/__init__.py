@@ -38,7 +38,7 @@ from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
@@ -58,7 +58,7 @@ __all__ = [
     "run_programmer",
     "run_firmware_mod",
     "run_task",
-    "ShepherdIOException",
+    "ShepherdIOError",
     "log",
     "flatten_list",
 ]

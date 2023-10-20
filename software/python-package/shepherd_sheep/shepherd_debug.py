@@ -1,7 +1,7 @@
 import contextlib
 import time
 from typing import NoReturn
-from typing import Self
+from typing_extensions import Self
 
 import msgpack
 import msgpack_numpy
@@ -21,7 +21,7 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .logger import log
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 from .target_io import TargetIO
 
 
@@ -93,7 +93,7 @@ class ShepherdDebug(ShepherdIO):
 
         msg_type, values = self._get_msg(30)
         if msg_type != commons.MSG_DBG_ADC:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_ADC) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -108,7 +108,7 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_GPI, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_GPI:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_GPI) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -144,7 +144,7 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_FN_TESTS:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -160,7 +160,8 @@ class ShepherdDebug(ShepherdIO):
     ) -> None:
         super().send_calibration_settings(cal_emu)
         src_pru = ConverterPRUConfig.from_vsrc(
-            src_cfg, log_intermediate_node=log_intermediate
+            src_cfg,
+            log_intermediate_node=log_intermediate,
         )
         super().send_virtual_converter_settings(src_pru)
 
@@ -177,7 +178,7 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSRC_INIT:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_INIT) }, "
                 f"but got type={ hex(msg_type) } val={ values }, "
                 " is ENABLE_DBG_VSOURCE defined in pru0/main.c??",
@@ -201,7 +202,7 @@ class ShepherdDebug(ShepherdIO):
         )
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_P_INP:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_INP) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -218,7 +219,7 @@ class ShepherdDebug(ShepherdIO):
         )
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_CHARGE:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_CHARGE) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -228,7 +229,7 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_P_OUT, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_P_OUT:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_OUT) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -238,7 +239,7 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_DRAIN:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_DRAIN) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -248,7 +249,7 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_V_CAP, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_V_CAP:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_CAP) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -258,7 +259,7 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_V_OUT, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_V_OUT:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_OUT) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -266,7 +267,10 @@ class ShepherdDebug(ShepherdIO):
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
     def iterate_sampling(
-        self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0
+        self,
+        V_inp_uV: int = 0,
+        A_inp_nA: int = 0,
+        A_out_nA: int = 0,
     ) -> int:
         # NOTE: this includes the harvester
         P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
@@ -421,7 +425,7 @@ class ShepherdDebug(ShepherdIO):
 
     def process_programming_messages(self) -> None:
         """Prints messages to console until timeout occurs"""
-        with contextlib.suppress(ShepherdIOException):
+        with contextlib.suppress(ShepherdIOError):
             while True:
                 msg_type, values = self._get_msg(5)
                 if msg_type != commons.MSG_PGM_ERROR_WRITE:

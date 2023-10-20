@@ -1,4 +1,3 @@
-from typing import Self
 from typing import TypeVar
 
 import numpy as np
@@ -7,6 +6,7 @@ from numpy.typing import NDArray
 from scipy import stats
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
+from typing_extensions import Self
 
 from .logger import logger
 
