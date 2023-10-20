@@ -5,6 +5,7 @@ from time import time
 import click
 import numpy as np
 import typer
+from shepherd_core import local_tz
 
 from .calibrator import INSTR_4WIRE
 from .calibrator import Calibrator
@@ -74,7 +75,7 @@ def measure(
     time_now = time()
     components = ("_emu" if emulator else "") + ("_hrv" if harvester else "")
     if outfile is None:
-        timestamp = datetime.fromtimestamp(time_now)
+        timestamp = datetime.fromtimestamp(time_now, tz=local_tz())
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
         outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}")
     if short:

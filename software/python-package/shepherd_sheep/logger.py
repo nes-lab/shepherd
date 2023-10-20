@@ -39,7 +39,7 @@ def set_verbosity(state: bool | int = True, temporary: bool = False) -> None:
     set_log_verbose_level(console_handler, 3)
     if temporary:
         return
-    global verbosity_state
+    global verbosity_state  # noqa: PLW0603
     verbosity_state = True
 
 

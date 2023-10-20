@@ -98,7 +98,6 @@ class ShepherdIO:
             self.component = "emulator"
         self.gpios = {}
 
-        # self.shared_mem: Optional[SharedMem] = None # noqa: E800
         self._buffer_period: float = 0.1  # placeholder value
 
         self.trace_iv = trace_iv
@@ -171,7 +170,7 @@ class ShepherdIO:
         for _ in range(timeout_n):
             try:
                 return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceException:  # noqa: PERF203
                 time.sleep(self._buffer_period)
                 continue
         raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
@@ -182,7 +181,7 @@ class ShepherdIO:
         while True:
             try:
                 sfs.read_pru_msg()
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceException:  # noqa: PERF203
                 break
 
     def start(
@@ -196,7 +195,7 @@ class ShepherdIO:
             start_time (int): Desired start time in unix time
             wait_blocking (bool): If true, block until start has completed
         """
-        if isinstance(start_time, (float, int)):
+        if isinstance(start_time, float | int):
             log.debug("asking kernel module for start at %.2f", start_time)
         sfs.set_start(start_time)
         if wait_blocking:
@@ -211,7 +210,8 @@ class ShepherdIO:
         """
         sfs.wait_for_state("running", timeout)
 
-    def reinitialize_prus(self) -> None:
+    @staticmethod
+    def reinitialize_prus() -> None:
         sfs.set_stop(force=True)  # forces idle
         sfs.wait_for_state("idle", 5)
 

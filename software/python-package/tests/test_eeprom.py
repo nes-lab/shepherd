@@ -94,7 +94,7 @@ def test_write_value(eeprom_retained, cape_data) -> None:
 def test_write_capedata(eeprom_retained, cape_data) -> None:
     eeprom_retained._write_cape_data(cape_data)
     for key, value in cape_data.items():
-        if type(value) is str:
+        if isinstance(value, str):
             assert eeprom_retained[key] == value.rstrip("\0")
         else:
             assert eeprom_retained[key] == value
@@ -102,7 +102,7 @@ def test_write_capedata(eeprom_retained, cape_data) -> None:
 
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
-def test_read_capedata(eeprom_with_data, cape_data) -> None:
+def test_read_capedata(eeprom_with_data, cape_data: CapeData) -> None:
     cape_data = eeprom_with_data._read_cape_data()
     for key in cape_data.keys():
         assert cape_data[key] == cape_data[key]

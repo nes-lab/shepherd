@@ -15,7 +15,7 @@ class SysUtilMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-    ):
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.3)
         self.log_interval_ns: int = 1 * (10**9)  # step-size is 1 s
         self.log_timestamp_ns: int = 0
@@ -70,7 +70,7 @@ class SysUtilMonitor(Monitor):
             self.thread = threading.Thread(target=self.thread_fn, daemon=True)
             self.thread.start()
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(self, *exc) -> None:  # type: ignore
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)
@@ -81,7 +81,7 @@ class SysUtilMonitor(Monitor):
         self.data["net"].resize((self.position, 2))
         super().__exit__()
 
-    def thread_fn(self, backlog: int = 40):
+    def thread_fn(self) -> None:
         """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none

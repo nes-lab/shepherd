@@ -20,7 +20,8 @@ from shepherd_sheep.shared_memory import DataBuffer
 
 
 def random_data(length) -> np.ndarray:
-    return np.random.randint(0, high=2**18, size=length, dtype="u4")
+    rng = np.random.default_rng()
+    return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture

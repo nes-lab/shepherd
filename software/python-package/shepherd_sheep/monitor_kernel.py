@@ -16,7 +16,7 @@ class KernelMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         backlog: int = 60,
-    ):
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.52)
         self.backlog = backlog
 
@@ -30,14 +30,14 @@ class KernelMonitor(Monitor):
 
         command = [
             "sudo",
-            "journalctl",
+            "/usr/bin/journalctl",
             "--dmesg",
             "--follow",
             f"--lines={self.backlog}",
             "--output=short-precise",
         ]
-        self.process = subprocess.Popen(  # noqa: S603
-            command,
+        self.process = subprocess.Popen(
+            command,  # noqa: S603
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
@@ -49,7 +49,7 @@ class KernelMonitor(Monitor):
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(self, *exc) -> None:  # type: ignore
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)

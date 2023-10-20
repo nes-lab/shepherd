@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
+from typing import ClassVar
 
 import yaml
 from fabric import Connection
@@ -17,6 +18,7 @@ from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
 from shepherd_core import Inventory
+from shepherd_core import local_tz
 from shepherd_core import tb_client
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
@@ -28,13 +30,13 @@ from .logger import logger
 
 
 class Herd:
-    _remote_paths_allowed = [
-        Path("/var/shepherd/recordings/"),  # default
+    path_default = Path("/var/shepherd/recordings/")
+    _remote_paths_allowed: ClassVar[set] = {
+        path_default,  # default
         Path("/var/shepherd/"),
         Path("/etc/shepherd/"),
         Path("/tmp/"),  # noqa: S108
-    ]
-    path_default = _remote_paths_allowed[0]
+    }
 
     timestamp_diff_allowed = 10
     start_delay_s = 30
@@ -80,13 +82,13 @@ class Herd:
             if host_path is None:
                 raise FileNotFoundError(", ".join(inventories))
 
-            with open(host_path) as stream:
+            with host_path.open(encoding="utf-8-sig") as stream:
                 try:
                     inventory_data = yaml.safe_load(stream)
-                except yaml.YAMLError:
+                except yaml.YAMLError as _xpt:
                     raise FileNotFoundError(
                         f"Couldn't read inventory file {host_path}, please provide a valid one",
-                    )
+                    ) from _xpt
             logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
@@ -256,7 +258,7 @@ class Herd:
             filename = src.name
             src = str(src)
 
-        if dst.suffix == "" and not str(dst).endswith("/"):
+        if not dst.suffix and not str(dst).endswith("/"):
             dst = str(dst) + "/"
 
         if not cnx.is_connected:
@@ -347,10 +349,9 @@ class Herd:
         dst_paths = {}
 
         # assemble file-names
-        if Path(src).is_absolute():
-            src_path = Path(src)
-        else:
-            src_path = Path(self.path_default) / src
+        src_path = (
+            Path(src) if Path(src).is_absolute() else Path(self.path_default) / src
+        )
 
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
@@ -459,7 +460,7 @@ class Herd:
             task_dict = task.model_dump(exclude_unset=True)
             task_wrap = Wrapper(
                 datatype=type(task).__name__,
-                created=datetime.now(),
+                created=datetime.now(tz=local_tz()),
                 parameters=task_dict,
             )
             task_yaml = yaml.safe_dump(
@@ -471,7 +472,7 @@ class Herd:
         elif isinstance(task, Path):
             if not task.is_file() or not task.exists():
                 raise ValueError("Task-Path must be existing file")
-            with open(task) as stream:
+            with task.open(encoding="utf-8-sig") as stream:
                 task_yaml = yaml.safe_load(stream)
         else:
             raise ValueError("Task must either be model or path to a model")

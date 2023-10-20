@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 from shepherd_core import CalibrationHarvester
+from shepherd_core import local_tz
 from shepherd_core.data_models import Firmware
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
@@ -33,7 +34,8 @@ from shepherd_sheep.shared_memory import DataBuffer
 
 
 def random_data(length: int) -> np.ndarray:
-    return np.random.randint(0, high=2**18, size=length, dtype="u4")
+    rng = np.random.default_rng()
+    return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture
@@ -100,7 +102,7 @@ def test_cli_harvest_parameters_most(
         force_overwrite=True,
         duration=10,
         use_cal_default=True,
-        time_start=datetime.fromtimestamp(round(time.time() + 20)),
+        time_start=datetime.fromtimestamp(round(time.time() + 20), tz=local_tz()),
         abort_on_error=False,
         verbose=3,
     ).to_file(tmp_yaml)
@@ -282,7 +284,7 @@ def test_cli_emulate_parameters_long(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         voltage_aux=2.5,
-        time_start=datetime.fromtimestamp(round(time.time() + 20)),
+        time_start=datetime.fromtimestamp(round(time.time() + 20), tz=local_tz()),
         use_cal_default=True,
         enable_io=True,
         io_port="B",

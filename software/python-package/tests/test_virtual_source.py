@@ -12,10 +12,7 @@ from shepherd_sheep import ShepherdDebug
 @pytest.fixture
 def src_cfg(request) -> VirtualSourceConfig:
     marker = request.node.get_closest_marker("src_name")
-    if marker is None:
-        src_name = None
-    else:
-        src_name = marker.args[0]
+    src_name = None if marker is None else marker.args[0]
 
     if isinstance(src_name, str):
         if ".yaml" in src_name:
@@ -200,7 +197,7 @@ def test_vsource_drain_charge(
         if (v_raw1 < 1) or (v_raw2 < 1):
             print(
                 f"Stopped Drain-loop after {index}/{n_samples} samples "
-                f"({round(100*index/n_samples)} %), because output was disabled",
+                f"({round(100 * index / n_samples)} %), because output was disabled",
             )
             break
 
@@ -345,7 +342,7 @@ def test_vsource_diodecap(
     V_settle_mV = (V_inp_uV * 10**-3 - 300) / 2
     # how many steps? charging took 9 steps at 200mA, so roughly 9 * 200 / (10 - 5)
     print(
-        f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV/10**3} mV , Out = 10mA "
+        f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV / 10**3} mV , Out = 10mA "
         f"-> V_out should settle @ {V_settle_mV} mV ",
     )
     for _ in range(25):

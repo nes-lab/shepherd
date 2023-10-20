@@ -13,7 +13,7 @@ class SheepMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-    ):
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.25)
         self.queue = get_message_queue()
         self.data.create_dataset(
@@ -38,7 +38,7 @@ class SheepMonitor(Monitor):
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(self, *exc) -> None:  # type: ignore
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)

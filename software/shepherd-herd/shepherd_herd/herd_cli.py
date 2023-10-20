@@ -23,7 +23,7 @@ from .logger import set_verbosity
 #  - arguments can be configured in a dict and standardized across tools
 
 
-def exit_gracefully(*args) -> None:  # type: ignore
+def exit_gracefully(*_args) -> None:  # type: ignore
     log.warning("Aborted!")
     sys.exit(0)
 

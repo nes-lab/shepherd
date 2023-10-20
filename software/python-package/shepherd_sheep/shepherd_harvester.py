@@ -4,6 +4,7 @@ import sys
 import time
 from contextlib import ExitStack
 
+from shepherd_core import local_tz
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 
@@ -65,7 +66,7 @@ class ShepherdHarvester(ShepherdIO):
 
         store_path = cfg.output_path.resolve()
         if store_path.is_dir():
-            timestamp = datetime.datetime.fromtimestamp(self.start_time)
+            timestamp = datetime.datetime.fromtimestamp(self.start_time, tz=local_tz())
             timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
             # ⤷ closest to ISO 8601, avoids ":"
             store_path = store_path / f"hrv_{timestring}.h5"
@@ -143,9 +144,11 @@ class ShepherdHarvester(ShepherdIO):
             try:
                 idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
             except ShepherdIOException as e:
-                log.warning("Caught an Exception", exc_info=e)
                 if self.cfg.abort_on_error:
-                    raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                    raise RuntimeError(
+                        "Caught unforgivable ShepherdIO-Exception"
+                    ) from e
+                log.warning("Caught an Exception", exc_info=e)
                 continue
 
             if (hrv_buf.timestamp_ns / 1e9) >= ts_end:

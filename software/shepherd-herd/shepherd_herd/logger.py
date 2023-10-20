@@ -22,5 +22,5 @@ def set_verbosity(state: bool | int = True) -> None:
     elif isinstance(state, int) and state < 3:
         return  # old format, will be replaced
     set_log_verbose_level(logger, 3)
-    global verbosity_state
+    global verbosity_state  # noqa: PLW0603
     verbosity_state = True

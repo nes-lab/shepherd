@@ -18,7 +18,7 @@ def fw_example() -> Path:
 @pytest.fixture
 def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
-    with open(store_path, "w") as f:
+    with store_path.open("w", encoding="utf-8-sig") as f:
         f.write("")
     return store_path
 

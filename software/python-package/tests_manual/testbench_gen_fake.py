@@ -11,7 +11,8 @@ store_path = tmp_path / "harvest_example.h5"
 
 
 def random_data(length):
-    return np.random.randint(0, high=2**18, size=length, dtype="u4")
+    rng = np.random.default_rng()
+    return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
 with Writer(store_path, cal_data=CalibrationHarvester()) as store:

@@ -7,6 +7,7 @@ from datetime import datetime
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
+from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
@@ -115,7 +116,7 @@ class ShepherdEmulator(ShepherdIO):
         if cfg.output_path is not None:
             store_path = cfg.output_path.resolve()
             if store_path.is_dir():
-                timestamp = datetime.fromtimestamp(self.start_time)
+                timestamp = datetime.fromtimestamp(self.start_time, tz=local_tz())
                 timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
                 # ⤷ closest to ISO 8601, avoids ":"
                 store_path = store_path / f"emu_{timestring}.h5"
@@ -217,10 +218,11 @@ class ShepherdEmulator(ShepherdIO):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
             except ShepherdIOException as e:
-                log.warning("Caught an Exception", exc_info=e)
-
                 if self.cfg.abort_on_error:
-                    raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                    raise RuntimeError(
+                        "Caught unforgivable ShepherdIO-Exception"
+                    ) from e
+                log.warning("Caught an Exception", exc_info=e)
                 continue
 
             if emu_buf.timestamp_ns / 1e9 >= ts_end:
@@ -244,6 +246,7 @@ class ShepherdEmulator(ShepherdIO):
                 # We're done when the PRU has processed all emulation data buffers
                 if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
                     break
-                else:
-                    if self.cfg.abort_on_error:
-                        raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                if self.cfg.abort_on_error:
+                    raise RuntimeError(
+                        "Caught unforgivable ShepherdIO-Exception"
+                    ) from e

@@ -8,7 +8,7 @@ from shepherd_sheep.sysfs_interface import remove_kernel_module
 
 
 def check_beagleboard() -> bool:
-    with suppress(Exception), open("/proc/cpuinfo") as info:
+    with suppress(Exception), Path("/proc/cpuinfo").open(encoding="utf-8-sig") as info:
         if "AM33XX" in info.read():
             return True
     return False

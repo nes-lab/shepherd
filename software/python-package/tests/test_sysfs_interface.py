@@ -147,7 +147,7 @@ def test_initial_calibration_settings(shepherd_up, cal4sysfs):
 
 @pytest.mark.hardware
 def test_initial_harvester_settings(shepherd_up):
-    hrv_list = [0] + list(range(200, 211))
+    hrv_list = [0, *list(range(200, 211))]
     assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 

@@ -144,7 +144,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         file_tmp = Path(path_tmp.name) / "aligned.hex"
         # tmp_path because firmware can be in readonly content-dir
         cmd = [
-            "srec_cat",
+            "/usr/bin/srec_cat",
             # BL51 hex files are not sorted for ascending addresses. Suppress this warning
             "-disable-sequence-warning",
             # load input HEX file
@@ -167,13 +167,13 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             file_tmp.as_posix(),
             "-Intel",
         ]
-        ret = subprocess.run(cmd, timeout=30)  # noqa: S607 S603
+        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
         if ret.returncode > 0:
             log.error("Error during realignment (srec_cat): %s", ret.stderr)
             failed = True
             raise SystemExit
 
-        with open(file_tmp.as_posix(), "rb") as fw:
+        with file_tmp.resolve().open("rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
                 target = cfg.mcu_type.lower()

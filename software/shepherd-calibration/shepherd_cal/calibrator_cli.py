@@ -4,6 +4,7 @@ from time import time
 
 import click
 import typer
+from shepherd_core import local_tz
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.base.calibration import CapeData
 
@@ -98,7 +99,7 @@ def measure(
     msr_cape = CalMeasurementCape(**results)
 
     if outfile is None:
-        timestamp = datetime.fromtimestamp(time())
+        timestamp = datetime.fromtimestamp(time(), tz=local_tz())
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
         outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}.measurement.yaml")
         logger.debug("No filename provided -> set to '%s'.", outfile)

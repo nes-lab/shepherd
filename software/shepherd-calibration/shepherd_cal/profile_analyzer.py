@@ -35,7 +35,7 @@ def analyze_directory(
 
     for file in files:
         fpath = Path(file)
-        if not os.path.isfile(file):
+        if not fpath.is_file():
             continue
         if "npz" not in fpath.suffix.lower():
             continue

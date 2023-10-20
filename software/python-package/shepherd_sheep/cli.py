@@ -59,7 +59,7 @@ except ModuleNotFoundError:
 # - redone programmer, emulation
 
 
-def exit_gracefully(*args):  # type: ignore
+def exit_gracefully(*_args):  # type: ignore
     log.warning("Aborted!")
     sys.exit(0)
 
@@ -180,7 +180,7 @@ def write(
             storage.write_calibration(cal_cape)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
-        exit(2)
+        sys.exit(2)
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
@@ -201,10 +201,10 @@ def read(cal_file: Path | None):
         log.warning(
             "Reading from EEPROM failed (Val) -> no plausible data found",
         )
-        exit(2)
+        sys.exit(2)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
-        exit(3)
+        sys.exit(3)
 
     if cal_file is None:
         log.info("Retrieved Cal-Data:\n\n%s", str(cal))

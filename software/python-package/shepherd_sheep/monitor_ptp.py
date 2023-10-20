@@ -15,7 +15,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-    ):
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.51)
         self.data.create_dataset(
             "values",
@@ -37,8 +37,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             "--lines=60",
             "--output=short-precise",
         ]  # for client
-        self.process = subprocess.Popen(  # noqa: S603
-            command,
+        self.process = subprocess.Popen(
+            command,  # noqa: S603
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
@@ -50,7 +50,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(self, *exc) -> None:  # type: ignore
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.poll_intervall)

@@ -10,7 +10,7 @@ from .logger import logger
 from .logger import set_verbosity
 
 
-def exit_gracefully(*args):  # type: ignore
+def exit_gracefully(*_args):  # type: ignore
     logger.warning("Aborted!")
     sys.exit(0)
 

@@ -9,8 +9,13 @@ HDF5 files.
 :license: MIT, see LICENSE for more details.
 """
 from pathlib import Path
+from typing import TYPE_CHECKING
+from typing import ClassVar
 
-import h5py
+if TYPE_CHECKING:
+    import h5py
+    from .monitor_abc import Monitor
+
 import numpy as np
 import yaml
 from shepherd_core import CalibrationEmulator as CalEmu
@@ -23,7 +28,6 @@ from shepherd_core.data_models.task import Compression
 
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .commons import MAX_GPIO_EVT_PER_BUFFER
-from .monitor_abc import Monitor
 from .monitor_kernel import KernelMonitor
 from .monitor_ptp import PTPMonitor
 from .monitor_sheep import SheepMonitor
@@ -48,7 +52,7 @@ class Writer(CoreWriter):
             nanoseconds
     """
 
-    mode_dtype_dict = {
+    mode_dtype_dict: ClassVar[dict[str, list]] = {
         "harvester": ["ivsample", "ivcurve", "isc_voc"],
         "emulator": ["ivsample"],
     }

@@ -14,7 +14,7 @@ class Monitor(ABC):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         poll_intervall: float = 0.25,
-    ):
+    ) -> None:
         self.data = target
         self.poll_intervall = poll_intervall
         self.position = 0
@@ -42,7 +42,7 @@ class Monitor(ABC):
             type(self).__name__,
         )
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(self, *exc) -> None:  # type: ignore
         self.data["time"].resize((self.position,))
         log.info(
             "[%s] recorded %d events",

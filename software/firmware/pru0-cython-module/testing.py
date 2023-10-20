@@ -1,6 +1,4 @@
 # import sys
-# print(sys.path)
-# sys.path.append('/home/vishal/shepherd/software/firmware/pru0-cython-module')
 # import pyximport
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
