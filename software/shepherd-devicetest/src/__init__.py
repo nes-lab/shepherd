@@ -311,7 +311,7 @@ if __name__ == "__main__":
     dpg.setup_dearpygui()
 
     assemble_window()
-    dpg.set_primary_window("main", True)
+    dpg.set_primary_window("main", value=True)
 
     dpg.show_viewport()
     dpg.start_dearpygui()

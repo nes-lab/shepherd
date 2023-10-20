@@ -25,6 +25,8 @@ from .profile_analyzer import analyze_directory
 from .profiler import INSTR_PROFILE_SHP
 from .profiler import Profiler
 
+# ruff: noqa: FBT001, FBT003
+
 cli_pro = typer.Typer(
     name="profile",
     help="Sub-commands for profiling the analog frontends",
@@ -84,7 +86,7 @@ def measure(
         file_path = outfile.stem + ".profile_full" + components + ".npz"
 
     shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
-    profiler = Profiler(shpcal, short)
+    profiler = Profiler(shpcal, short=short)
     results: dict[str, np.ndarray] = {"cape": cape_serial}
 
     if not quiet:
@@ -142,4 +144,4 @@ def analyze(
 ):
     """Analyze profile-data"""
     cli_setup_callback(verbose)
-    analyze_directory(infiles, outfile, plot)
+    analyze_directory(infiles, outfile, do_plots=plot)

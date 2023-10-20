@@ -16,6 +16,8 @@ from .herd import Herd
 from .logger import logger as log
 from .logger import set_verbosity
 
+# ruff: noqa: FBT001
+
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring
 #  https://click.palletsprojects.com/en/8.1.x/documentation/#command-short-help
@@ -102,7 +104,7 @@ def cli(
 @click.pass_context
 def poweroff(ctx: click.Context, restart: bool):
     with ctx.obj["herd"] as herd:
-        exit_code = herd.poweroff(restart)
+        exit_code = herd.poweroff(restart=restart)
     sys.exit(exit_code)
 
 
@@ -152,7 +154,7 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
 @click.pass_context
 def run(ctx: click.Context, config: Path, attach: bool):
     with ctx.obj["herd"] as herd:
-        exit_code = herd.run_task(config, attach)
+        exit_code = herd.run_task(config, attach=attach)
     sys.exit(exit_code)
 
 
@@ -409,7 +411,7 @@ def distribute(
     force_overwrite: bool,
 ):
     with ctx.obj["herd"] as herd:
-        herd.put_file(filename, remote_path, force_overwrite)
+        herd.put_file(filename, remote_path, force_overwrite=force_overwrite)
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
@@ -472,7 +474,7 @@ def retrieve(
             if herd.await_stop(timeout=30):
                 raise Exception("shepherd still active after timeout")
 
-        failed = herd.get_file(filename, outdir, timestamp, separate, delete)
+        failed = herd.get_file(filename, outdir, timestamp=timestamp, separate=separate, delete_src=delete)
     sys.exit(failed)
 
 

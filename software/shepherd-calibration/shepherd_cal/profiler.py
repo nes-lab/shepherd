@@ -21,6 +21,8 @@ from shepherd_core.data_models.testbed.cape import TargetPort
 from .calibrator import Calibrator
 from .logger import logger
 
+# ruff: noqa: FBT003
+
 INSTR_PROFILE_SHP = """
 ---------------------- Characterize Shepherd-Frontend -----------------------
 - remove targets from target-ports
@@ -36,7 +38,7 @@ INSTR_PROFILE_SHP = """
 
 
 class Profiler:
-    def __init__(self, calibrator: Calibrator, short: bool = False):
+    def __init__(self, calibrator: Calibrator, *, short: bool = False):
         self._cal: Calibrator = calibrator
 
         if short:

@@ -189,7 +189,7 @@ class Herd:
     @staticmethod
     def _thread_run(
         cnx: Connection,
-        sudo: bool,
+        sudo: bool,  # noqa: FBT001
         cmd: str,
         results: dict[int, Result],
         index: int,
@@ -210,7 +210,7 @@ class Herd:
             cnx.close()
 
     @validate_call
-    def run_cmd(self, cmd: str, sudo: bool = False) -> dict[int, Result]:
+    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[int, Result]:
         """Run COMMAND on the shell -> Returns output-results
         NOTE: in case of error on a node that corresponding dict value is unavailable
         """
@@ -230,7 +230,7 @@ class Herd:
             raise RuntimeError("ZERO nodes answered - check your config")
         return results
 
-    def print_output(self, replies: dict[int, Result], verbose: bool = False) -> None:
+    def print_output(self, replies: dict[int, Result], *, verbose: bool = False) -> None:
         """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
             if not isinstance(replies.get(i), Result):
@@ -250,7 +250,7 @@ class Herd:
         cnx: Connection,
         src: Path | StringIO,
         dst: Path,
-        force_overwrite: bool,
+        force_overwrite: bool,  # noqa: FBT001
     ):
         if isinstance(src, StringIO):
             filename = dst.name
@@ -281,7 +281,7 @@ class Herd:
     def put_file(
         self,
         src: StringIO | Path | str,
-        dst: Path | str,
+        dst: Path | str, *,
         force_overwrite: bool = False,
     ) -> None:
         if isinstance(src, StringIO):
@@ -336,7 +336,7 @@ class Herd:
     def get_file(
         self,
         src: Path | str,
-        dst_dir: Path | str,
+        dst_dir: Path | str, *,
         timestamp: bool = False,
         separate: bool = False,
         delete_src: bool = False,
@@ -493,7 +493,7 @@ class Herd:
         )
 
     @validate_call
-    def check_status(self, warn: bool = False) -> bool:
+    def check_status(self, *, warn: bool = False) -> bool:
         """Returns true as long as one instance is still measuring
 
         :param warn:
@@ -540,7 +540,7 @@ class Herd:
         return exit_code
 
     @validate_call
-    def poweroff(self, restart: bool) -> int:
+    def poweroff(self, *, restart: bool) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
             replies = self.run_cmd(sudo=True, cmd="reboot")
@@ -589,7 +589,7 @@ class Herd:
         # TODO: best case - add all to one file or a new inventories-model?
 
     @validate_call
-    def run_task(self, config: Path | ShpModel, attach: bool = False) -> int:
+    def run_task(self, config: Path | ShpModel, *, attach: bool = False) -> int:
         if attach:
             remote_path = Path("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
@@ -598,7 +598,7 @@ class Herd:
             exit_code = max([reply.exited for reply in replies.values()])
             if exit_code:
                 logger.error("Running Task failed - will exit now!")
-            self.print_output(replies, True)
+            self.print_output(replies, verbose=True)
 
         else:
             remote_path = Path("/etc/shepherd/config.yaml")
@@ -613,7 +613,7 @@ class Herd:
     def get_task_files(
         self,
         config: Path | ShpModel,
-        dst_dir: Path | str,
+        dst_dir: Path | str, *,
         separate: bool = False,
         delete_src: bool = False,
     ) -> bool:
@@ -629,7 +629,7 @@ class Herd:
         for task in tasks:
             if hasattr(task, "output_path"):
                 logger.info("General remote path is: %s", task.output_path)
-                failed |= self.get_file(task.output_path, dst_dir, separate, delete_src)
+                failed |= self.get_file(task.output_path, dst_dir, separate=separate, delete_src=delete_src)
             if hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
