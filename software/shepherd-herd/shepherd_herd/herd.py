@@ -187,14 +187,16 @@ class Herd:
     def _open(self) -> None:
         """Open Connection on all Nodes"""
         threads = {}
-        for i, cnx in enumerate(self.group):
-            threads[i] = threading.Thread(target=self._thread_open, args=[cnx])
-            threads[i].start()
-        for thread in threads.values():
+        for cnx in self.group:
+            _name = self.hostnames[cnx.host]
+            threads[_name] = threading.Thread(target=self._thread_open, args=[cnx])
+            threads[_name].start()
+        for host, thread in threads.items():
             thread.join(timeout=10.0)
             if thread.is_alive():
                 logger.error(
-                    "Connection.Open() did fail to finish - will delete that thread"
+                    "Connection.Open() did fail to finish on %s - will delete that thread",
+                    host,
                 )
             del thread  # ... overcautious
         self.group = [cnx for cnx in self.group if cnx.is_connected]
@@ -231,16 +233,18 @@ class Herd:
         threads = {}
         logger.debug("Sheep-CMD = %s", cmd)
         for i, cnx in enumerate(self.group):
-            threads[i] = threading.Thread(
+            _name = self.hostnames[cnx.host]
+            threads[_name] = threading.Thread(
                 target=self._thread_run,
                 args=(cnx, sudo, cmd, results, i),
             )
-            threads[i].start()
-        for thread in threads.values():
-            thread.join(timeout=10.0)
+            threads[_name].start()
+        for host, thread in threads.items():
+            thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
-                    "Command.Run() did fail to finish - will delete that thread"
+                    "Command.Run() did fail to finish on %s - will delete that thread",
+                    host,
                 )
             del thread  # ... overcautious
         if len(results) < 1:
@@ -331,16 +335,20 @@ class Herd:
                 raise NameError(f"provided path was forbidden ('{dst_path}')")
 
         threads = {}
-        for i, cnx in enumerate(self.group):
-            threads[i] = threading.Thread(
+        for cnx in self.group:
+            _name = self.hostnames[cnx.host]
+            threads[_name] = threading.Thread(
                 target=self._thread_put,
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
-            threads[i].start()
-        for thread in threads.values():
-            thread.join(timeout=10.0)
+            threads[_name].start()
+        for host, thread in threads.items():
+            thread.join()  # timeout=10.0
             if thread.is_alive():
-                logger.error("File.Put() did fail to finish - will delete that thread")
+                logger.error(
+                    "File.Put() did fail to finish on %s - will delete that thread",
+                    host,
+                )
             del thread  # ... overcautious
 
     @staticmethod
@@ -430,10 +438,11 @@ class Herd:
             hostname = self.hostnames[cnx.host]
             if replies[i].exited > 0:
                 continue
-            threads[i].join(timeout=10.0)
+            threads[i].join()  # timeout=10.0
             if threads[i].is_alive():
                 logger.error(
-                    "Command.Run() did fail to finish - will delete that thread"
+                    "Command.Run() did fail to finish on %s - will delete that thread",
+                    hostname,
                 )
             del threads[i]  # ... overcautious
             if delete_src:
