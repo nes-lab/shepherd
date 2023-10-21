@@ -63,6 +63,7 @@ extend-ignore = [
 
 per-file-ignores = """
 # asserts (in tests are ok), also allow print() instead of logger,
+*/tests_manual/*: T201
 */tests/*: T201
 # commented out code, TODO: finalize model
 # telnet for openOCD, for now, TODO: replace by direct ssh.run()

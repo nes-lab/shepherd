@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models.base.calibration import CapeData
 from shepherd_sheep import EEPROM
@@ -24,10 +25,10 @@ def data_test_string() -> bytes:
 @pytest.fixture()
 def eeprom_open(
     request: pytest.FixtureRequest,
-    fake_hardware: pytest.Mark,
+    fake_fs: FakeFilesystem | None,
 ) -> Generator[EEPROM, None, None]:
-    if fake_hardware is not None:
-        fake_hardware.create_file("/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768)
+    if fake_fs is not None:
+        fake_fs.create_file("/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768)
         request.applymarker(
             pytest.mark.xfail(
                 raises=OSError,
@@ -111,9 +112,9 @@ def test_write_capedata(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
 @pytest.mark.eeprom_write
 @pytest.mark.hardware
 def test_read_capedata(eeprom_with_data: EEPROM, cape_data: CapeData) -> None:
-    cape_data = eeprom_with_data._read_cape_data()
-    for key in cape_data:
-        assert cape_data[key] == cape_data[key]
+    cape_data2 = eeprom_with_data._read_cape_data()
+    for key, _ in cape_data:
+        assert cape_data[key] == cape_data2[key]
 
 
 @pytest.mark.eeprom_write

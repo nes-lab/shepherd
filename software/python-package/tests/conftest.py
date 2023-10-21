@@ -3,12 +3,10 @@ from collections.abc import Generator
 from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
 
 import pytest
 from click.testing import CliRunner
-from pyfakefs.fake_filesystem_unittest import Patcher
-from shepherd_sheep import sysfs_interface
+from pyfakefs.fake_filesystem import FakeFilesystem
 from shepherd_sheep.sysfs_interface import load_kernel_module
 from shepherd_sheep.sysfs_interface import remove_kernel_module
 
@@ -26,10 +24,12 @@ def check_beagleboard() -> bool:
         pytest.param("fake_hardware", marks=pytest.mark.fake_hardware),
     ],
 )
-def fake_hardware(request: pytest.FixtureRequest) -> Generator[Any, None, None]:
+def fake_fs(
+    request: pytest.FixtureRequest,
+) -> Generator[FakeFilesystem | None, None, None]:
     if request.param == "fake_hardware":
         request.fixturenames.append("fs")  # needs pyfakefs installed
-        fake_sysfs = request.getfixturevalue("fs")
+        fake_sysfs: FakeFilesystem = request.getfixturevalue("fs")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc1")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc2")
         yield fake_sysfs
@@ -68,10 +68,10 @@ def pytest_collection_modifyitems(
 
 @pytest.fixture()
 def shepherd_up(
-    fake_hardware: pytest.Mark,
+    fake_fs: FakeFilesystem | None,
     shepherd_down: None,
 ) -> Generator[None, None, None]:
-    if fake_hardware is not None:
+    if fake_fs is not None:
         files = [
             ("/sys/shepherd/state", "idle"),
             ("/sys/shepherd/mode", "harvester"),
@@ -93,14 +93,13 @@ def shepherd_up(
             # TODO: design tests for programmer, also check if all hardware-tests need real hw
             #       -> there should be more tests that don't require a pru
         ]
-        with Patcher(modules_to_reload=[sysfs_interface]) as patcher:
-            for file_, content in files:
-                patcher.fs.create_file(file_, contents=content)
-            here = Path(__file__).resolve().parent
-            patcher.fs.add_real_file(here / "_test_config_emulation.yaml")
-            patcher.fs.add_real_file(here / "_test_config_harvest.yaml")
-            patcher.fs.add_real_file(here / "_test_config_virtsource.yaml")
-            yield
+        for file_, content in files:
+            fake_fs.create_file(file_, contents=content)
+        here = Path(__file__).resolve().parent
+        fake_fs.add_real_file(here / "_test_config_emulation.yaml")
+        fake_fs.add_real_file(here / "_test_config_harvest.yaml")
+        fake_fs.add_real_file(here / "_test_config_virtsource.yaml")
+        yield
     else:
         load_kernel_module()
         yield
@@ -109,8 +108,8 @@ def shepherd_up(
 
 
 @pytest.fixture()
-def shepherd_down(fake_hardware: pytest.Mark) -> None:
-    if fake_hardware is None:
+def shepherd_down(fake_fs: FakeFilesystem | None) -> None:
+    if fake_fs is None:
         remove_kernel_module()
 
 
