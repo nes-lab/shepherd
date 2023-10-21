@@ -185,6 +185,8 @@ class ShepherdEmulator(ShepherdIO):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        super()._power_down_shp()
+        time.sleep(2)  # TODO: experimental - for releasing uart-backpressure
         self.stack.close()
         super().__exit__()
 

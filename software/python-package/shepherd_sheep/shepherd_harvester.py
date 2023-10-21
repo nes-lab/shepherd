@@ -117,6 +117,7 @@ class ShepherdHarvester(ShepherdIO):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        super()._power_down_shp()
         self.stack.close()
         super().__exit__()
 
