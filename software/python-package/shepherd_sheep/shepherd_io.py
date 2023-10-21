@@ -20,6 +20,8 @@ from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConf
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
+from typing_extensions import TypedDict
+from typing_extensions import Unpack
 
 from . import commons
 from . import sysfs_interface as sfs
@@ -63,10 +65,10 @@ class ShepherdIO:
     """
 
     # This _instance-element is part of the singleton implementation
-    _instance = None
+    _instance: Self | None = None
 
     @classmethod
-    def __new__(cls, *_args, **_kwds) -> Self:
+    def __new__(cls, **_kwargs: Unpack[TypedDict]) -> Self:
         """Implements singleton class."""
         if ShepherdIO._instance is None:
             new_class = object.__new__(cls)
@@ -113,7 +115,7 @@ class ShepherdIO:
         self.shared_mem: SharedMemory
 
     def __del__(self) -> None:
-        log.debug("Now deleting ShepherdIO")
+        log.debug("Now deleting ShepherdIO-Instance")
         ShepherdIO._instance = None
 
     def __enter__(self) -> Self:
@@ -138,7 +140,8 @@ class ShepherdIO:
 
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
-            self._cleanup()
+            self._power_down_shp()
+            self._unload_shared_mem()
             raise
 
         sfs.wait_for_state("idle", 3)
@@ -152,7 +155,8 @@ class ShepherdIO:
         extra_arg: int = 0,
     ) -> None:
         log.info("Now exiting ShepherdIO")
-        self._cleanup()
+        self._power_down_shp()
+        self._unload_shared_mem()
         ShepherdIO._instance = None
 
     @staticmethod
@@ -260,7 +264,12 @@ class ShepherdIO:
         )
         self.shared_mem.__enter__()
 
-    def _cleanup(self) -> None:
+    def _unload_shared_mem(self) -> None:
+        if self.shared_mem is not None:
+            self.shared_mem.__exit__()
+            self.shared_mem = None
+
+    def _power_down_shp(self) -> None:
         log.debug("ShepherdIO is commanded to power down / cleanup")
         count = 1
         while count < 6 and sfs.get_state() != "idle":
@@ -285,10 +294,6 @@ class ShepherdIO:
                 sfs.get_state(),
             )
         self.set_aux_target_voltage(0.0)
-
-        if self.shared_mem is not None:
-            self.shared_mem.__exit__()
-            self.shared_mem = None
 
         self.set_io_level_converter(False)
         self.set_power_state_emulator(False)
