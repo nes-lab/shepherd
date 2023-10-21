@@ -93,7 +93,7 @@ class SysUtilMonitor(Monitor):
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
-        while not self.event.is_set():
+        while not self.event.wait(self.poll_intervall):  # rate limiter & exit
             ts_now_ns = int(time.time() * 1e9)
             if ts_now_ns >= self.log_timestamp_ns:
                 data_length = self.data["time"].shape[0]
@@ -125,5 +125,4 @@ class SysUtilMonitor(Monitor):
                 self.position += 1
                 # TODO: add temp, not working:
                 #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
-            self.event.wait(self.poll_intervall)  # rate limiter
         log.debug("[%s] thread ended itself", type(self).__name__)

@@ -70,17 +70,15 @@ class UARTMonitor(Monitor):
         #   tried 'S' and opaque-type -> failed with errors
         # - converting is producing ValueError on certain chars,
         #   errors="backslashreplace" does not help
-        # TODO: eval https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        # TODO: is there a way to signal backpressure?
         try:
             # open serial as non-exclusive
             with serial.Serial(self.uart, self.baudrate, timeout=0) as uart:
-                while not self.event.is_set():
+                while not self.event.wait(self.poll_intervall):  # rate limiter & exit
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
-                        if self.event.is_set():
-                            # needed because uart.read is blocking
-                            break
                         if len(output) > 0:
                             data_length = self.data["time"].shape[0]
                             if self.position >= data_length:
@@ -92,7 +90,7 @@ class UARTMonitor(Monitor):
                             )
                             self.data["message"][self.position] = output
                             self.position += 1
-                    self.event.wait(self.poll_intervall)  # rate limiter
+
         except RuntimeError:
             log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
         except ValueError as e:
