@@ -4,7 +4,6 @@ import time
 from contextlib import ExitStack
 from datetime import datetime
 from types import TracebackType
-from typing_extensions import Self
 
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
@@ -14,6 +13,7 @@ from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
+from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface

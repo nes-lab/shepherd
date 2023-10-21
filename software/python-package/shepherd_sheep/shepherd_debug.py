@@ -1,7 +1,6 @@
 import contextlib
 import time
 from typing import NoReturn
-from typing_extensions import Self
 
 import msgpack
 import msgpack_numpy
@@ -15,6 +14,7 @@ from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
+from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface

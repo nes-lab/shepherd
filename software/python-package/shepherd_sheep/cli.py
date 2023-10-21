@@ -13,7 +13,6 @@ import sys
 import time
 from pathlib import Path
 from typing import TypedDict
-from typing_extensions import Unpack
 
 import click
 import gevent
@@ -22,6 +21,7 @@ from shepherd_core import CalibrationCape
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
+from typing_extensions import Unpack
 
 from . import Launcher
 from . import __version__

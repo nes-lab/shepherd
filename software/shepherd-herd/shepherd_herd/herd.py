@@ -11,7 +11,6 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any
 from typing import ClassVar
-from typing_extensions import Self
 
 import yaml
 from fabric import Connection
@@ -28,6 +27,7 @@ from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
+from typing_extensions import Self
 
 from .logger import logger
 

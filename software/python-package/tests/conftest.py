@@ -6,11 +6,11 @@ from typing import Any
 
 import pytest
 from click.testing import CliRunner
-from pyfakefs.fake_filesystem_unittest import patchfs, Patcher
-
+from pyfakefs.fake_filesystem_unittest import Patcher
+from shepherd_sheep import sysfs_interface
 from shepherd_sheep.sysfs_interface import load_kernel_module
 from shepherd_sheep.sysfs_interface import remove_kernel_module
-from shepherd_sheep import sysfs_interface
+
 
 def check_beagleboard() -> bool:
     with suppress(Exception), Path("/proc/cpuinfo").open(encoding="utf-8-sig") as info:

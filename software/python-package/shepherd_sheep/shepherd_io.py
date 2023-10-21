@@ -10,7 +10,6 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 import time
 from contextlib import suppress
 from types import TracebackType
-from typing_extensions import Self
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -20,6 +19,7 @@ from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
+from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface as sfs

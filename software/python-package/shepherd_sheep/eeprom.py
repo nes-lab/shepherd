@@ -14,10 +14,10 @@ import os
 import struct
 from contextlib import suppress
 from types import TracebackType
-from typing_extensions import Self
 
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CapeData
+from typing_extensions import Self
 
 from .logger import log
 

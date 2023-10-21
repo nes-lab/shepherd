@@ -5,11 +5,11 @@ import time
 from dataclasses import dataclass
 from datetime import timedelta
 from types import TracebackType
-from typing_extensions import Self
 
 import numpy as np
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
+from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface as sfs

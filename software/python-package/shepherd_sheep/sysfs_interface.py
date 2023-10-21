@@ -286,7 +286,9 @@ def write_dac_aux_voltage_raw(
         voltage_raw = min(voltage_raw, 2**16 - 1)
     voltage_raw |= int(ch_link) << 20
     voltage_raw |= int(cap_out) << 21
-    with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open("w", encoding="utf-8") as f:
+    with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open(
+        "w", encoding="utf-8"
+    ) as f:
         log.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
         f.write(str(voltage_raw))
 
@@ -604,7 +606,9 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
     _count = 1
     while _count < 6:
         try:
-            with Path("/sys/shepherd/pru0_firmware").open("w", encoding="utf-8") as file:
+            with Path("/sys/shepherd/pru0_firmware").open(
+                "w", encoding="utf-8"
+            ) as file:
                 file.write(request)
             time.sleep(2)
             with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:

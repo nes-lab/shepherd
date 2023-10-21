@@ -12,6 +12,7 @@ from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
 from typing import ClassVar
+
 from typing_extensions import Self
 
 if TYPE_CHECKING:

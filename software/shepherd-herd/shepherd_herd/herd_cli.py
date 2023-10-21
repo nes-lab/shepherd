@@ -3,7 +3,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import TypedDict
-from typing_extensions import Unpack
 
 import click
 import shepherd_core
@@ -12,6 +11,7 @@ from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.data_models.testbed import TargetPort
+from typing_extensions import Unpack
 
 from . import __version__
 from .herd import Herd

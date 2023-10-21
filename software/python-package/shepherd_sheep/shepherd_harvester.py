@@ -4,11 +4,11 @@ import sys
 import time
 from contextlib import ExitStack
 from types import TracebackType
-from typing_extensions import Self
 
 from shepherd_core import local_tz
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
+from typing_extensions import Self
 
 from . import sysfs_interface
 from .eeprom import retrieve_calibration
