@@ -68,15 +68,14 @@ class ShepherdIO:
     _instance: Self | None = None
 
     @classmethod
-    def __new__(cls, **_kwargs: Unpack[TypedDict]) -> Self:
+    def __new__(cls, *_args: tuple, **_kwargs: Unpack[TypedDict]) -> Self:
         """Implements singleton class."""
-        if ShepherdIO._instance is None:
-            new_class = object.__new__(cls)
-            ShepherdIO._instance = new_class
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
             # was raising on reuse and stored weakref.ref before
-            return new_class
+            return cls._instance
         log.debug("ShepherdIO-Singleton reused")
-        return ShepherdIO._instance
+        return cls._instance
 
     def __init__(
         self,
