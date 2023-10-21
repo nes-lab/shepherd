@@ -198,7 +198,7 @@ class Herd:
     @staticmethod
     def _thread_run(
         cnx: Connection,
-        sudo: bool,  # noqa: FBT001
+        sudo: bool,
         cmd: str,
         results: dict[int, Result],
         index: int,
@@ -264,7 +264,7 @@ class Herd:
         cnx: Connection,
         src: Path | StringIO,
         dst: Path,
-        force_overwrite: bool,  # noqa: FBT001
+        force_overwrite: bool,
     ) -> None:
         if isinstance(src, StringIO):
             filename = dst.name
@@ -281,7 +281,7 @@ class Herd:
         tmp_path = Path("/tmp") / filename  # noqa: S108
         logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
         try:
-            cnx.put(src, str(tmp_path))  # noqa: S108
+            cnx.put(src, str(tmp_path))
             xtr_arg = "-f" if force_overwrite else "-n"
             cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):

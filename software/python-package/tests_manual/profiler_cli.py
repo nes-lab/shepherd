@@ -53,6 +53,6 @@ res = cli_runner.invoke(
     """,
     )
 
-print(f"Routine took {time.time() - time_start} s")  # noqa: T201
+print(f"Routine took {time.time() - time_start} s")
 prof.create_stats()
 prof.dump_stats(path_log)

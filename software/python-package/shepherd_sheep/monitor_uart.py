@@ -94,7 +94,7 @@ class UARTMonitor(Monitor):
         except RuntimeError:
             log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
         except ValueError as e:
-            log.error(  # noqa: G200
+            log.error(
                 "[%s] PySerial ValueError '%s' - "
                 "couldn't configure serial-port '%s' "
                 "with baudrate=%d -> prevents logging",
@@ -104,7 +104,7 @@ class UARTMonitor(Monitor):
                 self.baudrate,
             )
         except serial.SerialException as e:
-            log.error(  # noqa: G200
+            log.error(
                 "[%s] pySerial SerialException '%s - "
                 "Couldn't open Serial-Port '%s' to target -> prevents logging",
                 type(self).__name__,

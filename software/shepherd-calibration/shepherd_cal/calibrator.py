@@ -387,7 +387,7 @@ class Calibrator:
             cal_file = Path(cal_file)
         CalibrationCape.from_file(cal_file)  # test data
 
-        self._cnx.put(cal_file, temp_file)  # noqa: S108
+        self._cnx.put(cal_file, temp_file)
         logger.info("----------EEPROM WRITE------------")
         logger.info("Local  file: %s", cal_file.as_posix())
         logger.info("Remote file: %s", temp_file)

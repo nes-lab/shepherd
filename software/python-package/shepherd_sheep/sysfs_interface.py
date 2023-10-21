@@ -8,7 +8,7 @@ provided by the shepherd kernel module
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
-import subprocess  # noqa: S404
+import subprocess
 import sys
 import time
 from pathlib import Path

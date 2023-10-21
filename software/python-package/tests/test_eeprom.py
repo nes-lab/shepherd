@@ -23,7 +23,8 @@ def data_test_string() -> bytes:
 
 @pytest.fixture()
 def eeprom_open(
-    request: pytest.FixtureRequest, fake_hardware: pytest.Mark
+    request: pytest.FixtureRequest,
+    fake_hardware: pytest.Mark,
 ) -> Generator[EEPROM, None, None]:
     if fake_hardware is not None:
         fake_hardware.create_file("/sys/bus/i2c/devices/2-0054/eeprom", st_size=32768)

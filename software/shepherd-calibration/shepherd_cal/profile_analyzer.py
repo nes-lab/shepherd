@@ -50,8 +50,8 @@ def analyze_directory(
             for component in profile.data:
                 for filtered in [True, False]:
                     profile.quiver_setpoints_offset(component, filtered)
-                    # profile.scatter_setpoints_stddev(component, filtered)  # noqa: E800
-                    # profile.scatter_setpoints_dynamic(component, filtered)  # noqa: E800
+                    # profile.scatter_setpoints_stddev(component, filtered)
+                    # profile.scatter_setpoints_dynamic(component, filtered)
 
     stat_df = pd.concat(stats_list, axis=0)
     stat_df.to_csv(stats_path, sep=";", decimal=",", index=False)

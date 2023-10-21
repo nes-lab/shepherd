@@ -9,7 +9,7 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import platform
 import shutil
-import subprocess  # noqa: S404
+import subprocess
 import tempfile
 import time
 from contextlib import ExitStack
@@ -210,7 +210,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                 log.error("OSError - Failed to initialize Programmer")
                 failed = True
             except ValueError as xpt:
-                log.exception("ValueError: %s", str(xpt))  # noqa: G200
+                log.exception("ValueError: %s", str(xpt))
                 failed = True
 
         state = "init"
@@ -250,7 +250,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         wrapper = prepare_task(cfg, observer_name)
         content = extract_tasks(wrapper)
     except ValueError as xcp:
-        log.error(  # noqa: G200
+        log.error(
             "Task-Set was not usable for this observer '%s', with original error = %s",
             observer_name,
             xcp,

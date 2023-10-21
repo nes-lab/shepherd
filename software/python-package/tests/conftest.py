@@ -47,7 +47,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_collection_modifyitems(
-    config: pytest.Config, items: Iterable[pytest.Item]
+    config: pytest.Config,
+    items: Iterable[pytest.Item],
 ) -> None:
     skip_fake = pytest.mark.skip(reason="cannot be faked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
@@ -67,7 +68,8 @@ def pytest_collection_modifyitems(
 
 @pytest.fixture()
 def shepherd_up(
-    fake_hardware: pytest.Mark, shepherd_down: None
+    fake_hardware: pytest.Mark,
+    shepherd_down: None,
 ) -> Generator[None, None, None]:
     if fake_hardware is not None:
         files = [
