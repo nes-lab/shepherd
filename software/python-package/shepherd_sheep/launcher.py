@@ -14,7 +14,7 @@ from contextlib import suppress
 from threading import Event
 from threading import Thread
 from types import TracebackType
-from typing import Callable
+from collections.abc import Callable
 
 from typing_extensions import Self
 
@@ -24,18 +24,6 @@ from .logger import log
 with suppress(ModuleNotFoundError):
     import dbus
     from periphery import GPIO
-
-
-def call_repeatedly(interval: float, func: Callable, *args) -> Callable:
-    stopped = Event()
-
-    def loop() -> None:
-        while not stopped.wait(interval):
-            # the first call is in `interval` secs
-            func(*args)
-
-    Thread(target=loop).start()
-    return stopped.set
 
 
 class Launcher:
@@ -67,7 +55,10 @@ class Launcher:
         self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
         self.gpio_button.edge = "falling"
         log.debug("configured gpio")
-        self.cancel_wd_timer = call_repeatedly(interval=600, func=self.ack_watchdog)
+        self.wd_event = Event()
+        self.wd_interval = 600
+        self.wd_thread = threading.Thread(target=self._thread_ack_watchdog, daemon=True)
+        self.wd_thread.start()
 
         sys_bus = dbus.SystemBus()
         systemd1 = sys_bus.get_object(
@@ -91,6 +82,7 @@ class Launcher:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        self.wd_event.set()
         self.gpio_led.close()
         self.gpio_button.close()
 
@@ -210,12 +202,13 @@ class Launcher:
         log.info("shutting down now")
         self.manager.PowerOff()
 
-    def ack_watchdog(self) -> None:
+    def _thread_ack_watchdog(self) -> None:
         """prevent system-reset from watchdog
         hw-rev2 has a watchdog that can turn on the BB every ~60 min
 
         """
-        self.gpio_ack_watchdog.write(True)
-        time.sleep(0.002)
-        self.gpio_ack_watchdog.write(False)
-        log.debug("Signaled ACK to Watchdog")
+        while not self.wd_event.wait(self.wd_interval):
+            self.gpio_ack_watchdog.write(True)
+            self.wd_event.wait(0.002)
+            self.gpio_ack_watchdog.write(False)
+            log.debug("Signaled ACK to Watchdog")
