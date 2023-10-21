@@ -1,5 +1,6 @@
 import gc
 from collections.abc import Generator
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,7 @@ def check_beagleboard() -> bool:
         pytest.param("fake_hardware", marks=pytest.mark.fake_hardware),
     ],
 )
-def fake_hardware(request) -> Generator[Any, None, None]:
+def fake_hardware(request: pytest.FixtureRequest) -> Generator[Any, None, None]:
     if request.param == "fake_hardware":
         request.fixturenames.append("fs")  # needs pyfakefs installed
         fake_sysfs = request.getfixturevalue("fs")
@@ -36,7 +37,7 @@ def fake_hardware(request) -> Generator[Any, None, None]:
         yield None
 
 
-def pytest_addoption(parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--eeprom-write",
         action="store_true",
@@ -45,7 +46,9 @@ def pytest_addoption(parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config, items) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Iterable[pytest.Item]
+) -> None:
     skip_fake = pytest.mark.skip(reason="cannot be faked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
     skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
@@ -63,7 +66,9 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 @pytest.fixture()
-def shepherd_up(fake_hardware, shepherd_down: None) -> Generator[None, None, None]:
+def shepherd_up(
+    fake_hardware: pytest.Mark, shepherd_down: None
+) -> Generator[None, None, None]:
     if fake_hardware is not None:
         files = [
             ("/sys/shepherd/state", "idle"),
@@ -102,7 +107,7 @@ def shepherd_up(fake_hardware, shepherd_down: None) -> Generator[None, None, Non
 
 
 @pytest.fixture()
-def shepherd_down(fake_hardware) -> None:
+def shepherd_down(fake_hardware: pytest.Mark) -> None:
     if fake_hardware is None:
         remove_kernel_module()
 

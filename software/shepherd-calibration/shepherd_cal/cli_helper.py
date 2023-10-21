@@ -1,5 +1,6 @@
 import signal
 import sys
+from types import FrameType
 
 import click
 import shepherd_core
@@ -10,7 +11,7 @@ from .logger import logger
 from .logger import set_verbosity
 
 
-def exit_gracefully(*_args) -> None:
+def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     logger.warning("Aborted!")
     sys.exit(0)
 

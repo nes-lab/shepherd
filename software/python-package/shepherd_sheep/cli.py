@@ -12,6 +12,7 @@ import signal
 import sys
 import time
 from pathlib import Path
+from types import FrameType
 from typing import TypedDict
 
 import click
@@ -61,7 +62,7 @@ except ModuleNotFoundError:
 # - redone programmer, emulation
 
 
-def exit_gracefully(*_args) -> None:
+def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     log.warning("Aborted!")
     sys.exit(0)
 

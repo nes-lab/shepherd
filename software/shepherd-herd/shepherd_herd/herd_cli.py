@@ -2,6 +2,7 @@ import signal
 import sys
 from datetime import datetime
 from pathlib import Path
+from types import FrameType
 from typing import TypedDict
 
 import click
@@ -27,7 +28,7 @@ from .logger import set_verbosity
 #  - arguments can be configured in a dict and standardized across tools
 
 
-def exit_gracefully(*_args) -> None:
+def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     log.warning("Aborted!")
     sys.exit(0)
 

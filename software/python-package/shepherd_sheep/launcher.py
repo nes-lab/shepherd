@@ -9,12 +9,10 @@ Relies on systemd service.
 :license: MIT, see LICENSE for more details.
 """
 import os
+import threading
 import time
 from contextlib import suppress
-from threading import Event
-from threading import Thread
 from types import TracebackType
-from collections.abc import Callable
 
 from typing_extensions import Self
 
@@ -55,7 +53,7 @@ class Launcher:
         self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
         self.gpio_button.edge = "falling"
         log.debug("configured gpio")
-        self.wd_event = Event()
+        self.wd_event = threading.Event()
         self.wd_interval = 600
         self.wd_thread = threading.Thread(target=self._thread_ack_watchdog, daemon=True)
         self.wd_thread.start()

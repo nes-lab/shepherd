@@ -11,7 +11,7 @@ from shepherd_sheep import ShepherdDebug
 
 
 @pytest.fixture
-def src_cfg(request) -> VirtualSourceConfig:
+def src_cfg(request: pytest.FixtureRequest) -> VirtualSourceConfig:
     marker = request.node.get_closest_marker("src_name")
     src_name = None if marker is None else marker.args[0]
 

@@ -10,6 +10,8 @@ from typing_extensions import Self
 
 from .logger import logger
 
+# ruff: noqa: PD008
+
 T_calc = TypeVar("T_calc", NDArray[np.float64], float)
 
 

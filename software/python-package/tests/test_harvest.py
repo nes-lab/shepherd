@@ -13,7 +13,7 @@ from shepherd_sheep import run_harvester
 
 
 @pytest.fixture(params=["harvester"])  # TODO: there is a second mode now
-def mode(request) -> str:
+def mode(request: pytest.FixtureRequest) -> str:
     return request.param
 
 

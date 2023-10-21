@@ -18,7 +18,8 @@ tuna cprofile.log
 
 Profile Import-Time (properly):
 sudo python3 -X importtime -c 'from shepherd_sheep.cli import cli' 2> importtime.log
-sudo python3 -X importtime -c 'from shepherd_core.data_models.task import EmulationTask' 2> importtime.log
+sudo python3 -X importtime -c
+    'from shepherd_core.data_models.task import EmulationTask' 2> importtime.log
 
 Timing-Optimizations:
 - import EmulationTask -> from 47 s to 8.4 s

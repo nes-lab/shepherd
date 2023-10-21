@@ -231,7 +231,7 @@ class Writer(CoreWriter):
             ] = buffer.gpio_edges.timestamps_ns
             self.gpio_grp["value"][
                 self.gpio_pos : gpio_new_pos
-            ] = buffer.gpio_edges.values
+            ] = buffer.gpio_edges.values  # noqa: PD011, false positive
             self.gpio_pos = gpio_new_pos
 
         if (buffer.util_mean > 95) or (buffer.util_max > 100):
