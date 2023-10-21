@@ -156,7 +156,7 @@ class ShepherdHarvester(ShepherdIO):
             except ShepherdIOError as e:
                 if e.id_num == ShepherdIOError.ID_TIMEOUT:
                     log.error("Reception from PRU had a timeout -> begin to exit now")
-                    break
+                    return
                 if self.cfg.abort_on_error:
                     raise RuntimeError(
                         "Caught unforgivable ShepherdIO-Exception",
@@ -165,7 +165,14 @@ class ShepherdHarvester(ShepherdIO):
                 continue
 
             if (hrv_buf.timestamp_ns / 1e9) >= ts_end:
-                break
+                return
 
-            self.writer.write_buffer(hrv_buf)
+            try:
+                self.writer.write_buffer(hrv_buf)
+            except OSError as _xpt:
+                log.error(
+                    "Failed to write data to HDF5-File - will STOP! error = %s",
+                    _xpt,
+                )
+                return
             self.return_buffer(idx, verbose=self.verbose_extra)

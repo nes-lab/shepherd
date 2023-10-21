@@ -59,7 +59,12 @@ class KernelMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_intervall)
+            if self.thread.is_alive():
+                log.error(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
             self.thread = None
         self.process.terminate()
         self.data["message"].resize((self.position,))

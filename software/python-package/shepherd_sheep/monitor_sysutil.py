@@ -80,7 +80,12 @@ class SysUtilMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_intervall)
+            if self.thread.is_alive():
+                log.error(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
             self.thread = None
         self.data["cpu"].resize((self.position,))
         self.data["ram"].resize((self.position, 2))

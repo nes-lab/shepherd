@@ -191,7 +191,11 @@ class Herd:
             threads[i] = threading.Thread(target=self._thread_open, args=[cnx])
             threads[i].start()
         for thread in threads.values():
-            thread.join()
+            thread.join(timeout=10.0)
+            if thread.is_alive():
+                logger.error(
+                    "Connection.Open() did fail to finish - will delete that thread"
+                )
             del thread  # ... overcautious
         self.group = [cnx for cnx in self.group if cnx.is_connected]
 
@@ -233,7 +237,11 @@ class Herd:
             )
             threads[i].start()
         for thread in threads.values():
-            thread.join()
+            thread.join(timeout=10.0)
+            if thread.is_alive():
+                logger.error(
+                    "Command.Run() did fail to finish - will delete that thread"
+                )
             del thread  # ... overcautious
         if len(results) < 1:
             raise RuntimeError("ZERO nodes answered - check your config")
@@ -330,7 +338,9 @@ class Herd:
             )
             threads[i].start()
         for thread in threads.values():
-            thread.join()
+            thread.join(timeout=10.0)
+            if thread.is_alive():
+                logger.error("File.Put() did fail to finish - will delete that thread")
             del thread  # ... overcautious
 
     @staticmethod
@@ -420,7 +430,11 @@ class Herd:
             hostname = self.hostnames[cnx.host]
             if replies[i].exited > 0:
                 continue
-            threads[i].join()
+            threads[i].join(timeout=10.0)
+            if threads[i].is_alive():
+                logger.error(
+                    "Command.Run() did fail to finish - will delete that thread"
+                )
             del threads[i]  # ... overcautious
             if delete_src:
                 logger.info(

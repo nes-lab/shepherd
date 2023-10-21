@@ -247,6 +247,7 @@ class Writer(CoreWriter):
         sys: SystemLogging | None = None,
         gpio: GpioTracing | None = None,
     ) -> None:
+        self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
         if sys is not None and sys.dmesg:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.ptp:
@@ -261,4 +262,3 @@ class Writer(CoreWriter):
                     baudrate=gpio.uart_baudrate,
                 ),
             )
-        self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
