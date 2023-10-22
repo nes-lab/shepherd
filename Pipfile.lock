@@ -2027,21 +2027,20 @@
             "path": "./software/shepherd-calibration"
         },
         "shepherd-core": {
-            "extras": [],
             "hashes": [
-                "sha256:1cb27b408e56577e3625b6a4605bfef4f54a64c533b1df7aaead1677e4173e61",
-                "sha256:f6939ad4fdf18f29f15034ec0fa2231486d315b0c57e61ad26d2edd0504f26b4"
+                "sha256:9c8ff4f740c5e611b487ff8f3e785121b6d5ab599b7092ba7c1871ebab960e8c",
+                "sha256:a33cc8243434d5b0bab50e7f88001ce7e780c1dcc510e947d675fb6fd0192585"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==2023.10.1"
+            "version": "==2023.10.3"
         },
         "shepherd-data": {
             "hashes": [
-                "sha256:28567d89412a5beef79a5a16f48df5275f858a20229aeab697e2c1c28b8f4f0d",
-                "sha256:52a38ba7f1531d89bb10c77bc53632b6719f80228818731bd830323ff00774d3"
+                "sha256:0d88400b76a890f5a09fa4b7bd0937acdf87cc13cfe3bd089307568188d6b267",
+                "sha256:86e3263da2b787c7f6f2ceb8df33c59ca644f2816dd861264227e9f25ffcb69b"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==2023.10.1"
+            "version": "==2023.10.3"
         },
         "shepherd-herd": {
             "editable": true,
