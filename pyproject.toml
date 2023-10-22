@@ -29,7 +29,6 @@ require-plugins = [
     "flake8-comprehensions",
     "flake8-simplify",
     "flake8-eradicate",
-    "flake8-commas",
 
     ### Limitations
     "flake8-blind-except",
@@ -50,8 +49,6 @@ extend-ignore = [
     "E203",
     # open() vs os.open()
     "SCS109",
-    # hideous commas
-    "C812", "C815", "C813",
     # DOCString TODO: reduce here
     "D100", "D102", "D103",
     # handled by ruff

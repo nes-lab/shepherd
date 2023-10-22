@@ -80,7 +80,6 @@ repos:
           - flake8-comprehensions
           - flake8-simplify
           - flake8-eradicate
-          - flake8-commas
 
           ### Limitations
           - flake8-blind-except
