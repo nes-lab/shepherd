@@ -114,7 +114,6 @@ class ShepherdIO:
         self.shared_mem: SharedMemory
 
     def __del__(self) -> None:
-        log.debug("Now deleting ShepherdIO-Instance")
         ShepherdIO._instance = None
 
     def __enter__(self) -> Self:
