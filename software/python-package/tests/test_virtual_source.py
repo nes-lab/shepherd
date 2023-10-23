@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -10,12 +11,9 @@ from shepherd_sheep import ShepherdDebug
 
 
 @pytest.fixture
-def src_cfg(request) -> VirtualSourceConfig:
+def src_cfg(request: pytest.FixtureRequest) -> VirtualSourceConfig:
     marker = request.node.get_closest_marker("src_name")
-    if marker is None:
-        src_name = None
-    else:
-        src_name = marker.args[0]
+    src_name = None if marker is None else marker.args[0]
 
     if isinstance(src_name, str):
         if ".yaml" in src_name:
@@ -25,10 +23,8 @@ def src_cfg(request) -> VirtualSourceConfig:
                 here = Path(__file__).resolve()
                 path = here.parent / src_name
             return VirtualSourceConfig.from_file(path)
-        else:
-            return VirtualSourceConfig(name=src_name)
-    else:
-        assert 0
+        return VirtualSourceConfig(name=src_name)
+    raise AssertionError
 
 
 @pytest.fixture
@@ -38,25 +34,21 @@ def cal_cape() -> CalibrationCape:
 
 @pytest.fixture()
 def pru_vsource(
-    request,
-    shepherd_up,
+    shepherd_up: None,
     src_cfg: VirtualSourceConfig,
     cal_cape: CalibrationCape,
     dtype_in: EnergyDType = EnergyDType.ivsample,
     window_size: int = 0,
-) -> ShepherdDebug:
-    pru = ShepherdDebug()
-    request.addfinalizer(pru.__del__)
-    pru.__enter__()
-    request.addfinalizer(pru.__exit__)
-    pru.vsource_init(
-        src_cfg=src_cfg,
-        cal_emu=cal_cape.emulator,
-        log_intermediate=False,
-        dtype_in=dtype_in,
-        window_size=window_size,
-    )  # TODO: extend to be real vsource
-    return pru
+) -> Generator[ShepherdDebug, None, None]:
+    with ShepherdDebug() as _d:
+        _d.vsource_init(
+            src_cfg=src_cfg,
+            cal_emu=cal_cape.emulator,
+            log_intermediate=False,
+            dtype_in=dtype_in,
+            window_size=window_size,
+        )  # TODO: extend to be real vsource
+        yield _d
 
 
 @pytest.fixture
@@ -77,7 +69,7 @@ def pyt_vsource(
 @pytest.fixture
 def reference_vss() -> dict:
     # keep in sync with "_test_config_virtsource.yaml"
-    vss = {
+    return {
         "C_intermediate_uF": 100 * (10**0),
         "V_intermediate_init_mV": 3000,
         "eta_in": 0.5,
@@ -87,7 +79,6 @@ def reference_vss() -> dict:
         "V_output_mV": 2000,
         "t_sample_s": 10 * (10**-6),
     }
-    return vss
 
 
 def difference_percent(val1: float, val2: float, offset: float) -> float:
@@ -200,7 +191,7 @@ def test_vsource_drain_charge(
         if (v_raw1 < 1) or (v_raw2 < 1):
             print(
                 f"Stopped Drain-loop after {index}/{n_samples} samples "
-                f"({round(100*index/n_samples)} %), because output was disabled",
+                f"({round(100 * index / n_samples)} %), because output was disabled",
             )
             break
 
@@ -345,7 +336,7 @@ def test_vsource_diodecap(
     V_settle_mV = (V_inp_uV * 10**-3 - 300) / 2
     # how many steps? charging took 9 steps at 200mA, so roughly 9 * 200 / (10 - 5)
     print(
-        f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV/10**3} mV , Out = 10mA "
+        f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV / 10**3} mV , Out = 10mA "
         f"-> V_out should settle @ {V_settle_mV} mV ",
     )
     for _ in range(25):

@@ -16,7 +16,7 @@ include("../python-package/shepherd/calibration.py")
 # - id= is now tag=
 
 
-def assemble_window():
+def assemble_window() -> None:
     with dpg.window(
         tag="main",
         label="Shepherd Testing and Debug Tool",
@@ -85,7 +85,7 @@ def assemble_window():
             dpg.add_radio_button(
                 tag="target_pwr",
                 items=[*tgt_dict],
-                default_value=[*tgt_dict][0],
+                default_value=next(iter(tgt_dict)),
                 callback=target_power_callback,
                 show=True,
             )
@@ -98,7 +98,7 @@ def assemble_window():
             dpg.add_radio_button(
                 tag="target_io",
                 items=[*tgt_dict],
-                default_value=[*tgt_dict][0],
+                default_value=next(iter(tgt_dict)),
                 callback=target_io_callback,
                 show=True,
             )
@@ -107,7 +107,7 @@ def assemble_window():
             dpg.add_radio_button(
                 tag="io_lvl_converter",
                 items=[*able_dict],
-                default_value=[*able_dict][0],
+                default_value=next(iter(able_dict)),
                 callback=io_level_converter_callback,
                 show=True,
             )
@@ -126,7 +126,8 @@ def assemble_window():
             )
             with dpg.tooltip("gpio_nRes_REC_ADC"):
                 dpg.add_text(
-                    "Option to reset this ADC - it has to be reinitialized afterwards (with PRU re-init)",
+                    "Option to reset this ADC - "
+                    "it has to be reinitialized afterwards (with PRU re-init)",
                 )
             dpg.add_spacer(width=5)
 
@@ -138,7 +139,8 @@ def assemble_window():
             )
             with dpg.tooltip("gpio_nRes_EMU_ADC"):
                 dpg.add_text(
-                    "Option to reset this ADC - it has to be configured afterwards (with PRU re-init)",
+                    "Option to reset this ADC - "
+                    "it has to be configured afterwards (with PRU re-init)",
                 )
             dpg.add_spacer(width=15)
 
@@ -274,7 +276,7 @@ def assemble_window():
             dpg.add_text(tag="text_B_gpio", default_value="PRU Input")
             dpg.add_spacer(width=16)
             dpg.add_input_text(
-                tag=f"gpio_output",
+                tag="gpio_output",
                 default_value="0",
                 readonly=True,
                 label="",
@@ -309,7 +311,7 @@ if __name__ == "__main__":
     dpg.setup_dearpygui()
 
     assemble_window()
-    dpg.set_primary_window("main", True)
+    dpg.set_primary_window("main", value=True)
 
     dpg.show_viewport()
     dpg.start_dearpygui()

@@ -1,10 +1,10 @@
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Optional
 
 import click
 import typer
+from shepherd_core import local_tz
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.base.calibration import CapeData
 
@@ -52,8 +52,8 @@ write_opt_t = typer.Option(
 def measure(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    outfile: Optional[Path] = ofile_opt_t,
+    password: str | None = pass_opt_t,
+    outfile: Path | None = ofile_opt_t,
     smu_ip: str = smu_ip_opt_t,
     smu_2wire: bool = smu_2w_opt_t,
     smu_nplc: float = smu_nc_opt_t,
@@ -61,9 +61,9 @@ def measure(
     emulator: bool = emu_opt_t,
     cape_serial: str = serial_opt_t,
     write: bool = write_opt_t,
-    version: Optional[str] = version_opt_t,
+    version: str | None = version_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Measure calibration-data for shepherd cape"""
     cli_setup_callback(verbose)
     smu_4wire = not smu_2wire
@@ -99,7 +99,7 @@ def measure(
     msr_cape = CalMeasurementCape(**results)
 
     if outfile is None:
-        timestamp = datetime.fromtimestamp(time())
+        timestamp = datetime.fromtimestamp(time(), tz=local_tz())
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
         outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}.measurement.yaml")
         logger.debug("No filename provided -> set to '%s'.", outfile)
@@ -131,11 +131,11 @@ def measure(
 def write(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    cal_file: Optional[Path] = ifile_opt_t,
-    measurement_file: Optional[Path] = ifile_opt_t,
+    password: str | None = pass_opt_t,
+    cal_file: Path | None = ifile_opt_t,
+    measurement_file: Path | None = ifile_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Write calibration-data to shepherd cape eeprom (choose cal- or measurement-file)"""
     cli_setup_callback(verbose)
     if not any([cal_file, measurement_file]):
@@ -160,10 +160,10 @@ def write(
 def read(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    cal_file: Optional[Path] = ofile_opt_t,
+    password: str | None = pass_opt_t,
+    cal_file: Path | None = ofile_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Read calibration-data from shepherd cape"""
     cli_setup_callback(verbose)
     shpcal = Calibrator(host, user, password)

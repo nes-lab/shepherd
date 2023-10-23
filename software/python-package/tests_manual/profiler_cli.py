@@ -18,7 +18,8 @@ tuna cprofile.log
 
 Profile Import-Time (properly):
 sudo python3 -X importtime -c 'from shepherd_sheep.cli import cli' 2> importtime.log
-sudo python3 -X importtime -c 'from shepherd_core.data_models.task import EmulationTask' 2> importtime.log
+sudo python3 -X importtime -c
+    'from shepherd_core.data_models.task import EmulationTask' 2> importtime.log
 
 Timing-Optimizations:
 - import EmulationTask -> from 47 s to 8.4 s
@@ -52,6 +53,6 @@ res = cli_runner.invoke(
     """,
     )
 
-print(f"Routine took {time.time() - time_start} s")  # noqa: T201
+print(f"Routine took {time.time() - time_start} s")
 prof.create_stats()
 prof.dump_stats(path_log)

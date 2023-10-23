@@ -21,7 +21,7 @@ def plot_calibration(
                 component,
             )
             continue
-        for channel in msr_component.keys():
+        for channel in msr_component:
             try:
                 sample_points = msr_component[channel]
                 xp = np.empty(len(sample_points))

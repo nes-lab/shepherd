@@ -1,8 +1,8 @@
 import os
-import subprocess  # noqa: S404
+import subprocess
 import threading
 import time
-from typing import Optional
+from types import TracebackType
 
 import h5py
 from shepherd_core import Compression
@@ -15,8 +15,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
-    ):
+        compression: Compression | None = Compression.default,
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.51)
         self.data.create_dataset(
             "values",
@@ -38,8 +38,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             "--lines=60",
             "--output=short-precise",
         ]  # for client
-        self.process = subprocess.Popen(  # noqa: S603
-            command,
+        self.process = subprocess.Popen(
+            command,  # noqa: S603
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
@@ -51,10 +51,21 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         self.thread = threading.Thread(target=self.thread_fn, daemon=True)
         self.thread.start()
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_intervall)
+            if self.thread.is_alive():
+                log.error(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
             self.thread = None
         self.process.terminate()
         self.data["values"].resize((self.position, 3))
@@ -84,6 +95,10 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
                     self.data["values"].resize((data_length, 3))
+            except RuntimeError:
+                log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
+                break
+            try:
                 self.data["time"][self.position] = int(time.time() * 1e9)
                 self.data["values"][self.position, :] = values[0:3]
                 self.position += 1

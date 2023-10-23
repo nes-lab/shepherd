@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 from shepherd_core.logger import set_log_verbose_level
 
@@ -15,7 +14,7 @@ def get_verbosity() -> bool:
     return verbosity_state
 
 
-def set_verbosity(state: Union[bool, int] = True) -> None:
+def set_verbosity(state: bool | int = True) -> None:
     if isinstance(state, bool):
         # strange solution -> bool is also int, so it falls through below in elif
         if not state:
@@ -23,5 +22,5 @@ def set_verbosity(state: Union[bool, int] = True) -> None:
     elif isinstance(state, int) and state < 3:
         return  # old format, will be replaced
     set_log_verbose_level(logger, 3)
-    global verbosity_state
+    global verbosity_state  # noqa: PLW0603
     verbosity_state = True

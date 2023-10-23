@@ -12,7 +12,8 @@ import signal
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from types import FrameType
+from typing import TypedDict
 
 import click
 import gevent
@@ -21,13 +22,14 @@ from shepherd_core import CalibrationCape
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.inventory import Inventory
+from typing_extensions import Unpack
 
+from . import Launcher
 from . import __version__
 from . import run_programmer
 from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
-from .launcher import Launcher
 from .logger import log
 from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
@@ -60,7 +62,7 @@ except ModuleNotFoundError:
 # - redone programmer, emulation
 
 
-def exit_gracefully(*args):  # type: ignore
+def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     log.warning("Aborted!")
     sys.exit(0)
 
@@ -78,7 +80,7 @@ def exit_gracefully(*args):  # type: ignore
     help="Prints version-info at start (combinable with -v)",
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, version: bool):
+def cli(ctx: click.Context, verbose: bool, version: bool) -> None:
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
@@ -115,7 +117,7 @@ def cli(ctx: click.Context, verbose: bool, version: bool):
     default="A",
     help="Choose Target-Port of Cape for powering",
 )
-def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
+def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str) -> None:
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base
@@ -151,7 +153,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str):
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     default=Path("/etc/shepherd/config.yaml"),
 )
-def run(config: Path):
+def run(config: Path) -> None:
     failed = run_task(config)
     if failed:
         log.debug("Tasks signaled an error (failed).")
@@ -162,7 +164,7 @@ def run(config: Path):
     context_settings={"help_option_names": ["-h", "--help"], "obj": {}},
     short_help="Read/Write data from EEPROM",
 )
-def eeprom():
+def eeprom() -> None:
     pass
 
 
@@ -172,8 +174,8 @@ def eeprom():
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
 def write(
-    cal_file: Optional[Path],
-):
+    cal_file: Path | None,
+) -> None:
     cal_cape = CalibrationCape.from_file(cal_file)
     try:
         log.debug("Will write Cal-Data:\n\n%s", str(cal_cape))
@@ -181,7 +183,7 @@ def write(
             storage.write_calibration(cal_cape)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
-        exit(2)
+        sys.exit(2)
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
@@ -192,7 +194,7 @@ def write(
     default=None,
     help="If provided, calibration data is dumped to this file",
 )
-def read(cal_file: Optional[Path]):
+def read(cal_file: Path | None) -> None:
     set_verbosity()
 
     try:
@@ -202,10 +204,10 @@ def read(cal_file: Optional[Path]):
         log.warning(
             "Reading from EEPROM failed (Val) -> no plausible data found",
         )
-        exit(2)
+        sys.exit(2)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
-        exit(3)
+        sys.exit(3)
 
     if cal_file is None:
         log.info("Retrieved Cal-Data:\n\n%s", str(cal))
@@ -215,7 +217,7 @@ def read(cal_file: Optional[Path]):
 
 @cli.command(short_help="Start zerorpc server")
 @click.option("--port", "-p", type=click.INT, default=4242)
-def rpc(port: Optional[int]):
+def rpc(port: int | None) -> None:
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     log.info("Shepherd Debug Interface: Initialized")
@@ -225,7 +227,7 @@ def rpc(port: Optional[int]):
     server.bind(f"tcp://0.0.0.0:{ port }")
     time.sleep(1)
 
-    def stop_server():
+    def stop_server() -> None:
         server.stop()
         shepherd_io.__exit__()
         sys.exit(0)
@@ -233,7 +235,9 @@ def rpc(port: Optional[int]):
     gevent.signal_handler(signal.SIGTERM, stop_server)
     gevent.signal_handler(signal.SIGINT, stop_server)
 
-    shepherd_io.start()
+    success = shepherd_io.start()
+    if not success:
+        return
     log.info("Shepherd RPC Interface: Started")
     server.run()
 
@@ -254,7 +258,7 @@ def inventorize(output_path: Path) -> None:
 @cli.command(short_help="Start shepherd launcher")
 @click.option("--led", "-l", type=click.INT, default=22)
 @click.option("--button", "-b", type=click.INT, default=65)
-def launcher(led: int, button: int):
+def launcher(led: int, button: int) -> None:
     with Launcher(button, led) as launch:
         launch.run()
 
@@ -307,7 +311,7 @@ def launcher(led: int, button: int):
     is_flag=True,
     help="dry-run the programmer - no data gets written",
 )
-def program(**kwargs):
+def program(**kwargs: Unpack[TypedDict]) -> None:
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,
@@ -322,7 +326,7 @@ def program(**kwargs):
     short_help="Reloads the shepherd-kernel-module",
     context_settings={"ignore_unknown_options": True},
 )
-def fix():
+def fix() -> None:
     set_verbosity()
     reload_kernel_module()
 

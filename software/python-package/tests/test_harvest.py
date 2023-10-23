@@ -1,4 +1,5 @@
 import time
+from collections.abc import Generator
 from pathlib import Path
 
 import h5py
@@ -12,43 +13,42 @@ from shepherd_sheep import run_harvester
 
 
 @pytest.fixture(params=["harvester"])  # TODO: there is a second mode now
-def mode(request) -> str:
+def mode(request: pytest.FixtureRequest) -> str:
     return request.param
 
 
 @pytest.fixture()
-def writer(tmp_path: Path, mode: str):
+def writer(tmp_path: Path, mode: str) -> Generator[Writer, None, None]:
     with Writer(
         mode=mode,
         cal_data=CalibrationHarvester(),
         force_overwrite=True,
         file_path=tmp_path / "test.h5",
-    ) as lw:
-        yield lw
+    ) as _w:
+        yield _w
 
 
 @pytest.fixture()
-def harvester(request, shepherd_up, mode: str, tmp_path: Path) -> ShepherdHarvester:
+def harvester(
+    shepherd_up: None,
+    mode: str,
+    tmp_path: Path,
+) -> Generator[ShepherdHarvester, None, None]:
     cfg = HarvestTask(output_path=tmp_path / "hrv_123.h5")
-    rec = ShepherdHarvester(cfg=cfg, mode=mode)
-    request.addfinalizer(rec.__del__)
-    rec.__enter__()
-    request.addfinalizer(rec.__exit__)
-    return rec
+    with ShepherdHarvester(cfg=cfg, mode=mode) as _h:
+        yield _h
 
 
 @pytest.mark.hardware
-def test_instantiation(shepherd_up, tmp_path: Path) -> None:
+def test_instantiation(shepherd_up: None, tmp_path: Path) -> None:
     cfg = HarvestTask(output_path=tmp_path / "hrv_123.h5")
-    rec = ShepherdHarvester(cfg)
-    rec.__enter__()
-    assert rec is not None
-    rec.__exit__()
-    del rec
+    with ShepherdHarvester(cfg) as _h:
+        assert _h is not None
+    del _h
 
 
 @pytest.mark.hardware
-def test_harvester(writer, harvester: ShepherdHarvester) -> None:
+def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
     harvester.start(wait_blocking=False)
     harvester.wait_for_start(15)
 
@@ -60,7 +60,7 @@ def test_harvester(writer, harvester: ShepherdHarvester) -> None:
 
 @pytest.mark.hardware  # TODO extend with new harvester-options
 @pytest.mark.timeout(40)
-def test_harvester_fn(tmp_path, shepherd_up) -> None:
+def test_harvester_fn(tmp_path: Path, shepherd_up: None) -> None:
     path = tmp_path / "rec.h5"
     time_start = int(time.time() + 10)
     cfg = HarvestTask(

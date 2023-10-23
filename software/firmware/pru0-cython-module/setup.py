@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 
 from Cython.Build import cythonize
 from setuptools import Extension
@@ -11,10 +12,11 @@ external_src = [
     "../pru0-shepherd-fw/calibration.c",
     "../pru0-shepherd-fw/math64_safe.c",
 ]
-if not os.path.isdir("./build"):
-    os.makedirs("./build")
+build_path = Path(__file__) / "build"
+if not build_path.is_dir():
+    build_path.mkdir(parents=True)
 for src in external_src:
-    shutil.copy(src, "./build/" + src.split("/")[-1])
+    shutil.copy(src, build_path / src.split("/")[-1])
 
 
 module_vconv = Extension(

@@ -3,15 +3,17 @@ import sys
 import time
 from contextlib import ExitStack
 from datetime import datetime
-from typing import Optional
+from types import TracebackType
 
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
+from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
+from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface
@@ -21,7 +23,7 @@ from .logger import get_verbosity
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 from .target_io import TargetIO
 from .target_io import target_pins
 
@@ -39,7 +41,7 @@ class ShepherdEmulator(ShepherdIO):
         self,
         cfg: EmulationTask,
         mode: str = "emulator",
-    ):
+    ) -> None:
         log.debug("ShepherdEmulator-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
@@ -60,8 +62,7 @@ class ShepherdEmulator(ShepherdIO):
             msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
             if self.cfg.abort_on_error:
                 raise ValueError(msg)
-            else:
-                log.error(msg)
+            log.error(msg)
         if not self.reader.is_valid() and self.cfg.abort_on_error:
             raise RuntimeError("Input-File is not valid!")
 
@@ -112,11 +113,11 @@ class ShepherdEmulator(ShepherdIO):
         )
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 
-        self.writer: Optional[Writer] = None
+        self.writer: Writer | None = None
         if cfg.output_path is not None:
             store_path = cfg.output_path.resolve()
             if store_path.is_dir():
-                timestamp = datetime.fromtimestamp(self.start_time)
+                timestamp = datetime.fromtimestamp(self.start_time, tz=local_tz())
                 timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
                 # ⤷ closest to ISO 8601, avoids ":"
                 store_path = store_path / f"emu_{timestring}.h5"
@@ -133,12 +134,12 @@ class ShepherdEmulator(ShepherdIO):
             )
 
         # hard-wire pin-direction until they are configurable
-        self._io: Optional[TargetIO] = TargetIO()
+        self._io: TargetIO | None = TargetIO()
         log.info("Setting variable GPIO to INPUT (actuation is not implemented yet)")
         for pin in range(len(target_pins)):
             self._io.set_pin_direction(pin, pdir=True)  # True = Inp
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         super().__enter__()
         super().set_power_state_recorder(False)
         super().set_power_state_emulator(True)
@@ -177,11 +178,24 @@ class ShepherdEmulator(ShepherdIO):
             # ⤷ could be as low as ~ 10us
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
+        super()._power_down_shp()
+        time.sleep(2)  # TODO: experimental - for releasing uart-backpressure
         self.stack.close()
         super().__exit__()
 
-    def return_buffer(self, index: int, buffer: DataBuffer, verbose: bool = False):
+    def return_buffer(
+        self,
+        index: int,
+        buffer: DataBuffer,
+        verbose: bool = False,
+    ) -> None:
         ts_start = time.time() if verbose else 0
 
         # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
@@ -197,8 +211,10 @@ class ShepherdEmulator(ShepherdIO):
                 1e3 * (time.time() - ts_start),
             )
 
-    def run(self):
-        self.start(self.start_time, wait_blocking=False)
+    def run(self) -> None:
+        success = self.start(self.start_time, wait_blocking=False)
+        if not success:
+            return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
         log.info("shepherd started!")
@@ -217,18 +233,26 @@ class ShepherdEmulator(ShepherdIO):
         ):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
-            except ShepherdIOException as e:
-                log.warning("Caught an Exception", exc_info=e)
-
+            except ShepherdIOError as e:
                 if self.cfg.abort_on_error:
-                    raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                    raise RuntimeError(
+                        "Caught unforgivable ShepherdIO-Exception",
+                    ) from e
+                log.warning("Caught an Exception", exc_info=e)
                 continue
 
             if emu_buf.timestamp_ns / 1e9 >= ts_end:
                 break
 
             if self.writer is not None:
-                self.writer.write_buffer(emu_buf)
+                try:
+                    self.writer.write_buffer(emu_buf)
+                except OSError as _xpt:
+                    log.error(
+                        "Failed to write data to HDF5-File - will STOP! error = %s",
+                        _xpt,
+                    )
+                    return
 
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
             self.return_buffer(idx, hrvst_buf, self.verbose_extra)
@@ -238,13 +262,26 @@ class ShepherdEmulator(ShepherdIO):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
-                    break
+                    return
                 if self.writer is not None:
                     self.writer.write_buffer(emu_buf)
-            except ShepherdIOException as e:
+            except ShepherdIOError as e:  # noqa: PERF203
                 # We're done when the PRU has processed all emulation data buffers
                 if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
-                    break
-                else:
-                    if self.cfg.abort_on_error:
-                        raise RuntimeError("Caught unforgivable ShepherdIO-Exception")
+                    log.debug("Collected all Buffers from PRU -> begin to exit now")
+                    return
+                if e.id_num == ShepherdIOError.ID_TIMEOUT:
+                    log.error("Reception from PRU had a timeout -> begin to exit now")
+                    return
+
+                if self.cfg.abort_on_error:
+                    raise RuntimeError(
+                        "Caught unforgivable ShepherdIO-Exception",
+                    ) from e
+                log.warning("Caught an Exception", exc_info=e)
+            except OSError as _xpt:
+                log.error(
+                    "Failed to write data to HDF5-File - will STOP! error = %s",
+                    _xpt,
+                )
+                return

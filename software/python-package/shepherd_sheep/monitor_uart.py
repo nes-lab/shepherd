@@ -1,7 +1,7 @@
 import threading
 import time
 from pathlib import Path
-from typing import Optional
+from types import TracebackType
 
 import h5py
 import serial
@@ -15,10 +15,10 @@ class UARTMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
-        baudrate: Optional[int] = None,
-    ):
+        baudrate: int | None = None,
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.05)
         self.uart = uart
         self.baudrate = baudrate
@@ -51,10 +51,21 @@ class UARTMonitor(Monitor):
                 self.uart,
             )
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_intervall)
+            if self.thread.is_alive():
+                log.error(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
             self.thread = None
         self.data["message"].resize((self.position,))
         super().__exit__()
@@ -64,17 +75,15 @@ class UARTMonitor(Monitor):
         #   tried 'S' and opaque-type -> failed with errors
         # - converting is producing ValueError on certain chars,
         #   errors="backslashreplace" does not help
-        # TODO: eval https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        # https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.to_bytes
+        # TODO: is there a way to signal backpressure?
         try:
             # open serial as non-exclusive
             with serial.Serial(self.uart, self.baudrate, timeout=0) as uart:
-                while not self.event.is_set():
+                while not self.event.wait(self.poll_intervall):  # rate limiter & exit
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
-                        if self.event.is_set():
-                            # needed because uart.read is blocking
-                            break
                         if len(output) > 0:
                             data_length = self.data["time"].shape[0]
                             if self.position >= data_length:
@@ -86,9 +95,11 @@ class UARTMonitor(Monitor):
                             )
                             self.data["message"][self.position] = output
                             self.position += 1
-                    self.event.wait(self.poll_intervall)  # rate limiter
+
+        except RuntimeError:
+            log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
         except ValueError as e:
-            log.error(  # noqa: G200
+            log.error(
                 "[%s] PySerial ValueError '%s' - "
                 "couldn't configure serial-port '%s' "
                 "with baudrate=%d -> prevents logging",
@@ -98,7 +109,7 @@ class UARTMonitor(Monitor):
                 self.baudrate,
             )
         except serial.SerialException as e:
-            log.error(  # noqa: G200
+            log.error(
                 "[%s] pySerial SerialException '%s - "
                 "Couldn't open Serial-Port '%s' to target -> prevents logging",
                 type(self).__name__,

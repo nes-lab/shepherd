@@ -1,0 +1,164 @@
+[tool.codespell]
+builtin = "clear,rare,informal,usage,code,en-GB_to_en-US"
+
+skip = "*.brd,*.sch,*.lbr,*.svg,*/sphinx_to_pages.yml,*/nrf52840.h,*/nrf52840_bitfields.h,*/core_cm4.h"
+# TODO: sphinx-entry only included temporarily
+# TODO: programmer header-files contain external code
+ignore-words-list = "dout,jupyter,stdio,astroid,uint,fram,arange,ro"
+
+# options without argument
+check-filenames = ""
+check-hidden = ""
+
+[tool.isort]
+profile = "black"
+filter_files = true
+force_single_line = true
+
+[tool.flake8]
+max-line-length = 100
+require-plugins = [
+    # https://github.com/DmytroLitvinov/awesome-flake8-extensions
+    ### Bugs & Code-Smells
+    "flake8-bugbear",
+    "flake8-secure-coding-standard",
+    "flake8-bandit",
+    "flake8-builtins",
+
+    ### Clean Code
+    "flake8-comprehensions",
+    "flake8-simplify",
+    "flake8-eradicate",
+
+    ### Limitations
+    "flake8-blind-except",
+    "flake8-logging-format",
+    "flake8-print",
+
+    ### Documentation
+    "flake8-comments",
+    # flake8-docstrings
+    # flake8-rst-docstrings
+
+    ### Test-Improvements
+    "flake8-assertive",
+]
+
+extend-ignore = [
+    # black-formatter-specific
+    "E203",
+    # open() vs os.open()
+    "SCS109",
+    # DOCString TODO: reduce here
+    "D100", "D102", "D103",
+    # handled by ruff
+    "G200",
+    "S101", "S108", "S404", "S603",
+    "SCS108",
+    "E501", "E800",
+]
+
+per-file-ignores = """
+# asserts (in tests are ok), also allow print() instead of logger,
+*/tests_manual/*: T201
+*/tests/*: T201
+# commented out code, TODO: finalize model
+# telnet for openOCD, for now, TODO: replace by direct ssh.run()
+software/shepherd-herd/shepherd_herd/open_ocd_cli.py: S401, S312
+# allow print() instead of logger,
+# software/python-package/tests/test_virtual_source.py: T201
+# under development - so more
+software/firmware/pru0-cython-module/*: T201, F401
+"""
+exclude = "software/shepherd-devicetest/*"
+
+count = true
+statistics = true
+
+[tool.ruff]  # TODO: once stable it replaces flake8, pyupgrade, isort, ...
+line-length = 100
+select = [
+    "A",    # flake8-builtins
+    "ANN", # flake8-annotations
+    "ARG",  # flake8-unused-arguments
+    "B",    # Bugbear
+    "C",
+    "COM", # flake8-commas
+#    "CPY",  # flake8-copyright
+    "C4",   # flake8-comprehensions
+    "DTZ",  # flake8-datetimez
+#    "D",    # pydocstyle, TODO: activate
+    "E",    # pycodestyle errors
+    "ERA",  # eradicate commented out code
+    "F",    # pyflakes
+#    "FA",   # flake8-future-annotations
+#    "FBT",  # boolean traps
+    "FLY",  # flynt
+    "FURB", # refurb
+    "G",    # flake8-logging-format
+#    "I",    # incomplete isort
+    "INP",  # flake8-no-pep420
+    "LOG",  # flake8-logging
+    "N",    # naming
+    "NPY",  # NumPy-specific rules
+    "PD",   # pandas-vet
+    "PERF", # Perflint
+    "PL",   # Pylint
+    "PTH",  # flake8-use-pathlib
+    "PYI",  # flake8-pyi
+    "RET",  # flake8-return
+    "RUF",  # Ruff-specific rules
+    "S",    # bandit, security
+    "SLF",  # flake8-self
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports
+    "TCH",  # flake8-type-checking
+    "T10",  # flake8-print
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+    "YTT",  # flake8-2020
+]
+ignore = [
+    "N802", "N803", "N806", "N815", "N816", # naming (si-units should stay)
+    "PLR2004", # magic values
+    "TID252", # relative imports from parent
+    "RUF100", # noqa from other linters, TODO: replace flake8, when security is fully ported (S4**)
+    "PLR0904", # complexity
+    "PLR0911", "PLR0912", # complexity
+    "PLR0913", "PLR0915", # complexity
+    "C901", # complexity
+    "E203", # whitespace before ':' (black-default)
+    "ANN101", "ANN102", # self & cls not type-annotated
+    "ANN401",  # Any as valid type
+    "COM812", # trailing comma, same line
+]
+target-version = "py310"
+preview = true
+
+exclude= [  # external projects
+    "software/shepherd-datalib/*",
+    "software/shepherd-webservice/*",
+    "software/firmware/pru0-cython-module/*",
+]
+
+[tool.ruff.per-file-ignores]
+"*/tests/**" = ["ARG", "S", "D", "SLF001"]
+"*/examples/**" = ["INP001"]  # no namespace
+"software/shepherd-calibration/**" = ["ERA001"]  # comments
+"software/shepherd-devicetest/**" = ["ERA001", "ARG001", "PLW0603", "F405", "F403", "ANN001"]
+"docs/**" = ["INP001"]
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.pyright]
+root = "./"
+include = [
+    './software/python-package',
+    './software/shepherd-herd',
+    './tests',
+]
+pythonVersion = "3.10"
+pythonPlatform = "All"
+reportMissingParameterType = true

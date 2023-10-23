@@ -1,11 +1,17 @@
-[submodule "datalib"]
+[submodule "software/shepherd-datalib"]
 	path = software/shepherd-datalib
 	url = https://github.com/orgua/shepherd-datalib.git
 
-[submodule "webservice"]
+[submodule "software/shepherd-webservice"]
 	path = software/shepherd-webservice
 	url = https://github.com/orgua/shepherd_webservice.git
 
-[submodule "targets"]
+[submodule "software/shepherd-targets"]
 	path = software/shepherd-targets
 	url = https://github.com/orgua/shepherd-targets.git
+
+# helpful commands:
+# git submodule add <link> <rel-path>
+# git submodule update --init --recursive
+# git submodule update --recursive --remote
+# git submodule foreach git reset --hard

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 from shepherd_sheep.cli import cli
 
 # NOTE: (almost) direct copy between shepherd-herd & python-package
@@ -24,14 +25,18 @@ def fw_msp() -> Path:
 @pytest.fixture
 def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
-    with open(store_path.resolve(), "w") as f:
+    with store_path.resolve().open("w", encoding="utf-8-sig") as f:
         f.write("")
     return store_path
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_minimal(shepherd_up, cli_runner, fw_nrf: Path) -> None:
+def test_cli_program_minimal(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_nrf: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -46,7 +51,11 @@ def test_cli_program_minimal(shepherd_up, cli_runner, fw_nrf: Path) -> None:
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_nrf: Path) -> None:
+def test_cli_program_swd_explicit(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_nrf: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -72,8 +81,8 @@ def test_cli_program_swd_explicit(shepherd_up, cli_runner, fw_nrf: Path) -> None
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_swd_explicit_short(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     fw_nrf: Path,
 ) -> None:
     res = cli_runner.invoke(
@@ -100,7 +109,11 @@ def test_cli_program_swd_explicit_short(
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_msp: Path) -> None:
+def test_cli_program_sbw_explicit(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_msp: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -125,7 +138,11 @@ def test_cli_program_sbw_explicit(shepherd_up, cli_runner, fw_msp: Path) -> None
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -> None:
+def test_cli_program_file_defective_a(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_empty: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -140,7 +157,11 @@ def test_cli_program_file_defective_a(shepherd_up, cli_runner, fw_empty: Path) -
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_b(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    tmp_path: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -155,7 +176,11 @@ def test_cli_program_file_defective_b(shepherd_up, cli_runner, tmp_path: Path) -
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -> None:
+def test_cli_program_file_defective_c(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    tmp_path: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -171,8 +196,8 @@ def test_cli_program_file_defective_c(shepherd_up, cli_runner, tmp_path: Path) -
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_a(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     fw_nrf: Path,
 ) -> None:
     res = cli_runner.invoke(
@@ -192,8 +217,8 @@ def test_cli_program_datarate_invalid_a(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_program_datarate_invalid_b(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     fw_nrf: Path,
 ) -> None:
     res = cli_runner.invoke(
@@ -212,7 +237,11 @@ def test_cli_program_datarate_invalid_b(
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_program_target_invalid(shepherd_up, cli_runner, fw_nrf: Path) -> None:
+def test_cli_program_target_invalid(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    fw_nrf: Path,
+) -> None:
     res = cli_runner.invoke(
         cli,
         [

@@ -2,7 +2,8 @@ import signal
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from types import FrameType
+from typing import TypedDict
 
 import click
 import shepherd_core
@@ -11,11 +12,14 @@ from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.data_models.testbed import TargetPort
+from typing_extensions import Unpack
 
 from . import __version__
 from .herd import Herd
 from .logger import logger as log
 from .logger import set_verbosity
+
+# ruff: noqa: FBT001
 
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring
@@ -24,7 +28,7 @@ from .logger import set_verbosity
 #  - arguments can be configured in a dict and standardized across tools
 
 
-def exit_gracefully(*args) -> None:  # type: ignore
+def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     log.warning("Aborted!")
     sys.exit(0)
 
@@ -67,13 +71,13 @@ def exit_gracefully(*args) -> None:  # type: ignore
 @click.pass_context
 def cli(
     ctx: click.Context,
-    inventory: Optional[str],
-    limit: Optional[str],
-    user: Optional[str],
-    key_filepath: Optional[Path],
+    inventory: str | None,
+    limit: str | None,
+    user: str | None,
+    key_filepath: Path | None,
     verbose: bool,
     version: bool,
-):
+) -> None:
     """A primary set of options to configure how to interface the herd"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
@@ -101,9 +105,9 @@ def cli(
 @cli.command(short_help="Power off shepherd nodes")
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
-def poweroff(ctx: click.Context, restart: bool):
+def poweroff(ctx: click.Context, restart: bool) -> None:
     with ctx.obj["herd"] as herd:
-        exit_code = herd.poweroff(restart)
+        exit_code = herd.poweroff(restart=restart)
     sys.exit(exit_code)
 
 
@@ -111,7 +115,7 @@ def poweroff(ctx: click.Context, restart: bool):
 @click.pass_context
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-def shell_cmd(ctx: click.Context, command: str, sudo: bool):
+def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
         herd.print_output(replies, verbose=True)
@@ -151,9 +155,9 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
 )
 @click.option("--attach", "-a", is_flag=True, help="Wait and receive output")
 @click.pass_context
-def run(ctx: click.Context, config: Path, attach: bool):
+def run(ctx: click.Context, config: Path, attach: bool) -> None:
     with ctx.obj["herd"] as herd:
-        exit_code = herd.run_task(config, attach)
+        exit_code = herd.run_task(config, attach=attach)
     sys.exit(exit_code)
 
 
@@ -196,8 +200,8 @@ def run(ctx: click.Context, config: Path, attach: bool):
 def harvest(
     ctx: click.Context,
     no_start: bool,
-    **kwargs,
-):
+    **kwargs: Unpack[TypedDict],
+) -> None:
     with ctx.obj["herd"] as herd:
         for path in ["output_path"]:
             file_path = Path(kwargs[path])
@@ -300,8 +304,8 @@ def harvest(
 def emulate(
     ctx: click.Context,
     no_start: bool,
-    **kwargs,
-):
+    **kwargs: Unpack[TypedDict],
+) -> None:
     with ctx.obj["herd"] as herd:
         for path in ["input_path", "output_path"]:
             file_path = Path(kwargs[path])
@@ -408,9 +412,9 @@ def distribute(
     filename: Path,
     remote_path: Path,
     force_overwrite: bool,
-):
+) -> None:
     with ctx.obj["herd"] as herd:
-        herd.put_file(filename, remote_path, force_overwrite)
+        herd.put_file(filename, remote_path, force_overwrite=force_overwrite)
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
@@ -473,7 +477,13 @@ def retrieve(
             if herd.await_stop(timeout=30):
                 raise Exception("shepherd still active after timeout")
 
-        failed = herd.get_file(filename, outdir, timestamp, separate, delete)
+        failed = herd.get_file(
+            filename,
+            outdir,
+            timestamp=timestamp,
+            separate=separate,
+            delete_src=delete,
+        )
     sys.exit(failed)
 
 
@@ -530,7 +540,7 @@ def retrieve(
     help="dry-run the programmer - no data gets written",
 )
 @click.pass_context
-def program(ctx: click.Context, **kwargs):
+def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     tmp_file = "/tmp/target_image.hex"  # noqa: S108
     cfg_path = Path("/etc/shepherd/config_for_herd.yaml")
 

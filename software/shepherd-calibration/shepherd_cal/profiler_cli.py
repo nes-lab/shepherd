@@ -1,12 +1,11 @@
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Dict
-from typing import Optional
 
 import click
 import numpy as np
 import typer
+from shepherd_core import local_tz
 
 from .calibrator import INSTR_4WIRE
 from .calibrator import Calibrator
@@ -25,6 +24,8 @@ from .logger import logger
 from .profile_analyzer import analyze_directory
 from .profiler import INSTR_PROFILE_SHP
 from .profiler import Profiler
+
+# ruff: noqa: FBT001, FBT003
 
 cli_pro = typer.Typer(
     name="profile",
@@ -54,8 +55,8 @@ quiet_opt_t = typer.Option(
 def measure(
     host: str = host_arg_t,
     user: str = user_opt_t,
-    password: Optional[str] = pass_opt_t,
-    outfile: Optional[Path] = ofile_opt_t,
+    password: str | None = pass_opt_t,
+    outfile: Path | None = ofile_opt_t,
     smu_ip: str = smu_ip_opt_t,
     smu_2wire: bool = smu_2w_opt_t,
     smu_nplc: float = smu_nc_opt_t,
@@ -65,7 +66,7 @@ def measure(
     cape_serial: str = serial_opt_t,
     quiet: bool = quiet_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Measure profile-data for shepherd cape"""
     cli_setup_callback(verbose)
     if not any([harvester, emulator]):
@@ -76,7 +77,7 @@ def measure(
     time_now = time()
     components = ("_emu" if emulator else "") + ("_hrv" if harvester else "")
     if outfile is None:
-        timestamp = datetime.fromtimestamp(time_now)
+        timestamp = datetime.fromtimestamp(time_now, tz=local_tz())
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
         outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}")
     if short:
@@ -85,8 +86,8 @@ def measure(
         file_path = outfile.stem + ".profile_full" + components + ".npz"
 
     shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
-    profiler = Profiler(shpcal, short)
-    results: Dict[str, np.ndarray] = {"cape": cape_serial}
+    profiler = Profiler(shpcal, short=short)
+    results: dict[str, np.ndarray] = {"cape": cape_serial}
 
     if not quiet:
         click.echo(INSTR_PROFILE_SHP)
@@ -137,10 +138,10 @@ plot_opt_t = typer.Option(
 @cli_pro.command()
 def analyze(
     infiles: Path = in_files_arg_t,
-    outfile: Optional[Path] = out_file_opt_t,
+    outfile: Path | None = out_file_opt_t,
     plot: bool = plot_opt_t,
     verbose: bool = verbose_opt_t,
-):
+) -> None:
     """Analyze profile-data"""
     cli_setup_callback(verbose)
-    analyze_directory(infiles, outfile, plot)
+    analyze_directory(infiles, outfile, do_plots=plot)

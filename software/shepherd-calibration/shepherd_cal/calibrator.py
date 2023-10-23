@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import time
 from pathlib import Path
-from typing import Dict
-from typing import Optional
-from typing import Union
 
 import msgpack
 import msgpack_numpy
@@ -50,12 +47,12 @@ class Calibrator:
         self,
         host: str,
         user: str,
-        password: Optional[str] = None,
-        smu_ip: Optional[str] = None,
+        password: str | None = None,
+        smu_ip: str | None = None,
         mode_4wire: bool = True,
         pwrline_cycles: float = 16,
-    ):
-        fabric_args: Dict[str, str] = {}
+    ) -> None:
+        fabric_args: dict[str, str] = {}
         if password is not None:
             fabric_args["password"] = password
 
@@ -80,7 +77,7 @@ class Calibrator:
         if self.kth is not None:
             self.kth.reset()
 
-    def __del__(self):
+    def __del__(self) -> None:
         # ... overcautious
         self._cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
         self._cnx.close()
@@ -126,7 +123,7 @@ class Calibrator:
         return value_i
 
     @staticmethod
-    def reject_outliers(data: np.ndarray, m: float = 2.0):
+    def reject_outliers(data: np.ndarray, m: float = 2.0) -> np.ndarray:
         d = np.abs(data - np.median(data))
         mdev = np.median(d)
         s = d / mdev if mdev else 0.0
@@ -337,7 +334,7 @@ class Calibrator:
         return results
 
     def measure_harvester(self) -> CalMeasurementHarvester:
-        results: Dict[str, CalMeasPairs] = {}
+        results: dict[str, CalMeasPairs] = {}
         logger.info("Measurement - Harvester - ADC . Voltage")
         results["adc_V_Sense"] = self.measure_harvester_adc_voltage(self.kth.smub)
 
@@ -352,7 +349,7 @@ class Calibrator:
         return CalMeasurementHarvester(**results)
 
     def measure_emulator(self) -> CalMeasurementEmulator:
-        results: Dict[str, CalMeasPairs] = {}
+        results: dict[str, CalMeasPairs] = {}
         logger.info("Measurement - Emulator - ADC . Current - Target A")
         # targetA-Port will get the monitored dac-channel-b
         self.sheep.select_port_for_power_tracking(TargetPort.A)
@@ -383,14 +380,14 @@ class Calibrator:
 
     def write(
         self,
-        cal_file: Union[str, Path],
-    ):
+        cal_file: str | Path,
+    ) -> None:
         temp_file = "/tmp/calib.yaml"  # noqa: S108
         if isinstance(cal_file, str):
             cal_file = Path(cal_file)
         CalibrationCape.from_file(cal_file)  # test data
 
-        self._cnx.put(cal_file, temp_file)  # noqa: S108
+        self._cnx.put(cal_file, temp_file)
         logger.info("----------EEPROM WRITE------------")
         logger.info("Local  file: %s", cal_file.as_posix())
         logger.info("Remote file: %s", temp_file)
@@ -403,7 +400,7 @@ class Calibrator:
         logger.info(result.stderr)
         logger.info("---------------------------------")
 
-    def read(self):
+    def read(self) -> None:
         logger.info("----------EEPROM READ------------")
         result = self._cnx.sudo(
             "shepherd-sheep --verbose eeprom read",
@@ -414,7 +411,7 @@ class Calibrator:
         logger.info(result.stderr)
         logger.info("---------------------------------")
 
-    def retrieve(self, cal_file: Path):
+    def retrieve(self, cal_file: Path) -> None:
         temp_file = "/tmp/calib.yaml"  # noqa: S108
         result = self._cnx.sudo(
             f"shepherd-sheep --verbose eeprom read -c {temp_file}",

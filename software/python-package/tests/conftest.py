@@ -1,14 +1,18 @@
 import gc
+from collections.abc import Generator
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
+from pyfakefs.fake_filesystem import FakeFilesystem
 from shepherd_sheep.sysfs_interface import load_kernel_module
 from shepherd_sheep.sysfs_interface import remove_kernel_module
 
 
 def check_beagleboard() -> bool:
-    with suppress(Exception), open("/proc/cpuinfo") as info:
+    with suppress(Exception), Path("/proc/cpuinfo").open(encoding="utf-8-sig") as info:
         if "AM33XX" in info.read():
             return True
     return False
@@ -20,10 +24,12 @@ def check_beagleboard() -> bool:
         pytest.param("fake_hardware", marks=pytest.mark.fake_hardware),
     ],
 )
-def fake_hardware(request):
+def fake_fs(
+    request: pytest.FixtureRequest,
+) -> Generator[FakeFilesystem | None, None, None]:
     if request.param == "fake_hardware":
         request.fixturenames.append("fs")  # needs pyfakefs installed
-        fake_sysfs = request.getfixturevalue("fs")
+        fake_sysfs: FakeFilesystem = request.getfixturevalue("fs")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc1")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc2")
         yield fake_sysfs
@@ -31,7 +37,7 @@ def fake_hardware(request):
         yield None
 
 
-def pytest_addoption(parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--eeprom-write",
         action="store_true",
@@ -40,7 +46,10 @@ def pytest_addoption(parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config, items) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config,
+    items: Iterable[pytest.Item],
+) -> None:
     skip_fake = pytest.mark.skip(reason="cannot be faked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
     skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
@@ -58,8 +67,11 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 @pytest.fixture()
-def shepherd_up(fake_hardware, shepherd_down):
-    if fake_hardware is not None:
+def shepherd_up(
+    fake_fs: FakeFilesystem | None,
+    shepherd_down: None,
+) -> Generator[None, None, None]:
+    if fake_fs is not None:
         files = [
             ("/sys/shepherd/state", "idle"),
             ("/sys/shepherd/mode", "harvester"),
@@ -82,11 +94,11 @@ def shepherd_up(fake_hardware, shepherd_down):
             #       -> there should be more tests that don't require a pru
         ]
         for file_, content in files:
-            fake_hardware.create_file(file_, contents=content)
+            fake_fs.create_file(file_, contents=content)
         here = Path(__file__).resolve().parent
-        fake_hardware.add_real_file(here / "_test_config_emulation.yaml")
-        fake_hardware.add_real_file(here / "_test_config_harvest.yaml")
-        fake_hardware.add_real_file(here / "_test_config_virtsource.yaml")
+        fake_fs.add_real_file(here / "_test_config_emulation.yaml")
+        fake_fs.add_real_file(here / "_test_config_harvest.yaml")
+        fake_fs.add_real_file(here / "_test_config_virtsource.yaml")
         yield
     else:
         load_kernel_module()
@@ -96,6 +108,11 @@ def shepherd_up(fake_hardware, shepherd_down):
 
 
 @pytest.fixture()
-def shepherd_down(fake_hardware) -> None:
-    if fake_hardware is None:
+def shepherd_down(fake_fs: FakeFilesystem | None) -> None:
+    if fake_fs is None:
         remove_kernel_module()
+
+
+@pytest.fixture
+def cli_runner() -> CliRunner:
+    return CliRunner()

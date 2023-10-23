@@ -31,8 +31,6 @@ prog2_io = 11   # P8_32, GPIO0[11]
 :license: MIT, see LICENSE for more details.
 """
 from contextlib import suppress
-from typing import Dict
-from typing import List
 
 from .logger import log
 
@@ -41,7 +39,7 @@ with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
 
-target_pins: List[Dict] = [  # pin-order from target-connector
+target_pins: list[dict] = [  # pin-order from target-connector
     {"name": "gpio0", "pin": 26, "dir": 78},
     {"name": "gpio1", "pin": 27, "dir": 78},
     {"name": "gpio2", "pin": 46, "dir": 78},
@@ -59,19 +57,19 @@ target_pins: List[Dict] = [  # pin-order from target-connector
 
 
 class TargetIO:
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes relevant variables.
 
         Args:
 
         """
         dir_pins = {pin["dir"] for pin in target_pins if isinstance(pin["dir"], int)}
-        self.dirs: Dict[int, GPIO] = {}
+        self.dirs: dict[int, GPIO] = {}
         for pin in dir_pins:
             self.dirs[pin] = GPIO(pin, "out")
             self.dirs[pin].write(True)  # True == Output to target
 
-        self.gpios: Dict[str, GPIO] = {}
+        self.gpios: dict[str, GPIO] = {}
         for pin_info in target_pins:
             if pin_info["dir"] == "I":
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "in")
@@ -79,7 +77,7 @@ class TargetIO:
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "out")
                 self.gpios[pin_info["name"]].write(False)  # init LOW
 
-        self.pin_names: List[str] = [pin["name"] for pin in target_pins]
+        self.pin_names: list[str] = [pin["name"] for pin in target_pins]
         self.pin_count: int = len(target_pins)
 
     def one_high(self, num: int) -> None:
@@ -128,13 +126,12 @@ class TargetIO:
         dir_param = target_pins[num]["dir"]
         if isinstance(dir_param, str):
             return dir_param == "I"
-        elif isinstance(dir_param, int):
+        if isinstance(dir_param, int):
             dir_pin = self.dirs[dir_param]
             return not dir_pin.read()
-        else:
-            raise RuntimeError(
-                "Something went wrong - could not determine pin-direction",
-            )
+        raise RuntimeError(
+            "Something went wrong - could not determine pin-direction",
+        )
 
     def set_pin_direction(self, num: int, pdir: bool) -> bool:
         """
@@ -150,7 +147,7 @@ class TargetIO:
             # not changeable
             pin_state = dir_param == "I"
             return pin_state == pdir
-        elif isinstance(dir_param, int):
+        if isinstance(dir_param, int):
             pins_affected = [
                 pin["name"] for pin in target_pins if pin["dir"] == dir_param
             ]

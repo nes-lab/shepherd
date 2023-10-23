@@ -1,14 +1,15 @@
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 from shepherd_sheep.cli import cli
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_target_power_min_arg_a(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -22,8 +23,8 @@ def test_cli_target_power_min_arg_a(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_target_power_min_arg_b(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -40,8 +41,8 @@ def test_cli_target_power_min_arg_b(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_target_power_min_arg_c(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -58,8 +59,8 @@ def test_cli_target_power_min_arg_c(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_target_power_explicit_a(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -77,8 +78,8 @@ def test_cli_target_power_explicit_a(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_target_power_explicit_b(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -98,8 +99,8 @@ def test_cli_target_power_explicit_b(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_eeprom_read_min_arg_a(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -108,14 +109,14 @@ def test_cli_eeprom_read_min_arg_a(
             "read",
         ],
     )
-    assert res.exit_code in [0, 2, 3]
+    assert res.exit_code in {0, 2, 3}
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_eeprom_read_min_arg_b(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
     path_inf = tmp_path / "info"
@@ -131,14 +132,14 @@ def test_cli_eeprom_read_min_arg_b(
             path_cal.as_posix(),
         ],
     )
-    assert res.exit_code in [0, 2, 3]
+    assert res.exit_code in {0, 2, 3}
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_eeprom_read_explicit(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
     path_inf = tmp_path / "info"
@@ -154,14 +155,14 @@ def test_cli_eeprom_read_explicit(
             path_cal.as_posix(),
         ],
     )
-    assert res.exit_code in [0, 2, 3]
+    assert res.exit_code in {0, 2, 3}
 
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_inventorize_min_arg_a(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,
@@ -173,8 +174,8 @@ def test_cli_inventorize_min_arg_a(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_inventorize_min_arg_b(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
     file = tmp_path / "inv.yaml"
@@ -189,8 +190,8 @@ def test_cli_inventorize_min_arg_b(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_inventorize_explicit(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
     file = tmp_path / "inv.yaml"
@@ -205,8 +206,8 @@ def test_cli_inventorize_explicit(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_fix_kmod(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
         cli,

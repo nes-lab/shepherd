@@ -1,7 +1,7 @@
 import threading
 from abc import ABC
 from abc import abstractmethod
-from typing import Optional
+from types import TracebackType
 
 import h5py
 from shepherd_core import Compression
@@ -13,15 +13,15 @@ class Monitor(ABC):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
+        compression: Compression | None = Compression.default,
         poll_intervall: float = 0.25,
-    ):
+    ) -> None:
         self.data = target
         self.poll_intervall = poll_intervall
         self.position = 0
         self.increment = 100
         self.event = threading.Event()
-        self.thread: Optional[threading.Thread] = None
+        self.thread: threading.Thread | None = None
 
         # create time, others have to be created in main class
         self.data.create_dataset(
@@ -43,7 +43,13 @@ class Monitor(ABC):
             type(self).__name__,
         )
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.data["time"].resize((self.position,))
         log.info(
             "[%s] recorded %d events",

@@ -8,7 +8,7 @@ Codestyle
 
 Please stick to the C and Python codestyle guidelines provided with the source code.
 
-All **Python code** uses the feature-set of **version 3.8** is supposed to be formatted using `Black <https://black.readthedocs.io/en/stable/>`_ in default mode and is tested with the `Flake8 <https://flake8.pycqa.org/en/latest/>`_ linter including some addons for cleaner and more secure code.
+All included **Python code** uses the feature-set of **version 3.10** is supposed to be formatted using `Black <https://black.readthedocs.io/en/stable/>`_ in default mode and is tested with the `Flake8 <https://flake8.pycqa.org/en/latest/>`_ linter including some addons for cleaner and more secure code.
 
 **C code** uses the feature-set of **C99** and shall be formatted based on *LLVM*-Style with some alterations to make it easier to read, similar to python code.
 We provide the corresponding ``clang-format`` config as ``.clang-format`` in the repository's root directory.

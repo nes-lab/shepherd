@@ -9,12 +9,11 @@ Provides main API functionality for harvesting and emulating with shepherd.
 """
 import platform
 import shutil
-import subprocess  # noqa: S404
+import subprocess
 import tempfile
 import time
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Union
 
 from shepherd_core.data_models import FirmwareDType
 from shepherd_core.data_models import ShpModel
@@ -39,12 +38,12 @@ from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 
 __all__ = [
     "Writer",
@@ -59,7 +58,7 @@ __all__ = [
     "run_programmer",
     "run_firmware_mod",
     "run_task",
-    "ShepherdIOException",
+    "ShepherdIOError",
     "log",
     "flatten_list",
 ]
@@ -102,7 +101,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     set_verbosity(cfg.verbose, temporary=True)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
-    if cfg.data_type in [FirmwareDType.path_elf, FirmwareDType.base64_elf]:
+    if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
         modify_uid(file_path, cfg.custom_id)
         file_path = firmware_to_hex(file_path)
     if file_path.as_posix() != cfg.firmware_file.as_posix():
@@ -145,7 +144,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         file_tmp = Path(path_tmp.name) / "aligned.hex"
         # tmp_path because firmware can be in readonly content-dir
         cmd = [
-            "srec_cat",
+            "/usr/bin/srec_cat",
             # BL51 hex files are not sorted for ascending addresses. Suppress this warning
             "-disable-sequence-warning",
             # load input HEX file
@@ -168,13 +167,13 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             file_tmp.as_posix(),
             "-Intel",
         ]
-        ret = subprocess.run(cmd, timeout=30)  # noqa: S607 S603
+        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
         if ret.returncode > 0:
             log.error("Error during realignment (srec_cat): %s", ret.stderr)
             failed = True
             raise SystemExit
 
-        with open(file_tmp.as_posix(), "rb") as fw:
+        with file_tmp.resolve().open("rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
                 target = cfg.mcu_type.lower()
@@ -211,7 +210,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                 log.error("OSError - Failed to initialize Programmer")
                 failed = True
             except ValueError as xpt:
-                log.exception("ValueError: %s", str(xpt))  # noqa: G200
+                log.exception("ValueError: %s", str(xpt))
                 failed = True
 
         state = "init"
@@ -245,13 +244,13 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
     return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 
-def run_task(cfg: Union[ShpModel, Path, str]) -> bool:
+def run_task(cfg: ShpModel | Path | str) -> bool:
     observer_name = platform.node().strip()
     try:
         wrapper = prepare_task(cfg, observer_name)
         content = extract_tasks(wrapper)
     except ValueError as xcp:
-        log.error(  # noqa: G200
+        log.error(
             "Task-Set was not usable for this observer '%s', with original error = %s",
             observer_name,
             xcp,

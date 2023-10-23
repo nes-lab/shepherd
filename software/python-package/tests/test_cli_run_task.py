@@ -16,8 +16,10 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from click.testing import CliRunner
 from pydantic import ValidationError
 from shepherd_core import CalibrationHarvester
+from shepherd_core import local_tz
 from shepherd_core.data_models import Firmware
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
@@ -33,7 +35,8 @@ from shepherd_sheep.shared_memory import DataBuffer
 
 
 def random_data(length: int) -> np.ndarray:
-    return np.random.randint(0, high=2**18, size=length, dtype="u4")
+    rng = np.random.default_rng()
+    return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
 @pytest.fixture
@@ -70,8 +73,8 @@ def path_here() -> Path:
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_no_cal(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_yaml: Path,
     path_h5: Path,
 ) -> None:
@@ -90,8 +93,8 @@ def test_cli_harvest_no_cal(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_parameters_most(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_yaml: Path,
     path_h5: Path,
 ) -> None:
@@ -100,7 +103,7 @@ def test_cli_harvest_parameters_most(
         force_overwrite=True,
         duration=10,
         use_cal_default=True,
-        time_start=datetime.fromtimestamp(round(time.time() + 20)),
+        time_start=datetime.fromtimestamp(round(time.time() + 20), tz=local_tz()),
         abort_on_error=False,
         verbose=3,
     ).to_file(tmp_yaml)
@@ -112,8 +115,8 @@ def test_cli_harvest_parameters_most(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_parameters_minimal(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_yaml: Path,
     path_h5: Path,
 ) -> None:
@@ -130,7 +133,11 @@ def test_cli_harvest_parameters_minimal(
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_harvest_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
+def test_cli_harvest_preconfigured(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    path_here: Path,
+) -> None:
     file_path = path_here / "_test_config_harvest.yaml"
     res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
@@ -139,8 +146,8 @@ def test_cli_harvest_preconfigured(shepherd_up, cli_runner, path_here: Path) -> 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_harvest_preconf_etc_shp_examples(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     path_here: Path,
 ) -> None:
     file_path = path_here.parent / "example_config_harvest.yaml"
@@ -151,8 +158,8 @@ def test_cli_harvest_preconf_etc_shp_examples(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -179,8 +186,8 @@ def test_cli_emulate(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_with_custom_virtsource(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -212,8 +219,8 @@ def test_cli_emulate_with_custom_virtsource(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_with_bq25570(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -241,8 +248,8 @@ def test_cli_emulate_with_bq25570(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_aux_voltage(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -270,8 +277,8 @@ def test_cli_emulate_aux_voltage(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_parameters_long(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -282,7 +289,7 @@ def test_cli_emulate_parameters_long(
         input_path=data_h5.as_posix(),
         output_path=path_h5.as_posix(),
         voltage_aux=2.5,
-        time_start=datetime.fromtimestamp(round(time.time() + 20)),
+        time_start=datetime.fromtimestamp(round(time.time() + 20), tz=local_tz()),
         use_cal_default=True,
         enable_io=True,
         io_port="B",
@@ -307,8 +314,8 @@ def test_cli_emulate_parameters_long(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_parameters_minimal(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -330,7 +337,11 @@ def test_cli_emulate_parameters_minimal(
 
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
-def test_cli_emulate_preconfigured(shepherd_up, cli_runner, path_here: Path) -> None:
+def test_cli_emulate_preconfigured(
+    shepherd_up: None,
+    cli_runner: CliRunner,
+    path_here: Path,
+) -> None:
     file_path = path_here / "_test_config_emulation.yaml"
     res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
@@ -339,8 +350,8 @@ def test_cli_emulate_preconfigured(shepherd_up, cli_runner, path_here: Path) -> 
 @pytest.mark.hardware
 @pytest.mark.timeout(80)
 def test_cli_emulate_preconf_etc_shp_examples(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     path_here: Path,
 ) -> None:
     file_path = path_here.parent / "example_config_emulation.yaml"
@@ -351,8 +362,8 @@ def test_cli_emulate_preconf_etc_shp_examples(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_emulate_aux_voltage_fail(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
     tmp_yaml: Path,
@@ -378,8 +389,8 @@ def test_cli_emulate_aux_voltage_fail(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_fw_mod_task(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
+    cli_runner: CliRunner,
     tmp_path: Path,
     path_here: Path,
 ) -> None:
@@ -413,8 +424,7 @@ def test_cli_fw_mod_task(
 @pytest.mark.hardware
 @pytest.mark.timeout(60)
 def test_cli_programming(
-    shepherd_up,
-    cli_runner,
+    shepherd_up: None,
     path_here: Path,
     tmp_path: Path,
 ) -> None:
@@ -427,7 +437,7 @@ def test_cli_programming(
         simulate=True,
         verbose=4,
     ).to_file(path_yaml)
-    res = cli_runner.invoke(
+    res = CliRunner().invoke(
         cli,
         [
             "run",

@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Optional
+from types import TracebackType
 
 import h5py
 import numpy as np
@@ -15,8 +15,8 @@ class SysUtilMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
-        compression: Optional[Compression] = Compression.default,
-    ):
+        compression: Compression | None = Compression.default,
+    ) -> None:
         super().__init__(target, compression, poll_intervall=0.3)
         self.log_interval_ns: int = 1 * (10**9)  # step-size is 1 s
         self.log_timestamp_ns: int = 0
@@ -71,10 +71,21 @@ class SysUtilMonitor(Monitor):
             self.thread = threading.Thread(target=self.thread_fn, daemon=True)
             self.thread.start()
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_intervall)
+            if self.thread.is_alive():
+                log.error(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
             self.thread = None
         self.data["cpu"].resize((self.position,))
         self.data["ram"].resize((self.position, 2))
@@ -82,12 +93,12 @@ class SysUtilMonitor(Monitor):
         self.data["net"].resize((self.position, 2))
         super().__exit__()
 
-    def thread_fn(self, backlog: int = 40):
+    def thread_fn(self) -> None:
         """captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
-        while not self.event.is_set():
+        while not self.event.wait(self.poll_intervall):  # rate limiter & exit
             ts_now_ns = int(time.time() * 1e9)
             if ts_now_ns >= self.log_timestamp_ns:
                 data_length = self.data["time"].shape[0]
@@ -119,5 +130,4 @@ class SysUtilMonitor(Monitor):
                 self.position += 1
                 # TODO: add temp, not working:
                 #  https://psutil.readthedocs.io/en/latest/#psutil.sensors_temperatures
-            self.event.wait(self.poll_intervall)  # rate limiter
         log.debug("[%s] thread ended itself", type(self).__name__)

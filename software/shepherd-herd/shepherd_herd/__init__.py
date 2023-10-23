@@ -14,7 +14,7 @@ from .logger import get_verbosity
 from .logger import logger
 from .logger import set_verbosity
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 
 __all__ = [
     "Herd",

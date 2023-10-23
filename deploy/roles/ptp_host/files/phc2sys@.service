@@ -23,3 +23,6 @@ StartLimitBurst=10
 
 [Install]
 WantedBy=multi-user.target
+
+# check with
+# sudo systemctl status phc2sys@eth0.service

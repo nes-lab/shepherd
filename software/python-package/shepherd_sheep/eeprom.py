@@ -13,10 +13,11 @@ through Linux I2C device driver.
 import os
 import struct
 from contextlib import suppress
-from typing import Optional
+from types import TracebackType
 
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CapeData
+from typing_extensions import Self
 
 from .logger import log
 
@@ -48,7 +49,7 @@ class EEPROM:
 
     """
 
-    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49):
+    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49) -> None:
         """Initializes EEPROM by bus number and address.
 
         Args:
@@ -60,12 +61,19 @@ class EEPROM:
         self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.fd = os.open(self.dev_path, os.O_RDWR | os.O_SYNC)
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         os.close(self.fd)
+        pass
 
     def _read(self, address: int, n_bytes: int) -> bytes:
         """Reads a given number of bytes from given address.
@@ -96,7 +104,7 @@ class EEPROM:
             raise
         self._write_protect_pin.write(True)
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> bytes | str:
         """Retrieves attribute from EEPROM.
 
         Args:
@@ -113,10 +121,9 @@ class EEPROM:
         if eeprom_format[key]["type"] == "str":
             str_data = raw_data.split(b"\x00")
             return str_data[0].decode("utf-8")
-        else:
-            return raw_data
+        return raw_data
 
-    def __setitem__(self, key: str, value):  # type: ignore
+    def __setitem__(self, key: str, value: str | bytes) -> None:
         """Writes attribute to EEPROM.
 
         Args:
@@ -150,7 +157,7 @@ class EEPROM:
         else:
             self._write(eeprom_format[key]["offset"], value)
 
-    def _write_cape_data(self, cape_data: Optional[CapeData]) -> None:
+    def _write_cape_data(self, cape_data: CapeData | None) -> None:
         """Writes complete BeagleBone cape data to EEPROM
 
         Args:
@@ -214,19 +221,19 @@ class EEPROM:
 def retrieve_calibration(use_default_cal: bool = False) -> CalibrationCape:
     if use_default_cal:
         return CalibrationCape()
-    else:
-        try:
-            with EEPROM() as storage:
-                return storage.read_calibration()
-        except ValueError:
-            log.warning(
-                "Couldn't read calibration from EEPROM (ValueError). "
-                "Falling back to default values.",
-            )
-            return CalibrationCape()
-        except FileNotFoundError:
-            log.warning(
-                "Couldn't read calibration from EEPROM (FileNotFoundError). "
-                "Falling back to default values.",
-            )
-            return CalibrationCape()
+
+    try:
+        with EEPROM() as storage:
+            return storage.read_calibration()
+    except ValueError:
+        log.warning(
+            "Couldn't read calibration from EEPROM (ValueError). "
+            "Falling back to default values.",
+        )
+        return CalibrationCape()
+    except FileNotFoundError:
+        log.warning(
+            "Couldn't read calibration from EEPROM (FileNotFoundError). "
+            "Falling back to default values.",
+        )
+        return CalibrationCape()

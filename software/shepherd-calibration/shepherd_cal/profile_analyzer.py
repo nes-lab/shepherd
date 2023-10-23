@@ -1,7 +1,5 @@
 import os
 from pathlib import Path
-from typing import List
-from typing import Optional
 
 import pandas as pd
 
@@ -10,7 +8,8 @@ from .profile import Profile
 
 def analyze_directory(
     folder_path: Path,
-    stats_path: Optional[Path] = None,
+    stats_path: Path | None = None,
+    *,
     do_plots: bool = False,
 ) -> None:
     stats_list = []
@@ -27,7 +26,7 @@ def analyze_directory(
         if "origin" in stats_base.columns:
             stat_names = stats_base["origin"].tolist()
 
-    files: List[str] = []
+    files: list[str] = []
     if folder_path.is_file():
         files.append(str(folder_path))
     elif folder_path.is_dir():
@@ -37,7 +36,7 @@ def analyze_directory(
 
     for file in files:
         fpath = Path(file)
-        if not os.path.isfile(file):
+        if not fpath.is_file():
             continue
         if "npz" not in fpath.suffix.lower():
             continue
@@ -51,8 +50,8 @@ def analyze_directory(
             for component in profile.data:
                 for filtered in [True, False]:
                     profile.quiver_setpoints_offset(component, filtered)
-                    # profile.scatter_setpoints_stddev(component, filtered)  # noqa: E800
-                    # profile.scatter_setpoints_dynamic(component, filtered)  # noqa: E800
+                    # profile.scatter_setpoints_stddev(component, filtered)
+                    # profile.scatter_setpoints_dynamic(component, filtered)
 
     stat_df = pd.concat(stats_list, axis=0)
     stat_df.to_csv(stats_path, sep=";", decimal=",", index=False)

@@ -32,7 +32,7 @@ repos:
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.14
+    rev: v0.15
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -43,7 +43,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 23.10.0
     hooks:
       - id: black
 
@@ -62,7 +62,7 @@ repos:
     rev: v3.15.0
     hooks:
       - id: pyupgrade
-        args: ["--py38-plus", "--keep-runtime-typing"]
+        args: ["--py310-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0
@@ -80,7 +80,6 @@ repos:
           - flake8-comprehensions
           - flake8-simplify
           - flake8-eradicate
-          - flake8-commas
 
           ### Limitations
           - flake8-blind-except
@@ -95,11 +94,21 @@ repos:
           ### Test-Improvements
           - flake8-assertive
 
-  - repo: https://github.com/ansible-community/ansible-lint.git
-    rev: v6.20.3
+          ### Load Config from ...
+          - flake8-pyproject
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.1.1'
     hooks:
-      - id: ansible-lint
-        #files: \.(yaml|yml)$
+      - id: ruff
+        # manual run: ruff check . --preview
+
+# TODO: disable, until bug is resolved, maybe connected to
+# https://github.com/ansible/ansible-lint/issues/3636
+#  - repo: https://github.com/ansible-community/ansible-lint.git
+#    rev: v6.20.3
+#    hooks:
+#      - id: ansible-lint
 
 #  - repo: https://github.com/rstcheck/rstcheck
 #    rev: v6.1.2
@@ -112,6 +121,7 @@ repos:
     rev: v2.2.6
     hooks:
       - id: codespell
+        additional_dependencies: ["tomli"]  # for py<3.11
         exclude: \.(sch|brd|lbr)$
 
 #  - repo: https://github.com/amperser/proselint
@@ -121,7 +131,7 @@ repos:
 #        types_or: ["markdown", "rst"]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v16.0.6
+    rev: v17.0.3
     hooks:
       - id: clang-format
         types_or: [c++, c]
@@ -175,4 +185,4 @@ repos:
 #        args: ["--fix", "--exit-non-zero-on-fix"]
 
 # default_language_version:
-#    python: python3.8
+#    python: python3.10

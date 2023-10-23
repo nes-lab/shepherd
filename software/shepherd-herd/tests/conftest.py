@@ -16,12 +16,12 @@ def cli_runner() -> CliRunner:
 
 
 def extract_first_sheep(herd_path: Path) -> str:
-    with open(herd_path) as stream:
+    with herd_path.open(encoding="utf-8-sig") as stream:
         try:
             inventory_data = yaml.safe_load(stream)
-        except yaml.YAMLError:
-            raise TypeError(f"Couldn't read inventory file {herd_path}")
-    return list(inventory_data["sheep"]["hosts"].keys())[0]
+        except yaml.YAMLError as _xpt:
+            raise TypeError(f"Couldn't read inventory file {herd_path}") from _xpt
+    return next(iter(inventory_data["sheep"]["hosts"].keys()))
 
 
 def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -> bool:
@@ -83,7 +83,7 @@ def local_herd(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def stopped_herd(cli_runner: CliRunner):
+def stopped_herd(cli_runner: CliRunner) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active

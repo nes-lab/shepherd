@@ -9,11 +9,16 @@ HDF5 files.
 :license: MIT, see LICENSE for more details.
 """
 from pathlib import Path
-from typing import List
-from typing import Optional
-from typing import Union
+from types import TracebackType
+from typing import TYPE_CHECKING
+from typing import ClassVar
 
-import h5py
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    import h5py
+    from .monitor_abc import Monitor
+
 import numpy as np
 import yaml
 from shepherd_core import CalibrationEmulator as CalEmu
@@ -26,7 +31,6 @@ from shepherd_core.data_models.task import Compression
 
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .commons import MAX_GPIO_EVT_PER_BUFFER
-from .monitor_abc import Monitor
 from .monitor_kernel import KernelMonitor
 from .monitor_ptp import PTPMonitor
 from .monitor_sheep import SheepMonitor
@@ -51,7 +55,7 @@ class Writer(CoreWriter):
             nanoseconds
     """
 
-    mode_dtype_dict = {
+    mode_dtype_dict: ClassVar[dict[str, list]] = {
         "harvester": ["ivsample", "ivcurve", "isc_voc"],
         "emulator": ["ivsample"],
     }
@@ -59,17 +63,17 @@ class Writer(CoreWriter):
     def __init__(
         self,
         file_path: Path,
-        mode: Optional[str] = None,
-        datatype: Optional[str] = None,
-        window_samples: Optional[int] = None,
-        cal_data: Union[CalSeries, CalEmu, CalHrv, None] = None,
+        mode: str | None = None,
+        datatype: str | None = None,
+        window_samples: int | None = None,
+        cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
         modify_existing: bool = False,
         force_overwrite: bool = False,
-        verbose: Optional[bool] = True,
+        verbose: bool | None = True,
         samples_per_buffer: int = 10_000,
         samplerate_sps: int = 100_000,
-    ):
+    ) -> None:
         # hopefully overwrite defaults from Reader
         self.samples_per_buffer: int = samples_per_buffer  # TODO: test
         self.samplerate_sps: int = samplerate_sps
@@ -85,9 +89,9 @@ class Writer(CoreWriter):
             window_samples,
             cal_data,
             compression,
-            modify_existing,
-            force_overwrite,
-            verbose,
+            modify_existing=modify_existing,
+            force_overwrite=force_overwrite,
+            verbose=verbose,
         )
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
@@ -110,9 +114,9 @@ class Writer(CoreWriter):
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
-        self.monitors: List[Monitor] = []
+        self.monitors: list[Monitor] = []
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """Initializes the structure of the HDF5 file
 
         HDF5 is hierarchically structured and before writing data, we have to
@@ -166,7 +170,13 @@ class Writer(CoreWriter):
 
         return self
 
-    def __exit__(self, *exc):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         # trim over-provisioned parts
         self.grp_data["time"].resize((self.data_pos,))
         self.grp_data["voltage"].resize((self.data_pos,))
@@ -221,7 +231,7 @@ class Writer(CoreWriter):
             ] = buffer.gpio_edges.timestamps_ns
             self.gpio_grp["value"][
                 self.gpio_pos : gpio_new_pos
-            ] = buffer.gpio_edges.values
+            ] = buffer.gpio_edges.values  # noqa: PD011, false positive
             self.gpio_pos = gpio_new_pos
 
         if (buffer.util_mean > 95) or (buffer.util_max > 100):
@@ -234,9 +244,10 @@ class Writer(CoreWriter):
 
     def start_monitors(
         self,
-        sys: Optional[SystemLogging] = None,
-        gpio: Optional[GpioTracing] = None,
+        sys: SystemLogging | None = None,
+        gpio: GpioTracing | None = None,
     ) -> None:
+        self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
         if sys is not None and sys.dmesg:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.ptp:
@@ -251,4 +262,3 @@ class Writer(CoreWriter):
                     baudrate=gpio.uart_baudrate,
                 ),
             )
-        self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))

@@ -10,8 +10,6 @@ This program verifies a proper function of the shepherd frontends for emulator a
 """
 import itertools
 import time
-from typing import List
-from typing import Tuple
 
 import msgpack
 import msgpack_numpy
@@ -22,6 +20,8 @@ from shepherd_core.data_models.testbed.cape import TargetPort
 
 from .calibrator import Calibrator
 from .logger import logger
+
+# ruff: noqa: FBT003
 
 INSTR_PROFILE_SHP = """
 ---------------------- Characterize Shepherd-Frontend -----------------------
@@ -38,7 +38,7 @@ INSTR_PROFILE_SHP = """
 
 
 class Profiler:
-    def __init__(self, calibrator: Calibrator, short: bool = False):
+    def __init__(self, calibrator: Calibrator, *, short: bool = False) -> None:
         self._cal: Calibrator = calibrator
 
         if short:
@@ -46,7 +46,7 @@ class Profiler:
                 [5.0, 0.05],
                 np.arange(0.0, 5.1, 0.4),
             )
-            self.currents_A: List[float] = [
+            self.currents_A: list[float] = [
                 0e-6,
                 1e-6,
                 2e-6,
@@ -69,7 +69,7 @@ class Profiler:
             ]
         else:
             self.voltages_V: np.ndarray = np.append([0.05], np.arange(0.0, 5.1, 0.2))
-            self.currents_A: List[float] = [
+            self.currents_A: list[float] = [
                 0e-6,
                 1e-6,
                 2e-6,
@@ -99,7 +99,7 @@ class Profiler:
         smu: KeithleyClass,
         voltage_V: float,
         current_A: float = 0,
-    ) -> Tuple[np.ndarray, float, float]:
+    ) -> tuple[np.ndarray, float, float]:
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
         # negative current, because smu acts as a drain
@@ -150,7 +150,7 @@ class Profiler:
         smu: KeithleyClass,
         voltage_V: float,
         current_A: float = 0,
-    ) -> Tuple[np.ndarray, np.ndarray, float, float]:
+    ) -> tuple[np.ndarray, np.ndarray, float, float]:
         voltage_V = min(max(voltage_V, 0.0), 5.0)
 
         # SMU as current-source

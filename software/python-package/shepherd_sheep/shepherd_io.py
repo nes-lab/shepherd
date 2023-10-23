@@ -9,8 +9,7 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 """
 import time
 from contextlib import suppress
-from typing import Optional
-from typing import Union
+from types import TracebackType
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -20,19 +19,20 @@ from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
+from typing_extensions import Self
+from typing_extensions import TypedDict
+from typing_extensions import Unpack
 
 from . import commons
 from . import sysfs_interface as sfs
 from .logger import log
+from .shared_memory import DataBuffer
 from .shared_memory import SharedMemory
 from .sysfs_interface import check_sys_access
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
     from periphery import GPIO
-
-
-ID_ERR_TIMEOUT = 100
 
 gpio_pin_nums = {
     "target_pwr_sel": 31,
@@ -44,8 +44,10 @@ gpio_pin_nums = {
 }
 
 
-class ShepherdIOException(Exception):
-    def __init__(self, message: str, id_num: int = 0, value: int = 0):
+class ShepherdIOError(Exception):
+    ID_TIMEOUT = 100
+
+    def __init__(self, message: str, id_num: int = 0, value: int = 0) -> None:
         super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
         self.id_num = id_num
         self.value = value
@@ -63,26 +65,24 @@ class ShepherdIO:
     """
 
     # This _instance-element is part of the singleton implementation
-    _instance = None
+    _instance: Self | None = None
 
     @classmethod
-    def __new__(cls, *args, **kwds):
+    def __new__(cls, *_args: tuple, **_kwargs: Unpack[TypedDict]) -> Self:
         """Implements singleton class."""
-        if ShepherdIO._instance is None:
-            new_class = object.__new__(cls)
-            ShepherdIO._instance = new_class
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
             # was raising on reuse and stored weakref.ref before
-            return new_class
-        else:
-            log.debug("ShepherdIO-Singleton reused")
-            return ShepherdIO._instance
+            return cls._instance
+        log.debug("ShepherdIO-Singleton reused")
+        return cls._instance
 
     def __init__(
         self,
         mode: str,
-        trace_iv: Optional[PowerTracing],
-        trace_gpio: Optional[GpioTracing],
-    ):
+        trace_iv: PowerTracing | None,
+        trace_gpio: GpioTracing | None,
+    ) -> None:
         """Initializes relevant variables.
 
         Args:
@@ -94,13 +94,12 @@ class ShepherdIO:
             sfs.load_pru0_firmware("shepherd")
 
         self.mode = mode
-        if mode in ["harvester", "emulator"]:
+        if mode in {"harvester", "emulator"}:
             self.component = mode  # TODO: still needed?
         else:
             self.component = "emulator"
         self.gpios = {}
 
-        # self.shared_mem: Optional[SharedMem] = None # noqa: E800
         self._buffer_period: float = 0.1  # placeholder value
 
         self.trace_iv = trace_iv
@@ -114,11 +113,10 @@ class ShepherdIO:
         self.n_buffers = 0
         self.shared_mem: SharedMemory
 
-    def __del__(self):
-        log.debug("Now deleting ShepherdIO")
+    def __del__(self) -> None:
         ShepherdIO._instance = None
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         try:
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
@@ -140,19 +138,27 @@ class ShepherdIO:
 
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
-            self._cleanup()
+            self._power_down_shp()
+            self._unload_shared_mem()
             raise
 
         sfs.wait_for_state("idle", 3)
         return self
 
-    def __exit__(self, *args):  # type: ignore
+    def __exit__(
+        self,
+        typ: type[BaseException] | None = None,
+        exc: BaseException | None = None,
+        tb: TracebackType | None = None,
+        extra_arg: int = 0,
+    ) -> None:
         log.info("Now exiting ShepherdIO")
-        self._cleanup()
+        self._power_down_shp()
+        self._unload_shared_mem()
         ShepherdIO._instance = None
 
     @staticmethod
-    def _send_msg(msg_type: int, values: Union[int, list]) -> None:
+    def _send_msg(msg_type: int, values: int | list) -> None:
         """Sends a formatted message to PRU0.
 
         Args:
@@ -162,7 +168,7 @@ class ShepherdIO:
         """
         sfs.write_pru_msg(msg_type, values)
 
-    def _get_msg(self, timeout_n: int = 5):
+    def _get_msg(self, timeout_n: int = 5) -> tuple[int, list[int]]:
         """Tries to retrieve formatted message from PRU0.
 
         Args:
@@ -173,36 +179,37 @@ class ShepherdIO:
         for _ in range(timeout_n):
             try:
                 return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceError:  # noqa: PERF203
                 time.sleep(self._buffer_period)
                 continue
-        raise ShepherdIOException("Timeout waiting for message", ID_ERR_TIMEOUT)
+        raise ShepherdIOError("Timeout waiting for message", ShepherdIOError.ID_TIMEOUT)
 
     @staticmethod
-    def _flush_msgs():
+    def _flush_msgs() -> None:
         """Flushes msg_channel by reading all available bytes."""
         while True:
             try:
                 sfs.read_pru_msg()
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceError:  # noqa: PERF203
                 break
 
     def start(
         self,
-        start_time: Optional[float] = None,
+        start_time: float | None = None,
         wait_blocking: bool = True,
-    ) -> None:
+    ) -> bool:
         """Starts sampling either now or at later point in time.
 
         Args:
             start_time (int): Desired start time in unix time
             wait_blocking (bool): If true, block until start has completed
         """
-        if isinstance(start_time, (float, int)):
+        if isinstance(start_time, float | int):
             log.debug("asking kernel module for start at %.2f", start_time)
-        sfs.set_start(start_time)
+        success = sfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
+        return success
 
     @staticmethod
     def wait_for_start(timeout: float) -> None:
@@ -213,11 +220,12 @@ class ShepherdIO:
         """
         sfs.wait_for_state("running", timeout)
 
-    def reinitialize_prus(self) -> None:
+    @staticmethod
+    def reinitialize_prus() -> None:
         sfs.set_stop(force=True)  # forces idle
         sfs.wait_for_state("idle", 5)
 
-    def refresh_shared_mem(self):
+    def refresh_shared_mem(self) -> None:
         if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMemory):
             self.shared_mem.__exit__()
 
@@ -254,20 +262,25 @@ class ShepherdIO:
         )
         self.shared_mem.__enter__()
 
-    def _cleanup(self):
+    def _unload_shared_mem(self) -> None:
+        if self.shared_mem is not None:
+            self.shared_mem.__exit__()
+            self.shared_mem = None
+
+    def _power_down_shp(self) -> None:
         log.debug("ShepherdIO is commanded to power down / cleanup")
         count = 1
         while count < 6 and sfs.get_state() != "idle":
             try:
                 sfs.set_stop(force=True)
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceError:
                 log.exception(
                     "CleanupRoutine caused an exception while trying to stop PRU (n=%d)",
                     count,
                 )
             try:
                 sfs.wait_for_state("idle", 3.0)
-            except sfs.SysfsInterfaceException:
+            except sfs.SysfsInterfaceError:
                 log.warning(
                     "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
                     count,
@@ -279,10 +292,6 @@ class ShepherdIO:
                 sfs.get_state(),
             )
         self.set_aux_target_voltage(0.0)
-
-        if self.shared_mem is not None:
-            self.shared_mem.__exit__()
-            self.shared_mem = None
 
         self.set_io_level_converter(False)
         self.set_power_state_emulator(False)
@@ -331,14 +340,14 @@ class ShepherdIO:
             time.sleep(0.3)  # time to stabilize voltage-drop
 
     @staticmethod
-    def convert_target_port_to_bool(target: Union[TargetPort, str, bool, None]) -> bool:
+    def convert_target_port_to_bool(target: TargetPort | str | bool | None) -> bool:
         if target is None:
             return True
-        elif isinstance(target, str):
+        if isinstance(target, str):
             return TargetPort[target] == TargetPort.A
-        elif isinstance(target, TargetPort):
+        if isinstance(target, TargetPort):
             return target == TargetPort.A
-        elif isinstance(target, bool):
+        if isinstance(target, bool):
             return target
         raise ValueError(
             f"Parameter 'target' must be A or B (was {target}, type {type(target)})",
@@ -346,7 +355,7 @@ class ShepherdIO:
 
     def select_port_for_power_tracking(
         self,
-        target: Union[TargetPort, bool, None],
+        target: TargetPort | bool | None,
     ) -> None:
         """
         choose which targets (A or B) gets the supply with current-monitor,
@@ -371,7 +380,7 @@ class ShepherdIO:
 
     def select_port_for_io_interface(
         self,
-        target: Union[TargetPort, bool, None],
+        target: TargetPort | bool | None,
     ) -> None:
         """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
@@ -405,7 +414,7 @@ class ShepherdIO:
     @staticmethod
     def set_aux_target_voltage(
         voltage: float,
-        cal_emu: Optional[CalibrationEmulator] = None,
+        cal_emu: CalibrationEmulator | None = None,
     ) -> None:
         """Enables or disables the voltage for the second target
 
@@ -420,7 +429,7 @@ class ShepherdIO:
         sfs.write_dac_aux_voltage(voltage, cal_emu)
 
     @staticmethod
-    def get_aux_voltage(cal_emu: Optional[CalibrationEmulator] = None) -> float:
+    def get_aux_voltage(cal_emu: CalibrationEmulator | None = None) -> float:
         """Reads the auxiliary voltage (dac channel B) from the PRU core.
 
         Args:
@@ -434,7 +443,7 @@ class ShepherdIO:
     @validate_call
     def send_calibration_settings(
         self,
-        cal_: Union[CalibrationEmulator, CalibrationHarvester, None],
+        cal_: CalibrationEmulator | CalibrationHarvester | None,
     ) -> None:
         """Sends calibration settings to PRU core
 
@@ -490,7 +499,11 @@ class ShepherdIO:
         """
         self._send_msg(commons.MSG_BUF_FROM_HOST, index)
 
-    def get_buffer(self, timeout_n: int = 10, verbose: bool = False):
+    def get_buffer(
+        self,
+        timeout_n: int = 10,
+        verbose: bool = False,
+    ) -> tuple[int, DataBuffer]:
         """Reads a data buffer from shared memory.
 
         Polls the msg-channel for a message from PRU0 and, if the message
@@ -509,8 +522,8 @@ class ShepherdIO:
         """
 
         while True:
-            msg_type, value = self._get_msg(timeout_n)
-            value = value[0]
+            msg_type, values = self._get_msg(timeout_n)
+            value = values[0]
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
                 ts_start = time.time()
@@ -523,31 +536,31 @@ class ShepherdIO:
                     )
                 return value, buf
 
-            elif msg_type == commons.MSG_DBG_PRINT:
+            if msg_type == commons.MSG_DBG_PRINT:
                 log.info("Received cmd to print: %d", value)
                 continue
 
-            elif msg_type == commons.MSG_DEP_ERR_INCMPLT:
-                raise ShepherdIOException(
+            if msg_type == commons.MSG_DEP_ERR_INCMPLT:
+                raise ShepherdIOError(
                     "Got incomplete buffer",
                     commons.MSG_DEP_ERR_INCMPLT,
                     value,
                 )
 
-            elif msg_type == commons.MSG_DEP_ERR_INVLDCMD:
-                raise ShepherdIOException(
+            if msg_type == commons.MSG_DEP_ERR_INVLDCMD:
+                raise ShepherdIOError(
                     "PRU received invalid command",
                     commons.MSG_DEP_ERR_INVLDCMD,
                     value,
                 )
-            elif msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
-                raise ShepherdIOException(
+            if msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
+                raise ShepherdIOError(
                     "PRU ran out of buffers",
                     commons.MSG_DEP_ERR_NOFREEBUF,
                     value,
                 )
-            else:
-                raise ShepherdIOException(
-                    f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
-                    f"got { msg_type }[{ value }]",
-                )
+
+            raise ShepherdIOError(
+                f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
+                f"got { msg_type }[{ value }]",
+            )

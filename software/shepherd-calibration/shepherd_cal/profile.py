@@ -1,6 +1,4 @@
 from pathlib import Path
-from typing import Dict
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -9,7 +7,7 @@ from matplotlib import pyplot as plt
 from .logger import logger
 from .profile_calibration import ProfileCalibration
 
-component_dict: Dict[str, str] = {
+component_dict: dict[str, str] = {
     "a": "emu_a",
     "emu_a": "emu_a",
     "b": "emu_b",
@@ -18,7 +16,7 @@ component_dict: Dict[str, str] = {
     "hrv": "hrv",
 }
 
-elem_dict: Dict[str, int] = {
+elem_dict: dict[str, int] = {
     "voltage_shp_V": 0,
     "voltage_shp_raw": 1,
     "voltage_ref_V": 2,
@@ -26,7 +24,7 @@ elem_dict: Dict[str, int] = {
     "current_shp_raw": 4,
     "current_ref_A": 5,
 }
-elem_list: List[str] = [
+elem_list: list[str] = [
     "v_shp_V",
     "v_shp_raw",
     "v_ref_V",
@@ -39,7 +37,7 @@ elem_list: List[str] = [
 
 
 class Profile:
-    def __init__(self, file: Path):
+    def __init__(self, file: Path) -> None:
         if not isinstance(file, Path):
             file = Path(file)
         if file.suffix != ".npz":
@@ -50,14 +48,14 @@ class Profile:
         meas_file = np.load(str(file), allow_pickle=True)
         self.file_name: str = file.stem
 
-        self.data: Dict[str, pd.DataFrame] = {}
-        self.cals: Dict[str, ProfileCalibration] = {}
+        self.data: dict[str, pd.DataFrame] = {}
+        self.cals: dict[str, ProfileCalibration] = {}
 
-        self.results: Dict[str, pd.DataFrame] = {}
-        self.stats: List[pd.DataFrame] = []
+        self.results: dict[str, pd.DataFrame] = {}
+        self.stats: list[pd.DataFrame] = []
 
-        self.data_filters: Dict[str, pd.Series] = {}
-        self.res_filters: Dict[str, pd.Series] = {}
+        self.data_filters: dict[str, pd.Series] = {}
+        self.res_filters: dict[str, pd.Series] = {}
 
         for comp_i in component_dict:
             if comp_i not in meas_file:
@@ -158,7 +156,7 @@ class Profile:
         )
         self.results[component] = result
 
-    def _prepare_filters(self, component: str):
+    def _prepare_filters(self, component: str) -> None:
         data = self.data[component]
         filter_c = (data["c_ref_A"] >= 3e-6) & (data["c_ref_A"] <= 40e-3)
         filter_v = (data.v_shp_V >= 1.0) & (data.v_shp_V <= 3.9)
@@ -196,7 +194,7 @@ class Profile:
     def get_stats(self) -> pd.DataFrame:
         return pd.concat(self.stats, axis=0, ignore_index=True)
 
-    def scatter_setpoints_stddev(self, component: str, filtered: bool = False):
+    def scatter_setpoints_stddev(self, component: str, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
@@ -239,7 +237,7 @@ class Profile:
         plt.close(fig)
         plt.clf()
 
-    def scatter_setpoints_dynamic(self, component: str, filtered: bool = False):
+    def scatter_setpoints_dynamic(self, component: str, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
@@ -292,7 +290,7 @@ class Profile:
         plt.close(fig)
         plt.clf()
 
-    def quiver_setpoints_offset(self, component: str, filtered: bool = False):
+    def quiver_setpoints_offset(self, component: str, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]

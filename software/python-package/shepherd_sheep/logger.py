@@ -1,7 +1,6 @@
 import logging.handlers
 import multiprocessing
 import sys
-from typing import Union
 
 import chromalog
 from shepherd_core.logger import set_log_verbose_level
@@ -30,7 +29,7 @@ def get_verbosity() -> bool:
     return verbosity_state
 
 
-def set_verbosity(state: Union[bool, int] = True, temporary: bool = False) -> None:
+def set_verbosity(state: bool | int = True, temporary: bool = False) -> None:
     if isinstance(state, bool):
         # strange solution -> bool is also int, so it falls through below in elif
         if not state:
@@ -40,7 +39,7 @@ def set_verbosity(state: Union[bool, int] = True, temporary: bool = False) -> No
     set_log_verbose_level(console_handler, 3)
     if temporary:
         return
-    global verbosity_state
+    global verbosity_state  # noqa: PLW0603
     verbosity_state = True
 
 

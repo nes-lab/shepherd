@@ -1,9 +1,6 @@
 import contextlib
 import time
 from typing import NoReturn
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import msgpack
 import msgpack_numpy
@@ -17,13 +14,14 @@ from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
+from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .logger import log
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOException
+from .shepherd_io import ShepherdIOError
 from .target_io import TargetIO
 
 
@@ -37,10 +35,10 @@ class ShepherdDebug(ShepherdIO):
     with the ADC and DAC.
     """
 
-    def __init__(self, use_io: bool = True):
+    def __init__(self, use_io: bool = True) -> None:
         super().__init__("debug", trace_iv=PowerTracing(), trace_gpio=GpioTracing())
 
-        self._io: Optional[TargetIO] = TargetIO() if use_io else None
+        self._io: TargetIO | None = TargetIO() if use_io else None
 
         # offer a default cali for debugging
         self._cal: CalibrationCape = CalibrationCape()
@@ -60,14 +58,14 @@ class ShepherdDebug(ShepherdIO):
         self.W_inp_fWs: float = 0.0
         self.W_out_fWs: float = 0.0
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         super().__enter__()
         super().set_power_state_recorder(True)
         super().set_power_state_emulator(True)
         super().reinitialize_prus()
         return self
 
-    def adc_read(self, channel: str):
+    def adc_read(self, channel: str) -> int:
         """Reads value from specified ADC channel.
 
         Args:
@@ -76,17 +74,17 @@ class ShepherdDebug(ShepherdIO):
         Returns:
             Binary ADC value read from corresponding channel
         """
-        if channel.lower() in ["hrv_a_in", "hrv_i_in", "a_in", "i_in"]:
+        if channel.lower() in {"hrv_a_in", "hrv_i_in", "a_in", "i_in"}:
             channel_no = 0
-        elif channel.lower() in ["hrv_v_in", "v_in"]:
+        elif channel.lower() in {"hrv_v_in", "v_in"}:
             channel_no = 1
-        elif channel.lower() in [
+        elif channel.lower() in {
             "emu",
             "emu_a_out",
             "emu_i_out",
             "a_out",
             "i_out",
-        ]:
+        }:
             channel_no = 2
         else:
             raise ValueError(f"ADC channel { channel } unknown")
@@ -95,7 +93,7 @@ class ShepherdDebug(ShepherdIO):
 
         msg_type, values = self._get_msg(30)
         if msg_type != commons.MSG_DBG_ADC:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_ADC) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -110,16 +108,16 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_GPI, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_GPI:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_GPI) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0]
 
-    def gp_set_batok(self, value: int):
+    def gp_set_batok(self, value: int) -> None:
         super()._send_msg(commons.MSG_DBG_GP_BATOK, value)
 
-    def dac_write(self, channels: int, value: int):
+    def dac_write(self, channels: int, value: int) -> None:
         """Writes value to specified DAC channel, DAC8562
 
         Args:
@@ -137,7 +135,7 @@ class ShepherdDebug(ShepherdIO):
 
     def get_buffer(
         self,
-        timeout_n: Optional[float] = None,
+        timeout_n: float | None = None,
         verbose: bool = False,
     ) -> NoReturn:
         raise NotImplementedError("Method not implemented for debugging mode")
@@ -146,7 +144,7 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_FN_TESTS:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_FN_TESTS) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -158,10 +156,13 @@ class ShepherdDebug(ShepherdIO):
         cal_emu: CalibrationEmulator,
         log_intermediate: bool = False,
         dtype_in: EnergyDType = EnergyDType.ivsample,
-        window_size: Optional[int] = None,
-    ):
+        window_size: int | None = None,
+    ) -> None:
         super().send_calibration_settings(cal_emu)
-        src_pru = ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate)
+        src_pru = ConverterPRUConfig.from_vsrc(
+            src_cfg,
+            log_intermediate_node=log_intermediate,
+        )
         super().send_virtual_converter_settings(src_pru)
 
         hrv_pru = HarvesterPRUConfig.from_vhrv(
@@ -177,7 +178,7 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSRC_INIT:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_INIT) }, "
                 f"but got type={ hex(msg_type) } val={ values }, "
                 " is ENABLE_DBG_VSOURCE defined in pru0/main.c??",
@@ -201,7 +202,7 @@ class ShepherdDebug(ShepherdIO):
         )
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_P_INP:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_INP) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -211,14 +212,14 @@ class ShepherdDebug(ShepherdIO):
         self,
         input_voltage_uV: int,
         input_current_nA: int,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         self._send_msg(
             commons.MSG_DBG_VSRC_CHARGE,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_CHARGE:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_CHARGE) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -228,17 +229,17 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_P_OUT, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_P_OUT:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_P_OUT) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def cnv_drain(self, current_adc_raw: int) -> Tuple[int, int]:
+    def cnv_drain(self, current_adc_raw: int) -> tuple[int, int]:
         self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_DRAIN:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_DRAIN) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -248,7 +249,7 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_V_CAP, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_V_CAP:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_CAP) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
@@ -258,14 +259,19 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_V_OUT, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_V_OUT:
-            raise ShepherdIOException(
+            raise ShepherdIOError(
                 f"Expected msg type { hex(commons.MSG_DBG_VSRC_V_OUT) }, "
                 f"but got type={ hex(msg_type) } val={ values }",
             )
         return values[0]  # V_out_dac_raw
 
     # TEST-SIMPLIFICATION - code below is also part py-vsource with same interface
-    def iterate_sampling(self, V_inp_uV: int = 0, A_inp_nA: int = 0, A_out_nA: int = 0):
+    def iterate_sampling(
+        self,
+        V_inp_uV: int = 0,
+        A_inp_nA: int = 0,
+        A_out_nA: int = 0,
+    ) -> int:
         # NOTE: this includes the harvester
         P_inp_fW = self.cnv_calc_inp_power(V_inp_uV, A_inp_nA, include_hrv=True)
         A_out_raw = self._cal.emulator.adc_C_A.si_to_raw(A_out_nA * 10**-9)
@@ -303,7 +309,7 @@ class ShepherdDebug(ShepherdIO):
 
     def select_port_for_power_tracking(
         self,
-        target: Union[TargetPort, bool, None],
+        target: TargetPort | bool | None,
     ) -> None:
         super().select_port_for_power_tracking(target)
 
@@ -320,37 +326,34 @@ class ShepherdDebug(ShepherdIO):
         return self._cal[component][channel].si_to_raw(value)
 
     def set_gpio_one_high(self, num: int) -> None:
-        if not (self._io is None):
+        if self._io is not None:
             self._io.one_high(num)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def get_gpio_state(self, num: int) -> bool:
-        if not (self._io is None):
+        if self._io is not None:
             return self._io.get_pin_state(num)
-        else:
-            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
+        log.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return False
 
     def set_gpio_direction(self, num: int, pdir: bool) -> None:
-        if not (self._io is None):
+        if self._io is not None:
             self._io.set_pin_direction(num, pdir)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
     def get_gpio_direction(self, num: int) -> bool:
-        if not (self._io is None):
+        if self._io is not None:
             return self._io.get_pin_direction(num)
-        else:
-            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
-            return True
+        log.debug("Error: IO is not enabled in this shepherd-debug-instance")
+        return True
 
     def get_gpio_info(self) -> list:
-        if not (self._io is None):
+        if self._io is not None:
             return self._io.pin_names
-        else:
-            log.debug("Error: IO is not enabled in this shepherd-debug-instance")
-            return []
+        log.debug("Error: IO is not enabled in this shepherd-debug-instance")
+        return []
 
     def set_power_state_emulator(self, state: bool) -> None:
         super().set_power_state_emulator(state)
@@ -395,7 +398,7 @@ class ShepherdDebug(ShepherdIO):
             super().start(wait_blocking=True)
         return mode_old
 
-    def sample_from_pru(self, length_n_buffers: int = 10):
+    def sample_from_pru(self, length_n_buffers: int = 10) -> bytes | None:
         length_n_buffers = int(min(max(length_n_buffers, 1), 55))
         super().reinitialize_prus()
         time.sleep(0.1)
@@ -422,7 +425,7 @@ class ShepherdDebug(ShepherdIO):
 
     def process_programming_messages(self) -> None:
         """Prints messages to console until timeout occurs"""
-        with contextlib.suppress(ShepherdIOException):
+        with contextlib.suppress(ShepherdIOError):
             while True:
                 msg_type, values = self._get_msg(5)
                 if msg_type != commons.MSG_PGM_ERROR_WRITE:
