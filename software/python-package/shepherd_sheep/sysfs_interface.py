@@ -179,7 +179,7 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
                 log.debug("writing 'start' to sysfs")
                 f.write("start")
     except OSError:
-        log.error("Failed to write 'Start' to sysfs")
+        log.error("Failed to write 'Start' to sysfs (@%f.3)", time.time())
         return False
     return True
 
