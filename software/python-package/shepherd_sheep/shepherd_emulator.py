@@ -89,7 +89,7 @@ class ShepherdEmulator(ShepherdIO):
         self.cal_emu = retrieve_calibration(cfg.use_cal_default).emulator
 
         if cfg.time_start is None:
-            self.start_time = round(time.time() + 10)
+            self.start_time = round(time.time() + 15)
         else:
             self.start_time = cfg.time_start.timestamp()
 
