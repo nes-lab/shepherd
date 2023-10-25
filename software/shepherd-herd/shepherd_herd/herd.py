@@ -241,7 +241,7 @@ class Herd:
             threads[_name].start()
         logger.debug("  .. threads started - will wait until finished")
         for host, thread in threads.items():
-            logger.debug("  .. join %s", host)
+            logger.debug("  .. joining %s-thread", host)
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
