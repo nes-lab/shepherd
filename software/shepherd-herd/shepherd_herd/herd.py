@@ -239,7 +239,9 @@ class Herd:
                 args=(cnx, sudo, cmd, results, i),
             )
             threads[_name].start()
+        logger.debug("  .. threads started - will wait until finished")
         for host, thread in threads.items():
+            logger.debug("  .. join %s", host)
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -433,7 +435,7 @@ class Herd:
                 args=(cnx, src_path, dst_paths[i]),
             )
             threads[i].start()
-
+        logger.debug("  .. threads started - will wait until finished")
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
             if replies[i].exited > 0:
