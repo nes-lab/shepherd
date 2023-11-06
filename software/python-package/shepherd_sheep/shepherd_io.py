@@ -90,8 +90,8 @@ class ShepherdIO:
         """
         check_sys_access()
 
-        if not sfs.pru0_firmware_is_default():
-            sfs.load_pru0_firmware("shepherd")
+        if not sfs.pru_firmware_is_default():
+            sfs.load_pru_firmware("shepherd")
 
         self.mode = mode
         if mode in {"harvester", "emulator"}:

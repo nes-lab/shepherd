@@ -331,5 +331,19 @@ def fix() -> None:
     reload_kernel_module()
 
 
+@cli.command(
+    short_help="Loads a specific firmware to the PRUs",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument(
+    "firmware",
+    type=click.Choice(["default", "swd", "sbw", "sync"]),
+    default="default",
+)
+def pru() -> None:
+    set_verbosity()
+    reload_kernel_module()
+
+
 if __name__ == "__main__":
     cli()

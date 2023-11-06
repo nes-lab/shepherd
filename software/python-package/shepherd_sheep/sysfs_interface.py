@@ -584,36 +584,37 @@ def check_programmer() -> str:
         return file.read().rstrip()
 
 
-pru0_firmwares = [
+pru_firmwares = [
     "am335x-pru0-shepherd-fw",
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
+    "am335x-pru1-sync-fw",  # just for debug
 ]
 
 
-def load_pru0_firmware(value: str = "shepherd") -> None:
+def load_pru_firmware(value: str = "shepherd") -> None:
     """Swap firmwares
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
     WORKAROUND: catch lockup, restart shp-module until successful
 
     Args:
-        value: unique part of valid file-name like shepherd, swd, sbw (not case sensitive)
+        value: unique part of valid file-name like shepherd, swd, sbw (not case-sensitive)
     """
-    request = pru0_firmwares[0]  # default
-    for firmware in pru0_firmwares:
+    request = pru_firmwares[0]  # default
+    for firmware in pru_firmwares:
         if value.lower() in firmware.lower():
             request = firmware
-    log.debug("Will set pru0-firmware to '%s'", request)
+    log.debug("Will set pru-firmware to '%s'", request)
     _count = 1
     while _count < 6:
         try:
-            with Path("/sys/shepherd/pru0_firmware").open(
+            with Path("/sys/shepherd/pru_firmware").open(
                 "w",
                 encoding="utf-8",
             ) as file:
                 file.write(request)
             time.sleep(2)
-            with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
+            with Path("/sys/shepherd/pru_firmware").open(encoding="utf-8") as file:
                 result = file.read().rstrip()
             if result == request:
                 return
@@ -636,12 +637,12 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
     )
 
 
-def pru0_firmware_is_default() -> bool:
+def pru_firmware_is_default() -> bool:
     _count = 1
     while _count < 6:
         try:
-            with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
-                return file.read().rstrip() in pru0_firmwares[0]
+            with Path("/sys/shepherd/pru_firmware").open(encoding="utf-8") as file:
+                return file.read().rstrip() in pru_firmwares[0]
         except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
