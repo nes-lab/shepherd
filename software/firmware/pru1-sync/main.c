@@ -21,8 +21,8 @@ mainly because accessing gpio from kMod is harder
 #define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK         BIT_SHIFT(P8_30)
 
-#define DEBUG_STATE_0  write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
-#define DEBUG_STATE_1  write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+#define DEBUG_STATE_0           write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+#define DEBUG_STATE_1           write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
 
 
 enum SyncState
@@ -133,7 +133,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
         /* waiting for a reply from Linux kernel module */
         while (receive_sync_reply(shared_mem, &sync_repl) < 1)
         {
-            __delay_cycles(2000);  // = 10 us
+            __delay_cycles(2000); // = 10 us
         }
         shared_mem->next_buffer_timestamp_ns = sync_repl.next_timestamp_ns;
         DEBUG_STATE_0;
