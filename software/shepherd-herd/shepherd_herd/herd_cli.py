@@ -150,7 +150,7 @@ def fix(ctx: click.Context) -> None:
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(
             sudo=True,
-            cmd=f"shepherd-sheep fix",
+            cmd="shepherd-sheep fix",
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([reply.exited for reply in replies.values()])
