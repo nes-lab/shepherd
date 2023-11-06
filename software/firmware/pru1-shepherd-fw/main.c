@@ -412,7 +412,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             continue; // for more regular gpio-sampling
         }
 
-        /* Mem-Reading for PRU0 -> can vary from 530 - 5400 ns (rare) */
+        /* Mem-Reading for PRU0 -> can vary from 530 to 5400 ns (rare) */
         if ((shared_mem->analog_sample_counter != shared_mem->analog_value_index) &&
             (shared_mem->sample_buffer != NULL) &&
             (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))

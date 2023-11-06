@@ -16,6 +16,7 @@
     - pru0-shepherd-fw
     - pru1-shepherd-fw
     - pru0-programmer
+    - pru1-sync
   become: true
 
 - name: Build PRU firmware
@@ -26,6 +27,7 @@
     - pru0-shepherd-fw
     - pru1-shepherd-fw
     - pru0-programmer
+    - pru1-sync
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -42,6 +44,7 @@
     - pru0-shepherd-fw
     - pru1-shepherd-fw
     - pru0-programmer
+    - pru1-sync
   become: true
 
 # build second programmer
