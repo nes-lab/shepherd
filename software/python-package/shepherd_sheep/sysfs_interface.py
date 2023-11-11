@@ -588,6 +588,7 @@ pru_firmwares = [
     "am335x-pru0-shepherd-fw",
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
+    "am335x-pru1-shepherd-fw",
     "am335x-pru1-sync-fw",  # just for debug
 ]
 
@@ -605,23 +606,26 @@ def load_pru_firmware(value: str = "shepherd") -> None:
         if value.lower() in firmware.lower():
             request = firmware
     log.debug("Will set pru-firmware to '%s'", request)
-    _count = 1
+    sys_str = f"/sys/shepherd/pru{1 if ('pru1' in request) else 0}_firmware"
+    _count = 0
     while _count < 6:
+        _count += 1
         try:
-            with Path("/sys/shepherd/pru_firmware").open(
+            with Path(sys_str).open(
                 "w",
                 encoding="utf-8",
             ) as file:
                 file.write(request)
             time.sleep(2)
-            with Path("/sys/shepherd/pru_firmware").open(encoding="utf-8") as file:
+            with Path(sys_str).open(encoding="utf-8") as file:
                 result = file.read().rstrip()
             if result == request:
                 return
             log.error(
-                "Requested PRU-FW (%s) was not set (is '%s')",
+                "Requested PRU-FW (%s) was not set (is '%s'), retry-count=%d",
                 request,
                 result,
+                _count,
             )
         except OSError:  # noqa: PERF203
             log.warning(
@@ -630,7 +634,6 @@ def load_pru_firmware(value: str = "shepherd") -> None:
                 _count,
             )
             reload_kernel_module()
-            _count += 1
     raise OSError(
         "PRU-Driver still locked up (during pru-fw change)"
         " -> consider restarting node",

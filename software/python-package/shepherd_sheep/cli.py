@@ -340,9 +340,9 @@ def fix() -> None:
     type=click.Choice(["default", "swd", "sbw", "sync"]),
     default="default",
 )
-def pru() -> None:
+def pru(firmware: str) -> None:
     set_verbosity()
-    reload_kernel_module()
+    sysfs_interface.load_pru_firmware(firmware)
 
 
 if __name__ == "__main__":

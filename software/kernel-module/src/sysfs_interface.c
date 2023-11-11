@@ -83,10 +83,14 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
 static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute *attr,
                                     const char *buffer, size_t count);
 
-static ssize_t sysfs_pru_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
-                                       char *buf);
-static ssize_t sysfs_pru_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                        const char *buffer, size_t count);
+static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf);
+static ssize_t sysfs_pru1_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf);
+static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
+static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
 
 struct kobj_attr_struct_s
 {
@@ -176,10 +180,12 @@ struct kobj_attr_struct_s attr_prog_pin_dir_tms = {
         .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
                       offsetof(struct ProgrammerCtrl, pin_dir_tms)};
 
-struct kobj_attr_struct_s attr_pru_firmware = {
-        .attr       = __ATTR(pru_firmware, 0660, sysfs_pru_firmware_show, sysfs_pru_firmware_store),
+struct kobj_attr_struct_s attr_pru0_firmware = {
+        .attr = __ATTR(pru0_firmware, 0660, sysfs_pru0_firmware_show, sysfs_pru0_firmware_store),
         .val_offset = 0};
-
+struct kobj_attr_struct_s attr_pru1_firmware = {
+        .attr = __ATTR(pru1_firmware, 0660, sysfs_pru1_firmware_show, sysfs_pru1_firmware_store),
+        .val_offset = 0};
 
 struct kobj_attribute attr_sync_error = __ATTR(error, 0660, sysfs_sync_error_show, NULL);
 
@@ -247,7 +253,8 @@ static struct attribute_group attr_sync_group = {
 
 
 static struct attribute *pru_firmware_attrs[] = {
-        &attr_pru_firmware.attr.attr,
+        &attr_pru0_firmware.attr.attr,
+        &attr_pru1_firmware.attr.attr,
         NULL,
 };
 static struct attribute_group attr_firmware_group = {
@@ -325,6 +332,9 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
         if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
         getnstimeofday(&ts_now);
+        /* TODO: replace getnstimeofday by
+         * time64_t kt_sec;
+         * kt_sec = ktime_get_real_seconds() */
         if (tmp < ts_now.tv_sec + 1) return -EINVAL;
         printk(KERN_INFO "shprd.k: Setting start-timestamp to %d", tmp);
         mem_interface_set_state(STATE_ARMED);
@@ -774,15 +784,24 @@ static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute 
 }
 
 
-static ssize_t sysfs_pru_firmware_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf)
 {
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
     read_pru_firmware(0, buf);
     return strlen(buf);
 }
 
-static ssize_t sysfs_pru_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                        const char *buffer, size_t count)
+static ssize_t sysfs_pru1_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf)
+{
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+    read_pru_firmware(1, buf);
+    return strlen(buf);
+}
+
+static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count)
 {
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -804,12 +823,26 @@ static ssize_t sysfs_pru_firmware_store(struct kobject *kobj, struct kobj_attrib
     {
         swap_pru_firmware(PRU0_FW_PRG_SBW, "");
     }
-    else if ((strncmp(buffer, "sync", 4) == 0) || (strncmp(buffer, PRU1_FW_SYNC, 19) == 0))
+    else { swap_pru_firmware(PRU0_FW_DEFAULT, ""); }
+
+    return count;
+}
+
+
+static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count)
+{
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+
+    /* FAIL with no file-name or not matching start-string */
+    if (strlen(buffer) == 0) return -EINVAL;
+
+    if ((strncmp(buffer, "sync", 4) == 0) || (strncmp(buffer, PRU1_FW_SYNC, 19) == 0))
     {
         swap_pru_firmware("", PRU1_FW_SYNC);
         /* only for debug */
     }
-    else { swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT); }
+    else { swap_pru_firmware("", PRU1_FW_DEFAULT); }
 
     return count;
 }
