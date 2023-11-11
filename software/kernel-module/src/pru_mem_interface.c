@@ -88,15 +88,10 @@ void mem_interface_reset(void)
 
 static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart)
 {
-    struct timespec ts_now;
-    uint64_t        now_ns_system;
+    /* Timestamp system clock */
+    const uint64_t now_ns_system = ktime_get_real_ns();
 
     mem_interface_set_state(STATE_RUNNING);
-
-    /* Timestamp system clock */
-    getnstimeofday(&ts_now);
-
-    now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
 
     printk(KERN_INFO "shprd.k: Triggered delayed start  @ %llu (now)", now_ns_system);
     return HRTIMER_NORESTART;

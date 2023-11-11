@@ -303,8 +303,8 @@ static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *att
 static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf,
                                  size_t count)
 {
-    struct timespec ts_now;
-    int             tmp;
+    time64_t kt_sec;
+    int      tmp;
 
     if (strncmp(buf, "start", 5) == 0)
     {
@@ -327,15 +327,11 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
 
     else if (sscanf(buf, "%d", &tmp) == 1)
     {
-        /* Timestamp system clock */
-
         if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+        /* Timestamp system clock */
+        kt_sec = ktime_get_real_seconds();
 
-        getnstimeofday(&ts_now);
-        /* TODO: replace getnstimeofday by
-         * time64_t kt_sec;
-         * kt_sec = ktime_get_real_seconds() */
-        if (tmp < ts_now.tv_sec + 1) return -EINVAL;
+        if (tmp < kt_sec + 1) return -EINVAL;
         printk(KERN_INFO "shprd.k: Setting start-timestamp to %d", tmp);
         mem_interface_set_state(STATE_ARMED);
         mem_interface_schedule_delayed_start(tmp);

@@ -35,6 +35,8 @@ static u8                 timers_active    = 0;
 const static unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
                                               5000000u,  2000000u,  1000000u,  500000u,   200000u,
                                               100000u,   50000u,    20000u};
+/* TODO: sleep 100ms - 20 us
+* TODO: above halvings sum up to 98870 us */
 static const size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
 //static unsigned int step_pos = 0;
 
@@ -110,14 +112,10 @@ void sync_pause(void)
 
 void sync_start(void)
 {
-    struct timespec ts_now;
-    uint64_t        now_ns_system;
-    uint32_t        ns_over_wrap;
-    uint64_t        ns_now_until_trigger;
-
+    uint32_t       ns_over_wrap;
+    uint64_t       ns_now_until_trigger;
     /* Timestamp system clock */
-    getnstimeofday(&ts_now);
-    now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
+    const uint64_t now_ns_system = ktime_get_real_ns();
 
     if (!init_done)
     {
@@ -164,16 +162,24 @@ void sync_reset(void)
 
 enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
-    struct timespec ts_now;
+    ktime_t         kt_now;
     uint64_t        ts_now_system_ns;
     uint64_t        ns_now_until_trigger;
+    static uint64_t ns_now_fire = 0;
+
+    if (1) /* TODO: just a test */
+    {
+        /* high-res busy-wait */
+        ns_now_fire += 50000;
+        while (ktime_get_real_ns() < ns_now_fire) {};
+    }
 
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
 
     /* Timestamp system clock */
-    getnstimeofday(&ts_now);
-    ts_now_system_ns = (uint64_t) timespec_to_ns(&ts_now);
+    kt_now           = ktime_get_real(); // TODO: try ktime_get() / monotonic instead of real clock
+    ts_now_system_ns = ktime_to_ns(kt_now);
 
     if (!timers_active) return HRTIMER_NORESTART;
     /*
@@ -186,7 +192,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     if (sys_ts_over_timer_wrap_ns > (trigger_loop_period_ns / 2))
     {
         /* normal use case (with pre-trigger) */
-        /* self regulating formula that results in ~ trigger_loop_period_ns */
+        /* self-regulating formula that results in ~ trigger_loop_period_ns */
         ns_now_until_trigger =
                 2 * trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
     }
@@ -201,9 +207,9 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     //  - write next_timestamp_ns directly into shared mem, as well as the other values in sync_loop
     //  - the reply-message is not needed anymore (current pru-code has nothing to calculate beforehand and would just use prev values if no new message arrives
 
-    hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
-                    ns_to_ktime(ns_now_until_trigger));
+    hrtimer_forward(timer_for_restart, kt_now, ns_to_ktime(ns_now_until_trigger));
 
+    ns_now_fire = ts_now_system_ns + ns_now_until_trigger;
     return HRTIMER_RESTART;
 }
 
@@ -212,14 +218,14 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
 {
     struct ProtoMsg       sync_rqst;
     struct SyncMsg        sync_reply;
-    struct timespec       ts_now;
+    ktime_t               kt_now;
     uint64_t              ts_now_system_ns;
     static uint64_t       ts_last_error_ns = 0;
     static const uint64_t quiet_time_ns    = 10000000000; // 10 s
     static unsigned int   step_pos         = 0;
     /* Timestamp system clock */
-    getnstimeofday(&ts_now);
-    ts_now_system_ns = (uint64_t) timespec_to_ns(&ts_now);
+    kt_now                                 = ktime_get_real();
+    ts_now_system_ns                       = ktime_to_ns(kt_now);
 
     if (!timers_active) return HRTIMER_NORESTART;
 
@@ -234,7 +240,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
                                 "overwrite old msg");
         }
 
-        /* resetting to longest sleep period */
+        /* resetting to the longest sleep period */
         step_pos = 0;
     }
     else if ((ts_last_error_ns + quiet_time_ns < ts_now_system_ns) &&
@@ -247,7 +253,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
                         "trigger-request in time!");
     }
 
-    hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
+    hrtimer_forward(timer_for_restart, kt_now,
                     ns_to_ktime(timer_steps_ns[step_pos])); /* variable sleep cycle */
 
     if (step_pos < timer_steps_ns_size - 1) step_pos++;

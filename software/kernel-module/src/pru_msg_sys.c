@@ -145,12 +145,8 @@ void msg_sys_pause(void)
 
 void msg_sys_start(void)
 {
-    struct timespec ts_now;
-    uint64_t        now_ns_system;
-
     /* Timestamp system clock */
-    getnstimeofday(&ts_now);
-    now_ns_system = (uint64_t) timespec_to_ns(&ts_now);
+    const ktime_t kt_now = ktime_get_real();
 
     if (!init_done)
     {
@@ -165,7 +161,7 @@ void msg_sys_start(void)
 
     msg_sys_reset();
 
-    hrtimer_start(&coordinator_loop_timer, ns_to_ktime(now_ns_system + coord_timer_steps_ns[0]),
+    hrtimer_start(&coordinator_loop_timer, kt_now + ns_to_ktime(coord_timer_steps_ns[0]),
                   HRTIMER_MODE_ABS);
 
     timers_active = 1;
@@ -178,13 +174,12 @@ void msg_sys_start(void)
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart)
 {
     struct ProtoMsg     pru_msg;
-    struct timespec     ts_now;
     static unsigned int step_pos = 0;
     uint8_t             had_work;
     uint32_t            iter;
 
     /* Timestamp system clock */
-    getnstimeofday(&ts_now);
+    const ktime_t       kt_now = ktime_get_real();
 
     if (!timers_active) return HRTIMER_NORESTART;
 
@@ -272,7 +267,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         step_pos = coord_timer_steps_ns_size - 1;
     }
 
-    hrtimer_forward(timer_for_restart, timespec_to_ktime(ts_now),
+    hrtimer_forward(timer_for_restart, kt_now,
                     ns_to_ktime(coord_timer_steps_ns[step_pos])); /* variable sleep cycle */
 
     if (step_pos > 0) step_pos--;
