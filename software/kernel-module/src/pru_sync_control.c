@@ -3,6 +3,8 @@
 #include <linux/math64.h>
 #include <linux/slab.h>
 
+#include <asm/io.h>  // as long as gpio0-hack is active
+
 #include "pru_mem_interface.h"
 #include "pru_sync_control.h"
 
@@ -40,6 +42,10 @@ static const unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 2
 static const size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
 //static unsigned int step_pos = 0;
 
+static void __iomem        *gpio0set         = NULL;
+static void __iomem        *gpio0clear       = NULL;
+
+
 // Sync-Routine - TODO: take these from pru-sharedmem
 #define BUFFER_PERIOD_NS       (100000000U) // TODO: there is already: trigger_loop_period_ns
 #define ADC_SAMPLES_PER_BUFFER (10000U)
@@ -60,6 +66,16 @@ void                sync_exit(void)
         kfree(sync_data);
         sync_data = NULL;
     }
+    if (gpio0clear != NULL)
+    {
+        iounmap(gpio0clear);
+        gpio0clear = NULL;
+    }
+    if (gpio0set != NULL)
+    {
+        iounmap(gpio0set);
+        gpio0set = NULL;
+    }
     init_done = 0;
     printk(KERN_INFO "shprd.k: pru-sync-system exited");
 }
@@ -79,6 +95,9 @@ int sync_init(uint32_t timer_period_ns)
         return -2;
     }
     sync_reset();
+
+    gpio0clear = ioremap(0x44E07000 + 0x190, 4);
+    gpio0set = ioremap(0x44E07000 + 0x194, 4);
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
@@ -170,12 +189,18 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     if (1) /* TODO: just a test */
     {
         /* high-res busy-wait */
-        ns_now_fire += 50000;
+        writel(0b1u << 22u, gpio0clear);
+        preempt_disable();
+        // TODO: another option: spinlocks, GFP_ATOMIC ?
+        ns_now_fire += 50000u;
         while (ktime_get_real_ns() < ns_now_fire) {};
+        // trigger /sys/bus/gpio/devices/gpiochip0/gpio/gpio22/value, TODO: dirty hack, but quick
+        writel(0b1u << 22u, gpio0set);
     }
 
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
+    preempt_enable();
 
     /* Timestamp system clock */
     kt_now           = ktime_get_real(); // TODO: try ktime_get() / monotonic instead of real clock
@@ -185,7 +210,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     /*
      * Get distance of system clock from timer wrap.
      * Is negative, when interrupt happened before wrap, positive when after
-     */
+     */ // TODO: there is something wrong here!
     div_u64_rem(ts_now_system_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
     next_timestamp_ns = ts_now_system_ns + trigger_loop_period_ns - sys_ts_over_timer_wrap_ns;
 
