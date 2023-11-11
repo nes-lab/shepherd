@@ -12,13 +12,13 @@ $(TARGET)-objs += module_base.o
 
 ccflags-y=-I$(src)/../common
 
-# CFLAGS_MODULE = -Wall -Wextra
+#CFLAGS_MODULE = -Wall -Wextra
 # -> not enabled by default because it also includes warnings of all external files
 # Analyze with:
 # make 2> output.txt
 # -> look for "shepherd/software/kernel" but
 # 	 you can ignore lines with: (in file included) from .. shepherd/
-
+# /opt/shepherd/software/kernel-module/src/ is at beginning of line
 
 all: build
 

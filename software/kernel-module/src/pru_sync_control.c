@@ -32,7 +32,7 @@ struct hrtimer            sync_loop_timer;
 static u8                 timers_active    = 0;
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
-const static unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
+static const unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
                                               5000000u,  2000000u,  1000000u,  500000u,   200000u,
                                               100000u,   50000u,    20000u};
 /* TODO: sleep 100ms - 20 us
