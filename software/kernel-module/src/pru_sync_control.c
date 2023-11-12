@@ -59,9 +59,11 @@ static u8           init_done  = 0;
 
 void                sync_benchmark(void)
 {
-    uint32_t counter;
-    uint64_t trigger_ns;
-    ktime_t  trigger_kt;
+    uint32_t         counter;
+    uint64_t         trigger_ns;
+    ktime_t          trigger_kt;
+    volatile int32_t counter_iv;
+    int32_t          trigger_in;
     printk(KERN_INFO "shprd.k: Benchmark high-res busy-wait Variants");
     /* Benchmark high-res busy-wait - RESULTS:
      * - ktime_get                  99.6us   215n   463ns/call
@@ -70,6 +72,7 @@ void                sync_benchmark(void)
      * - ktime_get_real_ns          131.5us  247n   532ns
      * - ktime_get_raw              99.3us   273n   364ns
      * - ktime_get_real_fast_ns     90.0us   308n   292ns
+     * - increment-loop             825us    100k   8.25ns/iteration
      */
     counter    = 0;
     trigger_kt = ktime_get() + ns_to_ktime(100000u);
@@ -125,14 +128,14 @@ void                sync_benchmark(void)
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_real_fast_ns() = %u n / ~100us", counter);
 
-    counter = 0;
-    trigger_ns = 100000;
+    counter_iv = 0;
+    trigger_in = 100000;
     preempt_disable();
     writel(0b1u << 22u, gpio0clear);
-    while (counter < trigger_ns) { counter++;};
+    while (counter_iv < trigger_in) { counter_iv++; };
     writel(0b1u << 22u, gpio0set);
     preempt_enable();
-    printk(KERN_INFO "shprd.k: 100k-count-Loops -> measure-time");
+    printk(KERN_INFO "shprd.k: %d-increment-Loops -> measure-time", trigger_in);
 }
 
 
@@ -193,7 +196,7 @@ int sync_init(uint32_t timer_period_ns)
     init_done                = 1;
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
 
-    sync_benchmark();
+    //sync_benchmark();
     sync_start();
     return 0;
 }
@@ -262,21 +265,32 @@ void sync_reset(void)
 
 enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
-    ktime_t        ts_now_kt;
-    uint64_t       ts_now_ns;
-    uint64_t       ns_to_next_trigger;
-    static ktime_t ts_next_kt = 0;
+    ktime_t          ts_now_kt;
+    uint64_t         ts_now_ns;
+    uint64_t         ns_to_next_trigger;
+    static ktime_t   ts_next_kt = 0;
+    volatile int32_t counter;
+    int32_t          trigger_n;
+    int64_t          dur_ns;
 
-    if (1) /* TODO: just a test */
+    if (1)
     {
-        /* high-res busy-wait */
+        /* high-res busy-wait, TODO: just a test  */
         writel(0b1u << 22u, gpio0clear);
         preempt_disable();
-        // TODO: another option: spinlocks, GFP_ATOMIC ?
-        ts_next_kt += ns_to_ktime(50000u);
-        while (ktime_get_real() < ts_next_kt) {};
-        // TODO: could switch to a faster busy-wait-method
-        // trigger /sys/bus/gpio/devices/gpiochip0/gpio/gpio22/value, TODO: dirty hack, but quick
+        /* Coarse Loop, ~300ns resolution */
+        ts_next_kt += ns_to_ktime(36000u);
+        ts_now_kt = ktime_get_real();
+        while (ts_now_kt < ts_next_kt) { ts_now_kt = ktime_get_real(); };
+        if (0)
+        {
+            /* fine loop, ~ 9ns resolution */
+            // TODO: more accurate, but also higher jitter +-1000 ns
+            counter   = 0;
+            dur_ns    = ktime_to_ns(ts_next_kt - ts_now_kt) + 4000;
+            trigger_n = div_s64(dur_ns * 4, 33); // 8.25 * 4 = 33
+            while (counter < trigger_n) { counter++; }
+        }
         writel(0b1u << 22u, gpio0set);
     }
 
