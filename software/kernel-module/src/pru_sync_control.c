@@ -124,6 +124,15 @@ void                sync_benchmark(void)
     writel(0b1u << 22u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_real_fast_ns() = %u n / ~100us", counter);
+
+    counter = 0;
+    trigger_ns = 100000;
+    preempt_disable();
+    writel(0b1u << 22u, gpio0clear);
+    while (counter < trigger_ns) { counter++;};
+    writel(0b1u << 22u, gpio0set);
+    preempt_enable();
+    printk(KERN_INFO "shprd.k: 100k-count-Loops -> measure-time");
 }
 
 
@@ -184,7 +193,7 @@ int sync_init(uint32_t timer_period_ns)
     init_done                = 1;
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
 
-    //sync_benchmark();
+    sync_benchmark();
     sync_start();
     return 0;
 }
