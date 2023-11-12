@@ -66,12 +66,11 @@ uint8_t get_msg_from_pru(struct ProtoMsg *const element)
 
 struct hrtimer              coordinator_loop_timer;
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart);
-static u8                   timers_active          = 0;
-static u8                   init_done              = 0;
-/* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
-static const unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
-                                                      50000u,  20000u,  10000u};
-static const size_t         coord_timer_steps_ns_size =
+static u8                   timers_active    = 0;
+static u8                   init_done        = 0;
+/* series of halving sleep cycles */
+static const uint32_t coord_timer_steps_ns[] = {500000u, 250000u, 100000u, 50000u, 25000u, 10000u};
+static const size_t   coord_timer_steps_ns_size =
         sizeof(coord_timer_steps_ns) / sizeof(coord_timer_steps_ns[0]);
 
 
@@ -146,7 +145,7 @@ void msg_sys_pause(void)
 void msg_sys_start(void)
 {
     /* Timestamp system clock */
-    const ktime_t kt_now = ktime_get_real();
+    const ktime_t ts_now_kt = ktime_get_real();
 
     if (!init_done)
     {
@@ -161,7 +160,7 @@ void msg_sys_start(void)
 
     msg_sys_reset();
 
-    hrtimer_start(&coordinator_loop_timer, kt_now + ns_to_ktime(coord_timer_steps_ns[0]),
+    hrtimer_start(&coordinator_loop_timer, ts_now_kt + ns_to_ktime(coord_timer_steps_ns[0]),
                   HRTIMER_MODE_ABS);
 
     timers_active = 1;
@@ -179,7 +178,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
     uint32_t            iter;
 
     /* Timestamp system clock */
-    const ktime_t       kt_now = ktime_get_real();
+    const ktime_t       ts_now_kt = ktime_get_real();
 
     if (!timers_active) return HRTIMER_NORESTART;
 
@@ -266,9 +265,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         /* resetting to the shortest sleep period */
         step_pos = coord_timer_steps_ns_size - 1;
     }
-
-    hrtimer_forward(timer_for_restart, kt_now,
-                    ns_to_ktime(coord_timer_steps_ns[step_pos])); /* variable sleep cycle */
+    /* variable sleep cycle */
+    hrtimer_forward(timer_for_restart, ts_now_kt + ns_to_ktime(coord_timer_steps_ns[step_pos]), 0);
 
     if (step_pos > 0) step_pos--;
 

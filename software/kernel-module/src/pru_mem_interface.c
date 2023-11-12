@@ -99,24 +99,23 @@ static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_res
 
 int mem_interface_schedule_delayed_start(unsigned int start_time_second)
 {
-    ktime_t  trigger_timer_time;
-    uint64_t trigger_timer_time_ns;
+    ktime_t  kt_trigger;
+    uint64_t ts_trigger_ns;
 
-    trigger_timer_time = ktime_set((const s64) start_time_second, 0);
+    kt_trigger    = ktime_set((const s64) start_time_second, 0);
 
     /**
      * The timer should fire in the middle of the interval before we want to
      * start. This allows the PRU enough time to receive the interrupt and
      * prepare itself to start at exactly the right time.
      */
-    trigger_timer_time =
-            ktime_sub_ns(trigger_timer_time, 3 * mem_interface_get_buffer_period_ns() / 4);
+    kt_trigger    = ktime_sub_ns(kt_trigger, 3 * mem_interface_get_buffer_period_ns() / 4);
 
-    trigger_timer_time_ns = ktime_to_ns(trigger_timer_time);
+    ts_trigger_ns = ktime_to_ns(kt_trigger);
 
-    printk(KERN_INFO "shprd.k: Delayed start timer set to %llu", trigger_timer_time_ns);
+    printk(KERN_INFO "shprd.k: Delayed start timer set to %llu", ts_trigger_ns);
 
-    hrtimer_start(&delayed_start_timer, trigger_timer_time, HRTIMER_MODE_ABS);
+    hrtimer_start(&delayed_start_timer, kt_trigger, HRTIMER_MODE_ABS);
 
     return 0;
 }
