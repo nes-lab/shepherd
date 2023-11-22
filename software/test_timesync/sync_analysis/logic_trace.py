@@ -1,6 +1,7 @@
 import pickle
 from pathlib import Path
-from typing import Self, Optional
+from typing_extensions import Self
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ class LogicTrace:
             data: np.ndarray,
             *,
             name: Optional[str] = None,
+            glitch_ns: int = 0,
             ) -> None:
         self.name: str = name
         # prepare data
@@ -26,6 +28,7 @@ class LogicTrace:
             _data = data[:, _i]
             _data = self._convert_analog2digital(_data)
             _data = self._filter_redundant_states(_data, data_ts)
+            _data = self._filter_glitches(_data, glitch_ns)
             self.data.append(_data)
         # data = self.filter_cs_falling_edge()
 
@@ -34,7 +37,7 @@ class LogicTrace:
             cls,
             path: Path,
             *,
-            rising_edge: bool = True,
+            glitch_ns: int = 0,
                   ) -> Self:
         if not path.exists():
             raise FileNotFoundError()
@@ -45,7 +48,7 @@ class LogicTrace:
             data: np.ndarray = np.loadtxt(
                 path.as_posix(), delimiter=",", skiprows=1,
             )
-            return cls(data, name=path.stem)
+            return cls(data, name=path.stem, glitch_ns=glitch_ns)
         if path.suffix.lower() == ".pkl":
             with path.open("rb") as _fh:
                 obj = pickle.load(_fh)
@@ -76,19 +79,29 @@ class LogicTrace:
         _d0 = data[:].astype("uint8")
         _d1 = np.concatenate([[not _d0[0]], _d0[:-1]])
         _df = _d0 + _d1
-        data = timestamps[(_df == 1)]
+        _ds = timestamps[_df == 1]
         # discard first&last entry AND make sure state=low starts
         if _d0[0] == 0:
-            data = data[2:-1]
+            _ds = _ds[2:-1]
         else:
-            data = data[1:-1]
-        if len(_d0) > len(data):
+            _ds = _ds[1:-1]
+        if len(_d0) > len(_ds):
             logger.info(
                 "filtered out %d/%d events (redundant)",
-                len(_d0) - len(data),
+                len(_d0) - len(_ds),
                 len(_d0),
             )
-        return data
+        return _ds
+
+    @staticmethod
+    def _filter_glitches(data: np.ndarray, duration_ns: int = 10):
+        _diff = ((data[1:] - data[:-1]) * 1e9).astype("uint64")
+        _filter1 = _diff > duration_ns
+        _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate([[True], _filter1])
+        _num = len(_filter1) - _filter1.sum()
+        if _num > 0:
+            logger.info("filtered out %d glitches", _num)
+        return data[_filter2]
 
     def calc_durations_ns(self, channel: int, edge_a_rising: bool, edge_b_rising: bool) -> np.ndarray:
         _d0 = self.data[channel]
@@ -108,9 +121,9 @@ class LogicTrace:
                 _db = _d0[2::2]
         _len = min(len(_da), len(_db))
         _diff = _db[:_len] - _da[:_len]
-        return _diff * 1e9
+        return np.column_stack([_da[:_len], _diff * 1e9])  # 2 columns: timestamp, duration [ns]
 
-    def get_edge(self, channel: int = 0, rising: bool = True) -> np.ndarray:
+    def get_edge_timestamps(self, channel: int = 0, rising: bool = True) -> np.ndarray:
         if rising:
             return self.data[channel][1::2]
         else:
@@ -132,7 +145,7 @@ class LogicTrace:
         data_b = data_b[:_len]
         # calculate duration of offset
         _diff = data_b[:_len] - data_a[:_len]
-        return _diff * 1e9
+        return np.column_stack([data_a[:_len], _diff * 1e9])  # 2 columns: timestamp, duration [ns]
 
     @staticmethod
     def calc_expected_value(data: np.ndarray) -> float:
@@ -151,29 +164,45 @@ class LogicTrace:
         logger.info("%s    \t[ %d <| %d || %d || %d |> %d ]",
                     name, dmin, dq05, dmean, dq95, dmax)
 
+    @staticmethod
+    def get_statistics(data: np.ndarray, name: str) -> list:
+        dmin = round(data.min())
+        dmax = round(data.max())
+        dq05 = round(np.quantile(data, 0.05))
+        dq95 = round(np.quantile(data, 0.95))
+        dmean = round(data.mean())
+        return [name, dmin, dq05, dmean, dq95, dmax]
+
+    @staticmethod
+    def get_statistics_header() -> list:
+        return ["name", "min", "q05%", "mean", "q95%", "max"]
+
     def analyze_inter_jitter(self, rising: bool = True) -> None:
         _len = len(self.data)
         first = True
         for _i in range(_len):
             for _j in range(_i+1, _len):
-                _di = self.get_edge(_i, rising=rising)
-                _dj = self.get_edge(_j, rising=rising)
+                _di = self.get_edge_timestamps(_i, rising=rising)
+                _dj = self.get_edge_timestamps(_j, rising=rising)
                 _name = self.name + f"_ch{_i}_ch{_j}"
-                _dk = LogicTrace.calc_duration_free_ns(_di, _dj)
+                _dk = LogicTrace.calc_duration_free_ns(_di, _dj)[:, 1]
                 LogicTrace.analyze_series_jitter(_dk, name=_name, with_header=first)
                 first = False
 
     @staticmethod
-    def plot_series_jitter(data: np.ndarray, ts: np.ndarray, name: str, path: Path, size: tuple = (18, 8)) -> None:
+    def plot_series_jitter(data: np.ndarray, ts: np.ndarray, name: str, path: Path, size: tuple = (18, 8), y_side: int = 1000) -> None:
         if path.is_dir():
-            _path = path / (name + f"_series_jitter.png")
+            _path = path / (name + f"_jitter.png")
         else:
             _path = path
         _len = min(len(data), len(ts))
+        _center = np.median(data)
+        _range = [_center - y_side, _center + y_side]
         fig, ax = plt.subplots(figsize=size)
         plt.plot(ts[:_len], data[:_len])  # X,Y
         ax.set_xlabel("time [s]")
-        ax.axes.set_ylabel("intra-trigger-jitter [ns]")
+        ax.axes.set_ylim(_range)
+        ax.axes.set_ylabel("trigger-jitter [ns]")
         ax.axes.set_title(_path.stem)
         fig.savefig(_path)
         plt.close()

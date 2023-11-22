@@ -1,35 +1,49 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from sync_analysis import LogicTrace
 from sync_analysis import LogicTraces
 from sync_analysis import logger
 
 path_here = Path(__file__).parent
 
-lt = LogicTraces(path_here)
-_dtrans: dict[str, dict[str, np.ndarray]] = {
-    "low": {},
-    "rising": {},
+ltraces = LogicTraces(path_here, glitch_ns=100)
+_stat: dict[str, list] = {
+    "diff": [],
+    "low": [],
+    "rising": [],
 }
-for trace in lt.traces:
+
+for trace in ltraces.traces:
     trace.to_file(path_here)
-    trace.analyze_inter_jitter(rising=True)
+
     for _ch in range(trace.channel_count):
-        _data = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
+        _data_r = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
         _name = trace.name + f"_ch{_ch}"
-        _expt = trace.calc_expected_value(_data)
-        trace.plot_series_jitter(_data - _expt, trace.data[_ch], _name, path_here)
-        _dtrans["rising"][_name] = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True) - _expt
-        _dtrans["low"][_name] = trace.calc_durations_ns(_ch, edge_a_rising=False, edge_b_rising=True)
-lt.plot_comparison_series(start=0)
-lt.plot_comparison_series(start=2)
-for _state, _ddict in _dtrans.items():
-    logger.info("State: %s", _state)
-    header = True
-    for _name, _data in _ddict.items():
-        LogicTrace.analyze_series_jitter(_data, _name, with_header=header)
-        header = False
+        _expt = trace.calc_expected_value(_data_r[:, 1])
+        _data_r[:, 1] = _data_r[:, 1] - _expt
+        trace.plot_series_jitter(_data_r[:, 1], _data_r[:, 0], _name, path_here)
+        _stat["rising"].append(trace.get_statistics(_data_r, _name))
+        _data_l = trace.calc_durations_ns(_ch, edge_a_rising=False, edge_b_rising=True)
+        _stat["low"].append(trace.get_statistics(_data_l, _name))
+
+    # sync between channels
+    for _ch1 in range(trace.channel_count):
+        _data1 = trace.get_edge_timestamps(_ch1, rising=True)
+        for _ch2 in range(_ch1 + 1, trace.channel_count):
+            _data2 = trace.get_edge_timestamps(_ch2, rising=True)
+            _diff = trace.calc_duration_free_ns(_data1, _data2)
+            _name = trace.name + f"_diff_{_ch1}u{_ch2}"
+            trace.plot_series_jitter(_diff[:, 1], _diff[:, 0], _name, path_here)
+            _stat["diff"].append(trace.get_statistics(_diff, _name))
+
+ltraces.plot_comparison_series(start=0)
+_stat_df = {_k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header()) for _k, _v in _stat.items()}
+for _k, _v in _stat_df.items():
+    logger.info("")
+    logger.info("TYPE: %s", _k)
+    logger.info(_v)
 
 # Trigger-Experiment:
 # - watch P8_19-low variance under load (currently 29.3 - 49.3 us)

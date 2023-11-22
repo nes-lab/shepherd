@@ -118,6 +118,16 @@ shepherd-herd -v shell-cmd -s 'systemctl status phc2sys@eth0'
 shepherd-herd -v shell-cmd -s 'systemctl status ptp4l@eth0'
 ```
 
+Fixing time-sync problems can be solved be restarting the services and shepehrd-kernel-module
+
+```shell
+# when sheep remain unsynced
+shepherd-herd -v shell-cmd -s 'systemctl restart ptp4l@eth0'
+shepherd-herd -v shell-cmd -s 'systemctl restart phc2sys@eth0'
+# signal on gpio missing (typically after clock changes significantly)
+shepherd-herd fix
+```
+
 Creating CPU-Load
 
 - run harvest first (this will create a measurement file)
@@ -148,3 +158,7 @@ Configure Logic 2 Software
   - set `Timer` to record for `200 s`
 
 - start measurement (Blue Play-Button)
+
+## Observations
+
+- phc2sys reports suddenly high offsets (>100us)  
