@@ -3,24 +3,25 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
+[packages]
+ansible = "*"
+# NOTE: pip fails installing these packages as editable (-e), but pipenv needs it
+shepherd-sheep = {editable = true, path = "./software/python-package"}
+shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
+shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
+shepherd-data = "*"
+# temporary
+dearpygui = "*"
+
 [dev-packages]
-pylint = "*"
-black = "*"
-twine = "*"
 bump2version = "*"
 pre-commit = "*"
-build = "*"
-coverage = "*"
-pyright = "*"
-pandas-stubs = "*"  # for pyright
-ruff = "*"
-types-PyYAML = "*"
-
-[packages]
-# NOTE: pip fails installing these packages as editable (-e), but pipenv needs it
+# additional shepherd-packages
 shepherd-sheep = {editable = true, extras = ["dev", "test"], path = "./software/python-package"}
 shepherd-herd = {editable = true, extras = ["dev", "test"], path = "./software/shepherd-herd"}
 shepherd-cal = {editable = true, extras = ["dev"], path = "./software/shepherd-calibration"}
+shepherd-data = {extras = ["dev", "test"], version = "*"}
+# DOCs
 sphinx = "*"
 sphinx-click = "*"
 sphinx-rtd-theme = "*"
@@ -28,20 +29,10 @@ sphinx-sitemap = "*"
 sphinx-design = "*"
 sphinx-copybutton = "*"
 #sphinx-autodoc2  # TODO: https://myst-parser.readthedocs.io/en/latest/intro.html#extending-sphinx
-matplotlib = "*"
-pandas = "<2.0.0"
-keithley2600 = "*"
-numpy = "*"
-scipy = "*"
-fabric = "*"
-pyyaml = "*"
-ansible = "*"
-dearpygui = "*"
-chromalog = "*"
-setuptools = "*"
 myst-parser = "*"
 
 [pipenv]
 allow_prereleases = false
-#[requires]
-#python_version = "3"
+
+[requires]
+python_version = "3.10"
