@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "23f74b3752242eb8c54c82fb0ca32bd8143493d9ebb71ea00c61509f9fc4a6ad"
+            "sha256": "bdec9e563419f1c271a1f214cb39572ac2305c86bba1bf624ba6a8e350ec5199"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1573,7 +1573,6 @@
         },
         "shepherd-cal": {
             "editable": true,
-            "extras": [],
             "path": "./software/shepherd-calibration"
         },
         "shepherd-core": {
@@ -1594,12 +1593,10 @@
         },
         "shepherd-herd": {
             "editable": true,
-            "extras": [],
             "path": "./software/shepherd-herd"
         },
         "shepherd-sheep": {
             "editable": true,
-            "extras": [],
             "path": "./software/python-package"
         },
         "six": {
@@ -1616,6 +1613,10 @@
                 "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"
             ],
             "version": "==2.4.0"
+        },
+        "sync-analysis": {
+            "editable": true,
+            "path": "./software/test_timesync"
         },
         "tqdm": {
             "hashes": [
@@ -3857,7 +3858,6 @@
         },
         "shepherd-cal": {
             "editable": true,
-            "extras": [],
             "path": "./software/shepherd-calibration"
         },
         "shepherd-core": {
@@ -3878,12 +3878,10 @@
         },
         "shepherd-herd": {
             "editable": true,
-            "extras": [],
             "path": "./software/shepherd-herd"
         },
         "shepherd-sheep": {
             "editable": true,
-            "extras": [],
             "path": "./software/python-package"
         },
         "six": {
