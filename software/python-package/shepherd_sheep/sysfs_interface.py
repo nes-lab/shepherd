@@ -644,8 +644,13 @@ def pru_firmware_is_default() -> bool:
     _count = 1
     while _count < 6:
         try:
-            with Path("/sys/shepherd/pru_firmware").open(encoding="utf-8") as file:
-                return file.read().rstrip() in pru_firmwares[0]
+            with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
+                if "shepherd-fw" not in file.read().rstrip():
+                    return False
+            with Path("/sys/shepherd/pru1_firmware").open(encoding="utf-8") as file:
+                if "shepherd-fw" not in file.read().rstrip():
+                    return False
+            return True
         except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
