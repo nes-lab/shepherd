@@ -1,23 +1,23 @@
 import pickle
 from pathlib import Path
-from typing_extensions import Self
 from typing import Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from typing_extensions import Self
+
 from .logger import logger
-import matplotlib.pyplot as plt
 
 
 class LogicTrace:
-
     def __init__(
-            self,
-            data: np.ndarray,
-            *,
-            name: Optional[str] = None,
-            glitch_ns: int = 0,
-            ) -> None:
+        self,
+        data: np.ndarray,
+        *,
+        name: str | None = None,
+        glitch_ns: int = 0,
+    ) -> None:
         self.name: str = name
         # prepare data
         self.channel_count: int = data.shape[1] - 1
@@ -34,11 +34,11 @@ class LogicTrace:
 
     @classmethod
     def from_file(
-            cls,
-            path: Path,
-            *,
-            glitch_ns: int = 0,
-                  ) -> Self:
+        cls,
+        path: Path,
+        *,
+        glitch_ns: int = 0,
+    ) -> Self:
         if not path.exists():
             raise FileNotFoundError()
         if path.with_suffix(".pkl").exists():
@@ -46,14 +46,18 @@ class LogicTrace:
             # logger.debug("File")
         if path.suffix.lower() == ".csv":
             data: np.ndarray = np.loadtxt(
-                path.as_posix(), delimiter=",", skiprows=1,
+                path.as_posix(),
+                delimiter=",",
+                skiprows=1,
             )
             return cls(data, name=path.stem, glitch_ns=glitch_ns)
         if path.suffix.lower() == ".pkl":
             with path.open("rb") as _fh:
                 obj = pickle.load(_fh)
             return obj
-        raise TypeError(f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'")
+        raise TypeError(
+            f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'"
+        )
 
     def to_file(self, path: Path) -> None:
         if path.is_dir():
@@ -62,7 +66,9 @@ class LogicTrace:
             pickle.dump(self, _fh)
 
     @staticmethod
-    def _convert_analog2digital(data: np.ndarray, *, invert: bool = False) -> np.ndarray:
+    def _convert_analog2digital(
+        data: np.ndarray, *, invert: bool = False
+    ) -> np.ndarray:
         """Divide dimension in two, divided by mean-value"""
         _theshold = np.mean(data)
         if invert:
@@ -72,9 +78,11 @@ class LogicTrace:
         return data.astype("bool")
 
     @staticmethod
-    def _filter_redundant_states(data: np.ndarray, timestamps: np.ndarray) -> np.ndarray:
+    def _filter_redundant_states(
+        data: np.ndarray, timestamps: np.ndarray
+    ) -> np.ndarray:
         """Sum of two sequential states is always 1 (True + False) if alternating
-            returns timestamps of alternating states, starting with 0
+        returns timestamps of alternating states, starting with 0
         """
         _d0 = data[:].astype("uint8")
         _d1 = np.concatenate([[not _d0[0]], _d0[:-1]])
@@ -97,13 +105,17 @@ class LogicTrace:
     def _filter_glitches(data: np.ndarray, duration_ns: int = 10):
         _diff = ((data[1:] - data[:-1]) * 1e9).astype("uint64")
         _filter1 = _diff > duration_ns
-        _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate([[True], _filter1])
+        _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate(
+            [[True], _filter1]
+        )
         _num = len(_filter1) - _filter1.sum()
         if _num > 0:
             logger.debug("filtered out %d glitches", _num)
         return data[_filter2]
 
-    def calc_durations_ns(self, channel: int, edge_a_rising: bool, edge_b_rising: bool) -> np.ndarray:
+    def calc_durations_ns(
+        self, channel: int, edge_a_rising: bool, edge_b_rising: bool
+    ) -> np.ndarray:
         _d0 = self.data[channel]
         if edge_b_rising:
             if edge_a_rising:
@@ -121,7 +133,9 @@ class LogicTrace:
                 _db = _d0[2::2]
         _len = min(len(_da), len(_db))
         _diff = _db[:_len] - _da[:_len]
-        return np.column_stack([_da[:_len], _diff * 1e9])  # 2 columns: timestamp, duration [ns]
+        return np.column_stack(
+            [_da[:_len], _diff * 1e9]
+        )  # 2 columns: timestamp, duration [ns]
 
     def get_edge_timestamps(self, channel: int = 0, rising: bool = True) -> np.ndarray:
         if rising:
@@ -145,7 +159,9 @@ class LogicTrace:
         data_b = data_b[:_len]
         # calculate duration of offset
         _diff = data_b[:_len] - data_a[:_len]
-        return np.column_stack([data_a[:_len], _diff * 1e9])  # 2 columns: timestamp, duration [ns]
+        return np.column_stack(
+            [data_a[:_len], _diff * 1e9]
+        )  # 2 columns: timestamp, duration [ns]
 
     @staticmethod
     def calc_expected_value(data: np.ndarray) -> float:
@@ -175,14 +191,33 @@ class LogicTrace:
         dq95 = round(np.quantile(data[:, 1], 0.95))
         dq99 = round(np.quantile(data[:, 1], 0.99))
         dmean = round(data[:, 1].mean())
-        return [name, dmin, dq01, dq05, dmean, dq95, dq99, dmax, tmin, tmax]
+        return [name, dmin, dq01, dq05, dmean, dq95, dq99, dmax, tmin, tmax, dq99 - dq01, dmax - dmin]
 
     @staticmethod
     def get_statistics_header() -> list:
-        return ["name", "min [ns]", "q1 [ns]", "q5 [ns]", "mean [ns]", "q95 [ns]", "q99 [ns]", "max [ns]", "t_min [s]", "t_max [s]"]
+        return [
+            "name",
+            "min [ns]",
+            "q1 [ns]",
+            "q5 [ns]",
+            "mean [ns]",
+            "q95 [ns]",
+            "q99 [ns]",
+            "max [ns]",
+            "t_min [s]",
+            "t_max [s]",
+            "q99:1 [ns]",
+            "minmax [ns]",
+        ]
 
     @staticmethod
-    def plot_series_jitter(data: np.ndarray, name: str, path: Path, size: tuple = (18, 8), y_side: int = 1000) -> None:
+    def plot_series_jitter(
+        data: np.ndarray,
+        name: str,
+        path: Path,
+        size: tuple = (18, 8),
+        y_side: int = 1000,
+    ) -> None:
         # data with timestamp!
         if data.shape[0] < 100:
             raise ValueError("Function needs more datapoints")
@@ -226,8 +261,10 @@ class LogicTrace:
         ch1t = ch1t[(ch1t > time_start) & (ch1t < time_stop)].reset_index(drop=True)
         min_length = min(ch0t.shape[0], ch1t.shape[0])
         # cut series to proper length and determine channel offset
-        data_new = [ch0t.iloc[0:min_length].mul(1e9).round(0),
-                    ch1t.iloc[0:min_length].mul(1e9).round(0)]
+        data_new = [
+            ch0t.iloc[0:min_length].mul(1e9).round(0),
+            ch1t.iloc[0:min_length].mul(1e9).round(0),
+        ]
         df = pd.concat(data_new, axis=1)
         df.columns = ["Ch0", "Ch1"]
         return df

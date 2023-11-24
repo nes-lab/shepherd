@@ -261,7 +261,7 @@ class Herd:
     ) -> None:
         """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
-            # TODO: incorrect when sheep are missing in inbetween
+            # TODO: incorrect when sheep are missing in between
             #       -> also throw out in hostname-dict?
             if not isinstance(replies.get(i), Result):
                 continue

@@ -16,7 +16,7 @@ Collection of tools to analyze Sync-behavior, recorded with saleae logic pro
 - Range: 3.3+ Volts
 - Timer: 100s
 
-### Prepare data for this tool 
+### Prepare data for this tool
 
 - Logic 2 -> File -> Export Data
 - select channels: 1-3 ???
@@ -54,7 +54,7 @@ python3 --version
 pip install pipenv
 ```
 
-Clone & enter shepherd-repo, then install and enter pipenv 
+Clone & enter shepherd-repo, then install and enter pipenv
 
 ```shell
 git clone https://github.com/orgua/shepherd
@@ -146,7 +146,7 @@ Generating Network-traffic
 General Notes
 
 - PTP should be given some minutes to stabilize
-- room-temperature should be stable, as clock-crystals react to that 
+- room-temperature should be stable, as clock-crystals react to that
 - think about recording a baseline first (undisturbed network)
 
 Configure Logic 2 Software
@@ -161,4 +161,4 @@ Configure Logic 2 Software
 
 ## Observations
 
-- phc2sys reports suddenly high offsets (>100us)  
+- phc2sys reports suddenly high offsets (>100us)

@@ -1,23 +1,17 @@
-import pickle
 from pathlib import Path
-from typing_extensions import Self
-from typing import Optional
 
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from .filesystem import get_files
 from .logic_trace import LogicTrace
-from .logger import logger
 
 
 class LogicTraces:
-
     def __init__(
-            self,
-            path: Path,
-            glitch_ns: int = 0,
+        self,
+        path: Path,
+        glitch_ns: int = 0,
     ) -> None:
         self.traces: list[LogicTrace] = []
         _fcsv = get_files(path, suffix=".csv")
@@ -27,7 +21,9 @@ class LogicTraces:
 
     def plot_comparison_series(self, start: int = 0) -> None:
         _names: list = [_t.name for _t in self.traces]
-        _data: list = [pd.Series(_t.calc_durations_ns(0, True, True)[:, 1]) for _t in self.traces]
+        _data: list = [
+            pd.Series(_t.calc_durations_ns(0, True, True)[:, 1]) for _t in self.traces
+        ]
         _len = len(_names)
         _names = _names[start:]
         _data = _data[start:]
@@ -38,10 +34,19 @@ class LogicTraces:
         fig_title = f"improvement_trigger_statistics_boxplot_{start}to{_len}"
         df = pd.concat(_data, axis=1)
         df.columns = _names
-        ax = df.plot.box(figsize=(20, 8), return_type="axes", ylim=[1e8-10_000, 1e8+10_000])
+        ax = df.plot.box(
+            figsize=(20, 8), return_type="axes", ylim=[1e8 - 10_000, 1e8 + 10_000]
+        )
         ax.set_ylabel("trigger_delay [ns]")
         ax.set_title(fig_title)
-        plt.grid(True, which="major", axis="y", color="grey", linewidth="0.6", linestyle=":", alpha=0.8)
+        plt.grid(
+            True,
+            which="major",
+            axis="y",
+            color="gray",
+            linewidth="0.6",
+            linestyle=":",
+            alpha=0.8,
+        )
         plt.savefig(fig_title + ".png")
         plt.close()
-

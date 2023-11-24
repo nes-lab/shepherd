@@ -40,7 +40,10 @@ for trace in ltraces.traces:  # TODO: transform into CLI
             _stat["diff"].append(trace.get_statistics(_diff, _name))
 
 ltraces.plot_comparison_series(start=0)
-_stat_df = {_k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header()) for _k, _v in _stat.items()}
+_stat_df = {
+    _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header())
+    for _k, _v in _stat.items()
+}
 for _k, _v in _stat_df.items():
     logger.info("")
     logger.info("TYPE: %s", _k)
@@ -52,4 +55,3 @@ for _k, _v in _stat_df.items():
 #   - example: [ 29348 <| 43416 || 46416 || 48726 |> 49276 ]
 # - watch P8_19-rising
 #   - example: [ -662 <| -404 || -142 || 128 |> 378 ]
-

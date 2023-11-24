@@ -1,14 +1,18 @@
 import os
-from .logger import logger
 from pathlib import Path
+
+from .logger import logger
 
 
 def get_files(
-    start_path: Path, stem: str = "", suffix: str = ".log", recursion_depth: int = 0
+    start_path: Path,
+    stem: str = "",
+    suffix: str = ".log",
+    recursion_depth: int = 0,
 ) -> list:
     if recursion_depth == 0:
         suffix = suffix.lower().split(".")[-1]
-    #if start_path.is_file():
+    # if start_path.is_file():
     #    dir
     dir_items = os.scandir(start_path)
     recursion_depth += 1
