@@ -135,8 +135,8 @@ Creating CPU-Load
 - Note: we exclude sheep0, as it is the ptp-server
 
 ```
-shepherd-herd -v --limit sheep1,sheep2, run .\software\test_timesync\config_harvest.yaml
-shepherd-herd -v --limit sheep1,sheep2, run .\software\test_timesync\config_emulation.yaml
+shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\test_timesync\config_harvest.yaml
+shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\test_timesync\config_emulation.yaml
 ```
 
 Generating Network-traffic

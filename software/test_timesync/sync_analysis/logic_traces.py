@@ -38,7 +38,7 @@ class LogicTraces:
         fig_title = f"improvement_trigger_statistics_boxplot_{start}to{_len}"
         df = pd.concat(_data, axis=1)
         df.columns = _names
-        ax = df.plot.box(figsize=(20, 8), return_type="axes")
+        ax = df.plot.box(figsize=(20, 8), return_type="axes", ylim=[1e8-10_000, 1e8+10_000])
         ax.set_ylabel("trigger_delay [ns]")
         ax.set_title(fig_title)
         plt.grid(True, which="major", axis="y", color="grey", linewidth="0.6", linestyle=":", alpha=0.8)

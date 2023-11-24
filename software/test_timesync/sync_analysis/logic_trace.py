@@ -86,7 +86,7 @@ class LogicTrace:
         else:
             _ds = _ds[1:-1]
         if len(_d0) > len(_ds):
-            logger.info(
+            logger.debug(
                 "filtered out %d/%d events (redundant)",
                 len(_d0) - len(_ds),
                 len(_d0),
@@ -100,7 +100,7 @@ class LogicTrace:
         _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate([[True], _filter1])
         _num = len(_filter1) - _filter1.sum()
         if _num > 0:
-            logger.info("filtered out %d glitches", _num)
+            logger.debug("filtered out %d glitches", _num)
         return data[_filter2]
 
     def calc_durations_ns(self, channel: int, edge_a_rising: bool, edge_b_rising: bool) -> np.ndarray:
@@ -150,56 +150,52 @@ class LogicTrace:
     @staticmethod
     def calc_expected_value(data: np.ndarray) -> float:
         """return expected duration (=10**X)"""
-        return 10 ** np.round(np.log10(data.mean()))
-
-    @staticmethod
-    def analyze_series_jitter(data: np.ndarray, name: str, with_header: bool = True) -> None:
-        if with_header:
-            logger.info("Jitter \t[  min <|  q05% ||  mean   ||  q95% |>  max ] in [ns]")
-        dmin = np.round(data.min())
-        dmax = np.round(data.max())
-        dq05 = np.round(np.quantile(data, 0.05))
-        dq95 = np.round(np.quantile(data, 0.95))
-        dmean = np.round(data.mean())
-        logger.info("%s    \t[ %d <| %d || %d || %d |> %d ]",
-                    name, dmin, dq05, dmean, dq95, dmax)
+        # data with timestamp!
+        if data.shape[0] < 100:
+            raise ValueError("Function needs more datapoints")
+        if data.shape[1] != 2:
+            raise ValueError("Function needs matrix with timestamps and durations")
+        return 10 ** np.round(np.log10(data[:, 1].mean()))
 
     @staticmethod
     def get_statistics(data: np.ndarray, name: str) -> list:
-        dmin = round(data.min())
-        dmax = round(data.max())
-        dq05 = round(np.quantile(data, 0.05))
-        dq95 = round(np.quantile(data, 0.95))
-        dmean = round(data.mean())
-        return [name, dmin, dq05, dmean, dq95, dmax]
+        # data with timestamp!
+        if data.shape[0] < 100:
+            raise ValueError("Function needs more datapoints")
+        if data.shape[1] != 2:
+            raise ValueError("Function needs matrix with timestamps and durations")
+        dmin = data[:, 1].min()
+        dmax = data[:, 1].max()
+        tmin = (data[data[:, 1] == dmin, 0])[0]
+        tmax = (data[data[:, 1] == dmax, 0])[0]
+        dmin = round(dmin)
+        dmax = round(dmax)
+        dq01 = round(np.quantile(data[:, 1], 0.01))
+        dq05 = round(np.quantile(data[:, 1], 0.05))
+        dq95 = round(np.quantile(data[:, 1], 0.95))
+        dq99 = round(np.quantile(data[:, 1], 0.99))
+        dmean = round(data[:, 1].mean())
+        return [name, dmin, dq01, dq05, dmean, dq95, dq99, dmax, tmin, tmax]
 
     @staticmethod
     def get_statistics_header() -> list:
-        return ["name", "min", "q05%", "mean", "q95%", "max"]
-
-    def analyze_inter_jitter(self, rising: bool = True) -> None:
-        _len = len(self.data)
-        first = True
-        for _i in range(_len):
-            for _j in range(_i+1, _len):
-                _di = self.get_edge_timestamps(_i, rising=rising)
-                _dj = self.get_edge_timestamps(_j, rising=rising)
-                _name = self.name + f"_ch{_i}_ch{_j}"
-                _dk = LogicTrace.calc_duration_free_ns(_di, _dj)[:, 1]
-                LogicTrace.analyze_series_jitter(_dk, name=_name, with_header=first)
-                first = False
+        return ["name", "min [ns]", "q1 [ns]", "q5 [ns]", "mean [ns]", "q95 [ns]", "q99 [ns]", "max [ns]", "t_min [s]", "t_max [s]"]
 
     @staticmethod
-    def plot_series_jitter(data: np.ndarray, ts: np.ndarray, name: str, path: Path, size: tuple = (18, 8), y_side: int = 1000) -> None:
+    def plot_series_jitter(data: np.ndarray, name: str, path: Path, size: tuple = (18, 8), y_side: int = 1000) -> None:
+        # data with timestamp!
+        if data.shape[0] < 100:
+            raise ValueError("Function needs more datapoints")
+        if data.shape[1] != 2:
+            raise ValueError("Function needs matrix with timestamps and durations")
         if path.is_dir():
             _path = path / (name + f"_jitter.png")
         else:
             _path = path
-        _len = min(len(data), len(ts))
-        _center = np.median(data)
+        _center = np.median(data[:, 1])
         _range = [_center - y_side, _center + y_side]
         fig, ax = plt.subplots(figsize=size)
-        plt.plot(ts[:_len], data[:_len])  # X,Y
+        plt.plot(data[:, 0], data[:, 1])  # X,Y
         ax.set_xlabel("time [s]")
         ax.axes.set_ylim(_range)
         ax.axes.set_ylabel("trigger-jitter [ns]")
@@ -207,6 +203,7 @@ class LogicTrace:
         fig.savefig(_path)
         plt.close()
 
+    @staticmethod
     def filter_cs_falling_edge(data: pd.Series, falling: bool = True) -> pd.Series:
         # TODO: not finished
         data.columns = data.columns.str.strip()  # fixes weird space before column-names
