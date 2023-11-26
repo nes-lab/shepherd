@@ -1,10 +1,8 @@
 import pickle
 from pathlib import Path
-from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from typing_extensions import Self
 
 from .logger import logger
@@ -56,7 +54,7 @@ class LogicTrace:
                 obj = pickle.load(_fh)
             return obj
         raise TypeError(
-            f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'"
+            f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'",
         )
 
     def to_file(self, path: Path) -> None:
@@ -67,7 +65,9 @@ class LogicTrace:
 
     @staticmethod
     def _convert_analog2digital(
-        data: np.ndarray, *, invert: bool = False
+        data: np.ndarray,
+        *,
+        invert: bool = False,
     ) -> np.ndarray:
         """Divide dimension in two, divided by mean-value"""
         _theshold = np.mean(data)
@@ -79,7 +79,8 @@ class LogicTrace:
 
     @staticmethod
     def _filter_redundant_states(
-        data: np.ndarray, timestamps: np.ndarray
+        data: np.ndarray,
+        timestamps: np.ndarray,
     ) -> np.ndarray:
         """Sum of two sequential states is always 1 (True + False) if alternating
         returns timestamps of alternating states, starting with 0
@@ -106,7 +107,7 @@ class LogicTrace:
         _diff = ((data[1:] - data[:-1]) * 1e9).astype("uint64")
         _filter1 = _diff > duration_ns
         _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate(
-            [[True], _filter1]
+            [[True], _filter1],
         )
         _num = len(_filter1) - _filter1.sum()
         if _num > 0:
@@ -114,7 +115,10 @@ class LogicTrace:
         return data[_filter2]
 
     def calc_durations_ns(
-        self, channel: int, edge_a_rising: bool, edge_b_rising: bool
+        self,
+        channel: int,
+        edge_a_rising: bool,
+        edge_b_rising: bool,
     ) -> np.ndarray:
         _d0 = self.data[channel]
         if edge_b_rising:
@@ -134,14 +138,13 @@ class LogicTrace:
         _len = min(len(_da), len(_db))
         _diff = _db[:_len] - _da[:_len]
         return np.column_stack(
-            [_da[:_len], _diff * 1e9]
+            [_da[:_len], _diff * 1e9],
         )  # 2 columns: timestamp, duration [ns]
 
     def get_edge_timestamps(self, channel: int = 0, rising: bool = True) -> np.ndarray:
         if rising:
             return self.data[channel][1::2]
-        else:
-            return self.data[channel][0::2]
+        return self.data[channel][0::2]
 
     @staticmethod
     def calc_duration_free_ns(data_a: np.ndarray, data_b: np.ndarray) -> np.ndarray:
@@ -160,7 +163,7 @@ class LogicTrace:
         # calculate duration of offset
         _diff = data_b[:_len] - data_a[:_len]
         return np.column_stack(
-            [data_a[:_len], _diff * 1e9]
+            [data_a[:_len], _diff * 1e9],
         )  # 2 columns: timestamp, duration [ns]
 
     @staticmethod
@@ -191,7 +194,20 @@ class LogicTrace:
         dq95 = round(np.quantile(data[:, 1], 0.95))
         dq99 = round(np.quantile(data[:, 1], 0.99))
         dmean = round(data[:, 1].mean())
-        return [name, dmin, dq01, dq05, dmean, dq95, dq99, dmax, tmin, tmax, dq99 - dq01, dmax - dmin]
+        return [
+            name,
+            dmin,
+            dq01,
+            dq05,
+            dmean,
+            dq95,
+            dq99,
+            dmax,
+            tmin,
+            tmax,
+            dq99 - dq01,
+            dmax - dmin,
+        ]
 
     @staticmethod
     def get_statistics_header() -> list:
@@ -206,8 +222,8 @@ class LogicTrace:
             "max [ns]",
             "t_min [s]",
             "t_max [s]",
-            "q99:1 [ns]",
-            "minmax [ns]",
+            "Δ_q1 [ns]",
+            "Δ_max [ns]",
         ]
 
     @staticmethod
@@ -224,7 +240,7 @@ class LogicTrace:
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")
         if path.is_dir():
-            _path = path / (name + f"_jitter.png")
+            _path = path / (name + "_jitter.png")
         else:
             _path = path
         _center = np.median(data[:, 1])
@@ -237,34 +253,3 @@ class LogicTrace:
         ax.axes.set_title(_path.stem)
         fig.savefig(_path)
         plt.close()
-
-    @staticmethod
-    def filter_cs_falling_edge(data: pd.Series, falling: bool = True) -> pd.Series:
-        # TODO: not finished
-        data.columns = data.columns.str.strip()  # fixes weird space before column-names
-        # values are binary -> get timestamps of chipselect-start (falling Edge)
-        # - first calc the derivative (current value - previous value)
-        # - second filter for "-1" and keep only these
-        # - now subtract the timestamps
-        # data = data[data["Time[s]"] > 1]
-        dtime = data["Time[s]"].iloc[1:]
-        ch0 = data.loc[:, "Channel 0"]
-        ch0d = pd.Series(ch0.values[1:] - ch0.values[:-1], index=ch0.index[1:])
-        ch0t = dtime[ch0d < 0]
-        ch1 = data.loc[:, "Channel 1"]
-        ch1d = pd.Series(ch1.values[1:] - ch1.values[:-1], index=ch1.index[1:])
-        ch1t = dtime[ch1d < 0]
-        # filter time-series for start and end that both series cover
-        time_start = max(ch0t.min(), ch1t.min()) - 5e-6
-        time_stop = min(ch0t.max(), ch1t.max()) - 5e-6
-        ch0t = ch0t[(ch0t > time_start) & (ch0t < time_stop)].reset_index(drop=True)
-        ch1t = ch1t[(ch1t > time_start) & (ch1t < time_stop)].reset_index(drop=True)
-        min_length = min(ch0t.shape[0], ch1t.shape[0])
-        # cut series to proper length and determine channel offset
-        data_new = [
-            ch0t.iloc[0:min_length].mul(1e9).round(0),
-            ch1t.iloc[0:min_length].mul(1e9).round(0),
-        ]
-        df = pd.concat(data_new, axis=1)
-        df.columns = ["Ch0", "Ch1"]
-        return df

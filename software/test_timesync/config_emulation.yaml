@@ -7,8 +7,9 @@ parameters:
   # output_path:
   # - providing a directory -> file is named emu_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> emu#num.h5
-  output_path: /var/shepherd/recordings
+  output_path: /var/shepherd/recordings/emu.h5
   output_compression: '1'  # should be '1' (level 1 gzip), lzf, or null (order of recommendation)
+  force_overwrite: true
   virtual_source: # provide path, name (ie. default, BQ25570) or parameters
     inherit_from: BQ25570
     harvester:
@@ -16,7 +17,6 @@ parameters:
     V_intermediate_init_mV: 3600
     V_buck_drop_mV: 0
     V_output_mV: 3000
-  force_overwrite: true
   use_cal_default: false
   enable_io: true
   io_port: A  # either Port A or B
@@ -27,10 +27,14 @@ parameters:
     # - 0-4.5 for specific const Voltage,
     # - "buffer" will output intermediate voltage (vsource storage cap),
     # - true or "main" to mirror main target voltage
-  gpio_tracing:
-    uart_decode: true
-    uart_baudrate: 115200
+  gpio_tracing: null
+#    uart_decode: true
+#    uart_baudrate: 115200
   power_tracing:
     discard_voltage: false
     discard_current: false
+  sys_logging:
+    dmesg: false
+    ptp: false
+
   verbose: 2 # serious performance impact for value > 3

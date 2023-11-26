@@ -6,6 +6,7 @@ from sync_analysis import LogicTraces
 from sync_analysis import logger
 
 path_here = Path(__file__).parent
+save_pickle = False
 
 ltraces = LogicTraces(path_here, glitch_ns=100)
 _stat: dict[str, list] = {
@@ -15,7 +16,8 @@ _stat: dict[str, list] = {
 }
 
 for trace in ltraces.traces:  # TODO: transform into CLI
-    # trace.to_file(path_here)
+    if save_pickle:
+        trace.to_file(path_here)
 
     for _ch in range(trace.channel_count):
         _data_r = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
