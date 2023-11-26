@@ -21,6 +21,15 @@ RestartSec=5
 Restart=always
 StartLimitBurst=10
 
+# improve responsiveness
+RestrictRealtime=false
+LimitRTPRIO=infinity
+CPUSchedulingPriority=90
+CPUSchedulingPolicy=rr
+IOSchedulingClass=realtime
+IOSchedulingPriority=3
+
+
 [Install]
 WantedBy=multi-user.target
 
