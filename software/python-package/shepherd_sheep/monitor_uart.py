@@ -42,7 +42,7 @@ class UARTMonitor(Monitor):
                 self.uart,
                 self.baudrate,
             )
-            self.thread = threading.Thread(target=self.thread_fn, daemon=True)
+            self.thread = threading.Thread(target=self.thread_fn, daemon=True, name="UARTMon")
             self.thread.start()
         else:
             log.error(

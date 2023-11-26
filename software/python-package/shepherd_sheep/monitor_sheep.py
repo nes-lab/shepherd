@@ -36,7 +36,7 @@ class SheepMonitor(Monitor):
             "description"
         ] = "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
 
-        self.thread = threading.Thread(target=self.thread_fn, daemon=True)
+        self.thread = threading.Thread(target=self.thread_fn, daemon=True, name="SHPMon")
         self.thread.start()
 
     def __exit__(
