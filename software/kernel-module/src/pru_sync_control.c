@@ -145,12 +145,7 @@ int sync_init(uint32_t timer_period_ns)
     // TODO: there is a .hrtimer_is_hres_enabled() and .hrtimer_switch_to_hres()
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
 
-    //printk(KERN_INFO "shprd.k: hres-mode: %d -> turning on now", hrtimer_is_hres_enabled());
-    //hrtimer_switch_to_hres();
-    //printk(KERN_INFO "shprd.k: hres-mode: %d", hrtimer_is_hres_enabled());
-    //printk(KERN_INFO "shprd.k: hres-mode: %d", hrtimer_hres_active());
     printk(KERN_INFO "shprd.k: hres-mode: %d", hrtimer_is_hres_active(&trigger_loop_timer));
-
 
     sync_benchmark();
 

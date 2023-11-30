@@ -19,10 +19,10 @@ ccflags-y=-I$(src)/../common
 all: build
 
 build:
-	make -C $(KDIR) M=$(CURDIR) modules
+	make -C $(KDIR) M=$(PWD) modules
 
 clean:
-	make -C $(KDIR) M=$(CURDIR) clean
+	make -C $(KDIR) M=$(PWD) clean
 
 install: all
 	@echo 'Installing kernel module'
