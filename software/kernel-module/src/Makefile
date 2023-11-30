@@ -4,10 +4,6 @@ KDIR ?= /lib/modules/$(KVERSION)/build
 
 obj-m += $(TARGET).o
 $(TARGET)-objs += pru_sync_control.o
-$(TARGET)-objs += pru_mem_interface.o
-$(TARGET)-objs += sysfs_interface.o
-$(TARGET)-objs += pru_msg_sys.o
-$(TARGET)-objs += pru_firmware.o
 $(TARGET)-objs += module_base.o
 
 ccflags-y=-I$(src)/../common
