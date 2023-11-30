@@ -8,7 +8,7 @@ from sync_analysis import logger
 path_here = Path(__file__).parent
 save_pickle = False
 
-ltraces = LogicTraces(path_here, glitch_ns=100)
+ltraces = LogicTraces(path_here, glitch_ns=20)
 _stat: dict[str, list] = {
     "diff": [],
     "rising": [],

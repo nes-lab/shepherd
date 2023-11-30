@@ -2,6 +2,7 @@
 #include <linux/ktime.h>
 #include <linux/math64.h>
 #include <linux/slab.h>
+//#include <time.h>
 
 #include <asm/io.h> // as long as gpio0-hack is active
 
@@ -20,13 +21,15 @@ void            reset_prev_timestamp(
 
 static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
-static uint32_t           trigger_loop_period_ns = 100000000; /* just initial value to avoid div0 */
+static uint32_t       trigger_loop_period_ns = 100000000u; /* just initial value to avoid div0 */
+static ktime_t        trigger_loop_period_kt = 100000000u;
+
 /*
 * add pre-trigger, because design previously aimed directly for busy pru_timer_wrap
 * (50% chance that pru takes a less meaningful counter-reading after wrap)
 * 1 ms + 5 us, this should be enough time for the ping-pong-messaging to complete before timer_wrap
 */
-static const uint32_t     ns_pre_trigger         = 1005000;
+static const uint32_t     ns_pre_trigger         = 1005000u;
 
 /* Timer to trigger fast sync_loop */
 struct hrtimer            trigger_loop_timer;
@@ -183,6 +186,7 @@ int sync_init(uint32_t timer_period_ns)
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
+    trigger_loop_period_kt = ns_to_ktime(trigger_loop_period_ns);
     //printk(KERN_INFO "shprd.k: new timer_period_ns = %u", trigger_loop_period_ns);
 
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -196,7 +200,7 @@ int sync_init(uint32_t timer_period_ns)
     init_done                = 1;
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
 
-    //sync_benchmark();
+    sync_benchmark();
     sync_start();
     return 0;
 }
@@ -269,67 +273,83 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     uint64_t         ts_now_ns;
     uint64_t         ns_to_next_trigger;
     static ktime_t   ts_next_kt = 0;
+    ktime_t          ts_next_busy_kt = 0;
     volatile int32_t counter;
     int32_t          trigger_n;
     int64_t          dur_ns;
 
+    if (!timers_active) return HRTIMER_NORESTART;
+
+    preempt_disable();
+    writel(0b1u << 22u, gpio0clear);
+
+    /* Timestamp system clock */
+    ts_now_kt = ktime_get_real();
+
+    if ((ts_now_kt > ts_next_kt + trigger_loop_period_kt) || (ts_now_kt < ts_next_kt))
+    {
+        writel(0b1u << 22u, gpio0set);
+        preempt_enable();
+        /* out of bounds -> reset timer */
+        printk(KERN_ERR "shprd.k: reset sync-trigger!");
+
+        ts_now_ns = ktime_to_ns(ts_now_kt);
+        div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
+        ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
+
+        ts_next_kt = ts_now_kt + ns_to_ktime(ns_to_next_trigger);
+        hrtimer_forward(timer_for_restart, ts_next_kt, 0);
+
+        /* update global vars */
+        sys_ts_over_timer_wrap_ns = 0u; /* invalidate this measurement */
+        ts_upcoming_ns = ts_now_ns + trigger_loop_period_ns - sys_ts_over_timer_wrap_ns;
+
+        return HRTIMER_RESTART;
+    }
+
     if (1)
     {
         /* high-res busy-wait, TODO: just a test  */
-        writel(0b1u << 22u, gpio0clear);
-        preempt_disable();
+        ts_next_busy_kt = ts_next_kt + ns_to_ktime(40000u);
         /* Coarse Loop, ~300ns resolution */
-        ts_next_kt += ns_to_ktime(36000u);
-        ts_now_kt = ktime_get_real();
-        while (ts_now_kt < ts_next_kt) { ts_now_kt = ktime_get_real(); };
+        while (ts_now_kt<ts_next_busy_kt)
+        {
+            ts_now_kt = ktime_get_real();
+        };
+
         if (0)
         {
             /* fine loop, ~ 9ns resolution */
             // TODO: more accurate, but also higher jitter +-1000 ns
-            counter   = 0;
-            dur_ns    = ktime_to_ns(ts_next_kt - ts_now_kt) + 4000;
-            trigger_n = div_s64(dur_ns * 4, 33); // 8.25 * 4 = 33
-            while (counter < trigger_n) { counter++; }
+            counter = 0;
+            dur_ns = ktime_to_ns(ts_next_kt-ts_now_kt)+4000;
+            trigger_n = div_s64(dur_ns*4, 33); // 8.25 * 4 = 33
+            while (counter<trigger_n)
+            { counter++; }
         }
-        writel(0b1u << 22u, gpio0set);
     }
 
+    writel(0b1u << 22u, gpio0set);
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
     preempt_enable();
 
-    /* Timestamp system clock */
-    ts_now_kt = ktime_get_real();
-    ts_now_ns = ktime_to_ns(ts_now_kt);
-
-    if (!timers_active) return HRTIMER_NORESTART;
     /*
      * Get distance of system clock from timer wrap.
      * Is negative, when interrupt happened before wrap, positive when after
      */
+    ts_now_ns = ktime_to_ns(ts_now_kt);
+    /* update global vars */
     div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
     ts_upcoming_ns = ts_now_ns + trigger_loop_period_ns - sys_ts_over_timer_wrap_ns;
+    ns_to_next_trigger =
+            2 * trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
 
-    if (sys_ts_over_timer_wrap_ns > (trigger_loop_period_ns / 2))
-    {
-        /* normal use case (with pre-trigger) */
-        /* self-regulating formula that results in ~ trigger_loop_period_ns */
-        ns_to_next_trigger =
-                2 * trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
-    }
-    else
-    {
-        printk(KERN_ERR "shprd.k: module missed a sync-trigger! -> last timestamp is "
-                        "now probably used twice by PRU");
-        ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
-        sys_ts_over_timer_wrap_ns = 0u; /* invalidate this measurement */
-    }
-    //printk(KERN_INFO "shprd.k: now=%llu, next=%llu, sleep=%llu", ts_now_ns, ts_upcoming_ns, ns_to_next_trigger);
     // TODO: minor optimization
     //  - write ts_upcoming_ns directly into shared mem, as well as the other values in sync_loop
     //  - the reply-message is not needed anymore (current pru-code has nothing to calculate beforehand and would just use prev values if no new message arrives
     ts_next_kt = ts_now_kt + ns_to_ktime(ns_to_next_trigger);
-    hrtimer_forward(timer_for_restart, ts_next_kt, 0); // ns_to_ktime(ns_to_next_trigger)
+    hrtimer_forward(timer_for_restart, ts_next_kt, 0);
 
     return HRTIMER_RESTART;
 }
