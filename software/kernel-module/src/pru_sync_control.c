@@ -181,6 +181,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     if ((ts_now_kt > ts_next_kt + trigger_loop_period_kt) || (ts_now_kt < ts_next_kt))
     {
         writel(0b1u << 22u, gpio0set);
+        //writel(0b1u << 22u, gpio0clear);
         //preempt_enable();
         /* out of bounds -> reset timer */
         printk(KERN_ERR "shprd.k: reset sync-trigger!");
