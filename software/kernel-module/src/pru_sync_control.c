@@ -1,7 +1,7 @@
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 #include <linux/math64.h>
-#include <linux/slab.h>
+#include <linux/slab.h>     /* kmalloc */
 
 #include <asm/io.h> // as long as gpio0-hack is active
 
@@ -140,22 +140,21 @@ int sync_init(uint32_t timer_period_ns)
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
     trigger_loop_period_kt = ns_to_ktime(trigger_loop_period_ns);
 
-    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS_PINNED_HARD);
     trigger_loop_timer.function = &trigger_loop_callback;
     // TODO: there is a .hrtimer_is_hres_enabled() and .hrtimer_switch_to_hres()
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
 
-    printk(KERN_INFO "shprd.k: hres-mode: %d", hrtimer_is_hres_active(&trigger_loop_timer));
-
     sync_benchmark();
 
     hrtimer_start(&trigger_loop_timer, ts_now_kt + ns_to_ktime(ns_to_next_trigger),
-                  HRTIMER_MODE_ABS);
-    // TODO: try: HRTIMER_MODE_ABS_HARD, HRTIMER_MODE_ABS_PINNED_HARD
+                  HRTIMER_MODE_ABS_PINNED_HARD);
+    // TODO: try: HRTIMER_MODE_ABS_HARD (kernel 5.4+), HRTIMER_MODE_ABS_PINNED_HARD
 
+    printk(KERN_INFO "shprd.k: hres-mode: %d", hrtimer_is_hres_active(&trigger_loop_timer));
     printk(KERN_INFO "shprd.k: timer.is_rel = %d", trigger_loop_timer.is_rel);
     printk(KERN_INFO "shprd.k: timer.is_soft = %d", trigger_loop_timer.is_soft);
-    printk(KERN_INFO "shprd.k: timer.is_hard = %d", trigger_loop_timer.is_hard);
+    //printk(KERN_INFO "shprd.k: timer.is_hard = %d", trigger_loop_timer.is_hard);
 
     printk(KERN_INFO "shprd.k: pru-sync-system started");
     return 0;
@@ -166,12 +165,15 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
     ktime_t          ts_now_kt;
     uint64_t         ts_now_ns;
-    uint64_t         ns_to_next_trigger;
     static ktime_t   ts_next_kt = 0;
+    static uint64_t  ts_next_ns = 0;
     ktime_t          ts_next_busy_kt = 0;
 
-    preempt_disable();
-    writel(0b1u << 22u, gpio0clear);
+    //preempt_disable();
+    //writel(0b1u << 22u, gpio0set);  // P8_19
+    writel(0b1u << 22u, gpio0clear);// P8_19
+    //writel(0b1u << 27u, gpio0set);  // P8_17
+    //writel(0b1u << 27u, gpio0clear);  // P8_17
 
     /* Timestamp system clock */
     ts_now_kt = ktime_get_real();
@@ -179,15 +181,14 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     if ((ts_now_kt > ts_next_kt + trigger_loop_period_kt) || (ts_now_kt < ts_next_kt))
     {
         writel(0b1u << 22u, gpio0set);
-        preempt_enable();
+        //preempt_enable();
         /* out of bounds -> reset timer */
         printk(KERN_ERR "shprd.k: reset sync-trigger!");
 
-        ts_now_ns = ktime_to_ns(ts_now_kt);
+        ts_now_ns = ktime_get_real_ns();
         div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
-        ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
-
-        ts_next_kt = ts_now_kt + ns_to_ktime(ns_to_next_trigger);
+        ts_next_ns = ts_now_ns + trigger_loop_period_ns - sys_ts_over_timer_wrap_ns;
+        ts_next_kt = ns_to_ktime(ts_next_ns);
         hrtimer_forward(timer_for_restart, ts_next_kt, 0);
 
         /* update global vars */
@@ -208,20 +209,19 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     }
 
     writel(0b1u << 22u, gpio0set);
-    preempt_enable();
+    //writel(0b1u << 27u, gpio0set);
+    //preempt_enable();
 
     /*
      * Get distance of system clock from timer wrap.
      * Is negative, when interrupt happened before wrap, positive when after
      */
-    ts_now_ns = ktime_to_ns(ts_now_kt);
-    /* update global vars */
-    div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
-    ns_to_next_trigger =
-            2 * trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
-
-    ts_next_kt = ts_now_kt + ns_to_ktime(ns_to_next_trigger);
+    ts_next_ns += trigger_loop_period_ns;
+    ts_next_kt = ns_to_ktime(ts_next_ns);
     hrtimer_forward(timer_for_restart, ts_next_kt, 0);
+
+    //writel(0b1u << 22u, gpio0clear);
+    //writel(0b1u << 27u, gpio0clear);
 
     return HRTIMER_RESTART;
 }
