@@ -1,10 +1,14 @@
-TARGET = shepherd
-KVERSION := $(shell uname -r)
-KDIR ?= /lib/modules/$(KVERSION)/build
+TARGET_MODULE = shepherd
 
-obj-m += $(TARGET).o
-$(TARGET)-objs += pru_sync_control.o
-$(TARGET)-objs += module_base.o
+# If we are running by kernel building system
+ifneq ($(KERNELRELEASE),)
+    obj-m += $(TARGET_MODULE).o
+    $(TARGET_MODULE)-objs = module_base.o
+    $(TARGET_MODULE)-objs += pru_sync_control.o
+else
+	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
+	PWD:=$(shell pwd)
+endif
 
 ccflags-y=-I$(src)/../common
 
@@ -16,15 +20,23 @@ ccflags-y=-I$(src)/../common
 # 	 you can ignore lines with: (in file included) from .. shepherd/
 # /opt/shepherd/software/kernel-module/src/ is at beginning of line
 
+# TODO: M=$(CURDIR) should be M=$(PWD)
+
 all: build
 
 build:
-	make -C $(KDIR) M=$(PWD) modules
+	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) modules
 
 clean:
-	make -C $(KDIR) M=$(PWD) clean
+	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) clean
+
+load:
+	insmod ./$(TARGET_MODULE).ko
+
+unload:
+	rmmod ./$(TARGET_MODULE).ko
 
 install: all
 	@echo 'Installing kernel module'
 	-@sudo mkdir /lib/modules/$(KVERSION)/extra/
-	@sudo cp $(TARGET).ko /lib/modules/$(KVERSION)/extra/
+	@sudo cp $(TARGET_MODULE).ko /lib/modules/$(KVERSION)/extra/
