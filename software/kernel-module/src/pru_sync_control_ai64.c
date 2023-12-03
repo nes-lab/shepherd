@@ -140,7 +140,7 @@ int sync_init(uint32_t timer_period_ns)
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
     trigger_loop_period_kt = ns_to_ktime(trigger_loop_period_ns);
 
-    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS_HARD);
+    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS_PINNED_HARD);
     trigger_loop_timer.function = &trigger_loop_callback;
     // TODO: there is a .hrtimer_is_hres_enabled() and .hrtimer_switch_to_hres()
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
@@ -148,7 +148,7 @@ int sync_init(uint32_t timer_period_ns)
     sync_benchmark();
 
     hrtimer_start(&trigger_loop_timer, ts_now_kt + ns_to_ktime(ns_to_next_trigger),
-                  HRTIMER_MODE_ABS_HARD);
+                  HRTIMER_MODE_ABS_PINNED_HARD);
     // TODO: try: HRTIMER_MODE_ABS_HARD (kernel 5.4+), HRTIMER_MODE_ABS_PINNED_HARD
 
     printk(KERN_INFO "shprd.k: hres-mode: %d", hrtimer_is_hres_active(&trigger_loop_timer));
