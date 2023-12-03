@@ -129,13 +129,24 @@ int sync_init(uint32_t timer_period_ns)
     const ktime_t  ts_now_kt = ktime_get_real();
     uint64_t       ts_now_ns = ktime_to_ns(ts_now_kt);
     uint64_t         ns_to_next_trigger;
+    void __iomem      *p803mux = NULL;
+    uint32_t       mux_val = 0;
 
     div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
     ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
 
     gpio0clear             = ioremap(0x600000 + 0x1C, 4); // P8_03
     gpio0set               = ioremap(0x600000 + 0x18, 4);
-
+    p803mux = ioremap(0x11C054, 4);
+    mux_val = readl(p803mux);
+    mux_val = (mux_val & ~0b1111u) | (7u << 0u); // Mode 7
+    mux_val = mux_val & ~(1u << 21u); // TX Enable
+    mux_val = mux_val | (1u << 18u); // RX Enable
+    writel(mux_val, p803mux);
+    printk(KERN_INFO "shprd.k: wrote mux-val: %x", mux_val);
+    iounmap(p803mux);
+    p803mux = NULL;
+    
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
     trigger_loop_period_kt = ns_to_ktime(trigger_loop_period_ns);
