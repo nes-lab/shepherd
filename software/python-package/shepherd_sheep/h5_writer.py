@@ -234,13 +234,15 @@ class Writer(CoreWriter):
             ] = buffer.gpio_edges.values  # noqa: PD011, false positive
             self.gpio_pos = gpio_new_pos
 
-        if (buffer.util_mean > 95) or (buffer.util_max > 100):
+        if (buffer.util_mean > 98) or (buffer.util_max > 100):
             self._logger.warning(
                 "WARNING: timing critical, pru0 Loop-Util: mean = %d %%, max = %d %%",
                 buffer.util_mean,
                 buffer.util_max,
             )
             # TODO: store pru-util? probably yes
+        # TODO: do not save continuous timestamps anymore
+        #       but instead: buffer-timestamp, sample-count, pru-util mean & max
 
     def start_monitors(
         self,

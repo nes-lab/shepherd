@@ -341,6 +341,7 @@ class SharedMemory:
                 pru0_util_mean,
                 pru0_util_max,
             )
+            # TODO: this is causing high overhead without a cape
         elif verbose:
             log.info(
                 "Pru0 Loop-Util: mean = %d %%, max = %d %%",
