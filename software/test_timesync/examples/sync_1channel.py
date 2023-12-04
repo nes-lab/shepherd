@@ -41,7 +41,7 @@ for trace in ltraces.traces:  # TODO: transform into CLI
             trace.plot_series_jitter(_diff, _name, path_here)
             _stat["diff"].append(trace.get_statistics(_diff, _name))
 
-ltraces.plot_comparison_series(start=0)
+# ltraces.plot_comparison_series(start=0)
 _stat_df = {
     _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header())
     for _k, _v in _stat.items()
@@ -50,6 +50,10 @@ for _k, _v in _stat_df.items():
     logger.info("")
     logger.info("TYPE: %s", _k)
     logger.info(_v.to_string())
+
+chosen = ["002_", "014_", "034_", "042_"]
+ltraces.traces = [trace for trace in ltraces.traces if trace.name[:4] in chosen]
+ltraces.plot_comparison_series(start=0)
 
 # Trigger-Experiment:
 # - watch P8_19-low variance under load (currently 29.3 - 49.3 us)
