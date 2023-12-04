@@ -29,12 +29,12 @@ static ktime_t        trigger_loop_period_kt = 100000000u;
 * (50% chance that pru takes a less meaningful counter-reading after wrap)
 * 1 ms + 5 us, this should be enough time for the ping-pong-messaging to complete before timer_wrap
 */
-static const uint32_t     ns_pre_trigger         = 1005000u;
+static const uint32_t ns_pre_trigger         = 1005000u;
 
 /* Timer to trigger fast sync_loop */
-struct hrtimer            trigger_loop_timer;
-struct hrtimer            sync_loop_timer;
-static u8                 timers_active    = 0;
+struct hrtimer        trigger_loop_timer;
+struct hrtimer        sync_loop_timer;
+static u8             timers_active        = 0;
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 static const unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
@@ -199,7 +199,8 @@ int sync_init(uint32_t timer_period_ns)
     init_done                = 1;
     printk(KERN_INFO "shprd.k: pru-sync-system initialized");
 
-    printk(KERN_INFO "shprd.k: trigger_hrtimer.hres    = %d", hrtimer_is_hres_active(&trigger_loop_timer));
+    printk(KERN_INFO "shprd.k: trigger_hrtimer.hres    = %d",
+           hrtimer_is_hres_active(&trigger_loop_timer));
     printk(KERN_INFO "shprd.k: trigger_hrtimer.is_rel  = %d", trigger_loop_timer.is_rel);
     printk(KERN_INFO "shprd.k: trigger_hrtimer.is_soft = %d", trigger_loop_timer.is_soft);
     //printk(KERN_INFO "shprd.k: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
@@ -273,11 +274,11 @@ void sync_reset(void)
 
 enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
-    ktime_t          ts_now_kt;
-    uint64_t         ts_now_ns;
-    static ktime_t   ts_next_kt = 0;
-    ktime_t          ts_next_busy_kt = 0;
-    static uint32_t  singleton = 0;
+    ktime_t         ts_now_kt;
+    uint64_t        ts_now_ns;
+    static ktime_t  ts_next_kt      = 0;
+    ktime_t         ts_next_busy_kt = 0;
+    static uint32_t singleton       = 0;
 
     if (!timers_active) return HRTIMER_NORESTART;
 
@@ -299,7 +300,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
         ts_now_ns = ktime_get_real_ns();
         div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
         ts_upcoming_ns = ts_now_ns + trigger_loop_period_ns - sys_ts_over_timer_wrap_ns;
-        ts_next_kt = ns_to_ktime(ts_upcoming_ns);
+        ts_next_kt     = ns_to_ktime(ts_upcoming_ns);
         hrtimer_forward(timer_for_restart, ts_next_kt, 0);
 
         /* update global vars */
@@ -312,7 +313,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     {
         /* high-res busy-wait, ~300ns resolution */
         ts_next_busy_kt = ts_next_kt + ns_to_ktime(40000u);
-        while (ts_now_kt<ts_next_busy_kt)  ts_now_kt = ktime_get_real();
+        while (ts_now_kt < ts_next_busy_kt) ts_now_kt = ktime_get_real();
     }
 
     writel(0b1u << 22u, gpio0set);
