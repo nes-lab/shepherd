@@ -2,9 +2,9 @@
 Description=Synchronize system clock or PTP hardware clock (PHC)
 Documentation=man:phc2sys
 # Requires=ptp4l@%i.device.service
-# After=ptp4l@%i.device.service
-# -> restarts phc2sys constantly ... just use the wait-option
+After=ptp4l@%i.service
 Before=time-sync.target
+# -> ptp4l needs to start AFTER phc2sys, otherwise the time gets reset
 
 [Service]
 Type=simple
@@ -21,14 +21,13 @@ RestartSec=5
 Restart=always
 StartLimitBurst=10
 
-# improve responsiveness
+# improve responsiveness with RT
 RestrictRealtime=false
 LimitRTPRIO=infinity
 CPUSchedulingPriority=90
 CPUSchedulingPolicy=rr
 IOSchedulingClass=realtime
 IOSchedulingPriority=3
-
 
 [Install]
 WantedBy=multi-user.target
