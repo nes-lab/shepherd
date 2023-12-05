@@ -1,12 +1,12 @@
 [codespell]
 
-builtin = "clear,rare,informal,usage,code,en-GB_to_en-US"
+builtin = clear,rare,informal,usage,code,en-GB_to_en-US
 
-skip = "*.brd,*.sch,*.lbr,*.svg,*/sphinx_to_pages.yml,*/nrf52840.h,*/nrf52840_bitfields.h,*/core_cm4.h"
+skip = *.brd,*.sch,*.lbr,*.svg,*/sphinx_to_pages.yml,*/nrf52840.h,*/nrf52840_bitfields.h,*/core_cm4.h
 # TODO: sphinx-entry only included temporarily
 # TODO: programmer header-files contain external code
-ignore-words-list = "dout,jupyter,stdio,astroid,uint,fram,arange,ro"
+ignore-words-list = dout,jupyter,stdio,astroid,uint,fram,arange,ro
 
 # options without argument
-check-filenames = ""
-check-hidden = ""
+check-filenames =
+check-hidden =
