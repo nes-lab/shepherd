@@ -43,7 +43,9 @@ class UARTMonitor(Monitor):
                 self.baudrate,
             )
             self.thread = threading.Thread(
-                target=self.thread_fn, daemon=True, name="UARTMon"
+                target=self.thread_fn,
+                daemon=True,
+                name="UARTMon",
             )
             self.thread.start()
         else:

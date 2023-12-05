@@ -17,6 +17,7 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     import h5py
+
     from .monitor_abc import Monitor
 
 import numpy as np

@@ -69,7 +69,9 @@ class SysUtilMonitor(Monitor):
             self.io_last = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
             self.nw_last = np.array(psutil.net_io_counters()[0:2])
             self.thread = threading.Thread(
-                target=self.thread_fn, daemon=True, name="SYSMon"
+                target=self.thread_fn,
+                daemon=True,
+                name="SYSMon",
             )
             self.thread.start()
 

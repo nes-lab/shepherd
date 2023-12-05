@@ -22,13 +22,13 @@ def get_files(
         if item.is_dir():
             files += get_files(item.path, stem, suffix, recursion_depth)
             continue
-        else:
-            item_name = str(item.name).lower()
-            item_ext = item_name.split(".")[-1]
-            if item_ext == suffix and item_ext != item_name and stem in item_name:
-                files.append(Path(item.path))
-            if suffix == "" and item_ext == item_name:
-                files.append(Path(item.path))
+
+        item_name = str(item.name).lower()
+        item_ext = item_name.split(".")[-1]
+        if item_ext == suffix and item_ext != item_name and stem in item_name:
+            files.append(Path(item.path))
+        if suffix == "" and item_ext == item_name:
+            files.append(Path(item.path))
     if recursion_depth == 1 and len(files) > 0:
         logger.debug(" -> got %s files with the suffix '%s'", len(files), suffix)
     return files

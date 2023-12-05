@@ -49,7 +49,9 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         os.set_blocking(self.process.stdout.fileno(), False)
 
         self.thread = threading.Thread(
-            target=self.thread_fn, daemon=True, name="PTPMon"
+            target=self.thread_fn,
+            daemon=True,
+            name="PTPMon",
         )
         self.thread.start()
 
