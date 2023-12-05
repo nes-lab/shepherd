@@ -37,16 +37,6 @@ repos:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/psf/black
-    rev: 23.10.0
-    hooks:
-      - id: black
-
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
@@ -58,47 +48,8 @@ repos:
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
-    hooks:
-      - id: pyupgrade
-        args: ["--py310-plus", "--keep-runtime-typing"]
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          # NOTE: entries are copy of .flake8-config-file -> for auto-install
-          ### Bugs
-          - flake8-bugbear
-          - flake8-secure-coding-standard
-          - flake8-bandit
-          - flake8-builtins
-
-          ### Clean Code
-          - flake8-comprehensions
-          - flake8-simplify
-          - flake8-eradicate
-
-          ### Limitations
-          - flake8-blind-except
-          - flake8-logging-format
-          - flake8-print
-
-          ### Documentation
-          - flake8-comments
-          # - flake8-docstrings
-          # - flake8-rst-docstrings
-
-          ### Test-Improvements
-          - flake8-assertive
-
-          ### Load Config from ...
-          - flake8-pyproject
-
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.1.1'
+    rev: 'v0.1.7'
     hooks:
       - id: ruff
         # manual run: ruff check . --preview
@@ -124,14 +75,8 @@ repos:
         additional_dependencies: ["tomli"]  # for py<3.11
         exclude: \.(sch|brd|lbr)$
 
-#  - repo: https://github.com/amperser/proselint
-#    rev: 0.13.0
-#    hooks:
-#      - id: proselint
-#        types_or: ["markdown", "rst"]
-
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v17.0.3
+    rev: v17.0.6
     hooks:
       - id: clang-format
         types_or: [c++, c]
