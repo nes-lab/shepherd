@@ -279,19 +279,26 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     static ktime_t  ts_next_kt      = 0;
     ktime_t         ts_next_busy_kt = 0;
     static uint32_t singleton       = 0;
+    const uint32_t  sync_edge       = 0;  // debug gpio output
 
     if (!timers_active) return HRTIMER_NORESTART;
 
-    preempt_disable();
-    writel(0b1u << 22u, gpio0clear);
+    if (sync_edge)
+    {
+        preempt_disable();
+        writel(0b1u << 22u, gpio0clear);
+    }
 
     /* Timestamp system clock */
     ts_now_kt = ktime_get_real();
 
     if ((ts_now_kt > ts_next_kt + trigger_loop_period_kt) || (ts_now_kt < ts_next_kt))
     {
-        writel(0b1u << 22u, gpio0set);
-        preempt_enable();
+        if (sync_edge)
+        {
+            writel(0b1u << 22u, gpio0set);
+            preempt_enable();
+        }
 
         /* out of bounds -> reset timer */
         if (singleton) printk(KERN_ERR "shprd.k: reset sync-trigger!");
@@ -309,17 +316,17 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
         return HRTIMER_RESTART;
     }
 
-    if (1)
+    if (sync_edge)
     {
         /* high-res busy-wait, ~300ns resolution */
         ts_next_busy_kt = ts_next_kt + ns_to_ktime(40000u);
         while (ts_now_kt < ts_next_busy_kt) ts_now_kt = ktime_get_real();
+        writel(0b1u << 22u, gpio0set);
+        preempt_enable();
     }
 
-    writel(0b1u << 22u, gpio0set);
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
-    preempt_enable();
 
     /*
      * Get distance of system clock from timer wrap.
