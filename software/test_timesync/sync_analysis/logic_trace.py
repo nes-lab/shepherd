@@ -51,8 +51,7 @@ class LogicTrace:
             return cls(data, name=path.stem, glitch_ns=glitch_ns)
         if path.suffix.lower() == ".pkl":
             with path.open("rb") as _fh:
-                obj = pickle.load(_fh)
-            return obj
+                return pickle.load(_fh)
         raise TypeError(
             f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'",
         )
@@ -71,10 +70,7 @@ class LogicTrace:
     ) -> np.ndarray:
         """Divide dimension in two, divided by mean-value"""
         _theshold = np.mean(data)
-        if invert:
-            data = data <= _theshold
-        else:
-            data = data >= _theshold
+        data = (data <= _theshold) if invert else (data >= _theshold)
         return data.astype("bool")
 
     @staticmethod
@@ -90,10 +86,7 @@ class LogicTrace:
         _df = _d0 + _d1
         _ds = timestamps[_df == 1]
         # discard first&last entry AND make sure state=low starts
-        if _d0[0] == 0:
-            _ds = _ds[2:-1]
-        else:
-            _ds = _ds[1:-1]
+        _ds = _ds[2:-1] if (_d0[0] == 0) else _ds[1:-1]
         if len(_d0) > len(_ds):
             logger.debug(
                 "filtered out %d/%d events (redundant)",
@@ -103,7 +96,7 @@ class LogicTrace:
         return _ds
 
     @staticmethod
-    def _filter_glitches(data: np.ndarray, duration_ns: int = 10):
+    def _filter_glitches(data: np.ndarray, duration_ns: int = 10) -> np.ndarray:
         _diff = ((data[1:] - data[:-1]) * 1e9).astype("uint64")
         _filter1 = _diff > duration_ns
         _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate(
@@ -128,13 +121,12 @@ class LogicTrace:
             else:
                 _da = _d0[0::2]
                 _db = _d0[1::2]
+        elif edge_a_rising:
+            _da = _d0[1::2]
+            _db = _d0[2::2]
         else:
-            if edge_a_rising:
-                _da = _d0[1::2]
-                _db = _d0[2::2]
-            else:
-                _da = _d0[0::2]
-                _db = _d0[2::2]
+            _da = _d0[0::2]
+            _db = _d0[2::2]
         _len = min(len(_da), len(_db))
         _diff = _db[:_len] - _da[:_len]
         return np.column_stack(
@@ -167,14 +159,17 @@ class LogicTrace:
         )  # 2 columns: timestamp, duration [ns]
 
     @staticmethod
-    def calc_expected_value(data: np.ndarray) -> float:
+    def calc_expected_value(data: np.ndarray, *, mode_log10: bool = False) -> float:
         """return expected duration (=10**X)"""
         # data with timestamp!
         if data.shape[0] < 100:
             raise ValueError("Function needs more datapoints")
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")
-        return 10 ** np.round(np.log10(data[:, 1].mean()))
+        if mode_log10:
+            return 10 ** np.round(np.log10(data[:, 1].mean()))
+        # 1 us resolution
+        return 1000 * np.round(data[:, 1].mean() / 1000)
 
     @staticmethod
     def get_statistics(data: np.ndarray, name: str) -> list:
@@ -187,8 +182,6 @@ class LogicTrace:
         dmax = data[:, 1].max()
         tmin = (data[data[:, 1] == dmin, 0])[0]
         tmax = (data[data[:, 1] == dmax, 0])[0]
-        dmin = round(dmin)
-        dmax = round(dmax)
         dq01 = round(np.quantile(data[:, 1], 0.01))
         dq05 = round(np.quantile(data[:, 1], 0.05))
         dq95 = round(np.quantile(data[:, 1], 0.95))
@@ -196,13 +189,13 @@ class LogicTrace:
         dmean = round(data[:, 1].mean())
         return [
             name,
-            dmin,
+            round(dmin),
             dq01,
             dq05,
             dmean,
             dq95,
             dq99,
-            dmax,
+            round(dmax),
             tmin,
             tmax,
             dq99 - dq01,
@@ -239,10 +232,9 @@ class LogicTrace:
             raise ValueError("Function needs more datapoints")
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")
-        if path.is_dir():
-            _path = path / (name + "_jitter.png")
-        else:
-            _path = path
+
+        _path = path / (name + "_jitter.png") if path.is_dir() else path
+
         _center = np.median(data[:, 1])
         _range = [_center - y_side, _center + y_side]
         fig, ax = plt.subplots(figsize=size)

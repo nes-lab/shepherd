@@ -21,23 +21,26 @@ class LogicTraces:
 
     def plot_comparison_series(self, start: int = 0) -> None:
         _names: list = [_t.name for _t in self.traces]
-        _data: list = [
-            pd.Series(_t.calc_durations_ns(0, True, True)[:, 1]) for _t in self.traces
-        ]
+        _data: list = [_t.calc_durations_ns(0, True, True) for _t in self.traces]
+        _data = [pd.Series(data[:, 1] - LogicTrace.calc_expected_value(data)) for data in _data]
+
         _len = len(_names)
         _names = _names[start:]
         _data = _data[start:]
+
         if len(_names) < 1 or len(_data) < 1:
             return
         # TODO: this just takes first CH0
         # file_names_short.reverse()
         fig_title = f"improvement_trigger_statistics_boxplot_{start}to{_len}"
-        df = pd.concat(_data, axis=1)
-        df.columns = _names
-        ax = df.plot.box(
+        # TODO: could also print a histogram-overlay for some
+        _df = pd.concat(_data, axis=1)
+        _df.columns = _names
+        ax = _df.plot.box(
             figsize=(20, 8),
             return_type="axes",
-            ylim=[1e8 - 10_000, 1e8 + 10_000],
+            ylim=[- 10_000, 10_000],
+            # ylim=[-1_000, +1_000], TODO: make it variable
         )
         ax.set_ylabel("trigger_delay [ns]")
         ax.set_title(fig_title)

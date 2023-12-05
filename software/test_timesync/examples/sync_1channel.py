@@ -21,7 +21,7 @@ for trace in ltraces.traces:  # TODO: transform into CLI
 
     for _ch in range(trace.channel_count):
         _data_r = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
-        _expt = trace.calc_expected_value(_data_r)
+        _expt = trace.calc_expected_value(_data_r, mode_log10 = True)
         _name = trace.name + f"_ch{_ch}_rising_{round(_expt/1e6)}ms"
         _data_r[:, 1] = _data_r[:, 1] - _expt
         trace.plot_series_jitter(_data_r, _name, path_here)
