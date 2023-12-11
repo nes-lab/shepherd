@@ -44,7 +44,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 
 __all__ = [
     "Writer",
