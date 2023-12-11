@@ -10,8 +10,10 @@
   - more futureproof
 - python
   - reduce load by 50 % (omit timestamps & change compression)
-- toolchain
-  - replace isort, black, flake8 by ruff
+  - IV-Stream -> add meta-data for stored buffer-segment
+    - meta: buffer-timestamp, sample-count, pru-util mean & max
+    - this can reconstruct timestamp-stream after the measurement
+- toolchain: replace isort, black, flake8, pylint by ruff
 - debug
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)
   - allow analyzing recorded gpio sync traces (`software/test_timesync`)
