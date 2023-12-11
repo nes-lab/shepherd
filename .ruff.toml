@@ -83,5 +83,4 @@ force-single-line = true
 [lint.pyupgrade]
 keep-runtime-typing = true
 
-[format]
-# per default like Black
+[format] # per default like Black

@@ -26,7 +26,6 @@ jobs:
           sudo apt install python3-msgpack
           sudo apt install cppcheck
           python3 -m pip install --upgrade pip msgpack
-          pip3 install pylint pylint-exit pylint-pytest
           pip3 install ansible -U
           ansible-galaxy collection install ansible.posix
           ansible-galaxy collection install community.general
@@ -44,10 +43,6 @@ jobs:
         run: "sudo pytest"
         working-directory: "./software/python-package"
         # needs sudo because it installs packages
-      - name: PyLint the shepherd py-package 🐏
-        run: "pylint $(git ls-files '*.py') || pylint-exit $?"
-        # -E --py-version 3.10
-        working-directory: "software/python-package/"
 
       - name: Install the shepherd-herd py-package 𓋿 𓀍
         run: "sudo pip3 install ./"

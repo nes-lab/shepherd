@@ -110,7 +110,6 @@ repos:
 #      - id: mypy
 # TODO: activate mypy -> some work to fix type-annotations
 # TODO: github.com/PyCQA/pydocstyle
-# TODO: github.com/PyCQA/pylint
 
 #  - repo: https://github.com/RobertCraigie/pyright-python
 #    rev: v1.1.298
@@ -119,12 +118,6 @@ repos:
 #      additional_dependencies:
 #      - shepherd-herd
 #      - shepherd-sheep
-
-#  - repo: https://github.com/charliermarsh/ruff-pre-commit
-#    rev: v0.0.257
-#    hooks:
-#      - id: ruff
-#        args: ["--fix", "--exit-non-zero-on-fix"]
 
 # default_language_version:
 #    python: python3.10

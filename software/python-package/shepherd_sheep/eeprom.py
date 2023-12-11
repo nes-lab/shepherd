@@ -57,7 +57,7 @@ class EEPROM:
             address (int): Address of EEPROM, usually fixed in hardware or
                 by DIP switch
         """
-        self.dev_path = f"/sys/bus/i2c/devices/{bus_num}" f"-{address:04X}/eeprom"
+        self.dev_path = f"/sys/bus/i2c/devices/{bus_num}-{address:04X}/eeprom"
         self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 
