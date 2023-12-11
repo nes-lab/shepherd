@@ -70,8 +70,7 @@ class ShepherdEmulator(ShepherdIO):
         if cal_inp is None:
             cal_inp = CalibrationSeries()
             log.warning(
-                "No calibration data from emulation-input (harvest) provided"
-                " - using defaults",
+                "No calibration data from emulation-input (harvest) provided - using defaults",
             )
 
         # PRU expects values in SI: uV and nV
@@ -170,6 +169,7 @@ class ShepherdEmulator(ShepherdIO):
             for _, dsv, dsc in self.reader.read_buffers(
                 end_n=self.fifo_buffer_size,
                 is_raw=True,
+                omit_ts=True,
             )
         ]
         for idx, buffer in enumerate(init_buffers):
@@ -230,6 +230,7 @@ class ShepherdEmulator(ShepherdIO):
         for _, dsv, dsc in self.reader.read_buffers(
             start_n=self.fifo_buffer_size,
             is_raw=True,
+            omit_ts=True,
         ):
             try:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
@@ -246,7 +247,7 @@ class ShepherdEmulator(ShepherdIO):
 
             if self.writer is not None:
                 try:
-                    self.writer.write_buffer(emu_buf)
+                    self.writer.write_buffer(emu_buf, omit_ts=True)
                 except OSError as _xpt:
                     log.error(
                         "Failed to write data to HDF5-File - will STOP! error = %s",
@@ -264,7 +265,7 @@ class ShepherdEmulator(ShepherdIO):
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
                     return
                 if self.writer is not None:
-                    self.writer.write_buffer(emu_buf)
+                    self.writer.write_buffer(emu_buf, omit_ts=True)
             except ShepherdIOError as e:  # noqa: PERF203
                 # We're done when the PRU has processed all emulation data buffers
                 if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
