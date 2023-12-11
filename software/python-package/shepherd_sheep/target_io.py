@@ -30,6 +30,7 @@ prog2_io = 11   # P8_32, GPIO0[11]
 :copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+
 from contextlib import suppress
 
 from .logger import log
@@ -148,9 +149,7 @@ class TargetIO:
             pin_state = dir_param == "I"
             return pin_state == pdir
         if isinstance(dir_param, int):
-            pins_affected = [
-                pin["name"] for pin in target_pins if pin["dir"] == dir_param
-            ]
+            pins_affected = [pin["name"] for pin in target_pins if pin["dir"] == dir_param]
 
             # changing pin-dir has to be done in 2 stages to be safe
             if pdir:  # GPIO -> input

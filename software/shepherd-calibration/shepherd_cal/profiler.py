@@ -8,6 +8,7 @@ This program verifies a proper function of the shepherd frontends for emulator a
 - "profile_frontend_plot.py" can be used to analyze the data
 
 """
+
 import itertools
 import time
 
@@ -114,9 +115,7 @@ class Profiler:
         )
         self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
         adc_data = self._cal.sheep.sample_from_pru(10)
-        adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[
-            0
-        ]
+        adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[0]
         adc_current_raw = float(np.mean(adc_currents_raw))
 
         # voltage measurement only for reference
@@ -132,9 +131,7 @@ class Profiler:
             )
 
         logger.info(
-            "  DAC @ %.3f V;"
-            " \tSMU: %.3f mA @ %.4f V; "
-            " \tI_raw: mean=%.2f, stddev=%.2f",
+            "  DAC @ %.3f V; \tSMU: %.3f mA @ %.4f V; \tI_raw: mean=%.2f, stddev=%.2f",
             voltage_V,
             1000 * current_A,
             smu_voltage,
@@ -164,13 +161,9 @@ class Profiler:
         )
         self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
         adc_data = self._cal.sheep.sample_from_pru(10)
-        adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[
-            0
-        ]
+        adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[0]
         adc_current_raw = float(np.mean(adc_currents_raw))
-        adc_voltages_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[
-            1
-        ]
+        adc_voltages_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[1]
         adc_voltage_raw = float(np.mean(adc_voltages_raw))
         voltage_adc_V = self._cal.sheep.convert_raw_to_value(
             "harvester",

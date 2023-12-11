@@ -2,6 +2,7 @@
 check correctness of meta-files, mostly yaml, in & around the project
 
 """
+
 from pathlib import Path
 
 import pytest

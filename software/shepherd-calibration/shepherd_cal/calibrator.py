@@ -253,9 +253,7 @@ class Calibrator:
 
         results = []
         for current_A in sm_currents_A:
-            smu.source.leveli = (
-                -current_A
-            )  # negative current, because smu acts as a drain
+            smu.source.leveli = -current_A  # negative, because smu acts as a drain
             time.sleep(0.5)
             self.sheep.sample_from_pru(2)  # flush previous buffers (just to be safe)
 

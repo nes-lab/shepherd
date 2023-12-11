@@ -39,7 +39,7 @@ class LogicTraces:
         ax = _df.plot.box(
             figsize=(20, 8),
             return_type="axes",
-            ylim=[- 10_000, 10_000],
+            ylim=[-10_000, 10_000],
             # ylim=[-1_000, +1_000], TODO: make it variable
         )
         ax.set_ylabel("trigger_delay [ns]")

@@ -8,6 +8,7 @@ provided by the shepherd kernel module
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+
 import subprocess
 import sys
 import time
@@ -122,8 +123,7 @@ def check_sys_access(iteration: int = 1) -> None:
             sys.exit(1)
     except PermissionError:
         log.error(
-            "RuntimeError: Failed to access sysFS -> "
-            "run shepherd-sheep with 'sudo'!",
+            "RuntimeError: Failed to access sysFS -> run shepherd-sheep with 'sudo'!",
         )
         sys.exit(1)
 
@@ -146,8 +146,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
 
         if time.time() - ts_start > timeout:
             raise SysfsInterfaceError(
-                f"timed out waiting for state { wanted_state } - "
-                f"state is { current_state }",
+                f"timed out waiting for state { wanted_state } - state is { current_state }",
             )
 
         time.sleep(0.1)
@@ -355,9 +354,7 @@ def write_calibration_settings(
         f.write(output)
 
 
-def read_calibration_settings() -> (
-    dict
-):  # more precise dict[str, int], trouble with py3.6
+def read_calibration_settings() -> dict[str, int]:
     """Retrieve the calibration settings from the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -635,8 +632,7 @@ def load_pru_firmware(value: str = "shepherd") -> None:
             )
             reload_kernel_module()
     raise OSError(
-        "PRU-Driver still locked up (during pru-fw change)"
-        " -> consider restarting node",
+        "PRU-Driver still locked up (during pru-fw change) -> consider restarting node",
     )
 
 
@@ -660,8 +656,7 @@ def pru_firmware_is_default() -> bool:
             reload_kernel_module()
             _count += 1
     raise OSError(
-        "PRU-Driver still locked up (during pru-fw read)"
-        " -> consider restarting node",
+        "PRU-Driver still locked up (during pru-fw read) -> consider restarting node",
     )
 
 

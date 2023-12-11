@@ -7,6 +7,7 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+
 import time
 from contextlib import suppress
 from types import TracebackType
@@ -561,6 +562,5 @@ class ShepherdIO:
                 )
 
             raise ShepherdIOError(
-                f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
-                f"got { msg_type }[{ value }]",
+                f"Expected msg type { commons.MSG_BUF_FROM_PRU } got { msg_type }[{ value }]",
             )

@@ -26,9 +26,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             chunks=True,
         )
         self.data["values"].attrs["unit"] = "ns, Hz, ns"
-        self.data["values"].attrs[
-            "description"
-        ] = "main offset [ns], s2 freq [Hz], path delay [ns]"
+        self.data["values"].attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
             "sudo",

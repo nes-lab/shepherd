@@ -33,9 +33,7 @@ class Monitor(ABC):
             compression=compression,
         )
         self.data["time"].attrs["unit"] = "s"
-        self.data["time"].attrs[
-            "description"
-        ] = "system time [s] = value * gain + (offset)"
+        self.data["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
         self.data["time"].attrs["gain"] = 1e-9
         self.data["time"].attrs["offset"] = 0
         log.debug(

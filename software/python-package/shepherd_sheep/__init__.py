@@ -7,6 +7,7 @@ Provides main API functionality for harvesting and emulating with shepherd.
 :copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
 :license: MIT, see LICENSE for more details.
 """
+
 import platform
 import shutil
 import subprocess

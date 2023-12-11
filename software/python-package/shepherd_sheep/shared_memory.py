@@ -135,9 +135,7 @@ class SharedMemory:
         self.gpio_offset = 16 + 2 * 4 * self.samples_per_buffer
         self.gpio_ts_offset = self.gpio_offset + 4 + 4
         self.gpio_vl_offset = self.gpio_offset + 8 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
-        self.pru0_ut_offset = (
-            self.gpio_offset + 8 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
-        )
+        self.pru0_ut_offset = self.gpio_offset + 8 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
 
         log.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
         if self.buffer_size * self.n_buffers != self.size:
@@ -231,8 +229,7 @@ class SharedMemory:
         )
         if verbose:
             log.debug(
-                "Retrieved buffer #%d  (@+%s) "
-                "with len %d and timestamp %d ms @%.3f sys_ts",
+                "Retrieved buffer #%d  (@+%s) with len %d and timestamp %d ms @%.3f sys_ts",
                 index,
                 f"0x{(index * self.buffer_size):06X}",
                 # ⤷ not directly in message because of colorizer
