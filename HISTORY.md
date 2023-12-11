@@ -14,7 +14,7 @@
   - replace isort, black, flake8 by ruff
 - debug
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)
-  - allow analyzing recorded gpio sync traces (`software/test_timesync`) 
+  - allow analyzing recorded gpio sync traces (`software/test_timesync`)
 - update floorplan of testbed
 
 ## 0.7.1
@@ -33,7 +33,7 @@
 
 ## 0.7.0
 
-- pru-firmware: 
+- pru-firmware:
    - improve blind-spots of gpio-sampling
    - fix compiler warning (cgt & gcc)
    - [measure timings](https://github.com/orgua/shepherd_v2_planning/blob/main/scratch/pruBenchmark_2023_10.md)

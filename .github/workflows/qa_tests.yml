@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.10"]  # TODO: reactivate "3.12", failing ATM (2023-11-06)
+        python-version: ["3.12", "3.11", "3.10"]  # TODO: reactivate "3.12", failing ATM (2023-11-06)
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies 🔧
