@@ -21,8 +21,8 @@ for trace in ltraces.traces:  # TODO: transform into CLI
 
     for _ch in range(trace.channel_count):
         _data_r = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
-        _expt = trace.calc_expected_value(_data_r, mode_log10 = True)
-        _name = trace.name + f"_ch{_ch}_rising_{round(_expt/1e6)}ms"
+        _expt = trace.calc_expected_value(_data_r, mode_log10=True)
+        _name = trace.name + f"_ch{_ch}_rising_{round(_expt / 1e6)}ms"
         _data_r[:, 1] = _data_r[:, 1] - _expt
         trace.plot_series_jitter(_data_r, _name, path_here)
         _stat["rising"].append(trace.get_statistics(_data_r, _name))
@@ -43,8 +43,7 @@ for trace in ltraces.traces:  # TODO: transform into CLI
 
 # ltraces.plot_comparison_series(start=0)
 _stat_df = {
-    _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header())
-    for _k, _v in _stat.items()
+    _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header()) for _k, _v in _stat.items()
 }
 for _k, _v in _stat_df.items():
     logger.info("")

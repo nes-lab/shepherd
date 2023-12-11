@@ -74,14 +74,14 @@ def update_gui_elements() -> None:
     dpg.configure_item("gpio_nRes_EMU_ADC", enabled=host_state)
     dpg.configure_item("button_reinit_prus", enabled=host_state)
     # TODO: more items
-    for _iter, _ in enumerate(dac_channels):
+    for _iter in range(len(dac_channels)):
         dac_state = dpg.get_value(f"en_dac{_iter}") and host_state
         dpg.configure_item(f"en_dac{_iter}", enabled=host_state)
         # dpg.configure_item(f"textA_dac{_iter}", enabled=dac_state)  #
         # dpg.configure_item(f"textB_dac{_iter}", enabled=dac_state)
         dpg.configure_item(f"value_raw_dac{_iter}", enabled=dac_state)
         dpg.configure_item(f"value_mV_dac{_iter}", enabled=dac_state)
-    for _iter, _ in enumerate(adc_channels):
+    for _iter in range(len(dac_channels)):
         dpg.configure_item(f"value_raw_adc{_iter}", enabled=host_state)
         dpg.configure_item(f"value_mSI_adc{_iter}", enabled=host_state)
     dpg.configure_item("gpio_input", enabled=host_state)
@@ -236,14 +236,12 @@ def reinitialize_prus(sender, element_data, user_data) -> None:
 #################################
 
 
-dac_channels = (
-    [  # combination of debug channel number, voltage_index, cal_component, cal_channel
-        [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
-        [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
-        [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
-        [8, "emulator", "dac_voltage_b", "Emulator Rail B (ADC)"],
-    ]
-)
+dac_channels = [  # combination of debug channel number, voltage_index, cal_component, cal_channel
+    [1, "harvester", "dac_voltage_a", "Harvester VSimBuf"],
+    [2, "harvester", "dac_voltage_b", "Harvester VMatching"],
+    [4, "emulator", "dac_voltage_a", "Emulator Rail A"],
+    [8, "emulator", "dac_voltage_b", "Emulator Rail B (ADC)"],
+]
 
 
 def dac_en_callback(sender, en_state, user_value) -> None:

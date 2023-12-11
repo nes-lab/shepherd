@@ -195,9 +195,7 @@ class ShepherdDebug(ShepherdIO):
         include_hrv: bool = False,
     ) -> int:
         super()._send_msg(
-            commons.MSG_DBG_VSRC_HRV_P_INP
-            if include_hrv
-            else commons.MSG_DBG_VSRC_P_INP,
+            commons.MSG_DBG_VSRC_HRV_P_INP if include_hrv else commons.MSG_DBG_VSRC_P_INP,
             [int(input_voltage_uV), int(input_current_nA)],
         )
         msg_type, values = self._get_msg()
@@ -413,7 +411,7 @@ class ShepherdDebug(ShepherdIO):
         for _ in range(2):  # flush first 2 buffers out
             super().get_buffer()
         for _ in range(length_n_buffers):  # get Data
-            idx, _buf = super().get_buffer()
+            _, _buf = super().get_buffer()
             c_array = numpy.hstack((c_array, _buf.current))
             v_array = numpy.hstack((v_array, _buf.voltage))
         super().reinitialize_prus()

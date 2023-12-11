@@ -341,9 +341,7 @@ if __name__ == "__main__":
                     f"random {random}",
                 )
                 print(
-                    f"\tOld "
-                    f"F2RAM = {round(two, 3)} s, "
-                    f"RAM2F = {round(tro, 3)} s",
+                    f"\tOld F2RAM = {round(two, 3)} s, RAM2F = {round(tro, 3)} s",
                 )
                 print(
                     f"\tNew "
@@ -353,10 +351,10 @@ if __name__ == "__main__":
                 )
                 print(
                     f"\tSize "
-                    f"f_in = {round(path_i.stat().st_size/2**20,3)} MB, "
-                    f" f_old = {round(path_o1.stat().st_size/2**20,3)} MB, "
-                    f" f_new = {round(path_o2.stat().st_size/2**20,3)} MB, "
-                    f" f_nts = {round(path_o3.stat().st_size/2**20,3)} MB",
+                    f"f_in = {round(path_i.stat().st_size / 2**20, 3)} MB, "
+                    f" f_old = {round(path_o1.stat().st_size / 2**20, 3)} MB, "
+                    f" f_new = {round(path_o2.stat().st_size / 2**20, 3)} MB, "
+                    f" f_nts = {round(path_o3.stat().st_size / 2**20, 3)} MB",
                 )
                 time.sleep(1)
                 path_i.unlink()

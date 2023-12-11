@@ -198,8 +198,8 @@ class LogicTrace:
             round(dmax),
             tmin,
             tmax,
-            dq99 - dq01,
-            dmax - dmin,
+            round(dq99 - dq01),
+            round(dmax - dmin),
         ]
 
     @staticmethod

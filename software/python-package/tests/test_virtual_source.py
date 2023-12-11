@@ -99,9 +99,7 @@ def test_vsource_add_charge(
     V_inp_mV = 1000
     dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_init_mV"]
     I_cIn_nA = dV_cap_mV * reference_vss["C_intermediate_uF"] / dt_s
-    P_inp_pW = (
-        I_cIn_nA * reference_vss["V_intermediate_init_mV"] / reference_vss["eta_in"]
-    )
+    P_inp_pW = I_cIn_nA * reference_vss["V_intermediate_init_mV"] / reference_vss["eta_in"]
     I_inp_nA = P_inp_pW / V_inp_mV
     # prepare fn-parameters
     V_inp_uV = int(V_inp_mV * 10**3)
@@ -161,9 +159,7 @@ def test_vsource_drain_charge(
         -dV_cap_mV * reference_vss["C_intermediate_uF"] / dt_s
         - reference_vss["I_intermediate_leak_nA"]
     )
-    P_out_pW = (
-        I_cOut_nA * reference_vss["V_intermediate_init_mV"] * reference_vss["eta_out"]
-    )
+    P_out_pW = I_cOut_nA * reference_vss["V_intermediate_init_mV"] * reference_vss["eta_out"]
     I_out_nA = P_out_pW / reference_vss["V_output_mV"]
     # prepare fn-parameters
     cal = CalibrationEmulator()
@@ -182,7 +178,7 @@ def test_vsource_drain_charge(
     print(f" Py  VOut = {pyt_vsource.cnv.update_states_and_output()} raw")
 
     for index in range(n_samples):
-        v_cap, v_raw1 = pru_vsource.cnv_drain(
+        _, v_raw1 = pru_vsource.cnv_drain(
             I_out_adc_raw,
         )  # combines P_in, P_out, V_cap, state_update
         pyt_vsource.cnv.calc_out_power(I_out_adc_raw)
@@ -255,15 +251,9 @@ def test_vsource_diodecap(
     V_pru_mV = pru_vsource.iterate_sampling(0, 0, 0) * 10**-3
     V_pyt_mV = pyt_vsource.iterate_sampling(0, 0, 0) * 10**-3
     A_inp_nA = 10**3
-    for V_inp_mV in voltages_mV[
-        0:4
-    ]:  # NOTE: make sure this selection is below cap-init-voltage
-        V_pru2_mV = (
-            pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-        )
-        V_pyt2_mV = (
-            pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-        )
+    for V_inp_mV in voltages_mV[0:4]:  # NOTE: make sure this selection is below cap-init-voltage
+        V_pru2_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
+        V_pyt2_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         assert V_pru_mV == V_pru2_mV
         assert V_pyt_mV == V_pyt2_mV
         print(
@@ -294,12 +284,8 @@ def test_vsource_diodecap(
     # zero current -> no change in output
     A_inp_nA = 0
     for V_inp_mV in voltages_mV:
-        V_pru_mV = (
-            pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-        )
-        V_pyt_mV = (
-            pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-        )
+        V_pru_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
+        V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         print(
             f"DiodeCap inp=0nA - Inp = {V_inp_mV} mV, "
             f"OutPru = {V_pru_mV:.3f} mV, "
@@ -312,12 +298,8 @@ def test_vsource_diodecap(
     A_inp_nA = 2 * 10**8
     for V_inp_mV in voltages_mV:
         for _ in range(100):
-            V_pru_mV = (
-                pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-            )
-            V_pyt_mV = (
-                pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-            )
+            V_pru_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
+            V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         V_postDiode_mV = max(V_inp_mV - 300, 0)  # diode drop voltage
         print(
             "DiodeCap inp=200mA - "
@@ -341,16 +323,10 @@ def test_vsource_diodecap(
     )
     for _ in range(25):
         for _ in range(50):
-            V_pru_mV = (
-                pru_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
-            )
-            V_pyt_mV = (
-                pyt_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
-            )
+            V_pru_mV = pru_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
+            V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
         print(
-            "DiodeCap Drain - "
-            f"OutPru = {V_pru_mV:.3f} mV, "
-            f"OutPy = {V_pyt_mV:.3f} mV",
+            f"DiodeCap Drain - OutPru = {V_pru_mV:.3f} mV, OutPy = {V_pyt_mV:.3f} mV",
         )
     assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
     assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
