@@ -8,7 +8,7 @@ parameters:
   # - providing a directory -> file is named hrv_timestamp.h5
   # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
   output_path: /var/shepherd/recordings/hrv.h5
-  output_compression: '1'  # should be '1' (level 1 gzip), lzf, or null (order of recommendation)
+  output_compression: lzf  # should be lzf, 1 (gzip level 1) or None (order of recommendation)
   virtual_harvester:
     name: ivcurves
   use_cal_default: true
