@@ -279,7 +279,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     static ktime_t  ts_next_kt      = 0;
     ktime_t         ts_next_busy_kt = 0;
     static uint32_t singleton       = 0;
-    const uint32_t  sync_edge       = 0;  // debug gpio output
+    const uint32_t  sync_edge       = 0; // debug gpio output
 
     if (!timers_active) return HRTIMER_NORESTART;
 
