@@ -19,8 +19,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
     ) -> None:
         super().__init__(target, compression, poll_intervall=0.51)
         self.data.create_dataset(
-            "values",
-            (self.increment, 3),
+            name="values",
+            shape=(self.increment, 3),
             dtype="i8",
             maxshape=(None, 3),
             chunks=True,

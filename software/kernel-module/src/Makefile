@@ -25,6 +25,7 @@ ccflags-y=-I$(src)/../common
 # 	 you can ignore lines with: (in file included) from .. shepherd/
 # /opt/shepherd/software/kernel-module/src/ is at beginning of line
 
+all: build
 
 build:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) modules
@@ -32,13 +33,14 @@ build:
 clean:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) clean
 
-load: # temporary
+load: # temporary during runtime
 	insmod ./$(TARGET_MODULE).ko
 
 unload:
 	rmmod ./$(TARGET_MODULE).ko
 
-install: all
+install: build
 	@echo 'Installing kernel module'
 	-@sudo mkdir -p $(EXTRA_DIR)
-	@sudo cp $(TARGET_MODULE).ko $(EXTRA_DIR)R
+	@sudo cp $(TARGET_MODULE).ko $(EXTRA_DIR)
+# also add name "shepherd" to /etc/modules for autostart

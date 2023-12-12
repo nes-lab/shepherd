@@ -22,17 +22,17 @@ class SysUtilMonitor(Monitor):
         self.log_timestamp_ns: int = 0
 
         self.data.create_dataset(
-            "cpu",
-            (self.increment,),
+            name="cpu",
+            shape=(self.increment,),
             dtype="u1",
             maxshape=(None,),
-            chunks=(self.increment,),
+            chunks=self.increment,
         )
         self.data["cpu"].attrs["unit"] = "%"
         self.data["cpu"].attrs["description"] = "cpu_util [%]"
         self.data.create_dataset(
-            "ram",
-            (self.increment, 2),
+            name="ram",
+            shape=(self.increment, 2),
             dtype="u1",
             maxshape=(None, 2),
             chunks=(self.increment, 2),
@@ -40,8 +40,8 @@ class SysUtilMonitor(Monitor):
         self.data["ram"].attrs["unit"] = "%"
         self.data["ram"].attrs["description"] = "ram_available [%], ram_used [%]"
         self.data.create_dataset(
-            "io",
-            (self.increment, 4),
+            name="io",
+            shape=(self.increment, 4),
             dtype="u8",
             maxshape=(None, 4),
             chunks=(self.increment, 4),
@@ -51,8 +51,8 @@ class SysUtilMonitor(Monitor):
             "description"
         ] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
         self.data.create_dataset(
-            "net",
-            (self.increment, 2),
+            name="net",
+            shape=(self.increment, 2),
             dtype="u8",
             maxshape=(None, 2),
             chunks=(self.increment, 2),

@@ -25,8 +25,8 @@ class Monitor(ABC):
 
         # create time, others have to be created in main class
         self.data.create_dataset(
-            "time",
-            (self.increment,),
+            name="time",
+            shape=(self.increment,),
             dtype="u8",
             maxshape=(None,),
             chunks=True,

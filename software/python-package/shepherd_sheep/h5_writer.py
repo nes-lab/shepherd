@@ -110,7 +110,7 @@ class Writer(CoreWriter):
         self.data_pos = 0
         self.data_inc = int(100 * self.samplerate_sps)
         self.meta_pos = 0
-        self.meta_inc = MAX_GPIO_EVT_PER_BUFFER
+        self.meta_inc = 10_000
         self.gpio_pos = 0
         self.gpio_inc = MAX_GPIO_EVT_PER_BUFFER
         # NOTE for possible optimization: align resize with chunk-size
@@ -136,11 +136,11 @@ class Writer(CoreWriter):
 
         # add new meta-data-storage
         self.grp_data.create_dataset(
-            "meta",
-            (self.meta_inc, 4),
+            name="meta",
+            shape=(self.meta_inc, 4),
             dtype="u8",
             maxshape=(None, 4),
-            chunks=self._chunk_shape,
+            chunks=(self.meta_inc, 4),
             compression=self._compression,
         )
         self.grp_data["meta"].attrs["unit"] = "s, n, %, %"
@@ -154,10 +154,10 @@ class Writer(CoreWriter):
         # Create group for gpio data
         self.gpio_grp = self.h5file.create_group("gpio")
         self.gpio_grp.create_dataset(
-            "time",
-            (self.gpio_inc, 4),
+            name="time",
+            shape=(self.gpio_inc,),
             dtype="u8",
-            maxshape=(None, 4),
+            maxshape=(None,),
             chunks=True,
             compression=self._compression,
         )
@@ -167,8 +167,8 @@ class Writer(CoreWriter):
         self.gpio_grp["time"].attrs["offset"] = 0
 
         self.gpio_grp.create_dataset(
-            "value",
-            (self.gpio_inc,),
+            name="value",
+            shape=(self.gpio_inc,),
             dtype="u2",
             maxshape=(None,),
             chunks=True,
@@ -202,7 +202,7 @@ class Writer(CoreWriter):
         self.grp_data["time"].resize((self.data_pos,))
         self.grp_data["voltage"].resize((self.data_pos,))
         self.grp_data["current"].resize((self.data_pos,))
-        self.grp_data["meta"].resize((self.meta_pos,))
+        self.grp_data["meta"].resize((self.meta_pos, 4))
 
         self.gpio_grp["time"].resize((self.gpio_pos,))
         self.gpio_grp["value"].resize((self.gpio_pos,))
@@ -283,9 +283,9 @@ class Writer(CoreWriter):
         if ds_time_size == ds_volt_size:
             return  # no action needed
         meta_time_size = np.sum(self.grp_data["meta"][:, 1])
-        if meta_time_size != ds_volt_size:
+        if meta_time_size != self.data_pos:
             self._logger.warning(
-                "GenTimestamps - sizes do not match (%d vs %d)", meta_time_size, ds_volt_size
+                "GenTimestamps - sizes do not match (%d vs %d)", meta_time_size, self.data_pos
             )
         self.grp_data["time"].resize((meta_time_size,))
         data_pos = 0

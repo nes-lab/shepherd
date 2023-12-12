@@ -18,15 +18,15 @@ class SheepMonitor(Monitor):
         super().__init__(target, compression, poll_intervall=0.25)
         self.queue = get_message_queue()
         self.data.create_dataset(
-            "message",
-            (self.increment,),
+            name="message",
+            shape=(self.increment,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=True,
         )
         self.data.create_dataset(
-            "level",
-            (self.increment,),
+            name="level",
+            shape=(self.increment,),
             dtype="uint8",
             maxshape=(None,),
             chunks=True,
