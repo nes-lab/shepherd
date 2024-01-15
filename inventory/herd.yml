@@ -1,11 +1,11 @@
 sheep:
   hosts:
-    sheep0:
-      ansible_host: 192.168.1.100
-    sheep1:
-      ansible_host: 192.168.1.101
-    sheep2:
-      ansible_host: 192.168.1.102
+    sheep64:
+      ansible_host: 10.0.0.38
+    sheep65:
+      ansible_host: 10.0.0.43
+    sheep66:
+      ansible_host: 10.0.0.44
   vars:
     ansible_user: jane
 # sheep can be assigned roles:
@@ -14,7 +14,7 @@ sheep:
 # - assign individually ("sheep0:") or as ranges ("sheep[2:10]:")
 # https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
 # example:
-ntp_clients:
-  hosts:
-    sheep0:
+#ntp_clients:
+#  hosts:
+#    sheep0:
 #    sheep[20:30]:

@@ -8,7 +8,8 @@
     - ansible.posix
 
   vars:
-    default_user: ubuntu
+    # TODO: minimal rewrite for debian (v11.8, bb-ai64)
+    default_user: debian
     default_password: temppwd
     apt_upgrade: true
 
