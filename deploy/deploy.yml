@@ -21,9 +21,9 @@
       ansible.builtin.include_role:
         name: maintenance
       vars:
-        maintenance_update_kernel: true
-        maintenance_update_bootloader: true
-        maintenance_delete_unused_files: true
+        maintenance_update_kernel: false
+        maintenance_update_bootloader: false
+        maintenance_delete_unused_files: false
 
 - name: Role - PTP-Client only (not recommended! all should be server as well)
   hosts: ptp_clients
@@ -63,11 +63,11 @@
   roles:
     - secure_testbed
 
-- name: Main-Software for Shepherd
-  hosts: sheep
-  become: true
-  roles:
-    - sheep
+#- name: Main-Software for Shepherd
+#  hosts: sheep
+#  become: true
+#  roles:
+#    - sheep
   # ⤷ NOTE: will only be installed once (later only sw-rebuild)
   # NOTE: this was put to the end - so some kind of timekeeping is active till then
   #       reason: 'make' fails in the past (after reboot)
