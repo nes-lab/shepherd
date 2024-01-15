@@ -7,9 +7,12 @@ After=sys-subsystem-net-devices-%i.device
 Type=simple
 ExecStartPre=-/usr/sbin/ntpdate -b -s -u pool.ntp.org
 # ExecStart=/usr/sbin/ptp4l -f /etc/linuxptp/ptp4l.conf -i %I
-ExecStart=/usr/sbin/ptp4l -A -f /etc/linuxptp/ptp4l.conf -i %I
+# ExecStart=/usr/sbin/ptp4l -A -f /etc/linuxptp/ptp4l.conf -i %I
+ExecStart=/usr/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
 # -2 -> IEEE 802.3 Network Transport, TODO: seems to produce "sheep03 ptp4l[4062]: [2837.436] port 1: bad message"
 # -A -> Auto Delay Mechanism (E2E first, then maybe P2P)
+# -H -> use hardware timestamping
+
 RestartSec=3
 Restart=always
 StartLimitBurst=5
@@ -28,3 +31,4 @@ WantedBy=multi-user.target
 
 # check with
 # sudo systemctl status ptp4l@eth0.service
+# sudo journalctl -u ptp4l@eth0.service -b -f
