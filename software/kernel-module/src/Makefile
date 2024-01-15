@@ -6,7 +6,8 @@ ifneq ($(KERNELRELEASE),)
     $(TARGET_MODULE)-objs = module_base.o
     $(TARGET_MODULE)-objs += pru_sync_control.o
 else
-	BUILDSYSTEM_DIR:=/lib/modules/$(shell uname -r)/build
+    KVERSION:=$(shell uname -r)
+	BUILDSYSTEM_DIR:=/lib/modules/$(KVERSION)/build
 	PWD:=$(shell pwd)
 endif
 
