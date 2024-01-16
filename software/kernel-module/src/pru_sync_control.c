@@ -45,63 +45,63 @@ void                sync_benchmark(void)
     counter    = 0;
     trigger_kt = ktime_get() + ns_to_ktime(100000u);
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (ktime_get() < trigger_kt) { counter++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get() = %u n / ~100us", counter);
 
     counter    = 0;
     trigger_kt = ktime_get_real() + ns_to_ktime(100000u);
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (ktime_get_real() < trigger_kt) { counter++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_real() = %u n / ~100us", counter);
 
     counter    = 0;
     trigger_ns = ktime_get_ns() + 100000u;
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (ktime_get_ns() < trigger_ns) { counter++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_ns() = %u n / ~100us", counter);
 
     counter    = 0;
     trigger_ns = ktime_get_real_ns() + 100000u;
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (ktime_get_real_ns() < trigger_ns) { counter++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_real_ns() = %u n / ~100us", counter);
 
     counter    = 0;
     trigger_kt = ktime_get_raw() + ns_to_ktime(100000u);
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (ktime_get_raw() < trigger_kt) { counter++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_raw() = %u n / ~100us", counter);
 
     counter    = 0;
     trigger_ns = ktime_get_real_fast_ns() + 100000u;
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (ktime_get_real_fast_ns() < trigger_ns) { counter++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: ktime_get_real_fast_ns() = %u n / ~100us", counter);
 
     counter_iv = 0;
     trigger_in = 100000;
     preempt_disable();
-    writel(0b1u << 20u, gpio0clear);
+    writel(0b1u << 21u, gpio0clear);
     while (counter_iv < trigger_in) { counter_iv++; };
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     preempt_enable();
     printk(KERN_INFO "shprd.k: %d-increment-Loops -> measure-time", trigger_in);
 }
@@ -129,23 +129,24 @@ int sync_init(uint32_t timer_period_ns)
     const ktime_t  ts_now_kt = ktime_get_real();
     uint64_t       ts_now_ns = ktime_to_ns(ts_now_kt);
     uint64_t         ns_to_next_trigger;
-    void __iomem      *p803mux = NULL;
-    uint32_t       mux_val = 0;
+    void __iomem      *gpio0fsel2 = NULL;
+    uint32_t       fsel = 0;
 
     div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
     ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
 
-    gpio0clear             = ioremap(0x600000 + 0x1C, 4); // P8_03
-    gpio0set               = ioremap(0x600000 + 0x18, 4);
-    p803mux = ioremap(0x11C054, 4);
-    mux_val = readl(p803mux);
-    mux_val = (mux_val & ~0b1111u) | (7u << 0u); // Mode 7
-    mux_val = mux_val & ~(1u << 21u); // TX Enable
-    mux_val = mux_val | (1u << 18u); // RX Enable
-    writel(mux_val, p803mux);
-    printk(KERN_INFO "shprd.k: wrote mux-val: %x", mux_val);
-    iounmap(p803mux);
-    p803mux = NULL;
+    // Get control for GPIO0 Pin0 to 31?
+    gpio0clear = ioremap(0x7e200000 + 0x28, 4);
+    gpio0set   = ioremap(0x7e200000 + 0x1C, 4);
+
+    gpio0fsel2    = ioremap(0x7e200000 + 0x08, 4);
+    fsel = readl(gpio0fsel2);
+    fsel = fsel & ~0b111000u; // reset gpio21 register
+    fsel = fsel | (0b001u << 3u); // TX Enable
+    writel(fsel, gpio0fsel2);
+    printk(KERN_INFO "shprd.k: wrote fsel for GPIO21: %x", fsel);
+    iounmap(gpio0fsel2);
+    gpio0fsel2 = NULL;
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
@@ -181,14 +182,14 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     ktime_t          ts_next_busy_kt = 0;
 
     //preempt_disable();
-    writel(0b1u << 20u, gpio0clear);// P8_03
+    writel(0b1u << 21u, gpio0clear);// P8_03
 
     /* Timestamp system clock */
     ts_now_kt = ktime_get_real();
 
     if ((ts_now_kt > ts_next_kt + trigger_loop_period_kt) || (ts_now_kt < ts_next_kt))
     {
-        writel(0b1u << 20u, gpio0set);
+        writel(0b1u << 21u, gpio0set);
         //preempt_enable();
         /* out of bounds -> reset timer */
         printk(KERN_ERR "shprd.k: reset sync-trigger!");
@@ -215,7 +216,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
         };
     }
 
-    writel(0b1u << 20u, gpio0set);
+    writel(0b1u << 21u, gpio0set);
     //preempt_enable();
 
     /*
