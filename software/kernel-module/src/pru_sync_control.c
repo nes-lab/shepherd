@@ -136,10 +136,10 @@ int sync_init(uint32_t timer_period_ns)
     ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
 
     // Get control for GPIO0 Pin0 to 31?
-    gpio0clear = ioremap(0x7e200000 + 0x28, 4);
-    gpio0set   = ioremap(0x7e200000 + 0x1C, 4);
+    gpio0clear = ioremap(0xfe200000 + 0x28, 4);
+    gpio0set   = ioremap(0xfe200000 + 0x1C, 4);
 
-    gpio0fsel2    = ioremap(0x7e200000 + 0x08, 4);
+    gpio0fsel2    = ioremap(0xfe200000 + 0x08, 4);
     fsel = readl(gpio0fsel2);
     fsel = fsel & ~0b111000u; // reset gpio21 register
     fsel = fsel | (0b001u << 3u); // TX Enable
