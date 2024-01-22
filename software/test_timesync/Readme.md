@@ -162,3 +162,43 @@ Configure Logic 2 Software
 ## Observations
 
 - phc2sys reports suddenly high offsets (>100us)
+
+
+# TODO
+
+- divide into separate readme
+- add new pictures in text
+- who is server
+- describe iperf
+
+```Shell
+#sudo apt install flowgrind
+sudo apt install iperf3
+
+# mockup server: external device receiving data
+iperf3 -s
+# ptp-clients send
+iperf3 -b 100M -c 10.0.0.200
+```
+
+- make sure governor is set to performance
+
+```Shell
+# check
+cpufreq-info
+# reset
+sudo cpufreq-set --governor performance
+```
+
+- make sure time-sync is running, see pics
+
+```shell
+# check on each device
+sudo journalctl -u ptp4l@eth0.service -b -f
+sudo journalctl -u phc2sys@eth0.service -b -f
+# or use logic analyzer
+# if something is off, restart services
+# note: if ptp is restarted, phc must also be restarted
+sudo systemctl restart ptp4l@eth0.service
+sudo systemctl restart phc2sys@eth0.service
+```

@@ -5,7 +5,7 @@ from sync_analysis import LogicTrace
 from sync_analysis import LogicTraces
 from sync_analysis import logger
 
-path_here = Path(__file__).parent
+path_here = Path(__file__).parent / "05_rpi_cm4"
 save_pickle = False
 
 ltraces = LogicTraces(path_here, glitch_ns=20)
