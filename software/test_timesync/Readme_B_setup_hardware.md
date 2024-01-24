@@ -1,20 +1,20 @@
 # Hardware Setup
 
-There are three steps for getting the hardware ready:
+After [software is ready](Readme_A_prepare_software.md) there are three steps for getting the hardware ready for the measurements:
 
 - get all nodes on the same network
   - Try to model the future network
-- route power to each one
+- route power to each system
   - special reqs. are noted below
   - POE-Adapters are always a good idea
 - get the logic analyzer connected to the gpio-trigger-output
-  - connecting the ptp server to pin 0 is recommended, as it might show a difference in behavior
+  - connecting the ptp server to pin 0 of the analyzer is recommended, as it might show a difference in behavior
   - don't forget to also connect ground
 
-Small introduction into Saleae logic analyzer
+## Quick-HowTo for the Saleae logic analyzer
 
-- channel-numbers are printed on the back-side
-- the removable connector-leads are color-coded and also have the channel-number printed on the individual end
+- channel-numbers are printed on the bottom-side
+- the removable connector-leads are color-coded and also have the channel-number printed on the individual ends
 - all ground-cables are black & without a channel-number printing
 
 ## Raspberry Pi CM4

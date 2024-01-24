@@ -6,14 +6,14 @@ The Host PC will
 
 - control the devices via the ssh-sessions
 - record the sync-performance with a logic analyzer connected to each sheep ([Saleae Software](https://www.saleae.com/downloads/))
-- stress-test sheep and network with workloads (iperf3 is needed, available in apt)
+- stress-test sheep and network with workloads (iperf3 is needed, available via apt)
 
 ## Prepare nodes
 
 This involves
  
 - choosing and installing linux-image
-- configure PTP & PHC2Sys
+- configure PTP & phc2sys
 - cleaning up the system to reduce interrupts
 - activating the kernel-module to trigger the gpio
 

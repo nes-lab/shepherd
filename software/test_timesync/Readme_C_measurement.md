@@ -2,10 +2,10 @@
 
 ## Preparation
 
-- set up hardware according to [tutorial](Readme_B_setup_hardware.md)
+- set up hardware according to the [tutorial](Readme_B_setup_hardware.md)
 - check that ptp is working
-  - option 1: via logic analyzer
-  - option 2: with ssh-connection (commands below)
+  - option 1: via logic analyzer (see subchapter below)
+  - option 2: via ssh-connection (commands below)
 - PTP should be given >= 5 minutes to stabilize
 - room-temperature should be stable, as clock-crystals react to that
 
@@ -49,7 +49,7 @@ Screenshots of correctly running [ptp](media/ptp_running_fine.png) and [phc2sys]
 
 ![Logic2-config](media/sw_logic2_config.png)
 
-- a failing sync looks like that:
+- a failed sync looks like that:
 
 ![Sync-Fail](media/sw_logic2_sync_fail.png)
 
@@ -57,7 +57,7 @@ Screenshots of correctly running [ptp](media/ptp_running_fine.png) and [phc2sys]
 
 ![Sync-Fail](media/sw_logic2_synchronized.png)
 
-Don't forget to save the capture after each measurement with a meaningful name!
+**Don't forget** to save the capture after each measurement with a meaningful name, i.e. `01_baseline.sal`!
 
 ### Quick-HowTo for IPerf3
 
@@ -73,15 +73,15 @@ iperf3 -s
 iperf3 -b 100M -c 10.0.0.200
 ```
 
-The server can only receive from one client at the same time. Therefor the two ptp-clients should be used in alternating pattern. It's best to start the recording first, then begin with traffic and alternate for ~ 50 - 70 s. The recording should show ~ 20 s of ptp getting back to normal.
+The server can only receive data from one client at the same time. Therefor the two ptp-clients should be used in alternating pattern. It's best to start the recording first, then begin with traffic and alternate for ~ 50 - 70 s. The recording should show ~ 20 s of ptp getting back to normal at the end.
 
 ## Collecting the Data with Logic 2 Software
 
-Its recommended to separate different campaigns or hardware-setups by sub-directories. A small textual description can help for later analysis. Also notes of oddities and reported ptp path delays add valuable context.
+It's recommended to separate different campaigns and hardware-setups by subdirectories. A small textual description can help for later analysis. Notes of oddities and reported ptp path delays add valuable context.
 
 The following measurements are recommended:
 
-- 01 - baseline (undisturbed network)
+- 01 - baseline (stable, undisturbed network)
 - 02 - ptp-clients send data to external host with 100 Mbit/s
 - 03 - ptp-clients send data with 200 Mbit/s
 - 04 - ptp-clients send data with 400 Mbit/s
@@ -90,3 +90,4 @@ The following measurements are recommended:
 - 07 - ptp-clients receive data with 200 Mbit/s
 - 08 - two external hosts send at max rate
 
+Each running for 100 s.

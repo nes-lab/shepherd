@@ -12,6 +12,7 @@
 # Analysis
 
 Setup: 
+
 - same cisco switch
 - same software configuration
 - data recorded with a logic pro 16 @ 500 MHz
