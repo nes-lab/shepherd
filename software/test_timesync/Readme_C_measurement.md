@@ -73,7 +73,7 @@ iperf3 -s
 iperf3 -b 100M -c 10.0.0.200
 ```
 
-The server can only receive data from one client at the same time. Therefor the two ptp-clients should be used in alternating pattern. It's best to start the recording first, then begin with traffic and alternate for ~ 50 - 70 s. The recording should show ~ 20 s of ptp getting back to normal at the end.
+The server can only receive data from one client at the same time. Therefore the two ptp-clients should be used in alternating pattern. It's best to start the recording first, then begin with traffic and alternate for ~ 50 - 70 s. The recording should show ~ 20 s of ptp getting back to normal at the end.
 
 ## Collecting the Data with Logic 2 Software
 

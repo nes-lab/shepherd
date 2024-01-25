@@ -6,19 +6,35 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: check-executables-have-shebangs
-      - id: detect-private-key
-      - id: mixed-line-ending
       - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: check-ast
+      - id: check-builtin-literals
       - id: check-case-conflict
       - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-json
       - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
       - id: check-symlinks
       - id: check-toml
+      # - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: file-contents-sorter
       - id: fix-byte-order-marker
+      - id: fix-encoding-pragma
+        args: ["--remove"]
+      - id: forbid-new-submodules
+      - id: mixed-line-ending
+      - id: name-tests-test
+        args: ["--pytest-test-first"]
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.38.0
@@ -27,7 +43,7 @@ repos:
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.15
+    rev: v0.16
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -36,19 +52,22 @@ repos:
     rev: v1.10.0
     hooks:
       - id: python-check-blanket-noqa
-      - id: python-use-type-annotations
+      # - id: python-check-blanket-type-ignore
+      - id: python-check-mock-methods
+      - id: python-no-eval
       - id: python-no-log-warn
+      - id: python-use-type-annotations
       - id: rst-backticks
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.1.7'
+    rev: 'v0.1.14'
     hooks:
-      - id: ruff-format
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
         # manual run: ruff check . --preview
 
 # TODO: disable, until bug is resolved, maybe connected to
@@ -64,6 +83,12 @@ repos:
 #      - id: rstcheck
 #        additional_dependencies: [ "rstcheck[sphinx,toml]" ]
 #        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: ["--disable", "MD013"]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
