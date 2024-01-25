@@ -11,7 +11,7 @@ The Host PC will
 ## Prepare nodes
 
 This involves
- 
+
 - choosing and installing linux-image
 - configure PTP & phc2sys
 - cleaning up the system to reduce interrupts

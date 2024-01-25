@@ -61,7 +61,7 @@ Screenshots of correctly running [ptp](media/ptp_running_fine.png) and [phc2sys]
 
 ### Quick-HowTo for IPerf3
 
-IPerf3 can be used to generate network traffic. 
+IPerf3 can be used to generate network traffic.
 
 ```Shell
 sudo apt install iperf3

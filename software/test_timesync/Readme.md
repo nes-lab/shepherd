@@ -1,6 +1,6 @@
 # Sync-Analyzer
 
-Collection of tools to analyze Sync-behavior, recorded with saleae logic pro. 
+Collection of tools to analyze Sync-behavior, recorded with saleae logic pro.
 
 The process to get the actual data is described in separate chapters:
 
