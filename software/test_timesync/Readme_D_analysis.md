@@ -14,13 +14,13 @@
 Setup:
 
 - same cisco switch
-- same software configuration
-- data recorded with a logic pro 16 @ 500 MHz
+- same software configuration (where possible)
+- data recorded with a Logic Pro 16 @ 500 MHz
 - nodes & network are at rest (baseline)
 
 ## GPIO - Jitter
 
-How accurate is the 100 ms trigger on different platforms? Lets visualize the jitter of one node.
+How accurate is the 100 ms trigger on different platforms? Let's visualize the jitter of one node.
 
 In numbers:
 - simplified
@@ -49,14 +49,14 @@ BBAI_02_ptp_piservo_[..]ing_100ms        464       16552
 
 Some context and final words:
 - BBB takes ~ 300 ns to get kernel time. performance looks fine considering the age of the platform
-- BBAI takes ~ 40 ns to get kernel time. the random spikes are still unexplained. It could be caused by one of several register-write-locks. The SOC has several co-processors that share the same bus.
+- BBAI takes ~ 40 ns to get kernel time. the random spikes are still unexplained. It could be caused by register-write-locks. The SOC has several coprocessors that share the same bus (linux shows 2ß rProc). Also the system is missing a RT-Kernel.
 - CM4 was overclocked to match BB-Ai, so it also takes ~ 40 ns to get kernel time. jitter looks best of these three systems
 
 ## Sync Performance
 
 In numbers:
-- Δ_q1 = 99%-Quantile - 1%-Quantile
-- Δ_max = Max - Min
+- `Δ_q1 = 99%-Quantile - 1%-Quantile`
+- `Δ_max = Max - Min`
 
 ```
                         name  Δ_q1 [ns]  Δ_max [ns]
@@ -71,3 +71,7 @@ BBAI_02_ptp_piservo_[..]_1u2        669        1182
 **Raspberry Pi CM4**
 
 ![Sync-RPiCM4](media/analysis_sync_CM4_005_norm_80_70_diff_1u2_jitter.png)
+
+## Deeper Dive
+
+Raw data and Plots are at [shepherd-planning](https://github.com/orgua/shepherd_v2_planning/tree/main/timesync'24)
