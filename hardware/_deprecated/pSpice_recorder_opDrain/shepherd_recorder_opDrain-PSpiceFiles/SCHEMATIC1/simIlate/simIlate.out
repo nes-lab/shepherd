@@ -1,0 +1,367 @@
+
+**** 03/24/21 11:40:00 ******* PSpice 17.4.0 (Nov 2018) ******* ID# 0 ********
+
+ ** Profile: "SCHEMATIC1-simIlate"  [ C:\Users\ingmo\Documents\GitHub\shepherd_v2_planning\PCBs\shepherd_recorder_opDrain-PSpiceFiles
+
+
+ ****     CIRCUIT DESCRIPTION
+
+
+******************************************************************************
+
+
+
+
+** Creating circuit file "simIlate.cir" 
+** WARNING: THIS AUTOMATICALLY GENERATED FILE MAY BE OVERWRITTEN BY SUBSEQUENT SIMULATIONS
+
+*Libraries: 
+* Profile Libraries :
+* Local Libraries :
+* From [PSPICE NETLIST] section of C:\SPB_Data\cdssetup\OrCAD_PSpiceTIPSpice_Install\17.4.0\PSpice.ini file:
+.lib "nom_pspti.lib" 
+.lib "nom.lib" 
+
+*Analysis directives: 
+.TRAN  0 0.01 0 
+.OPTIONS ADVCONV
+.PROBE64 V(alias(*)) I(alias(*)) W(alias(*)) D(alias(*)) NOISE(alias(*)) 
+.INC "..\SCHEMATIC1.net" 
+
+
+
+**** INCLUDING SCHEMATIC1.net ****
+* source SHEPHERD_RECORDER_OPDRAIN
+X_U1         OPIN N14735 N14685 N14776 OPDRAIN OPA189 
+I_I1         0 SENSE DC 20m AC 0 
+C_C1         N14735 SENSE  1n  TC=0,0 
+R_R1         N14735 SENSE  1k TC=0,0 
+R_R2         OPDRAIN N14674  10R TC=0,0 
+D_D1         SENSE N14674 Dbreak 
+V_V1         N14776 0 -6Vdc
+V_V2         N14685 0 10Vdc
+V_V3         OPIN 0 DC 3Vdc 
++PULSE 1Vdc 4Vdc 200ms 100ms 200ms 
+
+**** RESUMING simIlate.cir ****
+.END
+
+**** 03/24/21 11:40:00 ******* PSpice 17.4.0 (Nov 2018) ******* ID# 0 ********
+
+ ** Profile: "SCHEMATIC1-simIlate"  [ C:\Users\ingmo\Documents\GitHub\shepherd_v2_planning\PCBs\shepherd_recorder_opDrain-PSpiceFiles
+
+
+ ****     Resistor MODEL PARAMETERS
+
+
+******************************************************************************
+
+
+
+
+               X_U1.R_NOISELESS 
+  T_Measured   27            
+   T_Current -273.15         
+           R    1            
+
+
+**** 03/24/21 11:40:00 ******* PSpice 17.4.0 (Nov 2018) ******* ID# 0 ********
+
+ ** Profile: "SCHEMATIC1-simIlate"  [ C:\Users\ingmo\Documents\GitHub\shepherd_v2_planning\PCBs\shepherd_recorder_opDrain-PSpiceFiles
+
+
+ ****     Voltage Controlled Switch MODEL PARAMETERS
+
+
+******************************************************************************
+
+
+
+
+               X_U1.ESD_SW     X_U1.OL_SW      X_U1.OR_SW      
+         RON   50               1.000000E-03     .01         
+        ROFF    1.000000E+12    1.000000E+12    1.000000E+12 
+         VON     .5              .9             1.000000E-03 
+        VOFF     .45             .8             0            
+
+
+Starting pseudo-transient algorithm.
+
+INFO(ORPSIM-16594): To improve Pseudotransient Convergence and Performance, set following options to relax stabilization criteria for capacitor currents and inductor voltages: PTRANABSTOL=1e-5, PTRANVNTOL=1e-4
+
+ERROR -- Convergence problem in transient bias point calculation
+
+
+  Last node voltages tried were:
+
+ NODE   VOLTAGE     NODE   VOLTAGE     NODE   VOLTAGE     NODE   VOLTAGE
+
+
+( OPIN)    3.0000  (SENSE)    3.0000  (N14674)    2.2654 (N14685)   10.0000     
+
+(N14735)    3.0000 (N14776)   -6.0000 (OPDRAIN)    2.0654                       
+
+(X_U1.MID) 189.8E-06                  (X_U1.ESDn)    3.0000                     
+
+(X_U1.ESDp)    3.0000                 (X_U1.N001)     .0197                     
+
+(X_U1.N002) 191.3E-06                 (X_U1.N003) 191.3E-06                     
+
+(X_U1.N004) 189.9E-06                 (X_U1.N005)   -4.7434                     
+
+(X_U1.N006) 189.7E-06                 (X_U1.N007) 189.9E-06                     
+
+(X_U1.N008)    7.9622                 (X_U1.N009) 191.3E-06                     
+
+(X_U1.N010)   69.0000                 (X_U1.N011)   75.0000                     
+
+(X_U1.N012)    9.9825                 (X_U1.N013)    9.9825                     
+
+(X_U1.N014) 189.8E-06                 (X_U1.N015) 189.8E-06                     
+
+(X_U1.N016) 189.8E-06                 (X_U1.N017) 189.8E-06                     
+
+(X_U1.N018)   -8.9327                 (X_U1.N019) 189.8E-06                     
+
+(X_U1.N020) 189.8E-06                 (X_U1.N021) 189.8E-06                     
+
+(X_U1.N022) 189.8E-06                 (X_U1.N023) 189.8E-06                     
+
+(X_U1.N024) 189.8E-06                 (X_U1.N025)   -5.0856                     
+
+(X_U1.N026)   -5.0856                 (X_U1.N027)  -21.9320                     
+
+(X_U1.N028)  -21.9320                 (X_U1.N029)  -21.9320                     
+
+(X_U1.N030)    4.0677                 (X_U1.N031)    4.0677                     
+
+(X_U1.N032)    4.0677                 (X_U1.N033) 189.8E-06                     
+
+(X_U1.N034) 189.8E-06                 (X_U1.N035)    3.0000                     
+
+(X_U1.N036)    3.0000                 (X_U1.N037)  -70.0000                     
+
+(X_U1.N038)    3.0000                 (X_U1.N039)    3.0000                     
+
+(X_U1.N040)  -75.0000                 (X_U1.N041)    3.0000                     
+
+(X_U1.N042)    3.0000                 (X_U1.N043)    3.0000                     
+
+(X_U1.N044) 182.3E-06                 (X_U1.N045)    7.5000                     
+
+(X_U1.N046)   -6.1000                 (X_U1.N047)    3.0000                     
+
+(X_U1.N048)  -20.0000                 (X_U1.N049)    2.0654                     
+
+(X_U1.N050) -977.4800                 (X_U1.N051)   -2.6657                     
+
+(X_U1.N052)   -8.9323                 (X_U1.N053)   -5.2542                     
+
+(X_U1.N054)   -8.9327                 (X_U1.N055)   -8.9327                     
+
+(X_U1.N056)   -8.9323                 (X_U1.N057) -977.4800                     
+
+(X_U1.N058) -977.4800                 (X_U1.N059) -977.4800                     
+
+(X_U1.N060) -977.4800                 (X_U1.N061) -977.4000                     
+
+(X_U1.N062) -141.7200                 (X_U1.N063) -977.4000                     
+
+(X_U1.N064) -977.4000                 (X_U1.N065) -977.4000                     
+
+(X_U1.N066) -977.4000                 (X_U1.N067) -977.3000                     
+
+(X_U1.N068)   -4.8863                 (X_U1.N069) -977.2800                     
+
+(X_U1.N070)    2.0654                 (X_U1.N071) -977.4800                     
+
+(X_U1.N072) -977.4800                 (X_U1.N073) -977.4000                     
+
+(X_U1.N074) -977.4000                 (X_U1.N075)   -8.9323                     
+
+(X_U1.N076)   10.0000                 (X_U1.N077) 189.8E-06                     
+
+(X_U1.N078)   -6.0000                 (X_U1.N079)   -8.9323                     
+
+(X_U1.N080) 189.8E-06                 (X_U1.N081) 189.8E-06                     
+
+(X_U1.N082) 189.8E-06                 (X_U1.N083) 189.8E-06                     
+
+(X_U1.N084) 189.8E-06                 (X_U1.N085)   -8.9323                     
+
+(X_U1.N086)   -8.9323                 (X_U1.VCLP)   -8.9323                     
+
+(X_U1.CLAMP)   -8.9327                (X_U1.SW_OL) 189.8E-06                    
+
+(X_U1.VCC_B)   10.0000                (X_U1.VEE_B)   -6.0000                    
+
+(X_U1.VIMON)  -20.0000                (X_U1.VOUT_S)    2.0654                   
+
+(X_U1.VSENSE)   -8.9327               (X_U1.Xe_n.5)    0.0000                   
+
+(X_U1.VCC_CLP)    9.9825              (X_U1.VEE_CLP)   -5.0856                  
+
+(X_U1.Xi_nn.3)    0.0000              (X_U1.Xi_nn.5)    0.0000                  
+
+(X_U1.Xi_np.3)    0.0000              (X_U1.Xi_np.5)    0.0000                  
+
+(X_U1.CL_CLAMP)   -8.9323             (X_U1.CLAW_CLAMP)   -8.9323           
+
+
+  These voltages failed to converge:
+
+    V(SENSE)                  =     18.96V  \     3.000V
+    V(N14735)                 =     18.96V  \     3.000V
+    V(OPDRAIN)                =   -1.674GV  \     2.065V
+    V(N14674)                 =   -1.674GV  \     2.265V
+    V(X_U1.N047)              =     18.96V  \     3.000V
+    V(X_U1.ESDn)              =     18.96V  \     3.000V
+    V(X_U1.N077)              =     2.000V  \   189.84uV
+    V(X_U1.N007)              =     2.000V  \   189.88uV
+    V(X_U1.N006)              =     2.000V  \   189.65uV
+    V(X_U1.MID)               =     2.000V  \   189.84uV
+    V(X_U1.N070)              =   -1.674GV  \     2.065V
+    V(X_U1.N048)              =    -24.69V  \    -20.00V
+    V(X_U1.N049)              =   -1.674GV  \     2.065V
+    V(X_U1.N025)              =    -4.785V  \    -5.086V
+    V(X_U1.VEE_CLP)           =    -4.785V  \    -5.086V
+    V(X_U1.N026)              =    -4.785V  \    -5.086V
+    V(X_U1.VOUT_S)            =   -1.674GV  \     2.065V
+    V(X_U1.N010)              =     71.00V  \     69.00V
+    V(X_U1.N037)              =    -68.00V  \    -70.00V
+    V(X_U1.N023)              =     2.000V  \   189.84uV
+    V(X_U1.N024)              =     2.000V  \   189.84uV
+    V(X_U1.N016)              =     2.000V  \   189.84uV
+    V(X_U1.N017)              =     2.000V  \   189.84uV
+    V(X_U1.N021)              =     2.000V  \   189.84uV
+    V(X_U1.N022)              =     2.000V  \   189.84uV
+    V(X_U1.N014)              =     2.000V  \   189.84uV
+    V(X_U1.N015)              =     2.000V  \   189.84uV
+    V(X_U1.N082)              =     2.000V  \   189.84uV
+    V(X_U1.SW_OL)             =     2.000V  \   189.84uV
+    V(X_U1.VIMON)             =    -24.69V  \    -20.00V
+    V(X_U1.N033)              =     2.000V  \   189.84uV
+    V(X_U1.N040)              =    -73.00V  \    -75.00V
+    V(X_U1.N019)              =     2.000V  \   189.84uV
+    V(X_U1.N011)              =     77.00V  \     75.00V
+    V(X_U1.N020)              =     2.000V  \   189.84uV
+    V(X_U1.N034)              =     2.000V  \   189.84uV
+    V(X_U1.VSENSE)            =   -1.881GV  \    -8.933V
+    V(X_U1.N018)              =   -1.881GV  \    -8.933V
+    V(X_U1.N009)              =     2.000V  \   191.34uV
+    V(X_U1.CLAW_CLAMP)        =   -1.881GV  \    -8.932V
+    V(X_U1.N056)              =   -1.881GV  \    -8.932V
+    V(X_U1.CL_CLAMP)          =   -1.881GV  \    -8.932V
+    V(X_U1.N086)              =   -1.881GV  \    -8.932V
+    V(X_U1.VCLP)              =   -1.881GV  \    -8.932V
+    V(X_U1.N051)              =   -50.22MV  \    -2.666V
+    V(X_U1.N050)              =   -10.00GV  \   -977.48V
+    V(X_U1.CLAMP)             =   -1.881GV  \    -8.933V
+    V(X_U1.N032)              =   -1.881GV  \     4.068V
+    V(X_U1.N027)              =   -1.881GV  \    -21.93V
+    V(X_U1.N029)              =   -1.881GV  \    -21.93V
+    V(X_U1.N028)              =   -1.881GV  \    -21.93V
+    V(X_U1.N030)              =   -1.881GV  \     4.068V
+    V(X_U1.N031)              =   -1.881GV  \     4.068V
+    V(X_U1.N080)              =     2.000V  \   189.84uV
+    V(X_U1.N083)              =     2.000V  \   189.84uV
+    V(X_U1.N044)              =   -1.594KV  \   182.26uV
+    V(X_U1.N081)              =     2.000V  \   189.84uV
+    V(X_U1.N084)              =     2.000V  \   189.84uV
+    V(X_U1.N069)              =   -10.00GV  \   -977.28V
+    V(X_U1.N075)              =   -1.881GV  \    -8.932V
+    V(X_U1.N057)              =   -10.00GV  \   -977.48V
+    V(X_U1.N058)              =   -10.00GV  \   -977.48V
+    V(X_U1.N071)              =   -10.00GV  \   -977.48V
+    V(X_U1.N059)              =   -10.00GV  \   -977.48V
+    V(X_U1.N060)              =   -10.00GV  \   -977.48V
+    V(X_U1.N072)              =   -10.00GV  \   -977.48V
+    V(X_U1.N061)              =   -10.00GV  \   -977.40V
+    V(X_U1.N062)              =   -2.670GV  \   -141.72V
+    V(X_U1.N063)              =   -10.00GV  \   -977.40V
+    V(X_U1.N064)              =   -10.00GV  \   -977.40V
+    V(X_U1.N073)              =   -10.00GV  \   -977.40V
+    V(X_U1.N065)              =   -10.00GV  \   -977.40V
+    V(X_U1.N067)              =   -10.00GV  \   -977.30V
+    V(X_U1.N068)              =   -92.04MV  \    -4.886V
+    V(X_U1.N066)              =   -10.00GV  \   -977.40V
+    V(X_U1.N074)              =   -10.00GV  \   -977.40V
+    V(X_U1.N054)              =   -1.881GV  \    -8.933V
+    V(X_U1.N055)              =   -1.881GV  \    -8.933V
+    V(X_U1.N079)              =   -1.881GV  \    -8.932V
+    V(X_U1.N085)              =   -1.881GV  \    -8.932V
+    V(X_U1.N052)              =   -1.881GV  \    -8.932V
+    V(X_U1.N053)              =   -1.106GV  \    -5.254V
+    V(X_U1.N002)              =     2.000V  \   191.34uV
+    V(X_U1.N001)              =     2.007V  \    19.71mV
+    V(X_U1.N003)              =     2.000V  \   191.34uV
+    V(X_U1.N004)              =     2.000V  \   189.86uV
+    V(X_U1.N008)              =     8.370V  \     7.962V
+    V(X_U1.N005)              =    -4.325V  \    -4.743V
+
+  These supply currents failed to converge:
+
+    I(X_U1.E5)                =    1.674mA  \   -2.065pA
+    I(X_U1.E1)                =    30.52uA  \    22.17pA
+    I(X_U1.Xe_n.E3)           =    71.69pA  \    75.62pA
+    I(V_V1)                   =    24.65mA  \    21.30mA
+    I(V_V2)                   =   -4.647mA  \   -1.300mA
+    I(V_V3)                   =   -76.63pA  \   -82.54pA
+    I(X_U1.VCM_MIN)           =    8.102pA  \    6.098pA
+    I(X_U1.VCM_MAX)           =   -5.503pA  \   -7.500pA
+    I(X_U1.V4)                =   -26.69mA  \   -20.00mA
+    I(X_U1.V11)               =  -476.84nA  \    26.00pA
+    I(X_U1.V12)               =  -476.84nA  \   -26.00pA
+    I(X_U1.H1)                =    26.69pA  \    19.98pA
+
+  These devices failed to converge:
+    D_D1      X_U1.XCLAW_AMP.GVo- X_U1.XGR_AMP.GVo- X_U1.XVCCS_LIMIT_2.G1 
+    X_U1.XVCCS_LIM_ZO_OPA189.G1 
+
+**** Interrupt ****
+**** Param: RELTOL = 0.001
+**** Param: ABSTOL = 1e-12
+**** Param: VNTOL = 1e-06
+**** Param: GMIN = 1e-12
+**** Param: TSTOP = 0.01
+**** Param: TMAX = 0
+**** Param: ITL1 = 150
+**** Param: ITL2 = 20
+**** Param: ITL4 = 10
+**** Param: AutoConverge = 0
+**** Param: AutoConverge.ITL1 = 1000
+**** Param: AutoConverge.ITL2 = 1000
+**** Param: AutoConverge.ITL4 = 1000
+**** Param: AutoConverge.RELTOL = 0.05
+**** Param: AutoConverge.ABSTOL = 0.001
+**** Param: AutoConverge.VNTOL = 0.001
+**** Param: AutoConverge.PIVTOL = 1e-10
+**** Param: ADVCONV = 1
+**** Param: Current_Simulation = 0
+**** Param: METHOD = 0
+**** Param: TRTOL = 7
+**** Param: STEPGMIN = 0
+**** Param: GMINSTEPS = 0
+**** Param: ITL6 = 0
+**** Param: NOSTEPDEP = 0
+**** Param: PTRANSTEP = 0
+**** Param: GMINSRC = 0
+**** Param: PSEUDOTRAN = 0
+**** Param: NOSTEPSRC = 0
+
+          JOB ABORTED
+
+**** 03/24/21 11:40:00 ******* PSpice 17.4.0 (Nov 2018) ******* ID# 0 ********
+
+ ** Profile: "SCHEMATIC1-simIlate"  [ C:\Users\ingmo\Documents\GitHub\shepherd_v2_planning\PCBs\shepherd_recorder_opDrain-PSpiceFiles
+
+
+ ****     JOB STATISTICS SUMMARY
+
+
+******************************************************************************
+
+
+
+  Total job time (using Solver 1)   =       78.36
+

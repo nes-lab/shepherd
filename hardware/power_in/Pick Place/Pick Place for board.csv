@@ -1,0 +1,27 @@
+Altium Designer Pick and Place Locations
+C:\Users\Public\Documents\Altium\Projects\shepherd_power\Project Outputs\Pick Place\Pick Place for board.csv
+
+========================================================================================================================
+File Design Information:
+
+Date:       17.09.23
+Time:       17:27
+Revision:   Not in VersionControl
+Variant:    No variations
+Units used: mm
+
+"Designator","Comment","Layer","Footprint","Center-X(mm)","Center-Y(mm)","Rotation","Manufacturer PN","Value"
+"U1","UP_TPS62913","TopLayer","VQFN50P200X200X100_HS-10N","5,7125","4,8000","90","TPS62913RPUR",""
+"R3","R_0402_1k","TopLayer","RESC1005X04","3,1000","3,7000","0","ERJ-2GEJ102X","1k"
+"R2","R_0402_5k1_1%","TopLayer","RESC1005X04","3,1000","2,7000","180","ERJ-2RKF5101X","5.1k"
+"R1","R_0402_470R","TopLayer","RESC1005X04","3,1000","1,7000","180","ERJ-2RKF4700X","470R"
+"L1","L_SRN4026-2R2Y","TopLayer","INDP4040X25N","10,3000","2,3000","0","SRN4026-2R2Y","2.2uH"
+"J2","J_T1x2_3.5mm_Screw","TopLayer","P_Phoenix_1984617","16,2500","12,8000","180","1984617",""
+"J1","J_T1x2_3.5mm_Screw","TopLayer","P_Phoenix_1984617","4,0500","12,8000","180","1984617",""
+"C7","C_0603_1uF_10V","TopLayer","CAPC1608X09","2,7000","5,3000","0","C0603C105K8RACTU","1uF"
+"C6","C_1206_100uF_6V3","TopLayer","CAPC3216X18","16,8000","8,6000","180","JMK316ABJ107ML-T","100uF"
+"C5","C_0603_1uF_10V","TopLayer","CAPC1608X09","1,3000","2,7000","270","C0603C105K8RACTU","1uF"
+"C4","C_0402_10nF_25V_NP0","TopLayer","CAPC1005X06","5,8000","7,8000","270","GRM1555C1E103JE01J","10nF"
+"C3","C_0603_10uF_16V","TopLayer","CAPC1608X09","3,4000","8,2000","270","EMK107BBJ106MA-T","10uF"
+"C2","C_0603_10uF_16V","TopLayer","CAPC1608X09","4,7000","8,2000","270","EMK107BBJ106MA-T","10uF"
+"C1","C_1206_100uF_6V3","TopLayer","CAPC3216X18","15,6000","2,7000","180","JMK316ABJ107ML-T","100uF"

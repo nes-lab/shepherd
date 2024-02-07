@@ -1,0 +1,11 @@
+* source SHEPHERD_RECORDER_OPDRAIN
+X_U1         OPIN N14735 N14685 N14776 OPDRAIN OPA189 
+I_I1         0 SENSE DC 20m AC 0 
+C_C1         N14735 SENSE  100n  TC=0,0 
+R_R1         N14735 SENSE  1k TC=0,0 
+R_R2         OPDRAIN N14674  10R TC=0,0 
+D_D1         SENSE N14674 Dbreak 
+V_V1         N14776 0 -6Vdc
+V_V2         N14685 0 10Vdc
+V_V3         OPIN 0 DC 2Vdc 
++PULSE 5 0 1ms 1us 1us 2 3
