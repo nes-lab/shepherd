@@ -3,10 +3,8 @@ shepherd.shepherd_io
 ~~~~~
 Interface layer, abstracting low-level functionality provided by PRUs and
 kernel module. User-space part of the double-buffered data exchange protocol.
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
+
 import time
 from contextlib import suppress
 from types import TracebackType
@@ -90,8 +88,8 @@ class ShepherdIO:
         """
         check_sys_access()
 
-        if not sfs.pru0_firmware_is_default():
-            sfs.load_pru0_firmware("shepherd")
+        if not sfs.pru_firmware_is_default():
+            sfs.load_pru_firmware("shepherd")
 
         self.mode = mode
         if mode in {"harvester", "emulator"}:
@@ -511,8 +509,7 @@ class ShepherdIO:
         corresponding memory location as DataBuffer.
 
         Args:
-            :param timeout_n: (int) Time in buffer_periods that should be waited for an
-                incoming msg
+            :param timeout_n: (int) Time in buffer_periods that should be waited for
             :param verbose: (bool) more debug output
         Returns:
             Index and content of corresponding data buffer
@@ -561,6 +558,5 @@ class ShepherdIO:
                 )
 
             raise ShepherdIOError(
-                f"Expected msg type { commons.MSG_BUF_FROM_PRU } "
-                f"got { msg_type }[{ value }]",
+                f"Expected msg type { commons.MSG_BUF_FROM_PRU } got { msg_type }[{ value }]",
             )

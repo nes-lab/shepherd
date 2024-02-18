@@ -5,9 +5,6 @@ Defines the format of BeagleBone cape info and shepherd calibration data that
 is stored on the shepherd cape's EEPROM. Provides a class for accessing EEPROM
 through Linux I2C device driver.
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
 
 import os
@@ -57,7 +54,7 @@ class EEPROM:
             address (int): Address of EEPROM, usually fixed in hardware or
                 by DIP switch
         """
-        self.dev_path = f"/sys/bus/i2c/devices/{bus_num}" f"-{address:04X}/eeprom"
+        self.dev_path = f"/sys/bus/i2c/devices/{bus_num}-{address:04X}/eeprom"
         self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
         self._write_protect_pin.write(True)
 

@@ -1,6 +1,7 @@
 """
 Herd-Baseclass
 """
+
 import contextlib
 import threading
 import time
@@ -55,11 +56,7 @@ class Herd:
         if isinstance(limit, str):
             limits_list = limit.split(",")
             limits_list = [_host for _host in limits_list if len(_host) >= 1]
-        if (
-            isinstance(inventory, str)
-            and Path(inventory).exists()
-            and Path(inventory).is_file()
-        ):
+        if isinstance(inventory, str) and Path(inventory).exists() and Path(inventory).is_file():
             inventory = Path(inventory)
         if isinstance(inventory, str):
             hostlist = inventory.split(",")
@@ -239,7 +236,9 @@ class Herd:
                 args=(cnx, sudo, cmd, results, i),
             )
             threads[_name].start()
+        logger.debug("  .. threads started - will wait until finished")
         for host, thread in threads.items():
+            logger.debug("  .. joining %s-thread", host)
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -259,6 +258,8 @@ class Herd:
     ) -> None:
         """Logs output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
+            # TODO: incorrect when sheep are missing in between
+            #       -> also throw out in hostname-dict?
             if not isinstance(replies.get(i), Result):
                 continue
             if not verbose and replies[i].exited == 0:
@@ -383,9 +384,7 @@ class Herd:
         dst_paths = {}
 
         # assemble file-names
-        src_path = (
-            Path(src) if Path(src).is_absolute() else Path(self.path_default) / src
-        )
+        src_path = Path(src) if Path(src).is_absolute() else Path(self.path_default) / src
 
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
@@ -433,7 +432,7 @@ class Herd:
                 args=(cnx, src_path, dst_paths[i]),
             )
             threads[i].start()
-
+        logger.debug("  .. threads started - will wait until finished")
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
             if replies[i].exited > 0:
@@ -466,9 +465,7 @@ class Herd:
         """
         # Get the current time on each target node
         replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
-        ts_nows = [
-            datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()
-        ]
+        ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
         ts_diff = ts_max.timestamp() - ts_min.timestamp()

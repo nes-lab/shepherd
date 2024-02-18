@@ -1,0 +1,16 @@
+# This is an example configuration for shepherd.
+# Instead of modifying, better make a copy and name it config.yaml
+# Behavior: record data for 20s or until stopped by ctrl+c
+datatype: HarvestTask
+parameters:
+  duration: 200
+  # output_path:
+  # - providing a directory -> file is named hrv_timestamp.h5
+  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> hrv#num.h5
+  output_path: /var/shepherd/recordings/hrv.h5
+  output_compression: "1" # should be lzf, "1" (gzip level 1) or None (order of recommendation)
+  virtual_harvester:
+    name: mppt_opt
+  use_cal_default: true
+  force_overwrite: true
+  verbose: 2 # serious performance impact for value > 3

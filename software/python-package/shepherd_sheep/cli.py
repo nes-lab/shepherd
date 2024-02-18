@@ -4,10 +4,8 @@ shepherd.cli
 Provides the CLI utility 'shepherd-sheep', exposing most of shepherd's
 functionality to a command line user.
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
+
 import signal
 import sys
 import time
@@ -21,6 +19,7 @@ import zerorpc
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
+from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.inventory import Inventory
 from typing_extensions import Unpack
 
@@ -329,6 +328,42 @@ def program(**kwargs: Unpack[TypedDict]) -> None:
 def fix() -> None:
     set_verbosity()
     reload_kernel_module()
+
+
+@cli.command(
+    short_help="Loads a specific firmware to the PRUs",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument(
+    "firmware",
+    type=click.Choice(["default", "swd", "sbw", "sync"]),
+    default="default",
+)
+def pru(firmware: str) -> None:
+    set_verbosity()
+    sysfs_interface.load_pru_firmware(firmware)
+
+
+@cli.command(
+    short_help="Helps to identify Observers by flashing LEDs near Targets (IO, EMU)",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("duration", type=click.INT, default=30)
+def blink(duration: int) -> None:
+    set_verbosity()
+    log.info("Blinks LEDs IO & EMU next to Target-Ports for %d s", duration)
+    with ShepherdDebug(use_io=False) as dbg:
+        dbg.set_power_state_emulator(True)
+        dbg.set_io_level_converter(True)
+        for _ in range(duration * 2):
+            dbg.select_port_for_io_interface(TargetPort.A)
+            time.sleep(0.125)
+            dbg.select_port_for_power_tracking(TargetPort.A)
+            time.sleep(0.125)
+            dbg.select_port_for_power_tracking(TargetPort.B)
+            time.sleep(0.125)
+            dbg.select_port_for_io_interface(TargetPort.B)
+            time.sleep(0.125)
 
 
 if __name__ == "__main__":

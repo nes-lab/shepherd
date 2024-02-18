@@ -2,24 +2,37 @@
 Description=Synchronize system clock or PTP hardware clock (PHC)
 Documentation=man:phc2sys
 # Requires=ptp4l@%i.device.service
-# After=ptp4l@%i.device.service
-# -> restarts phc2sys constantly ... just use the wait-option
+After=ptp4l@%i.service
 Before=time-sync.target
+# -> ptp4l needs to start AFTER phc2sys, otherwise the time gets reset
 
 [Service]
 Type=simple
 ExecStartPre=-/bin/sleep 5
 # ExecStart=/usr/sbin/phc2sys -w -s %I
-ExecStart=/usr/sbin/phc2sys -rr -w -s %I
+# ExecStart=/usr/sbin/phc2sys -rr -w -s %I
+ExecStart=/usr/sbin/phc2sys -r -w -s %I -E linreg
+# for client: -r -w -s %I -E linreg
+# for server: -a -rr -E linreg, TODO: put in ansible
+# for both:   -rr -w -s %I -E linreg
 # -q	do not print messages to syslog
 # -m 	print msgs to stdout
 # -a 	autoconfig
 # -rr 	sync realtime clock and also consider it as a time source
 # -w    wait for ptp4l
 # -s    main clock
+# -E    clock servo (pi|linreg) - linreg is superior
 RestartSec=5
 Restart=always
 StartLimitBurst=10
+
+# improve responsiveness with RT
+RestrictRealtime=false
+LimitRTPRIO=infinity
+CPUSchedulingPriority=90
+CPUSchedulingPolicy=rr
+IOSchedulingClass=realtime
+IOSchedulingPriority=3
 
 [Install]
 WantedBy=multi-user.target

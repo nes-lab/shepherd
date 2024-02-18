@@ -19,16 +19,14 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
     ) -> None:
         super().__init__(target, compression, poll_intervall=0.51)
         self.data.create_dataset(
-            "values",
-            (self.increment, 3),
+            name="values",
+            shape=(self.increment, 3),
             dtype="i8",
             maxshape=(None, 3),
             chunks=True,
         )
         self.data["values"].attrs["unit"] = "ns, Hz, ns"
-        self.data["values"].attrs[
-            "description"
-        ] = "main offset [ns], s2 freq [Hz], path delay [ns]"
+        self.data["values"].attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
             "sudo",
@@ -48,7 +46,11 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             return
         os.set_blocking(self.process.stdout.fileno(), False)
 
-        self.thread = threading.Thread(target=self.thread_fn, daemon=True)
+        self.thread = threading.Thread(
+            target=self.thread_fn,
+            daemon=True,
+            name="PTPMon",
+        )
         self.thread.start()
 
     def __exit__(

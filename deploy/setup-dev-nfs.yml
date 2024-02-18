@@ -1,4 +1,6 @@
 ---
+# establish a local network file system `/opt/shepherd-dev` for the nodes to access
+
 - name: Base setup
   hosts: all
   strategy: free # noqa: run-once[play]

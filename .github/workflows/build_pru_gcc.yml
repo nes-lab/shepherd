@@ -78,3 +78,9 @@ jobs:
           make PROTO=SBW
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SBW-fw.elf
         working-directory: "software/firmware/pru0-programmer/"
+
+      - name: Build Sync (GPIO-Event) 🧱
+        run: |
+          make
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru1-sync-fw.elf
+        working-directory: "software/firmware/pru1-sync/"

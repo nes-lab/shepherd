@@ -7,12 +7,12 @@ on:
   workflow_call:
 
 jobs:
-  run-quality-assurance:
-    uses: ./.github/workflows/qa_tests.yml
+  run-quality-control:
+    uses: ./.github/workflows/qc_tests.yml
   build-pages:
     runs-on: ubuntu-latest
-    needs:
-      - run-quality-assurance
+#    needs:
+#      - run-quality-control # TODO: only temporary
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

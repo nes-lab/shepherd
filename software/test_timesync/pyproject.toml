@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.pyright]
+root = "./"
+include = ['./sync_analysis', ]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+reportMissingParameterType = true

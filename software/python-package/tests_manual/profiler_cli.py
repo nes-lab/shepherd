@@ -27,6 +27,7 @@ Timing-Optimizations:
 - inventorize-snippet -> from > 26 s to 16 s (cProfile)
 
 """
+
 import cProfile
 import time
 from pathlib import Path

@@ -112,8 +112,7 @@ def test_calibration_logging(
         ["gain", "offset"],
     ):
         assert (
-            h5store["data"][channel_entry].attrs[parameter]
-            == cal_series[channel_entry][parameter]
+            h5store["data"][channel_entry].attrs[parameter] == cal_series[channel_entry][parameter]
         )
 
 

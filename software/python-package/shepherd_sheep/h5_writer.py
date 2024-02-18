@@ -4,10 +4,8 @@ shepherd.datalog
 Provides classes for storing and retrieving sampled IV data to/from
 HDF5 files.
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
+
 from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
@@ -17,6 +15,7 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     import h5py
+
     from .monitor_abc import Monitor
 
 import numpy as np
@@ -107,6 +106,8 @@ class Writer(CoreWriter):
         # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
         self.data_pos = 0
         self.data_inc = int(100 * self.samplerate_sps)
+        self.meta_pos = 0
+        self.meta_inc = 10_000
         self.gpio_pos = 0
         self.gpio_inc = MAX_GPIO_EVT_PER_BUFFER
         # NOTE for possible optimization: align resize with chunk-size
@@ -129,26 +130,42 @@ class Writer(CoreWriter):
 
         """
         super().__enter__()
+
+        # add new meta-data-storage
+        self.grp_data.create_dataset(
+            name="meta",
+            shape=(self.meta_inc, 4),
+            dtype="u8",
+            maxshape=(None, 4),
+            chunks=(self.meta_inc, 4),
+            compression=self._compression,
+        )
+        self.grp_data["meta"].attrs["unit"] = "s, n, %, %"
+        self.grp_data["meta"].attrs["description"] = (
+            "buffer_timstamp [s], "
+            "buffer_elements [n], "
+            "pru0_util_mean [%], "
+            "pru0_util_max [%]"
+        )
+
         # Create group for gpio data
         self.gpio_grp = self.h5file.create_group("gpio")
         self.gpio_grp.create_dataset(
-            "time",
-            (self.gpio_inc,),
+            name="time",
+            shape=(self.gpio_inc,),
             dtype="u8",
             maxshape=(None,),
             chunks=True,
             compression=self._compression,
         )
         self.gpio_grp["time"].attrs["unit"] = "s"
-        self.gpio_grp["time"].attrs[
-            "description"
-        ] = "system time [s] = value * gain + (offset)"
+        self.gpio_grp["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
         self.gpio_grp["time"].attrs["gain"] = 1e-9
         self.gpio_grp["time"].attrs["offset"] = 0
 
         self.gpio_grp.create_dataset(
-            "value",
-            (self.gpio_inc,),
+            name="value",
+            shape=(self.gpio_inc,),
             dtype="u2",
             maxshape=(None,),
             chunks=True,
@@ -177,10 +194,12 @@ class Writer(CoreWriter):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        self._add_omitted_timestamps()
         # trim over-provisioned parts
         self.grp_data["time"].resize((self.data_pos,))
         self.grp_data["voltage"].resize((self.data_pos,))
         self.grp_data["current"].resize((self.data_pos,))
+        self.grp_data["meta"].resize((self.meta_pos, 4))
 
         self.gpio_grp["time"].resize((self.gpio_pos,))
         self.gpio_grp["value"].resize((self.gpio_pos,))
@@ -195,52 +214,84 @@ class Writer(CoreWriter):
             gpio_events,
         )
 
-    def write_buffer(self, buffer: DataBuffer) -> None:
+    def write_buffer(self, buffer: DataBuffer, *, omit_ts: bool = False) -> None:
         """Writes data from buffer to file.
 
         Args:
-            buffer (DataBuffer): Buffer containing IV data
+            buffer: (DataBuffer) Buffer containing IV data
+            omit_ts: (bool) optimize writing - timestamp-stream can be reconstructed later
         """
-
         # First, we have to resize the corresponding datasets
         data_end_pos = self.data_pos + len(buffer)
-        data_length = self.grp_data["time"].shape[0]
+        data_length = self.grp_data["voltage"].shape[0]
         if data_end_pos >= data_length:
             data_length += self.data_inc
-            self.grp_data["time"].resize((data_length,))
             self.grp_data["voltage"].resize((data_length,))
             self.grp_data["current"].resize((data_length,))
+            if not omit_ts:
+                self.grp_data["time"].resize((data_length,))
 
         self.grp_data["voltage"][self.data_pos : data_end_pos] = buffer.voltage
         self.grp_data["current"][self.data_pos : data_end_pos] = buffer.current
-        self.grp_data["time"][self.data_pos : data_end_pos] = (
-            self.buffer_timeseries + buffer.timestamp_ns
-        )
+        if not omit_ts:
+            self.grp_data["time"][self.data_pos : data_end_pos] = (
+                self.buffer_timeseries + buffer.timestamp_ns
+            )
         self.data_pos = data_end_pos
 
-        len_edges = len(buffer.gpio_edges)
-        if len_edges > 0:
-            gpio_new_pos = self.gpio_pos + len_edges
-            data_length = self.gpio_grp["time"].shape[0]
-            if gpio_new_pos >= data_length:
-                data_length += max(self.gpio_inc, gpio_new_pos - data_length)
-                self.gpio_grp["time"].resize((data_length,))
-                self.gpio_grp["value"].resize((data_length,))
-            self.gpio_grp["time"][
-                self.gpio_pos : gpio_new_pos
-            ] = buffer.gpio_edges.timestamps_ns
-            self.gpio_grp["value"][
-                self.gpio_pos : gpio_new_pos
-            ] = buffer.gpio_edges.values  # noqa: PD011, false positive
-            self.gpio_pos = gpio_new_pos
+        self.write_gpio(buffer)
+        self.write_meta(buffer)
 
-        if (buffer.util_mean > 95) or (buffer.util_max > 100):
+    def write_gpio(self, buffer: DataBuffer) -> None:
+        len_edges = len(buffer.gpio_edges)
+        if len_edges < 1:
+            return
+        gpio_new_pos = self.gpio_pos + len_edges
+        data_length = self.gpio_grp["time"].shape[0]
+        if gpio_new_pos >= data_length:
+            data_length += max(self.gpio_inc, gpio_new_pos - data_length)
+            self.gpio_grp["time"].resize((data_length,))
+            self.gpio_grp["value"].resize((data_length,))
+        self.gpio_grp["time"][self.gpio_pos : gpio_new_pos] = buffer.gpio_edges.timestamps_ns
+        self.gpio_grp["value"][self.gpio_pos : gpio_new_pos] = buffer.gpio_edges.values  # noqa: PD011, false positive
+        self.gpio_pos = gpio_new_pos
+
+    def write_meta(self, buffer: DataBuffer) -> None:
+        """this data allows to
+        - reconstruct timestamp-stream later (runtime-optimization, 33% less load)
+        - identify critical pru0-timeframes
+        """
+        data_length = self.grp_data["meta"].shape[0]
+        if self.meta_pos >= data_length:
+            data_length += self.meta_inc
+            self.grp_data["meta"].resize((data_length, 4))
+        self.grp_data["meta"][self.meta_pos, :] = [
+            buffer.timestamp_ns,
+            len(buffer),
+            buffer.util_mean,
+            buffer.util_max,
+        ]
+        self.meta_pos += 1
+
+    def _add_omitted_timestamps(self) -> None:
+        # TODO: may be more useful on server -> so move to core-writer
+        ds_time_size = self.grp_data["time"].shape[0]
+        ds_volt_size = self.grp_data["voltage"].shape[0]
+        if ds_time_size == ds_volt_size:
+            return  # no action needed
+        self._logger.info("[H5Writer] will add timestamps (omitted during run for performance)")
+        meta_time_size = np.sum(self.grp_data["meta"][:, 1])
+        if meta_time_size != self.data_pos:
             self._logger.warning(
-                "WARNING: timing critical, pru0 Loop-Util: mean = %d %%, max = %d %%",
-                buffer.util_mean,
-                buffer.util_max,
+                "GenTimestamps - sizes do not match (%d vs %d)", meta_time_size, self.data_pos
             )
-            # TODO: store pru-util? probably yes
+        self.grp_data["time"].resize((meta_time_size,))
+        data_pos = 0
+        for buf_ts_ns, buf_len in self.grp_data["meta"][:, :2]:
+            self.grp_data["time"][data_pos : data_pos + buf_len] = (
+                self.buffer_timeseries + buf_ts_ns
+            )
+            data_pos += buf_len
 
     def start_monitors(
         self,

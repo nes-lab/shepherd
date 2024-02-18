@@ -1,3 +1,5 @@
+"""Abstract base class for monitors
+"""
 import threading
 from abc import ABC
 from abc import abstractmethod
@@ -25,17 +27,15 @@ class Monitor(ABC):
 
         # create time, others have to be created in main class
         self.data.create_dataset(
-            "time",
-            (self.increment,),
+            name="time",
+            shape=(self.increment,),
             dtype="u8",
             maxshape=(None,),
             chunks=True,
             compression=compression,
         )
         self.data["time"].attrs["unit"] = "s"
-        self.data["time"].attrs[
-            "description"
-        ] = "system time [s] = value * gain + (offset)"
+        self.data["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
         self.data["time"].attrs["gain"] = 1e-9
         self.data["time"].attrs["offset"] = 0
         log.debug(

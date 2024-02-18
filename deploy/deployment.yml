@@ -1,0 +1,91 @@
+---
+# install shepherd-software, all dependencies & roles set in inventory-file
+
+- name: Install Shepherd-Software - Role-based
+  hosts: sheep
+  become: true
+  strategy: free  # noqa: run-once[play]
+  # ⤷ ansible won't wait for every host to continue next task
+
+  pre_tasks:
+
+    - name: Get time and date from ansible controller
+      ansible.builtin.command: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+      delegate_to: localhost
+      changed_when: false
+      register: local_time
+      become: false
+    - name: Set correct time
+      ansible.builtin.command: "date -s {{ local_time.stdout }}"
+      changed_when: true
+
+    - name: Update kernel, bootloader, software & cleanup afterwards
+      ansible.builtin.include_role:
+        name: maintenance
+      vars:
+        maintenance_update_kernel: true
+        maintenance_update_bootloader: true
+        maintenance_delete_unused_files: true
+
+- name: Role - PTP-Client only (not recommended! all should be server as well)
+  hosts: ptp_clients
+  become: true
+  strategy: free # noqa: run-once[play]
+  roles:
+    - ptp_client
+
+- name: Role - NTP-Client
+  hosts: ntp_clients
+  become: true
+  strategy: free # noqa: run-once[play]
+  roles:
+    - ntp_client
+
+- name: Role - GPS-Client
+  hosts: gps_clients
+  become: true
+  strategy: free # noqa: run-once[play]
+  roles:
+    - gps_client
+# TODO: how to avoid allowing gps & ptp & ntp client? trouble ahead
+#       -> could switch to components and argument_specs
+#       https://steampunk.si/blog/ansible-role-argument-specification/
+
+- name: Role - PTP-Server
+  hosts: ptp_servers
+  become: true
+  strategy: free # noqa: run-once[play]
+  roles:
+    - ptp_server
+
+- name: Role - Secured Testbed
+  hosts: secured
+  become: true
+  strategy: free # noqa: run-once[play]
+  roles:
+    - secure_testbed
+
+- name: Main-Software for Shepherd
+  hosts: sheep
+  become: true
+  roles:
+    - sheep
+  # ⤷ NOTE: will only be installed once (later only sw-rebuild)
+  # NOTE: this was put to the end - so some kind of timekeeping is active till then
+  #       reason: 'make' fails in the past (after reboot)
+
+- name: Installation done! Now post-installation tasks
+  hosts: sheep
+  become: true
+  strategy: free # noqa: run-once[play]
+
+  # post_tasks:
+  tasks:
+
+    - name: Cleanup after software
+      ansible.builtin.include_role:
+        name: maintenance
+      vars:
+        maintenance_update_kernel: false
+        maintenance_update_bootloader: false
+        maintenance_delete_unused_files: true

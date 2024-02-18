@@ -168,7 +168,7 @@ class ShepherdHarvester(ShepherdIO):
                 return
 
             try:
-                self.writer.write_buffer(hrv_buf)
+                self.writer.write_buffer(hrv_buf, omit_ts=False)
             except OSError as _xpt:
                 log.error(
                     "Failed to write data to HDF5-File - will STOP! error = %s",

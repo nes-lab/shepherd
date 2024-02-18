@@ -2,17 +2,32 @@
 Description=Precision Time Protocol (PTP) service for %I
 Documentation=man:ptp4l
 After=sys-subsystem-net-devices-%i.device
+# -> wanted: this service waits for network-connectivity
 
 [Service]
 Type=simple
-ExecStartPre=-/usr/sbin/ntpdate -b -s -u pool.ntp.org
+ExecStartPre=/usr/sbin/ntpdate -b -s -u pool.ntp.org
 # ExecStart=/usr/sbin/ptp4l -f /etc/linuxptp/ptp4l.conf -i %I
-ExecStart=/usr/sbin/ptp4l -A -f /etc/linuxptp/ptp4l.conf -i %I
+ExecStart=/usr/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
 # -2 -> IEEE 802.3 Network Transport, TODO: seems to produce "sheep03 ptp4l[4062]: [2837.436] port 1: bad message"
 # -A -> Auto Delay Mechanism (E2E first, then maybe P2P)
-RestartSec=3
+# -H -> use hardware timestamping
+# /etc/linuxptp/ptp4l.conf
+# slaveOnly     0/1     -> roles should be static
+# clock_servo   linreg/pi -> linreg should be superior
+
+
+RestartSec=5
 Restart=always
-StartLimitBurst=5
+StartLimitBurst=10
+
+# improve responsiveness with RT
+RestrictRealtime=false
+LimitRTPRIO=infinity
+CPUSchedulingPriority=99
+CPUSchedulingPolicy=rr
+IOSchedulingClass=realtime
+IOSchedulingPriority=3
 
 [Install]
 WantedBy=multi-user.target

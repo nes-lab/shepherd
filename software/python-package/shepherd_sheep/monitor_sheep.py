@@ -18,15 +18,15 @@ class SheepMonitor(Monitor):
         super().__init__(target, compression, poll_intervall=0.25)
         self.queue = get_message_queue()
         self.data.create_dataset(
-            "message",
-            (self.increment,),
+            name="message",
+            shape=(self.increment,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=True,
         )
         self.data.create_dataset(
-            "level",
-            (self.increment,),
+            name="level",
+            shape=(self.increment,),
             dtype="uint8",
             maxshape=(None,),
             chunks=True,
@@ -36,7 +36,11 @@ class SheepMonitor(Monitor):
             "description"
         ] = "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
 
-        self.thread = threading.Thread(target=self.thread_fn, daemon=True)
+        self.thread = threading.Thread(
+            target=self.thread_fn,
+            daemon=True,
+            name="SHPMon",
+        )
         self.thread.start()
 
     def __exit__(

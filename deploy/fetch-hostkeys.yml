@@ -1,4 +1,6 @@
 ---
+# will copy keys from nodes, handy firmware resets, while keeping keys
+
 - name: Base setup
   hosts: all
 

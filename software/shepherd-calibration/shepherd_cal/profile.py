@@ -101,7 +101,7 @@ class Profile:
             cal = ProfileCalibration.from_measurement(data_df)
 
         data_df["c_shp_A"] = cal.current.raw_to_si(data_df.c_shp_raw.to_numpy())
-        data_df["c_shp_A"] = data_df.c_shp_A.apply(lambda x: x if x >= -1e-3 else -1e-3)
+        data_df["c_shp_A"] = data_df.c_shp_A.apply(lambda x: max(x, -0.001))
 
         # fix the known case of missing SMU (PART 2)
         if component == "emu_b":
@@ -125,34 +125,22 @@ class Profile:
     def _prepare_results(self, component: str, data: pd.DataFrame) -> None:
         result = data.groupby(by=["c_ref_A", "v_shp_V"]).mean().reset_index(drop=False)
         result["v_error_mean_mV"] = (
-            data.groupby(by=["c_ref_A", "v_shp_V"])
-            .v_error_mV.mean()
-            .reset_index(drop=True)
+            data.groupby(by=["c_ref_A", "v_shp_V"]).v_error_mV.mean().reset_index(drop=True)
         )
         result["v_error_max_mV"] = (
-            data.groupby(by=["c_ref_A", "v_shp_V"])
-            .v_error_abs_mV.max()
-            .reset_index(drop=True)
+            data.groupby(by=["c_ref_A", "v_shp_V"]).v_error_abs_mV.max().reset_index(drop=True)
         )
         result["v_error_stddev_mV"] = (
-            data.groupby(by=["c_ref_A", "v_shp_V"])
-            .v_error_abs_mV.std()
-            .reset_index(drop=True)
+            data.groupby(by=["c_ref_A", "v_shp_V"]).v_error_abs_mV.std().reset_index(drop=True)
         )
         result["c_error_mean_mA"] = (
-            data.groupby(by=["c_ref_A", "v_shp_V"])
-            .c_error_mA.mean()
-            .reset_index(drop=True)
+            data.groupby(by=["c_ref_A", "v_shp_V"]).c_error_mA.mean().reset_index(drop=True)
         )
         result["c_error_max_mA"] = (
-            data.groupby(by=["c_ref_A", "v_shp_V"])
-            .c_error_abs_mA.max()
-            .reset_index(drop=True)
+            data.groupby(by=["c_ref_A", "v_shp_V"]).c_error_abs_mA.max().reset_index(drop=True)
         )
         result["c_error_stddev_mA"] = (
-            data.groupby(by=["c_ref_A", "v_shp_V"])
-            .c_error_abs_mA.std()
-            .reset_index(drop=True)
+            data.groupby(by=["c_ref_A", "v_shp_V"]).c_error_abs_mA.std().reset_index(drop=True)
         )
         self.results[component] = result
 

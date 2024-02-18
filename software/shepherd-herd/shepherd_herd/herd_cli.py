@@ -141,6 +141,39 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
     sys.exit(failed)
 
 
+@cli.command(
+    short_help="Reloads the shepherd-kernel-module on each sheep",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def fix(ctx: click.Context) -> None:
+    with ctx.obj["herd"] as herd:
+        replies = herd.run_cmd(
+            sudo=True,
+            cmd="shepherd-sheep fix",
+        )
+        herd.print_output(replies, verbose=False)
+        exit_code = max([reply.exited for reply in replies.values()])
+    sys.exit(exit_code)
+
+
+@cli.command(
+    short_help="Helps to identify Observers by flashing LEDs near Targets (IO, EMU)",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("duration", type=click.INT, default=30)
+@click.pass_context
+def blink(ctx: click.Context, duration: int) -> None:
+    with ctx.obj["herd"] as herd:
+        replies = herd.run_cmd(
+            sudo=True,
+            cmd=f"shepherd-sheep blink {duration}",
+        )
+        herd.print_output(replies, verbose=False)
+        exit_code = max([reply.exited for reply in replies.values()])
+    sys.exit(exit_code)
+
+
 # #############################################################################
 #                               Task-Handling
 # #############################################################################

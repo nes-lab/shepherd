@@ -5,11 +5,21 @@
 [![Build Pru](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml)
 [![Code Quality](https://www.codefactor.io/repository/github/orgua/shepherd/badge)](https://www.codefactor.io/repository/github/orgua/shepherd)
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
-[![CodeStyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-**Documentation**: <https://orgua.github.io/shepherd/>
+**Testbed-Webinterface**: <https://shepherd.cfaed.tu-dresden.de>
 
-**Source Code**: <https://github.com/orgua/shepherd>
+**Python-Modules for Users**: <https://github.com/orgua/shepherd-datalib>
+
+**Documentation**: <https://orgua.github.io/shepherd>
+
+**Main Project**: <https://github.com/orgua/shepherd>
+
+**Target-HW & -SW**: <https://github.com/orgua/shepherd-targets>
+
+**Webservice-Repo**: <https://github.com/orgua/shepherd_webservice>
+
+**Dev-Documentation**: <https://github.com/orgua/shepherd_v2_planning>
 
 ---
 
@@ -124,15 +134,11 @@ Try `shepherd-herd --help` or check out the documentation [here](https://shepher
 
 *shepherd* is an early stage project and chances are that something is not working as expected.
 Also, some features are not yet fully supported or documented.
-If you experience issues or require additional features, please get in touch via e-mail or by creating an issue on github.
-
-## Documentation
-
-The documentation is hosted on [readthedocs](https://shepherd-testbed.readthedocs.io/en/latest/).
+If you experience issues or require additional features, please get in touch via e-mail or by creating an issue on GitHub. The issue-tab also gives an overview for current roadmaps and milestones.
 
 ## People
 
-*shepherd* development is lead at the Networked Embedded Systems Lab at TU Dresden as part of the DFG-funded project Next-IoT.
+*shepherd* development is lead at the Networked Embedded Systems Lab at TU Dresden & TU Darmstadt as part of the DFG-funded project Next-IoT.
 
 The following people have contributed to *shepherd*:
 

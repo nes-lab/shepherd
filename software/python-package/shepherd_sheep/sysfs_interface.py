@@ -4,10 +4,8 @@ shepherd.sysfs_interface
 Provides convenience functions for interacting with the sysfs interface
 provided by the shepherd kernel module
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
+
 import subprocess
 import sys
 import time
@@ -122,8 +120,7 @@ def check_sys_access(iteration: int = 1) -> None:
             sys.exit(1)
     except PermissionError:
         log.error(
-            "RuntimeError: Failed to access sysFS -> "
-            "run shepherd-sheep with 'sudo'!",
+            "RuntimeError: Failed to access sysFS -> run shepherd-sheep with 'sudo'!",
         )
         sys.exit(1)
 
@@ -146,8 +143,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
 
         if time.time() - ts_start > timeout:
             raise SysfsInterfaceError(
-                f"timed out waiting for state { wanted_state } - "
-                f"state is { current_state }",
+                f"timed out waiting for state { wanted_state } - state is { current_state }",
             )
 
         time.sleep(0.1)
@@ -179,7 +175,7 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
                 log.debug("writing 'start' to sysfs")
                 f.write("start")
     except OSError:
-        log.error("Failed to write 'Start' to sysfs")
+        log.error("Failed to write 'Start' to sysfs (@%f.3)", time.time())
         return False
     return True
 
@@ -355,9 +351,7 @@ def write_calibration_settings(
         f.write(output)
 
 
-def read_calibration_settings() -> (
-    dict
-):  # more precise dict[str, int], trouble with py3.6
+def read_calibration_settings() -> dict[str, int]:
     """Retrieve the calibration settings from the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -584,43 +578,48 @@ def check_programmer() -> str:
         return file.read().rstrip()
 
 
-pru0_firmwares = [
+pru_firmwares = [
     "am335x-pru0-shepherd-fw",
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
+    "am335x-pru1-shepherd-fw",
+    "am335x-pru1-sync-fw",  # just for debug
 ]
 
 
-def load_pru0_firmware(value: str = "shepherd") -> None:
+def load_pru_firmware(value: str = "shepherd") -> None:
     """Swap firmwares
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
     WORKAROUND: catch lockup, restart shp-module until successful
 
     Args:
-        value: unique part of valid file-name like shepherd, swd, sbw (not case sensitive)
+        value: unique part of valid file-name like shepherd, swd, sbw (not case-sensitive)
     """
-    request = pru0_firmwares[0]  # default
-    for firmware in pru0_firmwares:
+    request = pru_firmwares[0]  # default
+    for firmware in pru_firmwares:
         if value.lower() in firmware.lower():
             request = firmware
-    log.debug("Will set pru0-firmware to '%s'", request)
-    _count = 1
+    log.debug("Will set pru-firmware to '%s'", request)
+    sys_str = f"/sys/shepherd/pru{1 if ('pru1' in request) else 0}_firmware"
+    _count = 0
     while _count < 6:
+        _count += 1
         try:
-            with Path("/sys/shepherd/pru0_firmware").open(
+            with Path(sys_str).open(
                 "w",
                 encoding="utf-8",
             ) as file:
                 file.write(request)
             time.sleep(2)
-            with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
+            with Path(sys_str).open(encoding="utf-8") as file:
                 result = file.read().rstrip()
             if result == request:
                 return
             log.error(
-                "Requested PRU-FW (%s) was not set (is '%s')",
+                "Requested PRU-FW (%s) was not set (is '%s'), retry-count=%d",
                 request,
                 result,
+                _count,
             )
         except OSError:  # noqa: PERF203
             log.warning(
@@ -629,19 +628,22 @@ def load_pru0_firmware(value: str = "shepherd") -> None:
                 _count,
             )
             reload_kernel_module()
-            _count += 1
     raise OSError(
-        "PRU-Driver still locked up (during pru-fw change)"
-        " -> consider restarting node",
+        "PRU-Driver still locked up (during pru-fw change) -> consider restarting node",
     )
 
 
-def pru0_firmware_is_default() -> bool:
+def pru_firmware_is_default() -> bool:
     _count = 1
     while _count < 6:
         try:
             with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
-                return file.read().rstrip() in pru0_firmwares[0]
+                if "shepherd-fw" not in file.read().rstrip():
+                    return False
+            with Path("/sys/shepherd/pru1_firmware").open(encoding="utf-8") as file:
+                if "shepherd-fw" not in file.read().rstrip():
+                    return False
+            return True
         except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
@@ -651,8 +653,7 @@ def pru0_firmware_is_default() -> bool:
             reload_kernel_module()
             _count += 1
     raise OSError(
-        "PRU-Driver still locked up (during pru-fw read)"
-        " -> consider restarting node",
+        "PRU-Driver still locked up (during pru-fw read) -> consider restarting node",
     )
 
 

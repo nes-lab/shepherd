@@ -60,9 +60,8 @@ def pytest_collection_modifyitems(
             item.add_marker(skip_missing_hardware)
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
-        if (
-            "fake_hardware" in item.keywords and "hardware" in item.keywords
-        ):  # real_hardware:
+        if "fake_hardware" in item.keywords and "hardware" in item.keywords:
+            # real_hardware
             item.add_marker(skip_fake)
 
 

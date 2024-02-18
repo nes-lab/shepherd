@@ -3,10 +3,8 @@ shepherd.__init__
 ~~~~~
 Provides main API functionality for harvesting and emulating with shepherd.
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
+
 import platform
 import shutil
 import subprocess
@@ -43,7 +41,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 
 __all__ = [
     "Writer",
@@ -129,7 +127,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
 
-        sysfs_interface.load_pru0_firmware(cfg.protocol)
+        sysfs_interface.load_pru_firmware(cfg.protocol)
         dbg.refresh_shared_mem()  # address might have changed
 
         log.info("processing file %s", cfg.firmware_file.name)
@@ -240,7 +238,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         pass
     stack.close()
 
-    sysfs_interface.load_pru0_firmware("shepherd")
+    sysfs_interface.load_pru_firmware("shepherd")
     return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 

@@ -23,8 +23,8 @@ class UARTMonitor(Monitor):
         self.uart = uart
         self.baudrate = baudrate
         self.data.create_dataset(
-            "message",
-            (self.increment,),
+            name="message",
+            shape=(self.increment,),
             dtype=h5py.special_dtype(vlen=bytes),
             maxshape=(None,),
             chunks=True,
@@ -42,7 +42,11 @@ class UARTMonitor(Monitor):
                 self.uart,
                 self.baudrate,
             )
-            self.thread = threading.Thread(target=self.thread_fn, daemon=True)
+            self.thread = threading.Thread(
+                target=self.thread_fn,
+                daemon=True,
+                name="UARTMon",
+            )
             self.thread.start()
         else:
             log.error(

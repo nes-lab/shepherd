@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.realpath("../software/shepherd-herd"))
 # -- Project information -----------------------------------------------------
 
 project = "SHEPHERD"
-project_copyright = "2019-2023, Networked Embedded Systems Lab, TU Dresden"
+project_copyright = "2019-2024, Networked Embedded Systems Lab, TU Dresden / TU Darmstadt"
 author = "Kai Geissdoerfer, Ingmar Splitt"
 
 
@@ -36,7 +36,7 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
 ]
-# TODO: check other sphinx-pluging (mentioned in pipfile) & breathe
+# TODO: check other sphinx-plugins (mentioned in pipfile) & breathe
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

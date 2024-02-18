@@ -22,8 +22,8 @@ class KernelMonitor(Monitor):
         self.backlog = backlog
 
         self.data.create_dataset(
-            "message",
-            (self.increment,),
+            name="message",
+            shape=(self.increment,),
             dtype=h5py.special_dtype(vlen=str),
             maxshape=(None,),
             chunks=True,
@@ -47,7 +47,7 @@ class KernelMonitor(Monitor):
             return
         os.set_blocking(self.process.stdout.fileno(), False)
 
-        self.thread = threading.Thread(target=self.thread_fn, daemon=True)
+        self.thread = threading.Thread(target=self.thread_fn, daemon=True, name="KMon")
         self.thread.start()
 
     def __exit__(
