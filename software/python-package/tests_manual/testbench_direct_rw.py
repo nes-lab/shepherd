@@ -168,7 +168,7 @@ def file_to_ram_old(path: Path, mem: SharedMemory) -> None:
         for _, dsv, dsc in sr.read_buffers(start_n=0, is_raw=True):
             # TODO: cal.raw_to_si
             mem.write_old(buffer_index, dsv, dsc)
-            buffer_index += 1
+            buffer_index += 1  # noqa: SIM113
 
 
 def ram_to_file_old(path: Path, mem: SharedMemory, compression: Compression) -> None:

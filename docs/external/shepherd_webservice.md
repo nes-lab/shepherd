@@ -1,6 +1,6 @@
 # Webservice
 
-[![QA-Tests](https://github.com/orgua/shepherd_webservice/actions/workflows/qa_tests.yml/badge.svg)](https://github.com/orgua/shepherd_webservice/actions/workflows/qa_tests.yml)
+[![QC-Tests](https://github.com/orgua/shepherd_webservice/actions/workflows/qc_tests.yml/badge.svg)](https://github.com/orgua/shepherd_webservice/actions/workflows/qc_tests.yml)
 
 **Testbed-WebAPI**: <https://shepherd.cfaed.tu-dresden.de:8000>
 

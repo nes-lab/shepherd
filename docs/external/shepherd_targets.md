@@ -2,7 +2,7 @@
 
 [![Build MSP430](https://github.com/orgua/shepherd-targets/actions/workflows/build_msp.yml/badge.svg)](https://github.com/orgua/shepherd-targets/actions/workflows/build_msp.yml)
 [![Build nRF52](https://github.com/orgua/shepherd-targets/actions/workflows/build_nrf.yml/badge.svg)](https://github.com/orgua/shepherd-targets/actions/workflows/build_nrf.yml)
-[![QA-Tests](https://github.com/orgua/shepherd-targets/actions/workflows/qa_tests.yml/badge.svg)](https://github.com/orgua/shepherd-targets/actions/workflows/qa_tests.yml)
+[![QC-Tests](https://github.com/orgua/shepherd-targets/actions/workflows/qc_tests.yml/badge.svg)](https://github.com/orgua/shepherd-targets/actions/workflows/qc_tests.yml)
 
 **Documentation**: <https://orgua.github.io/shepherd/external/shepherd_targets.html>
 
