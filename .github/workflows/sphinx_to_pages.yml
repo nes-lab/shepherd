@@ -26,3 +26,5 @@ jobs:
     steps:
       - name: Build and Push Pages 🧱
         uses: sphinx-notes/pages@v3
+        with:
+          pyproject_extras: ""
