@@ -16,7 +16,7 @@ Hardware-Subdirectories contain the necessary design-files to manufacture a shep
 
 ![Cape24b](_media/cape_24b_63b.jpg)
 
-More pictures are stored for QA in [planning-repo](https://github.com/orgua/shepherd_v2_planning/tree/main/doc_testbed/photos_PCBs).
+More pictures are stored for QC in [planning-repo](https://github.com/orgua/shepherd_v2_planning/tree/main/doc_testbed/photos_PCBs).
 
 ### Observers
 

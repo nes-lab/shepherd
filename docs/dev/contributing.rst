@@ -142,6 +142,7 @@ Once you have a clean, stable and tested version of code, you should decide if y
 Use ``bump2version`` to update the version number across the repository:
 
 .. code-block:: bash
+
     pipenv shell
     pre-commit run --all-files
     bump2version patch --allow-dirty
