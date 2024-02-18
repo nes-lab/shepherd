@@ -9,7 +9,9 @@ Welcome to SHEPHERD's documentation
 To learn how *shepherd* enables research into the most challenging problems of coordinating battery-less sensor nodes, take a look at our `paper <https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf>`_.
 To get a basic understanding of what shepherd does, read the :doc:`user/basics`.
 If you have the hardware on your desk and want to get started, read :doc:`user/getting_started`.
-To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd-cli` command line utility.
+To record/emulate data on a group of shepherd nodes, use the :ref:`herd-cli` command line utility.
+To access the testbed-instance go to :doc:`external/testbed`.
+The DevLog-Documentation is in: https://orgua.github.io/shepherd_v2_planning/
 
 .. toctree::
    :maxdepth: 2
@@ -29,11 +31,11 @@ To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd
    :maxdepth: 2
    :caption: Testbed & Tools
 
-   external/testbed.md
-   external/shepherd_core.md
-   external/shepherd_data.md
-   external/shepherd_targets.md
-   external/shepherd_webservice.md
+   external/testbed
+   external/shepherd_core
+   external/shepherd_data
+   external/shepherd_targets
+   external/shepherd_webservice
 
 .. toctree::
    :maxdepth: 2
@@ -50,7 +52,7 @@ To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd
    :maxdepth: 2
    :caption: Analyzing Sync-Behavior
 
-   timesync/1_prepare_software.md
-   timesync/2_setup_hardware.md
-   timesync/3_measurement.md
-   timesync/4_analysis.md
+   timesync/1_prepare_software
+   timesync/2_setup_hardware
+   timesync/3_measurement
+   timesync/4_analysis

@@ -1,3 +1,5 @@
+"""Abstract base class for monitors
+"""
 import threading
 from abc import ABC
 from abc import abstractmethod

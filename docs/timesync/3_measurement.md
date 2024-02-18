@@ -11,7 +11,7 @@
 
 **Note for RPi CM4**
 
-Changing the governor does not always work during boot, please check. At least the ptp-server is mostly stuck on `ondemand`.
+Changing the governor to `performance` does not always work during boot, please check. At least the ptp-server is mostly stuck on `ondemand`. 
 
 ```Shell
 # check
@@ -79,7 +79,7 @@ The server can only receive data from one client at the same time. Therefore the
 
 It's recommended to separate different campaigns and hardware-setups by subdirectories. A small textual description can help for later analysis. Notes of oddities and reported ptp path delays add valuable context.
 
-The following measurements are recommended:
+### The following measurements are recommended
 
 - 01 - baseline (stable, undisturbed network)
 - 02 - ptp-clients send data to external host with 100 Mbit/s

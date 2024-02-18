@@ -1,5 +1,7 @@
 # Hardware
 
+## Overview
+
 Shepherd is a HW/SW solution and this section describes the key interfaces of the shepherd hardware that are relevant to users.
 
 Each shepherd observer consists of five key components:
@@ -13,7 +15,7 @@ Each shepherd observer consists of five key components:
 
 ![cape_rendered](../media_recap/cape_v24b_pcb_preview.png)
 
-## References
+### References
 
 - [/hardware-directory](https://github.com/orgua/shepherd/tree/main/hardware): contains cape, housing and additional design-files
 - [shepherd-targets](https://github.com/orgua/shepherd-targets): contains hardware and software sources for supported targets
@@ -24,7 +26,7 @@ The harvesting port connects to any type of harvester, e.g., a solar panel or pi
 Some transducers need some external circuitry to work properly or for protection.
 By keeping this part of the hardware separate from the main shepherd cape, we allow to easily connect various types of harvesters, without having to change the complex and expensive main cape.
 
-### Header P6 pinout
+:::{table} Header P6 pinout
 
 | Pin | Description                                |
 |-----|--------------------------------------------|
@@ -32,26 +34,27 @@ By keeping this part of the hardware separate from the main shepherd cape, we al
 | 2   | Voltage sensing input of harvest-circuitry |
 | 3   | (optional) custom voltage from spare DAC   |
 | 4   | Current sinking input of harvest-circuitry |
+:::
 
-### Harvesting Sources
+## Harvesting Sources
 
 Examples of tested and deployed energy harvesting sources.
 
-#### Solar
+### Solar
 
-Name: Anysolar - IXOLAR - SM141K06L
-Source: Light
-Operation: 4.15 VDC open, 184 mW Max, 3.35 V Pmpp, 58.6 mA Short
-Price: 4.80 € 1x, 3.47 € 100x
-Link: <https://www.digikey.de/product-detail/de/anysolar-ltd/SM141K06L/SM141K06L-ND/9990462>
+- Name: Anysolar - IXOLAR - SM141K06L
+- Source: Light
+- Operation: 4.15 VDC open, 184 mW Max, 3.35 V Pmpp, 58.6 mA Short
+- Price: 4.80 € 1x, 3.47 € 100x
+- Link: <https://www.digikey.de/product-detail/de/anysolar-ltd/SM141K06L/SM141K06L-ND/9990462>
 
-#### Piezo
+### Piezo
 
-Name: Mide - S128-J1FR-1808YB
-Source: Mechanical Vibration
-Operation: 23.2 VDC, 16 mW,
-Price: 64,77 € per Module
-Link: <https://www.mouser.de/ProductDetail/Mide/S128-J1FR-1808YB?qs=%2Fha2pyFadugcWv6TUOmJo5PvQenH8AtGZXSLNQdw9t1p66yQjFtz4w==>
+- Name: Mide - S128-J1FR-1808YB
+- Source: Mechanical Vibration
+- Operation: 23.2 VDC, 16 mW
+- Price: 64,77 € per Module
+- Link: <https://www.mouser.de/ProductDetail/Mide/S128-J1FR-1808YB?qs=%2Fha2pyFadugcWv6TUOmJo5PvQenH8AtGZXSLNQdw9t1p66yQjFtz4w==>
 
 This specific transducer needs an adapter with
 
@@ -65,7 +68,7 @@ Shepherd provides two identical generic interface-ports to connect any type of c
 
 The target pcb connects to the shepherd cape via the dedicated headers P10 & P11 on the right side of the board.
 
-### Header P10 / P11 pinout
+:::{table} Header P10 / P11 pinout
 
 | Pin | Description (Rx/TX always with reference to Observer)              |
 |-----|--------------------------------------------------------------------|
@@ -87,6 +90,7 @@ The target pcb connects to the shepherd cape via the dedicated headers P10 & P11
 | 16  | Program2-IO - Data for remote programming (SWD, SBW) or JTAG-TMS   |
 | 17  | +3V3, use for any additional infrastructure circuitry              |
 | 18  | Ground                                                             |
+:::
 
 Notes:
 
@@ -98,6 +102,8 @@ Notes:
 - Pins 13 to 16 (level-translated) are used to program/debug a connected sensor node with SWD, SBW or JTAG. This enables support for a wide range of microcontrollers.
 - The header is symmetrical and therefore basically safe to reverse - so errors should not result in broken hardware.
 
-###
+## Target PCB
+
+This is shepherds current main target, hosting a nRF52 and MSP430.
 
 ![target_soldered](../media_recap/target_nRF_FRAM_v1.0_front_with_header.jpg)

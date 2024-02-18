@@ -12,7 +12,8 @@
 
 ---
 
-The repositoty contains a collection of target-hardware and mcu-firmwares used by the shepherd-testbed. In the past shepherd had a nRF52-only target but can now leverage an additional FRAM, as demonstrated successfully by the [Riotee-Platform](https://www.riotee.nessie-circuits.de).
+The repository contains a collection of target-hardware and mcu-firmwares used by the shepherd-testbed. In the past shepherd had a nRF52-only target but can now leverage an additional FRAM, as demonstrated successfully by the 
+[Riotee-Platform](https://www.riotee.nessie-circuits.de).
 
 **NOTE**: The shepherd testbed has a second target-port (unused) and is looking for ideas. Just contact us.
 

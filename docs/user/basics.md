@@ -1,6 +1,6 @@
 # Basics
 
-**shepherd** is a testbed for battery-less cyber-physical systems, or generally known as Internet of Things.
+**Shepherd** is a testbed for battery-less cyber-physical systems, or generally known as Internet of Things.
 It allows to record harvesting conditions at multiple points in space over time.
 The recorded data can be replayed to attached wireless sensor nodes (targets), examining their behavior under the constraints of spatio-temporal energy availability.
 

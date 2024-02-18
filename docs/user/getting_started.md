@@ -122,25 +122,25 @@ Further playbooks:
 - `setup-ext-storage.yml` will format and automount sd-card to `/var/shepherd/recordings`
 - `dev_rebuild_sw.yml` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart
 
+
 (install-simple)=
 ## Installation - ready-to-use image
 
-
-The following guide sets up a single shepherd-node by using a ready-to-use shepherd-image. The steps are more detailed and try to simplify the process for new users by cutting away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host, but Linux users can easily adapt.
+The following guide sets up a single observer by deploying a ready-to-use shepherd-image. The steps are more detailed and try to simplify the process for new users by cutting away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host. Linux users can easily adapt.
 
 As new hardware and unknown software can be intimidating the steps were also [filmed and put on YouTube](https://youtu.be/UPEH7QODm8A) for comparing the progress.
 
-First step is downloading the [current shepherd-image](https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx) and flashing it to a micro-sd-card with balenaEtcher in admin mode. Note that other tools like rufus probably don't work. Select the (still compressed `.img.xz`) image and choose the appropriate drive before flashing.
+First step is downloading the [current shepherd-image](https://drive.google.com/drive/folders/1HBD8D8gC8Zx3IYpiVImVOglhO_RTwGYx) and flashing it to a micro-sd-card with [balenaEtcher](https://etcher.balena.io/) in admin mode. Note that other tools like rufus probably don't work. Select the (still compressed `.img.xz`) image and choose the appropriate drive to begin flashing.
 
-Insert the finished sd-card into the Beaglebone, connect the device via ethernet-cable to your local network and finally power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
+Insert the prepared sd-card into the Beaglebone, connect the device via ethernet-cable to your local network and finally power the Beaglebone with a USB-Wall-Charger or any other power source with 5V and at least 500 mA.
 
-After power-up all **LEDs** should light up immediately for ~1s. From then on the outermost LED acts as a permanent heartbeat and the other 3 LEDs show different IO usage. Boot is finished when the LEDs stop being busy (~30s). After that you can login.
+After power-up all **LEDs** should light up immediately for ~1s. From then on the outermost LED acts as a permanent heartbeat and the other 3 LEDs show different IO usage. Boot is finished when the LEDs stop being busy (~30s). After that you can log in.
 
-How to connect? There are at least 3 options. In most cases you can access the Beaglebone by using the hostname `sheep0`. If that does not work you can check the list of network-devices compiled by your routers webinterface. Alternatively you can scan your local IP-space with an ip scanner, in our example the `Angry IP Scanner` was used. Look for the hostname `sheep0` or the MAC-Vendor `Texas Instruments` in the list. **Be sure to use the IP-space of the correct network device of your host device**.
+How to connect? There are at least three options. In most cases you can access the system by using the hostname `sheep0`. If that does not work you can check the list of network-devices compiled by your routers webinterface. Alternatively you can scan your local IP-space with an ip scanner, in our example the `Angry IP Scanner` was used. Look for the hostname `sheep0` or the MAC-Vendor `Texas Instruments` in the list. **Be sure to use the IP-space of the correct network device of your host device - there might be more than one**.
 
-Configure WSL on Windows with a generic Ubuntu or just use the PowerShell if OpenSSH is installed as an optional feature (`settings > apps > optional features`).
+Configure WSL on Windows with a Linux of your choice (we recommend a generic Ubuntu) or you can use the PowerShell if OpenSSH is installed as an optional feature (`windows > settings > apps > optional features`).
 
-The commands below open a secure shell (ssh) to the Beaglebone. As it's an unknown device you have to accept a new fingerprint (or host key) **once** before entering the password `temppwd` of the Beaglebone. The console will also tell you the password while trying to login. Notice how the current console-line now begins with `ubuntu@sheep0`. It means you are logged in and every issued command will be executed on the Beaglebone. To **quit the shell** type `exit` (for later).
+The commands below open a secure shell (ssh) to the Beaglebone. As it's an unknown device you have to accept a new fingerprint (or host key) **once** before entering the password `temppwd` of the Beaglebone. The console will also tell you the password while trying to log in. Notice how the current console-line now begins with `ubuntu@sheep0`. It means you are logged in and every issued command will be executed on the Beaglebone. To **quit the shell** type `exit` (remember for later).
 
 ```Shell
 # login via host-name (requires local DNS)
@@ -149,7 +149,7 @@ ssh ubuntu@sheep0
 ssh ubuntu@10.0.0.10
 ```
 
-Now it is recommended to check if ubuntu was indeed started from the sd-card as the Beaglebone could contain and boot an old OS.
+Now it is recommended to check if ubuntu was indeed started from the sd-card as the Beaglebones own flash-storage could contain & boot an old OS.
 
 ```Shell
 uname -a
@@ -160,23 +160,23 @@ mount
 # ⤷ should show that /dev/mmcblk0p1 (SD-Card) is "/" (root-directory) usually on line 1
 ```
 
-If the tests are positive it is safe to use the image as is from sd-card. Alternatively it is also possible to copy the OS to the internal eMMC for improved performance. Note that the recommended eMMC flasher does not work, but `dd` can be used instead:
+If the tests are positive it is safe to use the image as is from sd-card. Alternatively it is also possible to copy the OS to the internal eMMC for slightly improved performance. Note that the recommended eMMC flasher does not work, but `dd` can be used instead:
 
 ```Shell
 sudo dd if=/dev/mmcblk0p1 of=/dev/mmcblk1p1
 # ⤷ takes 10 - 20 min
 ```
 
-After the command finishes shut down the Beaglebone either by `sudo shutdown now` or by pushing the button next to the network socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches except that `mount` now shows mmcblk1p1 (eMMC) as root-directory.
+After the command finishes shut down the Beaglebone either by `sudo shutdown now` or by pushing the button next to the ethernet socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches except that `mount` now shows `mmcblk1p1` (eMMC) as root-directory.
 
-For password-less entry & usage of the Beaglebone we prepared an `ansible playbook`. Make sure that you cloned the shepherd-repository and installed ansible (compare with general installation-guide from previous section) and also configured the `herd.yml` in consultation with the full installation guide.
+For password-less entry & usage of the Beaglebone we prepared an `ansible playbook`. Make sure that you cloned the shepherd-repository locally and installed ansible (compare with general installation-guide from previous section) and also configured the `herd.yml` in consultation with the full installation guide.
 
 ```Shell
 # execute in shepherd-repo on host
 ansible-playbook ./deploy/setup_pwless_ssh_for_host.yml
 ```
 
-Now that the Software ready a basic test of the shepherd-framework can be run. It is possible to start a pre-configured harvesting demo, even without a cape. This can be done either on the Beaglebone itself:
+Now that the Software is ready, a basic test of the shepherd-framework can be run. It is possible to start a pre-configured harvesting demo, even without a cape. This can be done either on the Beaglebone itself:
 
 ```Shell
 sudo shepherd-sheep run --config /etc/shepherd/example_config_harvest.yaml

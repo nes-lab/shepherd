@@ -1,4 +1,4 @@
-name: Test for Quality Assurance
+name: Test for Quality Control
 
 on:
   push:

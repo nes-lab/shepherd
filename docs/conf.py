@@ -36,7 +36,7 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
 ]
-# TODO: check other sphinx-pluging (mentioned in pipfile) & breathe
+# TODO: check other sphinx-plugins (mentioned in pipfile) & breathe
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

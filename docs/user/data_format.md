@@ -41,7 +41,7 @@ The datasets `time`, `current` and `voltage` are raw `uint32` (directly from ADC
 - `unit` contains the SI unit for the scaling operation
 - `description` shows how to apply the scaling, i.e. `system time [s] = value * gain + (offset)`
 
-See also [](calibration.rst).
+See also [](calibration).
 
 The gpio group stores the timestamp when a GPIO edge was detected and the corresponding bit mask in values.
 For example, assume that all are were low at the beginning of the recording.

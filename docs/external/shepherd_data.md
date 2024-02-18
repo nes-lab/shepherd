@@ -1,7 +1,8 @@
 # Data Module
 
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_data.svg)](https://pypi.org/project/shepherd_data)
-[![Pytest](https://github.com/orgua/shepherd-datalib/actions/workflows/python-app.yml/badge.svg)](https://github.com/orgua/shepherd-datalib/actions/workflows/python-app.yml)
+[![image](https://img.shields.io/pypi/pyversions/shepherd_data.svg)](https://pypi.python.org/pypi/shepherd-data)
+[![Pytest](https://github.com/orgua/shepherd-datalib/actions/workflows/py_unittest.yml/badge.svg)](https://github.com/orgua/shepherd-datalib/actions/workflows/py_unittest.yml)
 [![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 **Documentation**: <https://orgua.github.io/shepherd/external/shepherd_data.html>
@@ -47,7 +48,7 @@ with sd.Reader("./hrv_sawtooth_1h.h5") as db:
   - file can be checked for plausibility and validity (`is_valid()`)
   - internal structure of h5file (`get_metadata()` or `save_metadata()` ... to yaml) with lots of additional data
   - access data and various converters, calculators
-    - `read_buffers()` -> generator that provides one buffer per call, can be configured on first call
+    - `read_buffers()` ⇾ generator that provides one buffer per call, can be configured on first call
     - `get_calibration_data()`
     - `get_windows_samples()`
     - `get_mode()`
@@ -91,7 +92,6 @@ with sd.Reader("./hrv_sawtooth_1h.h5") as db:
   - `is_valid`
   - `energy()`
   - `check_timediffs()`
-  - `data_timediffs()`
   - `get_metadata()`
   - `save_metadata()`
 
@@ -205,20 +205,20 @@ TODO:
   - note: lzf seems to cause trouble with some third party hdf5-tools
   - compression is a heavy load for the beaglebone, but it got more performant with recent python-versions
 - size-experiment A: 24 h of ramping / sawtooth (data is repetitive with 1 minute ramp)
-  - gzip-1: 49'646 MiB -> 588 KiB/s
-  - lzf: 106'445 MiB -> 1262 KiB/s
-  - uncompressed: 131'928 MiB -> 1564 KiB/s
+  - gzip-1: 49'646 MiB ⇾ 588 KiB/s
+  - lzf: 106'445 MiB ⇾ 1262 KiB/s
+  - uncompressed: 131'928 MiB ⇾ 1564 KiB/s
 - cpu-load-experiments (input is 24h sawtooth, python 3.10 with most recent libs as of 2022-04)
   - warning: gpio-traffic and other logging-data can cause lots of load
 
 ```
-  emu_120s_gz1_to_gz1.h5 	-> emulator, cpu_util [%] = 65.59, data-rate =  352.0 KiB/s
-  emu_120s_gz1_to_lzf.h5 	-> emulator, cpu_util [%] = 57.37, data-rate =  686.0 KiB/s
-  emu_120s_gz1_to_unc.h5 	-> emulator, cpu_util [%] = 53.63, data-rate = 1564.0 KiB/s
-  emu_120s_lzf_to_gz1.h5 	-> emulator, cpu_util [%] = 63.18, data-rate =  352.0 KiB/s
-  emu_120s_lzf_to_lzf.h5 	-> emulator, cpu_util [%] = 58.60, data-rate =  686.0 KiB/s
-  emu_120s_lzf_to_unc.h5 	-> emulator, cpu_util [%] = 55.75, data-rate = 1564.0 KiB/s
-  emu_120s_unc_to_gz1.h5 	-> emulator, cpu_util [%] = 63.84, data-rate =  351.0 KiB/s
-  emu_120s_unc_to_lzf.h5 	-> emulator, cpu_util [%] = 57.28, data-rate =  686.0 KiB/s
-  emu_120s_unc_to_unc.h5 	-> emulator, cpu_util [%] = 51.69, data-rate = 1564.0 KiB/s
+emu_120s_gz1_to_gz1.h5 	⇾ emulator, cpu_util [%] = 65.59, data-rate =  352.0 KiB/s
+emu_120s_gz1_to_lzf.h5 	⇾ emulator, cpu_util [%] = 57.37, data-rate =  686.0 KiB/s
+emu_120s_gz1_to_unc.h5 	⇾ emulator, cpu_util [%] = 53.63, data-rate = 1564.0 KiB/s
+emu_120s_lzf_to_gz1.h5 	⇾ emulator, cpu_util [%] = 63.18, data-rate =  352.0 KiB/s
+emu_120s_lzf_to_lzf.h5 	⇾ emulator, cpu_util [%] = 58.60, data-rate =  686.0 KiB/s
+emu_120s_lzf_to_unc.h5 	⇾ emulator, cpu_util [%] = 55.75, data-rate = 1564.0 KiB/s
+emu_120s_unc_to_gz1.h5 	⇾ emulator, cpu_util [%] = 63.84, data-rate =  351.0 KiB/s
+emu_120s_unc_to_lzf.h5 	⇾ emulator, cpu_util [%] = 57.28, data-rate =  686.0 KiB/s
+emu_120s_unc_to_unc.h5 	⇾ emulator, cpu_util [%] = 51.69, data-rate = 1564.0 KiB/s
 ```

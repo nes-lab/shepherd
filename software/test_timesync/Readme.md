@@ -9,6 +9,26 @@ The process to get the actual data is described in separate chapters:
 - [run measurements](../../docs/timesync/3_measurement.md)
 - [analysis](../../docs/timesync/4_analysis.md)
 
+It is part of the official [documentation](https://orgua.github.io/shepherd).
+
+## Installation
+
+Similar to the other python tooling you can run
+
+```Shell
+git clone https://github.com/orgua/shepherd
+cd shepherd/software/test-timesync
+pip install .
+```
+
+This assumes that python > v3.10 and git are installed
+
+For install directly from GitHub-Sources (here `dev`-branch):
+
+```Shell
+ pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/test-timesync -U
+```
+
 ## Expected Data-Format
 
 ```csv
