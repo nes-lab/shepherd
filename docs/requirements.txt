@@ -1,3 +1,5 @@
+-e ./software/python-package
+-e ./software/shepherd-herd
 alabaster
 asn1crypto
 Babel

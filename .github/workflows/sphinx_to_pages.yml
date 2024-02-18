@@ -15,8 +15,8 @@ jobs:
     uses: ./.github/workflows/qc_tests.yml
   build-pages:
     runs-on: ubuntu-latest
-#    needs:
-#      - run-quality-control # TODO: only temporary
+    needs:
+      - run-quality-control
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
