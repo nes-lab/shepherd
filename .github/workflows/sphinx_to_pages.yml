@@ -28,3 +28,4 @@ jobs:
         uses: sphinx-notes/pages@v3
         with:
           pyproject_extras: ""
+          # currently needed because action begins to analyze root pyproject.toml
