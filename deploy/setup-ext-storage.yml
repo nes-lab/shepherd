@@ -1,4 +1,6 @@
 ---
+# will format and automount sd-card to `/var/shepherd/recordings`
+
 - name: Setup tmpfs and shepherd recordings on external storage
   hosts: all
   collections:

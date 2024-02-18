@@ -27,13 +27,11 @@ In numbers:
 - `Δ_q1 = 99%-Quantile - 1%-Quantile`
 - `Δ_max = Max - Min`
 
-```
-                             name  Δ_q1 [ns]  Δ_max [ns]
-BBB_023_ABS_HARD_ch0_rising_100ms        874        1050
-BBAI_02_ptp_piservo_[..]ing_100ms        464       16552
-010_cm4_baseline_ch0_rising_100ms         78         286
-```
-
+| name                              | Δ_q1 [ns] | Δ_max [ns] |
+|-----------------------------------|-----------|------------|
+| BBB_023_ABS_HARD_ch0_rising_100ms | 874       | 1050       |
+| BBAI_02_ptp_piservo_[..]ing_100ms | 464       | 16552      |
+| 010_cm4_baseline_ch0_rising_100ms | 78        | 286        |
 
 **BBone Black**
 
@@ -58,11 +56,10 @@ In numbers:
 - `Δ_q1 = 99%-Quantile - 1%-Quantile`
 - `Δ_max = Max - Min`
 
-```
-                        name  Δ_q1 [ns]  Δ_max [ns]
-BBAI_02_ptp_piservo_[..]_1u2        669        1182
- RPI_005_norm_80_70_diff_1u2        336         378
-```
+| name                         | Δ_q1 [ns] | Δ_max [ns] |
+|------------------------------|-----------|------------|
+| BBAI_02_ptp_piservo_[..]_1u2 | 669       | 1182       |
+| RPI_005_norm_80_70_diff_1u2  | 336       | 378        |
 
 **BBone AI64**
 

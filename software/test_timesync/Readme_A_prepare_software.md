@@ -36,3 +36,12 @@ Steps are described in [AI64-Eval-Document](https://github.com/orgua/shepherd_v2
 ### Raspberry CM4
 
 Steps are described in [CM4-Eval-Document](https://github.com/orgua/shepherd_v2_planning/blob/main/67_raspberry_CM4_eval.md)
+
+### Kernel-Module Modification
+
+There are two specialized branches to GPIO-Access on Kernel-Level
+
+- [Kernel510](https://github.com/orgua/shepherd/tree/Kernel510/software/kernel-module/src): allows direct gpio-access for BBone Black & AI64
+- [Kernel61RPi](https://github.com/orgua/shepherd/tree/Kernel61RPi/software/kernel-module/src): same for Raspberry PI CM4
+
+⇾ compile and install these

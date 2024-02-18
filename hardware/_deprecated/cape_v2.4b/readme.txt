@@ -1,12 +1,12 @@
 
 Umfang:
 
-- 15 Baugruppen / PCBs 
+- 15 Baugruppen / PCBs
 	- wenn möglich 1 PCB Bestückung als Testsample und den Rest 2-3 Wochen später nach Freigabe
 	- falls für die letzte Platine wenige Bauteile fehlen, dann gerne unvollständig bestücken
 - 350 Bauteile, 50 unique
 - einseitige Bestückung
-- smallest part: 0402 
+- smallest part: 0402
 - smallest pitch: 0.5 mm
 - only top layer populated
 - Bestellung notwendig, nicht alle Bauteile konnten beigestellt werden (siehe Unten)
@@ -34,12 +34,12 @@ Platinenfertigung / Manufacturing Constraints:
 	- beidseitiger Bestückungsdruck
 - Stencil: Solder Paste Pads are optimized for a 70 - 110 um Stencil
 
-- markings: 
-	- Mech-15 contains assembly notes / Pick and Place 
-	- marking origin of part: cross (+) on assembly notes layer 
-	- marking pad 1 of ICs: chamfered edge and circle (assembly notes) and filled triangle (silk) 
-	- marking cathode of diodes: "C" or chamfered edge (assembly notes) and filled triangle (silk) 
-	- Mech-2 contains Top Part Designators 
+- markings:
+	- Mech-15 contains assembly notes / Pick and Place
+	- marking origin of part: cross (+) on assembly notes layer
+	- marking pad 1 of ICs: chamfered edge and circle (assembly notes) and filled triangle (silk)
+	- marking cathode of diodes: "C" or chamfered edge (assembly notes) and filled triangle (silk)
+	- Mech-2 contains Top Part Designators
 
 
 BOM / Bestellung:
@@ -53,6 +53,6 @@ BOM / Bestellung:
 
 Difference in B-Version of v2.4
 
-- adapt to mouser-stock 
+- adapt to mouser-stock
 	- Pitch: avoid .35 mm , now it's >= 0.5 mm
-	- Solder Mask Sliver: now safer > 0.2 mm  
+	- Solder Mask Sliver: now safer > 0.2 mm

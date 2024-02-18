@@ -4,9 +4,6 @@ shepherd.launcher
 Launcher allows to start and stop shepherd service with the press of a button.
 Relies on systemd service.
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
 
 import os

@@ -12,40 +12,40 @@
 
 
 
-** Creating circuit file "simIlate.cir" 
+** Creating circuit file "simIlate.cir"
 ** WARNING: THIS AUTOMATICALLY GENERATED FILE MAY BE OVERWRITTEN BY SUBSEQUENT SIMULATIONS
 
-*Libraries: 
+*Libraries:
 * Profile Libraries :
 * Local Libraries :
 * From [PSPICE NETLIST] section of C:\SPB_Data\cdssetup\OrCAD_PSpiceTIPSpice_Install\17.4.0\PSpice.ini file:
-.lib "nom_pspti.lib" 
-.lib "nom.lib" 
+.lib "nom_pspti.lib"
+.lib "nom.lib"
 
-*Analysis directives: 
-.TRAN  0 0.01 0 
+*Analysis directives:
+.TRAN  0 0.01 0
 .OPTIONS ADVCONV
-.PROBE64 V(alias(*)) I(alias(*)) W(alias(*)) D(alias(*)) NOISE(alias(*)) 
-.INC "..\SCHEMATIC1.net" 
+.PROBE64 V(alias(*)) I(alias(*)) W(alias(*)) D(alias(*)) NOISE(alias(*))
+.INC "..\SCHEMATIC1.net"
 
 
 
 **** INCLUDING SCHEMATIC1.net ****
 * source SHEPHERD_RECORDER_OPDRAIN
-X_U1         OPIN N14735 N14685 N14776 OPDRAIN OPA189 
-I_I1         0 SENSE DC 20m AC 0 
-C_C1         N14735 SENSE  1n  TC=0,0 
-R_R1         N14735 SENSE  1k TC=0,0 
-R_R2         OPDRAIN N14674  10R TC=0,0 
-D_D1         SENSE N14674 Dbreak 
+X_U1         OPIN N14735 N14685 N14776 OPDRAIN OPA189
+I_I1         0 SENSE DC 20m AC 0
+C_C1         N14735 SENSE  1n  TC=0,0
+R_R1         N14735 SENSE  1k TC=0,0
+R_R2         OPDRAIN N14674  10R TC=0,0
+D_D1         SENSE N14674 Dbreak
 V_V1         N14776 0 -6Vdc
 V_V2         N14685 0 10Vdc
-V_V3         OPIN 0 DC 3Vdc 
-+PULSE 1Vdc 4Vdc 200ms 100ms 200ms 
+V_V3         OPIN 0 DC 3Vdc
++PULSE 1Vdc 4Vdc 200ms 100ms 200ms
 
 **** RESUMING simIlate.cir ****
 .END
-
+
 **** 03/24/21 11:40:00 ******* PSpice 17.4.0 (Nov 2018) ******* ID# 0 ********
 
  ** Profile: "SCHEMATIC1-simIlate"  [ C:\Users\ingmo\Documents\GitHub\shepherd_v2_planning\PCBs\shepherd_recorder_opDrain-PSpiceFiles
@@ -59,12 +59,12 @@ V_V3         OPIN 0 DC 3Vdc
 
 
 
-               X_U1.R_NOISELESS 
-  T_Measured   27            
-   T_Current -273.15         
-           R    1            
+               X_U1.R_NOISELESS
+  T_Measured   27
+   T_Current -273.15
+           R    1
 
-
+
 **** 03/24/21 11:40:00 ******* PSpice 17.4.0 (Nov 2018) ******* ID# 0 ********
 
  ** Profile: "SCHEMATIC1-simIlate"  [ C:\Users\ingmo\Documents\GitHub\shepherd_v2_planning\PCBs\shepherd_recorder_opDrain-PSpiceFiles
@@ -78,11 +78,11 @@ V_V3         OPIN 0 DC 3Vdc
 
 
 
-               X_U1.ESD_SW     X_U1.OL_SW      X_U1.OR_SW      
-         RON   50               1.000000E-03     .01         
-        ROFF    1.000000E+12    1.000000E+12    1.000000E+12 
-         VON     .5              .9             1.000000E-03 
-        VOFF     .45             .8             0            
+               X_U1.ESD_SW     X_U1.OL_SW      X_U1.OR_SW
+         RON   50               1.000000E-03     .01
+        ROFF    1.000000E+12    1.000000E+12    1.000000E+12
+         VON     .5              .9             1.000000E-03
+        VOFF     .45             .8             0
 
 
 Starting pseudo-transient algorithm.
@@ -97,115 +97,115 @@ ERROR -- Convergence problem in transient bias point calculation
  NODE   VOLTAGE     NODE   VOLTAGE     NODE   VOLTAGE     NODE   VOLTAGE
 
 
-( OPIN)    3.0000  (SENSE)    3.0000  (N14674)    2.2654 (N14685)   10.0000     
+( OPIN)    3.0000  (SENSE)    3.0000  (N14674)    2.2654 (N14685)   10.0000
 
-(N14735)    3.0000 (N14776)   -6.0000 (OPDRAIN)    2.0654                       
+(N14735)    3.0000 (N14776)   -6.0000 (OPDRAIN)    2.0654
 
-(X_U1.MID) 189.8E-06                  (X_U1.ESDn)    3.0000                     
+(X_U1.MID) 189.8E-06                  (X_U1.ESDn)    3.0000
 
-(X_U1.ESDp)    3.0000                 (X_U1.N001)     .0197                     
+(X_U1.ESDp)    3.0000                 (X_U1.N001)     .0197
 
-(X_U1.N002) 191.3E-06                 (X_U1.N003) 191.3E-06                     
+(X_U1.N002) 191.3E-06                 (X_U1.N003) 191.3E-06
 
-(X_U1.N004) 189.9E-06                 (X_U1.N005)   -4.7434                     
+(X_U1.N004) 189.9E-06                 (X_U1.N005)   -4.7434
 
-(X_U1.N006) 189.7E-06                 (X_U1.N007) 189.9E-06                     
+(X_U1.N006) 189.7E-06                 (X_U1.N007) 189.9E-06
 
-(X_U1.N008)    7.9622                 (X_U1.N009) 191.3E-06                     
+(X_U1.N008)    7.9622                 (X_U1.N009) 191.3E-06
 
-(X_U1.N010)   69.0000                 (X_U1.N011)   75.0000                     
+(X_U1.N010)   69.0000                 (X_U1.N011)   75.0000
 
-(X_U1.N012)    9.9825                 (X_U1.N013)    9.9825                     
+(X_U1.N012)    9.9825                 (X_U1.N013)    9.9825
 
-(X_U1.N014) 189.8E-06                 (X_U1.N015) 189.8E-06                     
+(X_U1.N014) 189.8E-06                 (X_U1.N015) 189.8E-06
 
-(X_U1.N016) 189.8E-06                 (X_U1.N017) 189.8E-06                     
+(X_U1.N016) 189.8E-06                 (X_U1.N017) 189.8E-06
 
-(X_U1.N018)   -8.9327                 (X_U1.N019) 189.8E-06                     
+(X_U1.N018)   -8.9327                 (X_U1.N019) 189.8E-06
 
-(X_U1.N020) 189.8E-06                 (X_U1.N021) 189.8E-06                     
+(X_U1.N020) 189.8E-06                 (X_U1.N021) 189.8E-06
 
-(X_U1.N022) 189.8E-06                 (X_U1.N023) 189.8E-06                     
+(X_U1.N022) 189.8E-06                 (X_U1.N023) 189.8E-06
 
-(X_U1.N024) 189.8E-06                 (X_U1.N025)   -5.0856                     
+(X_U1.N024) 189.8E-06                 (X_U1.N025)   -5.0856
 
-(X_U1.N026)   -5.0856                 (X_U1.N027)  -21.9320                     
+(X_U1.N026)   -5.0856                 (X_U1.N027)  -21.9320
 
-(X_U1.N028)  -21.9320                 (X_U1.N029)  -21.9320                     
+(X_U1.N028)  -21.9320                 (X_U1.N029)  -21.9320
 
-(X_U1.N030)    4.0677                 (X_U1.N031)    4.0677                     
+(X_U1.N030)    4.0677                 (X_U1.N031)    4.0677
 
-(X_U1.N032)    4.0677                 (X_U1.N033) 189.8E-06                     
+(X_U1.N032)    4.0677                 (X_U1.N033) 189.8E-06
 
-(X_U1.N034) 189.8E-06                 (X_U1.N035)    3.0000                     
+(X_U1.N034) 189.8E-06                 (X_U1.N035)    3.0000
 
-(X_U1.N036)    3.0000                 (X_U1.N037)  -70.0000                     
+(X_U1.N036)    3.0000                 (X_U1.N037)  -70.0000
 
-(X_U1.N038)    3.0000                 (X_U1.N039)    3.0000                     
+(X_U1.N038)    3.0000                 (X_U1.N039)    3.0000
 
-(X_U1.N040)  -75.0000                 (X_U1.N041)    3.0000                     
+(X_U1.N040)  -75.0000                 (X_U1.N041)    3.0000
 
-(X_U1.N042)    3.0000                 (X_U1.N043)    3.0000                     
+(X_U1.N042)    3.0000                 (X_U1.N043)    3.0000
 
-(X_U1.N044) 182.3E-06                 (X_U1.N045)    7.5000                     
+(X_U1.N044) 182.3E-06                 (X_U1.N045)    7.5000
 
-(X_U1.N046)   -6.1000                 (X_U1.N047)    3.0000                     
+(X_U1.N046)   -6.1000                 (X_U1.N047)    3.0000
 
-(X_U1.N048)  -20.0000                 (X_U1.N049)    2.0654                     
+(X_U1.N048)  -20.0000                 (X_U1.N049)    2.0654
 
-(X_U1.N050) -977.4800                 (X_U1.N051)   -2.6657                     
+(X_U1.N050) -977.4800                 (X_U1.N051)   -2.6657
 
-(X_U1.N052)   -8.9323                 (X_U1.N053)   -5.2542                     
+(X_U1.N052)   -8.9323                 (X_U1.N053)   -5.2542
 
-(X_U1.N054)   -8.9327                 (X_U1.N055)   -8.9327                     
+(X_U1.N054)   -8.9327                 (X_U1.N055)   -8.9327
 
-(X_U1.N056)   -8.9323                 (X_U1.N057) -977.4800                     
+(X_U1.N056)   -8.9323                 (X_U1.N057) -977.4800
 
-(X_U1.N058) -977.4800                 (X_U1.N059) -977.4800                     
+(X_U1.N058) -977.4800                 (X_U1.N059) -977.4800
 
-(X_U1.N060) -977.4800                 (X_U1.N061) -977.4000                     
+(X_U1.N060) -977.4800                 (X_U1.N061) -977.4000
 
-(X_U1.N062) -141.7200                 (X_U1.N063) -977.4000                     
+(X_U1.N062) -141.7200                 (X_U1.N063) -977.4000
 
-(X_U1.N064) -977.4000                 (X_U1.N065) -977.4000                     
+(X_U1.N064) -977.4000                 (X_U1.N065) -977.4000
 
-(X_U1.N066) -977.4000                 (X_U1.N067) -977.3000                     
+(X_U1.N066) -977.4000                 (X_U1.N067) -977.3000
 
-(X_U1.N068)   -4.8863                 (X_U1.N069) -977.2800                     
+(X_U1.N068)   -4.8863                 (X_U1.N069) -977.2800
 
-(X_U1.N070)    2.0654                 (X_U1.N071) -977.4800                     
+(X_U1.N070)    2.0654                 (X_U1.N071) -977.4800
 
-(X_U1.N072) -977.4800                 (X_U1.N073) -977.4000                     
+(X_U1.N072) -977.4800                 (X_U1.N073) -977.4000
 
-(X_U1.N074) -977.4000                 (X_U1.N075)   -8.9323                     
+(X_U1.N074) -977.4000                 (X_U1.N075)   -8.9323
 
-(X_U1.N076)   10.0000                 (X_U1.N077) 189.8E-06                     
+(X_U1.N076)   10.0000                 (X_U1.N077) 189.8E-06
 
-(X_U1.N078)   -6.0000                 (X_U1.N079)   -8.9323                     
+(X_U1.N078)   -6.0000                 (X_U1.N079)   -8.9323
 
-(X_U1.N080) 189.8E-06                 (X_U1.N081) 189.8E-06                     
+(X_U1.N080) 189.8E-06                 (X_U1.N081) 189.8E-06
 
-(X_U1.N082) 189.8E-06                 (X_U1.N083) 189.8E-06                     
+(X_U1.N082) 189.8E-06                 (X_U1.N083) 189.8E-06
 
-(X_U1.N084) 189.8E-06                 (X_U1.N085)   -8.9323                     
+(X_U1.N084) 189.8E-06                 (X_U1.N085)   -8.9323
 
-(X_U1.N086)   -8.9323                 (X_U1.VCLP)   -8.9323                     
+(X_U1.N086)   -8.9323                 (X_U1.VCLP)   -8.9323
 
-(X_U1.CLAMP)   -8.9327                (X_U1.SW_OL) 189.8E-06                    
+(X_U1.CLAMP)   -8.9327                (X_U1.SW_OL) 189.8E-06
 
-(X_U1.VCC_B)   10.0000                (X_U1.VEE_B)   -6.0000                    
+(X_U1.VCC_B)   10.0000                (X_U1.VEE_B)   -6.0000
 
-(X_U1.VIMON)  -20.0000                (X_U1.VOUT_S)    2.0654                   
+(X_U1.VIMON)  -20.0000                (X_U1.VOUT_S)    2.0654
 
-(X_U1.VSENSE)   -8.9327               (X_U1.Xe_n.5)    0.0000                   
+(X_U1.VSENSE)   -8.9327               (X_U1.Xe_n.5)    0.0000
 
-(X_U1.VCC_CLP)    9.9825              (X_U1.VEE_CLP)   -5.0856                  
+(X_U1.VCC_CLP)    9.9825              (X_U1.VEE_CLP)   -5.0856
 
-(X_U1.Xi_nn.3)    0.0000              (X_U1.Xi_nn.5)    0.0000                  
+(X_U1.Xi_nn.3)    0.0000              (X_U1.Xi_nn.5)    0.0000
 
-(X_U1.Xi_np.3)    0.0000              (X_U1.Xi_np.5)    0.0000                  
+(X_U1.Xi_np.3)    0.0000              (X_U1.Xi_np.5)    0.0000
 
-(X_U1.CL_CLAMP)   -8.9323             (X_U1.CLAW_CLAMP)   -8.9323           
+(X_U1.CL_CLAMP)   -8.9323             (X_U1.CLAW_CLAMP)   -8.9323
 
 
   These voltages failed to converge:
@@ -315,7 +315,7 @@ ERROR -- Convergence problem in transient bias point calculation
     I(X_U1.H1)                =    26.69pA  \    19.98pA
 
   These devices failed to converge:
-    D_D1      X_U1.XCLAW_AMP.GVo- X_U1.XGR_AMP.GVo- X_U1.XVCCS_LIMIT_2.G1 
-    X_U1.XVCCS_LIM_ZO_OPA189.G1 
+    D_D1      X_U1.XCLAW_AMP.GVo- X_U1.XGR_AMP.GVo- X_U1.XVCCS_LIMIT_2.G1
+    X_U1.XVCCS_LIM_ZO_OPA189.G1
 
 **** Interrupt ****

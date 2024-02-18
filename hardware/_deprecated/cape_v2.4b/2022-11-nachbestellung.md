@@ -10,7 +10,6 @@ Count, Partname, Link
 60, OPA388QDBVRQ1, https://mou.sr/3g107N2
 
 
-also low: 
+also low:
 AD8421BRMZ -> alternative AD8421BRZ (SOIC8 statt MSOP)
 ADS8691 -> no
-

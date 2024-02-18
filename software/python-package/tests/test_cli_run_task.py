@@ -5,10 +5,6 @@ Tests the shepherd sheep CLI implemented with python click.
 
 CAVEAT: For some reason, tests fail when invoking CLI two times within the
 same test. Either find a solution or put every CLI call in a separate test.
-
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
 
 import time

@@ -1,4 +1,6 @@
 ---
+# install shepherd-software, all dependencies & roles set in inventory-file
+
 - name: Install Shepherd-Software - Role-based
   hosts: sheep
   become: true

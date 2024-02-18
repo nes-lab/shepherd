@@ -1,4 +1,6 @@
 ---
+# will handle updates, some configuration, remove clutter, improve ram-usage and boot-duration
+
 - name: Update software & cleanup
   hosts: all
   become: true

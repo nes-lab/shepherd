@@ -4,9 +4,6 @@ shepherd.cli
 Provides the CLI utility 'shepherd-sheep', exposing most of shepherd's
 functionality to a command line user.
 
-
-:copyright: (c) 2019 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
 
 import signal

@@ -45,11 +45,3 @@ To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd
    dev/gps_sync
    dev/virtual_source
    dev/v2_improvements
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Student-Projects
-
-   projects/implement_dataviewer.rst
-   projects/improvement_for_memory_interface.rst

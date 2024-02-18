@@ -27,8 +27,6 @@ uart_tx = 79   # P8_38, GPIO2[15]
 prog1_io = 10   # P8_31, GPIO0[10]
 prog2_io = 11   # P8_32, GPIO0[11]
 
-:copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
 
 from contextlib import suppress

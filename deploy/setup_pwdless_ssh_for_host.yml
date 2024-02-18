@@ -1,4 +1,6 @@
 ---
+# will deposit your machines' certificates on the nodes for future passwordless login
+
 - name: Deposit your machines' certificates (host) to nodes for future password-less ssh-logins
   hosts: all
   become: true

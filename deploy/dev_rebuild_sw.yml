@@ -1,4 +1,6 @@
 ---
+# hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart
+
 - name: Refresh Src, compile and install PRU-Fw, restart Kernel-Module, reinstall py-package, without Reboot
   hosts: all
   become: true

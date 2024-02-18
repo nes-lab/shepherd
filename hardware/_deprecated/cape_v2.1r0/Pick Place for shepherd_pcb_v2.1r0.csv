@@ -35,7 +35,7 @@ R2=-Vn/25uA","Mouser","584-LT3487EDD#TRPBF","2.72",""
 "U10","OPA189","TopLayer","SOT95P280X145-5N","SOT23-N5, Body 2,90x2,80mm, Pitch 0,95mm","31,1000","35,3000","180","OpAmp High Precision, +-65 mA perm, 20 V/us Slew, 5 nV/sqrtHz NoiseDist, Z_id 100 MOhm, Z_ic 60 TOhm, Iq ~ 1.7 mA","Mouser","595-OPA189IDBVR","2.02",""
 "U9","ADS8691","TopLayer","TSOP65P640X120-16N","TSSOP-16, Body 5,00x4,40mm, Pitch 0,65mm","39,1000","30,6000","360","ADC, 1CH, 18 Bit, 1 MS/s, 50 MHz SPI, 335 ns Acq & 665 ns Conv","Mouser","595-ADS8691IPWR","8.5",""
 "U8","DAC8562","TopLayer","PSON50P300X80_HS-11N","S-PWSON-N10, Body 3,00x3,00mm, Pitch 0,50mm, Thermal Pad 2,55x1,10mm","39,4000","35,3000","360","DAC, 2 CH, 10 us Settling, 16 bit Res, 50 MHz SPI","Mouser","595-DAC8562SDSCR","6.73",""
-"U7","AD8421B","TopLayer","TSOP65P490X110-8N","VSSOP-N8, Body 3,00x3,00mm, Pitch 0,65mm","29,9000","30,5000","90","Low Noise InAmp, 
+"U7","AD8421B","TopLayer","TSOP65P490X110-8N","VSSOP-N8, Body 3,00x3,00mm, Pitch 0,65mm","29,9000","30,5000","90","Low Noise InAmp,
 134 dB CMRR @ G100, f60Hz
 0.1 % Gain Error
 10 ppm Gain NonLin
@@ -43,7 +43,7 @@ R2=-Vn/25uA","Mouser","584-LT3487EDD#TRPBF","2.72",""
 "U6","ADS8691","TopLayer","TSOP65P640X120-16N","TSSOP-16, Body 5,00x4,40mm, Pitch 0,65mm","39,9000","40,9000","360","ADC, 1CH, 18 Bit, 1 MS/s, 50 MHz SPI, 335 ns Acq & 665 ns Conv","Mouser","595-ADS8691IPWR","8.5",""
 "U5","OPA2388","TopLayer","TSOP65P490X110-8N","VSSOP-N8, Body 3,00x3,00mm, Pitch 0,65mm","30,1000","40,0000","180","OpAmp High Precision, 30-60 mA perm, 5 V/us Slew, 7 nV/sqrtHz NoiseDist, 0.25 uV Offset, Z_id 100 MOhm, Z_ic 60 TOhm","Mouser","595-OPA2388IDGKR","2.63",""
 "U4","ADS8691","TopLayer","TSOP65P640X120-16N","TSSOP-16, Body 5,00x4,40mm, Pitch 0,65mm","54,6000","30,0000","180","ADC, 1CH, 18 Bit, 1 MS/s, 50 MHz SPI, 335 ns Acq & 665 ns Conv","Mouser","595-ADS8691IPWR","8.5",""
-"U3","AD8421B","TopLayer","TSOP65P490X110-8N","VSSOP-N8, Body 3,00x3,00mm, Pitch 0,65mm","63,0000","35,3000","270","Low Noise InAmp, 
+"U3","AD8421B","TopLayer","TSOP65P490X110-8N","VSSOP-N8, Body 3,00x3,00mm, Pitch 0,65mm","63,0000","35,3000","270","Low Noise InAmp,
 134 dB CMRR @ G100, f60Hz
 0.1 % Gain Error
 10 ppm Gain NonLin

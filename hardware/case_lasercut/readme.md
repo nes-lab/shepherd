@@ -1,4 +1,4 @@
-# LaserCut Case-Concept 
+# LaserCut Case-Concept
 
 ## Inner Parts
 
@@ -23,7 +23,7 @@ Area: 532 cm²
 
 ## External Features
 
-- Opening for 
+- Opening for
   - NW-Plug (15x13)
   - sd-card (15x4)
 - Convection-Slots
@@ -33,7 +33,7 @@ Area: 532 cm²
 - magnet-holder to fix
     - var1: 15x3mm round, with 3.5mm hole, n45 -> screw-able
     - var2: 20x10x1, N42, with adhesive, ~1.8kg
-    - var3: 10x5x1, N45, Adhesive, 700g, 
+    - var3: 10x5x1, N45, Adhesive, 700g,
 
 ## Coordinates
 
@@ -58,7 +58,7 @@ Vents
 H-Rail
 - X = 136 - 3 - 3 - 5= + 125
 - Z1 = 96 - 3 - 25 - 3 = -65 (from top)
-- Z2 = 96 - 3 - 25 - 3 - 3 -9 = -53 
+- Z2 = 96 - 3 - 25 - 3 - 3 -9 = -53
 
 H-Arret:
 - X = 136 - 3 - 82 - 14 = +37
@@ -96,11 +96,17 @@ https://jeromeleary.com/laser/  -> Fav, but finger-sections are off ?!?
 ## Manufacturing
 
 https://www.formulor.de/
-    -> matt, opak, mineral grey, 9643
+    -> matt, opak, mineral gray, 9643
     -> matt, opak, moonlight white, S2 1T41
     -> schwarz, opak, einseitig, matt, 9H01 SC
-    -> mittelgrau, transpararent 7C83 -> Fav
+    -> mittelgrau, transparent 7C83 -> Fav
     -> weiß, milchig, WH02 -> Fav
 https://www.plexilaser.de/shop/Acrylglas-transparent-Eisblau
 https://www.plexilaser.de/shop/Acrylglas-satiniert-Duo-Night-Day -> Fav
 https://www.plexilaser.de/shop/Acrylglas-satiniert-Milchglasoptik -> Fav
+
+## Assembling
+
+- parts are glued together with PMMA-compatible glue
+- leave outer protective layer on while gluing
+- parts can be put together all at once and fixed rubber-bands

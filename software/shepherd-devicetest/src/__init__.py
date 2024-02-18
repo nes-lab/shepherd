@@ -4,8 +4,6 @@ shepherd_testing_gui
 dearPyGui-based debug and test utility for controlling hw-functions of a shepherd node
 remotely.
 
-:copyright: (c) 2021 Networked Embedded Systems Lab, TU Dresden.
-:license: MIT, see LICENSE for more details.
 """
 
 import dearpygui.dearpygui as dpg

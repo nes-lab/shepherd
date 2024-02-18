@@ -1,4 +1,6 @@
 ---
+# cleanes up sheep0 to allow pulling an image
+
 - name: Delete space wasting or forgotten files (WARNING - includes recordings) and cleans up free space to prepare image-extraction
   hosts: sheep0
   become: true
