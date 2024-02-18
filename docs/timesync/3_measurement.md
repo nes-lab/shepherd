@@ -11,7 +11,7 @@
 
 **Note for RPi CM4**
 
-Changing the governor to `performance` does not always work during boot, please check. At least the ptp-server is mostly stuck on `ondemand`. 
+Changing the governor to `performance` does not always work during boot, please check. At least the ptp-server is mostly stuck on `ondemand`.
 
 ```Shell
 # check

@@ -9,15 +9,15 @@
 
 **Testbed-Webinterface**: <https://shepherd.cfaed.tu-dresden.de>
 
+**Python-Modules for Users**: <https://github.com/orgua/shepherd-datalib>
+
 **Documentation**: <https://orgua.github.io/shepherd>
 
 **Main Project**: <https://github.com/orgua/shepherd>
 
-**Python-Modules for Users**: <https://github.com/orgua/shepherd-datalib>
-
 **Target-HW & -SW**: <https://github.com/orgua/shepherd-targets>
 
-**Testbed-Webservice**: <https://github.com/orgua/shepherd_webservice>
+**Webservice-Repo**: <https://github.com/orgua/shepherd_webservice>
 
 **Dev-Documentation**: <https://github.com/orgua/shepherd_v2_planning>
 

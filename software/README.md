@@ -5,7 +5,7 @@ A collection of components and subprojects needed for the testbed. Bold items ar
 - **`firmware`**: time-critical gpio-sampling and emulation of virtual power source in PRUs of BeagleBone
 - `gps-overlay`: kernel-module to allow syncing time via GPS
 - **`kernel-module`**: low level system interface in between sheep-software (python) and PRUs
-- `openocd`: (semi-deprecated) configuration for programming targets via openOCD 
+- `openocd`: (semi-deprecated) configuration for programming targets via openOCD
 - `pps-gmtimer`: kernel-module to sync to a pps-time-signal
 - **`python-package`**: sheep-software running on the beaglebone
 - `shepherd-calibration`: python-software to calibrate the cape using a Keithley Sourcemeter
