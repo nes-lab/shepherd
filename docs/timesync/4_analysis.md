@@ -1,4 +1,4 @@
-# Prepare Data for the Tool
+# Prepare Data & Analysis
 
 - Logic 2 Software -> File -> Export Data
 - select channels: 1-3

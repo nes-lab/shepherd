@@ -18,6 +18,9 @@
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)
   - allow analyzing recorded gpio sync traces (`software/test_timesync`)
 - update floorplan of testbed
+- add tooling to allow analyzing timesync-behavior (software/test_timesync)
+- add current hardware design files
+- overhaul documentation
 
 ## 0.7.1
 

@@ -2,7 +2,7 @@
 
 ## Preparation
 
-- set up hardware according to the [tutorial](Readme_B_setup_hardware.md)
+- set up hardware according to the [tutorial](2_setup_hardware)
 - check that ptp is working
   - option 1: via logic analyzer (see subchapter below)
   - option 2: via ssh-connection (commands below)

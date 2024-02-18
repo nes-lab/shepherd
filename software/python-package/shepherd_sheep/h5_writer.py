@@ -274,11 +274,12 @@ class Writer(CoreWriter):
         self.meta_pos += 1
 
     def _add_omitted_timestamps(self) -> None:
-        # may be more useful on server -> so move to core-writer
+        # TODO: may be more useful on server -> so move to core-writer
         ds_time_size = self.grp_data["time"].shape[0]
         ds_volt_size = self.grp_data["voltage"].shape[0]
         if ds_time_size == ds_volt_size:
             return  # no action needed
+        self._logger.info("[H5Writer] will add timestamps (omitted during run for performance)")
         meta_time_size = np.sum(self.grp_data["meta"][:, 1])
         if meta_time_size != self.data_pos:
             self._logger.warning(

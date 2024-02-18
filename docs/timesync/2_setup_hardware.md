@@ -1,6 +1,6 @@
-# Hardware Setup
+# Set up Hardware
 
-After [software is ready](Readme_A_prepare_software.md) there are three steps for getting the hardware ready for the measurements:
+After [software is ready](1_prepare_software) there are three steps for getting the hardware ready for the measurements:
 
 - get all nodes on the same network
   - Try to model the future network

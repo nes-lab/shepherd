@@ -3,7 +3,6 @@ shepherd.shepherd_io
 ~~~~~
 Interface layer, abstracting low-level functionality provided by PRUs and
 kernel module. User-space part of the double-buffered data exchange protocol.
-
 """
 
 import time
@@ -510,8 +509,7 @@ class ShepherdIO:
         corresponding memory location as DataBuffer.
 
         Args:
-            :param timeout_n: (int) Time in buffer_periods that should be waited for an
-                incoming msg
+            :param timeout_n: (int) Time in buffer_periods that should be waited for
             :param verbose: (bool) more debug output
         Returns:
             Index and content of corresponding data buffer

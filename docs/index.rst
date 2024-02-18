@@ -45,3 +45,12 @@ To record/emulate data on a group of shepherd nodes, use the :ref:`shepherd-herd
    dev/gps_sync
    dev/virtual_source
    dev/v2_improvements
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Analyzing Sync-Behavior
+
+   timesync/1_prepare_software.md
+   timesync/2_setup_hardware.md
+   timesync/3_measurement.md
+   timesync/4_analysis.md
