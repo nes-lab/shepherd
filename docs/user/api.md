@@ -9,9 +9,10 @@ Use the `shepherd-herd` command line utility to orchestrate a group of shepherd 
 
 The recorder is used to configure all relevant hardware and software and to sample and extract data from the analog frontend.
 
-```{autoclass} shepherd_sheep.ShepherdHarvester
-:members:
-:inherited-members:
+```{eval-rst}
+.. autoclass:: shepherd_sheep.ShepherdHarvester
+    :members:
+    :inherited-members:
 ```
 
 Usage with a high-level example:
@@ -35,9 +36,10 @@ The example is taken from [sheep/init](https://github.com/orgua/shepherd/blob/ma
 
 The emulator is used to emulate previously recorded IV data to an attached sensor node.
 
-```{autoclass} shepherd_sheep.ShepherdEmulator
-:members:
-:inherited-members:
+```{eval-rst}
+.. autoclass:: shepherd_sheep.ShepherdEmulator
+    :members:
+    :inherited-members:
 ```
 
 Usage with a high-level example, task:
