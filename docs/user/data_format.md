@@ -2,7 +2,7 @@
 
 Data is stored in the popular [Hierarchical Data Format](https://en.wikipedia.org/wiki/Hierarchical_Data_Format).
 
-This section describes the structure of data recorded with shepherd:
+This section describes the essential structure of data recorded with shepherd:
 
 ```text
     .
@@ -48,6 +48,10 @@ For example, assume that all are were low at the beginning of the recording.
 At time T, GPIO pin 2 goes high.
 The value 0x04 will be stored together with the timestamp T in nanoseconds.
 
+:::{note}
+There is more data and metadate, like system logs, included in the files created by the testbed. Check the reference-links below for a deeper dive.
+:::
+
 There are numerous tools to work with HDF5 and library bindings for all popular programming languages.
 
 We offer the [core-library](https://pypi.org/project/shepherd_core) and complementing CLI-wrapper called [shepherd-data](https://pypi.org/project/shepherd_data). Advantages are:
@@ -80,3 +84,9 @@ with h5py.File("rec.h5", "r") as hf:
 
 plt.show()
 ```
+
+## References
+
+- [core/writer.py](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/writer.py) to see the complete file-structure
+- [core/reader.py](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/reader.py) for file-reading, -validation, -extractions and -conversions
+- [data/reader.py](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_data/shepherd_data/reader.py) for higher functions like resampling, plotting and extracting metadata

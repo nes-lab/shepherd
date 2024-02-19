@@ -98,17 +98,7 @@ Previous description is still correct, in detail:
 
 ### Hardware
 
-- the emulator and harvester consist of a purpose-fully chosen combination of low-noise and high-speed DACs, ADCs and Instrumentation-Amplifiers
-
-  - both circuits can handle 0 - 5 V with up to 50 mA current
-  - LSB is ~ 200 nA and ~ 20 uV for voltage and current
-
-- two target-ports available, emulator / user can choose
-- two parallel power rails available for the targets (one with current measurement, switchable)
-- one default target with a nrf52-module
-- 9 GPIO-Channels between target and system (pru-monitored), switchable
-- watchdog to handle hangups during unsupervised operation
-- screw-in power-socket or type-c connector
+in [](user/hardware)
 
 
 #### Shepherd Cape v2.4

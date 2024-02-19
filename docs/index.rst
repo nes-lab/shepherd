@@ -9,7 +9,7 @@ This is the main entry point into the shepherd ecosystem. Based on your experien
 #. If you have the hardware on your desk and want to get started, read :doc:`user/getting_started`.
 #. To record/emulate data on a group of shepherd nodes, use the :ref:`herd-cli` command line utility.
 #. To access the testbed-instance go to :doc:`external/testbed`.
-#. If you'd like to contribute or have issues, try the :doc:`dev/contribute`-guide or jump right to the
+#. If you'd like to contribute or have issues, try the :doc:`dev/contributing`-guide or jump to the :doc:`user/help_me_help_you`-section.
 #. The DevLog-Documentation is in: https://orgua.github.io/shepherd_v2_planning/
 
 .. toctree::
@@ -25,6 +25,7 @@ This is the main entry point into the shepherd ecosystem. Based on your experien
    user/api
    user/performance
    user/virtual_source
+   user/help_me_help_you
 
 .. toctree::
    :maxdepth: 2

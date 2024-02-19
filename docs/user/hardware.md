@@ -11,14 +11,31 @@ Each shepherd observer consists of five key components:
 - an optional harvesting adapter can be used to interface a harvesting transducer (e.g. solar panel) to the harvesting-port on the cape
 - The target pcb connects a sensor node (e.g. a microcontroller with radio) to the emulator-circuit
 
-![cape_soldered](../media_recap/cape_v24b_front_with_headers.jpg)
+## The Cape
 
-![cape_rendered](../media_recap/cape_v24b_pcb_preview.png)
+This custom PCB contains the analog interfaces for harvesting & emulation operations. 
+The included components and features are:
+
+- the emulator and harvester consist of a purpose-fully chosen combination of low-noise and high-speed DACs, ADCs and Instrumentation-Amplifiers
+
+  - both circuits can handle 0 - 5 V with up to 50 mA current
+  - LSB is ~ 200 nA and ~ 20 uV for voltage- and current-measurements
+
+- two target-ports for the emulator, user choice
+- two parallel power rails available for the targets (one with current measurement, switchable)
+- one default target with a nrf52-module (see below)
+- 9 GPIO-Channels between target and system (fully monitored), switchable direction on some channels
+- 4 programming-lines to each target for JTAG, SWD or SBW
+- level translated gpio is designed to prevent the transfer of energy. it is also possible to completely disconnect the target
+- watchdog to recover from hangups during unsupervised operation
+- screw-in power-socket or type-c connector
+- eeprom to store calibration and cape-config
+
+![cape_soldered](../media_recap/cape_v24b_front_with_headers.jpg)
 
 ### References
 
 - [/hardware-directory](https://github.com/orgua/shepherd/tree/main/hardware): contains cape, housing and additional design-files
-- [shepherd-targets](https://github.com/orgua/shepherd-targets): contains hardware and software sources for supported targets
 
 ## Harvesting Port
 
@@ -102,8 +119,25 @@ Notes:
 - Pins 13 to 16 (level-translated) are used to program/debug a connected sensor node with SWD, SBW or JTAG. This enables support for a wide range of microcontrollers.
 - The header is symmetrical and therefore basically safe to reverse - so errors should not result in broken hardware.
 
-## Target PCB
+## nRF-Target
 
-This is shepherds current main target, hosting a nRF52 and MSP430.
+This is shepherds current main target, hosting a nRF52 and MSP430. 
+The components and features are:
+
+- MCU1: nRF52840
+- MCU2: MSP430FR5962, 16 MHz, 128 kB FRAM, 8 kB SRAM, 68 IO, 12 bit DAC
+- shared GPIO, Chip2Chip / SPI, LEDs, I2C RTC
+- over-voltage protection for V_LV (max 3.9V)
+- two debug LEDs with separate supply
+- one self-powered LED to "burn" energy
+- io pins not interfering with RF (nRF PS v1.6 page 578)
+- LEDs / UART similar to Riotee
+- LEDs have minimal impact on pwr-budget
+- nRF uses low voltage mode (PSv1.1 page 61)
+- 3rd possible way for reset (external), beside JTAG and pwr-cycle
 
 ![target_soldered](../media_recap/target_nRF_FRAM_v1.0_front_with_header.jpg)
+
+### References
+
+- [shepherd-targets](https://github.com/orgua/shepherd-targets): contains hardware and software sources for supported targets

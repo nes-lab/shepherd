@@ -7,11 +7,11 @@ from shepherd_sheep import log
 from shepherd_sheep import run_emulator
 from shepherd_sheep import run_harvester
 
-# run with
+# run on observer with
 # sudo python3 /opt/shepherd/software/python-package/tests_manual/testbench_longrun.py
 
 if __name__ == "__main__":
-    duration = 600 * 60
+    duration = 10 * 60 * 60 # s
     benchmark_path = Path("/var/shepherd/recordings")
     file_rec = benchmark_path / "benchmark_rec.h5"
     file_emu1 = benchmark_path / "benchmark_emu1.h5"
