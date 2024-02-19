@@ -25,6 +25,7 @@ This is the main entry point into the shepherd ecosystem. Based on your experien
    user/api
    user/performance
    user/virtual_source
+   user/virtual_source_old
    user/help_me_help_you
 
 .. toctree::

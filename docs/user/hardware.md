@@ -13,7 +13,7 @@ Each shepherd observer consists of five key components:
 
 ## The Cape
 
-This custom PCB contains the analog interfaces for harvesting & emulation operations. 
+This custom PCB contains the analog frontend for harvesting & emulation operations.
 The included components and features are:
 
 - the emulator and harvester consist of a purpose-fully chosen combination of low-noise and high-speed DACs, ADCs and Instrumentation-Amplifiers
@@ -121,7 +121,7 @@ Notes:
 
 ## nRF-Target
 
-This is shepherds current main target, hosting a nRF52 and MSP430. 
+This is shepherds current main target, hosting a nRF52 and MSP430.
 The components and features are:
 
 - MCU1: nRF52840

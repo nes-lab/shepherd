@@ -30,10 +30,11 @@ drawing += elm.Ground()
 
 drawing += elm.Switch().right().at(buck.out)
 drawing += elm.Dot().label("Output")
+# TODO: add output capacitor after switch
 
 drawing += elm.Line().up().length(1).at(S2.c)
 drawing += elm.Line().right()
 drawing += elm.Line().down().length(1.7)
 drawing += elm.Dot()
 
-drawing.save("32_virtual_source_schemdraw.png")
+drawing.save("virtual_source_schemdraw.png")

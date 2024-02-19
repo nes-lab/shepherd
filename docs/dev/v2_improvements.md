@@ -11,7 +11,7 @@ Shepherd is a testbed for the batteryless Internet of Things, allowing to record
 Previous description is still correct, in detail:
 
 - embedded linux board with analog frontend serves as a shepherd node
-- harvesting-circuit can record an energy trace from a energy-source like solar, thermoelectric, …
+- harvesting-circuit can record an energy trace from an energy-source like solar, thermoelectric, …
 - emulation-circuit replays the energy-trace for a real target (user programmable uController) and records the drawn energy
 
 **Version 1** is build around a BQ25504-IC (plus capacitor) as harvester for recording and emulating various environments. This is a valid approach, but limited by design:

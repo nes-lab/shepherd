@@ -53,7 +53,7 @@ In emulator mode, spatio-temporal current and voltage data is replayed to a grou
 Each shepherd observer hosts a current source that can precisely supply the target ports and regulate in real-time.
 Relying on time-synchronization, shepherd can thus faithfully reproduce previously recorded (or model-based) spatio-temporal energy conditions.
 
-The user has the option of adding virtual power-supply parts between the energy-recording (input) and the target port (output), see [](#vsource).
+The user has the option of adding virtual power-supply parts between the energy-recording (input) and the target port (output), see [](virtual_source).
 This approach can be seen as a hardware-in-the-loop simulation ([HIL](https://en.wikipedia.org/wiki/Hardware-in-the-loop_simulation)) that - similar to the harvester - is fully parametrized.
 
 ```{figure} media/virtual_source_schemdraw.png
@@ -73,7 +73,7 @@ This allows to define presets by specifying a minimal parameter-set. Some direct
 - BQ-Converter with an immediate (schmitt-) trigger for power-good-signal (common modification)
 
 In case of recorded IV-Curves there is also the option of specifying the harvest-algorithm.
-The parameters will be explained in depth in the chapter [](./virtual_source.rst).
+The parameters will be explained in depth in the chapter [](./virtual_source_old.rst).
 
 Like other testbeds, shepherd records the targets power draw (voltage and current) during emulation.
 Furthermore, nine GPIO lines (including bidirectional UART) are level-translated between shepherd and the attached target.

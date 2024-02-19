@@ -1,7 +1,7 @@
 # API
 
-The shepherd API offers high level access to shepherd's functionality and forms the base for the two command line utilities. 
-With the introduction of the [core-lib](https://pypi.org/project/shepherd-core/) the api was simplified and modernized with a model-based approach. The [pydantic](https://docs.pydantic.dev) data-models offer self-validating configurations with neutral defaults. 
+The shepherd API offers high level access to shepherd's functionality and forms the base for the two command line utilities.
+With the introduction of the [core-lib](https://pypi.org/project/shepherd-core/) the api was simplified and modernized with a model-based approach. The [pydantic](https://docs.pydantic.dev) data-models offer self-validating config-parameters with neutral defaults.
 Note that the API only converts local functionality on a single shepherd node.
 Use the `shepherd-herd` command line utility to orchestrate a group of shepherd nodes remotely.
 
@@ -58,7 +58,7 @@ The example is taken from production code in [sheep/init](https://github.com/org
 
 ## Complete Example
 
-This code shows the harvester and emulator instantiated with custom config-models. It was used as a 10h stress-test to find a memory leak. 
+This code shows the harvester and emulator instantiated with custom config-models. It was used as a 10h stress-test to find a memory leak.
 
 :::{literalinclude} ../../software/python-package/tests_manual/testbench_longrun.py
 :language: python

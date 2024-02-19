@@ -2,11 +2,11 @@
    :format: latex
 ..
 
-Virtual Source
-==============
+Virtual Source OLD
+==================
 
 .. warning::
-   This information is old. The current implementation is more complex.
+   This information is deprecated. The current implementation is more complex.
 
 Emulator
 ---------
