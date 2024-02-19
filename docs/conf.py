@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.realpath("../software/shepherd-herd"))
 project = "SHEPHERD"
 project_copyright = "2019-2024, Networked Embedded Systems Lab, TU Dresden / TU Darmstadt"
 author = "Kai Geissdoerfer, Ingmar Splitt"
-
+release = '0.7.2'
 
 # -- General configuration ---------------------------------------------------
 
@@ -57,7 +57,9 @@ html_copy_source = False
 html_permalinks_icon = "<span>#</span>"
 
 html_theme = "sphinx_rtd_theme"
-html_theme_options = {}
+html_theme_options = {
+    'display_version': True,
+}
 github_url = "https://github.com/orgua/shepherd"
 
 html_baseurl = "https://orgua.github.io/shepherd/"
