@@ -121,7 +121,8 @@ Notes:
 
 ## nRF-Target
 
-This is shepherds current main target, hosting a nRF52 and MSP430.
+This is shepherds current main target, hosting a nRF52 and MSP430, similar to the [Riotee](https://www.riotee.nessie-circuits.de) platform. Unfortunately the Riotee-SDK is not completely compatible for now, as the target is missing the hysteresis-function for the power-good-signal, which requires two pins.
+
 The components and features are:
 
 - MCU1: nRF52840

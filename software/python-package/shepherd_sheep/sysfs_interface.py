@@ -621,7 +621,7 @@ def load_pru_firmware(value: str = "shepherd") -> None:
                 result,
                 _count,
             )
-        except OSError:  # noqa: PERF203
+        except OSError:
             log.warning(
                 "PRU-Driver is locked up (during pru-fw change)"
                 " -> will restart kernel-module (n=%d)",

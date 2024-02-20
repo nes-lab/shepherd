@@ -2,7 +2,7 @@ line-length = 100
 target-version = "py310"
 
 [lint]
-select = [
+select = [ # TODO: replace by "ALL"
     "A",    # flake8-builtins
     "ANN", # flake8-annotations
     "ARG",  # flake8-unused-arguments
@@ -47,7 +47,6 @@ ignore = [
     "N802", "N803", "N806", "N815", "N816", # naming (si-units should stay)
     "PLR2004", # magic values
     "TID252", # relative imports from parent
-    "RUF100", # noqa from other linters, TODO: replace flake8, when security is fully ported (S4**)
     "PLR0904", # complexity
     "PLR0911", "PLR0912", # complexity
     "PLR0913", "PLR0915", # complexity
