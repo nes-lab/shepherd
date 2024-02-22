@@ -34,7 +34,7 @@ extensions = [
     "myst_parser",
     "sphinx_design",
     "sphinx_copybutton",
-#    "sphinx.ext.autosectionlabel",
+    #    "sphinx.ext.autosectionlabel",
 ]
 # TODO: check other sphinx-plugins (mentioned in pipfile) & breathe
 

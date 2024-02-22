@@ -40,7 +40,7 @@ Time[s], Channel 0, Channel 1
 
 ## Run Analysis
 
-This tool has no proper CLI for now. 
+This tool has no proper CLI for now.
 Copy the `csv`-data into the `./example`-directory or where the `sync_1channel`-script located and run the script
 
 ```shell

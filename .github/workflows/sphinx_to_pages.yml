@@ -24,6 +24,8 @@ jobs:
       pages: write
       id-token: write
     steps:
+      - name: Init Submodules (for grabbing readmes) 🔧
+        run: git submodule update --init --recursive
       - name: Build and Push Pages 🧱
         uses: sphinx-notes/pages@v3
         with:
