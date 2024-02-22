@@ -4,10 +4,10 @@ Collection of tools to analyze Sync-behavior, recorded with saleae logic pro.
 
 The process to get the actual data is described in separate chapters:
 
-- [prepare software](../../docs/timesync/1_prepare_software.md)
-- [set up hardware](../../docs/timesync/2_setup_hardware.md)
-- [run measurements](../../docs/timesync/3_measurement.md)
-- [analysis](../../docs/timesync/4_analysis.md)
+- [prepare software](../../docs/time_sync/1_prepare_software.md)
+- [set up hardware](../../docs/time_sync/2_setup_hardware.md)
+- [run measurements](../../docs/time_sync/3_measurement.md)
+- [analysis](../../docs/time_sync/4_analysis.md)
 
 It is part of the official [documentation](https://orgua.github.io/shepherd).
 

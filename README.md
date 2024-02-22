@@ -40,9 +40,9 @@ The recorded data can be replayed to attached wireless sensor nodes, examining t
 For a detailed description see our [Paper](https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf) or the [official documentation](https://orgua.github.io/shepherd/).
 
 A *shepherd* instance consists of a group of spatially distributed *shepherd* nodes that are time-synchronized with each other.
-Each *shepherd* node consists of a [BeagleBone](https://beagleboard.org/bone), the *shepherd* cape and a particular choice of capelets according to the user requirements.
+Each *shepherd* node consists of a [BeagleBone](https://beagleboard.org/bone), the *shepherd* cape and either an energy harvesting source or a target MCU board to test.
 
-This repository contains the hardware design files for the shepherd cape and the various capelets, the software running on each *shepherd* node as well as the tool to orchestrate a group of *shepherd* nodes connected to a network.
+This repository contains the hardware design files for the shepherd cape, the software running on each *shepherd* node as well as the tool to orchestrate a group of *shepherd* nodes connected to a network.
 
 ## Quickstart
 
