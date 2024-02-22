@@ -24,10 +24,15 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Init Submodules (for grabbing readmes) 🔧
-        run: git submodule update --init --recursive
+
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          submodules: true  # for grabbing readme-files
+
       - name: Build and Push Pages 🧱
         uses: sphinx-notes/pages@v3
         with:
+          checkout: false
           pyproject_extras: ""
           # currently needed because action begins to analyze root pyproject.toml
