@@ -4,51 +4,51 @@ Welcome to SHEPHERD's documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Overview
+   :caption: Introduction
 
-   overview
+   ./overview.md
 
 .. toctree::
    :maxdepth: 2
    :caption: User Guide
 
-   user/basics
-   user/getting_started
-   user/hardware
-   user/cli
-   user/calibration
-   user/data_format
-   user/api
-   user/performance
-   user/virtual_source
-   user/virtual_source_old
-   user/help_me_help_you
+   ./user/basics.md
+   ./user/getting_started.md
+   ./user/hardware.md
+   ./user/cli.md
+   ./user/calibration.md
+   ./user/data_format.md
+   ./user/api.md
+   ./user/performance.rst
+   ./user/virtual_source.md
+   ./user/virtual_source_old.rst
+   ./user/help_me_help_you.md
 
 .. toctree::
    :maxdepth: 2
-   :caption: Testbed & Tools
+   :caption: Public Testbed & Tools
 
-   external/testbed
-   external/shepherd_core
-   external/shepherd_data
-   external/shepherd_targets
-   external/shepherd_webservice
+   ./external/testbed.md
+   ./external/readme_core.md
+   ./external/readme_data.md
+   ./external/readme_targets.md
+   ./external/webapi.md
 
 .. toctree::
    :maxdepth: 2
    :caption: Developer Guide
 
-   dev/contributing
-   dev/data_handling
-   dev/sysfs
-   dev/gps_sync
-   dev/v2_improvements
+   ./dev/contributing.md
+   ./dev/data_handling.md
+   ./dev/sysfs.md
+   ./dev/gps_sync.md
+   ./external/readme_pru_firmware.md
+   ./dev/v2_improvements.md
+   ./external/readme_herd.md
+   ./external/readme_cal.md
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Analyzing Sync-Behavior
+   ./dev/time_sync_analysis/readme.md
+   ./dev/time_sync_measurement/readme.md
+   ./external/readme_sync_analyzer.md
 
-   time_sync/1_prepare_software
-   time_sync/2_setup_hardware
-   time_sync/3_measurement
-   time_sync/4_analysis
+   ./external/readme_webservice.md

@@ -98,7 +98,7 @@ Previous description is still correct, in detail:
 
 ### Hardware
 
-in [](user/hardware)
+in [](../user/hardware)
 
 
 #### Shepherd Cape v2.4

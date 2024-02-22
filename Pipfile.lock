@@ -1623,7 +1623,7 @@
         },
         "sync-analysis": {
             "editable": true,
-            "path": "./software/test_timesync"
+            "path": "./software/time_sync_analyzer"
         },
         "tqdm": {
             "hashes": [

@@ -1,8 +1,8 @@
-# Shepherd-Cal
+# Cape-Calibration-Tool
 
-**Documentation**: [https://orgua.github.io/shepherd/](https://orgua.github.io/shepherd/)
+**Main Documentation**: <https://orgua.github.io/shepherd>
 
-**Source Code**: [https://github.com/orgua/shepherd](https://github.com/orgua/shepherd)
+**Source Code**: <https://github.com/orgua/shepherd>
 
 ---
 

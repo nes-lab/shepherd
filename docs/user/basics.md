@@ -57,7 +57,7 @@ The user has the option of adding virtual power-supply parts between the energy-
 This approach can be seen as a hardware-in-the-loop simulation ([HIL](https://en.wikipedia.org/wiki/Hardware-in-the-loop_simulation)) that - similar to the harvester - is fully parametrized.
 
 ```{figure} media/virtual_source_schemdraw.png
-:name: vsource
+:name: vsource_schem
 
 fully customizable power supply toolchain
 ```

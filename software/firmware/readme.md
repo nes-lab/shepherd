@@ -1,14 +1,26 @@
 # PRU-Firmware
 
-currently contains:
+**Main Documentation**: <https://orgua.github.io/shepherd>
 
-- shepherd-firmware (pru0 & pru1)
+**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/firmware>
+
+---
+
+The directory currently contains:
+
+- shepherd-firmware (pru0 & pru1) for emulation & harvest
 - programmer swd (pru0)
 - programmer sbw (pru0)
 
-Compiling can be done with GCC or CGT, but GCC is experimental for now. The makefile supports the following goals: clean, all, install.  and will decide which compiler to use depending on the env-variables defined. CGT will always be the fallback if `PRU_CGT` is not defined.
+Compiling can be done with GCC or CGT, but GCC is experimental for now. The makefile supports the following targets:
 
-general use:
+- clean,
+- all,
+- install.
+
+The makefile will decide which compiler to use depending on the env-variables defined. CGT will always be the fallback if `PRU_CGT` is not defined.
+
+General use:
 
 ```Shell
 cd shepherd/software/firmware/pru0-shepherd-fw
@@ -17,7 +29,7 @@ make
 sudo make install
 `````
 
-generate the two programmers (SWD is default):
+Generate the two programmers (SWD is default):
 
 ```Shell
 cd shepherd/software/firmware/pru0-programmer
@@ -66,12 +78,14 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 
 ## Differences CGT vs GCC
 
+Challenges while porting firmware to also be compatible with GCC.
+
 ### Assembly (solved)
 
 - file-ending is different
 	- CGT: `.asm`
 	- GCC: `.s`
-- setting constants differs from ti compiler (CGT)
+- setting assembly-constants differs from ti compiler (CGT)
 	- CGT: `VAR .set value`
 	- GCC: `.equ VAR, value`
 - fix is to use [+x with gcc](https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html)
@@ -83,7 +97,7 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 - current code may use loops instead of this magic
 - ~~we probably need an asm-version for `mul32()`~~ (with overflow safety, like the c-version)
 
-### Overflow of program memory
+### Overflow of program memory (mostly solved)
 
 - pru1-code compiles, but pru0 fails with ~ 3 kB overflow of program memory (8 kB)
 - disabling debug-symbols (`-g0`) does not change program memory, but size of elf-file gets reduced significantly
@@ -107,7 +121,7 @@ export PRU_CGT_SUPPORT=/usr/share/shepherd-tools/pru-software-support-package
 - **possible partial solution: divide codebase into the two subsystems.**
   - but timing-constraints were tough already. Probably GCC won't help us here for now. But we keep this solution in our sight.
 
-[more details](./readme_overflow_issue.md)
+[more details](https://github.com/orgua/shepherd/blob/main/software/firmware/readme_overflow_issue.md)
 
 ### Optional
 

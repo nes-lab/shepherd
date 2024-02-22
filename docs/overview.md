@@ -1,4 +1,4 @@
-# Landingpage
+# Overview
 
 This is the main entry point into the shepherd ecosystem. Based on your experience, you might skip the first steps:
 

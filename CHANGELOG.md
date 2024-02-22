@@ -16,9 +16,9 @@
 - toolchain: replace isort, black, flake8, pylint by ruff
 - debug
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)
-  - allow analyzing recorded gpio sync traces (`software/test_timesync`)
+  - allow analyzing recorded gpio sync traces (`software/time_sync_analyzer`)
 - update floorplan of testbed
-- add tooling to allow analyzing timesync-behavior (software/test_timesync)
+- add tooling to allow analyzing timesync-behavior (software/time_sync_analyzer)
 - add current hardware design files
 - overhaul documentation
 

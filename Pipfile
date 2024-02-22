@@ -10,7 +10,7 @@ shepherd-sheep = {editable = true, path = "./software/python-package"}
 shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
 shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
 shepherd-data = "*"
-sync-analysis = {editable = true, path = "./software/test_timesync"}
+sync-analysis = {editable = true, path = "./software/time_sync_analyzer"}
 # temporary
 dearpygui = "*"
 

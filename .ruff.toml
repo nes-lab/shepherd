@@ -68,7 +68,7 @@ exclude= [  # external projects
 "*/tests/**" = ["ARG", "S", "D", "SLF001"]
 "*/examples/**" = ["INP001"]  # no namespace
 "software/shepherd-calibration/**" = ["ERA001"]  # comments
-"software/test_timesync/**" = ["ERA001", "S301"]  # comments
+"software/time_sync_analyzer/**" = ["ERA001", "S301"]  # comments
 "software/shepherd-devicetest/**" = ["ERA001", "ARG001", "PLW0603", "F405", "F403", "ANN001"]
 "docs/**" = ["INP001"]
 

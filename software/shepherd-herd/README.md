@@ -1,11 +1,13 @@
-# Shepherd-Herd
+# Herd-Tool
 
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-**Documentation**: <https://orgua.github.io/shepherd/>
+**Main Documentation**: <https://orgua.github.io/shepherd/>
 
 **Main Project**: <https://github.com/orgua/shepherd>
+
+**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/shepherd_herd>
 
 ---
 
@@ -34,6 +36,7 @@ cd shepherd/software/shepherd-herd/
 pip3 install . -U
 ```
 
+(usage)=
 ## Usage
 
 All *shepherd-herd* commands require the list of hosts on which to perform the requested action.

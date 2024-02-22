@@ -14,4 +14,4 @@ A collection of components and subprojects needed for the testbed. Bold items ar
 - **`shepherd-herd`**: python-software to control sheep / observers
 - `shepherd-targets`: sub-git for target hardware and default firmwares
 - `shepherd-webservice`: sub-git for the API and Website of the official testbed instance
-- `test_timesync`: python-software for measuring sync between observers on gpio-level
+- `time_sync_analyzer`: python-software for measuring sync between observers on gpio-level
