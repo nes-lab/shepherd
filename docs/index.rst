@@ -33,8 +33,6 @@ Welcome to SHEPHERD's documentation
    ./external/readme_core.md
    ./external/readme_data.md
 
-   ./external/readme_herd.md
-
    ./external/readme_cal.md
    ./external/readme_sync_analyzer.md
 

@@ -27,6 +27,7 @@ path_tasks = path_local / "experiment_tb_tasks.yaml"
 # PART 1: Defining an Experiment
 # ######################################################
 # mostly copied from core-lib/examples/firmware_model.py
+# [xp-definition-start]
 
 target_configs = [
     # first Instance similar to yaml-syntax
@@ -56,12 +57,13 @@ xp1 = Experiment(
     duration=10,
 )
 
-
+# [xp-definition-end]
 # ######################################################
 # PART 2: Generating a Task-Set
 # ######################################################
+# [tset-definition-start]
 
-# TODO: this will definitely change in the near future or at least needs login
+# TODO: this will definitely change in the near future or at least needs a login
 
 tb_client = TestbedClient()
 do_connect = False
@@ -73,11 +75,12 @@ tb_tasks1 = TestbedTasks.from_xp(xp1)
 
 tb_tasks1.to_file(path_tasks)
 
-
+# [tset-definition-end]
 # ######################################################
-# PART 3: Generating a Task-Set & running it
+# PART 3: run the Task-set
 # ######################################################
 # alternative: use herd CLI
+# [herd-run-start]
 
 with Herd(inventory="/etc/shepherd/herd.yml") as herd:
     # NOTE: that's one of the default paths for the inventory
@@ -103,3 +106,5 @@ with Herd(inventory="/etc/shepherd/herd.yml") as herd:
     herd.get_task_files(tb_tasks1, dst_dir=path_local, delete_src=True)
     # NOTE1: sheep and herd-server both have access to the same nfs-drive
     # NOTE2: this routine is not finished
+
+# [herd-run-end]

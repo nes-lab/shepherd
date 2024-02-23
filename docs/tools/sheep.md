@@ -1,4 +1,4 @@
-# Shepherd-Sheep-Tool
+# Shepherd-Sheep
 
 `shepherd-sheep` is the command line utility for locally controlling a single shepherd observer.
 Depending on your use-case you may not even need to directly interact with it. Use the `shepherd-herd` command line utility to orchestrate a group of shepherd observer remotely.
@@ -6,6 +6,10 @@ Depending on your use-case you may not even need to directly interact with it. U
 For using the tool, deploy the software as described in [](../user/getting_started.md).
 
 ## Command-Line Interface
+
+:::{note}
+The tool has integrated help. For a full list of supported commands and options, run `shepherd-sheep --help` and for more detail for each command `shepherd-sheep [COMMAND] --help`.
+:::
 
 The command-line Interface is as follows:
 
@@ -20,8 +24,8 @@ The command-line Interface is as follows:
 The shepherd-sheep API offers high level access to shepherd's functionality and forms the base for the two command line utilities.
 With the introduction of the [core-lib](https://pypi.org/project/shepherd-core/) the api was simplified and modernized with a model-based approach. The [pydantic](https://docs.pydantic.dev) data-models offer self-validating config-parameters with neutral defaults.
 
-For lower-level access, have a look at the [](#hrv-api) and [](#emu-api) below. There is a third option called `debug-api`, used i.e. by the programmer. 
-It will not be documented here. 
+For lower-level access, have a look at the [](#hrv-api) and [](#emu-api) below. There is a third option called `debug-api`, used i.e. by the programmer.
+It will not be documented here.
 To learn about the functionality [the source](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/shepherd_emulator.py) should be consulted.
 
 ### Harvesting
@@ -58,7 +62,7 @@ from shepherd_sheep.logger import set_verbosity
 :pyobject: run_emulator
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [EmulationTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/emulation.py). 
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [EmulationTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/emulation.py).
 
 :::{note}
 TODO: add user/task-config and relink both tasks above
@@ -84,7 +88,7 @@ from shepherd_sheep.sysfs_interface import check_sys_access
 :pyobject: run_firmware_mod
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [FirmwareModTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/firmware_mod.py). 
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [FirmwareModTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/firmware_mod.py).
 
 ### Program Target
 
@@ -104,11 +108,11 @@ from shepherd_sheep.shepherd_debug import ShepherdDebug
 :pyobject: run_programmer
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [ProgrammingTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/programming.py). 
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [ProgrammingTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/programming.py).
 
 ### Example-Code
 
-This snippet shows the harvester and emulator instantiated with custom config-models. It was used as a 10h stress-test to find a memory leak. 
+This snippet shows the harvester and emulator instantiated with custom config-models. It was used as a 10h stress-test to find a memory leak.
 
 ```{literalinclude} ../../software/python-package/tests_manual/testbench_longrun.py
 :language: python
@@ -133,6 +137,38 @@ Source: [./tests_manual/testbench_longrun.py](https://github.com/orgua/shepherd/
 .. autoclass:: shepherd_sheep.ShepherdEmulator
     :members:
     :inherited-members:
+```
+
+(sheep-tests)=
+## Tests
+
+To run the full range of python tests, have a copy of the source code on a BeagleBone.
+Build and install from source (see [](#dev_setup) for more).
+Change into the `software/python-package` directory on the BeagleBone and run the following commands to:
+
+- install dependencies of tests
+- run testbench
+
+```shell
+cd /opt/shepherd/software/python-package
+sudo pip3 install ./[tests]
+sudo pytest-3
+```
+
+Some tests (~40) are hardware-independent, while most of them require a BeagleBone to work (~100). The testbench detects the BeagleBone automatically. A small subset of tests (~8) are writing & configuring the EEPROM on the shepherd cape and must be enabled manually (`sudo pytest --eeprom-write`)
+
+The following commands allow to:
+
+- restartable run that exits for each error (perfect for debugging on slow BBone)
+- run single tests,
+- whole test-files or
+
+```shell
+sudo pytest-3 --stepwise
+
+sudo pytest-3 tests/test_sheep_cli.py::test_cli_emulate_aux_voltage
+
+sudo pytest-3 tests/test_sheep_cli.py
 ```
 
 ## Reference

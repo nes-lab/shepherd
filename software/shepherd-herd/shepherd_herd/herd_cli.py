@@ -102,7 +102,11 @@ def cli(
 # #############################################################################
 
 
-@cli.command(short_help="Power off shepherd observers")
+@cli.command(
+    short_help="Power off shepherd observers. "
+    "Be sure to have physical access to the hardware "
+    "for manually starting them again."
+)
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
 def poweroff(ctx: click.Context, restart: bool) -> None:
@@ -186,7 +190,7 @@ def blink(ctx: click.Context, duration: int) -> None:
     "config",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
-@click.option("--attach", "-a", is_flag=True, help="Wait and receive output")
+@click.option("--attach", "-a", is_flag=True, help="Wait and receive output on shell")
 @click.pass_context
 def run(ctx: click.Context, config: Path, attach: bool) -> None:
     with ctx.obj["herd"] as herd:
@@ -194,7 +198,10 @@ def run(ctx: click.Context, config: Path, attach: bool) -> None:
     sys.exit(exit_code)
 
 
-@cli.command(short_help="Record IV data from a harvest-source (synchronous on chosen observers).")
+@cli.command(
+    short_help="Simultaneously record IV data from the connected "
+    "harvesting-sources on the chosen observers."
+)
 @click.option(
     "--output-path",
     "-o",
@@ -267,8 +274,10 @@ def harvest(
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT-PATH is an hdf5 file "
-    "on the sheep-host containing harvesting data",
+    short_help="Use the previously recorded harvest-data "
+    "(INPUT-PATH is a hdf5-file on the sheep-hosts) "
+    "for emulating an energy environment for the attached "
+    "sensor nodes and monitor their power consumption and GPIO events",
 )
 @click.argument(
     "input-path",
@@ -379,7 +388,8 @@ def emulate(
 
 
 @cli.command(
-    short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, UNSYNCED)",
+    short_help="Start pre-configured shp-service (/etc/shepherd/config.yml, "
+    "UNSYNCED when 'time_start' is not set)",
 )
 @click.pass_context
 def start(ctx: click.Context) -> None:
@@ -409,7 +419,7 @@ def status(ctx: click.Context) -> None:
     sys.exit(ret)
 
 
-@cli.command(short_help="Stops any harvest/emulation")
+@cli.command(short_help="Stops any harvest/emulation or other processes blocking the sheep")
 @click.pass_context
 def stop(ctx: click.Context) -> None:
     with ctx.obj["herd"] as herd:
@@ -425,7 +435,7 @@ def stop(ctx: click.Context) -> None:
 
 
 @cli.command(
-    short_help="Uploads a file FILENAME to the remote observers, stored in in REMOTE_PATH",
+    short_help="Uploads a file FILENAME to the remote observers, " "will be stored in REMOTE_PATH",
 )
 @click.argument(
     "filename",

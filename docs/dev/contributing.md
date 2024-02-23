@@ -108,40 +108,13 @@ As an alternative it often suffices to just pull the `index.html` into a browser
 
 ## Tests
 
-There is an initial testing framework that covers a large portion of the python code.
+There is a testing framework that covers a large portion of the python code.
 You should always make sure the tests are passing before committing your code.
+When changing lower level code it is also recommended to run the test-benches of the higher level tools.
+For a tutorial see the dedicated sections in the tool-documentations:
 
-To run the full range of python tests, have a copy of the source code on a BeagleBone.
-Build and install from source (see [](#dev_setup) for more).
-Change into the `software/python-package` directory on the BeagleBone and run the following commands to:
-
-- install dependencies of tests
-- run testbench
-
-```shell
-cd /opt/shepherd/software/python-package
-sudo pip3 install ./[tests]
-sudo pytest-3
-```
-
-Some tests (~40) are hardware-independent, while most of them require a BeagleBone to work (~100). The testbench detects the BeagleBone automatically. A small subset of tests (~8) are writing & configuring the EEPROM on the shepherd cape and must be enabled manually (`sudo pytest --eeprom-write`)
-
-The following commands allow to:
-
-- restartable run that exits for each error (perfect for debugging on slow BBone)
-- run single tests,
-- whole test-files or
-
-```shell
-sudo pytest-3 --stepwise
-
-sudo pytest-3 tests/test_sheep_cli.py::test_cli_emulate_aux_voltage
-
-sudo pytest-3 tests/test_sheep_cli.py
-```
-
-It is also recommended to **run the testbench of the herd-tool prior to releasing a new version**. See [project-page](https://github.com/orgua/shepherd/tree/main/software/shepherd-herd#testbench) for more info.
-
+- [sheep-testbench](#sheep-tests)
+- [herd-testbench](#herd-tests)
 
 ## Releasing
 
