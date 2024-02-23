@@ -29,6 +29,7 @@ sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
 sphinx-design = "*"
 sphinx-copybutton = "*"
+sphinxcontrib-typer = "*"
 #sphinx-autodoc2  # TODO: https://myst-parser.readthedocs.io/en/latest/intro.html#extending-sphinx
 myst-parser = "*"
 
