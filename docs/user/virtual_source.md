@@ -5,7 +5,7 @@ By switching to a software defined system the sourcing of energy becomes fully c
 The simulation loop runs in real-time with 100 kHz and allows to emulate a wide variety of voltage converter circuits.
 
 :::{note}
-WORK IN PROGRESS
+TODO: WORK IN PROGRESS
 :::
 
 ## Harvester

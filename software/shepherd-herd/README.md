@@ -1,9 +1,9 @@
-# Herd-Tool
+# Shepherd-Herd
 
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-**Main Documentation**: <https://orgua.github.io/shepherd/>
+**Main Documentation**: <https://orgua.github.io/shepherd/tools/herd>
 
 **Main Project**: <https://github.com/orgua/shepherd>
 
@@ -11,7 +11,9 @@
 
 ---
 
-*Shepherd-herd* is the command line utility for controlling a group of shepherd nodes remotely through an IP-based network.
+*Shepherd-herd* is the command line utility for controlling a group of shepherd observers remotely through an IP-based network.
+This is the key user interface for a private shepherd instance in the same network. 
+The python package must be installed on the user's local machine and sends commands to the sheep via *ssh*.
 
 ## Installation
 
@@ -36,35 +38,16 @@ cd shepherd/software/shepherd-herd/
 pip3 install . -U
 ```
 
-(usage)=
 ## Usage
 
-All *shepherd-herd* commands require the list of hosts on which to perform the requested action.
-This list of hosts is provided with the `-i` option, that takes either the path to a file or a comma-separated list of hosts (compare Ansible `-i`).
+For details either use the help provided by the tool or have a look into the [documentation](https://orgua.github.io/shepherd/tools/herd)
 
-For example, save the following file in your current working directory as an ansible style, YAML-formatted inventory file named `herd.yml`.
 
-```yaml
-sheep:
-  hosts:
-    sheep0:
-    sheep1:
-    sheep2:
-  vars:
-    ansible_user: jane
-```
 
-To find active nodes a ping-sweep (in this example from .1 to .64) can be achieved with:
 
-```Shell
-nmap -sn 192.168.1.1-64
-```
 
-After setting up the inventory, use shepherd-herd to check if all your nodes are responding correctly:
 
-```Shell
-shepherd-herd -i herd.yml shell-cmd "echo 'hello'"
-```
+
 
 Or, equivalently define the list of hosts on the command line
 

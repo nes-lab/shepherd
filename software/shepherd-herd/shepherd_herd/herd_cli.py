@@ -102,7 +102,7 @@ def cli(
 # #############################################################################
 
 
-@cli.command(short_help="Power off shepherd nodes")
+@cli.command(short_help="Power off shepherd observers")
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
 def poweroff(ctx: click.Context, restart: bool) -> None:
@@ -123,7 +123,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
     sys.exit(exit_code)
 
 
-@cli.command(short_help="Collects information about the hosts")
+@cli.command(short_help="Collects information about the observer-hosts -> saved to local file")
 @click.argument(
     "output-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
@@ -194,7 +194,7 @@ def run(ctx: click.Context, config: Path, attach: bool) -> None:
     sys.exit(exit_code)
 
 
-@cli.command(short_help="Record IV data from a harvest-source")
+@cli.command(short_help="Record IV data from a harvest-source (synchronous on chosen observers).")
 @click.option(
     "--output-path",
     "-o",
@@ -267,7 +267,7 @@ def harvest(
 
 
 @cli.command(
-    short_help="Emulate data, where INPUT is an hdf5 file "
+    short_help="Emulate data, where INPUT-PATH is an hdf5 file "
     "on the sheep-host containing harvesting data",
 )
 @click.argument(
@@ -425,7 +425,7 @@ def stop(ctx: click.Context) -> None:
 
 
 @cli.command(
-    short_help="Uploads a file FILENAME to the remote node, stored in in REMOTE_PATH",
+    short_help="Uploads a file FILENAME to the remote observers, stored in in REMOTE_PATH",
 )
 @click.argument(
     "filename",

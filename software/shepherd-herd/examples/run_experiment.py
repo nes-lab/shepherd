@@ -28,7 +28,7 @@ path_tasks = path_local / "experiment_tb_tasks.yaml"
 # ######################################################
 # mostly copied from core-lib/examples/firmware_model.py
 
-target_cfgs = [
+target_configs = [
     # first Instance similar to yaml-syntax
     TargetConfig(
         target_IDs=[3001, 3002, 3003],
@@ -52,7 +52,7 @@ xp1 = Experiment(
     id="4567",
     name="meaningful Test-Name",
     time_start="2033-03-13 14:15:16",  # or: datetime.now() + timedelta(minutes=30)
-    target_configs=target_cfgs,
+    target_configs=target_configs,
     duration=10,
 )
 
