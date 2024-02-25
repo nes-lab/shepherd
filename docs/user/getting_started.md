@@ -123,7 +123,6 @@ Further playbooks:
 - `dev_rebuild_sw.yml` hot-swaps pru-firmware (& kernel-module & py-package) by compiling and flashing without restart
 
 
-(install-simple)=
 ## Installation - ready-to-use image
 
 The following guide sets up a single observer by deploying a ready-to-use shepherd-image. The steps are more detailed and try to simplify the process for new users by cutting away the first instructions from the installation-guide in the previous section (up to shepherd-deploy with ansible). The guide is written for **Windows 10 (or newer)** as host. Linux users can easily adapt.

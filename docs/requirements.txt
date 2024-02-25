@@ -1,7 +1,10 @@
 -e ./software/python-package
 -e ./software/shepherd-herd
+#-e ./software/shepherd-datalib/shepherd-core
+#-e ./software/shepherd-datalib/shepherd-data
 alabaster
 asn1crypto
+autodoc_pydantic
 Babel
 bcrypt
 certifi

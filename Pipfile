@@ -30,6 +30,7 @@ sphinx-sitemap = "*"
 sphinx-design = "*"
 sphinx-copybutton = "*"
 sphinxcontrib-typer = "*"
+autodoc_pydantic = "*"
 #sphinx-autodoc2  # TODO: https://myst-parser.readthedocs.io/en/latest/intro.html#extending-sphinx
 myst-parser = "*"
 

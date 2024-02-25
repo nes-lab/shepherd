@@ -35,7 +35,7 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     # "sphinxcontrib.typer",
-    # "sphinx.ext.autosectionlabel",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 # TODO: check other sphinx-plugins (mentioned in pipfile) & breathe
 
@@ -49,6 +49,17 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 autodoc_mock_imports = ["dbus"]
 
 myst_enable_extensions = ["colon_fence"]
+myst_heading_anchors = 3
+
+autodoc_pydantic_model_show_json = False
+autodoc_pydantic_settings_show_json = False
+autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_show_validator_summary = False
+autodoc_pydantic_model_show_validator_members = False
+autodoc_pydantic_model_show_field_summary = True
+autodoc_pydantic_model_summary_list_order = "bysource"
+autodoc_pydantic_model_member_order = "bysource"
+autodoc_pydantic_field_list_validators = False
 
 # -- Options for HTML output -------------------------------------------------
 

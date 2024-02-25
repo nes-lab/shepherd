@@ -1,6 +1,5 @@
 # Time-Sync - Measurement
 
-(sync_sw_prep)=
 ## Prepare Software
 
 ### Prepare Host

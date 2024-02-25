@@ -7,6 +7,7 @@ Welcome to SHEPHERD's documentation
    :caption: Introduction
 
    ./overview.md
+   ./user/help_me_help_you.md
 
 .. toctree::
    :maxdepth: 2
@@ -21,7 +22,16 @@ Welcome to SHEPHERD's documentation
    ./user/virtual_source.md
    ./user/virtual_harvester.md
    ./user/virtual_source_old.rst
-   ./user/help_me_help_you.md
+   ./user/experiment_def.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Public Testbed
+
+   ./testbed/instance_tud.md
+
+   ./external/readme_targets.md
+   ./testbed/webapi.md
 
 .. toctree::
    :maxdepth: 2
@@ -31,19 +41,24 @@ Welcome to SHEPHERD's documentation
    ./tools/herd.md
 
    ./external/readme_core.md
-   ./external/readme_data.md
+   ./tools/data.md
 
    ./external/readme_cal.md
    ./external/readme_sync_analyzer.md
 
+   ./external/readme_webservice.md
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Public Testbed
+   :maxdepth: 1
+   :caption: APIs
 
-   ./external/testbed.md
-
-   ./external/readme_targets.md
-   ./external/webapi.md
+   ./api/herd.md
+   ./api/sheep_high_level.md
+   ./api/sheep_low_level.md
+   ./api/data_hdf5.md
+   ./api/core_config.md
+   ./api/core_vsrc.md
+   ./api/core_waveform_decoder.md
 
 .. toctree::
    :maxdepth: 2
@@ -58,6 +73,3 @@ Welcome to SHEPHERD's documentation
 
    ./dev/time_sync_analysis/readme.md
    ./dev/time_sync_measurement/readme.md
-
-
-   ./external/readme_webservice.md

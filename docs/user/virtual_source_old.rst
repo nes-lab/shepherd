@@ -8,8 +8,8 @@ Virtual Source OLD
 .. warning::
    This information is deprecated. The current implementation is more complex.
 
-Emulator
----------
+Emulator OLD
+------------
 
 In addition to regular emulation, shepherd provides VirtCap.
 VirtCap uses an algorithm to completely virtualize the DC/DC converter and storage capacitor.
@@ -25,8 +25,8 @@ Example usage:
 
     sepherd-sheep emulator --config virtcap_settings.yml /var/shepherd/recordings/rec.0.h
 
-Settings
---------
+Settings OLD
+-------------
 This is an example of a virtcap-settings file which emulates a BQ25570:
 
 .. code-block:: yaml
@@ -87,8 +87,8 @@ This is an example of a virtcap-settings file which emulates a BQ25570:
     | Third row defines output efficiency for 1--9mA.
     | Fourth row defines output efficiency for 10--90mA.
 
-Recording
----------
+Recording OLD
+-------------
 The algorithm assumes that the input power traces, is recorded with the same converter as the converter you are trying to emulate.
 This means that if only BQ255xx devices can be emulated using the recording option in Shepherd. It is however possible to record the input power trace with another device, and then convert those readings in the format of Shepherd (.h5).
 
@@ -96,15 +96,15 @@ This means that if only BQ255xx devices can be emulated using the recording opti
    :format: latex
 ..
 
-Model
------
+Model OLD
+----------
 
 The basics of the model are based on
 the work of :raw-latex:`\cite{de2010design}`. The model is extended by
 introducing a converter and adding other improvements.
 
-Capacitor Voltage Model
-~~~~~~~~~~~~~~~~~~~~~~~
+Capacitor Voltage Model OLD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We start from the current-voltage relation of a capacitor
 
@@ -208,8 +208,8 @@ where :math:`V_{\text{ut}}` is the upper threshold capacitor voltage and
 :math:`V_{\text{lt}}` the lower threshold capacitor voltage at which,
 respectively, the output turns on and off.
 
-Output Capacitor Compensation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Output Capacitor Compensation OLD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Converters can have a small output capacitor. When the output turns on,
 the bigger storage capacitor instantly charges the output capacitor.

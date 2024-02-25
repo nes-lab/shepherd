@@ -9,7 +9,7 @@ For a detailed, but slightly outdated description see our [Paper](https://wwwpub
 A **shepherd** instance consists of a group of spatially distributed **shepherd** observers that are time-synchronized with each other.
 Each **shepherd** observer consists of a single-board computer (SBC), the **shepherd** cape and a particular choice of connected targets.
 
-Shepherd works in two key modes: [](#Harvester) and [](#Emulator).
+Shepherd works in two key modes: [](#harvester) and [](#emulator).
 
 
 ## Time-synchronization
@@ -25,7 +25,6 @@ In mobile or long-range scenarios, it might not be feasible to connect the obser
 Instead, you can use the timing signal (PPS) from a GPS receiver.
 We have designed a GPS capelet (hardware/capelet_gps) to easily connect a GPS receiver and provide all necessary software in our repository.
 
-(harvester)=
 ## Harvester
 
 For recording a harvesting scenario, shepherd observers can be equipped with a harvesting transducer, e.g. a solar panel or piezo-electric harvester.
@@ -46,14 +45,13 @@ A group of shepherd observers can be deployed to the environment of interest to 
 The time-synchronization allows to gather the readings from multiple observers with respect to a common time-line.
 The data thus represents the spatio-temporal energy availability.
 
-(emulator)=
 ## Emulator
 
 In emulator mode, spatio-temporal current and voltage data is replayed to a group of sensor nodes (targets).
 Each shepherd observer hosts a current source that can precisely supply the target ports and regulate in real-time.
 Relying on time-synchronization, shepherd can thus faithfully reproduce previously recorded (or model-based) spatio-temporal energy conditions.
 
-The user has the option of adding virtual power-supply parts between the energy-recording (input) and the target port (output), see [](virtual_source).
+The user has the option of adding virtual power-supply parts between the energy-recording (input) and the target port (output), see [](./virtual_source).
 This approach can be seen as a hardware-in-the-loop simulation ([HIL](https://en.wikipedia.org/wiki/Hardware-in-the-loop_simulation)) that - similar to the harvester - is fully parametrized.
 
 ```{figure} media/virtual_source_schemdraw.png

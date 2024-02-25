@@ -11,7 +11,7 @@
 
 ---
 
-`Shepherd-herd is the command line utility for controlling a group of shepherd observers remotely through an IP-based network.
+`Shepherd-herd` is the command line utility for controlling a group of shepherd observers remotely through an IP-based network.
 This is the key user interface for a private shepherd instance in the same network.
 The python package must be installed on the user's local machine and sends commands to the sheep via *ssh*.
 

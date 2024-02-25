@@ -2,7 +2,6 @@
 
 This section helps developers getting started with contributing to `shepherd`.
 
-(codestyle)=
 ## Codestyle
 
 Please stick to the C and Python codestyle guidelines provided with the source code.
@@ -37,7 +36,6 @@ pre-commit run --all-files
 pre-commit run -a
 ```
 
-(dev_setup)=
 ## Development setup
 
 While some parts of the `shepherd` software stack can be developed hardware independent, in most cases you will need to develop/test code on the actual target hardware.
@@ -46,7 +44,6 @@ We found the following setup convenient: Have the code on your laptop/workstatio
 Have a BeagleBone (potentially with `shepherd` hardware) connected to the same network as your workstation.
 Prepare the BeagleBone by running the `bootstrap.yml` ansible playbook to allow passwordless entry.
 
-(dev_opt1)=
 ### Option 1
 
 You can now use the integrated functionally of the `deploy/dev_rebuild_sw` playbook that can push the changed files to the target and builds and installs it there with needing a reboot.
@@ -68,7 +65,7 @@ In addition, the playbook `deploy/dev_rebuild_sw.yml` builds and installs all lo
 You can mirror your working copy of the `shepherd` code to the BeagleBone using a network file system.
 We provide a playbook (`deploy/setup-dev-nfs.yml`) to conveniently configure an `NFS` share from your local machine to the BeagleBone.
 After mounting the share on the BeagleBone, you can compile and install the corresponding software component remotely over ssh on the BeagleBone while editing the code locally on your machine.
-Or you use the playbook described in [](#dev_opt1).
+Or you use the playbook described in [](#option-1).
 
 
 ## Build the docs
@@ -113,8 +110,8 @@ You should always make sure the tests are passing before committing your code.
 When changing lower level code it is also recommended to run the test-benches of the higher level tools.
 For a tutorial see the dedicated sections in the tool-documentations:
 
-- [sheep-testbench](#sheep-tests)
-- [herd-testbench](#herd-tests)
+- [sheep-testbench](../tools/sheep.md#unittests)
+- [herd-testbench](../tools/herd.md#unittests)
 
 ## Releasing
 

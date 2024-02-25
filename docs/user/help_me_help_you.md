@@ -1,6 +1,6 @@
-# HELP
+# Help
 
-What to do if things don’t work as expected, or you are missing a desired feature? Make sure
+What to do if things don’t work as expected, or you are missing a desired feature? You can ask the Dev-Team! Make sure (if applicable)
 
 - you read the provided guides carefully
 - your software is up-to-date
