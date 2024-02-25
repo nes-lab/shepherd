@@ -22,7 +22,7 @@ Welcome to SHEPHERD's documentation
    ./user/virtual_source.md
    ./user/virtual_harvester.md
    ./user/virtual_source_old.rst
-   ./user/experiment_def.md
+   ./user/experiments.md
 
 .. toctree::
    :maxdepth: 2

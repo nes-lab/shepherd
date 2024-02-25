@@ -213,4 +213,4 @@ Each running for 100 s.
 
 ### Processing Data
 
-See the dedicated [tool-readme](../../external/readme_sync_analyzer).
+See the dedicated [tool-page](../../external/readme_sync_analyzer.md) or an [exemplary analysis](../time_sync_analysis/readme.md)

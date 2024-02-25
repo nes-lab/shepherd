@@ -44,9 +44,9 @@ Top of the prio-list is to open an API-port to the internet. That would allow th
 
 Each Observer generates a hdf5-file. While we used shepherd in the past some postprocessing was generalized and bundled in the [main-datalib](https://pypi.org/project/shepherd_data). It is possible to extract logs, calculate metadata and generate plots.
 
-### Example-workflow
+## Example-Workflow
 
-First create an experiment and transform it to a task-set for the Testbed:
+First create an experiment and transform it to a task-set for the Testbed. With the self-validating experiment we can generate a `TestbedTasks`-config.
 
 ```Python
 from shepherd_core.data_models import GpioTracing
@@ -77,7 +77,9 @@ xp1 = Experiment(
 TestbedTasks.from_xp(xp1).to_file("./tb_tasks_rf_survey.yaml")
 ```
 
-Secondly transfer it to the testbed-server and run it:
+A more detailed guide for creating experiments is described in [](../user/experiments.md).
+
+After transferring the config-file to the testbed-server it can be run:
 
 ```Shell
 shepherd-herd run tb_tasks_rf_survey.yaml

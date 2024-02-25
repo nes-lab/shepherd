@@ -6,11 +6,11 @@
 
 ---
 
-*shepherd-cal* is the command line utility for calibrating and profiling a shepherd cape.
+`shepherd-cal` is the command line utility for calibrating and profiling a shepherd cape.
 
 ## Installation
 
-*shepherd-cal* is a pure python package and currently NOT available on PyPI.
+`shepherd-cal` is a pure python package and currently NOT available on PyPI.
 
 For install from local sources:
 
@@ -40,7 +40,7 @@ shepherd-cal calibration measure --help
 shepherd-cal profile --help
 ```
 
-It is currently possible to
+It is currently possible to:
 
 - calibrate the shepherd cape
 - read and write calibration to the shepherd cape
@@ -51,7 +51,7 @@ For actual measurements the program will tell you how to connect the SMU to the 
 
 ## Examples
 
-Calibration
+### Calibration
 
 ```Shell
 shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270060 --outfile sheep0_cape_v240b.yaml --verbose
@@ -60,7 +60,7 @@ shepherd-cal calibration write sheep0 --user jane --cal-file sheep0_cape_v240b.y
 shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --emulator-only --write --verbose --cape-serial 1270057
 ```
 
-Profiling
+### Profiling
 
 ```Shell
 shepherd-cal profile measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270057

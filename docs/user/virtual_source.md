@@ -17,7 +17,7 @@ With one of the latest additions of sampling [IV-curves](https://en.wikipedia.or
   - open circuit voltage (MPPT_VOC), or
   - perturb & observe (MPPT_PO)
 
-As an
+As an actual YAML-Example:
 
 ```yaml
 - datatype: VirtualHarvesterConfig
@@ -37,7 +37,7 @@ As an
 
 - [VirtualHarvesterConfig in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester.py)
 - [Harvester-Fixtures in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester_fixture.yaml)
-- https://github.com/orgua/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_harvester.c
+- [VirtualHarvester-Model in PRU](https://github.com/orgua/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_harvester.c)
 
 ## Emulator
 
@@ -46,6 +46,8 @@ As an
 
 fully customizable power supply toolchain
 ```
+
+As an actual YAML-Example describing a simple diode & capacitor circuit:
 
 ```yaml
 - datatype: VirtualSourceConfig
@@ -58,10 +60,54 @@ fully customizable power supply toolchain
     C_intermediate_uF: 10  # primary storage-Cap
 ```
 
+## Sim-Example 1
+
+Setup:
+
+- BQ25504 (with default slow pwr-good & fast schmitt-trigger)
+- I_inp = 100 uA @ 1200 mV
+- I_out = 1 mA (active MCU), 200 nA (sleep)
+- V_power_good = 2.2 V
+
+The only difference between the two runs is the altered power-good-circuit. The original BQ25504 is too slow to inform the MCU about the low energy level and therefore the MCU drains the capacitor. Note the small voltage drop in the first picture. The BQ disconnects the output for very low voltages and reconnects it on a certain voltage. The drop is caused by the simulated output-capacity.
+
+```{figure} media/vsource_sim_BQ25504_1200mV_5000ms.png
+:name: vsource_sim_bq
+
+BQ25504 with default slow pwr-good
+```
+
+```{figure} media/vsource_sim_BQ25504s_1200mV_5000ms.png
+:name: vsource_sim_bqs
+
+BQ25504 with fast schmitt-trigger
+```
+
+[Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/examples/vsource_simulation.py)
+
+## Sim-Example 2
+
+Setup:
+
+- diode + cap circuit with immediate schmitt-trigger for power-good
+- I_inp = 100 uA @ 1200 mV
+- I_out = 1 mA (active MCU), 200 nA (sleep)
+- V_power_good = 2.2 V
+
+The input-voltage is too small to charge the circuit up to V_power_good, so the capacitor is slowly discharging from its own leakage and the MCUs current-draw during sleep.
+
+```{figure} media/vsource_sim_diode+capacitor_1200mV_500ms.png
+:name: vsource_sim_diode_cap
+
+diode + cap circuit with fast schmitt-trigger for power-good
+```
+
+[Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/examples/vsource_simulation.py)
+
 ### References
 
 - [VirtualSourceConfig in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source.py)
 - [Source-Fixtures in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source_fixture.yaml)
-- [VirtualSource-Model in pru](https://github.com/orgua/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_converter.c)
+- [VirtualSource-Model in PRU](https://github.com/orgua/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_converter.c)
 - [VirtualSource-Model in corelib](https://github.com/orgua/shepherd-datalib/tree/main/shepherd_core/shepherd_core/vsource)
 - [example of a VirtualSource-Simulation](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/examples/vsource_simulation.py)

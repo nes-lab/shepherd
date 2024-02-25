@@ -46,7 +46,7 @@ The datasets `time`, `current` and `voltage` are raw `uint32` (directly from ADC
 - `unit` contains the SI unit for the scaling operation
 - `description` shows how to apply the scaling, i.e. `system time [s] = value * gain + (offset)`
 
-See also [](calibration).
+See [](calibration) for more details.
 
 The gpio group stores the timestamp when a GPIO edge was detected and the corresponding bit mask in values.
 For example, assume that all are were low at the beginning of the recording.
@@ -58,6 +58,8 @@ There is more data and metadate, like system logs, included in the files created
 :::
 
 There are numerous tools to work with HDF5 and library bindings for all popular programming languages.
+
+## Usage Examples
 
 We offer the [core-library](https://pypi.org/project/shepherd_core) and complementing CLI-wrapper called [shepherd-data](https://pypi.org/project/shepherd_data). Advantages are:
 
