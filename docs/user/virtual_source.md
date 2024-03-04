@@ -64,7 +64,7 @@ As an actual YAML-Example describing a simple diode & capacitor circuit:
 
 Setup:
 
-- BQ25504 (with default slow pwr-good & fast schmitt-trigger)
+- TI BQ25504 (with default slow pwr-good & fast schmitt-trigger)
 - I_inp = 100 uA @ 1200 mV
 - I_out = 1 mA (active MCU), 200 nA (sleep)
 - V_power_good = 2.2 V

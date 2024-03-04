@@ -4,14 +4,16 @@
 TODO: WORK IN PROGRESS
 :::
 
-The models support
+The models offer
 
+- one unified interface for all tools
 - auto-completion with neutral / sensible values
 - complex and custom datatypes (i.e. PositiveInt, lists-checks on length)
-- checking of inputs and type-casting
+- checking of inputs (validation) and type-casting
 - generate their own schema (for web-forms)
+- recursive inheritance (for content-configs)
 - pre-validation
-- store to & load from yaml with typecheck through wrapper
+- store to & load from yaml or json with typecheck through wrapper
 - included documentation
 
 ## Experiment

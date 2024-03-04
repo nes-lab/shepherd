@@ -13,7 +13,7 @@ Below is a screenshot of the [Campus-Navigator](https://navigator.tu-dresden.de/
 Most horizontal walls are concrete, while the walls between offices are drywall.
 
 The link-matrix of the Testbed looks like that (values in dBm):
-
+pay
 ```
 Tx⟍Rx     1     2     3     4     5     6     7     8    10    11    12    13    14
      +-----------------------------------------------------------------------------
