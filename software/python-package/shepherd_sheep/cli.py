@@ -214,7 +214,7 @@ def read(cal_file: Path | None) -> None:
         cal.to_file(cal_file)
 
 
-@cli.command(short_help="Start zerorpc server")
+@cli.command(short_help="Start ZeroRPC Server")
 @click.option("--port", "-p", type=click.INT, default=4242)
 def rpc(port: int | None) -> None:
     shepherd_io = ShepherdDebug()

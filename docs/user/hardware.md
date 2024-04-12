@@ -4,7 +4,7 @@
 
 Shepherd is a HW/SW solution and this section describes the key interfaces of the shepherd hardware that are relevant to users.
 
-Each shepherd observer consists of five key components:
+Each shepherd observer consists of four key components:
 
 - The BeagleBone is a Single Board Computer, handling synchronization, data storage and hardware control
 - The shepherd cape contains the harvester- and emulator-circuitry and all other fixed hardware parts
