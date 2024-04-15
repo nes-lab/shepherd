@@ -121,8 +121,7 @@ int sync_init(uint32_t timer_period_ns)
     const ktime_t  ts_now_kt = ktime_get_real();
     uint64_t       ts_now_ns = ktime_to_ns(ts_now_kt);
     uint64_t         ns_to_next_trigger;
-    void __iomem      *gpio0fsel2 = NULL;
-    uint32_t       fsel = 0;
+    void __iomem      *gpio0oe_set = NULL;
 
     div_u64_rem(ts_now_ns, trigger_loop_period_ns, &sys_ts_over_timer_wrap_ns);
     ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
