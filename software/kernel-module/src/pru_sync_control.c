@@ -132,8 +132,7 @@ int sync_init(uint32_t timer_period_ns)
     // rio-base-address + bitmask-set/clear + sub-register
 
     gpio0oe_set = ioremap(0x400e0000 + 0x2000 + 0x04, 4);
-
-    gpio0oe_set = 0b1u << 21u;
+    writel(0b1u << 21u, gpio0oe_set);
     printk(KERN_INFO "shprd.k: wrote RIO_OE for GPIO21");
     iounmap(gpio0oe_set);
     gpio0oe_set = NULL;
