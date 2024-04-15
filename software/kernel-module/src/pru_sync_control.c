@@ -33,15 +33,7 @@ void                sync_benchmark(void)
     volatile int32_t counter_iv;
     int32_t          trigger_in;
     printk(KERN_INFO "shprd.k: Benchmark high-res busy-wait Variants");
-    /* Benchmark high-res busy-wait - RESULTS:
-       ktime_get() = 2463 n / ~100us              -> ~ 40 ns/call
-       ktime_get_real() = 2352 n / ~100us
-       ktime_get_ns() = 2463 n / ~100us
-       ktime_get_real_ns() = 2352 n / ~100us
-       ktime_get_raw() = 2061 n / ~100us
-       ktime_get_real_fast_ns() = 1960 n / ~100us
-       increment-loop             400us    100k   -> ~ 4 ns/iteration
-     */
+
     counter    = 0;
     trigger_kt = ktime_get() + ns_to_ktime(100000u);
     preempt_disable();
@@ -136,17 +128,16 @@ int sync_init(uint32_t timer_period_ns)
     ns_to_next_trigger = trigger_loop_period_ns - sys_ts_over_timer_wrap_ns - ns_pre_trigger;
 
     // Get control for GPIO0 Pin0 to 31?
-    gpio0clear = ioremap(0xfe200000 + 0x28, 4);
-    gpio0set   = ioremap(0xfe200000 + 0x1C, 4);
+    gpio0clear = ioremap(0x400e0000 + 0x3000 + 0x00, 4);
+    gpio0set   = ioremap(0x400e0000 + 0x2000 + 0x00, 4);
+    // rio-base-address + bitmask-set/clear + sub-register
 
-    gpio0fsel2    = ioremap(0xfe200000 + 0x08, 4);
-    fsel = readl(gpio0fsel2);
-    fsel = fsel & ~0b111000u; // reset gpio21 register
-    fsel = fsel | (0b001u << 3u); // TX Enable
-    writel(fsel, gpio0fsel2);
-    printk(KERN_INFO "shprd.k: wrote fsel for GPIO21: %x", fsel);
-    iounmap(gpio0fsel2);
-    gpio0fsel2 = NULL;
+    gpio0oe_set = ioremap(0x400e0000 + 0x2000 + 0x04, 4);
+
+    gpio0oe_set = 0b1u << 21u;
+    printk(KERN_INFO "shprd.k: wrote RIO_OE for GPIO21");
+    iounmap(gpio0oe_set);
+    gpio0oe_set = NULL;
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
@@ -182,7 +173,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     ktime_t          ts_next_busy_kt = 0;
 
     //preempt_disable();
-    writel(0b1u << 21u, gpio0clear);// P8_03
+    writel(0b1u << 21u, gpio0clear);
 
     /* Timestamp system clock */
     ts_now_kt = ktime_get_real();
