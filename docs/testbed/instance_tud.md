@@ -1,10 +1,14 @@
 # Instance at TU Dresden
 
-In the second half of 2023 a public instance of the Shepherd Testbed went live. This section of the documentation is the landing-page and informs users about the first steps.
+In the second half of 2023 a (semi-)public instance of the Shepherd Testbed went live. This section of the documentation will be landing-page and inform users about the first steps.
+
+Direct Link: <https://shepherd.cfaed.tu-dresden.de/>
 
 ## Deployment
 
-The initial deployment is covering the ring of offices around the buildings ventilation system. The inner structure mostly blocks RF due to lots of metal vents. 14 shepherd observers are used for the testrun.
+The initial deployment covered the ring of offices around the buildings ventilation system. The inner structure mostly blocks RF due to lots of metal vents. 10 - 14 shepherd observers were used for the testrun. Unfortunately the RF-Performance of the nodes was not strong enough to close the gap between II62 and II75 (left side of plan). The Issue is documented [here](https://github.com/orgua/shepherd-targets/issues/3) and new targets with external antenna are in production.
+
+For now (April 2024) the testbed was reshaped to mimic an elongated multihop mesh-network on the lower part of the office-floor.
 
 Below is a screenshot of the [Campus-Navigator](https://navigator.tu-dresden.de/etplan/bar/02) with marked node-positions.
 
@@ -13,28 +17,10 @@ Below is a screenshot of the [Campus-Navigator](https://navigator.tu-dresden.de/
 Most horizontal walls are concrete, while the walls between offices are drywall.
 
 The link-matrix of the Testbed looks like that (values in dBm):
-pay
-```
-Tx⟍Rx     1     2     3     4     5     6     7     8    10    11    12    13    14
-     +-----------------------------------------------------------------------------
-   1 |        -70   -84   -90
-   2 |  -67         -77
-   3 |  -81   -78         -70   -86
-   4 |  -86         -69         -80
-   5 |              -87   -81         -72
-   6 |                          -72         -80                           -81
-   7 |                                -83         -83                     -89
-   8 |                                      -81               -86   -60   -80   -81
-  10 |                                                              -81
-  11 |                                            -85               -82
-  12 |                                            -61   -86   -85
-  13 |                                -83   -88   -81                           -63
-  14 |                                            -79                     -61
+
 ```
 
-:::{note}
-Node 9 is permanently offline
-:::
+```
 
 ## Controlling the Testbed
 
@@ -92,7 +78,6 @@ shepherd-herd run tb_tasks_rf_survey.yaml
 - available [firmwares for the targets](https://github.com/orgua/shepherd-targets)
     - adapted [Trafficbench](https://github.com/orgua/TrafficBench) for an [RF-survey](https://github.com/orgua/shepherd-targets/tree/main/nrf52_rf_survey)
 - the [Trafficbench pythontool](https://pypi.org/project/trafficbench)
-  - [Link-Matrix of the Testbed](https://github.com/orgua/shepherd-targets/issues/3#issuecomment-1816709179)
 
 ## Contributions
 
