@@ -4,7 +4,11 @@
 #include <linux/slab.h>
 //#include <time.h>
 
+//#define DBG_GPIO_EDGE
+
+#ifdef DBG_GPIO_EDGE
 #include <asm/io.h> // as long as gpio0-hack is active
+#endif
 
 #include "pru_mem_interface.h"
 #include "pru_sync_control.h"
@@ -45,9 +49,10 @@ static const unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 2
 static const size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
 //static unsigned int step_pos = 0;
 
+#ifdef DBG_GPIO_EDGE
 static void __iomem      *gpio0set            = NULL;
 static void __iomem      *gpio0clear          = NULL;
-
+#endif
 
 // Sync-Routine - TODO: take these from pru-sharedmem
 #define BUFFER_PERIOD_NS       (100000000U) // TODO: there is already: trigger_loop_period_ns
@@ -60,6 +65,7 @@ static uint32_t     info_count = 6666; /* >6k triggers explanation-message once 
 struct sync_data_s *sync_data  = NULL;
 static u8           init_done  = 0;
 
+#ifdef DBG_GPIO_EDGE
 void                sync_benchmark(void)
 {
     uint32_t         counter;
@@ -140,6 +146,7 @@ void                sync_benchmark(void)
     preempt_enable();
     printk(KERN_INFO "shprd.k: %d-increment-Loops -> measure-time", trigger_in);
 }
+#endif
 
 
 void sync_exit(void)
@@ -151,6 +158,7 @@ void sync_exit(void)
         kfree(sync_data);
         sync_data = NULL;
     }
+#ifdef DBG_GPIO_EDGE
     if (gpio0clear != NULL)
     {
         iounmap(gpio0clear);
@@ -161,6 +169,7 @@ void sync_exit(void)
         iounmap(gpio0set);
         gpio0set = NULL;
     }
+#endif
     init_done = 0;
     printk(KERN_INFO "shprd.k: pru-sync-system exited");
 }
@@ -181,8 +190,10 @@ int sync_init(uint32_t timer_period_ns)
     }
     sync_reset();
 
+#ifdef DBG_GPIO_EDGE
     gpio0clear             = ioremap(0x44E07000 + 0x190, 4);
     gpio0set               = ioremap(0x44E07000 + 0x194, 4);
+#endif
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */
     trigger_loop_period_ns = timer_period_ns; /* 100 ms */
@@ -205,7 +216,9 @@ int sync_init(uint32_t timer_period_ns)
     printk(KERN_INFO "shprd.k: trigger_hrtimer.is_soft = %d", trigger_loop_timer.is_soft);
     //printk(KERN_INFO "shprd.k: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
 
-    //sync_benchmark();
+#ifdef DBG_GPIO_EDGE
+    sync_benchmark();
+#endif
     sync_start();
     return 0;
 }
@@ -279,26 +292,23 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     static ktime_t  ts_next_kt      = 0;
     ktime_t         ts_next_busy_kt = 0;
     static uint32_t singleton       = 0;
-    const uint32_t  sync_edge       = 0; // debug gpio output
 
     if (!timers_active) return HRTIMER_NORESTART;
 
-    if (sync_edge)
-    {
-        preempt_disable();
-        writel(0b1u << 22u, gpio0clear);
-    }
+#ifdef DBG_GPIO_EDGE
+    preempt_disable();
+    writel(0b1u << 22u, gpio0clear);
+#endif
 
     /* Timestamp system clock */
     ts_now_kt = ktime_get_real();
 
     if ((ts_now_kt > ts_next_kt + trigger_loop_period_kt) || (ts_now_kt < ts_next_kt))
     {
-        if (sync_edge)
-        {
-            writel(0b1u << 22u, gpio0set);
-            preempt_enable();
-        }
+#ifdef DBG_GPIO_EDGE
+        writel(0b1u << 22u, gpio0set);
+        preempt_enable();
+#endif
 
         /* out of bounds -> reset timer */
         if (singleton) printk(KERN_ERR "shprd.k: reset sync-trigger!");
@@ -316,14 +326,13 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
         return HRTIMER_RESTART;
     }
 
-    if (sync_edge)
-    {
-        /* high-res busy-wait, ~300ns resolution */
-        ts_next_busy_kt = ts_next_kt + ns_to_ktime(40000u);
-        while (ts_now_kt < ts_next_busy_kt) ts_now_kt = ktime_get_real();
-        writel(0b1u << 22u, gpio0set);
-        preempt_enable();
-    }
+#ifdef DBG_GPIO_EDGE
+    /* high-res busy-wait, ~300ns resolution */
+    ts_next_busy_kt = ts_next_kt + ns_to_ktime(40000u);
+    while (ts_now_kt < ts_next_busy_kt) ts_now_kt = ktime_get_real();
+    writel(0b1u << 22u, gpio0set);
+    preempt_enable();
+#endif
 
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
