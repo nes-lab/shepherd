@@ -47,9 +47,9 @@ class SysUtilMonitor(Monitor):
             chunks=(self.increment, 4),
         )
         self.data["io"].attrs["unit"] = "n"
-        self.data["io"].attrs[
-            "description"
-        ] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
+        self.data["io"].attrs["description"] = (
+            "io_read [n], io_write [n], io_read [byte], io_write [byte]"
+        )
         self.data.create_dataset(
             name="net",
             shape=(self.increment, 2),

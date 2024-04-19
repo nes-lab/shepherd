@@ -117,8 +117,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
     while (1)
     {
         /* Trigger for interrupt from Linux host to take timestamp */
-        while (!(read_r31() & HOST_INT_TIMESTAMP_MASK))
-            ;
+        while (!(read_r31() & HOST_INT_TIMESTAMP_MASK));
 
         if (!INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) continue;
         DEBUG_STATE_1;

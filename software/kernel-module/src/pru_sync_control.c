@@ -7,7 +7,7 @@
 //#define DBG_GPIO_EDGE
 
 #ifdef DBG_GPIO_EDGE
-#include <asm/io.h> // as long as gpio0-hack is active
+  #include <asm/io.h> // as long as gpio0-hack is active
 #endif
 
 #include "pru_mem_interface.h"
@@ -50,8 +50,8 @@ static const size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(
 //static unsigned int step_pos = 0;
 
 #ifdef DBG_GPIO_EDGE
-static void __iomem      *gpio0set            = NULL;
-static void __iomem      *gpio0clear          = NULL;
+static void __iomem *gpio0set   = NULL;
+static void __iomem *gpio0clear = NULL;
 #endif
 
 // Sync-Routine - TODO: take these from pru-sharedmem
@@ -66,7 +66,7 @@ struct sync_data_s *sync_data  = NULL;
 static u8           init_done  = 0;
 
 #ifdef DBG_GPIO_EDGE
-void                sync_benchmark(void)
+void sync_benchmark(void)
 {
     uint32_t         counter;
     uint64_t         trigger_ns;
@@ -191,8 +191,8 @@ int sync_init(uint32_t timer_period_ns)
     sync_reset();
 
 #ifdef DBG_GPIO_EDGE
-    gpio0clear             = ioremap(0x44E07000 + 0x190, 4);
-    gpio0set               = ioremap(0x44E07000 + 0x194, 4);
+    gpio0clear = ioremap(0x44E07000 + 0x190, 4);
+    gpio0set   = ioremap(0x44E07000 + 0x194, 4);
 #endif
 
     /* timer for trigger, TODO: this needs better naming, make clear what it does */

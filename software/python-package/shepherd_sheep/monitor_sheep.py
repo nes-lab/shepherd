@@ -32,9 +32,9 @@ class SheepMonitor(Monitor):
             chunks=True,
         )
         self.data["level"].attrs["unit"] = "n"
-        self.data["level"].attrs[
-            "description"
-        ] = "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
+        self.data["level"].attrs["description"] = (
+            "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
+        )
 
         self.thread = threading.Thread(
             target=self.thread_fn,

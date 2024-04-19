@@ -75,8 +75,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 
     while (1)
     {
-        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()))
-            ;
+        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()));
 
         // Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)

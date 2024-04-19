@@ -23,8 +23,7 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     //__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
 
     /* Get input current/voltage from pru1 (these 2 far mem-reads can take from 530 to 5400 ns -> destroyer of real time) */
-    while (shared_mem->analog_value_index != shared_mem->analog_sample_counter)
-        ;
+    while (shared_mem->analog_value_index != shared_mem->analog_sample_counter);
     uint32_t       input_current_nA       = shared_mem->analog_value_current;
     uint32_t       input_voltage_uV       = shared_mem->analog_value_voltage;
     const uint32_t current_sample_counter = shared_mem->analog_sample_counter;

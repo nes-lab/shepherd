@@ -43,7 +43,7 @@ def eeprom_open(
 def eeprom_retained(eeprom_open: EEPROM) -> Generator[EEPROM, None, None]:
     data = eeprom_open._read(0, 1024)
     for i in range(256):
-        eeprom_open._write(i * 4, b"\xDE\xAD\xBE\xEF")
+        eeprom_open._write(i * 4, b"\xde\xad\xbe\xef")
     yield eeprom_open
     eeprom_open._write(0, data)
 
