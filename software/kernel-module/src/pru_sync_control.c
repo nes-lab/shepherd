@@ -290,9 +290,11 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     ktime_t         ts_now_kt;
     uint64_t        ts_now_ns;
     static ktime_t  ts_next_kt      = 0;
-    ktime_t         ts_next_busy_kt = 0;
     static uint32_t singleton       = 0;
-
+#ifdef DBG_GPIO_EDGE
+    ktime_t         ts_next_busy_kt = 0;
+#endif
+    
     if (!timers_active) return HRTIMER_NORESTART;
 
 #ifdef DBG_GPIO_EDGE
