@@ -19,7 +19,7 @@ select = [ # TODO: replace by "ALL"
 #    "FA",   # flake8-future-annotations
 #    "FBT",  # boolean traps
     "FLY",  # flynt
-    "FURB", # refurb
+#    "FURB", # refurb
     "G",    # flake8-logging-format
     "I",    # incomplete isort
     "INP",  # flake8-no-pep420
