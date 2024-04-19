@@ -143,7 +143,7 @@ class Herd:
     def __enter__(self) -> Self:
         self._open()
         if len(self.group) < 1:
-            raise ValueError("No remote sheep in current herd!")
+            logger.error("No remote sheep in current herd! Will run dry")
         return self
 
     def __exit__(
