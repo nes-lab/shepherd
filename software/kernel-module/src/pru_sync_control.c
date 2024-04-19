@@ -388,8 +388,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     else if ((ts_last_error_ns + quiet_time_ns < ts_now_ns) &&
              (ts_previous_ns + 2 * trigger_loop_period_ns < ts_now_ns) && (ts_previous_ns > 0))
     {
-        // TODO: not working as expected, this should alarm when PRUs are offline
-        // TODO: when PRUs are halting this error pops up endlessly & ktimersoftd/0 has 50% CPU-Usage
+        // TODO: not working as expected, this routine should get notified when PRUs are offline
         ts_last_error_ns = ts_now_ns;
         printk(KERN_ERR "shprd.k: Faulty behavior - PRU did not answer to "
                         "trigger-request in time!");
