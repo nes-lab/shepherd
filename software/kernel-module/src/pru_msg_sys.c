@@ -2,7 +2,7 @@
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
-#include <linux/mutex.h>
+//#include <linux/mutex.h>
 
 #include "pru_msg_sys.h"
 
@@ -19,7 +19,7 @@ static void       ring_init(struct RingBuffer *const buf)
     buf->start  = 0u;
     buf->end    = 0u;
     buf->active = 0u;
-    mutex_init(&buf->mutex);
+    //mutex_init(&buf->mutex);
 }
 
 static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
