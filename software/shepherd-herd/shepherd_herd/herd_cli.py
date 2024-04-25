@@ -162,6 +162,17 @@ def fix(ctx: click.Context) -> None:
 
 
 @cli.command(
+    short_help="Gets current time and restarts PTP on each sheep",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def resync(ctx: click.Context) -> None:
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.resync()
+    sys.exit(exit_code)
+
+
+@cli.command(
     short_help="Helps to identify Observers by flashing LEDs near Targets (IO, EMU)",
     context_settings={"ignore_unknown_options": True},
 )

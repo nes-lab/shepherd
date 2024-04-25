@@ -183,7 +183,7 @@ class Herd:
             cnx.close()
 
     def _open(self) -> None:
-        """Open Connection on all Nodes"""
+        """Open Connection on all Nodes."""
         threads = {}
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
@@ -224,7 +224,8 @@ class Herd:
 
     @validate_call
     def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[int, Result]:
-        """Run COMMAND on the shell -> Returns output-results
+        """Run COMMAND on the shell -> Returns output-results.
+
         NOTE: in case of error on a node that corresponding dict value is unavailable
         """
         results: dict[int, Result] = {}
@@ -257,7 +258,7 @@ class Herd:
         *,
         verbose: bool = False,
     ) -> None:
-        """Logs output-results of shell commands"""
+        """Log output-results of shell commands"""
         for i, hostname in enumerate(self.hostnames.values()):
             # TODO: incorrect when sheep are missing in between
             #       -> also throw out in hostname-dict?
@@ -457,7 +458,7 @@ class Herd:
         return failed_retrieval
 
     def find_consensus_time(self) -> tuple[datetime, float]:
-        """Finds a start time in the future when all nodes should start service
+        """Find a start time in the future when all nodes should start service
 
         In order to run synchronously, all nodes should start at the same time.
         This is achieved by querying all nodes to check any large time offset,
@@ -487,7 +488,7 @@ class Herd:
         task: Path | ShpModel,
         remote_path: Path | str = "/etc/shepherd/config.yaml",
     ) -> None:
-        """transfers shepherd tasks to the group of hosts / sheep.
+        """Transfer shepherd tasks to the group of hosts / sheep.
 
         Rolls out a configuration file according to the given command and parameters
         service.
@@ -531,7 +532,7 @@ class Herd:
 
     @validate_call
     def check_status(self, *, warn: bool = False) -> bool:
-        """Returns true as long as one instance is still measuring
+        """Return true as long as one instance is still measuring
 
         :param warn:
         :return: True is one node is still active
@@ -558,7 +559,7 @@ class Herd:
         return active
 
     def start_measurement(self) -> int:
-        """Starts shepherd service on the group of hosts."""
+        """Start shepherd service on the group of hosts."""
         if self.check_status(warn=True):
             logger.info("-> won't start while shepherd-instances are active")
             return 1
@@ -598,7 +599,7 @@ class Herd:
 
     @validate_call
     def inventorize(self, output_path: Path) -> bool:
-        """Collects information about the hosts, including the herd-server,
+        """Collect information about the hosts, including the herd-server,
         return True on failure
         """
         if output_path.is_file():
@@ -624,6 +625,21 @@ class Herd:
             delete_src=True,
         )
         # TODO: best case - add all to one file or a new inventories-model?
+
+    def resync(self) -> int:
+        """Get current time via ntp and restart PTP on each sheep."""
+        r1 = self.run_cmd(sudo=True, cmd=f"ntpdate -s time.nist.gov")
+        self.print_output(r1)
+        r2 = self.run_cmd(sudo=True, cmd=f"systemctl restart phc2sys@eth0")
+        self.print_output(r2)
+        r3 = self.run_cmd(sudo=True, cmd=f"systemctl restart ptp4l@eth0")
+        self.print_output(r3)
+        r4 = self.run_cmd(sudo=False, cmd=f"date")
+        self.print_output(r4)
+        exit_code = 0
+        for r in [r1, r2, r3, r4]:
+            exit_code = max([exit_code] + [reply.exited for reply in r.values()]) > 0
+        return exit_code
 
     @validate_call
     def run_task(self, config: Path | ShpModel, *, attach: bool = False) -> int:
