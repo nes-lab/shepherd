@@ -628,16 +628,20 @@ class Herd:
 
     def resync(self) -> int:
         """Get current time via ntp and restart PTP on each sheep."""
-        r1 = self.run_cmd(sudo=True, cmd=f"ntpdate -s time.nist.gov")
-        self.print_output(r1)
-        r2 = self.run_cmd(sudo=True, cmd=f"systemctl restart phc2sys@eth0")
-        self.print_output(r2)
-        r3 = self.run_cmd(sudo=True, cmd=f"systemctl restart ptp4l@eth0")
-        self.print_output(r3)
-        r4 = self.run_cmd(sudo=False, cmd=f"date")
-        self.print_output(r4)
+        r1 = self.run_cmd(sudo=True, cmd=f"systemctl stop phc2sys@eth0")
+        self.print_output(r1, verbose=True)
+        r2 = self.run_cmd(sudo=True, cmd=f"systemctl stop ptp4l@eth0")
+        self.print_output(r2, verbose=True)
+        r3 = self.run_cmd(sudo=True, cmd="ntpdate -s time.nist.gov")
+        self.print_output(r3, verbose=True)
+        r4 = self.run_cmd(sudo=True, cmd="systemctl start phc2sys@eth0")
+        self.print_output(r4, verbose=True)
+        r5 = self.run_cmd(sudo=True, cmd="systemctl start ptp4l@eth0")
+        self.print_output(r5, verbose=True)
+        r6 = self.run_cmd(sudo=False, cmd="date")
+        self.print_output(r6, verbose=True)
         exit_code = 0
-        for r in [r1, r2, r3, r4]:
+        for r in [r1, r2, r3, r4, r5, r6]:
             exit_code = max([exit_code] + [reply.exited for reply in r.values()]) > 0
         return exit_code
 
