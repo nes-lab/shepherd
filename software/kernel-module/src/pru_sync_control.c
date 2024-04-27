@@ -200,7 +200,8 @@ int sync_init(uint32_t timer_period_ns)
     trigger_loop_period_kt = ns_to_ktime(trigger_loop_period_ns);
     //printk(KERN_INFO "shprd.k: new timer_period_ns = %u", trigger_loop_period_ns);
 
-    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS_HARD);
+    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    // TODO: HRTIMER_MODE_ABS_HARD wanted, but _HARD not defined in 4.19 (without -RT)
     trigger_loop_timer.function = &trigger_loop_callback;
 
     /* timer for Sync-Loop */
@@ -208,7 +209,7 @@ int sync_init(uint32_t timer_period_ns)
     sync_loop_timer.function = &sync_loop_callback;
 
     init_done                = 1;
-    printk(KERN_INFO "shprd.k: pru-sync-system initialized");
+    printk(KERN_INFO "shprd.k: pru-sync-system initialized (wanted: hres, abs, hard)");
 
     printk(KERN_INFO "shprd.k: trigger_hrtimer.hres    = %d",
            hrtimer_is_hres_active(&trigger_loop_timer));
@@ -268,7 +269,7 @@ void sync_start(void)
     }
 
     hrtimer_start(&trigger_loop_timer, ts_now_kt + ns_to_ktime(ns_to_next_trigger),
-                  HRTIMER_MODE_ABS_HARD);
+                  HRTIMER_MODE_ABS);  // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
 
     hrtimer_start(&sync_loop_timer, ts_now_kt + ns_to_ktime(1000000), HRTIMER_MODE_ABS);
     printk(KERN_INFO "shprd.k: pru-sync-system started");
