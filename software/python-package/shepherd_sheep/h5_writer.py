@@ -178,7 +178,7 @@ class Writer(CoreWriter):
             sort_keys=False,
         )
 
-        # targets for logging-monitor
+        # targets for logging-monitor # TODO: redesign? all should be kept in data_0
         self.sheep_grp = self.h5file.create_group("sheep")
         self.uart_grp = self.h5file.create_group("uart")
         self.sysutil_grp = self.h5file.create_group("sysutil")
@@ -222,22 +222,24 @@ class Writer(CoreWriter):
             omit_ts: (bool) optimize writing - timestamp-stream can be reconstructed later
         """
         # First, we have to resize the corresponding datasets
-        data_end_pos = self.data_pos + len(buffer)
-        data_length = self.grp_data["voltage"].shape[0]
-        if data_end_pos >= data_length:
-            data_length += self.data_inc
-            self.grp_data["voltage"].resize((data_length,))
-            self.grp_data["current"].resize((data_length,))
-            if not omit_ts:
-                self.grp_data["time"].resize((data_length,))
+        data_length_new = len(buffer)
+        if data_length_new > 0:
+            data_end_pos = self.data_pos + data_length_new
+            data_length_h5 = self.grp_data["voltage"].shape[0]
+            if data_end_pos >= data_length_h5:
+                data_length_h5 += self.data_inc
+                self.grp_data["voltage"].resize((data_length_h5,))
+                self.grp_data["current"].resize((data_length_h5,))
+                if not omit_ts:
+                    self.grp_data["time"].resize((data_length_h5,))
 
-        self.grp_data["voltage"][self.data_pos : data_end_pos] = buffer.voltage
-        self.grp_data["current"][self.data_pos : data_end_pos] = buffer.current
-        if not omit_ts:
-            self.grp_data["time"][self.data_pos : data_end_pos] = (
-                self.buffer_timeseries + buffer.timestamp_ns
-            )
-        self.data_pos = data_end_pos
+            self.grp_data["voltage"][self.data_pos : data_end_pos] = buffer.voltage
+            self.grp_data["current"][self.data_pos : data_end_pos] = buffer.current
+            if not omit_ts:
+                self.grp_data["time"][self.data_pos : data_end_pos] = (
+                    self.buffer_timeseries + buffer.timestamp_ns
+                )
+            self.data_pos = data_end_pos
 
         self.write_gpio(buffer)
         self.write_meta(buffer)
@@ -280,18 +282,26 @@ class Writer(CoreWriter):
         if ds_time_size == ds_volt_size:
             return  # no action needed
         self._logger.info("[H5Writer] will add timestamps (omitted during run for performance)")
-        meta_time_size = np.sum(self.grp_data["meta"][:, 1])
-        if meta_time_size != self.data_pos:
+        self.grp_data["meta"].resize((self.meta_pos, 4))
+        meta_buf_size = np.sum(self.grp_data["meta"][:, 1])
+        if meta_buf_size != self.data_pos:
             self._logger.warning(
-                "GenTimestamps - sizes do not match (%d vs %d)", meta_time_size, self.data_pos
+                "GenTimestamps - sizes do not match (%d vs %d)", meta_buf_size, self.data_pos
             )
-        self.grp_data["time"].resize((meta_time_size,))
+        if meta_buf_size == 0:
+            return
+        self.grp_data["time"].resize((meta_buf_size,))
         data_pos = 0
         for buf_iter in range(self.grp_data["meta"].shape[0]):
-            buf_ts_ns, buf_len = self.grp_data["meta"][buf_iter, :2]
+            buf_len = self.grp_data["meta"][buf_iter, 1]
+            if buf_len == 0:
+                continue
+            buf_ts_ns = self.grp_data["meta"][buf_iter, 0]
             self.grp_data["time"][data_pos : data_pos + buf_len] = (
                 self.buffer_timeseries + buf_ts_ns
             )
+            # TODO: not clean - buf_len is read fresh (dynamic), but self.buf_timeseries is static
+            # BUT buf_len is either 0 or the static value
             data_pos += buf_len
 
     def start_monitors(
