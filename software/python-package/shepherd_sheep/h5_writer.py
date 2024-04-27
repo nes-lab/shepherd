@@ -140,9 +140,9 @@ class Writer(CoreWriter):
             chunks=(self.meta_inc, 4),
             compression=self._compression,
         )
-        self.grp_data["meta"].attrs["unit"] = "s, n, %, %"
+        self.grp_data["meta"].attrs["unit"] = "ns, n, %, %"
         self.grp_data["meta"].attrs["description"] = (
-            "buffer_timstamp [s], "
+            "buffer_timestamp [ns], "
             "buffer_elements [n], "
             "pru0_util_mean [%], "
             "pru0_util_max [%]"
@@ -287,7 +287,8 @@ class Writer(CoreWriter):
             )
         self.grp_data["time"].resize((meta_time_size,))
         data_pos = 0
-        for buf_ts_ns, buf_len in self.grp_data["meta"][:, :2]:
+        for buf_iter in range(self.grp_data["meta"].shape(0)):
+            buf_ts_ns, buf_len = self.grp_data["meta"][buf_iter, :2]
             self.grp_data["time"][data_pos : data_pos + buf_len] = (
                 self.buffer_timeseries + buf_ts_ns
             )
