@@ -287,7 +287,7 @@ class Writer(CoreWriter):
             )
         self.grp_data["time"].resize((meta_time_size,))
         data_pos = 0
-        for buf_iter in range(self.grp_data["meta"].shape(0)):
+        for buf_iter in range(self.grp_data["meta"].shape[0]):
             buf_ts_ns, buf_len = self.grp_data["meta"][buf_iter, :2]
             self.grp_data["time"][data_pos : data_pos + buf_len] = (
                 self.buffer_timeseries + buf_ts_ns

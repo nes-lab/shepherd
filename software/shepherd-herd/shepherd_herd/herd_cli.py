@@ -205,6 +205,7 @@ def blink(ctx: click.Context, duration: int) -> None:
 @click.pass_context
 def run(ctx: click.Context, config: Path, attach: bool) -> None:
     with ctx.obj["herd"] as herd:
+        log.info("Starting to resync sheep")
         exit_code = herd.resync()
         if exit_code == 0:
             exit_code = herd.run_task(config, attach=attach)

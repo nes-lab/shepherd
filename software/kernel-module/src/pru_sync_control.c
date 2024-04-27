@@ -269,7 +269,7 @@ void sync_start(void)
     }
 
     hrtimer_start(&trigger_loop_timer, ts_now_kt + ns_to_ktime(ns_to_next_trigger),
-                  HRTIMER_MODE_ABS);  // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
+                  HRTIMER_MODE_ABS); // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
 
     hrtimer_start(&sync_loop_timer, ts_now_kt + ns_to_ktime(1000000), HRTIMER_MODE_ABS);
     printk(KERN_INFO "shprd.k: pru-sync-system started");
