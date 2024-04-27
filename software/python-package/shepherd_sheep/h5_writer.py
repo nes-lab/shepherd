@@ -298,9 +298,7 @@ class Writer(CoreWriter):
                 continue
             data_pos_end = int(data_pos + buf_len)  # somehow needed
             buf_ts_ns = self.grp_data["meta"][buf_iter, 0]
-            self.grp_data["time"][data_pos : data_pos_end] = (
-                self.buffer_timeseries + buf_ts_ns
-            )
+            self.grp_data["time"][data_pos:data_pos_end] = self.buffer_timeseries + buf_ts_ns
             # TODO: not clean - buf_len is read fresh (dynamic), but self.buf_timeseries is static
             # BUT buf_len is either 0 or the static value
             data_pos = data_pos_end

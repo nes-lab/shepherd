@@ -62,7 +62,7 @@ class SysUtilMonitor(Monitor):
 
         if psutil.disk_io_counters() is None:
             log.info(
-                "[%s] will not start - fake or virtual hardware detected",
+                "[%s] will not start - mocked or virtual hardware detected",
                 type(self).__name__,
             )
         else:

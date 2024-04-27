@@ -19,8 +19,8 @@ with Writer(store_path, cal_data=CalibrationHarvester()) as store:
     store.store_hostname("Blinky")
     for i in range(100):
         len_ = 10_000
-        fake_data = DataBuffer(random_data(len_), random_data(len_), i)
-        store.write_buffer(fake_data)
+        mock_data = DataBuffer(random_data(len_), random_data(len_), i)
+        store.write_buffer(mock_data)
 
 # run with
 # sudo shepherd-sheep -v emulator -d 10 --force_overwrite
