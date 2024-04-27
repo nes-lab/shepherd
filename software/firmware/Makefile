@@ -1,4 +1,4 @@
-DIRS = pru0-shepherd-fw pru1-shepherd-fw device-tree pru0-programmer pru1-sync
+DIRS = pru0-shepherd-fw pru1-shepherd-fw device-tree pru0-programmer
 # TODO: this makefile currently can't produce both versions of the programmer
 
 BUILDDIRS = $(DIRS:%=build-%)

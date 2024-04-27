@@ -833,10 +833,10 @@ static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attri
     /* FAIL with no file-name or not matching start-string */
     if (strlen(buffer) == 0) return -EINVAL;
 
-    if ((strncmp(buffer, "sync", 4) == 0) || (strncmp(buffer, PRU1_FW_SYNC, 19) == 0))
+    if (strncmp(buffer, "sync", 4) == 0)
     {
-        swap_pru_firmware("", PRU1_FW_SYNC);
-        /* only for debug */
+        printk(KERN_ERR "shprd.k: sync-fw was removed");
+        // NOTE: this could be removed, but that makes the whole FN useless
     }
     else { swap_pru_firmware("", PRU1_FW_DEFAULT); }
 

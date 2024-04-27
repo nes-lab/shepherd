@@ -583,7 +583,6 @@ pru_firmwares = [
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
     "am335x-pru1-shepherd-fw",
-    "am335x-pru1-sync-fw",  # just for debug
 ]
 
 

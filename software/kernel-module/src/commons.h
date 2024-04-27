@@ -10,7 +10,6 @@
 #define PRU0_FW_PRG_SWD              ("am335x-pru0-programmer-SWD-fw")
 #define PRU0_FW_PRG_SBW              ("am335x-pru0-programmer-SBW-fw")
 #define PRU1_FW_DEFAULT              ("am335x-pru1-shepherd-fw")
-#define PRU1_FW_SYNC                 ("am335x-pru1-sync-fw")
 
 
 // NOTE: a (almost)Copy of this definition-file exists for the pru-firmware (copy changes by hand)
