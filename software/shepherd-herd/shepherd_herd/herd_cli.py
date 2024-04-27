@@ -205,7 +205,11 @@ def blink(ctx: click.Context, duration: int) -> None:
 @click.pass_context
 def run(ctx: click.Context, config: Path, attach: bool) -> None:
     with ctx.obj["herd"] as herd:
-        exit_code = herd.run_task(config, attach=attach)
+        exit_code = herd.resync()
+        if exit_code == 0:
+            exit_code = herd.run_task(config, attach=attach)
+        else:
+            log.error("Failed to resync -> will not start task!")
     sys.exit(exit_code)
 
 

@@ -628,9 +628,9 @@ class Herd:
 
     def resync(self) -> int:
         """Get current time via ntp and restart PTP on each sheep."""
-        r1 = self.run_cmd(sudo=True, cmd=f"systemctl stop phc2sys@eth0")
+        r1 = self.run_cmd(sudo=True, cmd="systemctl stop phc2sys@eth0")
         self.print_output(r1, verbose=True)
-        r2 = self.run_cmd(sudo=True, cmd=f"systemctl stop ptp4l@eth0")
+        r2 = self.run_cmd(sudo=True, cmd="systemctl stop ptp4l@eth0")
         self.print_output(r2, verbose=True)
         r3 = self.run_cmd(sudo=True, cmd="ntpdate -s time.nist.gov")
         self.print_output(r3, verbose=True)
