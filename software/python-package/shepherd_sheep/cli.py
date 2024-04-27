@@ -153,6 +153,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str) ->
     default=Path("/etc/shepherd/config.yaml"),
 )
 def run(config: Path) -> None:
+    reload_kernel_module()  # more reliable with fresh states
     failed = run_task(config)
     if failed:
         log.debug("Tasks signaled an error (failed).")
