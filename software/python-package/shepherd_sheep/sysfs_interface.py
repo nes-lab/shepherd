@@ -587,7 +587,7 @@ pru_firmwares = [
 ]
 
 
-def load_pru_firmware(value: str = "shepherd") -> None:
+def load_pru_firmware(value: str = "pru0-shepherd") -> None:
     """Swap firmwares
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
     WORKAROUND: catch lockup, restart shp-module until successful

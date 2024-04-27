@@ -238,7 +238,8 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         pass
     stack.close()
 
-    sysfs_interface.load_pru_firmware("shepherd")
+    sysfs_interface.load_pru_firmware("pru0-shepherd")
+    sysfs_interface.load_pru_firmware("pru1-shepherd")
     return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 
