@@ -7,8 +7,8 @@ import numpy as np
 import psutil
 from shepherd_core import Compression
 
-from .logger import log
 from .h5_monitor_abc import Monitor
+from .logger import log
 
 
 class SysUtilMonitor(Monitor):

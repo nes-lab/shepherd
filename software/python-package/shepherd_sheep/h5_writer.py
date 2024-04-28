@@ -32,9 +32,10 @@ from .h5_monitor_ptp import PTPMonitor
 from .h5_monitor_sheep import SheepMonitor
 from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
-from .shared_memory import DataBuffer
 from .h5_recorder_gpio import GpioRecorder
 from .h5_recorder_pru import PruRecorder
+from .logger import log
+from .shared_memory import DataBuffer
 
 
 class Writer(CoreWriter):
@@ -71,6 +72,7 @@ class Writer(CoreWriter):
         verbose: bool | None = True,
         samples_per_buffer: int = 10_000,
         samplerate_sps: int = 100_000,
+        omit_ts: bool = False,
     ) -> None:
         # hopefully overwrite defaults from Reader
         self.samples_per_buffer: int = samples_per_buffer  # TODO: test
@@ -104,6 +106,9 @@ class Writer(CoreWriter):
         self.data_inc = int(100 * self.samplerate_sps)
         # NOTE for possible optimization: align resize with chunk-size
         #      -> rely on autochunking -> inc = h5ds.chunks
+        self.omit_ts = omit_ts
+        if omit_ts:
+            log.debug("Will omit timestamp during experiment -> added on exit")
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
@@ -164,7 +169,7 @@ class Writer(CoreWriter):
 
         super().__exit__()
 
-    def write_buffer(self, buffer: DataBuffer, *, omit_ts: bool = False) -> None:
+    def write_buffer(self, buffer: DataBuffer, *, ) -> None:
         """Writes data from buffer to file.
 
         Args:
@@ -191,8 +196,8 @@ class Writer(CoreWriter):
                 )
             self.data_pos = data_end_pos
 
-        self.rec_gpio(buffer.gpio_edges)
-        self.rec_pru(buffer)
+        self.rec_gpio.write(buffer.gpio_edges)
+        self.rec_pru.write(buffer)
 
     def start_monitors(
         self,

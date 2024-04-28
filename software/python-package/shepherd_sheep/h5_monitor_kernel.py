@@ -7,8 +7,8 @@ from types import TracebackType
 import h5py
 from shepherd_core import Compression
 
-from .logger import log
 from .h5_monitor_abc import Monitor
+from .logger import log
 
 
 class KernelMonitor(Monitor):

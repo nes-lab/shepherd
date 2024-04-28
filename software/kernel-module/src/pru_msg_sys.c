@@ -57,7 +57,7 @@ static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const ele
 {
     if (buf->active == 0) return 0;
 #ifdef USE_MTX
-        mutex_lock(&buf->mutex);
+    mutex_lock(&buf->mutex);
 #endif
     *element = buf->ring[buf->start];
     if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo

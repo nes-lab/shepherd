@@ -5,8 +5,8 @@ import h5py
 import numpy as np
 from shepherd_core import Compression
 
-from .logger import log
 from .h5_monitor_abc import Monitor
+from .logger import log
 from .shared_memory import DataBuffer
 
 
@@ -71,9 +71,11 @@ class PruRecorder(Monitor):
         # TODO: may be more useful on server -> so move to core-writer
         if data_iv["time"].shape[0] == data_iv["voltage"].shape[0]:
             return  # no action needed
-        log.logger.info("[%s] will add timestamps (omitted during run for performance)", type(self).__name__)
+        log.logger.info(
+            "[%s] will add timestamps (omitted during run for performance)", type(self).__name__
+        )
         self.data["values"].resize((self.position, 4))
-        buf_size = np.sum(self.data["values"][:self.position, 1])
+        buf_size = np.sum(self.data["values"][: self.position, 1])
         if buf_size == 0:
             return
         data_iv["time"].resize((buf_size,))
@@ -82,7 +84,7 @@ class PruRecorder(Monitor):
             buf_len = self.data["values"][buf_iter, 1]
             if buf_len == 0:
                 continue
-            data_pos_end = int(data_pos + buf_len)  # typecast somehow needed
+            data_pos_end = int(data_pos + buf_len)
             buf_ts_ns = self.data["values"][buf_iter, 0]
             data_iv["time"][data_pos:data_pos_end] = tseries + buf_ts_ns
             # TODO: not clean - buf_len is read fresh (dynamic), but self.buf_timeseries is static

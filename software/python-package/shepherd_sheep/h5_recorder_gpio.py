@@ -1,17 +1,13 @@
-import os
-import subprocess
-import threading
-import time
 from types import TracebackType
 
 import h5py
 import yaml
 from shepherd_core import Compression
 
-from .commons import MAX_GPIO_EVT_PER_BUFFER, GPIO_LOG_BIT_POSITIONS
-from .logger import log
+from .commons import GPIO_LOG_BIT_POSITIONS
+from .commons import MAX_GPIO_EVT_PER_BUFFER
 from .h5_monitor_abc import Monitor
-from .shared_memory import DataBuffer, GPIOEdges
+from .shared_memory import GPIOEdges
 
 
 class GpioRecorder(Monitor):

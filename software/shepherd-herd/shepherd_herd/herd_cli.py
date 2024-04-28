@@ -167,6 +167,7 @@ def fix(ctx: click.Context) -> None:
 )
 @click.pass_context
 def resync(ctx: click.Context) -> None:
+    set_verbosity()
     with ctx.obj["herd"] as herd:
         exit_code = herd.resync()
     sys.exit(exit_code)

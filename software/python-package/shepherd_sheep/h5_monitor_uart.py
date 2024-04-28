@@ -7,8 +7,8 @@ import h5py
 import serial
 from shepherd_core import Compression
 
-from .logger import log
 from .h5_monitor_abc import Monitor
+from .logger import log
 
 
 class UARTMonitor(Monitor):
