@@ -56,7 +56,7 @@ class PruRecorder(Monitor):
         if self.position >= data_length:
             data_length += self.increment
             self.data["values"].resize((data_length, 4))
-            self.data["time"].resize((data_length, 4))
+            self.data["time"].resize((data_length,))
         self.data["time"][self.position] = int(time.time() * 1e9)
         self.data["values"][self.position, :] = [
             buffer.timestamp_ns,

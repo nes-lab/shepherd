@@ -108,8 +108,6 @@ class Writer(CoreWriter):
         # NOTE for possible optimization: align resize with chunk-size
         #      -> rely on autochunking -> inc = h5ds.chunks
         self.omit_ts = omit_ts
-        if omit_ts:
-            log.debug("Will omit timestamp during experiment -> added on exit")
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
@@ -142,6 +140,9 @@ class Writer(CoreWriter):
         self.sys_util_grp = self.h5file.create_group("sys_util")
         self.kernel_grp = self.h5file.create_group("kernel")
         self.ptp_grp = self.h5file.create_group("ptp")
+
+        if self.omit_ts:
+            log.debug("Deactivated writing TS during experiment -> will be added on exit")
 
         return self
 

@@ -269,7 +269,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
             element_str = element_str[:500] + " [first 500 chars]"
 
         log.info(
-            "\n###~###~###~###~###~###~ Starting %s ###~###~###~###~###~###\n%s\n",
+            "\n###~###~###~###~###~### Starting %s ###~###~###~###~###~###\n\n%s\n",
             type(element).__name__,
             element_str,
         )
