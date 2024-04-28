@@ -6,7 +6,7 @@ from shepherd_core import Compression
 
 from .logger import get_message_queue
 from .logger import log
-from .monitor_abc import Monitor
+from .h5_monitor_abc import Monitor
 
 
 class SheepMonitor(Monitor):

@@ -8,7 +8,7 @@ import psutil
 from shepherd_core import Compression
 
 from .logger import log
-from .monitor_abc import Monitor
+from .h5_monitor_abc import Monitor
 
 
 class SysUtilMonitor(Monitor):
