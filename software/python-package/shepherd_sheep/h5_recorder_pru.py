@@ -71,7 +71,7 @@ class PruRecorder(Monitor):
         # TODO: may be more useful on server -> so move to core-writer
         if data_iv["time"].shape[0] == data_iv["voltage"].shape[0]:
             return  # no action needed
-        log.logger.info(
+        log.info(
             "[%s] will add timestamps (omitted during run for performance)", type(self).__name__
         )
         self.data["values"].resize((self.position, 4))
