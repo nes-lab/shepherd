@@ -1,9 +1,14 @@
-#include "pru_mem_interface.h"
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
-//#include <linux/mutex.h>
 
+#define USE_MTX
+#ifdef USE_MTX
+  // NOTE: was deactivated for fixing trouble with realtime-kernel
+  #include <linux/mutex.h>
+#endif
+
+#include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
 
 /***************************************************************/
@@ -13,18 +18,24 @@ struct RingBuffer msg_ringbuf_from_pru;
 struct RingBuffer msg_ringbuf_to_pru;
 
 // TODO: base msg-system on irqs (there are free ones from rpmsg)
-// TODO: replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
+// TODO: maybe  replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
 static void       ring_init(struct RingBuffer *const buf)
 {
     buf->start  = 0u;
     buf->end    = 0u;
     buf->active = 0u;
-    //mutex_init(&buf->mutex);
+
+#ifdef USE_MTX
+    mutex_init(&buf->mutex);
+#endif
 }
 
 static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
-    //mutex_lock(&buf->mutex); // TODO: deactivated for now, test if it solves instability
+#ifdef USE_MTX
+    mutex_lock(&buf->mutex);
+#endif
+
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
@@ -37,17 +48,23 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
         /* fire warning - maybe not the best place to do this - could start an avalanche */
         printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
-    //mutex_unlock(&buf->mutex);
+#ifdef USE_MTX
+    mutex_unlock(&buf->mutex);
+#endif
 }
 
 static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if (buf->active == 0) return 0;
-    //mutex_lock(&buf->mutex);
+#ifdef USE_MTX
+        mutex_lock(&buf->mutex);
+#endif
     *element = buf->ring[buf->start];
     if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
-    //mutex_unlock(&buf->mutex);
+#ifdef USE_MTX
+    mutex_unlock(&buf->mutex);
+#endif
     return 1;
 }
 
