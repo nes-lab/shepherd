@@ -44,7 +44,7 @@ class PruRecorder(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.data["values"].resize((self.position, 3))
+        self.data["values"].resize((self.position, 4))
         super().__exit__()
 
     def write(self, buffer: DataBuffer) -> None:

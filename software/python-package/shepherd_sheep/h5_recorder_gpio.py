@@ -42,7 +42,7 @@ class GpioRecorder(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.data["value"].resize((self.position, 3))
+        self.data["value"].resize((self.position,))
         super().__exit__()
 
     def write(self, edges: GPIOEdges) -> None:
