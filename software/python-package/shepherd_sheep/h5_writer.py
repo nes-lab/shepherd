@@ -52,6 +52,7 @@ class Writer(CoreWriter):
             shepherd buffer
         samplerate_sps (int): Duration of a single shepherd buffer in
             nanoseconds
+        omit_ts: (bool) optimize writing - timestamp-stream can be reconstructed later
     """
 
     mode_dtype_dict: ClassVar[dict[str, list]] = {
@@ -169,12 +170,11 @@ class Writer(CoreWriter):
 
         super().__exit__()
 
-    def write_buffer(self, buffer: DataBuffer, *, ) -> None:
+    def write_buffer(self, buffer: DataBuffer) -> None:
         """Writes data from buffer to file.
 
         Args:
             buffer: (DataBuffer) Buffer containing IV data
-            omit_ts: (bool) optimize writing - timestamp-stream can be reconstructed later
         """
         # First, we have to resize the corresponding datasets
         data_length_new = len(buffer)
@@ -185,12 +185,12 @@ class Writer(CoreWriter):
                 data_length_h5 += self.data_inc
                 self.grp_data["voltage"].resize((data_length_h5,))
                 self.grp_data["current"].resize((data_length_h5,))
-                if not omit_ts:
+                if not self.omit_ts:
                     self.grp_data["time"].resize((data_length_h5,))
 
             self.grp_data["voltage"][self.data_pos : data_end_pos] = buffer.voltage
             self.grp_data["current"][self.data_pos : data_end_pos] = buffer.current
-            if not omit_ts:
+            if not self.omit_ts:
                 self.grp_data["time"][self.data_pos : data_end_pos] = (
                     self.buffer_timeseries + buffer.timestamp_ns
                 )

@@ -130,6 +130,7 @@ class ShepherdEmulator(ShepherdIO):
                 samplerate_sps=self.samplerate_sps,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
+                omit_ts=True,  # optimization during runtime
             )
 
         # hard-wire pin-direction until they are configurable
@@ -247,7 +248,7 @@ class ShepherdEmulator(ShepherdIO):
 
             if self.writer is not None:
                 try:
-                    self.writer.write_buffer(emu_buf, omit_ts=True)
+                    self.writer.write_buffer(emu_buf)
                 except OSError as _xpt:
                     log.error(
                         "Failed to write data to HDF5-File - will STOP! error = %s",
@@ -265,7 +266,7 @@ class ShepherdEmulator(ShepherdIO):
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
                     return
                 if self.writer is not None:
-                    self.writer.write_buffer(emu_buf, omit_ts=True)
+                    self.writer.write_buffer(emu_buf)
             except ShepherdIOError as e:  # noqa: PERF203
                 # We're done when the PRU has processed all emulation data buffers
                 if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
