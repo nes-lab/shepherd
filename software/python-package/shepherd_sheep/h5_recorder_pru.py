@@ -90,3 +90,6 @@ class PruRecorder(Monitor):
             # TODO: not clean - buf_len is read fresh (dynamic), but self.buf_timeseries is static
             # BUT buf_len is either 0 or the static value
             data_pos = data_pos_end
+
+    def thread_fn(self) -> None:
+        raise NotImplementedError

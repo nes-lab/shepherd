@@ -58,3 +58,6 @@ class GpioRecorder(Monitor):
         self.data["time"][self.position : pos_end] = edges.timestamps_ns
         self.data["value"][self.position : pos_end] = edges.values  # noqa: PD011, false positive
         self.position = pos_end
+
+    def thread_fn(self) -> None:
+        raise NotImplementedError
