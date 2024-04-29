@@ -8,7 +8,7 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 import time
 from contextlib import suppress
 from types import TracebackType
-from typing import Optional
+from typing import Union
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -46,7 +46,7 @@ gpio_pin_nums = {
 class ShepherdIOError(Exception):
     ID_TIMEOUT = 9999
 
-    def __init__(self, message: str, id_num: int = 0, value: Optional[int, list] = 0) -> None:
+    def __init__(self, message: str, id_num: int = 0, value: Union[int, list, None] = 0) -> None:
         super().__init__(message + f" [id=0x{id_num:x}, val={value}]")
         self.id_num = id_num
         self.value = value
