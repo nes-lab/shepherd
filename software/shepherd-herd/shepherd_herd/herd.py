@@ -28,6 +28,7 @@ from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
+from tqdm import tqdm
 from typing_extensions import Self
 
 from .logger import logger
@@ -178,7 +179,7 @@ class Herd:
         except (NoValidConnectionsError, SSHException, TimeoutError):
             logger.error(
                 "[%s] failed to open connection -> will exclude node from inventory",
-                cnx.host,
+                cnx.host,  # = IP
             )
             cnx.close()
 
@@ -204,42 +205,42 @@ class Herd:
         cnx: Connection,
         sudo: bool,
         cmd: str,
-        results: dict[int, Result],
-        index: int,
+        results: dict[str, Result],
+        hostname: str,
     ) -> None:
         if not cnx.is_connected:
             return
         try:
             if sudo:
-                results[index] = cnx.sudo(cmd, warn=True, hide=True)
+                results[hostname] = cnx.sudo(cmd, warn=True, hide=True)
             else:
-                results[index] = cnx.run(cmd, warn=True, hide=True)
+                results[hostname] = cnx.run(cmd, warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
             logger.error(
                 "[%s] failed to run '%s' -> will exclude node from inventory",
-                cnx.host,
+                cnx.host,  # IP
                 cmd,
             )
             cnx.close()
 
     @validate_call
-    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[int, Result]:
+    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[str, Result]:
         """Run COMMAND on the shell -> Returns output-results.
 
         NOTE: in case of error on a node that corresponding dict value is unavailable
         """
-        results: dict[int, Result] = {}
+        results: dict[str, Result] = {}
         threads = {}
         logger.debug("Sheep-CMD = %s", cmd)
-        for i, cnx in enumerate(self.group):
+        for cnx in self.group:
             _name = self.hostnames[cnx.host]
             threads[_name] = threading.Thread(
                 target=self._thread_run,
-                args=(cnx, sudo, cmd, results, i),
+                args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
         logger.debug("  .. threads started - will wait until finished")
-        for host, thread in threads.items():
+        for host, thread in tqdm(threads.items(), desc="joining threads", unit="n"):
             logger.debug("  .. joining %s-thread", host)
             thread.join()  # timeout=10.0
             if thread.is_alive():
@@ -249,30 +250,28 @@ class Herd:
                 )
             del thread  # ... overcautious
         if len(results) < 1:
-            raise RuntimeError("ZERO nodes answered - check your config")
+            logger.error("ZERO nodes answered - check your config")
         return results
 
     def print_output(
         self,
-        replies: dict[int, Result],
+        replies: dict[str, Result],
         *,
         verbose: bool = False,
     ) -> None:
         """Log output-results of shell commands"""
-        for i, hostname in enumerate(self.hostnames.values()):
+        for hostname, reply in replies.values():
             # TODO: incorrect when sheep are missing in between
             #       -> also throw out in hostname-dict?
-            if not isinstance(replies.get(i), Result):
+            if not verbose and reply.exited == 0:
                 continue
-            if not verbose and replies[i].exited == 0:
-                continue
-            if len(replies[i].stdout) > 0:
+            if len(reply.stdout) > 0:
                 logger.info("\n************** %s - stdout **************", hostname)
-                logger.info(replies[i].stdout)
-            if len(replies[i].stderr) > 0:
+                logger.info(reply.stdout)
+            if len(reply.stderr) > 0:
                 logger.error("\n~~~~~~~~~~~~~~ %s - stderr ~~~~~~~~~~~~~~", hostname)
-                logger.error(replies[i].stderr)
-            logger.info("Exit-code of %s = %s", hostname, replies[i].exited)
+                logger.error(reply.stderr)
+            logger.info("Exit-code of %s = %s", hostname, reply.exited)
 
     @staticmethod
     def _thread_put(
@@ -406,10 +405,10 @@ class Herd:
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
-            if not isinstance(replies.get(i), Result):
-                continue
             hostname = self.hostnames[cnx.host]
-            if replies[i].exited > 0:
+            if not isinstance(replies.get(hostname), Result):
+                continue
+            if replies[hostname].exited > 0:
                 logger.error(
                     "remote file '%s' does not exist on node %s",
                     src_path,
@@ -437,7 +436,9 @@ class Herd:
         logger.debug("  .. threads started - will wait until finished")
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
-            if replies[i].exited > 0:
+            if not isinstance(replies.get(hostname), Result):
+                continue
+            if replies[hostname].exited > 0:
                 continue
             threads[i].join()  # timeout=10.0
             if threads[i].is_alive():
@@ -540,10 +541,11 @@ class Herd:
         replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd")
         active = False
 
-        for i, cnx in enumerate(self.group):
-            if not isinstance(replies.get(i), Result):
+        for cnx in self.group:
+            hostname = self.hostnames[cnx.host]
+            if not isinstance(replies.get(hostname), Result):
                 continue
-            if replies[i].exited != 3:
+            if replies[hostname].exited != 3:
                 active = True
                 if warn:
                     logger.warning(
