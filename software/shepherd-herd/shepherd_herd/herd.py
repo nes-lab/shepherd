@@ -231,7 +231,7 @@ class Herd:
         """
         results: dict[str, Result] = {}
         threads = {}
-        logger.debug("Sheep-CMD = %s", cmd)
+        logger.info("Sheep-CMD = %s", cmd)
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
             threads[_name] = threading.Thread(
@@ -239,9 +239,7 @@ class Herd:
                 args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
-        logger.debug("  .. threads started - will wait until finished")
-        for host, thread in tqdm(threads.items(), desc="joining threads", unit="n"):
-            logger.debug("  .. joining %s-thread", host)
+        for host, thread in tqdm(threads.items(), desc="  .. joining threads", unit="n"):
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -260,7 +258,7 @@ class Herd:
         verbose: bool = False,
     ) -> None:
         """Log output-results of shell commands"""
-        for hostname, reply in replies.values():
+        for hostname, reply in replies.items():
             # TODO: incorrect when sheep are missing in between
             #       -> also throw out in hostname-dict?
             if not verbose and reply.exited == 0:
