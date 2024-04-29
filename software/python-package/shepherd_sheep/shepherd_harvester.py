@@ -16,7 +16,6 @@ from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOError
 
 
 class ShepherdHarvester(ShepherdIO):
@@ -151,20 +150,11 @@ class ShepherdHarvester(ShepherdIO):
             log.debug("Duration = %s (forced runtime)", duration_s)
 
         while True:
-            try:
-                idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
-            except ShepherdIOError as e:
-                if e.id_num == ShepherdIOError.ID_TIMEOUT:
-                    log.error("Reception from PRU had a timeout -> begin to exit now")
-                    return
-                if self.cfg.abort_on_error:
-                    raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception",
-                    ) from e
-                log.warning("Caught an Exception", exc_info=e)
-                continue
+            idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
+            # TODO: here was a bogus handling of forgivable errors, self.cfg.abort_on_error
 
             if (hrv_buf.timestamp_ns / 1e9) >= ts_end:
+                log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 return
 
             try:

@@ -233,17 +233,10 @@ class ShepherdEmulator(ShepherdIO):
             is_raw=True,
             omit_ts=True,
         ):
-            try:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
-            except ShepherdIOError as e:
-                if self.cfg.abort_on_error:
-                    raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception",
-                    ) from e
-                log.warning("Caught an Exception", exc_info=e)
-                continue
+            idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
 
             if emu_buf.timestamp_ns / 1e9 >= ts_end:
+                log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
 
             if self.writer is not None:
@@ -260,30 +253,23 @@ class ShepherdEmulator(ShepherdIO):
             self.return_buffer(idx, hrvst_buf, self.verbose_extra)
 
         # Read all remaining buffers from PRU
-        while True:
-            try:
+        try:
+            while True:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
+                    log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     return
                 if self.writer is not None:
                     self.writer.write_buffer(emu_buf)
-            except ShepherdIOError as e:  # noqa: PERF203
-                # We're done when the PRU has processed all emulation data buffers
-                if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
-                    log.debug("Collected all Buffers from PRU -> begin to exit now")
-                    return
-                if e.id_num == ShepherdIOError.ID_TIMEOUT:
-                    log.error("Reception from PRU had a timeout -> begin to exit now")
-                    return
-
-                if self.cfg.abort_on_error:
-                    raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception",
-                    ) from e
-                log.warning("Caught an Exception", exc_info=e)
-            except OSError as _xpt:
-                log.error(
-                    "Failed to write data to HDF5-File - will STOP! error = %s",
-                    _xpt,
-                )
+        except ShepherdIOError as e:
+            # We're done when the PRU has processed all emulation data buffers
+            if e.id_num == commons.MSG_ERR_NOFREEBUF:
+                log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
                 return
+            raise e
+        except OSError as _xpt:
+            log.error(
+                "Failed to write data to HDF5-File - will STOP! error = %s",
+                _xpt,
+            )
+            return

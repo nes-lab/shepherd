@@ -69,13 +69,17 @@ __all__ = [
 def run_harvester(cfg: HarvestTask) -> bool:
     stack = ExitStack()
     set_verbosity(cfg.verbose, temporary=True)
-    failed = False
+    failed = True
     try:
         hrv = ShepherdHarvester(cfg=cfg)
         stack.enter_context(hrv)
         hrv.run()
+        failed = False
     except SystemExit:
-        failed = True
+        pass
+    except ShepherdIOError:
+        log.exception("Caught an unrecoverable error")
+        pass
     stack.close()
     return failed
 
@@ -83,13 +87,16 @@ def run_harvester(cfg: HarvestTask) -> bool:
 def run_emulator(cfg: EmulationTask) -> bool:
     stack = ExitStack()
     set_verbosity(cfg.verbose, temporary=True)
-    failed = False
+    failed = True
     try:
         emu = ShepherdEmulator(cfg=cfg)
         stack.enter_context(emu)
         emu.run()
+        failed = False
     except SystemExit:
-        failed = True
+        pass
+    except ShepherdIOError:
+        log.exception("Caught an unrecoverable error")
         pass
     stack.close()
     return failed

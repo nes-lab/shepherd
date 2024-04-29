@@ -210,11 +210,13 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             break;
         }
 
-        if (pru_msg.type < 0xC0) { ring_put(&msg_ringbuf_from_pru, &pru_msg); }
-        else
+        if (pru_msg.type < MSG_TEST) { ring_put(&msg_ringbuf_from_pru, &pru_msg); }
+
+        if (pru_msg.type >= MSG_STATUS_RESTARTING_ROUTINE)
         {
-            switch (pru_msg.type) // TODO: move over to py, just keep ringbuffer-overflow here, handled in shepherd_io.get_buffer()
+            switch (pru_msg.type)
             {
+                // NOTE: all MSG_ERR also get handed to python
                 case MSG_STATUS_RESTARTING_ROUTINE:
                     printk(KERN_INFO "shprd.pru%u: (re)starting main-routine", had_work & 1u);
                     break;
@@ -231,21 +233,6 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     printk(KERN_ERR "shprd.pru%u: msg-buffer to kernel was still full "
                                     "-> backpressure (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
-                    break;
-                case MSG_ERR_INCMPLT:
-                    ring_put(&msg_ringbuf_from_pru, &pru_msg);
-                    /* printk(KERN_ERR
-                "shprd.pru%u: sample-buffer not full (fill=%u)", had_work & 1u, pru_msg.value[0]); */
-                    break;
-                case MSG_ERR_INVLDCMD:
-                    ring_put(&msg_ringbuf_from_pru, &pru_msg);
-                    /* printk(KERN_ERR
-                "shprd.pru%u: received invalid command / msg-type (%u)", had_work & 1u, pru_msg.value[0]); */
-                    break;
-                case MSG_ERR_NOFREEBUF:
-                    ring_put(&msg_ringbuf_from_pru, &pru_msg);
-                    /* printk(KERN_ERR
-                "shprd.pru%u: ringbuffer is depleted - no free buffer (val=%u)", had_work & 1u, pru_msg.value[0]); */
                     break;
                 case MSG_ERR_TIMESTAMP:
                     printk(KERN_ERR "shprd.pru%u: received timestamp is faulty (val=%u)",
