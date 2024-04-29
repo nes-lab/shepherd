@@ -469,12 +469,14 @@ class Herd:
         # Get the current time on each target node
         replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
+        if len(ts_nows) == 0:
+            raise RuntimeError("No active hosts found to synchronize.")
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
         ts_diff = ts_max.timestamp() - ts_min.timestamp()
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
-            raise Exception(
+            raise RuntimeError(
                 f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
         if ts_max.tzinfo is None:
@@ -568,12 +570,12 @@ class Herd:
 
         replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
         self.print_output(replies)
-        return max([reply.exited for reply in replies.values()])
+        return max([0] + [reply.exited for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
-        exit_code = max([reply.exited for reply in replies.values()])
+        exit_code = max([0] + [reply.exited for reply in replies.values()])
         logger.info("Shepherd was forcefully stopped")
         if exit_code > 0:
             logger.debug("-> max exit-code = %d", exit_code)
@@ -588,7 +590,7 @@ class Herd:
         else:
             replies = self.run_cmd(sudo=True, cmd="poweroff")
             logger.info("Command for powering off nodes was issued")
-        return max([reply.exited for reply in replies.values()])
+        return max([0] + [reply.exited for reply in replies.values()])
 
     @validate_call
     def await_stop(self, timeout: int = 30) -> bool:
@@ -654,7 +656,7 @@ class Herd:
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
-            exit_code = max([reply.exited for reply in replies.values()])
+            exit_code = max([0] + [reply.exited for reply in replies.values()])
             if exit_code:
                 logger.error("Running Task failed - will exit now!")
             self.print_output(replies, verbose=True)
