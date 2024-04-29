@@ -8,7 +8,6 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 import time
 from contextlib import suppress
 from types import TracebackType
-from typing import Union
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -46,8 +45,8 @@ gpio_pin_nums = {
 class ShepherdIOError(Exception):
     ID_TIMEOUT = 9999
 
-    def __init__(self, message: str, id_num: int = 0, value: Union[int, list, None] = 0) -> None:
-        super().__init__(message + f" [id=0x{id_num:x}, val={value}]")
+    def __init__(self, message: str, id_num: int = 0, value: int | list | None = 0) -> None:
+        super().__init__(message + f" [id=0x{id_num:X}, val={value}]")
         self.id_num = id_num
         self.value = value
 
@@ -131,10 +130,10 @@ class ShepherdIO:
             log.debug("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
 
+            self.refresh_shared_mem()
+
             # clean up msg-channel provided by kernel module
             self._flush_msgs()
-
-            self.refresh_shared_mem()
 
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
@@ -537,6 +536,18 @@ class ShepherdIO:
 
             if msg_type == commons.MSG_DBG_PRINT:
                 log.info("Received cmd to print: %d", value)
+                continue
+
+            if msg_type == commons.MSG_TEST:
+                log.debug("Received test-message from PRU: %d", value)
+                continue
+
+            if msg_type == commons.MSG_SYNC:
+                log.debug("Received sync-message from PRU: %d", value)
+                continue
+
+            if msg_type == commons.MSG_STATUS_RESTARTING_ROUTINE:
+                log.debug("PRU is restarting its main routine, val=%d", value)
                 continue
 
             error_msg: str | None = commons.pru_errors.get(msg_type)
