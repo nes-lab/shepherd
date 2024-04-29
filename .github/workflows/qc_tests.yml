@@ -34,7 +34,7 @@ jobs:
         # NOTE: ansible + collections might be needed for linter
 
       - name: Run Pre-Commit Tests 🧪
-        uses: pre-commit/action@v3.0.0
+        uses: pre-commit/action@v3.0.1
 
       - name: Install the shepherd py-package 🐑
         run: "sudo pip3 install ./[test]"
