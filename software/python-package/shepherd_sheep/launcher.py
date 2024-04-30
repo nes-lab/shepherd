@@ -4,6 +4,10 @@ shepherd.launcher
 Launcher allows to start and stop shepherd service with the press of a button.
 Relies on systemd service.
 
+TODO: launcher had high load recently (2024-04)
+Workaround: deactivate main-code (disable_launchi), only wdt-reset is alive
+TODO: separate these two - wdt-reset is needed as a service
+      launcher is not needed by the testbed
 """
 
 import os
@@ -46,6 +50,7 @@ class Launcher:
         self.service_name = service_name
 
     def __enter__(self) -> Self:
+        self.disable_launchi = True
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
         self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
@@ -55,6 +60,9 @@ class Launcher:
         self.wd_interval = 600
         self.wd_thread = threading.Thread(target=self._thread_ack_watchdog, daemon=True)
         self.wd_thread.start()
+
+        if self.disable_launchi:
+            return self
 
         sys_bus = dbus.SystemBus()
         systemd1 = sys_bus.get_object(
@@ -91,6 +99,9 @@ class Launcher:
         """
         try:
             while True:
+                if self.disable_launchi:
+                    time.sleep(5)
+                    continue
                 log.info("waiting for falling edge..")
                 self.gpio_led.write(True)
                 if not self.gpio_button.poll():
@@ -123,6 +134,8 @@ class Launcher:
         Raises:
             TimeoutError: If state remains changing for longer than timeout
         """
+        if self.disable_launchi:
+            return False
         ts_end = time.time() + timeout
 
         while True:
