@@ -338,7 +338,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             continue; // for more regular gpio-sampling
         }
 
-        /*  [Event 2] Timer compare 0 handle -> trigger for buffer swap on pru0 */
+        /*  [Event 2] Timer compare 0 handle -> buffer swap on pru0 */
         if (shared_mem->cmp0_trigger_for_pru1)
         {
             DEBUG_EVENT_STATE_2;
@@ -365,6 +365,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
                 pru0_sum_ticks_for_buffer                            = 0;
                 pru0_max_ticks_per_sample                            = 0;
             }
+            // TODO: add warning for when sync not idle?
 
             /* more maintenance */
             last_analog_sample_ticks = 0;
@@ -373,7 +374,7 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             continue; // for more regular gpio-sampling
         }
 
-        /* [Event 3] Timer compare 1 handle -> trigger for analog sample on pru0 */
+        /* [Event 3] Timer compare 1 handle -> analog sampling on pru0 */
         if (shared_mem->cmp1_trigger_for_pru1)
         {
             /* prevent a race condition (cmp0_event has to happen before cmp1_event!) */

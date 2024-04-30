@@ -236,7 +236,7 @@ class ShepherdEmulator(ShepherdIO):
             idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
 
             if emu_buf.timestamp_ns / 1e9 >= ts_end:
-                log.warning("UNEXPECTED! Out of bound timestamp collected -> begin to exit now")
+                log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
 
             if self.writer is not None:
@@ -257,7 +257,7 @@ class ShepherdEmulator(ShepherdIO):
             while True:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
-                    log.warning("UNEXPECTED! Out of bound timestamp collected -> begin to exit now")
+                    log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     return
                 if self.writer is not None:
                     self.writer.write_buffer(emu_buf)
