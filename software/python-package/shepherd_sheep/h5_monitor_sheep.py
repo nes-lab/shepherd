@@ -51,7 +51,7 @@ class SheepMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        time.sleep(2*self.poll_intervall)  # give thread time to write last bits
+        time.sleep(2 * self.poll_intervall)  # give thread time to write last bits
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=2 * self.poll_intervall)
