@@ -538,14 +538,6 @@ class ShepherdIO:
                 log.info("Received cmd to print: %d", value)
                 continue
 
-            if msg_type == commons.MSG_TEST:
-                log.debug("Received test-message from PRU: %d", value)
-                continue
-
-            if msg_type == commons.MSG_SYNC:
-                log.debug("Received sync-message from PRU: %d", value)
-                continue
-
             if msg_type == commons.MSG_STATUS_RESTARTING_ROUTINE:
                 log.debug("PRU is restarting its main routine, val=%d", value)
                 continue

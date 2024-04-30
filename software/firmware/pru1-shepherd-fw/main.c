@@ -83,11 +83,12 @@ static inline bool_ft receive_sync_reply(volatile struct SharedMem *const shared
             send_status(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
             return 0;
         }
-        if (shared_mem->pru1_sync_inbox.type == MSG_TEST)
+        if (shared_mem->pru1_sync_inbox.type == MSG_TEST_ROUTINE)
         {
             // pipeline-test for msg-system
             shared_mem->pru1_sync_inbox.unread = 0;
-            send_status(shared_mem, MSG_TEST, shared_mem->pru1_sync_inbox.buffer_block_period);
+            send_status(shared_mem, MSG_TEST_ROUTINE,
+                        shared_mem->pru1_sync_inbox.buffer_block_period);
             return 0;
         }
         // NOTE: do not overwrite external msg without thinking twice! sync-routine relies on that content

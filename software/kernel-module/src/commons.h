@@ -57,22 +57,23 @@ enum MsgType
     MSG_DBG_FN_TESTS              = 0xAF,
     MSG_DBG_VSRC_HRV_P_INP        = 0xB1, // HRV + CNV in one go
 
-    /* KERNELSPACE (enum >=0xC0) */
-    // STATUS
-    MSG_STATUS_RESTARTING_ROUTINE = 0xC0,
     // ERROR
     MSG_ERROR                     = 0xE0u,
     MSG_ERR_MEMCORRUPTION         = 0xE1u,
     MSG_ERR_BACKPRESSURE          = 0xE2u,
     MSG_ERR_INCMPLT               = 0xE3u,
     MSG_ERR_INVLDCMD              = 0xE4u,
-    MSG_ERR_NOFREEBUF             = 0xE5u,
+    MSG_ERR_NOFREEBUF             = 0xE5u, // this one marks the end of emulation
     MSG_ERR_TIMESTAMP             = 0xE6u,
     MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE7u,
     MSG_ERR_VALUE                 = 0xE8u,
+
+    /* KERNELSPACE (enum >=0xF0) */
+    // STATUS
+    MSG_STATUS_RESTARTING_ROUTINE = 0xF0u,
     // Routines
-    MSG_TEST                      = 0xEAu,
-    MSG_SYNC                      = 0xEBu
+    MSG_TEST_ROUTINE              = 0xFAu,
+    MSG_SYNC_ROUTINE              = 0xFBu
 };
 
 enum MsgID

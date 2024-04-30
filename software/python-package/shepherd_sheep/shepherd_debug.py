@@ -438,6 +438,7 @@ class ShepherdDebug(ShepherdIO):
             while True:
                 msg_type, values = self._get_msg(5)
                 if msg_type != commons.MSG_PGM_ERROR_WRITE:
+                    # TODO: that should trigger an error
                     log.error(
                         "PROGRAMMER-WRITE-ERROR: ihex to target @%s, data=%d [%s]",
                         f"0x{values[0]:X}",

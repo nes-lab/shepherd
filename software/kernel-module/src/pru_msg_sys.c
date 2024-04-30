@@ -2,12 +2,6 @@
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 
-#define USE_MTX
-#ifdef USE_MTX
-  // NOTE: was deactivated for fixing trouble with realtime-kernel
-  #include <linux/mutex.h>
-#endif
-
 #include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
 
@@ -25,16 +19,20 @@ static void       ring_init(struct RingBuffer *const buf)
     buf->end    = 0u;
     buf->active = 0u;
 
-#ifdef USE_MTX
-    mutex_init(&buf->mutex);
-#endif
+    buf->mutex  = 0u;
 }
+
+static void mutex_lock(uint32_t *const mutex, const uint32_t num)
+{
+    while (*mutex != 0u);
+    *mutex = num;
+}
+
+static void mutex_unlock(uint32_t *const mutex) { *mutex = 0u; }
 
 static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
-#ifdef USE_MTX
-    mutex_lock(&buf->mutex);
-#endif
+    mutex_lock(&buf->mutex, 100u);
 
     buf->ring[buf->end] = *element;
 
@@ -48,23 +46,22 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
         /* fire warning - maybe not the best place to do this - could start an avalanche */
         printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
-#ifdef USE_MTX
+
     mutex_unlock(&buf->mutex);
-#endif
 }
 
 static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if (buf->active == 0) return 0;
-#ifdef USE_MTX
-    mutex_lock(&buf->mutex);
-#endif
+
+    mutex_lock(&buf->mutex, 200u);
+
     *element = buf->ring[buf->start];
     if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
-#ifdef USE_MTX
+
     mutex_unlock(&buf->mutex);
-#endif
+
     return 1;
 }
 
@@ -118,13 +115,13 @@ void msg_sys_test(void)
     struct SyncMsg  msg2;
     printk(KERN_INFO "shprd.k: test msg-pipelines between kM and PRUs -> triggering "
                      "roundtrip-messages for pipeline 1-3");
-    msg1.type     = MSG_TEST;
+    msg1.type     = MSG_TEST_ROUTINE;
     msg1.value[0] = 1;
     put_msg_to_pru(&msg1); // message-pipeline pru0
     msg1.value[0] = 2;
     put_msg_to_pru(&msg1); // error-pipeline pru0
 
-    msg2.type                = MSG_TEST;
+    msg2.type                = MSG_TEST_ROUTINE;
     msg2.buffer_block_period = 3;
     pru1_comm_send_sync_reply(&msg2); // error-pipeline pru1
 }
@@ -210,16 +207,17 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             break;
         }
 
-        if (pru_msg.type < MSG_TEST) { ring_put(&msg_ringbuf_from_pru, &pru_msg); }
+        if (pru_msg.type <= 0xF0u)
+        {
+            // relay everything below kernelspace and also RESTARTING_ROUTINE
+            ring_put(&msg_ringbuf_from_pru, &pru_msg);
+        }
 
-        if (pru_msg.type >= MSG_STATUS_RESTARTING_ROUTINE)
+        if (pru_msg.type >= 0xE0u)
         {
             switch (pru_msg.type)
             {
                 // NOTE: all MSG_ERR also get handed to python
-                case MSG_STATUS_RESTARTING_ROUTINE:
-                    printk(KERN_INFO "shprd.pru%u: (re)starting main-routine", had_work & 1u);
-                    break;
                 case MSG_ERROR:
                     printk(KERN_ERR "shprd.pru%u: general error (val=%u)", had_work & 1u,
                            pru_msg.value[0]);
@@ -246,14 +244,18 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     printk(KERN_ERR "shprd.pru%u: content of msg failed test (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
                     break;
-                case MSG_TEST:
+
+                case MSG_STATUS_RESTARTING_ROUTINE:
+                    printk(KERN_INFO "shprd.pru%u: (re)starting main-routine", had_work & 1u);
+                    break;
+                case MSG_TEST_ROUTINE:
                     printk(KERN_INFO "shprd.k: [test passed] received answer from "
                                      "pru%u / pipeline %u",
                            had_work & 1u, pru_msg.value[0]);
                     break;
                 default:
                     /* these are all handled in userspace and will be passed by sys-fs */
-                    printk(KERN_ERR "shprd.k: received invalid command / msg-type (%u) "
+                    printk(KERN_ERR "shprd.k: received invalid command / msg-type (%02X) "
                                     "from pru%u",
                            pru_msg.type, had_work & 1u);
             }

@@ -461,7 +461,7 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
     if (sync_data->clock_corr < -80000) sync_data->clock_corr = -80000;
 
     /* determine corrected loop_ticks for next buffer_block */
-    sync_reply->type                 = MSG_SYNC;
+    sync_reply->type                 = MSG_SYNC_ROUTINE;
     sync_reply->buffer_block_period  = TIMER_BASE_PERIOD + sync_data->clock_corr;
     sync_data->previous_period       = sync_reply->buffer_block_period;
     sync_reply->analog_sample_period = (sync_reply->buffer_block_period / ADC_SAMPLES_PER_BUFFER);

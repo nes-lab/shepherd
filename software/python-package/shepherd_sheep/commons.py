@@ -33,10 +33,6 @@ MSG_DBG_VSRC_DRAIN = 0xAE
 MSG_DBG_FN_TESTS = 0xAF
 MSG_DBG_VSRC_HRV_P_INP = 0xB1
 
-# NOTE: below messages were previously exclusive to kernel space
-
-MSG_STATUS_RESTARTING_ROUTINE = 0xC0
-
 # TODO: these 9 lines below are replaced by the following dict
 MSG_ERROR = 0xE0
 MSG_ERR_MEMCORRUPTION = 0xE1
@@ -48,8 +44,8 @@ MSG_ERR_TIMESTAMP = 0xE6
 MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7
 MSG_ERR_VALUE = 0xE8
 
-MSG_TEST = 0xEA
-MSG_SYNC = 0xEB
+# NOTE: below messages are exclusive to kernel space
+MSG_STATUS_RESTARTING_ROUTINE = 0xF0
 
 pru_errors: dict[int, str] = {
     0xE0: "General (unspecified) PRU-error [MSG_ERROR]",
