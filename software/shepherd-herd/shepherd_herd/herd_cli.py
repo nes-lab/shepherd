@@ -135,12 +135,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
 )
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
-    file_path = Path("/var/shepherd/inventory.yaml")
     with ctx.obj["herd"] as herd:
-        herd.run_cmd(
-            sudo=True,
-            cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
-        )
         failed = herd.inventorize(output_path)
     sys.exit(failed)
 

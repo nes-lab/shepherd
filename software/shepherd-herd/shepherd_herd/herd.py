@@ -611,7 +611,7 @@ class Herd:
         file_path = Path("/var/shepherd/inventory.yaml")
         self.run_cmd(
             sudo=True,
-            cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+            cmd=f"shepherd-sheep inventorize --output-path {file_path.as_posix()}",
         )
         server_inv = Inventory.collect()
         output_path = Path(output_path)
