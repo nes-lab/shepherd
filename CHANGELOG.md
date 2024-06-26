@@ -3,11 +3,11 @@
 ## 0.7.2
 
 - linux
-  - switch to real-time kernel
+  - optimize for real-time kernel
   - make phc2sys & ptp4l more reliable
 - kernel-module
   - cleanup, optimize
-  - more futureproof
+  - more futureproof (use ktime_get_X() instead of getnstimeofday())
 - python
   - reduce load by 50 % (omit timestamps & change compression)
   - IV-Stream -> add meta-data for stored buffer-segment

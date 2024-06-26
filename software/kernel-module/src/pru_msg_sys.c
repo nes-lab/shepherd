@@ -1,9 +1,10 @@
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
+#include <linux/mutex.h>
 
-#include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
+#include "pru_mem_interface.h"
 
 /***************************************************************/
 /***************************************************************/
@@ -12,28 +13,18 @@ struct RingBuffer msg_ringbuf_from_pru;
 struct RingBuffer msg_ringbuf_to_pru;
 
 // TODO: base msg-system on irqs (there are free ones from rpmsg)
-// TODO: maybe  replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
+// TODO: maybe replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
 static void       ring_init(struct RingBuffer *const buf)
 {
     buf->start  = 0u;
     buf->end    = 0u;
     buf->active = 0u;
-
-    buf->mutex  = 0u;
+    mutex_init(&buf->mutex);
 }
-
-static void mutex_lock(uint32_t *const mutex, const uint32_t num)
-{
-    while (*mutex != 0u);
-    *mutex = num;
-}
-
-static void mutex_unlock(uint32_t *const mutex) { *mutex = 0u; }
 
 static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
-    mutex_lock(&buf->mutex, 100u);
-
+    mutex_lock(&buf->mutex); // TODO: deactivated for now, test if it solves instability
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
@@ -46,22 +37,17 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
         /* fire warning - maybe not the best place to do this - could start an avalanche */
         printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
-
     mutex_unlock(&buf->mutex);
 }
 
 static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if (buf->active == 0) return 0;
-
-    mutex_lock(&buf->mutex, 200u);
-
+    mutex_lock(&buf->mutex);
     *element = buf->ring[buf->start];
     if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
-
     mutex_unlock(&buf->mutex);
-
     return 1;
 }
 
@@ -80,11 +66,12 @@ uint8_t get_msg_from_pru(struct ProtoMsg *const element)
 
 struct hrtimer              coordinator_loop_timer;
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart);
-static u8                   timers_active    = 0;
-static u8                   init_done        = 0;
-/* series of halving sleep cycles */
-static const uint32_t coord_timer_steps_ns[] = {500000u, 250000u, 100000u, 50000u, 25000u, 10000u};
-static const size_t   coord_timer_steps_ns_size =
+static u8                   timers_active          = 0;
+static u8                   init_done              = 0;
+/* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
+static const unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
+                                                      50000u,  20000u,  10000u};
+static const size_t         coord_timer_steps_ns_size =
         sizeof(coord_timer_steps_ns) / sizeof(coord_timer_steps_ns[0]);
 
 
@@ -209,7 +196,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 
         if (pru_msg.type <= 0xF0u)
         {
-            // relay everything below kernelspace and also RESTARTING_ROUTINE
+            // relay everything below kernelspace to sheep and also RESTARTING_ROUTINE
             ring_put(&msg_ringbuf_from_pru, &pru_msg);
         }
 
@@ -235,6 +222,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                 case MSG_ERR_INCMPLT:
                 case MSG_ERR_INVLDCMD:
                 case MSG_ERR_NOFREEBUF: break;
+
                 case MSG_ERR_TIMESTAMP:
                     printk(KERN_ERR "shprd.pru%u: received timestamp is faulty (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
