@@ -47,6 +47,7 @@
     name: "./"
     state: absent
     chdir: '{{ sheep_install_path }}/software/python-package'
+    extra_args: --break-system-packages
   failed_when: false
   tags:
     - install

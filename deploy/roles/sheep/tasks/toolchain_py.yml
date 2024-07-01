@@ -43,6 +43,7 @@
         "wheel",
         "virtualenv",
       ]
-    extra_args: --upgrade
+    extra_args: --upgrade --break-system-packages # debian locks root env
   when: true
   # NOTE: not the cleanest solution - packages managed by apt but setup for pyPackage failed recently
+  # TODO: switch all pip-additions to virtual env?

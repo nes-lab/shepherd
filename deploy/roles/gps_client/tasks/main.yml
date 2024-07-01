@@ -2,7 +2,7 @@
 
 - name: Disable NTP service
   ansible.builtin.systemd:
-    name: systemd-timesyncd.service
+    name: systemd-timesyncd
     state: stopped
     enabled: false
     daemon_reload: true

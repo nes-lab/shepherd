@@ -12,6 +12,7 @@
   vars:
     default_user: ubuntu
     default_password: temppwd
+    # NOTE: for debian the user-name changes accordingly
     apt_upgrade: true
 
   pre_tasks:

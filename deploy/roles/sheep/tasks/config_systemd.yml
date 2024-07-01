@@ -23,7 +23,7 @@
     - { name: shepherd, enabled: false}
     - { name: shepherd-rpc, enabled: false}
     - { name: shepherd-launcher, enabled: true}
-    - { name: systemd-timesyncd, enabled: false}
+  #  - { name: systemd-timesyncd, enabled: false} # configured by ptp/ntp...roles
   tags:
     - conf
     - systemd

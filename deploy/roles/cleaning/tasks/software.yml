@@ -81,3 +81,8 @@
     - "{{ cleaning_packages_h }}"
     - "{{ cleaning_packages_i }}"
     - "{{ cleaning_packages_j }}"
+    - "{{ cleaning_packages_k }}"
+    - "{{ cleaning_packages_l }}"
+    - "{{ cleaning_packages_m }}"
+    - "{{ cleaning_packages_n }}"
+    - "{{ cleaning_packages_o }}"
