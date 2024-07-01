@@ -630,21 +630,33 @@ class Herd:
 
     def resync(self) -> int:
         """Get current time via ntp and restart PTP on each sheep."""
-        r1 = self.run_cmd(sudo=True, cmd="systemctl stop phc2sys@eth0")
-        self.print_output(r1, verbose=True)
-        r2 = self.run_cmd(sudo=True, cmd="systemctl stop ptp4l@eth0")
-        self.print_output(r2, verbose=True)
-        r3 = self.run_cmd(sudo=True, cmd="ntpdate -s time.nist.gov")
-        self.print_output(r3, verbose=True)
-        r4 = self.run_cmd(sudo=True, cmd="systemctl start phc2sys@eth0")
-        self.print_output(r4, verbose=True)
-        r5 = self.run_cmd(sudo=True, cmd="systemctl start ptp4l@eth0")
-        self.print_output(r5, verbose=True)
-        r6 = self.run_cmd(sudo=False, cmd="date")
-        self.print_output(r6, verbose=True)
+        commands = [
+            "systemctl stop phc2sys@eth0",
+            "systemctl stop ptp4l@eth0",
+            "ntpdate -s time.nist.gov",
+            "systemctl start phc2sys@eth0",
+            "systemctl start ptp4l@eth0",
+        ]
         exit_code = 0
-        for r in [r1, r2, r3, r4, r5, r6]:
-            exit_code = max([exit_code] + [reply.exited for reply in r.values()]) > 0
+        for command in commands:
+            ret = self.run_cmd(sudo=True, cmd=command)
+            self.print_output(ret, verbose=True)
+            exit_code = max([exit_code] + [reply.exited for reply in ret.values()])
+
+        # Get the current time on each target node
+        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        self.print_output(replies_date, verbose=True)
+        # calc diff
+        ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies_date.values()]
+        if len(ts_nows) == 0:
+            raise RuntimeError("No active hosts found to synchronize.")
+        ts_max = max(ts_nows)
+        ts_min = min(ts_nows)
+        ts_diff = ts_max.timestamp() - ts_min.timestamp()
+        if ts_diff > 5:
+            logger.error("Timediff after resync is too large (%d s)", ts_diff)
+            return 1
+        logger.info("Timediff is OK (%d s)", ts_diff)
         return exit_code
 
     @validate_call
