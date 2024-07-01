@@ -36,13 +36,13 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.39.0
+    rev: v0.41.0
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.16
+    rev: v0.18
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -62,7 +62,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.4.1'
+    rev: 'v0.5.0'
     hooks:
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
@@ -84,14 +84,14 @@ repos:
 #        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
         additional_dependencies: ["tomli"]  # for py<3.11
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v18.1.3
+    rev: v18.1.8
     hooks:
       - id: clang-format
         types_or: [c++, c]
