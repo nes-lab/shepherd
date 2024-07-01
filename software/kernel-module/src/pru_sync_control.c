@@ -6,9 +6,9 @@
 #include "pru_mem_interface.h"
 #include "pru_sync_control.h"
 
-static uint32_t sys_ts_over_timer_wrap_ns = 0;
-static uint64_t ts_upcoming_ns            = 0;
-static uint64_t ts_previous_ns            = 0; /* for plausibility-check */
+static uint32_t             sys_ts_over_timer_wrap_ns = 0;
+static uint64_t             ts_upcoming_ns            = 0;
+static uint64_t             ts_previous_ns            = 0; /* for plausibility-check */
 
 static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
@@ -71,6 +71,8 @@ void                sync_exit(void)
 
 int sync_init(uint32_t timer_period_ns)
 {
+    uint32_t ret_value;
+
     if (init_done)
     {
         printk(KERN_ERR "shprd.k: pru-sync-system init requested -> can't init twice!");
@@ -100,10 +102,12 @@ int sync_init(uint32_t timer_period_ns)
     init_done                = 1;
     printk(KERN_INFO "shprd.k: pru-sync-system initialized (wanted: hres, abs, hard)");
 
-    printk(KERN_INFO "shprd.k: trigger_hrtimer.hres    = %d",
-           hrtimer_is_hres_active(&trigger_loop_timer));
-    printk(KERN_INFO "shprd.k: trigger_hrtimer.is_rel  = %d", trigger_loop_timer.is_rel);
-    printk(KERN_INFO "shprd.k: trigger_hrtimer.is_soft = %d", trigger_loop_timer.is_soft);
+    ret_value = hrtimer_is_hres_active(&trigger_loop_timer)
+    printk((ret_value == 1 ? KERN_INFO : KERNERR) "shprd.k: trigger_hrtimer.hres    = %d", ret_value);
+    ret_value = trigger_loop_timer.is_rel;
+    printk((ret_value == 0 ? KERN_INFO : KERNERR) "shprd.k: trigger_hrtimer.is_rel  = %d", ret_value);
+    ret_value = trigger_loop_timer.is_soft;
+    printk((ret_value == 0 ? KERN_INFO : KERNERR) "shprd.k: trigger_hrtimer.is_soft = %d", ret_value);
     //printk(KERN_INFO "shprd.k: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
     // TODO: WARN when not HRES or SOFT or REL
     sync_start();
@@ -173,7 +177,7 @@ void sync_reset(void)
 
 enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
-    uint64_t        ns_to_next_trigger;
+    uint64_t ns_to_next_trigger;
     uint64_t ts_now_ns;
 
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
@@ -223,7 +227,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     static const uint64_t quiet_time_ns    = 10000000000; // 10 s
     static unsigned int   step_pos         = 0;
     /* Timestamp system clock */
-    const uint64_t ts_now_ns = ktime_get_real_ns();
+    const uint64_t        ts_now_ns        = ktime_get_real_ns();
 
     if (!timers_active) return HRTIMER_NORESTART;
 

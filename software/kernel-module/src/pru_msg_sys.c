@@ -3,8 +3,8 @@
 #include <linux/ktime.h>
 #include <linux/mutex.h>
 
-#include "pru_msg_sys.h"
 #include "pru_mem_interface.h"
+#include "pru_msg_sys.h"
 
 /***************************************************************/
 /***************************************************************/

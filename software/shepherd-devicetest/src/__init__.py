@@ -63,8 +63,8 @@ def assemble_window() -> None:
             dpg.add_text(tag="text_section_routing_A", default_value="Board Power")
             dpg.add_radio_button(
                 tag="shepherd_pwr",
-                items=[*able_dict],
-                default_value=[*able_dict][1],
+                items=[*able_dict],  # equal to list(able_dict.keys())
+                default_value=[*able_dict][1],  # noqa: PLE0643
                 callback=shepherd_power_callback,
                 show=True,
             )
@@ -73,7 +73,7 @@ def assemble_window() -> None:
             dpg.add_radio_button(
                 tag="shepherd_state",
                 items=[*state_dict],
-                default_value=[*state_dict][1],
+                default_value=[*state_dict][1],  # noqa: PLE0643
                 callback=shepherd_state_callback,
                 show=True,
             )

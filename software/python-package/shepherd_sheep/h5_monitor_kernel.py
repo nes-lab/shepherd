@@ -38,8 +38,8 @@ class KernelMonitor(Monitor):
             f"--lines={self.backlog}",
             "--output=short-precise",
         ]
-        self.process = subprocess.Popen(
-            command,  # noqa: S603
+        self.process = subprocess.Popen(  # noqa: S603
+            command,
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )

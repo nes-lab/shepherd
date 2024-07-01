@@ -59,8 +59,8 @@ def flatten_list(dl: list) -> list:
 def load_kernel_module() -> None:
     _try = 6
     while _try > 0:
-        ret = subprocess.run(
-            ["/usr/sbin/modprobe", "-a", "shepherd"],  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            ["/usr/sbin/modprobe", "-a", "shepherd"],
             timeout=60,
             check=False,
         ).returncode
@@ -76,8 +76,8 @@ def load_kernel_module() -> None:
 def remove_kernel_module() -> None:
     _try = 6
     while _try > 0:
-        ret = subprocess.run(
-            ["/usr/sbin/modprobe", "-rf", "shepherd"],  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            ["/usr/sbin/modprobe", "-rf", "shepherd"],
             timeout=60,
             capture_output=True,
             check=False,

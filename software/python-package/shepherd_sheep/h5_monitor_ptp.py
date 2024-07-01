@@ -36,8 +36,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             "--lines=60",
             "--output=short-precise",
         ]  # for client
-        self.process = subprocess.Popen(
-            command,  # noqa: S603
+        self.process = subprocess.Popen(  # noqa: S603
+            command,
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
