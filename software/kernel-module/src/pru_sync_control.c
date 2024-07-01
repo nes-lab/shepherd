@@ -102,14 +102,16 @@ int sync_init(uint32_t timer_period_ns)
     init_done                = 1;
     printk(KERN_INFO "shprd.k: pru-sync-system initialized (wanted: hres, abs, hard)");
 
-    ret_value = hrtimer_is_hres_active(&trigger_loop_timer)
-    printk((ret_value == 1 ? KERN_INFO : KERNERR) "shprd.k: trigger_hrtimer.hres    = %d", ret_value);
+    ret_value = hrtimer_is_hres_active(&trigger_loop_timer);
+    printk("%sshprd.k: trigger_hrtimer.hres    = %d", ret_value == 1 ? KERN_INFO : KERN_ERR,
+           ret_value);
     ret_value = trigger_loop_timer.is_rel;
-    printk((ret_value == 0 ? KERN_INFO : KERNERR) "shprd.k: trigger_hrtimer.is_rel  = %d", ret_value);
+    printk("%sshprd.k: trigger_hrtimer.is_rel  = %d", ret_value == 0 ? KERN_INFO : KERN_ERR,
+           ret_value);
     ret_value = trigger_loop_timer.is_soft;
-    printk((ret_value == 0 ? KERN_INFO : KERNERR) "shprd.k: trigger_hrtimer.is_soft = %d", ret_value);
+    printk("%sshprd.k: trigger_hrtimer.is_soft = %d", ret_value == 0 ? KERN_INFO : KERN_ERR,
+           ret_value);
     //printk(KERN_INFO "shprd.k: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
-    // TODO: WARN when not HRES or SOFT or REL
     sync_start();
     return 0;
 }
