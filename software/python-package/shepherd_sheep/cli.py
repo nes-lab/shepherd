@@ -23,7 +23,6 @@ from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.inventory import Inventory
 from typing_extensions import Unpack
 
-from . import Launcher
 from . import __version__
 from . import run_programmer
 from . import run_task
@@ -253,14 +252,6 @@ def rpc(port: int | None) -> None:
 def inventorize(output_path: Path) -> None:
     sheep_inv = Inventory.collect()
     sheep_inv.to_file(path=output_path, minimal=True)
-
-
-@cli.command(short_help="Start shepherd launcher")
-@click.option("--led", "-l", type=click.INT, default=22)
-@click.option("--button", "-b", type=click.INT, default=65)
-def launcher(led: int, button: int) -> None:
-    with Launcher(button, led) as launch:
-        launch.run()
 
 
 @cli.command(

@@ -29,7 +29,6 @@ from shepherd_core.fw_tools import modify_uid
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .h5_writer import Writer
-from .launcher import Launcher
 from .logger import log
 from .logger import reset_verbosity
 from .logger import set_verbosity
@@ -47,7 +46,6 @@ __all__ = [
     "Writer",
     "EEPROM",
     "TargetIO",
-    "Launcher",
     "ShepherdHarvester",
     "ShepherdEmulator",
     "ShepherdDebug",
