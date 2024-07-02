@@ -1,0 +1,11 @@
+[Unit]
+Description=shepherd watchdog reset
+
+[Service]
+type=simple
+ExecStart=/usr/local/bin/shepherd-watchdog
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

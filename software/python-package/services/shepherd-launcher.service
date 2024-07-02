@@ -2,8 +2,10 @@
 Description=shepherd launcher
 
 [Service]
-ExecStart=/usr/local/bin/shepherd-sheep -v launcher
+type=simple
+ExecStart=/usr/local/bin/shepherd-launcher
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

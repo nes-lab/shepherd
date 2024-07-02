@@ -12,6 +12,7 @@ import signal
 import sys
 import time
 from contextlib import suppress
+from datetime import datetime
 from types import FrameType
 from types import TracebackType
 
@@ -39,20 +40,20 @@ class Launcher:
     """Stores data coming from PRU's in HDF5 format.
 
     Args:
-        pin_button (int): Pin number where button is connected. Must be
+        pin_button (int): pin-number where button is connected. Must be
             configured as input with pull up and connected against ground
-        pin_led (int): Pin number of LED for displaying launcher status
+        pin_led (int): pin-number of LED for displaying launcher status
         service_name (str): Name of shepherd systemd service
 
     """
 
     def __init__(
         self,
-        pin_button: int = 65,
-        pin_led: int = 22,
-        service_name: str = "shepherd",
+        pin_button: int,
+        pin_led: int,
+        service_name: str,
     ) -> None:
-        log.debug("Initializing Launcher (pin_button = %d, pin_led = %d)", pin_button, pin_led)
+        log.debug("Initializing Launcher for '%s' (pin_button = %d, pin_led = %d)", service_name, pin_button, pin_led)
         self.pin_button = pin_button
         self.pin_led = pin_led
         self.service_name = service_name
@@ -61,21 +62,21 @@ class Launcher:
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
         self.gpio_button.edge = "falling"
-        log.debug("Configured GPIO")
+        log.debug("%s: Configured GPIO", self.timestring())
 
         sys_bus = dbus.SystemBus()
         systemd1 = sys_bus.get_object(
             "org.freedesktop.systemd1",
             "/org/freedesktop/systemd1",
         )
-        self.manager = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
+        self.sd_man = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
 
-        shepherd_object = self.manager.LoadUnit(f"{ self.service_name }.service")
-        self.shepherd_proxy = sys_bus.get_object(
+        sd_object = self.sd_man.LoadUnit(f"{ self.service_name }.service")
+        self.sd_service = sys_bus.get_object(
             "org.freedesktop.systemd1",
-            str(shepherd_object),
+            str(sd_object),
         )
-        log.debug("Configured dbus for systemd")
+        log.debug("%s: Configured dbus for systemd", self.timestring())
         return self
 
     def __exit__(
@@ -88,6 +89,11 @@ class Launcher:
         self.gpio_led.close()
         self.gpio_button.close()
 
+    @staticmethod
+    def timestring() -> str:
+        timestamp = datetime.fromtimestamp(time.time())
+        return timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
     def run(self) -> None:
         """Infinite loop waiting for button presses.
 
@@ -97,19 +103,20 @@ class Launcher:
         """
         try:
             while True:
-                log.info("Waiting for falling edge..")
+                log.info("%s: Waiting for falling edge..", self.timestring())
                 self.gpio_led.write(True)
-                if not self.gpio_button.poll():
+                if not self.gpio_button.poll(timeout=None):
                     # NOTE poll is suspected to exit after ~ 1-2 weeks running
                     #      -> fills mmc with random measurement otherwise
+                    log.debug("Button.Poll() exited without detecting edge")
                     continue
                 self.gpio_led.write(False)
                 log.debug("Edge detected")
                 if not self.get_state():
                     time.sleep(0.25)
-                    if self.gpio_button.poll(timeout=5):
-                        log.debug("Falling edge detected")
-                        log.info("Shutdown requested")
+                    if self.gpio_button.poll(timeout=2):
+                        log.debug("2nd falling edge detected")
+                        log.info("%s: Shutdown requested", self.timestring())
                         self.initiate_shutdown()
                         self.gpio_led.write(False)
                         time.sleep(3)
@@ -131,7 +138,7 @@ class Launcher:
         ts_end = time.time() + timeout
 
         while True:
-            systemd_state = self.shepherd_proxy.Get(
+            systemd_state = self.sd_service.Get(
                 "org.freedesktop.systemd1.Unit",
                 "ActiveState",
                 dbus_interface="org.freedesktop.DBus.Properties",
@@ -165,11 +172,11 @@ class Launcher:
             return None
 
         if active_state:
-            log.info("Stopping service")
-            self.manager.StopUnit("shepherd.service", "fail")
+            log.info("%s: Stopping service", self.timestring())
+            self.sd_man.StopUnit("shepherd.service", "fail")
         else:
-            log.info("Starting service")
-            self.manager.StartUnit("shepherd.service", "fail")
+            log.info("%s: Starting service", self.timestring())
+            self.sd_man.StartUnit("shepherd.service", "fail")
 
         time.sleep(1)
 
@@ -200,14 +207,14 @@ class Launcher:
                 return
             self.gpio_led.write(False)
         os.sync()
-        log.info("Shutting down now")
-        self.manager.PowerOff()
+        log.info("%s: Shutting down now", self.timestring())
+        self.sd_man.PowerOff()
 
 
 def main() -> None:
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
-    with Launcher() as launch:
+    with Launcher(pin_button=65, pin_led=22, service_name="shepherd") as launch:
         launch.run()
 
 

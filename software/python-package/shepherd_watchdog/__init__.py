@@ -41,10 +41,10 @@ class Watchdog:
 
     def __init__(
         self,
-        pin_ack: int = 68,
-        interval: int = 600,
+        pin_ack: int,
+        interval: int,
     ) -> None:
-        log.debug("Initializing Watchdog (pin = %d, interval = %d s)", pin_ack, interval)
+        log.debug("Initializing Watchdog-Resetter (pin = %d, interval = %d s)", pin_ack, interval)
         self.pin_ack = pin_ack
         self.interval = interval
 
@@ -69,7 +69,7 @@ class Watchdog:
 
     def run(self) -> None:
         """prevent system-reset from watchdog
-        hw-rev2 has a watchdog that can turn on the BB every ~60 min
+        cape-rev2 has a watchdog that can turn on the BB every ~60 min
 
         """
         try:
@@ -86,7 +86,7 @@ class Watchdog:
 def main() -> None:
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
-    with Watchdog() as watchdog:
+    with Watchdog(pin_ack=68, interval=600) as watchdog:
         watchdog.run()
 
 

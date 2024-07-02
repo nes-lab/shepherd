@@ -1,0 +1,12 @@
+[Unit]
+Description=Harvest/Emulation with SHEPHERD
+
+[Service]
+type=simple
+ExecStart=/usr/local/bin/shepherd-sheep -v run /etc/shepherd/config.yaml
+Restart=no
+
+# NOTE: verbose (-v) exec is wanted
+#       -> good for eventual debugging, examples:
+#           systemctl status shepherd
+#           journalctl --follow -u shepherd
