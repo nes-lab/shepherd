@@ -45,7 +45,7 @@ class UARTMonitor(Monitor):
             self.thread = threading.Thread(
                 target=self.thread_fn,
                 daemon=True,
-                name="UARTMon",
+                name="Shp.H5Mon.UART",
             )
             self.thread.start()
         else:

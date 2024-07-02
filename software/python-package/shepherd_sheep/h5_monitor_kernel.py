@@ -48,7 +48,7 @@ class KernelMonitor(Monitor):
             return
         os.set_blocking(self.process.stdout.fileno(), False)
 
-        self.thread = threading.Thread(target=self.thread_fn, daemon=True, name="KMon")
+        self.thread = threading.Thread(target=self.thread_fn, daemon=True, name="Shp.H5Mon.KMod")
         self.thread.start()
 
     def __exit__(

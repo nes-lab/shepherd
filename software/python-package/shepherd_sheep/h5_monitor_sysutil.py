@@ -71,7 +71,7 @@ class SysUtilMonitor(Monitor):
             self.thread = threading.Thread(
                 target=self.thread_fn,
                 daemon=True,
-                name="SYSMon",
+                name="Shp.H5Mon.Sys",
             )
             self.thread.start()
 

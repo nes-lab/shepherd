@@ -49,7 +49,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         self.thread = threading.Thread(
             target=self.thread_fn,
             daemon=True,
-            name="PTPMon",
+            name="Shp.H5Mon.PTP",
         )
         self.thread.start()
 

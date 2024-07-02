@@ -40,7 +40,7 @@ class SheepMonitor(Monitor):
         self.thread = threading.Thread(
             target=self.thread_fn,
             daemon=True,
-            name="SHPMon",
+            name="Shp.H5Mon.Sheep",
         )
         self.thread.start()
 
