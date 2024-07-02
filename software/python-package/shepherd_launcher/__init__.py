@@ -52,7 +52,12 @@ class Launcher:
         pin_led: int,
         service_name: str,
     ) -> None:
-        log.debug("Initializing Launcher for '%s' (pin_button = %d, pin_led = %d)", service_name, pin_button, pin_led)
+        log.debug(
+            "Initializing Launcher for '%s' (pin_button = %d, pin_led = %d)",
+            service_name,
+            pin_button,
+            pin_led,
+        )
         self.pin_button = pin_button
         self.pin_led = pin_led
         self.service_name = service_name

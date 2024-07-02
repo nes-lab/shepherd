@@ -27,7 +27,7 @@ sudo systemctl enable shepherd
 sudo systemctl disable shepherd
 ```
 
-with 
+with
 ```Shell
 sudo systemctl start shepherd
 sudo systemctl stop shepherd
