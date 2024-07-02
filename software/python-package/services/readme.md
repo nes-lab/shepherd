@@ -23,14 +23,15 @@ sudo systemctl enable shepherd-watchdog
 General control over the service
 
 ```Shell
-systemctl enable shepherd
-systemctl disable shepherd
+sudo systemctl enable shepherd
+sudo systemctl disable shepherd
 ```
 
+with 
 ```Shell
-systemctl start shepherd
-systemctl stop shepherd
-systemctl restart shepherd
+sudo systemctl start shepherd
+sudo systemctl stop shepherd
+sudo systemctl restart shepherd
 ```
 
 ## Debug
@@ -38,6 +39,6 @@ systemctl restart shepherd
 Read console output with
 
 ```Shell
-systemctl status shepherd
-journalctl --follow -u shepherd
+sudo systemctl status shepherd-watchdog
+sudo journalctl --follow -u shepherd-watchdog
 ```

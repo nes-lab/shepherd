@@ -12,7 +12,6 @@ import signal
 import sys
 import time
 from contextlib import suppress
-from datetime import datetime
 from types import FrameType
 from types import TracebackType
 
@@ -62,7 +61,7 @@ class Launcher:
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
         self.gpio_button.edge = "falling"
-        log.debug("%s: Configured GPIO", self.timestring())
+        log.debug("Configured GPIO")
 
         sys_bus = dbus.SystemBus()
         systemd1 = sys_bus.get_object(
@@ -76,7 +75,7 @@ class Launcher:
             "org.freedesktop.systemd1",
             str(sd_object),
         )
-        log.debug("%s: Configured dbus for systemd", self.timestring())
+        log.debug("Configured dbus for systemd")
         return self
 
     def __exit__(
@@ -89,11 +88,6 @@ class Launcher:
         self.gpio_led.close()
         self.gpio_button.close()
 
-    @staticmethod
-    def timestring() -> str:
-        timestamp = datetime.fromtimestamp(time.time())
-        return timestamp.strftime("%Y-%m-%d %H:%M:%S")
-
     def run(self) -> None:
         """Infinite loop waiting for button presses.
 
@@ -103,7 +97,7 @@ class Launcher:
         """
         try:
             while True:
-                log.info("%s: Waiting for falling edge..", self.timestring())
+                log.info("Waiting for falling edge..")
                 self.gpio_led.write(True)
                 if not self.gpio_button.poll(timeout=None):
                     # NOTE poll is suspected to exit after ~ 1-2 weeks running
@@ -116,7 +110,7 @@ class Launcher:
                     time.sleep(0.25)
                     if self.gpio_button.poll(timeout=2):
                         log.debug("2nd falling edge detected")
-                        log.info("%s: Shutdown requested", self.timestring())
+                        log.info("Shutdown requested")
                         self.initiate_shutdown()
                         self.gpio_led.write(False)
                         time.sleep(3)
@@ -172,10 +166,10 @@ class Launcher:
             return None
 
         if active_state:
-            log.info("%s: Stopping service", self.timestring())
+            log.info("Stopping service")
             self.sd_man.StopUnit("shepherd.service", "fail")
         else:
-            log.info("%s: Starting service", self.timestring())
+            log.info("Starting service")
             self.sd_man.StartUnit("shepherd.service", "fail")
 
         time.sleep(1)
@@ -207,7 +201,7 @@ class Launcher:
                 return
             self.gpio_led.write(False)
         os.sync()
-        log.info("%s: Shutting down now", self.timestring())
+        log.info("Shutting down now")
         self.sd_man.PowerOff()
 
 

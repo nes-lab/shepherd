@@ -10,7 +10,6 @@ import signal
 import sys
 import time
 from contextlib import suppress
-from datetime import datetime
 from types import FrameType
 from types import TracebackType
 
@@ -50,7 +49,7 @@ class Watchdog:
 
     def __enter__(self) -> Self:
         self.gpio_ack = GPIO(self.pin_ack, "out")
-        log.debug("%s: Configured GPIO", self.timestring())
+        log.debug("Configured GPIO")
         return self
 
     def __exit__(
@@ -62,11 +61,6 @@ class Watchdog:
     ) -> None:
         self.gpio_ack.close()
 
-    @staticmethod
-    def timestring() -> str:
-        timestamp = datetime.fromtimestamp(time.time())
-        return timestamp.strftime("%Y-%m-%d %H:%M:%S")
-
     def run(self) -> None:
         """prevent system-reset from watchdog
         cape-rev2 has a watchdog that can turn on the BB every ~60 min
@@ -77,7 +71,7 @@ class Watchdog:
                 self.gpio_ack.write(True)
                 time.sleep(0.002)
                 self.gpio_ack.write(False)
-                log.debug("%s: Signaled ACK to Watchdog", self.timestring())
+                log.debug("Signaled ACK to Watchdog")
                 time.sleep(self.interval)
         except SystemExit:
             return
