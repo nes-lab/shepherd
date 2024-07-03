@@ -2,7 +2,7 @@
 Description=shepherd watchdog reset
 
 [Service]
-type=simple
+Type=simple
 ExecStart=/usr/local/bin/shepherd-watchdog
 Restart=on-failure
 RestartSec=5

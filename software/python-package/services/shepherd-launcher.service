@@ -2,7 +2,7 @@
 Description=shepherd launcher
 
 [Service]
-type=simple
+Type=simple
 ExecStart=/usr/local/bin/shepherd-launcher
 Restart=on-failure
 RestartSec=5

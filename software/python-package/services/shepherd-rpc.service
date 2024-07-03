@@ -2,7 +2,7 @@
 Description=shepherd zero rpc server
 
 [Service]
-type=simple
+Type=simple
 ExecStart=/usr/local/bin/shepherd-sheep -v rpc
 Restart=on-failure
 RestartSec=1
