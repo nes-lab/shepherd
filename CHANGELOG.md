@@ -13,6 +13,7 @@
   - IV-Stream -> add meta-data for stored buffer-segment
     - meta: buffer-timestamp, sample-count, pru-util mean & max
     - this can reconstruct timestamp-stream after the measurement
+  - replaced setup.cfg by pyproject.toml with ini2toml
 - toolchain: replace isort, black, flake8, pylint by ruff
 - debug
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)

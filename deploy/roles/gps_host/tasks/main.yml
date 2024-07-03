@@ -1,5 +1,5 @@
 ---
-- name: Get kernel version
+- name: Get kernel-Release
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false

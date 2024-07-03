@@ -47,7 +47,7 @@
   with_items: "{{ files_fw.files | map(attribute='path') }}"
   when: false  # linux-firmware is completely uninstalled later
 
-- name: Uname - Get Kernel-Version
+- name: Uname - Get Kernel-Release
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false

@@ -24,7 +24,7 @@
   tags:
     - install
 
-- name: Install Pre-Requisits
+- name: Install Pre-Requisites
   ansible.builtin.include_tasks:
     file: "{{ file_item }}"
   loop:

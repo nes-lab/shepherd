@@ -2,6 +2,7 @@
 /plugin/;
 #include "am335x_pinctrl.h"
 
+// TODO: overlays have been simplified! https://github.com/beagleboard/bb.org-overlays/commit/187c1354a3f6466fa90eca152910c6c0b42250aa
 /*
 // future-reference, gpio.h contains: BONE_P8_03, etc
 #include <dt-bindings/gpio/gpio.h>
