@@ -155,7 +155,7 @@ class ShepherdHarvester(ShepherdIO):
 
         while True:
             idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
-            ts_now = (hrv_buf.timestamp_ns / 1e9)
+            ts_now = hrv_buf.timestamp_ns / 1e9
             # TODO: here was a bogus handling of forgivable errors, self.cfg.abort_on_error
 
             if ts_now >= ts_end:
