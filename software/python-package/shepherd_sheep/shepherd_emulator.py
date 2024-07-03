@@ -227,6 +227,10 @@ class ShepherdEmulator(ShepherdIO):
             ts_end = self.start_time + duration_s
             log.debug("Duration = %s (forced runtime)", duration_s)
 
+        # Heartbeat-Message
+        delay_alive: int = 60
+        ts_alive: float = self.start_time + delay_alive
+
         # Main Loop
         for _, dsv, dsc in self.reader.read_buffers(
             start_n=self.fifo_buffer_size,
@@ -234,10 +238,15 @@ class ShepherdEmulator(ShepherdIO):
             omit_ts=True,
         ):
             idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
+            ts_now = emu_buf.timestamp_ns / 1e9
 
-            if emu_buf.timestamp_ns / 1e9 >= ts_end:
+            if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
+            if ts_now >= ts_alive:
+                duration_s = round(ts_now - self.start_time)
+                log.debug("... now measuring for %d s", duration_s)
+                ts_alive += delay_alive
 
             if self.writer is not None:
                 try:

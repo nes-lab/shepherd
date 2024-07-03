@@ -149,13 +149,22 @@ class ShepherdHarvester(ShepherdIO):
             ts_end = self.start_time + duration_s
             log.debug("Duration = %s (forced runtime)", duration_s)
 
+        # Heartbeat-Message
+        delay_alive: int = 60
+        ts_alive: float = self.start_time + delay_alive
+
         while True:
             idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
+            ts_now = (hrv_buf.timestamp_ns / 1e9)
             # TODO: here was a bogus handling of forgivable errors, self.cfg.abort_on_error
 
-            if (hrv_buf.timestamp_ns / 1e9) >= ts_end:
+            if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 return
+            if ts_now >= ts_alive:
+                duration_s = round(ts_now - self.start_time)
+                log.debug("... now measuring for %d s", duration_s)
+                ts_alive += delay_alive
 
             try:
                 self.writer.write_buffer(hrv_buf)
