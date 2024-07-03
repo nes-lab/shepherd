@@ -23,12 +23,18 @@
     path: "/opt/scripts/device/" # ["/opt/scripts/.git/", "/opt/scripts/device/"]
     state: absent
 
-- name: Add back rcn-ee-repo for ubuntu focal (for ti-version of linux 4.19.94)
+- name: Add back rcn-ee-repo for ubuntu (for ti-version of linux 4.19)
   ansible.builtin.lineinfile:
-    dest: "/etc/apt/sources.list"
+    dest: "/etc/apt/sources.list.d/beagle.list"
     regexp: "#?deb .*.rcn-ee.*.focal.*$"
-    line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ focal main"
+    line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ jammy main"
     state: present
+  when: false
+  # Note: shepherd currently needs kernel 4.19, but only focal/20.04 had it.
+  #   - jammy/22.04 now also has it.
+  #   - noble/24.04 (next version) won't have it
+  # TODO: this should detect ubuntu and disable on debian
+
 - name: APT - update cache & install hardcoded kernel
   ansible.builtin.apt:
     name: "{{ maintenance_kernel_pin }}"
