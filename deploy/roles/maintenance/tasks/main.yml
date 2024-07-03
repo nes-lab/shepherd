@@ -23,23 +23,33 @@
     path: "/opt/scripts/device/" # ["/opt/scripts/.git/", "/opt/scripts/device/"]
     state: absent
 
-- name: Add back rcn-ee-repo for ubuntu (for ti-version of linux 4.19)
+- name: Uname - Get Kernel-Release
+  ansible.builtin.command: 'uname --kernel-release'
+  register: kernelrelease
+  changed_when: false
+- name: Uname - Get Kernel-Version
+  ansible.builtin.command: 'uname --kernel-version'
+  register: kernelversion
+  changed_when: false
+
+- name: Temporarily add back rcn-ee-repo for old ubuntu (for ti-version of linux 4.19)
   ansible.builtin.lineinfile:
     dest: "/etc/apt/sources.list.d/beagle.list"
-    regexp: "#?deb .*.rcn-ee.*.focal.*$"
+    regexp: "#?deb .*.rcn-ee.*.jammy.*$"
     line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ jammy main"
     state: present
-  when: false
-  # Note: shepherd currently needs kernel 4.19, but only focal/20.04 had it.
-  #   - jammy/22.04 now also has it.
-  #   - noble/24.04 (next version) won't have it
-  # TODO: this should detect ubuntu and disable on debian
+  when: '"noble" in kernelversion.stdout.strip()'
+  # Note: shepherd currently needs kernel 4.19,
+  #   - distros that have it: focal/20.04, jammy/22.04, bookworm/12.5
+  #   - distros WITHOUT: noble/24.04
+  #   - you can check if "image-4.19" is in https://repos.rcn-ee.com/ubuntu/log/noble.log
 
 - name: APT - update cache & install hardcoded kernel
   ansible.builtin.apt:
-    name: "{{ maintenance_kernel_pin }}"
+    name: "linux-image-{{ maintenance_kernel_pin }}"
     state: present
     update_cache: true
+  when: kernelrelease.stdout.strip() is not maintenance_kernel_pin
 
 - name: "SCRIPT - Switch to newest release of Kernel Branch {{ maintenance_default_kernel }}"
   ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ maintenance_default_kernel }}'
@@ -48,6 +58,14 @@
   failed_when: false # allow to fail, newest 4.19 kernel has currently no matching seeed-module
   # this was failing for ubuntu 22.04 -> apt install linux-image-4.19 ... .280-bone76 (with -bone, without -rt-)
   # -> added back focal-repo (see above) but it still fails to downgrade -> disable for now and hardcode (above)
+
+- name: Remove temp-added rcn-ee-repo for old ubuntu
+  ansible.builtin.lineinfile:
+    dest: "/etc/apt/sources.list.d/beagle.list"
+    regexp: "#?deb .*.rcn-ee.*.jammy.*$"
+    line: "# deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ jammy main"
+    state: present
+  when: '"noble" in kernelversion.stdout.strip()'
 
 - name: Grow root partition to drive-size
   ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
@@ -68,7 +86,7 @@
   when: maintenance_update_bootloader | bool
   failed_when: false # certificate may be invalid
 
-- name: Uname - Get Kernel-Version
+- name: Uname - Get Kernel-Release
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false

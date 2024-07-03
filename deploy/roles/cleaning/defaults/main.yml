@@ -19,15 +19,15 @@ cleaning_packages_d: ['bluetooth', 'btrfs-progs', 'cloud-guest-utils', 'gnupg*',
 cleaning_packages_e: ['less', 'libiio*', 'linux-firmware', 'pastebinit', 'vim', 'vim-*', 'wireguard-tools', 'wpasupplicant']
 #    down in repo_rcnee_pkg_list
 cleaning_packages_f: ['bb-u-boot-am57xx-evm', 'sancloud-firmware']
-# more findings on some distros
+# more findings on some distros (debian and newer ubuntus)
 cleaning_packages_g: ['wireless-*', 'ofono', 'bluez', 'rfkill', 'rtl8*']
 cleaning_packages_h: ['acpid', 'alsa-utils', 'libasound*', 'seeed-modules-*', 'can-utils', 'eject']
 cleaning_packages_i: ['ti-sgx-*', 'humanity-icon-theme', 'python3-sympy', 'laptop-detect', 'iso-codes'] # 'initramfs*', 'cron'
 cleaning_packages_j: ['plymouth*', 'ubuntu-pro-*', 'ubuntu-advantage-*', 'bind9*', 'javascript-*', 'xkb-*'] # ubuntu ONLY
 cleaning_packages_k: ['libtiff*', 'libjpeg*', 'libwebp*', 'libxpm4*', 'libopenjp2*', 'libjs-*'] # ubuntu ONLY
 cleaning_packages_l: ['mender*'] # debian ONLY
-cleaning_packages_m: ['libpng*', 'libx11*']
+cleaning_packages_m: ['libpng*', 'libx11*', 'dkms']
 cleaning_packages_n: ['firmware-atheros', 'firmware-brcm80211', 'firmware-iwlwifi', 'firmware-realtek', 'firmware-misc-nonfree']
 # test-stage
-cleaning_packages_o: ['dkms', 'systemd-timesyncd']  # removing timesyncd disables NTP-Support
+cleaning_packages_o: ['firmware-libertas'] #, 'systemd-timesyncd']  # removing timesyncd disables NTP-Support
 # NOTE: 'libx11*' part of python3-h5py

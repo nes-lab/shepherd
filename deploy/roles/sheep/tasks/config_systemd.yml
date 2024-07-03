@@ -4,6 +4,7 @@
   ansible.builtin.copy:
     src: '{{ sheep_install_path }}/software/python-package/services/{{ item }}'
     dest: '/etc/systemd/system/'
+    remote_src: true
     mode: '0644'
   loop:
     - shepherd.service

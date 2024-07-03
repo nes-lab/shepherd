@@ -7,6 +7,6 @@ maintenance_delete_unused_files: true
 
 # rule config
 maintenance_default_kernel: lts-4_19
-maintenance_kernel_pin: "linux-image-4.19.94-ti-r74"  # 2024-04-27: r74 was newest
+maintenance_kernel_pin: "4.19.94-ti-r74"  # 2024-07-03: r74 was newest
 # -rt -> used for more reliable ptp & gpio-triggering, BUT communication with PRU fails
 maintenance_timezone: Europe/Berlin
