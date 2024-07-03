@@ -1,6 +1,77 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "shepherd_cal"
+authors = [{name = "Kai Geissdoerfer", email = "kai.geissdoerfer@tu-dresden.de"}, {name = "Ingmar Splitt"}]
+maintainers = [{email = "ingmar.splitt@tu-dresden.de"}]
+license = {text = "MIT"}
+description = "Synchronized Energy Harvesting Emulator and Recorder CLI"
+keywords = ["testbed", "beaglebone", "pru", "batteryless", "energyharvesting", "solar"]
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
+]
+
+requires-python = ">= 3.10"
+dependencies = [
+    "typer[all]",
+    "fabric",
+    "matplotlib",
+    "msgpack",
+    "msgpack_numpy",
+    "numpy",
+    "pandas<2.0.0",
+    "pyYAML",
+    "scipy",
+    "zerorpc",
+    # shepherd @ git+https://github.com/orgua/shepherd.git#subdirectory=software/python-package/
+    "keithley2600",
+    "shepherd-core",
+]
+
+[project.optional-dependencies]
+dev = [
+    "twine",
+    "pre-commit",
+    "pyright",
+    "pandas-stubs",
+]
+
+[project.urls]
+Issues = "https://github.com/orgua/shepherd/issues"
+Source = "https://github.com/orgua/shepherd"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.scripts]
+shepherd-cal = "shepherd_cal.cli:cli"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+zip-safe = true
+include-package-data = true
+platforms = ["unix", "linux", "osx", "cygwin", "win32", "win64"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = false
+
+[tool.setuptools.dynamic]
+version = {attr = "shepherd_cal.__version__"}
 
 [tool.pyright]
 root = "./"
