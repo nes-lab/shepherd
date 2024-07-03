@@ -1,6 +1,6 @@
 ---
 
-- name: Get kernel version
+- name: Get Kernel-Release
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false
@@ -10,8 +10,21 @@
     name:
       [
         "linux-headers-{{ kernelrelease.stdout.strip() }}", # redundancy, 1st done by maintenance
-        # "dkms", # TODO: test removal - should not be needed - installs huge secondary gcc
-        "bb-cape-overlays",  # not a part of ubuntu 22.4, also missing from default repo (re-add ee/focal)
       ]
     state: present
     update_cache: true
+
+- name: GIT - Clone & Update device-tree Overlays
+  ansible.builtin.git:
+    repo: https://github.com/beagleboard/bb.org-overlays
+    dest: /opt/bb-cape-overlays
+    update: true
+    version: HEAD  # noqa latest[git]
+    force: true
+- name: "SCRIPT - Compile & install Overlays"
+  ansible.builtin.command: '/opt/bb-cape-overlays/install.sh'
+  changed_when: true
+  failed_when: false
+# git clone https://github.com/beagleboard/bb.org-overlays
+# cd bb.org-overlays
+# ./install.sh
