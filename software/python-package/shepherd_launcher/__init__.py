@@ -17,6 +17,8 @@ from types import TracebackType
 
 from typing_extensions import Self
 
+__version__ = "0.7.2"
+
 # Top-Level Package-logger
 log = logging.getLogger("ShpLauncher")
 log.addHandler(logging.StreamHandler())
@@ -53,7 +55,8 @@ class Launcher:
         service_name: str,
     ) -> None:
         log.debug(
-            "Initializing Launcher for '%s' (pin_button = %d, pin_led = %d)",
+            "Initializing Launcher v%s for '%s' (pin_button = %d, pin_led = %d)",
+            __version__,
             service_name,
             pin_button,
             pin_led,

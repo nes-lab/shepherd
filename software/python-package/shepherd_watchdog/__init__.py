@@ -15,6 +15,8 @@ from types import TracebackType
 
 from typing_extensions import Self
 
+__version__ = "0.7.2"
+
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
 log.addHandler(logging.StreamHandler())
@@ -43,7 +45,12 @@ class Watchdog:
         pin_ack: int,
         interval: int,
     ) -> None:
-        log.debug("Initializing Watchdog-Resetter (pin = %d, interval = %d s)", pin_ack, interval)
+        log.debug(
+            "Initializing Watchdog-Resetter v%s (pin = %d, interval = %d s)",
+            __version__,
+            pin_ack,
+            interval,
+        )
         self.pin_ack = pin_ack
         self.interval = interval
 
