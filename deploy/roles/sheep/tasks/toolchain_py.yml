@@ -7,7 +7,6 @@
         "zlib1g-dev",
         "libjpeg-dev",
         "python3-numpy",
-        "python3-scipy",
         "python3-zmq",
         "python3-gevent",
         "python3-h5py",
