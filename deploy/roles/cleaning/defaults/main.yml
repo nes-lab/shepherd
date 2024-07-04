@@ -29,5 +29,5 @@ cleaning_packages_l: ['mender*'] # debian ONLY
 cleaning_packages_m: ['libpng*', 'libx11*', 'dkms']
 cleaning_packages_n: ['firmware-atheros', 'firmware-brcm80211', 'firmware-iwlwifi', 'firmware-realtek', 'firmware-misc-nonfree']
 # test-stage
-cleaning_packages_o: ['firmware-libertas'] #, 'systemd-timesyncd']  # removing timesyncd disables NTP-Support
+cleaning_packages_o: ['firmware-libertas', 'firmware-ti-connectivity', 'locales'] #, 'systemd-timesyncd']  # removing timesyncd disables NTP-Support
 # NOTE: 'libx11*' part of python3-h5py

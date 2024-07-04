@@ -64,8 +64,8 @@
 
 - name: Synchronize host shepherd dir to target
   ansible.posix.synchronize:
-    src: "{{ repo_dir.stdout }}/"
-    dest: "{{ sheep_install_path }}"
+    src: "{{ repo_dir.stdout }}/software"
+    dest: "{{ sheep_install_path }}/software"
     delete: true
     owner: false
     group: false
