@@ -1,7 +1,6 @@
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
-#include <linux/mutex.h>
 
 #include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
@@ -19,12 +18,11 @@ static void       ring_init(struct RingBuffer *const buf)
     buf->start  = 0u;
     buf->end    = 0u;
     buf->active = 0u;
-    mutex_init(&buf->mutex);
 }
 
 static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const element)
 {
-    mutex_lock(&buf->mutex); // TODO: deactivated for now, test if it solves instability
+    //mutex_lock(&buf->mutex); // NOTE: module is single-threaded, so no lock needed
     buf->ring[buf->end] = *element;
 
     // special faster version of buf = (buf + 1) % SIZE
@@ -37,17 +35,17 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
         /* fire warning - maybe not the best place to do this - could start an avalanche */
         printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
     }
-    mutex_unlock(&buf->mutex);
+    //mutex_unlock(&buf->mutex);
 }
 
 static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const element)
 {
     if (buf->active == 0) return 0;
-    mutex_lock(&buf->mutex);
+    //mutex_lock(&buf->mutex);
     *element = buf->ring[buf->start];
     if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
     buf->active--;
-    mutex_unlock(&buf->mutex);
+    //mutex_unlock(&buf->mutex);
     return 1;
 }
 
