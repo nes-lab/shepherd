@@ -261,7 +261,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         step_pos = coord_timer_steps_ns_size - 1;
     }
     /* variable sleep cycle */
-    hrtimer_forward(timer_for_restart, ts_now_kt + ns_to_ktime(coord_timer_steps_ns[step_pos]), 0);
+    hrtimer_forward(timer_for_restart, ts_now_kt, ns_to_ktime(coord_timer_steps_ns[step_pos]));
 
     if (step_pos > 0) step_pos--;
 

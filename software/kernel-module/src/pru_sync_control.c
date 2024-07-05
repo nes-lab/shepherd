@@ -215,7 +215,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     //  - write ts_upcoming_ns directly into shared mem, as well as the other values in sync_loop
     //  - the reply-message is not needed anymore (current pru-code has nothing to calculate beforehand and would just use prev values if no new message arrives
 
-    hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns + ns_to_next_trigger), 0);
+    hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(ns_to_next_trigger));
 
     return HRTIMER_RESTART;
 }
@@ -262,7 +262,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     }
 
     /* variable sleep cycle */
-    hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns + timer_steps_ns[step_pos]), 0);
+    hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(timer_steps_ns[step_pos]));
 
     if (step_pos < timer_steps_ns_size - 1) step_pos++;
 
