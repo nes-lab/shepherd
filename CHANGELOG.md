@@ -5,7 +5,7 @@
 - linux
   - ~optimize for real-time kernel~, moved to branch
   - make phc2sys & ptp4l more reliable
-  - test and optimize for debian 12.6 bookworm 
+  - test and optimize for debian 12.6 bookworm
     - harvest cpu-usage drops from 69% (py310) to 61% (py311)
 - kernel-module
   - cleanup, optimize
@@ -32,7 +32,7 @@
   - disable NTP before starting a measurement
 - herd
   - resync - give info about time-diff
-  - improve interpretation of sheep-exit-codes 
+  - improve interpretation of sheep-exit-codes
 - ansible
   - major overhaul
   - more removed packages during cleanup
@@ -49,7 +49,7 @@
 - add current hardware design files
 - major overhaul documentation
 - **tested (fully)**: pytest sheep, pytest herd, ansible install
-- ready-to-use image will be created - look in 
+- ready-to-use image will be created - look in
 
 
 ## 0.7.1

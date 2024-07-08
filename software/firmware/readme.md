@@ -45,7 +45,7 @@ sudo make install
 
 The firmwares use GPIO to signal their states. Additionally, the Chip-Select of PRU0 is helpful.
 
-- Pru0 debug pin0 = P8_12, pin1 = P8_11 
+- Pru0 debug pin0 = P8_12, pin1 = P8_11
 - Pru1 debug pin0 = P8_28, pin1 = P8_30
 - Pru0 spi-cs = P9_25
 
