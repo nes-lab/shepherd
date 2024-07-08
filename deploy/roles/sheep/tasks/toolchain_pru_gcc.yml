@@ -30,7 +30,8 @@
 - name: Apply Size-Hack for iMEM to make pru0 compile (fw not usable)
   ansible.builtin.copy:
     src: "{{ sheep_install_path }}/software/firmware/lib/am335xl.pru0"
-    dest: "{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}/pru-elf/lib/device-specs/" # TODO: probably just []/pru-elf/pru-elf/[] now
+    dest: "{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}/pru-elf/lib/device-specs/"
+    # TODO: probably just []/pru-elf/pru-elf/[] now
     remote_src: true
     owner: "{{ ansible_user }}"
     mode: '0666'

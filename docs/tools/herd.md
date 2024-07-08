@@ -78,6 +78,6 @@ For testing `shepherd-herd` there must be a valid `herd.yml` at one of the menti
 
 ```Shell
 cd shepherd/software/shepherd-herd
-pip3 install ./[tests]
+pip3 install .[tests]
 pytest
 ```

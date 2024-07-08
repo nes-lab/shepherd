@@ -84,7 +84,7 @@
 
 - name: Install shepherd python package
   ansible.builtin.pip:
-    name: "./[test]"
+    name: ".[test]"
     state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
     chdir: '{{ sheep_install_path }}/software/python-package'
     extra_args: --break-system-packages

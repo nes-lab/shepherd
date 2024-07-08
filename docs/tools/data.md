@@ -29,6 +29,6 @@ To run the testbench, follow these steps:
 
 ```Shell
 cd shepherd-datalib/shepherd-data
-pip3 install ./[tests]
+pip3 install .[tests]
 pytest
 ```
