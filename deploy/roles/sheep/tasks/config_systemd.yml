@@ -32,12 +32,3 @@
     - systemd
 
 # NOTE: could avoid a restart by issuing "sudo systemctl daemon-reload"
-
-- name: Disable connman automatic time update
-  ansible.builtin.command:
-    cmd: 'busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"'
-  failed_when: false  # services may not exist in newer releases (ubuntu 20.04 ++)
-  changed_when: true
-  tags:
-    - conf
-    - systemd
