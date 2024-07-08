@@ -27,7 +27,7 @@
   register: kernelrelease
   changed_when: false
   when: kernelrelease.stdout.strip() != sheep_kernel_pin
-- name: Check for required Kernel-Version
+- name: Warn if required Kernel-Version is missing
   ansible.builtin.fail:
     msg: |
       Required kernel not active!
@@ -54,7 +54,9 @@
       ]
     state: absent
 - name: "SCRIPT - Compile & install Overlays"
-  ansible.builtin.command: '/opt/bb-cape-overlays/install.sh'
+  ansible.builtin.command:
+    cmd: './install.sh'
+    chdir: '/opt/bb-cape-overlays/'
   changed_when: true
   failed_when: false
   when: not overlays_dir.stat.exists

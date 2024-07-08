@@ -22,13 +22,13 @@
   ansible.builtin.apt:
     name: "linux-image-{{ maintenance_kernel_pin }}"
     state: present
-  when: kernelrelease.stdout.strip() is not maintenance_kernel_pin # wrong!
+  when: kernelrelease.stdout.strip() != maintenance_kernel_pin
 
 - name: APT - update cache & install hardcoded kernel headers
   ansible.builtin.apt:
     name: "linux-headers-{{ maintenance_kernel_pin }}"
     state: present
-  when: kernelrelease.stdout.strip() is not maintenance_kernel_pin # wrong!
+  when: kernelrelease.stdout.strip() != maintenance_kernel_pin
 
 - name: Remove temp-added rcn-ee-repo for old ubuntu
   ansible.builtin.lineinfile:
