@@ -32,7 +32,6 @@
         "/opt/scripts/images/",
       ]
     state: absent
-  when: not scripts_dir.stat.exists
 
 - name: APT - Update Cache
   ansible.builtin.apt:

@@ -13,26 +13,26 @@
         "linux-headers-{{ sheep_kernel_pin }}",
       ]
     state: present
-  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+  when: kernelrelease.stdout.strip() != sheep_kernel_pin
 
 - name: Restart device
   ansible.builtin.reboot:
     connect_timeout: 20
     reboot_timeout: 200
     post_reboot_delay: 30
-  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+  when: kernelrelease.stdout.strip() != sheep_kernel_pin
 
 - name: Get Kernel-Release
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false
-  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+  when: kernelrelease.stdout.strip() != sheep_kernel_pin
 - name: Check for required Kernel-Version
   ansible.builtin.fail:
     msg: |
       Required kernel not active!
       -> install failed or /boot/uEnv.txt got changed
-  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+  when: kernelrelease.stdout.strip() != sheep_kernel_pin
 
 - name: Check if Overlay-Repo exists
   ansible.builtin.stat:
@@ -46,6 +46,13 @@
     version: HEAD  # noqa latest[git]
     force: true
   when: not overlays_dir.stat.exists
+- name: Remove space-waster of Overlay-repo
+  ansible.builtin.file:
+    path:
+      [
+        "/opt/bb-cape-overlays/.git/",
+      ]
+    state: absent
 - name: "SCRIPT - Compile & install Overlays"
   ansible.builtin.command: '/opt/bb-cape-overlays/install.sh'
   changed_when: true
