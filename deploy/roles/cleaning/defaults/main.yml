@@ -75,9 +75,11 @@ cleaning_packages: [
   'laptop-detect',
   'iso-codes',
   'locales',
+  'avahi*',
 
   # ubuntu ONLY
   'plymouth*',
+  'keyboard*',
   'ubuntu-pro-*',
   'ubuntu-advantage-*',
   'bind9*',
