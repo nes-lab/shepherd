@@ -21,3 +21,21 @@
     enabled: false
     state: stopped
     daemon_reload: true
+
+- name: Disable unwanted systemd services
+  ansible.builtin.systemd:
+    name: '{{ item }}'
+    state: stopped
+    enabled: false
+    daemon_reload: true
+  failed_when: false  # services may not exist
+  loop:
+    - serial-getty@ttyS0
+    - serial-getty@ttyGS0
+    - serial-getty@
+    - getty@tty1
+    - getty@
+    - unattended-upgrades
+    # - systemd-timesyncd  # running ntp during a measurement is not recommended
+  # located in /etc/systemd/system/
+  # check with: systemctl list-units --type=service
