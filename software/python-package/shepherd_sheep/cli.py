@@ -33,6 +33,7 @@ from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
+from .sysfs_interface import disable_ntp
 from .sysfs_interface import reload_kernel_module
 
 # allow importing shepherd on x86 - for testing
@@ -153,6 +154,7 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str) ->
 )
 def run(config: Path) -> None:
     reload_kernel_module()  # more reliable with fresh states
+    disable_ntp()
     failed = run_task(config)
     if failed:
         log.debug("Tasks signaled an error (failed).")

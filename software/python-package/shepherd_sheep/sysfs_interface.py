@@ -96,6 +96,14 @@ def reload_kernel_module() -> None:
     load_kernel_module()
 
 
+def disable_ntp() -> None:
+    subprocess.run(  # noqa: S603
+        ["/usr/bin/systemctl", "stop" "systemd-timesyncd.service"],
+        timeout=60,
+        check=False,
+    )
+
+
 def check_sys_access(iteration: int = 1) -> None:
     iter_max: int = 5
     try:  # test for correct usage -> fail early!
