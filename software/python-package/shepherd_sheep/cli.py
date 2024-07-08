@@ -250,8 +250,10 @@ def rpc(port: int | None) -> None:
     help="Path to resulting YAML-formatted calibration data file",
 )
 def inventorize(output_path: Path) -> None:
+    output_path = Path(output_path)
     sheep_inv = Inventory.collect()
     sheep_inv.to_file(path=output_path, minimal=True)
+    log.info("Written inventory to %s", output_path.as_posix())
 
 
 @cli.command(
