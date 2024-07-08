@@ -178,6 +178,9 @@ class ShepherdDebug(ShepherdIO):
         time.sleep(0.5)
 
         super().start()
+        time.sleep(0.5)
+
+        super()._flush_msgs()
         super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSRC_INIT:
