@@ -1,19 +1,45 @@
 # History of Changes
 
-## 0.7.2
+## 0.8.0
 
 - linux
-  - optimize for real-time kernel
+  - ~optimize for real-time kernel~, moved to branch
   - make phc2sys & ptp4l more reliable
+  - test and optimize for debian 12.6 bookworm 
+    - harvest cpu-usage drops from 69% (py310) to 61% (py311)
 - kernel-module
   - cleanup, optimize
   - more futureproof (use ktime_get_X() instead of getnstimeofday())
+  - remove mutex (seems to have deadlocked sometimes)
+  - fix hrtimer_forward()-usage (source for instability)
+  - more const-correctness
+  - can now change firmware of both PRUs
+  - more pru-messages are handed to python (for logging)
+  - warn/error if sync-config is wrong
 - python
   - reduce load by 50 % (omit timestamps & change compression)
   - IV-Stream -> add meta-data for stored buffer-segment
     - meta: buffer-timestamp, sample-count, pru-util mean & max
     - this can reconstruct timestamp-stream after the measurement
+  - refactored h5writer into smaller modules (monitor and recorder threads)
+  - added monitors for uart, pru-usage, ptp-status
   - replaced setup.cfg by pyproject.toml with ini2toml
+  - added heartbeat-messages during operation
+  - fix launcher - was misbehaving with 100% cpu-usage
+  - added watchdog-reset service - functionality was in launcher before
+  - reduced ram-usage of services
+  - removed scipy-dependency (less ram usage, faster startup)
+  - disable NTP before starting a measurement
+- herd
+  - resync - give info about time-diff
+  - improve interpretation of sheep-exit-codes 
+- ansible
+  - major overhaul
+  - more removed packages during cleanup
+  - safer kernel-downgrading
+  - faster code
+  - safer firmware-removal
+  - disable unwanted services
 - toolchain: replace isort, black, flake8, pylint by ruff
 - debug
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)
@@ -21,7 +47,10 @@
 - update floorplan of testbed
 - add tooling to allow analyzing timesync-behavior (software/time_sync_analyzer)
 - add current hardware design files
-- overhaul documentation
+- major overhaul documentation
+- **tested (fully)**: pytest sheep, pytest herd, ansible install
+- ready-to-use image will be created - look in 
+
 
 ## 0.7.1
 

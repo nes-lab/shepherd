@@ -247,6 +247,7 @@ class ShepherdEmulator(ShepherdIO):
                 duration_s = round(ts_now - self.start_time)
                 log.debug("... now measuring for %d s", duration_s)
                 ts_alive += delay_alive
+                # TODO: switch to tqdm, progressbar
 
             if self.writer is not None:
                 try:
