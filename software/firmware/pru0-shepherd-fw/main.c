@@ -156,7 +156,7 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
         const uint32_t r32 = factor * factor;
         result             = r32;
     } // ~ 28 ns, limits 0..65535
-    else if (mode == 2) result = factor * factor; // ~ 34 ns, limits 0..65535
+    //else if (mode == 2) result = factor * factor; // ~ 34 ns, limits 0..65535
     else if (mode == 3)
         result = (uint64_t) factor * factor; // ~ 42 ns, limits 0..65535 -> wrong behavior!!!
     else if (mode == 4)
