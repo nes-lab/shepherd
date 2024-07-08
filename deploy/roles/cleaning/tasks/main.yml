@@ -5,7 +5,7 @@
   register: pre_free_mb
   changed_when: false
 
-- name: Find recordings
+- name: Find shepherd recordings
   ansible.builtin.find:
     paths: ["/var/shepherd/recordings/", "/var/shepherd/recordings2/"]
     patterns: '*'
@@ -19,6 +19,17 @@
   with_items: "{{ files_rec.files | map(attribute='path') }}"
   when: cleaning_delete_recordings | bool
   # NOTE: could be done with just .find, but this leaves directory intact
+
+- name: Remove space-waster in /opt/shepherd
+  ansible.builtin.file:
+    path:
+      [
+        "/opt/shepherd/.git/",
+        "/opt/shepherd/hardware/",
+        "/opt/shepherd/docs/",
+        "/opt/shepherd/deploy/",
+      ]
+    state: absent
 
 - name: Include removal of software
   ansible.builtin.include_tasks:
