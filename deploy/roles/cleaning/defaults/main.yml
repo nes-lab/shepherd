@@ -54,6 +54,8 @@ cleaning_packages: [
   # down in repo_rcnee_pkg_list
   'bb-u-boot-am57xx-evm',
   'sancloud-firmware',
+  'bb-bbai-*',
+  'bb-wl18xx-firmware',
 
   # more findings on some distros (debian and newer ubuntu)
   'wireless-*',
@@ -76,6 +78,7 @@ cleaning_packages: [
   'iso-codes',
   'locales',
   'avahi*',
+  'unattended-upgrades',
 
   # ubuntu ONLY
   'plymouth*',
@@ -106,7 +109,7 @@ cleaning_packages: [
   'firmware-libertas',
   'firmware-ti-connectivity',
 ]
-
+# find large packages: dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
 # test-stage: 'systemd-timesyncd' -> disables NTP-Support
 # NOTE: 'libx11*' part of python3-h5py
 # why not 'initramfs*', 'cron'?
