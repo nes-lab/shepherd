@@ -72,16 +72,16 @@ repos:
 # TODO: disable, until bug is resolved, maybe connected to
 # https://github.com/ansible/ansible-lint/issues/3636
 #  - repo: https://github.com/ansible-community/ansible-lint.git
-#    rev: v6.22.1
+#    rev: v24.6.1
 #    hooks:
 #      - id: ansible-lint
 
-#  - repo: https://github.com/rstcheck/rstcheck
-#    rev: v6.1.2
-#    hooks:
-#      - id: rstcheck
-#        additional_dependencies: [ "rstcheck[sphinx,toml]" ]
-#        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
+  - repo: https://github.com/rstcheck/rstcheck
+    rev: v6.2.4
+    hooks:
+      - id: rstcheck
+        additional_dependencies: ["rstcheck[sphinx,toml]"]
+        args: ["--report-level=WARNING"]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
@@ -116,6 +116,7 @@ repos:
           - "--suppress=missingInclude"
           - "--suppress=missingIncludeSystem"
           - "--suppress=unmatchedSuppression"
+          - "--suppress=constParameterCallback"
 
 ########################## BETA SECTION #############################
 
