@@ -23,15 +23,6 @@
     version: HEAD  # noqa latest[git]
     force: true
   when: not scripts_dir.stat.exists
-- name: Remove space-waster of boot-script-repo (free 13 of 27 mb)
-  ansible.builtin.file:
-    path:
-      [
-        "/opt/scripts/.git/",
-        "/opt/scripts/device/",
-        "/opt/scripts/images/",
-      ]
-    state: absent
 
 - name: APT - Update Cache
   ansible.builtin.apt:

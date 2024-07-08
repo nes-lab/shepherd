@@ -46,16 +46,9 @@
     version: HEAD  # noqa latest[git]
     force: true
   when: not overlays_dir.stat.exists
-- name: Remove space-waster of Overlay-repo
-  ansible.builtin.file:
-    path:
-      [
-        "/opt/bb-cape-overlays/.git/",
-      ]
-    state: absent
 - name: "SCRIPT - Compile & install Overlays"
   ansible.builtin.command:
-    cmd: './install.sh'
+    cmd: './install.sh'  # TODO: check if installed -> many .dtbo in /lib/firmware
     chdir: '/opt/bb-cape-overlays/'
   changed_when: true
   failed_when: false

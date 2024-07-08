@@ -22,14 +22,20 @@
 
 - name: Remove space-waster in /opt/shepherd
   ansible.builtin.file:
-    path:
-      [
-        "/opt/shepherd/.git/",
-        "/opt/shepherd/hardware/",
-        "/opt/shepherd/docs/",
-        "/opt/shepherd/deploy/",
-      ]
+    path: "{{ item }}"
     state: absent
+  loop:
+    - "/opt/shepherd/.git/"
+    - "/opt/shepherd/hardware/"
+    - "/opt/shepherd/docs/"
+    - "/opt/shepherd/deploy/"
+    - "/opt/scripts/.git/"
+    - "/opt/scripts/device/"
+    - "/opt/scripts/images/"
+    - "/opt/bb-cape-overlays/.git/"
+    - "/usr/share/ti/pru-software-support-package/.git/"
+    - "/usr/share/ti/pru-software-support-package/examples/"
+    - "/lib/firmware/ti-connectivity/"
 
 - name: Include removal of software
   ansible.builtin.include_tasks:
