@@ -29,12 +29,12 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 dependencies = [
+    "shepherd-core[elf,inventory]>=2024.7.2",
     "click",
     "numpy",
     "fabric",
     "pyYAML",
     "chromalog",
-    "shepherd-core[elf,inventory]",
     "tqdm",
 ]
 
