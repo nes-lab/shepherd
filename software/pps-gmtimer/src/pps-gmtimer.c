@@ -64,7 +64,7 @@ struct pps_gmtimer_platform_data
 /* kobject *******************/
 static ssize_t timer_name_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "%s\n", pdata->timer_name);
 }
 
@@ -72,7 +72,7 @@ static DEVICE_ATTR(timer_name, S_IRUGO, timer_name_show, NULL);
 
 static ssize_t stats_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "capture: %u\noverflow: %u\n", pdata->capture, pdata->overflow);
 }
 
@@ -80,7 +80,7 @@ static DEVICE_ATTR(stats, S_IRUGO, stats_show, NULL);
 
 static ssize_t interrupt_delta_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "%lld.%09ld\n", (long long) pdata->delta.tv_sec, pdata->delta.tv_nsec);
 }
 
@@ -88,7 +88,7 @@ static DEVICE_ATTR(interrupt_delta, S_IRUGO, interrupt_delta_show, NULL);
 
 static ssize_t pps_ts_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "%lld.%09ld\n", (long long) pdata->ts.ts_real.tv_sec,
                    pdata->ts.ts_real.tv_nsec);
 }
@@ -97,7 +97,7 @@ static DEVICE_ATTR(pps_ts, S_IRUGO, pps_ts_show, NULL);
 
 static ssize_t count_at_interrupt_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "%u\n", pdata->count_at_interrupt);
 }
 
@@ -105,7 +105,7 @@ static DEVICE_ATTR(count_at_interrupt, S_IRUGO, count_at_interrupt_show, NULL);
 
 static ssize_t capture_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "%u\n",
                    __omap_dm_timer_read(pdata->capture_timer, OMAP_TIMER_CAPTURE_REG,
                                         pdata->capture_timer->posted));
@@ -115,7 +115,7 @@ static DEVICE_ATTR(capture, S_IRUGO, capture_show, NULL);
 
 static ssize_t ctrlstatus_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata = dev->platform_data;
+    const struct pps_gmtimer_platform_data *const pdata = dev->platform_data;
     return sprintf(buf, "%x\n",
                    __omap_dm_timer_read(pdata->capture_timer, OMAP_TIMER_CTRL_REG,
                                         pdata->capture_timer->posted));
@@ -125,10 +125,9 @@ static DEVICE_ATTR(ctrlstatus, S_IRUGO, ctrlstatus_show, NULL);
 
 static ssize_t timer_counter_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    struct pps_gmtimer_platform_data *pdata         = dev->platform_data;
-    unsigned int                      current_count = 0;
+    const struct pps_gmtimer_platform_data *const pdata         = dev->platform_data;
+    const unsigned int                      current_count = pdata->timer_ops->read_counter(pdata->capture_timer);
 
-    current_count = pdata->timer_ops->read_counter(pdata->capture_timer);
     return sprintf(buf, "%u\n", current_count);
 }
 
@@ -153,9 +152,7 @@ static struct attribute_group attr_group = {
 /* timers ********************/
 static irqreturn_t pps_gmtimer_interrupt(int irq, void *data)
 {
-    struct pps_gmtimer_platform_data *pdata;
-
-    pdata = data;
+    struct pps_gmtimer_platform_data *const pdata = data;
 
     if (pdata->ready)
     {
@@ -231,7 +228,7 @@ static void omap_dm_timer_setup_capture(struct omap_dm_timer           *timer,
 /* if tclkin has no clock, writes to the timer registers will stall and you will get a message like:
  * Unhandled fault: external abort on non-linefetch (0x1028) at 0xfa044048
  */
-static void omap_dm_timer_use_tclkin(struct pps_gmtimer_platform_data *pdata)
+static void omap_dm_timer_use_tclkin(struct pps_gmtimer_platform_data *const pdata)
 {
     struct clk *gt_fclk;
 
@@ -241,7 +238,7 @@ static void omap_dm_timer_use_tclkin(struct pps_gmtimer_platform_data *pdata)
     pr_info("timer(%s) switched to tclkin, rate=%uHz\n", pdata->timer_name, pdata->frequency);
 }
 
-static void pps_gmtimer_enable_irq(struct pps_gmtimer_platform_data *pdata)
+static void pps_gmtimer_enable_irq(struct pps_gmtimer_platform_data *const pdata)
 {
     unsigned int interrupt_mask;
 
@@ -252,7 +249,7 @@ static void pps_gmtimer_enable_irq(struct pps_gmtimer_platform_data *pdata)
 }
 
 static int pps_gmtimer_init_timer(struct device_node               *timer_dn,
-                                  struct pps_gmtimer_platform_data *pdata)
+                                  struct pps_gmtimer_platform_data *const pdata)
 {
     struct clk *gt_fclk;
 
@@ -288,7 +285,7 @@ static int pps_gmtimer_init_timer(struct device_node               *timer_dn,
     return 0;
 }
 
-static void pps_gmtimer_cleanup_timer(struct pps_gmtimer_platform_data *pdata)
+static void pps_gmtimer_cleanup_timer(struct pps_gmtimer_platform_data *const pdata)
 {
     if (pdata->capture_timer)
     {
