@@ -70,11 +70,15 @@
       changed_when: true
       become: false
 
+    - name: APT - Update Cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
     - name: APT - Install required packages
       ansible.builtin.apt:
         name: ["sshpass", "nfs-common"]
         state: present
-        update_cache: true
 
   tasks:
 

@@ -5,15 +5,39 @@
   register: kernelrelease
   changed_when: false
 
-- name: APT - Install required packages for kernel compilation
+- name: APT - install hardcoded kernel image & headers
   ansible.builtin.apt:
     name:
       [
-        "linux-headers-{{ kernelrelease.stdout.strip() }}", # redundancy, 1st done by maintenance
+        "linux-image-{{ sheep_kernel_pin }}",
+        "linux-headers-{{ sheep_kernel_pin }}",
       ]
     state: present
-    update_cache: true
+  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
 
+- name: Restart device
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 200
+    post_reboot_delay: 30
+  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+
+- name: Get Kernel-Release
+  ansible.builtin.command: 'uname --kernel-release'
+  register: kernelrelease
+  changed_when: false
+  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+- name: Check for required Kernel-Version
+  ansible.builtin.fail:
+    msg: |
+      Required kernel not active!
+      -> install failed or /boot/uEnv.txt got changed
+  when: kernelrelease.stdout.strip() is not sheep_kernel_pin
+
+- name: Check if Overlay-Repo exists
+  ansible.builtin.stat:
+    path: /opt/bb-cape-overlays
+  register: overlays_dir
 - name: GIT - Clone & Update device-tree Overlays
   ansible.builtin.git:
     repo: https://github.com/beagleboard/bb.org-overlays
@@ -21,10 +45,14 @@
     update: true
     version: HEAD  # noqa latest[git]
     force: true
+  when: not overlays_dir.stat.exists
 - name: "SCRIPT - Compile & install Overlays"
   ansible.builtin.command: '/opt/bb-cape-overlays/install.sh'
   changed_when: true
   failed_when: false
-# git clone https://github.com/beagleboard/bb.org-overlays
-# cd bb.org-overlays
-# ./install.sh
+  when: not overlays_dir.stat.exists
+
+# manual shell commands:
+#   git clone https://github.com/beagleboard/bb.org-overlays
+#   cd bb.org-overlays
+#   ./install.sh

@@ -12,11 +12,15 @@
         state: present
         validate_certs: false
 
+    - name: APT - Update Cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
     - name: Install modded openOCD-version
       ansible.builtin.apt:
         name: shepherd-openocd
         state: present
-        update_cache: true
 
     - name: Get full path of repository
       ansible.builtin.command: 'realpath {{ playbook_dir }}/..'

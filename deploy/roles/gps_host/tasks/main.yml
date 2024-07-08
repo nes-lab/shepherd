@@ -5,6 +5,11 @@
   changed_when: false
   tags: gps
 
+- name: APT - Update Cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags: gps
 - name: Install required packages
   ansible.builtin.apt:
     name:
@@ -15,10 +20,8 @@
         "chrony",
         "pps-tools",
         "linux-headers-{{ kernelrelease.stdout.strip() }}",
-        # "dkms", # TODO: test removal - should not be needed - installs huge secondary gcc
       ]
     state: present
-    update_cache: true
   tags: gps
 
 - name: Install python ubxserial modules

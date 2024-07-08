@@ -4,6 +4,7 @@
   ansible.builtin.apt:
     name:
       [
+        "ntpdate", # allows manual time updates via ntpdate -s time.nist.gov
         "zlib1g-dev",
         "libjpeg-dev",
         "python3-numpy",
@@ -31,7 +32,6 @@
         "srecord",
       ]
     state: present
-    update_cache: true
 
 - name: PIP - update essential base-packages (setuptools, pip, ...)
   ansible.builtin.pip:

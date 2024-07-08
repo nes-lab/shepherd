@@ -60,11 +60,15 @@
       delegate_to: localhost
       become: true
 
+    - name: APT - Update Cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
     - name: Install required packages
       ansible.builtin.apt:
         name: "nfs-common"
         state: present
-        update_cache: true
       become: true
 
     - name: Mount nfs share

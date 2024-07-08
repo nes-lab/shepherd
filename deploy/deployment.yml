@@ -19,13 +19,12 @@
       ansible.builtin.command: "date -s {{ local_time.stdout }}"
       changed_when: true
 
-    - name: Update kernel, bootloader, software & cleanup afterwards
+    - name: Update kernel & software
       ansible.builtin.include_role:
         name: maintenance
       vars:
-        maintenance_update_kernel: true
-        maintenance_update_bootloader: true
-        maintenance_delete_unused_files: true
+        maintenance_update_kernel: false
+
 
 - name: Role - PTP-Client only (not recommended! all should be server as well)
   hosts: ptp_clients
@@ -82,10 +81,9 @@
   # post_tasks:
   tasks:
 
-    - name: Cleanup after software
+    - name: Cleanup after software install
       ansible.builtin.include_role:
-        name: maintenance
+        name: cleaning
       vars:
-        maintenance_update_kernel: false
-        maintenance_update_bootloader: false
-        maintenance_delete_unused_files: true
+        cleaning_delete_recordings: false
+        cleaning_zero_free_space: false
