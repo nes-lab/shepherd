@@ -123,7 +123,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
         herd.print_output(replies, verbose=True)
-        exit_code = max([0] + [reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -152,7 +152,7 @@ def fix(ctx: click.Context) -> None:
             cmd="shepherd-sheep fix",
         )
         herd.print_output(replies, verbose=False)
-        exit_code = max([0] + [reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -181,7 +181,7 @@ def blink(ctx: click.Context, duration: int) -> None:
             cmd=f"shepherd-sheep blink {duration}",
         )
         herd.print_output(replies, verbose=False)
-        exit_code = max([0] + [reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -609,7 +609,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
 
         command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
         replies = herd.run_cmd(sudo=True, cmd=command)
-        exit_code = max([0] + [reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         if exit_code:
             log.error("Programming - Procedure failed - will exit now!")
         herd.print_output(replies, verbose=False)

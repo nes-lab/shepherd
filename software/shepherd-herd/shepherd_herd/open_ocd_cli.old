@@ -72,7 +72,7 @@ def openocd_prepare(
             sudo=True,
             cmd="systemctl status shepherd-openocd",
         )
-        exit_code = max([reply.exited for reply in openocd_status.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in openocd_status.values()])
         exit_nodes = [
             key for key, value in openocd_status.items() if value.exited == exit_code
         ]
@@ -94,9 +94,9 @@ def openocd_finish(herd: Herd) -> None:
         sudo=True,
         cmd="shepherd-sheep --verbose target-power --off",
     )
-    exit_code = max(
-        [reply.exited for reply in replies1.values()]
-        + [reply.exited for reply in replies2.values()],
+    exit_code = max([0] +
+        [abs(reply.exited) for reply in replies1.values()]
+        + [abs(reply.exited) for reply in replies2.values()],
     )
     sys.exit(exit_code)
 

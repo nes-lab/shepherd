@@ -406,7 +406,7 @@ class Herd:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
-            if replies[hostname].exited > 0:
+            if abs(replies[hostname].exited) != 0:
                 logger.error(
                     "remote file '%s' does not exist on node %s",
                     src_path,
@@ -436,7 +436,7 @@ class Herd:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
-            if replies[hostname].exited > 0:
+            if replies[hostname].exited != 0:
                 continue
             threads[i].join()  # timeout=10.0
             if threads[i].is_alive():
@@ -568,12 +568,12 @@ class Herd:
 
         replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
         self.print_output(replies)
-        return max([0] + [reply.exited for reply in replies.values()])
+        return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
-        exit_code = max([0] + [reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         logger.info("Shepherd was forcefully stopped")
         if exit_code > 0:
             logger.debug("-> max exit-code = %d", exit_code)
@@ -588,7 +588,7 @@ class Herd:
         else:
             replies = self.run_cmd(sudo=True, cmd="poweroff")
             logger.info("Command for powering off nodes was issued")
-        return max([0] + [reply.exited for reply in replies.values()])
+        return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     @validate_call
     def await_stop(self, timeout: int = 30) -> bool:
@@ -641,7 +641,7 @@ class Herd:
         for command in commands:
             ret = self.run_cmd(sudo=True, cmd=command)
             self.print_output(ret, verbose=True)
-            exit_code = max([exit_code] + [reply.exited for reply in ret.values()])
+            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
 
         # Get the current time on each target node
         replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
@@ -666,7 +666,7 @@ class Herd:
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
-            exit_code = max([0] + [reply.exited for reply in replies.values()])
+            exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
             if exit_code:
                 logger.error("Running Task failed - will exit now!")
             self.print_output(replies, verbose=True)
