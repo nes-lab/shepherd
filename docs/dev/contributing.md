@@ -124,6 +124,7 @@ Use `bump2version` to update the version number across the repository:
 pipenv shell
 pre-commit run --all-files
 bump2version patch --allow-dirty
+# version-format: major.minor.patch
 ```
 
 Finally, open a pull-request to allow merging your changes into the main-branch and to trigger the test-pipeline.

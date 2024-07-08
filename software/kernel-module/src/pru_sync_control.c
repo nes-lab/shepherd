@@ -262,7 +262,8 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     }
 
     /* variable sleep cycle */
-    hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(timer_steps_ns[step_pos]));
+    hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns),
+                    ns_to_ktime(timer_steps_ns[step_pos]));
 
     if (step_pos < timer_steps_ns_size - 1) step_pos++;
 
