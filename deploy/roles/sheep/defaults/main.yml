@@ -15,6 +15,15 @@ sheep_refresh_source: false
 sheep_rebuild_kernel_module: true
 sheep_rebuild_python_package: true
 
+### KERNEL ######
+sheep_kernel_pin: "4.19.94-ti-r74"  # 2024-07-03: r74 was newest
+# -rt -> used for more reliable ptp & gpio-triggering, BUT communication with PRU fails
+# Updating to kernel 5.4 would be possible, but distros fail to boot with it
+# pssp 5.9 for kernel <= 5.4
+# pssp 6.0 for kernel >= 5.10
+# pssp 6.2 for kernel >= 6.1
+
+
 ### GCC ######
 sheep_gcc_tools_path: /usr/share/shepherd-tools
 sheep_gcc_pru_support_path: /usr/share/shepherd-tools/pru-software-support-package

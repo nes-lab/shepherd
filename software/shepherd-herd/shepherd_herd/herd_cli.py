@@ -123,7 +123,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
         herd.print_output(replies, verbose=True)
-        exit_code = max([reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -135,14 +135,9 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
 )
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
-    file_path = Path("/var/shepherd/inventory.yaml")
     with ctx.obj["herd"] as herd:
-        herd.run_cmd(
-            sudo=True,
-            cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
-        )
         failed = herd.inventorize(output_path)
-    sys.exit(failed)
+    sys.exit(int(failed))
 
 
 @cli.command(
@@ -157,7 +152,19 @@ def fix(ctx: click.Context) -> None:
             cmd="shepherd-sheep fix",
         )
         herd.print_output(replies, verbose=False)
-        exit_code = max([reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
+    sys.exit(exit_code)
+
+
+@cli.command(
+    short_help="Gets current time and restarts PTP on each sheep",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def resync(ctx: click.Context) -> None:
+    set_verbosity()
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.resync()
     sys.exit(exit_code)
 
 
@@ -174,7 +181,7 @@ def blink(ctx: click.Context, duration: int) -> None:
             cmd=f"shepherd-sheep blink {duration}",
         )
         herd.print_output(replies, verbose=False)
-        exit_code = max([reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     sys.exit(exit_code)
 
 
@@ -393,7 +400,7 @@ def emulate(
 )
 @click.pass_context
 def start(ctx: click.Context) -> None:
-    ret = 0
+    ret: int = 0
     with ctx.obj["herd"] as herd:
         if herd.check_status():
             log.info("Shepherd still active, will skip this command!")
@@ -409,7 +416,7 @@ def start(ctx: click.Context) -> None:
 @cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
 def status(ctx: click.Context) -> None:
-    ret = 0
+    ret: int = 0
     with ctx.obj["herd"] as herd:
         if herd.check_status():
             log.info("Shepherd still active!")
@@ -527,7 +534,7 @@ def retrieve(
             separate=separate,
             delete_src=delete,
         )
-    sys.exit(failed)
+    sys.exit(int(failed))
 
 
 # #############################################################################
@@ -602,7 +609,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
 
         command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
         replies = herd.run_cmd(sudo=True, cmd=command)
-        exit_code = max([reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         if exit_code:
             log.error("Programming - Procedure failed - will exit now!")
         herd.print_output(replies, verbose=False)

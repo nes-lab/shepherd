@@ -7,37 +7,39 @@ from types import TracebackType
 import h5py
 from shepherd_core import Compression
 
+from .h5_monitor_abc import Monitor
 from .logger import log
-from .monitor_abc import Monitor
 
 
-class PTPMonitor(Monitor):  # TODO: also add phc2sys
+class KernelMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
+        backlog: int = 60,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.51)
+        super().__init__(target, compression, poll_intervall=0.52)
+        self.backlog = backlog
+
         self.data.create_dataset(
-            name="values",
-            shape=(self.increment, 3),
-            dtype="i8",
-            maxshape=(None, 3),
+            name="message",
+            shape=(self.increment,),
+            dtype=h5py.special_dtype(vlen=str),
+            maxshape=(None,),
             chunks=True,
+            compression=compression,
         )
-        self.data["values"].attrs["unit"] = "ns, Hz, ns"
-        self.data["values"].attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
             "sudo",
-            "journalctl",
-            "--unit=ptp4l@eth0",
+            "/usr/bin/journalctl",
+            "--dmesg",
             "--follow",
-            "--lines=60",
+            f"--lines={self.backlog}",
             "--output=short-precise",
-        ]  # for client
-        self.process = subprocess.Popen(
-            command,  # noqa: S603
+        ]
+        self.process = subprocess.Popen(  # noqa: S603
+            command,
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
@@ -46,11 +48,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
             return
         os.set_blocking(self.process.stdout.fileno(), False)
 
-        self.thread = threading.Thread(
-            target=self.thread_fn,
-            daemon=True,
-            name="PTPMon",
-        )
+        self.thread = threading.Thread(target=self.thread_fn, daemon=True, name="Shp.H5Mon.KMod")
         self.thread.start()
 
     def __exit__(
@@ -70,41 +68,30 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                 )
             self.thread = None
         self.process.terminate()
-        self.data["values"].resize((self.position, 3))
+        self.data["message"].resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
-        # example:
-        # sheep1 ptp4l[378]: [821.629] main offset -4426 s2 freq +285889 path delay 12484
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
                 self.event.wait(self.poll_intervall)  # rate limiter
                 continue
-            try:
-                words = str(line).split()
-                i_start = words.index("offset")
-                values = [
-                    int(words[i_start + 1]),
-                    int(words[i_start + 4]),
-                    int(words[i_start + 7]),
-                ]
-            except ValueError:
-                continue
+            line = str(line).strip()[:128]
             try:
                 data_length = self.data["time"].shape[0]
                 if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
-                    self.data["values"].resize((data_length, 3))
+                    self.data["message"].resize((data_length,))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
                 self.data["time"][self.position] = int(time.time() * 1e9)
-                self.data["values"][self.position, :] = values[0:3]
+                self.data["message"][self.position] = line
                 self.position += 1
-            except (OSError, KeyError):
+            except OSError:
                 log.error(
                     "[%s] Caught a Write Error for Line: [%s] %s",
                     type(self).__name__,

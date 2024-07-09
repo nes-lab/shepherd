@@ -2,13 +2,15 @@
 
 - name: Add systemd unit
   ansible.builtin.copy:
-    src: '{{ item }}'
+    src: '{{ sheep_install_path }}/software/python-package/services/{{ item }}'
     dest: '/etc/systemd/system/'
+    remote_src: true
     mode: '0644'
   loop:
     - shepherd.service
     - shepherd-rpc.service
     - shepherd-launcher.service
+    - shepherd-watchdog.service
   tags:
     - install
     - systemd
@@ -22,19 +24,11 @@
   loop:
     - { name: shepherd, enabled: false}
     - { name: shepherd-rpc, enabled: false}
-    - { name: shepherd-launcher, enabled: true}
-    - { name: systemd-timesyncd, enabled: false}
+    - { name: shepherd-launcher, enabled: false}
+    - { name: shepherd-watchdog, enabled: true}
+  #  - { name: systemd-timesyncd, enabled: false} # configured by ptp/ntp...roles
   tags:
     - conf
     - systemd
 
 # NOTE: could avoid a restart by issuing "sudo systemctl daemon-reload"
-
-- name: Disable connman automatic time update
-  ansible.builtin.command:
-    cmd: 'busctl --system call net.connman / net.connman.Clock SetProperty sv "TimeUpdates" s "manual"'
-  failed_when: false  # services may not exist in newer releases (ubuntu 20.04 ++)
-  changed_when: true
-  tags:
-    - conf
-    - systemd

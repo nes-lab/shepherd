@@ -36,6 +36,3 @@ myst-parser = "*"
 
 [pipenv]
 allow_prereleases = false
-
-[requires]
-python_version = "3.10"

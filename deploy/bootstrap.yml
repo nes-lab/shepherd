@@ -9,10 +9,15 @@
   collections:
     - ansible.posix
 
+  vars_prompt:
+    # automatically skip prompt with argument: -e "default_user=ubuntu"
+    - name: default_user
+      prompt: "What is the current default user of the distro?"
+      private: false
+      default: "debian" # NOTE: for debian/ubuntu the user-name changes accordingly
+
   vars:
-    default_user: ubuntu
     default_password: temppwd
-    apt_upgrade: true
 
   pre_tasks:
 

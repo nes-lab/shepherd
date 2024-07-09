@@ -28,7 +28,7 @@ pip3 install shepherd-herd
 For install directly from GitHub-Sources (here `dev`-branch):
 
 ```Shell
- pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/shepherd-herd -U
+pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/shepherd-herd -U
 ```
 
 For install from local sources:

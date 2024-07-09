@@ -21,13 +21,13 @@ def check_beagleboard() -> bool:
 @pytest.fixture(
     params=[
         pytest.param("real_hardware", marks=pytest.mark.hardware),
-        pytest.param("fake_hardware", marks=pytest.mark.fake_hardware),
+        pytest.param("mock_hardware", marks=pytest.mark.mock_hardware),
     ],
 )
 def fake_fs(
     request: pytest.FixtureRequest,
 ) -> Generator[FakeFilesystem | None, None, None]:
-    if request.param == "fake_hardware":
+    if request.param == "mock_hardware":
         request.fixturenames.append("fs")  # needs pyfakefs installed
         fake_sysfs: FakeFilesystem = request.getfixturevalue("fs")
         fake_sysfs.create_dir("/sys/class/remoteproc/remoteproc1")
@@ -50,7 +50,7 @@ def pytest_collection_modifyitems(
     config: pytest.Config,
     items: Iterable[pytest.Item],
 ) -> None:
-    skip_fake = pytest.mark.skip(reason="cannot be faked")
+    skip_mock = pytest.mark.skip(reason="cannot be mocked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
     skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
     real_hardware = check_beagleboard()
@@ -60,9 +60,9 @@ def pytest_collection_modifyitems(
             item.add_marker(skip_missing_hardware)
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
-        if "fake_hardware" in item.keywords and "hardware" in item.keywords:
+        if "mock_hardware" in item.keywords and "hardware" in item.keywords:
             # real_hardware
-            item.add_marker(skip_fake)
+            item.add_marker(skip_mock)
 
 
 @pytest.fixture()

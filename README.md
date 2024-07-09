@@ -94,7 +94,7 @@ Now run the `bootstrap.yml` *Ansible* playbook, which sets the hostname, creates
 ansible-playbook deploy/bootstrap.yml
 ```
 
-Finally, use the `deploy.yml` playbook to setup the *shepherd* software with the configured roles from inventory:
+Finally, use the `deploy.yml` playbook to set up the *shepherd* software with the configured roles from inventory:
 
 ```shell
 ansible-playbook deploy/deploy.yml

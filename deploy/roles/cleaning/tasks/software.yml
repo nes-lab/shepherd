@@ -1,53 +1,6 @@
 ---
 
-- name: Optimize Boot by removing outdated initrd - find files with Wildcard
-  # similar to "rm -rf /boot/initrd.img*"
-  ansible.builtin.find:
-    paths: '/boot'
-    patterns: 'initrd.img*'
-  register: files_init
-- name: Optimize Boot by removing outdated initrd - delete files found previously
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  with_items: "{{ files_init.files | map(attribute='path') }}"
-  when: false  # probably not helpful
-
-- name: Delete unused firmware (by beaglebone, slightly risky) - A
-  ansible.builtin.file:
-    path: "/lib/firmware/{{ item }}"
-    state: absent
-  loop: # sorted by size, all ~ 360 mb
-    - "netronome"
-    - "amdgpu"
-    - "intel"
-    - "liquidio"
-    - "qcom"
-    - "qed"
-    - "brcm"
-    - "ath10k"
-    - "mellanox"
-    - "mrvl"
-    - "i915"
-    - "radeon"
-    - "mediatek"
-    - "nvidia"
-  become: true
-  when: false  # linux-firmware is completely uninstalled later
-
-- name: Find unused firmware (by beaglebone, slightly risky) - B
-  ansible.builtin.find:
-    paths: '/lib/firmware/'
-    patterns: 'iwlwifi-*' # > 100 mb, wifi-blobs
-  register: files_fw
-- name: Delete unused firmware (by beaglebone, slightly risky) - B
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  with_items: "{{ files_fw.files | map(attribute='path') }}"
-  when: false  # linux-firmware is completely uninstalled later
-
-- name: Uname - Get Kernel-Version
+- name: Uname - Get Kernel-Release
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false
@@ -70,14 +23,4 @@
     state: absent
     purge: true
   failed_when: false
-  with_items:
-    - "{{ cleaning_packages_a }}"
-    - "{{ cleaning_packages_b }}"
-    - "{{ cleaning_packages_c }}"
-    - "{{ cleaning_packages_d }}"
-    - "{{ cleaning_packages_e }}"
-    - "{{ cleaning_packages_f }}"
-    - "{{ cleaning_packages_g }}"
-    - "{{ cleaning_packages_h }}"
-    - "{{ cleaning_packages_i }}"
-    - "{{ cleaning_packages_j }}"
+  with_items: "{{ cleaning_packages }}"

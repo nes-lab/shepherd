@@ -10,6 +10,11 @@
   register: detector
 
 ### Install & Config
+- name: APT - Update Cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
 - name: Configure Shepherd - Pre-Phase
   ansible.builtin.include_tasks:
     file: "{{ file_item }}"
@@ -24,7 +29,7 @@
   tags:
     - install
 
-- name: Install Pre-Requisits
+- name: Install Pre-Requisites
   ansible.builtin.include_tasks:
     file: "{{ file_item }}"
   loop:

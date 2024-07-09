@@ -7,8 +7,8 @@ import h5py
 import serial
 from shepherd_core import Compression
 
+from .h5_monitor_abc import Monitor
 from .logger import log
-from .monitor_abc import Monitor
 
 
 class UARTMonitor(Monitor):
@@ -45,7 +45,7 @@ class UARTMonitor(Monitor):
             self.thread = threading.Thread(
                 target=self.thread_fn,
                 daemon=True,
-                name="UARTMon",
+                name="Shp.H5Mon.UART",
             )
             self.thread.start()
         else:

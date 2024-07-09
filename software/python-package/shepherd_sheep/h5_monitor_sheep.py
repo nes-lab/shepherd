@@ -1,12 +1,13 @@
 import threading
+import time
 from types import TracebackType
 
 import h5py
 from shepherd_core import Compression
 
+from .h5_monitor_abc import Monitor
 from .logger import get_message_queue
 from .logger import log
-from .monitor_abc import Monitor
 
 
 class SheepMonitor(Monitor):
@@ -32,14 +33,14 @@ class SheepMonitor(Monitor):
             chunks=True,
         )
         self.data["level"].attrs["unit"] = "n"
-        self.data["level"].attrs[
-            "description"
-        ] = "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
+        self.data["level"].attrs["description"] = (
+            "from [0..+10..50] = [NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL]"
+        )
 
         self.thread = threading.Thread(
             target=self.thread_fn,
             daemon=True,
-            name="SHPMon",
+            name="Shp.H5Mon.Sheep",
         )
         self.thread.start()
 
@@ -50,6 +51,7 @@ class SheepMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        time.sleep(2 * self.poll_intervall)  # give thread time to write last bits
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=2 * self.poll_intervall)

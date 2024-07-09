@@ -149,7 +149,7 @@ def test_initial_harvester_settings(shepherd_up: None) -> None:
     assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
-@pytest.mark.hardware  # TODO: could also run with fakehardware, but triggers pydantic-error
+@pytest.mark.hardware  # TODO: could also run with mock_hardware, but triggers pydantic-error
 def test_writing_harvester_settings(
     shepherd_up: None,
     hrv_cfg: HarvesterPRUConfig,

@@ -4,10 +4,10 @@
   ansible.builtin.apt:
     name:
       [
+        "ntpdate", # allows manual time updates via ntpdate -s time.nist.gov
         "zlib1g-dev",
         "libjpeg-dev",
         "python3-numpy",
-        "python3-scipy",
         "python3-zmq",
         "python3-gevent",
         "python3-h5py",
@@ -32,7 +32,6 @@
         "srecord",
       ]
     state: present
-    update_cache: true
 
 - name: PIP - update essential base-packages (setuptools, pip, ...)
   ansible.builtin.pip:
@@ -43,6 +42,7 @@
         "wheel",
         "virtualenv",
       ]
-    extra_args: --upgrade
+    extra_args: --upgrade --break-system-packages # debian locks root env
   when: true
   # NOTE: not the cleanest solution - packages managed by apt but setup for pyPackage failed recently
+  # TODO: switch all pip-additions to virtual env?

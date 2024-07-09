@@ -43,10 +43,10 @@ gpio_pin_nums = {
 
 
 class ShepherdIOError(Exception):
-    ID_TIMEOUT = 100
+    ID_TIMEOUT = 9999
 
-    def __init__(self, message: str, id_num: int = 0, value: int = 0) -> None:
-        super().__init__(message + f" [id=0x{id_num:x}, val=0x{value:x}]")
+    def __init__(self, message: str, id_num: int = 0, value: int | list | None = 0) -> None:
+        super().__init__(message + f" [id=0x{id_num:X}, val={value}]")
         self.id_num = id_num
         self.value = value
 
@@ -89,7 +89,8 @@ class ShepherdIO:
         check_sys_access()
 
         if not sfs.pru_firmware_is_default():
-            sfs.load_pru_firmware("shepherd")
+            sfs.load_pru_firmware("pru0-shepherd")
+            sfs.load_pru_firmware("pru1-shepherd")
 
         self.mode = mode
         if mode in {"harvester", "emulator"}:
@@ -129,10 +130,10 @@ class ShepherdIO:
             log.debug("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
 
+            self.refresh_shared_mem()
+
             # clean up msg-channel provided by kernel module
             self._flush_msgs()
-
-            self.refresh_shared_mem()
 
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
@@ -499,7 +500,7 @@ class ShepherdIO:
 
     def get_buffer(
         self,
-        timeout_n: int = 10,
+        timeout_n: int = 60,
         verbose: bool = False,
     ) -> tuple[int, DataBuffer]:
         """Reads a data buffer from shared memory.
@@ -537,26 +538,14 @@ class ShepherdIO:
                 log.info("Received cmd to print: %d", value)
                 continue
 
-            if msg_type == commons.MSG_DEP_ERR_INCMPLT:
-                raise ShepherdIOError(
-                    "Got incomplete buffer",
-                    commons.MSG_DEP_ERR_INCMPLT,
-                    value,
-                )
+            if msg_type == commons.MSG_STATUS_RESTARTING_ROUTINE:
+                log.debug("PRU is restarting its main routine, val=%d", value)
+                continue
 
-            if msg_type == commons.MSG_DEP_ERR_INVLDCMD:
-                raise ShepherdIOError(
-                    "PRU received invalid command",
-                    commons.MSG_DEP_ERR_INVLDCMD,
-                    value,
-                )
-            if msg_type == commons.MSG_DEP_ERR_NOFREEBUF:
-                raise ShepherdIOError(
-                    "PRU ran out of buffers",
-                    commons.MSG_DEP_ERR_NOFREEBUF,
-                    value,
-                )
+            error_msg: str | None = commons.pru_errors.get(msg_type)
+            if error_msg is not None:
+                raise ShepherdIOError(error_msg, msg_type, value)
 
             raise ShepherdIOError(
-                f"Expected msg type { commons.MSG_BUF_FROM_PRU } got { msg_type }[{ value }]",
+                f"Expected msg-type { hex(commons.MSG_BUF_FROM_PRU) }, but got", msg_type, value
             )

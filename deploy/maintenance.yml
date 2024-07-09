@@ -20,8 +20,6 @@
         name: maintenance
       vars:
         maintenance_update_kernel: true
-        maintenance_update_bootloader: true
-        maintenance_delete_unused_files: false  # see below
 
     - name: Cleanup Beaglebone
       ansible.builtin.include_role:

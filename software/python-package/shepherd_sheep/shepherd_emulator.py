@@ -130,6 +130,7 @@ class ShepherdEmulator(ShepherdIO):
                 samplerate_sps=self.samplerate_sps,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
+                omit_ts=True,  # optimization during runtime
             )
 
         # hard-wire pin-direction until they are configurable
@@ -226,28 +227,31 @@ class ShepherdEmulator(ShepherdIO):
             ts_end = self.start_time + duration_s
             log.debug("Duration = %s (forced runtime)", duration_s)
 
+        # Heartbeat-Message
+        delay_alive: int = 60
+        ts_alive: float = self.start_time + delay_alive
+
         # Main Loop
         for _, dsv, dsc in self.reader.read_buffers(
             start_n=self.fifo_buffer_size,
             is_raw=True,
             omit_ts=True,
         ):
-            try:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
-            except ShepherdIOError as e:
-                if self.cfg.abort_on_error:
-                    raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception",
-                    ) from e
-                log.warning("Caught an Exception", exc_info=e)
-                continue
+            idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
+            ts_now = emu_buf.timestamp_ns / 1e9
 
-            if emu_buf.timestamp_ns / 1e9 >= ts_end:
+            if ts_now >= ts_end:
+                log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
+            if ts_now >= ts_alive:
+                duration_s = round(ts_now - self.start_time)
+                log.debug("... now measuring for %d s", duration_s)
+                ts_alive += delay_alive
+                # TODO: switch to tqdm, progressbar
 
             if self.writer is not None:
                 try:
-                    self.writer.write_buffer(emu_buf, omit_ts=True)
+                    self.writer.write_buffer(emu_buf)
                 except OSError as _xpt:
                     log.error(
                         "Failed to write data to HDF5-File - will STOP! error = %s",
@@ -259,30 +263,23 @@ class ShepherdEmulator(ShepherdIO):
             self.return_buffer(idx, hrvst_buf, self.verbose_extra)
 
         # Read all remaining buffers from PRU
-        while True:
-            try:
+        try:
+            while True:
                 idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
                 if emu_buf.timestamp_ns / 1e9 >= ts_end:
+                    log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     return
                 if self.writer is not None:
-                    self.writer.write_buffer(emu_buf, omit_ts=True)
-            except ShepherdIOError as e:  # noqa: PERF203
-                # We're done when the PRU has processed all emulation data buffers
-                if e.id_num == commons.MSG_DEP_ERR_NOFREEBUF:
-                    log.debug("Collected all Buffers from PRU -> begin to exit now")
-                    return
-                if e.id_num == ShepherdIOError.ID_TIMEOUT:
-                    log.error("Reception from PRU had a timeout -> begin to exit now")
-                    return
-
-                if self.cfg.abort_on_error:
-                    raise RuntimeError(
-                        "Caught unforgivable ShepherdIO-Exception",
-                    ) from e
-                log.warning("Caught an Exception", exc_info=e)
-            except OSError as _xpt:
-                log.error(
-                    "Failed to write data to HDF5-File - will STOP! error = %s",
-                    _xpt,
-                )
+                    self.writer.write_buffer(emu_buf)
+        except ShepherdIOError as e:
+            # We're done when the PRU has processed all emulation data buffers
+            if e.id_num == commons.MSG_ERR_NOFREEBUF:
+                log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
                 return
+            raise e
+        except OSError as _xpt:
+            log.error(
+                "Failed to write data to HDF5-File - will STOP! error = %s",
+                _xpt,
+            )
+            return

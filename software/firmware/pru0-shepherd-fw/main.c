@@ -155,8 +155,8 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
     {
         const uint32_t r32 = factor * factor;
         result             = r32;
-    }                                             // ~ 28 ns, limits 0..65535
-    else if (mode == 2) result = factor * factor; // ~ 34 ns, limits 0..65535
+    } // ~ 28 ns, limits 0..65535
+    //else if (mode == 2) result = factor * factor; // ~ 34 ns, limits 0..65535
     else if (mode == 3)
         result = (uint64_t) factor * factor; // ~ 42 ns, limits 0..65535 -> wrong behavior!!!
     else if (mode == 4)
@@ -297,15 +297,15 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
             ring_put(free_buffers_ptr, (uint8_t) msg_in.value[0]);
             return 1U;
         }
-        else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 1))
+        else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
         {
             // pipeline-test for msg-system
-            send_message(shared_mem, MSG_TEST, msg_in.value[0], 0);
+            send_message(shared_mem, MSG_TEST_ROUTINE, msg_in.value[0], 0);
         }
-        else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 2))
+        else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 2))
         {
             // pipeline-test for msg-system
-            send_status(shared_mem, MSG_TEST, msg_in.value[0]);
+            send_status(shared_mem, MSG_TEST_ROUTINE, msg_in.value[0]);
         }
         else { send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0); }
     }
@@ -326,8 +326,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
         // take a snapshot of current triggers until something happens -> ensures prioritized handling
         // edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
         // NOTE: pru1 manages the irq, but pru0 reacts to it directly -> less jitter
-        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()))
-            ; // read iep-reg -> 12 cycles, 60 ns
+        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // read iep-reg -> 12 cycles, 60 ns
 
         // pre-trigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)

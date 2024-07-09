@@ -28,7 +28,8 @@ static ssize_t  sysfs_sync_error_sum_show(struct kobject *kobj, struct kobj_attr
 static ssize_t  sysfs_sync_correction_show(struct kobject *kobj, struct kobj_attribute *attr,
                                            char *buf);
 
-static ssize_t  sysfs_SharedMem_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+static ssize_t  sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attribute *attr,
+                                     char *const buf);
 
 static ssize_t  sysfs_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
@@ -262,11 +263,11 @@ static struct attribute_group attr_firmware_group = {
 };
 
 
-static ssize_t sysfs_SharedMem_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attribute *attr,
+                                    char *const buf)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-
-    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
     return sprintf(buf, "%u", readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset));
 }
 
@@ -342,12 +343,9 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
 
 static ssize_t sysfs_mode_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    unsigned int               mode;
-
-    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-
-    mode              = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
+    const unsigned int mode = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
     switch (mode)
     {
@@ -364,8 +362,8 @@ static ssize_t sysfs_mode_show(struct kobject *kobj, struct kobj_attribute *attr
 static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf,
                                 size_t count)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    unsigned int               mode;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    unsigned int                     mode;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -410,8 +408,8 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
 static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj, struct kobj_attribute *attr,
                                              const char *buf, size_t count)
 {
-    unsigned int               tmp;
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
+    unsigned int                     tmp;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -432,8 +430,8 @@ static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj, struct kobj_a
 static ssize_t sysfs_calibration_settings_store(struct kobject *kobj, struct kobj_attribute *attr,
                                                 const char *buf, size_t count)
 {
-    struct CalibrationConfig   tmp;
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
+    struct CalibrationConfig         tmp;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -470,9 +468,9 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj, struct kob
 static ssize_t sysfs_calibration_settings_show(struct kobject *kobj, struct kobj_attribute *attr,
                                                char *buf)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
 
-    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
     return sprintf(buf, "%u %d \n%u %d \n%u %d \n",
                    readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
                    readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
@@ -489,10 +487,10 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
     const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE * 1u;
     const uint32_t out_lut_size = LUT_SIZE * 4u;
     const uint32_t non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size;
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   mem_offset = 0u;
-    int32_t                    buf_pos    = 0;
-    uint32_t                   i          = 0u;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         mem_offset = 0u;
+    int32_t                          buf_pos    = 0;
+    uint32_t                         i          = 0u;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -547,15 +545,14 @@ static ssize_t sysfs_virtual_converter_settings_show(struct kobject        *kobj
     const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE * 1u;
     const uint32_t out_lut_size = LUT_SIZE * 4u;
     const uint32_t non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size;
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   mem_offset = 0u;
-    uint32_t                   i          = 0u;
-    int                        count      = 0;
-
-    kobj_attr_wrapped                     = container_of(attr, struct kobj_attr_struct_s, attr);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
+    uint32_t mem_offset = 0u;
+    uint32_t i          = 0u;
+    int      count      = 0;
 
     /* u32 beginning of struct */
-    mem_offset                            = kobj_attr_wrapped->val_offset;
+    mem_offset          = kobj_attr_wrapped->val_offset;
     for (i = 0; i < non_lut_size; i += 4)
     {
         count += sprintf(buf + strlen(buf), "%u \n", readl(pru_shared_mem_io + mem_offset + i));
@@ -584,11 +581,11 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
                                                       struct kobj_attribute *attr,
                                                       const char *buffer, size_t count)
 {
-    static const uint32_t      struct_size = sizeof(struct HarvesterConfig);
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   mem_offset = 0u;
-    int32_t                    buf_pos    = 0;
-    uint32_t                   i          = 0u;
+    static const uint32_t            struct_size = sizeof(struct HarvesterConfig);
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         mem_offset = 0u;
+    int32_t                          buf_pos    = 0;
+    uint32_t                         i          = 0u;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -610,14 +607,14 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
 static ssize_t sysfs_virtual_harvester_settings_show(struct kobject        *kobj,
                                                      struct kobj_attribute *attr, char *buf)
 {
-    static const uint32_t      struct_size = sizeof(struct HarvesterConfig);
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   mem_offset = 0u;
-    uint32_t                   i          = 0u;
-    int                        count      = 0;
+    static const uint32_t                  struct_size = sizeof(struct HarvesterConfig);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
+    uint32_t mem_offset = 0u;
+    uint32_t i          = 0u;
+    int      count      = 0;
 
-    kobj_attr_wrapped                     = container_of(attr, struct kobj_attr_struct_s, attr);
-    mem_offset                            = kobj_attr_wrapped->val_offset;
+    mem_offset          = kobj_attr_wrapped->val_offset;
     for (i = 0; i < struct_size; i += 4)
     {
         count += sprintf(buf + strlen(buf), "%u \n", readl(pru_shared_mem_io + mem_offset + i));
@@ -662,10 +659,10 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attri
 
 static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    int32_t                    value;
-    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-    value             = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
+    const int32_t value = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+
     if (value == PRG_STATE_IDLE) return sprintf(buf, "idle");
     else if (value == PRG_STATE_STARTING) return sprintf(buf, "starting");
     else if (value == PRG_STATE_INITIALIZING) return sprintf(buf, "initializing");
@@ -676,9 +673,9 @@ static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute
 static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribute *attr,
                                       const char *buffer, size_t count)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    int32_t                    value = 0u;
-    kobj_attr_wrapped                = container_of(attr, struct kobj_attr_struct_s, attr);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
+    int32_t value = 0u;
 
     if (strncmp(buffer, "start", 5) == 0) value = PRG_STATE_STARTING;
     else if (strncmp(buffer, "stop", 4) == 0) value = PRG_STATE_IDLE;
@@ -693,8 +690,8 @@ static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribut
 
 static ssize_t sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
 
     switch (readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset))
     {
@@ -707,8 +704,8 @@ static ssize_t sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribut
 static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribute *attr,
                                        const char *buffer, size_t count)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   value = 0u;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         value = 0u;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -730,8 +727,8 @@ static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribu
 static ssize_t sysfs_prog_datarate_store(struct kobject *kobj, struct kobj_attribute *attr,
                                          const char *buffer, size_t count)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   value;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         value;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -747,9 +744,9 @@ static ssize_t sysfs_prog_datarate_store(struct kobject *kobj, struct kobj_attri
 static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attribute *attr,
                                          const char *buffer, size_t count)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   value;
-    uint32_t                   value_max;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         value;
+    uint32_t                         value_max;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -765,8 +762,8 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
 static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute *attr,
                                     const char *buffer, size_t count)
 {
-    struct kobj_attr_struct_s *kobj_attr_wrapped;
-    uint32_t                   value;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         value;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -833,10 +830,10 @@ static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attri
     /* FAIL with no file-name or not matching start-string */
     if (strlen(buffer) == 0) return -EINVAL;
 
-    if ((strncmp(buffer, "sync", 4) == 0) || (strncmp(buffer, PRU1_FW_SYNC, 19) == 0))
+    if (strncmp(buffer, "sync", 4) == 0)
     {
-        swap_pru_firmware("", PRU1_FW_SYNC);
-        /* only for debug */
+        printk(KERN_ERR "shprd.k: sync-fw was removed");
+        // NOTE: this could be removed, but that makes the whole FN useless
     }
     else { swap_pru_firmware("", PRU1_FW_DEFAULT); }
 

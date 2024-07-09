@@ -59,8 +59,8 @@ def flatten_list(dl: list) -> list:
 def load_kernel_module() -> None:
     _try = 6
     while _try > 0:
-        ret = subprocess.run(
-            ["/usr/sbin/modprobe", "-a", "shepherd"],  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            ["/usr/sbin/modprobe", "-a", "shepherd"],
             timeout=60,
             check=False,
         ).returncode
@@ -76,8 +76,8 @@ def load_kernel_module() -> None:
 def remove_kernel_module() -> None:
     _try = 6
     while _try > 0:
-        ret = subprocess.run(
-            ["/usr/sbin/modprobe", "-rf", "shepherd"],  # noqa: S603
+        ret = subprocess.run(  # noqa: S603
+            ["/usr/sbin/modprobe", "-rf", "shepherd"],
             timeout=60,
             capture_output=True,
             check=False,
@@ -94,6 +94,14 @@ def remove_kernel_module() -> None:
 def reload_kernel_module() -> None:
     remove_kernel_module()
     load_kernel_module()
+
+
+def disable_ntp() -> None:
+    subprocess.run(  # noqa: S603
+        ["/usr/bin/systemctl", "stop" "systemd-timesyncd.service"],
+        timeout=60,
+        check=False,
+    )
 
 
 def check_sys_access(iteration: int = 1) -> None:
@@ -583,11 +591,10 @@ pru_firmwares = [
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
     "am335x-pru1-shepherd-fw",
-    "am335x-pru1-sync-fw",  # just for debug
 ]
 
 
-def load_pru_firmware(value: str = "shepherd") -> None:
+def load_pru_firmware(value: str = "pru0-shepherd") -> None:
     """Swap firmwares
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
     WORKAROUND: catch lockup, restart shp-module until successful

@@ -2,11 +2,7 @@
 
 # user can control rule by altering these vars from outside
 maintenance_update_kernel: false
-maintenance_update_bootloader: false
-maintenance_delete_unused_files: true
 
 # rule config
 maintenance_default_kernel: lts-4_19
-maintenance_kernel_pin: "linux-image-4.19.94-ti-rt-r74"  # 2023-10-02: r74 was newest
-# RT -> wanted for ptp and phc2sys (more reliable)
 maintenance_timezone: Europe/Berlin

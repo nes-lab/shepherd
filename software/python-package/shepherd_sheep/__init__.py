@@ -29,7 +29,6 @@ from shepherd_core.fw_tools import modify_uid
 from . import sysfs_interface
 from .eeprom import EEPROM
 from .h5_writer import Writer
-from .launcher import Launcher
 from .logger import log
 from .logger import reset_verbosity
 from .logger import set_verbosity
@@ -41,13 +40,12 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.7.2"
+__version__ = "0.8.0"
 
 __all__ = [
     "Writer",
     "EEPROM",
     "TargetIO",
-    "Launcher",
     "ShepherdHarvester",
     "ShepherdEmulator",
     "ShepherdDebug",
@@ -69,13 +67,17 @@ __all__ = [
 def run_harvester(cfg: HarvestTask) -> bool:
     stack = ExitStack()
     set_verbosity(cfg.verbose, temporary=True)
-    failed = False
+    failed = True
     try:
         hrv = ShepherdHarvester(cfg=cfg)
         stack.enter_context(hrv)
         hrv.run()
+        failed = False
     except SystemExit:
-        failed = True
+        pass
+    except ShepherdIOError:
+        log.exception("Caught an unrecoverable error")
+        pass
     stack.close()
     return failed
 
@@ -83,13 +85,16 @@ def run_harvester(cfg: HarvestTask) -> bool:
 def run_emulator(cfg: EmulationTask) -> bool:
     stack = ExitStack()
     set_verbosity(cfg.verbose, temporary=True)
-    failed = False
+    failed = True
     try:
         emu = ShepherdEmulator(cfg=cfg)
         stack.enter_context(emu)
         emu.run()
+        failed = False
     except SystemExit:
-        failed = True
+        pass
+    except ShepherdIOError:
+        log.exception("Caught an unrecoverable error")
         pass
     stack.close()
     return failed
@@ -238,7 +243,8 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         pass
     stack.close()
 
-    sysfs_interface.load_pru_firmware("shepherd")
+    sysfs_interface.load_pru_firmware("pru0-shepherd")
+    sysfs_interface.load_pru_firmware("pru1-shepherd")
     return failed  # TODO: all run_() should emit error and abort_on_error should decide
 
 
@@ -268,7 +274,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
             element_str = element_str[:500] + " [first 500 chars]"
 
         log.info(
-            "\n####### Starting %s #######\n%s\n",
+            "\n###~###~###~###~###~### Starting %s ###~###~###~###~###~###\n\n%s\n",
             type(element).__name__,
             element_str,
         )

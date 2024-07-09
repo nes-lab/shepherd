@@ -38,14 +38,23 @@ Using a PoE switch and corresponding power splitters can greatly reduce the cabl
 
 The DHCP server and your machine (for installation/control) must be connected to the same network.
 
+## Installation - Images
+
+Shepherd is been tested and used on Debian based distributions. Fresh images can be sourced from the [rcn-ee](https://rcn-ee.com/rootfs/)-repo. Be sure to select the ones that `armhf`, `minimal`, `-ti` and `am335x` in the name / path. The following overview gives some recommendations. Be aware that this repo is updated constantly and links may break. Time of writing is 2024-07-08.
+
+- [Debian 12 Bookwork](https://rcn-ee.com/rootfs/debian-armhf-12-bookworm-minimal-v6.1-ti/) is tested, fully working and recommended. It comes with python 3.11
+- ~[Ubuntu 20.04](https://rcn-ee.com/rootfs/ubuntu-armhf-20.04-console-v5.10-ti/)~ is not supported anymore, due to the outdated bundled python 3.8
+- [Ubuntu 22.04](https://rcn-ee.com/rootfs/ubuntu-armhf-22.04-console-v5.10-ti/) is tested and working, but not recommended anymore, due to the outdated bundled python 3.10
+- ~[Ubuntu 24.04](https://rcn-ee.com/rootfs/ubuntu-armhf-24.04-console-v5.10-ti/)~ is not supported yet. It comes with the newest python 3.12, but properly boot with `linux-image-4.19.x`
+
+NOTE: you can also choose to download pre-configured shepherd-images. See the more entry-friendly guide below.
 
 ## Installation - Full Guide
 
-Prepare the SD-cards.
+Prepare the SD-cards with the selected image.
 If you plan to install the OS and shepherd software on the onboard EMMC flash, you can prepare one SD card and sequentially flash the nodes.
 If you plan to install the OS and shepherd software on SD card, you have to prepare one SD card for every observer.
 Depending on your choice, follow [the official instructions](https://elinux.org/BeagleBoardUbuntu#eMMC:_All_BeagleBone_Variants_with_eMMC) for **BeagleBone**. There is also a simplified and more detailed install-instruction in the following section.
-Shepherd has been tested on [Ubuntu 22.04 LTS nightlies](https://rcn-ee.com/rootfs/ubuntu-armhf-22.04-console-v5.10-ti/), but might work with other Debian based distributions. Be sure to choose the `am335x`-image.
 
 After installing the OS on the BeagleBones and booting them, determine their IP addresses.
 If you know the subnet, you can use nmap from your machine, for example:

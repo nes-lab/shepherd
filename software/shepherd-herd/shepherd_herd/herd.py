@@ -28,6 +28,7 @@ from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
+from tqdm import tqdm
 from typing_extensions import Self
 
 from .logger import logger
@@ -143,7 +144,7 @@ class Herd:
     def __enter__(self) -> Self:
         self._open()
         if len(self.group) < 1:
-            raise ValueError("No remote sheep in current herd!")
+            logger.error("No remote sheep in current herd! Will run dry")
         return self
 
     def __exit__(
@@ -178,12 +179,12 @@ class Herd:
         except (NoValidConnectionsError, SSHException, TimeoutError):
             logger.error(
                 "[%s] failed to open connection -> will exclude node from inventory",
-                cnx.host,
+                cnx.host,  # = IP
             )
             cnx.close()
 
     def _open(self) -> None:
-        """Open Connection on all Nodes"""
+        """Open Connection on all Nodes."""
         threads = {}
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
@@ -204,42 +205,41 @@ class Herd:
         cnx: Connection,
         sudo: bool,
         cmd: str,
-        results: dict[int, Result],
-        index: int,
+        results: dict[str, Result],
+        hostname: str,
     ) -> None:
         if not cnx.is_connected:
             return
         try:
             if sudo:
-                results[index] = cnx.sudo(cmd, warn=True, hide=True)
+                results[hostname] = cnx.sudo(cmd, warn=True, hide=True)
             else:
-                results[index] = cnx.run(cmd, warn=True, hide=True)
+                results[hostname] = cnx.run(cmd, warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
             logger.error(
                 "[%s] failed to run '%s' -> will exclude node from inventory",
-                cnx.host,
+                cnx.host,  # IP
                 cmd,
             )
             cnx.close()
 
     @validate_call
-    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[int, Result]:
-        """Run COMMAND on the shell -> Returns output-results
+    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[str, Result]:
+        """Run COMMAND on the shell -> Returns output-results.
+
         NOTE: in case of error on a node that corresponding dict value is unavailable
         """
-        results: dict[int, Result] = {}
+        results: dict[str, Result] = {}
         threads = {}
-        logger.debug("Sheep-CMD = %s", cmd)
-        for i, cnx in enumerate(self.group):
+        logger.info("Sheep-CMD = %s", cmd)
+        for cnx in self.group:
             _name = self.hostnames[cnx.host]
             threads[_name] = threading.Thread(
                 target=self._thread_run,
-                args=(cnx, sudo, cmd, results, i),
+                args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
-        logger.debug("  .. threads started - will wait until finished")
-        for host, thread in threads.items():
-            logger.debug("  .. joining %s-thread", host)
+        for host, thread in tqdm(threads.items(), desc="  .. joining threads", unit="n"):
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -248,30 +248,28 @@ class Herd:
                 )
             del thread  # ... overcautious
         if len(results) < 1:
-            raise RuntimeError("ZERO nodes answered - check your config")
+            logger.error("ZERO nodes answered - check your config")
         return results
 
     def print_output(
         self,
-        replies: dict[int, Result],
+        replies: dict[str, Result],
         *,
         verbose: bool = False,
     ) -> None:
-        """Logs output-results of shell commands"""
-        for i, hostname in enumerate(self.hostnames.values()):
+        """Log output-results of shell commands"""
+        for hostname, reply in replies.items():
             # TODO: incorrect when sheep are missing in between
             #       -> also throw out in hostname-dict?
-            if not isinstance(replies.get(i), Result):
+            if not verbose and reply.exited == 0:
                 continue
-            if not verbose and replies[i].exited == 0:
-                continue
-            if len(replies[i].stdout) > 0:
+            if len(reply.stdout) > 0:
                 logger.info("\n************** %s - stdout **************", hostname)
-                logger.info(replies[i].stdout)
-            if len(replies[i].stderr) > 0:
+                logger.info(reply.stdout)
+            if len(reply.stderr) > 0:
                 logger.error("\n~~~~~~~~~~~~~~ %s - stderr ~~~~~~~~~~~~~~", hostname)
-                logger.error(replies[i].stderr)
-            logger.info("Exit-code of %s = %s", hostname, replies[i].exited)
+                logger.error(reply.stderr)
+            logger.info("Exit-code of %s = %s", hostname, reply.exited)
 
     @staticmethod
     def _thread_put(
@@ -405,10 +403,10 @@ class Herd:
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
-            if not isinstance(replies.get(i), Result):
-                continue
             hostname = self.hostnames[cnx.host]
-            if replies[i].exited > 0:
+            if not isinstance(replies.get(hostname), Result):
+                continue
+            if abs(replies[hostname].exited) != 0:
                 logger.error(
                     "remote file '%s' does not exist on node %s",
                     src_path,
@@ -436,7 +434,9 @@ class Herd:
         logger.debug("  .. threads started - will wait until finished")
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
-            if replies[i].exited > 0:
+            if not isinstance(replies.get(hostname), Result):
+                continue
+            if replies[hostname].exited != 0:
                 continue
             threads[i].join()  # timeout=10.0
             if threads[i].is_alive():
@@ -457,7 +457,7 @@ class Herd:
         return failed_retrieval
 
     def find_consensus_time(self) -> tuple[datetime, float]:
-        """Finds a start time in the future when all nodes should start service
+        """Find a start time in the future when all nodes should start service
 
         In order to run synchronously, all nodes should start at the same time.
         This is achieved by querying all nodes to check any large time offset,
@@ -467,12 +467,14 @@ class Herd:
         # Get the current time on each target node
         replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
+        if len(ts_nows) == 0:
+            raise RuntimeError("No active hosts found to synchronize.")
         ts_max = max(ts_nows)
         ts_min = min(ts_nows)
         ts_diff = ts_max.timestamp() - ts_min.timestamp()
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
-            raise Exception(
+            raise RuntimeError(
                 f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
             )
         if ts_max.tzinfo is None:
@@ -487,7 +489,7 @@ class Herd:
         task: Path | ShpModel,
         remote_path: Path | str = "/etc/shepherd/config.yaml",
     ) -> None:
-        """transfers shepherd tasks to the group of hosts / sheep.
+        """Transfer shepherd tasks to the group of hosts / sheep.
 
         Rolls out a configuration file according to the given command and parameters
         service.
@@ -531,7 +533,7 @@ class Herd:
 
     @validate_call
     def check_status(self, *, warn: bool = False) -> bool:
-        """Returns true as long as one instance is still measuring
+        """Return true as long as one instance is still measuring
 
         :param warn:
         :return: True is one node is still active
@@ -539,10 +541,11 @@ class Herd:
         replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd")
         active = False
 
-        for i, cnx in enumerate(self.group):
-            if not isinstance(replies.get(i), Result):
+        for cnx in self.group:
+            hostname = self.hostnames[cnx.host]
+            if not isinstance(replies.get(hostname), Result):
                 continue
-            if replies[i].exited != 3:
+            if replies[hostname].exited != 3:
                 active = True
                 if warn:
                     logger.warning(
@@ -558,19 +561,19 @@ class Herd:
         return active
 
     def start_measurement(self) -> int:
-        """Starts shepherd service on the group of hosts."""
+        """Start shepherd service on the group of hosts."""
         if self.check_status(warn=True):
             logger.info("-> won't start while shepherd-instances are active")
             return 1
 
         replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
         self.print_output(replies)
-        return max([reply.exited for reply in replies.values()])
+        return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
-        exit_code = max([reply.exited for reply in replies.values()])
+        exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         logger.info("Shepherd was forcefully stopped")
         if exit_code > 0:
             logger.debug("-> max exit-code = %d", exit_code)
@@ -585,7 +588,7 @@ class Herd:
         else:
             replies = self.run_cmd(sudo=True, cmd="poweroff")
             logger.info("Command for powering off nodes was issued")
-        return max([reply.exited for reply in replies.values()])
+        return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     @validate_call
     def await_stop(self, timeout: int = 30) -> bool:
@@ -598,7 +601,7 @@ class Herd:
 
     @validate_call
     def inventorize(self, output_path: Path) -> bool:
-        """Collects information about the hosts, including the herd-server,
+        """Collect information about the hosts, including the herd-server,
         return True on failure
         """
         if output_path.is_file():
@@ -608,7 +611,7 @@ class Herd:
         file_path = Path("/var/shepherd/inventory.yaml")
         self.run_cmd(
             sudo=True,
-            cmd=f"shepherd-sheep inventorize --output_path {file_path.as_posix()}",
+            cmd=f"shepherd-sheep inventorize --output-path {file_path.as_posix()}",
         )
         server_inv = Inventory.collect()
         output_path = Path(output_path)
@@ -625,6 +628,37 @@ class Herd:
         )
         # TODO: best case - add all to one file or a new inventories-model?
 
+    def resync(self) -> int:
+        """Get current time via ntp and restart PTP on each sheep."""
+        commands = [
+            "systemctl stop phc2sys@eth0",
+            "systemctl stop ptp4l@eth0",
+            "ntpdate -s time.nist.gov",
+            "systemctl start phc2sys@eth0",
+            "systemctl start ptp4l@eth0",
+        ]
+        exit_code = 0
+        for command in commands:
+            ret = self.run_cmd(sudo=True, cmd=command)
+            self.print_output(ret, verbose=True)
+            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
+
+        # Get the current time on each target node
+        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        self.print_output(replies_date, verbose=True)
+        # calc diff
+        ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies_date.values()]
+        if len(ts_nows) == 0:
+            raise RuntimeError("No active hosts found to synchronize.")
+        ts_max = max(ts_nows)
+        ts_min = min(ts_nows)
+        ts_diff = ts_max.timestamp() - ts_min.timestamp()
+        if ts_diff > 5:
+            logger.error("Timediff after resync is too large (%d s)", ts_diff)
+            return 1
+        logger.info("Timediff is OK (%d s)", ts_diff)
+        return exit_code
+
     @validate_call
     def run_task(self, config: Path | ShpModel, *, attach: bool = False) -> int:
         if attach:
@@ -632,7 +666,7 @@ class Herd:
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
-            exit_code = max([reply.exited for reply in replies.values()])
+            exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
             if exit_code:
                 logger.error("Running Task failed - will exit now!")
             self.print_output(replies, verbose=True)

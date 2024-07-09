@@ -1,14 +1,17 @@
 ---
-- name: Install ptp package
+- name: APT - Update Cache
   ansible.builtin.apt:
     update_cache: true
+    cache_valid_time: 3600
+
+- name: Install ptp package
+  ansible.builtin.apt:
     name: linuxptp
     state: present
   tags: ptp
 
 - name: Install ntpdate package
   ansible.builtin.apt:
-    update_cache: true
     name: ntpdate
     state: present
   tags: ptp

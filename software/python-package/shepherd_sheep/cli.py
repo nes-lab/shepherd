@@ -23,7 +23,6 @@ from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.inventory import Inventory
 from typing_extensions import Unpack
 
-from . import Launcher
 from . import __version__
 from . import run_programmer
 from . import run_task
@@ -34,6 +33,7 @@ from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
+from .sysfs_interface import disable_ntp
 from .sysfs_interface import reload_kernel_module
 
 # allow importing shepherd on x86 - for testing
@@ -62,7 +62,7 @@ except ModuleNotFoundError:
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    log.warning("Aborted!")
+    log.warning("Exiting!")
     sys.exit(0)
 
 
@@ -153,6 +153,8 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str) ->
     default=Path("/etc/shepherd/config.yaml"),
 )
 def run(config: Path) -> None:
+    reload_kernel_module()  # more reliable with fresh states
+    disable_ntp()
     failed = run_task(config)
     if failed:
         log.debug("Tasks signaled an error (failed).")
@@ -250,16 +252,10 @@ def rpc(port: int | None) -> None:
     help="Path to resulting YAML-formatted calibration data file",
 )
 def inventorize(output_path: Path) -> None:
+    output_path = Path(output_path)
     sheep_inv = Inventory.collect()
     sheep_inv.to_file(path=output_path, minimal=True)
-
-
-@cli.command(short_help="Start shepherd launcher")
-@click.option("--led", "-l", type=click.INT, default=22)
-@click.option("--button", "-b", type=click.INT, default=65)
-def launcher(led: int, button: int) -> None:
-    with Launcher(button, led) as launch:
-        launch.run()
+    log.info("Written inventory to %s", output_path.as_posix())
 
 
 @cli.command(

@@ -1,0 +1,39 @@
+# ubuntu 24.4 has no kernel 4.19 in apt-sources BUT also does not boot from it if added!
+#  - maintenance_kernel_pin functionality was moved to sheep-role
+
+- name: Uname - Get Kernel-Version
+  ansible.builtin.command: 'uname --kernel-version'
+  register: kernelversion
+  changed_when: false
+
+- name: Temporarily add back rcn-ee-repo for old ubuntu (for ti-version of linux 4.19)
+  ansible.builtin.lineinfile:
+    dest: "/etc/apt/sources.list.d/beagle.list"
+    regexp: "#?deb .*.rcn-ee.*.jammy.*$"
+    line: "deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ jammy main"
+    state: present
+  when: '"noble" in kernelversion.stdout.strip()'
+  # Note: shepherd currently needs kernel 4.19,
+  #   - distros that have it: focal/20.04, jammy/22.04, bookworm/12.5
+  #   - distros WITHOUT: noble/24.04
+  #   - you can check if "image-4.19" is in https://repos.rcn-ee.com/ubuntu/log/noble.log
+
+- name: APT - update cache & install hardcoded kernel image
+  ansible.builtin.apt:
+    name: "linux-image-{{ maintenance_kernel_pin }}"
+    state: present
+  when: kernelrelease.stdout.strip() != maintenance_kernel_pin
+
+- name: APT - update cache & install hardcoded kernel headers
+  ansible.builtin.apt:
+    name: "linux-headers-{{ maintenance_kernel_pin }}"
+    state: present
+  when: kernelrelease.stdout.strip() != maintenance_kernel_pin
+
+- name: Remove temp-added rcn-ee-repo for old ubuntu
+  ansible.builtin.lineinfile:
+    dest: "/etc/apt/sources.list.d/beagle.list"
+    regexp: "#?deb .*.rcn-ee.*.jammy.*$"
+    line: "# deb [arch=armhf signed-by=/usr/share/keyrings/rcn-ee-archive-keyring.gpg] http://repos.rcn-ee.com/ubuntu/ jammy main"
+    state: present
+  when: '"noble" in kernelversion.stdout.strip()'

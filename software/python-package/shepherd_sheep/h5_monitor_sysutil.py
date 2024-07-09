@@ -7,8 +7,8 @@ import numpy as np
 import psutil
 from shepherd_core import Compression
 
+from .h5_monitor_abc import Monitor
 from .logger import log
-from .monitor_abc import Monitor
 
 
 class SysUtilMonitor(Monitor):
@@ -47,9 +47,9 @@ class SysUtilMonitor(Monitor):
             chunks=(self.increment, 4),
         )
         self.data["io"].attrs["unit"] = "n"
-        self.data["io"].attrs[
-            "description"
-        ] = "io_read [n], io_write [n], io_read [byte], io_write [byte]"
+        self.data["io"].attrs["description"] = (
+            "io_read [n], io_write [n], io_read [byte], io_write [byte]"
+        )
         self.data.create_dataset(
             name="net",
             shape=(self.increment, 2),
@@ -62,7 +62,7 @@ class SysUtilMonitor(Monitor):
 
         if psutil.disk_io_counters() is None:
             log.info(
-                "[%s] will not start - fake or virtual hardware detected",
+                "[%s] will not start - mocked or virtual hardware detected",
                 type(self).__name__,
             )
         else:
@@ -71,7 +71,7 @@ class SysUtilMonitor(Monitor):
             self.thread = threading.Thread(
                 target=self.thread_fn,
                 daemon=True,
-                name="SYSMon",
+                name="Shp.H5Mon.Sys",
             )
             self.thread.start()
 

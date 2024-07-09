@@ -36,13 +36,13 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.39.0
+    rev: v0.41.0
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.16
+    rev: v0.18
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -62,7 +62,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.3.7'
+    rev: 'v0.5.1'
     hooks:
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
@@ -72,26 +72,26 @@ repos:
 # TODO: disable, until bug is resolved, maybe connected to
 # https://github.com/ansible/ansible-lint/issues/3636
 #  - repo: https://github.com/ansible-community/ansible-lint.git
-#    rev: v6.22.1
+#    rev: v24.6.1
 #    hooks:
 #      - id: ansible-lint
 
-#  - repo: https://github.com/rstcheck/rstcheck
-#    rev: v6.1.2
-#    hooks:
-#      - id: rstcheck
-#        additional_dependencies: [ "rstcheck[sphinx,toml]" ]
-#        args: [ "--report-level=WARNING" ]  # otherwise there is too much chatter
+  - repo: https://github.com/rstcheck/rstcheck
+    rev: v6.2.4
+    hooks:
+      - id: rstcheck
+        additional_dependencies: ["rstcheck[sphinx,toml]"]
+        args: ["--report-level=WARNING"]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
         additional_dependencies: ["tomli"]  # for py<3.11
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v17.0.6
+    rev: v18.1.8
     hooks:
       - id: clang-format
         types_or: [c++, c]
@@ -114,7 +114,9 @@ repos:
           - "--suppress=variableScope"
           - "--suppress=unreadVariable"
           - "--suppress=missingInclude"
+          - "--suppress=missingIncludeSystem"
           - "--suppress=unmatchedSuppression"
+          - "--suppress=constParameterCallback"
 
 ########################## BETA SECTION #############################
 

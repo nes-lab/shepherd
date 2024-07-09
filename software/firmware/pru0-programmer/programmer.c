@@ -15,7 +15,7 @@
 
 /* Writes block from hex file to target via driver */
 int write_to_target(volatile struct SharedMem *const shared_mem, device_driver_t *drv,
-                    ihex_mem_block_t *block)
+                    const ihex_mem_block_t *const block)
 {
     uint8_t *src     = block->data;
     uint32_t addr    = block->address;

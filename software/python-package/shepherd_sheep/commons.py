@@ -33,9 +33,31 @@ MSG_DBG_VSRC_DRAIN = 0xAE
 MSG_DBG_FN_TESTS = 0xAF
 MSG_DBG_VSRC_HRV_P_INP = 0xB1
 
-MSG_DEP_ERR_INCMPLT = 0xE3
-MSG_DEP_ERR_INVLDCMD = 0xE4
-MSG_DEP_ERR_NOFREEBUF = 0xE5
+# TODO: these 9 lines below are replaced by the following dict
+MSG_ERROR = 0xE0
+MSG_ERR_MEMCORRUPTION = 0xE1
+MSG_ERR_BACKPRESSURE = 0xE2
+MSG_ERR_INCMPLT = 0xE3  # TODO: could be removed, not possible anymore
+MSG_ERR_INVLDCMD = 0xE4
+MSG_ERR_NOFREEBUF = 0xE5
+MSG_ERR_TIMESTAMP = 0xE6
+MSG_ERR_SYNC_STATE_NOT_IDLE = 0xE7
+MSG_ERR_VALUE = 0xE8
+
+# NOTE: below messages are exclusive to kernel space
+MSG_STATUS_RESTARTING_ROUTINE = 0xF0
+
+pru_errors: dict[int, str] = {
+    0xE0: "General (unspecified) PRU-error [MSG_ERROR]",
+    0xE1: "PRU received a faulty msg.id from kernel [MSG_ERR_MEMCORRUPTION]",
+    0xE2: "PRUs msg-buffer to kernel still full [MSG_ERR_BACKPRESSURE]",
+    0xE3: "PRU got an incomplete buffer [MSG_ERR_INCMPLT]",
+    0xE4: "PRU received an invalid command [MSG_ERR_INVLDCMD]",
+    0xE5: "PRU ran out of buffers [MSG_ERR_NOFREEBUF]",
+    0xE6: "PRU received a faulty timestamp [MSG_ERR_TIMESTAMP]",
+    0xE7: "PRUs sync-state not idle at host interrupt [MSG_ERR_SYNC_STATE_NOT_IDLE]",
+    0xE8: "PRUs msg-content failed test [MSG_ERR_VALUE]",
+}
 
 # fmt: off
 # ruff: noqa: E241, E501

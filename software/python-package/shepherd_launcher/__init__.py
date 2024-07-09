@@ -6,15 +6,25 @@ Relies on systemd service.
 
 """
 
+import logging
 import os
-import threading
+import signal
+import sys
 import time
 from contextlib import suppress
+from types import FrameType
 from types import TracebackType
 
 from typing_extensions import Self
 
-from .logger import log
+__version__ = "0.8.0"
+
+# Top-Level Package-logger
+log = logging.getLogger("ShpLauncher")
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.DEBUG)
+log.propagate = 0
+
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
@@ -22,53 +32,58 @@ with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
 
+def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
+    log.warning("Exiting!")
+    sys.exit(0)
+
+
 class Launcher:
     """Stores data coming from PRU's in HDF5 format.
 
     Args:
-        pin_button (int): Pin number where button is connected. Must be
+        pin_button (int): pin-number where button is connected. Must be
             configured as input with pull up and connected against ground
-        pin_led (int): Pin number of LED for displaying launcher status
+        pin_led (int): pin-number of LED for displaying launcher status
         service_name (str): Name of shepherd systemd service
 
     """
 
     def __init__(
         self,
-        pin_button: int = 65,
-        pin_led: int = 22,
-        pin_ack_watchdog: int = 68,
-        service_name: str = "shepherd",
+        pin_button: int,
+        pin_led: int,
+        service_name: str,
     ) -> None:
+        log.debug(
+            "Initializing Launcher v%s for '%s' (pin_button = %d, pin_led = %d)",
+            __version__,
+            service_name,
+            pin_button,
+            pin_led,
+        )
         self.pin_button = pin_button
         self.pin_led = pin_led
-        self.pin_ack_watchdog = pin_ack_watchdog
         self.service_name = service_name
 
     def __enter__(self) -> Self:
         self.gpio_led = GPIO(self.pin_led, "out")
         self.gpio_button = GPIO(self.pin_button, "in")
-        self.gpio_ack_watchdog = GPIO(self.pin_ack_watchdog, "out")
         self.gpio_button.edge = "falling"
-        log.debug("configured gpio")
-        self.wd_event = threading.Event()
-        self.wd_interval = 600
-        self.wd_thread = threading.Thread(target=self._thread_ack_watchdog, daemon=True)
-        self.wd_thread.start()
+        log.debug("Configured GPIO")
 
         sys_bus = dbus.SystemBus()
         systemd1 = sys_bus.get_object(
             "org.freedesktop.systemd1",
             "/org/freedesktop/systemd1",
         )
-        self.manager = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
+        self.sd_man = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
 
-        shepherd_object = self.manager.LoadUnit(f"{ self.service_name }.service")
-        self.shepherd_proxy = sys_bus.get_object(
+        sd_object = self.sd_man.LoadUnit(f"{ self.service_name }.service")
+        self.sd_service = sys_bus.get_object(
             "org.freedesktop.systemd1",
-            str(shepherd_object),
+            str(sd_object),
         )
-        log.debug("configured dbus for systemd")
+        log.debug("Configured dbus for systemd")
         return self
 
     def __exit__(
@@ -78,7 +93,6 @@ class Launcher:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.wd_event.set()
         self.gpio_led.close()
         self.gpio_button.close()
 
@@ -91,20 +105,20 @@ class Launcher:
         """
         try:
             while True:
-                log.info("waiting for falling edge..")
+                log.info("Waiting for falling edge..")
                 self.gpio_led.write(True)
-                if not self.gpio_button.poll():
+                if not self.gpio_button.poll(timeout=None):
                     # NOTE poll is suspected to exit after ~ 1-2 weeks running
-                    #      -> fills mmc with random measurement
-                    # TODO observe behavior, hopefully this change fixes the bug
+                    #      -> fills mmc with random measurement otherwise
+                    log.debug("Button.Poll() exited without detecting edge")
                     continue
                 self.gpio_led.write(False)
-                log.debug("edge detected")
+                log.debug("Edge detected")
                 if not self.get_state():
                     time.sleep(0.25)
-                    if self.gpio_button.poll(timeout=5):
-                        log.debug("falling edge detected")
-                        log.info("shutdown requested")
+                    if self.gpio_button.poll(timeout=2):
+                        log.debug("2nd falling edge detected")
+                        log.info("Shutdown requested")
                         self.initiate_shutdown()
                         self.gpio_led.write(False)
                         time.sleep(3)
@@ -126,7 +140,7 @@ class Launcher:
         ts_end = time.time() + timeout
 
         while True:
-            systemd_state = self.shepherd_proxy.Get(
+            systemd_state = self.sd_service.Get(
                 "org.freedesktop.systemd1.Unit",
                 "ActiveState",
                 dbus_interface="org.freedesktop.DBus.Properties",
@@ -138,7 +152,7 @@ class Launcher:
             if time.time() > ts_end:
                 raise TimeoutError("Timed out waiting for service state")
 
-        log.debug("service ActiveState: %s", systemd_state)
+        log.debug("Service ActiveState: %s", systemd_state)
 
         if systemd_state == "active":
             return True
@@ -160,17 +174,17 @@ class Launcher:
             return None
 
         if active_state:
-            log.info("stopping service")
-            self.manager.StopUnit("shepherd.service", "fail")
+            log.info("Stopping service")
+            self.sd_man.StopUnit("shepherd.service", "fail")
         else:
-            log.info("starting service")
-            self.manager.StartUnit("shepherd.service", "fail")
+            log.info("Starting service")
+            self.sd_man.StartUnit("shepherd.service", "fail")
 
         time.sleep(1)
 
         new_state = self.get_state()
         if new_state != requested_state:
-            raise Exception("state didn't change")
+            raise Exception("State didn't change")
 
         return new_state
 
@@ -181,30 +195,30 @@ class Launcher:
             timeout (int): Number of seconds to wait before powering off
                 system
         """
-        log.debug("initiating shutdown routine..")
+        log.debug("Initiating shutdown routine..")
         time.sleep(0.25)
         for _ in range(timeout):
             if self.gpio_button.poll(timeout=0.5):
-                log.debug("edge detected")
-                log.info("shutdown canceled")
+                log.debug("Edge detected")
+                log.info("Shutdown canceled")
                 return
             self.gpio_led.write(True)
             if self.gpio_button.poll(timeout=0.5):
-                log.debug("edge detected")
-                log.info("shutdown canceled")
+                log.debug("Edge detected")
+                log.info("Shutdown canceled")
                 return
             self.gpio_led.write(False)
         os.sync()
-        log.info("shutting down now")
-        self.manager.PowerOff()
+        log.info("Shutting down now")
+        self.sd_man.PowerOff()
 
-    def _thread_ack_watchdog(self) -> None:
-        """prevent system-reset from watchdog
-        hw-rev2 has a watchdog that can turn on the BB every ~60 min
 
-        """
-        while not self.wd_event.wait(self.wd_interval):
-            self.gpio_ack_watchdog.write(True)
-            self.wd_event.wait(0.002)
-            self.gpio_ack_watchdog.write(False)
-            log.debug("Signaled ACK to Watchdog")
+def main() -> None:
+    signal.signal(signal.SIGTERM, exit_gracefully)
+    signal.signal(signal.SIGINT, exit_gracefully)
+    with Launcher(pin_button=65, pin_led=22, service_name="shepherd") as launch:
+        launch.run()
+
+
+if __name__ == "__main__":
+    main()

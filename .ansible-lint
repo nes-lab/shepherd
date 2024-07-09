@@ -6,11 +6,14 @@ profile: safety
 # and not relative to the CWD of execution. CLI arguments passed to the --exclude
 # option will be parsed relative to the CWD of execution.
 exclude_paths:
+  - .git/
   - .github/workflows/
-  - software/firmware/
-  - software/shepherd-datalib
-  - software/shepherd-webservice
+  - docs/
+  - extra/
+  - hardware/
+  - software/
 
 # Ansible-lint does not fail on warnings from the rules or tags listed below
-warn_list:
-  - syntax-check[specific]
+# warn_list:
+#  - syntax-check[unknown-module]
+#  - syntax-check[specific]

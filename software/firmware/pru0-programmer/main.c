@@ -53,15 +53,15 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
             ring_put(free_buffers_ptr, (uint8_t) msg_in.value[0]);
             return 1U;
         }
-        else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 1))
+        else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
         {
             // pipeline-test for msg-system
-            send_message(shared_mem, MSG_TEST, msg_in.value[0], 0);
+            send_message(shared_mem, MSG_TEST_ROUTINE, msg_in.value[0], 0);
         }
-        else if ((msg_in.type == MSG_TEST) && (msg_in.value[0] == 2))
+        else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 2))
         {
             // pipeline-test for msg-system
-            send_status(shared_mem, MSG_TEST, msg_in.value[0]);
+            send_status(shared_mem, MSG_TEST_ROUTINE, msg_in.value[0]);
         }
         else { send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0); }
     }
@@ -75,8 +75,7 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 
     while (1)
     {
-        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()))
-            ;
+        while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts()));
 
         // Pretrigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
