@@ -10,7 +10,7 @@ from shepherd_data import Writer
 from shepherd_herd.herd_cli import cli
 
 
-@pytest.fixture
+@pytest.fixture()
 def cli_runner() -> CliRunner:
     return CliRunner()
 
@@ -57,12 +57,12 @@ def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> 
     return store_path
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_h5_path(tmp_path: Path) -> Path:
     return generate_h5_file(tmp_path)
 
 
-@pytest.fixture
+@pytest.fixture()
 def local_herd(tmp_path: Path) -> Path:
     # locations copied from herd.cli()
     inventories = [
@@ -82,8 +82,8 @@ def local_herd(tmp_path: Path) -> Path:
     return local_path
 
 
-@pytest.fixture
-def stopped_herd(cli_runner: CliRunner) -> None:
+@pytest.fixture()
+def _stopped_herd(cli_runner: CliRunner) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active

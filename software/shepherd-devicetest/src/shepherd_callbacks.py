@@ -107,7 +107,7 @@ shepherd_state = True
 
 
 def connect_to_node(host: str) -> ShepherdDebug | None:
-    # todo: could also use fabric/connection to start rpc server on node
+    # TODO: could also use fabric/connection to start rpc server on node
     rpc_client = zerorpc.Client(timeout=60, heartbeat=20)
     rpc_client.connect(f"tcp://{host}:4242")
 

@@ -36,7 +36,7 @@ shepherd_modes = {
 
 
 def flatten_list(dl: list) -> list:
-    """small helper FN to convert (multi-dimensional) lists to 1D list
+    """Small helper FN to convert (multi-dimensional) lists to 1D list
 
     Args:
         dl: (multi-dimensional) lists
@@ -317,7 +317,6 @@ def read_dac_aux_voltage_raw() -> int:
     """Reads the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
-
     Returns: voltage as dac_raw
     """
     with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open(encoding="utf-8") as f:

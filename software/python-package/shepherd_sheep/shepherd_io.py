@@ -381,7 +381,7 @@ class ShepherdIO:
         self,
         target: TargetPort | bool | None,
     ) -> None:
-        """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
+        """Choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
         shepherd hw-rev2 has two ports for targets and can switch independently
         between power supplies
@@ -518,7 +518,6 @@ class ShepherdIO:
             TimeoutException: If no message is received within
                 specified timeout
         """
-
         while True:
             msg_type, values = self._get_msg(timeout_n)
             value = values[0]

@@ -8,14 +8,14 @@ from shepherd_herd.herd_cli import cli
 # differences: import _herd, .mark.hardware, shepherd_up / stopped_herd
 
 
-@pytest.fixture
+@pytest.fixture()
 def fw_example() -> Path:
     here = Path(__file__).absolute()
     name = "firmware_nrf52_powered.hex"
     return here.parent / name
 
 
-@pytest.fixture
+@pytest.fixture()
 def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
     with store_path.open("w", encoding="utf-8-sig") as f:

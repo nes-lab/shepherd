@@ -25,7 +25,7 @@ def random_data(length: int) -> np.ndarray:
     return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
-@pytest.fixture
+@pytest.fixture()
 def src_cfg() -> VirtualSourceConfig:
     here = Path(__file__).resolve()
     name = "_test_config_virtsource.yaml"
@@ -33,7 +33,7 @@ def src_cfg() -> VirtualSourceConfig:
     return VirtualSourceConfig.from_file(file_path)
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "record_example.h5"
     with Writer(
@@ -82,7 +82,7 @@ def emulator(
         yield _e
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 def test_emulation(
     writer: Writer,
     shp_reader: CoreReader,
@@ -105,7 +105,7 @@ def test_emulation(
         _, _ = emulator.get_buffer()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up: None) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
@@ -132,7 +132,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up: None) -> None:
         )
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 def test_target_pins(shepherd_up: None) -> None:
     with ShepherdDebug() as shepherd_io:

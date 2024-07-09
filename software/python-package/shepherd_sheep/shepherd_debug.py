@@ -101,7 +101,7 @@ class ShepherdDebug(ShepherdIO):
         return values[0]
 
     def gpi_read(self) -> int:
-        """issues a pru-read of the gpio-registers that monitor target-communication
+        """Issues a pru-read of the gpio-registers that monitor target-communication
 
         Returns: an int with the corresponding bits set
                 -> see bit-definition in commons.py

@@ -48,7 +48,7 @@ class PruRecorder(Monitor):
         super().__exit__()
 
     def write(self, buffer: DataBuffer) -> None:
-        """this data allows to
+        """This data allows to
         - reconstruct timestamp-stream later (runtime-optimization, 33% less load)
         - identify critical pru0-timeframes
         """

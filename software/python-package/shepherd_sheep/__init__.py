@@ -77,7 +77,6 @@ def run_harvester(cfg: HarvestTask) -> bool:
         pass
     except ShepherdIOError:
         log.exception("Caught an unrecoverable error")
-        pass
     stack.close()
     return failed
 
@@ -95,7 +94,6 @@ def run_emulator(cfg: EmulationTask) -> bool:
         pass
     except ShepherdIOError:
         log.exception("Caught an unrecoverable error")
-        pass
     stack.close()
     return failed
 

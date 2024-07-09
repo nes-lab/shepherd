@@ -38,7 +38,7 @@ class LogicTrace:
         glitch_ns: int = 0,
     ) -> Self:
         if not path.exists():
-            raise FileNotFoundError()
+            raise FileNotFoundError
         if path.with_suffix(".pkl").exists():
             path = path.with_suffix(".pkl")
             # logger.debug("File")
@@ -160,7 +160,7 @@ class LogicTrace:
 
     @staticmethod
     def calc_expected_value(data: np.ndarray, *, mode_log10: bool = False) -> float:
-        """return expected duration (=10**X)"""
+        """Return expected duration (=10**X)"""
         # data with timestamp!
         if data.shape[0] < 100:
             raise ValueError("Function needs more datapoints")

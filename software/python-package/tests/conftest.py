@@ -112,6 +112,6 @@ def shepherd_down(fake_fs: FakeFilesystem | None) -> None:
         remove_kernel_module()
 
 
-@pytest.fixture
+@pytest.fixture()
 def cli_runner() -> CliRunner:
     return CliRunner()

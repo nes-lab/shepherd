@@ -10,7 +10,7 @@ from shepherd_core.vsource import VirtualSourceModel
 from shepherd_sheep import ShepherdDebug
 
 
-@pytest.fixture
+@pytest.fixture()
 def src_cfg(request: pytest.FixtureRequest) -> VirtualSourceConfig:
     marker = request.node.get_closest_marker("src_name")
     src_name = None if marker is None else marker.args[0]
@@ -27,7 +27,7 @@ def src_cfg(request: pytest.FixtureRequest) -> VirtualSourceConfig:
     raise AssertionError
 
 
-@pytest.fixture
+@pytest.fixture()
 def cal_cape() -> CalibrationCape:
     return CalibrationCape()
 
@@ -51,7 +51,7 @@ def pru_vsource(
         yield _d
 
 
-@pytest.fixture
+@pytest.fixture()
 def pyt_vsource(
     src_cfg: VirtualSourceConfig,
     cal_cape: CalibrationCape,
@@ -66,7 +66,7 @@ def pyt_vsource(
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def reference_vss() -> dict:
     # keep in sync with "_test_config_virtsource.yaml"
     return {
@@ -86,7 +86,7 @@ def difference_percent(val1: float, val2: float, offset: float) -> float:
     return round(100 * abs((val1 + offset) / (val2 + offset) - 1), 3)
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.src_name("./_test_config_virtsource.yaml")
 def test_vsource_add_charge(
     pru_vsource: ShepherdDebug,
@@ -143,7 +143,7 @@ def test_vsource_add_charge(
     assert deviation_rel < 1.0  # %
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.src_name("./_test_config_virtsource.yaml")
 def test_vsource_drain_charge(
     pru_vsource: ShepherdDebug,
@@ -221,7 +221,7 @@ def test_vsource_drain_charge(
     assert V_out_pyt_raw < 1
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.src_name("direct")  # easiest case: v_inp == v_out, current not
 def test_vsource_direct(
     pru_vsource: ShepherdDebug,
@@ -239,7 +239,7 @@ def test_vsource_direct(
         assert difference_percent(V_pyt_mV, voltage_mV, 50) < 3
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.src_name("diode+capacitor")
 def test_vsource_diodecap(
     pru_vsource: ShepherdDebug,

@@ -1,2 +1,2 @@
-# TODO functions:
+# TODO: functions
 #   all

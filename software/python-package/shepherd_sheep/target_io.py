@@ -85,7 +85,6 @@ class TargetIO:
         Args:
             num: number of pin, in reference to list target_pins
         """
-
         for index in range(self.pin_count):
             self.set_pin_state(index, index == num)
 

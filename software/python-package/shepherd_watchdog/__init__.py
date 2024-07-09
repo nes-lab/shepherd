@@ -69,7 +69,7 @@ class Watchdog:
         self.gpio_ack.close()
 
     def run(self) -> None:
-        """prevent system-reset from watchdog
+        """Prevent system-reset from watchdog
         cape-rev2 has a watchdog that can turn on the BB every ~60 min
 
         """

@@ -188,7 +188,7 @@ class Profile:
             data = data[self.res_filters[component]]
         filter_str = "_filtered" if filtered else ""
         c_gain = self.cals[component].current.gain
-        x = 1e3 * data.v_ref_V  # todo: transition not finished, same with above FN
+        x = 1e3 * data.v_ref_V  # TODO: transition not finished, same with above FN
         y = []
         stddev = []
         vol = []

@@ -70,7 +70,6 @@ class EEPROM:
         extra_arg: int = 0,
     ) -> None:
         os.close(self.fd)
-        pass
 
     def _read(self, address: int, n_bytes: int) -> bytes:
         """Reads a given number of bytes from given address.

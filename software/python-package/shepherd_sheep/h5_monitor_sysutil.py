@@ -98,7 +98,7 @@ class SysUtilMonitor(Monitor):
         super().__exit__()
 
     def thread_fn(self) -> None:
-        """captures state of system in a fixed interval
+        """Captures state of system in a fixed interval
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
