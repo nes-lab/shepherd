@@ -49,7 +49,7 @@
 - add current hardware design files
 - major overhaul documentation
 - **tested (fully)**: pytest sheep, pytest herd, ansible install
-- ready-to-use image will be created - look in
+- ready-to-use image will be created - look in getting-started guide
 
 
 ## 0.7.1
