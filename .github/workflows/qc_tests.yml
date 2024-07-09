@@ -36,10 +36,6 @@ jobs:
       - name: Run Pre-Commit Tests 🧪
         uses: pre-commit/action@v3.0.1
 
-      - name: Show content
-        run: "ls -l ."
-        working-directory: "./software/python-package"
-
       - name: Install the shepherd py-package 🐑
         run: "pip3 install .[test]"
         working-directory: "./software/python-package"
