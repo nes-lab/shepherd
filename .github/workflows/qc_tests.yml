@@ -37,7 +37,7 @@ jobs:
         uses: pre-commit/action@v3.0.1
 
       - name: Show content
-        run: "ll ."
+        run: "ls -l ."
         working-directory: "./software/python-package"
 
       - name: Install the shepherd py-package 🐑
