@@ -137,7 +137,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
 def inventorize(ctx: click.Context, output_path: Path) -> None:
     with ctx.obj["herd"] as herd:
         failed = herd.inventorize(output_path)
-    sys.exit(failed)
+    sys.exit(int(failed))
 
 
 @cli.command(
@@ -400,7 +400,7 @@ def emulate(
 )
 @click.pass_context
 def start(ctx: click.Context) -> None:
-    ret = 0
+    ret: int = 0
     with ctx.obj["herd"] as herd:
         if herd.check_status():
             log.info("Shepherd still active, will skip this command!")
@@ -416,7 +416,7 @@ def start(ctx: click.Context) -> None:
 @cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
 def status(ctx: click.Context) -> None:
-    ret = 0
+    ret: int = 0
     with ctx.obj["herd"] as herd:
         if herd.check_status():
             log.info("Shepherd still active!")
@@ -534,7 +534,7 @@ def retrieve(
             separate=separate,
             delete_src=delete,
         )
-    sys.exit(failed)
+    sys.exit(int(failed))
 
 
 # #############################################################################
