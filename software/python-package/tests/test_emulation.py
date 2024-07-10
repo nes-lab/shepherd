@@ -70,7 +70,7 @@ def shp_reader(data_h5: Path) -> Generator[CoreReader, None, None]:
 
 @pytest.fixture()
 def emulator(
-        _shepherd_up: None,
+    _shepherd_up: None,
     data_h5: Path,
     src_cfg: VirtualSourceConfig,
 ) -> Generator[ShepherdEmulator, None, None]:

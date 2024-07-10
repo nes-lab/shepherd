@@ -34,7 +34,7 @@ def cal_cape() -> CalibrationCape:
 
 @pytest.fixture()
 def pru_vsource(
-        _shepherd_up: None,
+    _shepherd_up: None,
     src_cfg: VirtualSourceConfig,
     cal_cape: CalibrationCape,
     dtype_in: EnergyDType = EnergyDType.ivsample,

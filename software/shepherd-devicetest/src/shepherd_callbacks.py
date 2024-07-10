@@ -141,7 +141,7 @@ def connect_button_callback(sender, element_data, user_data) -> None:
         shepherd_io = None
         logger.debug("Disconnected from Host '%s'", host)
     if check_connection():
-        print("Connected to Host '%s'", host)
+        logger.debug("Connected to Host '%s'", host)
         # shepherd_cal = shepherd_io._cal.from_default()
     update_gui_elements()
 

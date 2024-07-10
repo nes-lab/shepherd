@@ -53,7 +53,7 @@ def plot_calibration(
             ax.set_xlabel(r"raw value", fontsize=10)
             ax.set_ylabel(r"SI-Unit", fontsize=10)
             ax.set_title(f"Calibration-Check for {component} - {channel}")
-            ax.grid(True)
+            ax.grid(visible=True)
             fig.set_figwidth(11)
             fig.set_figheight(10)
             fig.tight_layout()

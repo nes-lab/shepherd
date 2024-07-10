@@ -1,5 +1,5 @@
-"""
-Worst Case (RNG) test
+"""Worst Case (RNG) test.
+
 - Variables: compression, randomness of data
 - old: current design
 - new: eval h5py.directRead()/Write() feature
@@ -138,6 +138,7 @@ def generate_harvest(
     path: Path,
     duration: int,
     compression: Compression,
+    *,
     random: bool = True,
 ) -> None:
     rng = np.random.default_rng()

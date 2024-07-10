@@ -1,6 +1,5 @@
-"""
-shepherd_testing_gui
-~~~~~
+"""GUI to test the functionality of the shepherd cape.
+
 dearPyGui-based debug and test utility for controlling hw-functions of a shepherd node
 remotely.
 

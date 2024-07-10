@@ -73,7 +73,7 @@ def _shepherd_down(fake_fs: FakeFilesystem | None) -> None:
 
 @pytest.fixture()
 def _shepherd_up(
-        _shepherd_down: None,
+    _shepherd_down: None,
     fake_fs: FakeFilesystem | None,
 ) -> Generator[None, None, None]:
     if fake_fs is not None:

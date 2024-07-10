@@ -16,8 +16,8 @@ from typing_extensions import Unpack
 
 from . import __version__
 from .herd import Herd
+from .logger import activate_verbosity
 from .logger import logger as log
-from .logger import set_verbosity
 
 # ruff: noqa: FBT001
 
@@ -79,12 +79,12 @@ def cli(
     verbose: bool,
     version: bool,
 ) -> None:
-    """A primary set of options to configure how to interface the herd."""
+    """Entry for command line with settings to interface the herd."""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
-        set_verbosity()
+        activate_verbosity()
 
     if version:
         log.info("Shepherd-Cal v%s", __version__)
@@ -122,7 +122,7 @@ def poweroff(ctx: click.Context, restart: bool) -> None:
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
-    """Run COMMAND on the shell-"""
+    """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
         herd.print_output(replies, verbose=True)
@@ -138,7 +138,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
 )
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
-    """Collects information about the observer-hosts -> saved to local file"""
+    """Collect information about the observer-hosts -> saved to local file."""
     with ctx.obj["herd"] as herd:
         failed = herd.inventorize(output_path)
     sys.exit(int(failed))
@@ -150,7 +150,7 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
 )
 @click.pass_context
 def fix(ctx: click.Context) -> None:
-    """Reloads the shepherd-kernel-module on each sheep."""
+    """Reload the shepherd-kernel-module on each sheep."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(
             sudo=True,
@@ -167,8 +167,8 @@ def fix(ctx: click.Context) -> None:
 )
 @click.pass_context
 def resync(ctx: click.Context) -> None:
-    """Gets current time and restarts PTP on each sheep."""
-    set_verbosity()
+    """Get current time and restarts PTP on each sheep."""
+    activate_verbosity()
     with ctx.obj["herd"] as herd:
         exit_code = herd.resync()
     sys.exit(exit_code)
@@ -181,7 +181,7 @@ def resync(ctx: click.Context) -> None:
 @click.argument("duration", type=click.INT, default=30)
 @click.pass_context
 def blink(ctx: click.Context, duration: int) -> None:
-    """Helps to identify Observers by flashing LEDs near Targets (IO, EMU)."""
+    """Help to identify Observers by flashing LEDs near Targets (IO, EMU)."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(
             sudo=True,
@@ -450,7 +450,7 @@ def status(ctx: click.Context) -> None:
 @cli.command(short_help="Stops any harvest/emulation or other processes blocking the sheep")
 @click.pass_context
 def stop(ctx: click.Context) -> None:
-    """Stops any harvest/emulation or other processes blocking the sheep."""
+    """Stop any harvest/emulation or other processes blocking the sheep."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.stop_measurement()
     log.info("Shepherd stopped.")

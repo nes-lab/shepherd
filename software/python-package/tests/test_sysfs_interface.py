@@ -112,8 +112,8 @@ def test_set_mode_fail_offline() -> None:
         sysfs_interface.write_mode("harvester")
 
 
-@pytest.mark.usefixtures(_shepherd_running)
-def test_set_mode_fail_invalid(_shepherd_up) -> None:
+@pytest.mark.usefixtures(_shepherd_up)
+def test_set_mode_fail_invalid() -> None:
     with pytest.raises(sysfs_interface.SysfsInterfaceError):
         sysfs_interface.write_mode("invalidmode")
 

@@ -152,8 +152,12 @@ class ShepherdHarvester(ShepherdIO):
             log.debug("Duration = %s (forced runtime)", duration_s)
 
         # Heartbeat-Message
+        buffer_period_s = self.samples_per_buffer / self.samplerate_sps
         prog_bar = tqdm(
-            total=duration_s, desc="Measurement", mininterval=2, unit="s", unit_scale=0.1
+            total=duration_s,
+            desc="Measurement",
+            mininterval=2,
+            unit="s",
         )
 
         while True:
@@ -164,7 +168,7 @@ class ShepherdHarvester(ShepherdIO):
             if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
-            prog_bar.update(n=1)
+            prog_bar.update(n=buffer_period_s)
 
             try:
                 self.writer.write_buffer(hrv_buf)

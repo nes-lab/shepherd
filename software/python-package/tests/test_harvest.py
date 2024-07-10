@@ -31,7 +31,7 @@ def writer(tmp_path: Path, mode: str) -> Generator[Writer, None, None]:
 
 @pytest.fixture()
 def harvester(
-        _shepherd_up: None,
+    _shepherd_up: None,
     mode: str,
     tmp_path: Path,
 ) -> Generator[ShepherdHarvester, None, None]:
@@ -60,7 +60,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
         harvester.return_buffer(idx)
 
 
-@pytest.mark.hardware()  # TODO extend with new harvester-options
+@pytest.mark.hardware()  # TODO: extend with new harvester-options
 @pytest.mark.timeout(40)
 @pytest.mark.usefixtures(_shepherd_up)
 def test_harvester_fn(tmp_path: Path) -> None:

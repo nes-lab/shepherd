@@ -4,11 +4,5 @@ logger = logging.getLogger("shp.calTool")
 logger.setLevel(logging.INFO)
 
 
-def set_verbosity(state: bool | int = True) -> None:
-    if isinstance(state, bool):
-        # strange solution -> bool is also int, so it falls through below in elif
-        if not state:
-            return
-    elif isinstance(state, int) and state < 3:
-        return  # old format, will be replaced
+def activate_verbosity() -> None:
     logger.setLevel(logging.DEBUG)

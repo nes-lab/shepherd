@@ -341,7 +341,9 @@ class SharedMemory:
             )
             self.pru_warn -= 1
             if self.pru_warn == 0:
-                log.warning("Pru0 Loop-Util-Warning is quiet now!")
+                log.warning(
+                    "Pru0 Loop-Util-Warning is silenced now! Is emu running without a cape?"
+                )
             # TODO: this is causing high overhead without a cape
         elif verbose:
             log.info(

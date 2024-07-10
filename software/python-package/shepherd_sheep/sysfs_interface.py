@@ -102,6 +102,7 @@ def disable_ntp() -> None:
         timeout=60,
         check=False,
     )
+    log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
 def check_sys_access(iteration: int = 1) -> None:

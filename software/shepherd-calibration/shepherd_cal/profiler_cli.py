@@ -67,8 +67,8 @@ def measure(
     quiet: bool = quiet_opt_t,
     verbose: bool = verbose_opt_t,
 ) -> None:
-    """Measure profile-data for shepherd cape"""
-    cli_setup_callback(verbose)
+    """Measure profile-data for shepherd cape."""
+    cli_setup_callback(verbose=verbose)
     if not any([harvester, emulator]):
         harvester = True
         emulator = True
@@ -85,7 +85,7 @@ def measure(
     else:
         file_path = outfile.stem + ".profile_full" + components + ".npz"
 
-    shpcal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    shpcal = Calibrator(host, user, password, smu_ip, smu_nplc, mode_4wire=smu_4wire)
     profiler = Profiler(shpcal, short=short)
     results: dict[str, np.ndarray] = {"cape": cape_serial}
 
@@ -142,6 +142,6 @@ def analyze(
     plot: bool = plot_opt_t,
     verbose: bool = verbose_opt_t,
 ) -> None:
-    """Analyze profile-data"""
-    cli_setup_callback(verbose)
+    """Analyze profile-data."""
+    cli_setup_callback(verbose=verbose)
     analyze_directory(infiles, outfile, do_plots=plot)

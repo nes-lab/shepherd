@@ -221,17 +221,22 @@ class ShepherdEmulator(ShepherdIO):
         self.wait_for_start(self.start_time - time.time() + 15)
         log.info("shepherd started!")
 
-        if self.cfg.duration is None:
-            duration_s = None
-            ts_end = sys.float_info.max
-        else:
+        if self.cfg.duration is not None:
             duration_s = self.cfg.duration.total_seconds()
             ts_end = self.start_time + duration_s
             log.debug("Duration = %s (forced runtime)", duration_s)
+        else:
+            duration_s = self.reader.runtime_s
+            ts_end = sys.float_info.max
+            log.debug("Duration = %s (runtime of input file)", duration_s)
 
         # Heartbeat-Message
+        buffer_period_s = self.samples_per_buffer / self.samplerate_sps
         prog_bar = tqdm(
-            total=duration_s, desc="Measurement", mininterval=2, unit="s", unit_scale=0.1
+            total=duration_s,
+            desc="Measurement",
+            mininterval=2,
+            unit="s",
         )
 
         # Main Loop
@@ -246,7 +251,7 @@ class ShepherdEmulator(ShepherdIO):
             if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
-            prog_bar.update(1)
+            prog_bar.update(n=buffer_period_s)
 
             if self.writer is not None:
                 try:

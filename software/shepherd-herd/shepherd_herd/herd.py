@@ -1,6 +1,4 @@
-"""
-Herd-Baseclass for controlling the sheep-observer-nodes.
-"""
+"""Herd-Baseclass for controlling the sheep-observer-nodes."""
 
 import contextlib
 import threading
