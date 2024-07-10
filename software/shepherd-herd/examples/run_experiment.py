@@ -1,5 +1,5 @@
 """
-Example describes a typical scripted workflow for running experiments on the Testbed
+This describes a typical scripted workflow for running experiments on the Testbed.
 
 Example assumes:
 - access to herd-server

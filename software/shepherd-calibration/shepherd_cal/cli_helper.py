@@ -12,7 +12,7 @@ from .logger import set_verbosity
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    logger.warning("Aborted!")
+    logger.warning("Exiting!")
     sys.exit(0)
 
 

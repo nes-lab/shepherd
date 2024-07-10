@@ -14,7 +14,7 @@ def get_verbosity() -> bool:
     return verbosity_state
 
 
-def set_verbosity(state: bool | int = True) -> None:
+def set_verbosity(state: int | bool = True) -> None:
     if isinstance(state, bool):
         # strange solution -> bool is also int, so it falls through below in elif
         if not state:

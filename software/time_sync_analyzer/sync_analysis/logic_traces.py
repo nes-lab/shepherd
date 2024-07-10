@@ -21,7 +21,9 @@ class LogicTraces:
 
     def plot_comparison_series(self, start: int = 0) -> None:
         _names: list = [_t.name for _t in self.traces]
-        _data: list = [_t.calc_durations_ns(0, True, True) for _t in self.traces]
+        _data: list = [
+            _t.calc_durations_ns(0, edge_a_rising=True, edge_b_rising=True) for _t in self.traces
+        ]
         _data = [pd.Series(data[:, 1] - LogicTrace.calc_expected_value(data)) for data in _data]
 
         _len = len(_names)
@@ -45,7 +47,7 @@ class LogicTraces:
         ax.set_ylabel("trigger_delay [ns]")
         ax.set_title(fig_title)
         plt.grid(
-            True,
+            visible=True,
             which="major",
             axis="y",
             color="gray",

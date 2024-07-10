@@ -1,6 +1,5 @@
-"""
-shepherd_herd
-~~~~~
+"""shepherd_herd command line utility.
+
 click-based command line utility for controlling a group of shepherd nodes
 remotely through ssh. Provides commands for starting/stopping harvester and
 emulator, retrieving recordings to the local machine and flashing firmware

@@ -69,15 +69,15 @@ class Watchdog:
         self.gpio_ack.close()
 
     def run(self) -> None:
-        """Prevent system-reset from watchdog
-        cape-rev2 has a watchdog that can turn on the BB every ~60 min
+        """Prevent system-reset from watchdog.
 
+        cape-rev2 has a watchdog that can turn on the BB every ~60 min
         """
         try:
             while True:
-                self.gpio_ack.write(True)
+                self.gpio_ack.write(value=True)
                 time.sleep(0.002)
-                self.gpio_ack.write(False)
+                self.gpio_ack.write(value=False)
                 log.debug("Signaled ACK to Watchdog")
                 time.sleep(self.interval)
         except SystemExit:

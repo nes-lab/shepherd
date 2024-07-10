@@ -2,13 +2,14 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from conftest import _shepherd_up
 from shepherd_sheep.cli import cli
 
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_target_power_min_arg_a(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -22,8 +23,8 @@ def test_cli_target_power_min_arg_a(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_target_power_min_arg_b(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -40,8 +41,8 @@ def test_cli_target_power_min_arg_b(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_target_power_min_arg_c(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -58,8 +59,8 @@ def test_cli_target_power_min_arg_c(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_target_power_explicit_a(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -77,8 +78,8 @@ def test_cli_target_power_explicit_a(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_target_power_explicit_b(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -98,8 +99,8 @@ def test_cli_target_power_explicit_b(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_eeprom_read_min_arg_a(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -114,8 +115,8 @@ def test_cli_eeprom_read_min_arg_a(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_eeprom_read_min_arg_b(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
@@ -137,8 +138,8 @@ def test_cli_eeprom_read_min_arg_b(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_eeprom_read_explicit(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
@@ -160,8 +161,8 @@ def test_cli_eeprom_read_explicit(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_inventorize_min_arg_a(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(
@@ -173,8 +174,8 @@ def test_cli_inventorize_min_arg_a(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_inventorize_min_arg_b(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
@@ -189,8 +190,8 @@ def test_cli_inventorize_min_arg_b(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_inventorize_explicit(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_path: Path,
 ) -> None:
@@ -205,8 +206,8 @@ def test_cli_inventorize_explicit(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures(_shepherd_up)
 def test_cli_fix_kmod(
-    shepherd_up: None,
     cli_runner: CliRunner,
 ) -> None:
     res = cli_runner.invoke(

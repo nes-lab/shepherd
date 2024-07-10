@@ -53,7 +53,7 @@ class LogicTrace:
             with path.open("rb") as _fh:
                 return pickle.load(_fh)
         raise TypeError(
-            f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'",
+            "File must be .csv or .pkl (pickle) - Don't know how to open '%s'", path.name
         )
 
     def to_file(self, path: Path) -> None:
@@ -68,7 +68,7 @@ class LogicTrace:
         *,
         invert: bool = False,
     ) -> np.ndarray:
-        """Divide dimension in two, divided by mean-value"""
+        """Divide dimension in two, divided by mean-value."""
         _theshold = np.mean(data)
         data = (data <= _theshold) if invert else (data >= _theshold)
         return data.astype("bool")
@@ -78,8 +78,9 @@ class LogicTrace:
         data: np.ndarray,
         timestamps: np.ndarray,
     ) -> np.ndarray:
-        """Sum of two sequential states is always 1 (True + False) if alternating
-        returns timestamps of alternating states, starting with 0
+        """Sum of two sequential states is always 1 (True + False) if alternating.
+
+        -> returns timestamps of alternating states, starting with 0.
         """
         _d0 = data[:].astype("uint8")
         _d1 = np.concatenate([[not _d0[0]], _d0[:-1]])
@@ -110,6 +111,7 @@ class LogicTrace:
     def calc_durations_ns(
         self,
         channel: int,
+        *,
         edge_a_rising: bool,
         edge_b_rising: bool,
     ) -> np.ndarray:
@@ -133,7 +135,7 @@ class LogicTrace:
             [_da[:_len], _diff * 1e9],
         )  # 2 columns: timestamp, duration [ns]
 
-    def get_edge_timestamps(self, channel: int = 0, rising: bool = True) -> np.ndarray:
+    def get_edge_timestamps(self, channel: int = 0, *, rising: bool = True) -> np.ndarray:
         if rising:
             return self.data[channel][1::2]
         return self.data[channel][0::2]
@@ -160,7 +162,7 @@ class LogicTrace:
 
     @staticmethod
     def calc_expected_value(data: np.ndarray, *, mode_log10: bool = False) -> float:
-        """Return expected duration (=10**X)"""
+        """Return expected duration (=10**X)."""
         # data with timestamp!
         if data.shape[0] < 100:
             raise ValueError("Function needs more datapoints")

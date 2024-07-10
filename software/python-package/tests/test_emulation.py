@@ -5,6 +5,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from conftest import _shepherd_up
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
@@ -69,7 +70,7 @@ def shp_reader(data_h5: Path) -> Generator[CoreReader, None, None]:
 
 @pytest.fixture()
 def emulator(
-    shepherd_up: None,
+        _shepherd_up: None,
     data_h5: Path,
     src_cfg: VirtualSourceConfig,
 ) -> Generator[ShepherdEmulator, None, None]:
@@ -106,7 +107,8 @@ def test_emulation(
 
 
 @pytest.mark.hardware()
-def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up: None) -> None:
+@pytest.mark.usefixtures(_shepherd_up)
+def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
     emu_cfg = EmulationTask(
@@ -134,7 +136,8 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up: None) -> None:
 
 @pytest.mark.hardware()
 @pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
-def test_target_pins(shepherd_up: None) -> None:
+@pytest.mark.usefixtures(_shepherd_up)
+def test_target_pins() -> None:
     with ShepherdDebug() as shepherd_io:
         shepherd_io.start()
         shepherd_io.select_port_for_power_tracking(TargetPort.A)

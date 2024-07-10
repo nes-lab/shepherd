@@ -5,6 +5,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from conftest import _shepherd_up
 from shepherd_core import CalibrationHarvester
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep import ShepherdHarvester
@@ -30,7 +31,7 @@ def writer(tmp_path: Path, mode: str) -> Generator[Writer, None, None]:
 
 @pytest.fixture()
 def harvester(
-    shepherd_up: None,
+        _shepherd_up: None,
     mode: str,
     tmp_path: Path,
 ) -> Generator[ShepherdHarvester, None, None]:
@@ -40,7 +41,8 @@ def harvester(
 
 
 @pytest.mark.hardware()
-def test_instantiation(shepherd_up: None, tmp_path: Path) -> None:
+@pytest.mark.usefixtures(_shepherd_up)
+def test_instantiation(tmp_path: Path) -> None:
     cfg = HarvestTask(output_path=tmp_path / "hrv_123.h5")
     with ShepherdHarvester(cfg) as _h:
         assert _h is not None
@@ -60,7 +62,8 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
 
 @pytest.mark.hardware()  # TODO extend with new harvester-options
 @pytest.mark.timeout(40)
-def test_harvester_fn(tmp_path: Path, shepherd_up: None) -> None:
+@pytest.mark.usefixtures(_shepherd_up)
+def test_harvester_fn(tmp_path: Path) -> None:
     path = tmp_path / "rec.h5"
     time_start = int(time.time() + 10)
     cfg = HarvestTask(
