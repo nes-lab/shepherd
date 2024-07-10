@@ -123,18 +123,18 @@ def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str) ->
     a_is_aux = "a" in target_port.lower()
     for pin_name in ["en_shepherd"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(on)
+        pin.write(value=on)
         log.info("Shepherd-State \t= %s", "enabled" if on else "disabled")
     for pin_name in ["target_pwr_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(not a_is_aux)  # switched because rail A is AUX
+        pin.write(value=not a_is_aux)  # switched because rail A is AUX
         log.info("Select Target \t= %s", "A" if a_is_aux else "B")
     for pin_name in ["target_io_sel"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(a_is_aux)
+        pin.write(value=a_is_aux)
     for pin_name in ["target_io_en"]:
         pin = GPIO(gpio_pin_nums[pin_name], "out")
-        pin.write(gpio_pass)
+        pin.write(value=gpio_pass)
         log.info("IO passing \t= %s", "enabled" if gpio_pass else "disabled")
     log.info("Target Voltage \t= %.3f V", voltage)
     sysfs_interface.write_dac_aux_voltage(voltage)

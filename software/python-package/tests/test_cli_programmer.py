@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
-from conftest import _shepherd_up
 from shepherd_sheep.cli import cli
 
 # NOTE: (almost) direct copy between shepherd-herd & python-package
@@ -26,14 +25,14 @@ def fw_msp() -> Path:
 @pytest.fixture()
 def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
-    with store_path.resolve().open("w", encoding="utf-8-sig") as f:
-        f.write("")
+    with store_path.resolve().open("w", encoding="utf-8-sig") as fh:
+        fh.write("")
     return store_path
 
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_minimal(
     cli_runner: CliRunner,
     fw_nrf: Path,
@@ -52,7 +51,7 @@ def test_cli_program_minimal(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_swd_explicit(
     cli_runner: CliRunner,
     fw_nrf: Path,
@@ -81,7 +80,7 @@ def test_cli_program_swd_explicit(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_swd_explicit_short(
     cli_runner: CliRunner,
     fw_nrf: Path,
@@ -110,7 +109,7 @@ def test_cli_program_swd_explicit_short(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_sbw_explicit(
     cli_runner: CliRunner,
     fw_msp: Path,
@@ -139,7 +138,7 @@ def test_cli_program_sbw_explicit(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_a(
     cli_runner: CliRunner,
     fw_empty: Path,
@@ -158,7 +157,7 @@ def test_cli_program_file_defective_a(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_b(
     cli_runner: CliRunner,
     tmp_path: Path,
@@ -177,7 +176,7 @@ def test_cli_program_file_defective_b(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_c(
     cli_runner: CliRunner,
     tmp_path: Path,
@@ -196,7 +195,7 @@ def test_cli_program_file_defective_c(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_datarate_invalid_a(
     cli_runner: CliRunner,
     fw_nrf: Path,
@@ -217,7 +216,7 @@ def test_cli_program_datarate_invalid_a(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_datarate_invalid_b(
     cli_runner: CliRunner,
     fw_nrf: Path,
@@ -238,7 +237,7 @@ def test_cli_program_datarate_invalid_b(
 
 @pytest.mark.hardware()
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_target_invalid(
     cli_runner: CliRunner,
     fw_nrf: Path,

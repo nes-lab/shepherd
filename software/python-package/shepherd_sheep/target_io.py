@@ -66,7 +66,7 @@ class TargetIO:
         self.dirs: dict[int, GPIO] = {}
         for pin in dir_pins:
             self.dirs[pin] = GPIO(pin, "out")
-            self.dirs[pin].write(True)  # True == Output to target
+            self.dirs[pin].write(value=True)  # True == Output to target
 
         self.gpios: dict[str, GPIO] = {}
         for pin_info in target_pins:
@@ -74,7 +74,7 @@ class TargetIO:
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "in")
             else:
                 self.gpios[pin_info["name"]] = GPIO(pin_info["pin"], "out")
-                self.gpios[pin_info["name"]].write(False)  # init LOW
+                self.gpios[pin_info["name"]].write(value=False)  # init LOW
 
         self.pin_names: list[str] = [pin["name"] for pin in target_pins]
         self.pin_count: int = len(target_pins)
@@ -111,7 +111,7 @@ class TargetIO:
         pin_name = target_pins[num]["name"]
         if self.gpios[pin_name].direction == "in":
             log.warning("Error: pin %s was input, shouldn't be", pin_name)
-        self.gpios[pin_name].write(state)
+        self.gpios[pin_name].write(value=state)
         return True
 
     def get_pin_direction(self, num: int) -> bool:
@@ -131,7 +131,7 @@ class TargetIO:
             "Something went wrong - could not determine pin-direction",
         )
 
-    def set_pin_direction(self, num: int, pdir: bool) -> bool:
+    def set_pin_direction(self, num: int, *, pdir: bool) -> bool:
         """
         Args:
             num: number of pin, in reference to list target_pins
@@ -153,7 +153,7 @@ class TargetIO:
                 for pin in pins_affected:
                     self.gpios[pin].direction = "in"
             # dir-pin high == output (reversed to dir)
-            self.dirs[dir_param].write(not pdir)
+            self.dirs[dir_param].write(value=not pdir)
             if not pdir:  # GPIO -> input
                 for pin in pins_affected:
                     self.gpios[pin].direction = "out"

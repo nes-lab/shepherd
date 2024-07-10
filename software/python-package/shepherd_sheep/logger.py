@@ -44,15 +44,17 @@ def set_verbosity(state: bool | int = True, temporary: bool = False) -> None:
 
 
 def reset_verbosity() -> None:
-    """Only done if it was increased temporary before"""
+    """Will reset only if it was increased temporary before."""
     if verbosity_state:
         return
     set_log_verbose_level(console_handler, 2)
 
 
 def get_message_queue() -> multiprocessing.Queue:
-    """
-    read & delete with queue.get() -> element.message is the text
-    len is queue.qsize()
+    """Hand over queue.
+
+    - read & delete with queue.get().
+    - element.message is the text
+    - len is queue.qsize()
     """
     return queue

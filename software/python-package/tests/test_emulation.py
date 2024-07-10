@@ -5,7 +5,6 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from conftest import _shepherd_up
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
@@ -107,7 +106,7 @@ def test_emulation(
 
 
 @pytest.mark.hardware()
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
@@ -136,7 +135,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
 
 @pytest.mark.hardware()
 @pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
-@pytest.mark.usefixtures(_shepherd_up)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_target_pins() -> None:
     with ShepherdDebug() as shepherd_io:
         shepherd_io.start()

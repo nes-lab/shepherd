@@ -1,9 +1,4 @@
-"""
-shepherd-watchdog
-~~~~~
-Allows to reset hardware-watchdog
-
-"""
+"""Allows to periodically reset hardware-watchdog on Cape."""
 
 import logging
 import signal
@@ -34,7 +29,7 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
 
 
 class Watchdog:
-    """
+    """Allows to periodically reset hardware-watchdog on Cape.
 
     Args:
         pin_ack: pin that is resetting the hardware watchdog
