@@ -8,6 +8,7 @@ from types import TracebackType
 from shepherd_core import local_tz
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
+from tqdm import tqdm
 from typing_extensions import Self
 
 from . import sysfs_interface
@@ -144,14 +145,16 @@ class ShepherdHarvester(ShepherdIO):
 
         if self.cfg.duration is None:
             ts_end = sys.float_info.max
+            duration_s = None
         else:
             duration_s = self.cfg.duration.total_seconds()
             ts_end = self.start_time + duration_s
             log.debug("Duration = %s (forced runtime)", duration_s)
 
         # Heartbeat-Message
-        delay_alive: int = 60
-        ts_alive: float = self.start_time + delay_alive
+        prog_bar = tqdm(
+            total=duration_s, desc="Measurement", mininterval=2, unit="s", unit_scale=0.1
+        )
 
         while True:
             idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
@@ -160,11 +163,8 @@ class ShepherdHarvester(ShepherdIO):
 
             if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
-                return
-            if ts_now >= ts_alive:
-                duration_s = round(ts_now - self.start_time)
-                log.debug("... now measuring for %d s", duration_s)
-                ts_alive += delay_alive
+                break
+            prog_bar.update(n=1)
 
             try:
                 self.writer.write_buffer(hrv_buf)
@@ -173,5 +173,7 @@ class ShepherdHarvester(ShepherdIO):
                     "Failed to write data to HDF5-File - will STOP! error = %s",
                     _xpt,
                 )
-                return
+                break
             self.return_buffer(idx, verbose=self.verbose_extra)
+
+        prog_bar.close()

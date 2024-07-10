@@ -13,6 +13,7 @@ from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
+from tqdm import tqdm
 from typing_extensions import Self
 
 from . import commons
@@ -221,6 +222,7 @@ class ShepherdEmulator(ShepherdIO):
         log.info("shepherd started!")
 
         if self.cfg.duration is None:
+            duration_s = None
             ts_end = sys.float_info.max
         else:
             duration_s = self.cfg.duration.total_seconds()
@@ -228,8 +230,9 @@ class ShepherdEmulator(ShepherdIO):
             log.debug("Duration = %s (forced runtime)", duration_s)
 
         # Heartbeat-Message
-        delay_alive: int = 60
-        ts_alive: float = self.start_time + delay_alive
+        prog_bar = tqdm(
+            total=duration_s, desc="Measurement", mininterval=2, unit="s", unit_scale=0.1
+        )
 
         # Main Loop
         for _, dsv, dsc in self.reader.read_buffers(
@@ -243,11 +246,7 @@ class ShepherdEmulator(ShepherdIO):
             if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
-            if ts_now >= ts_alive:
-                duration_s = round(ts_now - self.start_time)
-                log.debug("... now measuring for %d s", duration_s)
-                ts_alive += delay_alive
-                # TODO: switch to tqdm, progressbar
+            prog_bar.update(1)
 
             if self.writer is not None:
                 try:
@@ -262,6 +261,7 @@ class ShepherdEmulator(ShepherdIO):
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
             self.return_buffer(idx, hrvst_buf, self.verbose_extra)
 
+        prog_bar.close()
         # Read all remaining buffers from PRU
         try:
             while True:
