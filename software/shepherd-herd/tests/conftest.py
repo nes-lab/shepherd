@@ -7,6 +7,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from shepherd_data import Writer
+from shepherd_herd import Herd
 from shepherd_herd.herd_cli import cli
 
 
@@ -83,7 +84,19 @@ def local_herd(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def _herd_stopped(cli_runner: CliRunner) -> None:
+def _herd_alive() -> None:
+    # pre-test is good for start of new test-file
+    for _ in range(3):
+        time.sleep(1)
+        with Herd() as herd:
+            if len(herd.group) > 0:
+                time.sleep(1)
+                return
+    raise RuntimeError("No Sheep seems to be alive")
+
+
+@pytest.fixture()
+def _herd_stopped(cli_runner: CliRunner, _herd_alive: None) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active
@@ -91,8 +104,6 @@ def _herd_stopped(cli_runner: CliRunner) -> None:
         cli,
         [
             "-v",
-            "run",
-            "--sudo",
-            "'modprobe -a shepherd'",
+            "fix",
         ],
     )

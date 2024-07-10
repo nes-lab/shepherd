@@ -24,6 +24,7 @@ def fw_empty(tmp_path: Path) -> Path:
 
 
 @pytest.mark.timeout(80)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_minimal(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -38,6 +39,7 @@ def test_cli_program_minimal(cli_runner: CliRunner, fw_example: Path) -> None:
 
 
 @pytest.mark.timeout(80)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_swd_explicit(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -62,6 +64,7 @@ def test_cli_program_swd_explicit(cli_runner: CliRunner, fw_example: Path) -> No
 
 
 @pytest.mark.timeout(80)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_swd_explicit_short(
     cli_runner: CliRunner,
     fw_example: Path,
@@ -89,6 +92,7 @@ def test_cli_program_swd_explicit_short(
 
 
 @pytest.mark.timeout(80)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_sbw_explicit(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -112,7 +116,8 @@ def test_cli_program_sbw_explicit(cli_runner: CliRunner, fw_example: Path) -> No
     assert res.exit_code == 0
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(60)  # TODO: fails in big runs - so add alive-checker here
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_file_defective_a(cli_runner: CliRunner, fw_empty: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -127,6 +132,7 @@ def test_cli_program_file_defective_a(cli_runner: CliRunner, fw_empty: Path) -> 
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_file_defective_b(cli_runner: CliRunner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -141,6 +147,7 @@ def test_cli_program_file_defective_b(cli_runner: CliRunner, tmp_path: Path) -> 
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_file_defective_c(cli_runner: CliRunner, tmp_path: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -155,6 +162,7 @@ def test_cli_program_file_defective_c(cli_runner: CliRunner, tmp_path: Path) -> 
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_datarate_invalid_a(
     cli_runner: CliRunner,
     fw_example: Path,
@@ -174,6 +182,7 @@ def test_cli_program_datarate_invalid_a(
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_datarate_invalid_b(
     cli_runner: CliRunner,
     fw_example: Path,
@@ -193,6 +202,7 @@ def test_cli_program_datarate_invalid_b(
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_target_invalid(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,

@@ -4,12 +4,17 @@ import pytest
 from click.testing import CliRunner
 from shepherd_herd.herd_cli import cli
 
-from .conftest import _herd_stopped
 from .conftest import wait_for_end
 
 
+@pytest.mark.timeout(30)
+@pytest.mark.usefixtures("_herd_alive")
+def test_herd_alive() -> None:
+    pass
+
+
 @pytest.mark.timeout(150)
-@pytest.mark.usefixtures(_herd_stopped)
+@pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_example(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -29,7 +34,7 @@ def test_hrv_example(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_herd_stopped)
+@pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_example_fail(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -49,7 +54,7 @@ def test_hrv_example_fail(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(60)
-@pytest.mark.usefixtures(_herd_stopped)
+@pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_minimal(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -67,7 +72,7 @@ def test_hrv_minimal(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(150)
-@pytest.mark.usefixtures(_herd_stopped)
+@pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_all_args_long(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -89,7 +94,7 @@ def test_hrv_all_args_long(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(150)
-@pytest.mark.usefixtures(_herd_stopped)
+@pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_all_args_short(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -111,7 +116,7 @@ def test_hrv_all_args_short(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(150)
-@pytest.mark.usefixtures(_herd_stopped)
+@pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_no_start(cli_runner: CliRunner) -> None:
     # Note: short timeout is the catch
     res = cli_runner.invoke(
