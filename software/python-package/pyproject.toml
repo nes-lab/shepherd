@@ -31,7 +31,7 @@ dependencies = [
     "shepherd-core[elf,inventory]>=2024.7.2",
     "click>=8.1.3",
     "numpy",
-    "python-periphery<2.0.0",
+    "python-periphery<2.0.0", # v2 has no persistence anymore
     "zerorpc",
     "invoke",
     "h5py",
@@ -43,7 +43,6 @@ dependencies = [
     "gevent",
     "chromalog",
     "pydantic>2.0.0",
-    # force-update some plugins (june23)
 ]
 
 [project.optional-dependencies]
