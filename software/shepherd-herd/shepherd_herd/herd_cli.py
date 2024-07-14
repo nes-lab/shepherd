@@ -192,6 +192,21 @@ def blink(ctx: click.Context, duration: int) -> None:
     sys.exit(exit_code)
 
 
+@cli.command(
+    short_help="Check if all remote hosts are present & responding.",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def alive(ctx: click.Context) -> None:
+    with ctx.obj["herd"] as herd:
+        failed = herd.alive()
+    if failed:
+        log.warning("Not all remote hosts are responding.")
+    else:
+        log.debug("All remote hosts are responding.")
+    sys.exit(int(failed))
+
+
 # #############################################################################
 #                               Task-Handling
 # #############################################################################

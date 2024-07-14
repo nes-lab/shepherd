@@ -713,3 +713,11 @@ class Herd:
                         "FN not finished, not needed ATM"
                     )  # TODO: will it be needed?
         return failed
+
+    def alive(self) -> bool:
+        """Check if all remote hosts are present & responding.
+
+        - Group is list of hosts with live connection,
+        - hostnames contains all hosts in inventory
+        """
+        return len(self.group) == len(self.hostnames)
