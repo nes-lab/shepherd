@@ -1,5 +1,15 @@
 # History of Changes
 
+## 0.8.1
+
+- sheep - limit pru-warning count
+- sheep - fix stopping of ntp-service 
+- py - add progressbars to long processes
+- py - don't limit pandas to <v2 anymore
+- herd - query for alive status of testbed (all hosts responding)
+- herd - more robust unittesting
+- extend ruff and fix ~ 200 linting-errors 
+
 ## 0.8.0
 
 - linux
