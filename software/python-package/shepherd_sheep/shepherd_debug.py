@@ -442,6 +442,8 @@ class ShepherdDebug(ShepherdIO):
                 msg_type, values = self._get_msg(5)
                 if msg_type != commons.MSG_PGM_ERROR_WRITE:
                     # TODO: that should trigger an error
+                    # TODO: programmer recently emits this at the end of process:
+                    #       ..-WRITE-ERROR: ihex to target @0x0, data=0 [0x0]
                     log.error(
                         "PROGRAMMER-WRITE-ERROR: ihex to target @%s, data=%d [%s]",
                         f"0x{values[0]:X}",
