@@ -178,7 +178,7 @@ class ShepherdIO:
         for _ in range(timeout_n):
             try:
                 return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:  # noqa: PERF203
+            except sfs.SysfsInterfaceError:
                 time.sleep(self._buffer_period)
                 continue
         raise ShepherdIOError("Timeout waiting for message", ShepherdIOError.ID_TIMEOUT)
@@ -189,7 +189,7 @@ class ShepherdIO:
         while True:
             try:
                 sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:  # noqa: PERF203
+            except sfs.SysfsInterfaceError:
                 break
 
     def start(
@@ -458,7 +458,9 @@ class ShepherdIO:
                 cal_ = CalibrationHarvester()
             else:
                 cal_ = CalibrationEmulator()
-        log.debug("Calibration-Settings:\n%s", cal_)
+        log.debug("Calibration-Settings:")
+        for key, value in cal_.model_dump(exclude_unset=False, exclude_defaults=False).items():
+            log.debug("    %s: %s", key, value)
         cal_dict = cal_.export_for_sysfs()
         sfs.write_calibration_settings(cal_dict)
 

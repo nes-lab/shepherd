@@ -355,7 +355,7 @@ def write_calibration_settings(
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        log.debug("Sending calibration settings:\n%s", output)
+        log.debug("Sending Calibration-Settings:\n%s", output)
         fh.write(output)
 
 
@@ -654,7 +654,7 @@ def pru_firmware_is_default() -> bool:
                 if "shepherd-fw" not in file.read().rstrip():
                     return False
             return True
-        except OSError:  # noqa: PERF203
+        except OSError:
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
                 " -> will restart kernel-module (n=%d)",
