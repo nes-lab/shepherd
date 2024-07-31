@@ -62,11 +62,11 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.5.1'
+    rev: 'v0.5.5'
     hooks:
+      - id: ruff-format
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
-      - id: ruff-format
         # manual run: ruff check . --preview
 
 # TODO: disable, until bug is resolved, maybe connected to
