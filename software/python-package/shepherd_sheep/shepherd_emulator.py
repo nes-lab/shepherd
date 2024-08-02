@@ -84,7 +84,13 @@ class ShepherdEmulator(ShepherdIO):
                 gain=1e9 * cal_inp.current.gain,
                 offset=1e9 * cal_inp.current.offset,
             ),
+            # TODO: add units
         )
+        log.debug("Calibration-Setting of input file:")
+        for key, value in self.cal_pru.model_dump(
+            exclude_unset=False, exclude_defaults=False
+        ).items():
+            log.debug("\t%s: %s", key, value)
 
         self.cal_emu = retrieve_calibration(cfg.use_cal_default).emulator
 

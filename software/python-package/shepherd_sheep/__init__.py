@@ -263,13 +263,14 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
     # TODO: parameters currently not handled:
     #   time_prep, root_path, abort_on_error (but used in emuTask)
     failed = False
+    limit_char = 1000
     for element in content:
         if element is None:
             continue
 
         element_str = str(element)
-        if len(element_str) > 500:
-            element_str = element_str[:500] + " [first 500 chars]"
+        if len(element_str) > limit_char:
+            element_str = element_str[:limit_char] + f" [first {limit_char} chars]"
 
         log.info(
             "\n###~###~###~###~###~### Starting %s ###~###~###~###~###~###\n\n%s\n",

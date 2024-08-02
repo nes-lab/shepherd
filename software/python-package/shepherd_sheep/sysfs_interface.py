@@ -355,7 +355,7 @@ def write_calibration_settings(
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        log.debug("Sending Calibration-Settings:\n%s", output)
+        log.debug("Transfer Calibration-Settings to sysfs_if (2nd row unused by emu):\n%s", output)
         fh.write(output)
 
 
@@ -388,8 +388,8 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
     """
     settings = list(settings.model_dump().values())
     log.debug(
-        "Writing virtual converter to sysfs_interface, first values are %s",
-        settings[0:3],
+        "Writing virtual converter to sysfs_interface, first values are\n\t%s",
+        settings[0:10],
     )
 
     output = ""
@@ -433,8 +433,8 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
     """
     settings = list(settings.model_dump().values())
     log.debug(
-        "Writing virtual harvester to sysfs_interface, first values are %s",
-        settings[0:3],
+        "Writing virtual harvester to sysfs_interface, first values are\n\t%s",
+        settings[0:10],
     )
     output = ""
     for setting in settings:
