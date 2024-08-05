@@ -28,7 +28,11 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
         static uint32_t negative_residue_nA = 0;
         const uint32_t  adc_offset_nA       = -cal->adc_current_offset_nA + negative_residue_nA;
 
-        if (I_nA > adc_offset_nA) { return (I_nA - adc_offset_nA); }
+        if (I_nA > adc_offset_nA)
+        {
+            negative_residue_nA = 0;
+            return (I_nA - adc_offset_nA);
+        }
         else
         {
             negative_residue_nA = adc_offset_nA - I_nA;
