@@ -114,7 +114,7 @@ class ShepherdEmulator(ShepherdIO):
         )
         self.hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=cfg.virtual_source.harvester,
-            for_emu=False,
+            for_emu=True,
             dtype_in=self.reader.get_datatype(),
         )
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
