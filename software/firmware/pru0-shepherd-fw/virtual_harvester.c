@@ -19,6 +19,13 @@ static uint32_t                               interval_step      = 1u << 30u;
 static uint32_t                               volt_step_uV       = 0u;
 static uint32_t                               power_last_raw     = 0u; // adc_mppt_po
 
+/* ivcurve cutout
+   - prevents power-spike during the non-linear reset-step of the ivcurve
+   - slow analog filters show this behavior with cape 2.4
+   TODO: make value configurable by frontend
+*/
+static const uint32_t                         STEP_IV_CUTOUT     = 5u;
+
 static const volatile struct HarvesterConfig *cfg;
 
 // to be used with harvester-frontend
@@ -114,8 +121,15 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
     __delay_cycles(800 / 5);
-    const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+    uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+
+    /* discard initial readings during reset */
+    if (interval_step < STEP_IV_CUTOUT)
+    {
+        if (is_rising) current_adc = 0;
+        else           voltage_adc = 0;
+    }
 
     if (settle_steps == 0u)
     {
@@ -132,10 +146,8 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
             else voltage_set_uV = sub32(voltage_set_uV, cfg->voltage_step_uV);
         }
         /* check boundaries */
-        if (is_rising && (voltage_set_uV > cfg->voltage_max_uV))
-            voltage_set_uV = cfg->voltage_max_uV;
-        if ((!is_rising) && (voltage_set_uV < cfg->voltage_min_uV))
-            voltage_set_uV = cfg->voltage_min_uV;
+        if (is_rising && (voltage_set_uV > cfg->voltage_max_uV)) voltage_set_uV = cfg->voltage_max_uV;
+        if ((!is_rising) && (voltage_set_uV < cfg->voltage_min_uV)) voltage_set_uV = cfg->voltage_min_uV;
 
         /* write new step */
         const uint32_t voltage_raw = cal_conv_uV_to_dac_raw(voltage_set_uV);
@@ -378,8 +390,9 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
 	 *  - influencing parameters: interval_n, duration_n, current_limit_nA, voltage_min_uV, voltage_max_uV, setpoint_n8, window_size
 	 * 		   from init: (wait_cycles_n), voltage_uV (for cv())
 	 */
-    static uint32_t age_now = 0u, voc_now = 0u;
-    static uint32_t age_nxt = 0u, voc_nxt = 0u;
+    static uint32_t age_now = 0u, voc_now = cfg->voltage_max_uV;
+    static uint32_t age_nxt = 0u, voc_nxt = cfg->voltage_max_uV;
+    static const uint32_t voc_min = cfg->voltage_min_uV > 1000 ? cfg->voltage_min_uV : 1000;
 
     /* keep track of time, do  step = mod(step + 1, n) */
     if (++interval_step >= cfg->interval_n) interval_step = 0u;
@@ -388,7 +401,7 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
 
     /* lookout for new VOC */
     if ((*p_current_nA < cfg->current_limit_nA) && (*p_voltage_uV <= voc_nxt) &&
-        (*p_voltage_uV >= cfg->voltage_min_uV) && (*p_voltage_uV <= cfg->voltage_max_uV))
+        (*p_voltage_uV >= voc_min) && (*p_voltage_uV <= cfg->voltage_max_uV))
     {
         voc_nxt = *p_voltage_uV;
         age_nxt = 0u;
