@@ -82,6 +82,19 @@
     - install
     - device-tree
 
+- name: Uninstall shepherd python packages
+  ansible.builtin.pip:
+    name: "{{ item }}"
+    state: absent
+    break_system_packages: true
+  loop:
+    - shepherd-core
+    - shepherd-sheep
+  tags:
+    - install
+    - python
+  when: sheep_rebuild_python_package | bool
+
 - name: Install shepherd python package
   ansible.builtin.pip:
     name: ".[test]"
