@@ -55,6 +55,7 @@
     - install
     - python
   when: sheep_rebuild_python_package | bool
+  become: true
   # there were situations were the core-lib stayed old
 
 - name: Get full path of repository

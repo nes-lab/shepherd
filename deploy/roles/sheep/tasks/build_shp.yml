@@ -92,3 +92,5 @@
     - install
     - python
   when: sheep_rebuild_python_package | bool
+  become: true
+  
