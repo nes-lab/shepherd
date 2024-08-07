@@ -5,6 +5,11 @@
 #include "spi_transfer_pru.h"
 #include <stdint.h>
 
+/* prus .text-section overflows with latest changes, so remove dead-weight
+   TODO: divide fw into harv & emu
+*/
+#define SAVE_STORAGE
+
 // internal variables
 static uint32_t                               voltage_set_uV     = 0u;
 static bool_ft                                is_rising          = 0u;
@@ -14,8 +19,12 @@ static uint32_t                               current_hold       = 0u;
 static uint32_t                               voltage_step_x4_uV = 0u;
 static uint32_t                               age_max            = 0u;
 
+static uint32_t                               voc_now            = 0u;
+static uint32_t                               voc_nxt            = 0u;
+static uint32_t                               voc_min            = 0u;
+
 static uint32_t                               settle_steps       = 0; // adc_ivcurve
-static uint32_t                               interval_step      = 1u << 30u;
+static uint32_t                               interval_step      = 0u;
 
 static uint32_t                               volt_step_uV       = 0u;
 static uint32_t                               power_last_raw     = 0u; // adc_mppt_po
@@ -31,7 +40,9 @@ static const volatile struct HarvesterConfig *cfg;
 
 // to be used with harvester-frontend
 static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+#ifndef SAVE_STORAGE
 static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+#endif
 static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx);
 static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
 static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx);
@@ -53,12 +64,15 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
 void harvester_initialize(const volatile struct HarvesterConfig *const config)
 {
     // basic (shared) states for ADC- and IVCurve-Version
-    cfg                = config;
-    voltage_set_uV     = cfg->voltage_uV + 1u; // deliberately off for cv-version
-    settle_steps       = 0u;
-    interval_step      = 1u << 30u; // deliberately out of bounds
+    cfg            = config;
+    voltage_set_uV = cfg->voltage_uV + 1u; // deliberately off for cv-version
+    settle_steps   = 0u;
 
-    // TODO: hrv_mode-bit0 is "emulation"-detector
+    const bool_ft is_emu = (cfg->hrv_mode >> 0u) & 1u;
+    if (is_emu && (cfg->interval_n > 2 * cfg->window_size))
+        interval_step = cfg->interval_n - (2 * cfg->window_size);
+    else interval_step = 1u << 30u;
+    // ⤷ intake two ivcurves before overflow / reset if possible
     is_rising          = (cfg->hrv_mode >> 1u) & 1u;
 
     // MPPT-PO
@@ -70,6 +84,10 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     current_hold       = 0u;
     voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
     age_max            = 2 * cfg->window_size;
+
+    voc_now            = cfg->voltage_max_uV;
+    voc_nxt            = cfg->voltage_max_uV;
+    voc_min            = cfg->voltage_min_uV > 1000 ? cfg->voltage_min_uV : 1000;
     // TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
     // TODO: check that ConfigParams are used in SubFns if applicable
     // TODO: divide lib into IVC and ADC Parts
@@ -83,7 +101,9 @@ uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t 
     else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_2_mppt_voc(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_CV) harvest_adc_2_cv(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_2_ivcurve(buffer, sample_idx);
+#ifndef SAVE_STORAGE
     else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(buffer, sample_idx);
+#endif
     // todo: else send error to system
     return 0u;
 }
@@ -129,8 +149,8 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
     /* discard initial readings during reset */
     if (interval_step < STEP_IV_CUTOUT)
     {
-        if (is_rising) current_adc = 0;
-        else           voltage_adc = 0;
+        if (is_rising) voltage_adc = 0;
+        else current_adc = 0;
     }
 
     if (settle_steps == 0u)
@@ -162,7 +182,7 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
     buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-
+#ifndef SAVE_STORAGE
 static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /* 	Record VOC & ISC
@@ -196,7 +216,7 @@ static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint3
     buffer->values_current[sample_idx] = current_hold;
     buffer->values_voltage[sample_idx] = voltage_hold;
 }
-
+#endif
 
 static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
@@ -392,9 +412,8 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
 	 *  - influencing parameters: interval_n, duration_n, current_limit_nA, voltage_min_uV, voltage_max_uV, setpoint_n8, window_size
 	 * 		   from init: (wait_cycles_n), voltage_uV (for cv())
 	 */
-    static uint32_t age_now = 0u, voc_now = cfg->voltage_max_uV;
-    static uint32_t age_nxt = 0u, voc_nxt = cfg->voltage_max_uV;
-    static const uint32_t voc_min = cfg->voltage_min_uV > 1000 ? cfg->voltage_min_uV : 1000;
+    static uint32_t age_now = 0u;
+    static uint32_t age_nxt = 0u;
 
     /* keep track of time, do  step = mod(step + 1, n) */
     if (++interval_step >= cfg->interval_n) interval_step = 0u;
