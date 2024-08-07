@@ -50,7 +50,9 @@
   failed_when: false
   loop:
     - shepherd-core
+    - shepherd_core
     - shepherd-sheep
+    - shepherd_sheep
   tags:
     - install
     - python
