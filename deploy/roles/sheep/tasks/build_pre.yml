@@ -44,16 +44,18 @@
 
 - name: Uninstall shepherd python package
   ansible.builtin.pip:
-    name: "./"
+    name: "{{ item }}"
     state: absent
-    chdir: '{{ sheep_install_path }}/software/python-package'
-    extra_args: --break-system-packages
+    break_system_packages: true
   failed_when: false
+  loop:
+    - shepherd-core
+    - shepherd-sheep
   tags:
     - install
     - python
   when: sheep_rebuild_python_package | bool
-  # TODO: maybe not needed
+  # there were situations were the core-lib stayed old
 
 - name: Get full path of repository
   ansible.builtin.command: "realpath {{ role_path }}/../../.."
