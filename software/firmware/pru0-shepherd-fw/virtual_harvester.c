@@ -12,6 +12,7 @@ static bool_ft                                is_rising          = 0u;
 static uint32_t                               voltage_hold       = 0u;
 static uint32_t                               current_hold       = 0u;
 static uint32_t                               voltage_step_x4_uV = 0u;
+static uint32_t                               age_max            = 0u;
 
 static uint32_t                               settle_steps       = 0; // adc_ivcurve
 static uint32_t                               interval_step      = 1u << 30u;
@@ -68,6 +69,7 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     voltage_hold       = 0u;
     current_hold       = 0u;
     voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
+    age_max            = 2 * cfg->window_size;
     // TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
     // TODO: check that ConfigParams are used in SubFns if applicable
     // TODO: divide lib into IVC and ADC Parts
@@ -408,7 +410,7 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
     }
 
     /* current "best VOC" (the lowest voltage with zero-current) can not get too old, or be NOT the best */
-    if ((age_now > cfg->window_size) || (voc_nxt <= voc_now))
+    if ((age_now > age_max) || (voc_nxt <= voc_now))
     {
         age_now = age_nxt;
         voc_now = voc_nxt;
@@ -519,7 +521,7 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
     }
 
     /* current "best VOC" (the lowest voltage with zero-current) can not get too old, or NOT be the best */
-    if ((age_now > cfg->window_size) || (power_nxt >= power_now))
+    if ((age_now > age_max) || (power_nxt >= power_now))
     {
         age_now     = age_nxt;
         power_now   = power_nxt;
