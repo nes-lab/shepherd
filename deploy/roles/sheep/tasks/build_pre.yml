@@ -46,8 +46,7 @@
   ansible.builtin.pip:
     name: "{{ item }}"
     state: absent
-    break_system_packages: true
-  failed_when: false
+    extra_args: "--yes --break-system-packages"
   loop:
     - shepherd-core
     - shepherd_core
