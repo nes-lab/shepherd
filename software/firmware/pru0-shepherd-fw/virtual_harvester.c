@@ -64,9 +64,9 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
 void harvester_initialize(const volatile struct HarvesterConfig *const config)
 {
     // basic (shared) states for ADC- and IVCurve-Version
-    cfg            = config;
-    voltage_set_uV = cfg->voltage_uV + 1u; // deliberately off for cv-version
-    settle_steps   = 0u;
+    cfg                  = config;
+    voltage_set_uV       = cfg->voltage_uV + 1u; // deliberately off for cv-version
+    settle_steps         = 0u;
 
     const bool_ft is_emu = (cfg->hrv_mode >> 0u) & 1u;
     if (is_emu && (cfg->interval_n > 2 * cfg->window_size))
@@ -168,8 +168,10 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
             else voltage_set_uV = sub32(voltage_set_uV, cfg->voltage_step_uV);
         }
         /* check boundaries */
-        if (is_rising && (voltage_set_uV > cfg->voltage_max_uV)) voltage_set_uV = cfg->voltage_max_uV;
-        if ((!is_rising) && (voltage_set_uV < cfg->voltage_min_uV)) voltage_set_uV = cfg->voltage_min_uV;
+        if (is_rising && (voltage_set_uV > cfg->voltage_max_uV))
+            voltage_set_uV = cfg->voltage_max_uV;
+        if ((!is_rising) && (voltage_set_uV < cfg->voltage_min_uV))
+            voltage_set_uV = cfg->voltage_min_uV;
 
         /* write new step */
         const uint32_t voltage_raw = cal_conv_uV_to_dac_raw(voltage_set_uV);
