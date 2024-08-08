@@ -20,7 +20,7 @@ from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
 from shepherd_core import Inventory
 from shepherd_core import local_tz
-from shepherd_core import tb_client
+from shepherd_core.testbed_client import tb_client
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.task import extract_tasks
