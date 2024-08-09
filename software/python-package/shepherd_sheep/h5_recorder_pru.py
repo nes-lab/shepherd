@@ -84,7 +84,7 @@ class PruRecorder(Monitor):
             return
         data_iv["time"].resize((buf_size,))
         data_pos = 0
-        for buf_iter in trange(self.position, desc="Add timestamps", mininterval=2):
+        for buf_iter in trange(self.position, desc="Add timestamps", mininterval=2, leave=False):
             buf_len = self.data["values"][buf_iter, 1]
             if buf_len == 0:
                 continue
