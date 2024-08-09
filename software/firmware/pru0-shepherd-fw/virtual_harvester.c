@@ -149,8 +149,14 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
     /* discard initial readings during reset */
     if (interval_step < STEP_IV_CUTOUT)
     {
-        if (is_rising) voltage_adc = 0;
-        else current_adc = 0;
+        // set lowest & highest 18 bit value of ADC
+        if (is_rising) voltage_adc = 0u;
+        else
+        {
+            voltage_adc = 0x3FFFFu;
+            current_adc = 0u;
+        }
+
     }
 
     if (settle_steps == 0u)
