@@ -10,7 +10,8 @@
   - query for alive status of testbed (all hosts responding)
   - more robust unittesting
 - python in general
-  - add progressbars to long processes
+  - add progress-bars to long processes
+  - remove progress-bar after task finishes (most)
   - don't limit pandas to <v2 anymore
 - pru vsourve & harvester
   - fix residue feature

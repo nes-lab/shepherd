@@ -2,12 +2,10 @@ from contextlib import ExitStack
 from pathlib import Path
 
 from shepherd_core import CalibrationHarvester
-from shepherd_core import Writer
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualHarvesterConfig
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
-from shepherd_core.vsource import VirtualHarvesterModel, simulate_harvester
+from shepherd_core.vsource import simulate_harvester
 from shepherd_data import Reader
 from shepherd_herd import Herd
 
