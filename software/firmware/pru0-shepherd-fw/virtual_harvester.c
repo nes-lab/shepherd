@@ -156,7 +156,6 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
             voltage_adc = 0x3FFFFu;
             current_adc = 0u;
         }
-
     }
 
     if (settle_steps == 0u)

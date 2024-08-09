@@ -238,7 +238,9 @@ class Herd:
                 args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
-        for host, thread in tqdm(threads.items(), desc="  .. joining threads", unit="n", leave=False):
+        for host, thread in tqdm(
+            threads.items(), desc="  .. joining threads", unit="n", leave=False
+        ):
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -341,7 +343,9 @@ class Herd:
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
             threads[_name].start()
-        for host, thread in tqdm(threads.items(), desc="  .. joining threads", unit="n", leave=False):
+        for host, thread in tqdm(
+            threads.items(), desc="  .. joining threads", unit="n", leave=False
+        ):
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -431,7 +435,9 @@ class Herd:
             )
             threads[i].start()
         logger.debug("  .. threads started - will wait until finished")
-        for i, cnx in enumerate(tqdm(self.group, desc="  .. joining threads", unit="n", leave=False)):
+        for i, cnx in enumerate(
+            tqdm(self.group, desc="  .. joining threads", unit="n", leave=False)
+        ):
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
