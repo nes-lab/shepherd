@@ -243,6 +243,7 @@ class ShepherdEmulator(ShepherdIO):
             desc="Measurement",
             mininterval=2,
             unit="s",
+            leave=False,
         )
 
         # Main Loop

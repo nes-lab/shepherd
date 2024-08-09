@@ -158,6 +158,7 @@ class ShepherdHarvester(ShepherdIO):
             desc="Measurement",
             mininterval=2,
             unit="s",
+            leave=False,
         )
 
         while True:
