@@ -55,17 +55,18 @@ def measure(
     password: str | None = pass_opt_t,
     outfile: Path | None = ofile_opt_t,
     smu_ip: str = smu_ip_opt_t,
-    smu_2wire: bool = smu_2w_opt_t,
     smu_nplc: float = smu_nc_opt_t,
+    cape_serial: str = serial_opt_t,
+    version: str | None = version_opt_t,
+    *,
+    smu_2wire: bool = smu_2w_opt_t,
     harvester: bool = hrv_opt_t,
     emulator: bool = emu_opt_t,
-    cape_serial: str = serial_opt_t,
     write: bool = write_opt_t,
-    version: str | None = version_opt_t,
     verbose: bool = verbose_opt_t,
 ) -> None:
     """Measure calibration-data for shepherd cape"""
-    cli_setup_callback(verbose)
+    cli_setup_callback(verbose=verbose)
     smu_4wire = not smu_2wire
     if not any([harvester, emulator]):
         harvester = True
@@ -78,7 +79,7 @@ def measure(
 
     results = {"host": host, "cape": cape}
 
-    shp_cal = Calibrator(host, user, password, smu_ip, smu_4wire, smu_nplc)
+    shp_cal = Calibrator(host, user, password, smu_ip, smu_nplc, mode_4wire=smu_4wire)
 
     if harvester:
         click.echo(INSTR_CAL_HRV)
@@ -134,10 +135,11 @@ def write(
     password: str | None = pass_opt_t,
     cal_file: Path | None = ifile_opt_t,
     measurement_file: Path | None = ifile_opt_t,
+    *,
     verbose: bool = verbose_opt_t,
 ) -> None:
     """Write calibration-data to shepherd cape eeprom (choose cal- or measurement-file)"""
-    cli_setup_callback(verbose)
+    cli_setup_callback(verbose=verbose)
     if not any([cal_file, measurement_file]):
         raise click.UsageError("provide one of cal-file or measurement-file")
     if all([cal_file, measurement_file]):
@@ -162,10 +164,11 @@ def read(
     user: str = user_opt_t,
     password: str | None = pass_opt_t,
     cal_file: Path | None = ofile_opt_t,
+    *,
     verbose: bool = verbose_opt_t,
 ) -> None:
     """Read calibration-data from shepherd cape"""
-    cli_setup_callback(verbose)
+    cli_setup_callback(verbose=verbose)
     shpcal = Calibrator(host, user, password)
     if cal_file is None:
         shpcal.read()

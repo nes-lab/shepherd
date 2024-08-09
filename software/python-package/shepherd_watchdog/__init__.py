@@ -1,9 +1,4 @@
-"""
-shepherd-watchdog
-~~~~~
-Allows to reset hardware-watchdog
-
-"""
+"""Allows to periodically reset hardware-watchdog on Cape."""
 
 import logging
 import signal
@@ -15,7 +10,7 @@ from types import TracebackType
 
 from typing_extensions import Self
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
@@ -34,7 +29,7 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
 
 
 class Watchdog:
-    """
+    """Allows to periodically reset hardware-watchdog on Cape.
 
     Args:
         pin_ack: pin that is resetting the hardware watchdog
@@ -69,15 +64,15 @@ class Watchdog:
         self.gpio_ack.close()
 
     def run(self) -> None:
-        """prevent system-reset from watchdog
-        cape-rev2 has a watchdog that can turn on the BB every ~60 min
+        """Prevent system-reset from watchdog.
 
+        cape-rev2 has a watchdog that can turn on the BB every ~60 min
         """
         try:
             while True:
-                self.gpio_ack.write(True)
+                self.gpio_ack.write(value=True)
                 time.sleep(0.002)
-                self.gpio_ack.write(False)
+                self.gpio_ack.write(value=False)
                 log.debug("Signaled ACK to Watchdog")
                 time.sleep(self.interval)
         except SystemExit:

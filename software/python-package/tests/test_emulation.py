@@ -25,7 +25,7 @@ def random_data(length: int) -> np.ndarray:
     return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
-@pytest.fixture
+@pytest.fixture()
 def src_cfg() -> VirtualSourceConfig:
     here = Path(__file__).resolve()
     name = "_test_config_virtsource.yaml"
@@ -33,7 +33,7 @@ def src_cfg() -> VirtualSourceConfig:
     return VirtualSourceConfig.from_file(file_path)
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "record_example.h5"
     with Writer(
@@ -69,7 +69,7 @@ def shp_reader(data_h5: Path) -> Generator[CoreReader, None, None]:
 
 @pytest.fixture()
 def emulator(
-    shepherd_up: None,
+    _shepherd_up: None,
     data_h5: Path,
     src_cfg: VirtualSourceConfig,
 ) -> Generator[ShepherdEmulator, None, None]:
@@ -82,7 +82,7 @@ def emulator(
         yield _e
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 def test_emulation(
     writer: Writer,
     shp_reader: CoreReader,
@@ -105,8 +105,9 @@ def test_emulation(
         _, _ = emulator.get_buffer()
 
 
-@pytest.mark.hardware
-def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up: None) -> None:
+@pytest.mark.hardware()
+@pytest.mark.usefixtures("_shepherd_up")
+def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 10)
     emu_cfg = EmulationTask(
@@ -132,9 +133,10 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path, shepherd_up: None) -> None:
         )
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
-def test_target_pins(shepherd_up: None) -> None:
+@pytest.mark.usefixtures("_shepherd_up")
+def test_target_pins() -> None:
     with ShepherdDebug() as shepherd_io:
         shepherd_io.start()
         shepherd_io.select_port_for_power_tracking(TargetPort.A)

@@ -1,6 +1,5 @@
-"""
+"""This program verifies a proper function of the shepherd frontends for emulator and harvester.
 
-This program verifies a proper function of the shepherd frontends for emulator and harvester.
 - a SMU is used to step through various voltage and current combinations
 - runs from 0 to 5 V and 0 to 50 mA with about 600 combinations
 - pru also samples 1 s of data (100k datapoints) from ADCs

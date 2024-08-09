@@ -66,9 +66,15 @@ def pytest_collection_modifyitems(
 
 
 @pytest.fixture()
-def shepherd_up(
+def _shepherd_down(fake_fs: FakeFilesystem | None) -> None:
+    if fake_fs is None:
+        remove_kernel_module()
+
+
+@pytest.fixture()
+def _shepherd_up(
+    _shepherd_down: None,
     fake_fs: FakeFilesystem | None,
-    shepherd_down: None,
 ) -> Generator[None, None, None]:
     if fake_fs is not None:
         files = [
@@ -107,11 +113,5 @@ def shepherd_up(
 
 
 @pytest.fixture()
-def shepherd_down(fake_fs: FakeFilesystem | None) -> None:
-    if fake_fs is None:
-        remove_kernel_module()
-
-
-@pytest.fixture
 def cli_runner() -> CliRunner:
     return CliRunner()

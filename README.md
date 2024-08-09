@@ -132,8 +132,6 @@ Try `shepherd-herd --help` or check out the documentation [here](https://shepher
 
 ## Problems and Questions
 
-*shepherd* is an early stage project and chances are that something is not working as expected.
-Also, some features are not yet fully supported or documented.
 If you experience issues or require additional features, please get in touch via e-mail or by creating an issue on GitHub. The issue-tab also gives an overview for current roadmaps and milestones.
 
 ## People

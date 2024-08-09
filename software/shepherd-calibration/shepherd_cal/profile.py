@@ -182,13 +182,13 @@ class Profile:
     def get_stats(self) -> pd.DataFrame:
         return pd.concat(self.stats, axis=0, ignore_index=True)
 
-    def scatter_setpoints_stddev(self, component: str, filtered: bool = False) -> None:
+    def scatter_setpoints_stddev(self, component: str, *, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
         filter_str = "_filtered" if filtered else ""
         c_gain = self.cals[component].current.gain
-        x = 1e3 * data.v_ref_V  # todo: transition not finished, same with above FN
+        x = 1e3 * data.v_ref_V  # TODO: transition not finished, same with above FN
         y = []
         stddev = []
         vol = []
@@ -213,7 +213,7 @@ class Profile:
             orientation="vertical",
             shrink=0.7,
         )
-        ax.grid(True)
+        ax.grid(visible=True)
         ax.set_xlim(-500, 5000)
         ax.set_ylim(-5, 50)
         fig.set_figwidth(11)
@@ -225,7 +225,7 @@ class Profile:
         plt.close(fig)
         plt.clf()
 
-    def scatter_setpoints_dynamic(self, component: str, filtered: bool = False) -> None:
+    def scatter_setpoints_dynamic(self, component: str, *, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
@@ -266,7 +266,7 @@ class Profile:
             shrink=0.7,
         )
 
-        ax.grid(True)
+        ax.grid(visible=True)
         ax.set_xlim(-500, 5000)
         ax.set_ylim(-5, 50)
         fig.set_figwidth(11)
@@ -278,7 +278,7 @@ class Profile:
         plt.close(fig)
         plt.clf()
 
-    def quiver_setpoints_offset(self, component: str, filtered: bool = False) -> None:
+    def quiver_setpoints_offset(self, component: str, *, filtered: bool = False) -> None:
         data = self.results[component]
         if filtered:
             data = data[self.res_filters[component]]
@@ -314,7 +314,7 @@ class Profile:
             shrink=0.7,
         )
 
-        ax.grid(True)
+        ax.grid(visible=True)
         ax.set_xlim(-500, 5500)
         ax.set_ylim(-5, 55)
         fig.set_figwidth(11)

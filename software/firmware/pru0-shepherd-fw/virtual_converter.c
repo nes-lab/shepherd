@@ -159,11 +159,8 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         /* disable boost if input voltage too low for boost to work, TODO: is this also in 65ms interval? */
         if (input_voltage_uV < cfg->V_input_boost_threshold_uV) { input_voltage_uV = 0u; }
 
-        /* limit input voltage when higher than voltage of storage cap */
-        if (input_voltage_uV > (state.V_mid_uV_n32 >> 32u))
-        {
-            input_voltage_uV = (uint32_t) (state.V_mid_uV_n32 >> 32u);
-        }
+        // if (input_voltage_uV > (state.V_mid_uV_n32 >> 32u) + cfg->V_input_drop_uV)
+        // TODO: vdrop in case of non-boost?
     }
     else if (state.enable_storage == false)
     {

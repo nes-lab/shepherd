@@ -32,7 +32,7 @@ def analyze_directory(
     elif folder_path.is_dir():
         files = files + os.listdir(folder_path)
     else:
-        raise ValueError(f"Provided Path is neither directory or file ({folder_path})")
+        raise ValueError("Provided Path is neither directory or file (%s)", folder_path.as_posix())
 
     for file in files:
         fpath = Path(file)
@@ -49,9 +49,9 @@ def analyze_directory(
         if do_plots:
             for component in profile.data:
                 for filtered in [True, False]:
-                    profile.quiver_setpoints_offset(component, filtered)
-                    # profile.scatter_setpoints_stddev(component, filtered)
-                    # profile.scatter_setpoints_dynamic(component, filtered)
+                    profile.quiver_setpoints_offset(component, filtered=filtered)
+                    # profile.scatter_setpoints_stddev(component, filtered=filtered)
+                    # profile.scatter_setpoints_dynamic(component, filtered=filtered)
 
     stat_df = pd.concat(stats_list, axis=0)
     stat_df.to_csv(stats_path, sep=";", decimal=",", index=False)

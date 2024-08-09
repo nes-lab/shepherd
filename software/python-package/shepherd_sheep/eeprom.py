@@ -56,7 +56,7 @@ class EEPROM:
         """
         self.dev_path = f"/sys/bus/i2c/devices/{bus_num}-{address:04X}/eeprom"
         self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
-        self._write_protect_pin.write(True)
+        self._write_protect_pin.write(value=True)
 
     def __enter__(self) -> Self:
         self.fd = os.open(self.dev_path, os.O_RDWR | os.O_SYNC)
@@ -70,7 +70,6 @@ class EEPROM:
         extra_arg: int = 0,
     ) -> None:
         os.close(self.fd)
-        pass
 
     def _read(self, address: int, n_bytes: int) -> bytes:
         """Reads a given number of bytes from given address.
@@ -92,14 +91,14 @@ class EEPROM:
         Raises:
             TimeoutError: If write operation times out
         """
-        self._write_protect_pin.write(False)
+        self._write_protect_pin.write(value=False)
         os.lseek(self.fd, address, 0)
         try:
             os.write(self.fd, buffer)
         except TimeoutError:
             log.error("Timeout writing to EEPROM. Is write protection disabled?")
             raise
-        self._write_protect_pin.write(True)
+        self._write_protect_pin.write(value=True)
 
     def __getitem__(self, key: str) -> bytes | str:
         """Retrieves attribute from EEPROM.

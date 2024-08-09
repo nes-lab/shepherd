@@ -36,7 +36,7 @@ shepherd_modes = {
 
 
 def flatten_list(dl: list) -> list:
-    """small helper FN to convert (multi-dimensional) lists to 1D list
+    """Small helper FN to convert (multi-dimensional) lists to 1D list
 
     Args:
         dl: (multi-dimensional) lists
@@ -98,10 +98,11 @@ def reload_kernel_module() -> None:
 
 def disable_ntp() -> None:
     subprocess.run(  # noqa: S603
-        ["/usr/bin/systemctl", "stop" "systemd-timesyncd.service"],
+        ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
         timeout=60,
         check=False,
     )
+    log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
 def check_sys_access(iteration: int = 1) -> None:
@@ -173,15 +174,15 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
         raise SysfsInterfaceError(f"Cannot start from state { current_state }")
 
     try:
-        with Path("/sys/shepherd/state").open("w", encoding="utf-8") as f:
+        with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
             if isinstance(start_time, float):
                 start_time = int(start_time)
             if isinstance(start_time, int):
                 log.debug("writing start-time = %d to sysfs", start_time)
-                f.write(f"{start_time}")
+                fh.write(f"{start_time}")
             else:  # unknown type
                 log.debug("writing 'start' to sysfs")
-                f.write("start")
+                fh.write("start")
     except OSError:
         log.error("Failed to write 'Start' to sysfs (@%f.3)", time.time())
         return False
@@ -199,8 +200,8 @@ def set_stop(force: bool = False) -> None:
         if current_state != "running":
             raise SysfsInterfaceError(f"Cannot stop from state { current_state }")
 
-    with Path("/sys/shepherd/state").open("w", encoding="utf-8") as f:
-        f.write("stop")
+    with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
+        fh.write("stop")
 
 
 def write_mode(mode: str, force: bool = False) -> None:
@@ -223,8 +224,8 @@ def write_mode(mode: str, force: bool = False) -> None:
         )
 
     log.debug("sysfs/mode: '%s'", mode)
-    with Path("/sys/shepherd/mode").open("w", encoding="utf-8") as f:
-        f.write(mode)
+    with Path("/sys/shepherd/mode").open("w", encoding="utf-8") as fh:
+        fh.write(mode)
 
 
 @validate_call
@@ -293,9 +294,9 @@ def write_dac_aux_voltage_raw(
     with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open(
         "w",
         encoding="utf-8",
-    ) as f:
+    ) as fh:
         log.debug("Sending raw auxiliary voltage (dac channel B): %d", voltage_raw)
-        f.write(str(voltage_raw))
+        fh.write(str(voltage_raw))
 
 
 def read_dac_aux_voltage(cal_emu: CalibrationEmulator | None = None) -> float:
@@ -317,7 +318,6 @@ def read_dac_aux_voltage_raw() -> int:
     """Reads the auxiliary voltage (dac channel B) to the PRU core.
 
     Args:
-
     Returns: voltage as dac_raw
     """
     with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open(encoding="utf-8") as f:
@@ -337,26 +337,26 @@ def write_calibration_settings(
     """
     if cal_pru["adc_current_gain"] < 0:
         raise SysfsInterfaceError(
-            f"sending calibration with negative ADC-C-gain: {cal_pru['adc_current_gain']}",
+            "sending calibration with negative ADC-C-gain: %f", cal_pru["adc_current_gain"]
         )
     if cal_pru["adc_voltage_gain"] < 0:
         raise SysfsInterfaceError(
-            f"sending calibration with negative ADC-V-gain: {cal_pru['adc_voltage_gain']}",
+            "sending calibration with negative ADC-V-gain: %f", cal_pru["adc_voltage_gain"]
         )
     if cal_pru["dac_voltage_gain"] < 0:
         raise SysfsInterfaceError(
-            f"sending calibration with negative DAC-gain: {cal_pru['dac_voltage_gain']}",
+            "sending calibration with negative DAC-gain: %f", cal_pru["dac_voltage_gain"]
         )
     wait_for_state("idle", 3.0)
 
-    with Path("/sys/shepherd/calibration_settings").open("w", encoding="utf-8") as f:
+    with Path("/sys/shepherd/calibration_settings").open("w", encoding="utf-8") as fh:
         output = (
             f"{int(cal_pru['adc_current_gain'])} {int(cal_pru['adc_current_offset'])} \n"
             f"{int(cal_pru['adc_voltage_gain'])} {int(cal_pru['adc_voltage_offset'])} \n"
             f"{int(cal_pru['dac_voltage_gain'])} {int(cal_pru['dac_voltage_offset'])}"
         )
-        log.debug("Sending calibration settings:\n%s", output)
-        f.write(output)
+        log.debug("Transfer Calibration-Settings to sysfs_if (2nd row unused by emu):\n%s", output)
+        fh.write(output)
 
 
 def read_calibration_settings() -> dict[str, int]:
@@ -381,15 +381,15 @@ def read_calibration_settings() -> dict[str, int]:
 
 @validate_call
 def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
-    """Sends the virtual-converter settings to the PRU core.
+    """Send the virtual-converter settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
 
     """
     settings = list(settings.model_dump().values())
     log.debug(
-        "Writing virtual converter to sysfs_interface, first values are %s",
-        settings[0:3],
+        "Writing virtual converter to sysfs_interface, first values are\n\t%s",
+        settings[0:10],
     )
 
     output = ""
@@ -426,15 +426,15 @@ def read_virtual_converter_settings() -> list:
 
 @validate_call
 def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
-    """Sends the settings to the PRU core.
+    """Send the settings to the PRU core.
 
     The pru-algorithm uses these settings to configure emulator.
 
     """
     settings = list(settings.model_dump().values())
     log.debug(
-        "Writing virtual harvester to sysfs_interface, first values are %s",
-        settings[0:3],
+        "Writing virtual harvester to sysfs_interface, first values are\n\t%s",
+        settings[0:10],
     )
     output = ""
     for setting in settings:
@@ -442,7 +442,9 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
             output += f"{setting} \n"
         else:
             raise SysfsInterfaceError(
-                f"virtual harvester value {setting} has wrong type ({type(setting)})",
+                "virtual harvester value %s has wrong type (%s)",
+                setting,
+                type(setting),
             )
 
     wait_for_state("idle", 3.0)
@@ -595,7 +597,8 @@ pru_firmwares = [
 
 
 def load_pru_firmware(value: str = "pru0-shepherd") -> None:
-    """Swap firmwares
+    """Swap out firmware for PRU.
+
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
     WORKAROUND: catch lockup, restart shp-module until successful
 
@@ -651,7 +654,7 @@ def pru_firmware_is_default() -> bool:
                 if "shepherd-fw" not in file.read().rstrip():
                     return False
             return True
-        except OSError:  # noqa: PERF203
+        except OSError:
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
                 " -> will restart kernel-module (n=%d)",

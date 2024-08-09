@@ -29,7 +29,7 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2024.7.2",
+    "shepherd-core[elf,inventory]>=2024.8.2",
     "click",
     "numpy",
     "fabric",

@@ -48,8 +48,9 @@ class Calibrator:
         user: str,
         password: str | None = None,
         smu_ip: str | None = None,
-        mode_4wire: bool = True,
         pwrline_cycles: float = 16,
+        *,
+        mode_4wire: bool = True,
     ) -> None:
         fabric_args: dict[str, str] = {}
         if password is not None:

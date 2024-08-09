@@ -26,7 +26,7 @@ def data_buffer() -> DataBuffer:
     return DataBuffer(voltage, current, 1551848387472)
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "record_example.h5"
     with Writer(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
@@ -38,7 +38,7 @@ def data_h5(tmp_path: Path) -> Path:
     return name
 
 
-@pytest.fixture
+@pytest.fixture()
 def cal_cape() -> CalibrationCape:
     return CalibrationCape()
 

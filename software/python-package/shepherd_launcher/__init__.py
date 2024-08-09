@@ -1,7 +1,5 @@
-"""
-shepherd.launcher
-~~~~~
-Launcher allows to start and stop shepherd service with the press of a button.
+"""Launcher allows to start and stop shepherd service with the press of a button.
+
 Relies on systemd service.
 
 """
@@ -17,7 +15,7 @@ from types import TracebackType
 
 from typing_extensions import Self
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpLauncher")
@@ -106,13 +104,13 @@ class Launcher:
         try:
             while True:
                 log.info("Waiting for falling edge..")
-                self.gpio_led.write(True)
+                self.gpio_led.write(value=True)
                 if not self.gpio_button.poll(timeout=None):
                     # NOTE poll is suspected to exit after ~ 1-2 weeks running
                     #      -> fills mmc with random measurement otherwise
                     log.debug("Button.Poll() exited without detecting edge")
                     continue
-                self.gpio_led.write(False)
+                self.gpio_led.write(value=False)
                 log.debug("Edge detected")
                 if not self.get_state():
                     time.sleep(0.25)
@@ -120,7 +118,7 @@ class Launcher:
                         log.debug("2nd falling edge detected")
                         log.info("Shutdown requested")
                         self.initiate_shutdown()
-                        self.gpio_led.write(False)
+                        self.gpio_led.write(value=False)
                         time.sleep(3)
                         continue
                 self.set_service(not self.get_state())
@@ -170,7 +168,7 @@ class Launcher:
 
         if requested_state == active_state:
             log.debug("service already in requested state")
-            self.gpio_led.write(active_state)
+            self.gpio_led.write(value=active_state)
             return None
 
         if active_state:
@@ -202,12 +200,12 @@ class Launcher:
                 log.debug("Edge detected")
                 log.info("Shutdown canceled")
                 return
-            self.gpio_led.write(True)
+            self.gpio_led.write(value=True)
             if self.gpio_button.poll(timeout=0.5):
                 log.debug("Edge detected")
                 log.info("Shutdown canceled")
                 return
-            self.gpio_led.write(False)
+            self.gpio_led.write(value=False)
         os.sync()
         log.info("Shutting down now")
         self.sd_man.PowerOff()

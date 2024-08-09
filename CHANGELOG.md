@@ -1,5 +1,31 @@
 # History of Changes
 
+## 0.8.1
+
+- sheep
+  - limit pru-warning count
+  - fix forced stopping of ntp-service
+  - improve debug-output
+- herd
+  - query for alive status of testbed (all hosts responding)
+  - more robust unittesting
+- python in general
+  - add progress-bars to long processes
+  - remove progress-bar after task finishes (most)
+  - don't limit pandas to <v2 anymore
+- pru vsourve & harvester
+  - fix residue feature
+  - remove limiting-behavior of boost-regulator
+  - fix calculation of window_size for individual usecases
+  - ivcurve - cutout measurements during big step
+- harvesting ivcurves
+  - fix max age of samples
+  - improve initial interval_step to intake two whole ivcurves before reset
+  - improve VOC-harvester
+- ansible: remove py-packages before install
+- extend ruff and fix ~ 200 linting-errors
+- **tested**: pytest sheep, pytest herd, playbook dev_rebuild_sw.yml
+
 ## 0.8.0
 
 - linux
@@ -49,8 +75,7 @@
 - add current hardware design files
 - major overhaul documentation
 - **tested (fully)**: pytest sheep, pytest herd, ansible install
-- ready-to-use image will be created - look in
-
+- ready-to-use image will be created - look in getting-started guide
 
 ## 0.7.1
 

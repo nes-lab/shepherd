@@ -12,5 +12,5 @@ parameters:
   virtual_harvester:
     name: ivcurves
   use_cal_default: true
-  force_overwrite: false
+  force_overwrite: true
   verbose: 2 # serious performance impact for value > 3

@@ -1,6 +1,5 @@
-"""
-shepherd_testing_gui
-~~~~~
+"""GUI to test the functionality of the shepherd cape.
+
 dearPyGui-based debug and test utility for controlling hw-functions of a shepherd node
 remotely.
 
@@ -8,6 +7,7 @@ remotely.
 
 import dearpygui.dearpygui as dpg
 from shepherd_callbacks import *
+from shepherd_core.logger import increase_verbose_level
 
 include("../python-package/shepherd/calibration.py")
 # changes to make 0.8-Code work with v1.3
@@ -301,6 +301,7 @@ def assemble_window() -> None:
 
 
 if __name__ == "__main__":
+    increase_verbose_level(3)
     dpg.create_context()
     dpg.create_viewport(
         title="Shepherd Testing and Debug Tool (VP)",

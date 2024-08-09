@@ -1,4 +1,4 @@
-# TODO functions:
+# TODO: functions
 #  - target
 #  - process_result
 #  - start_openocd

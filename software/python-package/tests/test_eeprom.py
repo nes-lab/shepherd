@@ -54,7 +54,7 @@ def eeprom_with_data(
     cape_data: CapeData,
 ) -> Generator[EEPROM, None, None]:
     eeprom_retained._write_cape_data(cape_data)
-    yield eeprom_retained
+    return eeprom_retained
 
 
 @pytest.fixture()
@@ -63,33 +63,33 @@ def eeprom_with_calibration(
     cal_cape: CalibrationCape,
 ) -> Generator[EEPROM, None, None]:
     eeprom_retained.write_calibration(cal_cape)
-    yield eeprom_retained
+    return eeprom_retained
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_read_raw(eeprom_open: EEPROM) -> None:
     eeprom_open._read(0, 4)
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_write_raw(eeprom_retained: EEPROM, data_test_string: bytes) -> None:
     eeprom_retained._write(0, data_test_string)
     data = eeprom_retained._read(0, len(data_test_string))
     assert data == data_test_string
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_read_value(eeprom_with_data: EEPROM, cape_data: CapeData) -> None:
     with pytest.raises(KeyError):
         _ = eeprom_with_data["some non-sense parameter"]
     assert eeprom_with_data["version"] == cape_data["version"]
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_write_value(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
     with pytest.raises(KeyError):
         eeprom_retained["some non-sense parameter"] = "some data"
@@ -98,8 +98,8 @@ def test_write_value(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
     assert eeprom_retained["version"] == "1234"
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_write_capedata(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
     eeprom_retained._write_cape_data(cape_data)
     for key, value in cape_data.items():
@@ -109,16 +109,16 @@ def test_write_capedata(eeprom_retained: EEPROM, cape_data: CapeData) -> None:
             assert eeprom_retained[key] == value
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_read_capedata(eeprom_with_data: EEPROM, cape_data: CapeData) -> None:
     cape_data2 = eeprom_with_data._read_cape_data()
     for key, _ in cape_data:
         assert cape_data[key] == cape_data2[key]
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_write_calibration(eeprom_retained: EEPROM, cal_cape: CalibrationCape) -> None:
     eeprom_retained.write_calibration(cal_cape)
     cal_restored = eeprom_retained.read_calibration()
@@ -126,8 +126,8 @@ def test_write_calibration(eeprom_retained: EEPROM, cal_cape: CalibrationCape) -
         assert cal_restored[component].get_hash() == cal_cape[component].get_hash()
 
 
-@pytest.mark.eeprom_write
-@pytest.mark.hardware
+@pytest.mark.eeprom_write()
+@pytest.mark.hardware()
 def test_read_calibration(
     eeprom_with_calibration: EEPROM,
     cal_cape: CalibrationCape,

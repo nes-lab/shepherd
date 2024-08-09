@@ -178,7 +178,7 @@ class ShepherdIO:
         for _ in range(timeout_n):
             try:
                 return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:  # noqa: PERF203
+            except sfs.SysfsInterfaceError:
                 time.sleep(self._buffer_period)
                 continue
         raise ShepherdIOError("Timeout waiting for message", ShepherdIOError.ID_TIMEOUT)
@@ -189,7 +189,7 @@ class ShepherdIO:
         while True:
             try:
                 sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:  # noqa: PERF203
+            except sfs.SysfsInterfaceError:
                 break
 
     def start(
@@ -306,7 +306,7 @@ class ShepherdIO:
         """
         state_str = "enabled" if state else "disabled"
         log.debug("Set power-supplies of shepherd-cape to %s", state_str)
-        self.gpios["en_shepherd"].write(state)
+        self.gpios["en_shepherd"].write(value=state)
         if state:
             time.sleep(0.5)  # time to stabilize voltage-drop
 
@@ -320,7 +320,7 @@ class ShepherdIO:
         """
         state_str = "enabled" if state else "disabled"
         log.debug("Set Recorder of shepherd-cape to %s", state_str)
-        self.gpios["en_recorder"].write(state)
+        self.gpios["en_recorder"].write(value=state)
         if state:
             time.sleep(0.3)  # time to stabilize voltage-drop
 
@@ -334,7 +334,7 @@ class ShepherdIO:
         """
         state_str = "enabled" if state else "disabled"
         log.debug("Set Emulator of shepherd-cape to %s", state_str)
-        self.gpios["en_emulator"].write(state)
+        self.gpios["en_emulator"].write(value=state)
         if state:
             time.sleep(0.3)  # time to stabilize voltage-drop
 
@@ -373,7 +373,7 @@ class ShepherdIO:
             "Set routing for (main) supply with current-monitor to target %s",
             target,
         )
-        self.gpios["target_pwr_sel"].write(value)
+        self.gpios["target_pwr_sel"].write(value=value)
         if current_state != "idle":
             self.start(wait_blocking=True)
 
@@ -381,7 +381,7 @@ class ShepherdIO:
         self,
         target: TargetPort | bool | None,
     ) -> None:
-        """choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
+        """Choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
         shepherd hw-rev2 has two ports for targets and can switch independently
         between power supplies
@@ -391,7 +391,7 @@ class ShepherdIO:
         """
         value = self.convert_target_port_to_bool(target)
         log.debug("Set routing for IO to Target %s", target)
-        self.gpios["target_io_sel"].write(value)
+        self.gpios["target_io_sel"].write(value=value)
 
     def set_io_level_converter(self, state: bool) -> None:
         """Enables or disables the GPIO level converter to targets.
@@ -408,7 +408,7 @@ class ShepherdIO:
             state = False
         state_str = "enabled" if state else "disabled"
         log.debug("Set target-io level converter to %s", state_str)
-        self.gpios["target_io_en"].write(state)
+        self.gpios["target_io_en"].write(value=state)
 
     @staticmethod
     def set_aux_target_voltage(
@@ -458,7 +458,9 @@ class ShepherdIO:
                 cal_ = CalibrationHarvester()
             else:
                 cal_ = CalibrationEmulator()
-        log.debug("Calibration-Settings:\n%s", cal_)
+        log.debug("Calibration-Settings (%s):", self.component)
+        for key, value in cal_.model_dump(exclude_unset=False, exclude_defaults=False).items():
+            log.debug("\t%s: %s", key, value)
         cal_dict = cal_.export_for_sysfs()
         sfs.write_calibration_settings(cal_dict)
 
@@ -518,7 +520,6 @@ class ShepherdIO:
             TimeoutException: If no message is received within
                 specified timeout
         """
-
         while True:
             msg_type, values = self._get_msg(timeout_n)
             value = values[0]

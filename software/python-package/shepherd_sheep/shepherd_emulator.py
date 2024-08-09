@@ -13,6 +13,7 @@ from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
+from tqdm import tqdm
 from typing_extensions import Self
 
 from . import commons
@@ -83,7 +84,13 @@ class ShepherdEmulator(ShepherdIO):
                 gain=1e9 * cal_inp.current.gain,
                 offset=1e9 * cal_inp.current.offset,
             ),
+            # TODO: add units
         )
+        log.debug("Calibration-Setting of input file:")
+        for key, value in self.cal_pru.model_dump(
+            exclude_unset=False, exclude_defaults=False
+        ).items():
+            log.debug("\t%s: %s", key, value)
 
         self.cal_emu = retrieve_calibration(cfg.use_cal_default).emulator
 
@@ -107,7 +114,7 @@ class ShepherdEmulator(ShepherdIO):
         )
         self.hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=cfg.virtual_source.harvester,
-            for_emu=False,
+            for_emu=True,
             dtype_in=self.reader.get_datatype(),
         )
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
@@ -220,16 +227,24 @@ class ShepherdEmulator(ShepherdIO):
         self.wait_for_start(self.start_time - time.time() + 15)
         log.info("shepherd started!")
 
-        if self.cfg.duration is None:
-            ts_end = sys.float_info.max
-        else:
+        if self.cfg.duration is not None:
             duration_s = self.cfg.duration.total_seconds()
             ts_end = self.start_time + duration_s
             log.debug("Duration = %s (forced runtime)", duration_s)
+        else:
+            duration_s = self.reader.runtime_s
+            ts_end = sys.float_info.max
+            log.debug("Duration = %s (runtime of input file)", duration_s)
 
         # Heartbeat-Message
-        delay_alive: int = 60
-        ts_alive: float = self.start_time + delay_alive
+        buffer_period_s = self.samples_per_buffer / self.samplerate_sps
+        prog_bar = tqdm(
+            total=duration_s,
+            desc="Measurement",
+            mininterval=2,
+            unit="s",
+            leave=False,
+        )
 
         # Main Loop
         for _, dsv, dsc in self.reader.read_buffers(
@@ -243,11 +258,7 @@ class ShepherdEmulator(ShepherdIO):
             if ts_now >= ts_end:
                 log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                 break
-            if ts_now >= ts_alive:
-                duration_s = round(ts_now - self.start_time)
-                log.debug("... now measuring for %d s", duration_s)
-                ts_alive += delay_alive
-                # TODO: switch to tqdm, progressbar
+            prog_bar.update(n=buffer_period_s)
 
             if self.writer is not None:
                 try:
@@ -262,6 +273,7 @@ class ShepherdEmulator(ShepherdIO):
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
             self.return_buffer(idx, hrvst_buf, self.verbose_extra)
 
+        prog_bar.close()
         # Read all remaining buffers from PRU
         try:
             while True:

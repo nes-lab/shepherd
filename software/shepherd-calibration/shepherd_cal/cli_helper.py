@@ -7,20 +7,21 @@ import shepherd_core
 import typer
 
 from . import __version__
+from .logger import activate_verbosity
 from .logger import logger
-from .logger import set_verbosity
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    logger.warning("Aborted!")
+    logger.warning("Exiting!")
     sys.exit(0)
 
 
-def cli_setup_callback(verbose: bool = False, print_version: bool = False) -> None:
+def cli_setup_callback(*, verbose: bool = False, print_version: bool = False) -> None:
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
-    set_verbosity(verbose)
+    if verbose:
+        activate_verbosity()
 
     if print_version:
         logger.info("Shepherd-Cal v%s", __version__)

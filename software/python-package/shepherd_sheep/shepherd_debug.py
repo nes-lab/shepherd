@@ -66,7 +66,7 @@ class ShepherdDebug(ShepherdIO):
         return self
 
     def adc_read(self, channel: str) -> int:
-        """Reads value from specified ADC channel.
+        """Read value from specified ADC channel.
 
         Args:
             channel (str): Specifies the channel to read from, e.g., 'v_in' for
@@ -101,7 +101,7 @@ class ShepherdDebug(ShepherdIO):
         return values[0]
 
     def gpi_read(self) -> int:
-        """issues a pru-read of the gpio-registers that monitor target-communication
+        """Issues a pru-read of the gpio-registers that monitor target-communication
 
         Returns: an int with the corresponding bits set
                 -> see bit-definition in commons.py
@@ -351,7 +351,7 @@ class ShepherdDebug(ShepherdIO):
 
     def set_gpio_direction(self, num: int, pdir: bool) -> None:
         if self._io is not None:
-            self._io.set_pin_direction(num, pdir)
+            self._io.set_pin_direction(num, pdir=pdir)
         else:
             log.debug("Error: IO is not enabled in this shepherd-debug-instance")
 
@@ -442,6 +442,8 @@ class ShepherdDebug(ShepherdIO):
                 msg_type, values = self._get_msg(5)
                 if msg_type != commons.MSG_PGM_ERROR_WRITE:
                     # TODO: that should trigger an error
+                    # TODO: programmer recently emits this at the end of process:
+                    #       ..-WRITE-ERROR: ihex to target @0x0, data=0 [0x0]
                     log.error(
                         "PROGRAMMER-WRITE-ERROR: ihex to target @%s, data=%d [%s]",
                         f"0x{values[0]:X}",

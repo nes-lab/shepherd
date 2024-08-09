@@ -1,4 +1,4 @@
-"""Performance-Profiling
+"""Performance-Profiling for Sheep-Program.
 
 Shell on BBone:
 sudo python3 profiler_cli.py
@@ -54,6 +54,6 @@ res = cli_runner.invoke(
     """,
     )
 
-print(f"Routine took {time.time() - time_start} s")
+print(f"Routine took {time.time() - time_start} s")  # noqa: T201
 prof.create_stats()
 prof.dump_stats(path_log)

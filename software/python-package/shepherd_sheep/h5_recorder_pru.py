@@ -4,6 +4,7 @@ from types import TracebackType
 import h5py
 import numpy as np
 from shepherd_core import Compression
+from tqdm import trange
 
 from .h5_monitor_abc import Monitor
 from .logger import log
@@ -48,7 +49,7 @@ class PruRecorder(Monitor):
         super().__exit__()
 
     def write(self, buffer: DataBuffer) -> None:
-        """this data allows to
+        """This data allows to
         - reconstruct timestamp-stream later (runtime-optimization, 33% less load)
         - identify critical pru0-timeframes
         """
@@ -67,7 +68,10 @@ class PruRecorder(Monitor):
         self.position += 1
 
     def add_timestamps(self, data_iv: h5py.Group, tseries: np.ndarray) -> None:
-        """Add timestamps to Group - only when previously omitted."""
+        """Add timestamps to Group - only when previously omitted.
+
+        Note: location here in pru-recorder is weird, but that one has info about buffer TS and content
+        """
         # TODO: may be more useful on server -> so move to core-writer
         if data_iv["time"].shape[0] == data_iv["voltage"].shape[0]:
             return  # no action needed
@@ -80,7 +84,7 @@ class PruRecorder(Monitor):
             return
         data_iv["time"].resize((buf_size,))
         data_pos = 0
-        for buf_iter in range(self.position):
+        for buf_iter in trange(self.position, desc="Add timestamps", mininterval=2, leave=False):
             buf_len = self.data["values"][buf_iter, 1]
             if buf_len == 0:
                 continue

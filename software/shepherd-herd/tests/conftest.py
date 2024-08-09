@@ -7,10 +7,11 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from shepherd_data import Writer
+from shepherd_herd import Herd
 from shepherd_herd.herd_cli import cli
 
 
-@pytest.fixture
+@pytest.fixture()
 def cli_runner() -> CliRunner:
     return CliRunner()
 
@@ -20,7 +21,7 @@ def extract_first_sheep(herd_path: Path) -> str:
         try:
             inventory_data = yaml.safe_load(stream)
         except yaml.YAMLError as _xpt:
-            raise TypeError(f"Couldn't read inventory file {herd_path}") from _xpt
+            raise TypeError("Couldn't read inventory file %s", herd_path.as_posix()) from _xpt
     return next(iter(inventory_data["sheep"]["hosts"].keys()))
 
 
@@ -29,11 +30,11 @@ def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -
     while cli_runner.invoke(cli, ["status"]).exit_code > 0:
         duration = time.time() - ts_start
         if duration > timeout:
-            raise TimeoutError(f"Shepherd ran into timeout ({timeout} s)")
+            raise TimeoutError("Shepherd ran into timeout (%f s)", timeout)
         time.sleep(2)
     duration = time.time() - ts_start
     if duration < tmin:
-        raise TimeoutError(f"Shepherd only took {duration} s (min = {tmin} s)")
+        raise TimeoutError("Shepherd only took %f s (min = %f s)", duration, tmin)
     return False
 
 
@@ -57,12 +58,12 @@ def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> 
     return store_path
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_h5_path(tmp_path: Path) -> Path:
     return generate_h5_file(tmp_path)
 
 
-@pytest.fixture
+@pytest.fixture()
 def local_herd(tmp_path: Path) -> Path:
     # locations copied from herd.cli()
     inventories = [
@@ -82,8 +83,20 @@ def local_herd(tmp_path: Path) -> Path:
     return local_path
 
 
-@pytest.fixture
-def stopped_herd(cli_runner: CliRunner) -> None:
+@pytest.fixture()
+def _herd_alive() -> None:
+    # pre-test is good for start of new test-file
+    for _ in range(3):
+        time.sleep(1)
+        with Herd() as herd:
+            if len(herd.group) > 0:
+                time.sleep(1)
+                return
+    raise RuntimeError("No Sheep seems to be alive")
+
+
+@pytest.fixture()
+def _herd_stopped(cli_runner: CliRunner, _herd_alive: None) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active
@@ -91,8 +104,6 @@ def stopped_herd(cli_runner: CliRunner) -> None:
         cli,
         [
             "-v",
-            "run",
-            "--sudo",
-            "'modprobe -a shepherd'",
+            "fix",
         ],
     )

@@ -27,7 +27,7 @@ from .logger import logger as log
 
 
 def exit_gracefully(*args) -> None:  # type: ignore
-    log.warning("Aborted!")
+    log.warning("Exiting!")
     sys.exit(0)
 
 

@@ -100,6 +100,7 @@ class SharedMemory:
         self.n_buffers = int(n_buffers)
         self.samples_per_buffer = int(samples_per_buffer)
         self.prev_timestamp: int = 0
+        self.pru_warn: int = 10
 
         self.trace_iv = trace_iv
         self.trace_gp = trace_gpio
@@ -331,13 +332,18 @@ class SharedMemory:
         pru0_util_mean = round(100 * pru0_sum_ticks / n_samples / 2000, 1)
         if pru0_util_mean > pru0_util_max:
             pru0_util_mean = 0.1
-        if (pru0_util_mean > 98) or (pru0_util_max > 100):
+        if (self.pru_warn > 0) and ((pru0_util_mean > 95) or (pru0_util_max > 100)):
             log.warning(
                 "Pru0 Loop-Util: mean = %d %%, max = %d %% "
                 "-> WARNING: probably broken real-time-condition",
                 pru0_util_mean,
                 pru0_util_max,
             )
+            self.pru_warn -= 1
+            if self.pru_warn == 0:
+                log.warning(
+                    "Pru0 Loop-Util-Warning is silenced now! Is emu running without a cape?"
+                )
             # TODO: this is causing high overhead without a cape
         elif verbose:
             log.info(

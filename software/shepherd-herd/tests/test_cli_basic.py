@@ -10,6 +10,7 @@ from .conftest import generate_h5_file
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_run_standard(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -22,6 +23,7 @@ def test_run_standard(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_run_extra(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -35,6 +37,7 @@ def test_run_extra(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_run_fail(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -48,6 +51,7 @@ def test_run_fail(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_run_sudo(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -62,6 +66,7 @@ def test_run_sudo(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_run_sudo_long(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
@@ -76,6 +81,7 @@ def test_run_sudo_long(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_provide_inventory(cli_runner: CliRunner, local_herd: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -91,6 +97,7 @@ def test_provide_inventory(cli_runner: CliRunner, local_herd: Path) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_provide_inventory_long(cli_runner: CliRunner, local_herd: Path) -> None:
     res = cli_runner.invoke(
         cli,
@@ -106,6 +113,7 @@ def test_provide_inventory_long(cli_runner: CliRunner, local_herd: Path) -> None
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_provide_limit(cli_runner: CliRunner, local_herd: Path) -> None:
     sheep = extract_first_sheep(local_herd)
     res = cli_runner.invoke(
@@ -124,6 +132,7 @@ def test_provide_limit(cli_runner: CliRunner, local_herd: Path) -> None:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.usefixtures("_herd_alive")
 def test_provide_limit_long(cli_runner: CliRunner, local_herd: Path) -> None:
     sheep = extract_first_sheep(local_herd)
     res = cli_runner.invoke(
@@ -158,6 +167,7 @@ def test_provide_limit_fail(cli_runner: CliRunner, local_herd: Path) -> None:
     assert res.exit_code != 0
 
 
+@pytest.mark.usefixtures("_herd_alive")
 def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
     elem_count1 = len(os.listdir(tmp_path))
@@ -201,6 +211,7 @@ def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
     assert elem_count2 == elem_count3
 
 
+@pytest.mark.usefixtures("_herd_alive")
 def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
     elem_count1 = len(os.listdir(tmp_path))
@@ -247,6 +258,7 @@ def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
     assert elem_count2 == elem_count3
 
 
+@pytest.mark.usefixtures("_herd_alive")
 def test_distribute_retrieve_var(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
     elem_count1 = len(os.listdir(tmp_path))

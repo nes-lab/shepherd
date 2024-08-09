@@ -1,6 +1,4 @@
-"""
-Herd-Baseclass
-"""
+"""Herd-Baseclass for controlling the sheep-observer-nodes."""
 
 import contextlib
 import threading
@@ -22,12 +20,12 @@ from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
 from shepherd_core import Inventory
 from shepherd_core import local_tz
-from shepherd_core import tb_client
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
+from shepherd_core.testbed_client import tb_client
 from tqdm import tqdm
 from typing_extensions import Self
 
@@ -89,7 +87,8 @@ class Herd:
                     inventory_data = yaml.safe_load(stream)
                 except yaml.YAMLError as _xpt:
                     raise FileNotFoundError(
-                        f"Couldn't read inventory file {host_path}, please provide a valid one",
+                        "Couldn't read inventory file %s, please provide a valid one",
+                        host_path.as_posix(),
                     ) from _xpt
             logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
@@ -203,7 +202,7 @@ class Herd:
     @staticmethod
     def _thread_run(
         cnx: Connection,
-        sudo: bool,
+        sudo: bool,  # noqa: FBT001
         cmd: str,
         results: dict[str, Result],
         hostname: str,
@@ -239,7 +238,9 @@ class Herd:
                 args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
-        for host, thread in tqdm(threads.items(), desc="  .. joining threads", unit="n"):
+        for host, thread in tqdm(
+            threads.items(), desc="  .. joining threads", unit="n", leave=False
+        ):
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -257,7 +258,7 @@ class Herd:
         *,
         verbose: bool = False,
     ) -> None:
-        """Log output-results of shell commands"""
+        """Log output-results of shell commands."""
         for hostname, reply in replies.items():
             # TODO: incorrect when sheep are missing in between
             #       -> also throw out in hostname-dict?
@@ -276,7 +277,7 @@ class Herd:
         cnx: Connection,
         src: Path | StringIO,
         dst: Path,
-        force_overwrite: bool,
+        force_overwrite: bool,  # noqa: FBT001
     ) -> None:
         if isinstance(src, StringIO):
             filename = dst.name
@@ -332,7 +333,7 @@ class Herd:
                 if str(dst_path).startswith(str(path_allowed)):
                     is_allowed = True
             if not is_allowed:
-                raise NameError(f"provided path was forbidden ('{dst_path}')")
+                raise NameError("provided path was forbidden ('%s')", dst_path.as_posix())
 
         threads = {}
         for cnx in self.group:
@@ -342,7 +343,9 @@ class Herd:
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
             threads[_name].start()
-        for host, thread in threads.items():
+        for host, thread in tqdm(
+            threads.items(), desc="  .. joining threads", unit="n", leave=False
+        ):
             thread.join()  # timeout=10.0
             if thread.is_alive():
                 logger.error(
@@ -432,7 +435,9 @@ class Herd:
             )
             threads[i].start()
         logger.debug("  .. threads started - will wait until finished")
-        for i, cnx in enumerate(self.group):
+        for i, cnx in enumerate(
+            tqdm(self.group, desc="  .. joining threads", unit="n", leave=False)
+        ):
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
@@ -457,7 +462,7 @@ class Herd:
         return failed_retrieval
 
     def find_consensus_time(self) -> tuple[datetime, float]:
-        """Find a start time in the future when all nodes should start service
+        """Find a start time in the future when all nodes should start service.
 
         In order to run synchronously, all nodes should start at the same time.
         This is achieved by querying all nodes to check any large time offset,
@@ -475,7 +480,8 @@ class Herd:
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
             raise RuntimeError(
-                f"Time difference between hosts greater {self.timestamp_diff_allowed} s",
+                "Time difference between hosts greater %f s",
+                self.timestamp_diff_allowed,
             )
         if ts_max.tzinfo is None:
             logger.error("Provided time from host should have time-zone data!")
@@ -510,14 +516,14 @@ class Herd:
             task = StringIO(task_yaml)
         elif isinstance(task, Path):
             if not task.is_file() or not task.exists():
-                raise ValueError("Task-Path must be existing file")
+                raise FileNotFoundError("Task-Path must be an existing file")
             with task.open(encoding="utf-8-sig") as stream:
                 task_yaml = yaml.safe_load(stream)
         else:
-            raise ValueError("Task must either be model or path to a model")
+            raise TypeError("Task must either be model or path to a model")
 
         if self.check_status(warn=True):
-            raise RuntimeError("shepherd still active!")
+            raise RuntimeError("Shepherd still active!")
         if not isinstance(remote_path, Path):
             remote_path = Path(remote_path)
 
@@ -533,7 +539,7 @@ class Herd:
 
     @validate_call
     def check_status(self, *, warn: bool = False) -> bool:
-        """Return true as long as one instance is still measuring
+        """Return true as long as one instance is still measuring.
 
         :param warn:
         :return: True is one node is still active
@@ -601,12 +607,11 @@ class Herd:
 
     @validate_call
     def inventorize(self, output_path: Path) -> bool:
-        """Collect information about the hosts, including the herd-server,
-        return True on failure
-        """
+        """Collect information about the hosts, including the herd-server."""
         if output_path.is_file():
             raise ValueError(
-                f"Inventorize needs a dir, not a file '{output_path.as_posix()}'",
+                "Inventorize needs a dir, not a file '%s'",
+                output_path.as_posix(),
             )
         file_path = Path("/var/shepherd/inventory.yaml")
         self.run_cmd(
@@ -710,5 +715,15 @@ class Herd:
             if hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
-                    raise RuntimeError("FN not finished, not needed ATM")  # TODO
+                    raise RuntimeError(
+                        "FN not finished, not needed ATM"
+                    )  # TODO: will it be needed?
         return failed
+
+    def alive(self) -> bool:
+        """Check if all remote hosts are present & responding.
+
+        - Group is list of hosts with live connection,
+        - hostnames contains all hosts in inventory
+        """
+        return len(self.group) == len(self.hostnames)

@@ -1,9 +1,9 @@
 import logging
 
+from shepherd_core.logger import get_verbose_level
 from shepherd_core.logger import set_log_verbose_level
 
 logger = logging.getLogger("shepherd-herd")
-verbosity_state: bool = False
 logger.addHandler(logging.NullHandler())
 set_log_verbose_level(logger, 2)
 # Note: defined here to avoid circular import
@@ -11,16 +11,8 @@ set_log_verbose_level(logger, 2)
 
 
 def get_verbosity() -> bool:
-    return verbosity_state
+    return get_verbose_level() >= 3
 
 
-def set_verbosity(state: bool | int = True) -> None:
-    if isinstance(state, bool):
-        # strange solution -> bool is also int, so it falls through below in elif
-        if not state:
-            return
-    elif isinstance(state, int) and state < 3:
-        return  # old format, will be replaced
+def activate_verbosity() -> None:
     set_log_verbose_level(logger, 3)
-    global verbosity_state  # noqa: PLW0603
-    verbosity_state = True

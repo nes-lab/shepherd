@@ -16,8 +16,8 @@ from typing_extensions import Unpack
 
 from . import __version__
 from .herd import Herd
+from .logger import activate_verbosity
 from .logger import logger as log
-from .logger import set_verbosity
 
 # ruff: noqa: FBT001
 
@@ -29,7 +29,8 @@ from .logger import set_verbosity
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    log.warning("Aborted!")
+    """Signal-handling for a clean exit-strategy."""
+    log.warning("Exiting!")
     sys.exit(0)
 
 
@@ -78,12 +79,12 @@ def cli(
     verbose: bool,
     version: bool,
 ) -> None:
-    """A primary set of options to configure how to interface the herd"""
+    """Entry for command line with settings to interface the herd."""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
-        set_verbosity()
+        activate_verbosity()
 
     if version:
         log.info("Shepherd-Cal v%s", __version__)
@@ -103,13 +104,14 @@ def cli(
 
 
 @cli.command(
-    short_help="Power off shepherd observers. "
+    short_help="Power off shepherd observers."
     "Be sure to have physical access to the hardware "
     "for manually starting them again."
 )
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
 def poweroff(ctx: click.Context, restart: bool) -> None:
+    """Power off shepherd observers."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.poweroff(restart=restart)
     sys.exit(exit_code)
@@ -120,6 +122,7 @@ def poweroff(ctx: click.Context, restart: bool) -> None:
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
 def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
+    """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
         herd.print_output(replies, verbose=True)
@@ -135,6 +138,7 @@ def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
 )
 @click.pass_context
 def inventorize(ctx: click.Context, output_path: Path) -> None:
+    """Collect information about the observer-hosts -> saved to local file."""
     with ctx.obj["herd"] as herd:
         failed = herd.inventorize(output_path)
     sys.exit(int(failed))
@@ -146,6 +150,7 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
 )
 @click.pass_context
 def fix(ctx: click.Context) -> None:
+    """Reload the shepherd-kernel-module on each sheep."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(
             sudo=True,
@@ -162,7 +167,8 @@ def fix(ctx: click.Context) -> None:
 )
 @click.pass_context
 def resync(ctx: click.Context) -> None:
-    set_verbosity()
+    """Get current time and restarts PTP on each sheep."""
+    activate_verbosity()
     with ctx.obj["herd"] as herd:
         exit_code = herd.resync()
     sys.exit(exit_code)
@@ -175,6 +181,7 @@ def resync(ctx: click.Context) -> None:
 @click.argument("duration", type=click.INT, default=30)
 @click.pass_context
 def blink(ctx: click.Context, duration: int) -> None:
+    """Help to identify Observers by flashing LEDs near Targets (IO, EMU)."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(
             sudo=True,
@@ -185,13 +192,28 @@ def blink(ctx: click.Context, duration: int) -> None:
     sys.exit(exit_code)
 
 
+@cli.command(
+    short_help="Check if all remote hosts are present & responding.",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def alive(ctx: click.Context) -> None:
+    with ctx.obj["herd"] as herd:
+        failed = herd.alive()
+    if failed:
+        log.warning("Not all remote hosts are responding.")
+    else:
+        log.debug("All remote hosts are responding.")
+    sys.exit(int(failed))
+
+
 # #############################################################################
 #                               Task-Handling
 # #############################################################################
 
 
 @cli.command(
-    short_help="Runs a task or set of tasks with provided config/task file (YAML).",
+    short_help="Run a task or set of tasks with provided config/task file (YAML).",
 )
 @click.argument(
     "config",
@@ -200,6 +222,7 @@ def blink(ctx: click.Context, duration: int) -> None:
 @click.option("--attach", "-a", is_flag=True, help="Wait and receive output on shell")
 @click.pass_context
 def run(ctx: click.Context, config: Path, attach: bool) -> None:
+    """Run a task or set of tasks with provided config/task file (YAML)."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.run_task(config, attach=attach)
     sys.exit(exit_code)
@@ -249,6 +272,7 @@ def harvest(
     no_start: bool,
     **kwargs: Unpack[TypedDict],
 ) -> None:
+    """Simultaneously record IV data from harvesting-sources on the chosen observers."""
     with ctx.obj["herd"] as herd:
         for path in ["output_path"]:
             file_path = Path(kwargs[path])
@@ -355,6 +379,12 @@ def emulate(
     no_start: bool,
     **kwargs: Unpack[TypedDict],
 ) -> None:
+    """Emulate an energy environment for the attached sensor nodes.
+
+    Use the previously recorded harvest-data for emulating an energy environment for the attached
+    sensor nodes and monitor their power consumption and GPIO events
+    - INPUT-PATH is a hdf5-file on the sheep-hosts
+    """
     with ctx.obj["herd"] as herd:
         for path in ["input_path", "output_path"]:
             file_path = Path(kwargs[path])
@@ -400,6 +430,11 @@ def emulate(
 )
 @click.pass_context
 def start(ctx: click.Context) -> None:
+    """Start pre-configured shp-service.
+
+    - source /etc/shepherd/config.yml,
+    - UNSYNCED when 'time_start' is not set)
+    """
     ret: int = 0
     with ctx.obj["herd"] as herd:
         if herd.check_status():
@@ -416,6 +451,7 @@ def start(ctx: click.Context) -> None:
 @cli.command(short_help="Information about current state of shepherd measurement")
 @click.pass_context
 def status(ctx: click.Context) -> None:
+    """Information about current state of shepherd measurement."""
     ret: int = 0
     with ctx.obj["herd"] as herd:
         if herd.check_status():
@@ -429,6 +465,7 @@ def status(ctx: click.Context) -> None:
 @cli.command(short_help="Stops any harvest/emulation or other processes blocking the sheep")
 @click.pass_context
 def stop(ctx: click.Context) -> None:
+    """Stop any harvest/emulation or other processes blocking the sheep."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.stop_measurement()
     log.info("Shepherd stopped.")
@@ -442,7 +479,7 @@ def stop(ctx: click.Context) -> None:
 
 
 @cli.command(
-    short_help="Uploads a file FILENAME to the remote observers, " "will be stored in REMOTE_PATH",
+    short_help="Uploads a file FILENAME to the remote observers, will be stored in REMOTE_PATH",
 )
 @click.argument(
     "filename",
@@ -463,11 +500,12 @@ def distribute(
     remote_path: Path,
     force_overwrite: bool,
 ) -> None:
+    """Upload a file FILENAME to the remote observers, which will be stored in REMOTE_PATH."""
     with ctx.obj["herd"] as herd:
         herd.put_file(filename, remote_path, force_overwrite=force_overwrite)
 
 
-@cli.command(short_help="Retrieves remote hdf file FILENAME and stores in in OUTDIR")
+@cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
 @click.argument("filename", type=click.Path(file_okay=True, dir_okay=False))
 @click.argument(
     "outdir",
@@ -511,7 +549,7 @@ def retrieve(
     delete: bool,
     force_stop: bool,
 ) -> None:
-    """
+    """Retrieve remote hdf file FILENAME and stores in OUTDIR.
 
     :param ctx: context
     :param filename: remote file with absolute path or relative in '/var/shepherd/recordings/'
@@ -525,7 +563,7 @@ def retrieve(
         if force_stop:
             herd.stop_measurement()
             if herd.await_stop(timeout=30):
-                raise Exception("shepherd still active after timeout")
+                raise TimeoutError("shepherd still active after timeout")
 
         failed = herd.get_file(
             filename,
@@ -591,6 +629,7 @@ def retrieve(
 )
 @click.pass_context
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
+    """Programmer for Target-Controller."""
     tmp_file = "/tmp/target_image.hex"  # noqa: S108
     cfg_path = Path("/etc/shepherd/config_for_herd.yaml")
 

@@ -1,5 +1,5 @@
-"""
-Worst Case (RNG) test
+"""Worst Case (RNG) test.
+
 - Variables: compression, randomness of data
 - old: current design
 - new: eval h5py.directRead()/Write() feature
@@ -75,6 +75,7 @@ from shepherd_core import Compression
 from shepherd_core import Reader
 from shepherd_core import Writer
 from shepherd_core.data_models import EnergyDType
+from shepherd_core.logger import logger
 from typing_extensions import Self
 
 
@@ -138,6 +139,7 @@ def generate_harvest(
     path: Path,
     duration: int,
     compression: Compression,
+    *,
     random: bool = True,
 ) -> None:
     rng = np.random.default_rng()
@@ -334,27 +336,29 @@ if __name__ == "__main__":
                     globals=globals(),
                     number=1,
                 )
-                print(
-                    f"RUN with "
-                    f"duration {duration} s, "
-                    f"compression {compression}, "
-                    f"random {random}",
+                logger.info(
+                    "RUN with duration %d s, compression %s, random %s",
+                    duration,
+                    str(compression),
+                    str(random),
                 )
-                print(
-                    f"\tOld F2RAM = {round(two, 3)} s, RAM2F = {round(tro, 3)} s",
+                logger.info(
+                    "\tOld F2RAM = %f s, RAM2F = %f s",
+                    round(two, 3),
+                    round(tro, 3),
                 )
-                print(
-                    f"\tNew "
-                    f"F2RAM = {round(twn, 3)} s, "
-                    f"RAM2F = {round(trn, 3)} s, "
-                    f"RAM2Fts = {round(trt, 3)}",
+                logger.info(
+                    "\tNew F2RAM = %f s, RAM2F = %f s, RAM2Fts = %f",
+                    round(twn, 3),
+                    round(trn, 3),
+                    round(trt, 3),
                 )
-                print(
-                    f"\tSize "
-                    f"f_in = {round(path_i.stat().st_size / 2**20, 3)} MB, "
-                    f" f_old = {round(path_o1.stat().st_size / 2**20, 3)} MB, "
-                    f" f_new = {round(path_o2.stat().st_size / 2**20, 3)} MB, "
-                    f" f_nts = {round(path_o3.stat().st_size / 2**20, 3)} MB",
+                logger.info(
+                    "\tSize f_in = %f MB, f_old = %f MB, f_new = %f MB, f_nts = %f MB",
+                    round(path_i.stat().st_size / 2**20, 3),
+                    round(path_o1.stat().st_size / 2**20, 3),
+                    round(path_o2.stat().st_size / 2**20, 3),
+                    round(path_o3.stat().st_size / 2**20, 3),
                 )
                 time.sleep(1)
                 path_i.unlink()

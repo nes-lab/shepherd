@@ -40,7 +40,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 __all__ = [
     "Writer",
@@ -77,7 +77,6 @@ def run_harvester(cfg: HarvestTask) -> bool:
         pass
     except ShepherdIOError:
         log.exception("Caught an unrecoverable error")
-        pass
     stack.close()
     return failed
 
@@ -95,7 +94,6 @@ def run_emulator(cfg: EmulationTask) -> bool:
         pass
     except ShepherdIOError:
         log.exception("Caught an unrecoverable error")
-        pass
     stack.close()
     return failed
 
@@ -265,13 +263,14 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
     # TODO: parameters currently not handled:
     #   time_prep, root_path, abort_on_error (but used in emuTask)
     failed = False
+    limit_char = 1000
     for element in content:
         if element is None:
             continue
 
         element_str = str(element)
-        if len(element_str) > 500:
-            element_str = element_str[:500] + " [first 500 chars]"
+        if len(element_str) > limit_char:
+            element_str = element_str[:limit_char] + f" [first {limit_char} chars]"
 
         log.info(
             "\n###~###~###~###~###~### Starting %s ###~###~###~###~###~###\n\n%s\n",

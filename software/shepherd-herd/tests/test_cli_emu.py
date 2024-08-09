@@ -10,7 +10,8 @@ from .conftest import wait_for_end
 
 
 @pytest.mark.timeout(60)
-def test_emu_prepare(cli_runner: CliRunner, stopped_herd: None, tmp_path: Path) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_prepare(cli_runner: CliRunner, tmp_path: Path) -> None:
     # distribute file and emulate from it in following tests
     test_file = generate_h5_file(tmp_path, "pytest_src.h5")
     res = cli_runner.invoke(
@@ -27,7 +28,8 @@ def test_emu_prepare(cli_runner: CliRunner, stopped_herd: None, tmp_path: Path) 
 
 
 @pytest.mark.timeout(150)
-def test_emu_example(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_example(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -45,7 +47,8 @@ def test_emu_example(cli_runner: CliRunner, stopped_herd: None) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_emu_example_fail(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_example_fail(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -63,7 +66,8 @@ def test_emu_example_fail(cli_runner: CliRunner, stopped_herd: None) -> None:
 
 
 @pytest.mark.timeout(150)
-def test_emu_minimal(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_minimal(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -76,7 +80,8 @@ def test_emu_minimal(cli_runner: CliRunner, stopped_herd: None) -> None:
 
 
 @pytest.mark.timeout(150)
-def test_emu_all_args_long(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_all_args_long(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -105,7 +110,8 @@ def test_emu_all_args_long(cli_runner: CliRunner, stopped_herd: None) -> None:
 
 
 @pytest.mark.timeout(150)
-def test_emu_all_args_short(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_all_args_short(cli_runner: CliRunner) -> None:
     # short arg or opposite bool val
     res = cli_runner.invoke(
         cli,
@@ -135,7 +141,8 @@ def test_emu_all_args_short(cli_runner: CliRunner, stopped_herd: None) -> None:
 
 
 @pytest.mark.timeout(150)
-def test_emu_no_start(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_no_start(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
@@ -161,7 +168,8 @@ def test_emu_no_start(cli_runner: CliRunner, stopped_herd: None) -> None:
 
 
 @pytest.mark.timeout(60)
-def test_emu_force_stop(cli_runner: CliRunner, stopped_herd: None) -> None:
+@pytest.mark.usefixtures("_herd_stopped")
+def test_emu_force_stop(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [

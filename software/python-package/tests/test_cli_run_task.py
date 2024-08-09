@@ -36,7 +36,7 @@ def random_data(length: int) -> np.ndarray:
     return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
-@pytest.fixture
+@pytest.fixture()
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
     with Writer(
@@ -52,25 +52,25 @@ def data_h5(tmp_path: Path) -> Path:
     return store_path
 
 
-@pytest.fixture
+@pytest.fixture()
 def tmp_yaml(tmp_path: Path) -> Path:
     return tmp_path / "cfg.yaml"
 
 
-@pytest.fixture
+@pytest.fixture()
 def path_h5(tmp_path: Path) -> Path:
     return tmp_path / "out.h5"
 
 
-@pytest.fixture
+@pytest.fixture()
 def path_here() -> Path:
     return Path(__file__).resolve().parent
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_no_cal(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_yaml: Path,
     path_h5: Path,
@@ -87,10 +87,10 @@ def test_cli_harvest_no_cal(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_parameters_most(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_yaml: Path,
     path_h5: Path,
@@ -109,10 +109,10 @@ def test_cli_harvest_parameters_most(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_parameters_minimal(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_yaml: Path,
     path_h5: Path,
@@ -128,10 +128,10 @@ def test_cli_harvest_parameters_minimal(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_preconfigured(
-    shepherd_up: None,
     cli_runner: CliRunner,
     path_here: Path,
 ) -> None:
@@ -140,10 +140,10 @@ def test_cli_harvest_preconfigured(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_preconf_etc_shp_examples(
-    shepherd_up: None,
     cli_runner: CliRunner,
     path_here: Path,
 ) -> None:
@@ -152,10 +152,10 @@ def test_cli_harvest_preconf_etc_shp_examples(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -180,10 +180,10 @@ def test_cli_emulate(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_custom_virtsource(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -213,10 +213,10 @@ def test_cli_emulate_with_custom_virtsource(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_bq25570(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -242,10 +242,10 @@ def test_cli_emulate_with_bq25570(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -271,10 +271,10 @@ def test_cli_emulate_aux_voltage(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_long(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -308,10 +308,10 @@ def test_cli_emulate_parameters_long(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_minimal(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -332,10 +332,10 @@ def test_cli_emulate_parameters_minimal(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconfigured(
-    shepherd_up: None,
     cli_runner: CliRunner,
     path_here: Path,
 ) -> None:
@@ -344,22 +344,23 @@ def test_cli_emulate_preconfigured(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(80)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconf_etc_shp_examples(
-    shepherd_up: None,
     cli_runner: CliRunner,
     path_here: Path,
 ) -> None:
+    # NOTE: this needs prior run of example_config_harvest
     file_path = path_here.parent / "example_config_emulation.yaml"
     res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage_fail(
-    shepherd_up: None,
     cli_runner: CliRunner,
     data_h5: Path,
     path_h5: Path,
@@ -373,20 +374,20 @@ def test_cli_emulate_aux_voltage_fail(
             voltage_aux=5.5,
             verbose=3,
         ).to_file(tmp_yaml)
-        res = cli_runner.invoke(
-            cli,
-            [
-                "run",
-                tmp_yaml.as_posix(),
-            ],
-        )
-        assert res.exit_code != 0
+    res = cli_runner.invoke(
+        cli,
+        [
+            "run",
+            tmp_yaml.as_posix(),
+        ],
+    )
+    assert res.exit_code != 0
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_fw_mod_task(
-    shepherd_up: None,
     cli_runner: CliRunner,
     tmp_path: Path,
     path_here: Path,
@@ -418,10 +419,10 @@ def test_cli_fw_mod_task(
     assert path_file.is_file()
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware()
 @pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
 def test_cli_programming(
-    shepherd_up: None,
     path_here: Path,
     tmp_path: Path,
 ) -> None:
