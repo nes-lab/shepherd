@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#ifdef __CYTHON__
+#ifdef __PYTHON__
   #define read_r30()          (0u)
   #define write_r30(pin_mask) (pin_mask) // mockups
   #define read_r31()          (0u)

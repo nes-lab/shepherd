@@ -11,7 +11,7 @@ uint64_t sub64(uint64_t value1, uint64_t value2);
 uint32_t sub32(uint32_t value1, uint32_t value2);
 
 
-#ifdef __CYTHON__
+#ifdef __PYTHON__
 uint8_ft get_num_size_as_bits(const uint32_t value);
 uint32_t msb_position(uint32_t value);
 uint32_t max_value(uint32_t value1, uint32_t value2);

@@ -1,6 +1,6 @@
 #include "math64_safe.h"
 
-#ifdef __CYTHON__
+#ifdef __PYTHON__
 uint32_t msb_position(uint32_t value)
 {
     uint32_t pos = 0;
@@ -35,7 +35,7 @@ uint32_t min_value(uint32_t value1, uint32_t value2)
 #endif
 
 
-#if defined(__GNUC__) || defined(__CYTHON__)
+#if defined(__GNUC__) || defined(__PYTHON__)
 
 uint64_t mul64(const uint64_t value1, const uint64_t value2)
 {
