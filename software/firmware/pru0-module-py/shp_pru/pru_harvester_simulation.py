@@ -44,6 +44,7 @@ def simulate_harvester(
     #    ("shepherd_core.vsource.VirtualHarvesterModel", VirtualHarvesterModel),
     #    ("shepherd_core.vsource.virtual_harvester_model.VirtualHarvesterModel", VirtualHarvesterModel)
     # return sim_hrv_core(config, path_input, path_output)
+    # TODO: fix monkeypatching
 
     stack = ExitStack()
     file_inp = Reader(path_input, verbose=False)
