@@ -1,24 +1,33 @@
 #include "math64_safe.h"
 
-#ifdef __PYTHON__
+#if defined(__GNUC__) || defined(__PYTHON__)
+
 uint32_t msb_position(uint32_t value)
 {
-    uint32_t pos = 0;
-    while (value > 0)
+    uint32_t pos = 0u;
+    if (value == 0u) return 32u; // equals empty
+    while (value > 0u)
     {
         pos++;
-        value = value >> 1;
+        value = value >> 1u;
     }
-    return pos;
+    return pos - 1u;
 }
 
 uint8_ft get_num_size_as_bits(const uint32_t value)
 {
     /* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
+    // TODO: LMBD-description in spruij2.pdf is weird and reversed
+    #if 0
     uint32_t _value = value;
     uint8_ft count  = 32u;
     for (; _value > 0u; _value >>= 1u) count--;
     return count;
+    #else
+    const uint32_t pos = msb_position(value);
+    if (pos == 32u) return 0u;
+    return pos + 1u;
+    #endif
 }
 
 uint32_t max_value(uint32_t value1, uint32_t value2)
@@ -35,18 +44,6 @@ uint32_t min_value(uint32_t value1, uint32_t value2)
 #endif
 
 
-#if defined(__GNUC__) || defined(__PYTHON__)
-
-uint64_t mul64(const uint64_t value1, const uint64_t value2)
-{
-    const uint64_t product = value1 * value2;
-    if ((product < value1) || (product < value2)) return (uint64_t) (0xFFFFFFFFFFFFFFFFull);
-    else return product;
-    // TODO: not completely right, or is it?
-}
-
-#else
-
 /* Faster and more time-constant replacement for uint64-multiplication
  * - native code takes 3 - 7 us per mul, depending on size of number (hints at add-loop)
  * - model-calculation gets much safer with container-boundaries
@@ -60,7 +57,6 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
     uint64_t       product = (uint64_t) v1L * (uint64_t) v2L;
     product += ((uint64_t) v1L * (uint64_t) v2H) << 32u;
     product += ((uint64_t) v1H * (uint64_t) v2L) << 32u;
-    //const uint64_t product4 = ((uint64_t)v2H * (uint64_t)v2H); // << 64u
     // check for possible overflow - return max
     uint8_ft v1bits = get_num_size_as_bits(v1H) + 32u;
     if (v1bits <= 32u) v1bits = get_num_size_as_bits(v1L);
@@ -70,8 +66,6 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
         return product; // simple approximation, not 100% correct, but cheap
     else return (uint64_t) (0xFFFFFFFFFFFFFFFFull);
 }
-
-#endif
 
 uint32_t mul32(const uint32_t value1, const uint32_t value2)
 {
