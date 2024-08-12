@@ -1,7 +1,10 @@
 import ctypes as ct
 from pathlib import Path
 
-from .data_types import HarvesterConfig, CalibrationConfig, ConverterConfig, SharedMemLight
+from .data_types import CalibrationConfig
+from .data_types import ConverterConfig
+from .data_types import HarvesterConfig
+from .data_types import SharedMemLight
 
 
 def get_device() -> ct.CDLL:

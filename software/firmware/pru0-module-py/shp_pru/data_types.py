@@ -11,12 +11,13 @@ class HarvesterConfig(ct.Structure):
 class CalibrationConfig(ct.Structure):
     _pack_ = 1
     _fields_ = [
-        ("adc_current_factor_nA_n8", ct.c_uint32),
-        ("adc_current_offset_nA", ct.c_int32),
-        ("adc_voltage_factor_uV_n8", ct.c_uint32),
-        ("adc_voltage_offset_uV", ct.c_int32),
-        ("dac_voltage_inv_factor_uV_n20", ct.c_uint32),
-        ("dac_voltage_offset_uV", ct.c_int32),
+        ("adc_current_gain", ct.c_uint32),  # adc_current_factor_nA_n8
+        ("adc_current_offset", ct.c_int32),  # adc_current_offset_nA
+        ("adc_voltage_gain", ct.c_uint32),  # adc_voltage_factor_uV_n8
+        ("adc_voltage_offset", ct.c_int32),  # adc_voltage_offset_uV
+        ("dac_voltage_gain", ct.c_uint32),  # dac_voltage_inv_factor_uV_n20
+        ("dac_voltage_offset", ct.c_int32),  # dac_voltage_offset_uV
+        # NOTE: above are the py-names as the c-struct is handed raw
     ]
 
 

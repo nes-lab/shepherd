@@ -4,30 +4,30 @@
 
 uint8_ft get_size_in_bits(const uint32_t value)
 {
-    /* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
-    // Note: LMBD-description in spruij2.pdf is weird and reversed
-    #if 0
+  /* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
+  // Note: LMBD-description in spruij2.pdf is weird and reversed
+  #if 0
     uint32_t _value = value;
     uint8_ft count  = 32u;
     for (; _value > 0u; _value >>= 1u) count--;
     return count;
-    #else
+  #else
     uint32_t _value = value;
-    uint32_t count = 0u;
+    uint32_t count  = 0u;
     while (_value > 0u)
     {
         count++;
         _value = _value >> 1u;
     }
     return count;
-    #endif
+  #endif
 }
 
 uint8_ft log2safe(const uint32_t value)
 {
     if (value == 0u) return 0u;
     uint32_t _value = value;
-    uint32_t count = 0u;
+    uint32_t count  = 0u;
     while (_value > 0u)
     {
         count++;

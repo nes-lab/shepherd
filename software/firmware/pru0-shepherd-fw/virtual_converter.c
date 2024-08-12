@@ -186,7 +186,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
 
     const uint32_t eta_inp_n8 =
             (state.enable_boost) ? get_input_efficiency_n8(input_voltage_uV, input_current_nA)
-                                : (1u << 8u);
+                                 : (1u << 8u);
     state.P_inp_fW_n8 =
             mul64((uint64_t) eta_inp_n8 * (uint64_t) input_voltage_uV, input_current_nA);
 
@@ -206,7 +206,8 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
     const uint32_t eta_inv_out_n4 =
             (state.enable_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
     state.P_out_fW_n4 =
-            add64(mul64((uint64_t) eta_inv_out_n4 * (uint64_t) state.V_out_dac_uV, I_out_nA), P_leak_fW_n4);
+            add64(mul64((uint64_t) eta_inv_out_n4 * (uint64_t) state.V_out_dac_uV, I_out_nA),
+                  P_leak_fW_n4);
 
     // allows target to initialize and go to sleep
     if (state.interval_startup_disabled_drain_n > 0u)
@@ -374,7 +375,7 @@ uint32_t get_V_intermediate_raw(void)
 
 uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
-void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
+void     set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
 {
     shared_mem->vsource_batok_pin_value        = value;
     shared_mem->vsource_batok_trigger_for_pru1 = true;
