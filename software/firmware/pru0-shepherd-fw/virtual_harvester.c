@@ -53,6 +53,18 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
 static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 
+#ifdef __PYTHON__
+void __delay_cycles(uint32_t num)
+{
+    while (num > 0u) num--;
+}
+/* next is a mock-impl to calm the compiler (does not get used)*/
+static uint32_t hw_value = 0u;
+uint32_t        adc_readwrite(uint32_t cs_pin, uint32_t val) { return cs_pin + val + hw_value; }
+uint32_t        adc_fastread(uint32_t cs_pin) { return cs_pin + hw_value; }
+void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + val; }
+#endif
+
 #define HRV_ISC_VOC  (1u << 3u)
 #define HRV_IVCURVE  (1u << 4u)
 #define HRV_CV       (1u << 8u)
@@ -82,12 +94,12 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     // for IV-Curve-Version, mostly resets states
     voltage_hold       = 0u;
     current_hold       = 0u;
-    voltage_step_x4_uV = cfg->voltage_step_uV << 2u;
-    age_max            = 2 * cfg->window_size;
+    voltage_step_x4_uV = 4u * cfg->voltage_step_uV;
+    age_max            = 2u * cfg->window_size;
 
     voc_now            = cfg->voltage_max_uV;
     voc_nxt            = cfg->voltage_max_uV;
-    voc_min            = cfg->voltage_min_uV > 1000 ? cfg->voltage_min_uV : 1000;
+    voc_min            = cfg->voltage_min_uV > 1000u ? cfg->voltage_min_uV : 1000u;
     // TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
     // TODO: check that ConfigParams are used in SubFns if applicable
     // TODO: divide lib into IVC and ADC Parts
@@ -462,7 +474,7 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
 	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_ivcurve_2_cv()
 	 * - influencing parameters: interval_n, voltage_step_uV, voltage_max_uV, voltage_min_uV
 	 */
-    static uint32_t power_last = 0u;
+    static uint64_t power_last = 0u;
 
     /* keep track of time, do  step = mod(step + 1, n) */
     if (++interval_step >= cfg->interval_n) interval_step = 0u;
@@ -473,7 +485,7 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
 
     if (interval_step == 0u)
     {
-        const uint32_t power_now = mul32(*p_voltage_uV, *p_current_nA);
+        const uint64_t power_now = (uint64_t) (*p_voltage_uV) * (uint64_t) (*p_current_nA);
         if (power_now > power_last)
         {
             /* got higher power -> keep direction, move further, speed up */
@@ -483,7 +495,7 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
         }
         else
         {
-            if ((power_now == 0) && (voltage_set_uV > 0))
+            if ((power_now == 0u) && (voltage_set_uV > 0u))
             {
                 /* lost tracking - or started with bad init */
                 is_rising      = 1u;
@@ -528,15 +540,16 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
     /* Derivate of VOC -> selects the highest power directly
 	 * - influencing parameters: window_size, voltage_min_uV, voltage_max_uV,
 	 */
-    static uint32_t age_now = 0u, power_now = 0u, voltage_now = 0u, current_now = 0u;
-    static uint32_t age_nxt = 0u, power_nxt = 0u, voltage_nxt = 0u, current_nxt = 0u;
+    static uint32_t age_now = 0u, voltage_now = 0u, current_now = 0u;
+    static uint32_t age_nxt = 0u, voltage_nxt = 0u, current_nxt = 0u;
+    static uint64_t power_now = 0ull, power_nxt = 0ull;
 
     /* keep track of time */
     age_nxt++;
     age_now++;
 
     /* search for new max */
-    const uint32_t power_fW = mul32(*p_voltage_uV, *p_current_nA);
+    const uint64_t power_fW = (uint64_t) (*p_voltage_uV) * (uint64_t) (*p_current_nA);
     if ((power_fW >= power_nxt) && (*p_voltage_uV >= cfg->voltage_min_uV) &&
         (*p_voltage_uV <= cfg->voltage_max_uV))
     {
