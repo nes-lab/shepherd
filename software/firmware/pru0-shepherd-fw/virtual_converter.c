@@ -373,6 +373,8 @@ uint32_t get_V_intermediate_raw(void)
     return cal_conv_uV_to_dac_raw((uint32_t) (state.V_mid_uV_n32 >> 32u));
 }
 
+uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
+
 void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
 {
     shared_mem->vsource_batok_pin_value        = value;

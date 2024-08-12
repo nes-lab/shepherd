@@ -19,6 +19,7 @@ uint64_t get_P_output_fW(void);
 uint32_t get_V_intermediate_uV(void);
 uint32_t get_V_intermediate_raw(void);
 uint32_t get_I_mid_out_nA(void);
+uint32_t get_V_output_uV(void);
 bool_ft  get_state_log_intermediate(void);
 
 void     set_batok_pin(volatile struct SharedMem *shared_mem, bool_ft value);
