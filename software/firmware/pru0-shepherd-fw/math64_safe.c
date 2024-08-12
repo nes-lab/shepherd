@@ -2,32 +2,38 @@
 
 #if defined(__GNUC__) || defined(__PYTHON__)
 
-uint32_t msb_position(uint32_t value)
-{
-    uint32_t pos = 0u;
-    if (value == 0u) return 32u; // equals empty
-    while (value > 0u)
-    {
-        pos++;
-        value = value >> 1u;
-    }
-    return pos - 1u;
-}
-
-uint8_ft get_num_size_as_bits(const uint32_t value)
+uint8_ft get_size_in_bits(const uint32_t value)
 {
     /* there is an ASM-COMMAND for that, LMBD r2, r1, 1 */
-    // TODO: LMBD-description in spruij2.pdf is weird and reversed
+    // Note: LMBD-description in spruij2.pdf is weird and reversed
     #if 0
     uint32_t _value = value;
     uint8_ft count  = 32u;
     for (; _value > 0u; _value >>= 1u) count--;
     return count;
     #else
-    const uint32_t pos = msb_position(value);
-    if (pos == 32u) return 0u;
-    return pos + 1u;
+    uint32_t _value = value;
+    uint32_t count = 0u;
+    while (_value > 0u)
+    {
+        count++;
+        _value = _value >> 1u;
+    }
+    return count;
     #endif
+}
+
+uint8_ft log2safe(const uint32_t value)
+{
+    if (value == 0u) return 0u;
+    uint32_t _value = value;
+    uint32_t count = 0u;
+    while (_value > 0u)
+    {
+        count++;
+        _value = _value >> 1u;
+    }
+    return count - 1u;
 }
 
 uint32_t max_value(uint32_t value1, uint32_t value2)
@@ -58,10 +64,10 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
     product += ((uint64_t) v1L * (uint64_t) v2H) << 32u;
     product += ((uint64_t) v1H * (uint64_t) v2L) << 32u;
     // check for possible overflow - return max
-    uint8_ft v1bits = get_num_size_as_bits(v1H) + 32u;
-    if (v1bits <= 32u) v1bits = get_num_size_as_bits(v1L);
-    uint8_ft v2bits = get_num_size_as_bits(v2H) + 32u;
-    if (v2bits <= 32u) v2bits = get_num_size_as_bits(v2L);
+    uint8_ft v1bits = get_size_in_bits(v1H) + 32u;
+    if (v1bits <= 32u) v1bits = get_size_in_bits(v1L);
+    uint8_ft v2bits = get_size_in_bits(v2H) + 32u;
+    if (v2bits <= 32u) v2bits = get_size_in_bits(v2L);
     if ((v1bits + v2bits) <= 64u)
         return product; // simple approximation, not 100% correct, but cheap
     else return (uint64_t) (0xFFFFFFFFFFFFFFFFull);

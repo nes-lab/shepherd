@@ -1,6 +1,6 @@
 
-    .global get_num_size_as_bits
-get_num_size_as_bits:
+    .global get_size_in_bits
+get_size_in_bits:
     LMBD r14, r14, 1 ; returns bit-position of highest valued 1, returns 32 if only 0s found
     ADD  r14, r14, 1 ; turn bit-position into bit-size
     QBNE finished, r14, 33 ; handle empty number
@@ -9,9 +9,12 @@ finished:
     JMP r3.w2
 
 
-    .global msb_position
-msb_position:
+    .global log2safe
+log2safe:
     LMBD r14, r14, 1 ; returns bit-position of highest valued 1, returns 32 if only 0s found
+    QBNE fin_log, r14, 32 ; handle empty number (LMBD=32)
+    AND  r14, r14, 0 ; (32 -> 0 bit size)
+fin_log:
     JMP r3.w2
 
 

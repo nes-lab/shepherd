@@ -143,7 +143,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
 }
 
 #ifdef ENABLE_DEBUG_MATH_FN
-extern uint32_t get_num_size_as_bits(uint32_t value);
+extern uint32_t get_size_in_bits(uint32_t value);
 uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
 {
     uint64_t       result = 0;
@@ -190,7 +190,7 @@ uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
     else if (mode == 33) result = f2 - f3;               // same
     else if (mode == 41) result = ((uint64_t) (factor) << 32u); // ~ 128 ns, limit (2^32-1)
     else if (mode == 42) result = (f2 >> 32u);                  // ~ 128 ns, also works
-    else if (mode == 51) result = get_num_size_as_bits(factor); //
+    else if (mode == 51) result = get_size_in_bits(factor); //
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     return result;
 }

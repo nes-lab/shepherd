@@ -20,7 +20,7 @@ SOURCES += $(notdir $(wildcard ./*.c))
 # internal asm-sources
 ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # external asm-sources - add manually
-ASM_SOURCES += $(BASE_PATH)/lib/src/register_magic.asm # get_num_size_as_bits, msb_position, max_value, min_value
+ASM_SOURCES += $(BASE_PATH)/lib/src/register_magic.asm # get_size_in_bits, log2safe, max_value, min_value
 
 # look for gcc, but use cgt as fallback / default
 ifdef PRU_GCC
