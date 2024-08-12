@@ -8,7 +8,7 @@
 ## Command-Line Interface
 
 :::{note}
-The tool has integrated help-functionality. For a full list of supported commands and options, run `shepherd-herd --help` and for more detail for each command `shepherd-herd [COMMAND] --help`.
+The tool has integrated help-functionality. For a full list of supported commands and options, run `shepherd-data --help` and for more detail for each command `shepherd-data [COMMAND] --help`.
 :::
 
 The command-line Interface is as follows:
