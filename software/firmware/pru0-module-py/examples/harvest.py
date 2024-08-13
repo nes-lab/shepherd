@@ -2,10 +2,8 @@ from pathlib import Path
 
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualHarvesterConfig
-
-from shp_pru import simulate_harvester
 from shepherd_data import Reader
-
+from shepherd_pru import simulate_harvester
 
 hrv_list = [
     "ivcurve",
@@ -26,7 +24,9 @@ results: dict = {}
 # #####################################################################
 
 for hrv_name in hrv_list[1:]:
-    path_output = path_input.with_name(path_input.stem + "_" + hrv_name + "_cim" + path_input.suffix)
+    path_output = path_input.with_name(
+        path_input.stem + "_" + hrv_name + "_cim" + path_input.suffix
+    )
     if not path_output.exists():
         simulate_harvester(
             config=VirtualHarvesterConfig(name=hrv_name),

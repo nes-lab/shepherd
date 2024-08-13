@@ -5,8 +5,8 @@ from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.vsource import ResistiveTarget
 from shepherd_data import Reader
-from shp_pru.pru_source_simulation2 import simulate_source
-#from shepherd_core.vsource import simulate_source
+from shepherd_pru.pru_source_simulation2 import simulate_source
+
 
 hrv_list = [
     "ivcurve",
@@ -35,7 +35,7 @@ for hrv_name, src_name in product(hrv_list, src_list):
     path_output = path_input.with_name(
         path_input.stem + "_" + src_name + "_cim" + path_input.suffix
     )
-    #if not path_output.exists():
+    # if not path_output.exists():
     simulate_source(
         config=VirtualSourceConfig(
             inherit_from=src_name,

@@ -1,5 +1,5 @@
-#include "commons.h"
 #include "calibration.h"
+#include "commons.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
 #include <stdint.h>
@@ -7,7 +7,8 @@
 /*
 ripped out parts from sample_emulator() in sampling.c
 */
-uint32_t vsrc_iterate_sampling(uint32_t input_voltage_uV, uint32_t input_current_nA, const uint32_t current_adc_raw)
+uint32_t vsrc_iterate_sampling(uint32_t input_voltage_uV, uint32_t input_current_nA,
+                               const uint32_t current_adc_raw)
 {
     static struct SharedMem shared_mem;
 

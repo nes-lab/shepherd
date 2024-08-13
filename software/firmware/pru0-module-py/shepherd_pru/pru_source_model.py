@@ -9,6 +9,7 @@ Goals:
 NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
 """
+
 from shepherd_core.data_models import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
