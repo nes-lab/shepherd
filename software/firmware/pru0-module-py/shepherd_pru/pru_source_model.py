@@ -9,8 +9,6 @@ Goals:
 NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
 """
-
-
 from shepherd_core.data_models import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
@@ -65,18 +63,11 @@ class PruSourceModel:
         :param I_out_nA:
         :return:
         """
-        V_inp_uV, I_inp_nA = self.hrv.ivcurve_sample(V_inp_uV, I_inp_nA)
-
-        P_inp_fW = self.cnv.calc_inp_power(V_inp_uV, I_inp_nA)
-
-        # fake ADC read
-        A_out_raw = self._cal_emu.adc_C_A.si_to_raw(I_out_nA * 10**-9)
-
-        P_out_fW = self.cnv.calc_out_power(A_out_raw)
-        V_mid_uV = self.cnv.update_cap_storage()
-        V_out_raw = self.cnv.update_states_and_output()
-        V_out_uV = int(self._cal_emu.dac_V_A.raw_to_si(V_out_raw) * 10**6)
-
+        I_out_raw = self._cal_emu.adc_C_A.si_to_raw(1e-9 * I_out_nA)
+        V_out_uV = self.cnv.vsrc_iterate_sampling(V_inp_uV, I_inp_nA, int(I_out_raw))
+        P_inp_fW = self.cnv.get_P_input_fW()
+        P_out_fW = self.cnv.get_P_output_fW()
+        V_mid_uV = self.cnv.get_V_intermediate_uV()
         self.W_inp_fWs += P_inp_fW
         self.W_out_fWs += P_out_fW
 

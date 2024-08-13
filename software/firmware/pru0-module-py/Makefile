@@ -26,15 +26,16 @@ INCLUDE = -I$(BASE_PATH)/pru0-shepherd-fw/include
 INCLUDE += -I$(BASE_PATH)/lib/include
 INCLUDE += -I$(BASE_PATH)/include
 
-# external sources - add manually
+# sources - add manually
 SOURCES = $(BASE_PATH)/pru0-shepherd-fw/virtual_harvester.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/virtual_converter.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/calibration.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/math64_safe.c
+SOURCES += $(BASE_PATH)/pru0-module-py/shp_pru/pru_source.c
 
 OBJECTS=$(SOURCES:.c=.o)
 
-TARGET=./shp_pru/virtual_xyz.so
+TARGET=./shp_pru/_shared_pru.so
 
 all: $(TARGET)
 
