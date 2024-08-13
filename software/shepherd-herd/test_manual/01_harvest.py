@@ -1,7 +1,6 @@
 from contextlib import ExitStack
 from pathlib import Path
 
-from shepherd_core import CalibrationHarvester
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualHarvesterConfig
 from shepherd_core.data_models.task import HarvestTask
@@ -59,7 +58,6 @@ for hrv_name in hrv_list:
 # #####################################################################
 
 path_input = path_here / host_selected / "hrv_ivcurve.h5"
-cal_hrv = CalibrationHarvester()
 
 for hrv_name in hrv_list[1:]:
     path_output = path_input.with_name(path_input.stem + "_" + hrv_name + path_input.suffix)

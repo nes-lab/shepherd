@@ -2,16 +2,13 @@ from contextlib import ExitStack
 from itertools import product
 from pathlib import Path
 
-import numpy as np
-from shepherd_core import CalibrationEmulator
-from shepherd_core import Writer
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
-from shepherd_core.vsource import VirtualSourceModel, simulate_source, ResistiveTarget
+from shepherd_core.vsource import ResistiveTarget
+from shepherd_core.vsource import simulate_source
 from shepherd_data import Reader
 from shepherd_herd import Herd
-from tqdm import tqdm
 
 hrv_list = [
     "ivcurve",
@@ -69,11 +66,12 @@ for hrv_name, src_name in product(hrv_list, src_list):
         if herd.run_task(task, attach=True) == 0:
             herd.get_file(path_remote_src, path_here, separate=True, delete_src=True)
         else:
-            logger.error("Failed to harvest with '%s'", hrv_name)
+            logger.error("Failed to emulate with '%s'", hrv_name)
         stack.close()
 
     with Reader(path_local_src) as _fh:
         results[path_local_src.stem] = _fh.energy()
+
 
 # #####################################################################
 # Emulate - simulated          ########################################
