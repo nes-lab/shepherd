@@ -112,10 +112,12 @@ class ShepherdEmulator(ShepherdIO):
             data=cfg.virtual_source,
             log_intermediate_node=log_cap,
         )
+        window_size = self.reader.get_window_samples()
         self.hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=cfg.virtual_source.harvester,
             for_emu=True,
             dtype_in=self.reader.get_datatype(),
+            window_size=window_size if window_size > 0 else None,
         )
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 
