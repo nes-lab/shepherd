@@ -152,6 +152,7 @@ struct SampleBuffer
  * 	- pru1 could read ahead, despite a bufferchange
  * 	- python would still fill this fifo block by block, its just easier for the pru to read
  * 	- keep matching V&C / IV Values together -> more efficient for pru
+ *  - report size to python (less hardcoded vars)
  */
 
 /* Programmer-Control as part of SharedMem-Struct */
@@ -368,7 +369,8 @@ struct SharedMem
     /* Counter for ADC-Samples, updated by PRU0, also needed (non-writing) by PRU1 */
     uint32_t                 analog_sample_counter;
     /* Fetch-System where pru0 can instruct pru1 to get the IV-Set from far buffer */
-    uint32_t                 analog_value_index;
+    uint32_t                 analog_value_request; // managed & written by PRU0
+    uint32_t                 analog_value_index;   // these 3 below are managed & written by PRU1
     uint32_t                 analog_value_current;
     uint32_t                 analog_value_voltage;
     /* Token system to ensure both PRUs can share interrupts */

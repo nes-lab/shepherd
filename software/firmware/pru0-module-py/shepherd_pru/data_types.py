@@ -73,7 +73,7 @@ class SharedMemLight(ct.Structure):
         ("gpio_pin_state", ct.c_uint32),
         ("gpio_edges", ct.c_uint32),  # Pointer
         ("sample_buffer", ct.c_uint32),  # Pointer
-        ("analog_x", ct.c_uint32 * 4),
+        ("analog_x", ct.c_uint32 * 5),
         ("trigger_x", ct.c_uint32 * 2),  # bool_ft
         ("vsource_batok_trigger_for_pru1", ct.c_uint32),  # bool_ft
         ("vsource_skip_gpio_logging", ct.c_uint32),  # bool_ft
