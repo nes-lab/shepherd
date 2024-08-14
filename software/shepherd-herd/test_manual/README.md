@@ -1,82 +1,75 @@
 # Benchmarks
 
+Systems that are compared here:
+
+- `py`: virtual harvester implementation in shepherd-core-lib
+- `c-py`: pru-code interfaced by python via ctypes (/software/firmware/pru0-python-module)
+- `pru`: real pru harvesting directly from transducer
+
+The first two systems harvest from `ivcurves`, which is a compromise to allow later harvesting.
+
 ## Harvesting
 
-### From Transducer
+Algorithms used
 
-hrv_ivcurve                 = 26,846435 mWs
+- `ivcurve`: IV-Curve with 909 steps (110 Hz)
+- `cv10`: Constant Voltage = 1 V
+- `cv20`: 2 V
+- `mppt_voc`: generic V_OC-Regulator
+- `mppt_bq_solar`: harvesting-unit of BQ-ICs set to solar
+- `mppt_bq_thermoelectric`: same for wrong transducer
+- `mppt_po`: perturb & observe algorithm
+- `mppt_opt`: very fast po-algo
 
-hrv_cv10                    = 24,041531 mWs
-hrv_cv20                    = 45,086118 mWs
-hrv_mppt_voc                = 55,581604 mWs
-hrv_mppt_bq_solar           = 55,279022 mWs
-hrv_mppt_bq_thermoelectric  = 43,281144 mWs
-hrv_mppt_po                 = 56,171798 mWs
-hrv_mppt_opt                = 53,415238 mWs
+### Setup
 
-### From IVCurve C
+- solar cell: IXYS SM101K09L
+- lighting by philips LED 5.9 W 806 lm 2000-2700 K, 50 Hz
+- lamp was ~ 10 cm above solar cell & the setup was covered with a white lampshade
+- 30 s recording
 
-hrv_ivcurve_cv10_cim                    = 24,061841 mWs
-hrv_ivcurve_cv20_cim                    = 45,293206 mWs
-hrv_ivcurve_mppt_voc_cim                = 55,781310 mWs
-hrv_ivcurve_mppt_bq_solar_cim           = 55,586730 mWs
-hrv_ivcurve_mppt_bq_thermoelectric_cim  = 42,805608 mWs
-hrv_ivcurve_mppt_po_cim                 = 56,361913 mWs
-hrv_ivcurve_mppt_opt_cim                = 57,236651 mWs
+### Results
 
-### From IVCurve Py
+Analyze of the processed energy and error in comparison to the Py-implementation as reference.
 
-hrv_ivcurve_cv10                    = 24,061841 mWs
-hrv_ivcurve_cv20                    = 45,293206 mWs
-hrv_ivcurve_mppt_voc                = 55,781310 mWs
-hrv_ivcurve_mppt_bq_solar           = 55,586730 mWs
-hrv_ivcurve_mppt_bq_thermoelectric  = 42,805609 mWs -> identical, except last digit
-hrv_ivcurve_mppt_po                 = 56,361913 mWs
-hrv_ivcurve_mppt_opt                = 57,236651 mWs
+| Harvesting             | Py/mWs | C-Py/mWs | error/% | PRU/mWs | error/%    |
+|------------------------|--------|----------|---------|---------|------------|
+| ivcurve (base)         |        |          |         | 26,846  |            |
+| cv10                   | 24,062 | 24,062   | 0,000   | 24,042  | 0,084      |
+| cv20                   | 45,293 | 45,293   | 0,000   | 45,086  | 0,457      |
+| mppt_voc               | 55,781 | 55,781   | 0,000   | 55,582  | 0,358      |
+| mppt_bq_solar          | 55,587 | 55,587   | 0,000   | 55,279  | 0,554      |
+| mppt_bq_thermoelectric | 42,806 | 42,806   | 0,000   | 43,281  | **-1,111** |
+| mppt_po                | 56,362 | 56,362   | 0,000   | 56,172  | 0,337      |
+| mppt_opt               | 57,237 | 57,237   | 0,000   | 53,415  | **6,677**  |
+
+The main difference is visible for `PRU` running `mppt_opt` with is directly harvesting from the transducer (different approach) in comparison to the other two systems which process the `ivcurve`-recording.
 
 ## Emulation
 
-### Target
+Different virtual source configurations were feed with 3 different harvesting traces. For better controllability the target is a simple resistor.
 
-hrv_ivcurve_direct_emu      = 237,957013 mWs
-hrv_ivcurve_dio_cap_emu     = 51,180749 mWs
-hrv_ivcurve_BQ25504_emu     = 50,291193 mWs
-hrv_ivcurve_BQ25570_emu     = 47,063520 mWs
-hrv_mppt_voc_direct_emu     = 266,889329 mWs
-hrv_mppt_voc_dio_cap_emu    = 50,009699 mWs
-hrv_mppt_voc_BQ25504_emu    = 50,286746 mWs
-hrv_mppt_voc_BQ25570_emu    = 47,044391 mWs
-hrv_mppt_po_direct_emu      = 236,746732 mWs
-hrv_mppt_po_dio_cap_emu     = 50,187478 mWs
-hrv_mppt_po_BQ25504_emu     = 50,754587 mWs
-hrv_mppt_po_BQ25570_emu     = 47,554642 mWs
+### Setup
 
-### Simulation C
+- Target is a single 1 kOhm resistor
 
-hrv_ivcurve_direct_cim      = 238,551795 mWs
-hrv_ivcurve_dio_cap_cim     = 51,181283 mWs
-hrv_ivcurve_BQ25504_cim     = 50,292813 mWs
-hrv_ivcurve_BQ25570_cim     = 46,994343 mWs
-hrv_mppt_voc_direct_cim     = 267,582445 mWs
-hrv_mppt_voc_dio_cap_cim    = 50,011117 mWs
-hrv_mppt_voc_BQ25504_cim    = 50,288394 mWs
-hrv_mppt_voc_BQ25570_cim    = 47,044898 mWs
-hrv_mppt_po_direct_cim      = 237,338993 mWs
-hrv_mppt_po_dio_cap_cim     = 50,193853 mWs
-hrv_mppt_po_BQ25504_cim     = 50,761248 mWs
-hrv_mppt_po_BQ25570_cim     = 47,591982 mWs
+### Results
 
-### Simulation Py
+Analyze of the processed energy and error in comparison to the Py-implementation as reference.
 
-hrv_ivcurve_direct_sim      = 238,514834 mWs
-hrv_ivcurve_dio_cap_sim     = 51,181966 mWs
-hrv_ivcurve_BQ25504_sim     = 50,293696 mWs
-hrv_ivcurve_BQ25570_sim     = 47,100070 mWs
-hrv_mppt_voc_direct_sim     = 267,581982 mWs
-hrv_mppt_voc_dio_cap_sim    = 50,011020 mWs
-hrv_mppt_voc_BQ25504_sim    = 50,289405 mWs
-hrv_mppt_voc_BQ25570_sim    = 47,097267 mWs
-hrv_mppt_po_direct_sim      = 237,338342 mWs
-hrv_mppt_po_dio_cap_sim     = 50,193663 mWs
-hrv_mppt_po_BQ25504_sim     = 50,762194 mWs
-hrv_mppt_po_BQ25570_sim     = 47,464787 mWs
+| Emulation           | Py/mWs     | C-Py/mWs   | error/% | PRU/mWs    | error/% |
+|---------------------|------------|------------|---------|------------|---------|
+| ivcurve to direct   | 238,514834 | 238,551795 | 0,015   | 237,957013 | 0,234   |
+| ivcurve to dio_cap  | 51,181966  | 51,181283  | -0,001  | 51,180749  | 0,002   |
+| ivcurve to BQ25504  | 50,293696  | 50,292813  | -0,002  | 50,291193  | 0,005   |
+| ivcurve to BQ25570  | 47,10007   | 46,994343  | -0,225  | 47,06352   | 0,078   |
+| mppt_voc to direct  | 267,581982 | 267,582445 | 0,000   | 266,889329 | 0,259   |
+| mppt_voc to dio_cap | 50,01102   | 50,011117  | 0,000   | 50,009699  | 0,003   |
+| mppt_voc to BQ25504 | 50,289405  | 50,288394  | -0,002  | 50,286746  | 0,005   |
+| mppt_voc to BQ25570 | 47,097267  | 47,044898  | -0,111  | 47,044391  | 0,112   |
+| mppt_po to direct   | 237,338342 | 237,338993 | 0,000   | 236,746732 | 0,249   |
+| mppt_po to dio_cap  | 50,193663  | 50,193853  | 0,000   | 50,187478  | 0,012   |
+| mppt_po to BQ25504  | 50,762194  | 50,761248  | -0,002  | 50,754587  | 0,015   |
+| mppt_po to BQ25570  | 47,464787  | 47,591982  | 0,267   | 47,554642  | -0,189  |
+
+The main source of the low constant error is from the input efficiency only having a resolution of 8 bit.
