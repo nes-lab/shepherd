@@ -8,16 +8,16 @@
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
 
-static bool_ft         dac_aux_link_to_main = false;
-static bool_ft         dac_aux_link_to_mid  = false;
+static bool_ft     dac_aux_link_to_main = false;
+static bool_ft     dac_aux_link_to_mid  = false;
 
 /* NOTE:
  * Changes in HW or ADC/DAC Config also change the calibration.data!
  * (ie. py-package/shepherd/calibration_default.py)
  */
 
-static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_mem,
-                                       struct SampleBuffer *const       buffer)
+static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
+                                   struct SampleBuffer *const       buffer)
 {
     /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     //__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
@@ -27,7 +27,10 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
     uint32_t       input_current_nA       = shared_mem->analog_value_current;
     uint32_t       input_voltage_uV       = shared_mem->analog_value_voltage;
     const uint32_t current_sample_counter = shared_mem->analog_sample_counter;
-    shared_mem->analog_sample_counter++; // increment early to trigger pru1 to fetch new data
+    if (current_sample_counter < ADC_SAMPLES_PER_BUFFER - 1u)
+    {
+        shared_mem->analog_value_request = current_sample_counter + 1u;
+    }
 
     sample_ivcurve_harvester(&input_voltage_uV, &input_current_nA);
 
@@ -70,29 +73,26 @@ static inline uint32_t sample_emulator(volatile struct SharedMem *const shared_m
         buffer->values_current[current_sample_counter] = current_adc_raw;
         buffer->values_voltage[current_sample_counter] = voltage_dac;
     }
-    return 1u; // because we already incremented
 }
 
 
-static inline uint32_t sample_emu_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static inline void sample_emu_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     __delay_cycles(1000 / TIMER_TICK_NS); // fill up to 1000 ns since adc-trigger (if needed)
     buffer->values_current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
     buffer->values_voltage[sample_idx] = 0u;
-    return 0u;
 }
 
-static inline uint32_t sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static inline void sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     __delay_cycles(1000 / TIMER_TICK_NS); // fill up to 1000 ns since adc-trigger (if needed)
     buffer->values_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     buffer->values_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-    return 0u;
 }
 
 
-uint32_t sample(volatile struct SharedMem *const shared_mem,
-                struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
+void sample(volatile struct SharedMem *const shared_mem,
+            struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
 {
     switch (mode) // reordered to prioritize longer routines
     {
@@ -104,7 +104,6 @@ uint32_t sample(volatile struct SharedMem *const shared_mem,
             return sample_emu_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
         case MODE_HRV_ADC_READ:
             return sample_hrv_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
-        default: return 0u;
     }
 }
 

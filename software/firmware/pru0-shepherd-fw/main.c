@@ -360,19 +360,18 @@ void event_loop(volatile struct SharedMem *const shared_mem,
             /* Clear Timer Compare 1 and forward it to pru1 */
             shared_mem->cmp1_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
-            uint32_t inc_done = 0u;
 
             /* The actual sampling takes place here */
             if ((sample_buf_idx != NO_BUFFER) &&
                 (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
             {
                 GPIO_ON(DEBUG_PIN1_MASK);
-                inc_done = sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
+                sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
                 GPIO_OFF(DEBUG_PIN1_MASK);
             }
 
-            /* counter-incrementation, allow premature incrementation by sub-sampling_fn, use return_value to register it */
-            if (!inc_done) shared_mem->analog_sample_counter++;
+            /* counter-incrementation */
+            shared_mem->analog_sample_counter++;
 
             if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
             {
@@ -386,10 +385,10 @@ void event_loop(volatile struct SharedMem *const shared_mem,
                     GPIO_ON(DEBUG_PIN1_MASK);
                     sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far,
                                                         sample_buf_idx);
+                    /* place a request, so pru1 can fetch data */
+                    shared_mem->analog_value_request = 0u;
+                    shared_mem->analog_value_index   = NO_BUFFER;
                 }
-                /* pre-reset counter, so pru1 can fetch data */
-                shared_mem->analog_sample_counter = 0u;
-                shared_mem->analog_value_index    = NO_BUFFER;
             }
             else
             {
@@ -487,6 +486,8 @@ reset:
 
     shared_memory->gpio_edges                = NULL;
     shared_memory->vsource_skip_gpio_logging = false;
+
+    shared_memory->analog_value_request      = 0u;
 
     shared_memory->shepherd_state            = STATE_IDLE;
     /* Make sure the mutex is clear */

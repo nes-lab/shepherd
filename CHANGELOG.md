@@ -2,26 +2,36 @@
 
 ## 0.8.1
 
+- big bugfix release
 - sheep
   - limit pru-warning count
   - fix forced stopping of ntp-service
   - improve debug-output
+  - fix ingestion of ivcurves (windowsize was not propagated)
+  - fix copy of emu-input into shared mem (off-by-one-error)
 - herd
   - query for alive status of testbed (all hosts responding)
   - more robust unittesting
+  - add automated benchmark in `software\shepherd-herd\test_manual\`
 - python in general
   - add progress-bars to long processes
   - remove progress-bar after task finishes (most)
   - don't limit pandas to <v2 anymore
+  - prepare for py313
 - pru vsourve & harvester
   - fix residue feature
   - remove limiting-behavior of boost-regulator
   - fix calculation of window_size for individual usecases
   - ivcurve - cutout measurements during big step
+  - improve code-quality (cleaner fetching of emu-input and special math-functions are easier to understand)
 - harvesting ivcurves
   - fix max age of samples
   - improve initial interval_step to intake two whole ivcurves before reset
   - improve VOC-harvester
+- python module "shepherd-pru" interfaces pru-c-code via ctypes
+  - harvesting & emulation can be done
+  - benchmarking revealed some bugs
+- remove cython-playground (in favor of ctypes-implementation)
 - ansible: remove py-packages before install
 - extend ruff and fix ~ 200 linting-errors
 - **tested**: pytest sheep, pytest herd, playbook dev_rebuild_sw.yml

@@ -98,6 +98,10 @@ class SharedMemory:
         self.address = address
         self.size = int(size)
         self.n_buffers = int(n_buffers)
+        if samples_per_buffer != 10000:
+            raise ValueError(
+                "Samples_per_buffer is NOT 10000. External routines expect currently 10k."
+            )
         self.samples_per_buffer = int(samples_per_buffer)
         self.prev_timestamp: int = 0
         self.pru_warn: int = 10
@@ -129,6 +133,7 @@ class SharedMemory:
             # pru0 util stat
             + 2 * 4
         )  # NOTE: atm 4h of bug-search lead to this hardcoded piece
+        self.buffer_header_size = 16
         # TODO: put number in shared-mem or other way around
 
         self.voltage_offset = 4 + 4 + 8
@@ -371,9 +376,18 @@ class SharedMemory:
             raise ValueError(
                 f"out of bound access (i={index}), tried writing to SharedMEM-Buffer",
             )
+        if (voltage.shape[0] != self.samples_per_buffer) or (
+            current.shape[0] != self.samples_per_buffer
+        ):
+            raise ValueError(
+                "Buffer #%d has unexpected size (v%d, c%d)",
+                index,
+                voltage.shape[0],
+                current.shape[0],
+            )
         buffer_offset = self.buffer_size * index
-        # Seek buffer location in memory and skip 12B header
-        self.mapped_mem.seek(buffer_offset + 12)
+        # Seek buffer location in memory and skip header
+        self.mapped_mem.seek(buffer_offset + self.buffer_header_size)
         self.mapped_mem.write(voltage.tobytes())
         self.mapped_mem.write(current.tobytes())
 
