@@ -107,7 +107,7 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     // TODO: embed cfg->current_limit_nA as a limiter if resources allow for it
 }
 
-uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+void sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     if (cfg->algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_2_mppt_voc(buffer, sample_idx);
@@ -117,7 +117,6 @@ uint32_t sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t 
     else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(buffer, sample_idx);
 #endif
     // todo: else send error to system
-    return 0u;
 }
 
 static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)

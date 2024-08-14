@@ -414,17 +414,18 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             continue; // for more regular gpio-sampling
         }
 
-        /* Mem-Reading for PRU0 -> can vary from 530 to 5400 ns (rare) */
-        if ((shared_mem->analog_sample_counter != shared_mem->analog_value_index) &&
+        /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
+        if ((shared_mem->analog_value_request != shared_mem->analog_value_index) &&
             (shared_mem->sample_buffer != NULL) &&
-            (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
+            (shared_mem->analog_value_request < ADC_SAMPLES_PER_BUFFER))
         {
             // split reads to optimize gpio-tracing
-            static bool_ft first = true;
+            static bool_ft first       = true;
+            const uint32_t value_index = shared_mem->analog_value_request;
+
             if (first)
             {
                 DEBUG_RAMRD_STATE_1;
-                const uint32_t value_index = shared_mem->analog_sample_counter;
                 shared_mem->analog_value_current =
                         shared_mem->sample_buffer->values_current[value_index];
                 first = false;
@@ -432,7 +433,6 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             else
             {
                 DEBUG_RAMRD_STATE_2;
-                const uint32_t value_index = shared_mem->analog_sample_counter;
                 shared_mem->analog_value_voltage =
                         shared_mem->sample_buffer->values_voltage[value_index];
                 shared_mem->analog_value_index = value_index;
