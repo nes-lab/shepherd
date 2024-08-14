@@ -42,7 +42,7 @@ repos:
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.18
+    rev: v0.19
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
