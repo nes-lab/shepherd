@@ -5,7 +5,7 @@ from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.vsource import ResistiveTarget
 from shepherd_data import Reader
-from shepherd_pru.pru_source_simulation2 import simulate_source
+from shepherd_pru.pru_source_simulation import simulate_source
 
 
 hrv_list = [
