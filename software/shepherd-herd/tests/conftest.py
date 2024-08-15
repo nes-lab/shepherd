@@ -11,7 +11,7 @@ from shepherd_herd import Herd
 from shepherd_herd.herd_cli import cli
 
 
-@pytest.fixture()
+@pytest.fixture
 def cli_runner() -> CliRunner:
     return CliRunner()
 
@@ -58,12 +58,12 @@ def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> 
     return store_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_h5_path(tmp_path: Path) -> Path:
     return generate_h5_file(tmp_path)
 
 
-@pytest.fixture()
+@pytest.fixture
 def local_herd(tmp_path: Path) -> Path:
     # locations copied from herd.cli()
     inventories = [
@@ -83,7 +83,7 @@ def local_herd(tmp_path: Path) -> Path:
     return local_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def _herd_alive() -> None:
     # pre-test is good for start of new test-file
     for _ in range(3):
@@ -95,7 +95,7 @@ def _herd_alive() -> None:
     raise RuntimeError("No Sheep seems to be alive")
 
 
-@pytest.fixture()
+@pytest.fixture
 def _herd_stopped(cli_runner: CliRunner, _herd_alive: None) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)

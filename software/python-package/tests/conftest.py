@@ -65,13 +65,13 @@ def pytest_collection_modifyitems(
             item.add_marker(skip_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def _shepherd_down(fake_fs: FakeFilesystem | None) -> None:
     if fake_fs is None:
         remove_kernel_module()
 
 
-@pytest.fixture()
+@pytest.fixture
 def _shepherd_up(
     _shepherd_down: None,
     fake_fs: FakeFilesystem | None,
@@ -112,6 +112,6 @@ def _shepherd_up(
         gc.collect()  # precaution
 
 
-@pytest.fixture()
+@pytest.fixture
 def cli_runner() -> CliRunner:
     return CliRunner()

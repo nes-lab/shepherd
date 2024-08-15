@@ -36,7 +36,7 @@ def random_data(length: int) -> np.ndarray:
     return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
     with Writer(
@@ -52,22 +52,22 @@ def data_h5(tmp_path: Path) -> Path:
     return store_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def tmp_yaml(tmp_path: Path) -> Path:
     return tmp_path / "cfg.yaml"
 
 
-@pytest.fixture()
+@pytest.fixture
 def path_h5(tmp_path: Path) -> Path:
     return tmp_path / "out.h5"
 
 
-@pytest.fixture()
+@pytest.fixture
 def path_here() -> Path:
     return Path(__file__).resolve().parent
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_no_cal(
@@ -87,7 +87,7 @@ def test_cli_harvest_no_cal(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_parameters_most(
@@ -109,7 +109,7 @@ def test_cli_harvest_parameters_most(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_parameters_minimal(
@@ -128,7 +128,7 @@ def test_cli_harvest_parameters_minimal(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_preconfigured(
@@ -140,7 +140,7 @@ def test_cli_harvest_preconfigured(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_preconf_etc_shp_examples(
@@ -152,7 +152,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate(
@@ -180,7 +180,7 @@ def test_cli_emulate(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_custom_virtsource(
@@ -213,7 +213,7 @@ def test_cli_emulate_with_custom_virtsource(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_bq25570(
@@ -242,7 +242,7 @@ def test_cli_emulate_with_bq25570(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage(
@@ -271,7 +271,7 @@ def test_cli_emulate_aux_voltage(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_long(
@@ -308,7 +308,7 @@ def test_cli_emulate_parameters_long(
     assert path_h5.exists()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_minimal(
@@ -332,7 +332,7 @@ def test_cli_emulate_parameters_minimal(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconfigured(
@@ -344,7 +344,7 @@ def test_cli_emulate_preconfigured(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(80)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconf_etc_shp_examples(
@@ -357,7 +357,7 @@ def test_cli_emulate_preconf_etc_shp_examples(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage_fail(
@@ -384,7 +384,7 @@ def test_cli_emulate_aux_voltage_fail(
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_fw_mod_task(
@@ -419,7 +419,7 @@ def test_cli_fw_mod_task(
     assert path_file.is_file()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_programming(

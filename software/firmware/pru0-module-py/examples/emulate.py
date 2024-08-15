@@ -7,7 +7,6 @@ from shepherd_core.vsource import ResistiveTarget
 from shepherd_data import Reader
 from shepherd_pru.pru_source_simulation import simulate_source
 
-
 hrv_list = [
     "ivcurve",
     "mppt_voc",
