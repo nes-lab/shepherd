@@ -1,5 +1,12 @@
 # History of Changes
 
+## 0.8.2
+
+- PRU gets now partially zeroed buffer-segments
+- PRU had a race-condition with a loose mutex resulting in keeping old gpio-samples
+- python now warns on full gpio-buffer (as it can only hold ~16k entries in 100 ms)
+- python now warns if first or last timestamp of gpio-buffer is out of scope of outer buffer-period
+
 ## 0.8.1
 
 - big bugfix release
