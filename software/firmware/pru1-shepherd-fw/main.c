@@ -207,7 +207,7 @@ static inline void check_gpio(volatile struct SharedMem *const shared_mem,
 
         /* Each buffer can only store a limited number of events */
         if (cIDX >= MAX_GPIO_EVT_PER_BUFFER) return;
-        // TODO: indicate overflow here before returning. ie. MAX_GPIO.. + 1
+        // TODO: could indicate overflow here before returning. ie. MAX_GPIO.. + 1
 
         /* Ticks since we've taken the last sample */
         const uint32_t ticks_since_last_sample = CT_IEP.TMR_CNT - last_sample_ticks;

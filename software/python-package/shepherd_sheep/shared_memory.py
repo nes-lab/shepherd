@@ -302,6 +302,8 @@ class SharedMemory:
                 f"CANARY of GpioBuffer was harmed! Is 0x{canary2:X}, expected 0x0F0F0F0F",
             )
 
+        if n_gpio_events == commons.MAX_GPIO_EVT_PER_BUFFER:
+            log.warning("Hint for Overflow - current GPIO-Buffer is full @ buffer-ts = %.1f s", buffer_timestamp / 1e9)
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
             log.error(
                 "Size of gpio_events out of range with %d entries (max=%d)",
