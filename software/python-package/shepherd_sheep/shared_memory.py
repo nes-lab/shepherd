@@ -311,7 +311,7 @@ class SharedMemory:
 
         if n_gpio_events == commons.MAX_GPIO_EVT_PER_BUFFER:
             log.warning(
-                "Hint for Overflow - current GPIO-Buffer is full @ buffer-ts = %.1f s",
+                "Current GPIO-Buffer is full @ buffer-ts = %.1f s -> hint for overflow & loss of data",
                 buffer_timestamp / 1e9,
             )
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
