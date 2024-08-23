@@ -340,6 +340,15 @@ class SharedMemory:
             gpio_timestamps_ns = np.empty(0, dtype=np.uint64)
             gpio_values = np.empty(0, dtype=np.uint16)
 
+        if len(gpio_timestamps_ns) > 0:
+            # test if first/last gpio-timestamp is in scope of outer buffer
+            gpio_ts_valid = ((buffer_timestamp <= gpio_timestamps_ns[0] <= buffer_timestamp + 100e6) and
+                             (buffer_timestamp <= gpio_timestamps_ns[-1] <= buffer_timestamp + 100e6))
+            if not gpio_ts_valid:
+                log.warning("Timestamps (first or last) of GPIO-buffer are NOT in buffer-period @ ts = %.1f s",
+                            buffer_timestamp / 1e9,
+                            )
+
         gpio_edges = GPIOEdges(gpio_timestamps_ns, gpio_values)
 
         # pru0 util
