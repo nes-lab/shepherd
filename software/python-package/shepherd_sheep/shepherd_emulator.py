@@ -212,6 +212,7 @@ class ShepherdEmulator(ShepherdIO):
         v_tf = self.cal_pru.voltage.raw_to_si(buffer.voltage).astype("u4")
         c_tf = self.cal_pru.current.raw_to_si(buffer.current).astype("u4")
 
+        self.shared_mem.clear_buffer(index)
         self.shared_mem.write_buffer(index, v_tf, c_tf)
         super()._return_buffer(index)
         if verbose:

@@ -142,6 +142,10 @@ class SharedMemory:
         self.gpio_ts_offset = self.gpio_offset + 4 + 4
         self.gpio_vl_offset = self.gpio_offset + 8 + 8 * commons.MAX_GPIO_EVT_PER_BUFFER
         self.pru0_ut_offset = self.gpio_offset + 8 + 10 * commons.MAX_GPIO_EVT_PER_BUFFER
+        # init zeroed data for clearing buffers
+        self.zero_4b = bytes(bytearray(4))
+        self.zero_8b = bytes(bytearray(8))
+        self.zero_gpio_ts = commons.MAX_GPIO_EVT_PER_BUFFER * self.zero_8b
 
         log.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
         if self.buffer_size * self.n_buffers != self.size:
@@ -164,6 +168,9 @@ class SharedMemory:
         )
 
     def __enter__(self) -> Self:
+        # zero parts of buffer as a precaution
+        for idx in range(self.n_buffers):
+            self.clear_buffer(idx)
         return self
 
     def __exit__(
@@ -303,7 +310,10 @@ class SharedMemory:
             )
 
         if n_gpio_events == commons.MAX_GPIO_EVT_PER_BUFFER:
-            log.warning("Hint for Overflow - current GPIO-Buffer is full @ buffer-ts = %.1f s", buffer_timestamp / 1e9)
+            log.warning(
+                "Hint for Overflow - current GPIO-Buffer is full @ buffer-ts = %.1f s",
+                buffer_timestamp / 1e9,
+            )
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
             log.error(
                 "Size of gpio_events out of range with %d entries (max=%d)",
@@ -367,6 +377,18 @@ class SharedMemory:
             pru0_util_mean,
             pru0_util_max,
         )
+
+    def clear_buffer(self, index: int) -> None:
+        # this fn should be executed before handing the buffer back to PRU
+        buffer_offset = self.buffer_size * index
+        # IV-Sample len & timestamp
+        self.mapped_mem.seek(buffer_offset + 4)  # behind canary
+        self.mapped_mem.write(self.zero_4b)  # len
+        self.mapped_mem.write(self.zero_8b)  # timestamp
+        # GPIO-Edges-Index & timestamps
+        self.mapped_mem.seek(buffer_offset + self.gpio_offset + 4)  # behind canary
+        self.mapped_mem.write(self.zero_4b)  # idx
+        self.mapped_mem.write(self.zero_gpio_ts)  # timestamp-array
 
     def write_buffer(
         self,
