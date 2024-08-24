@@ -13,7 +13,7 @@ from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 
 
-@pytest.fixture()
+@pytest.fixture
 def path_here() -> Path:
     return Path(__file__).resolve().parent
 

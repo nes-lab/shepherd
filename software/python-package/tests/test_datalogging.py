@@ -18,7 +18,7 @@ def random_data(length: int) -> np.ndarray:
     return rng.integers(low=0, high=2**18, size=length, dtype="u4")
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_buffer() -> DataBuffer:
     len_ = 10_000
     voltage = random_data(len_)
@@ -26,7 +26,7 @@ def data_buffer() -> DataBuffer:
     return DataBuffer(voltage, current, 1551848387472)
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "record_example.h5"
     with Writer(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
@@ -38,7 +38,7 @@ def data_h5(tmp_path: Path) -> Path:
     return name
 
 
-@pytest.fixture()
+@pytest.fixture
 def cal_cape() -> CalibrationCape:
     return CalibrationCape()
 

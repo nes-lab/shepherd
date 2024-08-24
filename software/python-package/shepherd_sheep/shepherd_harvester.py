@@ -131,6 +131,7 @@ class ShepherdHarvester(ShepherdIO):
         :param index: (int) Index of the buffer. 0 <= index < n_buffers
         :param verbose: chatter-prevention, performance-critical computation saver
         """
+        self.shared_mem.clear_buffer(index)
         super()._return_buffer(index)
         if verbose:
             log.debug("Sent empty buffer #%s to PRU", index)

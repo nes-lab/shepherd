@@ -8,21 +8,21 @@ from shepherd_sheep.cli import cli
 # differences: import _herd, .mark.hardware, shepherd_up / stopped_herd
 
 
-@pytest.fixture()
+@pytest.fixture
 def fw_nrf() -> Path:
     here = Path(__file__).resolve()
     name = "firmware_nrf52_testable.hex"
     return here.parent / name
 
 
-@pytest.fixture()
+@pytest.fixture
 def fw_msp() -> Path:
     here = Path(__file__).resolve()
     name = "firmware_msp430_testable.hex"
     return here.parent / name
 
 
-@pytest.fixture()
+@pytest.fixture
 def fw_empty(tmp_path: Path) -> Path:
     store_path = tmp_path / "firmware_null.hex"
     with store_path.resolve().open("w", encoding="utf-8-sig") as fh:
@@ -30,7 +30,7 @@ def fw_empty(tmp_path: Path) -> Path:
     return store_path
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_minimal(
@@ -49,7 +49,7 @@ def test_cli_program_minimal(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_swd_explicit(
@@ -78,7 +78,7 @@ def test_cli_program_swd_explicit(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_swd_explicit_short(
@@ -107,7 +107,7 @@ def test_cli_program_swd_explicit_short(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_sbw_explicit(
@@ -136,7 +136,7 @@ def test_cli_program_sbw_explicit(
     assert res.exit_code == 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_a(
@@ -155,7 +155,7 @@ def test_cli_program_file_defective_a(
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_b(
@@ -174,7 +174,7 @@ def test_cli_program_file_defective_b(
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_c(
@@ -193,7 +193,7 @@ def test_cli_program_file_defective_c(
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_datarate_invalid_a(
@@ -214,7 +214,7 @@ def test_cli_program_datarate_invalid_a(
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_datarate_invalid_b(
@@ -235,7 +235,7 @@ def test_cli_program_datarate_invalid_b(
     assert res.exit_code != 0
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_target_invalid(

@@ -17,7 +17,7 @@ def mode(request: pytest.FixtureRequest) -> str:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def writer(tmp_path: Path, mode: str) -> Generator[Writer, None, None]:
     with Writer(
         mode=mode,
@@ -28,7 +28,7 @@ def writer(tmp_path: Path, mode: str) -> Generator[Writer, None, None]:
         yield _w
 
 
-@pytest.fixture()
+@pytest.fixture
 def harvester(
     _shepherd_up: None,
     mode: str,
@@ -39,7 +39,7 @@ def harvester(
         yield _h
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_instantiation(tmp_path: Path) -> None:
     cfg = HarvestTask(output_path=tmp_path / "hrv_123.h5")
@@ -48,7 +48,7 @@ def test_instantiation(tmp_path: Path) -> None:
     del _h
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
     harvester.start(wait_blocking=False)
     harvester.wait_for_start(15)
@@ -59,7 +59,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
         harvester.return_buffer(idx)
 
 
-@pytest.mark.hardware()  # TODO: extend with new harvester-options
+@pytest.mark.hardware  # TODO: extend with new harvester-options
 @pytest.mark.timeout(40)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_harvester_fn(tmp_path: Path) -> None:

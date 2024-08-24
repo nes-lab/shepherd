@@ -12,7 +12,7 @@ from shepherd_sheep import flatten_list
 from shepherd_sheep import sysfs_interface
 
 
-@pytest.fixture()
+@pytest.fixture
 def cnv_cfg() -> ConverterPRUConfig:
     here = Path(__file__).resolve()
     name = "_test_config_virtsource.yaml"
@@ -21,20 +21,20 @@ def cnv_cfg() -> ConverterPRUConfig:
     return ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate_node=False)
 
 
-@pytest.fixture()
+@pytest.fixture
 def hrv_cfg() -> HarvesterPRUConfig:
     path = Path(__file__).parent / "_test_config_harvest.yaml"
     hrv_cfg = HarvestTask.from_file(path.as_posix())
     return HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
 
 
-@pytest.fixture()
+@pytest.fixture
 def _shepherd_running(_shepherd_up: None) -> None:
     sysfs_interface.set_start()
     sysfs_interface.wait_for_state("running", 5)
 
 
-@pytest.fixture()
+@pytest.fixture
 def cal4sysfs() -> dict:
     cal = CalibrationCape()
     return cal.emulator.export_for_sysfs()
@@ -55,7 +55,7 @@ def test_getters_fail(attr: str) -> None:
         method_to_call()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_start() -> None:
     sysfs_interface.set_start()
@@ -65,7 +65,7 @@ def test_start() -> None:
         sysfs_interface.set_start()
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_wait_for_state() -> None:
     sysfs_interface.set_start()
@@ -74,7 +74,7 @@ def test_wait_for_state() -> None:
     assert sysfs_interface.wait_for_state("idle", 3) < 3
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_start_delayed() -> None:
     start_time = int(time.time() + 5)
@@ -103,7 +103,7 @@ def test_initial_mode() -> None:
     assert sysfs_interface.get_mode() == "harvester"
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_running")
 def test_set_mode_fail_offline() -> None:
     with pytest.raises(sysfs_interface.SysfsInterfaceError):
@@ -144,7 +144,7 @@ def test_calibration_settings(cal4sysfs: dict) -> None:
     assert sysfs_interface.read_calibration_settings() == cal4sysfs
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_initial_calibration_settings(cal4sysfs: dict) -> None:
     # NOTE: initial config is in common_inits.h of kernel-module
@@ -157,14 +157,14 @@ def test_initial_calibration_settings(cal4sysfs: dict) -> None:
     assert sysfs_interface.read_calibration_settings() == cal4sysfs
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_initial_harvester_settings() -> None:
     hrv_list = [0, *list(range(200, 211))]
     assert sysfs_interface.read_virtual_harvester_settings() == hrv_list
 
 
-@pytest.mark.hardware()  # TODO: could also run with mock_hardware, but triggers pydantic-error
+@pytest.mark.hardware  # TODO: could also run with mock_hardware, but triggers pydantic-error
 @pytest.mark.usefixtures("_shepherd_up")
 def test_writing_harvester_settings(
     hrv_cfg: HarvesterPRUConfig,
@@ -175,7 +175,7 @@ def test_writing_harvester_settings(
     )
 
 
-@pytest.mark.hardware()
+@pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_initial_virtsource_settings() -> None:
     # NOTE: initial config is set in main() of pru0
