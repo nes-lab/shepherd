@@ -15,9 +15,9 @@
 #include "shepherd_config.h"
 
 #include "calibration.h"
+#include "fw_config.h"
 #include "sampling.h"
 #include "virtual_converter.h"
-#include "fw_config.h"
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
