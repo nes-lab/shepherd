@@ -589,7 +589,8 @@ def check_programmer() -> str:
 
 
 pru_firmwares = [
-    "am335x-pru0-shepherd-fw",
+    "am335x-pru0-shepherd-EMU-fw",
+    "am335x-pru0-shepherd-HRV-fw",
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
     "am335x-pru1-shepherd-fw",
@@ -609,6 +610,7 @@ def load_pru_firmware(value: str = "pru0-shepherd") -> None:
     for firmware in pru_firmwares:
         if value.lower() in firmware.lower():
             request = firmware
+            break
     log.debug("Will set pru-firmware to '%s'", request)
     sys_str = f"/sys/shepherd/pru{1 if ('pru1' in request) else 0}_firmware"
     _count = 0

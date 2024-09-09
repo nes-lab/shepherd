@@ -37,6 +37,7 @@ class ShepherdHarvester(ShepherdIO):
         mode: str = "harvester",
     ) -> None:
         log.debug("ShepherdHarvester-Init in %s-mode", mode)
+        sysfs_interface.load_pru_firmware("shepherd-HRV")
         super().__init__(
             mode=mode,
             trace_iv=cfg.power_tracing,
