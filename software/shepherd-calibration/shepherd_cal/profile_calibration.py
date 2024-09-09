@@ -69,7 +69,7 @@ class ProfileCalibration(CalibrationSeries):
             )
             return None
         logger.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
-        return CalibrationPair(gain=gain, offset=offset)
+        return CalibrationPair(gain=gain, offset=offset, unit="A")
 
     @staticmethod
     def _determine_voltage_cal(result: pd.DataFrame) -> CalibrationPair | None:
@@ -98,4 +98,4 @@ class ProfileCalibration(CalibrationSeries):
             )
             return None
         logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
-        return CalibrationPair(gain=gain, offset=offset)
+        return CalibrationPair(gain=gain, offset=offset, unit="V")
