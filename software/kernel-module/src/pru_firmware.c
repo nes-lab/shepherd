@@ -73,7 +73,7 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 
         /* Initialize synchronization mechanism between PRU1 and our clock */
         //if ((fwncmp(0, PRU0_FW_DEFAULT) == 0) && (fwncmp(1, PRU1_FW_DEFAULT) == 0))
-        if (fwncmp(0, PRU0_FW_DEFAULT) == 0) { sync_start(); }
+        if ((fwncmp(0, PRU0_FW_EMU) == 0) || (fwncmp(0, PRU0_FW_HRV) == 0)) { sync_start(); }
         else printk(KERN_INFO "shprd.k: pru-sync-system NOT (re)started (only for shepherd-fw)");
     }
     init_done = 1;
