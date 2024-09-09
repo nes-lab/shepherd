@@ -20,7 +20,7 @@ src_list = [
     "BQ25570",
 ]
 
-target = ResistiveTarget(resistance_Ohm=1000)
+target = ResistiveTarget(R_Ohm=1000)
 
 paths_local_hrv = {hrv_name: Path(__file__).parent / f"hrv_{hrv_name}.h5" for hrv_name in hrv_list}
 results: dict = {}
@@ -34,16 +34,16 @@ for hrv_name, src_name in product(hrv_list, src_list):
     path_output = path_input.with_name(
         path_input.stem + "_" + src_name + "_cim" + path_input.suffix
     )
-    # if not path_output.exists():
-    simulate_source(
-        config=VirtualSourceConfig(
-            inherit_from=src_name,
-            C_output_uF=0,
-        ),
-        target=target,
-        path_input=path_input,
-        path_output=path_output,
-    )
+    if not path_output.exists():
+        simulate_source(
+            config=VirtualSourceConfig(
+                inherit_from=src_name,
+                C_output_uF=0,
+            ),
+            target=target,
+            path_input=path_input,
+            path_output=path_output,
+        )
     with Reader(path_output, verbose=False) as _fh:
         results[path_output.stem] = _fh.energy()
 

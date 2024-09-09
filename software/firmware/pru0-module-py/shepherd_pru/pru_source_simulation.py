@@ -46,7 +46,11 @@ def simulate_source(
         cal_out = file_out.get_calibration_data()
 
     src = VirtualSourceModel(
-        config, cal_emu, log_intermediate=False, window_size=file_inp.get_window_samples()
+        config,
+        cal_emu,
+        dtype_in=file_inp.get_datatype(),
+        log_intermediate=False,
+        window_size=file_inp.get_window_samples(),
     )
     i_out_nA = 0
     e_out_Ws = 0.0
