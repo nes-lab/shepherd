@@ -61,7 +61,7 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
 #ifdef __PYTHON__
 void __delay_cycles(uint32_t num)
 {
-    while (num > 0u) num--;
+    if (num > 0u) num--; // just touch - needs no faking
 }
 /* next is a mock-impl to calm the compiler (does not get used)*/
 static uint32_t hw_value = 0u;
@@ -393,7 +393,7 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
 	 * - no min/max usage here, the main FNs do that, or python if cv() is used directly
 	 * */
     static uint32_t voltage_last = 0u, current_last = 0u;
-    static uint32_t voltage_delta = 0u, current_delta = 0u;
+    static int32_t  voltage_delta = 0u, current_delta = 0u;
     static bool_ft  compare_last  = 0u;
 
     /* find matching voltage with threshold-crossing-detection -> direction of curve is irrelevant */
@@ -417,31 +417,33 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
         {
             voltage_hold  = *p_voltage_uV;
             current_hold  = *p_current_nA;
-            voltage_delta = *p_voltage_uV - voltage_last;
-            current_delta = *p_current_nA - current_last;
+            voltage_delta = (int32_t) *p_voltage_uV - voltage_last;
+            current_delta = (int32_t) *p_current_nA - current_last;
         }
         else if ((distance_last < distance_now) && (distance_last < voltage_step_x4_uV))
         {
             voltage_hold  = voltage_last;
             current_hold  = current_last;
-            voltage_delta = *p_voltage_uV - voltage_last;
-            current_delta = *p_current_nA - current_last;
+            voltage_delta = (int32_t) *p_voltage_uV - voltage_last;
+            current_delta = (int32_t) *p_current_nA - current_last;
         }
     }
     else if (lin_extrapolation)
     {
         /* apply the proper delta if needed */
-        if ((voltage_hold < voltage_set_uV) == (voltage_delta > 0u))
+        if ((voltage_hold < voltage_set_uV) == (voltage_delta > 0))
         {
             voltage_hold += voltage_delta;
             current_hold += current_delta;
         }
         else
         {
-            if (voltage_hold > voltage_delta) voltage_hold -= voltage_delta;
-            else voltage_hold = 0;
-            if (current_hold > current_delta) current_hold -= current_delta;
-            else current_hold = 0;
+            const uint32_t uvd = voltage_delta >= 0 ? (uint32_t) voltage_delta : 0u;
+            const uint32_t ucd = current_delta >= 0 ? (uint32_t) current_delta : 0u;
+            if (voltage_hold > uvd) voltage_hold -= voltage_delta;
+            else voltage_hold = 0u;
+            if (current_hold > ucd) current_hold -= current_delta;
+            else current_hold = 0u;
         }
     }
     voltage_last  = *p_voltage_uV;
