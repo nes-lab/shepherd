@@ -163,7 +163,8 @@ class ShepherdDebug(ShepherdIO):
     ) -> None:
         super().send_calibration_settings(cal_emu)
         src_pru = ConverterPRUConfig.from_vsrc(
-            src_cfg,
+            data=src_cfg,
+            dtype_in=dtype_in,
             log_intermediate_node=log_intermediate,
         )
         super().send_virtual_converter_settings(src_pru)

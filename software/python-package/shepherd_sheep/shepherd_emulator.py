@@ -110,6 +110,7 @@ class ShepherdEmulator(ShepherdIO):
         log_cap = log_iv and cfg.power_tracing.intermediate_voltage
         self.cnv_pru = ConverterPRUConfig.from_vsrc(
             data=cfg.virtual_source,
+            dtype_in=self.reader.get_datatype(),
             log_intermediate_node=log_cap,
         )
         window_size = self.reader.get_window_samples()
