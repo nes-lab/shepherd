@@ -597,7 +597,7 @@ pru_firmwares = [
 ]
 
 
-def load_pru_firmware(value: str = "pru0-shepherd") -> None:
+def load_pru_firmware(value: str) -> None:
     """Swap out firmware for PRU.
 
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs

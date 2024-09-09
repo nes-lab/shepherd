@@ -44,7 +44,6 @@ class ShepherdEmulator(ShepherdIO):
         mode: str = "emulator",
     ) -> None:
         log.debug("ShepherdEmulator-Init in %s-mode", mode)
-        sysfs_interface.load_pru_firmware("shepherd-EMU")
         super().__init__(
             mode=mode,
             trace_iv=cfg.power_tracing,
