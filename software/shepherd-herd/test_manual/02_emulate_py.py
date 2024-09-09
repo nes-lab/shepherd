@@ -30,8 +30,6 @@ target = ResistiveTarget(R_Ohm=1000)
 # #####################################################################
 
 for hrv_name, src_name in product(hrv_list, src_list):
-
-
     path_input = path_here / host_selected / f"hrv_{hrv_name}.h5"
     path_output = path_input.with_name(
         path_input.stem + "_" + src_name + "_sim" + path_input.suffix

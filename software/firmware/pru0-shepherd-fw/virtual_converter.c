@@ -79,7 +79,7 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
     cfg                                     = config;
 
     /* Power-flow in and out of system */
-    state.V_input_uV                        = 0u;  // TODO: is it used?
+    state.V_input_uV                        = 0u; // TODO: is it used?
     state.P_inp_fW_n8                       = 0ull;
     state.P_out_fW_n4                       = 0ull;
     state.interval_startup_disabled_drain_n = cfg->interval_startup_delay_drain_n;
@@ -177,8 +177,9 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     else if (state.enable_storage)
     {
         // no boost, but cap, for ie. diode+cap (+resistor)
-        const uint32_t V_mid_uV  = (state.V_mid_uV_n32 >> 32u);
-        const uint32_t V_diff_uV = (input_voltage_uV >= V_mid_uV) ? input_voltage_uV - V_mid_uV : 0u;
+        const uint32_t V_mid_uV = (state.V_mid_uV_n32 >> 32u);
+        const uint32_t V_diff_uV =
+                (input_voltage_uV >= V_mid_uV) ? input_voltage_uV - V_mid_uV : 0u;
         const uint32_t V_res_drop_uV =
                 (uint32_t) (((uint64_t) input_current_nA * (uint64_t) cfg->R_input_kOhm_n22) >>
                             22u);
