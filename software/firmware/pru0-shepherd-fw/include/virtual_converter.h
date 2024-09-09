@@ -4,26 +4,29 @@
 #include "commons.h"
 #include <stdint.h>
 
-void     converter_initialize(const volatile struct ConverterConfig *config);
+void            converter_initialize(const volatile struct ConverterConfig *config);
 
-void     converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
-void     converter_calc_out_power(uint32_t current_adc_raw);
-void     converter_update_cap_storage(void);
-uint32_t converter_update_states_and_output(volatile struct SharedMem *shared_mem);
+void            converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
+void            converter_calc_out_power(uint32_t current_adc_raw);
+void            converter_update_cap_storage(void);
+uint32_t        converter_update_states_and_output(volatile struct SharedMem *shared_mem);
 
-void     set_P_input_fW(uint32_t P_fW);
-void     set_P_output_fW(uint32_t P_fW);
-void     set_V_intermediate_uV(uint32_t C_uV);
-uint64_t get_P_input_fW(void);
-uint64_t get_P_output_fW(void);
-uint32_t get_V_intermediate_uV(void);
-uint32_t get_V_intermediate_raw(void);
-uint32_t get_I_mid_out_nA(void);
-uint32_t get_V_output_uV(void);
-bool_ft  get_state_log_intermediate(void);
+void            set_P_input_fW(uint32_t P_fW);
+void            set_P_output_fW(uint32_t P_fW);
+void            set_V_intermediate_uV(uint32_t C_uV);
+uint64_t        get_P_input_fW(void);
+uint64_t        get_P_output_fW(void);
+uint32_t        get_V_intermediate_uV(void);
+uint32_t        get_V_intermediate_raw(void);
+uint32_t        get_I_mid_out_nA(void);
+uint32_t        get_V_output_uV(void);
+bool_ft         get_state_log_intermediate(void);
 
-void     set_batok_pin(volatile struct SharedMem *shared_mem, bool_ft value);
+void            set_batok_pin(volatile struct SharedMem *shared_mem, bool_ft value);
 
+/* feedback to harvester - global vars */
+extern bool_ft  feedback_to_hrv;
+extern uint32_t V_input_request_uV;
 
 /* Direct Connection
  * - Voltage-value in buffer is written to DAC

@@ -17,6 +17,7 @@
 #include "calibration.h"
 #include "sampling.h"
 #include "virtual_converter.h"
+#include "fw_config.h"
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
@@ -227,7 +228,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 send_message(shared_mem, MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
                 return 1U;
 
-#ifdef ENABLE_DBG_VSOURCE
+#if (defined(ENABLE_DBG_VSOURCE) && defined(EMU_SUPPORT))
             case MSG_DBG_VSRC_HRV_P_INP:
                 sample_ivcurve_harvester(&msg_in.value[0], &msg_in.value[1]);
                 // fall through
@@ -276,7 +277,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 res = converter_update_states_and_output(shared_mem);
                 send_message(shared_mem, MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
-#endif
+#endif // ENABLE_DBG_VSOURCE
 
 #ifdef ENABLE_DEBUG_MATH_FN
             case MSG_DBG_FN_TESTS:

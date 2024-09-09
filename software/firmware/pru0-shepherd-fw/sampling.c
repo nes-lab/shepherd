@@ -5,16 +5,20 @@
 #include "hw_config.h"
 #include "sampling.h"
 #include "spi_transfer_pru.h"
+
+#include "fw_config.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
-
-static bool_ft     dac_aux_link_to_main = false;
-static bool_ft     dac_aux_link_to_mid  = false;
 
 /* NOTE:
  * Changes in HW or ADC/DAC Config also change the calibration.data!
  * (ie. py-package/shepherd/calibration_default.py)
  */
+
+static bool_ft dac_aux_link_to_main = false;
+static bool_ft dac_aux_link_to_mid  = false;
+
+#ifdef EMU_SUPPORT
 
 static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
                                    struct SampleBuffer *const       buffer)
@@ -62,6 +66,9 @@ static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
         dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | get_V_intermediate_raw());
     }
 
+    /* feedback path - important for boost-less circuits */
+    if (feedback_to_hrv) { voltage_set_uV = V_input_request_uV; }
+
     /* write back converter-state into shared memory buffer */
     if (get_state_log_intermediate())
     {
@@ -74,7 +81,7 @@ static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
         buffer->values_voltage[current_sample_counter] = voltage_dac;
     }
 }
-
+#endif // EMU_SUPPORT
 
 static inline void sample_emu_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
@@ -96,10 +103,14 @@ void sample(volatile struct SharedMem *const shared_mem,
 {
     switch (mode) // reordered to prioritize longer routines
     {
+#ifdef EMU_SUPPORT
         case MODE_EMULATOR: // ~ ## ns, TODO: test timing for new revision
             return sample_emulator(shared_mem, current_buffer_far);
+#endif // EMU_SUPPORT
+#ifdef HRV_SUPPORT
         case MODE_HARVESTER: // ~ ## ns
             return sample_adc_harvester(current_buffer_far, shared_mem->analog_sample_counter);
+#endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ:
             return sample_emu_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
         case MODE_HRV_ADC_READ:
@@ -244,15 +255,8 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
     }
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
-    if (mode == MODE_EMULATOR)
-    {
-        calibration_initialize(&shared_mem->calibration_settings);
-        converter_initialize(&shared_mem->converter_settings);
-        harvester_initialize(&shared_mem->harvester_settings);
-    }
-    else if (mode == MODE_HARVESTER)
-    {
-        calibration_initialize(&shared_mem->calibration_settings);
-        harvester_initialize(&shared_mem->harvester_settings);
-    }
+    /* init harvester & converter */
+    calibration_initialize(&shared_mem->calibration_settings);
+    harvester_initialize(&shared_mem->harvester_settings);
+    if (mode == MODE_EMULATOR) { converter_initialize(&shared_mem->converter_settings); }
 }
