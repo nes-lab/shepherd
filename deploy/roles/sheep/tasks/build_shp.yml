@@ -23,9 +23,9 @@
     chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: all
   loop:
-    - pru0-shepherd-fw
+    - pru0-shepherd-fw  # default: EMU
     - pru1-shepherd-fw
-    - pru0-programmer
+    - pru0-programmer   # default: SWD
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -42,6 +42,33 @@
     - pru0-shepherd-fw
     - pru1-shepherd-fw
     - pru0-programmer
+  become: true
+
+# build harvester
+- name: Clean PRU Firmware Source - PRU0
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/pru0-shepherd-fw"
+    target: clean
+  become: true
+- name: Build PRU firmware - PRU0 - Harvester
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/pru0-shepherd-fw"
+    target: all
+    params:
+      TYPE: HRV
+  environment:
+    PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
+    PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
+    # PRU_GCC: '{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}' # TODO: probably just []/pru-elf now
+    # PRU_GCC_SUPPORT: '{{ sheep_gcc_pru_support_path }}'
+  become: false
+  # NOTE: clean & build & install could be just install, but then a manual rebuild needs sudo
+- name: Install PRU firmware - PRU0 - HARVESTER
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/pru0-shepherd-fw"
+    target: install
+    params:
+      TYPE: HRV
   become: true
 
 # build second programmer
