@@ -109,7 +109,7 @@ def test_emulation(
 @pytest.mark.usefixtures("_shepherd_up")
 def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
-    start_time = round(time.time() + 10)
+    start_time = round(time.time() + 14)
     emu_cfg = EmulationTask(
         input_path=data_h5,
         output_path=output,
