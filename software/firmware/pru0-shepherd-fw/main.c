@@ -39,8 +39,8 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
                         const uint32_t value)
 {
     // do not care for sent-status -> the newest error wins IF different from previous
-    if (!((shared_mem->pru1_msg_error.type == type) &&
-          (shared_mem->pru1_msg_error.value[0] == value)))
+    if (!((shared_mem->pru0_msg_error.type == type) &&
+          (shared_mem->pru0_msg_error.value[0] == value)))
     {
         shared_mem->pru0_msg_error.unread   = 0u;
         shared_mem->pru0_msg_error.type     = type;
