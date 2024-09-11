@@ -51,10 +51,20 @@ jobs:
         run: "sudo cp software/firmware/lib/am335xl.pru0 ${{ env.PRU_GCC }}/pru-elf/lib/device-specs/am335xl.pru0"
         working-directory: "${{ github.workspace }}"
 
-      - name: Build PRU0 🧱
+      - name: Build PRU0 - SHP EMU 🧱
         run: |
-          make
-          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-fw.elf
+          make TYPE=EMU
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-EMU-fw.elf
+        working-directory: "software/firmware/pru0-shepherd-fw/"
+
+      - name: Clean Programmer 🧹
+        run: make clean
+        working-directory: "software/firmware/pru0-programmer/"
+
+      - name: Build PRU0 - SHP HRV 🧱
+        run: |
+          make TYPE=HRV
+          ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-HRV-fw.elf
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
       - name: Build PRU1 🧱

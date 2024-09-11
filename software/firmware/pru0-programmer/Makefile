@@ -5,7 +5,7 @@ folder_path := $(dir $(mkfile_path))
 PROTO ?= SWD
 PROJ_NAME = $(current_dir)-$(PROTO)
 FW_NAME = programmer-$(PROTO)
-# choose variant with "make PROTO=SWD|SBW"
+# choose variant with "make PROTO=SWD|SBW", with SWD being default
 
 BASE_PATH ?= ./..
 

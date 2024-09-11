@@ -6,7 +6,7 @@ from .pru_harvester_simulation import simulate_harvester
 from .pru_source_model import PruSourceModel
 from .pru_source_simulation import simulate_source
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 
 __all__ = [
     "PruConverterModel",

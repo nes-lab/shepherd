@@ -589,14 +589,15 @@ def check_programmer() -> str:
 
 
 pru_firmwares = [
-    "am335x-pru0-shepherd-fw",
+    "am335x-pru0-shepherd-EMU-fw",
+    "am335x-pru0-shepherd-HRV-fw",
     "am335x-pru0-programmer-SWD-fw",
     "am335x-pru0-programmer-SBW-fw",
     "am335x-pru1-shepherd-fw",
 ]
 
 
-def load_pru_firmware(value: str = "pru0-shepherd") -> None:
+def load_pru_firmware(value: str) -> None:
     """Swap out firmware for PRU.
 
     NOTE: current kernel 4.19 (or kernel module code) locks up rproc-sysfs
@@ -609,8 +610,10 @@ def load_pru_firmware(value: str = "pru0-shepherd") -> None:
     for firmware in pru_firmwares:
         if value.lower() in firmware.lower():
             request = firmware
-    log.debug("Will set pru-firmware to '%s'", request)
-    sys_str = f"/sys/shepherd/pru{1 if ('pru1' in request) else 0}_firmware"
+            break
+    pru_num = 1 if ("pru1" in request) else 0
+    log.debug("\t- set pru%d-firmware to '%s'", pru_num, request)
+    sys_str = f"/sys/shepherd/pru{pru_num}_firmware"
     _count = 0
     while _count < 6:
         _count += 1

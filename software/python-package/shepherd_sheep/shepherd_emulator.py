@@ -79,12 +79,13 @@ class ShepherdEmulator(ShepherdIO):
             voltage=CalibrationPair(
                 gain=1e6 * cal_inp.voltage.gain,
                 offset=1e6 * cal_inp.voltage.offset,
+                unit="V",
             ),
             current=CalibrationPair(
                 gain=1e9 * cal_inp.current.gain,
                 offset=1e9 * cal_inp.current.offset,
+                unit="A",
             ),
-            # TODO: add units
         )
         log.debug("Calibration-Setting of input file:")
         for key, value in self.cal_pru.model_dump(
@@ -110,6 +111,7 @@ class ShepherdEmulator(ShepherdIO):
         log_cap = log_iv and cfg.power_tracing.intermediate_voltage
         self.cnv_pru = ConverterPRUConfig.from_vsrc(
             data=cfg.virtual_source,
+            dtype_in=self.reader.get_datatype(),
             log_intermediate_node=log_cap,
         )
         window_size = self.reader.get_window_samples()

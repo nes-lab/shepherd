@@ -15,6 +15,7 @@
 #include "shepherd_config.h"
 
 #include "calibration.h"
+#include "fw_config.h"
 #include "sampling.h"
 #include "virtual_converter.h"
 
@@ -38,8 +39,8 @@ static void send_status(volatile struct SharedMem *const shared_mem, enum MsgTyp
                         const uint32_t value)
 {
     // do not care for sent-status -> the newest error wins IF different from previous
-    if (!((shared_mem->pru1_msg_error.type == type) &&
-          (shared_mem->pru1_msg_error.value[0] == value)))
+    if (!((shared_mem->pru0_msg_error.type == type) &&
+          (shared_mem->pru0_msg_error.value[0] == value)))
     {
         shared_mem->pru0_msg_error.unread   = 0u;
         shared_mem->pru0_msg_error.type     = type;
@@ -227,7 +228,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 send_message(shared_mem, MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
                 return 1U;
 
-#ifdef ENABLE_DBG_VSOURCE
+#if (defined(ENABLE_DBG_VSOURCE) && defined(EMU_SUPPORT))
             case MSG_DBG_VSRC_HRV_P_INP:
                 sample_ivcurve_harvester(&msg_in.value[0], &msg_in.value[1]);
                 // fall through
@@ -276,7 +277,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 res = converter_update_states_and_output(shared_mem);
                 send_message(shared_mem, MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
-#endif
+#endif // ENABLE_DBG_VSOURCE
 
 #ifdef ENABLE_DEBUG_MATH_FN
             case MSG_DBG_FN_TESTS:

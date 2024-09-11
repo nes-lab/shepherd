@@ -2,8 +2,10 @@ PRU_NUM = 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 folder_path := $(dir $(mkfile_path))
-PROJ_NAME = $(current_dir)
-FW_NAME = shepherd
+TYPE ?= EMU
+PROJ_NAME = $(current_dir)-$(TYPE)
+FW_NAME = shepherd-$(TYPE)
+# choose variant with "make TYPE=EMU|HRV", with EMU being default
 
 BASE_PATH ?= ./..
 
@@ -21,6 +23,10 @@ SOURCES += $(notdir $(wildcard ./*.c))
 ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # external asm-sources - add manually
 ASM_SOURCES += $(BASE_PATH)/lib/src/register_magic.asm # get_size_in_bits, log2safe, max_value, min_value
+
+ifeq ($(TYPE), HRV)  # switch to HRV with "make TYPE=HRV"
+CFLAGS += -D HRV_SUPPORT
+endif
 
 # look for gcc, but use cgt as fallback / default
 ifdef PRU_GCC

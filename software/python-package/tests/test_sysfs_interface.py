@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
+from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
@@ -18,7 +19,9 @@ def cnv_cfg() -> ConverterPRUConfig:
     name = "_test_config_virtsource.yaml"
     path = here.parent / name
     src_cfg = VirtualSourceConfig.from_file(path)
-    return ConverterPRUConfig.from_vsrc(src_cfg, log_intermediate_node=False)
+    return ConverterPRUConfig.from_vsrc(
+        data=src_cfg, dtype_in=EnergyDType.ivsample, log_intermediate_node=False
+    )
 
 
 @pytest.fixture

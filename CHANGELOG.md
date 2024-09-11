@@ -2,10 +2,17 @@
 
 ## 0.8.2
 
-- PRU gets now partially zeroed buffer-segments
+- PRU now gets partially zeroed buffer-segments
 - PRU had a race-condition with a loose mutex resulting in keeping old gpio-samples
-- python now warns on full gpio-buffer (as it can only hold ~16k entries in 100 ms)
-- python now warns if first or last timestamp of gpio-buffer is out of scope of outer buffer-period
+- python warns on full gpio-buffer (as it can only hold ~16k entries in 100 ms)
+- python warns if first or last timestamp of gpio-buffer is out of scope of outer buffer-period
+- hw cape - add errata-list
+- vsrc - add datatype to determine state-variables
+- CalibrationPair - add units
+- split pru0-shepherd-fw into hrv & emu -> kModule, shepherd-sheep, playbooks, workflows adapted
+- pru-vsource - add feedback to harvester
+- pru-harvester - add feedback & extrapolation for cv-harvester
+- **tested**: pytest sheep, pytest herd, playbook dev_rebuild_sw.yml
 
 ## 0.8.1
 

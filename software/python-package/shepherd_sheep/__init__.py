@@ -40,7 +40,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 
 __all__ = [
     "Writer",
@@ -241,7 +241,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         pass
     stack.close()
 
-    sysfs_interface.load_pru_firmware("pru0-shepherd")
+    sysfs_interface.load_pru_firmware("pru0-shepherd-EMU")
     sysfs_interface.load_pru_firmware("pru1-shepherd")
     return failed  # TODO: all run_() should emit error and abort_on_error should decide
 

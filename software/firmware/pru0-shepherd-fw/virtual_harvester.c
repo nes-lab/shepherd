@@ -5,58 +5,63 @@
 #include "spi_transfer_pru.h"
 #include <stdint.h>
 
-/* prus .text-section overflows with latest changes, so remove dead-weight
-   TODO: divide fw into harv & emu
-*/
-#define SAVE_STORAGE
+#include "fw_config.h"
 
 // internal variables
-static uint32_t                               voltage_set_uV     = 0u;
-static bool_ft                                is_rising          = 0u;
+uint32_t        voltage_set_uV = 0u; // global
+static bool_ft  is_rising      = 0u;
 
-static uint32_t                               voltage_hold       = 0u;
-static uint32_t                               current_hold       = 0u;
-static uint32_t                               voltage_step_x4_uV = 0u;
-static uint32_t                               age_max            = 0u;
+static uint32_t voltage_hold   = 0u;
+static uint32_t current_hold   = 0u;
 
-static uint32_t                               voc_now            = 0u;
-static uint32_t                               voc_nxt            = 0u;
-static uint32_t                               voc_min            = 0u;
+#ifdef EMU_SUPPORT
+static uint32_t voltage_step_x4_uV = 0u;
+static uint32_t age_max            = 0u;
 
-static uint32_t                               settle_steps       = 0; // adc_ivcurve
-static uint32_t                               interval_step      = 0u;
+static uint32_t voc_now            = 0u;
+static uint32_t voc_nxt            = 0u;
+static uint32_t voc_min            = 0u;
 
-static uint32_t                               volt_step_uV       = 0u;
-static uint32_t                               power_last_raw     = 0u; // adc_mppt_po
+static bool_ft  lin_extrapolation  = 0u;
+#endif // EMU_SUPPORT
 
+static uint32_t                               settle_steps   = 0; // adc_ivcurve
+static uint32_t                               interval_step  = 0u;
+
+static uint32_t                               volt_step_uV   = 0u;
+static uint32_t                               power_last_raw = 0u; // adc_mppt_po
+
+
+static const volatile struct HarvesterConfig *cfg;
+
+#ifdef HRV_SUPPORT
 /* ivcurve cutout
    - prevents power-spike during the non-linear reset-step of the ivcurve
    - slow analog filters show this behavior with cape 2.4
    TODO: make value configurable by frontend
 */
-static const uint32_t                         STEP_IV_CUTOUT     = 5u;
-
-static const volatile struct HarvesterConfig *cfg;
+static const uint32_t STEP_IV_CUTOUT = 5u;
 
 // to be used with harvester-frontend
 static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint32_t sample_idx);
-#ifndef SAVE_STORAGE
 static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
-#endif
 static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx);
 static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx);
 static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint32_t sample_idx);
+#endif // HRV_SUPPORT
 
+#ifdef EMU_SUPPORT
 // to be used in virtual harvester (part of emulator)
 static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
 static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA);
+#endif // EMU_SUPPORT
 
 #ifdef __PYTHON__
 void __delay_cycles(uint32_t num)
 {
-    while (num > 0u) num--;
+    if (num > 0u) num--; // just touch - needs no faking
 }
 /* next is a mock-impl to calm the compiler (does not get used)*/
 static uint32_t hw_value = 0u;
@@ -85,21 +90,28 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
         interval_step = cfg->interval_n - (2 * cfg->window_size);
     else interval_step = 1u << 30u;
     // ⤷ intake two ivcurves before overflow / reset if possible
-    is_rising          = (cfg->hrv_mode >> 1u) & 1u;
+    is_rising      = (cfg->hrv_mode >> 1u) & 1u;
 
     // MPPT-PO
-    volt_step_uV       = cfg->voltage_step_uV;
-    power_last_raw     = 0u;
+    volt_step_uV   = cfg->voltage_step_uV;
+    power_last_raw = 0u;
 
     // for IV-Curve-Version, mostly resets states
-    voltage_hold       = 0u;
-    current_hold       = 0u;
+    voltage_hold   = 0u;
+    current_hold   = 0u;
+
+#ifdef EMU_SUPPORT
     voltage_step_x4_uV = 4u * cfg->voltage_step_uV;
     age_max            = 2u * cfg->window_size;
 
     voc_now            = cfg->voltage_max_uV;
     voc_nxt            = cfg->voltage_max_uV;
     voc_min            = cfg->voltage_min_uV > 1000u ? cfg->voltage_min_uV : 1000u;
+
+    /* extrapolation */
+    lin_extrapolation  = (cfg->hrv_mode >> 2u) & 1u;
+#endif // EMU_SUPPORT
+
     // TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
     // TODO: check that ConfigParams are used in SubFns if applicable
     // TODO: divide lib into IVC and ADC Parts
@@ -107,15 +119,14 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
     // TODO: embed cfg->current_limit_nA as a limiter if resources allow for it
 }
 
+#ifdef HRV_SUPPORT
 void sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     if (cfg->algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_2_mppt_voc(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_CV) harvest_adc_2_cv(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_2_ivcurve(buffer, sample_idx);
-#ifndef SAVE_STORAGE
     else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(buffer, sample_idx);
-#endif
     // todo: else send error to system
 }
 
@@ -200,7 +211,6 @@ static void harvest_adc_2_ivcurve(struct SampleBuffer *const buffer, const uint3
     buffer->values_voltage[sample_idx] = voltage_adc;
 }
 
-#ifndef SAVE_STORAGE
 static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     /* 	Record VOC & ISC
@@ -234,7 +244,6 @@ static void harvest_adc_2_isc_voc(struct SampleBuffer *const buffer, const uint3
     buffer->values_current[sample_idx] = current_hold;
     buffer->values_voltage[sample_idx] = voltage_hold;
 }
-#endif
 
 static void harvest_adc_2_mppt_voc(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
@@ -357,14 +366,14 @@ static void harvest_adc_2_mppt_po(struct SampleBuffer *const buffer, const uint3
     buffer->values_current[sample_idx] = current_adc;
     buffer->values_voltage[sample_idx] = voltage_adc;
 }
-
+#endif // HRV_SUPPORT
 
 /* // TODO: do we need a constant-current-version?
 const uint32_t current_nA = cal_conv_adc_raw_to_nA(current_adc); // TODO: could be simplified by providing raw-value in cfg
 if (current_nA > cfg->current_limit_nA)
 */
 
-
+#ifdef EMU_SUPPORT
 void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     // check for IVCurve-Input Indicator and use selected algo
@@ -384,6 +393,7 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
 	 * - no min/max usage here, the main FNs do that, or python if cv() is used directly
 	 * */
     static uint32_t voltage_last = 0u, current_last = 0u;
+    static int32_t  voltage_delta = 0u, current_delta = 0u;
     static bool_ft  compare_last  = 0u;
 
     /* find matching voltage with threshold-crossing-detection -> direction of curve is irrelevant */
@@ -405,13 +415,35 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
 		 * TODO: could also be interpolated if sampling-routine has time to spare */
         if ((distance_now < distance_last) && (distance_now < voltage_step_x4_uV))
         {
-            voltage_hold = *p_voltage_uV;
-            current_hold = *p_current_nA;
+            voltage_hold  = *p_voltage_uV;
+            current_hold  = *p_current_nA;
+            voltage_delta = (int32_t) *p_voltage_uV - voltage_last;
+            current_delta = (int32_t) *p_current_nA - current_last;
         }
         else if ((distance_last < distance_now) && (distance_last < voltage_step_x4_uV))
         {
-            voltage_hold = voltage_last;
-            current_hold = current_last;
+            voltage_hold  = voltage_last;
+            current_hold  = current_last;
+            voltage_delta = (int32_t) *p_voltage_uV - voltage_last;
+            current_delta = (int32_t) *p_current_nA - current_last;
+        }
+    }
+    else if (lin_extrapolation)
+    {
+        /* apply the proper delta if needed */
+        if ((voltage_hold < voltage_set_uV) == (voltage_delta > 0))
+        {
+            voltage_hold += voltage_delta;
+            current_hold += current_delta;
+        }
+        else
+        {
+            const uint32_t uvd = voltage_delta >= 0 ? (uint32_t) voltage_delta : 0u;
+            const uint32_t ucd = current_delta >= 0 ? (uint32_t) current_delta : 0u;
+            if (voltage_hold > uvd) voltage_hold -= voltage_delta;
+            else voltage_hold = 0u;
+            if (current_hold > ucd) current_hold -= current_delta;
+            else current_hold = 0u;
         }
     }
     voltage_last  = *p_voltage_uV;
@@ -576,3 +608,4 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
     *p_voltage_uV = voltage_now;
     *p_current_nA = current_now;
 }
+#endif // EMU_SUPPORT

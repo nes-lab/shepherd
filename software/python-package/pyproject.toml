@@ -29,8 +29,8 @@ classifiers = [
 
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2024.8.2",
-    "click>=8.1.3",
+    "shepherd-core[elf,inventory]>=2024.9.1",  # limit due to newest features
+    "click",
     "numpy",
     "python-periphery<2.0.0", # v2 has no persistence anymore
     "zerorpc",
@@ -38,12 +38,12 @@ dependencies = [
     "h5py",
     "psutil",
     "pyserial",
-    "pyYAML>=6.0.0",
+    "pyYAML>=6.0.0",   # not compatible with prior versions
     "msgpack",
     "msgpack-numpy",
     "gevent",
     "chromalog",
-    "pydantic>2.0.0",
+    "pydantic>2.0.0",  # not compatible with prior versions
 ]
 
 [project.optional-dependencies]
@@ -55,8 +55,8 @@ dev = [
     "ruff",
 ]
 test = [
-    "pytest>7.4.0",
-    "pyfakefs>5.0.0",
+    "pytest>7.4.0",  # not compatible with prior versions
+    "pyfakefs>5.0.0",  # not compatible with prior versions
     "pytest-timeout",
     "pytest-click",
     "coverage",

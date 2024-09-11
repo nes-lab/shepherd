@@ -332,7 +332,7 @@ def fix() -> None:
 )
 @click.argument(
     "firmware",
-    type=click.Choice(["default", "swd", "sbw", "sync"]),
+    type=click.Choice(["default", "emu", "hrv", "swd", "sbw", "sync"]),
     default="default",
 )
 def pru(firmware: str) -> None:

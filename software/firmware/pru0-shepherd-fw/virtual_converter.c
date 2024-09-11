@@ -6,17 +6,20 @@
 #include "stdint_fast.h"
 #include <stdint.h>
 
+#include "fw_config.h"
+
 /* ---------------------------------------------------------------------
  * Virtual Converter, TODO: update description
  * ----------------------------------------------------------------------
  */
 
+#ifdef EMU_SUPPORT
 /* private FNs */
 static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
 static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
 
-#define DIV_SHIFT    (17u) // 2^17 as uV is ~ 131 mV
-#define DIV_LUT_SIZE (40u)
+  #define DIV_SHIFT    (17u) // 2^17 as uV is ~ 131 mV
+  #define DIV_LUT_SIZE (40u)
 
 /* LUT for faster division
  * Generation:
@@ -36,7 +39,7 @@ static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
     if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
     return mul64((power_fW_n4 >> 10u), LUT_div_uV_n27[lut_pos]) >> 17u;
 }
-
+#endif // EMU_SUPPORT
 
 /* data-structure that hold the state - variables for local / direct use */
 struct ConverterState
@@ -62,6 +65,10 @@ struct ConverterState
     bool_ft  power_good;
 };
 
+/* feedback to harvester - global vars */
+bool_ft                                       feedback_to_hrv    = 0u;
+uint32_t                                      V_input_request_uV = 0u;
+
 /* (local) global vars to access in update function */
 static struct ConverterState                  state;
 static const volatile struct ConverterConfig *cfg;
@@ -72,7 +79,7 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
     cfg                                     = config;
 
     /* Power-flow in and out of system */
-    state.V_input_uV                        = 0u;
+    state.V_input_uV                        = 0u; // TODO: is it used?
     state.P_inp_fW_n8                       = 0ull;
     state.P_out_fW_n4                       = 0ull;
     state.interval_startup_disabled_drain_n = cfg->interval_startup_delay_drain_n;
@@ -102,6 +109,10 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
         // this should not happen, but better safe than ...
         state.V_enable_output_threshold_uV_n32 = state.dV_enable_output_uV_n32;
     }
+
+    /* feedback to harvester */
+    feedback_to_hrv    = (cfg->converter_mode & 0b10000) > 0u;
+    V_input_request_uV = cfg->V_intermediate_init_uV;
 
     /* compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
 	 * -> this can be const value, because the converter always turns on with "V_intermediate_enable_threshold_uV"
@@ -137,6 +148,7 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
  * voltage of storage cap -> 		V += dV
  *
  */
+#ifdef EMU_SUPPORT
 
 void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA)
 {
@@ -160,28 +172,40 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         if (input_voltage_uV < cfg->V_input_boost_threshold_uV) { input_voltage_uV = 0u; }
 
         // if (input_voltage_uV > (state.V_mid_uV_n32 >> 32u) + cfg->V_input_drop_uV)
-        // TODO: vdrop in case of non-boost?
+        // TODO: vdrop in case of v_input > v_storage (non-boost)?
     }
-    else if (state.enable_storage == false)
+    else if (state.enable_storage)
     {
-        // direct connection
-        state.V_mid_uV_n32 = ((uint64_t) input_voltage_uV) << 32u;
-        input_voltage_uV   = 0u;
+        // no boost, but cap, for ie. diode+cap (+resistor)
+        const uint32_t V_mid_uV = (state.V_mid_uV_n32 >> 32u);
+        const uint32_t V_diff_uV =
+                (input_voltage_uV >= V_mid_uV) ? input_voltage_uV - V_mid_uV : 0u;
+        const uint32_t V_res_drop_uV =
+                (uint32_t) (((uint64_t) input_current_nA * (uint64_t) cfg->R_input_kOhm_n22) >>
+                            22u);
+        if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
+        else { input_voltage_uV -= V_res_drop_uV; }
+
+        if (feedback_to_hrv)
+        {
+            // IF input==ivcurve request new CV
+            V_input_request_uV = V_mid_uV + V_res_drop_uV + cfg->V_input_drop_uV;
+        }
+        else if (input_voltage_uV < V_mid_uV)
+        {
+            // without feedback there is no usable energy here
+            input_voltage_uV = 0u;
+        }
     }
     else
     {
-        // mode for input-diode, resistor & storage-cap
-        const uint32_t V_mid_uV = (state.V_mid_uV_n32 >> 32u);
-        if (input_voltage_uV > V_mid_uV)
-        {
-            const uint32_t V_diff_uV = input_voltage_uV - V_mid_uV;
-            const uint32_t V_drop_uV =
-                    (uint32_t) (((uint64_t) input_current_nA * (uint64_t) cfg->R_input_kOhm_n22) >>
-                                22u);
-            if (V_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
-            else { input_voltage_uV -= V_drop_uV; }
-        }
-        else input_voltage_uV = 0u;
+        /* direct connection
+           modifying V_mid here is not clean, but simpler
+           -> V_mid is needed in calc_out, before cap is updated
+        */
+        state.V_mid_uV_n32 = ((uint64_t) input_voltage_uV) << 32u;
+        input_voltage_uV   = 0u;
+        // ⤷ input will not be evaluated
     }
 
     const uint32_t eta_inp_n8 =
@@ -247,11 +271,6 @@ void converter_update_cap_storage(void)
     if ((uint32_t) (state.V_mid_uV_n32 >> 32u) > cfg->V_intermediate_max_uV)
     {
         state.V_mid_uV_n32 = ((uint64_t) cfg->V_intermediate_max_uV) << 32u;
-    }
-    if ((state.enable_boost == false) && (state.P_inp_fW_n8 > 0u) &&
-        (uint32_t) (state.V_mid_uV_n32 >> 32u) > state.V_input_uV)
-    {
-        state.V_mid_uV_n32 = ((uint64_t) state.V_input_uV) << 32u;
     }
     if ((uint32_t) (state.V_mid_uV_n32 >> 32u) < 1u)
     {
@@ -375,15 +394,17 @@ uint32_t get_V_intermediate_raw(void)
 
 uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
-void     set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
-{
-    shared_mem->vsource_batok_pin_value        = value;
-    shared_mem->vsource_batok_trigger_for_pru1 = true;
-}
-
 uint32_t get_I_mid_out_nA(void)
 {
     return (uint32_t) div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);
 }
 
 bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
+
+#endif // EMU_SUPPORT
+
+void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
+{
+    shared_mem->vsource_batok_pin_value        = value;
+    shared_mem->vsource_batok_trigger_for_pru1 = true;
+}

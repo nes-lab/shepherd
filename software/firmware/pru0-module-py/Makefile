@@ -31,11 +31,11 @@ SOURCES = $(BASE_PATH)/pru0-shepherd-fw/virtual_harvester.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/virtual_converter.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/calibration.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/math64_safe.c
-SOURCES += $(BASE_PATH)/pru0-module-py/shp_pru/pru_source.c
+SOURCES += $(BASE_PATH)/pru0-module-py/shepherd_pru/pru_source.c
 
 OBJECTS=$(SOURCES:.c=.o)
 
-TARGET=./shp_pru/_shared_pru.so
+TARGET=./shepherd_pru/_shared_pru.so
 
 all: $(TARGET)
 

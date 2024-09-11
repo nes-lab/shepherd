@@ -8,7 +8,7 @@
 
   vars:
     cmd_ssh: "ssh {{ ansible_user }}@{{ inventory_hostname }}"
-    image_name: "shepherd--console-armhf-{{ ansible_date_time.date }}-4g.img.gz"
+    image_name: "shepherd--console-armhf-{{ ansible_date_time.date }}-4g.img.xz"
 
   tasks:
 

@@ -4,6 +4,8 @@
 #include "virtual_harvester.h"
 #include <stdint.h>
 
+#define EMU_SUPPORT
+
 /*
 ripped out parts from sample_emulator() in sampling.c
 */
@@ -21,6 +23,9 @@ uint32_t vsrc_iterate_sampling(uint32_t input_voltage_uV, uint32_t input_current
     converter_update_cap_storage();
 
     converter_update_states_and_output(&shared_mem);
+
+    /* feedback path - important for boost-less circuits */
+    if (feedback_to_hrv) { voltage_set_uV = V_input_request_uV; }
 
     return get_V_output_uV();
 }

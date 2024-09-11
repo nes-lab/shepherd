@@ -38,7 +38,7 @@ class PruSourceModel:
 
         self.cfg_src = VirtualSourceConfig() if vsrc is None else vsrc
         cnv_config = ConverterPRUConfig.from_vsrc(
-            self.cfg_src, log_intermediate_node=log_intermediate
+            data=self.cfg_src, dtype_in=dtype_in, log_intermediate_node=log_intermediate
         )
         self.cnv: VirtualConverterModel = VirtualConverterModel(cnv_config, self._cal_pru)
 

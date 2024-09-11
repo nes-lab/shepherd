@@ -33,7 +33,7 @@ dependencies = [
     "msgpack",
     "msgpack_numpy",
     "numpy",
-    "pandas>=2.0.0",
+    "pandas>=2.0.0",  # not compatible with prior versions
     "pyYAML",
     "scipy",
     "zerorpc",
