@@ -12,7 +12,7 @@
 - split pru0-shepherd-fw into hrv & emu -> kModule, shepherd-sheep, playbooks, workflows adapted
 - pru-vsource - add feedback to harvester
 - pru-harvester - add feedback & extrapolation for cv-harvester
-- **tested**: playbook dev_rebuild_sw.yml
+- **tested**: pytest sheep, pytest herd, playbook dev_rebuild_sw.yml
 
 ## 0.8.1
 
