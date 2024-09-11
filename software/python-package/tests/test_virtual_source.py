@@ -248,16 +248,20 @@ def test_vsource_diodecap(
     voltages_mV = [1000, 1100, 1500, 2000, 2500, 3000, 3500, 4000, 4500]
 
     # input with lower voltage should not change (open) output
+    print("DiodeCap Input different Voltages BELOW capacitor voltage -> no change in output")
     V_pru_mV = pru_vsource.iterate_sampling(0, 0, 0) * 10**-3
     V_pyt_mV = pyt_vsource.iterate_sampling(0, 0, 0) * 10**-3
     A_inp_nA = 10**3
-    for V_inp_mV in voltages_mV[0:4]:  # NOTE: make sure this selection is below cap-init-voltage
+    for V_inp_mV in voltages_mV:
+        if V_inp_mV > pyt_vsource.cfg_src.V_intermediate_init_mV:
+            # selection must be below cap-init-voltage
+            continue
         V_pru2_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         V_pyt2_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         assert V_pru_mV == V_pru2_mV
         assert V_pyt_mV == V_pyt2_mV
         print(
-            "DiodeCap LowInput - "
+            " -> "
             f"Inp = {V_inp_mV} mV, "
             f"OutPru = {V_pru2_mV:.3f} mV, "
             f"OutPy = {V_pyt2_mV:.3f} mV",
@@ -266,8 +270,9 @@ def test_vsource_diodecap(
     assert pru_vsource.W_inp_fWs >= pru_vsource.W_out_fWs
 
     # drain Cap for next tests
-    V_target_mV = 500
-    A_out_nA = 10**7
+    # NOTE: must be above V_intermediate_disable_threshold_mV
+    V_target_mV = max(2200, pyt_vsource.cfg_src.V_intermediate_disable_threshold_mV + 100)
+    A_out_nA = 10**6  # 1mA
     steps_needed = [0, 0]
     while pru_vsource.iterate_sampling(0, 0, A_out_nA) > V_target_mV * 10**3:
         steps_needed[0] += 1
@@ -282,12 +287,13 @@ def test_vsource_diodecap(
     pyt_vsource.W_out_fWs = 0
 
     # zero current -> no change in output
+    print("DiodeCap Input different Voltages but ZERO current -> no change in output")
     A_inp_nA = 0
     for V_inp_mV in voltages_mV:
         V_pru_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         print(
-            f"DiodeCap inp=0nA - Inp = {V_inp_mV} mV, "
+            f" -> inp=0nA - Inp = {V_inp_mV} mV, "
             f"OutPru = {V_pru_mV:.3f} mV, "
             f"OutPy  = {V_pyt_mV:.3f} mV",
         )
@@ -295,14 +301,19 @@ def test_vsource_diodecap(
         assert difference_percent(V_pyt_mV, V_target_mV, 50) < 3
 
     # feed 200 mA -> fast charging cap
-    A_inp_nA = 2 * 10**8
+    A_inp_nA = 200 * 10**6
+    print(f"DiodeCap input different voltage with {A_inp_nA * 1e-6} mA -> fast charge")
+    V_diode_mV = pyt_vsource.cfg_src.V_input_drop_mV
     for V_inp_mV in voltages_mV:
+        V_postDiode_mV = max(V_inp_mV - V_diode_mV, 0)  # diode drop voltage
+        if V_postDiode_mV < V_pru_mV and V_postDiode_mV < V_pyt_mV:
+            # input must be above cap-voltage
+            continue
         for _ in range(100):
             V_pru_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
             V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
-        V_postDiode_mV = max(V_inp_mV - 300, 0)  # diode drop voltage
         print(
-            "DiodeCap inp=200mA - "
+            " -> inp=200mA - "
             f"Inp = {V_inp_mV} mV, "
             f"PostDiode = {V_postDiode_mV} mV, "
             f"OutPru = {V_pru_mV:.3f} mV, "
@@ -312,21 +323,22 @@ def test_vsource_diodecap(
         assert difference_percent(V_pyt_mV, V_postDiode_mV, 50) < 3
 
     # feed 5 mA, drain double of that -> output should settle at (V_in - V_drop)/2
-    V_inp_uV = 3 * 10**6
     A_inp_nA = 5 * 10**6
     A_out_nA = 2 * A_inp_nA
-    V_settle_mV = (V_inp_uV * 10**-3 - 300) / 2
+    V_settle_mV = max(2200, pyt_vsource.cfg_src.V_intermediate_disable_threshold_mV + 100)
+    V_inp_uV = (V_settle_mV * 2 + V_diode_mV) * 1e3
+    assert V_inp_uV <= pyt_vsource.cfg_src.V_input_max_mV * 1e3
     # how many steps? charging took 9 steps at 200mA, so roughly 9 * 200 / (10 - 5)
     print(
         f"DiodeCap Drain #### Inp = 5mA @ {V_inp_uV / 10**3} mV , Out = 10mA "
         f"-> V_out should settle @ {V_settle_mV} mV ",
     )
     for _ in range(25):
-        for _ in range(50):
+        for _ in range(200):
             V_pru_mV = pru_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
             V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_uV, A_inp_nA, A_out_nA) * 10**-3
         print(
-            f"DiodeCap Drain - OutPru = {V_pru_mV:.3f} mV, OutPy = {V_pyt_mV:.3f} mV",
+            f" -> OutPru = {V_pru_mV:.3f} mV, OutPy = {V_pyt_mV:.3f} mV",
         )
     assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
     assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3

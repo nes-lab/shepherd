@@ -611,7 +611,7 @@ def load_pru_firmware(value: str) -> None:
         if value.lower() in firmware.lower():
             request = firmware
             break
-    pru_num = 1 if ('pru1' in request) else 0
+    pru_num = 1 if ("pru1" in request) else 0
     log.debug("\t- set pru%d-firmware to '%s'", pru_num, request)
     sys_str = f"/sys/shepherd/pru{pru_num}_firmware"
     _count = 0
