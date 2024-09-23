@@ -10,6 +10,25 @@
     state: present
   tags: ptp
 
+- name: Configure PTP
+  ansible.builtin.lineinfile:
+    dest: "/etc/linuxptp/ptp4l.conf"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regex: "clock_servo.*$",
+      replacement: "clock_servo  linreg",
+    }
+    - {
+      regex: "time_stamping.*$",
+      replacement: "time_stamping     hardware",
+    }
+  tags:
+    - ptp
+    - conf
+
 - name: Install ntpdate package
   ansible.builtin.apt:
     name: ntpdate
@@ -31,3 +50,19 @@
   # Tests
   # manual: sudo systemctl restart ptp4l@eth0
   # status: sudo journalctl -u ptp4l@eth0 -f
+
+- name: Install ethtool
+  ansible.builtin.apt:
+    name: ethtool
+    state: present
+  tags: ptp
+
+- name: Check interface capabilities
+  ansible.builtin.shell:
+    cmd: "set -o pipefail && ethtool -T eth0 | grep {{ item }}"
+  loop:
+    - hardware-raw-clock
+    - hardware-transmit
+    - hardware-receive
+  failed_when: false
+  tags: ptp

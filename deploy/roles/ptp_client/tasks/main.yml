@@ -2,9 +2,22 @@
 - name: Configure PTP for client-only mode
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
-    regexp: "slaveOnly.*$"
-    line: "slaveOnly  1"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
     state: present
+  loop:
+    - {
+      regex: "slaveOnly.*$",
+      replacement: "slaveOnly  0",
+    }
+    - {
+      regex: "masterOnly.*$",
+      replacement: "masterOnly  0",
+    }
+    - {
+      regex: "priority1.*$",
+      replacement: "priority1  128",
+    }
   tags:
     - ptp
     - conf
