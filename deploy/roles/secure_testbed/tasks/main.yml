@@ -66,6 +66,7 @@
     state: stopped
     enabled: false
   changed_when: true
+  failed_when: false  # RPi does not have this timer
 
 - name: CFG - Disable Terminal over Serial -> Services
   ansible.builtin.systemd:
@@ -78,6 +79,7 @@
     - serial-getty@ttyS0.service
     - getty@tty1.service
   changed_when: true
+  failed_when: false  # RPi does not have some services
   # change active ones with: sudo systemctl list-units
 
 - name: CFG - Disable Terminal over Serial -> Grub
@@ -92,6 +94,7 @@
     dest: /boot/uEnv.txt
     regexp: '^console='
     replace: '#console='
+  failed_when: false  # RPi does not have this file
 
 # TODO: part 3 needed, terminal still active
 # TODO: uEnv has UART enabled
