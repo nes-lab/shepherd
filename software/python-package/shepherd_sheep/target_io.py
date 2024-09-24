@@ -86,7 +86,7 @@ class TargetIO:
             num: number of pin, in reference to list target_pins
         """
         for index in range(self.pin_count):
-            self.set_pin_state(index, index == num)
+            self.set_pin(index, state=index == num)
 
     def get_pin_state(self, num: int) -> bool:
         """
@@ -98,7 +98,7 @@ class TargetIO:
         pin_name = target_pins[num]["name"]
         return self.gpios[pin_name].read()
 
-    def set_pin_state(self, num: int, state: bool) -> bool:
+    def set_pin(self, num: int, *, state: bool) -> bool:
         """
         Args:
             num: number of pin, in reference to list target_pins

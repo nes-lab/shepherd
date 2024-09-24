@@ -1,16 +1,17 @@
 import ctypes as ct
+from typing import ClassVar
 
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 
 
 class HarvesterConfig(ct.Structure):
-    _pack_ = 1
-    _fields_ = [(_key, ct.c_uint32) for _key in HarvesterPRUConfig.model_fields]
+    _pack_: ClassVar[int] = 1
+    _fields_: ClassVar[list] = [(_key, ct.c_uint32) for _key in HarvesterPRUConfig.model_fields]
 
 
 class CalibrationConfig(ct.Structure):
-    _pack_ = 1
-    _fields_ = [
+    _pack_: ClassVar[int] = 1
+    _fields_: ClassVar[list] = [
         ("adc_current_gain", ct.c_uint32),  # adc_current_factor_nA_n8
         ("adc_current_offset", ct.c_int32),  # adc_current_offset_nA
         ("adc_voltage_gain", ct.c_uint32),  # adc_voltage_factor_uV_n8
@@ -27,8 +28,8 @@ LUT_OUT = ct.c_uint32 * LUT_SIZE
 
 
 class ConverterConfig(ct.Structure):
-    _pack_ = 1
-    _fields_ = [
+    _pack_: ClassVar[int] = 1
+    _fields_: ClassVar[list] = [
         ("converter_mode", ct.c_uint32),
         ("interval_startup_delay_drain_n", ct.c_uint32),
         ("V_input_max_uV", ct.c_uint32),
@@ -59,8 +60,8 @@ class ConverterConfig(ct.Structure):
 
 
 class SharedMemLight(ct.Structure):
-    _pack_ = 1
-    _fields_ = [
+    _pack_: ClassVar[int] = 1
+    _fields_: ClassVar[list] = [
         ("pre_stuff", ct.c_uint32 * 9),
         ("calibration_settings", CalibrationConfig),
         ("converter_settings", ConverterConfig),

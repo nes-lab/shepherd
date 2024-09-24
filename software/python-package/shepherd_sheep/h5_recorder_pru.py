@@ -70,7 +70,8 @@ class PruRecorder(Monitor):
     def add_timestamps(self, data_iv: h5py.Group, tseries: np.ndarray) -> None:
         """Add timestamps to Group - only when previously omitted.
 
-        Note: location here in pru-recorder is weird, but that one has info about buffer TS and content
+        Note: location here in pru-recorder is weird,
+        but that one has info about buffer TS and content
         """
         # TODO: may be more useful on server -> so move to core-writer
         if data_iv["time"].shape[0] == data_iv["voltage"].shape[0]:

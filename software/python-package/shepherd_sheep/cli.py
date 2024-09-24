@@ -79,7 +79,7 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     help="Prints version-info at start (combinable with -v)",
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, version: bool) -> None:
+def cli(ctx: click.Context, *, verbose: bool, version: bool) -> None:
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
@@ -116,7 +116,7 @@ def cli(ctx: click.Context, verbose: bool, version: bool) -> None:
     default="A",
     help="Choose Target-Port of Cape for powering",
 )
-def target_power(on: bool, voltage: float, gpio_pass: bool, target_port: str) -> None:
+def target_power(target_port: str, voltage: float, *, on: bool, gpio_pass: bool) -> None:
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base
@@ -349,8 +349,8 @@ def blink(duration: int) -> None:
     set_verbosity()
     log.info("Blinks LEDs IO & EMU next to Target-Ports for %d s", duration)
     with ShepherdDebug(use_io=False) as dbg:
-        dbg.set_power_state_emulator(True)
-        dbg.set_io_level_converter(True)
+        dbg.set_power_emulator(True)
+        dbg.set_power_io_level_converter(True)
         for _ in range(duration * 2):
             dbg.select_port_for_io_interface(TargetPort.A)
             time.sleep(0.125)

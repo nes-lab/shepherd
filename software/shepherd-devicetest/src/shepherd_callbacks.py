@@ -159,7 +159,7 @@ tgt_dict: dict[str, TargetPort] = {"Target A": TargetPort.A, "Target B": TargetP
 
 def shepherd_power_callback(sender, element_data, user_data) -> None:
     if shepherd_io is not None:
-        shepherd_io.set_shepherd_pcb_power(able_dict[element_data])
+        shepherd_io.set_power_cape_pcb(able_dict[element_data])
 
 
 def update_power_state_shepherd() -> None:
@@ -201,7 +201,7 @@ def update_target_io() -> None:
 
 def io_level_converter_callback(sender, element_data, user_data) -> None:
     state = able_dict[element_data]
-    shepherd_io.set_io_level_converter(state)
+    shepherd_io.set_power_io_level_converter(state)
 
 
 def update_io_level_state() -> None:
@@ -210,7 +210,7 @@ def update_io_level_state() -> None:
 
 
 def set_power_state_emulator(sender, en_state, user_data) -> None:
-    shepherd_io.set_power_state_emulator(en_state)
+    shepherd_io.set_power_emulator(en_state)
 
 
 def update_power_state_emulator() -> None:
@@ -218,7 +218,7 @@ def update_power_state_emulator() -> None:
 
 
 def set_power_state_recoder(sender, en_state, user_data) -> None:
-    shepherd_io.set_power_state_recorder(en_state)
+    shepherd_io.set_power_recorder(en_state)
 
 
 def update_power_state_recorder() -> None:

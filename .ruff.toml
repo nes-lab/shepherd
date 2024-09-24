@@ -23,7 +23,6 @@ ignore = [
     # TODO: for releasing now - do add documentation later
     "D",
     "INP001",
-    "FBT",
     "EM102",
 ]
 
@@ -39,6 +38,8 @@ exclude= [  # external projects
 "software/shepherd-calibration/**" = ["ERA001"]  # comments
 "software/time_sync_analyzer/**" = ["ERA001", "S301"]  # comments
 "software/shepherd-devicetest/**" = ["ERA001", "ARG001", "PLW0603", "F405", "F403", "ANN001"]
+"software/python-package/shepherd_sheep/shepherd_debug.py" = ["FBT001", "FBT002"]
+"software/shepherd-calibration/shepherd_cal/**" = ["FBT003"]  # rpc had trouble with named params
 "docs/**" = ["INP001"]
 
 [lint.mccabe]

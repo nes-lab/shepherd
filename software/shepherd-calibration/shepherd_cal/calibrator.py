@@ -141,7 +141,7 @@ class Calibrator:
             dac_voltage_V,
             dac_voltage_raw,
         )
-        self.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
+        self.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =link_channels
 
         self.set_smu_to_vsource(smu, 0.0, smu_current_A)
 
@@ -196,7 +196,7 @@ class Calibrator:
             dac_voltage_V,
             dac_voltage_raw,
         )
-        self.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
+        self.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =link_channels
 
         self.set_smu_to_isource(smu, 0.0, 3.0)
 
@@ -245,7 +245,7 @@ class Calibrator:
         self.sheep.set_aux_target_voltage_raw(
             dac_voltage_to_raw(dac_voltage_V),
             True,
-        )  # =ch_link
+        )  # =link_channels
         # TODO: rpc seems to have trouble with named parameters,
         #  so not using name ch_link is a bugfix
 
@@ -289,6 +289,7 @@ class Calibrator:
     def measure_dac_voltage(
         self,
         smu: KeithleyClass,
+        *,
         dac_bitmask: int,
         drain: bool = False,
     ) -> CalMeasPairs:
@@ -340,10 +341,10 @@ class Calibrator:
         results["adc_C_Hrv"] = self.measure_harvester_adc_current(self.kth.smub)
 
         logger.info("Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
-        results["dac_V_Sim"] = self.measure_dac_voltage(self.kth.smua, 0b0001)
+        results["dac_V_Sim"] = self.measure_dac_voltage(self.kth.smua, dac_bitmask=0b0001)
 
         logger.info("Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
-        results["dac_V_Hrv"] = self.measure_dac_voltage(self.kth.smub, 0b0010)
+        results["dac_V_Hrv"] = self.measure_dac_voltage(self.kth.smub, dac_bitmask=0b0010)
         return CalMeasurementHarvester(**results)
 
     def measure_emulator(self) -> CalMeasurementEmulator:
@@ -364,14 +365,14 @@ class Calibrator:
         logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
         results["dac_V_A"] = self.measure_dac_voltage(
             self.kth.smua,
-            0b1100,
+            dac_bitmask=0b1100,
             drain=True,
         )
 
         logger.info("Measurement - Emulator - DAC . Voltage - Channel B")
         results["dac_V_B"] = self.measure_dac_voltage(
             self.kth.smub,
-            0b1100,
+            dac_bitmask=0b1100,
             drain=True,
         )
         return CalMeasurementEmulator(**results)

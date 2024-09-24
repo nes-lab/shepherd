@@ -214,7 +214,7 @@ class EEPROM:
         return cal
 
 
-def retrieve_calibration(use_default_cal: bool = False) -> CalibrationCape:
+def retrieve_calibration(*, use_default_cal: bool = False) -> CalibrationCape:
     if use_default_cal:
         return CalibrationCape()
 

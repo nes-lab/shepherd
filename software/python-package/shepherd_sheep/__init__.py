@@ -66,7 +66,7 @@ __all__ = [
 
 def run_harvester(cfg: HarvestTask) -> bool:
     stack = ExitStack()
-    set_verbosity(cfg.verbose, temporary=True)
+    set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
     try:
         hrv = ShepherdHarvester(cfg=cfg)
@@ -83,7 +83,7 @@ def run_harvester(cfg: HarvestTask) -> bool:
 
 def run_emulator(cfg: EmulationTask) -> bool:
     stack = ExitStack()
-    set_verbosity(cfg.verbose, temporary=True)
+    set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
     try:
         emu = ShepherdEmulator(cfg=cfg)
@@ -99,7 +99,7 @@ def run_emulator(cfg: EmulationTask) -> bool:
 
 
 def run_firmware_mod(cfg: FirmwareModTask) -> bool:
-    set_verbosity(cfg.verbose, temporary=True)
+    set_verbosity(state=cfg.verbose, temporary=True)
     check_sys_access()  # not really needed here
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
@@ -112,7 +112,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
 
 def run_programmer(cfg: ProgrammingTask) -> bool:
     stack = ExitStack()
-    set_verbosity(cfg.verbose, temporary=True)
+    set_verbosity(state=cfg.verbose, temporary=True)
     failed = False
 
     try:
@@ -122,9 +122,9 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         dbg.select_port_for_power_tracking(
             not dbg.convert_target_port_to_bool(cfg.target_port),
         )
-        dbg.set_power_state_emulator(True)
+        dbg.set_power_emulator(True)
         dbg.select_port_for_io_interface(cfg.target_port)
-        dbg.set_io_level_converter(True)
+        dbg.set_power_io_level_converter(True)
 
         sysfs_interface.write_dac_aux_voltage(cfg.voltage)
         # switching target may restart pru
@@ -172,7 +172,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         if ret.returncode > 0:
             log.error("Error during realignment (srec_cat): %s", ret.stderr)
             failed = True
-            raise SystemExit
+            raise SystemExit  # noqa: TRY301
 
         with file_tmp.resolve().open("rb") as fw:
             try:
@@ -287,7 +287,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, ProgrammingTask):
             failed |= run_programmer(element)
         else:
-            raise ValueError("Task not implemented: %s", type(element))
+            raise TypeError("Task not implemented: %s", type(element))
         reset_verbosity()
         # TODO: handle "failed": retry?
     return failed

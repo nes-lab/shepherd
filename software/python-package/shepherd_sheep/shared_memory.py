@@ -214,7 +214,7 @@ class SharedMemory:
         )
         self.ts_unset = False
 
-    def read_buffer(self, index: int, verbose: bool = False) -> DataBuffer:
+    def read_buffer(self, index: int, *, verbose: bool = False) -> DataBuffer:
         """Extracts buffer from shared memory.
 
         Extracts data from buffer with given index from the shared memory area
@@ -311,7 +311,8 @@ class SharedMemory:
 
         if n_gpio_events == commons.MAX_GPIO_EVT_PER_BUFFER:
             log.warning(
-                "Current GPIO-Buffer is full @ buffer-ts = %.1f s -> hint for overflow & loss of data",
+                "Current GPIO-Buffer is full @ buffer-ts = %.1f s "
+                "-> hint for overflow & loss of data",
                 buffer_timestamp / 1e9,
             )
         if not (0 <= n_gpio_events <= commons.MAX_GPIO_EVT_PER_BUFFER):
@@ -346,7 +347,8 @@ class SharedMemory:
             ts2_valid = buffer_timestamp <= gpio_timestamps_ns[-1] <= buffer_timestamp + 100e6
             if not (ts1_valid and ts2_valid):
                 log.warning(
-                    "Timestamps of GPIO-buffer are out of scope of outer buffer-period @ ts = %.1f s",
+                    "Timestamps of GPIO-buffer are out of scope "
+                    "of outer buffer-period @ ts = %.1f s",
                     buffer_timestamp / 1e9,
                 )
 

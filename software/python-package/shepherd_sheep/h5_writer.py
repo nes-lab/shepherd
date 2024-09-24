@@ -68,12 +68,13 @@ class Writer(CoreWriter):
         window_samples: int | None = None,
         cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
+        samples_per_buffer: int = 10_000,
+        samplerate_sps: int = 100_000,
+        *,
+        omit_ts: bool = False,
         modify_existing: bool = False,
         force_overwrite: bool = False,
         verbose: bool | None = True,
-        samples_per_buffer: int = 10_000,
-        samplerate_sps: int = 100_000,
-        omit_ts: bool = False,
     ) -> None:
         # hopefully overwrite defaults from Reader
         self.samples_per_buffer: int = samples_per_buffer  # TODO: test

@@ -189,7 +189,7 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
     return True
 
 
-def set_stop(force: bool = False) -> None:
+def set_stop(*, force: bool = False) -> None:
     """Stops shepherd.
 
     Writes 'stop' to the 'state' sysfs attribute in order to transition from
@@ -204,7 +204,7 @@ def set_stop(force: bool = False) -> None:
         fh.write("stop")
 
 
-def write_mode(mode: str, force: bool = False) -> None:
+def write_mode(mode: str, *, force: bool = False) -> None:
     """Sets the shepherd mode.
 
     Sets shepherd mode by writing corresponding string to the 'mode' sysfs
@@ -243,7 +243,7 @@ def write_dac_aux_voltage(
         voltage = 0.0
     elif (voltage is True) or (isinstance(voltage, str) and "main" in voltage.lower()):
         # set bit 20 (during pru-reset) and therefore link both adc-channels
-        write_dac_aux_voltage_raw(0, ch_link=True)
+        write_dac_aux_voltage_raw(0, link_channels=True)
         return
     elif isinstance(voltage, str) and "buffer" in voltage.lower():
         # set bit 21 (during pru-reset) and therefore output
@@ -274,7 +274,8 @@ def write_dac_aux_voltage(
 
 def write_dac_aux_voltage_raw(
     voltage_raw: int,
-    ch_link: bool = False,
+    *,
+    link_channels: bool = False,
     cap_out: bool = False,
 ) -> None:
     """Sends the auxiliary voltage (dac channel B) to the PRU core.
@@ -289,7 +290,7 @@ def write_dac_aux_voltage_raw(
             "DAC: sending raw-voltage above possible limit of 16bit-value, will limit",
         )
         voltage_raw = min(voltage_raw, 2**16 - 1)
-    voltage_raw |= int(ch_link) << 20
+    voltage_raw |= int(link_channels) << 20
     voltage_raw |= int(cap_out) << 21
     with Path("/sys/shepherd/dac_auxiliary_voltage_raw").open(
         "w",
@@ -482,7 +483,7 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
         # catch all single ints and floats
         values = [int(values), 0]
     elif not isinstance(values, list):
-        raise ValueError(f"Outgoing msg to pru should have been list but is {values}")
+        raise TypeError("Outgoing msg to pru should have been list but is %s", values)
 
     for value in values:
         if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
@@ -656,8 +657,7 @@ def pru_firmware_is_default() -> bool:
             with Path("/sys/shepherd/pru1_firmware").open(encoding="utf-8") as file:
                 if "shepherd-fw" not in file.read().rstrip():
                     return False
-            return True
-        except OSError:
+        except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read)"
                 " -> will restart kernel-module (n=%d)",
@@ -665,6 +665,8 @@ def pru_firmware_is_default() -> bool:
             )
             reload_kernel_module()
             _count += 1
+        else:
+            return True
     raise OSError(
         "PRU-Driver still locked up (during pru-fw read) -> consider restarting node",
     )

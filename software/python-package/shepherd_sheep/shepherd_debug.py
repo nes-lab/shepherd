@@ -4,7 +4,7 @@ from typing import NoReturn
 
 import msgpack
 import msgpack_numpy
-import numpy
+import numpy as np
 from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
@@ -60,8 +60,8 @@ class ShepherdDebug(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_state_recorder(True)
-        super().set_power_state_emulator(True)
+        super().set_power_recorder(state=True)
+        super().set_power_emulator(state=True)
         super().reinitialize_prus()
         return self
 
@@ -317,8 +317,8 @@ class ShepherdDebug(ShepherdIO):
     def get_shepherd_state() -> str:
         return sysfs_interface.get_state()
 
-    def set_shepherd_pcb_power(self, state: bool) -> None:
-        super().set_shepherd_pcb_power(state)
+    def set_power_cape_pcb(self, state: bool) -> None:
+        super().set_power_cape_pcb(state=state)
 
     def select_port_for_power_tracking(
         self,
@@ -329,8 +329,8 @@ class ShepherdDebug(ShepherdIO):
     def select_port_for_io_interface(self, target: TargetPort) -> None:
         super().select_port_for_io_interface(target)
 
-    def set_io_level_converter(self, state: bool) -> None:
-        super().set_io_level_converter(state)
+    def set_power_io_level_converter(self, state: bool) -> None:
+        super().set_power_io_level_converter(state=state)
 
     def convert_raw_to_value(self, component: str, channel: str, raw: int) -> float:
         return self._cal[component][channel].raw_to_si(raw)
@@ -368,11 +368,11 @@ class ShepherdDebug(ShepherdIO):
         log.debug("Error: IO is not enabled in this shepherd-debug-instance")
         return []
 
-    def set_power_state_emulator(self, state: bool) -> None:
-        super().set_power_state_emulator(state)
+    def set_power_emulator(self, state: bool) -> None:
+        super().set_power_emulator(state=state)
 
-    def set_power_state_recorder(self, state: bool) -> None:
-        super().set_power_state_recorder(state)
+    def set_power_recorder(self, state: bool) -> None:
+        super().set_power_recorder(state=state)
 
     def reinitialize_prus(self) -> None:
         super().reinitialize_prus()
@@ -396,16 +396,16 @@ class ShepherdDebug(ShepherdIO):
         return self.gpios["target_io_en"].read()
 
     @staticmethod
-    def set_aux_target_voltage_raw(voltage_raw: int, ch_link: bool = False) -> None:
-        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw, ch_link)
+    def set_aux_target_voltage_raw(voltage_raw: int, link_channels: bool = False) -> None:
+        sysfs_interface.write_dac_aux_voltage_raw(voltage_raw, link_channels=link_channels)
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()
-        super().set_power_state_recorder(False)
-        super().set_power_state_emulator(False)
+        super().set_power_recorder(state=False)
+        super().set_power_emulator(state=False)
         sysfs_interface.write_mode(mode, force=True)
-        super().set_power_state_recorder(True)
-        super().set_power_state_emulator(True)
+        super().set_power_recorder(state=True)
+        super().set_power_emulator(state=True)
         super().reinitialize_prus()
         if "debug" in mode:
             super().start(wait_blocking=True)
@@ -420,17 +420,17 @@ class ShepherdDebug(ShepherdIO):
             super()._return_buffer(_i)
         time.sleep(0.1)
         super().start(wait_blocking=True)
-        c_array = numpy.empty([0], dtype="=u4")
-        v_array = numpy.empty([0], dtype="=u4")
+        c_array = np.empty([0], dtype="=u4")
+        v_array = np.empty([0], dtype="=u4")
         time.sleep(0.1)
         for _ in range(2):  # flush first 2 buffers out
             super().get_buffer()
         for _ in range(length_n_buffers):  # get Data
             _, _buf = super().get_buffer()
-            c_array = numpy.hstack((c_array, _buf.current))
-            v_array = numpy.hstack((v_array, _buf.voltage))
+            c_array = np.hstack((c_array, _buf.current))
+            v_array = np.hstack((v_array, _buf.voltage))
         super().reinitialize_prus()
-        base_array = numpy.vstack((c_array, v_array))
+        base_array = np.vstack((c_array, v_array))
         return msgpack.packb(
             base_array,
             default=msgpack_numpy.encode,

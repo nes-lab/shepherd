@@ -11,6 +11,13 @@ from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 
+from shepherd_core import CalibrationHarvester
+from shepherd_core import Reader
+from shepherd_core import Writer
+from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester import VirtualHarvesterConfig
+from tqdm import tqdm
+
 from .pru_harvester_model import PruHarvesterModel
 
 patch(
@@ -23,13 +30,7 @@ patch(target=".VirtualHarvesterModel", new=PruHarvesterModel)
 patch(target="shepherd_core.vsource.VirtualHarvesterModel", new=PruHarvesterModel)
 patch(target=".vsource.VirtualHarvesterModel", new=PruHarvesterModel)
 patch(target="vsource.VirtualHarvesterModel", new=PruHarvesterModel)
-
-from shepherd_core import CalibrationHarvester
-from shepherd_core import Reader
-from shepherd_core import Writer
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_harvester import VirtualHarvesterConfig
-from tqdm import tqdm
+# TODO: fix monkeypatching, does not work, even when done in function
 
 
 def simulate_harvester(
@@ -39,12 +40,7 @@ def simulate_harvester(
 
     Fn return the harvested energy.
     """
-    # patch(target="shepherd_core.vsource.virtual_harvester_model.VirtualHarvesterModel", new=PruHarvesterModel)
-    # patch(target="shepherd_core.vsource.VirtualHarvesterModel", new=PruHarvesterModel)
-    #    ("shepherd_core.vsource.VirtualHarvesterModel", VirtualHarvesterModel),
-    #    ("shepherd_core.vsource.virtual_harvester_model.VirtualHarvesterModel", VirtualHarvesterModel)
-    # return sim_hrv_core(config, path_input, path_output)
-    # TODO: fix monkeypatching
+    # return sim_hrv_core(config, path_input, path_output)  # noqa: ERA001
 
     stack = ExitStack()
     file_inp = Reader(path_input, verbose=False)
