@@ -18,9 +18,7 @@ from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 
 from .logger import log
 
-
-class SysfsInterfaceError(Exception):
-    pass
+SysfsInterfaceError = IOError
 
 
 # dedicated sampling modes
@@ -152,7 +150,9 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
 
         if time.time() - ts_start > timeout:
             raise SysfsInterfaceError(
-                f"timed out waiting for state { wanted_state } - state is { current_state }",
+                "timed out waiting for state '%s' - current state is '%s'",
+                wanted_state,
+                current_state,
             )
 
         time.sleep(0.1)
@@ -171,7 +171,7 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
     current_state = get_state()
     log.debug("current state of shepherd kernel module: %s", current_state)
     if current_state != "idle":
-        raise SysfsInterfaceError(f"Cannot start from state { current_state }")
+        raise SysfsInterfaceError("Cannot start from state '%s'", current_state)
 
     try:
         with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
@@ -198,7 +198,7 @@ def set_stop(*, force: bool = False) -> None:
     if not force:
         current_state = get_state()
         if current_state != "running":
-            raise SysfsInterfaceError(f"Cannot stop from state { current_state }")
+            raise SysfsInterfaceError("Cannot stop from state '%s'", current_state)
 
     with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
         fh.write("stop")
@@ -219,9 +219,7 @@ def write_mode(mode: str, *, force: bool = False) -> None:
         set_stop(force=True)
         wait_for_state("idle", 5)
     elif get_state() != "idle":
-        raise SysfsInterfaceError(
-            f"Cannot set mode when shepherd is { get_state() }",
-        )
+        raise SysfsInterfaceError("Cannot set mode when shepherd is '%s'", get_state())
 
     log.debug("sysfs/mode: '%s'", mode)
     with Path("/sys/shepherd/mode").open("w", encoding="utf-8") as fh:
@@ -256,9 +254,9 @@ def write_dac_aux_voltage(
         return
 
     if voltage < 0.0:
-        raise SysfsInterfaceError(f"sending voltage with negative value: {voltage}")
+        raise SysfsInterfaceError("sending voltage with negative value: '%s'", voltage)
     if voltage > 5.0:
-        raise SysfsInterfaceError(f"sending voltage above limit of 5V: {voltage}")
+        raise SysfsInterfaceError("sending voltage above limit of 5V: '%s'", voltage)
     if not cal_emu:
         cal_emu = CalibrationEmulator()
     output = int(cal_emu.dac_V_A.si_to_raw(voltage))
@@ -403,7 +401,9 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
             output += " ".join(_set) + " \n"
         else:
             raise SysfsInterfaceError(
-                f"virtual-converter value {setting} has wrong type ({type(setting)})",
+                "virtual-converter value '%s' has wrong type ('%s')",
+                setting,
+                type(setting),
             )
 
     wait_for_state("idle", 3.0)
@@ -474,9 +474,9 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
     """
     if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255):
         raise SysfsInterfaceError(
-            f"pru_msg-type has invalid type, "
-            f"expected u8 for type (={type(msg_type)}) "
-            f"and content (={msg_type})",
+            "pru_msg-type has invalid type, expected u8 for type (=%s) and content (=%s)",
+            type(msg_type),
+            msg_type,
         )
 
     if isinstance(values, int | float):
@@ -488,8 +488,9 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
     for value in values:
         if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
             raise SysfsInterfaceError(
-                f"pru_msg-value has invalid type, "
-                f"expected u32 for type (={type(value)}) and content (={value})",
+                "pru_msg-value has invalid type, expected u32 for type (=%s) and content (=%s)",
+                type(value),
+                value,
             )
 
     with Path("/sys/shepherd/pru_msg_box").open("w", encoding="utf-8") as file:
@@ -552,9 +553,7 @@ def write_programmer_ctrl(
         if value is None:
             continue
         if num > 0 and ((value < 0) or (value >= 2**32)):
-            raise SysfsInterfaceError(
-                f"at least one parameter out of u32-bounds, value={value}",
-            )
+            raise SysfsInterfaceError("at least one parameter out of u32-bounds, value=%d", value)
         with (prog_path / attribute).open(
             "w",
             encoding="utf-8",

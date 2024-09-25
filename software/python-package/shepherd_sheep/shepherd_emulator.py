@@ -24,7 +24,7 @@ from .logger import get_verbosity
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOError
+from .shepherd_io import ShepherdPRUError
 from .target_io import TargetIO
 from .target_io import target_pins
 
@@ -56,7 +56,7 @@ class ShepherdEmulator(ShepherdIO):
         self.verbose_extra = False
 
         if not cfg.input_path.exists():
-            raise ValueError(f"Input-File does not exist ({cfg.input_path})")
+            raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
         self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
@@ -289,12 +289,12 @@ class ShepherdEmulator(ShepherdIO):
                     return
                 if self.writer is not None:
                     self.writer.write_buffer(emu_buf)
-        except ShepherdIOError as e:
+        except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
             if e.id_num == commons.MSG_ERR_NOFREEBUF:
                 log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
                 return
-            raise ShepherdIOError from e
+            raise ShepherdPRUError from e
         except OSError as _xpt:
             log.error(
                 "Failed to write data to HDF5-File - will STOP! error = %s",

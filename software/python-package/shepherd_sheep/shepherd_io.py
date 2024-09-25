@@ -42,11 +42,36 @@ gpio_pin_nums = {
 }
 
 
-class ShepherdIOError(Exception):
-    ID_TIMEOUT = 9999
+ShepherdIOError = IOError
 
+
+class ShepherdTimeoutError(ShepherdIOError):
+    def __init__(self, id_num: int | None = None, value: int | list | None = None) -> None:
+        super().__init__("Timeout waiting for message [id=0x%X, val=%s]", id_num, value)
+        self.id_num = id_num
+        self.value = value
+
+
+class ShepherdRxError(ShepherdIOError):
+    def __init__(
+        self,
+        id_expected: int,
+        id_num: int = 0,
+        value: int | list | None = 0,
+        note: str | None = None,
+    ) -> None:
+        message = "Expected msg-type %X, but got [id=0x%X, val=%s]"
+        if isinstance(note, str):
+            message = message + " - " + note
+
+        super().__init__(message, id_expected, id_num, value)
+        self.id_num = id_num
+        self.value = value
+
+
+class ShepherdPRUError(ShepherdIOError):
     def __init__(self, message: str, id_num: int = 0, value: int | list | None = 0) -> None:
-        super().__init__(message + f" [id=0x{id_num:X}, val={value}]")
+        super().__init__(message + " with [id=0x%X, val=%s]", id_num, value)
         self.id_num = id_num
         self.value = value
 
@@ -183,7 +208,7 @@ class ShepherdIO:
             except sfs.SysfsInterfaceError:  # noqa: PERF203
                 time.sleep(self._buffer_period)
                 continue
-        raise ShepherdIOError("Timeout waiting for message", ShepherdIOError.ID_TIMEOUT)
+        raise ShepherdTimeoutError
 
     @staticmethod
     def _flush_msgs() -> None:
@@ -351,8 +376,8 @@ class ShepherdIO:
             return target == TargetPort.A
         if isinstance(target, bool):
             return target
-        raise ValueError(
-            f"Parameter 'target' must be A or B (was {target}, type {type(target)})",
+        raise TypeError(
+            "Parameter 'target' must be A or B (was %s, type = %s)", target, type(target)
         )
 
     def select_port_for_power_tracking(
@@ -549,8 +574,10 @@ class ShepherdIO:
 
             error_msg: str | None = commons.pru_errors.get(msg_type)
             if error_msg is not None:
-                raise ShepherdIOError(error_msg, msg_type, value)
+                raise ShepherdPRUError(error_msg, msg_type, value)
 
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_BUF_FROM_PRU) }, but got", msg_type, value
+            raise ShepherdRxError(
+                commons.MSG_BUF_FROM_PRU,
+                msg_type,
+                value,
             )

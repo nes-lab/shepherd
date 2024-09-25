@@ -156,7 +156,7 @@ class Launcher:
             return True
         if systemd_state == "inactive":
             return False
-        raise OSError(f"Unknown state { systemd_state }")
+        raise OSError("Unknown state '%s'", systemd_state)
 
     def set_service(self, *, requested_state: bool) -> bool | None:
         """Changes state of shepherd service.

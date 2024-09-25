@@ -22,6 +22,7 @@ from .eeprom import EEPROM
 from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOError
+from .shepherd_io import ShepherdRxError
 from .target_io import TargetIO
 
 
@@ -87,14 +88,14 @@ class ShepherdDebug(ShepherdIO):
         }:
             channel_no = 2
         else:
-            raise ValueError(f"ADC channel { channel } unknown")
+            raise ValueError("ADC channel '%s' is unknown", channel)
 
         super()._send_msg(commons.MSG_DBG_ADC, channel_no)
 
         msg_type, values = self._get_msg(30)
         if msg_type != commons.MSG_DBG_ADC:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_ADC) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_ADC,
                 msg_type,
                 values,
             )
@@ -109,8 +110,8 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_GPI, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_GPI:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_GPI) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_GPI,
                 msg_type,
                 values,
             )
@@ -146,8 +147,8 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_FN_TESTS:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_FN_TESTS) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_FN_TESTS,
                 msg_type,
                 values,
             )
@@ -185,12 +186,11 @@ class ShepherdDebug(ShepherdIO):
         super()._send_msg(commons.MSG_DBG_VSRC_INIT, 0)
         msg_type, values = super()._get_msg()  # no data, just a confirmation
         if msg_type != commons.MSG_DBG_VSRC_INIT:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_INIT) }, "
-                f"but got type={ hex(msg_type) } val={ values }, "
-                " is ENABLE_DBG_VSOURCE defined in pru0/main.c??",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_INIT,
                 msg_type,
                 values,
+                note="is ENABLE_DBG_VSOURCE defined in pru0/main.c??",
             )
         # TEST-SIMPLIFICATION - code below is not part of main pru-code
         self.W_inp_fWs = 0.0
@@ -209,8 +209,8 @@ class ShepherdDebug(ShepherdIO):
         )
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_P_INP:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_P_INP) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_P_INP,
                 msg_type,
                 values,
             )
@@ -227,8 +227,8 @@ class ShepherdDebug(ShepherdIO):
         )
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_CHARGE:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_CHARGE) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_CHARGE,
                 msg_type,
                 values,
             )
@@ -238,8 +238,8 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_P_OUT, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_P_OUT:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_P_OUT) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_P_OUT,
                 msg_type,
                 values,
             )
@@ -249,8 +249,8 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_DRAIN, int(current_adc_raw))
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_DRAIN:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_DRAIN) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_DRAIN,
                 msg_type,
                 values,
             )
@@ -260,8 +260,8 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_V_CAP, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_V_CAP:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_V_CAP) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_V_CAP,
                 msg_type,
                 values,
             )
@@ -271,8 +271,8 @@ class ShepherdDebug(ShepherdIO):
         self._send_msg(commons.MSG_DBG_VSRC_V_OUT, 0)
         msg_type, values = self._get_msg()
         if msg_type != commons.MSG_DBG_VSRC_V_OUT:
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_DBG_VSRC_V_OUT) }, but got",
+            raise ShepherdRxError(
+                commons.MSG_DBG_VSRC_V_OUT,
                 msg_type,
                 values,
             )

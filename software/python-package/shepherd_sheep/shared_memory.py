@@ -151,7 +151,9 @@ class SharedMemory:
         if self.buffer_size * self.n_buffers != self.size:
             raise BufferError(
                 "Py-estimated mem-size for buffers is different "
-                f"from pru-reported size ({self.buffer_size * self.n_buffers} vs. {self.size})",
+                "from pru-reported size (%d vs. %d)",
+                self.buffer_size * self.n_buffers,
+                self.size,
             )
 
         self.devmem_fd = os.open(
@@ -229,7 +231,8 @@ class SharedMemory:
         # The buffers are organized as an array in shared memory
         if not (0 <= index < self.n_buffers):
             raise ValueError(
-                f"out of bound access (i={index}), tried reading from SharedMEM-Buffer",
+                "out of bound access (i=%d), tried reading from SharedMEM-Buffer",
+                index,
             )
         buffer_offset = index * self.buffer_size
         self.mapped_mem.seek(buffer_offset)
@@ -252,7 +255,8 @@ class SharedMemory:
             )
         if canary1 != 0x0F0F0F0F:
             raise BufferError(
-                f"CANARY of SampleBuffer was harmed! Is 0x{canary1:X}, expected 0x0F0F0F0F",
+                "CANARY of SampleBuffer was harmed! Is 0x%X, expected 0x0F0F0F0F",
+                canary1,
             )
 
         # verify received timestamp,
@@ -306,7 +310,8 @@ class SharedMemory:
 
         if canary2 != 0x0F0F0F0F:
             raise BufferError(
-                f"CANARY of GpioBuffer was harmed! Is 0x{canary2:X}, expected 0x0F0F0F0F",
+                "CANARY of GpioBuffer was harmed! Is 0x%X, expected 0x0F0F0F0F",
+                canary2,
             )
 
         if n_gpio_events == commons.MAX_GPIO_EVT_PER_BUFFER:
@@ -409,9 +414,7 @@ class SharedMemory:
         current: np.ndarray,
     ) -> None:
         if not (0 <= index < self.n_buffers):
-            raise ValueError(
-                f"out of bound access (i={index}), tried writing to SharedMEM-Buffer",
-            )
+            raise ValueError("out of bound access (i=%d), tried writing to SharedMEM-Buffer", index)
         if (voltage.shape[0] != self.samples_per_buffer) or (
             current.shape[0] != self.samples_per_buffer
         ):

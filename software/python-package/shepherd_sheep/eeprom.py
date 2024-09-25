@@ -110,7 +110,7 @@ class EEPROM:
             KeyError: If key is not a valid attribute
         """
         if key not in eeprom_format:
-            raise KeyError(f"{ key } is not a valid EEPROM parameter")
+            raise KeyError("'%s' is not a valid EEPROM parameter", key)
         raw_data = self._read(eeprom_format[key]["offset"], eeprom_format[key]["size"])
         if eeprom_format[key]["type"] == "ascii":
             return raw_data.decode("utf-8")
@@ -132,13 +132,14 @@ class EEPROM:
                 attribute
         """
         if key not in eeprom_format:
-            raise KeyError(f"{ key } is not a valid EEPROM parameter")
+            raise KeyError("'%s' is not a valid EEPROM parameter", key)
         if eeprom_format[key]["type"] == "ascii":
             # TODO: ascii not used anymore -> why limit some fields to exact length?
             if len(value) != eeprom_format[key]["size"]:
                 raise ValueError(
-                    f"Value { value } has wrong size. "
-                    f"Required size is { eeprom_format[key]['size'] }",
+                    "Value '%s' has wrong size. Required size is %s",
+                    value,
+                    eeprom_format[key]["size"],
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         elif eeprom_format[key]["type"] == "str":
@@ -146,8 +147,9 @@ class EEPROM:
                 value += "\0"
             elif len(value) > eeprom_format[key]["size"]:
                 raise ValueError(
-                    f"Value { value } is longer than maximum "
-                    f"size { eeprom_format[key]['size'] }",
+                    "Value '%s' is longer than maximum size %s",
+                    value,
+                    eeprom_format[key]["size"],
                 )
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         else:
@@ -185,9 +187,9 @@ class EEPROM:
         data_serialized = cal_cape.to_bytestr()
         if len(data_serialized) != calibration_data_format["size"]:
             raise ValueError(
-                f"WriteCal: data-size is wrong! "
-                f"expected = {calibration_data_format['size']} bytes, "
-                f"but got {len(data_serialized)}",
+                "WriteCal: data-size is wrong! expected = %s bytes, but got %s",
+                calibration_data_format["size"],
+                len(data_serialized),
             )
         self._write(calibration_data_format["offset"], data_serialized)
         self._write_cape_data(cal_cape.cape)
