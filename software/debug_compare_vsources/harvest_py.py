@@ -1,31 +1,24 @@
 from pathlib import Path
 
+from config import host_selected
+from config import hrv_list
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualHarvesterConfig
+from shepherd_core.vsource import simulate_harvester
 from shepherd_data import Reader
-from shepherd_pru import simulate_harvester
 
-hrv_list = [
-    "ivcurve",
-    "cv10",
-    "cv20",
-    "mppt_voc",
-    "mppt_bq_solar",
-    "mppt_bq_thermoelectric",
-    "mppt_po",
-    "mppt_opt",
-]
-
-path_input = Path(__file__).parent / "hrv_ivcurve.h5"
+path_here = Path(__file__).parent
 results: dict = {}
 
 # #####################################################################
 # Harvest emulation from IVCurves #####################################
 # #####################################################################
 
+path_input = path_here / host_selected / "hrv_ivcurve.h5"
+
 for hrv_name in hrv_list[1:]:
     path_output = path_input.with_name(
-        path_input.stem + "_" + hrv_name + "_cim" + path_input.suffix
+        path_input.stem + "_" + hrv_name + "_py_sim" + path_input.suffix
     )
     if not path_output.exists():
         simulate_harvester(

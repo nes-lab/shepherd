@@ -1,38 +1,26 @@
 from itertools import product
 from pathlib import Path
 
+from config import emu_hrv_list
+from config import emu_src_list
+from config import emu_target
+from config import host_selected
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.vsource import ResistiveTarget
 from shepherd_data import Reader
 from shepherd_pru.pru_source_simulation import simulate_source
 
-hrv_list = [
-    "ivcurve",
-    "mppt_voc",
-    "mppt_po",
-]
-
-src_list = [
-    "direct",
-    "dio_cap",
-    "BQ25504",
-    "BQ25570",
-]
-
-target = ResistiveTarget(R_Ohm=1000)
-
-paths_local_hrv = {hrv_name: Path(__file__).parent / f"hrv_{hrv_name}.h5" for hrv_name in hrv_list}
+path_here = Path(__file__).parent
 results: dict = {}
 
 # #####################################################################
 # Emulate - simulated          ########################################
 # #####################################################################
 
-for hrv_name, src_name in product(hrv_list, src_list):
-    path_input = paths_local_hrv[hrv_name]
+for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
+    path_input = Path(__file__).parent / host_selected / f"hrv_{hrv_name}.h5"
     path_output = path_input.with_name(
-        path_input.stem + "_" + src_name + "_cim" + path_input.suffix
+        path_input.stem + "_" + src_name + "_cpy_sim" + path_input.suffix
     )
     if not path_output.exists():
         simulate_source(
@@ -40,7 +28,7 @@ for hrv_name, src_name in product(hrv_list, src_list):
                 inherit_from=src_name,
                 C_output_uF=0,
             ),
-            target=target,
+            target=emu_target,
             path_input=path_input,
             path_output=path_output,
         )
