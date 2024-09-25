@@ -2,7 +2,7 @@
 
 **Main Documentation**: <https://orgua.github.io/shepherd>
 
-**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/time_sync_analyzer>
+**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/debug_analyze_time_sync>
 
 ---
 
@@ -56,6 +56,6 @@ Creating CPU-Load
 - Note: we exclude sheep0, as it is the ptp-server
 
 ```Shell
-shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\time_sync_analyzer\config_harvest.yaml
-shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\time_sync_analyzer\config_emulation.yaml
+shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\debug_analyze_time_sync\config_harvest.yaml
+shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\debug_analyze_time_sync\config_emulation.yaml
 ```
