@@ -7,6 +7,7 @@
 #include "spi_transfer_pru.h"
 
 #include "fw_config.h"
+#include "msg_sys.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
 
@@ -115,6 +116,7 @@ void sample(volatile struct SharedMem *const shared_mem,
             return sample_emu_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
         case MODE_HRV_ADC_READ:
             return sample_hrv_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
+        default: msg_send_status(MSG_ERR_SAMPLE_MODE, mode);
     }
 }
 

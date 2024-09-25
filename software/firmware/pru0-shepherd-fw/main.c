@@ -11,6 +11,7 @@
 
 #include "commons.h"
 #include "hw_config.h"
+#include "msg_sys.h"
 #include "ringbuffer.h"
 #include "shepherd_config.h"
 
@@ -34,60 +35,6 @@
 /* Used to signal an invalid buffer index */
 #define NO_BUFFER (0xFFFFFFFF)
 
-// alternative message channel specially dedicated for errors
-static void send_status(volatile struct SharedMem *const shared_mem, enum MsgType type,
-                        const uint32_t value)
-{
-    // do not care for sent-status -> the newest error wins IF different from previous
-    if (!((shared_mem->pru0_msg_error.type == type) &&
-          (shared_mem->pru0_msg_error.value[0] == value)))
-    {
-        shared_mem->pru0_msg_error.unread   = 0u;
-        shared_mem->pru0_msg_error.type     = type;
-        shared_mem->pru0_msg_error.value[0] = value;
-        shared_mem->pru0_msg_error.id       = MSG_TO_KERNEL;
-        // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-        shared_mem->pru0_msg_error.unread   = 1u;
-    }
-    if (type >= 0xE0) __delay_cycles(200U / TIMER_TICK_NS); // 200 ns
-}
-
-// send returns a 1 on success
-static bool_ft send_message(volatile struct SharedMem *const shared_mem, enum MsgType type,
-                            const uint32_t value1, const uint32_t value2)
-{
-    if (shared_mem->pru0_msg_outbox.unread == 0)
-    {
-        shared_mem->pru0_msg_outbox.type     = type;
-        shared_mem->pru0_msg_outbox.value[0] = value1;
-        shared_mem->pru0_msg_outbox.value[1] = value2;
-        shared_mem->pru0_msg_outbox.id       = MSG_TO_KERNEL;
-        // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-        shared_mem->pru0_msg_outbox.unread   = 1u;
-        return 1;
-    }
-    /* Error occurs if kernel was not able to handle previous message in time */
-    send_status(shared_mem, MSG_ERR_BACKPRESSURE, 0);
-    return 0;
-}
-
-// only one central hub should receive, because a message is only handed out once
-static bool_ft receive_message(volatile struct SharedMem *const shared_mem,
-                               struct ProtoMsg *const           msg_container)
-{
-    if (shared_mem->pru0_msg_inbox.unread >= 1)
-    {
-        if (shared_mem->pru0_msg_inbox.id == MSG_TO_PRU)
-        {
-            *msg_container                    = shared_mem->pru0_msg_inbox;
-            shared_mem->pru0_msg_inbox.unread = 0;
-            return 1;
-        }
-        // send mem_corruption warning
-        send_status(shared_mem, MSG_ERR_MEMCORRUPTION, 0);
-    }
-    return 0;
-}
 
 static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
                                    struct RingBuffer *const         free_buffers_ptr,
@@ -109,14 +56,14 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
         if (shared_mem->next_buffer_timestamp_ns == 0u)
         {
             /* debug-output for a wrong timestamp */
-            send_status(shared_mem, MSG_ERR_TIMESTAMP, 0);
+            msg_send_status(MSG_ERR_TIMESTAMP, 0u);
         }
     }
     else
     {
         next_buffer_idx           = NO_BUFFER;
         shared_mem->sample_buffer = NULL;
-        send_status(shared_mem, MSG_ERR_NOFREEBUF, 0u);
+        msg_send_status(MSG_ERR_NOFREEBUF, 0u);
     }
 
     /* Lock the access to gpio_edges structure to allow swap without inconsistency */
@@ -137,7 +84,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
     {
         (buffers_far + last_buffer_idx)->len =
                 ADC_SAMPLES_PER_BUFFER; // TODO: could be removed in future, not used ATM
-        send_message(shared_mem, MSG_BUF_FROM_PRU, last_buffer_idx, ADC_SAMPLES_PER_BUFFER);
+        msg_send(MSG_BUF_FROM_PRU, last_buffer_idx, ADC_SAMPLES_PER_BUFFER);
     }
 
     return next_buffer_idx;
@@ -202,7 +149,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
 {
     struct ProtoMsg msg_in;
 
-    if (receive_message(shared_mem, &msg_in) == 0) return 1u;
+    if (msg_receive(&msg_in) == 0) return 1u;
 
     if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
     {
@@ -215,7 +162,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
 
             case MSG_DBG_ADC:
                 res = sample_dbg_adc(msg_in.value[0]);
-                send_message(shared_mem, MSG_DBG_ADC, res, 0);
+                msg_send(MSG_DBG_ADC, res, 0);
                 return 1u;
 
             case MSG_DBG_DAC: // TODO: better name: MSG_CTRL_DAC
@@ -224,9 +171,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
 
             case MSG_DBG_GP_BATOK: set_batok_pin(shared_mem, msg_in.value[0] > 0); return 1U;
 
-            case MSG_DBG_GPI:
-                send_message(shared_mem, MSG_DBG_GPI, shared_mem->gpio_pin_state, 0);
-                return 1U;
+            case MSG_DBG_GPI: msg_send(MSG_DBG_GPI, shared_mem->gpio_pin_state, 0); return 1U;
 
 #if (defined(ENABLE_DBG_VSOURCE) && defined(EMU_SUPPORT))
             case MSG_DBG_VSRC_HRV_P_INP:
@@ -235,31 +180,31 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
             case MSG_DBG_VSRC_P_INP: // TODO: these can be done with normal emulator instantiation
                 // TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-                send_message(shared_mem, MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u),
-                             (uint32_t) get_P_input_fW());
+                msg_send(MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u),
+                         (uint32_t) get_P_input_fW());
                 return 1u;
 
             case MSG_DBG_VSRC_P_OUT:
                 converter_calc_out_power(msg_in.value[0]);
-                send_message(shared_mem, MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u),
-                             (uint32_t) get_P_output_fW());
+                msg_send(MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u),
+                         (uint32_t) get_P_output_fW());
                 return 1u;
 
             case MSG_DBG_VSRC_V_CAP:
                 converter_update_cap_storage();
-                send_message(shared_mem, MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
+                msg_send(MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
                 return 1u;
 
             case MSG_DBG_VSRC_V_OUT:
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSRC_V_OUT, res, 0);
+                msg_send(MSG_DBG_VSRC_V_OUT, res, 0);
                 return 1u;
 
             case MSG_DBG_VSRC_INIT:
                 calibration_initialize(&shared_mem->calibration_settings);
                 converter_initialize(&shared_mem->converter_settings);
                 harvester_initialize(&shared_mem->harvester_settings);
-                send_message(shared_mem, MSG_DBG_VSRC_INIT, 0, 0);
+                msg_send(MSG_DBG_VSRC_INIT, 0, 0);
                 return 1u;
 
             case MSG_DBG_VSRC_CHARGE:
@@ -267,7 +212,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 converter_calc_out_power(0u);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
+                msg_send(MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
 
             case MSG_DBG_VSRC_DRAIN:
@@ -275,19 +220,21 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 converter_calc_out_power(msg_in.value[0]);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output(shared_mem);
-                send_message(shared_mem, MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
+                msg_send(MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
 #endif // ENABLE_DBG_VSOURCE
 
 #ifdef ENABLE_DEBUG_MATH_FN
             case MSG_DBG_FN_TESTS:
                 res64 = debug_math_fns(msg_in.value[0], msg_in.value[1]);
-                send_message(shared_mem, MSG_DBG_FN_TESTS, (uint32_t) (res64 >> 32u),
-                             (uint32_t) res64);
+                msg_send(MSG_DBG_FN_TESTS, (uint32_t) (res64 >> 32u), (uint32_t) res64);
                 return 1u;
 #endif //ENABLE_DEBUG_MATH_FN
 
-            default: send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0); return 0U;
+            default:
+                msg_send(MSG_ERR_INVLDCMD, msg_in.type, 0u);
+                return 0U;
+                // TODO: there are two msg_send() in here that send MSG_ERR
         }
     }
     else
@@ -301,14 +248,14 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
         else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
         {
             // pipeline-test for msg-system
-            send_message(shared_mem, MSG_TEST_ROUTINE, msg_in.value[0], 0);
+            msg_send(MSG_TEST_ROUTINE, msg_in.value[0], 0);
         }
         else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 2))
         {
             // pipeline-test for msg-system
-            send_status(shared_mem, MSG_TEST_ROUTINE, msg_in.value[0]);
+            msg_send_status(MSG_TEST_ROUTINE, msg_in.value[0]);
         }
-        else { send_message(shared_mem, MSG_ERR_INVLDCMD, msg_in.type, 0); }
+        else { msg_send(MSG_ERR_INVLDCMD, msg_in.type, 0u); }
     }
     return 0u;
 }
@@ -460,6 +407,7 @@ int main(void)
     shared_memory->pru0_msg_outbox.unread            = 0u;
     shared_memory->pru0_msg_inbox.unread             = 0u;
     shared_memory->pru0_msg_error.unread             = 0u;
+    msg_init(shared_memory);
 
     /*
 	 * The dynamically allocated shared DDR RAM holds all the buffers that
@@ -476,7 +424,7 @@ int main(void)
     shared_memory->cmp0_trigger_for_pru1   = 1u;
 
 reset:
-    send_message(shared_memory, MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
+    msg_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
     shared_memory->pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
     ring_init(&free_buffers);

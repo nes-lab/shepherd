@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "fw_config.h"
+#include "msg_sys.h"
 
 // internal variables
 uint32_t        voltage_set_uV = 0u; // global
@@ -59,10 +60,6 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
 #endif // EMU_SUPPORT
 
 #ifdef __PYTHON__
-void __delay_cycles(uint32_t num)
-{
-    if (num > 0u) num--; // just touch - needs no faking
-}
 /* next is a mock-impl to calm the compiler (does not get used)*/
 static uint32_t hw_value = 0u;
 uint32_t        adc_readwrite(uint32_t cs_pin, uint32_t val) { return cs_pin + val + hw_value; }
@@ -127,7 +124,7 @@ void sample_adc_harvester(struct SampleBuffer *const buffer, const uint32_t samp
     else if (cfg->algorithm >= HRV_CV) harvest_adc_2_cv(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_2_ivcurve(buffer, sample_idx);
     else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(buffer, sample_idx);
-    // todo: else send error to system
+    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm);
 }
 
 static void harvest_adc_2_cv(struct SampleBuffer *const buffer, const uint32_t sample_idx)
@@ -382,7 +379,7 @@ void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_cu
     else if (cfg->algorithm >= HRV_MPPT_PO) harvest_ivcurve_2_mppt_po(p_voltage_uV, p_current_nA);
     else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_ivcurve_2_mppt_voc(p_voltage_uV, p_current_nA);
     else if (cfg->algorithm >= HRV_CV) harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
-    // todo: else send error to system
+    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm);
 }
 
 

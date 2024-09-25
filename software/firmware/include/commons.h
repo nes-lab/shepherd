@@ -69,6 +69,8 @@ enum MsgType
     MSG_ERR_TIMESTAMP             = 0xE6u,
     MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE7u,
     MSG_ERR_VALUE                 = 0xE8u,
+    MSG_ERR_SAMPLE_MODE           = 0xE9u,
+    MSG_ERR_HRV_ALGO              = 0xEAu,
 
     /* KERNELSPACE (enum >=0xF0) */
     // STATUS

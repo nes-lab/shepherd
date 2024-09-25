@@ -26,4 +26,11 @@
 #define DEBUG_PIN0_MASK       BIT_SHIFT(P8_12)
 #define DEBUG_PIN1_MASK       BIT_SHIFT(P8_11)
 
+#ifdef __PYTHON__
+void __delay_cycles(const uint32_t num)
+{
+    // needs no faking
+}
+#endif
+
 #endif /* PRU0_HW_CONFIG_H_ */
