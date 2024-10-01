@@ -1,14 +1,14 @@
 #ifndef MSG_SYS_H
 #define MSG_SYS_H
 
-#include <stdint.h>
 #include "commons.h"
 #include "ringbuffer.h"
+#include <stdint.h>
 
-void msg_init(volatile struct SharedMem *const shared_mem);
+void    msg_init(volatile struct SharedMem *const shared_mem);
 
 // alternative message channel specially dedicated for errors
-void msg_send_status(enum MsgType type, const uint32_t value);
+void    msg_send_status(enum MsgType type, const uint32_t value);
 
 // send returns a 1 on success
 bool_ft msg_send(enum MsgType type, const uint32_t value1, const uint32_t value2);

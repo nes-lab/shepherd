@@ -1,25 +1,25 @@
 #include "msg_sys.h"
-#include <stdint.h>
-#include <stdlib.h>
 #include "commons.h"
 #include "ringbuffer.h"
+#include <stdint.h>
+#include <stdlib.h>
 
-volatile struct ProtoMsg * msg_inbox;
-volatile struct ProtoMsg * msg_outbox;
-volatile struct ProtoMsg * msg_error;
+volatile struct ProtoMsg *msg_inbox;
+volatile struct ProtoMsg *msg_outbox;
+volatile struct ProtoMsg *msg_error;
 
-void msg_init(volatile struct SharedMem *const shared_mem)
+void                      msg_init(volatile struct SharedMem *const shared_mem)
 {
 #if defined(PRU0)
-    msg_inbox = &shared_mem->pru0_msg_inbox;
+    msg_inbox  = &shared_mem->pru0_msg_inbox;
     msg_outbox = &shared_mem->pru0_msg_outbox;
-    msg_error = &shared_mem->pru0_msg_error;
+    msg_error  = &shared_mem->pru0_msg_error;
 #elif defined(PRU1)
     msg_outbox = &shared_mem->pru1_sync_outbox;
-    msg_error = &shared_mem->pru1_msg_error;
+    msg_error  = &shared_mem->pru1_msg_error;
     // TODO: add sync inbox
 #else
-#error "PRU number must be defined and either 1 or 0"
+  #error "PRU number must be defined and either 1 or 0"
 #endif
 }
 
@@ -27,8 +27,7 @@ void msg_init(volatile struct SharedMem *const shared_mem)
 void msg_send_status(enum MsgType type, const uint32_t value)
 {
     // do not care for sent-status -> the newest error wins IF different from previous
-    if (!((msg_error->type == type) &&
-          (msg_error->value[0] == value)))
+    if (!((msg_error->type == type) && (msg_error->value[0] == value)))
     {
         msg_error->unread   = 0u;
         msg_error->type     = type;
@@ -42,8 +41,7 @@ void msg_send_status(enum MsgType type, const uint32_t value)
 }
 
 // send returns a 1 on success
-bool_ft msg_send(enum MsgType type,
-                            const uint32_t value1, const uint32_t value2)
+bool_ft msg_send(enum MsgType type, const uint32_t value1, const uint32_t value2)
 {
     if (msg_outbox->unread == 0)
     {
@@ -67,7 +65,7 @@ bool_ft msg_receive(struct ProtoMsg *const container)
     {
         if (msg_inbox->id == MSG_TO_PRU)
         {
-            *container                    = *msg_inbox;
+            *container        = *msg_inbox;
             msg_inbox->unread = 0;
             return 1;
         }
