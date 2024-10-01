@@ -98,9 +98,13 @@ static inline void sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint
     buffer->values_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 }
 
-
+#ifdef EMU_SUPPORT
 void sample(volatile struct SharedMem *const shared_mem,
             struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
+#else
+void sample(volatile const struct SharedMem *const shared_mem,
+            struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
+#endif
 {
     switch (mode) // reordered to prioritize longer routines
     {

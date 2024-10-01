@@ -91,7 +91,7 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
 }
 
 #ifdef ENABLE_DEBUG_MATH_FN
-uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
+uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 {
     uint64_t       result = 0;
     const uint64_t f2     = (uint64_t) factor + ((uint64_t) (factor) << 32u);
