@@ -2,30 +2,17 @@ from contextlib import ExitStack
 from itertools import product
 from pathlib import Path
 
+from config import emu_hrv_list
+from config import emu_src_list
+from config import host_selected
 from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
-from shepherd_core.vsource import ResistiveTarget
 from shepherd_data import Reader
 from shepherd_herd import Herd
 
-hrv_list = [
-    "ivcurve",
-    #    "mppt_voc",
-    #    "mppt_po",
-]
-
-src_list = [
-    "direct",
-    "dio_cap",
-    "BQ25504",
-    "BQ25570",
-]
-
-host_selected = "sheep0"
 path_here = Path(__file__).parent
 results: dict = {}
-target = ResistiveTarget(R_Ohm=1000)
 
 # #####################################################################
 # Transfer Files to Observer   ########################################
@@ -34,10 +21,10 @@ target = ResistiveTarget(R_Ohm=1000)
 paths_local_hrv = {}
 paths_remote_hrv = {}
 with Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected) as herd:
-    for hrv_name in hrv_list:
+    for hrv_name in emu_hrv_list:
         file_name = f"hrv_{hrv_name}.h5"
         paths_local_hrv[hrv_name] = path_here / host_selected / file_name
-        paths_remote_hrv[hrv_name] = Path("/tmp/" + file_name)
+        paths_remote_hrv[hrv_name] = Path("/tmp/" + file_name)  # noqa: S108
         logger.info("Start transferring '%s'", file_name)
         herd.put_file(paths_local_hrv[hrv_name], paths_remote_hrv[hrv_name], force_overwrite=True)
 
@@ -45,10 +32,10 @@ with Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected) as herd:
 # Emulate with real Target     ########################################
 # #####################################################################
 
-for hrv_name, src_name in product(hrv_list, src_list):
+for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
     path_remote_hrv = paths_remote_hrv[hrv_name]
     path_remote_src = path_remote_hrv.with_name(
-        path_remote_hrv.stem + "_" + src_name + "_emu" + path_remote_hrv.suffix
+        path_remote_hrv.stem + "_" + src_name + "_pru_emu" + path_remote_hrv.suffix
     )
     path_local_src = path_here / host_selected / path_remote_src.name
 

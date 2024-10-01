@@ -22,10 +22,13 @@ SOURCES += $(notdir $(wildcard ./*.c))
 # internal asm-sources
 ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # external asm-sources - add manually
-ASM_SOURCES += $(BASE_PATH)/lib/src/register_magic.asm # get_size_in_bits, log2safe, max_value, min_value
+# ... currently empty
 
 ifeq ($(TYPE), HRV)  # switch to HRV with "make TYPE=HRV"
-CFLAGS += -D HRV_SUPPORT
+CFLAGS += -DHRV_SUPPORT
+endif
+ifeq ($(TYPE), EMU)
+CFLAGS += -DEMU_SUPPORT
 endif
 
 # look for gcc, but use cgt as fallback / default
@@ -34,5 +37,6 @@ ASM_SOURCES += $(BASE_PATH)/lib/src/spi_transfer_pru_gcc.asm # small hack: const
 include $(BASE_PATH)/lib/GCC/Makefile
 else
 ASM_SOURCES += $(BASE_PATH)/lib/src/spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
+ASM_SOURCES += $(BASE_PATH)/lib/src/register_magic.asm # get_size_in_bits, log2safe, max_value, min_value
 include $(BASE_PATH)/lib/CGT/Makefile
 endif

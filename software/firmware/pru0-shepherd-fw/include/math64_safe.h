@@ -11,7 +11,8 @@ uint64_t sub64(uint64_t value1, uint64_t value2);
 uint32_t sub32(uint32_t value1, uint32_t value2);
 
 
-#ifdef __PYTHON__
+#if defined(__GNUC__) || defined(__PYTHON__)
+// TODO: not completely correct - now the gnu-pru also uses c-code instead of 1-op asm
 uint8_ft get_size_in_bits(const uint32_t value);
 uint8_ft log2safe(uint32_t value);
 uint32_t max_value(uint32_t value1, uint32_t value2);

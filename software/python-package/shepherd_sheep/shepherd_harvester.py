@@ -48,7 +48,7 @@ class ShepherdHarvester(ShepherdIO):
         # performance-critical, allows deep insight between py<-->pru-communication
         self.verbose_extra = False
 
-        self.cal_hrv = retrieve_calibration(cfg.use_cal_default).harvester
+        self.cal_hrv = retrieve_calibration(use_default_cal=cfg.use_cal_default).harvester
 
         if cfg.time_start is None:
             self.start_time = round(time.time() + 10)
@@ -88,8 +88,8 @@ class ShepherdHarvester(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_state_emulator(False)
-        super().set_power_state_recorder(True)
+        super().set_power_emulator(state=False)
+        super().set_power_recorder(state=True)
 
         super().send_virtual_harvester_settings(self.hrv_pru)
         super().send_calibration_settings(self.cal_hrv)
@@ -105,7 +105,7 @@ class ShepherdHarvester(ShepherdIO):
         # Give the PRU empty buffers to begin with
         time.sleep(1)
         for i in range(self.n_buffers):
-            self.return_buffer(i, False)
+            self.return_buffer(i, verbose=False)
             time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
             # ⤷ could be as low as ~ 10us
         return self
@@ -121,7 +121,7 @@ class ShepherdHarvester(ShepherdIO):
         self.stack.close()
         super().__exit__()
 
-    def return_buffer(self, index: int, verbose: bool = False) -> None:
+    def return_buffer(self, index: int, *, verbose: bool = False) -> None:
         """Returns a buffer to the PRU
 
         After reading the content of a buffer and potentially filling it with

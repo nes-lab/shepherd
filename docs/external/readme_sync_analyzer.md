@@ -1,2 +1,2 @@
-:::{include} ../../software/time_sync_analyzer/Readme.md
+:::{include} ../../software/debug_analyze_time_sync/Readme.md
 :::

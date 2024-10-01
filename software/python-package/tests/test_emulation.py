@@ -159,7 +159,7 @@ def test_target_pins() -> None:
             value_raw = shepherd_io.convert_value_to_raw(dac_cfg[1], dac_cfg[2], 2.0)
             shepherd_io.dac_write(dac_cfg[0], value_raw)
 
-        shepherd_io.set_io_level_converter(True)
+        shepherd_io.set_power_io_level_converter(True)
 
         shepherd_io.select_port_for_io_interface(TargetPort.A)
 

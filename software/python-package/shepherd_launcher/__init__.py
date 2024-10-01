@@ -15,7 +15,7 @@ from types import TracebackType
 
 from typing_extensions import Self
 
-__version__ = "0.8.2"
+__version__ = "0.8.3"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpLauncher")
@@ -121,7 +121,7 @@ class Launcher:
                         self.gpio_led.write(value=False)
                         time.sleep(3)
                         continue
-                self.set_service(not self.get_state())
+                self.set_service(requested_state=not self.get_state())
                 time.sleep(10)
         except SystemExit:
             return
@@ -156,9 +156,9 @@ class Launcher:
             return True
         if systemd_state == "inactive":
             return False
-        raise Exception(f"Unknown state { systemd_state }")
+        raise OSError("Unknown state '%s'", systemd_state)
 
-    def set_service(self, requested_state: bool) -> bool | None:
+    def set_service(self, *, requested_state: bool) -> bool | None:
         """Changes state of shepherd service.
 
         Args:
@@ -182,7 +182,7 @@ class Launcher:
 
         new_state = self.get_state()
         if new_state != requested_state:
-            raise Exception("State didn't change")
+            raise OSError("State didn't change")
 
         return new_state
 

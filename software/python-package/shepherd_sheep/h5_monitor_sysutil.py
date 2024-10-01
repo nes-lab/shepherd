@@ -66,7 +66,7 @@ class SysUtilMonitor(Monitor):
                 type(self).__name__,
             )
         else:
-            self.io_last = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
+            self.io_last = np.array(psutil.disk_io_counters()[0:4])
             self.nw_last = np.array(psutil.net_io_counters()[0:2])
             self.thread = threading.Thread(
                 target=self.thread_fn,
@@ -125,7 +125,7 @@ class SysUtilMonitor(Monitor):
                     int(100 * mem_stat[1] / mem_stat[0]),
                     int(mem_stat[2]),
                 ]
-                io_now = np.array(psutil.disk_io_counters()[0:4])  # type: ignore
+                io_now = np.array(psutil.disk_io_counters()[0:4])
                 self.data["io"][self.position, :] = io_now - self.io_last
                 self.io_last = io_now
                 nw_now = np.array(psutil.net_io_counters()[0:2])

@@ -42,11 +42,36 @@ gpio_pin_nums = {
 }
 
 
-class ShepherdIOError(Exception):
-    ID_TIMEOUT = 9999
+ShepherdIOError = IOError
 
+
+class ShepherdTimeoutError(ShepherdIOError):
+    def __init__(self, id_num: int | None = None, value: int | list | None = None) -> None:
+        super().__init__("Timeout waiting for message [id=0x%X, val=%s]", id_num, value)
+        self.id_num = id_num
+        self.value = value
+
+
+class ShepherdRxError(ShepherdIOError):
+    def __init__(
+        self,
+        id_expected: int,
+        id_num: int = 0,
+        value: int | list | None = 0,
+        note: str | None = None,
+    ) -> None:
+        message = "Expected msg-type %X, but got [id=0x%X, val=%s]"
+        if isinstance(note, str):
+            message = message + " - " + note
+
+        super().__init__(message, id_expected, id_num, value)
+        self.id_num = id_num
+        self.value = value
+
+
+class ShepherdPRUError(ShepherdIOError):
     def __init__(self, message: str, id_num: int = 0, value: int | list | None = 0) -> None:
-        super().__init__(message + f" [id=0x{id_num:X}, val={value}]")
+        super().__init__(message + " with [id=0x%X, val=%s]", id_num, value)
         self.id_num = id_num
         self.value = value
 
@@ -122,8 +147,8 @@ class ShepherdIO:
             for name, pin in gpio_pin_nums.items():
                 self.gpios[name] = GPIO(pin, "out")
 
-            self.set_shepherd_pcb_power(True)
-            self.set_io_level_converter(False)
+            self.set_power_cape_pcb(state=True)
+            self.set_power_io_level_converter(state=False)
 
             log.debug("Shepherd hardware is powered up")
 
@@ -180,23 +205,24 @@ class ShepherdIO:
         for _ in range(timeout_n):
             try:
                 return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:
+            except sfs.SysfsInterfaceError:  # noqa: PERF203
                 time.sleep(self._buffer_period)
                 continue
-        raise ShepherdIOError("Timeout waiting for message", ShepherdIOError.ID_TIMEOUT)
+        raise ShepherdTimeoutError
 
     @staticmethod
     def _flush_msgs() -> None:
         """Flushes msg_channel by reading all available bytes."""
-        while True:
-            try:
+        try:
+            while True:
                 sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:
-                break
+        except sfs.SysfsInterfaceError:
+            pass
 
     def start(
         self,
         start_time: float | None = None,
+        *,
         wait_blocking: bool = True,
     ) -> bool:
         """Starts sampling either now or at later point in time.
@@ -294,13 +320,13 @@ class ShepherdIO:
             )
         self.set_aux_target_voltage(0.0)
 
-        self.set_io_level_converter(False)
-        self.set_power_state_emulator(False)
-        self.set_power_state_recorder(False)
-        self.set_shepherd_pcb_power(False)
+        self.set_power_io_level_converter(state=False)
+        self.set_power_emulator(state=False)
+        self.set_power_recorder(state=False)
+        self.set_power_cape_pcb(state=False)
         log.debug("Shepherd hardware is now powered down")
 
-    def set_shepherd_pcb_power(self, state: bool) -> None:
+    def set_power_cape_pcb(self, *, state: bool) -> None:
         """Controls state of power supplies on shepherd cape.
 
         Args:
@@ -312,7 +338,7 @@ class ShepherdIO:
         if state:
             time.sleep(0.5)  # time to stabilize voltage-drop
 
-    def set_power_state_recorder(self, state: bool) -> None:
+    def set_power_recorder(self, *, state: bool) -> None:
         """
         triggered pin is currently connected to ADCs reset-line
         NOTE: this might be extended to DAC as well
@@ -326,7 +352,7 @@ class ShepherdIO:
         if state:
             time.sleep(0.3)  # time to stabilize voltage-drop
 
-    def set_power_state_emulator(self, state: bool) -> None:
+    def set_power_emulator(self, *, state: bool) -> None:
         """
         triggered pin is currently connected to ADCs reset-line
         NOTE: this might be extended to DAC as well
@@ -350,8 +376,8 @@ class ShepherdIO:
             return target == TargetPort.A
         if isinstance(target, bool):
             return target
-        raise ValueError(
-            f"Parameter 'target' must be A or B (was {target}, type {type(target)})",
+        raise TypeError(
+            "Parameter 'target' must be A or B (was %s, type = %s)", target, type(target)
         )
 
     def select_port_for_power_tracking(
@@ -395,7 +421,7 @@ class ShepherdIO:
         log.debug("Set routing for IO to Target %s", target)
         self.gpios["target_io_sel"].write(value=value)
 
-    def set_io_level_converter(self, state: bool) -> None:
+    def set_power_io_level_converter(self, *, state: bool) -> None:
         """Enables or disables the GPIO level converter to targets.
 
         The shepherd cape has bidirectional logic level translators (LSF0108)
@@ -505,6 +531,7 @@ class ShepherdIO:
     def get_buffer(
         self,
         timeout_n: int = 60,
+        *,
         verbose: bool = False,
     ) -> tuple[int, DataBuffer]:
         """Reads a data buffer from shared memory.
@@ -528,7 +555,7 @@ class ShepherdIO:
 
             if msg_type == commons.MSG_BUF_FROM_PRU:
                 ts_start = time.time()
-                buf = self.shared_mem.read_buffer(value, verbose)
+                buf = self.shared_mem.read_buffer(value, verbose=verbose)
                 if verbose:
                     log.debug(
                         "Processing buffer #%d from shared memory took %.2f ms",
@@ -547,8 +574,10 @@ class ShepherdIO:
 
             error_msg: str | None = commons.pru_errors.get(msg_type)
             if error_msg is not None:
-                raise ShepherdIOError(error_msg, msg_type, value)
+                raise ShepherdPRUError(error_msg, msg_type, value)
 
-            raise ShepherdIOError(
-                f"Expected msg-type { hex(commons.MSG_BUF_FROM_PRU) }, but got", msg_type, value
+            raise ShepherdRxError(
+                commons.MSG_BUF_FROM_PRU,
+                msg_type,
+                value,
             )

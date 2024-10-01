@@ -34,7 +34,8 @@
     # select good AND exclude weak algorithms: TODO: just forbid
     - {regex: '^.*KexAlgorithms.*$', line: 'KexAlgorithms -ecdh-sha2*,diffie-hellman-group-exchange*,diffie-hellman-group14-sha1'}
     - {regex: '^.*HostKeyAlgorithms.*$', line: 'HostKeyAlgorithms -ecda-sha2*,ecdsa-sha2*'}
-    - {regex: '^.*Ciphers.*$', line: 'Ciphers -arcfour*,chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr'}
+    - {regex: '^.*Ciphers.*$', line: 'Ciphers -arcfour*,chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr'}
+    # cipher aes256-ctr is used by paramico (herd) - last remaining option - so keep it for now even it is considered insecure
     - {regex: '^.*MACs.*$', line: 'MACs -umac-64*,hmac-sha1*,hmac-sha2-256,hmac-sha2-512,umac-128@open*'}
   # TODO: x11Forwarding is twice in file, one yes and one no
 
@@ -65,6 +66,7 @@
     state: stopped
     enabled: false
   changed_when: true
+  failed_when: false  # RPi does not have this timer
 
 - name: CFG - Disable Terminal over Serial -> Services
   ansible.builtin.systemd:
@@ -77,6 +79,7 @@
     - serial-getty@ttyS0.service
     - getty@tty1.service
   changed_when: true
+  failed_when: false  # RPi does not have some services
   # change active ones with: sudo systemctl list-units
 
 - name: CFG - Disable Terminal over Serial -> Grub
@@ -91,6 +94,7 @@
     dest: /boot/uEnv.txt
     regexp: '^console='
     replace: '#console='
+  failed_when: false  # RPi does not have this file
 
 # TODO: part 3 needed, terminal still active
 # TODO: uEnv has UART enabled

@@ -513,7 +513,8 @@ class Herd:
                 default_flow_style=False,
                 sort_keys=False,
             )
-            task = StringIO(task_yaml)
+            task = StringIO()  # TODO: wanted is StringIO(task_yaml), but large inputs produce bugs
+            task.write(task_yaml)
         elif isinstance(task, Path):
             if not task.is_file() or not task.exists():
                 raise FileNotFoundError("Task-Path must be an existing file")
@@ -641,6 +642,7 @@ class Herd:
             "ntpdate -s time.nist.gov",
             "systemctl start phc2sys@eth0",
             "systemctl start ptp4l@eth0",
+            "shepherd-sheep fix",  # restarts kernel module
         ]
         exit_code = 0
         for command in commands:

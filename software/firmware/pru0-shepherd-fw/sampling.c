@@ -7,6 +7,7 @@
 #include "spi_transfer_pru.h"
 
 #include "fw_config.h"
+#include "msg_sys.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
 
@@ -97,9 +98,13 @@ static inline void sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint
     buffer->values_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 }
 
-
+#ifdef EMU_SUPPORT
 void sample(volatile struct SharedMem *const shared_mem,
             struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
+#else
+void sample(const volatile struct SharedMem *const shared_mem,
+            struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
+#endif
 {
     switch (mode) // reordered to prioritize longer routines
     {
@@ -115,6 +120,7 @@ void sample(volatile struct SharedMem *const shared_mem,
             return sample_emu_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
         case MODE_HRV_ADC_READ:
             return sample_hrv_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
+        default: msg_send_status(MSG_ERR_SAMPLE_MODE, mode);
     }
 }
 

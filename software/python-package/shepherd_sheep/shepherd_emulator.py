@@ -24,7 +24,7 @@ from .logger import get_verbosity
 from .logger import log
 from .shared_memory import DataBuffer
 from .shepherd_io import ShepherdIO
-from .shepherd_io import ShepherdIOError
+from .shepherd_io import ShepherdPRUError
 from .target_io import TargetIO
 from .target_io import target_pins
 
@@ -56,7 +56,7 @@ class ShepherdEmulator(ShepherdIO):
         self.verbose_extra = False
 
         if not cfg.input_path.exists():
-            raise ValueError(f"Input-File does not exist ({cfg.input_path})")
+            raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
         self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
@@ -93,7 +93,7 @@ class ShepherdEmulator(ShepherdIO):
         ).items():
             log.debug("\t%s: %s", key, value)
 
-        self.cal_emu = retrieve_calibration(cfg.use_cal_default).emulator
+        self.cal_emu = retrieve_calibration(use_default_cal=cfg.use_cal_default).emulator
 
         if cfg.time_start is None:
             self.start_time = round(time.time() + 15)
@@ -152,8 +152,8 @@ class ShepherdEmulator(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_state_recorder(False)
-        super().set_power_state_emulator(True)
+        super().set_power_recorder(state=False)
+        super().set_power_emulator(state=True)
 
         # TODO: why are there wrappers? just directly access
         super().send_calibration_settings(self.cal_emu)
@@ -162,7 +162,7 @@ class ShepherdEmulator(ShepherdIO):
 
         super().reinitialize_prus()  # needed for ADCs
 
-        super().set_io_level_converter(self.cfg.enable_io)
+        super().set_power_io_level_converter(state=self.cfg.enable_io)
         super().select_port_for_io_interface(self.cfg.io_port)
         super().select_port_for_power_tracking(self.cfg.io_port)
         super().set_aux_target_voltage(self.cfg.voltage_aux, self.cal_emu)
@@ -206,6 +206,7 @@ class ShepherdEmulator(ShepherdIO):
         self,
         index: int,
         buffer: DataBuffer,
+        *,
         verbose: bool = False,
     ) -> None:
         ts_start = time.time() if verbose else 0
@@ -276,7 +277,7 @@ class ShepherdEmulator(ShepherdIO):
                     return
 
             hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
-            self.return_buffer(idx, hrvst_buf, self.verbose_extra)
+            self.return_buffer(idx, hrvst_buf, verbose=self.verbose_extra)
 
         prog_bar.close()
         # Read all remaining buffers from PRU
@@ -288,12 +289,12 @@ class ShepherdEmulator(ShepherdIO):
                     return
                 if self.writer is not None:
                     self.writer.write_buffer(emu_buf)
-        except ShepherdIOError as e:
+        except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
             if e.id_num == commons.MSG_ERR_NOFREEBUF:
                 log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
                 return
-            raise e
+            raise ShepherdPRUError from e
         except OSError as _xpt:
             log.error(
                 "Failed to write data to HDF5-File - will STOP! error = %s",

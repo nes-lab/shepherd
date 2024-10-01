@@ -76,11 +76,9 @@ class PruConverterModel:
 
     def get_input_efficiency(self, voltage_uV: float, current_nA: float) -> float:
         raise NotImplementedError
-        # return self.pru.get_input_efficiency_n8(voltage_uV, current_nA) / (2**8)
 
     def get_output_inv_efficiency(self, current_nA: float) -> float:
         raise NotImplementedError
-        # return self.pru.get_output_inv_efficiency_n4(current_nA) / (2**4)
 
     def set_P_input_fW(self, value: float) -> None:
         self.pru.set_P_input_fW(int(value))

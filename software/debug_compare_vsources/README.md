@@ -3,10 +3,12 @@
 Systems that are compared here:
 
 - `py`: virtual harvester implementation in shepherd-core-lib
-- `c-py`: pru-code interfaced by python via ctypes (/software/firmware/pru0-python-module)
-- `pru`: real pru harvesting directly from transducer
+- `cpy`: pru-code interfaced by python via ctypes (/software/firmware/pru0-python-module)
+- `pru`: real pru harvesting directly from transducer on a harvesting node
 
 The first two systems harvest from `ivcurves`, which is a compromise to allow later harvesting.
+
+**NOTES**: `harvest_pru.py` should be run first to get the input files for the other experiments. See setup-section below.
 
 ## Harvesting
 

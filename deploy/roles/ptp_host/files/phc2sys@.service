@@ -7,7 +7,7 @@ Before=time-sync.target
 # -> ptp4l needs to start AFTER phc2sys, otherwise the time gets reset
 
 [Service]
-Type=simple
+Type=idle
 ExecStartPre=-/bin/sleep 5
 # ExecStart=/usr/sbin/phc2sys -w -s %I
 # ExecStart=/usr/sbin/phc2sys -rr -w -s %I

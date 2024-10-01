@@ -59,6 +59,7 @@ class LogicTrace:
     def to_file(self, path: Path) -> None:
         if path.is_dir():
             path = path / (self.name + ".pkl")
+        path.with_suffix(".pkl")
         with path.open("wb") as _fh:
             pickle.dump(self, _fh)
 

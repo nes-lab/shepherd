@@ -2,7 +2,7 @@
 
 **Main Documentation**: <https://orgua.github.io/shepherd>
 
-**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/time_sync_analyzer>
+**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/debug_analyze_time_sync>
 
 ---
 
@@ -16,7 +16,7 @@ Similar to the other python tooling you can run
 
 ```Shell
 git clone https://github.com/orgua/shepherd
-cd shepherd/software/test-timesync
+cd shepherd/software/debug_analyze_time_sync
 pip install .
 ```
 
@@ -25,7 +25,7 @@ This assumes that python > v3.10 and git are installed
 For install directly from GitHub-Sources (here `dev`-branch):
 
 ```Shell
- pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/test-timesync -U
+ pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/debug_analyze_time_sync -U
 ```
 
 ## Expected Data-Format
@@ -40,11 +40,16 @@ Time[s], Channel 0, Channel 1
 
 ## Run Analysis
 
-This tool has no proper CLI for now.
-Copy the `csv`-data into the `./example`-directory or where the `sync_1channel`-script located and run the script
+This tool has a minimalistic CLI.
+Either change into the directory that contains the measurements or provide the path to the tool via the `-i`-parameter.
+Extra options and help will be listed by issuing `--help`.
 
 ```shell
-python3 sync_1channel
+sync-analysis -i ./path_to_data
+
+# OR
+cd ./path_to_data
+sync-analysis
 ```
 
 ## Extras
@@ -56,6 +61,6 @@ Creating CPU-Load
 - Note: we exclude sheep0, as it is the ptp-server
 
 ```Shell
-shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\time_sync_analyzer\config_harvest.yaml
-shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\time_sync_analyzer\config_emulation.yaml
+shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\debug_analyze_time_sync\config_harvest.yaml
+shepherd-herd -v --limit sheep1,sheep2, run --attach .\software\debug_analyze_time_sync\config_emulation.yaml
 ```

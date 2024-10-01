@@ -112,7 +112,7 @@ class Profiler:
             "dac_V_A",
             voltage_V,
         )
-        self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
+        self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =link_channels
         adc_data = self._cal.sheep.sample_from_pru(10)
         adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[0]
         adc_current_raw = float(np.mean(adc_currents_raw))
@@ -158,7 +158,7 @@ class Profiler:
             "dac_V_Hrv",
             voltage_V,
         )
-        self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =ch_link
+        self._cal.sheep.set_aux_target_voltage_raw(dac_voltage_raw, True)  # =link_channels
         adc_data = self._cal.sheep.sample_from_pru(10)
         adc_currents_raw = msgpack.unpackb(adc_data, object_hook=msgpack_numpy.decode)[0]
         adc_current_raw = float(np.mean(adc_currents_raw))
@@ -194,10 +194,10 @@ class Profiler:
         logger.info("Measurement - Harvester - Voltage & Current")
         if True:  # TODO: test if leakage is fixed
             self._cal.sheep.switch_shepherd_mode("hrv_adc_read")
-            self._cal.sheep.set_aux_target_voltage_raw(0, True)  # =ch_link
-            self._cal.sheep.set_shepherd_pcb_power(False)
+            self._cal.sheep.set_aux_target_voltage_raw(0, True)  # = link_channels
+            self._cal.sheep.set_power_cape_pcb(state=False)
             time.sleep(2)
-            self._cal.sheep.set_shepherd_pcb_power(True)
+            self._cal.sheep.set_power_cape_pcb(state=True)
         self._cal.sheep.switch_shepherd_mode("hrv_adc_read")
         results = np.zeros(
             [6, len(self.voltages_V) * len(self.currents_A)],
@@ -223,7 +223,7 @@ class Profiler:
         self._cal.sheep.set_aux_target_voltage_raw(
             cal_def.dac_voltage_to_raw(5.0),
             True,
-        )  # =ch_link
+        )  # =link_channels
         return results
 
     def measure_emulator_a(self) -> np.ndarray:

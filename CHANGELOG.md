@@ -1,5 +1,23 @@
 # History of Changes
 
+## 0.8.3
+
+- setup
+  - fix ambitious removal of ciphers for secure host
+  - test and adapt to raspberry pi OS
+  - create smaller playbook to redeploy roles (`dev_redeploy_roles.yml`)
+- herd
+  - fix StringIO-Bug
+- timesync: improve configuration for client and server
+- sync analysis: move to `software/debug_analyze_time_sync` and also add CLI
+- vsrc comparison: move to `software/debug_compare_vsrouces`
+- py
+  - fix > 100 linting error
+  - improve exception-system
+- pru
+  - extend error-system
+  - refactor and fix messaging-system
+
 ## 0.8.2
 
 - PRU now gets partially zeroed buffer-segments
@@ -93,9 +111,9 @@
 - toolchain: replace isort, black, flake8, pylint by ruff
 - debug
   - add option to generate kernel gpio edges (`trigger_loop_callback()` in `pru_sync_control.c`)
-  - allow analyzing recorded gpio sync traces (`software/time_sync_analyzer`)
+  - allow analyzing recorded gpio sync traces (`software/debug_analyze_time_sync`)
 - update floorplan of testbed
-- add tooling to allow analyzing timesync-behavior (software/time_sync_analyzer)
+- add tooling to allow analyzing timesync-behavior (software/debug_analyze_time_sync)
 - add current hardware design files
 - major overhaul documentation
 - **tested (fully)**: pytest sheep, pytest herd, ansible install

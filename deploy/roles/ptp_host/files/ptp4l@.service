@@ -5,7 +5,7 @@ After=sys-subsystem-net-devices-%i.device
 # -> wanted: this service waits for network-connectivity
 
 [Service]
-Type=simple
+Type=idle
 ExecStartPre=/usr/sbin/ntpdate -b -s -u pool.ntp.org
 # ExecStart=/usr/sbin/ptp4l -f /etc/linuxptp/ptp4l.conf -i %I
 ExecStart=/usr/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
