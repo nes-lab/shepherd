@@ -19,7 +19,8 @@
   loop:
     - {
       regex: "clock_servo.*$",
-      replacement: "clock_servo  linreg",
+      replacement: "clock_servo  pi",
+      # NOTE: linreg is faster at start, BUT Pi is more precise here
     }
     - {
       regex: "time_stamping.*$",
