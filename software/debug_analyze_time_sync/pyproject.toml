@@ -1,14 +1,12 @@
-[build-system]
-requires = ["setuptools>=61.2"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "sync_analysis"
-authors = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
-maintainers = [{email = "ingmar.splitt@tu-dresden.de"}]
-license = {text = "MIT"}
 description = "Collection of tools to analyze Sync-behavior, recorded with saleae logic pro"
 keywords = ["testbed", "beaglebone", "pru", "logic pro"]
+
+authors = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
+maintainers = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
+
+license = {text = "MIT"}
 dynamic = ["version"]
 
 classifiers = [
@@ -32,19 +30,13 @@ dependencies = [
     "numpy",
     "pandas",
     "chromalog",
+    "matplotlib",
+    "typing-extensions",
 ]
-
 
 [project.optional-dependencies]
-dev = [
-    "twine",
-    "pre-commit",
-    "pyright",
-    "ruff",
-]
 test = [
-    "pytest>7.4.0",  # not compatible with prior versions
-    "pytest-timeout",
+    "pytest",
     "pytest-click",
     "coverage",
 ]
@@ -55,14 +47,22 @@ Documentation = "https://orgua.github.io/shepherd"
 Issues = "https://github.com/orgua/shepherd/issues"
 Source = "https://github.com/orgua/shepherd"
 
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
 [project.scripts]
 sync-analysis = "sync_analysis.cli:cli"
+
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "."}
 zip-safe = true
 include-package-data = true
-platforms = ["unix", "linux"]
+platforms = ["unix", "linux", "osx", "cygwin", "win32", "win64"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
