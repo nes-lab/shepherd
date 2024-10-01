@@ -102,7 +102,7 @@ static inline void sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint
 void sample(volatile struct SharedMem *const shared_mem,
             struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
 #else
-void sample(volatile const struct SharedMem *const shared_mem,
+void sample(const volatile struct SharedMem *const shared_mem,
             struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
 #endif
 {

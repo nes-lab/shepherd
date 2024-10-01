@@ -25,7 +25,10 @@ ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # ... currently empty
 
 ifeq ($(TYPE), HRV)  # switch to HRV with "make TYPE=HRV"
-CFLAGS += -D HRV_SUPPORT
+CFLAGS += -DHRV_SUPPORT
+endif
+ifeq ($(TYPE), EMU)
+CFLAGS += -DEMU_SUPPORT
 endif
 
 # look for gcc, but use cgt as fallback / default
