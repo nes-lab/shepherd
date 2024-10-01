@@ -91,7 +91,6 @@ static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
 }
 
 #ifdef ENABLE_DEBUG_MATH_FN
-extern uint32_t get_size_in_bits(uint32_t value);
 uint64_t        debug_math_fns(const uint32_t factor, const uint32_t mode)
 {
     uint64_t       result = 0;
