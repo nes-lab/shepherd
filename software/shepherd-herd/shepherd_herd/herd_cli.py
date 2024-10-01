@@ -19,8 +19,6 @@ from .herd import Herd
 from .logger import activate_verbosity
 from .logger import logger as log
 
-# ruff: noqa: FBT001
-
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring
 #  https://click.palletsprojects.com/en/8.1.x/documentation/#command-short-help
@@ -76,6 +74,7 @@ def cli(
     limit: str | None,
     user: str | None,
     key_filepath: Path | None,
+    *,
     verbose: bool,
     version: bool,
 ) -> None:
@@ -110,7 +109,7 @@ def cli(
 )
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
-def poweroff(ctx: click.Context, restart: bool) -> None:
+def poweroff(ctx: click.Context, *, restart: bool) -> None:
     """Power off shepherd observers."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.poweroff(restart=restart)
@@ -121,7 +120,7 @@ def poweroff(ctx: click.Context, restart: bool) -> None:
 @click.pass_context
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-def shell_cmd(ctx: click.Context, command: str, sudo: bool) -> None:
+def shell_cmd(ctx: click.Context, command: str, *, sudo: bool) -> None:
     """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
@@ -221,7 +220,7 @@ def alive(ctx: click.Context) -> None:
 )
 @click.option("--attach", "-a", is_flag=True, help="Wait and receive output on shell")
 @click.pass_context
-def run(ctx: click.Context, config: Path, attach: bool) -> None:
+def run(ctx: click.Context, config: Path, *, attach: bool) -> None:
     """Run a task or set of tasks with provided config/task file (YAML)."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.run_task(config, attach=attach)
@@ -269,6 +268,7 @@ def run(ctx: click.Context, config: Path, attach: bool) -> None:
 @click.pass_context
 def harvest(
     ctx: click.Context,
+    *,
     no_start: bool,
     **kwargs: Unpack[TypedDict],
 ) -> None:
@@ -376,6 +376,7 @@ def harvest(
 @click.pass_context
 def emulate(
     ctx: click.Context,
+    *,
     no_start: bool,
     **kwargs: Unpack[TypedDict],
 ) -> None:
@@ -498,6 +499,7 @@ def distribute(
     ctx: click.Context,
     filename: Path,
     remote_path: Path,
+    *,
     force_overwrite: bool,
 ) -> None:
     """Upload a file FILENAME to the remote observers, which will be stored in REMOTE_PATH."""
@@ -544,6 +546,7 @@ def retrieve(
     ctx: click.Context,
     filename: Path,
     outdir: Path,
+    *,
     timestamp: bool,
     separate: bool,
     delete: bool,
