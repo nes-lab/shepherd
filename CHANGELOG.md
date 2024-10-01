@@ -1,5 +1,21 @@
 # History of Changes
 
+## 0.8.3
+
+- setup
+  - fix ambitious removal of ciphers for secure host
+  - test and adapt to raspberry pi OS
+  - create smaller playbook to redeploy roles (`dev_redeploy_roles.yml`)
+- herd
+  - fix StringIO-Bug
+- timesync: improve configuration for client and server
+- sync analysis: move to `software/debug_analyze_time_sync` and also add CLI
+- vsrc comparison: move to `software/debug_compare_vsrouces`
+- py
+  - fix > 100 linting error
+  - improve exception-system
+- pru: extend error-system
+
 ## 0.8.2
 
 - PRU now gets partially zeroed buffer-segments
