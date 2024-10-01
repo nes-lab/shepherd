@@ -14,7 +14,9 @@
 - py
   - fix > 100 linting error
   - improve exception-system
-- pru: extend error-system
+- pru
+  - extend error-system
+  - refactor and fix messaging-system
 
 ## 0.8.2
 
