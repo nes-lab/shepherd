@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "fw_config.h"
+#include "shared_mem.h"
 
 /* ---------------------------------------------------------------------
  * Virtual Converter, TODO: update description
@@ -77,6 +78,7 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
 {
     /* Initialize state */
     cfg                                     = config;
+    // TODO: could also be hardcoded
 
     /* Power-flow in and out of system */
     state.V_input_uV                        = 0u; // TODO: is it used?
@@ -280,7 +282,7 @@ void converter_update_cap_storage(void)
 }
 
 // TODO: not optimized
-uint32_t converter_update_states_and_output(volatile struct SharedMem *const shared_mem)
+uint32_t converter_update_states_and_output()
 {
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
 
@@ -326,7 +328,7 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
                 state.power_good = is_outputting;
             }
         }
-        set_batok_pin(shared_mem, state.power_good);
+        set_batok_pin(state.power_good);
     }
 
     if (is_outputting || (state.interval_startup_disabled_drain_n > 0u))
@@ -347,7 +349,7 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
     }
 
     // helps to prevent jitter-noise in gpio-traces
-    shared_mem->vsource_skip_gpio_logging =
+    SHARED_MEM.vsource_skip_gpio_logging =
             (state.V_out_dac_uV < cfg->V_output_log_gpio_threshold_uV);
 
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
@@ -403,8 +405,8 @@ bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
 
 #endif // EMU_SUPPORT
 
-void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
+void set_batok_pin(const bool_ft value)
 {
-    shared_mem->vsource_batok_pin_value        = value;
-    shared_mem->vsource_batok_trigger_for_pru1 = true;
+    SHARED_MEM.vsource_batok_pin_value        = value;
+    SHARED_MEM.vsource_batok_trigger_for_pru1 = true;
 }

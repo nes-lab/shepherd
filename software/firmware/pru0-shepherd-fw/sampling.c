@@ -7,6 +7,7 @@
 #include "spi_transfer_pru.h"
 
 #include "fw_config.h"
+#include "shared_mem.h"
 #include "msg_sys.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
@@ -18,23 +19,29 @@
 
 static bool_ft dac_aux_link_to_main = false;
 static bool_ft dac_aux_link_to_mid  = false;
+volatile struct IVTrace * buffer_iv;
+// TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_ptr->samples, also buffer-idx
 
 #ifdef EMU_SUPPORT
 
-static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
-                                   struct SampleBuffer *const       buffer)
+static inline void sample_emulator()
 {
     /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     //__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
 
     /* Get input current/voltage from pru1 (these 2 far mem-reads can take from 530 to 5400 ns -> destroyer of real time) */
-    while (shared_mem->analog_value_index != shared_mem->analog_sample_counter);
-    uint32_t       input_current_nA       = shared_mem->analog_value_current;
-    uint32_t       input_voltage_uV       = shared_mem->analog_value_voltage;
-    const uint32_t current_sample_counter = shared_mem->analog_sample_counter;
-    if (current_sample_counter < ADC_SAMPLES_PER_BUFFER - 1u)
+    while (SHARED_MEM.ivsample_fetch_index != SHARED_MEM.buffer_iv_idx);
+    uint32_t       input_current_nA       = SHARED_MEM.ivsample_fetch_value.current; // TODO: get both at once
+    uint32_t       input_voltage_uV       = SHARED_MEM.ivsample_fetch_value.voltage;
+    const uint32_t current_sample_index = SHARED_MEM.ivsample_fetch_index;
+    if (current_sample_index >= BUFFER_IV_SIZE - 1u)
     {
-        shared_mem->analog_value_request = current_sample_counter + 1u;
+        SHARED_MEM.ivsample_fetch_request = 0u;
+        // TODO: also increment buffer_iv_idx???
+    }
+    else
+    {
+        SHARED_MEM.ivsample_fetch_request = current_sample_index + 1u;
     }
 
     sample_ivcurve_harvester(&input_voltage_uV, &input_current_nA);
@@ -48,7 +55,7 @@ static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
 
     converter_update_cap_storage();
 
-    const uint32_t voltage_dac = converter_update_states_and_output(shared_mem);
+    const uint32_t voltage_dac = converter_update_states_and_output();
 
     if (dac_aux_link_to_main)
     {
@@ -73,54 +80,53 @@ static inline void sample_emulator(volatile struct SharedMem *const shared_mem,
     /* write back converter-state into shared memory buffer */
     if (get_state_log_intermediate())
     {
-        buffer->values_current[current_sample_counter] = get_I_mid_out_nA();
-        buffer->values_voltage[current_sample_counter] = get_V_intermediate_uV();
+        //buffer_iv->sample[current_sample_index].current = get_I_mid_out_nA();  // TODO: write both at once
+        //buffer_iv->sample[current_sample_index].voltage = get_V_intermediate_uV();
+        buffer_iv->sample[current_sample_index] = (struct IVSample){.voltage = get_V_intermediate_uV(), .current = get_I_mid_out_nA()};
     }
     else
     {
-        buffer->values_current[current_sample_counter] = current_adc_raw;
-        buffer->values_voltage[current_sample_counter] = voltage_dac;
+        //buffer_iv->sample[current_sample_index].current = current_adc_raw;
+        //buffer_iv->sample[current_sample_index].voltage = voltage_dac;
+        buffer_iv->sample[current_sample_index] = (struct IVSample){.voltage = voltage_dac, .current = current_adc_raw};
     }
 }
 #endif // EMU_SUPPORT
 
-static inline void sample_emu_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static inline void sample_emu_ADCs(const uint32_t sample_idx)
 {
-    __delay_cycles(1000 / TIMER_TICK_NS); // fill up to 1000 ns since adc-trigger (if needed)
-    buffer->values_current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
-    buffer->values_voltage[sample_idx] = 0u;
+    __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
+    //buffer_iv->sample[sample_idx].current = adc_fastread(SPI_CS_EMU_ADC_PIN);
+    //buffer_iv->sample[sample_idx].voltage = 0u;
+    buffer_iv->sample[sample_idx] = (struct IVSample){.voltage = 0u, .current = adc_fastread(SPI_CS_EMU_ADC_PIN)};
 }
 
-static inline void sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
+static inline void sample_hrv_ADCs(const uint32_t sample_idx)
 {
-    __delay_cycles(1000 / TIMER_TICK_NS); // fill up to 1000 ns since adc-trigger (if needed)
-    buffer->values_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    buffer->values_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+    __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
+    //buffer_iv->sample[sample_idx].current = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    //buffer_iv->sample[sample_idx].voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+    buffer_iv->sample[sample_idx] = (struct IVSample){.voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN), .current = adc_fastread(SPI_CS_HRV_C_ADC_PIN)};
 }
 
-#ifdef EMU_SUPPORT
-void sample(volatile struct SharedMem *const shared_mem,
-            struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
-#else
-void sample(const volatile struct SharedMem *const shared_mem,
-            struct SampleBuffer *const current_buffer_far, const enum ShepherdMode mode)
-#endif
+
+void sample()
 {
-    switch (mode) // reordered to prioritize longer routines
+    switch (SHARED_MEM.shp_pru0_mode) // reordered to prioritize longer routines
     {
 #ifdef EMU_SUPPORT
         case MODE_EMULATOR: // ~ ## ns, TODO: test timing for new revision
-            return sample_emulator(shared_mem, current_buffer_far);
+            return sample_emulator();
 #endif // EMU_SUPPORT
 #ifdef HRV_SUPPORT
         case MODE_HARVESTER: // ~ ## ns
-            return sample_adc_harvester(current_buffer_far, shared_mem->analog_sample_counter);
+            return sample_adc_harvester(SHARED_MEM.buffer_iv_idx);
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ:
-            return sample_emu_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
+            return sample_emu_ADCs(SHARED_MEM.buffer_iv_idx);
         case MODE_HRV_ADC_READ:
-            return sample_hrv_ADCs(current_buffer_far, shared_mem->analog_sample_counter);
-        default: msg_send_status(MSG_ERR_SAMPLE_MODE, mode);
+            return sample_hrv_ADCs(SHARED_MEM.buffer_iv_idx);
+        default: msg_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode);
     }
 }
 
@@ -129,7 +135,7 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 {
     uint32_t result;
     /* NOTE: ADC sampled at last CS-Rising-Edge (new pretrigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
-    __delay_cycles(1000 / 5);
+    __delay_cycles(1000u / TICK_INTERVAL_NS);
 
     switch (channel_num)
     {
@@ -209,18 +215,20 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 
 // harvester-init takes 	32'800 ns ATM
 // emulator-init takes
-void sample_init(const volatile struct SharedMem *const shared_mem)
+void sample_init()
 {
     /* Chip-Select signals are active low */
     GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-    const enum ShepherdMode mode                 = (enum ShepherdMode) shared_mem->shepherd_mode;
-    const uint32_t          dac_ch_a_voltage_raw = shared_mem->dac_auxiliary_voltage_raw & 0xFFFF;
+    buffer_iv = SHARED_MEM.buffer_iv_ptr;
+
+    const enum ShepherdMode mode                 = (enum ShepherdMode) SHARED_MEM.shp_pru0_mode;
+    const uint32_t          dac_ch_a_voltage_raw = SHARED_MEM.dac_auxiliary_voltage_raw & 0xFFFF;
     /* switch to set behavior of aux-channel (dac A) */
-    dac_aux_link_to_main = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
-    dac_aux_link_to_mid  = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
+    dac_aux_link_to_main = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
+    dac_aux_link_to_mid  = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
 
     /* deactivate hw-units when not needed, initialize the other */
     const bool_ft use_harvester =
@@ -262,7 +270,7 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     /* init harvester & converter */
-    calibration_initialize(&shared_mem->calibration_settings);
-    harvester_initialize(&shared_mem->harvester_settings);
-    if (mode == MODE_EMULATOR) { converter_initialize(&shared_mem->converter_settings); }
+    calibration_initialize(&SHARED_MEM.calibration_settings);
+    harvester_initialize(&SHARED_MEM.harvester_settings);
+    if (mode == MODE_EMULATOR) { converter_initialize(&SHARED_MEM.converter_settings); }
 }

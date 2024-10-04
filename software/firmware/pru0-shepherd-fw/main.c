@@ -6,19 +6,19 @@
 #include "iep.h"
 #include "intc.h"
 #include "resource_table_def.h"
-#include "simple_lock.h"
 #include "stdint_fast.h"
 
 #include "commons.h"
 #include "hw_config.h"
 #include "msg_sys.h"
-#include "ringbuffer.h"
 #include "shepherd_config.h"
+#include "shared_mem.h"
 
 #include "calibration.h"
 #include "fw_config.h"
 #include "sampling.h"
 #include "virtual_converter.h"
+
 
 /* PRU0 Feature Selection */
 //#define ENABLE_DEBUG_MATH_FN	// reduces firmware by ~9 kByte
@@ -32,63 +32,6 @@
   #include "virtual_harvester.h"
 #endif
 
-/* Used to signal an invalid buffer index */
-#define NO_BUFFER (0xFFFFFFFF)
-
-
-static uint32_t handle_buffer_swap(volatile struct SharedMem *const shared_mem,
-                                   struct RingBuffer *const         free_buffers_ptr,
-                                   struct SampleBuffer *const       buffers_far,
-                                   const uint32_t                   last_buffer_idx)
-{
-    uint32_t next_buffer_idx;
-    uint8_t  tmp_idx;
-
-    /* Fetch and prepare new buffer from ring */
-    if (ring_get(free_buffers_ptr, &tmp_idx) > 0u)
-    {
-        next_buffer_idx                         = (uint32_t) tmp_idx;
-        shared_mem->sample_buffer               = buffers_far + next_buffer_idx;
-        shared_mem->sample_buffer->canary       = 0x0F0F0F0Fu;
-        shared_mem->sample_buffer->timestamp_ns = shared_mem->next_buffer_timestamp_ns;
-        shared_mem->last_sample_timestamp_ns    = shared_mem->next_buffer_timestamp_ns;
-
-        if (shared_mem->next_buffer_timestamp_ns == 0u)
-        {
-            /* debug-output for a wrong timestamp */
-            msg_send_status(MSG_ERR_TIMESTAMP, 0u);
-        }
-    }
-    else
-    {
-        next_buffer_idx           = NO_BUFFER;
-        shared_mem->sample_buffer = NULL;
-        msg_send_status(MSG_ERR_NOFREEBUF, 0u);
-    }
-
-    /* Lock the access to gpio_edges structure to allow swap without inconsistency */
-    simple_mutex_enter(&shared_mem->gpio_edges_mutex);
-
-    if (next_buffer_idx != NO_BUFFER)
-    {
-        shared_mem->gpio_edges         = &shared_mem->sample_buffer->gpio_edges;
-        shared_mem->gpio_edges->idx    = 0u;
-        shared_mem->gpio_edges->canary = 0x0F0F0F0Fu;
-    }
-    else { shared_mem->gpio_edges = NULL; }
-
-    simple_mutex_exit(&shared_mem->gpio_edges_mutex);
-
-    /* If we had a valid buffer, return it to host */
-    if (last_buffer_idx != NO_BUFFER)
-    {
-        (buffers_far + last_buffer_idx)->len =
-                ADC_SAMPLES_PER_BUFFER; // TODO: could be removed in future, not used ATM
-        msg_send(MSG_BUF_FROM_PRU, last_buffer_idx, ADC_SAMPLES_PER_BUFFER);
-    }
-
-    return next_buffer_idx;
-}
 
 #ifdef ENABLE_DEBUG_MATH_FN
 uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
@@ -143,14 +86,13 @@ uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 }
 #endif
 
-static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
-                                 struct RingBuffer *const         free_buffers_ptr)
+static bool_ft handle_kernel_com()
 {
     struct ProtoMsg msg_in;
 
     if (msg_receive(&msg_in) == 0) return 1u;
 
-    if ((shared_mem->shepherd_mode == MODE_DEBUG) && (shared_mem->shepherd_state == STATE_RUNNING))
+    if ((SHARED_MEM.shp_pru0_mode == MODE_DEBUG) && (SHARED_MEM.shp_pru_state == STATE_RUNNING))
     {
         uint32_t res;
 #ifdef ENABLE_DEBUG_MATH_FN
@@ -168,9 +110,9 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 sample_dbg_dac(msg_in.value[0]);
                 return 1u;
 
-            case MSG_DBG_GP_BATOK: set_batok_pin(shared_mem, msg_in.value[0] > 0); return 1U;
+            case MSG_DBG_GP_BATOK: set_batok_pin(msg_in.value[0] > 0); return 1U;
 
-            case MSG_DBG_GPI: msg_send(MSG_DBG_GPI, shared_mem->gpio_pin_state, 0); return 1U;
+            case MSG_DBG_GPI: msg_send(MSG_DBG_GPI, SHARED_MEM.gpio_pin_state, 0); return 1U;
 
 #if (defined(ENABLE_DBG_VSOURCE) && defined(EMU_SUPPORT))
             case MSG_DBG_VSRC_HRV_P_INP:
@@ -195,14 +137,14 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 return 1u;
 
             case MSG_DBG_VSRC_V_OUT:
-                res = converter_update_states_and_output(shared_mem);
+                res = converter_update_states_and_output();
                 msg_send(MSG_DBG_VSRC_V_OUT, res, 0);
                 return 1u;
 
             case MSG_DBG_VSRC_INIT:
-                calibration_initialize(&shared_mem->calibration_settings);
-                converter_initialize(&shared_mem->converter_settings);
-                harvester_initialize(&shared_mem->harvester_settings);
+                calibration_initialize(&SHARED_MEM.calibration_settings);
+                converter_initialize(&SHARED_MEM.converter_settings);
+                harvester_initialize(&SHARED_MEM.harvester_settings);
                 msg_send(MSG_DBG_VSRC_INIT, 0, 0);
                 return 1u;
 
@@ -210,7 +152,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
                 converter_calc_out_power(0u);
                 converter_update_cap_storage();
-                res = converter_update_states_and_output(shared_mem);
+                res = converter_update_states_and_output();
                 msg_send(MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
 
@@ -218,7 +160,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
                 converter_calc_inp_power(0u, 0u);
                 converter_calc_out_power(msg_in.value[0]);
                 converter_update_cap_storage();
-                res = converter_update_states_and_output(shared_mem);
+                res = converter_update_states_and_output();
                 msg_send(MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
 #endif // ENABLE_DBG_VSOURCE
@@ -238,13 +180,7 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
     }
     else
     {
-        // most common and important msg first
-        if (msg_in.type == MSG_BUF_FROM_HOST)
-        {
-            ring_put(free_buffers_ptr, (uint8_t) msg_in.value[0]);
-            return 1U;
-        }
-        else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
+        if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
         {
             // pipeline-test for msg-system
             msg_send(MSG_TEST_ROUTINE, msg_in.value[0], 0);
@@ -259,13 +195,8 @@ static bool_ft handle_kernel_com(volatile struct SharedMem *const shared_mem,
     return 0u;
 }
 
-void event_loop(volatile struct SharedMem *const shared_mem,
-                struct RingBuffer *const         free_buffers_ptr,
-                struct SampleBuffer *const
-                        buffers_far) // TODO: should be volatile, also for programmer and more
+void event_loop()
 {
-    uint32_t          sample_buf_idx = NO_BUFFER;
-    enum ShepherdMode shepherd_mode  = (enum ShepherdMode) shared_mem->shepherd_mode;
     uint32_t          iep_tmr_cmp_sts;
 
     while (1)
@@ -291,62 +222,50 @@ void event_loop(volatile struct SharedMem *const shared_mem,
         // Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
         if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
         {
+            // TODO: move back to PRU1 - not needed here anymore?
             /* Clear Timer Compare 0 and forward it to pru1 */
             GPIO_TOGGLE(DEBUG_PIN0_MASK);
-            shared_mem->cmp0_trigger_for_pru1 = 1u;
+            SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
-            /* prepare a new buffer-cycle */
-            shared_mem->analog_sample_counter = 0u;
-            /* without a buffer: only show short Signal for new Cycle */
-            if (sample_buf_idx == NO_BUFFER) GPIO_TOGGLE(DEBUG_PIN0_MASK);
         }
 
-        // Sample, swap buffer and receive messages
+        // Sample and receive messages
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
         {
             /* Clear Timer Compare 1 and forward it to pru1 */
-            shared_mem->cmp1_trigger_for_pru1 = 1u;
+            SHARED_MEM.cmp1_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
             /* The actual sampling takes place here */
-            if ((sample_buf_idx != NO_BUFFER) &&
-                (shared_mem->analog_sample_counter < ADC_SAMPLES_PER_BUFFER))
+            if (SHARED_MEM.shp_pru_state == STATE_RUNNING)
             {
                 GPIO_ON(DEBUG_PIN1_MASK);
-                sample(shared_mem, shared_mem->sample_buffer, shepherd_mode);
+                sample();
                 GPIO_OFF(DEBUG_PIN1_MASK);
-            }
 
-            /* counter-incrementation */
-            shared_mem->analog_sample_counter++;
-
-            if (shared_mem->analog_sample_counter == ADC_SAMPLES_PER_BUFFER)
-            {
-                /* Did the Linux kernel module ask for reset? */
-                if (shared_mem->shepherd_state == STATE_RESET) return;
-
-                /* PRU tries to exchange a full buffer for a fresh one if measurement is running */
-                if ((shared_mem->shepherd_state == STATE_RUNNING) &&
-                    (shared_mem->shepherd_mode != MODE_DEBUG))
+                /* counter-incrementation */
+                if (SHARED_MEM.buffer_iv_idx >= BUFFER_IV_SIZE - 1u)
                 {
-                    GPIO_ON(DEBUG_PIN1_MASK);
-                    sample_buf_idx = handle_buffer_swap(shared_mem, free_buffers_ptr, buffers_far,
-                                                        sample_buf_idx);
-                    /* place a request, so pru1 can fetch data */
-                    shared_mem->analog_value_request = 0u;
-                    shared_mem->analog_value_index   = NO_BUFFER;
+                    SHARED_MEM.buffer_iv_idx = 0u;
+                }
+                else
+                {
+                    SHARED_MEM.buffer_iv_idx++;
                 }
             }
+
+            /* Did the Linux kernel module ask for reset? */
+            if (SHARED_MEM.shp_pru_state == STATE_RESET) return;
             else
             {
                 /* only handle kernel-communications if this is not the last sample */
                 GPIO_ON(DEBUG_PIN1_MASK);
-                handle_kernel_com(shared_mem, free_buffers_ptr);
+                handle_kernel_com();
             }
         }
 
         // record loop-duration -> gets further processed by pru1
-        shared_mem->pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
+        SHARED_MEM.pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
         GPIO_OFF(DEBUG_PIN1_MASK);
     }
 }
@@ -354,94 +273,76 @@ void event_loop(volatile struct SharedMem *const shared_mem,
 int main(void)
 {
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-    static struct RingBuffer         free_buffers;
 
-    /*
-	 * The shared mem is dynamically allocated -> we have to inform user space
-	 * about the address and size via sysfs, which exposes parts of the
-	 * shared_mem structure.
-	 * Do this initialization early! The kernel module relies on it.
-	 */
-    volatile struct SharedMem *const shared_memory =
-            (volatile struct SharedMem *) PRU_SHARED_MEM_STRUCT_OFFSET;
-
+    SHARED_MEM.canary                            = CANARY_VALUE_U32;
     // Initialize struct-Members Part A, must come first - this blocks PRU1!
-    shared_memory->cmp0_trigger_for_pru1             = 0u; // Reset Token-System to init-values
-    shared_memory->cmp1_trigger_for_pru1             = 0u;
+    SHARED_MEM.cmp0_trigger_for_pru1             = 0u; // Reset Token-System to init-values
+    SHARED_MEM.cmp1_trigger_for_pru1             = 0u;
 
     // Initialize all struct-Members Part B
-    shared_memory->mem_base_addr                     = resourceTable.shared_mem.pa;
-    shared_memory->mem_size                          = resourceTable.shared_mem.len;
+    SHARED_MEM.far_mem_ptr                       = (uint32_t *) resourceTable.shared_memory.pa;
+    SHARED_MEM.far_mem_size                      = resourceTable.shared_memory.len;  // TODO: rename buffer_size?
 
-    shared_memory->n_buffers                         = FIFO_BUFFER_SIZE;
-    shared_memory->samples_per_buffer                = ADC_SAMPLES_PER_BUFFER;
-    shared_memory->buffer_period_ns                  = BUFFER_PERIOD_NS;
+    SHARED_MEM.buffer_iv_ptr                     = (struct IVTrace *) resourceTable.shared_memory.pa;
+    SHARED_MEM.buffer_iv_size                    = sizeof(struct IVTrace);
+    SHARED_MEM.buffer_gpio_ptr                   = (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace));
+    SHARED_MEM.buffer_gpio_size                  = sizeof(struct GPIOTrace);
+    SHARED_MEM.buffer_util_ptr                   = (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) + sizeof(struct GPIOTrace));
+    SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
 
-    shared_memory->dac_auxiliary_voltage_raw         = 0u;
-    shared_memory->shepherd_state                    = STATE_IDLE;
-    shared_memory->shepherd_mode                     = MODE_HARVESTER;
+    SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
+    SHARED_MEM.shp_pru_state                    = STATE_IDLE;
+    SHARED_MEM.shp_pru0_mode                     = MODE_HARVESTER;
 
-    shared_memory->last_sample_timestamp_ns          = 0u;
-    shared_memory->next_buffer_timestamp_ns          = 0u;
-    shared_memory->analog_sample_counter             = 0u;
-    shared_memory->gpio_edges                        = NULL;
-    shared_memory->sample_buffer                     = NULL;
+    SHARED_MEM.last_sample_timestamp_ns          = 0u;
+    SHARED_MEM.next_buffer_timestamp_ns          = 0u;
 
-    shared_memory->gpio_pin_state                    = 0u;
+    SHARED_MEM.gpio_pin_state                    = 0u;
 
-    shared_memory->vsource_batok_trigger_for_pru1    = false;
-    shared_memory->vsource_batok_pin_value           = false;
+    SHARED_MEM.vsource_batok_trigger_for_pru1    = false;
+    SHARED_MEM.vsource_batok_pin_value           = false;
 
     /* minimal init for these structs to make them safe */
     /* NOTE: more inits are done in kernel */
-    shared_memory->converter_settings.converter_mode = 0u;
-    shared_memory->harvester_settings.algorithm      = 0u;
-    shared_memory->programmer_ctrl.state             = PRG_STATE_IDLE;
-    shared_memory->programmer_ctrl.target            = PRG_TARGET_NRF52;
+    SHARED_MEM.converter_settings.converter_mode = 0u;
+    SHARED_MEM.harvester_settings.algorithm      = 0u;
+    SHARED_MEM.programmer_ctrl.state             = PRG_STATE_IDLE;
+    SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NRF52;
 
-    shared_memory->pru1_sync_outbox.unread           = 0u;
-    shared_memory->pru1_sync_inbox.unread            = 0u;
-    shared_memory->pru1_msg_error.unread             = 0u;
+    SHARED_MEM.pru1_sync_outbox.unread           = 0u;
+    SHARED_MEM.pru1_sync_inbox.unread            = 0u;
+    SHARED_MEM.pru1_msg_error.unread             = 0u;
 
-    shared_memory->pru0_msg_outbox.unread            = 0u;
-    shared_memory->pru0_msg_inbox.unread             = 0u;
-    shared_memory->pru0_msg_error.unread             = 0u;
-    msg_init(shared_memory);
-
-    /*
-	 * The dynamically allocated shared DDR RAM holds all the buffers that
-	 * are used to transfer the actual data between us and the Linux host.
-	 * This memory is requested from remoteproc via a carveout resource request
-	 * in our resource-table
-	 */
-    struct SampleBuffer *const buffers_far = (struct SampleBuffer *) resourceTable.shared_mem.pa;
+    SHARED_MEM.pru0_msg_outbox.unread            = 0u;
+    SHARED_MEM.pru0_msg_inbox.unread             = 0u;
+    SHARED_MEM.pru0_msg_error.unread             = 0u;
+    msg_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT         = 0u;
 
     /* allow PRU1 to enter event-loop */
-    shared_memory->cmp0_trigger_for_pru1   = 1u;
+    SHARED_MEM.cmp0_trigger_for_pru1   = 1u;
 
 reset:
     msg_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
-    shared_memory->pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
+    SHARED_MEM.pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
-    ring_init(&free_buffers);
+    SHARED_MEM.buffer_iv_idx = 0u;
+    SHARED_MEM.buffer_gpio_idx = 0u;
+    SHARED_MEM.buffer_util_idx = 0u;
 
     GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-    sample_init(shared_memory);
+    sample_init();
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-    shared_memory->gpio_edges                = NULL;
-    shared_memory->vsource_skip_gpio_logging = false;
+    SHARED_MEM.vsource_skip_gpio_logging = false;
 
-    shared_memory->analog_value_request      = 0u;
+    SHARED_MEM.ivsample_fetch_request    = 0u; // TODO: put all into sampling-struct?
 
-    shared_memory->shepherd_state            = STATE_IDLE;
-    /* Make sure the mutex is clear */
-    simple_mutex_exit(&shared_memory->gpio_edges_mutex);
+    SHARED_MEM.shp_pru_state            = STATE_IDLE;
 
-    event_loop(shared_memory, &free_buffers, buffers_far);
+    event_loop();
 
     goto reset;
 }

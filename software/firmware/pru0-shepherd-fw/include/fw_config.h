@@ -8,4 +8,13 @@
   #define EMU_SUPPORT
 #endif
 
+#if !defined(EMU_SUPPORT)
+  #define EMU_SUPPORT
+#endif
+
+#if !defined(HRV_SUPPORT)
+  #define HRV_SUPPORT
+#endif
+// TODO: both parts fit into one again!
+
 #endif // PRU0_FW_CONFIG_H_
