@@ -3,7 +3,8 @@
 #include <linux/string.h>
 #include <linux/sysfs.h>
 
-#include "commons.h"
+#include "_commons.h"
+#include "_shared_mem.h"
 #include "pru_firmware.h"
 #include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
@@ -101,24 +102,15 @@ struct kobj_attr_struct_s
 
 struct kobj_attribute     attr_state = __ATTR(state, 0660, sysfs_state_show, sysfs_state_store);
 
-struct kobj_attr_struct_s attr_mem_base_addr = {
+struct kobj_attr_struct_s attr_far_mem_ptr = {
         .attr       = __ATTR(address, 0660, sysfs_SharedMem_show, NULL),
-        .val_offset = offsetof(struct SharedMem, mem_base_addr)};
-struct kobj_attr_struct_s attr_mem_size  = {.attr = __ATTR(size, 0660, sysfs_SharedMem_show, NULL),
-                                            .val_offset = offsetof(struct SharedMem, mem_size)};
+        .val_offset = offsetof(struct SharedMem, far_mem_ptr)};
+struct kobj_attr_struct_s attr_far_mem_size  = {.attr = __ATTR(size, 0660, sysfs_SharedMem_show, NULL),
+                                            .val_offset = offsetof(struct SharedMem, far_mem_size)};
 
-struct kobj_attr_struct_s attr_n_buffers = {
-        .attr       = __ATTR(n_buffers, 0660, sysfs_SharedMem_show, NULL),
-        .val_offset = offsetof(struct SharedMem, n_buffers)};
-struct kobj_attr_struct_s attr_samples_per_buffer = {
-        .attr       = __ATTR(samples_per_buffer, 0660, sysfs_SharedMem_show, NULL),
-        .val_offset = offsetof(struct SharedMem, samples_per_buffer)};
-struct kobj_attr_struct_s attr_buffer_period_ns = {
-        .attr       = __ATTR(buffer_period_ns, 0660, sysfs_SharedMem_show, NULL),
-        .val_offset = offsetof(struct SharedMem, buffer_period_ns)};
 struct kobj_attr_struct_s attr_mode = {
         .attr       = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
-        .val_offset = offsetof(struct SharedMem, shepherd_mode)};
+        .val_offset = offsetof(struct SharedMem, shp_pru0_mode)};
 struct kobj_attr_struct_s attr_auxiliary_voltage = {
         .attr       = __ATTR(dac_auxiliary_voltage_raw, 0660, sysfs_SharedMem_show,
                              sysfs_auxiliary_voltage_store),
@@ -197,9 +189,6 @@ struct kobj_attribute attr_sync_error_sum =
         __ATTR(error_sum, 0660, sysfs_sync_error_sum_show, NULL);
 
 static struct attribute *pru_attrs[] = {
-        &attr_n_buffers.attr.attr,
-        &attr_samples_per_buffer.attr.attr,
-        &attr_buffer_period_ns.attr.attr,
         &attr_mode.attr.attr,
         &attr_auxiliary_voltage.attr.attr,
         &attr_calibration_settings.attr.attr,
@@ -215,8 +204,8 @@ static struct attribute_group attr_group = {
 
 
 static struct attribute *pru_mem_attrs[] = {
-        &attr_mem_base_addr.attr.attr,
-        &attr_mem_size.attr.attr,
+        &attr_far_mem_ptr.attr.attr,
+        &attr_far_mem_size.attr.attr,
         NULL,
 };
 static struct attribute_group attr_mem_group = {
@@ -751,7 +740,7 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-    value_max         = readl(pru_shared_mem_io + offsetof(struct SharedMem, mem_size));
+    value_max         = readl(pru_shared_mem_io + offsetof(struct SharedMem, far_mem_size));
 
     if (sscanf(buffer, "%u", &value) != 1) return -EINVAL;
     if ((value < 1) || (value > value_max)) return -EINVAL;

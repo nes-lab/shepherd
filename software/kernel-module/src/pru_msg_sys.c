@@ -107,7 +107,7 @@ void msg_sys_test(void)
     put_msg_to_pru(&msg1); // error-pipeline pru0
 
     msg2.type                = MSG_TEST_ROUTINE;
-    msg2.buffer_block_period = 3;
+    msg2.sync_interval_ticks = 3;
     pru1_comm_send_sync_reply(&msg2); // error-pipeline pru1
 }
 
@@ -203,10 +203,6 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             switch (pru_msg.type)
             {
                 // NOTE: all MSG_ERR also get handed to python
-                case MSG_ERROR:
-                    printk(KERN_ERR "shprd.pru%u: general error (val=%u)", had_work & 1u,
-                           pru_msg.value[0]);
-                    break;
                 case MSG_ERR_MEMCORRUPTION:
                     printk(KERN_ERR "shprd.pru%u: msg.id from kernel is faulty -> mem "
                                     "corruption? (val=%u)",
@@ -217,9 +213,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                                     "-> backpressure (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
                     break;
-                case MSG_ERR_INCMPLT:
-                case MSG_ERR_INVLDCMD:
-                case MSG_ERR_NOFREEBUF: break;
+                case MSG_ERR_INVLDCMD: break;
 
                 case MSG_ERR_TIMESTAMP:
                     printk(KERN_ERR "shprd.pru%u: received timestamp is faulty (val=%u)",

@@ -1,6 +1,6 @@
 #ifndef PRU_MEM_INTERFACE_H_
 #define PRU_MEM_INTERFACE_H_
-#include "commons.h"
+#include "_commons.h"
 
 /**
  * Initializes communication between our kernel module and the PRUs.
@@ -67,20 +67,6 @@ enum ShepherdState mem_interface_get_state(void);
  * @see SharedMem
  */
 void               mem_interface_set_state(enum ShepherdState state);
-
-/**
- * Reads the buffer period from the PRUs
- *
- * The 'buffer period' is a crucial parameter that, together with the number
- * of samples per buffer determines the sampling rate. It is defined in the
- * PRU firmware, but we need it to set the timer period that is used to
- * schedule samples on the PRUs.
- *
- * @see sync_init()
- *
- * @returns Buffer period in nanoseconds
- */
-unsigned int       mem_interface_get_buffer_period_ns(void);
 
 /**
  * Receives Sync-Messages from PRU1
