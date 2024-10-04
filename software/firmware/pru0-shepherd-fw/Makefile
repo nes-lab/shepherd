@@ -13,9 +13,7 @@ BASE_PATH ?= ./..
 INCLUDE = -I./include
 
 # external sources - add manually
-SOURCES = $(BASE_PATH)/lib/src/simple_lock.c
 SOURCES += $(BASE_PATH)/lib/src/iep.c
-SOURCES += $(BASE_PATH)/lib/src/ringbuffer.c
 # internal sources
 SOURCES += $(notdir $(wildcard ./*.c))
 
