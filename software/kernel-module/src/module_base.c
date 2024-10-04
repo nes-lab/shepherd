@@ -115,7 +115,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     msg_sys_init();
 
     /* Initialize synchronization mechanism between PRU1 and our clock */
-    sync_init(mem_interface_get_buffer_period_ns());
+    sync_init();
 
     /* Set up the sysfs interface for access from userspace */
     sysfs_interface_init();
