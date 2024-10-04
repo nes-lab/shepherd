@@ -3,9 +3,9 @@
 #include <linux/math64.h>
 #include <linux/slab.h>
 
+#include "_shepherd_config.h"
 #include "pru_mem_interface.h"
 #include "pru_sync_control.h"
-#include "_shepherd_config.h"
 
 static uint32_t             sys_ts_over_timer_wrap_ns = 0;
 static uint64_t             ts_upcoming_ns            = 0;
@@ -13,19 +13,19 @@ static uint64_t             ts_previous_ns            = 0; /* for plausibility-c
 
 static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
-static uint32_t       trigger_loop_interval_ns = SYNC_INTERVAL_NS; /* just initial value to avoid div0 */
+static uint32_t trigger_loop_interval_ns = SYNC_INTERVAL_NS; /* just initial value to avoid div0 */
 
 /*
 * add pre-trigger, because design previously aimed directly for busy pru_timer_wrap
 * (50% chance that pru takes a less meaningful counter-reading after wrap)
 * 1 ms + 5 us, this should be enough time for the ping-pong-messaging to complete before timer_wrap
 */
-static const uint32_t ns_pre_trigger         = 1005000u;
+static const uint32_t     ns_pre_trigger = 1005000u;
 
 /* Timer to trigger fast sync_loop */
-struct hrtimer        trigger_loop_timer;
-struct hrtimer        sync_loop_timer;
-static u8             timers_active        = 0u;
+struct hrtimer            trigger_loop_timer;
+struct hrtimer            sync_loop_timer;
+static u8                 timers_active    = 0u;
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 static const unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,
@@ -36,9 +36,9 @@ static const unsigned int timer_steps_ns[] = {20000000u, 20000000u, 20000000u, 2
 static const size_t       timer_steps_ns_size = sizeof(timer_steps_ns) / sizeof(timer_steps_ns[0]);
 //static unsigned int step_pos = 0;
 
-static uint32_t     info_count = 6666; /* >6k triggers explanation-message once */
-struct sync_data_s *sync_data  = NULL;
-static u8           init_done  = 0;
+static uint32_t           info_count          = 6666; /* >6k triggers explanation-message once */
+struct sync_data_s       *sync_data           = NULL;
+static u8                 init_done           = 0;
 
 /* Benchmark high-res busy-wait - RESULTS:
  * - ktime_get                  99.6us   215n   463ns/call
@@ -50,7 +50,7 @@ static u8           init_done  = 0;
  * - increment-loop             825us    100k   8.25ns/iteration
  */
 
-void                sync_exit(void)
+void                      sync_exit(void)
 {
     hrtimer_cancel(&trigger_loop_timer);
     hrtimer_cancel(&sync_loop_timer);
@@ -163,11 +163,11 @@ void sync_start(void)
 
 void sync_reset(void)
 {
-    sync_data->error_now       = 0;
-    sync_data->error_pre       = 0;
-    sync_data->error_dif       = 0;
-    sync_data->error_sum       = 0;
-    sync_data->clock_corr      = 0;
+    sync_data->error_now         = 0;
+    sync_data->error_pre         = 0;
+    sync_data->error_dif         = 0;
+    sync_data->error_sum         = 0;
+    sync_data->clock_corr        = 0;
     sync_data->previous_interval = SYNC_INTERVAL_TICKS;
 }
 
@@ -319,11 +319,11 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
     if (sync_data->clock_corr < -80000) sync_data->clock_corr = -80000;
 
     /* determine corrected loop_ticks for next buffer_block */
-    sync_reply->type                 = MSG_SYNC_ROUTINE;
-    sync_reply->sync_interval_ticks  = SYNC_INTERVAL_TICKS + sync_data->clock_corr;
-    sync_data->previous_interval       = sync_reply->sync_interval_ticks;
+    sync_reply->type                  = MSG_SYNC_ROUTINE;
+    sync_reply->sync_interval_ticks   = SYNC_INTERVAL_TICKS + sync_data->clock_corr;
+    sync_data->previous_interval      = sync_reply->sync_interval_ticks;
     sync_reply->sample_interval_ticks = (sync_reply->sync_interval_ticks / SAMPLES_PER_SYNC);
-    sync_reply->compensation_steps   = sync_reply->sync_interval_ticks -
+    sync_reply->compensation_steps    = sync_reply->sync_interval_ticks -
                                      (SAMPLES_PER_SYNC * sync_reply->sample_interval_ticks);
 
     if (((sync_data->error_now > 500) || (sync_data->error_now < -500)) && (++info_count >= 100))
@@ -332,7 +332,7 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
         printk(KERN_INFO "shprd.sync: period=%u, n_comp=%u, er_pid=%lld/%lld/%lld, "
                          "ns_iep=%u, ns_sys=%u",
                sync_reply->sample_interval_ticks, // = upper part of sync_interval_ticks
-               sync_reply->compensation_steps,   // = lower part of sync_interval_ticks
+               sync_reply->compensation_steps,    // = lower part of sync_interval_ticks
                sync_data->error_now, sync_data->error_sum, sync_data->error_dif,
                iep_ts_over_timer_wrap_ns, sys_ts_over_timer_wrap_ns);
         if (info_count > 6600)

@@ -44,7 +44,7 @@ bool_ft receive_message(struct ProtoMsg *const msg_container)
     {
         if (SHARED_MEM.pru0_msg_inbox.id == MSG_TO_PRU)
         {
-            *msg_container                    = SHARED_MEM.pru0_msg_inbox;
+            *msg_container                   = SHARED_MEM.pru0_msg_inbox;
             SHARED_MEM.pru0_msg_inbox.unread = 0;
             return 1;
         }

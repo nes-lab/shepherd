@@ -1,8 +1,8 @@
 #include "msg_sys.h"
 #include "commons.h"
+#include "shared_mem.h"
 #include <stdint.h>
 #include <stdlib.h>
-#include "shared_mem.h"
 
 volatile struct ProtoMsg *msg_inbox;
 volatile struct ProtoMsg *msg_outbox;
@@ -10,7 +10,7 @@ volatile struct ProtoMsg *msg_error;
 
 void                      msg_init()
 {
-#if defined(PRU0)  // TODO: can be hardcoded!
+#if defined(PRU0) // TODO: can be hardcoded!
     msg_inbox  = &SHARED_MEM.pru0_msg_inbox;
     msg_outbox = &SHARED_MEM.pru0_msg_outbox;
     msg_error  = &SHARED_MEM.pru0_msg_error;

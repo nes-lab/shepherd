@@ -1,8 +1,8 @@
 #ifndef SHARED_MEM_H
 #define SHARED_MEM_H
 
-#include "stdint_fast.h"
 #include "commons.h"
+#include "stdint_fast.h"
 
 /* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
 //typedef struct
@@ -12,7 +12,7 @@ struct SharedMem
     /* Stores the mode, e.g. harvester or emulator */
     volatile uint32_t                 shp_pru0_mode;
     /* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
-    volatile uint32_t                *far_mem_ptr;  // TODO: still needed?
+    volatile uint32_t                *far_mem_ptr; // TODO: still needed?
     /* Length of shared area in DDR RAM */
     volatile uint32_t                 far_mem_size;
     /**
@@ -29,7 +29,7 @@ struct SharedMem
     /* size of both buffers */
     volatile uint32_t                 buffer_iv_size;
     volatile uint32_t                 buffer_gpio_size;
-    volatile uint32_t                 buffer_util_size;  // TODO: hardcoding seems better
+    volatile uint32_t                 buffer_util_size; // TODO: hardcoding seems better
     /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
      * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
     volatile uint32_t                 dac_auxiliary_voltage_raw;
@@ -53,35 +53,35 @@ struct SharedMem
 
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
     volatile uint64_t                 last_sample_timestamp_ns;
-    volatile uint64_t                 next_buffer_timestamp_ns;  // TODO: both still needed?
+    volatile uint64_t                 next_buffer_timestamp_ns; // TODO: both still needed?
     /* internal gpio-register from PRU1 (for PRU1, debug), only updated when not running */
     volatile uint32_t                 gpio_pin_state;
 
     /* Fetch-System where pru0 can instruct pru1 to get the IV-Set from far buffer */
     volatile uint32_t                 ivsample_fetch_request; // managed & written by PRU0
-    volatile uint32_t                 ivsample_fetch_index;   // these 2 below are managed & written by PRU1
-    volatile struct IVSample          ivsample_fetch_value;
+    volatile uint32_t        ivsample_fetch_index; // these 2 below are managed & written by PRU1
+    volatile struct IVSample ivsample_fetch_value;
     /* Token system to ensure both PRUs can share interrupts */
-    volatile bool_ft                  cmp0_trigger_for_pru1;
-    volatile bool_ft                  cmp1_trigger_for_pru1;
+    volatile bool_ft         cmp0_trigger_for_pru1;
+    volatile bool_ft         cmp1_trigger_for_pru1;
     /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-    volatile bool_ft                  vsource_batok_trigger_for_pru1;
-    volatile bool_ft                  vsource_batok_pin_value;
+    volatile bool_ft         vsource_batok_trigger_for_pru1;
+    volatile bool_ft         vsource_batok_pin_value;
     /* Trigger to control sampling of gpios */
-    volatile bool_ft                  vsource_skip_gpio_logging;
+    volatile bool_ft         vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */
-    volatile uint32_t                 pru0_ticks_per_sample;
-//} SharedMem;
+    volatile uint32_t        pru0_ticks_per_sample;
+    //} SharedMem;
 } __attribute__((packed));
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000u);
 // NOTE: PRUs shared ram should be even 12kb
 
-//volatile struct SharedMem *const shared_mem = (volatile struct SharedMem *) PRU_SHARED_MEM_STRUCT_OFFSET;
+//volatile struct SharedMem *const shared_mem = (volatile struct SharedMem *) PRU_SHARED_MEM_OFFSET;
 // TODO: cleanup
 // NOTE: GCC-way preferred as cgt builds to 62204 bytes instead of 64244
 //#ifdef __GNUC__
-#define SHARED_MEM	(*((volatile struct SharedMem *)PRU_SHARED_MEM_STRUCT_OFFSET))
+#define SHARED_MEM (*((volatile struct SharedMem *) PRU_SHARED_MEM_OFFSET))
 //#else
 //volatile struct SharedMem SHARED_MEM __attribute__((cregister("PRU_SHAREDMEM", near), peripheral));
 //#endif

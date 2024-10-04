@@ -10,9 +10,9 @@
 #include "intc.h"
 
 #include "commons.h"
-#include "shared_mem.h"
 #include "debug_routines.h"
 #include "resource_table.h"
+#include "shared_mem.h"
 #include "shepherd_config.h"
 #include "stdint_fast.h"
 
@@ -61,12 +61,12 @@ static void send_status(enum MsgType type, const uint32_t value)
     if (!((SHARED_MEM.pru1_msg_error.type == type) &&
           (SHARED_MEM.pru1_msg_error.value[0u] == value)))
     {
-        SHARED_MEM.pru1_msg_error.unread   = 0u;
-        SHARED_MEM.pru1_msg_error.type     = type;
+        SHARED_MEM.pru1_msg_error.unread    = 0u;
+        SHARED_MEM.pru1_msg_error.type      = type;
         SHARED_MEM.pru1_msg_error.value[0u] = value;
-        SHARED_MEM.pru1_msg_error.id       = MSG_TO_KERNEL;
+        SHARED_MEM.pru1_msg_error.id        = MSG_TO_KERNEL;
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-        SHARED_MEM.pru1_msg_error.unread   = 1u;
+        SHARED_MEM.pru1_msg_error.unread    = 1u;
     }
     if (type >= 0xE0) __delay_cycles(200u / TICK_INTERVAL_NS); // 200 ns
 }
@@ -86,8 +86,7 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         {
             // pipeline-test for msg-system
             SHARED_MEM.pru1_sync_inbox.unread = 0u;
-            send_status(MSG_TEST_ROUTINE,
-                        SHARED_MEM.pru1_sync_inbox.sync_interval_ticks);
+            send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks);
             return 0u;
         }
         // NOTE: do not overwrite external msg without thinking twice! sync-routine relies on that content
@@ -199,13 +198,13 @@ static inline void check_gpio(const uint32_t last_sample_ticks)
     {
         DEBUG_GPIO_STATE_2;
         // local copy reduces reads to far-ram to current minimum
-        struct GPIOTrace *const buf_gpio = SHARED_MEM.buffer_gpio_ptr;
-        const uint32_t cIDX = SHARED_MEM.buffer_gpio_idx;
+        struct GPIOTrace *const buf_gpio                = SHARED_MEM.buffer_gpio_ptr;
+        const uint32_t          cIDX                    = SHARED_MEM.buffer_gpio_idx;
 
         /* Ticks since we've taken the last sample */
-        const uint32_t ticks_since_last_sample = CT_IEP.TMR_CNT - last_sample_ticks;
+        const uint32_t          ticks_since_last_sample = CT_IEP.TMR_CNT - last_sample_ticks;
         /* Calculate final timestamp of gpio event */
-        const uint64_t gpio_timestamp_ns =
+        const uint64_t          gpio_timestamp_ns =
                 SHARED_MEM.last_sample_timestamp_ns + TICK_INTERVAL_NS * ticks_since_last_sample;
 
         buf_gpio->timestamp_ns[cIDX] = gpio_timestamp_ns;
@@ -213,12 +212,12 @@ static inline void check_gpio(const uint32_t last_sample_ticks)
 
         if (cIDX >= BUFFER_GPIO_SIZE - 1u)
         {
-            buf_gpio->idx_pru = 0u;
+            buf_gpio->idx_pru          = 0u;
             SHARED_MEM.buffer_gpio_idx = 0u;
         }
         else
         {
-            buf_gpio->idx_pru = cIDX + 1u;
+            buf_gpio->idx_pru          = cIDX + 1u;
             SHARED_MEM.buffer_gpio_idx = cIDX + 1u;
         }
     }
@@ -261,39 +260,42 @@ int32_t event_loop()
     uint32_t        last_sample_interval_ticks = 0;
 
     /* Prepare message that will be received and sent to Linux kernel module */
-    struct ProtoMsg sync_rqst = {.id = MSG_TO_KERNEL, .type = MSG_NONE, .unread = 0u, .canary = CANARY_VALUE_U32};
-    struct SyncMsg  sync_repl = {
-             .sync_interval_ticks = SYNC_INTERVAL_TICKS,
-             .sample_interval_ticks = SAMPLE_INTERVAL_TICKS,
-             .compensation_steps   = 0u,
-             .canary = CANARY_VALUE_U32,
+    struct ProtoMsg sync_rqst                  = {.id     = MSG_TO_KERNEL,
+                                                  .type   = MSG_NONE,
+                                                  .unread = 0u,
+                                                  .canary = CANARY_VALUE_U32};
+    struct SyncMsg  sync_repl                  = {
+                              .sync_interval_ticks   = SYNC_INTERVAL_TICKS,
+                              .sample_interval_ticks = SAMPLE_INTERVAL_TICKS,
+                              .compensation_steps    = 0u,
+                              .canary                = CANARY_VALUE_U32,
     };
 
     /* This tracks our local state, allowing to execute actions at the right time */
-    enum SyncState sync_state                = IDLE;
+    enum SyncState sync_state             = IDLE;
 
     /*
 	* This holds the number of 'compensation' periods, where the sampling
 	* period is increased by 1 in order to compensate for the remainder of the
 	* integer udiv used to calculate the sampling period.
 	*/
-    uint32_t       compensation_steps        = sync_repl.compensation_steps;
+    uint32_t       compensation_steps     = sync_repl.compensation_steps;
     /*
 	 * holds distribution of the compensation periods (every x samples the period is increased by 1)
 	 */
-    uint32_t       compensation_counter      = 0u;
-    uint32_t       compensation_increment    = 0u;
+    uint32_t       compensation_counter   = 0u;
+    uint32_t       compensation_increment = 0u;
 
     /* pru0 util monitor */
-    uint32_t       pru0_ticks_max = 0u;
-    uint32_t       pru0_ticks_sum = 0u;
+    uint32_t       pru0_ticks_max         = 0u;
+    uint32_t       pru0_ticks_sum         = 0u;
 
     /* Our initial guess of the sampling period based on nominal timer period */
-    uint32_t       sample_interval_ticks     = sync_repl.sample_interval_ticks;
-    uint32_t       sync_interval_ticks       = sync_repl.sync_interval_ticks;
+    uint32_t       sample_interval_ticks  = sync_repl.sample_interval_ticks;
+    uint32_t       sync_interval_ticks    = sync_repl.sync_interval_ticks;
 
     /* These are our initial guesses for buffer sample period */
-    iep_set_cmp_val(IEP_CMP0, sync_interval_ticks);  // 20 MTicks -> 100 ms
+    iep_set_cmp_val(IEP_CMP0, sync_interval_ticks);   // 20 MTicks -> 100 ms
     iep_set_cmp_val(IEP_CMP1, sample_interval_ticks); //  2 kTicks -> 10 us
 
     iep_enable_evt_cmp(IEP_CMP1);
@@ -350,7 +352,7 @@ int32_t event_loop()
             /* update clock compensation of sample-trigger */
             iep_set_cmp_val(IEP_CMP1, 0);
             iep_enable_evt_cmp(IEP_CMP1);
-            sample_interval_ticks   = sync_repl.sample_interval_ticks;
+            sample_interval_ticks  = sync_repl.sample_interval_ticks;
             compensation_steps     = sync_repl.compensation_steps;
             compensation_increment = sync_repl.compensation_steps;
             compensation_counter   = 0;
@@ -361,20 +363,14 @@ int32_t event_loop()
 
             /* transmit pru0-util, current design puts this in fresh/next buffer */
             {
-                const uint32_t idx = SHARED_MEM.buffer_util_idx;
+                const uint32_t idx                         = SHARED_MEM.buffer_util_idx;
                 SHARED_MEM.buffer_util_ptr->ticks_sum[idx] = pru0_ticks_sum;
                 SHARED_MEM.buffer_util_ptr->ticks_max[idx] = pru0_ticks_max;
-                SHARED_MEM.buffer_util_ptr->idx_pru = idx;
-                pru0_ticks_sum                            = 0u;
-                pru0_ticks_max                            = 0u;
-                if (idx < BUFFER_UTIL_SIZE - 1u)
-                {
-                    SHARED_MEM.buffer_util_idx = idx + 1u;
-                }
-                else
-                {
-                    SHARED_MEM.buffer_util_idx = 0u;
-                }
+                SHARED_MEM.buffer_util_ptr->idx_pru        = idx;
+                pru0_ticks_sum                             = 0u;
+                pru0_ticks_max                             = 0u;
+                if (idx < BUFFER_UTIL_SIZE - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
+                else { SHARED_MEM.buffer_util_idx = 0u; }
             }
             // TODO: add warning for when sync not idle?
 
@@ -396,7 +392,7 @@ int32_t event_loop()
             SHARED_MEM.cmp1_trigger_for_pru1 = 0;
 
             // Update Timer-Values
-            last_sample_interval_ticks          = iep_get_cmp_val(IEP_CMP1);
+            last_sample_interval_ticks       = iep_get_cmp_val(IEP_CMP1);
             if (last_sample_interval_ticks > 0) // this assumes sample0 taken on cmp1==0
             {
                 SHARED_MEM.last_sample_timestamp_ns +=
@@ -419,7 +415,7 @@ int32_t event_loop()
             /* If we are waiting for a reply from Linux kernel module */
             if (receive_sync_reply(&sync_repl) > 0)
             {
-                sync_state                           = IDLE;
+                sync_state                          = IDLE;
                 SHARED_MEM.next_buffer_timestamp_ns = sync_repl.next_timestamp_ns;
             }
             DEBUG_EVENT_STATE_0;
@@ -433,8 +429,7 @@ int32_t event_loop()
             // split reads to optimize gpio-tracing
             const uint32_t index = SHARED_MEM.ivsample_fetch_request;
             DEBUG_RAMRD_STATE_1;
-            SHARED_MEM.ivsample_fetch_value =
-                    SHARED_MEM.buffer_iv_ptr->sample[index];
+            SHARED_MEM.ivsample_fetch_value = SHARED_MEM.buffer_iv_ptr->sample[index];
             SHARED_MEM.ivsample_fetch_index = index;
             DEBUG_RAMRD_STATE_0;
             continue;
@@ -488,7 +483,7 @@ int main(void)
 reset:
     send_status(MSG_STATUS_RESTARTING_ROUTINE, 101);
 
-    SHARED_MEM.ivsample_fetch_value = (struct IVSample){.voltage = 0u, .current = 0u};
+    SHARED_MEM.ivsample_fetch_value = (struct IVSample) {.voltage = 0u, .current = 0u};
     SHARED_MEM.ivsample_fetch_index = IDX_OUT_OF_BOUND;
 
     DEBUG_STATE_0;

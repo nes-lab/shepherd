@@ -46,11 +46,11 @@
 #define SIZE_CARVEOUT (sizeof(struct IVTrace) + sizeof(struct GPIOTrace) + sizeof(struct UtilTrace))
 
 // pseudo-assertion to test for correct struct-size, zero cost -> signoff changes here
-extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT == (
-                                    (3u*4u + 2u*8u + (1u<<20u)*(4u + 4u)) +  // IV
-                                    (3u*4u + 0u*8u + (1u<<20u)*(8u + 2u)) + // GPIO
-                                    (2u*4u + 0u*8u + (1u<<8u)*(4u + 4u))   // Util
- ))];
+extern uint32_t CHECK_CARVEOUT[1 / (SIZE_CARVEOUT ==
+                                    ((3u * 4u + 2u * 8u + (1u << 20u) * (4u + 4u)) + // IV
+                                     (3u * 4u + 0u * 8u + (1u << 20u) * (8u + 2u)) + // GPIO
+                                     (2u * 4u + 0u * 8u + (1u << 8u) * (4u + 4u))    // Util
+                                     ))];
 
 #if !defined(__GNUC__)
   #pragma DATA_SECTION(resourceTable, ".resource_table")
