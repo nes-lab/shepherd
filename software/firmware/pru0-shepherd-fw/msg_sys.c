@@ -1,22 +1,22 @@
 #include "msg_sys.h"
 #include "commons.h"
-#include "ringbuffer.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include "shared_mem.h"
 
 volatile struct ProtoMsg *msg_inbox;
 volatile struct ProtoMsg *msg_outbox;
 volatile struct ProtoMsg *msg_error;
 
-void                      msg_init(volatile struct SharedMem *const shared_mem)
+void                      msg_init()
 {
-#if defined(PRU0)
-    msg_inbox  = &shared_mem->pru0_msg_inbox;
-    msg_outbox = &shared_mem->pru0_msg_outbox;
-    msg_error  = &shared_mem->pru0_msg_error;
+#if defined(PRU0)  // TODO: can be hardcoded!
+    msg_inbox  = &SHARED_MEM.pru0_msg_inbox;
+    msg_outbox = &SHARED_MEM.pru0_msg_outbox;
+    msg_error  = &SHARED_MEM.pru0_msg_error;
 #elif defined(PRU1)
-    msg_outbox = &shared_mem->pru1_sync_outbox;
-    msg_error  = &shared_mem->pru1_msg_error;
+    msg_outbox = &SHARED_MEM.pru1_sync_outbox;
+    msg_error  = &SHARED_MEM.pru1_msg_error;
     // TODO: add sync inbox
 #else
   #error "PRU number must be defined and either 1 or 0"
@@ -37,7 +37,7 @@ void msg_send_status(enum MsgType type, const uint32_t value)
         msg_error->unread   = 1u;
     }
     // apply some rate limiting
-    if (type >= 0xE0) __delay_cycles(200U / TIMER_TICK_NS); // 200 ns
+    if (type >= 0xE0) __delay_cycles(200U / TICK_INTERVAL_NS); // 200 ns
 }
 
 // send returns a 1 on success
