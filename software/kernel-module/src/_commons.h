@@ -1,8 +1,8 @@
 #ifndef __COMMONS_H_
 #define __COMMONS_H_
 
-#include <linux/types.h>
 #include "_shepherd_config.h"
+#include <linux/types.h>
 
 
 /* Message content description used to distinguish messages for PRU0 */
@@ -101,7 +101,7 @@ enum ProgrammerTarget
 };
 
 /* Programmer-Control as part of SharedMem-Struct */
-struct ProgrammerCtrl  // TODO: also rename to *Config?
+struct ProgrammerCtrl // TODO: also rename to *Config?
 {
     int32_t  state;
     /* Target chip to be programmed */

@@ -11,8 +11,8 @@
 #include "commons.h"
 #include "hw_config.h"
 #include "msg_sys.h"
-#include "shepherd_config.h"
 #include "shared_mem.h"
+#include "shepherd_config.h"
 
 #include "calibration.h"
 #include "fw_config.h"
@@ -197,7 +197,7 @@ static bool_ft handle_kernel_com()
 
 void event_loop()
 {
-    uint32_t          iep_tmr_cmp_sts;
+    uint32_t iep_tmr_cmp_sts;
 
     while (1)
     {
@@ -248,10 +248,7 @@ void event_loop()
                 {
                     SHARED_MEM.buffer_iv_idx = 0u;
                 }
-                else
-                {
-                    SHARED_MEM.buffer_iv_idx++;
-                }
+                else { SHARED_MEM.buffer_iv_idx++; }
             }
 
             /* Did the Linux kernel module ask for reset? */
@@ -274,24 +271,27 @@ int main(void)
 {
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-    SHARED_MEM.canary                            = CANARY_VALUE_U32;
+    SHARED_MEM.canary                = CANARY_VALUE_U32;
     // Initialize struct-Members Part A, must come first - this blocks PRU1!
-    SHARED_MEM.cmp0_trigger_for_pru1             = 0u; // Reset Token-System to init-values
-    SHARED_MEM.cmp1_trigger_for_pru1             = 0u;
+    SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
+    SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
     // Initialize all struct-Members Part B
-    SHARED_MEM.far_mem_ptr                       = (uint32_t *) resourceTable.shared_memory.pa;
-    SHARED_MEM.far_mem_size                      = resourceTable.shared_memory.len;  // TODO: rename buffer_size?
+    SHARED_MEM.far_mem_ptr           = (uint32_t *) resourceTable.shared_memory.pa;
+    SHARED_MEM.far_mem_size          = resourceTable.shared_memory.len; // TODO: rename buffer_size?
 
-    SHARED_MEM.buffer_iv_ptr                     = (struct IVTrace *) resourceTable.shared_memory.pa;
-    SHARED_MEM.buffer_iv_size                    = sizeof(struct IVTrace);
-    SHARED_MEM.buffer_gpio_ptr                   = (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace));
-    SHARED_MEM.buffer_gpio_size                  = sizeof(struct GPIOTrace);
-    SHARED_MEM.buffer_util_ptr                   = (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) + sizeof(struct GPIOTrace));
+    SHARED_MEM.buffer_iv_ptr         = (struct IVTrace *) resourceTable.shared_memory.pa;
+    SHARED_MEM.buffer_iv_size        = sizeof(struct IVTrace);
+    SHARED_MEM.buffer_gpio_ptr =
+            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace));
+    SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
+    SHARED_MEM.buffer_util_ptr =
+            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) +
+                                  sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
-    SHARED_MEM.shp_pru_state                    = STATE_IDLE;
+    SHARED_MEM.shp_pru_state                     = STATE_IDLE;
     SHARED_MEM.shp_pru0_mode                     = MODE_HARVESTER;
 
     SHARED_MEM.last_sample_timestamp_ns          = 0u;
@@ -319,18 +319,18 @@ int main(void)
     msg_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
-    CT_CFG.SYSCFG_bit.STANDBY_INIT         = 0u;
+    CT_CFG.SYSCFG_bit.STANDBY_INIT   = 0u;
 
     /* allow PRU1 to enter event-loop */
-    SHARED_MEM.cmp0_trigger_for_pru1   = 1u;
+    SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
     msg_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
     SHARED_MEM.pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
-    SHARED_MEM.buffer_iv_idx = 0u;
-    SHARED_MEM.buffer_gpio_idx = 0u;
-    SHARED_MEM.buffer_util_idx = 0u;
+    SHARED_MEM.buffer_iv_idx         = 0u;
+    SHARED_MEM.buffer_gpio_idx       = 0u;
+    SHARED_MEM.buffer_util_idx       = 0u;
 
     GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     sample_init();
@@ -340,7 +340,7 @@ reset:
 
     SHARED_MEM.ivsample_fetch_request    = 0u; // TODO: put all into sampling-struct?
 
-    SHARED_MEM.shp_pru_state            = STATE_IDLE;
+    SHARED_MEM.shp_pru_state             = STATE_IDLE;
 
     event_loop();
 

@@ -1,8 +1,8 @@
 #ifndef _SHARED_MEM_H
 #define _SHARED_MEM_H
 
-#include <linux/types.h>
 #include "_commons.h"
+#include <linux/types.h>
 
 struct SharedMem
 {

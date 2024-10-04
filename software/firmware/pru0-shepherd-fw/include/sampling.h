@@ -3,9 +3,9 @@
 
 #include "commons.h"
 
-void sample_init();
+void     sample_init();
 
-void sample();
+void     sample();
 
 uint32_t sample_dbg_adc(uint32_t channel_num);
 void     sample_dbg_dac(uint32_t value);

@@ -20,7 +20,7 @@ enum MsgType
     MSG_PGM_ERROR_PARSE           = 0x96u, // val0: ihex_return, val1: line number of hex
     // DEBUG
     MSG_DBG_ADC                   = 0xA0u,
-    MSG_DBG_DAC                   = 0xA1u,  // TODO: rename: MSG_CTRL_DAC
+    MSG_DBG_DAC                   = 0xA1u, // TODO: rename: MSG_CTRL_DAC
     MSG_DBG_GPI                   = 0xA2u,
     MSG_DBG_GP_BATOK              = 0xA3u,
     MSG_DBG_PRINT                 = 0xA6u,
@@ -36,8 +36,8 @@ enum MsgType
 
     // ERROR
     MSG_ERR_MEMCORRUPTION         = 0xE1u,
-    MSG_ERR_BACKPRESSURE          = 0xE2u,  // TODO: add canary violations
-
+    MSG_ERR_BACKPRESSURE          = 0xE2u, // TODO: add canary violations
+    MSG_ERR_TIMESTAMP             = 0xE3u,
     MSG_ERR_INVLDCMD              = 0xE4u,
 
     MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE7u,
@@ -53,7 +53,7 @@ enum MsgType
     MSG_SYNC_ROUTINE              = 0xFBu, // TODO: not used?
 };
 
-/* Message IDs used in Mem-Protocol between PRUs and kernel module */
+/* Message IDs used in Mem-Msg-Protocol between PRUs and kernel module */
 enum MsgID
 {
     MSG_TO_KERNEL = 0x55u,
@@ -103,20 +103,20 @@ enum ProgrammerTarget
 
 struct IVSample
 {
-    uint32_t    voltage;
-    uint32_t    current;
+    uint32_t voltage;
+    uint32_t current;
 } __attribute__((packed));
 
 struct IVTrace
 {
-    uint32_t         idx_pru;
-    uint32_t         idx_sys; // TODO: might be better placed in shared ram
+    uint32_t        idx_pru;
+    uint32_t        idx_sys; // TODO: might be better placed in shared ram
     /* TS gets written while passing idx=0 */
-    uint64_t         timestamp_pru_ns;
-    uint64_t         timestamp_sys_ns;
-    struct IVSample  sample[BUFFER_IV_SIZE];
+    uint64_t        timestamp_pru_ns;
+    uint64_t        timestamp_sys_ns;
+    struct IVSample sample[BUFFER_IV_SIZE];
     /* safety */
-    uint32_t         canary;
+    uint32_t        canary;
 } __attribute__((packed));
 /*
  * TODO: sample-buffer needs big update
@@ -131,7 +131,7 @@ struct IVTrace
 struct GPIOTrace
 {
     uint32_t idx_pru;
-    uint32_t idx_sys;  // TODO: not needed?
+    uint32_t idx_sys; // TODO: not needed?
     uint64_t timestamp_ns[BUFFER_GPIO_SIZE];
     uint16_t bitmask[BUFFER_GPIO_SIZE];
     /* safety */
@@ -141,15 +141,15 @@ struct GPIOTrace
 struct UtilTrace
 {
     /* PRU0 utilization, max ticks per sample (10us), sum of ticks during one sync window (100ms) */
-    uint32_t  idx_pru;
-    uint32_t  ticks_max[BUFFER_UTIL_SIZE];
-    uint32_t  ticks_sum[BUFFER_UTIL_SIZE];
+    uint32_t idx_pru;
+    uint32_t ticks_max[BUFFER_UTIL_SIZE];
+    uint32_t ticks_sum[BUFFER_UTIL_SIZE];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
-struct ProgrammerCtrl
+struct ProgrammerCtrl // TODO: also rename to *Config?
 {
     int32_t  state;
     /* Target chip to be programmed */
@@ -160,11 +160,11 @@ struct ProgrammerCtrl
     uint32_t pin_tdio;     // data-io for SWD & SBW, input-only for JTAG (TDI)
     uint32_t pin_dir_tdio; // direction (HIGH == Output to target)
     /* pins below only for JTAG */
-    uint32_t pin_tdo;      // data-output for JTAG
-    uint32_t pin_tms;      // mode for JTAG
-    uint32_t pin_dir_tms;  // direction (HIGH == Output to target)
+    uint32_t pin_tdo;     // data-output for JTAG
+    uint32_t pin_tms;     // mode for JTAG
+    uint32_t pin_dir_tms; // direction (HIGH == Output to target)
     /* safety */
-    uint32_t canary;  // TODO: should these near structs have canaries inbetween?
+    uint32_t canary;       // TODO: should these near structs have canaries in between?
 } __attribute__((packed)); // TODO: pin_X can be u8,
 
 
@@ -298,7 +298,7 @@ struct ProtoMsg
 } __attribute__((packed));
 
 /* Control reply message sent from this kernel module to PRU1 after running the control loop */
-struct SyncMsg  // TODO: could be done with ProtoMsg?
+struct SyncMsg // TODO: could be done with ProtoMsg?
 {
     /* Identifier => Canary, This is used to identify memory corruption */
     uint8_t  id;
@@ -309,7 +309,7 @@ struct SyncMsg  // TODO: could be done with ProtoMsg?
     /* Alignment with memory, (bytes)mod4 */
     uint8_t  reserved0[1];
     /* Actual Content of message */
-    uint32_t sync_interval_ticks;  // corrected ticks that equal 100ms
+    uint32_t sync_interval_ticks;   // corrected ticks that equal 100ms
     uint32_t sample_interval_ticks; // ~ 10 us
     // remainder of sync_interval/samples_per_sync - sample_interval = compensation_steps
     uint32_t compensation_steps;
@@ -318,4 +318,4 @@ struct SyncMsg  // TODO: could be done with ProtoMsg?
     uint32_t canary;
 } __attribute__((packed));
 
-#endif /* __SHEPHERD_COMMONS_H_ */
+#endif /* SHEPHERD_COMMONS_H_ */

@@ -105,8 +105,9 @@ struct kobj_attribute     attr_state = __ATTR(state, 0660, sysfs_state_show, sys
 struct kobj_attr_struct_s attr_far_mem_ptr = {
         .attr       = __ATTR(address, 0660, sysfs_SharedMem_show, NULL),
         .val_offset = offsetof(struct SharedMem, far_mem_ptr)};
-struct kobj_attr_struct_s attr_far_mem_size  = {.attr = __ATTR(size, 0660, sysfs_SharedMem_show, NULL),
-                                            .val_offset = offsetof(struct SharedMem, far_mem_size)};
+struct kobj_attr_struct_s attr_far_mem_size = {
+        .attr       = __ATTR(size, 0660, sysfs_SharedMem_show, NULL),
+        .val_offset = offsetof(struct SharedMem, far_mem_size)};
 
 struct kobj_attr_struct_s attr_mode = {
         .attr       = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),

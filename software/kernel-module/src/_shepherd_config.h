@@ -6,21 +6,21 @@
 * sudo sh -c 'echo am335x-pru0-programmer-SWD-fw > /sys/class/remoteproc/remoteproc1/firmware'
 * sudo sh -c 'echo prog-swd > /sys/shepherd/pru_firmware'
 */
-#define PRU0_FW_EMU                  ("am335x-pru0-shepherd-EMU-fw") /* 27 chars */
-#define PRU0_FW_HRV                  ("am335x-pru0-shepherd-HRV-fw")
-#define PRU0_FW_PRG_SWD              ("am335x-pru0-programmer-SWD-fw") /* 29 chars */
-#define PRU0_FW_PRG_SBW              ("am335x-pru0-programmer-SBW-fw")
-#define PRU0_FW_SLEEP                ("am335x-pru0-fw.sleep")
-#define PRU0_FW_DEFAULT              PRU0_FW_EMU
-#define PRU1_FW_SLEEP                ("am335x-pru1-fw.sleep")  // TODO: make use of it (for programming)
-#define PRU1_FW_SHEPHERD             ("am335x-pru1-shepherd-fw")
-#define PRU1_FW_DEFAULT              PRU1_FW_SHEPHERD
+#define PRU0_FW_EMU                     ("am335x-pru0-shepherd-EMU-fw") /* 27 chars */
+#define PRU0_FW_HRV                     ("am335x-pru0-shepherd-HRV-fw")
+#define PRU0_FW_PRG_SWD                 ("am335x-pru0-programmer-SWD-fw") /* 29 chars */
+#define PRU0_FW_PRG_SBW                 ("am335x-pru0-programmer-SBW-fw")
+#define PRU0_FW_SLEEP                   ("am335x-pru0-fw.sleep")
+#define PRU0_FW_DEFAULT                 PRU0_FW_EMU
+#define PRU1_FW_SLEEP                   ("am335x-pru1-fw.sleep") // TODO: make use of it (for programming)
+#define PRU1_FW_SHEPHERD                ("am335x-pru1-shepherd-fw")
+#define PRU1_FW_DEFAULT                 PRU1_FW_SHEPHERD
 
 /**
  * Size of msg-fifo - unrelated to fifo-buffer of pru / shared mem that stores harvest & emulation data
  * this msg-fifo should be at least slightly larger though
  */
-#define MSG_FIFO_SIZE                (128U)
+#define MSG_FIFO_SIZE                   (128U)
 
 /** *************************************************************************************
  * NOTE: below is a copy of shepherd_config.h for the pru-firmware (copy changes by hand)
@@ -49,7 +49,7 @@
 #define HOST_PRU_EVT_TIMESTAMP          (20u)
 
 /* The SharedMem struct resides at the beginning of the PRUs shared memory */
-#define PRU_SHARED_MEM_OFFSET    (0x10000u)
+#define PRU_SHARED_MEM_OFFSET           (0x10000u)
 
 
 // Test data-containers and constants with pseudo-assertion with zero cost (if expression evaluates to 0 this causes a div0

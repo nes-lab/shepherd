@@ -45,9 +45,9 @@ int write_to_target(device_driver_t *drv, const ihex_mem_block_t *const block)
 
 void programmer(volatile struct ProgrammerCtrl *const pctrl, const uint32_t *const fw_data)
 {
-    device_driver_t                      *drv = NULL;
-    int                                   ret;
-    ihex_mem_block_t                      block;
+    device_driver_t *drv = NULL;
+    int              ret;
+    ihex_mem_block_t block;
     // TODO: pctrl -> PGM_CFG - HARDCODE
     pctrl->state = PRG_STATE_INITIALIZING;
 
@@ -64,7 +64,8 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, const uint32_t *con
         goto exit;
     }
 
-    if (drv->open(pctrl->pin_tck, pctrl->pin_tdio, pctrl->pin_dir_tdio, pctrl->datarate) != DRV_ERR_OK)
+    if (drv->open(pctrl->pin_tck, pctrl->pin_tdio, pctrl->pin_dir_tdio, pctrl->datarate) !=
+        DRV_ERR_OK)
     {
         pctrl->state = PRG_STATE_ERR_OPEN;
         goto exit;
