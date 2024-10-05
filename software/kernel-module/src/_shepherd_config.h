@@ -37,9 +37,9 @@
 /**
  * Length of buffer for storing harvest & emulation data
  */
-#define BUFFER_IV_SIZE                  (1u << 20u) // 1M for ~10s
-#define BUFFER_GPIO_SIZE                (1u << 20u) // 1M - similar to sum of segments before
-#define BUFFER_UTIL_SIZE                (1u << 8u)  // 256
+#define BUFFER_IV_SIZE                  (1000000u) // 1M for ~10s
+#define BUFFER_GPIO_SIZE                (1000000u)
+#define BUFFER_UTIL_SIZE                (400u)
 #define IDX_OUT_OF_BOUND                (0xFFFFFFFFu)
 
 /**

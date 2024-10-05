@@ -110,10 +110,8 @@ struct IVSample
 struct IVTrace
 {
     uint32_t        idx_pru;
-    uint32_t        idx_sys; // TODO: might be better placed in shared ram
     /* TS gets written while passing idx=0 */
-    uint64_t        timestamp_pru_ns;
-    uint64_t        timestamp_sys_ns;
+    uint64_t        timestamp_ns;
     struct IVSample sample[BUFFER_IV_SIZE];
     /* safety */
     uint32_t        canary;
@@ -131,7 +129,6 @@ struct IVTrace
 struct GPIOTrace
 {
     uint32_t idx_pru;
-    uint32_t idx_sys; // TODO: not needed?
     uint64_t timestamp_ns[BUFFER_GPIO_SIZE];
     uint16_t bitmask[BUFFER_GPIO_SIZE];
     /* safety */
@@ -142,6 +139,7 @@ struct UtilTrace
 {
     /* PRU0 utilization, max ticks per sample (10us), sum of ticks during one sync window (100ms) */
     uint32_t idx_pru;
+    uint64_t timestamp_ns[BUFFER_UTIL_SIZE];
     uint32_t ticks_max[BUFFER_UTIL_SIZE];
     uint32_t ticks_sum[BUFFER_UTIL_SIZE];
     /* safety */
