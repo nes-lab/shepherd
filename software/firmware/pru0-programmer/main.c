@@ -30,8 +30,15 @@ int main(void)
     SHARED_MEM.cmp1_trigger_for_pru1             = 0u;
 
     // Initialize all struct-Members Part B
-    SHARED_MEM.far_mem_ptr                       = (uint32_t *) resourceTable.shared_memory.pa;
-    SHARED_MEM.far_mem_size                      = resourceTable.shared_memory.len;
+    SHARED_MEM.buffer_iv_ptr         = (struct IVTrace *) resourceTable.shared_memory.pa;
+    SHARED_MEM.buffer_iv_size        = sizeof(struct IVTrace);
+    SHARED_MEM.buffer_gpio_ptr =
+            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace));
+    SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
+    SHARED_MEM.buffer_util_ptr =
+            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) +
+                                  sizeof(struct GPIOTrace));
+    SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
     // TODO: Update from PRU0-shepherd
 
 
@@ -83,7 +90,7 @@ reset:
     {
         if (SHARED_MEM.programmer_ctrl.state == PRG_STATE_STARTING)
         {
-            programmer(&SHARED_MEM.programmer_ctrl, SHARED_MEM.far_mem_ptr);
+            programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *const) resourceTable.shared_memory.pa);
         }
     }
 

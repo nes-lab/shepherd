@@ -11,13 +11,10 @@ struct SharedMem
     volatile uint32_t                 shp_pru_state;
     /* Stores the mode, e.g. harvester or emulator */
     volatile uint32_t                 shp_pru0_mode;
-    /* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
-    volatile uint32_t                *far_mem_ptr; // TODO: still needed?
-    /* Length of shared area in DDR RAM */
-    volatile uint32_t                 far_mem_size;
     /**
     * Parameters of buffer structures in current far & slow RAM.
-    * Only PRU0 knows about addresses.
+    * Only PRU0 knows about physical address of shared area in DDR RAM,
+    * that is used to exchange data between user space and PRUs.
     */
     volatile struct IVTrace          *buffer_iv_ptr;
     volatile struct GPIOTrace        *buffer_gpio_ptr;
@@ -26,10 +23,13 @@ struct SharedMem
     volatile uint32_t                 buffer_iv_idx;   // write by pru0 only
     volatile uint32_t                 buffer_gpio_idx; // write by pru1 only
     volatile uint32_t                 buffer_util_idx; // write by pru1 only
-    /* size of both buffers */
+    /* size of these buffers - allows cheap verification in userspace */
     volatile uint32_t                 buffer_iv_size;
     volatile uint32_t                 buffer_gpio_size;
-    volatile uint32_t                 buffer_util_size; // TODO: hardcoding seems better
+    volatile uint32_t                 buffer_util_size;
+    /* userspace buffer-states */
+    volatile uint32_t                 buffer_iv_sys_idx;            // write by sys only
+    volatile uint32_t                 buffer_iv_sys_next_timestamp; // write by sys only
     /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
      * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
     volatile uint32_t                 dac_auxiliary_voltage_raw;

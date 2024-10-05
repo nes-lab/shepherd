@@ -277,9 +277,6 @@ int main(void)
     SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
     // Initialize all struct-Members Part B
-    SHARED_MEM.far_mem_ptr           = (uint32_t *) resourceTable.shared_memory.pa;
-    SHARED_MEM.far_mem_size          = resourceTable.shared_memory.len; // TODO: rename buffer_size?
-
     SHARED_MEM.buffer_iv_ptr         = (struct IVTrace *) resourceTable.shared_memory.pa;
     SHARED_MEM.buffer_iv_size        = sizeof(struct IVTrace);
     SHARED_MEM.buffer_gpio_ptr =
@@ -289,6 +286,7 @@ int main(void)
             (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) +
                                   sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
+    // whole length is documented in resourceTable.shared_memory.len
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;

@@ -62,6 +62,7 @@ void mem_interface_exit(void)
 void mem_interface_reset(void)
 {
     struct SharedMem *const shared_mem = (struct SharedMem *) pru_shared_mem_io;
+    // TODO: why not use this as default interface?
 
     if (!init_done)
     {
