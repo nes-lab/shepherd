@@ -26,8 +26,8 @@ int main(void)
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
     // Initialize struct-Members Part A, must come first - this blocks PRU1!
-    SHARED_MEM.cmp0_trigger_for_pru1             = 0u; // Reset Token-System to init-values
-    SHARED_MEM.cmp1_trigger_for_pru1             = 0u;
+    SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
+    SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
     // Initialize all struct-Members Part B
     SHARED_MEM.buffer_iv_ptr         = (struct IVTrace *) resourceTable.shared_memory.pa;
@@ -90,7 +90,8 @@ reset:
     {
         if (SHARED_MEM.programmer_ctrl.state == PRG_STATE_STARTING)
         {
-            programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *const) resourceTable.shared_memory.pa);
+            programmer(&SHARED_MEM.programmer_ctrl,
+                       (uint32_t *const) resourceTable.shared_memory.pa);
         }
     }
 
