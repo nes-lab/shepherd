@@ -49,7 +49,7 @@ bool_ft receive_message(struct ProtoMsg *const msg_container)
             return 1;
         }
         // send mem_corruption warning
-        send_status(MSG_ERR_MEMCORRUPTION, 0);
+        send_status(MSG_ERR_MEM_CORRUPTION, 0);
     }
     return 0;
 }

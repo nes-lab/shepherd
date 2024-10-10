@@ -10,6 +10,7 @@ enum MsgType
 {
     /* USERSPACE (enum <0xF0) */
     MSG_NONE                      = 0x00u,
+
     // Programmer
     //MSG_PGM_ERROR_GENERIC         = 0x91u,  // TODO: move to error-section?
     //MSG_PGM_ERROR_OPEN            = 0x92u,
@@ -34,15 +35,15 @@ enum MsgType
     MSG_DBG_VSRC_HRV_P_INP        = 0xB1u, // HRV + CNV in one go
 
     // ERROR
-    MSG_ERR_MEMCORRUPTION         = 0xE1u,
-    MSG_ERR_BACKPRESSURE          = 0xE2u, // TODO: add canary violations
+    MSG_ERR_INVLD_CMD             = 0xE0u,
+    MSG_ERR_MEM_CORRUPTION        = 0xE1u,
+    MSG_ERR_BACKPRESSURE          = 0xE2u,
     MSG_ERR_TIMESTAMP             = 0xE3u,
-    MSG_ERR_INVLDCMD              = 0xE4u,
-
-    MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE7u,
-    MSG_ERR_VALUE                 = 0xE8u,
-    MSG_ERR_SAMPLE_MODE           = 0xE9u,
-    MSG_ERR_HRV_ALGO              = 0xEAu,
+    MSG_ERR_CANARY                = 0xE4u, // TODO: add canary violations
+    MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE5u,
+    MSG_ERR_VALUE                 = 0xE6u,
+    MSG_ERR_SAMPLE_MODE           = 0xE7u,
+    MSG_ERR_HRV_ALGO              = 0xE8u,
 
     /* KERNELSPACE (enum >=0xF0) */
     // STATUS

@@ -203,7 +203,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             switch (pru_msg.type)
             {
                 // NOTE: all MSG_ERR also get handed to python
-                case MSG_ERR_MEMCORRUPTION:
+                case MSG_ERR_INVLD_CMD: break;
+                case MSG_ERR_MEM_CORRUPTION:
                     printk(KERN_ERR "shprd.pru%u: msg.id from kernel is faulty -> mem "
                                     "corruption? (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
@@ -213,10 +214,12 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                                     "-> backpressure (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
                     break;
-                case MSG_ERR_INVLDCMD: break;
-
                 case MSG_ERR_TIMESTAMP:
                     printk(KERN_ERR "shprd.pru%u: received timestamp is faulty (val=%u)",
+                           had_work & 1u, pru_msg.value[0]);
+                    break;
+                case MSG_ERR_CANARY:
+                    printk(KERN_ERR "shprd.pru%u: detected a dead canary (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_SYNC_STATE_NOT_IDLE:
@@ -227,7 +230,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     printk(KERN_ERR "shprd.pru%u: content of msg failed test (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
                     break;
-
+                case MSG_ERR_SAMPLE_MODE: break;
+                case MSG_ERR_HRV_ALGO: break;
                 case MSG_STATUS_RESTARTING_ROUTINE:
                     printk(KERN_INFO "shprd.pru%u: (re)starting main-routine", had_work & 1u);
                     break;

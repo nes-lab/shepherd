@@ -70,7 +70,7 @@ bool_ft msg_receive(struct ProtoMsg *const container)
             return 1;
         }
         // send mem_corruption warning
-        msg_send_status(MSG_ERR_MEMCORRUPTION, 0u);
+        msg_send_status(MSG_ERR_MEM_CORRUPTION, 0u);
     }
     return 0;
 }

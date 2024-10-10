@@ -92,6 +92,7 @@ static bool_ft handle_kernel_com()
 
     if (msg_receive(&msg_in) == 0) return 1u;
 
+    // TODO: remove debug mode? not needed anymore with py-to-c-interface
     if ((SHARED_MEM.shp_pru0_mode == MODE_DEBUG) && (SHARED_MEM.shp_pru_state == STATE_RUNNING))
     {
         uint32_t res;
@@ -173,7 +174,7 @@ static bool_ft handle_kernel_com()
 #endif //ENABLE_DEBUG_MATH_FN
 
             default:
-                msg_send(MSG_ERR_INVLDCMD, msg_in.type, 0u);
+                msg_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u);
                 return 0U;
                 // TODO: there are two msg_send() in here that send MSG_ERR
         }
@@ -190,7 +191,7 @@ static bool_ft handle_kernel_com()
             // pipeline-test for msg-system
             msg_send_status(MSG_TEST_ROUTINE, msg_in.value[0]);
         }
-        else { msg_send(MSG_ERR_INVLDCMD, msg_in.type, 0u); }
+        else { msg_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u); }
     }
     return 0u;
 }

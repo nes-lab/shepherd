@@ -79,7 +79,7 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         if (SHARED_MEM.pru1_sync_inbox.id != MSG_TO_PRU)
         {
             /* Error occurs if something writes over boundaries */
-            send_status(MSG_ERR_MEMCORRUPTION, 0);
+            send_status(MSG_ERR_MEM_CORRUPTION, 0);
             return 0u;
         }
         if (SHARED_MEM.pru1_sync_inbox.type == MSG_TEST_ROUTINE)
@@ -481,7 +481,7 @@ int main(void)
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u;
 
 reset:
-    send_status(MSG_STATUS_RESTARTING_ROUTINE, 101);
+    send_status(MSG_STATUS_RESTARTING_ROUTINE, 1u);
 
     SHARED_MEM.ivsample_fetch_value = (struct IVSample) {.voltage = 0u, .current = 0u};
     SHARED_MEM.ivsample_fetch_index = IDX_OUT_OF_BOUND;
