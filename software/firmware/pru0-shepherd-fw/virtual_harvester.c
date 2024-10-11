@@ -35,7 +35,7 @@ static uint32_t                               power_last_raw = 0u; // adc_mppt_p
 
 
 static const volatile struct HarvesterConfig *cfg;
-static volatile struct IVTrace               *buffer;
+static volatile struct IVTraceOut            *buffer;
 
 #ifdef HRV_SUPPORT
 /* ivcurve cutout
@@ -80,10 +80,9 @@ void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + v
 void harvester_initialize(const volatile struct HarvesterConfig *const config)
 {
     // basic (shared) states for ADC- and IVCurve-Version
-    cfg = config;
-    buffer =
-            SHARED_MEM
-                    .buffer_iv_ptr; // TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_ptr->samples
+    cfg                  = config;
+    buffer               = SHARED_MEM.buffer_iv_out_ptr;
+    // TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_ptr->samples
     voltage_set_uV       = cfg->voltage_uV + 1u; // deliberately off for cv-version
     settle_steps         = 0u;
 
@@ -143,10 +142,8 @@ static void harvest_adc_2_cv(const uint32_t sample_idx)
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
     __delay_cycles(800 / 5);
-    //const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    //const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-    const struct IVSample sample_adc = {.voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN),
-                                        .current = adc_fastread(SPI_CS_HRV_C_ADC_PIN)};
+    const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
     if (voltage_set_uV != cfg->voltage_uV)
     {
@@ -155,9 +152,8 @@ static void harvest_adc_2_cv(const uint32_t sample_idx)
         const uint32_t voltage_raw = cal_conv_uV_to_dac_raw(voltage_set_uV);
         dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_raw);
     }
-    //buffer->sample[sample_idx].current = current_adc;
-    //buffer->sample[sample_idx].voltage = voltage_adc;
-    buffer->sample[sample_idx] = sample_adc;
+    buffer->current[sample_idx] = current_adc;
+    buffer->voltage[sample_idx] = voltage_adc;
 }
 
 static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
@@ -170,21 +166,18 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
     __delay_cycles(800 / 5);
-    //uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    //uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-    struct IVSample sample_adc = {.voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN),
-                                  .current = adc_fastread(SPI_CS_HRV_C_ADC_PIN)};
-
+    uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
     /* discard initial readings during reset */
     if (interval_step < STEP_IV_CUTOUT)
     {
         // set lowest & highest 18 bit value of ADC
-        if (is_rising) sample_adc.voltage = 0u;
+        if (is_rising) voltage_adc = 0u;
         else
         {
-            sample_adc.voltage = 0x3FFFFu;
-            sample_adc.current = 0u;
+            voltage_adc = 0x3FFFFu;
+            current_adc = 0u;
         }
     }
 
@@ -215,9 +208,8 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     }
     else settle_steps--;
 
-    //buffer->sample[sample_idx].current = current_adc;
-    //buffer->sample[sample_idx].voltage = voltage_adc;
-    buffer->sample[sample_idx] = sample_adc;
+    buffer->current[sample_idx] = current_adc;
+    buffer->voltage[sample_idx] = voltage_adc;
 }
 
 static void harvest_adc_2_isc_voc(const uint32_t sample_idx)
@@ -250,8 +242,8 @@ static void harvest_adc_2_isc_voc(const uint32_t sample_idx)
     }
     else settle_steps--;
 
-    buffer->sample[sample_idx].voltage = voltage_hold;
-    buffer->sample[sample_idx].current = current_hold;
+    buffer->voltage[sample_idx] = voltage_hold;
+    buffer->current[sample_idx] = current_hold;
 }
 
 static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
@@ -264,11 +256,8 @@ static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations later */
     __delay_cycles(800 / 5);
-    //const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    //const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-    struct IVSample sample_adc = {.voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN),
-                                  .current = adc_fastread(SPI_CS_HRV_C_ADC_PIN)};
-
+    const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
     /* keep track of time, do  step = mod(step + 1, n) */
     if (++interval_step >= cfg->interval_n) interval_step = 0u;
@@ -282,7 +271,7 @@ static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
     if (interval_step == cfg->duration_n - 1u)
     {
         /* end of voc-measurement -> lock-in the value */
-        const uint32_t voc_uV = cal_conv_adc_raw_to_uV(sample_adc.voltage);
+        const uint32_t voc_uV = cal_conv_adc_raw_to_uV(voltage_adc);
         voltage_set_uV        = mul32(voc_uV, cfg->setpoint_n8) >> 8u;
 
         /* check boundaries */
@@ -298,17 +287,14 @@ static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
     {
         /* output disconnected during voc-measurement */
 
-        //buffer->sample[sample_idx].current = 0u;
-        //buffer->sample[sample_idx].voltage = voltage_adc; // keep voltage for debug-purposes
-        sample_adc.current         = 0u;
-        buffer->sample[sample_idx] = sample_adc;
+        buffer->current[sample_idx] = 0u;
+        buffer->voltage[sample_idx] = voltage_adc; // keep voltage for debug-purposes
     }
     else
     {
         /* converter-mode at pre-set VOC */
-        //buffer->sample[sample_idx].current = current_adc;
-        //buffer->sample[sample_idx].voltage = voltage_adc;
-        buffer->sample[sample_idx] = sample_adc;
+        buffer->current[sample_idx] = current_adc;
+        buffer->voltage[sample_idx] = voltage_adc;
     }
 }
 
@@ -379,8 +365,8 @@ static void harvest_adc_2_mppt_po(const uint32_t sample_idx)
         const uint32_t voltage_raw = cal_conv_uV_to_dac_raw(voltage_set_uV);
         dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_raw);
     }
-    buffer->sample[sample_idx].current = current_adc;
-    buffer->sample[sample_idx].voltage = voltage_adc;
+    buffer->current[sample_idx] = current_adc;
+    buffer->voltage[sample_idx] = voltage_adc;
 }
 #endif // HRV_SUPPORT
 

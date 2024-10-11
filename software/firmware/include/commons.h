@@ -78,7 +78,7 @@ enum ShepherdState
     STATE_ARMED   = 0x20u, // transitional state
     // TODO: pru should switch to running when armed & ts>counter
     STATE_RUNNING = 0x30u,
-    STATE_RESET   = 0xE0,  // transitional state -> idle
+    STATE_RESET   = 0xE0, // transitional state -> idle
     STATE_FAULT   = 0xF0,
 };
 
@@ -105,20 +105,28 @@ enum ProgrammerTarget
 
 struct IVSample
 {
-    // TODO: add timestamp?
     uint32_t voltage;
     uint32_t current;
 } __attribute__((packed));
 
-struct IVTrace
+struct IVTraceInp
 {
     uint32_t        idx_pru;
-    /* TS gets written while passing idx=0 */
-    uint64_t        timestamp_ns;
     struct IVSample sample[BUFFER_IV_SIZE];
     /* safety */
     uint32_t        canary;
 } __attribute__((packed));
+
+struct IVTraceOut
+{
+    uint32_t idx_pru;
+    uint64_t timestamp_ns[BUFFER_IV_SIZE];
+    uint32_t voltage[BUFFER_IV_SIZE];
+    uint32_t current[BUFFER_IV_SIZE];
+    /* safety */
+    uint32_t canary;
+} __attribute__((packed));
+
 /*
  * TODO: sample-buffer needs big update
  * 	- one large fifo with IV-Struct would have big advantage!
@@ -144,7 +152,8 @@ struct UtilTrace
     uint32_t idx_pru;
     uint64_t timestamp_ns[BUFFER_UTIL_SIZE];
     uint32_t ticks_max[BUFFER_UTIL_SIZE];
-    uint32_t ticks_sum[BUFFER_UTIL_SIZE]; // TODO: add sample count
+    uint32_t ticks_sum[BUFFER_UTIL_SIZE];
+    uint32_t sample_count[BUFFER_UTIL_SIZE];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));

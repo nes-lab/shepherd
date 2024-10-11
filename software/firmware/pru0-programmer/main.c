@@ -30,16 +30,20 @@ int main(void)
     SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
     // Initialize all struct-Members Part B
-    SHARED_MEM.buffer_iv_ptr         = (struct IVTrace *) resourceTable.shared_memory.pa;
-    SHARED_MEM.buffer_iv_size        = sizeof(struct IVTrace);
+    SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
+    SHARED_MEM.buffer_iv_inp_size    = sizeof(struct IVTraceInp);
+
+    SHARED_MEM.buffer_iv_out_ptr =
+            (struct IVTraceOut *) (SHARED_MEM.buffer_iv_inp_ptr + sizeof(struct IVTraceInp));
+    SHARED_MEM.buffer_iv_out_size = sizeof(struct IVTraceOut);
+
     SHARED_MEM.buffer_gpio_ptr =
-            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace));
+            (struct GPIOTrace *) (SHARED_MEM.buffer_iv_out_ptr + sizeof(struct IVTraceOut));
     SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
+
     SHARED_MEM.buffer_util_ptr =
-            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) +
-                                  sizeof(struct GPIOTrace));
+            (struct UtilTrace *) (SHARED_MEM.buffer_gpio_ptr + sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
-    // TODO: Update from PRU0-shepherd
 
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;

@@ -291,6 +291,7 @@ int32_t event_loop()
     /* pru0 util monitor */
     uint32_t       pru0_ticks_max         = 0u;
     uint32_t       pru0_ticks_sum         = 0u;
+    uint32_t       pru0_sample_count      = 0u;
 
     /* Our initial guess of the sampling period based on nominal timer period */
     uint32_t       sample_interval_ticks  = sync_repl.sample_interval_ticks;
@@ -365,12 +366,14 @@ int32_t event_loop()
 
             /* transmit pru0-util, current design puts this in fresh/next buffer */
             {
-                const uint32_t idx                         = SHARED_MEM.buffer_util_idx;
-                SHARED_MEM.buffer_util_ptr->ticks_sum[idx] = pru0_ticks_sum;
-                SHARED_MEM.buffer_util_ptr->ticks_max[idx] = pru0_ticks_max;
-                SHARED_MEM.buffer_util_ptr->idx_pru        = idx;
-                pru0_ticks_sum                             = 0u;
-                pru0_ticks_max                             = 0u;
+                const uint32_t idx                            = SHARED_MEM.buffer_util_idx;
+                SHARED_MEM.buffer_util_ptr->ticks_sum[idx]    = pru0_ticks_sum;
+                SHARED_MEM.buffer_util_ptr->ticks_max[idx]    = pru0_ticks_max;
+                SHARED_MEM.buffer_util_ptr->sample_count[idx] = pru0_sample_count;
+                SHARED_MEM.buffer_util_ptr->idx_pru           = idx;
+                pru0_ticks_sum                                = 0u;
+                pru0_ticks_max                                = 0u;
+                pru0_sample_count                             = 0u;
                 if (idx < BUFFER_UTIL_SIZE - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
                 else { SHARED_MEM.buffer_util_idx = 0u; }
             }
@@ -426,7 +429,7 @@ int32_t event_loop()
             // split reads to optimize gpio-tracing
             const uint32_t index = SHARED_MEM.ivsample_fetch_request;
             DEBUG_RAMRD_STATE_1;
-            SHARED_MEM.ivsample_fetch_value = SHARED_MEM.buffer_iv_ptr->sample[index];
+            SHARED_MEM.ivsample_fetch_value = SHARED_MEM.buffer_iv_inp_ptr->sample[index];
             SHARED_MEM.ivsample_fetch_index = index;
             DEBUG_RAMRD_STATE_0;
             continue;
@@ -458,6 +461,7 @@ int32_t event_loop()
                     pru0_ticks_max = SHARED_MEM.pru0_ticks_per_sample;
                 }
                 pru0_ticks_sum += SHARED_MEM.pru0_ticks_per_sample;
+                pru0_sample_count += 1;
             }
             SHARED_MEM.pru0_ticks_per_sample = IDX_OUT_OF_BOUND;
         }
