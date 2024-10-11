@@ -492,7 +492,8 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
 {
     const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE * 1u;
     const uint32_t out_lut_size = LUT_SIZE * 4u;
-    const uint32_t non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size;
+    const uint32_t non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size - 4u;
+    // ignore canary
     const struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                         mem_offset = 0u;
     int32_t                          buf_pos    = 0;
@@ -550,7 +551,8 @@ static ssize_t sysfs_virtual_converter_settings_show(struct kobject        *kobj
 {
     const uint32_t inp_lut_size = LUT_SIZE * LUT_SIZE * 1u;
     const uint32_t out_lut_size = LUT_SIZE * 4u;
-    const uint32_t non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size;
+    const uint32_t non_lut_size = sizeof(struct ConverterConfig) - inp_lut_size - out_lut_size - 4u;
+    // ignore canary
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
     uint32_t mem_offset = 0u;
@@ -587,7 +589,8 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
                                                       struct kobj_attribute *attr,
                                                       const char *buffer, size_t count)
 {
-    static const uint32_t            struct_size = sizeof(struct HarvesterConfig);
+    static const uint32_t            struct_size = sizeof(struct HarvesterConfig) - 4u;
+    // ignore canary
     const struct kobj_attr_struct_s *kobj_attr_wrapped;
     uint32_t                         mem_offset = 0u;
     int32_t                          buf_pos    = 0;
@@ -613,7 +616,8 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
 static ssize_t sysfs_virtual_harvester_settings_show(struct kobject        *kobj,
                                                      struct kobj_attribute *attr, char *buf)
 {
-    static const uint32_t                  struct_size = sizeof(struct HarvesterConfig);
+    static const uint32_t                  struct_size = sizeof(struct HarvesterConfig) - 4u;
+    // ignore canary
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
     uint32_t mem_offset = 0u;

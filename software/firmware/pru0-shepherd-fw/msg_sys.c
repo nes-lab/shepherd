@@ -24,14 +24,15 @@ void                      msg_init()
 }
 
 // alternative message channel specially dedicated for errors
-void msg_send_status(enum MsgType type, const uint32_t value)
+void msg_send_status(enum MsgType type, const uint32_t value1, const uint32_t value2)
 {
     // do not care for sent-status -> the newest error wins IF different from previous
-    if (!((msg_error->type == type) && (msg_error->value[0] == value)))
+    if (!((msg_error->type == type) && (msg_error->value[0] == value1)))
     {
         msg_error->unread   = 0u;
         msg_error->type     = type;
-        msg_error->value[0] = value;
+        msg_error->value[0] = value1;
+        msg_error->value[1] = value2;
         msg_error->id       = MSG_TO_KERNEL;
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
         msg_error->unread   = 1u;
@@ -54,7 +55,7 @@ bool_ft msg_send(enum MsgType type, const uint32_t value1, const uint32_t value2
         return 1;
     }
     /* Error occurs if kernel was not able to handle previous message in time */
-    msg_send_status(MSG_ERR_BACKPRESSURE, 0u);
+    msg_send_status(MSG_ERR_BACKPRESSURE, 0u, 0u);
     return 0;
 }
 
@@ -70,7 +71,7 @@ bool_ft msg_receive(struct ProtoMsg *const container)
             return 1;
         }
         // send mem_corruption warning
-        msg_send_status(MSG_ERR_MEM_CORRUPTION, 0u);
+        msg_send_status(MSG_ERR_MEM_CORRUPTION, 0u, 0u);
     }
     return 0;
 }

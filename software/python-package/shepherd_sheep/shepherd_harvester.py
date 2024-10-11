@@ -45,7 +45,7 @@ class ShepherdHarvester(ShepherdIO):
         self.stack = ExitStack()
 
         # performance-critical, allows deep insight between py<-->pru-communication
-        self.verbose_extra = False
+        self.verbose_extra = True
 
         self.cal_hrv = retrieve_calibration(use_default_cal=cfg.use_cal_default).harvester
 
@@ -117,7 +117,8 @@ class ShepherdHarvester(ShepherdIO):
             return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        log.info("shepherd started!")
+        self.handle_pru_messages()
+        log.info("shepherd started! T_sys = %f", time.time())
 
         if self.cfg.duration is None:
             ts_end = sys.float_info.max
@@ -143,7 +144,7 @@ class ShepherdHarvester(ShepherdIO):
             if data_ut:
                 self.writer.write_util_buffer(data_ut)
 
-            if data_iv:
+            if data_iv is not None:
                 prog_bar.update(n=data_iv.duration())
                 if data_iv.timestamp() >= ts_end:
                     log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")

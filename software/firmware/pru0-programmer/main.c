@@ -47,7 +47,7 @@ int main(void)
     SHARED_MEM.shp_pru0_mode                     = MODE_HARVESTER;
 
     SHARED_MEM.last_sample_timestamp_ns          = 0u;
-    SHARED_MEM.next_buffer_timestamp_ns          = 0u;
+    SHARED_MEM.next_sync_timestamp_ns            = 0u;
     SHARED_MEM.buffer_iv_idx                     = 0u;
     SHARED_MEM.buffer_gpio_idx                   = 0u;
     SHARED_MEM.buffer_util_idx                   = 0u;

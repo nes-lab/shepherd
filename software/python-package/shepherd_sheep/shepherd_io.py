@@ -133,7 +133,7 @@ class ShepherdIO:
         # placeholders
         self.samples_per_segment = Reader.samples_per_buffer
         self.segment_period_s: float = self.samples_per_segment * commons.SAMPLE_INTERVAL_S
-        self.shared_mem: SharedMemory
+        self.shared_mem: SharedMemory | None = None
 
     def __del__(self) -> None:
         ShepherdIO._instance = None
@@ -503,17 +503,19 @@ class ShepherdIO:
             except sfs.SysfsInterfaceError:
                 return
 
-            value = values[0]
-
             if msg_type == commons.MSG_DBG_PRINT:
-                log.info("Received cmd to print: %d", value)
+                log.info("Received cmd to print: %d, %d", values[0], values[1])
                 continue
 
             if msg_type == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                log.debug("PRU is restarting its main routine, val=%d", value)
+                log.debug(
+                    "PRU%d is restarting its main routine, val2=%s",
+                    values[0],
+                    f"0x{values[0]:X}",
+                )
                 # TODO: this should raise when needed (during normal OP)
                 continue
 
             error_msg: str | None = commons.pru_errors.get(msg_type)
             if error_msg is not None:
-                raise ShepherdPRUError(error_msg, msg_type, value)
+                raise ShepherdPRUError(error_msg, msg_type, values)

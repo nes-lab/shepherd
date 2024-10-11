@@ -189,16 +189,16 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 4 + 4)
         )
 
-        if self.iv_canary_offset < self.iv_trace_size:
+        if self.iv_canary_offset >= self.iv_trace_offset + self.iv_trace_size:
             raise ValueError("Canary of IV-Buffer is not inside buffer?!?")
-        if self.gpio_canary_offset < self.gpio_trace_size:
+        if self.gpio_canary_offset >= self.gpio_trace_offset + self.gpio_trace_size:
             raise ValueError("Canary of GPIO-Buffer is not inside buffer?!?")
-        if self.util_canary_offset < self.util_trace_size:
+        if self.util_canary_offset >= self.util_trace_offset + self.util_trace_size:
             raise ValueError("Canary of Util-Buffer is not inside buffer?!?")
 
-        if self.iv_trace_size <= sfs.get_trace_gpio_address() - sfs.get_trace_iv_address():
+        if self.iv_trace_size > sfs.get_trace_gpio_address() - sfs.get_trace_iv_address():
             raise ValueError("IV-Buffer does not fit into address-space?!?")
-        if self.gpio_trace_size <= sfs.get_trace_util_address() - sfs.get_trace_gpio_address():
+        if self.gpio_trace_size > sfs.get_trace_util_address() - sfs.get_trace_gpio_address():
             raise ValueError("GPIO-Buffer does not fit into address-space?!?")
 
         self.iv_trace_timestamp_last = 0
@@ -227,11 +227,11 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             raise ValueError("Size of IV-Buffer-Segment must be integer quotient of buffer-size")
         self.gpio_segment_size = commons.BUFFER_GPIO_SIZE // self.buffer_segment_count
         self.util_segment_size = commons.BUFFER_UTIL_SIZE // self.buffer_segment_count
-        if self.iv_segment_size * self.buffer_segment_count != commons.BUFFER_IV_SIZE:
+        if (commons.BUFFER_IV_SIZE % self.iv_segment_size) != 0:
             raise ValueError("IV-Buffer was not cleanly dividable by chunk-count.")
-        if self.gpio_segment_size * self.buffer_segment_count != commons.BUFFER_GPIO_SIZE:
+        if (commons.BUFFER_GPIO_SIZE % self.gpio_segment_size) != 0:
             raise ValueError("GPIO-Buffer was not cleanly dividable by chunk-count.")
-        if self.util_segment_size * self.buffer_segment_count != commons.BUFFER_UTIL_SIZE:
+        if (commons.BUFFER_UTIL_SIZE % self.util_segment_size) != 0:
             raise ValueError("UTIL-Buffer was not cleanly dividable by chunk-count.")
 
         # init zeroed data for clearing buffers
@@ -333,17 +333,11 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             # TODO: detect overflow!!!
             # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
             return None
-        if verbose:
-            log.debug(
-                "Retrieve IV-Buffer index %d with len %d @%.3f sys_ts",
-                self.iv_trace_index_read,
-                self.iv_segment_size,
-                time.time(),
-            )
+
         if self.iv_trace_index_read != 0:
             # Timestamp is referenced to sample 0
-            pru_timestamp = None
-        if (self.iv_trace_timestamp_last > 0) and pru_timestamp is not None:
+            pru_timestamp = 0.0
+        if (self.iv_trace_timestamp_last > 0) and pru_timestamp > 0:
             diff_ms = (pru_timestamp - self.iv_trace_timestamp_last) // 10**6
             if pru_timestamp == 0:
                 log.error("ZERO      timestamp detected after recv it from PRU")
@@ -362,11 +356,21 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                     "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
-        if pru_timestamp is not None:
+        if pru_timestamp > 0:
             self.iv_trace_timestamp_last = pru_timestamp
         segment_timestamp = (
             self.iv_trace_timestamp_last + self.iv_trace_index_read * commons.SAMPLE_INTERVAL_NS
         )
+
+        if verbose:
+            log.debug(
+                "Retrieve IV-Buffer index %6d, len %d, ts %.3f, tsBuf %.3f, @%.3f sys_ts",
+                self.iv_trace_index_read,
+                self.iv_segment_size,
+                segment_timestamp / 1e9,
+                pru_timestamp / 1e9,
+                time.time(),
+            )
 
         # prepare & fetch data
         if self.ts_start_iv <= segment_timestamp <= self.ts_stop_iv:
@@ -383,15 +387,17 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             )
         else:
             data = None
+            log.debug("Discarded IV-Data / out of time-boundary.")
+
         # TODO: segment in buffer should be reset to ZERO to better detect errors
         # advance index
-        self.iv_trace_index_read += (
+        self.iv_trace_index_read = (
             self.iv_trace_index_read + self.iv_segment_size
         ) % commons.BUFFER_IV_SIZE
         # test canary
         self.mapped_mem.seek(self.iv_canary_offset)
         # TODO: canary can be tested less often (only on reset)
-        canary = struct.unpack("=L", self.mapped_mem.read(4))
+        canary: int = struct.unpack("=L", self.mapped_mem.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             raise BufferError(
                 "Canary of IV-Buffer was harmed! It is 0x%X, expected 0x%X",
@@ -403,7 +409,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
     def read_buffer_gpio(self, *, verbose: bool = False) -> GPIOTrace | None:
         # determine current state
         self.mapped_mem.seek(self.gpio_trace_offset)
-        (index_pru,) = struct.unpack("=L", self.mapped_mem.read(4))
+        index_pru: int = struct.unpack("=L", self.mapped_mem.read(4))[0]
         avail_length = (index_pru - self.gpio_trace_index) % commons.BUFFER_GPIO_SIZE
         if avail_length < self.gpio_segment_size:
             # nothing to do
@@ -412,7 +418,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             return None
         if verbose:
             log.debug(
-                "Retrieve GPIO-Buffer index %d with len %d @%.3f sys_ts",
+                "Retrieve GPIO-Buffer index %6d with len %d @sys_ts %.3f",
                 self.gpio_trace_index,
                 self.gpio_segment_size,
                 time.time(),
@@ -436,13 +442,13 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         # TODO: filter dataset with self.ts_start_gp <= buffer_timestamp <= self.ts_stop_gp
         # TODO: segment should be reset to ZERO to better detect errors
         # advance index
-        self.gpio_trace_index += (
+        self.gpio_trace_index = (
             self.gpio_trace_index + self.gpio_segment_size
         ) % commons.BUFFER_GPIO_SIZE
         # test canary
         self.mapped_mem.seek(self.gpio_canary_offset)
         # TODO: canary can be tested less often (only on reset)
-        canary = struct.unpack("=L", self.mapped_mem.read(4))
+        canary: int = struct.unpack("=L", self.mapped_mem.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             raise BufferError(
                 "Canary of GPIO-Buffer was harmed! It is 0x%X, expected 0x%X",
@@ -454,7 +460,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
     def read_buffer_util(self, *, verbose: bool = False) -> UtilTrace | None:
         # determine current state
         self.mapped_mem.seek(self.util_trace_offset)
-        index_pru: int = struct.unpack("=L", self.mapped_mem.read(4))
+        index_pru: int = struct.unpack("=L", self.mapped_mem.read(4))[0]
         avail_length = (index_pru - self.util_trace_index) % commons.BUFFER_UTIL_SIZE
         if avail_length < self.util_segment_size:
             # nothing to do
@@ -463,7 +469,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             return None
         if verbose:
             log.debug(
-                "Retrieve Util-Buffer index %d with len %d @%.3f sys_ts",
+                "Retrieve Util-Buffer index %4d, len %d @%.3f sys_ts",
                 self.util_trace_index,
                 self.util_segment_size,
                 time.time(),
@@ -492,15 +498,19 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             / commons.SAMPLES_PER_SYNC,
         )
         # TODO: cleanup, every crit-instance should be reported
-        util_mean_crit = data.ticks_mean.max() > 0.95 * commons.SAMPLE_INTERVAL_TICKS
-        util_max_crit = data.ticks_max.max() > 1 * commons.SAMPLE_INTERVAL_TICKS
+        util_mean_val = data.ticks_mean.max()
+        util_max_val = data.ticks_max.max()
+        util_mean_crit = util_mean_val > 0.95 * commons.SAMPLE_INTERVAL_TICKS
+        util_max_crit = util_max_val > 1 * commons.SAMPLE_INTERVAL_TICKS
+        util_mean_val *= 100 / commons.SAMPLE_INTERVAL_TICKS
+        util_max_val *= 100 / commons.SAMPLE_INTERVAL_TICKS
 
         if (self.pru_warn_counter > 0) and (util_mean_crit or util_max_crit):
             log.warning(
-                "Pru0 Loop-Util: mean = %d %%, max = %d %% "
+                "Pru0 Loop-Util: mean = %.3f %%, max = %.3f %% "
                 "-> WARNING: probably broken real-time-condition",
-                util_mean_crit,
-                util_max_crit,
+                util_mean_val,
+                util_max_val,
             )
             self.pru_warn_counter -= 1
             if self.pru_warn_counter == 0:
@@ -510,20 +520,20 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                 )
         elif verbose:
             log.info(
-                "Pru0 Loop-Util: mean = %d %%, max = %d %%",
-                data.ticks_mean.max(),
-                data.ticks_max.max(),
+                "Pru0 Loop-Util: mean = %.3f %%, max = %.3f %%",
+                util_mean_val,
+                util_max_val,
             )
 
         # TODO: segment should be reset to ZERO to better detect errors
         # advance index
-        self.util_trace_index += (
+        self.util_trace_index = (
             self.util_trace_index + self.util_segment_size
         ) % commons.BUFFER_UTIL_SIZE
         # test canary
         self.mapped_mem.seek(self.util_canary_offset)
         # TODO: canary can be tested less often (only on reset)
-        canary = struct.unpack("=L", self.mapped_mem.read(4))
+        canary: int = struct.unpack("=L", self.mapped_mem.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             raise BufferError(
                 "Canary of Util-Buffer was harmed! It is 0x%X, expected 0x%X",

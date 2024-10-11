@@ -31,9 +31,9 @@ static inline void sample_emulator()
 
     /* Get input current/voltage from pru1 (these 2 far mem-reads can take from 530 to 5400 ns -> destroyer of real time) */
     while (SHARED_MEM.ivsample_fetch_index != SHARED_MEM.buffer_iv_idx);
-    uint32_t input_current_nA = SHARED_MEM.ivsample_fetch_value.current; // TODO: get both at once
-    uint32_t input_voltage_uV = SHARED_MEM.ivsample_fetch_value.voltage;
-    const uint32_t current_sample_index = SHARED_MEM.ivsample_fetch_index;
+    uint32_t       input_current_nA     = SHARED_MEM.ivsample_fetch_value.current;
+    uint32_t       input_voltage_uV     = SHARED_MEM.ivsample_fetch_value.voltage;
+    const uint32_t current_sample_index = SHARED_MEM.buffer_iv_idx;
     if (current_sample_index >= BUFFER_IV_SIZE - 1u)
     {
         SHARED_MEM.ivsample_fetch_request = 0u;
@@ -77,18 +77,17 @@ static inline void sample_emulator()
     /* write back converter-state into shared memory buffer */
     if (get_state_log_intermediate())
     {
-        //buffer_iv->sample[current_sample_index].current = get_I_mid_out_nA();  // TODO: write both at once
-        //buffer_iv->sample[current_sample_index].voltage = get_V_intermediate_uV();
-        buffer_iv->sample[current_sample_index] =
-                (struct IVSample) {.voltage = get_V_intermediate_uV(),
-                                   .current = get_I_mid_out_nA()};
+        buffer_iv->sample[current_sample_index].current = get_I_mid_out_nA();
+        buffer_iv->sample[current_sample_index].voltage = get_V_intermediate_uV();
     }
     else
     {
-        //buffer_iv->sample[current_sample_index].current = current_adc_raw;
-        //buffer_iv->sample[current_sample_index].voltage = voltage_dac;
+        buffer_iv->sample[current_sample_index].current = current_adc_raw;
+        buffer_iv->sample[current_sample_index].voltage = voltage_dac;
+        /* NOTE: code above saves 28 bytes compared to:
         buffer_iv->sample[current_sample_index] =
                 (struct IVSample) {.voltage = voltage_dac, .current = current_adc_raw};
+         */
     }
 }
 #endif // EMU_SUPPORT
@@ -96,20 +95,15 @@ static inline void sample_emulator()
 static inline void sample_emu_ADCs(const uint32_t sample_idx)
 {
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
-    //buffer_iv->sample[sample_idx].current = adc_fastread(SPI_CS_EMU_ADC_PIN);
-    //buffer_iv->sample[sample_idx].voltage = 0u;
-    buffer_iv->sample[sample_idx] =
-            (struct IVSample) {.voltage = 0u, .current = adc_fastread(SPI_CS_EMU_ADC_PIN)};
+    buffer_iv->sample[sample_idx].current = adc_fastread(SPI_CS_EMU_ADC_PIN);
+    buffer_iv->sample[sample_idx].voltage = 0u;
 }
 
 static inline void sample_hrv_ADCs(const uint32_t sample_idx)
 {
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
-    //buffer_iv->sample[sample_idx].current = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    //buffer_iv->sample[sample_idx].voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
-    buffer_iv->sample[sample_idx] =
-            (struct IVSample) {.voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN),
-                               .current = adc_fastread(SPI_CS_HRV_C_ADC_PIN)};
+    buffer_iv->sample[sample_idx].current = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    buffer_iv->sample[sample_idx].voltage = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 }
 
 
@@ -127,7 +121,7 @@ void sample()
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ: return sample_emu_ADCs(SHARED_MEM.buffer_iv_idx);
         case MODE_HRV_ADC_READ: return sample_hrv_ADCs(SHARED_MEM.buffer_iv_idx);
-        default: msg_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode);
+        default: msg_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode, 0u);
     }
 }
 

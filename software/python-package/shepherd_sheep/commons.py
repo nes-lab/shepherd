@@ -34,7 +34,7 @@ CANARY_VALUE_U32: int = 0xDEBAC1E5  # read as '0-debacles'
 # ############################################################################
 
 MSG_PRU0_ENTER_ROUTINE = 0x12
-MSG_PRU0_EXIT_ROUTINE  = 0x13
+MSG_PRU0_EXIT_ROUTINE = 0x13
 
 MSG_PGM_ERROR_WRITE = 0x93  # val0: addr, val1: data
 MSG_PGM_ERROR_VERIFY = 0x94  # val0: addr, val1: data(original)

@@ -52,7 +52,7 @@ class ShepherdEmulator(ShepherdIO):
         self.stack = ExitStack()
 
         # performance-critical, allows deep insight between py<-->pru-communication
-        self.verbose_extra = False
+        self.verbose_extra = True
 
         if not cfg.input_path.exists():
             raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
@@ -177,7 +177,11 @@ class ShepherdEmulator(ShepherdIO):
         ):
             if self.shared_mem.get_space_to_write_iv() < self.reader.samples_per_buffer:
                 raise BufferError("Not enough space in buffer during initial fill.")
-            self.shared_mem.write_buffer_iv(data=IVTrace(voltage=dsv, current=dsc))
+            self.shared_mem.write_buffer_iv(
+                data=IVTrace(voltage=dsv, current=dsc),
+                cal=self.cal_pru,
+                verbose=self.verbose_extra,
+            )
             time.sleep(100e-6)  # allow other processes to work
 
         return self
@@ -200,7 +204,8 @@ class ShepherdEmulator(ShepherdIO):
             return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        log.info("shepherd started!")
+        self.handle_pru_messages()
+        log.info("shepherd started! T_sys = %f", time.time())
 
         if self.cfg.duration is not None:
             duration_s = self.cfg.duration.total_seconds()
@@ -239,6 +244,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 if data_iv:
                     prog_bar.update(n=data_iv.duration())
+                    # TODO: this can't work - with the limited tracers
                     if data_iv.timestamp() >= ts_end:
                         log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                         break
@@ -254,6 +260,7 @@ class ShepherdEmulator(ShepherdIO):
                             return
 
                 # TODO: implement cleaner exit (pru-statechange or end-timestamp
+
                 self.handle_pru_messages()
                 if not (data_iv or data_gp or data_ut):
                     if ts_data_last - time.time() > 10:
