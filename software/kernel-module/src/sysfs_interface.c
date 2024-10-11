@@ -102,12 +102,18 @@ struct kobj_attr_struct_s
 
 struct kobj_attribute     attr_state = __ATTR(state, 0660, sysfs_state_show, sysfs_state_store);
 
-struct kobj_attr_struct_s attr_buffer_iv_ptr = {
-        .attr       = __ATTR(iv_address, 0660, sysfs_SharedMem_show, NULL),
-        .val_offset = offsetof(struct SharedMem, buffer_iv_ptr)};
-struct kobj_attr_struct_s attr_buffer_iv_size = {
-        .attr       = __ATTR(iv_size, 0660, sysfs_SharedMem_show, NULL),
-        .val_offset = offsetof(struct SharedMem, buffer_iv_size)};
+struct kobj_attr_struct_s attr_buffer_iv_inp_ptr = {
+        .attr       = __ATTR(iv_inp_address, 0660, sysfs_SharedMem_show, NULL),
+        .val_offset = offsetof(struct SharedMem, buffer_iv_inp_ptr)};
+struct kobj_attr_struct_s attr_buffer_iv_inp_size = {
+        .attr       = __ATTR(iv_inp_size, 0660, sysfs_SharedMem_show, NULL),
+        .val_offset = offsetof(struct SharedMem, buffer_iv_inp_size)};
+struct kobj_attr_struct_s attr_buffer_iv_out_ptr = {
+        .attr       = __ATTR(iv_out_address, 0660, sysfs_SharedMem_show, NULL),
+        .val_offset = offsetof(struct SharedMem, buffer_iv_out_ptr)};
+struct kobj_attr_struct_s attr_buffer_iv_out_size = {
+        .attr       = __ATTR(iv_out_size, 0660, sysfs_SharedMem_show, NULL),
+        .val_offset = offsetof(struct SharedMem, buffer_iv_out_size)};
 struct kobj_attr_struct_s attr_buffer_gpio_ptr = {
         .attr       = __ATTR(gpio_address, 0660, sysfs_SharedMem_show, NULL),
         .val_offset = offsetof(struct SharedMem, buffer_gpio_ptr)};
@@ -217,8 +223,10 @@ static struct attribute_group attr_group = {
 
 
 static struct attribute *pru_mem_attrs[] = {
-        &attr_buffer_iv_ptr.attr.attr,
-        &attr_buffer_iv_size.attr.attr,
+        &attr_buffer_iv_inp_ptr.attr.attr,
+        &attr_buffer_iv_inp_size.attr.attr,
+        &attr_buffer_iv_out_ptr.attr.attr,
+        &attr_buffer_iv_out_size.attr.attr,
         &attr_buffer_gpio_ptr.attr.attr,
         &attr_buffer_gpio_size.attr.attr,
         &attr_buffer_util_ptr.attr.attr,
@@ -761,7 +769,8 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-    value_max         = readl(pru_shared_mem_io + offsetof(struct SharedMem, buffer_iv_size));
+    value_max         = readl(pru_shared_mem_io + offsetof(struct SharedMem, buffer_iv_inp_size) +
+                              offsetof(struct SharedMem, buffer_iv_out_size));
 
     if (sscanf(buffer, "%u", &value) != 1) return -EINVAL;
     if ((value < 1) || (value > value_max)) return -EINVAL;

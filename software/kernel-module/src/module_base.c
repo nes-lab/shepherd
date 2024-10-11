@@ -141,6 +141,7 @@ static int shepherd_drv_remove(struct platform_device *pdev)
         rproc_put(pdata->rproc_prus[1]);
         devm_kfree(&pdev->dev, pdev->dev.platform_data);
         pdev->dev.platform_data = NULL;
+        printk(KERN_INFO "shprd.k: PRUs shut down");
     }
 
     platform_set_drvdata(pdev, NULL);

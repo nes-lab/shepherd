@@ -257,15 +257,14 @@ void event_loop()
                 GPIO_OFF(DEBUG_PIN1_MASK);
 
                 /* counter write & incrementation */
-                SHARED_MEM.buffer_iv_ptr->idx_pru = SHARED_MEM.buffer_iv_idx;
+                const uint32_t idx = SHARED_MEM.buffer_iv_idx;
+                SHARED_MEM.buffer_iv_out_ptr->timestamp_ns[idx] =
+                        SHARED_MEM.last_sample_timestamp_ns;
+                SHARED_MEM.buffer_iv_out_ptr->idx_pru = idx;
                 // TODO: also write continuous TS
 
-                if (SHARED_MEM.buffer_iv_idx >= BUFFER_IV_SIZE - 1u)
-                {
-                    SHARED_MEM.buffer_iv_idx               = 0u;
-                    SHARED_MEM.buffer_iv_ptr->timestamp_ns = SHARED_MEM.last_sample_timestamp_ns;
-                }
-                else { SHARED_MEM.buffer_iv_idx++; }
+                if (idx >= BUFFER_IV_SIZE - 1u) { SHARED_MEM.buffer_iv_idx = 0u; }
+                else { SHARED_MEM.buffer_iv_idx = idx + 1u; }
             }
 
             /* Did the Linux kernel module ask for reset? */
@@ -294,14 +293,18 @@ int main(void)
     SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
     // Initialize all struct-Members Part B
-    SHARED_MEM.buffer_iv_ptr         = (struct IVTrace *) resourceTable.shared_memory.pa;
-    SHARED_MEM.buffer_iv_size        = sizeof(struct IVTrace);
+    SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
+    SHARED_MEM.buffer_iv_inp_size    = sizeof(struct IVTraceInp);
+
+    SHARED_MEM.buffer_iv_out_ptr = (struct IVTraceOut *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp));
+    SHARED_MEM.buffer_iv_out_size = sizeof(struct IVTraceOut);
+
     SHARED_MEM.buffer_gpio_ptr =
-            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace));
+            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) + sizeof(struct IVTraceOut));
     SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
+
     SHARED_MEM.buffer_util_ptr =
-            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTrace) +
-                                  sizeof(struct GPIOTrace));
+            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) + sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
     // whole length is documented in resourceTable.shared_memory.len
 
