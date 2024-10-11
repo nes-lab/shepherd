@@ -62,22 +62,22 @@ enum MsgID
 
 enum ShepherdMode
 {
-    MODE_HARVESTER,
-    MODE_HRV_ADC_READ,
-    MODE_EMULATOR,
-    MODE_EMU_ADC_READ,
-    MODE_DEBUG,
-    MODE_NONE
+    MODE_NONE         = 0x00u,
+    MODE_HARVESTER    = 0x10u,
+    MODE_HRV_ADC_READ = 0x11u,
+    MODE_EMULATOR     = 0x20u,
+    MODE_EMU_ADC_READ = 0x21u,
+    MODE_DEBUG        = 0xD0u,
 };
 
 enum ShepherdState
 {
-    STATE_UNKNOWN,
-    STATE_IDLE,
-    STATE_ARMED,
-    STATE_RUNNING,
-    STATE_RESET,
-    STATE_FAULT
+    STATE_UNKNOWN = 0x00u,
+    STATE_IDLE    = 0x10u,
+    STATE_ARMED   = 0x20u,
+    STATE_RUNNING = 0x30u,
+    STATE_RESET   = 0xE0,
+    STATE_FAULT   = 0xF0,
 };
 
 enum ProgrammerState

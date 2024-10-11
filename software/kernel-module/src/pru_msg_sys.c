@@ -219,8 +219,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                            had_work & 1u, pru_msg.value[0]);
                     break;
                 case MSG_ERR_CANARY:
-                    printk(KERN_ERR "shprd.pru%u: detected a dead canary (val=%u)",
-                           had_work & 1u, pru_msg.value[0]);
+                    printk(KERN_ERR "shprd.pru%u: detected a dead canary (val=%u)", had_work & 1u,
+                           pru_msg.value[0]);
                     break;
                 case MSG_ERR_SYNC_STATE_NOT_IDLE:
                     printk(KERN_ERR "shprd.pru%u: Sync not idle at host interrupt (val=%u)",

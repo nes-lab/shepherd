@@ -63,22 +63,23 @@ enum MsgID
 
 enum ShepherdMode
 {
-    MODE_HARVESTER,
-    MODE_HRV_ADC_READ,
-    MODE_EMULATOR,
-    MODE_EMU_ADC_READ,
-    MODE_DEBUG,
-    MODE_NONE
+    MODE_NONE         = 0x00u,
+    MODE_HARVESTER    = 0x10u,
+    MODE_HRV_ADC_READ = 0x11u,
+    MODE_EMULATOR     = 0x20u,
+    MODE_EMU_ADC_READ = 0x21u,
+    MODE_DEBUG        = 0xD0u,
 }; // TODO: allow to set "NONE", shuts down hrv & emu
 
 enum ShepherdState
 {
-    STATE_UNKNOWN,
-    STATE_IDLE,
-    STATE_ARMED,
-    STATE_RUNNING,
-    STATE_RESET,
-    STATE_FAULT
+    STATE_UNKNOWN = 0x00u,
+    STATE_IDLE    = 0x10u,
+    STATE_ARMED   = 0x20u, // transitional state
+    // TODO: pru should switch to running when armed & ts>counter
+    STATE_RUNNING = 0x30u,
+    STATE_RESET   = 0xE0,  // transitional state -> idle
+    STATE_FAULT   = 0xF0,
 };
 
 enum ProgrammerState
@@ -143,7 +144,7 @@ struct UtilTrace
     uint32_t idx_pru;
     uint64_t timestamp_ns[BUFFER_UTIL_SIZE];
     uint32_t ticks_max[BUFFER_UTIL_SIZE];
-    uint32_t ticks_sum[BUFFER_UTIL_SIZE];
+    uint32_t ticks_sum[BUFFER_UTIL_SIZE]; // TODO: add sample count
     /* safety */
     uint32_t canary;
 } __attribute__((packed));

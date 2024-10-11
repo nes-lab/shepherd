@@ -189,7 +189,7 @@ static bool_ft handle_kernel_com()
         else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 2))
         {
             // pipeline-test for msg-system
-            msg_send_status(MSG_TEST_ROUTINE, msg_in.value[0]);
+            msg_send_status(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
         }
         else { msg_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u); }
     }
@@ -206,6 +206,7 @@ void event_loop()
         // edge case: sample0 @cnt=0, cmp0&1 trigger, but cmp0 needs to get handled before cmp1
         // NOTE: pru1 manages the irq, but pru0 reacts to it directly -> less jitter
         while (!(iep_tmr_cmp_sts = iep_get_tmr_cmp_sts())); // read iep-reg -> 12 cycles, 60 ns
+        // TODO: could just check, and assign later
 
         // pre-trigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
@@ -228,6 +229,14 @@ void event_loop()
             GPIO_TOGGLE(DEBUG_PIN0_MASK);
             SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
+            /* test & update time */
+            // const uint64_t ts_now = SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
+            //if (ts_now != SHARED_MEM.last_sample_timestamp_ns)
+            // TODO: warn
+            SHARED_MEM.last_sample_timestamp_ns =
+                    SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
+            /* go dark if not running */
+            if (SHARED_MEM.shp_pru_state != STATE_RUNNING) GPIO_OFF(DEBUG_PIN0_MASK);
         }
 
         // Sample and receive messages
@@ -237,6 +246,9 @@ void event_loop()
             SHARED_MEM.cmp1_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
+            /* update current time */
+            SHARED_MEM.last_sample_timestamp_ns += SAMPLE_INTERVAL_NS;
+
             /* The actual sampling takes place here */
             if (SHARED_MEM.shp_pru_state == STATE_RUNNING)
             {
@@ -244,10 +256,14 @@ void event_loop()
                 sample();
                 GPIO_OFF(DEBUG_PIN1_MASK);
 
-                /* counter-incrementation */
+                /* counter write & incrementation */
+                SHARED_MEM.buffer_iv_ptr->idx_pru = SHARED_MEM.buffer_iv_idx;
+                // TODO: also write continuous TS
+
                 if (SHARED_MEM.buffer_iv_idx >= BUFFER_IV_SIZE - 1u)
                 {
-                    SHARED_MEM.buffer_iv_idx = 0u;
+                    SHARED_MEM.buffer_iv_idx               = 0u;
+                    SHARED_MEM.buffer_iv_ptr->timestamp_ns = SHARED_MEM.last_sample_timestamp_ns;
                 }
                 else { SHARED_MEM.buffer_iv_idx++; }
             }
@@ -291,10 +307,10 @@ int main(void)
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
-    SHARED_MEM.shp_pru0_mode                     = MODE_HARVESTER;
+    SHARED_MEM.shp_pru0_mode                     = MODE_NONE;
 
     SHARED_MEM.last_sample_timestamp_ns          = 0u;
-    SHARED_MEM.next_buffer_timestamp_ns          = 0u;
+    SHARED_MEM.next_sync_timestamp_ns            = 0u;
 
     SHARED_MEM.gpio_pin_state                    = 0u;
 
@@ -324,7 +340,7 @@ int main(void)
     SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
-    msg_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
+    msg_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
     SHARED_MEM.pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
     SHARED_MEM.buffer_iv_idx         = 0u;

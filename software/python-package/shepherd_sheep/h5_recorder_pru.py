@@ -61,11 +61,9 @@ class PruRecorder(Monitor):
             self.data["values"].resize((data_length, 2))
             self.data["time"].resize((data_length,))
         self.data["time"][self.position : pos_end] = int(time.time() * 1e9)
-        self.data["values"][self.position : pos_end, :] = [
-            data.ticks_mean,
-            data.ticks_max,
-        ]
-        self.position += 1
+        self.data["values"][self.position : pos_end, 0] = data.ticks_mean
+        self.data["values"][self.position : pos_end, 1] = data.ticks_max
+        self.position = pos_end
 
     def thread_fn(self) -> None:
         raise NotImplementedError

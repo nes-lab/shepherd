@@ -129,7 +129,7 @@ void sample_adc_harvester(const uint32_t sample_idx)
     else if (cfg->algorithm >= HRV_CV) harvest_adc_2_cv(sample_idx);
     else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_2_ivcurve(sample_idx);
     else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(sample_idx);
-    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm);
+    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm, 0u);
 }
 
 static void harvest_adc_2_cv(const uint32_t sample_idx)
@@ -250,10 +250,8 @@ static void harvest_adc_2_isc_voc(const uint32_t sample_idx)
     }
     else settle_steps--;
 
-    buffer->sample[sample_idx] =
-            (struct IVSample) {.voltage = voltage_hold, .current = current_hold};
-    // TODO: use this scheme for all?
-    // changing to struct - handling grew fw by > 300b
+    buffer->sample[sample_idx].voltage = voltage_hold;
+    buffer->sample[sample_idx].current = current_hold;
 }
 
 static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
@@ -381,9 +379,8 @@ static void harvest_adc_2_mppt_po(const uint32_t sample_idx)
         const uint32_t voltage_raw = cal_conv_uV_to_dac_raw(voltage_set_uV);
         dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | voltage_raw);
     }
-    //buffer->sample[sample_idx].current = current_adc;
-    //buffer->sample[sample_idx].voltage = voltage_adc;
-    buffer->sample[sample_idx] = (struct IVSample) {.voltage = voltage_adc, .current = current_adc};
+    buffer->sample[sample_idx].current = current_adc;
+    buffer->sample[sample_idx].voltage = voltage_adc;
 }
 #endif // HRV_SUPPORT
 
@@ -401,7 +398,7 @@ void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_cu
     else if (cfg->algorithm >= HRV_MPPT_PO) harvest_ivcurve_2_mppt_po(p_voltage_uV, p_current_nA);
     else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_ivcurve_2_mppt_voc(p_voltage_uV, p_current_nA);
     else if (cfg->algorithm >= HRV_CV) harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
-    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm);
+    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm, 0u);
 }
 
 

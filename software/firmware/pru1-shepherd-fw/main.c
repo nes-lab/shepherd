@@ -55,15 +55,16 @@ enum SyncState
 };
 
 // alternative message channel specially dedicated for errors
-static void send_status(enum MsgType type, const uint32_t value)
+static void send_status(enum MsgType type, const uint32_t value1, const uint32_t value2)
 {
     // do not care for sent-status -> the newest error wins IF different from previous
     if (!((SHARED_MEM.pru1_msg_error.type == type) &&
-          (SHARED_MEM.pru1_msg_error.value[0u] == value)))
+          (SHARED_MEM.pru1_msg_error.value[0u] == value1)))
     {
         SHARED_MEM.pru1_msg_error.unread    = 0u;
         SHARED_MEM.pru1_msg_error.type      = type;
-        SHARED_MEM.pru1_msg_error.value[0u] = value;
+        SHARED_MEM.pru1_msg_error.value[0u] = value1;
+        SHARED_MEM.pru1_msg_error.value[1u] = value2;
         SHARED_MEM.pru1_msg_error.id        = MSG_TO_KERNEL;
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
         SHARED_MEM.pru1_msg_error.unread    = 1u;
@@ -79,14 +80,14 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         if (SHARED_MEM.pru1_sync_inbox.id != MSG_TO_PRU)
         {
             /* Error occurs if something writes over boundaries */
-            send_status(MSG_ERR_MEM_CORRUPTION, 0);
+            send_status(MSG_ERR_MEM_CORRUPTION, 0u, 0u);
             return 0u;
         }
         if (SHARED_MEM.pru1_sync_inbox.type == MSG_TEST_ROUTINE)
         {
             // pipeline-test for msg-system
             SHARED_MEM.pru1_sync_inbox.unread = 0u;
-            send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks);
+            send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks, 0u);
             return 0u;
         }
         // NOTE: do not overwrite external msg without thinking twice! sync-routine relies on that content
@@ -98,27 +99,27 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         if (msg->sync_interval_ticks > SYNC_INTERVAL_TICKS + (SYNC_INTERVAL_TICKS >> 3))
         {
             //"Recv_CtrlReply -> sync_interval_ticks too high");
-            send_status(MSG_ERR_VALUE, 11);
+            send_status(MSG_ERR_VALUE, 11u, 0u);
         }
         if (msg->sync_interval_ticks < SYNC_INTERVAL_TICKS - (SYNC_INTERVAL_TICKS >> 3))
         {
             //"Recv_CtrlReply -> sync_interval_ticks too low");
-            send_status(MSG_ERR_VALUE, 12);
+            send_status(MSG_ERR_VALUE, 12u, 0u);
         }
         if (msg->sample_interval_ticks > SAMPLE_INTERVAL_TICKS + 100)
         {
             //"Recv_CtrlReply -> sample_interval_ticks too high");
-            send_status(MSG_ERR_VALUE, 13);
+            send_status(MSG_ERR_VALUE, 13u, 0u);
         }
         if (msg->sample_interval_ticks < SAMPLE_INTERVAL_TICKS - 100)
         {
             //"Recv_CtrlReply -> sample_interval_ticks too low");
-            send_status(MSG_ERR_VALUE, 14);
+            send_status(MSG_ERR_VALUE, 14u, 0u);
         }
         if (msg->compensation_steps > SAMPLES_PER_SYNC)
         {
             //"Recv_CtrlReply -> compensation_steps too high");
-            send_status(MSG_ERR_VALUE, 15);
+            send_status(MSG_ERR_VALUE, 15u, 0u);
         }
 
         static uint64_t prev_timestamp_ns = 0;
@@ -128,16 +129,16 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         {
             if (msg->next_timestamp_ns == 0)
                 // "Recv_CtrlReply -> next_timestamp_ns is zero");
-                send_status(MSG_ERR_VALUE, 16);
+                send_status(MSG_ERR_VALUE, 16u, 0u);
             else if (time_diff > SYNC_INTERVAL_NS + 5000000u)
                 // "Recv_CtrlReply -> next_timestamp_ns is > 105 ms");
-                send_status(MSG_ERR_VALUE, 17);
+                send_status(MSG_ERR_VALUE, 17u, 0u);
             else if (time_diff < SYNC_INTERVAL_NS - 5000000u)
                 // "Recv_CtrlReply -> next_timestamp_ns is < 95 ms");
-                send_status(MSG_ERR_VALUE, 18);
+                send_status(MSG_ERR_VALUE, 18u, 0u);
             else
                 // "Recv_CtrlReply -> timestamp-jump was not 100 ms");
-                send_status(MSG_ERR_VALUE, 19);
+                send_status(MSG_ERR_VALUE, 19u, 0u);
         }
 #endif
         return 1;
@@ -158,7 +159,7 @@ static inline bool_ft send_sync_request(const struct ProtoMsg *const msg)
         return 1;
     }
     /* Error occurs if PRU was not able to handle previous message in time */
-    send_status(MSG_ERR_BACKPRESSURE, 0);
+    send_status(MSG_ERR_BACKPRESSURE, 0u, 0u);
     return 0;
 }
 
@@ -198,14 +199,15 @@ static inline void check_gpio(const uint32_t last_sample_ticks)
     {
         DEBUG_GPIO_STATE_2;
         // local copy reduces reads to far-ram to current minimum
-        struct GPIOTrace *const buf_gpio                = SHARED_MEM.buffer_gpio_ptr;
-        const uint32_t          cIDX                    = SHARED_MEM.buffer_gpio_idx;
+        volatile struct GPIOTrace *const buf_gpio = SHARED_MEM.buffer_gpio_ptr;
+        const uint32_t                   cIDX     = SHARED_MEM.buffer_gpio_idx;
 
         /* Ticks since we've taken the last sample */
-        const uint32_t          ticks_since_last_sample = CT_IEP.TMR_CNT - last_sample_ticks;
+        const uint32_t ticks_since_last_sample    = CT_IEP.TMR_CNT - last_sample_ticks;
         /* Calculate final timestamp of gpio event */
-        const uint64_t          gpio_timestamp_ns =
+        const uint64_t gpio_timestamp_ns =
                 SHARED_MEM.last_sample_timestamp_ns + TICK_INTERVAL_NS * ticks_since_last_sample;
+        // TODO: maybe just store TS and counter or even u32 sync-counter + u32 tick_counter
 
         buf_gpio->timestamp_ns[cIDX] = gpio_timestamp_ns;
         buf_gpio->bitmask[cIDX]      = (uint16_t) gpio_status;
@@ -334,7 +336,7 @@ int32_t event_loop()
             if (sync_state == IDLE) sync_state = REPLY_PENDING;
             else
             {
-                send_status(MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state);
+                send_status(MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state, 0u);
                 return 0;
             }
             send_sync_request(&sync_rqst);
@@ -393,14 +395,9 @@ int32_t event_loop()
 
             // Update Timer-Values
             last_sample_interval_ticks       = iep_get_cmp_val(IEP_CMP1);
-            if (last_sample_interval_ticks > 0) // this assumes sample0 taken on cmp1==0
-            {
-                SHARED_MEM.last_sample_timestamp_ns +=
-                        SAMPLE_INTERVAL_NS; // TODO: should be directly done on pru0 (noncritical)
-            }
 
             /* Forward sample timer based on current sample_interval_ticks*/
-            uint32_t next_cmp_val = last_sample_interval_ticks + sample_interval_ticks;
+            uint32_t next_cmp_val            = last_sample_interval_ticks + sample_interval_ticks;
             compensation_counter += compensation_increment; // fixed point magic
             /* If we are in compensation phase add one */
             if ((compensation_counter >= SAMPLES_PER_SYNC) && (compensation_steps > 0))
@@ -415,8 +412,8 @@ int32_t event_loop()
             /* If we are waiting for a reply from Linux kernel module */
             if (receive_sync_reply(&sync_repl) > 0)
             {
-                sync_state                          = IDLE;
-                SHARED_MEM.next_buffer_timestamp_ns = sync_repl.next_timestamp_ns;
+                sync_state                        = IDLE;
+                SHARED_MEM.next_sync_timestamp_ns = sync_repl.next_timestamp_ns;
             }
             DEBUG_EVENT_STATE_0;
             continue; // for more regular gpio-sampling
@@ -481,10 +478,11 @@ int main(void)
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u;
 
 reset:
-    send_status(MSG_STATUS_RESTARTING_ROUTINE, 1u);
+    send_status(MSG_STATUS_RESTARTING_ROUTINE, 1u, 0u);
 
-    SHARED_MEM.ivsample_fetch_value = (struct IVSample) {.voltage = 0u, .current = 0u};
-    SHARED_MEM.ivsample_fetch_index = IDX_OUT_OF_BOUND;
+    SHARED_MEM.ivsample_fetch_value.voltage = 0u;
+    SHARED_MEM.ivsample_fetch_value.current = 0u;
+    SHARED_MEM.ivsample_fetch_index         = IDX_OUT_OF_BOUND;
 
     DEBUG_STATE_0;
     iep_init();

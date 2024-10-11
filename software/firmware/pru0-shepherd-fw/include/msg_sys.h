@@ -7,7 +7,7 @@
 void    msg_init();
 
 // alternative message channel specially dedicated for errors
-void    msg_send_status(enum MsgType type, const uint32_t value);
+void    msg_send_status(enum MsgType type, const uint32_t value1, const uint32_t value2);
 
 // send returns a 1 on success
 bool_ft msg_send(enum MsgType type, const uint32_t value1, const uint32_t value2);

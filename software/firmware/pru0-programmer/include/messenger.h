@@ -6,7 +6,7 @@
 #include "stdint_fast.h"
 #include <stdint.h>
 
-void    send_status(enum MsgType type, const uint32_t value);
+void    send_status(enum MsgType type, const uint32_t value1, const uint32_t value2);
 
 // send returns a 1 on success
 bool_ft send_message(enum MsgType type, const uint32_t value1, const uint32_t value2);
