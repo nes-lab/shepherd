@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 #if defined(PRU0)
-#define RCV_TYPE     ProtoMsg
+  #define RCV_TYPE ProtoMsg
 #else
-#define RCV_TYPE     SyncMsg
+  #define RCV_TYPE SyncMsg
 #endif
 
 void    msgsys_init();

@@ -4,7 +4,7 @@
 #include "commons.h"
 #include <stdint.h>
 
-void            converter_initialize(const volatile struct ConverterConfig *config);
+void            converter_initialize();
 
 void            converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void            converter_calc_out_power(uint32_t current_adc_raw);

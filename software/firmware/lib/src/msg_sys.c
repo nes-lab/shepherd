@@ -1,23 +1,35 @@
 #include "msg_sys.h"
 #include "commons.h"
 #include "shared_mem.h"
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stddef.h>
 
 #if defined(PRU0)
-#define MSG_INBOX (*((volatile struct ProtoMsg *) PRU_SHARED_MEM_OFFSET + offsetof(struct SharedMem, pru0_msg_inbox)))
-#define MSG_OUTBOX (*((volatile struct ProtoMsg *) PRU_SHARED_MEM_OFFSET + offsetof(struct SharedMem, pru0_msg_outbox)))
-#define MSG_ERROR (*((volatile struct ProtoMsg *) PRU_SHARED_MEM_OFFSET + offsetof(struct SharedMem, pru0_msg_error)))
+  #define MSG_INBOX                                                                                \
+      (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
+                                       offsetof(struct SharedMem, pru0_msg_inbox))))
+  #define MSG_OUTBOX                                                                               \
+      (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
+                                       offsetof(struct SharedMem, pru0_msg_outbox))))
+  #define MSG_ERROR                                                                                \
+      (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
+                                       offsetof(struct SharedMem, pru0_msg_error))))
 #elif defined(PRU1)
-#define MSG_INBOX (*((volatile struct SyncMsg *) PRU_SHARED_MEM_OFFSET + offsetof(struct SharedMem, pru1_sync_inbox)))
-#define MSG_OUTBOX (*((volatile struct ProtoMsg *) PRU_SHARED_MEM_OFFSET + offsetof(struct SharedMem, pru1_sync_outbox)))
-#define MSG_ERROR (*((volatile struct ProtoMsg *) PRU_SHARED_MEM_OFFSET + offsetof(struct SharedMem, pru1_msg_error)))
+  #define MSG_INBOX                                                                                \
+      (*((volatile struct SyncMsg *) (PRU_SHARED_MEM_OFFSET +                                      \
+                                      offsetof(struct SharedMem, pru1_sync_inbox))))
+  #define MSG_OUTBOX                                                                               \
+      (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
+                                       offsetof(struct SharedMem, pru1_sync_outbox))))
+  #define MSG_ERROR                                                                                \
+      (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
+                                       offsetof(struct SharedMem, pru1_msg_error))))
 #else
-#error "PRU number must be defined and either 1 or 0"
+  #error "PRU number must be defined and either 1 or 0"
 #endif
 
-void                      msgsys_init() { }
+void msgsys_init() {}
 
 // alternative message channel specially dedicated for errors
 void msgsys_send_status(enum MsgType type, const uint32_t value1, const uint32_t value2)
@@ -62,7 +74,7 @@ bool_ft msgsys_receive(struct RCV_TYPE *const container)
     {
         if (MSG_INBOX.id == MSG_TO_PRU)
         {
-            *container        = MSG_INBOX;
+            *container       = MSG_INBOX;
             MSG_INBOX.unread = 0u;
             return 1u;
         }

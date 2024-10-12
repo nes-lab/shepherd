@@ -4,7 +4,7 @@
 #include "commons.h"
 #include "stdint.h"
 
-void            harvester_initialize(const volatile struct HarvesterConfig *);
+void            harvester_initialize();
 
 void            sample_adc_harvester(uint32_t sample_idx);
 

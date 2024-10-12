@@ -210,7 +210,9 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         self.util_timestamps_offset = self.util_trace_offset + 4
         self.util_ticks_min_offset = self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * 8
         self.util_ticks_max_offset = self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 4)
-        self.util_ticks_sum_offset = self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 2 * 4)
+        self.util_ticks_sum_offset = (
+            self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 2 * 4)
+        )
         self.util_sample_count_offset = (
             self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 3 * 4)
         )

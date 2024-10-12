@@ -51,7 +51,7 @@ enum MsgType
     MSG_STATUS_RESTARTING_ROUTINE = 0xF0u,
     // Routines
     MSG_TEST_ROUTINE              = 0xFAu,
-    MSG_SYNC_ROUTINE              = 0xFBu, // TODO: not used?
+    MSG_SYNC_ROUTINE              = 0xFBu,
 };
 
 /* Message IDs used in Mem-Msg-Protocol between PRUs and kernel module */

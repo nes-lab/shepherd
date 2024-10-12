@@ -261,7 +261,7 @@ void sample_init()
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     /* init harvester & converter */
-    calibration_initialize(&SHARED_MEM.calibration_settings);
-    harvester_initialize(&SHARED_MEM.harvester_settings);
-    if (mode == MODE_EMULATOR) { converter_initialize(&SHARED_MEM.converter_settings); }
+    calibration_initialize();
+    harvester_initialize();
+    if (mode == MODE_EMULATOR) { converter_initialize(); }
 }
