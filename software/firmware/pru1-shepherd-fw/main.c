@@ -64,7 +64,8 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         if (msg->type == MSG_TEST_ROUTINE)
         {
             // pipeline-test for msg-system
-            msgsys_send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks, 0u);
+            msgsys_send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks,
+                               0u);
             return 0u;
         }
 
@@ -216,14 +217,14 @@ static inline void check_gpio(const uint32_t last_sample_ticks)
 
 int32_t event_loop()
 {
-    uint32_t        last_sample_interval_ticks = 0;
+    uint32_t       last_sample_interval_ticks = 0;
 
     /* Prepare message that will be received and sent to Linux kernel module */
-    struct SyncMsg  sync_repl                  = {
-                              .sync_interval_ticks   = SYNC_INTERVAL_TICKS,
-                              .sample_interval_ticks = SAMPLE_INTERVAL_TICKS,
-                              .compensation_steps    = 0u,
-                              .canary                = CANARY_VALUE_U32,
+    struct SyncMsg sync_repl                  = {
+                             .sync_interval_ticks   = SYNC_INTERVAL_TICKS,
+                             .sample_interval_ticks = SAMPLE_INTERVAL_TICKS,
+                             .compensation_steps    = 0u,
+                             .canary                = CANARY_VALUE_U32,
     };
 
 

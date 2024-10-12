@@ -78,10 +78,10 @@ int main(void)
     msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
-    CT_CFG.SYSCFG_bit.STANDBY_INIT               = 0u;
+    CT_CFG.SYSCFG_bit.STANDBY_INIT   = 0u;
 
     /* allow PRU1 to enter event-loop */
-    SHARED_MEM.cmp0_trigger_for_pru1             = 1u;
+    SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.programmer_ctrl.state);

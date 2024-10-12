@@ -123,13 +123,13 @@ static bool_ft handle_kernel_com()
                 // TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
                 msgsys_send(MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u),
-                         (uint32_t) get_P_input_fW());
+                            (uint32_t) get_P_input_fW());
                 return 1u;
 
             case MSG_DBG_VSRC_P_OUT:
                 converter_calc_out_power(msg_in.value[0]);
                 msgsys_send(MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u),
-                         (uint32_t) get_P_output_fW());
+                            (uint32_t) get_P_output_fW());
                 return 1u;
 
             case MSG_DBG_VSRC_V_CAP:
@@ -143,9 +143,9 @@ static bool_ft handle_kernel_com()
                 return 1u;
 
             case MSG_DBG_VSRC_INIT:
-                calibration_initialize(&SHARED_MEM.calibration_settings);
-                converter_initialize(&SHARED_MEM.converter_settings);
-                harvester_initialize(&SHARED_MEM.harvester_settings);
+                calibration_initialize();
+                converter_initialize();
+                harvester_initialize();
                 msgsys_send(MSG_DBG_VSRC_INIT, 0, 0);
                 return 1u;
 
