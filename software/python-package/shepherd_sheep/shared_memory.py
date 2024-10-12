@@ -36,7 +36,7 @@ class IVTrace:
         self.current = current
 
     def __len__(self) -> int:
-        if isinstance(self.timestamp_ns, int):
+        if isinstance(self.timestamp_ns, int | None):
             return min(self.voltage.size, self.current.size)
         if isinstance(self.timestamp_ns, np.ndarray):
             return min(self.voltage.size, self.current.size, self.timestamp_ns.size)
@@ -184,7 +184,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
 
         # TODO: switch to struct dict: "index": {type: u64, count: 1}
 
-        self.iv_inp_trace_index: int | None = 0
+        self.iv_inp_trace_index: int | None = None
         self.iv_inp_trace_offset = 0
         self.iv_inp_samples_offset = self.iv_inp_trace_offset + 4
         self.iv_inp_samples_size = 2 * 4
@@ -644,8 +644,8 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                 avail_length,
             )
         ts_start = time.time() if verbose else None
-        if self.iv_out_trace_index is None:
-            self.iv_out_trace_index = 0
+        if self.iv_inp_trace_index is None:
+            self.iv_inp_trace_index = 0
         # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
         data.voltage = cal.voltage.raw_to_si(data.voltage).astype("u4")
         data.current = cal.current.raw_to_si(data.current).astype("u4")
@@ -656,7 +656,6 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         # Seek buffer location in memory and skip header
         self.mapped_mem.seek(self.iv_inp_samples_offset + 8 * self.iv_inp_trace_index)
         self.mapped_mem.write(iv_data.tobytes())
-        self.iv_inp_trace_index = (self.iv_inp_trace_index + len(data)) % commons.BUFFER_IV_SIZE
         # TODO: code does not handle boundaries - !!!!!
         # TODO: should we write or test timestamp? otherwise remove entry in pru-sharedmem
         # test canary
@@ -671,9 +670,12 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             )
         if verbose:
             log.debug(
-                "Sending emu-buffer to PRU took %.2f ms",
+                "Sending emu-buffer to PRU, idx=%d took %.2f ms",
+                self.iv_inp_trace_index,
                 1e3 * (time.time() - ts_start),
             )
+        self.iv_inp_trace_index = (self.iv_inp_trace_index + len(data)) % commons.BUFFER_IV_SIZE
+
 
     def write_firmware(self, data: bytes) -> int:
         data_size = len(data)

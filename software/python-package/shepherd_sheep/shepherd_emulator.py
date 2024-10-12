@@ -52,7 +52,7 @@ class ShepherdEmulator(ShepherdIO):
         self.stack = ExitStack()
 
         # performance-critical, allows deep insight between py<-->pru-communication
-        self.verbose_extra = True
+        self.verbose_extra = False
 
         if not cfg.input_path.exists():
             raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
@@ -167,21 +167,20 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
-        time.sleep(1)  # TODO: remove?!?
         self.buffer_segment_count = commons.BUFFER_IV_SIZE // self.samples_per_buffer
+        log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
         for _, dsv, dsc in self.reader.read_buffers(
             end_n=self.buffer_segment_count,
             is_raw=True,
             omit_ts=True,
         ):
-            if self.shared_mem.get_space_to_write_iv() < self.reader.samples_per_buffer:
+            if not self.shared_mem.can_fit_iv_segment():
                 raise BufferError("Not enough space in buffer during initial fill.")
             self.shared_mem.write_buffer_iv(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
-                verbose=self.verbose_extra,
+                verbose=False,
             )
-            time.sleep(100e-6)  # allow other processes to work
 
         return self
 
@@ -231,6 +230,7 @@ class ShepherdEmulator(ShepherdIO):
             is_raw=True,
             omit_ts=True,
         ):
+
             # TODO: transform h5_recorders into monitors, make all 3 free threading
             while not self.shared_mem.can_fit_iv_segment():
                 data_iv = self.shared_mem.read_buffer_iv(verbose=self.verbose_extra)
@@ -266,15 +266,13 @@ class ShepherdEmulator(ShepherdIO):
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s)
-
+                    time.sleep(self.segment_period_s/10)
             self.shared_mem.write_buffer_iv(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
                 verbose=self.verbose_extra,
             )
 
-        prog_bar.close()
         # Read all remaining buffers from PRU
         try:
             while True:
@@ -287,6 +285,7 @@ class ShepherdEmulator(ShepherdIO):
                     self.writer.write_util_buffer(data_ut)
 
                 if data_iv:
+                    prog_bar.update(n=data_iv.duration())
                     if data_iv.timestamp() >= ts_end:
                         log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                         return
@@ -300,12 +299,13 @@ class ShepherdEmulator(ShepherdIO):
                         log.error("Post sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s)
+                    time.sleep(self.segment_period_s/10)
 
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
             if e.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
                 log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
+                prog_bar.close()
                 return
             raise ShepherdPRUError from e
         except OSError as _xpt:
@@ -314,3 +314,4 @@ class ShepherdEmulator(ShepherdIO):
                 _xpt,
             )
             return
+        prog_bar.close()
