@@ -2,10 +2,10 @@ PRU_NUM = 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 folder_path := $(dir $(mkfile_path))
-PROTO ?= SWD
-PROJ_NAME = $(current_dir)-$(PROTO)
-FW_NAME = programmer-$(PROTO)
-# choose variant with "make PROTO=SWD|SBW", with SWD being default
+TYPE ?= SWD
+PROJ_NAME = $(current_dir)-$(TYPE)
+FW_NAME = programmer-$(TYPE)
+# choose variant with "make TYPE=SWD|SBW", with SWD being default
 
 BASE_PATH ?= ./..
 
@@ -26,7 +26,7 @@ ASM_SOURCES = $(notdir $(wildcard ./*.asm))
 # external asm-sources - add manually
 #ASM_SOURCES += spi_transfer_pru.asm # adc_readwrite, adc_fastread, dac_write
 
-ifeq ($(PROTO), SBW)  # switch to SBW with "make PROTO=SBW"
+ifeq ($(TYPE), SBW)  # switch to SBW with "make TYPE=SBW"
 CFLAGS += -D SBW_SUPPORT
 endif
 
