@@ -7,7 +7,7 @@
 
 #include "device.h"
 #include "intelhex.h"
-#include "messenger.h"
+#include "msg_sys.h"
 #include "swd_transport.h"
 #include "sys_gpio.h"
 #include <stdint.h>
@@ -27,13 +27,13 @@ int write_to_target(device_driver_t *drv, const ihex_mem_block_t *const block)
         uint32_t data = *((uint32_t *) src);
         if (drv->write(data, addr) != DRV_ERR_OK)
         {
-            send_message(MSG_PGM_ERROR_WRITE, addr, data);
+            msgsys_send(MSG_PGM_ERROR_WRITE, addr, data);
             return PRG_STATE_ERR_WRITE;
         }
         if (drv->verify(data, addr) != DRV_ERR_OK)
         {
             // TODO: maybe add switch to read-back & send-out data
-            send_message(MSG_PGM_ERROR_VERIFY, addr, data);
+            msgsys_send(MSG_PGM_ERROR_VERIFY, addr, data);
             return PRG_STATE_ERR_VERIFY;
         }
 
@@ -97,7 +97,7 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, const uint32_t *con
     }
     if (ret != IHEX_RET_DONE)
     {
-        send_message(MSG_PGM_ERROR_PARSE, ret, 0u);
+        msgsys_send(MSG_PGM_ERROR_PARSE, ret, 0u);
         pctrl->state = PRG_STATE_ERR_PARSE;
         goto exit;
     }

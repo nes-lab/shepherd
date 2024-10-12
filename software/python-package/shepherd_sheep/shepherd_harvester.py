@@ -45,7 +45,7 @@ class ShepherdHarvester(ShepherdIO):
         self.stack = ExitStack()
 
         # performance-critical, allows deep insight between py<-->pru-communication
-        self.verbose_extra = True
+        self.verbose_extra = False
 
         self.cal_hrv = retrieve_calibration(use_default_cal=cfg.use_cal_default).harvester
 

@@ -19,16 +19,17 @@ class PruRecorder(Monitor):
 
         self.data.create_dataset(
             name="values",
-            shape=(self.increment, 2),
+            shape=(self.increment, 3),
             dtype="u2",
-            maxshape=(None, 2),
-            chunks=(self.increment, 2),
+            maxshape=(None, 3),
+            chunks=(self.increment, 3),
             compression=compression,
         )
 
         self.data["values"].attrs["unit"] = "ticks, ticks"
         self.data["values"].attrs["description"] = (
             "pru0_util_mean [ticks], "
+            "pru0_util_min [ticks],"
             "pru0_util_max [ticks],"
             f"with {commons.SAMPLE_INTERVAL_TICKS} ticks per sample-step"
         )
@@ -43,7 +44,7 @@ class PruRecorder(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.data["values"].resize((self.position, 2))
+        self.data["values"].resize((self.position, 3))
         super().__exit__()
 
     def write(self, data: UtilTrace) -> None:
@@ -58,11 +59,12 @@ class PruRecorder(Monitor):
         data_length = self.data["time"].shape[0]
         if pos_end >= data_length:
             data_length += max(self.increment, pos_end - data_length)
-            self.data["values"].resize((data_length, 2))
+            self.data["values"].resize((data_length, 3))
             self.data["time"].resize((data_length,))
         self.data["time"][self.position : pos_end] = int(time.time() * 1e9)
-        self.data["values"][self.position : pos_end, 0] = data.ticks_sum
-        self.data["values"][self.position : pos_end, 1] = data.ticks_max
+        self.data["values"][self.position : pos_end, 0] = data.ticks_mean
+        self.data["values"][self.position : pos_end, 1] = data.ticks_min
+        self.data["values"][self.position : pos_end, 2] = data.ticks_max
         self.position = pos_end
 
     def thread_fn(self) -> None:

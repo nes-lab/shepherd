@@ -124,11 +124,11 @@ void harvester_initialize(const volatile struct HarvesterConfig *const config)
 void sample_adc_harvester(const uint32_t sample_idx)
 {
     if (cfg->algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(sample_idx);
-    else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_2_mppt_voc(sample_idx);
+    else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_adc_2_mppt_voc(sample_idx);  // ~ 1300 ns without SPI
     else if (cfg->algorithm >= HRV_CV) harvest_adc_2_cv(sample_idx);
     else if (cfg->algorithm >= HRV_IVCURVE) harvest_adc_2_ivcurve(sample_idx);
     else if (cfg->algorithm >= HRV_ISC_VOC) harvest_adc_2_isc_voc(sample_idx);
-    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm, 0u);
+    else msgsys_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm, 0u);
 }
 
 static void harvest_adc_2_cv(const uint32_t sample_idx)
@@ -384,7 +384,7 @@ void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_cu
     else if (cfg->algorithm >= HRV_MPPT_PO) harvest_ivcurve_2_mppt_po(p_voltage_uV, p_current_nA);
     else if (cfg->algorithm >= HRV_MPPT_VOC) harvest_ivcurve_2_mppt_voc(p_voltage_uV, p_current_nA);
     else if (cfg->algorithm >= HRV_CV) harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
-    else msg_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm, 0u);
+    else msgsys_send_status(MSG_ERR_HRV_ALGO, cfg->algorithm, 0u);
 }
 
 

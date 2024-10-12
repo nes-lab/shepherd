@@ -90,7 +90,7 @@ static bool_ft handle_kernel_com()
 {
     struct ProtoMsg msg_in;
 
-    if (msg_receive(&msg_in) == 0) return 1u;
+    if (msgsys_receive(&msg_in) == 0) return 1u;
 
     // TODO: remove debug mode? not needed anymore with py-to-c-interface
     if ((SHARED_MEM.shp_pru0_mode == MODE_DEBUG) && (SHARED_MEM.shp_pru_state == STATE_RUNNING))
@@ -104,7 +104,7 @@ static bool_ft handle_kernel_com()
 
             case MSG_DBG_ADC:
                 res = sample_dbg_adc(msg_in.value[0]);
-                msg_send(MSG_DBG_ADC, res, 0);
+                msgsys_send(MSG_DBG_ADC, res, 0);
                 return 1u;
 
             case MSG_DBG_DAC: // TODO: better name: MSG_CTRL_DAC
@@ -113,7 +113,7 @@ static bool_ft handle_kernel_com()
 
             case MSG_DBG_GP_BATOK: set_batok_pin(msg_in.value[0] > 0); return 1U;
 
-            case MSG_DBG_GPI: msg_send(MSG_DBG_GPI, SHARED_MEM.gpio_pin_state, 0); return 1U;
+            case MSG_DBG_GPI: msgsys_send(MSG_DBG_GPI, SHARED_MEM.gpio_pin_state, 0); return 1U;
 
 #if (defined(ENABLE_DBG_VSOURCE) && defined(EMU_SUPPORT))
             case MSG_DBG_VSRC_HRV_P_INP:
@@ -122,31 +122,31 @@ static bool_ft handle_kernel_com()
             case MSG_DBG_VSRC_P_INP: // TODO: these can be done with normal emulator instantiation
                 // TODO: get rid of these test, but first allow lib-testing of converter, then full virtual_X pru-test with artificial inputs
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
-                msg_send(MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u),
+                msgsys_send(MSG_DBG_VSRC_P_INP, (uint32_t) (get_P_input_fW() >> 32u),
                          (uint32_t) get_P_input_fW());
                 return 1u;
 
             case MSG_DBG_VSRC_P_OUT:
                 converter_calc_out_power(msg_in.value[0]);
-                msg_send(MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u),
+                msgsys_send(MSG_DBG_VSRC_P_OUT, (uint32_t) (get_P_output_fW() >> 32u),
                          (uint32_t) get_P_output_fW());
                 return 1u;
 
             case MSG_DBG_VSRC_V_CAP:
                 converter_update_cap_storage();
-                msg_send(MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
+                msgsys_send(MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
                 return 1u;
 
             case MSG_DBG_VSRC_V_OUT:
                 res = converter_update_states_and_output();
-                msg_send(MSG_DBG_VSRC_V_OUT, res, 0);
+                msgsys_send(MSG_DBG_VSRC_V_OUT, res, 0);
                 return 1u;
 
             case MSG_DBG_VSRC_INIT:
                 calibration_initialize(&SHARED_MEM.calibration_settings);
                 converter_initialize(&SHARED_MEM.converter_settings);
                 harvester_initialize(&SHARED_MEM.harvester_settings);
-                msg_send(MSG_DBG_VSRC_INIT, 0, 0);
+                msgsys_send(MSG_DBG_VSRC_INIT, 0, 0);
                 return 1u;
 
             case MSG_DBG_VSRC_CHARGE:
@@ -154,7 +154,7 @@ static bool_ft handle_kernel_com()
                 converter_calc_out_power(0u);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output();
-                msg_send(MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
+                msgsys_send(MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
 
             case MSG_DBG_VSRC_DRAIN:
@@ -162,19 +162,19 @@ static bool_ft handle_kernel_com()
                 converter_calc_out_power(msg_in.value[0]);
                 converter_update_cap_storage();
                 res = converter_update_states_and_output();
-                msg_send(MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
+                msgsys_send(MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
 #endif // ENABLE_DBG_VSOURCE
 
 #ifdef ENABLE_DEBUG_MATH_FN
             case MSG_DBG_FN_TESTS:
                 res64 = debug_math_fns(msg_in.value[0], msg_in.value[1]);
-                msg_send(MSG_DBG_FN_TESTS, (uint32_t) (res64 >> 32u), (uint32_t) res64);
+                msgsys_send(MSG_DBG_FN_TESTS, (uint32_t) (res64 >> 32u), (uint32_t) res64);
                 return 1u;
 #endif //ENABLE_DEBUG_MATH_FN
 
             default:
-                msg_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u);
+                msgsys_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u);
                 return 0U;
                 // TODO: there are two msg_send() in here that send MSG_ERR
         }
@@ -184,14 +184,14 @@ static bool_ft handle_kernel_com()
         if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
         {
             // pipeline-test for msg-system
-            msg_send(MSG_TEST_ROUTINE, msg_in.value[0], 0);
+            msgsys_send(MSG_TEST_ROUTINE, msg_in.value[0], 0);
         }
         else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 2))
         {
             // pipeline-test for msg-system
-            msg_send_status(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
+            msgsys_send_status(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
         }
-        else { msg_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u); }
+        else { msgsys_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u); }
     }
     return 0u;
 }
@@ -209,7 +209,7 @@ void event_loop()
         // TODO: could just check, and assign later
 
         // pre-trigger for extra low jitter and up-to-date samples, ADCs will be triggered to sample on rising edge
-        if (iep_tmr_cmp_sts & IEP_CMP1_MASK)
+        if (iep_tmr_cmp_sts & IEP_CMP1_MASK) // LogicAnalyzer: 104 ns
         {
             GPIO_OFF(SPI_CS_ADCs_MASK);
             // determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
@@ -222,7 +222,7 @@ void event_loop()
         const uint32_t timer_start = iep_get_cnt_val() - 30u; // rough estimate on
 
         // Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
-        if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
+        if (iep_tmr_cmp_sts & IEP_CMP0_MASK) // LogicAnalyzer: 204 ns
         {
             // TODO: move back to PRU1 - not needed here anymore?
             /* Clear Timer Compare 0 and forward it to pru1 */
@@ -269,7 +269,7 @@ void event_loop()
 
             /* Did the Linux kernel module ask for reset? */
             if (SHARED_MEM.shp_pru_state == STATE_RESET) return;
-            else
+            else // LogicAnalyzer: 148 ns for just checking, till loop-restart
             {
                 /* only handle kernel-communications if this is not the last sample */
                 GPIO_ON(DEBUG_PIN1_MASK);
@@ -296,15 +296,18 @@ int main(void)
     SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
     SHARED_MEM.buffer_iv_inp_size    = sizeof(struct IVTraceInp);
 
-    SHARED_MEM.buffer_iv_out_ptr = (struct IVTraceOut *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp));
+    SHARED_MEM.buffer_iv_out_ptr =
+            (struct IVTraceOut *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp));
     SHARED_MEM.buffer_iv_out_size = sizeof(struct IVTraceOut);
 
     SHARED_MEM.buffer_gpio_ptr =
-            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) + sizeof(struct IVTraceOut));
+            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
+                                  sizeof(struct IVTraceOut));
     SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
 
     SHARED_MEM.buffer_util_ptr =
-            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) + sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
+            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
+                                  sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
     // whole length is documented in resourceTable.shared_memory.len
 
@@ -334,7 +337,7 @@ int main(void)
     SHARED_MEM.pru0_msg_outbox.unread            = 0u;
     SHARED_MEM.pru0_msg_inbox.unread             = 0u;
     SHARED_MEM.pru0_msg_error.unread             = 0u;
-    msg_init();
+    msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT   = 0u;
@@ -343,7 +346,7 @@ int main(void)
     SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
-    msg_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
+    msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
     SHARED_MEM.pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
 
     SHARED_MEM.buffer_iv_idx         = 0u;
