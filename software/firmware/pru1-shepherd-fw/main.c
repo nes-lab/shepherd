@@ -8,6 +8,7 @@
 
 #include "iep.h"
 #include "intc.h"
+#include "msg_sys.h"
 
 #include "commons.h"
 #include "debug_routines.h"
@@ -54,72 +55,45 @@ enum SyncState
     REPLY_PENDING
 };
 
-// alternative message channel specially dedicated for errors
-static void send_status(enum MsgType type, const uint32_t value1, const uint32_t value2)
-{
-    // do not care for sent-status -> the newest error wins IF different from previous
-    if (!((SHARED_MEM.pru1_msg_error.type == type) &&
-          (SHARED_MEM.pru1_msg_error.value[0u] == value1)))
-    {
-        SHARED_MEM.pru1_msg_error.unread    = 0u;
-        SHARED_MEM.pru1_msg_error.type      = type;
-        SHARED_MEM.pru1_msg_error.value[0u] = value1;
-        SHARED_MEM.pru1_msg_error.value[1u] = value2;
-        SHARED_MEM.pru1_msg_error.id        = MSG_TO_KERNEL;
-        // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-        SHARED_MEM.pru1_msg_error.unread    = 1u;
-    }
-    if (type >= 0xE0) __delay_cycles(200u / TICK_INTERVAL_NS); // 200 ns
-}
-
 
 static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
 {
-    if (SHARED_MEM.pru1_sync_inbox.unread >= 1u)
+
+    if (msgsys_receive(msg))
     {
-        if (SHARED_MEM.pru1_sync_inbox.id != MSG_TO_PRU)
-        {
-            /* Error occurs if something writes over boundaries */
-            send_status(MSG_ERR_MEM_CORRUPTION, 0u, 0u);
-            return 0u;
-        }
-        if (SHARED_MEM.pru1_sync_inbox.type == MSG_TEST_ROUTINE)
+        if (msg->type == MSG_TEST_ROUTINE)
         {
             // pipeline-test for msg-system
-            SHARED_MEM.pru1_sync_inbox.unread = 0u;
-            send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks, 0u);
+            msgsys_send_status(MSG_TEST_ROUTINE, SHARED_MEM.pru1_sync_inbox.sync_interval_ticks, 0u);
             return 0u;
         }
-        // NOTE: do not overwrite external msg without thinking twice! sync-routine relies on that content
-        *msg = SHARED_MEM.pru1_sync_inbox; // TODO: faster to copy only the needed payload
-        SHARED_MEM.pru1_sync_inbox.unread = 0u;
 
 #if (SANITY_CHECKS > 0u)
         // TODO: move this to kernel
         if (msg->sync_interval_ticks > SYNC_INTERVAL_TICKS + (SYNC_INTERVAL_TICKS >> 3))
         {
             //"Recv_CtrlReply -> sync_interval_ticks too high");
-            send_status(MSG_ERR_VALUE, 11u, 0u);
+            msgsys_send_status(MSG_ERR_VALUE, 11u, 0u);
         }
         if (msg->sync_interval_ticks < SYNC_INTERVAL_TICKS - (SYNC_INTERVAL_TICKS >> 3))
         {
             //"Recv_CtrlReply -> sync_interval_ticks too low");
-            send_status(MSG_ERR_VALUE, 12u, 0u);
+            msgsys_send_status(MSG_ERR_VALUE, 12u, 0u);
         }
         if (msg->sample_interval_ticks > SAMPLE_INTERVAL_TICKS + 100)
         {
             //"Recv_CtrlReply -> sample_interval_ticks too high");
-            send_status(MSG_ERR_VALUE, 13u, 0u);
+            msgsys_send_status(MSG_ERR_VALUE, 13u, 0u);
         }
         if (msg->sample_interval_ticks < SAMPLE_INTERVAL_TICKS - 100)
         {
             //"Recv_CtrlReply -> sample_interval_ticks too low");
-            send_status(MSG_ERR_VALUE, 14u, 0u);
+            msgsys_send_status(MSG_ERR_VALUE, 14u, 0u);
         }
         if (msg->compensation_steps > SAMPLES_PER_SYNC)
         {
             //"Recv_CtrlReply -> compensation_steps too high");
-            send_status(MSG_ERR_VALUE, 15u, 0u);
+            msgsys_send_status(MSG_ERR_VALUE, 15u, 0u);
         }
 
         static uint64_t prev_timestamp_ns = 0;
@@ -129,38 +103,21 @@ static inline bool_ft receive_sync_reply(struct SyncMsg *const msg)
         {
             if (msg->next_timestamp_ns == 0)
                 // "Recv_CtrlReply -> next_timestamp_ns is zero");
-                send_status(MSG_ERR_VALUE, 16u, 0u);
+                msgsys_send_status(MSG_ERR_VALUE, 16u, 0u);
             else if (time_diff > SYNC_INTERVAL_NS + 5000000u)
                 // "Recv_CtrlReply -> next_timestamp_ns is > 105 ms");
-                send_status(MSG_ERR_VALUE, 17u, 0u);
+                msgsys_send_status(MSG_ERR_VALUE, 17u, 0u);
             else if (time_diff < SYNC_INTERVAL_NS - 5000000u)
                 // "Recv_CtrlReply -> next_timestamp_ns is < 95 ms");
-                send_status(MSG_ERR_VALUE, 18u, 0u);
+                msgsys_send_status(MSG_ERR_VALUE, 18u, 0u);
             else
                 // "Recv_CtrlReply -> timestamp-jump was not 100 ms");
-                send_status(MSG_ERR_VALUE, 19u, 0u);
+                msgsys_send_status(MSG_ERR_VALUE, 19u, 0u);
         }
 #endif
-        return 1;
+        return 1u;
     }
-    return 0;
-}
-
-// emits a 1 on success
-// pru1_sync_outbox: (future opt.) needs to have special config set: identifier=MSG_TO_KERNEL and unread=1
-static inline bool_ft send_sync_request(const struct ProtoMsg *const msg)
-{
-    if (SHARED_MEM.pru1_sync_outbox.unread == 0)
-    {
-        SHARED_MEM.pru1_sync_outbox        = *msg;
-        SHARED_MEM.pru1_sync_outbox.id     = MSG_TO_KERNEL;
-        // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
-        SHARED_MEM.pru1_sync_outbox.unread = 1u;
-        return 1;
-    }
-    /* Error occurs if PRU was not able to handle previous message in time */
-    send_status(MSG_ERR_BACKPRESSURE, 0u, 0u);
-    return 0;
+    return 0u;
 }
 
 /*
@@ -262,16 +219,13 @@ int32_t event_loop()
     uint32_t        last_sample_interval_ticks = 0;
 
     /* Prepare message that will be received and sent to Linux kernel module */
-    struct ProtoMsg sync_rqst                  = {.id     = MSG_TO_KERNEL,
-                                                  .type   = MSG_NONE,
-                                                  .unread = 0u,
-                                                  .canary = CANARY_VALUE_U32};
     struct SyncMsg  sync_repl                  = {
                               .sync_interval_ticks   = SYNC_INTERVAL_TICKS,
                               .sample_interval_ticks = SAMPLE_INTERVAL_TICKS,
                               .compensation_steps    = 0u,
                               .canary                = CANARY_VALUE_U32,
     };
+
 
     /* This tracks our local state, allowing to execute actions at the right time */
     enum SyncState sync_state             = IDLE;
@@ -290,6 +244,7 @@ int32_t event_loop()
 
     /* pru0 util monitor */
     uint32_t       pru0_ticks_max         = 0u;
+    uint32_t       pru0_ticks_min         = 0xFFFFFFu;
     uint32_t       pru0_ticks_sum         = 0u;
     uint32_t       pru0_sample_count      = 0u;
 
@@ -329,7 +284,7 @@ int32_t event_loop()
             if (!INTC_CHECK_EVENT(HOST_PRU_EVT_TIMESTAMP)) continue;
 
             /* Take timestamp of IEP */
-            sync_rqst.value[0] = iep_get_cnt_val();
+            const uint32_t iep_timestamp = iep_get_cnt_val(); // TODO: remove
             DEBUG_EVENT_STATE_3;
             /* Clear interrupt */
             INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
@@ -337,10 +292,10 @@ int32_t event_loop()
             if (sync_state == IDLE) sync_state = REPLY_PENDING;
             else
             {
-                send_status(MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state, 0u);
+                msgsys_send_status(MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state, 0u);
                 return 0;
             }
-            send_sync_request(&sync_rqst);
+            msgsys_send(MSG_SYNC_ROUTINE, iep_timestamp, 0u);
             DEBUG_EVENT_STATE_0;
             continue; // for more regular gpio-sampling
         }
@@ -369,10 +324,12 @@ int32_t event_loop()
                 const uint32_t idx                            = SHARED_MEM.buffer_util_idx;
                 SHARED_MEM.buffer_util_ptr->ticks_sum[idx]    = pru0_ticks_sum;
                 SHARED_MEM.buffer_util_ptr->ticks_max[idx]    = pru0_ticks_max;
+                SHARED_MEM.buffer_util_ptr->ticks_min[idx]    = pru0_ticks_min;
                 SHARED_MEM.buffer_util_ptr->sample_count[idx] = pru0_sample_count;
                 SHARED_MEM.buffer_util_ptr->idx_pru           = idx;
                 pru0_ticks_sum                                = 0u;
                 pru0_ticks_max                                = 0u;
+                pru0_ticks_min                                = 0xFFFFFFu;
                 pru0_sample_count                             = 0u;
                 if (idx < BUFFER_UTIL_SIZE - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
                 else { SHARED_MEM.buffer_util_idx = 0u; }
@@ -460,6 +417,10 @@ int32_t event_loop()
                 {
                     pru0_ticks_max = SHARED_MEM.pru0_ticks_per_sample;
                 }
+                else if (SHARED_MEM.pru0_ticks_per_sample < pru0_ticks_min)
+                {
+                    pru0_ticks_min = SHARED_MEM.pru0_ticks_per_sample;
+                }
                 pru0_ticks_sum += SHARED_MEM.pru0_ticks_per_sample;
                 pru0_sample_count += 1;
             }
@@ -480,9 +441,10 @@ int main(void)
     /* wait until pru0 is ready */
     while (SHARED_MEM.cmp0_trigger_for_pru1 == 0u) __delay_cycles(10);
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u;
+    msgsys_init();
 
 reset:
-    send_status(MSG_STATUS_RESTARTING_ROUTINE, 1u, 0u);
+    msgsys_send_status(MSG_STATUS_RESTARTING_ROUTINE, 1u, 0u);
 
     SHARED_MEM.ivsample_fetch_value.voltage = 0u;
     SHARED_MEM.ivsample_fetch_value.current = 0u;

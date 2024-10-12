@@ -14,6 +14,7 @@ INCLUDE = -I./include
 
 # external sources - add manually
 SOURCES += $(BASE_PATH)/lib/src/iep.c
+SOURCES += $(BASE_PATH)/lib/src/msg_sys.c
 # internal sources
 SOURCES += $(notdir $(wildcard ./*.c))
 

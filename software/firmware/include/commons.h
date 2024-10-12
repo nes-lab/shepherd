@@ -151,6 +151,7 @@ struct UtilTrace
     /* PRU0 utilization, max ticks per sample (10us), sum of ticks during one sync window (100ms) */
     uint32_t idx_pru;
     uint64_t timestamp_ns[BUFFER_UTIL_SIZE];
+    uint32_t ticks_min[BUFFER_UTIL_SIZE];
     uint32_t ticks_max[BUFFER_UTIL_SIZE];
     uint32_t ticks_sum[BUFFER_UTIL_SIZE];
     uint32_t sample_count[BUFFER_UTIL_SIZE];

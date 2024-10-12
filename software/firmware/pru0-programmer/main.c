@@ -17,7 +17,7 @@
 #include "shared_mem.h"
 #include "shepherd_config.h"
 
-#include "messenger.h"
+#include "msg_sys.h"
 #include "programmer.h"
 
 
@@ -75,6 +75,7 @@ int main(void)
     SHARED_MEM.pru0_msg_outbox.unread            = 0u;
     SHARED_MEM.pru0_msg_inbox.unread             = 0u;
     SHARED_MEM.pru0_msg_error.unread             = 0u;
+    msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT               = 0u;
@@ -83,7 +84,7 @@ int main(void)
     SHARED_MEM.cmp0_trigger_for_pru1             = 1u;
 
 reset:
-    send_message(MSG_STATUS_RESTARTING_ROUTINE, 0u, 0u);
+    msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.programmer_ctrl.state);
     SHARED_MEM.pru0_ticks_per_sample     = 0u; // 2000 ticks are in one 10 us sample
 
     SHARED_MEM.vsource_skip_gpio_logging = false;
