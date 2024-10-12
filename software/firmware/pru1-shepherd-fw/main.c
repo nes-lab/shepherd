@@ -387,7 +387,9 @@ int32_t event_loop()
             // split reads to optimize gpio-tracing
             const uint32_t index = SHARED_MEM.ivsample_fetch_request;
             DEBUG_RAMRD_STATE_1;
-            SHARED_MEM.ivsample_fetch_value = SHARED_MEM.buffer_iv_inp_ptr->sample[index];
+            __builtin_memcpy((void *)&SHARED_MEM.ivsample_fetch_value, (void *)&SHARED_MEM.buffer_iv_inp_ptr->sample, 8u);
+            //SHARED_MEM.ivsample_fetch_value = SHARED_MEM.buffer_iv_inp_ptr->sample[0];
+            SHARED_MEM.buffer_iv_inp_ptr->idx_pru = index;
             SHARED_MEM.ivsample_fetch_index = index;
             DEBUG_RAMRD_STATE_0;
             continue;
@@ -407,6 +409,7 @@ int32_t event_loop()
                 DEBUG_PGOOD_STATE_0;
             }
             SHARED_MEM.vsource_batok_trigger_for_pru1 = false;
+            continue;
         }
 
         /* pru0 util monitoring */
@@ -426,6 +429,7 @@ int32_t event_loop()
                 pru0_sample_count += 1;
             }
             SHARED_MEM.pru0_ticks_per_sample = IDX_OUT_OF_BOUND;
+            continue;
         }
     }
 }
