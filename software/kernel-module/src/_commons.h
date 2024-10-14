@@ -50,7 +50,8 @@ enum MsgType
     MSG_STATUS_RESTARTING_ROUTINE = 0xF0u,
     // Routines
     MSG_TEST_ROUTINE              = 0xFAu,
-    MSG_SYNC_ROUTINE              = 0xFBu, // TODO: not used?
+    MSG_SYNC_ROUTINE              = 0xFBu,
+    MSG_SYNC_RESET                = 0xFCu,
 };
 
 /* Message IDs used in Mem-Msg-Protocol between PRUs and kernel module */
@@ -249,25 +250,21 @@ struct ProtoMsg
     uint32_t canary;
 } __attribute__((packed));
 
-/* Control reply message sent from this kernel module to PRU1 after running the control loop */
-struct SyncMsg // TODO: could be done with ProtoMsg?
+struct ProtoMsg64
 {
     /* Identifier => Canary, This is used to identify memory corruption */
     uint8_t  id;
-    /* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
+    /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
     uint8_t  unread;
     /* content description used to distinguish messages, see enum MsgType */
-    uint8_t  type; // only needed for debug
+    uint8_t  type;
     /* Alignment with memory, (bytes)mod4 */
-    uint8_t  reserved0[1];
+    uint8_t  reserved[1];
     /* Actual Content of message */
-    uint32_t sync_interval_ticks;   // corrected ticks that equal 100ms
-    uint32_t sample_interval_ticks; // ~ 10 us
-    // remainder of sync_interval/samples_per_sync - sample_interval = compensation_steps
-    uint32_t compensation_steps;
-    uint64_t next_timestamp_ns; // start of next sync block
+    uint64_t value;
     /* safety */
     uint32_t canary;
 } __attribute__((packed));
+
 
 #endif /* __COMMONS_H_ */

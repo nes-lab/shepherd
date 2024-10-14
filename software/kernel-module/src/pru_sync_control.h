@@ -35,7 +35,7 @@ void sync_start(void);
  * @param sync_reply fresh values for next 100ms-window
  * @param sync_rqst timed iep-counter-value that was received from PRU0
  */
-int  sync_loop(struct SyncMsg *sync_reply, const struct ProtoMsg *sync_rqst);
+int  calc_sync_correction(struct ProtoMsg *sync_reply, const struct ProtoMsg *sync_rqst);
 
 /**
  * Synchronization data structure
@@ -52,7 +52,5 @@ struct sync_data_s
     int32_t  clock_corr;
     uint32_t previous_interval;
 };
-
-extern struct sync_data_s *sync_data;
 
 #endif /* __PRU_SYNC_CONTROL_H_ */

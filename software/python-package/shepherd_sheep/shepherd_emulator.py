@@ -1,3 +1,4 @@
+import math
 import platform
 import sys
 import time
@@ -167,7 +168,7 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
-        self.buffer_segment_count = commons.BUFFER_IV_SIZE // self.samples_per_buffer
+        self.buffer_segment_count = math.floor(commons.BUFFER_IV_SIZE // self.samples_per_buffer)
         log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
         for _, dsv, dsc in self.reader.read_buffers(
             end_n=self.buffer_segment_count,
@@ -230,12 +231,11 @@ class ShepherdEmulator(ShepherdIO):
             is_raw=True,
             omit_ts=True,
         ):
-
             # TODO: transform h5_recorders into monitors, make all 3 free threading
             while not self.shared_mem.can_fit_iv_segment():
                 data_iv = self.shared_mem.read_buffer_iv(verbose=self.verbose_extra)
                 data_gp = self.shared_mem.read_buffer_gpio(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.read_buffer_util(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.read_buffer_util(verbose=True)
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:
@@ -266,7 +266,7 @@ class ShepherdEmulator(ShepherdIO):
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s/10)
+                    time.sleep(self.segment_period_s / 10)
             self.shared_mem.write_buffer_iv(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
@@ -299,7 +299,7 @@ class ShepherdEmulator(ShepherdIO):
                         log.error("Post sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s/10)
+                    time.sleep(self.segment_period_s / 10)
 
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers

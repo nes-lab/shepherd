@@ -287,19 +287,19 @@ static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attr
 
 static ssize_t sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    return sprintf(buf, "%lld", sync_data->error_now);
+    return sprintf(buf, "%u", 0u); // TODO: remove
 }
 
 static ssize_t sysfs_sync_error_sum_show(struct kobject *kobj, struct kobj_attribute *attr,
                                          char *buf)
 {
-    return sprintf(buf, "%lld", sync_data->error_sum);
+    return sprintf(buf, "%u", 0u); // TODO: remove
 }
 
 static ssize_t sysfs_sync_correction_show(struct kobject *kobj, struct kobj_attribute *attr,
                                           char *buf)
 {
-    return sprintf(buf, "%d", sync_data->clock_corr);
+    return sprintf(buf, "%u", 0u); // TODO: remove
 }
 
 static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)

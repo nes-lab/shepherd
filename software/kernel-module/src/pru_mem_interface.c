@@ -77,12 +77,12 @@ void mem_interface_reset(void)
     shared_mem->programmer_ctrl      = ProgrammerCtrl_default;
 
     shared_mem->pru0_msg_inbox       = ProtoMsg_default;
-    shared_mem->pru0_msg_outbox      = ProtoMsg_default;
-    shared_mem->pru0_msg_error       = ProtoMsg_default;
+    //shared_mem->pru0_msg_outbox      = ProtoMsg_default;  // Owned by PRU
+    //shared_mem->pru0_msg_error       = ProtoMsg_default;
 
-    shared_mem->pru1_sync_inbox      = SyncMsg_default;
-    shared_mem->pru1_sync_outbox     = ProtoMsg_default;
-    shared_mem->pru1_msg_error       = ProtoMsg_default;
+    shared_mem->pru1_msg_inbox       = ProtoMsg_default;
+    //shared_mem->pru1_msg_outbox      = ProtoMsg_default; // Owned by PRU
+    //shared_mem->pru1_msg_error       = ProtoMsg_default;
     shared_mem->canary               = CANARY_VALUE_U32;
     printk(KERN_INFO "shprd.k: mem-interface reset to default");
 }
@@ -141,9 +141,10 @@ void mem_interface_set_state(enum ShepherdState state)
     writel(state, pru_shared_mem_io + offsetof(struct SharedMem, shp_pru_state));
 }
 
+// TODO: unify send/receive functions a lot of duplication
 unsigned char pru1_comm_receive_sync_request(struct ProtoMsg *const msg)
 {
-    static const uint32_t offset_msg    = offsetof(struct SharedMem, pru1_sync_outbox);
+    static const uint32_t offset_msg    = offsetof(struct SharedMem, pru1_msg_outbox);
     static const uint32_t offset_unread = offset_msg + offsetof(struct ProtoMsg, unread);
 
     /* testing for unread-msg-token */
@@ -157,23 +158,25 @@ unsigned char pru1_comm_receive_sync_request(struct ProtoMsg *const msg)
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
             printk(KERN_ERR "shprd.k: recv_sync_req from pru1 -> mem corruption? id=%u (!=%u)",
                    msg->id, MSG_TO_KERNEL);
-
+        if (msg->canary != CANARY_VALUE_U32)
+            printk(KERN_ERR "shprd.k: recv_sync_req from PRU1 -> canary was harmed");
         return 1;
     }
     return 0;
 }
 
 
-unsigned char pru1_comm_send_sync_reply(struct SyncMsg *const msg)
+unsigned char pru1_comm_send_sync_reply(struct ProtoMsg *const msg)
 {
-    static const uint32_t offset_msg    = offsetof(struct SharedMem, pru1_sync_inbox);
-    static const uint32_t offset_unread = offset_msg + offsetof(struct SyncMsg, unread);
+    static const uint32_t offset_msg    = offsetof(struct SharedMem, pru1_msg_inbox);
+    static const uint32_t offset_unread = offset_msg + offsetof(struct ProtoMsg, unread);
     const unsigned char   status        = readb(pru_shared_mem_io + offset_unread) == 0u;
 
     /* first update payload in memory */
     msg->id                             = MSG_TO_PRU;
     msg->unread                         = 0u;
-    memcpy_toio(pru_shared_mem_io + offset_msg, msg, sizeof(struct SyncMsg));
+    msg->canary                         = CANARY_VALUE_U32;
+    memcpy_toio(pru_shared_mem_io + offset_msg, msg, sizeof(struct ProtoMsg));
 
     /* activate message with unread-token */
     writeb(1u, pru_shared_mem_io + offset_unread);
@@ -197,7 +200,8 @@ unsigned char pru0_comm_receive_error(struct ProtoMsg *const msg)
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
             printk(KERN_ERR "shprd.k: recv_status from pru0 -> mem corruption? id=%u (!=%u)",
                    msg->id, MSG_TO_KERNEL);
-
+        if (msg->canary != CANARY_VALUE_U32)
+            printk(KERN_ERR "shprd.k: recv_error from PRU0 -> canary was harmed");
         return 1;
     }
     return 0;
@@ -220,7 +224,8 @@ unsigned char pru1_comm_receive_error(struct ProtoMsg *const msg)
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
             printk(KERN_ERR "shprd.k: recv_status from pru1 -> mem corruption? id=%u (!=%u)",
                    msg->id, MSG_TO_KERNEL);
-
+        if (msg->canary != CANARY_VALUE_U32)
+            printk(KERN_ERR "shprd.k: recv_error from PRU1 -> canary was harmed");
         return 1;
     }
     return 0;
@@ -243,7 +248,8 @@ unsigned char pru0_comm_receive_msg(struct ProtoMsg *const msg)
         if (msg->id != MSG_TO_KERNEL) /* Error occurs if something writes over boundaries */
             printk(KERN_ERR "shprd.k: recv_msg from pru0 -> mem corruption? id=%u (!=%u)", msg->id,
                    MSG_TO_KERNEL);
-
+        if (msg->canary != CANARY_VALUE_U32)
+            printk(KERN_ERR "shprd.k: recv_msg from PRU1 -> canary was harmed");
         return 1;
     }
     return 0;
@@ -259,6 +265,7 @@ unsigned char pru0_comm_send_msg(struct ProtoMsg *const msg)
     /* first update payload in memory */
     msg->id                             = MSG_TO_PRU;
     msg->unread                         = 0u;
+    msg->canary                         = CANARY_VALUE_U32;
     memcpy_toio(pru_shared_mem_io + offset_msg, msg, sizeof(struct ProtoMsg));
 
     /* activate message with unread-token */

@@ -79,7 +79,7 @@ unsigned char      pru1_comm_receive_sync_request(struct ProtoMsg *const msg);
  * @param msg
  * @return success = 1, error = 0
  */
-unsigned char      pru1_comm_send_sync_reply(struct SyncMsg *const msg);
+unsigned char      pru1_comm_send_sync_reply(struct ProtoMsg *const msg);
 
 /*
  * COM-System between kernel module and PRU0

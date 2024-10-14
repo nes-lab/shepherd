@@ -17,10 +17,11 @@
  * (ie. py-package/shepherd/calibration_default.py)
  */
 
-static bool_ft              dac_aux_link_to_main = false;
-static bool_ft              dac_aux_link_to_mid  = false;
-volatile struct IVTraceOut *buffer_iv;
-// TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_out_ptr->samples, also buffer-idx
+static bool_ft     dac_aux_link_to_main = false;
+static bool_ft     dac_aux_link_to_mid  = false;
+volatile uint8_t  *buf_inp_sample;
+volatile uint32_t *buf_out_voltage;
+volatile uint32_t *buf_out_current;
 
 #ifdef EMU_SUPPORT
 
@@ -47,8 +48,8 @@ static inline void fetch_iv_trace(const uint32_t index)
     else
     {
         /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
-        void *ram_addr = (void *) &SHARED_MEM.buffer_iv_inp_ptr->sample; // TODO: put to init
-        __builtin_memcpy((uint8_t *) &ivsample, (uint8_t *) ram_addr + (index << ELEMENT_SIZE_LOG2),
+        __builtin_memcpy((uint8_t *) &ivsample,
+                         (uint8_t *) buf_inp_sample + (index << ELEMENT_SIZE_LOG2),
                          sizeof(struct IVSample));
     }
     //DEBUG_RAMRD_STATE_0;
@@ -101,17 +102,13 @@ static inline void sample_emulator()
     /* write back converter-state into shared memory buffer */
     if (get_state_log_intermediate())
     {
-        buffer_iv->current[index] = get_I_mid_out_nA();
-        buffer_iv->voltage[index] = get_V_intermediate_uV();
+        buf_out_current[index] = get_I_mid_out_nA();
+        buf_out_voltage[index] = get_V_intermediate_uV();
     }
     else
     {
-        buffer_iv->current[index] = current_adc_raw;
-        buffer_iv->voltage[index] = voltage_dac;
-        /* NOTE: code above saves 28 bytes compared to:
-        buffer_iv->sample[index] =
-                (struct IVSample) {.voltage = voltage_dac, .current = current_adc_raw};
-         */
+        buf_out_current[index] = current_adc_raw;
+        buf_out_voltage[index] = voltage_dac;
     }
 }
 #endif // EMU_SUPPORT
@@ -119,15 +116,15 @@ static inline void sample_emulator()
 static inline void sample_emu_ADCs(const uint32_t sample_idx)
 {
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
-    buffer_iv->current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
-    buffer_iv->voltage[sample_idx] = 0u;
+    buf_out_current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
+    buf_out_voltage[sample_idx] = 0u;
 }
 
 static inline void sample_hrv_ADCs(const uint32_t sample_idx)
 {
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
-    buffer_iv->current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
-    buffer_iv->voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+    buf_out_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
+    buf_out_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 }
 
 
@@ -241,7 +238,9 @@ void sample_init()
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-    buffer_iv                                    = SHARED_MEM.buffer_iv_out_ptr;
+    buf_inp_sample                               = SHARED_MEM.buffer_iv_inp_ptr->sample;
+    buf_out_voltage                              = SHARED_MEM.buffer_iv_out_ptr->voltage;
+    buf_out_current                              = SHARED_MEM.buffer_iv_out_ptr->current;
 
     const enum ShepherdMode mode                 = (enum ShepherdMode) SHARED_MEM.shp_pru0_mode;
     const uint32_t          dac_ch_a_voltage_raw = SHARED_MEM.dac_auxiliary_voltage_raw & 0xFFFF;

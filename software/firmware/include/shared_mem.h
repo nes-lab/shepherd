@@ -45,8 +45,8 @@ struct SharedMem
     volatile struct ProtoMsg          pru0_msg_inbox;
     volatile struct ProtoMsg          pru0_msg_outbox;
     volatile struct ProtoMsg          pru0_msg_error;
-    volatile struct SyncMsg           pru1_sync_inbox;
-    volatile struct ProtoMsg          pru1_sync_outbox;
+    volatile struct ProtoMsg          pru1_msg_inbox;
+    volatile struct ProtoMsg          pru1_msg_outbox;
     volatile struct ProtoMsg          pru1_msg_error;
     /* Cache System to avoid far/slow RAM-reads */
     volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT];
@@ -55,8 +55,8 @@ struct SharedMem
     /* NOTE: End of region (also) controlled by kernel module */
 
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
-    volatile uint64_t                 last_sample_timestamp_ns;
-    volatile uint64_t                 next_sync_timestamp_ns; // TODO: both still needed?
+    volatile uint64_t                 last_sync_timestamp_ns;
+    volatile uint64_t                 next_sync_timestamp_ns;
     /* internal gpio-register from PRU1 (for PRU1, debug), only updated when not running */
     volatile uint32_t                 gpio_pin_state;
 

@@ -17,11 +17,11 @@
                                        offsetof(struct SharedMem, pru0_msg_error))))
 #elif defined(PRU1)
   #define MSG_INBOX                                                                                \
-      (*((volatile struct SyncMsg *) (PRU_SHARED_MEM_OFFSET +                                      \
-                                      offsetof(struct SharedMem, pru1_sync_inbox))))
+      (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
+                                       offsetof(struct SharedMem, pru1_msg_inbox))))
   #define MSG_OUTBOX                                                                               \
       (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
-                                       offsetof(struct SharedMem, pru1_sync_outbox))))
+                                       offsetof(struct SharedMem, pru1_msg_outbox))))
   #define MSG_ERROR                                                                                \
       (*((volatile struct ProtoMsg *) (PRU_SHARED_MEM_OFFSET +                                     \
                                        offsetof(struct SharedMem, pru1_msg_error))))
@@ -29,7 +29,18 @@
   #error "PRU number must be defined and either 1 or 0"
 #endif
 
-void msgsys_init() {}
+void msgsys_init()
+{
+    MSG_INBOX.unread  = 0u;
+
+    MSG_OUTBOX.unread = 0u;
+    MSG_OUTBOX.id     = MSG_TO_KERNEL;
+    MSG_OUTBOX.canary = CANARY_VALUE_U32;
+
+    MSG_ERROR.unread  = 0u;
+    MSG_ERROR.id      = MSG_TO_KERNEL;
+    MSG_ERROR.canary  = CANARY_VALUE_U32;
+}
 
 // alternative message channel specially dedicated for errors
 void msgsys_send_status(enum MsgType type, const uint32_t value1, const uint32_t value2)
@@ -37,11 +48,11 @@ void msgsys_send_status(enum MsgType type, const uint32_t value1, const uint32_t
     // do not care for sent-status -> the newest error wins IF different from previous
     if (!((MSG_ERROR.type == type) && (MSG_ERROR.value[0] == value1)))
     {
+        // NOTE: id & canary are set during init (shouldn't change)
         MSG_ERROR.unread   = 0u;
         MSG_ERROR.type     = type;
         MSG_ERROR.value[0] = value1;
         MSG_ERROR.value[1] = value2;
-        MSG_ERROR.id       = MSG_TO_KERNEL;
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
         MSG_ERROR.unread   = 1u;
     }
@@ -54,10 +65,10 @@ bool_ft msgsys_send(enum MsgType type, const uint32_t value1, const uint32_t val
 {
     if (MSG_OUTBOX.unread == 0)
     {
+        // NOTE: id & canary are set during init (shouldn't change)
         MSG_OUTBOX.type     = type;
         MSG_OUTBOX.value[0] = value1;
         MSG_OUTBOX.value[1] = value2;
-        MSG_OUTBOX.id       = MSG_TO_KERNEL;
         // NOTE: always make sure that the unread-flag is activated AFTER payload is copied
         MSG_OUTBOX.unread   = 1u;
         return 1u;
@@ -67,8 +78,13 @@ bool_ft msgsys_send(enum MsgType type, const uint32_t value1, const uint32_t val
     return 0u;
 }
 
+bool_ft msgsys_check_delivery(void)
+{
+    return MSG_OUTBOX.unread == 0u; // return 1 if sent
+}
+
 // only one central hub should receive, because a message is only handed out once
-bool_ft msgsys_receive(struct RCV_TYPE *const container)
+bool_ft msgsys_receive(struct ProtoMsg *const container)
 {
     if (MSG_INBOX.unread >= 1u)
     {

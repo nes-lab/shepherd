@@ -7,7 +7,7 @@
 
 ## Mechanism High level
 
-- Kernel sends pseudo-interrupt to PRU for taking a timestamp
+- Kernel sends pseudo-interrupt to PRU for taking a counter-snapshot
   - kernel does this to a specific time
   - while pru should be idle, but period is almost over, TODO
 - PRU sends current period-counter1 and switches to "reply pending"
