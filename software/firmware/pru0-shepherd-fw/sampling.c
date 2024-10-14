@@ -24,18 +24,46 @@ volatile struct IVTraceOut *buffer_iv;
 
 #ifdef EMU_SUPPORT
 
+struct IVSample    ivsample;
+
+static inline void fetch_iv_trace(const uint32_t index)
+{
+    //DEBUG_RAMRD_STATE_1;
+    /* check if sample is in cache */
+    const uint32_t cache_block_idx = index >> CACHE_BLOCK_ELEM_LOG2;
+    const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
+    const uint32_t flag_mask       = 1u << (cache_block_idx & 0x1Fu);
+    const bool_ft  in_cache0       = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
+    const bool_ft  in_cache        = 1;
+
+    /* fetch from cache if available, otherwise use slow RAM-read */
+    if (in_cache)
+    {
+        /* Cache-Reading, ~ 27 cycles per u32 -> 270 ns */
+        const uint32_t cache_offset = (index & CACHE_MASK) << ELEMENT_SIZE_LOG2;
+        __builtin_memcpy((uint8_t *) &ivsample, L3OCMC_ADDR + cache_offset,
+                         sizeof(struct IVSample));
+    }
+    else
+    {
+        /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
+        void *ram_addr = (void *) &SHARED_MEM.buffer_iv_inp_ptr->sample; // TODO: put to init
+        __builtin_memcpy((uint8_t *) &ivsample, (uint8_t *) ram_addr + (index << ELEMENT_SIZE_LOG2),
+                         sizeof(struct IVSample));
+    }
+    //DEBUG_RAMRD_STATE_0;
+}
+
+
 static inline void sample_emulator()
 {
     /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     //__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
 
-    /* Get input current/voltage from pru1 (these 2 far mem-reads can take from 530 to 5400 ns -> destroyer of real time) */
-    while (SHARED_MEM.ivsample_fetch_index != SHARED_MEM.buffer_iv_idx);
-    uint32_t       input_current_nA     = SHARED_MEM.ivsample_fetch_value.current;
-    uint32_t       input_voltage_uV     = SHARED_MEM.ivsample_fetch_value.voltage;
-    const uint32_t current_sample_index = SHARED_MEM.buffer_iv_idx;
-    if (current_sample_index >= BUFFER_IV_SIZE - 1u) { SHARED_MEM.ivsample_fetch_request = 0u; }
-    else { SHARED_MEM.ivsample_fetch_request = current_sample_index + 1u; }
+    const uint32_t index = SHARED_MEM.buffer_iv_idx;
+    fetch_iv_trace(index);
+    uint32_t input_current_nA = ivsample.current;
+    uint32_t input_voltage_uV = ivsample.voltage;
 
     sample_ivcurve_harvester(&input_voltage_uV, &input_current_nA);
 
@@ -73,15 +101,15 @@ static inline void sample_emulator()
     /* write back converter-state into shared memory buffer */
     if (get_state_log_intermediate())
     {
-        buffer_iv->current[current_sample_index] = get_I_mid_out_nA();
-        buffer_iv->voltage[current_sample_index] = get_V_intermediate_uV();
+        buffer_iv->current[index] = get_I_mid_out_nA();
+        buffer_iv->voltage[index] = get_V_intermediate_uV();
     }
     else
     {
-        buffer_iv->current[current_sample_index] = current_adc_raw;
-        buffer_iv->voltage[current_sample_index] = voltage_dac;
+        buffer_iv->current[index] = current_adc_raw;
+        buffer_iv->voltage[index] = voltage_dac;
         /* NOTE: code above saves 28 bytes compared to:
-        buffer_iv->sample[current_sample_index] =
+        buffer_iv->sample[index] =
                 (struct IVSample) {.voltage = voltage_dac, .current = current_adc_raw};
          */
     }

@@ -48,6 +48,8 @@ struct SharedMem
     volatile struct SyncMsg           pru1_sync_inbox;
     volatile struct ProtoMsg          pru1_sync_outbox;
     volatile struct ProtoMsg          pru1_msg_error;
+    /* Cache System to avoid far/slow RAM-reads */
+    volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT];
     /* safety */
     volatile uint32_t                 canary;
     /* NOTE: End of region (also) controlled by kernel module */
@@ -58,20 +60,16 @@ struct SharedMem
     /* internal gpio-register from PRU1 (for PRU1, debug), only updated when not running */
     volatile uint32_t                 gpio_pin_state;
 
-    /* Fetch-System where pru0 can instruct pru1 to get the IV-Set from far buffer */
-    volatile uint32_t                 ivsample_fetch_request; // managed & written by PRU0
-    volatile uint32_t        ivsample_fetch_index; // these 2 below are managed & written by PRU1
-    volatile struct IVSample ivsample_fetch_value;
     /* Token system to ensure both PRUs can share interrupts */
-    volatile bool_ft         cmp0_trigger_for_pru1;
-    volatile bool_ft         cmp1_trigger_for_pru1;
+    volatile bool_ft                  cmp0_trigger_for_pru1;
+    volatile bool_ft                  cmp1_trigger_for_pru1;
     /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-    volatile bool_ft         vsource_batok_trigger_for_pru1;
-    volatile bool_ft         vsource_batok_pin_value;
+    volatile bool_ft                  vsource_batok_trigger_for_pru1;
+    volatile bool_ft                  vsource_batok_pin_value;
     /* Trigger to control sampling of gpios */
-    volatile bool_ft         vsource_skip_gpio_logging;
+    volatile bool_ft                  vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */
-    volatile uint32_t        pru0_ticks_per_sample;
+    volatile uint32_t                 pru0_ticks_per_sample;
     //} SharedMem;
 } __attribute__((packed));
 

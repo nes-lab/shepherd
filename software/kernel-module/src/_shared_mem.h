@@ -46,6 +46,8 @@ struct SharedMem
     volatile struct SyncMsg           pru1_sync_inbox;
     volatile struct ProtoMsg          pru1_sync_outbox;
     volatile struct ProtoMsg          pru1_msg_error;
+    /* Cache System to avoid far/slow RAM-reads */
+    volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT];
     /* safety */
     volatile uint32_t                 canary;
     /* NOTE: End of region (also) controlled by kernel module */
