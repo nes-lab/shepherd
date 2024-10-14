@@ -676,7 +676,6 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             )
         self.iv_inp_trace_index = (self.iv_inp_trace_index + len(data)) % commons.BUFFER_IV_SIZE
 
-
     def write_firmware(self, data: bytes) -> int:
         data_size = len(data)
         if data_size > self.buffer_size:

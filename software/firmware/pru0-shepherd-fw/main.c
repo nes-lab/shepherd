@@ -233,8 +233,8 @@ void event_loop()
             // const uint64_t ts_now = SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
             //if (ts_now != SHARED_MEM.last_sample_timestamp_ns)
             // TODO: warn
-            SHARED_MEM.last_sample_timestamp_ns =
-                    SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
+            //SHARED_MEM.last_sample_timestamp_ns =
+            //       SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
             /* go dark if not running */
             if (SHARED_MEM.shp_pru_state != STATE_RUNNING) GPIO_OFF(DEBUG_PIN0_MASK);
         }
@@ -247,7 +247,13 @@ void event_loop()
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
             /* update current time */
-            SHARED_MEM.last_sample_timestamp_ns += SAMPLE_INTERVAL_NS;
+            if (SHARED_MEM.next_sync_timestamp_ns > 0u)
+            {
+                // initial sync
+                SHARED_MEM.last_sample_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
+                SHARED_MEM.next_sync_timestamp_ns   = 0u;
+            }
+            else { SHARED_MEM.last_sample_timestamp_ns += SAMPLE_INTERVAL_NS; }
 
             /* The actual sampling takes place here */
             if (SHARED_MEM.shp_pru_state == STATE_RUNNING)
@@ -358,8 +364,6 @@ reset:
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
     SHARED_MEM.vsource_skip_gpio_logging = false;
-
-    SHARED_MEM.ivsample_fetch_request    = 0u; // TODO: put all into sampling-struct?
 
     SHARED_MEM.shp_pru_state             = STATE_IDLE;
 

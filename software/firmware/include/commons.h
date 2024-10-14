@@ -109,6 +109,8 @@ struct IVSample
     uint32_t current;
 } __attribute__((packed));
 
+extern uint32_t __cache_fits_buffer[1 / ((1u << ELEMENT_SIZE_LOG2) == sizeof(struct IVSample))];
+
 struct IVTraceInp
 {
     uint32_t        idx_pru;
@@ -320,7 +322,7 @@ struct SyncMsg // TODO: could be done with ProtoMsg?
     /* Alignment with memory, (bytes)mod4 */
     uint8_t  reserved0[1];
     /* Actual Content of message */
-    uint32_t sync_interval_ticks;   // corrected ticks that equal 100ms
+    uint32_t sync_interval_ticks;   // calculated ticks that equal 100ms
     uint32_t sample_interval_ticks; // ~ 10 us
     // remainder of sync_interval/samples_per_sync - sample_interval = compensation_steps
     uint32_t compensation_steps;
