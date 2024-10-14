@@ -179,14 +179,14 @@ static bool_ft handle_kernel_com()
                 // TODO: there are two msg_send() in here that send MSG_ERR
         }
     }
-    else
+    else if (msg_in.type == MSG_TEST_ROUTINE)
     {
-        if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 1))
+        if (msg_in.value[0] == 1)
         {
             // pipeline-test for msg-system
-            msgsys_send(MSG_TEST_ROUTINE, msg_in.value[0], 0);
+            msgsys_send(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
         }
-        else if ((msg_in.type == MSG_TEST_ROUTINE) && (msg_in.value[0] == 2))
+        else if (msg_in.value[0] == 2)
         {
             // pipeline-test for msg-system
             msgsys_send_status(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
@@ -199,6 +199,7 @@ static bool_ft handle_kernel_com()
 void event_loop()
 {
     uint32_t iep_tmr_cmp_sts;
+    uint64_t last_sample_timestamp_ns = 0u;
 
     while (1)
     {
@@ -229,12 +230,10 @@ void event_loop()
             GPIO_TOGGLE(DEBUG_PIN0_MASK);
             SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
-            /* test & update time */
-            // const uint64_t ts_now = SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
-            //if (ts_now != SHARED_MEM.last_sample_timestamp_ns)
-            // TODO: warn
-            //SHARED_MEM.last_sample_timestamp_ns =
-            //       SHARED_MEM.next_sync_timestamp_ns - SAMPLE_INTERVAL_NS;
+            /* update timestamp
+            *  NOTE: incrementing of next_sync_timestamp_ns is done by PRU1
+            * */
+            SHARED_MEM.last_sync_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
             /* go dark if not running */
             if (SHARED_MEM.shp_pru_state != STATE_RUNNING) GPIO_OFF(DEBUG_PIN0_MASK);
         }
@@ -246,14 +245,11 @@ void event_loop()
             SHARED_MEM.cmp1_trigger_for_pru1 = 1u;
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
-            /* update current time */
-            if (SHARED_MEM.next_sync_timestamp_ns > 0u)
+            /* update current time (if not already done) */
+            if (~(iep_tmr_cmp_sts & IEP_CMP0_MASK))
             {
-                // initial sync
-                SHARED_MEM.last_sample_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
-                SHARED_MEM.next_sync_timestamp_ns   = 0u;
+                last_sample_timestamp_ns += SAMPLE_INTERVAL_NS;
             }
-            else { SHARED_MEM.last_sample_timestamp_ns += SAMPLE_INTERVAL_NS; }
 
             /* The actual sampling takes place here */
             if (SHARED_MEM.shp_pru_state == STATE_RUNNING)
@@ -263,11 +259,9 @@ void event_loop()
                 GPIO_OFF(DEBUG_PIN1_MASK);
 
                 /* counter write & incrementation */
-                const uint32_t idx = SHARED_MEM.buffer_iv_idx;
-                SHARED_MEM.buffer_iv_out_ptr->timestamp_ns[idx] =
-                        SHARED_MEM.last_sample_timestamp_ns;
-                SHARED_MEM.buffer_iv_out_ptr->idx_pru = idx;
-                // TODO: also write continuous TS
+                const uint32_t idx                              = SHARED_MEM.buffer_iv_idx;
+                SHARED_MEM.buffer_iv_out_ptr->timestamp_ns[idx] = last_sample_timestamp_ns;
+                SHARED_MEM.buffer_iv_out_ptr->idx_pru           = idx;
 
                 if (idx >= BUFFER_IV_SIZE - 1u) { SHARED_MEM.buffer_iv_idx = 0u; }
                 else { SHARED_MEM.buffer_iv_idx = idx + 1u; }
@@ -321,7 +315,7 @@ int main(void)
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
     SHARED_MEM.shp_pru0_mode                     = MODE_NONE;
 
-    SHARED_MEM.last_sample_timestamp_ns          = 0u;
+    SHARED_MEM.last_sync_timestamp_ns            = 0u;
     SHARED_MEM.next_sync_timestamp_ns            = 0u;
 
     SHARED_MEM.gpio_pin_state                    = 0u;
@@ -336,13 +330,6 @@ int main(void)
     SHARED_MEM.programmer_ctrl.state             = PRG_STATE_IDLE;
     SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NRF52;
 
-    SHARED_MEM.pru1_sync_outbox.unread           = 0u;
-    SHARED_MEM.pru1_sync_inbox.unread            = 0u;
-    SHARED_MEM.pru1_msg_error.unread             = 0u;
-
-    SHARED_MEM.pru0_msg_outbox.unread            = 0u;
-    SHARED_MEM.pru0_msg_inbox.unread             = 0u;
-    SHARED_MEM.pru0_msg_error.unread             = 0u;
     msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */

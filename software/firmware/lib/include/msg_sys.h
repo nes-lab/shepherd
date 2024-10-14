@@ -4,12 +4,6 @@
 #include "commons.h"
 #include <stdint.h>
 
-#if defined(PRU0)
-  #define RCV_TYPE ProtoMsg
-#else
-  #define RCV_TYPE SyncMsg
-#endif
-
 void    msgsys_init();
 
 // alternative message channel specially dedicated for errors
@@ -18,7 +12,10 @@ void    msgsys_send_status(enum MsgType type, const uint32_t value1, const uint3
 // send returns a 1 on success
 bool_ft msgsys_send(enum MsgType type, const uint32_t value1, const uint32_t value2);
 
+// return 1 if received
+bool_ft msgsys_check_delivery(void);
+
 // only one central hub should receive, because a message is only handed out once
-bool_ft msgsys_receive(struct RCV_TYPE *const container);
+bool_ft msgsys_receive(struct ProtoMsg *const container);
 
 #endif //MSG_SYS_H

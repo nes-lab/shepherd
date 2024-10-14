@@ -105,14 +105,4 @@ const struct ProtoMsg ProtoMsg_default = {.id     = 0u,
                                           .value  = {0u, 0u},
                                           .canary = CANARY_VALUE_U32};
 
-const struct SyncMsg  SyncMsg_default  = {
-          .id                    = 0u,
-          .unread                = 0u,
-          .type                  = 0u,
-          .sync_interval_ticks   = 0u,
-          .sample_interval_ticks = 0u,
-          .compensation_steps    = 0u,
-          .canary                = CANARY_VALUE_U32,
-};
-
 #endif //KERNELMODULE_COMMONS_INITS_H

@@ -92,23 +92,20 @@ void msg_sys_reset(void)
 
 void msg_sys_test(void)
 {
-    struct ProtoMsg msg1 = {.id       = MSG_TO_PRU,
-                            .unread   = 0u,
-                            .type     = MSG_NONE,
-                            .reserved = {0u},
-                            .value    = {0u, 0u}};
-    struct SyncMsg  msg2;
+    struct ProtoMsg msg = {.id       = MSG_TO_PRU,
+                           .unread   = 0u,
+                           .type     = MSG_NONE,
+                           .reserved = {0u},
+                           .value    = {0u, 0u}};
     printk(KERN_INFO "shprd.k: test msg-pipelines between kM and PRUs -> triggering "
                      "roundtrip-messages for pipeline 1-3");
-    msg1.type     = MSG_TEST_ROUTINE;
-    msg1.value[0] = 1;
-    put_msg_to_pru(&msg1); // message-pipeline pru0
-    msg1.value[0] = 2;
-    put_msg_to_pru(&msg1); // error-pipeline pru0
-
-    msg2.type                = MSG_TEST_ROUTINE;
-    msg2.sync_interval_ticks = 3;
-    pru1_comm_send_sync_reply(&msg2); // error-pipeline pru1
+    msg.type     = MSG_TEST_ROUTINE;
+    msg.value[0] = 1;
+    put_msg_to_pru(&msg); // message-pipeline pru0
+    msg.value[0] = 2;
+    put_msg_to_pru(&msg); // error-pipeline pru0
+    msg.value[0] = 3;
+    pru1_comm_send_sync_reply(&msg); // error-pipeline pru1
 }
 
 void msg_sys_init(void)

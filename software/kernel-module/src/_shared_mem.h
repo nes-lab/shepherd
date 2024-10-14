@@ -43,8 +43,8 @@ struct SharedMem
     volatile struct ProtoMsg          pru0_msg_inbox;
     volatile struct ProtoMsg          pru0_msg_outbox;
     volatile struct ProtoMsg          pru0_msg_error;
-    volatile struct SyncMsg           pru1_sync_inbox;
-    volatile struct ProtoMsg          pru1_sync_outbox;
+    volatile struct ProtoMsg          pru1_msg_inbox;
+    volatile struct ProtoMsg          pru1_msg_outbox;
     volatile struct ProtoMsg          pru1_msg_error;
     /* Cache System to avoid far/slow RAM-reads */
     volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT];

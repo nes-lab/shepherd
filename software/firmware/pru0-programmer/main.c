@@ -50,7 +50,7 @@ int main(void)
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
     SHARED_MEM.shp_pru0_mode                     = MODE_HARVESTER;
 
-    SHARED_MEM.last_sample_timestamp_ns          = 0u;
+    SHARED_MEM.last_sync_timestamp_ns            = 0u;
     SHARED_MEM.next_sync_timestamp_ns            = 0u;
     SHARED_MEM.buffer_iv_idx                     = 0u;
     SHARED_MEM.buffer_gpio_idx                   = 0u;
@@ -68,13 +68,6 @@ int main(void)
     SHARED_MEM.programmer_ctrl.state             = PRG_STATE_IDLE;
     SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NONE;
 
-    SHARED_MEM.pru1_sync_outbox.unread           = 0u;
-    SHARED_MEM.pru1_sync_inbox.unread            = 0u;
-    SHARED_MEM.pru1_msg_error.unread             = 0u;
-
-    SHARED_MEM.pru0_msg_outbox.unread            = 0u;
-    SHARED_MEM.pru0_msg_inbox.unread             = 0u;
-    SHARED_MEM.pru0_msg_error.unread             = 0u;
     msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
