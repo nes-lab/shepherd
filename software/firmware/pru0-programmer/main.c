@@ -78,7 +78,7 @@ int main(void)
 
 reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.programmer_ctrl.state);
-    SHARED_MEM.pru0_ticks_per_sample     = 0u; // 2000 ticks are in one 10 us sample
+    SHARED_MEM.pru0_ns_per_sample        = 0u;
 
     SHARED_MEM.vsource_skip_gpio_logging = false;
 

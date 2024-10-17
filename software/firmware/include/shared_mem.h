@@ -69,7 +69,7 @@ struct SharedMem
     /* Trigger to control sampling of gpios */
     volatile bool_ft                  vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */
-    volatile uint32_t                 pru0_ticks_per_sample;
+    volatile uint32_t                 pru0_ns_per_sample;
     //} SharedMem;
 } __attribute__((packed));
 

@@ -278,7 +278,7 @@ void event_loop()
         }
 
         // record loop-duration -> gets further processed by pru1
-        SHARED_MEM.pru0_ticks_per_sample = iep_get_cnt_val() - timer_start;
+        SHARED_MEM.pru0_ns_per_sample = iep_get_cnt_val() - timer_start;
         GPIO_OFF(DEBUG_PIN1_MASK);
     }
 }
@@ -340,11 +340,11 @@ int main(void)
 
 reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
-    SHARED_MEM.pru0_ticks_per_sample = 0u; // 2000 ticks are in one 10 us sample
+    SHARED_MEM.pru0_ns_per_sample = 0u;
 
-    SHARED_MEM.buffer_iv_idx         = 0u;
-    SHARED_MEM.buffer_gpio_idx       = 0u;
-    SHARED_MEM.buffer_util_idx       = 0u;
+    SHARED_MEM.buffer_iv_idx      = 0u;
+    SHARED_MEM.buffer_gpio_idx    = 0u;
+    SHARED_MEM.buffer_util_idx    = 0u;
 
     GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     sample_init();

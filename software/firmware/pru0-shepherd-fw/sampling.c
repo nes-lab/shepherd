@@ -238,7 +238,7 @@ void sample_init()
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-    buf_inp_sample                               = SHARED_MEM.buffer_iv_inp_ptr->sample;
+    buf_inp_sample                               = (volatile uint8_t *)SHARED_MEM.buffer_iv_inp_ptr->sample;
     buf_out_voltage                              = SHARED_MEM.buffer_iv_out_ptr->voltage;
     buf_out_current                              = SHARED_MEM.buffer_iv_out_ptr->current;
 
