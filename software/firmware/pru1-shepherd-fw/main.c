@@ -19,7 +19,6 @@
 
 /* The Arm to Host interrupt for the timestamp event is mapped to Host interrupt 0 -> Bit 30 (see resource_table.h) */
 #define HOST_INT_TIMESTAMP_MASK (1U << 30U)
-// TODO: is bit r31.31 still important?
 
 // both pins have a LED
 #define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
@@ -63,8 +62,9 @@ static inline bool_ft receive_sync_reply(struct ProtoMsg *const msg)
         if (msg->type == MSG_TEST_ROUTINE)
         {
             // pipeline-test for msg-system
-            msgsys_send(MSG_TEST_ROUTINE, 4, 0u);
             msgsys_send_status(MSG_TEST_ROUTINE, 3, 0u);
+            // NOTE: msgsys_send() is deliberatedly NOT used
+            //       (sync-reset does test pipeline)
             return 0u;
         }
         return 1u;
@@ -113,7 +113,6 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
 
         /* Calculate timestamp of gpio event, cnt_val should be equal to offset_ns */
         // TODO: maybe just store TS and counter or even u32 sync-counter + u32 tick_counter
-        // TODO: w
         buf_gpio->timestamp_ns[cIDX] = SHARED_MEM.last_sync_timestamp_ns + last_sync_offset_ns;
         buf_gpio->bitmask[cIDX]      = (uint16_t) gpio_status;
 
@@ -165,28 +164,28 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
 
 int32_t event_loop()
 {
-    struct ProtoMsg sync_repl;
-
-    /* Tracks our local state, allowing to execute actions at the right time */
-    enum SyncState  sync_state             = IDLE;
-
     /*
-	* This holds the number of 'compensation' periods, where the sampling
-	* period is increased by 1 in order to compensate for the remainder of the
-	* integer udiv used to calculate the sampling period.
-	*/
-    uint32_t        compensation_steps     = 0u; // TODO: not used
-    /*
-	 * holds distribution of the compensation periods (every x samples the period is increased by 1)
+	 * Sync-Algorithm:
+     * - the pru-clock is manipulated by max 1% to phase-lock with system
+     * - sync-reply contains
+     *    - value[0]: ticks-compensations for every step and
+     *    - value[1]: remainder compensation thats added per bresenham-algo
 	 */
-    uint32_t        compensation_counter   = 0u; // TODO: not used
-    uint32_t        compensation_increment = 0u; // TODO: not used
+    uint32_t        compensation_counter   = 0u;
+    uint32_t        compensation_increment = 0u;
+    uint32_t        bresenham_counter      = 0u;
+    uint32_t        bresenham_increment    = 0u;
+    /* Tracks our local state, allowing to execute actions at the right time */
+    struct ProtoMsg sync_repl;
+    enum SyncState  sync_state          = IDLE;
 
     /* pru0 util monitor */
-    uint32_t        pru0_ticks_max         = 0u;
-    uint32_t        pru0_ticks_min         = 0xFFFFFFu;
-    uint32_t        pru0_ticks_sum         = 0u;
-    uint32_t        pru0_sample_count      = 0u;
+    uint32_t        pru0_tsample_ns_max = 0u;
+    uint32_t        pru0_tsample_ns_sum = 0u;
+    uint32_t        pru0_sample_count   = 0u;
+    /* pru1 util monitor */
+    uint32_t        pru1_tsample_ns_max = 0u;
+    uint32_t        last_timer_ns       = 0u;
 
     /* Configure timer */
     iep_set_cmp_val(IEP_CMP0, SYNC_INTERVAL_NS);   // 20 MTicks -> 100 ms
@@ -205,7 +204,7 @@ int32_t event_loop()
     ts_repl.type = 0u;
     while (ts_repl.type != MSG_SYNC_RESET)
     {
-        if (msgsys_check_delivery()) msgsys_send(MSG_SYNC_RESET, 0u, 1u);
+        //if (msgsys_check_delivery()) msgsys_send(MSG_SYNC_RESET, 0u, 1u);
         __delay_cycles(1000u / TICK_INTERVAL_NS);
         receive_sync_reply((struct ProtoMsg *) &ts_repl);
     }
@@ -223,11 +222,25 @@ int32_t event_loop()
 #if DEBUG_LOOP_EN
         debug_loop_delays(SHARED_MEM.shp_pru_state);
 #endif
-        const uint32_t last_sync_offset_ticks = iep_get_cnt_val()
-                // TODO: use offset for benchmarking
-                DEBUG_GPIO_STATE_1;
-        check_gpio(last_sync_offset_ticks);
+        /* clock-skewing for sync */
+        if (compensation_counter > 0)
+        {
+            iep_compensate();
+            compensation_counter--;
+        }
+
+        const uint32_t timer_ns = iep_get_cnt_val();
+        DEBUG_GPIO_STATE_1;
+        check_gpio(timer_ns);
         DEBUG_GPIO_STATE_0;
+
+        /* pru1 util monitoring */
+        const uint32_t tsample_ns = timer_ns - last_timer_ns;
+        if ((tsample_ns > pru1_tsample_ns_max) && (tsample_ns < (1u << 20u)))
+        {
+            pru1_tsample_ns_max = timer_ns;
+        }
+        last_timer_ns = timer_ns;
 
         /* [Sync-Event 1] Check for interrupt from KernelModule to take counter snapshot */
         if (read_r31() & HOST_INT_TIMESTAMP_MASK)
@@ -263,24 +276,34 @@ int32_t event_loop()
 
             SHARED_MEM.next_sync_timestamp_ns += SYNC_INTERVAL_NS;
             //iep_enable_evt_cmp(IEP_CMP1);
-            compensation_steps     = sync_repl.value[0];
-            compensation_increment = sync_repl.value[1];
-            compensation_counter   = 0;
+            if (sync_repl.value[0] >= SAMPLE_INTERVAL_TICKS)
+            {
+                // PRU is ahead, slow down
+                compensation_increment = sync_repl.value[0] - SAMPLE_INTERVAL_TICKS;
+                iep_set_compensation_inc(TICK_INTERVAL_NS - 1u);
+            }
+            else
+            {
+                // PRU is behind, speed up
+                compensation_increment = SAMPLE_INTERVAL_TICKS - sync_repl.value[0];
+                iep_set_compensation_inc(TICK_INTERVAL_NS + 1u);
+            }
+            bresenham_increment = sync_repl.value[1];
+            bresenham_counter   = 0;
 
             /* transmit pru0-util, current design puts this in fresh/next buffer */
             // TODO: this can be done on separate occasion (triggered by this event3)
             {
-                const uint32_t idx                            = SHARED_MEM.buffer_util_idx;
+                const uint32_t idx                                   = SHARED_MEM.buffer_util_idx;
                 // TODO: add timestamp
-                SHARED_MEM.buffer_util_ptr->ticks_sum[idx]    = pru0_ticks_sum;
-                SHARED_MEM.buffer_util_ptr->ticks_max[idx]    = pru0_ticks_max;
-                SHARED_MEM.buffer_util_ptr->ticks_min[idx]    = pru0_ticks_min;
-                SHARED_MEM.buffer_util_ptr->sample_count[idx] = pru0_sample_count;
-                SHARED_MEM.buffer_util_ptr->idx_pru           = idx;
-                pru0_ticks_sum                                = 0u;
-                pru0_ticks_max                                = 0u;
-                pru0_ticks_min                                = 0xFFFFFFu;
-                pru0_sample_count                             = 0u;
+                SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_sum[idx] = pru0_tsample_ns_sum;
+                SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_max[idx] = pru0_tsample_ns_max;
+                SHARED_MEM.buffer_util_ptr->pru0_sample_count[idx]   = pru0_sample_count;
+                SHARED_MEM.buffer_util_ptr->pru1_tsample_max[idx]    = pru1_tsample_ns_max;
+                SHARED_MEM.buffer_util_ptr->idx_pru                  = idx;
+                pru0_tsample_ns_sum                                  = 0u;
+                pru0_tsample_ns_max                                  = 0u;
+                pru0_sample_count                                    = 0u;
                 if (idx < BUFFER_UTIL_SIZE - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
                 else { SHARED_MEM.buffer_util_idx = 0u; }
             }
@@ -304,6 +327,16 @@ int32_t event_loop()
             uint32_t new_trigger             = iep_get_cmp_val(IEP_CMP1) + SAMPLE_INTERVAL_NS;
             //if (new_trigger >= SYNC_INTERVAL_NS) new_trigger -= SYNC_INTERVAL_NS;
             iep_set_cmp_val(IEP_CMP1, new_trigger);
+
+            /* reactivate compensation with fixed point magic */
+            compensation_counter += compensation_increment;
+            bresenham_counter += bresenham_increment;
+            /* If we are in compensation phase add one */
+            if (bresenham_counter >= SAMPLES_PER_SYNC)
+            {
+                compensation_counter++;
+                bresenham_counter -= SAMPLES_PER_SYNC;
+            }
 
             /* If we are waiting for a reply from Linux kernel module */
             if (receive_sync_reply(&sync_repl) > 0)
@@ -334,22 +367,18 @@ int32_t event_loop()
 
         /* pru0 util monitoring */
         // TODO: move to PRU0?
-        if (SHARED_MEM.pru0_ticks_per_sample != IDX_OUT_OF_BOUND)
+        if (SHARED_MEM.pru0_ns_per_sample != IDX_OUT_OF_BOUND)
         {
-            if (SHARED_MEM.pru0_ticks_per_sample < (1u << 20u))
+            if (SHARED_MEM.pru0_ns_per_sample < (1u << 20u))
             {
-                if (SHARED_MEM.pru0_ticks_per_sample > pru0_ticks_max)
+                if (SHARED_MEM.pru0_ns_per_sample > pru0_tsample_ns_max)
                 {
-                    pru0_ticks_max = SHARED_MEM.pru0_ticks_per_sample;
+                    pru0_tsample_ns_max = SHARED_MEM.pru0_ns_per_sample;
                 }
-                else if (SHARED_MEM.pru0_ticks_per_sample < pru0_ticks_min)
-                {
-                    pru0_ticks_min = SHARED_MEM.pru0_ticks_per_sample;
-                }
-                pru0_ticks_sum += SHARED_MEM.pru0_ticks_per_sample;
+                pru0_tsample_ns_sum += SHARED_MEM.pru0_ns_per_sample;
                 pru0_sample_count += 1;
             }
-            SHARED_MEM.pru0_ticks_per_sample = IDX_OUT_OF_BOUND;
+            SHARED_MEM.pru0_ns_per_sample = IDX_OUT_OF_BOUND;
             continue;
         }
     }
@@ -374,7 +403,7 @@ reset:
 
     DEBUG_STATE_0;
     iep_init();
-    iep_set_increment(5u);
+    iep_set_increment(TICK_INTERVAL_NS);
     iep_reset();
 
     event_loop();

@@ -40,7 +40,7 @@ enum MsgType
     MSG_ERR_MEM_CORRUPTION        = 0xE1u,
     MSG_ERR_BACKPRESSURE          = 0xE2u,
     MSG_ERR_TIMESTAMP             = 0xE3u,
-    MSG_ERR_CANARY                = 0xE4u, // TODO: add canary violations
+    MSG_ERR_CANARY                = 0xE4u, // TODO: add report on canary violations
     MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE5u,
     MSG_ERR_VALUE                 = 0xE6u,
     MSG_ERR_SAMPLE_MODE           = 0xE7u,
@@ -130,16 +130,6 @@ struct IVTraceOut
     uint32_t canary;
 } __attribute__((packed));
 
-/*
- * TODO: sample-buffer needs big update
- * 	- one large fifo with IV-Struct would have big advantage!
- * 	- overhead on bufferchange would be minimal and
- * 	- pru1 could read ahead, despite a bufferchange
- * 	- python would still fill this fifo block by block, its just easier for the pru to read
- * 	- keep matching V&C / IV Values together -> more efficient for pru
- *  - report size to python (less hardcoded vars)
- */
-
 struct GPIOTrace
 {
     uint32_t idx_pru;
@@ -154,16 +144,16 @@ struct UtilTrace
     /* PRU0 utilization, max ticks per sample (10us), sum of ticks during one sync window (100ms) */
     uint32_t idx_pru;
     uint64_t timestamp_ns[BUFFER_UTIL_SIZE];
-    uint32_t ticks_min[BUFFER_UTIL_SIZE];
-    uint32_t ticks_max[BUFFER_UTIL_SIZE];
-    uint32_t ticks_sum[BUFFER_UTIL_SIZE];
-    uint32_t sample_count[BUFFER_UTIL_SIZE];
+    uint32_t pru0_tsample_ns_max[BUFFER_UTIL_SIZE];
+    uint32_t pru0_tsample_ns_sum[BUFFER_UTIL_SIZE];
+    uint32_t pru0_sample_count[BUFFER_UTIL_SIZE];
+    uint32_t pru1_tsample_max[BUFFER_UTIL_SIZE];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
-struct ProgrammerCtrl // TODO: also rename to *Config?
+struct ProgrammerCtrl
 {
     int32_t  state;
     /* Target chip to be programmed */
@@ -178,7 +168,7 @@ struct ProgrammerCtrl // TODO: also rename to *Config?
     uint32_t pin_tms;     // mode for JTAG
     uint32_t pin_dir_tms; // direction (HIGH == Output to target)
     /* safety */
-    uint32_t canary;       // TODO: should these near structs have canaries in between?
+    uint32_t canary;
 } __attribute__((packed)); // TODO: pin_X can be u8,
 
 

@@ -35,7 +35,7 @@ void sync_start(void);
  * @param sync_reply fresh values for next 100ms-window
  * @param sync_rqst timed iep-counter-value that was received from PRU0
  */
-int  calc_sync_correction(struct ProtoMsg *sync_reply, const struct ProtoMsg *sync_rqst);
+int  sync_PID_correction(struct ProtoMsg *sync_reply, const struct ProtoMsg *sync_rqst);
 
 /**
  * Synchronization data structure
@@ -45,12 +45,11 @@ int  calc_sync_correction(struct ProtoMsg *sync_reply, const struct ProtoMsg *sy
  */
 struct sync_data_s
 {
-    int64_t  error_now;
-    int64_t  error_pre;
-    int64_t  error_dif;
-    int64_t  error_sum;
-    int32_t  clock_corr;
-    uint32_t previous_interval;
+    int64_t  output_sum;
+    int32_t  input_smooth;
+    uint32_t k_state;
+    int32_t  kp_inv_n10;
+    int32_t  ki_inv_n10;
 };
 
 #endif /* __PRU_SYNC_CONTROL_H_ */
