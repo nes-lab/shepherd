@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 # config PI
 kp = 1.1
 ki = 0.9
-pOnE = True
 sum_limit = 10e6
 out_limit = 200e3
 stage = 0
@@ -74,20 +73,11 @@ for idx in range(steps):
         state = 0
 
     output_sum += ki_int * error
-
-    if not pOnE:
-        output_sum -= -kp_int * input_diff
-
     output_sum = min(output_sum, sum_limit)
     output_sum = max(output_sum, -sum_limit)
 
-    if pOnE:
-        output = kp_int * error
-    else:
-        output = 0
-
+    output = kp_int * error
     output += output_sum
-
     output = min(output, out_limit)
     output = max(output, -out_limit)
 

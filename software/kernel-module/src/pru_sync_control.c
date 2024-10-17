@@ -47,7 +47,7 @@ static u8                 init_done       = 0;
  * - values are inverted (inv) and shifted by 10 bit (n10)
  */
 const int32_t             kp_inv_n10_init = 1024 / 1.1;
-const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1);  //
+const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
 /* Benchmark high-res busy-wait - RESULTS:
  * - ktime_get                  99.6us   215n   463ns/call
@@ -169,8 +169,8 @@ void sync_reset(void)
 
 void trigger_loop_start(void)
 {
-    struct ProtoMsg64     sync_reply64;
-    const uint64_t        ts_now_ns        = ktime_get_real_ns();
+    struct ProtoMsg64 sync_reply64;
+    const uint64_t    ts_now_ns = ktime_get_real_ns();
 
     // initial hard reset of timestamp on PRU on 0.1s - grid
     div_u64_rem(ts_now_ns, SYNC_INTERVAL_NS, &sys_ts_over_wrap_ns);
@@ -184,10 +184,10 @@ void trigger_loop_start(void)
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
 
     ts_previous_ns = 0;
-    ts_upcoming_ns     += SYNC_INTERVAL_NS;
+    ts_upcoming_ns += SYNC_INTERVAL_NS;
     sys_ts_over_wrap_ns = 0;
     hrtimer_start(&trigger_loop_timer, ns_to_ktime(ts_upcoming_ns),
-              HRTIMER_MODE_ABS); // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
+                  HRTIMER_MODE_ABS); // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
 
     printk(KERN_WARNING "shprd.sync: pru1-init with reset of time to %llu - starting loop",
            ts_upcoming_ns);
@@ -317,13 +317,13 @@ int sync_PID_correction(struct ProtoMsg *const sync_reply, const struct ProtoMsg
     if (input_now < -(int32_t) (SYNC_INTERVAL_NS / 2)) input_now += SYNC_INTERVAL_NS;
     else if (input_now > (int32_t) (SYNC_INTERVAL_NS / 2)) input_now -= SYNC_INTERVAL_NS;
 
-    /* generate smoothed & absoulte version of input */
+    /* generate smoothed & absolute version of input */
     if (input_now >= 0)
         sync_state.input_smooth =
-                    ((smooth_factor - 1) * sync_state.input_smooth + input_now) / smooth_factor;
+                ((smooth_factor - 1) * sync_state.input_smooth + input_now) / smooth_factor;
     else
         sync_state.input_smooth =
-                    ((smooth_factor - 1) * sync_state.input_smooth - input_now) / smooth_factor;
+                ((smooth_factor - 1) * sync_state.input_smooth - input_now) / smooth_factor;
 
     /* adjust PI-Tuning once stable */
     if ((sync_state.input_smooth < 1000000) && (sync_state.k_state == 0))

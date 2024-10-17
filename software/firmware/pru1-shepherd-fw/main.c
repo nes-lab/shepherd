@@ -169,7 +169,7 @@ int32_t event_loop()
      * - the pru-clock is manipulated by max 1% to phase-lock with system
      * - sync-reply contains
      *    - value[0]: ticks-compensations for every step and
-     *    - value[1]: remainder compensation thats added per bresenham-algo
+     *    - value[1]: remainder of compensation that is added per bresenham-algo
 	 */
     uint32_t        compensation_counter   = 0u;
     uint32_t        compensation_increment = 0u;
