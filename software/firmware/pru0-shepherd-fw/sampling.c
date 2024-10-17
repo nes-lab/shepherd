@@ -238,11 +238,11 @@ void sample_init()
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-    buf_inp_sample                               = (volatile uint8_t *)SHARED_MEM.buffer_iv_inp_ptr->sample;
-    buf_out_voltage                              = SHARED_MEM.buffer_iv_out_ptr->voltage;
-    buf_out_current                              = SHARED_MEM.buffer_iv_out_ptr->current;
+    buf_inp_sample               = (volatile uint8_t *) SHARED_MEM.buffer_iv_inp_ptr->sample;
+    buf_out_voltage              = SHARED_MEM.buffer_iv_out_ptr->voltage;
+    buf_out_current              = SHARED_MEM.buffer_iv_out_ptr->current;
 
-    const enum ShepherdMode mode                 = (enum ShepherdMode) SHARED_MEM.shp_pru0_mode;
+    const enum ShepherdMode mode = (enum ShepherdMode) SHARED_MEM.shp_pru0_mode;
     const uint32_t          dac_ch_a_voltage_raw = SHARED_MEM.dac_auxiliary_voltage_raw & 0xFFFF;
     /* switch to set behavior of aux-channel (dac A) */
     dac_aux_link_to_main = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
