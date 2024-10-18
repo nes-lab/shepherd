@@ -83,21 +83,21 @@ class UtilTrace:
     def __init__(
         self,
         timestamps_ns: np.ndarray,
-        ticks_min: np.ndarray,
-        ticks_max: np.ndarray,
-        ticks_mean: np.ndarray,
+        pru0_tsample_mean: np.ndarray,
+        pru0_tsample_max: np.ndarray,
+        pru1_tsample_max: np.ndarray,
     ) -> None:
         self.timestamps_ns = timestamps_ns
-        self.ticks_min = ticks_min
-        self.ticks_max = ticks_max
-        self.ticks_mean = ticks_mean
+        self.pru0_tsample_mean = pru0_tsample_mean
+        self.pru0_tsample_max = pru0_tsample_max
+        self.pru1_tsample_max = pru1_tsample_max
 
     def __len__(self) -> int:
         return min(
             self.timestamps_ns.size,
-            self.ticks_mean.size,
-            self.ticks_min.size,
-            self.ticks_max.size,
+            self.pru0_tsample_mean.size,
+            self.pru0_tsample_max.size,
+            self.pru1_tsample_max.size,
         )
 
 
@@ -208,12 +208,16 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         self.util_trace_index = 0
         self.util_trace_offset = self.gpio_trace_offset + self.gpio_trace_size
         self.util_timestamps_offset = self.util_trace_offset + 4
-        self.util_ticks_min_offset = self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * 8
-        self.util_ticks_max_offset = self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 4)
-        self.util_ticks_sum_offset = (
-            self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 2 * 4)
+        self.util_pru0_tsample_max_offset = (
+            self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * 8
+        )
+        self.util_pru0_tsample_sum_offset = (
+            self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 1 * 4)
         )
         self.util_sample_count_offset = (
+            self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 2 * 4)
+        )
+        self.util_pru1_tsample_max_offset = (
             self.util_trace_offset + 4 + commons.BUFFER_UTIL_SIZE * (8 + 3 * 4)
         )
         self.util_canary_offset = (
@@ -442,7 +446,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             )
         else:
             data = None
-            log.debug("Discarded IV-Data / out of time-boundary.")
+            log.debug("Discarded IV-Data / out of time-boundary (t_pru = %d).", pru_timestamp)
 
         # TODO: segment in buffer should be reset to ZERO to better detect errors
         # advance index
@@ -545,36 +549,35 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                 count=self.util_segment_size,
                 offset=self.util_timestamps_offset + self.util_trace_index * 8,
             ),
-            ticks_min=np.frombuffer(
+            pru0_tsample_max=np.frombuffer(
                 self.mapped_mem,
                 np.uint32,
                 count=self.util_segment_size,
-                offset=self.util_ticks_min_offset + self.util_trace_index * 4,
+                offset=self.util_pru0_tsample_max_offset + self.util_trace_index * 4,
             ),
-            ticks_max=np.frombuffer(
+            pru1_tsample_max=np.frombuffer(
                 self.mapped_mem,
                 np.uint32,
                 count=self.util_segment_size,
-                offset=self.util_ticks_max_offset + self.util_trace_index * 4,
+                offset=self.util_pru1_tsample_max_offset + self.util_trace_index * 4,
             ),
-            ticks_mean=np.frombuffer(
+            pru0_tsample_mean=np.frombuffer(
                 self.mapped_mem,
                 np.uint32,
                 count=self.util_segment_size,
-                offset=self.util_ticks_sum_offset + self.util_trace_index * 4,
+                offset=self.util_pru0_tsample_sum_offset + self.util_trace_index * 4,
             )
             / sample_count,
         )
         # TODO: cleanup, every crit-instance should be reported
-        util_mean_val = data.ticks_mean.mean() * 100 / commons.SAMPLE_INTERVAL_TICKS
-        util_min_val = data.ticks_min.max() * 100 / commons.SAMPLE_INTERVAL_TICKS
-        util_max_val = data.ticks_max.max() * 100 / commons.SAMPLE_INTERVAL_TICKS
+        util_mean_val = data.pru0_tsample_mean.mean() * 100 / commons.SAMPLE_INTERVAL_NS
+        util_max_val = data.pru0_tsample_max.max() * 100 / commons.SAMPLE_INTERVAL_NS
         util_mean_crit = util_mean_val > 95.0
         util_max_crit = util_max_val >= 100.0
 
         if (self.pru_warn_counter > 0) and (util_mean_crit or util_max_crit):
             log.warning(
-                "Pru0 Loop-Util: mean = %.3f %%, max = %.3f %% "
+                "Pru0-Util: mean = %.3f %%, max = %.3f %% "
                 "-> WARNING: probably broken real-time-condition",
                 util_mean_val,
                 util_max_val,
@@ -582,18 +585,15 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             self.pru_warn_counter -= 1
             if self.pru_warn_counter == 0:
                 # silenced because this is causing overhead without a cape
-                log.warning(
-                    "Pru0 Loop-Util-Warning is silenced now! Is emu running without a cape?"
-                )
+                log.warning("Pru0-Util-Warning is silenced now! Is emu running without a cape?")
         elif verbose:
             log.info(
-                "Pru0 Loop-Util = [%.3f, %.3f, %.3f] %%; sample-count [%d, %d, %d] n; (min, mean, max)",
-                util_min_val,
+                "Pru0-Util = [%.3f, %.3f] %% (mean,max); sample-count [%d, %d] n (min,max); tGpioMax = %d ns",
                 util_mean_val,
                 util_max_val,
                 sample_count.min(),
-                sample_count.mean(),
                 sample_count.max(),
+                data.pru1_tsample_max.max(),
             )
 
         # TODO: segment should be reset to ZERO to better detect errors

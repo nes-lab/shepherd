@@ -26,12 +26,12 @@ class PruRecorder(Monitor):
             compression=compression,
         )
 
-        self.data["values"].attrs["unit"] = "ticks, ticks"
+        self.data["values"].attrs["unit"] = "ns, ns, ns"
         self.data["values"].attrs["description"] = (
-            "pru0_util_mean [ticks], "
-            "pru0_util_min [ticks],"
-            "pru0_util_max [ticks],"
-            f"with {commons.SAMPLE_INTERVAL_TICKS} ticks per sample-step"
+            "pru0_vsrc_tsample_mean [ns], "
+            "pru0_vsrc_tsample_max [ns],"
+            "pru1_gpio_tsample_max [ns],"
+            f"with {commons.SAMPLE_INTERVAL_NS} ns per sample-step"
         )
         # reset increment AFTER creating all dsets are created
         self.increment = 1000  # 100 s
@@ -62,9 +62,9 @@ class PruRecorder(Monitor):
             self.data["values"].resize((data_length, 3))
             self.data["time"].resize((data_length,))
         self.data["time"][self.position : pos_end] = int(time.time() * 1e9)
-        self.data["values"][self.position : pos_end, 0] = data.ticks_mean
-        self.data["values"][self.position : pos_end, 1] = data.ticks_min
-        self.data["values"][self.position : pos_end, 2] = data.ticks_max
+        self.data["values"][self.position : pos_end, 0] = data.pru0_tsample_mean
+        self.data["values"][self.position : pos_end, 1] = data.pru0_tsample_max
+        self.data["values"][self.position : pos_end, 2] = data.pru1_tsample_max
         self.position = pos_end
 
     def thread_fn(self) -> None:

@@ -147,7 +147,7 @@ struct UtilTrace
     uint32_t pru0_tsample_ns_max[BUFFER_UTIL_SIZE];
     uint32_t pru0_tsample_ns_sum[BUFFER_UTIL_SIZE];
     uint32_t pru0_sample_count[BUFFER_UTIL_SIZE];
-    uint32_t pru1_tsample_max[BUFFER_UTIL_SIZE];
+    uint32_t pru1_tsample_ns_max[BUFFER_UTIL_SIZE];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));

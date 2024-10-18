@@ -198,7 +198,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 {
     uint64_t ns_to_next_trigger;
     uint64_t ts_now_ns;
-
+    // TODO: best would be to get rid of this additional loop - is there a sys-interrupt we can use?
     GPIO_P819_SET;
 
     /* Raise Interrupt on PRU, telling it to timestamp IEP */
@@ -326,18 +326,19 @@ int sync_PID_correction(struct ProtoMsg *const sync_reply, const struct ProtoMsg
                 ((smooth_factor - 1) * sync_state.input_smooth - input_now) / smooth_factor;
 
     /* adjust PI-Tuning once stable */
+    // TODO: slow down state-changes, also try holding ki - phase-changes stay in recent versions
     if ((sync_state.input_smooth < 1000000) && (sync_state.k_state == 0))
     {
         sync_state.kp_inv_n10 *= 2;
         sync_state.ki_inv_n10 *= 2;
-        sync_state.k_state = 1;
+        sync_state.k_state++;
         printk(KERN_INFO "shprd.sync: error BELOW 1ms -> relax PI-tuning");
     }
     else if ((sync_state.input_smooth < 200000) && (sync_state.k_state == 1))
     {
         sync_state.kp_inv_n10 *= 2;
         sync_state.ki_inv_n10 *= 2;
-        sync_state.k_state = 2;
+        sync_state.k_state++;
         printk(KERN_INFO "shprd.sync: error BELOW 200us -> relax PI-tuning");
     }
     else if ((sync_state.input_smooth > 2000000) && (sync_state.k_state > 0))

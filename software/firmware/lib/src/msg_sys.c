@@ -31,15 +31,19 @@
 
 void msgsys_init()
 {
-    MSG_INBOX.unread  = 0u;
+    MSG_INBOX.unread    = 0u;
 
-    MSG_OUTBOX.unread = 0u;
-    MSG_OUTBOX.id     = MSG_TO_KERNEL;
-    MSG_OUTBOX.canary = CANARY_VALUE_U32;
+    MSG_OUTBOX.unread   = 0u;
+    MSG_OUTBOX.type     = 0u;
+    MSG_OUTBOX.value[0] = 0u;
+    MSG_OUTBOX.id       = MSG_TO_KERNEL;
+    MSG_OUTBOX.canary   = CANARY_VALUE_U32;
 
-    MSG_ERROR.unread  = 0u;
-    MSG_ERROR.id      = MSG_TO_KERNEL;
-    MSG_ERROR.canary  = CANARY_VALUE_U32;
+    MSG_ERROR.unread    = 0u;
+    MSG_ERROR.type      = 0u;
+    MSG_ERROR.value[0]  = 0u;
+    MSG_ERROR.id        = MSG_TO_KERNEL;
+    MSG_ERROR.canary    = CANARY_VALUE_U32;
 }
 
 // alternative message channel specially dedicated for errors
