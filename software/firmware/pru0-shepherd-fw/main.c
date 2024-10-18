@@ -226,14 +226,15 @@ void event_loop()
         if (iep_tmr_cmp_sts & IEP_CMP0_MASK) // LogicAnalyzer: 204 ns
         {
             // TODO: move back to PRU1 - not needed here anymore?
-            /* Clear Timer Compare 0 and forward it to pru1 */
             GPIO_TOGGLE(DEBUG_PIN0_MASK);
-            SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
-            iep_clear_evt_cmp(IEP_CMP0); // CT_IEP.TMR_CMP_STS.bit0
+            /* Clear Timer Compare 0 */
+            iep_clear_evt_cmp(IEP_CMP0);
             /* update timestamp
             *  NOTE: incrementing of next_sync_timestamp_ns is done by PRU1
             * */
             SHARED_MEM.last_sync_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
+            /* orward interrupt to pru1 */
+            SHARED_MEM.cmp0_trigger_for_pru1  = 1u;
             /* go dark if not running */
             if (SHARED_MEM.shp_pru_state != STATE_RUNNING) GPIO_OFF(DEBUG_PIN0_MASK);
         }
@@ -246,10 +247,9 @@ void event_loop()
             iep_clear_evt_cmp(IEP_CMP1); // CT_IEP.TMR_CMP_STS.bit1
 
             /* update current time (if not already done) */
-            if (~(iep_tmr_cmp_sts & IEP_CMP0_MASK))
-            {
-                last_sample_timestamp_ns += SAMPLE_INTERVAL_NS;
-            }
+            if (iep_tmr_cmp_sts & IEP_CMP0_MASK)
+                last_sample_timestamp_ns = SHARED_MEM.last_sync_timestamp_ns;
+            else last_sample_timestamp_ns += SAMPLE_INTERVAL_NS;
 
             /* The actual sampling takes place here */
             if (SHARED_MEM.shp_pru_state == STATE_RUNNING)

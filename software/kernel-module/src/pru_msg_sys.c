@@ -200,7 +200,10 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             switch (pru_msg.type)
             {
                 // NOTE: all MSG_ERR also get handed to python
-                case MSG_ERR_INVLD_CMD: break;
+                case MSG_ERR_INVLD_CMD:
+                    printk(KERN_ERR "shprd.pru%u: pru received invalid cmd, type = %u",
+                           had_work & 1u, pru_msg.value[0]);
+                    break;
                 case MSG_ERR_MEM_CORRUPTION:
                     printk(KERN_ERR "shprd.pru%u: msg.id from kernel is faulty -> mem "
                                     "corruption? (val=%u)",
@@ -239,7 +242,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     break;
                 default:
                     /* these are all handled in userspace and will be passed by sys-fs */
-                    printk(KERN_ERR "shprd.k: received invalid command / msg-type (0x%02X) "
+                    printk(KERN_ERR "shprd.k: received invalid command / msg-type = 0x%02X"
                                     "from pru%u",
                            pru_msg.type, had_work & 1u);
             }

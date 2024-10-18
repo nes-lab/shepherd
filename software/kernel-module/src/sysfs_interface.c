@@ -953,4 +953,5 @@ void sysfs_interface_exit(void)
     kobject_put(kobj_sync_ref);
     kobject_put(kobj_mem_ref);
     kobject_put(kobj_ref);
+    printk(KERN_INFO "shprd.k: sysfs exited");
 }
