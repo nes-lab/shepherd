@@ -168,17 +168,18 @@ void msg_sys_start(void)
 
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart)
 {
-    struct ProtoMsg     pru_msg;
-    static unsigned int step_pos = 0;
-    uint8_t             had_work;
-    uint32_t            iter;
+    struct ProtoMsg pru_msg;
+    static uint32_t step_pos       = 0;
+    static uint32_t canary_counter = 100000;
+    uint8_t         had_work;
+    uint32_t        iter;
 
     /* Timestamp system clock */
-    const ktime_t       ts_now_kt = ktime_get_real();
+    const ktime_t   ts_now_kt = ktime_get_real();
 
     if (!timers_active) return HRTIMER_NORESTART;
 
-    for (iter = 0; iter < 6; ++iter) /* 3 should be enough, 6 has safety-margin included */
+    for (iter = 0; iter < 4; ++iter) /* 3 should be enough, 6 has safety-margin included */
     {
         if (pru0_comm_receive_msg(&pru_msg)) had_work = 2;
         else if (pru0_comm_receive_error(&pru_msg)) had_work = 4;
@@ -249,15 +250,23 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         }
 
         /* resetting to the shortest sleep period */
-        step_pos = coord_timer_steps_ns_size - 1;
+        step_pos = coord_timer_steps_ns_size - 1u;
     }
 
     if (pru0_comm_check_send_status() && ring_get(&msg_ringbuf_to_pru, &pru_msg))
     {
         pru0_comm_send_msg(&pru_msg);
         /* resetting to the shortest sleep period */
-        step_pos = coord_timer_steps_ns_size - 1;
+        step_pos = coord_timer_steps_ns_size - 1u;
     }
+
+    if (canary_counter++ > 100000u)
+    {
+        mem_interface_check_canaries();
+        canary_counter = 0u;
+        printk(KERN_INFO "shprd.k: checked canaries");
+    }
+
     /* variable sleep cycle */
     hrtimer_forward(timer_for_restart, ts_now_kt, ns_to_ktime(coord_timer_steps_ns[step_pos]));
 

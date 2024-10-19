@@ -87,6 +87,46 @@ void mem_interface_reset(void)
     printk(KERN_INFO "shprd.k: mem-interface reset to default");
 }
 
+/* test the 11 canaries that are placed in shared-mem */
+void mem_interface_check_canaries(void)
+{
+    struct SharedMem *const shared_mem = (struct SharedMem *) pru_shared_mem_io;
+    if (pru_shared_mem_io == NULL) return;
+
+    if (shared_mem->calibration_settings.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of calibration_settings was harmed!");
+
+    if (shared_mem->converter_settings.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of converter_settings was harmed!");
+
+    if (shared_mem->harvester_settings.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of harvester_settings was harmed!");
+
+    if (shared_mem->programmer_ctrl.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of programmer_ctrl was harmed!");
+
+    if (shared_mem->pru0_msg_inbox.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of pru0_msg_inbox was harmed!");
+
+    if (shared_mem->pru0_msg_outbox.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of pru0_msg_outbox was harmed!");
+
+    if (shared_mem->pru0_msg_error.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of pru0_msg_error was harmed!");
+
+    if (shared_mem->pru1_msg_inbox.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of pru1_msg_inbox was harmed!");
+
+    if (shared_mem->pru1_msg_outbox.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of pru1_msg_outbox was harmed!");
+
+    if (shared_mem->pru1_msg_error.canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of pru1_msg_error was harmed!");
+
+    if (shared_mem->canary != CANARY_VALUE_U32)
+        printk(KERN_ERR "shprd.k: canary of shared_mem was harmed!");
+}
+
 
 static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart)
 {
