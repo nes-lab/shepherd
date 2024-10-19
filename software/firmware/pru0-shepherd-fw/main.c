@@ -216,11 +216,10 @@ void event_loop()
             // determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
             __delay_cycles(100 / 5);
             GPIO_ON(SPI_CS_ADCs_MASK);
-            // TODO: look at asm-code, is there still potential for optimization?
             // TODO: make sure that 1 us passes before trying to get that value
         }
         // timestamp pru0 to monitor utilization
-        const uint32_t timer_start = iep_get_cnt_val() - 30u; // rough estimate on
+        const uint32_t timer_start = iep_get_cnt_val();
 
         // Activate new Buffer-Cycle & Ensure proper execution order on pru1 -> cmp0_event (E2) must be handled before cmp1_event (E3)!
         if (iep_tmr_cmp_sts & IEP_CMP0_MASK) // LogicAnalyzer: 204 ns
@@ -277,8 +276,8 @@ void event_loop()
             }
         }
 
-        // record loop-duration -> gets further processed by pru1
-        SHARED_MEM.pru0_ns_per_sample = iep_get_cnt_val() - timer_start;
+        /* record loop-duration, compensate for CS -> gets further processed by pru1 */
+        SHARED_MEM.pru0_ns_per_sample = iep_get_cnt_val() - timer_start + 110u;
         GPIO_OFF(DEBUG_PIN1_MASK);
     }
 }
