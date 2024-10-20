@@ -44,7 +44,7 @@ enum MsgType
     MSG_ERR_VALUE                 = 0xE6u,
     MSG_ERR_SAMPLE_MODE           = 0xE7u,
     MSG_ERR_HRV_ALGO              = 0xE8u,
-
+    MSG_ERR_ADC_NOT_FOUND         = 0xE9u,
     /* KERNELSPACE (enum >=0xF0) */
     // STATUS
     MSG_STATUS_RESTARTING_ROUTINE = 0xF0u,
@@ -57,6 +57,7 @@ enum MsgType
 /* Message IDs used in Mem-Msg-Protocol between PRUs and kernel module */
 enum MsgID
 {
+    MSG_TO_USER   = 0x11u, // python
     MSG_TO_KERNEL = 0x55,
     MSG_TO_PRU    = 0xAA
 };
@@ -80,6 +81,15 @@ enum ShepherdState
     STATE_RESET   = 0xE0,
     STATE_FAULT   = 0xF0,
 };
+
+struct IVTraceInp
+{
+    uint32_t        idx_pru;
+    uint32_t        idx_sys;
+    struct IVSample sample[BUFFER_IV_SIZE];
+    /* safety */
+    uint32_t        canary;
+} __attribute__((packed));
 
 enum ProgrammerState
 {

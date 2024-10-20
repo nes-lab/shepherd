@@ -23,13 +23,13 @@ SysfsInterfaceError = IOError
 
 # dedicated sampling modes
 # - _adc_read - modes are used per rpc (currently to calibrate the hardware)
-# TODO: what is with "None"?
 shepherd_modes = {
     "harvester",
     "hrv_adc_read",
     "emulator",
     "emu_adc_read",
     "debug",
+    "none",
 }
 
 

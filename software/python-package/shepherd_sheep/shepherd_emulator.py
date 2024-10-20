@@ -145,8 +145,6 @@ class ShepherdEmulator(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_recorder(state=False)
-        super().set_power_emulator(state=True)
 
         # TODO: why are there wrappers? just directly access
         super().send_calibration_settings(self.cal_emu)
@@ -192,7 +190,7 @@ class ShepherdEmulator(ShepherdIO):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        super()._power_down_shp()
+        self.set_power_io_level_converter(state=False)
         time.sleep(2)  # TODO: experimental - for releasing uart-backpressure
         self.stack.close()
         super().__exit__()
@@ -236,6 +234,7 @@ class ShepherdEmulator(ShepherdIO):
                 data_iv = self.shared_mem.read_buffer_iv(verbose=self.verbose_extra)
                 data_gp = self.shared_mem.read_buffer_gpio(verbose=self.verbose_extra)
                 data_ut = self.shared_mem.read_buffer_util(verbose=True)
+                # TODO: detect backpressure and high sys-load -> drop gpio
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:

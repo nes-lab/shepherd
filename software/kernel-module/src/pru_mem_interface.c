@@ -61,7 +61,8 @@ void mem_interface_exit(void)
 
 void mem_interface_reset(void)
 {
-    struct SharedMem *const shared_mem = (struct SharedMem *) pru_shared_mem_io;
+    uint32_t iter = 0u;
+    struct SharedMem *const shared_mem = (struct SharedMem *const) pru_shared_mem_io;
     // TODO: why not use this as default interface?
 
     if (!init_done)
@@ -69,6 +70,10 @@ void mem_interface_reset(void)
         printk(KERN_ERR "shprd.k: mem-interface reset requested without prior init");
         return;
     }
+
+    shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
+    for (iter = 0u; iter < CACHE_FLAG_U32_COUNT; iter++)
+        shared_mem->cache_flags[iter] = 0u;
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;
@@ -83,48 +88,86 @@ void mem_interface_reset(void)
     shared_mem->pru1_msg_inbox       = ProtoMsg_default;
     //shared_mem->pru1_msg_outbox      = ProtoMsg_default; // Owned by PRU
     //shared_mem->pru1_msg_error       = ProtoMsg_default;
-    shared_mem->canary               = CANARY_VALUE_U32;
+    //shared_mem->canary1               = CANARY_VALUE_U32;  // Owned by PRU
+    //shared_mem->canary2               = CANARY_VALUE_U32;
+    //shared_mem->canary3               = CANARY_VALUE_U32;
     printk(KERN_INFO "shprd.k: mem-interface reset to default");
 }
 
-/* test the 11 canaries that are placed in shared-mem */
-void mem_interface_check_canaries(void)
+/* verify the 13 canaries that are placed in shared-mem */
+uint32_t mem_interface_check_canaries(void)
 {
+    uint32_t                ret        = 0u;
     struct SharedMem *const shared_mem = (struct SharedMem *) pru_shared_mem_io;
-    if (pru_shared_mem_io == NULL) return;
+    if (pru_shared_mem_io == NULL) return 0u;
 
     if (shared_mem->calibration_settings.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of calibration_settings was harmed!");
+        ret |= 1u << 0u;
+    }
 
     if (shared_mem->converter_settings.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of converter_settings was harmed!");
-
+        ret |= 1u << 1u;
+    }
     if (shared_mem->harvester_settings.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of harvester_settings was harmed!");
-
+        ret |= 1u << 2u;
+    }
     if (shared_mem->programmer_ctrl.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of programmer_ctrl was harmed!");
-
+        ret |= 1u << 3u;
+    }
     if (shared_mem->pru0_msg_inbox.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of pru0_msg_inbox was harmed!");
-
+        ret |= 1u << 4u;
+    }
     if (shared_mem->pru0_msg_outbox.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of pru0_msg_outbox was harmed!");
-
+        ret |= 1u << 5u;
+    }
     if (shared_mem->pru0_msg_error.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of pru0_msg_error was harmed!");
-
+        ret |= 1u << 6u;
+    }
     if (shared_mem->pru1_msg_inbox.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of pru1_msg_inbox was harmed!");
-
+        ret |= 1u << 7u;
+    }
     if (shared_mem->pru1_msg_outbox.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of pru1_msg_outbox was harmed!");
-
+        ret |= 1u << 8u;
+    }
     if (shared_mem->pru1_msg_error.canary != CANARY_VALUE_U32)
+    {
         printk(KERN_ERR "shprd.k: canary of pru1_msg_error was harmed!");
-
-    if (shared_mem->canary != CANARY_VALUE_U32)
-        printk(KERN_ERR "shprd.k: canary of shared_mem was harmed!");
+        ret |= 1u << 9u;
+    }
+    if (shared_mem->canary1 != CANARY_VALUE_U32)
+    {
+        printk(KERN_ERR "shprd.k: canary1 of shared_mem was harmed!");
+        ret |= 1u << 10u;
+    }
+    if (shared_mem->canary2 != CANARY_VALUE_U32)
+    {
+        printk(KERN_ERR "shprd.k: canary2 of shared_mem was harmed!");
+        ret |= 1u << 11u;
+    }
+    if (shared_mem->canary3 != CANARY_VALUE_U32)
+    {
+        printk(KERN_ERR "shprd.k: canary3 of shared_mem was harmed!");
+        ret |= 1u << 12u;
+    }
+    return ret;
 }
 
 

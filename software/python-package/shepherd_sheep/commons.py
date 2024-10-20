@@ -64,11 +64,12 @@ pru_errors: dict[int, str] = {
     0xE1: "[ERR_MEM_CORRUPTION] PRU received a faulty msg.id from kernel",
     0xE2: "[ERR_BACKPRESSURE] PRUs msg-buffer to kernel still full",
     0xE3: "[ERR_TIMESTAMP] PRU received a faulty timestamp",
-    0xE4: "[ERR_CANARY] PRU detected a dead canary",
+    0xE4: "[ERR_CANARY] kernel / pru detected a dead canary",
     0xE5: "[ERR_SYNC_STATE_NOT_IDLE] PRUs sync-state not idle at host interrupt",
     0xE6: "[ERR_VALUE] PRUs msg-content failed test",
     0xE7: "[ERR_SAMPLE_MODE] no valid sample mode found",
     0xE8: "[ERR_HRV_ALGO] no valid hrv algo found",
+    0xE9: "[ERR_ADC_NOT_FOUND] PRU failed to read back from ADC -> is cape powered?",
 }
 
 # fmt: off

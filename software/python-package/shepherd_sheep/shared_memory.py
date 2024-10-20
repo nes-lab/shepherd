@@ -142,8 +142,8 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
 
         # With knowledge of structure of each buffer, we calculate its total size
         self.iv_inp_trace_size = (
-            # Index
-            4
+            # Index for sys & pru
+            4 + 4
             # timestamps & IVSamples
             + commons.BUFFER_IV_SIZE * (4 + 4)
             # Canary
@@ -186,9 +186,10 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
 
         self.iv_inp_trace_index: int | None = None
         self.iv_inp_trace_offset = 0
-        self.iv_inp_samples_offset = self.iv_inp_trace_offset + 4
+        self.iv_inp_sys_idx_offset = self.iv_inp_trace_offset + 1 * 4
+        self.iv_inp_samples_offset = self.iv_inp_trace_offset + 2 * 4
         self.iv_inp_samples_size = 2 * 4
-        self.iv_inp_canary_offset = self.iv_inp_trace_offset + 4 + commons.BUFFER_IV_SIZE * (4 + 4)
+        self.iv_inp_canary_offset = self.iv_inp_trace_offset + 2 * 4 + commons.BUFFER_IV_SIZE * (4 + 4)
 
         self.iv_out_trace_index = 0
         self.iv_out_trace_offset = self.iv_inp_trace_offset + self.iv_inp_trace_size
@@ -350,6 +351,8 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
     def init_buffer_iv_inp(self) -> None:
         self.mapped_mem.seek(self.iv_inp_trace_offset)
         self.mapped_mem.write(bytes(bytearray(self.iv_inp_trace_size)))
+        self.mapped_mem.seek(self.iv_inp_sys_idx_offset)
+        self.mapped_mem.write(struct.pack("=L", commons.IDX_OUT_OF_BOUND))
         self.mapped_mem.seek(self.iv_inp_canary_offset)
         self.mapped_mem.write(struct.pack("=L", commons.CANARY_VALUE_U32))
 
@@ -658,6 +661,16 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         self.mapped_mem.write(iv_data.tobytes())
         # TODO: code does not handle boundaries - !!!!!
         # TODO: should we write or test timestamp? otherwise remove entry in pru-sharedmem
+        if verbose:
+            log.debug(
+                "Sending emu-buffer to PRU, idx=%d took %.2f ms",
+                self.iv_inp_trace_index,
+                1e3 * (time.time() - ts_start),
+            )
+        # update sys-index
+        self.iv_inp_trace_index = (self.iv_inp_trace_index + len(data)) % commons.BUFFER_IV_SIZE
+        self.mapped_mem.seek(self.iv_inp_sys_idx_offset)
+        self.mapped_mem.write(struct.pack("=L", self.iv_inp_trace_index))
         # test canary
         self.mapped_mem.seek(self.iv_inp_canary_offset)
         # TODO: canary can be tested less often (only on reset)
@@ -668,13 +681,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                 canary,
                 commons.CANARY_VALUE_U32,
             )
-        if verbose:
-            log.debug(
-                "Sending emu-buffer to PRU, idx=%d took %.2f ms",
-                self.iv_inp_trace_index,
-                1e3 * (time.time() - ts_start),
-            )
-        self.iv_inp_trace_index = (self.iv_inp_trace_index + len(data)) % commons.BUFFER_IV_SIZE
+
 
     def write_firmware(self, data: bytes) -> int:
         data_size = len(data)

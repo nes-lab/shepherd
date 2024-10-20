@@ -80,8 +80,6 @@ class ShepherdHarvester(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_emulator(state=False)
-        super().set_power_recorder(state=True)
 
         super().send_virtual_harvester_settings(self.hrv_pru)
         super().send_calibration_settings(self.cal_hrv)
@@ -107,7 +105,6 @@ class ShepherdHarvester(ShepherdIO):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        super()._power_down_shp()
         self.stack.close()
         super().__exit__()
 

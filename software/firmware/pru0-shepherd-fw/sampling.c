@@ -29,7 +29,6 @@ struct IVSample    ivsample;
 
 static inline void fetch_iv_trace(const uint32_t index)
 {
-    //DEBUG_RAMRD_STATE_1;
     /* check if sample is in cache */
     const uint32_t cache_block_idx = index >> CACHE_BLOCK_ELEM_LOG2;
     const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
@@ -52,15 +51,11 @@ static inline void fetch_iv_trace(const uint32_t index)
                          (uint8_t *) buf_inp_sample + (index << ELEMENT_SIZE_LOG2),
                          sizeof(struct IVSample));
     }
-    //DEBUG_RAMRD_STATE_0;
 }
 
 
 static inline void sample_emulator()
 {
-    /* NOTE: ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
-    //__delay_cycles(200 / 5); // current design takes ~1500 ns between CS-Lows
-
     const uint32_t index = SHARED_MEM.buffer_iv_idx;
     fetch_iv_trace(index);
     uint32_t input_current_nA = ivsample.current;
@@ -70,7 +65,11 @@ static inline void sample_emulator()
 
     converter_calc_inp_power(input_voltage_uV, input_current_nA);
 
-    /* measure current */
+    /* measure current
+     * NOTE: is ADC-Sample ready?
+	 * - ads8691 needs 1us to acquire and convert
+     * - current design takes >2000 ns between CS-Lows (measured 2024-10)
+	 */
     const uint32_t current_adc_raw = adc_fastread(SPI_CS_EMU_ADC_PIN);
 
     converter_calc_out_power(current_adc_raw);
@@ -130,15 +129,14 @@ static inline void sample_hrv_ADCs(const uint32_t sample_idx)
 
 void sample()
 {
-    switch (SHARED_MEM.shp_pru0_mode) // reordered to prioritize longer routines
+    switch (SHARED_MEM.shp_pru0_mode)
     {
+        /* reordered to prioritize longer routines */
 #ifdef EMU_SUPPORT
-        case MODE_EMULATOR: // ~ ## ns, TODO: test timing for new revision
-            return sample_emulator();
+        case MODE_EMULATOR: return sample_emulator();
 #endif // EMU_SUPPORT
 #ifdef HRV_SUPPORT
-        case MODE_HARVESTER: // ~ ## ns
-            return sample_adc_harvester(SHARED_MEM.buffer_iv_idx);
+        case MODE_HARVESTER: return sample_adc_harvester(SHARED_MEM.buffer_iv_idx);
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ: return sample_emu_ADCs(SHARED_MEM.buffer_iv_idx);
         case MODE_HRV_ADC_READ: return sample_hrv_ADCs(SHARED_MEM.buffer_iv_idx);
@@ -150,7 +148,7 @@ void sample()
 uint32_t sample_dbg_adc(const uint32_t channel_num)
 {
     uint32_t result;
-    /* NOTE: ADC sampled at last CS-Rising-Edge (new pretrigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
+    /* NOTE: ADC sampled at last CS-Rising-Edge -> ads8691 needs 1us to acquire and convert */
     __delay_cycles(1000u / TICK_INTERVAL_NS);
 
     switch (channel_num)
@@ -206,27 +204,36 @@ static void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
 
 static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 {
+    /* the IC needs its pauses between CS-Lows! */
     if (activate)
     {
+        __delay_cycles(1000u / TICK_INTERVAL_NS);
         adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | NOT_PWRDOWN | NAP_EN);
     }
     else
     {
+        __delay_cycles(1000u / TICK_INTERVAL_NS);
         adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | WRITE_KEY);
+        __delay_cycles(1000u / TICK_INTERVAL_NS);
         adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | WRITE_KEY | PWRDOWN);
         return;
     }
 
     /* set Input Range = 1.25 * Vref, with Vref = 4.096 V, -> LSB = 19.53 uV */
+    __delay_cycles(1000u / TICK_INTERVAL_NS);
     adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_RANGE | RANGE_SEL_P125);
 
-    /*	adc_readwrite(cs_pin, REGISTER_READ | ADDR_REG_RANGE);
-	const uint32_t  response = adc_readwrite(cs_pin, 0u);
-	if (response != RANGE_SEL_P125)
-	{
-		// TODO: Alert kernel module that this hw-unit seems to be not present
-	}*/
-    // TODO: checkup disabled for now, doubles adc-init-speed
+    /* Alert kernel module that this hw-unit seems to be not present
+ 	 * -> downside: doubles adc-init-speed
+ 	*/
+    __delay_cycles(1000u / TICK_INTERVAL_NS);
+    adc_readwrite(cs_pin, REGISTER_READ | ADDR_REG_RANGE);
+    __delay_cycles(1000u / TICK_INTERVAL_NS);
+    const uint32_t response = adc_fastread(cs_pin) >> 2u; // read 18 byte, but only asked for 16
+    if ((response & 0x0F) != RANGE_SEL_P125)
+    {
+        msgsys_send_status(MSG_ERR_ADC_NOT_FOUND, cs_pin, response);
+    }
 }
 
 // harvester-init takes 	32'800 ns ATM

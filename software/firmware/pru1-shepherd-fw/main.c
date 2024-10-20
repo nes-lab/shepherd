@@ -61,15 +61,14 @@ static inline bool_ft receive_sync_reply(struct ProtoMsg *const msg)
     {
         switch (msg->type)
         {
-			case MSG_SYNC_ROUTINE:
-            case MSG_SYNC_RESET:
-            	return 1u; // hand to caller
+            case MSG_SYNC_ROUTINE:
+            case MSG_SYNC_RESET: return 1u; // hand to caller
             case MSG_TEST_ROUTINE:
-            	// pipeline-test for msg-system
-            	msgsys_send_status(MSG_TEST_ROUTINE, 3, 0u);
-            	// NOTE: msgsys_send() is deliberatedly NOT used
-            	//       (sync-reset does test pipeline)
-            	return 0u; // hide from caller
+                // pipeline-test for msg-system
+                msgsys_send_status(MSG_TEST_ROUTINE, 3, 0u);
+                // NOTE: msgsys_send() is deliberatedly NOT used
+                //       (sync-reset does test pipeline)
+                return 0u; // hide from caller
             default:
                 msgsys_send_status(MSG_ERR_INVLD_CMD, msg->type, 0u);
                 return 0u; // hide from caller
