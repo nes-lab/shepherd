@@ -37,7 +37,7 @@ gpio_pin_nums = {
     "target_io_en": 60,
     "target_io_sel": 30,
     "en_shepherd": 23,
-    "en_recorder": 50,
+    "en_harvester": 50,
     "en_emulator": 51,
 }
 
@@ -146,11 +146,15 @@ class ShepherdIO:
             self.set_power_cape_pcb(state=True)
             self.set_power_io_level_converter(state=False)
 
-            log.debug("Shepherd hardware is powered up")
-
             # If shepherd hasn't been terminated properly
             self.reinitialize_prus()
-            log.debug("Switching to '%s'-mode", self.mode)
+
+            #
+            self.set_power_emulator(state=self.mode == "emulator")
+            self.set_power_harvester(state=self.mode == "harvester")
+            log.debug("Shepherd hardware is powered up")
+
+            log.info("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
 
             self.refresh_shared_mem()
@@ -174,6 +178,7 @@ class ShepherdIO:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        sfs.write_mode("none", force=True)
         log.info("Now exiting ShepherdIO")
         self._power_down_shp()
         self._unload_shared_mem()
@@ -296,7 +301,7 @@ class ShepherdIO:
 
         self.set_power_io_level_converter(state=False)
         self.set_power_emulator(state=False)
-        self.set_power_recorder(state=False)
+        self.set_power_harvester(state=False)
         self.set_power_cape_pcb(state=False)
         log.debug("Shepherd hardware is now powered down")
 
@@ -310,9 +315,9 @@ class ShepherdIO:
         log.debug("Set power-supplies of shepherd-cape to %s", state_str)
         self.gpios["en_shepherd"].write(value=state)
         if state:
-            time.sleep(0.5)  # time to stabilize voltage-drop
+            time.sleep(1.0)  # time to stabilize voltage-drop
 
-    def set_power_recorder(self, *, state: bool) -> None:
+    def set_power_harvester(self, *, state: bool) -> None:
         """
         triggered pin is currently connected to ADCs reset-line
         NOTE: this might be extended to DAC as well
@@ -321,10 +326,10 @@ class ShepherdIO:
         :return:
         """
         state_str = "enabled" if state else "disabled"
-        log.debug("Set Recorder of shepherd-cape to %s", state_str)
-        self.gpios["en_recorder"].write(value=state)
+        log.debug("Set Harvester of shepherd-cape to %s", state_str)
+        self.gpios["en_harvester"].write(value=state)
         if state:
-            time.sleep(0.3)  # time to stabilize voltage-drop
+            time.sleep(0.5)  # time to stabilize voltage-drop
 
     def set_power_emulator(self, *, state: bool) -> None:
         """
@@ -338,7 +343,7 @@ class ShepherdIO:
         log.debug("Set Emulator of shepherd-cape to %s", state_str)
         self.gpios["en_emulator"].write(value=state)
         if state:
-            time.sleep(0.3)  # time to stabilize voltage-drop
+            time.sleep(0.5)  # time to stabilize voltage-drop
 
     @staticmethod
     def convert_target_port_to_bool(target: TargetPort | str | bool | None) -> bool:

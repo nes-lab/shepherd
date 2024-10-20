@@ -5,11 +5,12 @@
 #include "stdint_fast.h"
 
 /* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
-//typedef struct
 struct SharedMem
 {
+    /* safety */
+    volatile uint32_t                 canary1;
+    /* Stores state & the mode, e.g. harvester or emulator */
     volatile uint32_t                 shp_pru_state;
-    /* Stores the mode, e.g. harvester or emulator */
     volatile uint32_t                 shp_pru0_mode;
     /**
     * Parameters of buffer structures in current far & slow RAM.
@@ -30,28 +31,30 @@ struct SharedMem
     volatile uint32_t                 buffer_gpio_size;
     volatile uint32_t                 buffer_util_size;
     /* userspace buffer-states */
-    volatile uint32_t                 buffer_iv_inp_sys_idx; // write by sys only, TODO: consider
+    volatile uint32_t                 buffer_iv_inp_sys_idx; // write by kMod only, TODO: consider
+    /* Cache System (for buffer_iv_inp) to avoid far/slow RAM-reads */
+    volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT]; // write by kMod only
     /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
      * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
     volatile uint32_t                 dac_auxiliary_voltage_raw;
+    /* safety */
+    volatile uint32_t                 canary2;
     /* ADC calibration settings */
-    volatile struct CalibrationConfig calibration_settings;
+    volatile struct CalibrationConfig calibration_settings; // write by kMod only
     /* This structure defines all settings of virtual converter emulation*/
-    volatile struct ConverterConfig   converter_settings;
-    volatile struct HarvesterConfig   harvester_settings;
+    volatile struct ConverterConfig   converter_settings; // write by kMod only
+    volatile struct HarvesterConfig   harvester_settings; // write by kMod only
     /* settings for programmer-subroutines */
-    volatile struct ProgrammerCtrl    programmer_ctrl;
+    volatile struct ProgrammerCtrl    programmer_ctrl; // write by kMod only
     /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
-    volatile struct ProtoMsg          pru0_msg_inbox;
+    volatile struct ProtoMsg          pru0_msg_inbox; // write by kMod only
     volatile struct ProtoMsg          pru0_msg_outbox;
     volatile struct ProtoMsg          pru0_msg_error;
-    volatile struct ProtoMsg          pru1_msg_inbox;
+    volatile struct ProtoMsg          pru1_msg_inbox; // write by kMod only
     volatile struct ProtoMsg          pru1_msg_outbox;
     volatile struct ProtoMsg          pru1_msg_error;
-    /* Cache System to avoid far/slow RAM-reads */
-    volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT];
     /* safety */
-    volatile uint32_t                 canary;
+    volatile uint32_t                 canary3;
     /* NOTE: End of region (also) controlled by kernel module */
 
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
@@ -70,19 +73,13 @@ struct SharedMem
     volatile bool_ft                  vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */
     volatile uint32_t                 pru0_ns_per_sample;
-    //} SharedMem;
 } __attribute__((packed));
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000u);
 // NOTE: PRUs shared ram should be even 12kb
 
-//volatile struct SharedMem *const shared_mem = (volatile struct SharedMem *) PRU_SHARED_MEM_OFFSET;
-// TODO: cleanup
 // NOTE: GCC-way preferred as cgt builds to 62204 bytes instead of 64244
-//#ifdef __GNUC__
 #define SHARED_MEM (*((volatile struct SharedMem *) PRU_SHARED_MEM_OFFSET))
-//#else
 //volatile struct SharedMem SHARED_MEM __attribute__((cregister("PRU_SHAREDMEM", near), peripheral));
-//#endif
 
 #endif //SHARED_MEM_H

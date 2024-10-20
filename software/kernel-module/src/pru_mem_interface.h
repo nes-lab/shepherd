@@ -21,7 +21,7 @@ void               mem_interface_exit(void);
 void               mem_interface_reset(void);
 
 /* test the 11 canaries that are placed in shared-mem */
-void               mem_interface_check_canaries(void);
+uint32_t           mem_interface_check_canaries(void);
 /**
  * Trigger a system event on the PRUs
  *

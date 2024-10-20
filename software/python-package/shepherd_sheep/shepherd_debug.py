@@ -60,7 +60,7 @@ class ShepherdDebug(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_recorder(state=True)
+        super().set_power_harvester(state=True)
         super().set_power_emulator(state=True)
         super().reinitialize_prus()
         return self
@@ -365,8 +365,8 @@ class ShepherdDebug(ShepherdIO):
     def set_power_emulator(self, state: bool) -> None:
         super().set_power_emulator(state=state)
 
-    def set_power_recorder(self, state: bool) -> None:
-        super().set_power_recorder(state=state)
+    def set_power_harvester(self, state: bool) -> None:
+        super().set_power_harvester(state=state)
 
     def reinitialize_prus(self) -> None:
         super().reinitialize_prus()
@@ -395,10 +395,10 @@ class ShepherdDebug(ShepherdIO):
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()
-        super().set_power_recorder(state=False)
+        super().set_power_harvester(state=False)
         super().set_power_emulator(state=False)
         sysfs_interface.write_mode(mode, force=True)
-        super().set_power_recorder(state=True)
+        super().set_power_harvester(state=True)
         super().set_power_emulator(state=True)
         super().reinitialize_prus()
         if "debug" in mode:

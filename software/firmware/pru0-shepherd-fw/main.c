@@ -286,12 +286,18 @@ int main(void)
 {
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-    SHARED_MEM.canary                = CANARY_VALUE_U32;
-    // Initialize struct-Members Part A, must come first - this blocks PRU1!
+
+    /* Initialize struct-Members Part A, must come first - this blocks PRU1! */
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
     SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
-    // Initialize all struct-Members Part B
+    /* establish safety-boundary around critical sections */
+    SHARED_MEM.canary1               = CANARY_VALUE_U32;
+    SHARED_MEM.canary2               = CANARY_VALUE_U32;
+    SHARED_MEM.canary3               = CANARY_VALUE_U32;
+
+    /* Initialize all struct-Members Part B */
+    SHARED_MEM.buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
     SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
     SHARED_MEM.buffer_iv_inp_size    = sizeof(struct IVTraceInp);
 
@@ -308,7 +314,7 @@ int main(void)
             (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
                                   sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
-    // whole length is documented in resourceTable.shared_memory.len
+    /* accumulated length is documented in resourceTable.shared_memory.len */
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
@@ -327,7 +333,7 @@ int main(void)
     SHARED_MEM.converter_settings.converter_mode = 0u;
     SHARED_MEM.harvester_settings.algorithm      = 0u;
     SHARED_MEM.programmer_ctrl.state             = PRG_STATE_IDLE;
-    SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NRF52;
+    SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NONE;
 
     msgsys_init();
 

@@ -287,7 +287,7 @@ static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attr
 
 static ssize_t sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-    return sprintf(buf, "%u", 0u); // TODO: remove
+    return sprintf(buf, "%u", 0u);
 }
 
 static ssize_t sysfs_sync_error_sum_show(struct kobject *kobj, struct kobj_attribute *attr,
@@ -410,6 +410,11 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
     {
         if ((count < 5) || (count > 6)) return -EINVAL;
         mode = MODE_DEBUG;
+    }
+    else if (strncmp(buf, "none", 4) == 0)
+    {
+        if ((count < 4) || (count > 5)) return -EINVAL;
+        mode = MODE_NONE;
     }
     else return -EINVAL;
 

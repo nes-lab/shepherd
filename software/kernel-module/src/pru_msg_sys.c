@@ -231,6 +231,11 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     printk(KERN_ERR "shprd.pru%u: content of msg failed test (val=%u)",
                            had_work & 1u, pru_msg.value[0]);
                     break;
+                case MSG_ERR_ADC_NOT_FOUND:
+                    printk(KERN_ERR "shprd.pru%u: failed to read back from ADC -> is cape powered? "
+                                    "(pin=%u, value=%u)",
+                           had_work & 1u, pru_msg.value[0], pru_msg.value[1]);
+                    break;
                 case MSG_ERR_SAMPLE_MODE: break;
                 case MSG_ERR_HRV_ALGO: break;
                 case MSG_STATUS_RESTARTING_ROUTINE:
@@ -243,7 +248,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     break;
                 default:
                     /* these are all handled in userspace and will be passed by sys-fs */
-                    printk(KERN_ERR "shprd.k: received invalid command / msg-type = 0x%02X"
+                    printk(KERN_ERR "shprd.k: received invalid command / msg-type = 0x%02X "
                                     "from pru%u",
                            pru_msg.type, had_work & 1u);
             }
@@ -262,9 +267,16 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 
     if (canary_counter++ > 100000u)
     {
-        mem_interface_check_canaries();
-        canary_counter = 0u;
-        printk(KERN_INFO "shprd.k: checked canaries");
+        canary_counter   = 0u;
+        pru_msg.value[0] = mem_interface_check_canaries();
+        if (pru_msg.value[0] > 0u)
+        {
+            pru_msg.id     = MSG_TO_USER;
+            pru_msg.type   = MSG_ERR_CANARY;
+            pru_msg.canary = CANARY_VALUE_U32;
+            ring_put(&msg_ringbuf_from_pru, &pru_msg);
+        }
+        else printk(KERN_INFO "shprd.k: verified canaries");
     }
 
     /* variable sleep cycle */

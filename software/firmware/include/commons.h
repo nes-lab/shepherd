@@ -40,11 +40,12 @@ enum MsgType
     MSG_ERR_MEM_CORRUPTION        = 0xE1u,
     MSG_ERR_BACKPRESSURE          = 0xE2u,
     MSG_ERR_TIMESTAMP             = 0xE3u,
-    MSG_ERR_CANARY                = 0xE4u, // TODO: add report on canary violations
+    MSG_ERR_CANARY                = 0xE4u, // unused here, done by kMod & py
     MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE5u,
     MSG_ERR_VALUE                 = 0xE6u,
     MSG_ERR_SAMPLE_MODE           = 0xE7u,
     MSG_ERR_HRV_ALGO              = 0xE8u,
+    MSG_ERR_ADC_NOT_FOUND         = 0xE9u,
 
     /* KERNELSPACE (enum >=0xF0) */
     // STATUS
@@ -58,6 +59,7 @@ enum MsgType
 /* Message IDs used in Mem-Msg-Protocol between PRUs and kernel module */
 enum MsgID
 {
+    MSG_TO_USER   = 0x11u, // python
     MSG_TO_KERNEL = 0x55u,
     MSG_TO_PRU    = 0xAAu,
 };
@@ -115,6 +117,7 @@ extern uint32_t __cache_fits_buffer[1 / ((1u << ELEMENT_SIZE_LOG2) == sizeof(str
 struct IVTraceInp
 {
     uint32_t        idx_pru;
+    uint32_t        idx_sys;
     struct IVSample sample[BUFFER_IV_SIZE];
     /* safety */
     uint32_t        canary;

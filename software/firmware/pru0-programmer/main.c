@@ -25,30 +25,39 @@ int main(void)
 {
     GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
 
-    // Initialize struct-Members Part A, must come first - this blocks PRU1!
+    /* Initialize struct-Members Part A, must come first - this blocks PRU1! */
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
     SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
 
-    // Initialize all struct-Members Part B
+    /* establish safety-boundary around critical sections */
+    SHARED_MEM.canary1               = CANARY_VALUE_U32;
+    SHARED_MEM.canary2               = CANARY_VALUE_U32;
+    SHARED_MEM.canary3               = CANARY_VALUE_U32;
+
+    /* Initialize all struct-Members Part B */
+    SHARED_MEM.buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
     SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
     SHARED_MEM.buffer_iv_inp_size    = sizeof(struct IVTraceInp);
 
     SHARED_MEM.buffer_iv_out_ptr =
-            (struct IVTraceOut *) (SHARED_MEM.buffer_iv_inp_ptr + sizeof(struct IVTraceInp));
+            (struct IVTraceOut *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp));
     SHARED_MEM.buffer_iv_out_size = sizeof(struct IVTraceOut);
 
     SHARED_MEM.buffer_gpio_ptr =
-            (struct GPIOTrace *) (SHARED_MEM.buffer_iv_out_ptr + sizeof(struct IVTraceOut));
+            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
+                                  sizeof(struct IVTraceOut));
     SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
 
     SHARED_MEM.buffer_util_ptr =
-            (struct UtilTrace *) (SHARED_MEM.buffer_gpio_ptr + sizeof(struct GPIOTrace));
+            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
+                                  sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
     SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
+    // accumulated length is documented in resourceTable.shared_memory.len
 
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
-    SHARED_MEM.shp_pru0_mode                     = MODE_HARVESTER;
+    SHARED_MEM.shp_pru0_mode                     = MODE_NONE;
 
     SHARED_MEM.last_sync_timestamp_ns            = 0u;
     SHARED_MEM.next_sync_timestamp_ns            = 0u;
@@ -80,7 +89,7 @@ reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.programmer_ctrl.state);
     SHARED_MEM.pru0_ns_per_sample        = 0u;
 
-    SHARED_MEM.vsource_skip_gpio_logging = false;
+    SHARED_MEM.vsource_skip_gpio_logging = true;
 
     SHARED_MEM.shp_pru_state             = STATE_IDLE;
 

@@ -72,13 +72,14 @@ uint32_t        adc_fastread(uint32_t cs_pin) { return cs_pin + hw_value; }
 void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + val; }
 #endif
 
-#define HRV_ISC_VOC  (1u << 3u)
-#define HRV_IVCURVE  (1u << 4u)
-#define HRV_CV       (1u << 8u)
-#define HRV_MPPT_VOC (1u << 12u)
-#define HRV_MPPT_PO  (1u << 13u)
-#define HRV_MPPT_OPT (1u << 14u)
+#define HRV_ISC_VOC       (1u << 3u)
+#define HRV_IVCURVE       (1u << 4u)
+#define HRV_CV            (1u << 8u)
+#define HRV_MPPT_VOC      (1u << 12u)
+#define HRV_MPPT_PO       (1u << 13u)
+#define HRV_MPPT_OPT      (1u << 14u)
 
+#define HRV_ADC_PRE_SLEEP (800u / TICK_INTERVAL_NS) // results in 1350 ns between CS-Lows
 
 void harvester_initialize()
 {

@@ -57,6 +57,5 @@ extern uint32_t V_input_request_uV;
 /* Solar - Diode - Target
  * -> currently not possible to emulate
  * - needs IV-curves and feedback
- * TODO: later
  */
 #endif // PRU_FIRMWARE_PRU0_SHEPHERD_FW_CONVERTER_H
