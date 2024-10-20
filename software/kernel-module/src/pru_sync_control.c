@@ -25,8 +25,8 @@ static u8                   timers_active = 0u;
 /* debug gpio - gpio0[22] - P8_19 - BUTTON_LED is suitable */
 static void __iomem        *gpio0set      = NULL;
 static void __iomem        *gpio0clear    = NULL;
-#define GPIO_P819_SET writel(0b1u << 22u, gpio0set);
-#define GPIO_P819_CLR writel(0b1u << 22u, gpio0clear);
+#define GPIO_P819_SET iowrite32(0b1u << 22u, gpio0set);
+#define GPIO_P819_CLR iowrite32(0b1u << 22u, gpio0clear);
 
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 static const unsigned int TIMER_STEPS_NS[] = {20000000u, 20000000u, 20000000u, 20000000u, 10000000u,

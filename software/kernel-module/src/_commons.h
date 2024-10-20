@@ -82,15 +82,6 @@ enum ShepherdState
     STATE_FAULT   = 0xF0,
 };
 
-struct IVTraceInp
-{
-    uint32_t        idx_pru;
-    uint32_t        idx_sys;
-    struct IVSample sample[BUFFER_IV_SIZE];
-    /* safety */
-    uint32_t        canary;
-} __attribute__((packed));
-
 enum ProgrammerState
 {
     PRG_STATE_ERR_GENERIC  = -1,
@@ -111,6 +102,15 @@ enum ProgrammerTarget
     PRG_TARGET_NRF52  = 2u,
     PRG_TARGET_DUMMY  = 3u,
 };
+
+struct IVTraceInp
+{
+    uint32_t        idx_pru;
+    uint32_t        idx_sys;
+    uint64_t        sample[BUFFER_IV_SIZE];
+    /* safety */
+    uint32_t        canary;
+} __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl // TODO: also rename to *Config?

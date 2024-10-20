@@ -282,7 +282,7 @@ static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attr
 {
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
-    return sprintf(buf, "%u", readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset));
+    return sprintf(buf, "%u", ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset));
 }
 
 static ssize_t sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -359,7 +359,7 @@ static ssize_t sysfs_mode_show(struct kobject *kobj, struct kobj_attribute *attr
 {
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
-    const unsigned int mode = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    const unsigned int mode = ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
     switch (mode)
     {
@@ -418,7 +418,7 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
     }
     else return -EINVAL;
 
-    writel(mode, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    iowrite32(mode, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     printk(KERN_INFO "shprd.k: new mode = %d (%s)", mode, buf);
     mem_interface_set_state(STATE_RESET);
     return count;
@@ -437,7 +437,7 @@ static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj, struct kobj_a
     if (sscanf(buf, "%u", &tmp) == 1)
     {
         printk(KERN_INFO "shprd.k: Setting auxiliary DAC-voltage to raw %u", tmp);
-        writel(tmp, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+        iowrite32(tmp, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
         mem_interface_set_state(STATE_RESET); // TODO: really needed?
         return count;
@@ -469,13 +469,13 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj, struct kob
         printk(KERN_INFO "shprd: Setting DAC-Voltage calibration config. gain: %d, offset: %d",
                tmp.dac_voltage_inv_factor_uV_n20, tmp.dac_voltage_offset_uV);
 
-        writel(tmp.adc_current_factor_nA_n8, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
-        writel(tmp.adc_current_offset_nA, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
-        writel(tmp.adc_voltage_factor_uV_n8, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
-        writel(tmp.adc_voltage_offset_uV, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
-        writel(tmp.dac_voltage_inv_factor_uV_n20,
+        iowrite32(tmp.adc_current_factor_nA_n8, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
+        iowrite32(tmp.adc_current_offset_nA, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
+        iowrite32(tmp.adc_voltage_factor_uV_n8, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
+        iowrite32(tmp.adc_voltage_offset_uV, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
+        iowrite32(tmp.dac_voltage_inv_factor_uV_n20,
                pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16);
-        writel(tmp.dac_voltage_offset_uV, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20);
+        iowrite32(tmp.dac_voltage_offset_uV, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20);
         /* TODO: this should copy the struct in one go */
 
         return count;
@@ -491,12 +491,12 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj, struct kobj
             container_of(attr, struct kobj_attr_struct_s, attr);
 
     return sprintf(buf, "%u %d \n%u %d \n%u %d \n",
-                   readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
-                   readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
-                   readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
-                   readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12),
-                   readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16),
-                   readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20));
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20));
 }
 
 static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kobj,
@@ -525,7 +525,7 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
         int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
-        writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
+        iowrite32(value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
     /* u8 input LUT */
@@ -539,7 +539,7 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
         if (ret != 1) return -EINVAL;
         if (value_retrieved > 255)
             printk(KERN_WARNING "shprd.k: virtual Converter parsing got a u8-value out of bound");
-        writeb((uint8_t) value_retrieved, pru_shared_mem_io + mem_offset + i);
+        iowrite8((uint8_t) value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
     /* u32 output LUT */
@@ -551,7 +551,7 @@ static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kob
         int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
-        writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
+        iowrite32(value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
 
     printk(KERN_INFO "shprd.k: Setting Virtual Converter Config");
@@ -576,14 +576,14 @@ static ssize_t sysfs_virtual_converter_settings_show(struct kobject        *kobj
     mem_offset          = kobj_attr_wrapped->val_offset;
     for (i = 0; i < non_lut_size; i += 4)
     {
-        count += sprintf(buf + strlen(buf), "%u \n", readl(pru_shared_mem_io + mem_offset + i));
+        count += sprintf(buf + strlen(buf), "%u \n", ioread32(pru_shared_mem_io + mem_offset + i));
     }
 
     /* u8 input LUT */
     mem_offset = kobj_attr_wrapped->val_offset + non_lut_size;
     for (i = 0; i < inp_lut_size; i += 1)
     {
-        count += sprintf(buf + strlen(buf), "%u ", readb(pru_shared_mem_io + mem_offset + i));
+        count += sprintf(buf + strlen(buf), "%u ", ioread8(pru_shared_mem_io + mem_offset + i));
     }
     count += sprintf(buf + strlen(buf), "\n");
 
@@ -591,7 +591,7 @@ static ssize_t sysfs_virtual_converter_settings_show(struct kobject        *kobj
     mem_offset = kobj_attr_wrapped->val_offset + non_lut_size + inp_lut_size;
     for (i = 0; i < out_lut_size; i += 4)
     {
-        count += sprintf(buf + strlen(buf), "%u ", readl(pru_shared_mem_io + mem_offset + i));
+        count += sprintf(buf + strlen(buf), "%u ", ioread32(pru_shared_mem_io + mem_offset + i));
     }
     count += sprintf(buf + strlen(buf), "\n");
     printk(KERN_INFO "shprd.k: reading struct ConverterConfig");
@@ -620,7 +620,7 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
         int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
         buf_pos += value_length;
         if (ret != 1) return -EINVAL;
-        writel(value_retrieved, pru_shared_mem_io + mem_offset + i);
+        iowrite32(value_retrieved, pru_shared_mem_io + mem_offset + i);
     }
     printk(KERN_INFO "shprd.k: writing struct HarvesterConfig");
     return count;
@@ -640,7 +640,7 @@ static ssize_t sysfs_virtual_harvester_settings_show(struct kobject        *kobj
     mem_offset          = kobj_attr_wrapped->val_offset;
     for (i = 0; i < struct_size; i += 4)
     {
-        count += sprintf(buf + strlen(buf), "%u \n", readl(pru_shared_mem_io + mem_offset + i));
+        count += sprintf(buf + strlen(buf), "%u \n", ioread32(pru_shared_mem_io + mem_offset + i));
     }
     printk(KERN_INFO "shprd.k: reading struct HarvesterConfig");
     return count;
@@ -684,7 +684,7 @@ static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute
 {
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
-    const int32_t value = readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    const int32_t value = ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
     if (value == PRG_STATE_IDLE) return sprintf(buf, "idle");
     else if (value == PRG_STATE_STARTING) return sprintf(buf, "starting");
@@ -707,7 +707,7 @@ static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribut
     if ((value == PRG_STATE_STARTING) && (mem_interface_get_state() != STATE_IDLE)) return -EBUSY;
     // TODO: kernel should test validity of struct (instead of pru) -> best place is here
 
-    writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    iowrite32(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     return count;
 }
 
@@ -716,7 +716,7 @@ static ssize_t sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribut
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
 
-    switch (readl(pru_shared_mem_io + kobj_attr_wrapped->val_offset))
+    switch (ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset))
     {
         case PRG_TARGET_NRF52: return sprintf(buf, "nrf52");
         case PRG_TARGET_MSP430: return sprintf(buf, "msp430");
@@ -743,7 +743,7 @@ static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribu
         return -EINVAL;
     }
 
-    writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    iowrite32(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     return count;
 }
 
@@ -760,7 +760,7 @@ static ssize_t sysfs_prog_datarate_store(struct kobject *kobj, struct kobj_attri
     if (sscanf(buffer, "%u", &value) != 1) return -EINVAL;
     if ((value < 1) || (value > 10000000)) // TODO: replace with valid boundaries
         return -EINVAL;
-    writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    iowrite32(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     return count;
 }
 
@@ -774,12 +774,12 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-    value_max         = readl(pru_shared_mem_io + offsetof(struct SharedMem, buffer_iv_inp_size) +
+    value_max         = ioread32(pru_shared_mem_io + offsetof(struct SharedMem, buffer_iv_inp_size) +
                               offsetof(struct SharedMem, buffer_iv_out_size));
 
     if (sscanf(buffer, "%u", &value) != 1) return -EINVAL;
     if ((value < 1) || (value > value_max)) return -EINVAL;
-    writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    iowrite32(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     return count;
 }
 
@@ -796,7 +796,7 @@ static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute 
     if (sscanf(buffer, "%u", &value) != 1) return -EINVAL;
     if (value > 10000) // TODO: replace with proper range-test for valid pin-def
         return -EINVAL;
-    writel(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    iowrite32(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
     return count;
 }
 
