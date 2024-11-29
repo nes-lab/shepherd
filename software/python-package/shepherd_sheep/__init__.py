@@ -43,20 +43,20 @@ from .target_io import TargetIO
 __version__ = "0.8.3"
 
 __all__ = [
-    "Writer",
     "EEPROM",
-    "TargetIO",
-    "ShepherdHarvester",
-    "ShepherdEmulator",
     "ShepherdDebug",
+    "ShepherdEmulator",
+    "ShepherdHarvester",
+    "ShepherdIOError",
+    "TargetIO",
+    "Writer",
+    "flatten_list",
+    "log",
     "run_emulator",
+    "run_firmware_mod",
     "run_harvester",
     "run_programmer",
-    "run_firmware_mod",
     "run_task",
-    "ShepherdIOError",
-    "log",
-    "flatten_list",
 ]
 
 # NOTE:
@@ -143,6 +143,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         path_tmp = tempfile.TemporaryDirectory()
         stack.enter_context(path_tmp)
         file_tmp = Path(path_tmp.name) / "aligned.hex"
+        log.debug("\taligned firmware")
         # tmp_path because firmware can be in readonly content-dir
         cmd = [
             "/usr/bin/srec_cat",
@@ -173,6 +174,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             log.error("Error during realignment (srec_cat): %s", ret.stderr)
             failed = True
             raise SystemExit  # noqa: TRY301
+        log.debug("\tconverted to ihex")
 
         with file_tmp.resolve().open("rb") as fw:
             try:
@@ -207,9 +209,9 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                     )
                 log.info("Programmer initialized, will start now")
                 sysfs_interface.start_programmer()
-            except OSError:
-                log.error("OSError - Failed to initialize Programmer")
-                failed = True
+            # except OSError as xpt:
+            #    log.exception("OSError - Failed to initialize Programmer", str(xpt))
+            #    failed = True
             except ValueError as xpt:
                 log.exception("ValueError: %s", str(xpt))
                 failed = True

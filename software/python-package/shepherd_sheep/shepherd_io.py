@@ -148,7 +148,6 @@ class ShepherdIO:
             # If shepherd hasn't been terminated properly
             self.reinitialize_prus()
 
-            #
             self.set_power_emulator(state=self.mode == "emulator")
             self.set_power_harvester(state=self.mode == "harvester")
             log.debug("Shepherd hardware is powered up")

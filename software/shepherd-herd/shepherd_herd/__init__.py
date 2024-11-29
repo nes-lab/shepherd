@@ -16,8 +16,8 @@ __version__ = "0.8.3"
 
 __all__ = [
     "Herd",
-    "logger",
     "activate_verbosity",
-    "logger",
     "get_verbosity",
+    "logger",
+    "logger",
 ]
