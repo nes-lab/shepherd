@@ -153,7 +153,6 @@ class ShepherdDebug(ShepherdIO):
         log_intermediate: bool = False,
         dtype_in: EnergyDType = EnergyDType.ivsample,
         window_size: int | None = None,
-        voltage_step_V: float | None = None,
     ) -> None:
         super().send_calibration_settings(cal_emu)
         src_pru = ConverterPRUConfig.from_vsrc(
@@ -168,7 +167,7 @@ class ShepherdDebug(ShepherdIO):
             for_emu=True,
             dtype_in=dtype_in,
             window_size=window_size,
-            voltage_step_V=voltage_step_V,
+            voltage_step_V=file_inp.get_voltage_step(),
         )
         super().send_virtual_harvester_settings(hrv_pru)
         time.sleep(0.5)
@@ -435,33 +434,29 @@ class ShepherdDebug(ShepherdIO):
         with contextlib.suppress(ShepherdIOError):
             while True:
                 msg_type, values = self._get_msg(5)
-                if msg_type == commons.MSG_PGM_ERROR_WRITE:
+                if msg_type != commons.MSG_PGM_ERROR_WRITE:
                     # TODO: that should trigger an error
+                    # TODO: programmer recently emits this at the end of process:
+                    #       ..-WRITE-ERROR: ihex to target @0x0, data=0 [0x0]
                     log.error(
-                        "PROGRAMMER-WRITE-ERROR: ihex to address @%s, data=%d [%s]",
+                        "PROGRAMMER-WRITE-ERROR: ihex to target @%s, data=%d [%s]",
                         f"0x{values[0]:X}",
                         values[1],
                         f"0x{values[1]:X}",
                     )
-                elif msg_type == commons.MSG_PGM_ERROR_VERIFY:
+                elif msg_type != commons.MSG_PGM_ERROR_VERIFY:
                     log.error(
                         "PROGRAMMER-VERIFY-ERROR: read-back failed @%s, data=%d [%s]",
                         f"0x{values[0]:X}",
                         values[1],
                         f"0x{values[1]:X}",
                     )
-                elif msg_type == commons.MSG_PGM_ERROR_PARSE:
-                    log.error(
-                        "PROGRAMMER-PARSE-ERROR: ihex_return=%d, line=%d", values[0], values[1]
-                    )
-                elif msg_type == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                    log.debug(
-                        "PRU is restarting its main routine, val=[%d, %d]", values[0], values[1]
-                    )
+                elif msg_type != commons.MSG_PGM_ERROR_PARSE:
+                    log.error("PROGRAMMER-PARSE-ERROR: ihex_return=%d", values[0])
                 else:
                     log.error(
                         "UNKNOWN PROGRAMMER-ERROR: type=%d, val0=%d, val1=%d",
-                        f"0x{msg_type:X}",
+                        msg_type,
                         values[0],
                         values[1],
                     )

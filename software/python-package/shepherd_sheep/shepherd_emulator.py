@@ -13,7 +13,7 @@ from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
-from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.task import EmulationTask, HarvestTask
 from tqdm import tqdm
 from typing_extensions import Self
 
