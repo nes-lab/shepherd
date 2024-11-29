@@ -167,6 +167,7 @@ class ShepherdDebug(ShepherdIO):
             for_emu=True,
             dtype_in=dtype_in,
             window_size=window_size,
+            voltage_step_V=file_inp.get_voltage_step(),
         )
         super().send_virtual_harvester_settings(hrv_pru)
         time.sleep(0.5)

@@ -61,6 +61,7 @@ def simulate_harvester(
         for_emu=True,
         dtype_in=file_inp.get_datatype(),
         window_size=file_inp.get_window_samples(),
+        voltage_step_V=file_inp.get_voltage_step(),
     )
     hrv = PruHarvesterModel(hrv_pru)
     e_out_Ws = 0.0
