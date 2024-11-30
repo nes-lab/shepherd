@@ -29,7 +29,7 @@ classifiers = [
 
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2025.2.2",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2024.11.3",  # limit due to newest features
     "click",
     "numpy",
     "python-periphery<2.0.0", # v2 has no persistence anymore
