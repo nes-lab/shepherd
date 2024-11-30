@@ -29,9 +29,10 @@ void                        mem_interface_init(void)
         return;
     }
     /* Maps the control registers of the PRU's interrupt controller */
-    pru_intc_io       = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
+    pru_intc_io = ioremap_nocache(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
-    pru_shared_mem_io = ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
+    pru_shared_mem_io =
+            ioremap_nocache(PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
 
     hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     delayed_start_timer.function = &delayed_start_callback;
@@ -61,7 +62,6 @@ void mem_interface_exit(void)
 
 void mem_interface_reset(void)
 {
-    uint32_t iter = 0u;
     struct SharedMem *const shared_mem = (struct SharedMem *const) pru_shared_mem_io;
     // TODO: why not use this as default interface?
 
@@ -72,8 +72,7 @@ void mem_interface_reset(void)
     }
 
     shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
-    for (iter = 0u; iter < CACHE_FLAG_U32_COUNT; iter++)
-        shared_mem->cache_flags[iter] = 0u;
+    memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;
@@ -216,7 +215,7 @@ void mem_interface_trigger(unsigned int system_event)
 enum ShepherdState mem_interface_get_state(void)
 {
     return (enum ShepherdState) ioread32(pru_shared_mem_io +
-                                      offsetof(struct SharedMem, shp_pru_state));
+                                         offsetof(struct SharedMem, shp_pru_state));
 }
 
 void mem_interface_set_state(enum ShepherdState state)
