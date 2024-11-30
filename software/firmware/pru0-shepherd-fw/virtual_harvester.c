@@ -502,6 +502,12 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
     /* emulate VOC Search @ beginning of interval duration */
     if (interval_step < HRV_CFG.duration_n)
     {
+        /* No Output here, jump to VOC for first half */
+        voltage_set_uV = HRV_CFG.voltage_max_uV;
+        *p_current_nA  = 0u;
+    }
+    else if (interval_step == HRV_CFG.duration_n)
+    {
         /* No Output here, also update wanted const voltage */
         voltage_set_uV = mul32(voc_now, HRV_CFG.setpoint_n8) >> 8u;
         *p_current_nA  = 0u;
