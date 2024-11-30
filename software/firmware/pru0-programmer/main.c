@@ -35,25 +35,28 @@ int main(void)
     SHARED_MEM.canary3               = CANARY_VALUE_U32;
 
     /* Initialize all struct-Members Part B */
-    SHARED_MEM.buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
     SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
-    SHARED_MEM.buffer_iv_inp_size    = sizeof(struct IVTraceInp);
-
     SHARED_MEM.buffer_iv_out_ptr =
             (struct IVTraceOut *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp));
-    SHARED_MEM.buffer_iv_out_size = sizeof(struct IVTraceOut);
-
     SHARED_MEM.buffer_gpio_ptr =
             (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
                                   sizeof(struct IVTraceOut));
-    SHARED_MEM.buffer_gpio_size = sizeof(struct GPIOTrace);
-
     SHARED_MEM.buffer_util_ptr =
             (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
                                   sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
-    SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
-    // accumulated length is documented in resourceTable.shared_memory.len
 
+    SHARED_MEM.buffer_size                       = resourceTable.shared_memory.len;
+    SHARED_MEM.buffer_iv_inp_size                = sizeof(struct IVTraceInp);
+    SHARED_MEM.buffer_iv_out_size                = sizeof(struct IVTraceOut);
+    SHARED_MEM.buffer_gpio_size                  = sizeof(struct GPIOTrace);
+    SHARED_MEM.buffer_util_size                  = sizeof(struct UtilTrace);
+
+    SHARED_MEM.buffer_iv_inp_sys_idx             = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_inp_ptr->idx_sys        = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_inp_ptr->idx_pru        = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_out_ptr->idx_pru        = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_gpio_ptr->idx_pru          = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_util_ptr->idx_pru          = IDX_OUT_OF_BOUND;
 
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
