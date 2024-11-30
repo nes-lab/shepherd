@@ -367,6 +367,7 @@ static ssize_t sysfs_mode_show(struct kobject *kobj, struct kobj_attribute *attr
         case MODE_HRV_ADC_READ: return sprintf(buf, "hrv_adc_read");
         case MODE_EMULATOR: return sprintf(buf, "emulator");
         case MODE_EMU_ADC_READ: return sprintf(buf, "emu_adc_read");
+        case MODE_EMU_LOOPBACK: return sprintf(buf, "emu_loopback");
         case MODE_DEBUG: return sprintf(buf, "debug");
         case MODE_NONE: return sprintf(buf, "none");
         default: return -EINVAL;
@@ -405,6 +406,11 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
     {
         if ((count < 12) || (count > 13)) return -EINVAL;
         mode = MODE_EMU_ADC_READ;
+    }
+    else if (strncmp(buf, "emu_loopback", 12) == 0)
+    {
+        if ((count < 12) || (count > 13)) return -EINVAL;
+        mode = MODE_EMU_LOOPBACK;
     }
     else if (strncmp(buf, "debug", 5) == 0)
     {
@@ -469,13 +475,17 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj, struct kob
         printk(KERN_INFO "shprd: Setting DAC-Voltage calibration config. gain: %d, offset: %d",
                tmp.dac_voltage_inv_factor_uV_n20, tmp.dac_voltage_offset_uV);
 
-        iowrite32(tmp.adc_current_factor_nA_n8, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
+        iowrite32(tmp.adc_current_factor_nA_n8,
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
         iowrite32(tmp.adc_current_offset_nA, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
-        iowrite32(tmp.adc_voltage_factor_uV_n8, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
-        iowrite32(tmp.adc_voltage_offset_uV, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
+        iowrite32(tmp.adc_voltage_factor_uV_n8,
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
+        iowrite32(tmp.adc_voltage_offset_uV,
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
         iowrite32(tmp.dac_voltage_inv_factor_uV_n20,
-               pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16);
-        iowrite32(tmp.dac_voltage_offset_uV, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20);
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16);
+        iowrite32(tmp.dac_voltage_offset_uV,
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20);
         /* TODO: this should copy the struct in one go */
 
         return count;
@@ -774,8 +784,7 @@ static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attri
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
     kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
-    value_max         = ioread32(pru_shared_mem_io + offsetof(struct SharedMem, buffer_iv_inp_size) +
-                              offsetof(struct SharedMem, buffer_iv_out_size));
+    value_max         = ioread32(pru_shared_mem_io + offsetof(struct SharedMem, buffer_size));
 
     if (sscanf(buffer, "%u", &value) != 1) return -EINVAL;
     if ((value < 1) || (value > value_max)) return -EINVAL;
