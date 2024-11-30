@@ -69,6 +69,7 @@ enum ShepherdMode
     MODE_HRV_ADC_READ = 0x11u,
     MODE_EMULATOR     = 0x20u,
     MODE_EMU_ADC_READ = 0x21u,
+    MODE_EMU_LOOPBACK = 0x22u,
     MODE_DEBUG        = 0xD0u,
 };
 
@@ -105,11 +106,11 @@ enum ProgrammerTarget
 
 struct IVTraceInp
 {
-    uint32_t        idx_pru;
-    uint32_t        idx_sys;
-    uint64_t        sample[BUFFER_IV_SIZE];
+    uint32_t idx_pru;
+    uint32_t idx_sys;
+    uint64_t sample[BUFFER_IV_SIZE];
     /* safety */
-    uint32_t        canary;
+    uint32_t canary;
 } __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
