@@ -288,8 +288,10 @@ uint32_t converter_update_states_and_output()
 
     /* connect or disconnect output on certain events */
     static uint32_t sample_count     = 0xFFFFFFF0u;
-    static bool_ft  is_outputting    = true;
+    static bool_ft  is_outputting    = false;
     const bool_ft   check_thresholds = (++sample_count >= CNV_CFG.interval_check_thresholds_n);
+    const uint32_t  V_mid_uV         = (uint32_t) (state.V_mid_uV_n32 >> 32u);
+    // this local copy also avoids not enabling pwr_good (due to large dV_enable_output_uV)
 
     if (check_thresholds)
     {
@@ -311,8 +313,6 @@ uint32_t converter_update_states_and_output()
             }
         }
     }
-
-    const uint32_t V_mid_uV = (uint32_t) (state.V_mid_uV_n32 >> 32u);
 
     if (check_thresholds || CNV_CFG.immediate_pwr_good_signal)
     {
