@@ -71,6 +71,7 @@ enum ShepherdMode
     MODE_HRV_ADC_READ = 0x11u,
     MODE_EMULATOR     = 0x20u,
     MODE_EMU_ADC_READ = 0x21u,
+    MODE_EMU_LOOPBACK = 0x22u,
     MODE_DEBUG        = 0xD0u,
 }; // TODO: allow to set "NONE", shuts down hrv & emu
 
@@ -116,8 +117,8 @@ extern uint32_t __cache_fits_buffer[1 / ((1u << ELEMENT_SIZE_LOG2) == sizeof(str
 
 struct IVTraceInp
 {
-    uint32_t        idx_pru;
-    uint32_t        idx_sys;
+    uint32_t idx_pru; // already read, TODO: can be removed? copy of shared_mem.buffer_iv_idx?
+    uint32_t idx_sys;
     struct IVSample sample[BUFFER_IV_SIZE];
     /* safety */
     uint32_t        canary;

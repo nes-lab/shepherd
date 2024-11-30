@@ -7,38 +7,41 @@
 /* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
 struct SharedMem
 {
+    /* NOTE: start of region read-accessed by kernel module, but controlled by PRUs. */
     /* safety */
-    volatile uint32_t                 canary1;
+    volatile uint32_t           canary1;
     /* Stores state & the mode, e.g. harvester or emulator */
-    volatile uint32_t                 shp_pru_state;
-    volatile uint32_t                 shp_pru0_mode;
+    volatile uint32_t           shp_pru_state;
+    volatile uint32_t           shp_pru0_mode;
     /**
     * Parameters of buffer structures in current far & slow RAM.
     * Only PRU0 knows about physical address of shared area in DDR RAM,
     * that is used to exchange data between user space and PRUs.
     */
-    volatile struct IVTraceInp       *buffer_iv_inp_ptr;
-    volatile struct IVTraceOut       *buffer_iv_out_ptr;
-    volatile struct GPIOTrace        *buffer_gpio_ptr;
-    volatile struct UtilTrace        *buffer_util_ptr;
+    volatile struct IVTraceInp *buffer_iv_inp_ptr;
+    volatile struct IVTraceOut *buffer_iv_out_ptr;
+    volatile struct GPIOTrace  *buffer_gpio_ptr;
+    volatile struct UtilTrace  *buffer_util_ptr;
     /* internal fast index to far-buffers */
-    volatile uint32_t                 buffer_iv_idx;   // write by pru0 only
-    volatile uint32_t                 buffer_gpio_idx; // write by pru1 only
-    volatile uint32_t                 buffer_util_idx; // write by pru1 only
+    volatile uint32_t           buffer_iv_idx;   // write by pru0 only
+    volatile uint32_t           buffer_gpio_idx; // write by pru1 only
+    volatile uint32_t           buffer_util_idx; // write by pru1 only
     /* size of these buffers - allows cheap verification in userspace */
-    volatile uint32_t                 buffer_iv_inp_size;
-    volatile uint32_t                 buffer_iv_out_size;
-    volatile uint32_t                 buffer_gpio_size;
-    volatile uint32_t                 buffer_util_size;
+    volatile uint32_t           buffer_size;
+    volatile uint32_t           buffer_iv_inp_size;
+    volatile uint32_t           buffer_iv_out_size;
+    volatile uint32_t           buffer_gpio_size;
+    volatile uint32_t           buffer_util_size;
+    /* NOTE: start of region controlled by kModule. */
     /* userspace buffer-states */
-    volatile uint32_t                 buffer_iv_inp_sys_idx; // write by kMod only, TODO: consider
+    volatile uint32_t           buffer_iv_inp_sys_idx; // write by kMod only, TODO: consider in PRU
     /* Cache System (for buffer_iv_inp) to avoid far/slow RAM-reads */
-    volatile uint32_t                 cache_flags[CACHE_FLAG_U32_COUNT]; // write by kMod only
+    volatile uint32_t           cache_flags[CACHE_FLAG_SIZE_U32_N]; // write by kMod only
     /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
      * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
-    volatile uint32_t                 dac_auxiliary_voltage_raw;
+    volatile uint32_t           dac_auxiliary_voltage_raw;
     /* safety */
-    volatile uint32_t                 canary2;
+    volatile uint32_t           canary2; // write by pru0 only
     /* ADC calibration settings */
     volatile struct CalibrationConfig calibration_settings; // write by kMod only
     /* This structure defines all settings of virtual converter emulation*/
@@ -54,8 +57,8 @@ struct SharedMem
     volatile struct ProtoMsg          pru1_msg_outbox;
     volatile struct ProtoMsg          pru1_msg_error;
     /* safety */
-    volatile uint32_t                 canary3;
-    /* NOTE: End of region (also) controlled by kernel module */
+    volatile uint32_t                 canary3; // write by pru0 only
+    /* NOTE: End of region accessed by kernel module */
 
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
     volatile uint64_t                 last_sync_timestamp_ns;

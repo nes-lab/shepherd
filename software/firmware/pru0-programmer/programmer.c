@@ -43,7 +43,7 @@ int write_to_target(device_driver_t *drv, const ihex_mem_block_t *const block)
     return 0;
 }
 
-void programmer(volatile struct ProgrammerCtrl *const pctrl, const uint32_t *const fw_data)
+void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint32_t *const fw_data)
 {
     device_driver_t *drv = NULL;
     int              ret;

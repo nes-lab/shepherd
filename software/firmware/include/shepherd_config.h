@@ -4,40 +4,47 @@
 #include <stdint.h>
 
 /* The IEP of the PRUs is clocked with 200 MHz -> 5 nanoseconds per tick */
-#define TICK_INTERVAL_NS          (5U)
-#define SAMPLE_INTERVAL_NS        (10000u)
-#define SAMPLE_INTERVAL_TICKS     (SAMPLE_INTERVAL_NS / TICK_INTERVAL_NS)
-#define SYNC_INTERVAL_NS          (100000000u) // ~ 100ms
-#define SYNC_INTERVAL_TICKS       (SYNC_INTERVAL_NS / TICK_INTERVAL_NS)
-#define SAMPLES_PER_SYNC          (SYNC_INTERVAL_NS / SAMPLE_INTERVAL_NS)
+#define TICK_INTERVAL_NS           (5U)
+#define SAMPLE_INTERVAL_NS         (10000u)
+#define SAMPLE_INTERVAL_TICKS      (SAMPLE_INTERVAL_NS / TICK_INTERVAL_NS)
+#define SYNC_INTERVAL_NS           (100000000u) // ~ 100ms
+#define SYNC_INTERVAL_TICKS        (SYNC_INTERVAL_NS / TICK_INTERVAL_NS)
+#define SAMPLES_PER_SYNC           (SYNC_INTERVAL_NS / SAMPLE_INTERVAL_NS)
 
 /**
  * Length of buffers for storing harvest & emulation, gpio- and util- data
  */
-#define ELEMENT_SIZE_LOG2         (3u) // 8 byte
-#define BUFFER_IV_ELEM_LOG2       (20u)
+#define ELEMENT_SIZE_LOG2          (3u) // 8 byte
+#define BUFFER_IV_ELEM_LOG2        (20u)
 
-#define BUFFER_IV_SIZE            (1000000u) // 1M for ~10s, TODO: rename to elem
-#define BUFFER_GPIO_SIZE          (1000000u)
-#define BUFFER_UTIL_SIZE          (400u)
-#define IDX_OUT_OF_BOUND          (0xFFFFFFFFu)
+#define BUFFER_IV_SIZE             (1000000u) // 1M for ~10s, TODO: rename to elem
+#define BUFFER_GPIO_SIZE           (1000000u)
+#define BUFFER_UTIL_SIZE           (400u)
+#define IDX_OUT_OF_BOUND           (0xFFFFFFFFu)
 
 /*
  * Cache for Input-IV-Buffer
  */
-#define CACHE_SIZE_LOG2           (16u) // 64kByte
-#define CACHE_ELEM_LOG2           (CACHE_SIZE_LOG2 - ELEMENT_SIZE_LOG2)
-#define CACHE_ELEM                (1u << CACHE_ELEM_LOG2)
-#define CACHE_MASK                (CACHE_ELEM - 1u)
+#define CACHE_SIZE_BYTE_LOG2       (16u) // 64kByte
+#define CACHE_SIZE_ELEM_LOG2       (CACHE_SIZE_BYTE_LOG2 - ELEMENT_SIZE_LOG2)
+#define CACHE_SIZE_ELEM_N          (1u << CACHE_SIZE_ELEM_LOG2)
+#define CACHE_ELEM_MASK            (CACHE_SIZE_ELEM_N - 1u)
 
-#define CACHE_BLOCK_COUNT_LOG2    (3u) // 8 segments
-#define CACHE_BLOCK_COUNT         (1u << CACHE_BLOCK_COUNT_LOG2)
-#define CACHE_BLOCK_ELEM_LOG2     (CACHE_ELEM_LOG2 - CACHE_BLOCK_COUNT_LOG2) // expect 2^10
+#define CACHE_SIZE_BLOCK_LOG2      (3u) // 8 segments
+#define CACHE_SIZE_BLOCK_N         (1u << CACHE_SIZE_BLOCK_LOG2)
 
-#define CACHE_FLAG_U32_COUNT_LOG2 (BUFFER_IV_ELEM_LOG2 - CACHE_BLOCK_ELEM_LOG2 - 5u)
-#define CACHE_FLAG_U32_COUNT      (1u << CACHE_FLAG_U32_COUNT_LOG2)
+#define CACHE_BLOCK_SIZE_ELEM_LOG2 (CACHE_SIZE_ELEM_LOG2 - CACHE_SIZE_BLOCK_LOG2) // expect 2^10
+#define CACHE_BLOCK_SIZE_ELEM_N    (1u << CACHE_BLOCK_SIZE_ELEM_LOG2)
+#define CACHE_BLOCK_SIZE_BYTE_N    (1u << CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2)
+#define CACHE_BLOCK_MASK           (CACHE_BLOCK_SIZE_ELEM_N - 1u)
 
-#define L3OCMC_ADDR               ((uint8_t *) 0x40000000u)
+#define BUFFER_SIZE_BLOCK_LOG2     (BUFFER_IV_ELEM_LOG2 - CACHE_BLOCK_SIZE_ELEM_LOG2)
+#define BUFFER_SIZE_BLOCK_N        (1u << BUFFER_SIZE_BLOCK_LOG2)
+
+#define CACHE_FLAG_SIZE_U32_LOG2   (BUFFER_SIZE_BLOCK_LOG2 - 5u)
+#define CACHE_FLAG_SIZE_U32_N      (1u << CACHE_FLAG_SIZE_U32_LOG2)
+
+#define L3OCMC_ADDR                ((uint8_t *) 0x40000000u)
 
 extern uint32_t __cache_fits_buffer[1 / ((1u << BUFFER_IV_ELEM_LOG2) >= BUFFER_IV_SIZE)];
 

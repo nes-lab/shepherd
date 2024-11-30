@@ -30,17 +30,18 @@ struct IVSample    ivsample;
 static inline void fetch_iv_trace(const uint32_t index)
 {
     /* check if sample is in cache */
-    const uint32_t cache_block_idx = index >> CACHE_BLOCK_ELEM_LOG2;
+    const uint32_t cache_block_idx = index >> CACHE_BLOCK_SIZE_ELEM_LOG2;
     const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
     const uint32_t flag_mask       = 1u << (cache_block_idx & 0x1Fu);
-    const bool_ft  in_cache0       = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
-    const bool_ft  in_cache        = 1;
+    const bool_ft  in_cache       = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
 
-    /* fetch from cache if available, otherwise use slow RAM-read */
+    /* fetch from cache if available, otherwise use slow RAM-read
+    *  memcpy(dst_ptr, src_ptr, len_bytes);
+    * */
     if (in_cache)
     {
         /* Cache-Reading, ~ 27 cycles per u32 -> 270 ns */
-        const uint32_t cache_offset = (index & CACHE_MASK) << ELEMENT_SIZE_LOG2;
+        const uint32_t cache_offset = (index & CACHE_ELEM_MASK) << ELEMENT_SIZE_LOG2;
         __builtin_memcpy((uint8_t *) &ivsample, L3OCMC_ADDR + cache_offset,
                          sizeof(struct IVSample));
     }
@@ -51,6 +52,8 @@ static inline void fetch_iv_trace(const uint32_t index)
                          (uint8_t *) buf_inp_sample + (index << ELEMENT_SIZE_LOG2),
                          sizeof(struct IVSample));
     }
+    /* inform host about current position */
+    SHARED_MEM.buffer_iv_inp_ptr->idx_pru = index;
 }
 
 
@@ -112,6 +115,13 @@ static inline void sample_emulator()
 }
 #endif // EMU_SUPPORT
 
+static inline void sample_emu_loopback(const uint32_t sample_idx)
+{
+ 	fetch_iv_trace(sample_idx);
+    buf_out_current[sample_idx] = ivsample.current;
+    buf_out_voltage[sample_idx] = ivsample.voltage;
+}
+
 static inline void sample_emu_ADCs(const uint32_t sample_idx)
 {
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
@@ -140,6 +150,7 @@ void sample()
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ: return sample_emu_ADCs(SHARED_MEM.buffer_iv_idx);
         case MODE_HRV_ADC_READ: return sample_hrv_ADCs(SHARED_MEM.buffer_iv_idx);
+        case MODE_EMU_LOOPBACK: return sample_emu_loopback(SHARED_MEM.buffer_iv_idx);
         default: msgsys_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode, 0u);
     }
 }
@@ -204,7 +215,7 @@ static void dac8562_init(const uint32_t cs_pin, const bool_ft activate)
 
 static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 {
-    /* the IC needs its pauses between CS-Lows! */
+    /* the IC needs its 1us breaks between CS-Lows! */
     if (activate)
     {
         __delay_cycles(1000u / TICK_INTERVAL_NS);
@@ -224,7 +235,7 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
     adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_RANGE | RANGE_SEL_P125);
 
     /* Alert kernel module that this hw-unit seems to be not present
- 	 * -> downside: doubles adc-init-speed
+ 	 * -> downside: doubles duration of adc-init
  	*/
     __delay_cycles(1000u / TICK_INTERVAL_NS);
     adc_readwrite(cs_pin, REGISTER_READ | ADDR_REG_RANGE);
