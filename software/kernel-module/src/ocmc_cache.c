@@ -13,11 +13,11 @@ void __iomem      *cache_io             = NULL;
 void __iomem      *buffr_io             = NULL;
 static u8          init_done            = 0;
 struct SharedMem  *shared_mem           = NULL;
-struct IVTraceInp *buff_mem             = NULL;
+struct IVTraceInp *buffr_mem             = NULL;
 uint32_t           cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
 uint32_t           cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-uint32_t           cache_block_fill     = 0u;
-uint32_t           flags[CACHE_FLAG_SIZE_U32_N];
+uint32_t           cache_block_fill_lvl     = 0u;
+uint32_t           flags_local[CACHE_FLAG_SIZE_U32_N];
 
 void               ocmc_cache_init(void)
 {
@@ -35,7 +35,7 @@ void               ocmc_cache_init(void)
 
     /* Maps the memory in OCMC, used as cache for PRU */
     cache_io   = ioremap_nocache(OCMC_BASE_ADDR, OCMC_SIZE);
-    buffr_io   = ioremap_nocache(shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
+    buffr_io   = ioremap_nocache((uint32_t)shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
     buffr_mem  = (struct IVTraceInp *) buffr_io;
 
     ocmc_cache_reset();
@@ -59,18 +59,19 @@ void ocmc_cache_exit(void)
 
 void ocmc_cache_reset(void)
 {
-    uint32_t iter             = 0;
+    /* what is done: invalidate indizes, empty fill-level, clear cache, */
     cache_block_idx_head      = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
     cache_block_idx_tail      = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-    uint32_t cache_block_fill = 0u;
-    memset_io(cache_io, 0u, OCMC_SIZE); // u8-based
+    cache_block_fill_lvl = 0u;
+    memset_io(cache_io, 0u, OCMC_SIZE); // u8-based operation
     shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
-    for (iter = 0u; iter < CACHE_FLAG_SIZE_U32_N; iter++) { flags[iter] = 0u; }
-    memcpy_toio(&shared_mem->cache_flags[0], &flags[0], 4 * CACHE_FLAG_SIZE_U32_N);
+    memset(&flags_local[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
+    memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
 }
 
 uint32_t ocmc_cache_add(uint32_t block_idx)
 {
+    /* refill one block if there is space for in cache */
     const uint32_t flag_u32_idx = block_idx >> 5u;
     const uint32_t flag_mask    = 1u << (block_idx & 0x1Fu);
     uint32_t       cache_offset;
@@ -87,14 +88,15 @@ uint32_t ocmc_cache_add(uint32_t block_idx)
                 ((uint8_t *) buffr_mem->sample) + buffer_offset, CACHE_BLOCK_SIZE_BYTE_N);
 
     /* update cache-flags */
-    flags[flag_u32_idx] |= flag_mask;
-    shared_mem->cache_flags[flag_u32_idx] = flags[flag_u32_idx]
+    flags_local[flag_u32_idx] |= flag_mask;
+    shared_mem->cache_flags[flag_u32_idx] = flags_local[flag_u32_idx];
 
-            return 1u;
+    return 1u;
 }
 
 uint32_t ocmc_cache_remove(uint32_t block_idx)
 {
+    /* discard a cached block */
     const uint32_t flag_u32_idx = block_idx >> 5u;
     const uint32_t flag_mask    = 1u << (block_idx & 0x1Fu);
     uint32_t       cache_offset;
@@ -102,13 +104,13 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
     if (block_idx >= BUFFER_SIZE_BLOCK_N) return 0u;
 
     /* update cache-flags */
-    flags[flag_u32_idx] &= ~flag_mask;
-    shared_mem->cache_flags[flag_u32_idx] = flags[flag_u32_idx]
+    flags_local[flag_u32_idx] &= ~flag_mask;
+    shared_mem->cache_flags[flag_u32_idx] = flags_local[flag_u32_idx];
 
-            /* zero cache-block (TODO: optional in theory)*/
-            cache_offset                  = (block_idx & CACHE_BLOCK_MASK)
+    /* zero cache-block (TODO: optional in theory)*/
+    cache_offset                  = (block_idx & CACHE_BLOCK_MASK)
                            << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
-    memset_io(cache_offset, 0u, CACHE_BLOCK_SIZE_BYTE_N);
+    memset_io((volatile void *) cache_offset, 0u, CACHE_BLOCK_SIZE_BYTE_N);
 
     return 1u;
 }
@@ -116,11 +118,15 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
 
 void ocmc_cache_update(void)
 {
-    /*
+    /* Manages cache to shorten read-latency for PRU.
+
+	-> cache should always be ahead of PRUs read-pointers
+
 	pru_read_index A		SHARED_MEM.buffer_iv_idx [PRU-INTERNAL]
-	pru_read_index B		IVTraceInp.idx_pru	[written by PRU]
+	pru_read_index B		IVTraceInp.idx_pru	[public, written by PRU]
 	python_write_index A	IVTraceInp.idx_sys	[written by Py]
 	python_write_index B	SHARED_MEM.buffer_iv_inp_sys_idx [kMod to Pru]
+	cache
 		-> is IDX_OUT_OF_BOUND when empty
 	TODO: there should only be one per access
     */
@@ -138,21 +144,21 @@ void ocmc_cache_update(void)
     idx_write                         = buffr_mem->idx_sys >> CACHE_BLOCK_SIZE_ELEM_LOG2;
 
     /* Cache Cleanup */
-    if ((idx_read != cache_block_idx_tail) && (cache_block_fill > 0u))
+    if ((idx_read != cache_block_idx_tail) && (cache_block_fill_lvl > 0u))
     {
-        cache_block_fill -= ocmc_cache_remove(cache_block_idx_tail);
+        cache_block_fill_lvl -= ocmc_cache_remove(cache_block_idx_tail);
         if (cache_block_idx_tail++ >= BUFFER_SIZE_BLOCK_N) { cache_block_idx_tail = 0u; }
     }
 
     /* Cache Fill */
-    if (cache_block_fill >= CACHE_SIZE_BLOCK_N) return;
+    if (cache_block_fill_lvl >= CACHE_SIZE_BLOCK_N) return;
 
     head_next = cache_block_idx_head + 1u;
     if (head_next >= BUFFER_SIZE_BLOCK_N) { head_next = 0u; }
 
     if (head_next != idx_write)
     {
-        cache_block_fill += ocmc_cache_add(head_next);
+        cache_block_fill_lvl += ocmc_cache_add(head_next);
         cache_block_idx_head = head_next;
     }
 
