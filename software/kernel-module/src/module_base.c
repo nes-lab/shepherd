@@ -13,6 +13,7 @@
 #include <linux/remoteproc.h>
 #include <linux/types.h>
 
+#include "ocmc_cache.h"
 #include "pru_firmware.h"
 #include "pru_mem_interface.h"
 #include "pru_msg_sys.h"
@@ -118,6 +119,8 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     /* Initialize synchronization mechanism between PRU1 and our clock */
     sync_init();
 
+    ocmc_cache_init();
+
     /* Set up the sysfs interface for access from userspace */
     sysfs_interface_init();
 
@@ -127,6 +130,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 static int shepherd_drv_remove(struct platform_device *pdev)
 {
     sysfs_interface_exit();
+    ocmc_cache_exit();
     msg_sys_exit();
     sync_exit();
     mem_interface_exit();
