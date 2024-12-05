@@ -28,6 +28,7 @@ shepherd_modes = {
     "hrv_adc_read",
     "emulator",
     "emu_adc_read",
+    "emu_loopback",
     "debug",
     "none",
 }

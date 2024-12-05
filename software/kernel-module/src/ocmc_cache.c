@@ -13,10 +13,10 @@ void __iomem      *cache_io             = NULL;
 void __iomem      *buffr_io             = NULL;
 static u8          init_done            = 0;
 struct SharedMem  *shared_mem           = NULL;
-struct IVTraceInp *buffr_mem             = NULL;
+struct IVTraceInp *buffr_mem            = NULL;
 uint32_t           cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
 uint32_t           cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-uint32_t           cache_block_fill_lvl     = 0u;
+uint32_t           cache_block_fill_lvl = 0u;
 uint32_t           flags_local[CACHE_FLAG_SIZE_U32_N];
 
 void               ocmc_cache_init(void)
@@ -35,8 +35,8 @@ void               ocmc_cache_init(void)
 
     /* Maps the memory in OCMC, used as cache for PRU */
     cache_io   = ioremap_nocache(OCMC_BASE_ADDR, OCMC_SIZE);
-    buffr_io   = ioremap_nocache((uint32_t)shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
-    buffr_mem  = (struct IVTraceInp *) buffr_io;
+    buffr_io = ioremap_nocache((uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
+    buffr_mem = (struct IVTraceInp *) buffr_io;
 
     ocmc_cache_reset();
     init_done = 1;
@@ -60,8 +60,8 @@ void ocmc_cache_exit(void)
 void ocmc_cache_reset(void)
 {
     /* what is done: invalidate indizes, empty fill-level, clear cache, */
-    cache_block_idx_head      = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-    cache_block_idx_tail      = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
+    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
+    cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
     cache_block_fill_lvl = 0u;
     memset_io(cache_io, 0u, OCMC_SIZE); // u8-based operation
     shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
@@ -108,8 +108,8 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
     shared_mem->cache_flags[flag_u32_idx] = flags_local[flag_u32_idx];
 
     /* zero cache-block (TODO: optional in theory)*/
-    cache_offset                  = (block_idx & CACHE_BLOCK_MASK)
-                           << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
+    cache_offset                          = (block_idx & CACHE_BLOCK_MASK)
+                   << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
     memset_io((volatile void *) cache_offset, 0u, CACHE_BLOCK_SIZE_BYTE_N);
 
     return 1u;
