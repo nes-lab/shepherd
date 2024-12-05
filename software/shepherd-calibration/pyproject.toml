@@ -27,7 +27,7 @@ classifiers = [
 
 requires-python = ">= 3.10"
 dependencies = [
-    "typer",
+    "typer==0.15.1",
     "fabric",
     "matplotlib",
     "msgpack",

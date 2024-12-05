@@ -33,7 +33,7 @@ static inline void fetch_iv_trace(const uint32_t index)
     const uint32_t cache_block_idx = index >> CACHE_BLOCK_SIZE_ELEM_LOG2;
     const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
     const uint32_t flag_mask       = 1u << (cache_block_idx & 0x1Fu);
-    const bool_ft  in_cache       = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
+    const bool_ft  in_cache        = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
 
     /* fetch from cache if available, otherwise use slow RAM-read
     *  memcpy(dst_ptr, src_ptr, len_bytes);
@@ -117,7 +117,7 @@ static inline void sample_emulator()
 
 static inline void sample_emu_loopback(const uint32_t sample_idx)
 {
- 	fetch_iv_trace(sample_idx);
+    fetch_iv_trace(sample_idx);
     buf_out_current[sample_idx] = ivsample.current;
     buf_out_voltage[sample_idx] = ivsample.voltage;
 }

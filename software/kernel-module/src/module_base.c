@@ -119,7 +119,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     /* Initialize synchronization mechanism between PRU1 and our clock */
     sync_init();
 
-    ocmc_cache_init();
+    // ocmc_cache_init();  // TODO: tempory
 
     /* Set up the sysfs interface for access from userspace */
     sysfs_interface_init();
@@ -130,7 +130,7 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 static int shepherd_drv_remove(struct platform_device *pdev)
 {
     sysfs_interface_exit();
-    ocmc_cache_exit();
+    // ocmc_cache_exit();   // TODO: tempory
     msg_sys_exit();
     sync_exit();
     mem_interface_exit();

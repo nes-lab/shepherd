@@ -143,7 +143,8 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         # With knowledge of structure of each buffer, we calculate its total size
         self.iv_inp_trace_size = (
             # Index for sys & pru
-            4 + 4
+            4
+            + 4
             # timestamps & IVSamples
             + commons.BUFFER_IV_SIZE * (4 + 4)
             # Canary
@@ -189,7 +190,9 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         self.iv_inp_sys_idx_offset = self.iv_inp_trace_offset + 1 * 4
         self.iv_inp_samples_offset = self.iv_inp_trace_offset + 2 * 4
         self.iv_inp_samples_size = 2 * 4
-        self.iv_inp_canary_offset = self.iv_inp_trace_offset + 2 * 4 + commons.BUFFER_IV_SIZE * (4 + 4)
+        self.iv_inp_canary_offset = (
+            self.iv_inp_trace_offset + 2 * 4 + commons.BUFFER_IV_SIZE * (4 + 4)
+        )
 
         self.iv_out_trace_index = 0
         self.iv_out_trace_offset = self.iv_inp_trace_offset + self.iv_inp_trace_size
@@ -349,8 +352,9 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
         self.ts_unset = False
 
     def init_buffer_iv_inp(self) -> None:
-        self.mapped_mem.seek(self.iv_inp_trace_offset)
-        self.mapped_mem.write(bytes(bytearray(self.iv_inp_trace_size)))
+        """Special case"""
+        self.mapped_mem.seek(self.iv_inp_samples_offset)
+        self.mapped_mem.write(bytes(bytearray(self.iv_inp_trace_size - 8)))
         self.mapped_mem.seek(self.iv_inp_sys_idx_offset)
         self.mapped_mem.write(struct.pack("=L", commons.IDX_OUT_OF_BOUND))
         self.mapped_mem.seek(self.iv_inp_canary_offset)
@@ -591,7 +595,9 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                 log.warning("Pru0-Util-Warning is silenced now! Is emu running without a cape?")
         elif verbose:
             log.info(
-                "Pru0-Util = [%.3f, %.3f] %% (mean,max); sample-count [%d, %d] n (min,max); tGpioMax = %d ns",
+                "Pru0-Util = [%.3f, %.3f] %% (mean,max); "
+                "sample-count [%d, %d] n (min,max); "
+                "tGpioMax = %d ns",
                 util_mean_val,
                 util_max_val,
                 sample_count.min(),
@@ -622,6 +628,7 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
             return min(commons.BUFFER_IV_SIZE, self.iv_segment_size)
         self.mapped_mem.seek(self.iv_inp_trace_offset)
         index_pru: int = struct.unpack("=L", self.mapped_mem.read(4))[0]
+        # TODO: index_pru can be out_of_bound
         return min(
             (index_pru - self.iv_inp_trace_index) % commons.BUFFER_IV_SIZE,
             self.iv_segment_size,
@@ -681,7 +688,6 @@ class SharedMemory:  # TODO: rename to RamBuffer, as shared mem is precoined for
                 canary,
                 commons.CANARY_VALUE_U32,
             )
-
 
     def write_firmware(self, data: bytes) -> int:
         data_size = len(data)
