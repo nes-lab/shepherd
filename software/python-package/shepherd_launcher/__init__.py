@@ -76,7 +76,7 @@ class Launcher:
         )
         self.sd_man = dbus.Interface(systemd1, "org.freedesktop.systemd1.Manager")
 
-        sd_object = self.sd_man.LoadUnit(f"{ self.service_name }.service")
+        sd_object = self.sd_man.LoadUnit(f"{self.service_name}.service")
         self.sd_service = sys_bus.get_object(
             "org.freedesktop.systemd1",
             str(sd_object),

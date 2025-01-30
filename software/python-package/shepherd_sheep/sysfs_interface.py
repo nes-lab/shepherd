@@ -659,8 +659,7 @@ def pru_firmware_is_default() -> bool:
                     return False
         except OSError:  # noqa: PERF203
             log.warning(
-                "PRU-Driver is locked up (during pru-fw read)"
-                " -> will restart kernel-module (n=%d)",
+                "PRU-Driver is locked up (during pru-fw read) -> will restart kernel-module (n=%d)",
                 _count,
             )
             reload_kernel_module()

@@ -6,15 +6,17 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from shepherd_core import CalibrationCape, CalibrationPair
+from shepherd_core import CalibrationCape
+from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
-from shepherd_sheep import ShepherdDebug, commons
+from shepherd_sheep import ShepherdDebug
 from shepherd_sheep import ShepherdEmulator
 from shepherd_sheep import Writer
+from shepherd_sheep import commons
 from shepherd_sheep import run_emulator
 from shepherd_sheep.shared_memory import IVTrace
 
@@ -181,7 +183,6 @@ def test_target_pins() -> None:
 
 
 @pytest.mark.usefixtures("_shepherd_up")
-
 def test_cache_via_loopback(tmp_path: Path) -> None:
     # generate 2.5 buffers of random data
     duration_s = 2.5e-3 * commons.BUFFER_IV_INTERVAL_MS
@@ -189,10 +190,11 @@ def test_cache_via_loopback(tmp_path: Path) -> None:
     path_output = tmp_path / "loopback.h5"
 
     # run loopback and write to second file
-    with (ShepherdDebug() as shepherd_io,
-          CoreReader(path_input) as reader,
-          Writer(path_output, mode="emulator", datatype="ivsample", force_overwrite=True) as writer,):
-
+    with (
+        ShepherdDebug() as shepherd_io,
+        CoreReader(path_input) as reader,
+        Writer(path_output, mode="emulator", datatype="ivsample", force_overwrite=True) as writer,
+    ):
         shepherd_io.switch_shepherd_mode("emu_loopback")
 
         # essentials of emulator.init()

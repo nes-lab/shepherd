@@ -225,7 +225,7 @@ def rpc(port: int | None) -> None:
     time.sleep(1)
 
     server = zerorpc.Server(shepherd_io)
-    server.bind(f"tcp://0.0.0.0:{ port }")
+    server.bind(f"tcp://0.0.0.0:{port}")
     time.sleep(1)
 
     def stop_server() -> None:
