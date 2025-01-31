@@ -120,6 +120,7 @@ class ShepherdEmulator(ShepherdIO):
             for_emu=True,
             dtype_in=self.reader.get_datatype(),
             window_size=window_size if window_size > 0 else None,
+            voltage_step_V=self.reader.get_voltage_step(),
         )
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 

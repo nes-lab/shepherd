@@ -42,7 +42,7 @@ class Herd:
     }
 
     timestamp_diff_allowed = 10
-    start_delay_s = 30
+    start_delay_s = 40
 
     def __init__(
         self,

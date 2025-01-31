@@ -14,9 +14,11 @@
 - py
   - fix > 100 linting error
   - improve exception-system
+  - make compatible with latest core-lib 2024.11.3
 - pru
   - extend error-system
   - refactor and fix messaging-system
+- **tested**: pytest sheep, pytest herd, playbook dev_rebuild_sw.yml
 
 ## 0.8.2
 
