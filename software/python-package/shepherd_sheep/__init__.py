@@ -172,7 +172,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             # generate hex records with 16 byte data length (default 32 byte)
             "-Output_Block_Size=16",
             # generate 16- or 32-bit address records. Do not use 16-bit for address ranges > 64K
-            f"-address-length={2 if "msp" in target else 4}",
+            f"-address-length={2 if 'msp' in target else 4}",
             # generate a Intel hex file
             "-o",
             file_tmp.as_posix(),
