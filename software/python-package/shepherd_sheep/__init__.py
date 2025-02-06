@@ -138,6 +138,18 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         if d_type != FirmwareDType.base64_hex:
             log.warning("Firmware seems not to be HEX - but will try to program anyway")
 
+        # derive target-info
+        target = cfg.mcu_type.lower()
+        if "msp430" in target:
+            target = "msp430"
+        elif "nrf52" in target:
+            target = "nrf52"
+        else:
+            log.warning(
+                "MCU-Type needs to be [msp430, nrf52] but was: %s",
+                target,
+            )
+
         # WORKAROUND that realigns hex for misguided programmer
         path_str = cfg.firmware_file.as_posix()
         path_tmp = tempfile.TemporaryDirectory()
@@ -152,17 +164,15 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             path_str,
             "-Intel",
             # fill all incomplete 16-bit words with 0xFF. The range is limited to the application
-            "-fill",
-            "0xFF",
+            "-fill=0xFF",
             "-within",
             path_str,
             "-Intel",
-            "-range-padding",
-            "4",
+            "-range-padding=4",
             # generate hex records with 16 byte data length (default 32 byte)
             "-Output_Block_Size=16",
-            # generate 16-bit address records. Do no use for address ranges > 64K
-            "-address-length=2",
+            # generate 16- or 32-bit address records. Do not use 16-bit for address ranges > 64K
+            f"-address-length={2 if "msp" in target else 4}",
             # generate a Intel hex file
             "-o",
             file_tmp.as_posix(),
@@ -177,16 +187,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         with file_tmp.resolve().open("rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
-                target = cfg.mcu_type.lower()
-                if "msp430" in target:
-                    target = "msp430"
-                elif "nrf52" in target:
-                    target = "nrf52"
-                else:
-                    log.warning(
-                        "MCU-Type needs to be [msp430, nrf52] but was: %s",
-                        target,
-                    )
+
                 if cfg.simulate:
                     target = "dummy"
                 if cfg.mcu_port == 1:
