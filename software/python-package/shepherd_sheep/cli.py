@@ -291,7 +291,7 @@ def inventorize(output_path: Path) -> None:
     "--datarate",
     "-d",
     type=click.INT,
-    default=500_000,
+    default=200_000,
     help="Bit rate of Programmer (bit/s)",
 )
 @click.option(
