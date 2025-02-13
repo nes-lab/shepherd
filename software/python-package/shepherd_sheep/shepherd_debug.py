@@ -443,24 +443,24 @@ class ShepherdDebug(ShepherdIO):
         with contextlib.suppress(ShepherdIOError):
             while True:
                 msg_type, values = self._get_msg(5)
-                if msg_type != commons.MSG_PGM_ERROR_WRITE:
+                if msg_type == commons.MSG_PGM_ERROR_WRITE:
                     # TODO: that should trigger an error
                     # TODO: programmer recently emits this at the end of process:
                     #       ..-WRITE-ERROR: ihex to target @0x0, data=0 [0x0]
                     log.error(
-                        "PROGRAMMER-WRITE-ERROR: ihex to target @%s, data=%d [%s]",
+                        "PROGRAMMER-WRITE-ERROR: ihex to address @%s, data=%d [%s]",
                         f"0x{values[0]:X}",
                         values[1],
                         f"0x{values[1]:X}",
                     )
-                elif msg_type != commons.MSG_PGM_ERROR_VERIFY:
+                elif msg_type == commons.MSG_PGM_ERROR_VERIFY:
                     log.error(
                         "PROGRAMMER-VERIFY-ERROR: read-back failed @%s, data=%d [%s]",
                         f"0x{values[0]:X}",
                         values[1],
                         f"0x{values[1]:X}",
                     )
-                elif msg_type != commons.MSG_PGM_ERROR_PARSE:
+                elif msg_type == commons.MSG_PGM_ERROR_PARSE:
                     log.error("PROGRAMMER-PARSE-ERROR: ihex_return=%d", values[0])
                 else:
                     log.error(
