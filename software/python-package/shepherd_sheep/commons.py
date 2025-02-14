@@ -15,7 +15,7 @@ MSG_BUF_FROM_PRU = 0x02
 
 MSG_PGM_ERROR_WRITE = 0x93  # val0: addr, val1: data
 MSG_PGM_ERROR_VERIFY = 0x94  # val0: addr, val1: data(original)
-MSG_PGM_ERROR_PARSE = 0x96  # val0: ihex_return
+MSG_PGM_ERROR_PARSE = 0x96  # val0: ihex_return, val1: line number of hex
 
 MSG_DBG_ADC = 0xA0
 MSG_DBG_DAC = 0xA1

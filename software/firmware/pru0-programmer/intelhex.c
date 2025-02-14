@@ -2,6 +2,8 @@
 
 static char    *fptr;
 static uint32_t reader_addr;
+static uint32_t start_exe_addr;
+static uint32_t line_number;
 
 typedef enum
 {
@@ -13,15 +15,13 @@ typedef enum
     IHEX_REC_TYPE_SLAR  = 5u
 } ihex_rec_type_t;
 
-enum ihex_error
+static inline void ihex_init(char *const file_mem)
 {
-    IHEX_ERR_OK       = 0u,
-    IHEX_ERR_START    = 1u,
-    IHEX_ERR_CHECKSUM = 2u,
-    IHEX_ERR_END      = 3u
-};
+    fptr        = file_mem;
+    line_number = 0u;
+}
 
-static inline void         ihex_init(char *const file_mem) { fptr = file_mem; }
+uint32_t                   ihex_get_line_number() { return line_number; }
 
 /* converts ascii-encoded hex value to number */
 static inline unsigned int x2u(char x)
@@ -44,7 +44,7 @@ static int ihex_get_rec(ihex_rec_t *const rec)
 {
     uint32_t i;
 
-    if (*(fptr++) != ':') return -IHEX_ERR_START;
+    if (*(fptr++) != ':') return IHEX_RET_ERR_REC_START;
 
     rec->len         = read_byte(&fptr);
 
@@ -67,23 +67,25 @@ static int ihex_get_rec(ihex_rec_t *const rec)
     uint8_t checksum = read_byte(&fptr);
     counter += checksum;
 
-    const int rc      = ((counter & 0xFF) == 0) ? 0 : -2;
+    const int rc = ((counter & 0xFF) == 0) ? IHEX_RET_OK : IHEX_RET_ERR_REC_CHECKSUM;
+    line_number++;
 
     /* end of line can be one or two characters */
-    char      lineend = *(fptr++);
+    char lineend = *(fptr++);
     if (lineend == 0x0D)
     {
         if (*(fptr++) == 0x0A) return rc;
-        return -IHEX_ERR_END;
+        return IHEX_RET_ERR_REC_END;
     }
     else if (lineend == 0x0A) return rc;
-    else return -IHEX_ERR_END;
+    else return IHEX_RET_ERR_REC_END;
 }
 
 int ihex_reader_init(char *const file_mem)
 {
     ihex_init(file_mem);
-    reader_addr = 0;
+    reader_addr    = 0u;
+    start_exe_addr = 0u;
     return 0;
 }
 
@@ -91,22 +93,66 @@ int ihex_reader_init(char *const file_mem)
 ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
 {
     static ihex_rec_t rec;
+    static int        ret_err;
     while (1)
     {
-        if (ihex_get_rec(&rec) != 0) return IHEX_RET_ERR;
+        ret_err ihex_get_rec(&rec) if (ret_err != 0) return ret_err;
 
         if (rec.type == IHEX_REC_TYPE_DATA)
         {
-            block->address = reader_addr + rec.address;
-            block->data    = rec.data;
-            block->len     = rec.len;
-            return IHEX_RET_OK;
+            // len could be 0, so take a shortcut here and advance
+            if (rec.len > 0u)
+            {
+                block->address = reader_addr + rec.address;
+                block->data    = rec.data;
+                block->len     = rec.len;
+                return IHEX_RET_OK;
+            }
+        }
+        else if (rec.type == IHEX_REC_TYPE_EOF)
+        {
+            if (rec.len > 0u) return IHEX_RET_ERR_LEN_EOF;
+            return IHEX_RET_DONE;
         }
         else if (rec.type == IHEX_REC_TYPE_ESAR)
         {
-            uint32_t segment = ((unsigned int) rec.data[0] << 4u) + rec.data[1];
-            reader_addr += segment;
+            /* Extended Segment Address
+            - multiply by 16 and add to each subsequent data record address
+            - extends address range from 64k to 1M
+            */
+            if (rec.len != 2u) return IHEX_RET_ERR_LEN_ESAR;
+            reader_addr = (uint32_t) rec.data[0] << 12u;
+            reader_addr |= (uint32_t) rec.data[1] << 4u;
         }
-        else if (rec.type == IHEX_REC_TYPE_EOF) { return IHEX_RET_DONE; }
+        else if (rec.type == IHEX_REC_TYPE_START)
+        {
+            start_exe_addr = ((uint32_t) rec.data[0] << 24u); // Code Segment
+            start_exe_addr |= ((uint32_t) rec.data[1] << 16u);
+            start_exe_addr |= ((uint32_t) rec.data[2] << 8u); // Program counter
+            start_exe_addr |= ((uint32_t) rec.data[3] << 0u);
+            // not used
+        }
+        else if (rec.type == IHEX_REC_TYPE_ELAR)
+        {
+            /* Extended Linear Address
+            The two data bytes (big endian) specify the upper 16 bits of
+            the 32 bit absolute address for all subsequent type 00 records.
+            */
+            if (rec.len != 2u) return IHEX_RET_ERR_LEN_ELAR;
+            reader_addr = (uint32_t) rec.data[0] << 24u;
+            reader_addr |= (uint32_t) rec.data[1] << 16u;
+        }
+        else if (rec.type == IHEX_REC_TYPE_SLAR)
+        {
+            start_exe_addr = ((uint32_t) rec.data[0] << 24u);
+            start_exe_addr |= ((uint32_t) rec.data[1] << 16u);
+            start_exe_addr |= ((uint32_t) rec.data[2] << 8u);
+            start_exe_addr |= ((uint32_t) rec.data[3] << 0u);
+        }
+        else
+        {
+            // all known types are handled above, so this is undefined territory
+            return IHEX_RET_ERR_TYPE_UNKNOWN;
+        }
     }
 }

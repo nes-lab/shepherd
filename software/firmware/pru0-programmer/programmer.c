@@ -103,7 +103,7 @@ void programmer(volatile struct SharedMem *const    shared_mem,
     }
     if (ret != IHEX_RET_DONE)
     {
-        send_message(shared_mem, MSG_PGM_ERROR_PARSE, ret, 0u);
+        send_message(shared_mem, MSG_PGM_ERROR_PARSE, ret, ihex_get_line_number());
         pc->state = PRG_STATE_ERR_PARSE;
         goto exit;
     }
