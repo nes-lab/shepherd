@@ -184,7 +184,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
             failed = True
             raise SystemExit  # noqa: TRY301
 
-        if not (0.1 < rate_factor < 1.0):
+        if not (0.1 <= rate_factor <= 1.0):
             raise ValueError("Scaler for data-rate must be between 0.1 and 1.0")
         _data_rate = int(rate_factor * cfg.datarate)
 
@@ -210,7 +210,9 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                         9,
                         11,
                     )
-                log.info("Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate)
+                log.info(
+                    "Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate
+                )
                 sysfs_interface.start_programmer()
             except OSError:
                 log.error("OSError - Failed to initialize Programmer")

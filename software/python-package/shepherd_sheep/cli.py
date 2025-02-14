@@ -313,7 +313,7 @@ def program(**kwargs: Unpack[TypedDict]) -> None:
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     cfg = ProgrammingTask(**kwargs)
-    retries = 3
+    retries = 5
     rate_factor = 1.0
     failed = True
     while retries > 0 and failed:
