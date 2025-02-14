@@ -96,7 +96,8 @@ ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
     static int        ret_err;
     while (1)
     {
-        ret_err ihex_get_rec(&rec) if (ret_err != 0) return ret_err;
+        ret_err = ihex_get_rec(&rec);
+        if (ret_err != 0) return ret_err;
 
         if (rec.type == IHEX_REC_TYPE_DATA)
         {
