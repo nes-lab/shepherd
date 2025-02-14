@@ -110,7 +110,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     return False
 
 
-def run_programmer(cfg: ProgrammingTask) -> bool:
+def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     stack = ExitStack()
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = False
@@ -184,6 +184,10 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             failed = True
             raise SystemExit  # noqa: TRY301
 
+        if not (0.1 < rate_factor < 1.0):
+            raise ValueError("Scaler for data-rate must be between 0.1 and 1.0")
+        _data_rate = int(rate_factor * cfg.datarate)
+
         with file_tmp.resolve().open("rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
@@ -193,7 +197,7 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                 if cfg.mcu_port == 1:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        cfg.datarate,
+                        _data_rate,
                         5,
                         4,
                         10,
@@ -201,12 +205,12 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                 else:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        cfg.datarate,
+                        _data_rate,
                         8,
                         9,
                         11,
                     )
-                log.info("Programmer initialized, will start now")
+                log.info("Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate)
                 sysfs_interface.start_programmer()
             except OSError:
                 log.error("OSError - Failed to initialize Programmer")
@@ -286,12 +290,14 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, FirmwareModTask):
             failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            retries = 3
+            retries = 5
+            rate_factor = 1.0
             had_error = True
             while retries > 0 and had_error:
                 log.info("Starting Programmer (%d retries left)", retries)
                 retries -= 1
-                had_error = run_programmer(element)
+                had_error = run_programmer(element, rate_factor)
+                rate_factor *= 0.8  # 20% slower each failed attempt
             failed |= had_error
         else:
             raise TypeError("Task not implemented: %s", type(element))

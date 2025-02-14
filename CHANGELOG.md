@@ -13,7 +13,8 @@
 - ihex - detection of malformed command records
 - ihex - detection of unknown commands (throw error)
 - error-reporting did not detect a pru-restart
-- programmer now retries 3 times before failing
+- programmer now retries 5 times before failing
+  - also the data-rate gets reduced by 20 % after each failed attempt
 
 ## 0.8.3
 
