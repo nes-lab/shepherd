@@ -462,10 +462,12 @@ class ShepherdDebug(ShepherdIO):
                     log.error(
                         "PROGRAMMER-PARSE-ERROR: ihex_return=%d, line=%d", values[0], values[1]
                     )
+                elif msg_type == commons.MSG_STATUS_RESTARTING_ROUTINE:
+                    log.debug("PRU is restarting its main routine, val=%d", values)
                 else:
                     log.error(
                         "UNKNOWN PROGRAMMER-ERROR: type=%d, val0=%d, val1=%d",
-                        msg_type,
+                        f"0x{msg_type:X}",
                         values[0],
                         values[1],
                     )

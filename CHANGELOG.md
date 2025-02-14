@@ -3,7 +3,7 @@
 ## 0.8.4
 
 - programming needed some improvements
-- bugfix - don't realign nrf-hex-file with 16bit adress limit
+- bugfix - don't realign nrf-hex-file with 16bit address limit
 - workaround - reduce default data-rate for programming (500k to 200k)
 - bugfix - properly report programming errors (write-error, verify, parsing was not reported correctly)
 - ihex - added remaining 3 of 6 command-types of intel hex
@@ -12,6 +12,8 @@
 - ihex - full 32bit address-space should now be usable (was limited to <64k before)
 - ihex - detection of malformed command records
 - ihex - detection of unknown commands (throw error)
+- error-reporting did not detect a pru-restart
+- programmer now retries 3 times before failing
 
 ## 0.8.3
 
