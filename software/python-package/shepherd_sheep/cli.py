@@ -313,7 +313,12 @@ def program(**kwargs: Unpack[TypedDict]) -> None:
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     cfg = ProgrammingTask(**kwargs)
-    failed = run_programmer(cfg)
+    retries = 3
+    failed = True
+    while retries > 0 and failed:
+        log.info("Starting Programmer (%d retries left)", retries)
+        retries -= 1
+        failed = run_programmer(cfg)
     sys.exit(int(failed))
 
 

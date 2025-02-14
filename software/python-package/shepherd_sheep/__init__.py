@@ -286,7 +286,13 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, FirmwareModTask):
             failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            failed |= run_programmer(element)
+            retries = 3
+            had_error = True
+            while retries > 0 and had_error:
+                log.info("Starting Programmer (%d retries left)", retries)
+                retries -= 1
+                had_error = run_programmer(element)
+            failed |= had_error
         else:
             raise TypeError("Task not implemented: %s", type(element))
         reset_verbosity()
