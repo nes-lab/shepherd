@@ -299,7 +299,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
                 log.info("Starting Programmer (%d retries left)", retries)
                 retries -= 1
                 had_error = run_programmer(element, rate_factor)
-                rate_factor *= 0.8  # 20% slower each failed attempt
+                rate_factor *= 0.6  # 40% slower each failed attempt
             failed |= had_error
         else:
             raise TypeError("Task not implemented: %s", type(element))
