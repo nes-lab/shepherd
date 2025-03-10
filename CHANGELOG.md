@@ -14,7 +14,7 @@
 - ihex - detection of unknown commands (throw error)
 - error-reporting did not detect a pru-restart
 - programmer now retries 5 times before failing
-  - also the data-rate gets reduced by 20 % after each failed attempt
+  - also the data-rate gets reduced by ~~20~~ 40 % after each failed attempt
 
 ## 0.8.3
 

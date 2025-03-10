@@ -7,7 +7,7 @@ Hardware-Subdirectories contain the necessary design-files to manufacture a shep
 - `_deprecated`: design files for hardware that still floats around in the lab
 - `cape_v#.#`: most recent version of shepherd cape for the BBone
 - `case_lasercut`: deployment version for testbed
-- `power_in`: low noise voltage regulator with < 17 V Input for TP-Link POE-Adapters that fail to produce 5V on newer Cisco Switches
+- ~~`power_in`:~~ low noise voltage regulator with < 17 V Input for TP-Link POE-Adapters that fail to produce 5V on newer Cisco Switches
 - Targets are in dedicated [target-lib](https://github.com/orgua/shepherd-targets/tree/main/hardware)
 
 ## Photos
