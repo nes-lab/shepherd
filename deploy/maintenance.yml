@@ -19,7 +19,7 @@
       ansible.builtin.include_role:
         name: maintenance
       vars:
-        maintenance_update_kernel: true
+        maintenance_update_kernel: false
 
     - name: Cleanup Beaglebone
       ansible.builtin.include_role:
