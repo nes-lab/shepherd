@@ -1,6 +1,4 @@
 
-
-
 ## Implemented Changes v2.5d
 
 - BOM-Trouble
