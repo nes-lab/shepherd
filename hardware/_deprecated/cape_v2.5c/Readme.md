@@ -63,8 +63,8 @@ r30_09/out  TARGET_BAT_OK   P8_29	-
 
 ```
 pru_reg       name              BB_pin	sys_pin sys_reg
-pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART)   
-pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART)  
+pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART)
+pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART)
 pru1_r31_02   TARGET_GPIO2      P8_43	P8_16, g1[14] -> 46
 pru1_r31_03   TARGET_GPIO3      P8_44	P8_15, g1[15] -> 47
 pru1_r31_04   TARGET_GPIO4      P8_41	P8_26, g1[29] -> 61

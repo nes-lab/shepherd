@@ -13,6 +13,6 @@
     - **729-PI5A4157ZUEX**: UDFN-Package, 1x1 mm, mouser totally hides out of life parts, is in stock
   - LP2989-3.3 not avail as VSSOP-8 / TSOP
     - switch to WSON?
-    - **926-LP2989AIMM33NOPB**, same but double the price 
+    - **926-LP2989AIMM33NOPB**, same but double the price
   - 10k 0402 667-ERJ-2GEJ103X -> 603-RC0402FR-7W10KL
   - 5.1k 0402 667-ERJ-2RKF5101X -> 603-RC0402FR-075K1L
