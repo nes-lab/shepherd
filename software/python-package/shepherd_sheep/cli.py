@@ -6,9 +6,11 @@ functionality to a command line user.
 
 """
 
+import atexit
 import signal
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from types import FrameType
 from typing import TypedDict
@@ -35,6 +37,8 @@ from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import disable_ntp
 from .sysfs_interface import reload_kernel_module
+from .usage_log import get_last_usage
+from .usage_log import usage_logger
 
 # allow importing shepherd on x86 - for testing
 try:
@@ -86,6 +90,11 @@ def cli(ctx: click.Context, *, verbose: bool, version: bool) -> None:
 
     if verbose:
         set_verbosity()
+
+    if ctx.invoked_subcommand and ctx.invoked_subcommand not in ["usage"]:
+        # this adds a usage-entry when sheep exits
+        atexit.register(usage_logger, datetime.now().astimezone(), ctx.invoked_subcommand)
+
     if version:
         log.info("Shepherd-Sheep v%s", __version__)
         log.debug("Python v%s", sys.version)
@@ -367,6 +376,15 @@ def blink(duration: int) -> None:
             time.sleep(0.125)
             dbg.select_port_for_io_interface(TargetPort.B)
             time.sleep(0.125)
+
+
+@cli.command(
+    short_help="Returns statistic about last usage: timestamp, total runtime, sub-command",
+    context_settings={"ignore_unknown_options": True},
+)
+def usage() -> None:
+    log.info(get_last_usage())
+    sys.exit(0)
 
 
 if __name__ == "__main__":

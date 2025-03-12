@@ -1,6 +1,7 @@
 """Herd-Baseclass for controlling the sheep-observer-nodes."""
 
 import contextlib
+import logging
 import threading
 import time
 from datetime import datetime
@@ -226,7 +227,12 @@ class Herd:
 
     @validate_call
     def run_cmd(
-        self, cmd: str, exclusive_host: str | None = None, *, sudo: bool = False
+        self,
+        cmd: str,
+        exclusive_host: str | None = None,
+        *,
+        sudo: bool = False,
+        verbose: bool = True,
     ) -> dict[str, Result]:
         """Run COMMAND on the shell -> Returns output-results.
 
@@ -234,7 +240,8 @@ class Herd:
         """
         results: dict[str, Result] = {}
         threads = {}
-        logger.info("Sheep-CMD = %s", cmd)
+        level = logging.INFO if verbose else logging.DEBUG
+        logger.log(level, "Sheep-CMD = %s", cmd)
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
             if exclusive_host and _name != exclusive_host:
@@ -413,7 +420,9 @@ class Herd:
             dst_paths[i] = target_path / (src_path.stem + xtra_ts + xtra_node + src_path.suffix)
 
         # check if file is present
-        replies = self.run_cmd(sudo=False, exclusive_host=exclusive_host, cmd=f"test -f {src_path}")
+        replies = self.run_cmd(
+            sudo=False, exclusive_host=exclusive_host, cmd=f"test -f {src_path}", verbose=False
+        )
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
@@ -481,7 +490,7 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
         if len(ts_nows) == 0:
             raise RuntimeError("No active hosts found to synchronize.")
@@ -556,7 +565,7 @@ class Herd:
         :param warn:
         :return: True is one node is still active
         """
-        replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd")
+        replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd", verbose=False)
         active = False
 
         for cnx in self.group:
@@ -568,15 +577,34 @@ class Herd:
                 if warn:
                     logger.warning(
                         "shepherd still active on %s",
-                        self.hostnames[cnx.host],
+                        hostname,
                     )
                 else:
                     logger.debug(
                         "shepherd still active on %s",
-                        self.hostnames[cnx.host],
+                        hostname,
                     )
                     # shepherd-herd -v shell-cmd -s "systemctl status shepherd"
         return active
+
+    def get_last_usage(self) -> timedelta | None:
+        """Gives time-delta of last testbed usage."""
+        replies1 = self.run_cmd(sudo=True, cmd="tail -n 1 /var/shepherd/log.csv", verbose=False)
+        replies2 = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
+        deltas = []
+        for cnx in self.group:
+            hostname = self.hostnames[cnx.host]
+            if not isinstance(replies1.get(hostname), Result):
+                continue
+            if not isinstance(replies2.get(hostname), Result):
+                continue
+            if replies1[hostname].exited == 0:
+                ts_end = datetime.fromisoformat(replies1[hostname].stdout.split(",")[1].strip())
+                ts_now = datetime.fromisoformat(replies2[hostname].stdout.strip())
+                deltas.append(ts_now - ts_end)
+        if len(deltas) == 0:
+            return None
+        return min(deltas)
 
     def start_measurement(self) -> int:
         """Start shepherd service on the group of hosts."""
@@ -662,7 +690,7 @@ class Herd:
             exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
 
         # Get the current time on each target node
-        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
         self.print_output(replies_date, verbose=True)
         # calc diff
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies_date.values()]

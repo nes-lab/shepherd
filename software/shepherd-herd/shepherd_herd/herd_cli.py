@@ -461,6 +461,10 @@ def status(ctx: click.Context) -> None:
             ret = 1
         else:
             log.info("Shepherd not active! (measurement is done)")
+        delta = herd.get_last_usage()
+        if delta is not None:
+            ts_now = datetime.now().astimezone()
+            log.info("Last usage was %s, Δt = %s", str(ts_now - delta), str(delta))
     sys.exit(ret)
 
 
