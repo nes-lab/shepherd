@@ -1,7 +1,8 @@
 import signal
 import sys
 from datetime import datetime
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+from pathlib import PurePosixPath
 from types import FrameType
 from typing import TypedDict
 
@@ -508,7 +509,9 @@ def distribute(
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
-@click.argument("filename", type=click.Path(file_okay=True, dir_okay=False, path_type=PurePosixPath))
+@click.argument(
+    "filename", type=click.Path(file_okay=True, dir_okay=False, path_type=Path)
+)
 @click.argument(
     "outdir",
     type=click.Path(
@@ -545,7 +548,7 @@ def distribute(
 @click.pass_context
 def retrieve(
     ctx: click.Context,
-    filename: PurePosixPath,
+    filename: Path,
     outdir: Path,
     *,
     timestamp: bool,
@@ -555,13 +558,11 @@ def retrieve(
 ) -> None:
     """Retrieve remote hdf file FILENAME and stores in OUTDIR.
 
-    :param ctx: context
-    :param filename: remote file with absolute path or relative in '/var/shepherd/recordings/'
-    :param outdir: local path to put the files in 'outdir/[node-name]/filename'
-    :param timestamp:
-    :param separate:
-    :param delete:
-    :param force_stop:
+    filename: can either be
+        - remote file with absolute path or relative path in '/var/shepherd/recordings/'
+        - local job / task-file (embedded paths are retrieved)
+
+    outdir: local path to put the files in 'outdir/[node-name]/filename'
     """
     with ctx.obj["herd"] as herd:
         if force_stop:
@@ -569,13 +570,17 @@ def retrieve(
             if herd.await_stop(timeout=30):
                 raise TimeoutError("shepherd still active after timeout")
 
-        failed = herd.get_file(
-            filename,
-            outdir,
-            timestamp=timestamp,
-            separate=separate,
-            delete_src=delete,
-        )
+        if filename.is_file() and filename.exists() and filename.suffix in [".yaml", ".yml"]:
+            failed = herd.get_task_files(filename, outdir, separate=separate, delete_src=delete)
+        else:
+            filename = PurePosixPath(filename)
+            failed = herd.get_file(
+                filename,
+                outdir,
+                timestamp=timestamp,
+                separate=separate,
+                delete_src=delete,
+            )
     sys.exit(int(failed))
 
 

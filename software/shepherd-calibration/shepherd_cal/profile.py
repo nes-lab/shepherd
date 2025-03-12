@@ -57,12 +57,11 @@ class Profile:
         self.data_filters: dict[str, pd.Series] = {}
         self.res_filters: dict[str, pd.Series] = {}
 
-        for comp_i in component_dict:
+        for comp_i, comp_o in component_dict.items():
             if comp_i not in meas_file:
                 continue
             if (meas_file[comp_i] is None) or (meas_file[comp_i].size < 2):
                 continue
-            comp_o = component_dict[comp_i]
             logger.debug("  component '%s'", comp_o)
 
             self._prepare_data(comp_o, meas_file[comp_i])

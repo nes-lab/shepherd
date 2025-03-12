@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 from itertools import product
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+from pathlib import PurePosixPath
 
 from config import emu_hrv_list
 from config import emu_src_list

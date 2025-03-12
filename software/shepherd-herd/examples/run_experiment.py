@@ -8,7 +8,8 @@ Example assumes:
 
 """
 
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+from pathlib import PurePosixPath
 
 from shepherd_core import TestbedClient
 from shepherd_core.data_models import EnergyEnvironment

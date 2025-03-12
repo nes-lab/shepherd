@@ -6,7 +6,9 @@ import time
 from datetime import datetime
 from datetime import timedelta
 from io import StringIO
-from pathlib import Path, PurePosixPath, PurePath
+from pathlib import Path
+from pathlib import PurePath
+from pathlib import PurePosixPath
 from types import TracebackType
 from typing import Any
 from typing import ClassVar
@@ -254,7 +256,7 @@ class Herd:
 
     @staticmethod
     def print_output(
-            replies: dict[str, Result],
+        replies: dict[str, Result],
         *,
         verbose: bool = False,
     ) -> None:
@@ -331,7 +333,7 @@ class Herd:
             dst_posix = dst_path.as_posix()
             is_allowed = False
             for path_allowed in self._remote_paths_allowed:
-                if dst_posix.startswith(str(path_allowed)):
+                if dst_posix.startswith(path_allowed.as_posix()):
                     is_allowed = True
             if not is_allowed:
                 raise NameError("provided path was forbidden ('%s')", dst_posix)
@@ -360,7 +362,7 @@ class Herd:
         if not cnx.is_connected:
             return
         try:
-            cnx.get(str(src), local=str(dst))
+            cnx.get(src.as_posix(), local=dst.as_posix())
         except (NoValidConnectionsError, SSHException, TimeoutError):
             logger.error(
                 "[%s] failed to get '%s' -> will exclude node from inventory",
@@ -387,7 +389,9 @@ class Herd:
         dst_paths = {}
 
         # assemble file-names
-        src_path: PurePosixPath = PurePosixPath(src) if PurePosixPath(src).is_absolute() else self.path_default / src
+        src_path: PurePosixPath = (
+            PurePosixPath(src) if PurePosixPath(src).is_absolute() else self.path_default / src
+        )
 
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
@@ -398,9 +402,7 @@ class Herd:
                 target_path = Path(dst_dir)
                 xtra_node = f"_{hostname}"
 
-            dst_paths[i] = target_path / (
-                str(src_path.stem) + xtra_ts + xtra_node + src_path.suffix
-            )
+            dst_paths[i] = target_path / (src_path.stem + xtra_ts + xtra_node + src_path.suffix)
 
         # check if file is present
         replies = self.run_cmd(sudo=False, cmd=f"test -f {src_path}")
@@ -715,7 +717,7 @@ class Herd:
                     separate=separate,
                     delete_src=delete_src,
                 )
-            if hasattr(task, "get_output_paths"):
+            elif hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
                     raise RuntimeError(

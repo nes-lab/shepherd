@@ -1,5 +1,6 @@
 from contextlib import ExitStack
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+from pathlib import PurePosixPath
 
 from config import host_selected
 from config import hrv_list
