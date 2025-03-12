@@ -30,10 +30,7 @@ class PruRecorder(Monitor):
 
         self.data["values"].attrs["unit"] = "ns, n, %, %"
         self.data["values"].attrs["description"] = (
-            "buffer_timestamp [ns], "
-            "buffer_elements [n], "
-            "pru0_util_mean [%], "
-            "pru0_util_max [%]"
+            "buffer_timestamp [ns], buffer_elements [n], pru0_util_mean [%], pru0_util_max [%]"
         )
         # reset increment AFTER creating all dsets are created
         self.increment = 1000  # 100 s

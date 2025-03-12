@@ -46,14 +46,14 @@ def cal4sysfs() -> dict:
 @pytest.mark.parametrize("attr", sysfs_interface.attribs)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_getters(attr: str) -> None:
-    method_to_call = getattr(sysfs_interface, f"get_{ attr }")
+    method_to_call = getattr(sysfs_interface, f"get_{attr}")
     assert method_to_call() is not None
 
 
 @pytest.mark.parametrize("attr", sysfs_interface.attribs)
 @pytest.mark.usefixtures("_shepherd_down")
 def test_getters_fail(attr: str) -> None:
-    method_to_call = getattr(sysfs_interface, f"get_{ attr }")
+    method_to_call = getattr(sysfs_interface, f"get_{attr}")
     with pytest.raises(FileNotFoundError):
         method_to_call()
 

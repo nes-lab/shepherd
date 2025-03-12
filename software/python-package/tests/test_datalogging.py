@@ -45,7 +45,7 @@ def cal_cape() -> CalibrationCape:
 
 @pytest.mark.parametrize("mode", ["harvester"])
 def test_create_h5writer(mode: str, tmp_path: Path, cal_cape: CalibrationCape) -> None:
-    d = tmp_path / f"{ mode }.h5"
+    d = tmp_path / f"{mode}.h5"
     h = Writer(file_path=d, cal_data=cal_cape[mode], mode=mode)
     # assert not exists
     h.__enter__()

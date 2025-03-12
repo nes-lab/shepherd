@@ -150,8 +150,7 @@ class SharedMemory:
         log.debug("Size of 1 Buffer:\t%d byte", self.buffer_size)
         if self.buffer_size * self.n_buffers != self.size:
             raise BufferError(
-                "Py-estimated mem-size for buffers is different "
-                "from pru-reported size (%d vs. %d)",
+                "Py-estimated mem-size for buffers is different from pru-reported size (%d vs. %d)",
                 self.buffer_size * self.n_buffers,
                 self.size,
             )

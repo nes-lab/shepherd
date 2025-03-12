@@ -43,20 +43,20 @@ from .target_io import TargetIO
 __version__ = "0.8.4"
 
 __all__ = [
-    "Writer",
     "EEPROM",
-    "TargetIO",
-    "ShepherdHarvester",
-    "ShepherdEmulator",
     "ShepherdDebug",
+    "ShepherdEmulator",
+    "ShepherdHarvester",
+    "ShepherdIOError",
+    "TargetIO",
+    "Writer",
+    "flatten_list",
+    "log",
     "run_emulator",
+    "run_firmware_mod",
     "run_harvester",
     "run_programmer",
-    "run_firmware_mod",
     "run_task",
-    "ShepherdIOError",
-    "log",
-    "flatten_list",
 ]
 
 # NOTE:

@@ -10,10 +10,10 @@ __version__ = "0.8.4"
 
 __all__ = [
     "Calibrator",
-    "Profiler",
     "Profile",
-    "logger",
+    "Profiler",
     "activate_verbosity",
-    "plot_calibration",
     "analyze_directory",
+    "logger",
+    "plot_calibration",
 ]

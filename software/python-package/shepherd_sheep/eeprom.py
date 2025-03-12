@@ -225,8 +225,7 @@ def retrieve_calibration(*, use_default_cal: bool = False) -> CalibrationCape:
             return storage.read_calibration()
     except ValueError:
         log.warning(
-            "Couldn't read calibration from EEPROM (ValueError). "
-            "Falling back to default values.",
+            "Couldn't read calibration from EEPROM (ValueError). Falling back to default values.",
         )
         return CalibrationCape()
     except FileNotFoundError:

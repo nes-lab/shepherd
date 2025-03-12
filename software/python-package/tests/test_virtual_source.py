@@ -261,10 +261,7 @@ def test_vsource_diodecap(
         assert V_pru_mV == V_pru2_mV
         assert V_pyt_mV == V_pyt2_mV
         print(
-            " -> "
-            f"Inp = {V_inp_mV} mV, "
-            f"OutPru = {V_pru2_mV:.3f} mV, "
-            f"OutPy = {V_pyt2_mV:.3f} mV",
+            f" -> Inp = {V_inp_mV} mV, OutPru = {V_pru2_mV:.3f} mV, OutPy = {V_pyt2_mV:.3f} mV",
         )
     assert pyt_vsource.W_inp_fWs >= pyt_vsource.W_out_fWs
     assert pru_vsource.W_inp_fWs >= pru_vsource.W_out_fWs

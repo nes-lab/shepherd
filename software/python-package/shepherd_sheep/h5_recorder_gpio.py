@@ -56,7 +56,7 @@ class GpioRecorder(Monitor):
             self.data["time"].resize((data_length,))
             self.data["value"].resize((data_length,))
         self.data["time"][self.position : pos_end] = edges.timestamps_ns
-        self.data["value"][self.position : pos_end] = edges.values  # noqa: PD011, false positive
+        self.data["value"][self.position : pos_end] = edges.values
         self.position = pos_end
 
     def thread_fn(self) -> None:
