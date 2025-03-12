@@ -325,15 +325,16 @@ class Herd:
 
         if dst is None:
             dst_path = self.path_default
-            logger.debug("Remote path not provided -> default = %s", dst_path)
+            logger.debug("Remote path not provided -> use default = %s", dst_path)
         else:
-            dst_path = Path(dst).absolute()
+            dst_path = Path(dst)
+            dst_posix = dst_path.as_posix()
             is_allowed = False
             for path_allowed in self._remote_paths_allowed:
-                if str(dst_path).startswith(str(path_allowed)):
+                if dst_posix.startswith(str(path_allowed)):
                     is_allowed = True
             if not is_allowed:
-                raise NameError("provided path was forbidden ('%s')", dst_path.as_posix())
+                raise NameError("provided path was forbidden ('%s')", dst_posix)
 
         threads = {}
         for cnx in self.group:
