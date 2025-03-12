@@ -217,7 +217,7 @@ def write(
     is_flag=True,
     help="output all fields on console",
 )
-def read(cal_file: Path | None, revision: bool, full: bool) -> None:
+def read(cal_file: Path | None, *, revision: bool, full: bool) -> None:
     try:
         with EEPROM() as storage:
             cal = storage.read_calibration()
