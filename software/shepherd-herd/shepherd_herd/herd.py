@@ -412,10 +412,7 @@ class Herd:
                 xtra_node = ""
             else:
                 target_path = Path(dst_dir)
-                if hostname in src_path.stem:
-                    xtra_node = ""
-                else:
-                    xtra_node = f"_{hostname}"
+                xtra_node = "" if hostname in src_path.stem else f"_{hostname}"
 
             dst_paths[i] = target_path / (src_path.stem + xtra_ts + xtra_node + src_path.suffix)
 

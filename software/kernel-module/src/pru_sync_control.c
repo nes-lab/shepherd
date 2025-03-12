@@ -305,7 +305,7 @@ int sync_loop(struct SyncMsg *const sync_reply, const struct ProtoMsg *const syn
     {
         /* Currently the correction is (almost) always headed in one direction
          * - the pre-trigger @ - 1 ms is the "almost" (1 % chance for the other direction)
-         * - lets correct the imbalance to 50/50
+         * - correct the imbalance to 50/50
          */
         sync_data->error_now += trigger_loop_period_ns;
     }

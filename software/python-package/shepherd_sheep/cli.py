@@ -17,6 +17,7 @@ from typing import TypedDict
 
 import click
 import gevent
+import yaml
 import zerorpc
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models.task import ProgrammingTask
@@ -204,9 +205,19 @@ def write(
     default=None,
     help="If provided, calibration data is dumped to this file",
 )
-def read(cal_file: Path | None) -> None:
-    set_verbosity()
-
+@click.option(
+    "--revision",
+    "-r",
+    is_flag=True,
+    help="only output version of cape hardware on console",
+)
+@click.option(
+    "--full",
+    "-f",
+    is_flag=True,
+    help="output all fields on console",
+)
+def read(cal_file: Path | None, revision: bool, full: bool) -> None:
     try:
         with EEPROM() as storage:
             cal = storage.read_calibration()
@@ -219,8 +230,15 @@ def read(cal_file: Path | None) -> None:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
         sys.exit(3)
 
-    if cal_file is None:
-        log.info("Retrieved Cal-Data:\n\n%s", str(cal))
+    if revision:
+        log.info("%s", cal.cape.version)
+    elif cal_file is None:
+        _data = yaml.safe_dump(
+            cal.model_dump(exclude_unset=True, exclude_defaults=False),
+            default_flow_style=False,
+            sort_keys=False,
+        ) if full else str(cal)
+        log.info("Retrieved Cal-Data:\n\n%s", str(_data))
     else:
         cal.to_file(cal_file)
 
