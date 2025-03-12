@@ -36,7 +36,7 @@ elem_list: list[str] = [
 # TODO: profiler should use CalibrationCape with CalibrationHarvester & CalibrationEmulator
 
 
-class Profile:
+class ProfileCape:
     def __init__(self, file: Path) -> None:
         if not isinstance(file, Path):
             file = Path(file)

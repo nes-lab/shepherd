@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .profile import Profile
+from .profile_cape import ProfileCape
 
 
 def analyze_directory(
@@ -43,7 +43,7 @@ def analyze_directory(
         if fpath.stem in stat_names:
             continue
 
-        profile = Profile(fpath)
+        profile = ProfileCape(fpath)
         stats_list.append(profile.get_stats())
 
         if do_plots:

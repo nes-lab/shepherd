@@ -233,11 +233,15 @@ def read(cal_file: Path | None, revision: bool, full: bool) -> None:
     if revision:
         log.info("%s", cal.cape.version)
     elif cal_file is None:
-        _data = yaml.safe_dump(
-            cal.model_dump(exclude_unset=True, exclude_defaults=False),
-            default_flow_style=False,
-            sort_keys=False,
-        ) if full else str(cal)
+        _data = (
+            yaml.safe_dump(
+                cal.model_dump(exclude_unset=True, exclude_defaults=False),
+                default_flow_style=False,
+                sort_keys=False,
+            )
+            if full
+            else str(cal)
+        )
         log.info("Retrieved Cal-Data:\n\n%s", str(_data))
     else:
         cal.to_file(cal_file)

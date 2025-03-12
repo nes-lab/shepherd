@@ -15,6 +15,16 @@
 - error-reporting did not detect a pru-restart
 - programmer now retries 5 times before failing
   - also the data-rate gets reduced by ~~20~~ 40 % after each failed attempt
+- sheep now logs usage (only timestamp, sub-command i.e. `run`, total runtime)
+- `shepherd-sheep eeprom read -f` prints full data-model
+- `shepherd-sheep eeprom read -r` prints only hardware revision of cape
+- herd - fix Windows OS bug while distributing files
+- herd - use PurePosixPath for all remote paths (better cross-compatibility)
+- `shepherd-herd retrieve` now alternatively takes local task/job-file and fetches embedded paths
+- `shepherd-herd retrieve` does not add hostname to filename if already present
+- `shepherd-herd alive` had a bug and reported the opposite
+- `shepherd-herd status` now also reports last testbed-usage as timestamp and timedelta
+- herd - some run_cmd() executions have been silenced (from info to debug-level)
 
 ## 0.8.3
 

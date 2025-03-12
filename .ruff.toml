@@ -10,7 +10,6 @@ ignore = [
     "TID252", # relative imports from parent
     "PLR0904", "PLR0911", "PLR0912", "PLR0913", "PLR0915", # complexity
     "C901", # complexity
-    "ANN101", "ANN102", # self & cls not type-annotated
     "ANN401",  # Any as valid type
     "COM812", # trailing comma, same line
     "TD002", "TD003", "TD005", "FIX002",  # TODOs
