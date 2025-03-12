@@ -557,8 +557,8 @@ def retrieve(
     """Retrieve remote hdf file FILENAME and stores in OUTDIR.
 
     filename: can either be
-        - remote file with absolute path or relative path in '/var/shepherd/recordings/'
-        - local job / task-file (embedded paths are retrieved)
+    (a) remote file with absolute path or relative path in '/var/shepherd/recordings/' or
+    (b) local job- / task-file (embedded paths are retrieved)
 
     outdir: local path to put the files in 'outdir/[node-name]/filename'
     """
