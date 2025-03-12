@@ -199,7 +199,7 @@ def blink(ctx: click.Context, duration: int) -> None:
 @click.pass_context
 def alive(ctx: click.Context) -> None:
     with ctx.obj["herd"] as herd:
-        failed = herd.alive()
+        failed = not herd.alive()
     if failed:
         log.warning("Not all remote hosts are responding.")
     else:
@@ -509,9 +509,7 @@ def distribute(
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
-@click.argument(
-    "filename", type=click.Path(file_okay=True, dir_okay=False, path_type=Path)
-)
+@click.argument("filename", type=click.Path(file_okay=True, dir_okay=False, path_type=Path))
 @click.argument(
     "outdir",
     type=click.Path(

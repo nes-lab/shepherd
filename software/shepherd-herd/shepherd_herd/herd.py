@@ -225,7 +225,9 @@ class Herd:
             cnx.close()
 
     @validate_call
-    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[str, Result]:
+    def run_cmd(
+        self, cmd: str, exclusive_host: str | None = None, *, sudo: bool = False
+    ) -> dict[str, Result]:
         """Run COMMAND on the shell -> Returns output-results.
 
         NOTE: in case of error on a node that corresponding dict value is unavailable
@@ -235,6 +237,8 @@ class Herd:
         logger.info("Sheep-CMD = %s", cmd)
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
+            if exclusive_host and _name != exclusive_host:
+                continue
             threads[_name] = threading.Thread(
                 target=self._thread_run,
                 args=(cnx, sudo, cmd, results, _name),
@@ -376,6 +380,7 @@ class Herd:
         self,
         src: PurePosixPath | str,
         dst_dir: Path | str,
+        exclusive_host: str | None = None,
         *,
         timestamp: bool = False,
         separate: bool = False,
@@ -405,7 +410,7 @@ class Herd:
             dst_paths[i] = target_path / (src_path.stem + xtra_ts + xtra_node + src_path.suffix)
 
         # check if file is present
-        replies = self.run_cmd(sudo=False, cmd=f"test -f {src_path}")
+        replies = self.run_cmd(sudo=False, exclusive_host=exclusive_host, cmd=f"test -f {src_path}")
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
@@ -719,10 +724,14 @@ class Herd:
                 )
             elif hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
-                    logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
-                    raise RuntimeError(
-                        "FN not finished, not needed ATM"
-                    )  # TODO: will it be needed?
+                    logger.info("Remote path of '%s' is: %s", host, path)
+                    failed |= self.get_file(
+                        task.output_path,
+                        dst_dir,
+                        exclusive_host=host,
+                        separate=separate,
+                        delete_src=delete_src,
+                    )
         return failed
 
     def alive(self) -> bool:
@@ -731,4 +740,4 @@ class Herd:
         - Group is list of hosts with live connection,
         - hostnames contains all hosts in inventory
         """
-        return len(self.group) == len(self.hostnames)
+        return len(self.group) >= len(self.hostnames)
