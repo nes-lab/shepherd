@@ -726,7 +726,7 @@ class Herd:
                 for host, path in task.get_output_paths().items():
                     logger.info("Remote path of '%s' is: %s", host, path)
                     failed |= self.get_file(
-                        task.output_path,
+                        path,
                         dst_dir,
                         exclusive_host=host,
                         separate=separate,
