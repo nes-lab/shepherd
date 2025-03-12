@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from datetime import timedelta
 from io import StringIO
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PurePath
 from types import TracebackType
 from typing import Any
 from typing import ClassVar
@@ -33,12 +33,12 @@ from .logger import logger
 
 
 class Herd:
-    path_default = Path("/var/shepherd/recordings/")
+    path_default = PurePosixPath("/var/shepherd/recordings/")
     _remote_paths_allowed: ClassVar[set] = {
         path_default,  # default
-        Path("/var/shepherd/"),
-        Path("/etc/shepherd/"),
-        Path("/tmp/"),  # noqa: S108
+        PurePosixPath("/var/shepherd/"),
+        PurePosixPath("/etc/shepherd/"),
+        PurePosixPath("/tmp/"),  # noqa: S108
     }
 
     timestamp_diff_allowed = 10
@@ -252,9 +252,9 @@ class Herd:
             logger.error("ZERO nodes answered - check your config")
         return results
 
+    @staticmethod
     def print_output(
-        self,
-        replies: dict[str, Result],
+            replies: dict[str, Result],
         *,
         verbose: bool = False,
     ) -> None:
@@ -276,7 +276,7 @@ class Herd:
     def _thread_put(
         cnx: Connection,
         src: Path | StringIO,
-        dst: Path,
+        dst: PurePosixPath,
         force_overwrite: bool,  # noqa: FBT001
     ) -> None:
         if isinstance(src, StringIO):
@@ -286,15 +286,15 @@ class Herd:
             src = str(src)
 
         if not dst.suffix and not str(dst).endswith("/"):
-            dst = str(dst) + "/"
+            dst = PurePosixPath(str(dst) + "/")
 
         if not cnx.is_connected:
             return
 
-        tmp_path = Path("/tmp") / filename  # noqa: S108
+        tmp_path = PurePosixPath("/tmp") / filename  # noqa: S108
         logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
         try:
-            cnx.put(src, str(tmp_path))
+            cnx.put(src, tmp_path.as_posix())
             xtr_arg = "-f" if force_overwrite else "-n"
             cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
@@ -308,7 +308,7 @@ class Herd:
     def put_file(
         self,
         src: StringIO | Path | str,
-        dst: Path | str,
+        dst: PurePosixPath | str,
         *,
         force_overwrite: bool = False,
     ) -> None:
@@ -327,7 +327,7 @@ class Herd:
             dst_path = self.path_default
             logger.debug("Remote path not provided -> use default = %s", dst_path)
         else:
-            dst_path = Path(dst)
+            dst_path = PurePosixPath(dst)
             dst_posix = dst_path.as_posix()
             is_allowed = False
             for path_allowed in self._remote_paths_allowed:
@@ -356,7 +356,7 @@ class Herd:
             del thread  # ... overcautious
 
     @staticmethod
-    def _thread_get(cnx: Connection, src: Path, dst: Path) -> None:
+    def _thread_get(cnx: Connection, src: PurePosixPath, dst: Path) -> None:
         if not cnx.is_connected:
             return
         try:
@@ -372,7 +372,7 @@ class Herd:
     @validate_call
     def get_file(
         self,
-        src: Path | str,
+        src: PurePosixPath | str,
         dst_dir: Path | str,
         *,
         timestamp: bool = False,
@@ -387,7 +387,7 @@ class Herd:
         dst_paths = {}
 
         # assemble file-names
-        src_path = Path(src) if Path(src).is_absolute() else Path(self.path_default) / src
+        src_path: PurePosixPath = PurePosixPath(src) if PurePosixPath(src).is_absolute() else self.path_default / src
 
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
@@ -494,7 +494,7 @@ class Herd:
     def put_task(
         self,
         task: Path | ShpModel,
-        remote_path: Path | str = "/etc/shepherd/config.yaml",
+        remote_path: PurePosixPath | str = "/etc/shepherd/config.yaml",
     ) -> None:
         """Transfer shepherd tasks to the group of hosts / sheep.
 
@@ -526,8 +526,8 @@ class Herd:
 
         if self.check_status(warn=True):
             raise RuntimeError("Shepherd still active!")
-        if not isinstance(remote_path, Path):
-            remote_path = Path(remote_path)
+        if not isinstance(remote_path, PurePath):
+            remote_path = PurePosixPath(remote_path)
 
         logger.info(
             "Rolling out the config to '%s'",
@@ -615,7 +615,7 @@ class Herd:
                 "Inventorize needs a dir, not a file '%s'",
                 output_path.as_posix(),
             )
-        file_path = Path("/var/shepherd/inventory.yaml")
+        file_path = PurePosixPath("/var/shepherd/inventory.yaml")
         self.run_cmd(
             sudo=True,
             cmd=f"shepherd-sheep inventorize --output-path {file_path.as_posix()}",
@@ -670,7 +670,7 @@ class Herd:
     @validate_call
     def run_task(self, config: Path | ShpModel, *, attach: bool = False) -> int:
         if attach:
-            remote_path = Path("/etc/shepherd/config_for_herd.yaml")
+            remote_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
@@ -680,7 +680,7 @@ class Herd:
             self.print_output(replies, verbose=True)
 
         else:
-            remote_path = Path("/etc/shepherd/config.yaml")
+            remote_path = PurePosixPath("/etc/shepherd/config.yaml")
             self.put_task(config, remote_path)
             exit_code = self.start_measurement()
             logger.info("Shepherd started.")

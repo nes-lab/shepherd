@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from itertools import product
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from config import emu_hrv_list
 from config import emu_src_list
@@ -24,7 +24,7 @@ with Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected) as herd:
     for hrv_name in emu_hrv_list:
         file_name = f"hrv_{hrv_name}.h5"
         paths_local_hrv[hrv_name] = path_here / host_selected / file_name
-        paths_remote_hrv[hrv_name] = Path("/tmp/" + file_name)  # noqa: S108
+        paths_remote_hrv[hrv_name] = PurePosixPath("/tmp/" + file_name)  # noqa: S108
         logger.info("Start transferring '%s'", file_name)
         herd.put_file(paths_local_hrv[hrv_name], paths_remote_hrv[hrv_name], force_overwrite=True)
 

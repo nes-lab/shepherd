@@ -1,7 +1,7 @@
 import signal
 import sys
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import FrameType
 from typing import TypedDict
 
@@ -57,7 +57,7 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
 @click.option(
     "--key-filepath",
     "-k",
-    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False, path_type=Path),
     default=None,
     help="Path to private ssh key file",
 )
@@ -132,7 +132,7 @@ def shell_cmd(ctx: click.Context, command: str, *, sudo: bool) -> None:
 @cli.command(short_help="Collects information about the observer-hosts -> saved to local file")
 @click.argument(
     "output-path",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
     default=Path("./"),
 )
 @click.pass_context
@@ -216,7 +216,7 @@ def alive(ctx: click.Context) -> None:
 )
 @click.argument(
     "config",
-    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False, path_type=Path),
 )
 @click.option("--attach", "-a", is_flag=True, help="Wait and receive output on shell")
 @click.pass_context
@@ -234,7 +234,7 @@ def run(ctx: click.Context, config: Path, *, attach: bool) -> None:
 @click.option(
     "--output-path",
     "-o",
-    type=click.Path(dir_okay=True, file_okay=True),
+    type=click.Path(dir_okay=True, file_okay=True, path_type=PurePosixPath),
     default=Herd.path_default,
     help="Dir or file path for resulting hdf5 file",
 )
@@ -275,7 +275,7 @@ def harvest(
     """Simultaneously record IV data from harvesting-sources on the chosen observers."""
     with ctx.obj["herd"] as herd:
         for path in ["output_path"]:
-            file_path = Path(kwargs[path])
+            file_path = PurePosixPath(kwargs[path])
             if not file_path.is_absolute():
                 kwargs[path] = Herd.path_default / file_path
 
@@ -312,13 +312,13 @@ def harvest(
 )
 @click.argument(
     "input-path",
-    type=click.Path(file_okay=True, dir_okay=False),
+    type=click.Path(file_okay=True, dir_okay=False, path_type=PurePosixPath),
 )
 # TODO: switch to local file for input?
 @click.option(
     "--output-path",
     "-o",
-    type=click.Path(dir_okay=True, file_okay=True),
+    type=click.Path(dir_okay=True, file_okay=True, path_type=PurePosixPath),
     default=Herd.path_default,
     help="Dir or file path for resulting hdf5 file with load recordings",
 )
@@ -388,7 +388,7 @@ def emulate(
     """
     with ctx.obj["herd"] as herd:
         for path in ["input_path", "output_path"]:
-            file_path = Path(kwargs[path])
+            file_path = PurePosixPath(kwargs[path])
             if not file_path.is_absolute():
                 kwargs[path] = Herd.path_default / file_path
 
@@ -484,12 +484,12 @@ def stop(ctx: click.Context) -> None:
 )
 @click.argument(
     "filename",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
     "--remote-path",
     "-r",
-    type=click.Path(file_okay=True, dir_okay=True),
+    type=click.Path(file_okay=True, dir_okay=True, path_type=PurePosixPath),
     default=Herd.path_default,
     help="for safety only allowed: /var/shepherd/* or /etc/shepherd/*",
 )
@@ -498,7 +498,7 @@ def stop(ctx: click.Context) -> None:
 def distribute(
     ctx: click.Context,
     filename: Path,
-    remote_path: Path,
+    remote_path: PurePosixPath,
     *,
     force_overwrite: bool,
 ) -> None:
@@ -508,13 +508,14 @@ def distribute(
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
-@click.argument("filename", type=click.Path(file_okay=True, dir_okay=False))
+@click.argument("filename", type=click.Path(file_okay=True, dir_okay=False, path_type=PurePosixPath))
 @click.argument(
     "outdir",
     type=click.Path(
         exists=True,
         file_okay=False,
         dir_okay=True,
+        path_type=Path,
     ),
 )
 @click.option(
@@ -544,7 +545,7 @@ def distribute(
 @click.pass_context
 def retrieve(
     ctx: click.Context,
-    filename: Path,
+    filename: PurePosixPath,
     outdir: Path,
     *,
     timestamp: bool,
@@ -588,7 +589,7 @@ def retrieve(
 )
 @click.argument(
     "firmware-file",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path),
 )
 @click.option(
     "--target-port",
@@ -633,8 +634,8 @@ def retrieve(
 @click.pass_context
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     """Programmer for Target-Controller."""
-    tmp_file = "/tmp/target_image.hex"  # noqa: S108
-    cfg_path = Path("/etc/shepherd/config_for_herd.yaml")
+    tmp_file = PurePosixPath("/tmp/target_image.hex")  # noqa: S108
+    cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
 
     with ctx.obj["herd"] as herd:
         herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
@@ -643,7 +644,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
             "msp430": ProgrammerProtocol.sbw,
         }
         kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
-        kwargs["firmware_file"] = Path(tmp_file)
+        kwargs["firmware_file"] = PurePosixPath(tmp_file)
 
         kwargs = {key: value for key, value in kwargs.items() if value is not None}
         task = ProgrammingTask(**kwargs)
