@@ -117,9 +117,7 @@ class SysUtilMonitor(Monitor):
                 if self.log_timestamp_ns < ts_now_ns:
                     self.log_timestamp_ns = int(time.time() * 1e9)
                 self.data["time"][self.position] = ts_now_ns
-                self.data["cpu"][self.position] = int(
-                    round(psutil.cpu_percent(0)),
-                )
+                self.data["cpu"][self.position] = round(psutil.cpu_percent(0))
                 mem_stat = psutil.virtual_memory()[0:3]
                 self.data["ram"][self.position, 0:2] = [
                     int(100 * mem_stat[1] / mem_stat[0]),

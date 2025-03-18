@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -26,16 +25,15 @@ def analyze_directory(
         if "origin" in stats_base.columns:
             stat_names = stats_base["origin"].tolist()
 
-    files: list[str] = []
+    files: list[Path] = []
     if folder_path.is_file():
-        files.append(str(folder_path))
+        files.append(folder_path)
     elif folder_path.is_dir():
-        files = files + os.listdir(folder_path)
+        files = files + list(folder_path.iterdir())
     else:
         raise ValueError("Provided Path is neither directory or file (%s)", folder_path.as_posix())
 
-    for file in files:
-        fpath = Path(file)
+    for fpath in files:
         if not fpath.is_file():
             continue
         if "npz" not in fpath.suffix.lower():
