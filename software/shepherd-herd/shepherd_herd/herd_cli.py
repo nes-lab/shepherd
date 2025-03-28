@@ -562,7 +562,7 @@ def retrieve(
 
     filename: can either be
     (a) remote file with absolute path or relative path in '/var/shepherd/recordings/' or
-    (b) local job- / task-file (embedded paths are retrieved)
+    (b) local job- / task-file that did already run (embedded paths are retrieved)
 
     outdir: local path to put the files in 'outdir/[node-name]/filename'
     """

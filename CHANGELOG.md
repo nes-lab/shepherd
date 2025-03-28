@@ -25,6 +25,9 @@
 - `shepherd-herd alive` had a bug and reported the opposite
 - `shepherd-herd status` now also reports last testbed-usage as timestamp and timedelta
 - herd - some run_cmd() executions have been silenced (from info to debug-level)
+- hw-designfiles - add cape 2.5d & move prior capes to `_deprecated`
+- ansible - avoid updating kernel
+- avoid os-package if pathlib can handle it
 
 ## 0.8.3
 
