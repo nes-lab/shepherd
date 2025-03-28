@@ -2,32 +2,38 @@
 
 ## 0.8.4
 
-- programming needed some improvements
-- bugfix - don't realign nrf-hex-file with 16bit address limit
-- workaround - reduce default data-rate for programming (500k to 200k)
-- bugfix - properly report programming errors (write-error, verify, parsing was not reported correctly)
-- ihex - added remaining 3 of 6 command-types of intel hex
-- ihex - corrected calculation of Extended Segment Address
-- ihex - more detailed error-reporting in python (including line-number)
-- ihex - full 32bit address-space should now be usable (was limited to <64k before)
-- ihex - detection of malformed command records
-- ihex - detection of unknown commands (throw error)
-- error-reporting did not detect a pru-restart
-- programmer now retries 5 times before failing
-  - also the data-rate gets reduced by ~~20~~ 40 % after each failed attempt
-- sheep now logs usage (only timestamp, sub-command i.e. `run`, total runtime)
-- `shepherd-sheep eeprom read -f` prints full data-model
-- `shepherd-sheep eeprom read -r` prints only hardware revision of cape
-- herd - fix Windows OS bug while distributing files
-- herd - use PurePosixPath for all remote paths (better cross-compatibility)
-- `shepherd-herd retrieve` now alternatively takes local task/job-file and fetches embedded paths
-- `shepherd-herd retrieve` does not add hostname to filename if already present
-- `shepherd-herd alive` had a bug and reported the opposite
-- `shepherd-herd status` now also reports last testbed-usage as timestamp and timedelta
-- herd - some run_cmd() executions have been silenced (from info to debug-level)
+- sheep programming needed some improvements
+  - bugfix - don't realign nrf-hex-file with 16bit address limit
+  - workaround - reduce default data-rate for programming (500k to 200k)
+  - bugfix - properly report programming errors (write-error, verify, parsing was not reported correctly)
+  - ihex - added remaining 3 of 6 command-types of intel hex
+  - ihex - corrected calculation of Extended Segment Address
+  - ihex - more detailed error-reporting in python (including line-number)
+  - ihex - full 32bit address-space should now be usable (was limited to <64k before)
+  - ihex - detection of malformed command records
+  - ihex - detection of unknown commands (throw error)
+  - error-reporting did not detect a pru-restart
+  - programmer now retries 5 times before failing
+    - also the data-rate gets reduced by ~~20~~ 40 % after each failed attempt
+- sheep
+  - now logs usage (only timestamp, sub-command i.e. `run`, total runtime)
+  - `shepherd-sheep eeprom read -f` prints full data-model
+  - `shepherd-sheep eeprom read -r` prints only hardware revision of cape
+  - small optimizations (fail early, but avoid exception; avoid code duplication)
+- herd
+  - fix Windows OS bug while distributing files
+  - use PurePosixPath for all remote paths (better cross-compatibility)
+  - some run_cmd() executions have been silenced (from info to debug-level)
+  - `shepherd-herd retrieve` now alternatively takes local task/job-file and fetches embedded paths
+  - `shepherd-herd retrieve` does not add hostname to filename if already present
+  - `shepherd-herd alive` had a bug and reported the opposite
+  - `shepherd-herd status` now also reports last testbed-usage as timestamp and timedelta
+- python
+  - avoid os-package if pathlib can handle it
+  - avoid sys.exit() if click.context.exit() is available
 - hw-designfiles - add cape 2.5d & move prior capes to `_deprecated`
 - ansible - avoid updating kernel
-- avoid os-package if pathlib can handle it
+- **tested**: pytest sheep, pytest herd
 
 ## 0.8.3
 

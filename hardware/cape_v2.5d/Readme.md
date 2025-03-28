@@ -133,12 +133,12 @@ pru0_r30_07   -                 P9_25     (was CS_ADC2_REC)
 - 5x 220 uF 6V3 on backside
 - 2x 47 uF 16V on backside
 
-### Initial Test 
+### Initial Test
 
 - visual
   - all ICs and diodes correct orientation
   - no visible shorts or other defects
-- 8V In: 
+- 8V In:
   - 17mA, with 18x PI5 180deg flipped
   - 15mA with PI5 removed
   - first converter (TPS62913) warms up by 7K above ambient
@@ -146,7 +146,7 @@ pru0_r30_07   -                 P9_25     (was CS_ADC2_REC)
   - 5V In directly after 17V stage (with TPS removed) 1 mA off vs 50 mA when on
   - warmest part is U3 - AD8421 InAmp (+5K from Ambient)
   - Power-Hotspots: U22, U19, U21,
-  - Emu-Hotspots: U4, U3, U1, 
+  - Emu-Hotspots: U4, U3, U1,
   - GPIO-Hotspots: U7 (only one of many?)
 - Voltages
     - L5V ⇾ 5.000 V

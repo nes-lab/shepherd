@@ -142,7 +142,7 @@
             P8_32(MUX_MODE7)                // gpio0[11]
             P8_33(MUX_MODE7 | RX_ACTIVE)    // gpio0[9]
             P8_34(MUX_MODE7 | RX_ACTIVE)    // gpio2[17]
-            P8_35(MUX_MODE7 | RX_ACTIVE)    // gpio0[8], TODO: test with rx enabled, not needed for CLK, but debug
+            P8_35(MUX_MODE7 | RX_ACTIVE)    // gpio0[8], rx not needed for clock, just debug
             P8_36(MUX_MODE7 | RX_ACTIVE)    // gpio2[16]
             P8_37(MUX_MODE7)                // gpio2[14]
             P8_38(MUX_MODE7)                // gpio2[15]
@@ -163,7 +163,7 @@
             P9_14(MUX_MODE7)                // gpio1[18], 50
             P9_16(MUX_MODE7)                // gpio1[19], 51
 
-            P9_17(MUX_MODE7 | RX_ACTIVE)    // gpio0[5], swd_clk, TODO: test with rx enabled, not needed for CLK, but debug
+            P9_17(MUX_MODE7 | RX_ACTIVE)    // gpio0[5], swd_clk, rx not needed for clock, just debug
             P9_18(MUX_MODE7 | RX_ACTIVE)    // gpio0[4], swd_io
 
             P9_23(MUX_MODE7)                // gpio1[17]
