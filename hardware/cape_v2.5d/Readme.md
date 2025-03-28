@@ -83,10 +83,11 @@
 - panel-bridge under JST - bad coincidence
 - screw-hole could have vias around (safer, if inner metal scrapes off)
 - show label on 10mV
+- Label reads "v2.5c"
 
 ## Target Pin Def
 
-### Target Port - Cape 2.4
+### Target Port - Cape 2.4 (previous one)
 
 ```
 pru_reg     name            BB_pin	sys_pin sys_reg
@@ -102,7 +103,7 @@ r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15] -> 15
 r30_09/out  TARGET_BAT_OK   P8_29	-
 ```
 
-### Target Port - Cape 2.5
+### Target Port - Cape 2.5 (this revision)
 
 ```
 pru_reg       name              BB_pin	sys_pin sys_reg

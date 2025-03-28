@@ -16,12 +16,12 @@
   - programmer now retries 5 times before failing
     - also the data-rate gets reduced by ~~20~~ 40 % after each failed attempt
 - sheep
-  - now logs usage (only timestamp, sub-command i.e. `run`, total runtime)
+  - now logs usage (timestamp, sub-command i.e. `run`, total runtime)
   - `shepherd-sheep eeprom read -f` prints full data-model
   - `shepherd-sheep eeprom read -r` prints only hardware revision of cape
   - small optimizations (fail early, but avoid exception; avoid code duplication)
 - herd
-  - fix Windows OS bug while distributing files
+  - fix bug on Windows OS while distributing files
   - use PurePosixPath for all remote paths (better cross-compatibility)
   - some run_cmd() executions have been silenced (from info to debug-level)
   - `shepherd-herd retrieve` now alternatively takes local task/job-file and fetches embedded paths
@@ -33,7 +33,7 @@
   - avoid sys.exit() if click.context.exit() is available
 - hw-designfiles - add cape 2.5d & move prior capes to `_deprecated`
 - ansible - avoid updating kernel
-- **tested**: pytest sheep, pytest herd
+- **tested**: pytest sheep, pytest herd linux & windows
 
 ## 0.8.3
 

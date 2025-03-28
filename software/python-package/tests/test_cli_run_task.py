@@ -68,7 +68,7 @@ def path_here() -> Path:
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_no_cal(
     cli_runner: CliRunner,

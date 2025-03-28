@@ -73,7 +73,7 @@ class Herd:
                     "/etc/shepherd/herd.yml",
                     "~/herd.yml",
                     "inventory/herd.yml",
-                    "herd.yml",
+                    "herd.yml",  # TODO: use XDG_CACHE_HOME
                 ]
             else:
                 inventories = [inventory]
