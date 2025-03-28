@@ -114,7 +114,7 @@ def poweroff(ctx: click.Context, *, restart: bool) -> None:
     """Power off shepherd observers."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.poweroff(restart=restart)
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 @cli.command(short_help="Run COMMAND on the shell")
@@ -127,7 +127,7 @@ def shell_cmd(ctx: click.Context, command: str, *, sudo: bool) -> None:
         replies = herd.run_cmd(sudo=sudo, cmd=command)
         herd.print_output(replies, verbose=True)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 @cli.command(short_help="Collects information about the observer-hosts -> saved to local file")
@@ -141,7 +141,7 @@ def inventorize(ctx: click.Context, output_path: Path) -> None:
     """Collect information about the observer-hosts -> saved to local file."""
     with ctx.obj["herd"] as herd:
         failed = herd.inventorize(output_path)
-    sys.exit(int(failed))
+    ctx.exit(int(failed))
 
 
 @cli.command(
@@ -158,7 +158,7 @@ def fix(ctx: click.Context) -> None:
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 @cli.command(
@@ -171,7 +171,7 @@ def resync(ctx: click.Context) -> None:
     activate_verbosity()
     with ctx.obj["herd"] as herd:
         exit_code = herd.resync()
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 @cli.command(
@@ -189,7 +189,7 @@ def blink(ctx: click.Context, duration: int) -> None:
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 @cli.command(
@@ -204,7 +204,7 @@ def alive(ctx: click.Context) -> None:
         log.warning("Not all remote hosts are responding.")
     else:
         log.debug("All remote hosts are responding.")
-    sys.exit(int(failed))
+    ctx.exit(int(failed))
 
 
 # #############################################################################
@@ -225,7 +225,7 @@ def run(ctx: click.Context, config: Path, *, attach: bool) -> None:
     """Run a task or set of tasks with provided config/task file (YAML)."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.run_task(config, attach=attach)
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 @cli.command(
@@ -279,6 +279,8 @@ def harvest(
             file_path = PurePosixPath(kwargs[path])
             if not file_path.is_absolute():
                 kwargs[path] = Herd.path_default / file_path
+            kwargs[path] = Path(kwargs[path])
+            # ⤷ TODO: workaround until datalib uses PurePaths
 
         if kwargs.get("virtual_harvester") is not None:
             kwargs["virtual_harvester"] = {"name": kwargs["virtual_harvester"]}
@@ -392,6 +394,8 @@ def emulate(
             file_path = PurePosixPath(kwargs[path])
             if not file_path.is_absolute():
                 kwargs[path] = Herd.path_default / file_path
+            kwargs[path] = Path(kwargs[path])
+            # ⤷ TODO: workaround until datalib uses PurePaths
 
         for port in ["io_port", "pwr_port"]:
             kwargs[port] = TargetPort[kwargs[port]]
@@ -447,7 +451,7 @@ def start(ctx: click.Context) -> None:
             log.info("Shepherd started.")
             if exit_code > 0:
                 log.debug("-> max exit-code = %d", exit_code)
-    sys.exit(ret)
+    ctx.exit(ret)
 
 
 @cli.command(short_help="Information about current state of shepherd measurement")
@@ -465,7 +469,7 @@ def status(ctx: click.Context) -> None:
         if delta is not None:
             ts_now = datetime.now().astimezone()
             log.info("Last usage was %s, Δt = %s", str(ts_now - delta), str(delta))
-    sys.exit(ret)
+    ctx.exit(ret)
 
 
 @cli.command(short_help="Stops any harvest/emulation or other processes blocking the sheep")
@@ -583,7 +587,7 @@ def retrieve(
                 separate=separate,
                 delete_src=delete,
             )
-    sys.exit(int(failed))
+    ctx.exit(int(failed))
 
 
 # #############################################################################
@@ -652,6 +656,8 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
         }
         kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
         kwargs["firmware_file"] = PurePosixPath(tmp_file)
+        kwargs["firmware_file"] = Path(kwargs["firmware_file"])
+        # ⤷ TODO: workaround until datalib uses PurePaths
 
         kwargs = {key: value for key, value in kwargs.items() if value is not None}
         task = ProgrammingTask(**kwargs)
@@ -663,7 +669,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
         if exit_code:
             log.error("Programming - Procedure failed - will exit now!")
         herd.print_output(replies, verbose=False)
-    sys.exit(exit_code)
+    ctx.exit(exit_code)
 
 
 if __name__ == "__main__":

@@ -27,7 +27,6 @@ from shepherd_core.inventory import Inventory
 from typing_extensions import Unpack
 
 from . import __version__
-from . import run_programmer
 from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
@@ -100,7 +99,8 @@ def cli(ctx: click.Context, *, verbose: bool, version: bool) -> None:
         log.info("Shepherd-Sheep v%s", __version__)
         log.debug("Python v%s", sys.version)
         log.debug("Click v%s", click.__version__)
-    check_sys_access()
+    if check_sys_access():
+        ctx.exit(1)
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 
@@ -162,13 +162,14 @@ def target_power(target_port: str, voltage: float, *, on: bool, gpio_pass: bool)
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     default=Path("/etc/shepherd/config.yaml"),
 )
-def run(config: Path) -> None:
+@click.pass_context
+def run(ctx: click.Context, config: Path) -> None:
     reload_kernel_module()  # more reliable with fresh states
     disable_ntp()
     failed = run_task(config)
     if failed:
         log.debug("Tasks signaled an error (failed).")
-    sys.exit(int(failed))
+    ctx.exit(int(failed))
 
 
 @cli.group(
@@ -184,7 +185,9 @@ def eeprom() -> None:
     "cal-file",
     type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
 )
+@click.pass_context
 def write(
+    ctx: click.Context,
     cal_file: Path | None,
 ) -> None:
     cal_cape = CalibrationCape.from_file(cal_file)
@@ -194,7 +197,7 @@ def write(
             storage.write_calibration(cal_cape)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
-        sys.exit(2)
+        ctx.exit(2)
 
 
 @eeprom.command(short_help="Read cape info and calibration data from EEPROM")
@@ -217,7 +220,8 @@ def write(
     is_flag=True,
     help="output all fields on console",
 )
-def read(cal_file: Path | None, *, revision: bool, full: bool) -> None:
+@click.pass_context
+def read(ctx: click.Context, cal_file: Path | None, *, revision: bool, full: bool) -> None:
     try:
         with EEPROM() as storage:
             cal = storage.read_calibration()
@@ -225,10 +229,10 @@ def read(cal_file: Path | None, *, revision: bool, full: bool) -> None:
         log.warning(
             "Reading from EEPROM failed (Val) -> no plausible data found",
         )
-        sys.exit(2)
+        ctx.exit(2)
     except FileNotFoundError:
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
-        sys.exit(3)
+        ctx.exit(3)
 
     if revision:
         log.info("%s", cal.cape.version)
@@ -249,7 +253,8 @@ def read(cal_file: Path | None, *, revision: bool, full: bool) -> None:
 
 @cli.command(short_help="Start ZeroRPC Server")
 @click.option("--port", "-p", type=click.INT, default=4242)
-def rpc(port: int | None) -> None:
+@click.pass_context
+def rpc(ctx: click.Context, port: int | None) -> None:
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     log.info("Shepherd Debug Interface: Initialized")
@@ -262,7 +267,7 @@ def rpc(port: int | None) -> None:
     def stop_server() -> None:
         server.stop()
         shepherd_io.__exit__()
-        sys.exit(0)
+        ctx.exit(0)
 
     gevent.signal_handler(signal.SIGTERM, stop_server)
     gevent.signal_handler(signal.SIGINT, stop_server)
@@ -337,22 +342,16 @@ def inventorize(output_path: Path) -> None:
     is_flag=True,
     help="dry-run the programmer - no data gets written",
 )
-def program(**kwargs: Unpack[TypedDict]) -> None:
+@click.pass_context
+def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,
     }
     kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
     cfg = ProgrammingTask(**kwargs)
-    retries = 5
-    rate_factor = 1.0
-    failed = True
-    while retries > 0 and failed:
-        log.info("Starting Programmer (%d retries left)", retries)
-        retries -= 1
-        failed = run_programmer(cfg, rate_factor)
-        rate_factor *= 0.6  # 40% slower each failed attempt
-    sys.exit(int(failed))
+    failed = run_task(cfg)
+    ctx.exit(int(failed))
 
 
 @cli.command(
@@ -404,9 +403,10 @@ def blink(duration: int) -> None:
     short_help="Returns statistic about last usage: timestamp, total runtime, sub-command",
     context_settings={"ignore_unknown_options": True},
 )
-def usage() -> None:
+@click.pass_context
+def usage(ctx: click.Context) -> None:
     log.info(get_last_usage())
-    sys.exit(0)
+    ctx.exit(0)
 
 
 if __name__ == "__main__":

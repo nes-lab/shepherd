@@ -100,7 +100,8 @@ def run_emulator(cfg: EmulationTask) -> bool:
 
 def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
-    check_sys_access()  # not really needed here
+    if check_sys_access():  # not really needed here
+        return True
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
         modify_uid(file_path, cfg.custom_id)
@@ -292,7 +293,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, FirmwareModTask):
             failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            retries = 5
+            retries = 1 if element.simulate else 5
             rate_factor = 1.0
             had_error = True
             while retries > 0 and had_error:

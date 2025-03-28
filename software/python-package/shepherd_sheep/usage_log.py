@@ -2,6 +2,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from .logger import log
+
 path_log = Path("/var/shepherd/log.csv")
 
 
@@ -12,6 +14,7 @@ def usage_logger(ts_start: datetime, cmd: str) -> None:
         if not existed:
             fh.write("time_start, time_stop, runtime [s], command\n")
         fh.write(f"{ts_start}, {ts_now}, {(ts_now - ts_start).total_seconds()}, {cmd}\n")
+    log.debug("Added entry to usage log")
 
 
 def get_last_usage() -> str | None:
