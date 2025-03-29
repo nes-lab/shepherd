@@ -7,6 +7,8 @@
 #include "simple_lock.h"
 #include "stdint_fast.h"
 
+#define CAPE_HW_V25
+
 /**
  * Length of buffer for storing harvest & emulation data
  */
@@ -380,7 +382,7 @@ struct SharedMem
     bool_ft                  cmp1_trigger_for_pru1;
     /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
     bool_ft                  vsource_batok_trigger_for_pru1;
-    bool_ft                  vsource_batok_pin_value;
+    uint32_t                 vsource_batok_pin_value; // TODO: rename power_good
     /* Trigger to control sampling of gpios */
     bool_ft                  vsource_skip_gpio_logging;
 } __attribute__((packed));

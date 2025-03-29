@@ -104,8 +104,8 @@ class PruConverterModel:
     def get_V_output_uV(self) -> int:
         return self.pru.get_V_output_uV()
 
-    def get_power_good(self) -> bool:
-        return bool(self.shared_mem.vsource_batok_pin_value)
+    def get_power_good(self) -> int:
+        return self.shared_mem.vsource_batok_pin_value  # TODO: this has now power_high & _low
 
     def get_I_mid_out_nA(self) -> float:
         return self.pru.get_I_mid_out_nA()

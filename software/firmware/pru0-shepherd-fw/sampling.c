@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include "calibration.h"
+#include "commons.h"
 #include "gpio.h"
 #include "hw_config.h"
 #include "sampling.h"
@@ -94,8 +95,10 @@ static inline void sample_emu_ADCs(struct SampleBuffer *const buffer, const uint
 static inline void sample_hrv_ADCs(struct SampleBuffer *const buffer, const uint32_t sample_idx)
 {
     __delay_cycles(1000 / TIMER_TICK_NS); // fill up to 1000 ns since adc-trigger (if needed)
+#ifndef CAPE_HW_V25
     buffer->values_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     buffer->values_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+#endif // CAPE_HW_V25
 }
 
 #ifdef EMU_SUPPORT
@@ -133,8 +136,10 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
     switch (channel_num)
     {
+#ifndef CAPE_HW_V25
         case 0: result = adc_fastread(SPI_CS_HRV_C_ADC_PIN); break;
         case 1: result = adc_fastread(SPI_CS_HRV_V_ADC_PIN); break;
+#endif // CAPE_HW_V25
         default: result = adc_fastread(SPI_CS_EMU_ADC_PIN); break;
     }
     return result;
@@ -143,8 +148,10 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
 void sample_dbg_dac(const uint32_t value)
 {
+#ifndef CAPE_HW_V25
     if (value & (1u << 20u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
     if (value & (1u << 21u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
+#endif // CAPE_HW_V25
     if (value & (1u << 22u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
     if (value & (1u << 23u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
 }
@@ -211,8 +218,10 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 // emulator-init takes
 void sample_init(const volatile struct SharedMem *const shared_mem)
 {
-    /* Chip-Select signals are active low */
+/* Chip-Select signals are active low */
+#ifndef CAPE_HW_V25
     GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
+#endif // CAPE_HW_V25
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
@@ -223,13 +232,13 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
     dac_aux_link_to_mid  = ((shared_mem->dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
 
     /* deactivate hw-units when not needed, initialize the other */
+
+#ifndef CAPE_HW_V25
+    GPIO_TOGGLE(DEBUG_PIN1_MASK);
     const bool_ft use_harvester =
             (mode == MODE_HARVESTER) || (mode == MODE_HRV_ADC_READ) || (mode == MODE_DEBUG);
-    const bool_ft use_emulator =
-            (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
-
-    GPIO_TOGGLE(DEBUG_PIN1_MASK);
     dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
+
     // TODO: init more efficient, can be done all same ICs at the same time (common cs_low)
     // just init-emulator takes 10.5 us, 5x DAC * 750 ns, 4x ADC x 1440 ns
 
@@ -247,8 +256,11 @@ void sample_init(const volatile struct SharedMem *const shared_mem)
     ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
     // ⤷ TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
     ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
+#endif // CAPE_HW_V25
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
+    const bool_ft use_emulator =
+            (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
     dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
     ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 

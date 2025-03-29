@@ -23,12 +23,16 @@
 #define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK         BIT_SHIFT(P8_30)
 
-#define GPIO_BATOK              BIT_SHIFT(P8_29)
-#define GPIO_BATOK_POS          (9u)
+#ifdef CAPE_HW_V25
+  #define GPIO_BATOK_POS (12u)
+  #define GPIO_MASK      (0x3FFF)
+#else // prior revisions
+  #define GPIO_BATOK_PIN BIT_SHIFT(P8_29)
+  #define GPIO_BATOK_POS (9u)
+  #define GPIO_MASK      (0x03FF)
+#endif
 
-#define GPIO_MASK               (0x03FF)
-
-#define SANITY_CHECKS           (0) // warning: costs performance, but is helpful for dev / debugging
+#define SANITY_CHECKS (0) // warning: costs performance, but is helpful for dev / debugging
 
 /* overview for pin-mirroring - HW-Rev2.4b
 
@@ -43,6 +47,30 @@ r31_06      TARGET_GPIO6    P8_39	P8_34, g2[17] -> 81
 r31_07      TARGET_UART_RX  P8_40	P9_26, g0[14] -> 14
 r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15] -> 15
 r30_09/out  TARGET_BAT_OK   P8_29	-
+
+Note: this table is copied (for hdf5-reference) in commons.py
+*/
+
+/* overview for pin-mirroring - HW-Rev2.5d
+
+pru_reg       name              BB_pin	sys_pin sys_reg
+pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART)
+pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART)
+TODO: cape v25d has swapped uart
+pru1_r31_02   TARGET_GPIO2      P8_43	P8_16, g1[14] -> 46
+pru1_r31_03   TARGET_GPIO3      P8_44	P8_15, g1[15] -> 47
+pru1_r31_04   TARGET_GPIO4      P8_41	P8_26, g1[29] -> 61
+pru1_r31_05   TARGET_GPIO5      P8_42	P8_36, g2[16] -> 80
+pru1_r31_06   TARGET_GPIO6      P8_39	P8_34, g2[17] -> 81
+pru1_r31_07   TARGET_GPIO7      P8_40	P8_14, g0[26] -> 26
+pru1_r31_08   TARGET_GPIO8      P8_27	P8_17, g0[27] -> 27
+pru1_r31_09   TARGET_GPIO9      P8_29	-
+pru1_r31_10   TARGET_GPIO10     P8_28   - !! PRU1-LED0, direction must be changed in DTree for debugging
+pru1_r31_11   TARGET_GPIO11     P8_30   - !! PRU1-LED1, direction must be changed in DTree
+
+pru0_r30_05   PWR_GOOD_L        P9_27     (was CS_DAC_REC), gets added to bit 12 for GPIO-Sampling
+pru0_r30_06   PWR_GOOD_H        P9_41B    (was CS_ADC1_REC), gets added to bit 13 for GPIO-Sampling
+pru0_r30_07   -                 P9_25     (was CS_ADC2_REC)
 
 Note: this table is copied (for hdf5-reference) in commons.py
 */
@@ -446,21 +474,23 @@ int32_t event_loop(volatile struct SharedMem *const shared_mem)
             continue;
         }
 
-        /* remote gpio-triggering for pru0 */
+/* remote gpio-triggering for pru0 */
+#ifndef CAPE_HW_V25
         if (shared_mem->vsource_batok_trigger_for_pru1)
         {
             if (shared_mem->vsource_batok_pin_value)
             {
-                GPIO_ON(GPIO_BATOK);
+                GPIO_ON(GPIO_BATOK_PIN);
                 DEBUG_PGOOD_STATE_1;
             }
             else
             {
-                GPIO_OFF(GPIO_BATOK);
+                GPIO_OFF(GPIO_BATOK_PIN);
                 DEBUG_PGOOD_STATE_0;
             }
             shared_mem->vsource_batok_trigger_for_pru1 = false;
         }
+#endif
 
         /* pru0 util monitoring */
         if (shared_mem->pru0_ticks_per_sample != 0xFFFFFFFFu)

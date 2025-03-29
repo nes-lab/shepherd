@@ -62,7 +62,12 @@ struct ConverterState
     uint64_t V_enable_output_threshold_uV_n32;
     uint64_t V_disable_output_threshold_uV_n32;
     uint64_t dV_enable_output_uV_n32;
-    bool_ft  power_good;
+#ifdef CAPE_HW_V25
+    bool_ft power_good_low;
+    bool_ft power_good_high;
+#else
+    bool_ft power_good;
+#endif // CAPE_HW_V25
 };
 
 /* feedback to harvester - global vars */
@@ -95,7 +100,12 @@ void converter_initialize(const volatile struct ConverterConfig *const config)
 
     state.V_out_dac_uV                      = cfg->V_output_uV;
     state.V_out_dac_raw                     = cal_conv_uV_to_dac_raw(cfg->V_output_uV);
-    state.power_good                        = true;
+#ifdef CAPE_HW_V25
+    state.power_good_low  = true;
+    state.power_good_high = true;
+#else
+    state.power_good = true;
+#endif // CAPE_HW_V25
 
     /* prepare hysteresis-thresholds */
     state.dV_enable_output_uV_n32           = ((uint64_t) cfg->dV_enable_output_uV) << 32u;
@@ -314,6 +324,42 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
 
     if (check_thresholds || cfg->immediate_pwr_good_signal)
     {
+  #ifdef CAPE_HW_V25
+        if (state.power_good_low)
+        {
+            if (V_mid_uV < cfg->V_pwr_good_disable_threshold_uV)
+            {
+                state.power_good_low = false;
+                GPIO_OFF(POWER_GOOD_LOW);
+            }
+        }
+        else
+        {
+            if (is_outputting && (V_mid_uV >= cfg->V_pwr_good_disable_threshold_uV))
+            {
+
+                state.power_good_low = true;
+                GPIO_ON(POWER_GOOD_LOW);
+            }
+        }
+        if (state.power_good_high)
+        {
+            if (V_mid_uV < cfg->V_pwr_good_enable_threshold_uV)
+            {
+                state.power_good_high = false;
+                GPIO_OFF(POWER_GOOD_HIGH);
+            }
+        }
+        else
+        {
+            if (is_outputting && (V_mid_uV >= cfg->V_pwr_good_enable_threshold_uV))
+            {
+                state.power_good_high = true;
+                GPIO_ON(POWER_GOOD_HIGH);
+            }
+        }
+        set_batok_pin(shared_mem, (state.power_good_high << 1u) | state.power_good_low);
+  #else
         /* emulate power-good-signal */
         if (state.power_good)
         {
@@ -327,6 +373,7 @@ uint32_t converter_update_states_and_output(volatile struct SharedMem *const sha
             }
         }
         set_batok_pin(shared_mem, state.power_good);
+  #endif // CAPE_HW_V25
     }
 
     if (is_outputting || (state.interval_startup_disabled_drain_n > 0u))
@@ -402,6 +449,7 @@ uint32_t get_I_mid_out_nA(void)
 bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
 
 #endif // EMU_SUPPORT
+
 
 void set_batok_pin(volatile struct SharedMem *const shared_mem, const bool_ft value)
 {

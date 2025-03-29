@@ -115,6 +115,8 @@ class ShepherdIO:
             raise RuntimeError
 
         if mode == "harvester":
+            if not commons.CAPE_HAS_HRV:
+                raise RuntimeError("Harvester mode not available for that Cape")
             sfs.load_pru_firmware("pru0-shepherd-HRV")
         else:
             sfs.load_pru_firmware("pru0-shepherd-EMU")
@@ -347,6 +349,8 @@ class ShepherdIO:
         :param state: bool, enable to get ADC out of reset
         :return:
         """
+        if not commons.CAPE_HAS_HRV:
+            return
         state_str = "enabled" if state else "disabled"
         log.debug("Set Recorder of shepherd-cape to %s", state_str)
         self.gpios["en_recorder"].write(value=state)

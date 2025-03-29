@@ -390,7 +390,7 @@ int main(void)
     shared_memory->gpio_pin_state                    = 0u;
 
     shared_memory->vsource_batok_trigger_for_pru1    = false;
-    shared_memory->vsource_batok_pin_value           = false;
+    shared_memory->vsource_batok_pin_value           = 0u;
 
     /* minimal init for these structs to make them safe */
     /* NOTE: more inits are done in kernel */

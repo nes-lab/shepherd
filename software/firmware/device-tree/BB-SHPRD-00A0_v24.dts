@@ -25,53 +25,55 @@
         "P8_11", /*     pru0_dbg_Led1 */
         "P8_12", /*     pru0_dbg_Led0 */
         "P8_13", /*     EN_Shepherd */
-        "P8_14", /*     target_GPIO7 */
+        "P8_14", /*     target_GPIO0 */
         "P8_15", /* 	target_GPIO3 */
         "P8_16", /* 	target_GPIO2 */
-        "P8_17", /* 	target_GPIO8 */
+        "P8_17", /* 	target_GPIO1 */
         "P8_18", /* 	BTN Sense */
         "P8_19", /* 	BTN Led */
 
         "P8_26", /* 	target_GPIO4 */
-        "P8_27", /* 	pru1_target_gpio8 */
-        "P8_28", /* 	pru1_target_gpio10, pru1_dbg_Led0 */
-        "P8_29", /* 	pru1_target_gpio9 */
-        "P8_30", /* 	pru1_target_gpio11, pru1_dbg_Led1 */
+        "P8_27", /* 	pru1_target_uart-tx */
+        "P8_28", /* 	pru1_dbg_Led0 */
+        "P8_29", /* 	pru1_target_batOK */
+        "P8_30", /* 	pru1_dbg_Led1 */
         "P8_31", /* 	IO-Dir Program1 TDIO */
         "P8_32", /* 	IO-Dir Program2 TMS */
-        "P8_33", /* 	target_program2_io */
+        "P8_33", /* 	target_swd2_io */
         "P8_34", /* 	target_GPIO6 */
-        "P8_35", /*     target_program2_CLK */
+        "P8_35", /*     target_swd2_CLK */
         "P8_36", /*     target_GPIO5 */
-        "P8_37", /*     IO_DIR_GROUP A */
-        "P8_38", /*     IO_DIR_GROUP B */
+        "P8_37", /*     IO_DIR_GPIO 0to3 */
+        "P8_38", /*     IO_DIR_UART-TX */
         "P8_39", /* 	pru1_target_gpio6 */
-        "P8_40", /* 	pru1_target_gpio7 */
+        "P8_40", /* 	pru1_target_uart-tx */
         "P8_41", /* 	pru1_target_gpio4 */
         "P8_42", /* 	pru1_target_gpio5 */
         "P8_43", /* 	pru1_target_gpio2 */
         "P8_44", /* 	pru1_target_gpio3 */
-        "P8_45", /* 	pru1_target_gpio0 (uart RX) */
-        "P8_46", /* 	pru1_target_gpio1 (uart TX) */
+        "P8_45", /* 	pru1_target_gpio0 */
+        "P8_46", /* 	pru1_target_gpio1 */
 
         "P9_11", /* 	target_io_SEL */
         "P9_12", /* 	target_io_EN */
         "P9_13", /* 	target_Pwr_SEL */
-        "P9_14", /*     IO_DIR_GROUP C */
+        "P9_14", /*     EN_Recorder */
 
         "P9_16", /*     EN_Emulator */
-        "P9_17", /* 	target_program1_clk */
-        "P9_18", /* 	target_program1_io */
+        "P9_17", /* 	target_swd1_clk */
+        "P9_18", /* 	target_swd1_io */
 
         "P9_23", /* 	Mem_WP */
 
-        "P9_27", /* 	pru0 power good Low */
+        "P9_25", /* 	pru0 SPI_CS_ADC2_REC */
+
+        "P9_27", /* 	pru0 SPI_CS_DAC_REC */
         "P9_28", /* 	pru0 SPI_CS_DAC_EMU */
         "P9_29", /* 	pru0 SPI_MOSI */
         "P9_30", /* 	pru0 SPI_MISO */
         "P9_31", /* 	pru0 SPI_SCK */
 
-        "P9_41", /* 	pru0 power good High */
+        "P9_41", /* 	pru0 SPI_CS_ADC1_REC */
         "P9_42", /* 	pru0 SPI_CS_ADC_EMU */
 
         /* Realtime Units */
@@ -132,9 +134,9 @@
 
             P8_26(MUX_MODE7 | RX_ACTIVE)    // gpio1[29]
             P8_27(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r31_8
-            P8_28(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r30_10, MODE5 if used as LED
-            P8_29(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r30_9
-            P8_30(MUX_MODE6 | RX_ACTIVE)    // pr1_pru1_pru_r30_11, MODE5 if used as LED
+            P8_28(MUX_MODE5)                // pr1_pru1_pru_r30_10
+            P8_29(MUX_MODE5)                // pr1_pru1_pru_r30_9   BATOK, only output
+            P8_30(MUX_MODE5)                // pr1_pru1_pru_r30_11
 
             P8_31(MUX_MODE7)                // gpio0[10]
             P8_32(MUX_MODE7)                // gpio0[11]
@@ -166,13 +168,15 @@
 
             P9_23(MUX_MODE7)                // gpio1[17]
 
-            P9_27(MUX_MODE5)                // pr1_pru0_pru_r30_5, power good low
+            P9_25(MUX_MODE5)                // pr1_pru0_pru_r30_7
+
+            P9_27(MUX_MODE5)                // pr1_pru0_pru_r30_5
             P9_28(MUX_MODE5)                // pr1_pru0_pru_r30_3
             P9_29(MUX_MODE5)                // pr1_pru0_pru_r30_1
             P9_30(MUX_MODE6 | RX_ACTIVE)    // pr1_pru0_pru_r31_2
             P9_31(MUX_MODE5)                // pr1_pru0_pru_r30_0
 
-            P9_41B(MUX_MODE5)               // pr1_pru0_pru_r30_6, power good high
+            P9_41B(MUX_MODE5)               // pr1_pru0_pru_r30_6
             P9_42B(MUX_MODE5)               // pr1_pru0_pru_r30_4
 
             // just for tests, does not hinder uart-module from loading

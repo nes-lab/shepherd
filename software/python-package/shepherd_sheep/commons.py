@@ -7,6 +7,11 @@ corresponding implementation in `software/firmware/include/commons.h`
 
 """
 
+# TODO: this could be done by asking the eeprom
+CAPE_HW_VER = 25
+CAPE_HAS_HRV = CAPE_HW_VER != 25
+
+
 MAX_GPIO_EVT_PER_BUFFER = 16_384  # 2^14
 # TODO: replace by (currently non-existing) sysfs_interface
 
@@ -61,7 +66,7 @@ pru_errors: dict[int, str] = {
 
 # fmt: off
 # ruff: noqa: E241, E501
-GPIO_LOG_BIT_POSITIONS = {
+GPIO_LOG_BIT_POSITIONS_V24 = {
     0: {"pru_reg": "r31_00", "name": "tgt_gpio0",   "bb_pin": "P8_45", "sys_pin": "P8_14", "sys_reg": "26"},
     1: {"pru_reg": "r31_01", "name": "tgt_gpio1",   "bb_pin": "P8_46", "sys_pin": "P8_17", "sys_reg": "27"},
     2: {"pru_reg": "r31_02", "name": "tgt_gpio2",   "bb_pin": "P8_43", "sys_pin": "P8_16", "sys_reg": "14"},
@@ -76,4 +81,22 @@ GPIO_LOG_BIT_POSITIONS = {
 # Note: this table is copied (for hdf5-reference) from pru1/main.c, HW-Rev2.4b
 # Note: datalib has gpio-models + data! this lives now in
 #       shepherd_core/shepherd_core/data_models/testbed/gpio_fixture.yaml
+GPIO_LOG_BIT_POSITIONS_V25 = {
+    0: {"pru_reg":  "r31_00", "name": "tgt_gpio00_uRx", "bb_pin": "P8_45", "sys_pin": "P9_26", "sys_reg": "14"},
+    1: {"pru_reg":  "r31_01", "name": "tgt_gpio01_uTx", "bb_pin": "P8_46", "sys_pin": "P9_24", "sys_reg": "15"},
+    2: {"pru_reg":  "r31_02", "name": "tgt_gpio02",     "bb_pin": "P8_43", "sys_pin": "P8_16", "sys_reg": "46"},
+    3: {"pru_reg":  "r31_03", "name": "tgt_gpio03",     "bb_pin": "P8_44", "sys_pin": "P8_15", "sys_reg": "47"},
+    4: {"pru_reg":  "r31_04", "name": "tgt_gpio04",     "bb_pin": "P8_41", "sys_pin": "P8_26", "sys_reg": "61"},
+    5: {"pru_reg":  "r31_05", "name": "tgt_gpio05",     "bb_pin": "P8_42", "sys_pin": "P8_36", "sys_reg": "80"},
+    6: {"pru_reg":  "r31_06", "name": "tgt_gpio06",     "bb_pin": "P8_39", "sys_pin": "P8_34", "sys_reg": "81"},
+    7: {"pru_reg":  "r31_07", "name": "tgt_gpio07",     "bb_pin": "P8_40", "sys_pin": "P8_14", "sys_reg": "26"},
+    8: {"pru_reg":  "r31_08", "name": "tgt_gpio08",     "bb_pin": "P8_27", "sys_pin": "P8_17", "sys_reg": "27"},
+    9: {"pru_reg":  "r31_09", "name": "tgt_gpio09",     "bb_pin": "P8_29", "sys_pin": "",      "sys_reg": ""},
+    10: {"pru_reg": "r31_10", "name": "tgt_gpio10",     "bb_pin": "P8_28", "sys_pin": "",      "sys_reg": ""},
+    11: {"pru_reg": "r31_11", "name": "tgt_gpio11",     "bb_pin": "P8_30", "sys_pin": "",      "sys_reg": ""},
+    12: {"pru_reg": "r30_05", "name": "pwr_good_low",   "bb_pin": "P9_27", "sys_pin": "",      "sys_reg": ""},
+    13: {"pru_reg": "r30_06", "name": "pwr_good_high",  "bb_pin": "P9_41B","sys_pin": "",      "sys_reg": ""},
+    # TODO: cape 25d has swapped uart, 14 / P9_26 is Rx-Input
+}
+GPIO_LOG_BIT_POSITIONS = GPIO_LOG_BIT_POSITIONS_V25 if CAPE_HW_VER == 25 else GPIO_LOG_BIT_POSITIONS_V24
 # fmt: on

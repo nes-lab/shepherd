@@ -122,7 +122,7 @@ pru1_r31_11   TARGET_GPIO11     P8_30   - !! PRU1-LED1, direction must be change
 
 pru0_r30_05   PWR_GOOD_L        P9_27     (was CS_DAC_REC), gets added to bit 12 for GPIO-Sampling
 pru0_r30_06   PWR_GOOD_H        P9_41B    (was CS_ADC1_REC), gets added to bit 13 for GPIO-Sampling
-pru0_r30_07   -                 P9_25     (was CS_ADC2_REC)
+pru0_r30_07   - (free)          P9_25     (was CS_ADC2_REC)
 ```
 
 ## Commissioning Steps & Tests

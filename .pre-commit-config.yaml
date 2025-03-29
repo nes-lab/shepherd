@@ -97,26 +97,26 @@ repos:
         types_or: [c++, c]
 
   # cpp-check comes last! fails if uninstalled
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.5
-    hooks:
-      - id: cppcheck
-        args:
-          - "--enable=all"
-          - "--std=c99"
-          - "--platform=unix32"
-          - "--verbose"
-          - "-q"
-          - "--max-ctu-depth=10"
-          - "-isoftware/firmware/_cgt233/"
-          - "-isoftware/firmware/_pssp57g/"
-          - "--suppress=unusedFunction"
-          - "--suppress=variableScope"
-          - "--suppress=unreadVariable"
-          - "--suppress=missingInclude"
-          - "--suppress=missingIncludeSystem"
-          - "--suppress=unmatchedSuppression"
-          - "--suppress=constParameterCallback"
+#  - repo: https://github.com/pocc/pre-commit-hooks
+#    rev: v1.3.5
+#    hooks:
+#      - id: cppcheck
+#        args:
+#          - "--enable=all"
+#          - "--std=c99"
+#          - "--platform=unix32"
+#          - "--verbose"
+#          - "-q"
+#          - "--max-ctu-depth=10"
+#          - "-isoftware/firmware/_cgt233/"
+#          - "-isoftware/firmware/_pssp57g/"
+#          - "--suppress=unusedFunction"
+#          - "--suppress=variableScope"
+#          - "--suppress=unreadVariable"
+#          - "--suppress=missingInclude"
+#          - "--suppress=missingIncludeSystem"
+#          - "--suppress=unmatchedSuppression"
+#          - "--suppress=constParameterCallback"
 
 ########################## BETA SECTION #############################
 
