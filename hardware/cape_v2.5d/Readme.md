@@ -84,6 +84,7 @@
 - screw-hole could have vias around (safer, if inner metal scrapes off)
 - show label on 10mV
 - Label reads "v2.5c"
+- uart-sys pins are swapped, R66 & R68 need to be crossed manually
 
 ## Target Pin Def
 
@@ -103,12 +104,12 @@ r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15] -> 15
 r30_09/out  TARGET_BAT_OK   P8_29	-
 ```
 
-### Target Port - Cape 2.5 (this revision)
+### Target Port - Cape 2.5d (this revision)
 
 ```
 pru_reg       name              BB_pin	sys_pin sys_reg
-pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART)
-pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART)
+pru1_r31_00   TARGET_GPIO0/uRx  P8_45	P9_26, g0[14] -> 14 (also Sys/PRU-UART) SYS_PINs have swapped UART
+pru1_r31_01   TARGET_GPIO1/uTx  P8_46	P9_24, g0[15] -> 15 (also Sys/PRU-UART) SYS_PINs have swapped UART
 pru1_r31_02   TARGET_GPIO2      P8_43	P8_16, g1[14] -> 46
 pru1_r31_03   TARGET_GPIO3      P8_44	P8_15, g1[15] -> 47
 pru1_r31_04   TARGET_GPIO4      P8_41	P8_26, g1[29] -> 61
@@ -122,7 +123,7 @@ pru1_r31_11   TARGET_GPIO11     P8_30   - !! PRU1-LED1, direction must be change
 
 pru0_r30_05   PWR_GOOD_L        P9_27     (was CS_DAC_REC), gets added to bit 12 for GPIO-Sampling
 pru0_r30_06   PWR_GOOD_H        P9_41B    (was CS_ADC1_REC), gets added to bit 13 for GPIO-Sampling
-pru0_r30_07   -                 P9_25     (was CS_ADC2_REC)
+pru0_r30_07   - (free)          P9_25     (was CS_ADC2_REC)
 ```
 
 ## Commissioning Steps & Tests
