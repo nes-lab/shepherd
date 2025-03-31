@@ -74,17 +74,20 @@
 ## Errata & future Improvements
 
 - 1uF 10V is both used in 0402 & 0603
-- holes on panel can be 3.1 mm for stencil printer
+- holes on panel can be 3.2 mm for stencil printer
 - QR Code can now be directly created in Altium
-- perforated breaking lines on panels
+- perforated breaking lines on panels  (extension of milled line)
 - cage with paste?
 - PI5 is the hardest part to place (but has to be replaced anyway)
 - JST-Connector needs paste on mech-pad
 - panel-bridge under JST - bad coincidence
 - screw-hole could have vias around (safer, if inner metal scrapes off)
 - show label on 10mV
-- Label reads "v2.5c"
-- uart-sys pins are swapped, R66 & R68 need to be crossed manually
+- add testpoints for voltages, avoids touching components
+- Label reads "v2.5c" not 2.5d
+- **uart-sys pins are swapped, R66 & R68 need to be crossed manually**
+- larger tag-field (upper left corner)
+- header to interface SBC as SMD?
 
 ## Target Pin Def
 
