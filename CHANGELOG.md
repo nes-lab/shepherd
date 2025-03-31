@@ -1,5 +1,9 @@
 # History of Changes
 
+## 0.8.5
+
+- sheep bugfix that prevented clean exit after execution (unhandled filled queue did not release thread)
+
 ## 0.8.4
 
 - sheep programming needed some improvements
