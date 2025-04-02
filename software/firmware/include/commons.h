@@ -18,7 +18,7 @@ enum MsgType
     MSG_PGM_ERROR_WRITE           = 0x93u, // val0: addr, val1: data
     MSG_PGM_ERROR_VERIFY          = 0x94u, // val0: addr, val1: data (original)
     //MSG_PGM_ERROR_ERASE           = 0x95u,
-    MSG_PGM_ERROR_PARSE           = 0x96u, // val0: ihex_return
+    MSG_PGM_ERROR_PARSE           = 0x96u, // val0: ihex_return, val1: line number of hex
     // DEBUG
     MSG_DBG_ADC                   = 0xA0u,
     MSG_DBG_DAC                   = 0xA1u, // TODO: rename: MSG_CTRL_DAC

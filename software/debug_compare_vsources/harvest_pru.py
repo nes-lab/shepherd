@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 from pathlib import Path
+from pathlib import PurePosixPath
 
 from config import host_selected
 from config import hrv_list
@@ -18,7 +19,7 @@ results: dict = {}
 
 for hrv_name in hrv_list:
     file_name = f"hrv_{hrv_name}.h5"
-    path_remote = Path("/tmp/" + file_name)  # noqa: S108
+    path_remote = PurePosixPath("/tmp/" + file_name)  # noqa: S108
     path_local = path_here / host_selected / file_name
 
     if not path_local.exists():

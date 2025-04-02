@@ -70,6 +70,7 @@ def local_herd(tmp_path: Path) -> Path:
         "/etc/shepherd/herd.yml",
         "~/herd.yml",
         "inventory/herd.yml",
+        "herd.yml",
     ]
     host_path = None
     for inventory in inventories:

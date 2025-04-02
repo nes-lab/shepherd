@@ -46,7 +46,7 @@ def test_emu_example(cli_runner: CliRunner) -> None:
     wait_for_end(cli_runner, tmin=20)
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(80)
 @pytest.mark.usefixtures("_herd_stopped")
 def test_emu_example_fail(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(

@@ -9,6 +9,7 @@ Example assumes:
 """
 
 from pathlib import Path
+from pathlib import PurePosixPath
 
 from shepherd_core import TestbedClient
 from shepherd_core.data_models import EnergyEnvironment
@@ -90,7 +91,7 @@ with Herd(inventory="/etc/shepherd/herd.yml") as herd:
 
     if variant1:
         # more control
-        remote_config = Path("/etc/shepherd/config_task.yaml")
+        remote_config = PurePosixPath("/etc/shepherd/config_task.yaml")
         herd.put_file(path_tasks, dst=remote_config, force_overwrite=True)
         command = f"shepherd-sheep --verbose run {remote_config.as_posix()}"
         replies = herd.run_cmd(sudo=True, cmd=command)

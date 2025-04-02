@@ -111,7 +111,8 @@ class ShepherdIO:
         Args:
             mode (str): Shepherd mode, see sysfs_interface for more
         """
-        check_sys_access()
+        if check_sys_access():
+            raise RuntimeError
 
         if mode == "harvester":
             sfs.load_pru_firmware("pru0-shepherd-HRV")

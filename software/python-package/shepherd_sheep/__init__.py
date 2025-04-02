@@ -40,7 +40,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.8.3"
+__version__ = "0.8.4"
 
 __all__ = [
     "EEPROM",
@@ -100,7 +100,8 @@ def run_emulator(cfg: EmulationTask) -> bool:
 
 def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
-    check_sys_access()  # not really needed here
+    if check_sys_access():  # not really needed here
+        return True
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
         modify_uid(file_path, cfg.custom_id)
@@ -110,7 +111,7 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     return False
 
 
-def run_programmer(cfg: ProgrammingTask) -> bool:
+def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     stack = ExitStack()
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = False
@@ -138,6 +139,18 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
         if d_type != FirmwareDType.base64_hex:
             log.warning("Firmware seems not to be HEX - but will try to program anyway")
 
+        # derive target-info
+        target = cfg.mcu_type.lower()
+        if "msp430" in target:
+            target = "msp430"
+        elif "nrf52" in target:
+            target = "nrf52"
+        else:
+            log.warning(
+                "MCU-Type needs to be [msp430, nrf52] but was: %s",
+                target,
+            )
+
         # WORKAROUND that realigns hex for misguided programmer
         path_str = cfg.firmware_file.as_posix()
         path_tmp = tempfile.TemporaryDirectory()
@@ -153,17 +166,15 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             path_str,
             "-Intel",
             # fill all incomplete 16-bit words with 0xFF. The range is limited to the application
-            "-fill",
-            "0xFF",
+            "-fill=0xFF",
             "-within",
             path_str,
             "-Intel",
-            "-range-padding",
-            "4",
+            "-range-padding=4",
             # generate hex records with 16 byte data length (default 32 byte)
             "-Output_Block_Size=16",
-            # generate 16-bit address records. Do no use for address ranges > 64K
-            "-address-length=2",
+            # generate 16- or 32-bit address records. Do not use 16-bit for address ranges > 64K
+            f"-address-length={2 if 'msp' in target else 4}",
             # generate a Intel hex file
             "-o",
             file_tmp.as_posix(),
@@ -176,25 +187,20 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
             raise SystemExit  # noqa: TRY301
         log.debug("\tconverted to ihex")
 
+        if not (0.1 <= rate_factor <= 1.0):
+            raise ValueError("Scaler for data-rate must be between 0.1 and 1.0")
+        _data_rate = int(rate_factor * cfg.datarate)
+
         with file_tmp.resolve().open("rb") as fw:
             try:
                 dbg.shared_mem.write_firmware(fw.read())
-                target = cfg.mcu_type.lower()
-                if "msp430" in target:
-                    target = "msp430"
-                elif "nrf52" in target:
-                    target = "nrf52"
-                else:
-                    log.warning(
-                        "MCU-Type needs to be [msp430, nrf52] but was: %s",
-                        target,
-                    )
+
                 if cfg.simulate:
                     target = "dummy"
                 if cfg.mcu_port == 1:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        cfg.datarate,
+                        _data_rate,
                         5,
                         4,
                         10,
@@ -202,12 +208,14 @@ def run_programmer(cfg: ProgrammingTask) -> bool:
                 else:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        cfg.datarate,
+                        _data_rate,
                         8,
                         9,
                         11,
                     )
-                log.info("Programmer initialized, will start now")
+                log.info(
+                    "Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate
+                )
                 sysfs_interface.start_programmer()
             # except OSError as xpt:
             #    log.exception("OSError - Failed to initialize Programmer", str(xpt))
@@ -287,7 +295,15 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, FirmwareModTask):
             failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            failed |= run_programmer(element)
+            retries = 1 if element.simulate else 5
+            rate_factor = 1.0
+            had_error = True
+            while retries > 0 and had_error:
+                log.info("Starting Programmer (%d retries left)", retries)
+                retries -= 1
+                had_error = run_programmer(element, rate_factor)
+                rate_factor *= 0.6  # 40% slower each failed attempt
+            failed |= had_error
         else:
             raise TypeError("Task not implemented: %s", type(element))
         reset_verbosity()

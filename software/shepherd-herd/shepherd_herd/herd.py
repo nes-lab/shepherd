@@ -1,12 +1,15 @@
 """Herd-Baseclass for controlling the sheep-observer-nodes."""
 
 import contextlib
+import logging
 import threading
 import time
 from datetime import datetime
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
+from pathlib import PurePath
+from pathlib import PurePosixPath
 from types import TracebackType
 from typing import Any
 from typing import ClassVar
@@ -33,16 +36,16 @@ from .logger import logger
 
 
 class Herd:
-    path_default = Path("/var/shepherd/recordings/")
+    path_default = PurePosixPath("/var/shepherd/recordings/")
     _remote_paths_allowed: ClassVar[set] = {
         path_default,  # default
-        Path("/var/shepherd/"),
-        Path("/etc/shepherd/"),
-        Path("/tmp/"),  # noqa: S108
+        PurePosixPath("/var/shepherd/"),
+        PurePosixPath("/etc/shepherd/"),
+        PurePosixPath("/tmp/"),  # noqa: S108
     }
 
     timestamp_diff_allowed = 10
-    start_delay_s = 30
+    start_delay_s = 40
 
     def __init__(
         self,
@@ -70,7 +73,7 @@ class Herd:
                     "/etc/shepherd/herd.yml",
                     "~/herd.yml",
                     "inventory/herd.yml",
-                    "herd.yml",
+                    "herd.yml",  # TODO: use XDG_CACHE_HOME
                 ]
             else:
                 inventories = [inventory]
@@ -223,16 +226,26 @@ class Herd:
             cnx.close()
 
     @validate_call
-    def run_cmd(self, cmd: str, *, sudo: bool = False) -> dict[str, Result]:
+    def run_cmd(
+        self,
+        cmd: str,
+        exclusive_host: str | None = None,
+        *,
+        sudo: bool = False,
+        verbose: bool = True,
+    ) -> dict[str, Result]:
         """Run COMMAND on the shell -> Returns output-results.
 
         NOTE: in case of error on a node that corresponding dict value is unavailable
         """
         results: dict[str, Result] = {}
         threads = {}
-        logger.info("Sheep-CMD = %s", cmd)
+        level = logging.INFO if verbose else logging.DEBUG
+        logger.log(level, "Sheep-CMD = %s", cmd)
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
+            if exclusive_host and _name != exclusive_host:
+                continue
             threads[_name] = threading.Thread(
                 target=self._thread_run,
                 args=(cnx, sudo, cmd, results, _name),
@@ -252,8 +265,8 @@ class Herd:
             logger.error("ZERO nodes answered - check your config")
         return results
 
+    @staticmethod
     def print_output(
-        self,
         replies: dict[str, Result],
         *,
         verbose: bool = False,
@@ -276,7 +289,7 @@ class Herd:
     def _thread_put(
         cnx: Connection,
         src: Path | StringIO,
-        dst: Path,
+        dst: PurePosixPath,
         force_overwrite: bool,  # noqa: FBT001
     ) -> None:
         if isinstance(src, StringIO):
@@ -286,15 +299,15 @@ class Herd:
             src = str(src)
 
         if not dst.suffix and not str(dst).endswith("/"):
-            dst = str(dst) + "/"
+            dst = PurePosixPath(str(dst) + "/")
 
         if not cnx.is_connected:
             return
 
-        tmp_path = Path("/tmp") / filename  # noqa: S108
+        tmp_path = PurePosixPath("/tmp") / filename  # noqa: S108
         logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
         try:
-            cnx.put(src, str(tmp_path))
+            cnx.put(src, tmp_path.as_posix())
             xtr_arg = "-f" if force_overwrite else "-n"
             cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
@@ -308,7 +321,7 @@ class Herd:
     def put_file(
         self,
         src: StringIO | Path | str,
-        dst: Path | str,
+        dst: PurePosixPath | str,
         *,
         force_overwrite: bool = False,
     ) -> None:
@@ -325,15 +338,16 @@ class Herd:
 
         if dst is None:
             dst_path = self.path_default
-            logger.debug("Remote path not provided -> default = %s", dst_path)
+            logger.debug("Remote path not provided -> use default = %s", dst_path)
         else:
-            dst_path = Path(dst).absolute()
+            dst_path = PurePosixPath(dst)
+            dst_posix = dst_path.as_posix()
             is_allowed = False
             for path_allowed in self._remote_paths_allowed:
-                if str(dst_path).startswith(str(path_allowed)):
+                if dst_posix.startswith(path_allowed.as_posix()):
                     is_allowed = True
             if not is_allowed:
-                raise NameError("provided path was forbidden ('%s')", dst_path.as_posix())
+                raise NameError("provided path was forbidden ('%s')", dst_posix)
 
         threads = {}
         for cnx in self.group:
@@ -355,11 +369,11 @@ class Herd:
             del thread  # ... overcautious
 
     @staticmethod
-    def _thread_get(cnx: Connection, src: Path, dst: Path) -> None:
+    def _thread_get(cnx: Connection, src: PurePosixPath, dst: Path) -> None:
         if not cnx.is_connected:
             return
         try:
-            cnx.get(str(src), local=str(dst))
+            cnx.get(src.as_posix(), local=dst.as_posix())
         except (NoValidConnectionsError, SSHException, TimeoutError):
             logger.error(
                 "[%s] failed to get '%s' -> will exclude node from inventory",
@@ -371,8 +385,9 @@ class Herd:
     @validate_call
     def get_file(
         self,
-        src: Path | str,
+        src: PurePosixPath | str,
         dst_dir: Path | str,
+        exclusive_host: str | None = None,
         *,
         timestamp: bool = False,
         separate: bool = False,
@@ -386,7 +401,9 @@ class Herd:
         dst_paths = {}
 
         # assemble file-names
-        src_path = Path(src) if Path(src).is_absolute() else Path(self.path_default) / src
+        src_path: PurePosixPath = (
+            PurePosixPath(src) if PurePosixPath(src).is_absolute() else self.path_default / src
+        )
 
         for i, cnx in enumerate(self.group):
             hostname = self.hostnames[cnx.host]
@@ -395,14 +412,14 @@ class Herd:
                 xtra_node = ""
             else:
                 target_path = Path(dst_dir)
-                xtra_node = f"_{hostname}"
+                xtra_node = "" if hostname in src_path.stem else f"_{hostname}"
 
-            dst_paths[i] = target_path / (
-                str(src_path.stem) + xtra_ts + xtra_node + src_path.suffix
-            )
+            dst_paths[i] = target_path / (src_path.stem + xtra_ts + xtra_node + src_path.suffix)
 
         # check if file is present
-        replies = self.run_cmd(sudo=False, cmd=f"test -f {src_path}")
+        replies = self.run_cmd(
+            sudo=False, exclusive_host=exclusive_host, cmd=f"test -f {src_path}", verbose=False
+        )
 
         # try to fetch data
         for i, cnx in enumerate(self.group):
@@ -470,7 +487,7 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
         if len(ts_nows) == 0:
             raise RuntimeError("No active hosts found to synchronize.")
@@ -493,7 +510,7 @@ class Herd:
     def put_task(
         self,
         task: Path | ShpModel,
-        remote_path: Path | str = "/etc/shepherd/config.yaml",
+        remote_path: PurePosixPath | str = "/etc/shepherd/config.yaml",
     ) -> None:
         """Transfer shepherd tasks to the group of hosts / sheep.
 
@@ -525,8 +542,8 @@ class Herd:
 
         if self.check_status(warn=True):
             raise RuntimeError("Shepherd still active!")
-        if not isinstance(remote_path, Path):
-            remote_path = Path(remote_path)
+        if not isinstance(remote_path, PurePath):
+            remote_path = PurePosixPath(remote_path)
 
         logger.info(
             "Rolling out the config to '%s'",
@@ -545,7 +562,7 @@ class Herd:
         :param warn:
         :return: True is one node is still active
         """
-        replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd")
+        replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd", verbose=False)
         active = False
 
         for cnx in self.group:
@@ -557,15 +574,34 @@ class Herd:
                 if warn:
                     logger.warning(
                         "shepherd still active on %s",
-                        self.hostnames[cnx.host],
+                        hostname,
                     )
                 else:
                     logger.debug(
                         "shepherd still active on %s",
-                        self.hostnames[cnx.host],
+                        hostname,
                     )
                     # shepherd-herd -v shell-cmd -s "systemctl status shepherd"
         return active
+
+    def get_last_usage(self) -> timedelta | None:
+        """Gives time-delta of last testbed usage."""
+        replies1 = self.run_cmd(sudo=True, cmd="tail -n 1 /var/shepherd/log.csv", verbose=False)
+        replies2 = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
+        deltas = []
+        for cnx in self.group:
+            hostname = self.hostnames[cnx.host]
+            if not isinstance(replies1.get(hostname), Result):
+                continue
+            if not isinstance(replies2.get(hostname), Result):
+                continue
+            if replies1[hostname].exited == 0:
+                ts_end = datetime.fromisoformat(replies1[hostname].stdout.split(",")[1].strip())
+                ts_now = datetime.fromisoformat(replies2[hostname].stdout.strip())
+                deltas.append(ts_now - ts_end)
+        if len(deltas) == 0:
+            return None
+        return min(deltas)
 
     def start_measurement(self) -> int:
         """Start shepherd service on the group of hosts."""
@@ -614,7 +650,7 @@ class Herd:
                 "Inventorize needs a dir, not a file '%s'",
                 output_path.as_posix(),
             )
-        file_path = Path("/var/shepherd/inventory.yaml")
+        file_path = PurePosixPath("/var/shepherd/inventory.yaml")
         self.run_cmd(
             sudo=True,
             cmd=f"shepherd-sheep inventorize --output-path {file_path.as_posix()}",
@@ -651,7 +687,7 @@ class Herd:
             exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
 
         # Get the current time on each target node
-        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds")
+        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
         self.print_output(replies_date, verbose=True)
         # calc diff
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies_date.values()]
@@ -669,7 +705,7 @@ class Herd:
     @validate_call
     def run_task(self, config: Path | ShpModel, *, attach: bool = False) -> int:
         if attach:
-            remote_path = Path("/etc/shepherd/config_for_herd.yaml")
+            remote_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
@@ -679,7 +715,7 @@ class Herd:
             self.print_output(replies, verbose=True)
 
         else:
-            remote_path = Path("/etc/shepherd/config.yaml")
+            remote_path = PurePosixPath("/etc/shepherd/config.yaml")
             self.put_task(config, remote_path)
             exit_code = self.start_measurement()
             logger.info("Shepherd started.")
@@ -714,12 +750,16 @@ class Herd:
                     separate=separate,
                     delete_src=delete_src,
                 )
-            if hasattr(task, "get_output_paths"):
+            elif hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
-                    logger.info("Remote path of '%s' is: %s, WON'T COPY", host, path)
-                    raise RuntimeError(
-                        "FN not finished, not needed ATM"
-                    )  # TODO: will it be needed?
+                    logger.info("Remote path of '%s' is: %s", host, path)
+                    failed |= self.get_file(
+                        path,
+                        dst_dir,
+                        exclusive_host=host,
+                        separate=separate,
+                        delete_src=delete_src,
+                    )
         return failed
 
     def alive(self) -> bool:
@@ -728,4 +768,4 @@ class Herd:
         - Group is list of hosts with live connection,
         - hostnames contains all hosts in inventory
         """
-        return len(self.group) == len(self.hostnames)
+        return len(self.group) >= len(self.hostnames)

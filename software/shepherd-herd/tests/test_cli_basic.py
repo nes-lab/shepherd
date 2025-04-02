@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pytest
@@ -170,7 +169,7 @@ def test_provide_limit_fail(cli_runner: CliRunner, local_herd: Path) -> None:
 @pytest.mark.usefixtures("_herd_alive")
 def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
-    elem_count1 = len(os.listdir(tmp_path))
+    elem_count1 = len(list(tmp_path.iterdir()))
     res = cli_runner.invoke(
         cli,
         [
@@ -193,7 +192,7 @@ def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
         ],
     )
     assert res.exit_code == 0
-    elem_count2 = len(os.listdir(tmp_path))
+    elem_count2 = len(list(tmp_path.iterdir()))
     # file got deleted in prev retrieve, so fail now
     res = cli_runner.invoke(
         cli,
@@ -206,7 +205,7 @@ def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
         ],
     )
     assert res.exit_code != 0
-    elem_count3 = len(os.listdir(tmp_path))
+    elem_count3 = len(list(tmp_path.iterdir()))
     assert elem_count1 < elem_count2
     assert elem_count2 == elem_count3
 
@@ -214,7 +213,7 @@ def test_distribute_retrieve_std(cli_runner: CliRunner, tmp_path: Path) -> None:
 @pytest.mark.usefixtures("_herd_alive")
 def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
-    elem_count1 = len(os.listdir(tmp_path))
+    elem_count1 = len(list(tmp_path.iterdir()))
     dir_remote = "/etc/shepherd/"
     res = cli_runner.invoke(
         cli,
@@ -240,7 +239,7 @@ def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
         ],
     )
     assert res.exit_code == 0
-    elem_count2 = len(os.listdir(tmp_path))
+    elem_count2 = len(list(tmp_path.iterdir()))
     # file got deleted in prev retrieve, so fail now
     res = cli_runner.invoke(
         cli,
@@ -253,7 +252,7 @@ def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
         ],
     )
     assert res.exit_code != 0
-    elem_count3 = len(os.listdir(tmp_path))
+    elem_count3 = len(list(tmp_path.iterdir()))
     assert elem_count1 < elem_count2
     assert elem_count2 == elem_count3
 
@@ -261,7 +260,7 @@ def test_distribute_retrieve_etc(cli_runner: CliRunner, tmp_path: Path) -> None:
 @pytest.mark.usefixtures("_herd_alive")
 def test_distribute_retrieve_var(cli_runner: CliRunner, tmp_path: Path) -> None:
     test_file = generate_h5_file(tmp_path, "pytest_deploy.h5")
-    elem_count1 = len(os.listdir(tmp_path))
+    elem_count1 = len(list(tmp_path.iterdir()))
     dir_remote = "/var/shepherd/"
     res = cli_runner.invoke(
         cli,
@@ -287,7 +286,7 @@ def test_distribute_retrieve_var(cli_runner: CliRunner, tmp_path: Path) -> None:
         ],
     )
     assert res.exit_code == 0
-    elem_count2 = len(os.listdir(tmp_path))
+    elem_count2 = len(list(tmp_path.iterdir()))
     # file got deleted in prev retrieve, so fail now
     res = cli_runner.invoke(
         cli,
@@ -300,7 +299,7 @@ def test_distribute_retrieve_var(cli_runner: CliRunner, tmp_path: Path) -> None:
         ],
     )
     assert res.exit_code != 0
-    elem_count3 = len(os.listdir(tmp_path))
+    elem_count3 = len(list(tmp_path.iterdir()))
     assert elem_count1 < elem_count2
     assert elem_count2 == elem_count3
 

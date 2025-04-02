@@ -7,7 +7,6 @@ provided by the shepherd kernel module
 """
 
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -104,14 +103,15 @@ def disable_ntp() -> None:
     log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
-def check_sys_access(iteration: int = 1) -> None:
+def check_sys_access(iteration: int = 1) -> bool:
+    """Return True if access failed."""
     iter_max: int = 5
     try:  # test for correct usage -> fail early!
         get_mode()
     except FileNotFoundError:
         try:
             if iteration > iter_max:
-                sys.exit(1)
+                return True
             log.warning(
                 "Failed to access sysFS -> "
                 "will try to activate shepherd kernel module (attempt %d/%d)",
@@ -125,12 +125,13 @@ def check_sys_access(iteration: int = 1) -> None:
                 "RuntimeError: Failed to access sysFS -> "
                 "make sure shepherd kernel module is active!",
             )
-            sys.exit(1)
+            return True
     except PermissionError:
         log.error(
             "RuntimeError: Failed to access sysFS -> run shepherd-sheep with 'sudo'!",
         )
-        sys.exit(1)
+        return True
+    return False
 
 
 def wait_for_state(wanted_state: str, timeout: float) -> float:
@@ -614,18 +615,18 @@ def load_pru_firmware(value: str) -> None:
             break
     pru_num = 1 if ("pru1" in request) else 0
     log.debug("\t- set pru%d-firmware to '%s'", pru_num, request)
-    sys_str = f"/sys/shepherd/pru{pru_num}_firmware"
+    sys_path = Path(f"/sys/shepherd/pru{pru_num}_firmware")
     _count = 0
     while _count < 6:
         _count += 1
         try:
-            with Path(sys_str).open(
+            with sys_path.open(
                 "w",
                 encoding="utf-8",
             ) as file:
                 file.write(request)
             time.sleep(2)
-            with Path(sys_str).open(encoding="utf-8") as file:
+            with sys_path.open(encoding="utf-8") as file:
                 result = file.read().rstrip()
             if result == request:
                 return

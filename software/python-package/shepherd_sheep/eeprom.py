@@ -166,7 +166,7 @@ class EEPROM:
         for key, value in cape_data.items():
             self[key] = value
 
-    def _read_cape_data(self) -> CapeData:
+    def read_cape_data(self) -> CapeData:
         """Reads and returns BeagleBone cape data from EEPROM
 
         Returns:
@@ -204,7 +204,7 @@ class EEPROM:
             calibration_data_format["offset"],
             calibration_data_format["size"],
         )
-        cape = self._read_cape_data()
+        cape = self.read_cape_data()
         try:
             cal = CalibrationCape.from_bytestr(data, cape)
             log.debug("EEPROM provided calibration-settings")
