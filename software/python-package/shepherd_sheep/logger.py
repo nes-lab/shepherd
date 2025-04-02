@@ -1,3 +1,4 @@
+import atexit
 import logging.handlers
 import multiprocessing
 import sys
@@ -58,3 +59,14 @@ def get_message_queue() -> multiprocessing.Queue:
     - len is queue.qsize()
     """
     return queue
+
+
+def clear_message_queue() -> None:
+    """If no one reads the queue, the thread will not finish, so add option to empty it"""
+    log.removeHandler(queue_handler)
+    queue.cancel_join_thread()
+    queue.close()
+
+
+# last action on exit is to clear queue to prevent lockup
+atexit.register(clear_message_queue)

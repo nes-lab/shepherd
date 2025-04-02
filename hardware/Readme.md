@@ -18,14 +18,18 @@ Hardware-Subdirectories contain the necessary design-files to manufacture a shep
 
 More pictures are stored for QC in [planning-repo](https://github.com/orgua/shepherd_v2_planning/tree/main/doc_testbed/photos_PCBs).
 
+### Cape v2.5
+
+No pictures available yet. Hardware is currently tested and then deployed.
+
 ### Observers
 
-Assembled in August 2023 for the deployment at TU Dresden. These nodes contain:
+Assembled in October 2024 for the deployment at TU Dresden. These nodes contain:
 
 - TP-Link POE Splitter
 - BeagleBone Green
 - Shepherd Cape v2.4
-- nRF FRAM Target v1.0
+- [nRF FRAM Target v1.3](https://github.com/orgua/shepherd-targets/tree/main/hardware/shepherd_nRF_FRAM_Target_v1.3e)
 - Power-in-PCB
 - Laser-cut case
 

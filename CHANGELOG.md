@@ -1,5 +1,10 @@
 # History of Changes
 
+## 0.8.5
+
+- sheep bugfix that prevented clean exit after execution (unhandled filled queue did not release thread)
+- hw-designfiles - add cape 2.5e & move prior capes to `_deprecated`
+
 ## 0.8.4
 
 - sheep programming needed some improvements
