@@ -16,9 +16,7 @@
  * Changes in HW or ADC/DAC Config also change the calibration.data!
  * (ie. py-package/shepherd/calibration_default.py)
  */
-
 static bool_ft     dac_aux_link_to_main = false;
-static bool_ft     dac_aux_link_to_mid  = false;
 volatile uint8_t  *buf_inp_sample;
 volatile uint32_t *buf_out_voltage;
 volatile uint32_t *buf_out_current;
@@ -26,6 +24,7 @@ volatile uint32_t *buf_out_current;
 #ifdef EMU_SUPPORT
 
 struct IVSample    ivsample;
+static bool_ft     dac_aux_link_to_mid = false;
 
 static inline void fetch_iv_trace(const uint32_t index)
 {
@@ -113,7 +112,7 @@ static inline void sample_emulator()
         buf_out_voltage[index] = voltage_dac;
     }
 }
-#endif // EMU_SUPPORT
+
 
 static inline void sample_emu_loopback(const uint32_t sample_idx)
 {
@@ -121,6 +120,8 @@ static inline void sample_emu_loopback(const uint32_t sample_idx)
     buf_out_current[sample_idx] = ivsample.current;
     buf_out_voltage[sample_idx] = ivsample.voltage;
 }
+
+#endif // EMU_SUPPORT
 
 static inline void sample_emu_ADCs(const uint32_t sample_idx)
 {
@@ -150,7 +151,9 @@ void sample()
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ: return sample_emu_ADCs(SHARED_MEM.buffer_iv_idx);
         case MODE_HRV_ADC_READ: return sample_hrv_ADCs(SHARED_MEM.buffer_iv_idx);
+#ifdef EMU_SUPPORT
         case MODE_EMU_LOOPBACK: return sample_emu_loopback(SHARED_MEM.buffer_iv_idx);
+#endif // EMU_SUPPORT
         default: msgsys_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode, 0u);
     }
 }
@@ -264,7 +267,9 @@ void sample_init()
     const uint32_t          dac_ch_a_voltage_raw = SHARED_MEM.dac_auxiliary_voltage_raw & 0xFFFF;
     /* switch to set behavior of aux-channel (dac A) */
     dac_aux_link_to_main = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;
-    dac_aux_link_to_mid  = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
+#ifdef EMU_SUPPORT
+    dac_aux_link_to_mid = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 2u;
+#endif // EMU_SUPPORT
 
     /* deactivate hw-units when not needed, initialize the other */
     const bool_ft use_harvester =

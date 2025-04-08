@@ -100,8 +100,7 @@ reset:
     {
         if (SHARED_MEM.programmer_ctrl.state == PRG_STATE_STARTING)
         {
-            programmer(&SHARED_MEM.programmer_ctrl,
-                       (uint32_t *const) resourceTable.shared_memory.pa);
+            programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *) resourceTable.shared_memory.pa);
         }
     }
 

@@ -31,7 +31,7 @@ typedef struct
     uint8_t *data;
 } ihex_mem_block_t;
 
-int        ihex_reader_init(char *file_mem);
+ihex_ret_t ihex_reader_init(char *file_mem);
 ihex_ret_t ihex_reader_get(ihex_mem_block_t *block);
 uint32_t   ihex_get_line_number();
 

@@ -26,34 +26,36 @@ static uint32_t voc_nxt            = 0u;
 static uint32_t voc_min            = 0u;
 
 static bool_ft  lin_extrapolation  = 0u;
+
 #endif // EMU_SUPPORT
 
-static uint32_t settle_steps   = 0; // adc_ivcurve
-static uint32_t interval_step  = 0u;
-
-static uint32_t volt_step_uV   = 0u;
-static uint32_t power_last_raw = 0u; // adc_mppt_po
-
+static uint32_t interval_step = 0u;
+static uint32_t volt_step_uV  = 0u;
 
 #define HRV_CFG                                                                                    \
     (*((volatile struct HarvesterConfig *) (PRU_SHARED_MEM_OFFSET +                                \
                                             offsetof(struct SharedMem, harvester_settings))))
-static volatile struct IVTraceOut *buffer;
 
 #ifdef HRV_SUPPORT
+
+static volatile struct IVTraceOut *buffer;
+
+static uint32_t                    settle_steps   = 0;  // used for adc_ivcurve()
+static uint32_t                    power_last_raw = 0u; // used for adc_mppt_po()
+
 /* ivcurve cutout
    - prevents power-spike during the non-linear reset-step of the ivcurve
    - slow analog filters show this behavior with cape 2.4
    TODO: make value configurable by frontend
 */
-static const uint32_t STEP_IV_CUTOUT = 5u;
+static const uint32_t              STEP_IV_CUTOUT = 5u;
 
 // to be used with harvester-frontend
-static void           harvest_adc_2_ivcurve(const uint32_t sample_idx);
-static void           harvest_adc_2_isc_voc(const uint32_t sample_idx);
-static void           harvest_adc_2_cv(const uint32_t sample_idx);
-static void           harvest_adc_2_mppt_voc(const uint32_t sample_idx);
-static void           harvest_adc_2_mppt_po(const uint32_t sample_idx);
+static void                        harvest_adc_2_ivcurve(const uint32_t sample_idx);
+static void                        harvest_adc_2_isc_voc(const uint32_t sample_idx);
+static void                        harvest_adc_2_cv(const uint32_t sample_idx);
+static void                        harvest_adc_2_mppt_voc(const uint32_t sample_idx);
+static void                        harvest_adc_2_mppt_po(const uint32_t sample_idx);
 #endif // HRV_SUPPORT
 
 #ifdef EMU_SUPPORT
@@ -84,25 +86,29 @@ void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + v
 void harvester_initialize()
 {
     // basic (shared) states for ADC- and IVCurve-Version
-    buffer               = SHARED_MEM.buffer_iv_out_ptr;
+    voltage_set_uV = HRV_CFG.voltage_uV + 1u; // deliberately off for cv-version
+#ifdef HRV_SUPPORT
+    buffer       = SHARED_MEM.buffer_iv_out_ptr;
     // TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_ptr->samples
-    voltage_set_uV       = HRV_CFG.voltage_uV + 1u; // deliberately off for cv-version
-    settle_steps         = 0u;
+    settle_steps = 0u;
+#endif //HRV_SUPPORT
 
     const bool_ft is_emu = (HRV_CFG.hrv_mode >> 0u) & 1u;
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
         interval_step = HRV_CFG.interval_n - (2 * HRV_CFG.window_size);
     else interval_step = 1u << 30u;
     // ⤷ intake two ivcurves before overflow / reset if possible
-    is_rising      = (HRV_CFG.hrv_mode >> 1u) & 1u;
+    is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;
 
     // MPPT-PO
-    volt_step_uV   = HRV_CFG.voltage_step_uV;
+    volt_step_uV = HRV_CFG.voltage_step_uV;
+#ifdef HRV_SUPPORT
     power_last_raw = 0u;
+#endif //HRV_SUPPORT
 
     // for IV-Curve-Version, mostly resets states
-    voltage_hold   = 0u;
-    current_hold   = 0u;
+    voltage_hold = 0u;
+    current_hold = 0u;
 
 #ifdef EMU_SUPPORT
     voltage_step_x4_uV = 4u * HRV_CFG.voltage_step_uV;
