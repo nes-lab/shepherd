@@ -238,9 +238,9 @@ class ShepherdEmulator(ShepherdIO):
             while not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
-                verbose=True,  # TODO self.verbose_extra,
+                verbose=True,  # TODO: self.verbose_extra,
             ):
-                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO: self.verbose_extra)
                 data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
                 data_ut = self.shared_mem.util.read(verbose=False)  # TODO
                 # TODO: detect backpressure and high sys-load -> drop gpio
@@ -279,9 +279,9 @@ class ShepherdEmulator(ShepherdIO):
         log.debug("FINISHED supplying input-data -> Read remaining data from PRU")
         try:
             while True:
-                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO self.verbose_extra)
-                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO: self.verbose_extra)
+                data_gp = self.shared_mem.gpio.read(force=True, verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(force=True, verbose=self.verbose_extra)
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:

@@ -130,43 +130,49 @@ class SharedMemGPIOOutput:
             return int(delta.total_seconds() * 10**9)
         return int(timedelta(seconds=default_s).total_seconds() * 10**9)
 
-    def read(self, *, verbose: bool = False) -> GPIOTrace | None:
-        # determine current state
+    def read(self, *, force: bool = False, verbose: bool = False) -> GPIOTrace | None:
+        # determine current fill-level
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        if avail_length < self.N_SAMPLES_PER_CHUNK:
-            # nothing to do
-            # TODO: detect overflow!!!
-            # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
-            return None
+        if not force and (avail_length < self.N_SAMPLES_PER_CHUNK):
+            return None  # nothing to do
+        # adjust read length to stay within chunk-size and also consider end of ring-buffer
+        read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
+        fill_level = 100 * avail_length / self.N_SAMPLES
+        if fill_level > 80:
+            log.warning(
+                "[%s] Fill-level critical (80%%) - should discard Chunks",
+                type(self).__name__,
+            )
+            # TODO: implement discarding chunks
         if verbose:
             log.debug(
-                "[%s] Retrieving index %6d with len %d @sys_ts %.3f",
+                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, fill%%=%.2f",
                 type(self).__name__,
                 self.index_next,
-                self.N_SAMPLES_PER_CHUNK,
+                read_length,
                 time.time(),
+                fill_level,
             )
         # prepare & fetch data
-        # TODO: honor boundary - check count + offset
         data = GPIOTrace(
             timestamps_ns=np.frombuffer(
                 self._mm,
                 np.uint64,
-                count=self.N_SAMPLES_PER_CHUNK,
+                count=read_length,
                 offset=self._offset_timestamps + self.index_next * 8,
             ),
             bitmasks=np.frombuffer(
                 self._mm,
                 np.uint16,
-                count=self.N_SAMPLES_PER_CHUNK,
+                count=read_length,
                 offset=self._offset_bitmasks + self.index_next * 2,
             ),
         )
         # TODO: filter dataset with self.ts_start_gp <= buffer_timestamp <= self.ts_stop_gp
         # TODO: segment should be reset to ZERO to better detect errors
-        self.index_next = (self.index_next + self.N_SAMPLES_PER_CHUNK) % self.N_SAMPLES
+        self.index_next = (self.index_next + read_length) % self.N_SAMPLES
 
         if self.index_next == 0:
             self.check_canary()

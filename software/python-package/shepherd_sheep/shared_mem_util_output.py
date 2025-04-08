@@ -120,30 +120,35 @@ class SharedMemUtilOutput:
                 commons.CANARY_VALUE_U32,
             )
 
-    def read(self, *, verbose: bool = False) -> UtilTrace | None:
-        # determine current state
+    def read(self, *, force: bool = False, verbose: bool = False) -> UtilTrace | None:
+        # determine current fill-level
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        if avail_length < self.N_SAMPLES_PER_CHUNK:
-            # nothing to do
-            # TODO: detect overflow!!!
-            # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
-            return None
+        if not force and (avail_length < self.N_SAMPLES_PER_CHUNK):
+            return None  # nothing to do
+        # adjust read length to stay within chunk-size and also consider end of ring-buffer
+        read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
+        fill_level = 100 * avail_length / self.N_SAMPLES
+        if fill_level > 80:
+            log.warning(
+                "[%s] Fill-level critical (80%%)",
+                type(self).__name__,
+            )
         if verbose:
             log.debug(
-                "[%s] Retrieving index %4d, len %d @%.3f sys_ts",
+                "[%s] Retrieving index %4d, len %d @%.3f sys_ts, fill%% %.2f",
                 type(self).__name__,
                 self.index_next,
-                self.N_SAMPLES_PER_CHUNK,
+                read_length,
                 time.time(),
+                fill_level,
             )
         # prepare & fetch data
-        # TODO: honor boundary - check count + offset
         sample_count = np.frombuffer(
             self._mm,
             np.uint32,
-            count=self.N_SAMPLES_PER_CHUNK,
+            count=read_length,
             offset=self._offset_sample_count + self.index_next * 4,
         )
 
@@ -151,33 +156,33 @@ class SharedMemUtilOutput:
             timestamps_ns=np.frombuffer(
                 self._mm,
                 np.uint64,
-                count=self.N_SAMPLES_PER_CHUNK,
+                count=read_length,
                 offset=self._offset_timestamps + self.index_next * 8,
             ),
             pru0_tsample_max=np.frombuffer(
                 self._mm,
                 np.uint32,
-                count=self.N_SAMPLES_PER_CHUNK,
+                count=read_length,
                 offset=self._offset_pru0_tsample_max + self.index_next * 4,
             ),
             pru1_tsample_max=np.frombuffer(
                 self._mm,
                 np.uint32,
-                count=self.N_SAMPLES_PER_CHUNK,
+                count=read_length,
                 offset=self._offset_pru1_tsample_max + self.index_next * 4,
             ),
             pru0_tsample_mean=np.frombuffer(
                 self._mm,
                 np.uint32,
-                count=self.N_SAMPLES_PER_CHUNK,
+                count=read_length,
                 offset=self._offset_pru0_tsample_sum + self.index_next * 4,
             )
             / sample_count,
             sample_count=sample_count,
         )
         # TODO: segment should be reset to ZERO to better detect errors
-        self.index_next = (self.index_next + self.N_SAMPLES_PER_CHUNK) % self.N_SAMPLES
-        self.warn(data, verbose=False)  # TODO activate
+        self.index_next = (self.index_next + read_length) % self.N_SAMPLES
+        self.warn(data, verbose=False)  # TODO: activate
 
         if self.index_next == 0:
             self.check_canary()

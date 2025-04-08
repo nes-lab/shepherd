@@ -134,6 +134,13 @@ class SharedMemIVOutput:
             # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
             return None
 
+        fill_level = 100 * avail_length / self.N_SAMPLES
+        if fill_level > 80:
+            log.warning(
+                "[%s] Fill-level critical (80%%)",
+                type(self).__name__,
+            )
+
         fetch_all_ts: bool = True  # TODO: move 2 init
         if fetch_all_ts:
             timestamps_ns = np.frombuffer(
@@ -177,7 +184,7 @@ class SharedMemIVOutput:
                 self.N_SAMPLES_PER_CHUNK,
                 pru_timestamp * 1e-9 - self.xp_start,
                 time.time() - self.xp_start,
-                100 * avail_length / self.N_SAMPLES,
+                fill_level,
             )
 
         # prepare & fetch data
