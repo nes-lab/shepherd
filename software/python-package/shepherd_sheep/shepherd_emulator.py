@@ -100,7 +100,6 @@ class ShepherdEmulator(ShepherdIO):
         else:
             self.start_time = cfg.time_start.timestamp()
 
-        self.samples_per_buffer = self.reader.samples_per_buffer
         # TODO: write gpio-mask
 
         log_iv = cfg.power_tracing is not None
@@ -167,16 +166,16 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
-        self.buffer_segment_count = math.floor(commons.BUFFER_IV_SIZE // self.samples_per_buffer)
+        self.buffer_segment_count = math.floor(commons.BUFFER_IV_SIZE // self.samples_per_segment)
         log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
         for _, dsv, dsc in self.reader.read_buffers(
             end_n=self.buffer_segment_count,
             is_raw=True,
             omit_ts=True,
         ):
-            if not self.shared_mem.can_fit_iv_segment():
+            if len(dsv) > self.shared_mem.iv_inp.get_free_space():
                 raise BufferError("Not enough space in buffer during initial fill.")
-            self.shared_mem.write_buffer_iv(
+            self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
                 verbose=False,
@@ -202,7 +201,7 @@ class ShepherdEmulator(ShepherdIO):
             return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        self.handle_pru_messages()
+        self.handle_pru_messages(panic_on_restart=False)
         log.info("shepherd started! T_sys = %f", time.time())
 
         if self.cfg.duration is not None:
@@ -225,16 +224,25 @@ class ShepherdEmulator(ShepherdIO):
 
         # Main Loop
         ts_data_last = self.start_time
+        buffer_segment_last = math.floor(duration_s / self.segment_period_s)
         for _, dsv, dsc in self.reader.read_buffers(
             start_n=self.buffer_segment_count,
+            end_n=buffer_segment_last,
             is_raw=True,
             omit_ts=True,
         ):
+            # this loop fetches data and tries to fill it into the buffer
+            # -> while there is no space it will do other tasks
+
             # TODO: transform h5_recorders into monitors, make all 3 free threading
-            while not self.shared_mem.can_fit_iv_segment():
-                data_iv = self.shared_mem.read_buffer_iv(verbose=self.verbose_extra)
-                data_gp = self.shared_mem.read_buffer_gpio(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.read_buffer_util(verbose=True)
+            while not self.shared_mem.iv_inp.write(
+                data=IVTrace(voltage=dsv, current=dsc),
+                cal=self.cal_pru,
+                verbose=True,  # TODO self.verbose_extra,
+            ):
+                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO self.verbose_extra)
+                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(verbose=False)  # TODO
                 # TODO: detect backpressure and high sys-load -> drop gpio
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
@@ -245,7 +253,7 @@ class ShepherdEmulator(ShepherdIO):
                     prog_bar.update(n=data_iv.duration())
                     # TODO: this can't work - with the limited tracers
                     if data_iv.timestamp() >= ts_end:
-                        log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
+                        log.debug("Out of bound timestamp collected -> begin to exit now")
                         break
                     ts_data_last = time.time()
                     if self.writer is not None:
@@ -260,25 +268,20 @@ class ShepherdEmulator(ShepherdIO):
 
                 # TODO: implement cleaner exit (pru-statechange or end-timestamp
 
-                self.handle_pru_messages()
+                self.handle_pru_messages(panic_on_restart=True)
                 if not (data_iv or data_gp or data_ut):
                     if ts_data_last - time.time() > 10:
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
                     time.sleep(self.segment_period_s / 10)
-            self.shared_mem.write_buffer_iv(
-                data=IVTrace(voltage=dsv, current=dsc),
-                cal=self.cal_pru,
-                verbose=self.verbose_extra,
-            )
 
-        # Read all remaining buffers from PRU
+        log.debug("FINISHED supplying input-data -> Read remaining data from PRU")
         try:
             while True:
-                data_iv = self.shared_mem.read_buffer_iv(verbose=self.verbose_extra)
-                data_gp = self.shared_mem.read_buffer_gpio(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.read_buffer_util(verbose=self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO self.verbose_extra)
+                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:
@@ -293,7 +296,7 @@ class ShepherdEmulator(ShepherdIO):
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
                 # TODO: implement cleaner exit (pru-statechange or end-timestamp
-                self.handle_pru_messages()
+                self.handle_pru_messages(panic_on_restart=False)
                 if not (data_iv or data_gp or data_ut):
                     if ts_data_last - time.time() > 10:
                         log.error("Post sheep-routine ran dry for 10s, will STOP")

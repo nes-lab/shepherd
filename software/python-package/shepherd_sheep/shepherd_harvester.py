@@ -114,7 +114,7 @@ class ShepherdHarvester(ShepherdIO):
             return
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        self.handle_pru_messages()
+        self.handle_pru_messages(panic_on_restart=False)
         log.info("shepherd started! T_sys = %f", time.time())
 
         if self.cfg.duration is None:
@@ -136,8 +136,8 @@ class ShepherdHarvester(ShepherdIO):
 
         ts_data_last = self.start_time
         while True:
-            data_iv = self.shared_mem.read_buffer_iv(verbose=self.verbose_extra)
-            data_ut = self.shared_mem.read_buffer_util(verbose=self.verbose_extra)
+            data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
             if data_ut:
                 self.writer.write_util_buffer(data_ut)
 
@@ -156,7 +156,7 @@ class ShepherdHarvester(ShepherdIO):
                     )
                     break
             # TODO: implement cleaner exit from pru-statechange or end-TS
-            self.handle_pru_messages()
+            self.handle_pru_messages(panic_on_restart=True)
             if not (data_iv or data_ut):
                 if ts_data_last - time.time() > 10:
                     log.error("Main sheep-routine ran dry for 10s, will STOP")

@@ -193,7 +193,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
 
         with file_tmp.resolve().open("rb") as fw:
             try:
-                dbg.shared_mem.write_firmware(fw.read())
+                dbg.shared_mem.iv_out.write_firmware(fw.read())
 
                 if cfg.simulate:
                     target = "dummy"
