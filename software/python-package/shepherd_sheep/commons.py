@@ -70,6 +70,7 @@ pru_errors: dict[int, str] = {
     0xE7: "[ERR_SAMPLE_MODE] no valid sample mode found",
     0xE8: "[ERR_HRV_ALGO] no valid hrv algo found",
     0xE9: "[ERR_ADC_NOT_FOUND] PRU failed to read back from ADC -> is cape powered?",
+    0xF0: "[ERR_RESTART] PRU restarted was unwanted",
 }
 
 # fmt: off

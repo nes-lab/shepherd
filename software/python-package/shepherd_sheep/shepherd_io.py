@@ -263,7 +263,6 @@ class ShepherdIO:
             self.trace_iv,
             self.trace_gpio,
             start_timestamp_ns=int(1e9 * start_time),
-            iv_segment_size=self.samples_per_segment,
         )
         self.shared_mem.__enter__()
 
@@ -495,7 +494,7 @@ class ShepherdIO:
         sfs.write_virtual_harvester_settings(settings)
 
     @staticmethod
-    def handle_pru_messages() -> None:
+    def handle_pru_messages(*, panic_on_restart: bool = False) -> None:
         """checks message inbox coming from both PRUs.
 
         Raises:
@@ -517,8 +516,9 @@ class ShepherdIO:
                     values[0],
                     f"0x{values[0]:X}",
                 )
-                # TODO: this should raise when needed (during normal OP)
-                continue
+                # only panic during measurements
+                if not panic_on_restart:
+                    continue
 
             error_msg: str | None = commons.pru_errors.get(msg_type)
             if error_msg is not None:
