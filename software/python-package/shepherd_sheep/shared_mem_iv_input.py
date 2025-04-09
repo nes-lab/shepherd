@@ -61,9 +61,9 @@ class SharedMemIVInput:
     SIZE_SECTION: int = 4 + 4 + SIZE_SAMPLES + SIZE_CANARY
     # ⤷ consist of index, samples, canary
 
-    N_BUFFER_CHUNKS: int = 20
-    N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
-    DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
+    N_BUFFER_CHUNKS_DEF: int = 20
+    N_SAMPLES_PER_CHUNK_DEF: int = N_SAMPLES // N_BUFFER_CHUNKS_DEF
+    # DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK_DEF * commons.SAMPLE_INTERVAL_NS // 10**6
 
     # TODO: something like that would allow automatic processing
     SIZES: dict[str, int] = {
@@ -73,15 +73,21 @@ class SharedMemIVInput:
         "canary": 4,
     }
 
-    def __init__(self, mem_map: mmap) -> None:
+    def __init__(self, mem_map: mmap, n_samples_per_segment: int | None = None) -> None:
         self._mm: mmap = mem_map
+
+        self.n_samples_per_chunk: int = (
+            n_samples_per_segment if n_samples_per_segment else self.N_SAMPLES_PER_CHUNK_DEF
+        )
+        self.n_buffer_chunks: int = self.N_SAMPLES // self.n_samples_per_chunk
+
         self.size_by_sys: int = sfs.get_trace_iv_inp_size()
         self.address: int = sfs.get_trace_iv_inp_address()
         self.base: int = sfs.get_trace_iv_inp_address()
 
         if self.size_by_sys != self.SIZE_SECTION:
             raise ValueError("[%s] Size does not match PRU-data", type(self).__name__)
-        if (self.N_SAMPLES % self.N_SAMPLES_PER_CHUNK) != 0:
+        if (self.N_SAMPLES % self.n_buffer_chunks) != 0:
             raise ValueError(
                 "[%s] Buffer was not cleanly dividable by chunk-count", type(self).__name__
             )
@@ -104,8 +110,10 @@ class SharedMemIVInput:
             # ⤷ not directly in message because of colorizer
             self.SIZE_SECTION,
             self.N_SAMPLES,
-            self.N_BUFFER_CHUNKS,
+            self.n_buffer_chunks,
         )
+
+        self.fill_level: float = 0
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_idx_sys)
@@ -137,21 +145,23 @@ class SharedMemIVInput:
 
     def get_free_space(self) -> int:
         if self.index_next is None:
-            return min(self.N_SAMPLES, self.N_SAMPLES_PER_CHUNK)
+            return min(self.N_SAMPLES, self.n_samples_per_chunk)
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         if index_pru > self.N_SAMPLES:
             # still out-of-bound (u32_max)
             index_pru = 0
+        avail_length = (index_pru - self.index_next) % self.N_SAMPLES
+        self.fill_level = 100 * (self.N_SAMPLES - avail_length) / self.N_SAMPLES
         return min(
-            (index_pru - self.index_next) % self.N_SAMPLES,
-            self.N_SAMPLES_PER_CHUNK,
+            avail_length,
+            self.n_samples_per_chunk,
         )
         # min() avoids boundary handling in write function
         # find cleaner solution here to avoid boundary handling
 
     def can_fit_new_chunk(self) -> bool:
-        return self.get_free_space() >= self.N_SAMPLES_PER_CHUNK
+        return self.get_free_space() >= self.n_samples_per_chunk
 
     def write(
         self,
@@ -180,11 +190,11 @@ class SharedMemIVInput:
         # TODO: code does not handle boundaries - !!!!!
         if verbose:
             log.debug(
-                "[%s] Sending idx = %d to PRU took %.2f ms, %d free",
+                "[%s] Sending idx = %d to PRU took %.2f ms, %.2f %%fill",
                 type(self).__name__,
                 self.index_next,
                 1e3 * (time.time() - ts_start),
-                avail_length,
+                self.fill_level,
             )
         # update sys-index
         self.index_next = (self.index_next + len(data)) % self.N_SAMPLES

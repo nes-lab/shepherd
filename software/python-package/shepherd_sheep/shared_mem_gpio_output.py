@@ -80,6 +80,8 @@ class SharedMemGPIOOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self.fill_level: float = 0
+
         self.ts_start: int | None = None
         self.ts_stop: int | None = None
         self.ts_set: bool = False
@@ -135,25 +137,30 @@ class SharedMemGPIOOutput:
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        if not force and (avail_length < self.N_SAMPLES_PER_CHUNK):
+        if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
-        fill_level = 100 * avail_length / self.N_SAMPLES
-        if fill_level > 80:
-            log.warning(
-                "[%s] Fill-level critical (80%%) - should discard Chunks",
+
+        self.fill_level = 100 * avail_length / self.N_SAMPLES
+        if self.fill_level > 80:
+            # show an error here, as we will now drop samples
+            log.error(
+                "[%s] Fill-level critical (80%%) -> discarding %d samples",
                 type(self).__name__,
+                read_length,
             )
-            # TODO: implement discarding chunks
+            self.index_next = (self.index_next + read_length) % self.N_SAMPLES
+            return None
+
         if verbose:
             log.debug(
-                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, fill%%=%.2f",
+                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, %.2f %%fill",
                 type(self).__name__,
                 self.index_next,
                 read_length,
                 time.time(),
-                fill_level,
+                self.fill_level,
             )
         # prepare & fetch data
         data = GPIOTrace(

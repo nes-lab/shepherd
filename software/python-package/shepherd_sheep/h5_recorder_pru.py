@@ -6,7 +6,7 @@ from shepherd_core import Compression
 
 from . import commons
 from .h5_monitor_abc import Monitor
-from .shared_memory import UtilTrace
+from .shared_mem_util_output import UtilTrace
 
 
 class PruRecorder(Monitor):

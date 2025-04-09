@@ -36,9 +36,9 @@ from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
 from .h5_recorder_gpio import GpioRecorder
 from .h5_recorder_pru import PruRecorder
-from .shared_memory import GPIOTrace
-from .shared_memory import IVTrace
-from .shared_memory import UtilTrace
+from .shared_mem_gpio_output import GPIOTrace
+from .shared_mem_iv_input import IVTrace
+from .shared_mem_util_output import UtilTrace
 
 
 class Writer(CoreWriter):

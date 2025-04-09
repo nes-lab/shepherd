@@ -91,6 +91,7 @@ class SharedMemUtilOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self.fill_level: float = 0
         self.warn_counter: int = 10
         # self.timestamp_last: int = 0
 
@@ -125,24 +126,24 @@ class SharedMemUtilOutput:
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        if not force and (avail_length < self.N_SAMPLES_PER_CHUNK):
+        if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
-        fill_level = 100 * avail_length / self.N_SAMPLES
-        if fill_level > 80:
+        self.fill_level = 100 * avail_length / self.N_SAMPLES
+        if self.fill_level > 80:
             log.warning(
                 "[%s] Fill-level critical (80%%)",
                 type(self).__name__,
             )
         if verbose:
             log.debug(
-                "[%s] Retrieving index %4d, len %d @%.3f sys_ts, fill%% %.2f",
+                "[%s] Retrieving index %4d, len %d, @%.3f sys_ts, %.2f %%fill",
                 type(self).__name__,
                 self.index_next,
                 read_length,
                 time.time(),
-                fill_level,
+                self.fill_level,
             )
         # prepare & fetch data
         sample_count = np.frombuffer(

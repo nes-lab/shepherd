@@ -22,7 +22,7 @@ from .eeprom import retrieve_calibration
 from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
-from .shared_memory import IVTrace
+from .shared_mem_iv_input import IVTrace
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
 from .target_io import TargetIO
@@ -53,7 +53,7 @@ class ShepherdEmulator(ShepherdIO):
         self.stack = ExitStack()
 
         # performance-critical, allows deep insight between py<-->pru-communication
-        self.verbose_extra = False
+        self.verbose_extra = True
 
         if not cfg.input_path.exists():
             raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
@@ -67,6 +67,7 @@ class ShepherdEmulator(ShepherdIO):
         if not self.reader.is_valid() and self.cfg.abort_on_error:
             raise RuntimeError("Input-File is not valid!")
 
+        self.samples_per_segment = self.reader.samples_per_buffer
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
             cal_inp = CalibrationSeries()
@@ -178,7 +179,7 @@ class ShepherdEmulator(ShepherdIO):
             self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
-                verbose=False,
+                verbose=self.verbose_extra,
             )
 
         return self
@@ -204,14 +205,14 @@ class ShepherdEmulator(ShepherdIO):
         self.handle_pru_messages(panic_on_restart=False)
         log.info("shepherd started! T_sys = %f", time.time())
 
+        duration_s = sys.float_info.max
         if self.cfg.duration is not None:
             duration_s = self.cfg.duration.total_seconds()
-            ts_end = self.start_time + duration_s
-            log.debug("Duration = %s (forced runtime)", duration_s)
-        else:
+            log.debug("Duration = %s (configured runtime)", duration_s)
+        if self.reader.runtime_s < duration_s:
             duration_s = self.reader.runtime_s
-            ts_end = sys.float_info.max
             log.debug("Duration = %s (runtime of input file)", duration_s)
+        ts_end = self.start_time + duration_s
 
         # Heartbeat-Message
         prog_bar = tqdm(
@@ -238,12 +239,12 @@ class ShepherdEmulator(ShepherdIO):
             while not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
-                verbose=True,  # TODO: self.verbose_extra,
+                verbose=self.verbose_extra,
             ):
-                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO: self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
                 data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.util.read(verbose=False)  # TODO
-                # TODO: detect backpressure and high sys-load -> drop gpio
+                data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:
@@ -251,8 +252,9 @@ class ShepherdEmulator(ShepherdIO):
 
                 if data_iv:
                     prog_bar.update(n=data_iv.duration())
-                    # TODO: this can't work - with the limited tracers
+                    # TODO: this can't work - with the limiting tracers
                     if data_iv.timestamp() >= ts_end:
+                        # TODO: should already be done in shared_mem.iv_out
                         log.debug("Out of bound timestamp collected -> begin to exit now")
                         break
                     ts_data_last = time.time()
@@ -276,12 +278,17 @@ class ShepherdEmulator(ShepherdIO):
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
                     time.sleep(self.segment_period_s / 10)
 
-        log.debug("FINISHED supplying input-data -> Read remaining data from PRU")
+        log.debug("FINISHED supplying input-data -> process remaining buffer")
+        force_subchunks = False
         try:
             while True:
-                data_iv = self.shared_mem.iv_out.read(verbose=True)  # TODO: self.verbose_extra)
-                data_gp = self.shared_mem.gpio.read(force=True, verbose=self.verbose_extra)
-                data_ut = self.shared_mem.util.read(force=True, verbose=self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+                data_gp = self.shared_mem.gpio.read(
+                    force=force_subchunks, verbose=self.verbose_extra
+                )
+                data_ut = self.shared_mem.util.read(
+                    force=force_subchunks, verbose=self.verbose_extra
+                )
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:
@@ -290,19 +297,21 @@ class ShepherdEmulator(ShepherdIO):
                 if data_iv:
                     prog_bar.update(n=data_iv.duration())
                     if data_iv.timestamp() >= ts_end:
-                        log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
-                        return
+                        log.debug("Out of bound timestamp collected -> will discard")
+                        data_iv = None
+                if data_iv:
                     ts_data_last = time.time()
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
                 # TODO: implement cleaner exit (pru-statechange or end-timestamp
-                self.handle_pru_messages(panic_on_restart=False)
+                self.handle_pru_messages(panic_on_restart=True)
                 if not (data_iv or data_gp or data_ut):
-                    if ts_data_last - time.time() > 10:
-                        log.error("Post sheep-routine ran dry for 10s, will STOP")
+                    if time.time() - ts_data_last > 5:
+                        log.debug("FINALIZING: Post sheep-routine ran dry for 5s, will STOP")
                         break
+                    force_subchunks = True
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s / 10)
+                    time.sleep(self.segment_period_s / 5)
 
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers

@@ -263,6 +263,7 @@ class ShepherdIO:
             self.trace_iv,
             self.trace_gpio,
             start_timestamp_ns=int(1e9 * start_time),
+            n_samples_per_segment=self.samples_per_segment,
         )
         self.shared_mem.__enter__()
 

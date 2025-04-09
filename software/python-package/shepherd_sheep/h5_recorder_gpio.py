@@ -7,7 +7,7 @@ from shepherd_core import Compression
 from .commons import BUFFER_GPIO_SIZE
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .h5_monitor_abc import Monitor
-from .shared_memory import GPIOTrace
+from .shared_mem_gpio_output import GPIOTrace
 
 
 class GpioRecorder(Monitor):

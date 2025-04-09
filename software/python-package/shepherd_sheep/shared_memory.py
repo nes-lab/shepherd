@@ -30,6 +30,7 @@ class SharedMemory:
         cfg_iv: PowerTracing | None,
         cfg_gpio: GpioTracing | None,
         start_timestamp_ns: int,
+        n_samples_per_segment: int | None = None,
         # TODO: add util-config ??
     ) -> None:
         """Initializes relevant parameters for shared memory area.
@@ -68,7 +69,7 @@ class SharedMemory:
         )
         # TODO: could it also be async? might be error-source
 
-        self.iv_inp = SharedMemIVInput(self._mm)
+        self.iv_inp = SharedMemIVInput(self._mm, n_samples_per_segment)
         self.iv_out = SharedMemIVOutput(self._mm, cfg_iv, start_timestamp_ns)
         self.gpio = SharedMemGPIOOutput(self._mm, cfg_gpio, start_timestamp_ns)
         self.util = SharedMemUtilOutput(self._mm)

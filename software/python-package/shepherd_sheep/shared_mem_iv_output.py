@@ -65,7 +65,9 @@ class SharedMemIVOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self.fill_level: float = 0
         self.xp_start: float = ts_xp_start_ns * 1e-9
+
         self.ts_start: int | None = None
         self.ts_stop: int | None = None
         self.ts_set: bool = False
@@ -134,8 +136,8 @@ class SharedMemIVOutput:
             # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
             return None
 
-        fill_level = 100 * avail_length / self.N_SAMPLES
-        if fill_level > 80:
+        self.fill_level = 100 * avail_length / self.N_SAMPLES
+        if self.fill_level > 80:
             log.warning(
                 "[%s] Fill-level critical (80%%)",
                 type(self).__name__,
@@ -178,13 +180,13 @@ class SharedMemIVOutput:
 
         if verbose:
             log.debug(
-                "[%s] Retrieving index=%6d, len=%d, ts=%.3f, ts_sys=%.3f, fill%%=%.2f",
+                "[%s] Retrieving index=%6d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
                 type(self).__name__,
                 self.index_next,
                 self.N_SAMPLES_PER_CHUNK,
                 pru_timestamp * 1e-9 - self.xp_start,
                 time.time() - self.xp_start,
-                fill_level,
+                self.fill_level,
             )
 
         # prepare & fetch data
