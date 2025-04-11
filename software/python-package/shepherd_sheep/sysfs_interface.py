@@ -95,12 +95,18 @@ def reload_kernel_module() -> None:
 
 
 def disable_ntp() -> None:
-    subprocess.run(  # noqa: S603
-        ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
-        timeout=60,
+    ret = subprocess.run(  # noqa: S603
+        ["/usr/bin/systemctl", "is-active", "--quiet", "systemd-timesyncd.service"],
+        timeout=20,
         check=False,
-    )
-    log.debug("Deactivated systemd-timesyncd.service (NTP)")
+    ).returncode
+    if ret == 0:
+        subprocess.run(  # noqa: S603
+            ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
+            timeout=20,
+            check=False,
+        )
+        log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
 def check_sys_access(iteration: int = 1) -> bool:
