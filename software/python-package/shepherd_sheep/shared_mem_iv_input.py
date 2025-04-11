@@ -1,7 +1,9 @@
 import mmap
 import struct
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from types import TracebackType
 
 import numpy as np
@@ -50,8 +52,10 @@ class IVTrace:
 
 
 class SharedMemIVInput:
-    # TODO: it should be possible to optimize further - data is currently copied twice and modified once
-    #       pytables (alternative to h5py) allows mmap - maybe we can directly move data?
+    # TODO: it should be possible to optimize further -
+    #       data is currently copied twice and modified once
+    #       pytables (alternative to h5py) allows mmap -
+    #       maybe directly move data?
 
     # class is designed for the following size layout (mentioned here mostly for crosscheck)
     N_SAMPLES: int = commons.BUFFER_IV_SIZE
@@ -63,15 +67,16 @@ class SharedMemIVInput:
 
     N_BUFFER_CHUNKS_DEF: int = 20
     N_SAMPLES_PER_CHUNK_DEF: int = N_SAMPLES // N_BUFFER_CHUNKS_DEF
-    # DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK_DEF * commons.SAMPLE_INTERVAL_NS // 10**6
 
     # TODO: something like that would allow automatic processing
-    SIZES: dict[str, int] = {
-        "idx_pru": 4,
-        "idx_sys": 4,
-        "samples": N_SAMPLES * 4,
-        "canary": 4,
-    }
+    SIZES: Mapping[str, int] = MappingProxyType(
+        {
+            "idx_pru": 4,
+            "idx_sys": 4,
+            "samples": N_SAMPLES * 4,
+            "canary": 4,
+        }
+    )
 
     def __init__(self, mem_map: mmap, n_samples_per_segment: int | None = None) -> None:
         self._mm: mmap = mem_map

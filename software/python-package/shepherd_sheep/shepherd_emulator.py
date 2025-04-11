@@ -53,7 +53,7 @@ class ShepherdEmulator(ShepherdIO):
         self.stack = ExitStack()
 
         # performance-critical, allows deep insight between py<-->pru-communication
-        self.verbose_extra = True
+        self.verbose_extra = False
 
         if not cfg.input_path.exists():
             raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
@@ -169,19 +169,24 @@ class ShepherdEmulator(ShepherdIO):
         # Preload emulator with data
         self.buffer_segment_count = math.floor(commons.BUFFER_IV_SIZE // self.samples_per_segment)
         log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
+        prog_bar = tqdm(
+            total=self.buffer_segment_count,
+            desc="Fill IV-Buffer",
+            unit="n",
+            leave=False,
+        )
         for _, dsv, dsc in self.reader.read_buffers(
             end_n=self.buffer_segment_count,
             is_raw=True,
             omit_ts=True,
         ):
-            if len(dsv) > self.shared_mem.iv_inp.get_free_space():
-                raise BufferError("Not enough space in buffer during initial fill.")
-            self.shared_mem.iv_inp.write(
+            if not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,
-                verbose=self.verbose_extra,
-            )
-
+                verbose=False,
+            ):
+                raise BufferError("Not enough space in buffer during initial fill.")
+            prog_bar.update(1)
         return self
 
     def __exit__(
@@ -208,10 +213,10 @@ class ShepherdEmulator(ShepherdIO):
         duration_s = sys.float_info.max
         if self.cfg.duration is not None:
             duration_s = self.cfg.duration.total_seconds()
-            log.debug("Duration = %s (configured runtime)", duration_s)
+            log.debug("Duration = %s s (configured runtime)", duration_s)
         if self.reader.runtime_s < duration_s:
             duration_s = self.reader.runtime_s
-            log.debug("Duration = %s (runtime of input file)", duration_s)
+            log.debug("Duration = %s s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
 
         # Heartbeat-Message
@@ -307,7 +312,7 @@ class ShepherdEmulator(ShepherdIO):
                 self.handle_pru_messages(panic_on_restart=True)
                 if not (data_iv or data_gp or data_ut):
                     if time.time() - ts_data_last > 5:
-                        log.debug("FINALIZING: Post sheep-routine ran dry for 5s, will STOP")
+                        log.info("FINALIZING: Post emu-routine ran dry for 5s -> begin to exit now")
                         break
                     force_subchunks = True
                     # rest of loop is non-blocking, so we better doze a while if nothing to do

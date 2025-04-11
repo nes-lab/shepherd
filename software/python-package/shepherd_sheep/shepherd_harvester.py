@@ -1,6 +1,5 @@
 import datetime
 import platform
-import sys
 import time
 from contextlib import ExitStack
 from types import TracebackType
@@ -118,12 +117,12 @@ class ShepherdHarvester(ShepherdIO):
         log.info("shepherd started! T_sys = %f", time.time())
 
         if self.cfg.duration is None:
-            ts_end = sys.float_info.max
-            duration_s = None
+            duration_s = 10**6  # s, defaults to ~ 100 days
+            log.debug("Duration = %.3f s (forced runtime, press ctrl+c to exit)", duration_s)
         else:
             duration_s = self.cfg.duration.total_seconds()
-            ts_end = self.start_time + duration_s
-            log.debug("Duration = %s (forced runtime)", duration_s)
+            log.debug("Duration = %.3f s (configured runtime)", duration_s)
+        ts_end = self.start_time + duration_s
 
         # Progress-Bar
         prog_bar = tqdm(

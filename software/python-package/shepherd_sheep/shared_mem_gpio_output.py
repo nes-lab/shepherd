@@ -98,8 +98,6 @@ class SharedMemGPIOOutput:
                 self.ts_stop / 1e9,
             )
 
-        # self.timestamp_last: int = 0
-
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))

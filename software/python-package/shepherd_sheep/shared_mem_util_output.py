@@ -93,7 +93,6 @@ class SharedMemUtilOutput:
 
         self.fill_level: float = 0
         self.warn_counter: int = 10
-        # self.timestamp_last: int = 0
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_base)
