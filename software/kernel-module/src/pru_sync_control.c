@@ -220,7 +220,7 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     else ns_to_next_trigger = SYNC_INTERVAL_NS - sys_ts_over_wrap_ns;
     ts_upcoming_ns = ts_now_ns + ns_to_next_trigger;
 
-    // printk(KERN_INFO "shprd.sync: triggered @%llu, next ts = %llu", ts_now_ns, ts_upcoming_ns);
+    //printk(KERN_INFO "shprd.sync: triggered @%llu, next ts = %llu", ts_now_ns, ts_upcoming_ns);
     // NOTE: without load this trigger is accurate < 4 us
 
     hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(ns_to_next_trigger));

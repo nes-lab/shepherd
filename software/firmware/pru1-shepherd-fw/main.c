@@ -235,6 +235,7 @@ int32_t event_loop()
             compensation_counter--;
         }
 
+        /* Take timestamp of IEP if event just came up*/
         timer_ns = iep_get_cnt_val();
         if (read_r31() & HOST_INT_TIMESTAMP_MASK) host_int_early = 1u;
 
@@ -274,7 +275,7 @@ int32_t event_loop()
             continue; // for more regular gpio-sampling
         }
 
-        /*  [Sync-Event 3] Timer compare 0 handle -> sync period is resetting */
+        /*  [Sync-Event 3] 100ms Timer compare 0 handle -> sync period is resetting */
         if (SHARED_MEM.cmp0_trigger_for_pru1)
         {
             DEBUG_EVENT_STATE_2;
@@ -310,7 +311,7 @@ int32_t event_loop()
             continue; // for more regular gpio-sampling
         }
 
-        /* [Sync-Event 2] Timer compare 1 handle -> analog sampling on pru0 */
+        /* [Sync-Event 2] 10us Timer compare 1 handle -> analog sampling on pru0 */
         if (SHARED_MEM.cmp1_trigger_for_pru1)
         {
             /* prevent a race condition (cmp0_event has to happen before cmp1_event!) */
@@ -338,8 +339,10 @@ int32_t event_loop()
             /* If we are waiting for a reply from Linux kernel module */
             if (receive_sync_reply(&sync_repl) > 0)
             {
-                sync_state = IDLE;
-                //SHARED_MEM.next_sync_timestamp_ns = sync_repl.next_timestamp_ns;  // TODO
+                sync_state                        = IDLE;
+                // TODO: implement detect error here?
+                // hard reset here will also trigger an error when resulting time-jumps show up
+                SHARED_MEM.next_sync_timestamp_ns = sync_repl.next_timestamp_ns;
             }
             DEBUG_EVENT_STATE_0;
             continue; // for more regular gpio-sampling
