@@ -130,7 +130,9 @@ class SharedMemGPIOOutput:
             return int(delta.total_seconds() * 10**9)
         return int(timedelta(seconds=default_s).total_seconds() * 10**9)
 
-    def read(self, *, force: bool = False, verbose: bool = False) -> GPIOTrace | None:
+    def read(
+        self, *, force: bool = False, discard: bool = False, verbose: bool = False
+    ) -> GPIOTrace | None:
         # determine current fill-level
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
@@ -141,10 +143,10 @@ class SharedMemGPIOOutput:
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
 
         self.fill_level = 100 * avail_length / self.N_SAMPLES
-        if self.fill_level > 80:
+        if discard or self.fill_level > 80:
             # show an error here, as we will now drop samples
             log.error(
-                "[%s] Fill-level critical (80%%) -> discarding %d samples",
+                "[%s] Backpressure detected -> discarding %d samples",
                 type(self).__name__,
                 read_length,
             )

@@ -156,6 +156,7 @@ class ShepherdHarvester(ShepherdIO):
                     break
             # TODO: implement cleaner exit from pru-statechange or end-TS
             self.handle_pru_messages(panic_on_restart=True)
+            self.shared_mem.handle_backpressure(iv_inp=False, iv_out=True, gpio=True, util=True)
             if not (data_iv or data_ut):
                 if ts_data_last - time.time() > 10:
                     log.error("Main sheep-routine ran dry for 10s, will STOP")
