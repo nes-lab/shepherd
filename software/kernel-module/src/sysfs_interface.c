@@ -20,6 +20,7 @@ struct kobject *kobj_mem_ref;
 struct kobject *kobj_sync_ref;
 struct kobject *kobj_prog_ref;
 struct kobject *kobj_firmware_ref;
+static u8       init_done = 0;
 
 static ssize_t  sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
@@ -888,8 +889,12 @@ static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attri
 int sysfs_interface_init(void)
 {
     int retval = 0;
-
-    kobj_ref   = kobject_create_and_add("shepherd", NULL);
+    if (init_done)
+    {
+        printk(KERN_ERR "shprd.k: sys init requested -> can't init twice!");
+        return -1;
+    }
+    kobj_ref = kobject_create_and_add("shepherd", NULL);
 
     if ((retval = sysfs_create_file(kobj_ref, &attr_state.attr)))
     {
@@ -933,6 +938,7 @@ int sysfs_interface_init(void)
         goto f_prog;
     };
 
+    init_done = 1;
     return 0;
 
     // last item stays: attr_prog_group
@@ -957,6 +963,7 @@ f_shp_state:
 
 void sysfs_interface_exit(void)
 {
+    if (init_done == 0) return;
     sysfs_remove_group(kobj_ref, &attr_prog_group);
     sysfs_remove_group(kobj_ref, &attr_sync_group);
     sysfs_remove_group(kobj_ref, &attr_mem_group);
@@ -967,5 +974,6 @@ void sysfs_interface_exit(void)
     kobject_put(kobj_sync_ref);
     kobject_put(kobj_mem_ref);
     kobject_put(kobj_ref);
+    init_done = 0;
     printk(KERN_INFO "shprd.k: sysfs exited");
 }

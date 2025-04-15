@@ -38,13 +38,15 @@ void                        mem_interface_init(void)
     delayed_start_timer.function = &delayed_start_callback;
 
     init_done                    = 1;
-    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%p", pru_shared_mem_io);
+    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%x, size = %d bytes",
+           (uint32_t) PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
 
     mem_interface_reset();
 }
 
 void mem_interface_exit(void)
 {
+    if (init_done) hrtimer_cancel(&delayed_start_timer);
     if (pru_intc_io != NULL)
     {
         iounmap(pru_intc_io);
@@ -55,7 +57,6 @@ void mem_interface_exit(void)
         iounmap(pru_shared_mem_io);
         pru_shared_mem_io = NULL;
     }
-    hrtimer_cancel(&delayed_start_timer);
     init_done = 0;
     printk(KERN_INFO "shprd.k: mem-interface exited");
 }

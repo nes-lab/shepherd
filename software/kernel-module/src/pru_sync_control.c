@@ -61,8 +61,11 @@ const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
 void                      sync_exit(void)
 {
-    hrtimer_cancel(&trigger_loop_timer);
-    hrtimer_cancel(&sync_loop_timer);
+    if (init_done)
+    {
+        hrtimer_cancel(&trigger_loop_timer);
+        hrtimer_cancel(&sync_loop_timer);
+    }
     if (gpio0clear != NULL)
     {
         iounmap(gpio0clear);

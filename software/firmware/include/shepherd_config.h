@@ -14,7 +14,7 @@
 /**
  * Length of buffers for storing harvest & emulation, gpio- and util- data
  */
-#define ELEMENT_SIZE_LOG2          (3u) // 8 byte
+#define ELEMENT_SIZE_LOG2          (3u) // 8 byte (4 + 4)
 #define BUFFER_IV_ELEM_LOG2        (20u)
 
 #define BUFFER_IV_SIZE             (1000000u) // 1M for ~10s, TODO: rename to elem
