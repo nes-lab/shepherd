@@ -1,24 +1,23 @@
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
-#include <linux/ioport.h> // request_mem_region
+#include <linux/io.h>
 #include <linux/ktime.h>
 #include <linux/math64.h>
-
-#include <asm/io.h>
 
 #include "_commons.h"
 #include "_shared_mem.h"
 #include "ocmc_cache.h"
 
-#define OCMC_BASE_ADDR        (0x40300000ul)
-#define OCMC_SIZE             (0xFFFFu)
-#define ZERO_DISCARDED_BLOCKS (true)
+#define OCMC_BASE_ADDR         (0x40300000ul)
+#define OCMC_SIZE              (0xFFFFu)
+#define CLEAR_DISCARDED_BLOCKS (true)
 
 extern uint32_t             __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_BYTE_LOG2) - 1u)];
 
 void __iomem               *cache_io             = NULL;
 void __iomem               *buffr_io             = NULL;
-static u8                   init_done            = 0;
+static u8                   init_done            = 0u;
+static u8                   error_detected       = 0u;
 struct SharedMem           *shared_mem           = NULL;
 struct IVTraceInp          *buffr_mem            = NULL;
 uint32_t                    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
@@ -37,40 +36,39 @@ void ocmc_cache_init(void)
     const uint64_t ts_now = ktime_get_real();
     if (init_done)
     {
-        printk(KERN_ERR "shprd.k: ocmc-cache init requested -> can't init twice!");
+        printk(KERN_ERR "shprd.cache: ocmc-cache init requested -> can't init twice!");
         return;
     }
     if (pru_shared_mem_io == NULL)
     {
-        printk(KERN_ERR "shprd.k: cache needs shared-mem of PRU but got NULL");
+        printk(KERN_ERR "shprd.cache: cache needs shared-mem of PRU but got NULL");
         return;
     }
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
 
     /* Maps the memory in OCMC, used as cache for PRU */
-    if (request_mem_region(OCMC_BASE_ADDR, OCMC_SIZE, "shepherd") == NULL)
+    cache_io   = ioremap_nocache(OCMC_BASE_ADDR, OCMC_SIZE);
+    if (cache_io == NULL)
     {
-        printk(KERN_ERR "shprd.k: OCMC not available");
-        //return;
-    }
-    cache_io = ioremap_nocache(OCMC_BASE_ADDR, OCMC_SIZE);
-
-    if (request_mem_region((uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp),
-                           "shepherd") == NULL)
-    {
-        printk(KERN_ERR "shprd.k: BUF_IV_INP not available");
+        printk(KERN_ERR "shprd.cache: OCMC not properly mapped");
         return;
     }
-    buffr_io  = ioremap((uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
+
+    /* map physical RAM address (special case that fails with ioremap()) */
+    buffr_io = memremap((uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp),
+                        MEMREMAP_WB);
+    if (buffr_io == NULL)
+    {
+        printk(KERN_ERR "shprd.cache: BUF_IV_INP not properly mapped");
+        return;
+    }
     buffr_mem = (struct IVTraceInp *) buffr_io;
-    // TODO: how to map user space memory?
-    // TODO: how to test timers if init? to end properly -> other sections also
 
     ocmc_cache_reset();
 
-    printk(KERN_INFO "shprd.k: ocmc-cache initialized @ 0x%x, size = %d bytes",
+    printk(KERN_INFO "shprd.cache: OCMC initialized @ 0x%x, size = %d bytes",
            (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
-    printk(KERN_INFO "shprd.k:             inp-buffer @ 0x%x, size = %d bytes",
+    printk(KERN_INFO "shprd.cache:     input-buffer @ 0x%x, size = %d bytes",
            (uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
 
     /* timer for updates */
@@ -78,15 +76,15 @@ void ocmc_cache_init(void)
     update_timer.function = &update_callback;
     hrtimer_start(&update_timer, ts_now + DELAY_TIMER, HRTIMER_MODE_ABS);
 
-    init_done = 1;
-    printk(KERN_INFO "shprd.k: -> %u cache-blocks with %u ivsamples each for %u us",
+    init_done = 1u;
+    printk(KERN_INFO "shprd.cache: -> %u cache-blocks with %u ivsamples each for %u us",
            CACHE_SIZE_BLOCK_N, CACHE_BLOCK_SIZE_ELEM_N,
            CACHE_BLOCK_SIZE_ELEM_N * SAMPLE_INTERVAL_NS / 1000u);
 }
 
 void ocmc_cache_exit(void)
 {
-    if (init_done) hrtimer_cancel(&update_timer);
+    if (update_timer.base != NULL) hrtimer_cancel(&update_timer);
 
     if (cache_io != NULL)
     {
@@ -95,11 +93,11 @@ void ocmc_cache_exit(void)
     }
     if (buffr_io != NULL)
     {
-        iounmap(buffr_io);
+        memunmap(buffr_io);
         buffr_io = NULL;
     }
-    init_done = 0;
-    printk(KERN_INFO "shprd.k: ocmc-cache exited");
+    init_done = 0u;
+    printk(KERN_INFO "shprd.cache: ocmc-cache exited");
 }
 
 void ocmc_cache_reset(void)
@@ -112,6 +110,7 @@ void ocmc_cache_reset(void)
     shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
     memset(&flags_local[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
     memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
+    error_detected = 0u;
 }
 
 uint32_t ocmc_cache_add(uint32_t block_idx)
@@ -123,12 +122,12 @@ uint32_t ocmc_cache_add(uint32_t block_idx)
     uint32_t       buffer_offset;
 
     if (block_idx >= BUFFER_SIZE_BLOCK_N) return 0u;
-
+    // printk(KERN_INFO "shprd.cache: mk %d, flag i%d m%d", block_idx, flag_idx, flag_mask);
     /* copy from buffer to cache */
     cache_offset = (block_idx & CACHE_BLOCK_MASK)
                    << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
     buffer_offset = block_idx << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
-    // TODO: check boundaries, or does this throw?
+    // note: no mask applied for buffer as first return-check handles range
     memcpy_toio(((uint8_t *) cache_io) + cache_offset,
                 ((uint8_t *) buffr_mem->sample) + buffer_offset, CACHE_BLOCK_SIZE_BYTE_N);
 
@@ -147,17 +146,17 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
     uint32_t       cache_offset;
 
     if (block_idx >= BUFFER_SIZE_BLOCK_N) return 0u;
-
+    //printk(KERN_INFO "shprd.cache: rm %d, flag i%d m%d", block_idx, flag_idx, flag_mask);
     /* update cache-flags */
     flags_local[flag_idx] &= ~flag_mask;
     shared_mem->cache_flags[flag_idx] = flags_local[flag_idx];
 
-    /* zero cache-block (TODO: optional in theory)*/
-    if (ZERO_DISCARDED_BLOCKS)
+    /* zero cache-block, optional in theory */
+    if (CLEAR_DISCARDED_BLOCKS)
     {
         cache_offset = (block_idx & CACHE_BLOCK_MASK)
                        << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
-        memset_io((volatile void *) cache_offset, 0u, CACHE_BLOCK_SIZE_BYTE_N);
+        memset_io(((uint8_t *) cache_io) + cache_offset, 0u, CACHE_BLOCK_SIZE_BYTE_N);
     }
 
     return 1u;
@@ -186,7 +185,6 @@ void ocmc_cache_update(void)
     /*  Read-path Shortcut for PRU */
     shared_mem->buffer_iv_inp_sys_idx = buffr_mem->idx_sys;
 
-    // TODO: a 2^n-size might be easier for this
     // calculate current external positions
     idx_read                          = buffr_mem->idx_pru >> CACHE_BLOCK_SIZE_ELEM_LOG2;
     idx_write                         = buffr_mem->idx_sys >> CACHE_BLOCK_SIZE_ELEM_LOG2;
@@ -210,13 +208,35 @@ void ocmc_cache_update(void)
         cache_block_fill_lvl += ocmc_cache_add(head_next);
         cache_block_idx_head = head_next;
     }
-    printk(KERN_INFO "shprd.k: idx [%d, %d]", cache_block_idx_tail, cache_block_idx_head);
-    // TODO: mask idx
-    // TODO: update flags - erase
-    // TODO: copy new to cache
-    // TODO: update flags - addition
 
+    /* report out-of-bound read-index ONCE */
+    if ((error_detected == 0u) && (idx_read < BUFFER_SIZE_BLOCK_N) &&
+        (cache_block_idx_tail < BUFFER_SIZE_BLOCK_N) &&
+        (cache_block_idx_head < BUFFER_SIZE_BLOCK_N))
+    {
+        if (cache_block_idx_head >= cache_block_idx_tail)
+        {
+            /* normal usecase, head in front of tail */
+            if ((idx_read < cache_block_idx_tail) || (idx_read > cache_block_idx_head))
+            {
+                printk(KERN_ERR "shprd.cache: pru index (read block %d) outside of cache [%d, %d] ",
+                       idx_read, cache_block_idx_tail, cache_block_idx_head);
+                error_detected = 1u;
+            }
+        }
+        else
+        {
+            /* head wrapped, tail not */
+            if ((idx_read < cache_block_idx_tail) && (idx_read > cache_block_idx_head))
+            {
+                printk(KERN_ERR "shprd.cache: pru index (read block %d) outside of cache [%d, %d] ",
+                       idx_read, cache_block_idx_tail, cache_block_idx_head);
+                error_detected = 1u;
+            }
+        }
+    }
 
+    //printk(KERN_INFO "shprd.cache: idx [%d, %d] %d", cache_block_idx_tail, cache_block_idx_head, cache_block_fill_lvl);
     /*
     if (idx_end_new > idx_start_new + CACHE_SIZE_BLOCK_N)
     const uint32_t cache_block_idx = index >> CACHE_BLOCK_SIZE_ELEM_LOG2;
@@ -237,8 +257,7 @@ enum hrtimer_restart update_callback(struct hrtimer *timer_for_restart)
     return HRTIMER_RESTART;
 }
 
-
-/*
+/* TODO: replacec deprecated commands
 ioread32(pru_shared_mem_io + offsetof(struct SharedMem, buffer_iv_inp_ptr))
 iowrite32(mode, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 memcpy_toio(pru_shared_mem_io + offset_msg, msg, sizeof(struct ProtoMsg));
