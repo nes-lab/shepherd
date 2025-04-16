@@ -1,7 +1,7 @@
 import os
 import subprocess
 import threading
-import time
+from datetime import datetime
 from types import TracebackType
 
 import h5py
@@ -36,7 +36,7 @@ class KernelMonitor(Monitor):
             "--dmesg",
             "--follow",
             f"--lines={self.backlog}",
-            "--output=short-precise",
+            "--output=short-iso-precise",
         ]
         self.process = subprocess.Popen(  # noqa: S603
             command,
@@ -77,7 +77,11 @@ class KernelMonitor(Monitor):
             if len(line) < 1:
                 self.event.wait(self.poll_intervall)  # rate limiter
                 continue
-            line = str(line).strip()[:128]
+            first_space = line.find(" ")
+            time_str = line[:first_space]
+            time_ts = datetime.fromisoformat(time_str)
+            time_ns = int(datetime.timestamp(time_ts) * 1e9)
+            line = line[first_space:].strip()[:128]
             try:
                 data_length = self.data["time"].shape[0]
                 if self.position >= data_length:
@@ -88,7 +92,7 @@ class KernelMonitor(Monitor):
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.data["time"][self.position] = int(time.time() * 1e9)
+                self.data["time"][self.position] = time_ns
                 self.data["message"][self.position] = line
                 self.position += 1
             except OSError:

@@ -1,7 +1,7 @@
 import os
 import subprocess
 import threading
-import time
+from datetime import datetime
 from types import TracebackType
 
 import h5py
@@ -11,7 +11,7 @@ from .h5_monitor_abc import Monitor
 from .logger import log
 
 
-class PTPMonitor(Monitor):  # TODO: also add phc2sys
+class PTPMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
@@ -30,11 +30,11 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
 
         command = [
             "sudo",
-            "journalctl",
+            "/usr/bin/journalctl",
             "--unit=ptp4l@eth0",
             "--follow",
             "--lines=60",
-            "--output=short-precise",
+            "--output=short-iso-precise",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603
             command,
@@ -89,6 +89,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     int(words[i_start + 4]),
                     int(words[i_start + 7]),
                 ]
+                time_ts = datetime.fromisoformat(words[0])
+                time_ns = int(datetime.timestamp(time_ts) * 1e9)
             except ValueError:
                 continue
             try:
@@ -101,7 +103,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.data["time"][self.position] = int(time.time() * 1e9)
+                self.data["time"][self.position] = time_ns
                 self.data["values"][self.position, :] = values[0:3]
                 self.position += 1
             except (OSError, KeyError):
