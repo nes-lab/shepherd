@@ -78,7 +78,8 @@ static const size_t         coord_timer_steps_ns_size =
 
 void msg_sys_exit(void)
 {
-    if (init_done) hrtimer_cancel(&coordinator_loop_timer);
+    if (coordinator_loop_timer.base != NULL) hrtimer_cancel(&coordinator_loop_timer);
+
     init_done     = 0;
     timers_active = 0;
     printk(KERN_INFO "shprd.k: msg-system exited");

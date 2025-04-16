@@ -48,24 +48,25 @@
 /*
  * Cache for Input-IV-Buffer
  */
-#define CACHE_SIZE_BYTE_LOG2       (16u) // 64kByte
-#define CACHE_SIZE_ELEM_LOG2       (CACHE_SIZE_BYTE_LOG2 - ELEMENT_SIZE_LOG2)
-#define CACHE_SIZE_ELEM_N          (1u << CACHE_SIZE_ELEM_LOG2)
+#define CACHE_SIZE_BYTE_LOG2       (16u)                                      // 64kByte
+#define CACHE_SIZE_ELEM_LOG2       (CACHE_SIZE_BYTE_LOG2 - ELEMENT_SIZE_LOG2) // 13
+#define CACHE_SIZE_ELEM_N          (1u << CACHE_SIZE_ELEM_LOG2)               // 8192
 #define CACHE_ELEM_MASK            (CACHE_SIZE_ELEM_N - 1u)
 
-#define CACHE_SIZE_BLOCK_LOG2      (3u) // 8 segments
-#define CACHE_SIZE_BLOCK_N         (1u << CACHE_SIZE_BLOCK_LOG2)
+#define CACHE_SIZE_BLOCK_LOG2      (3u)                          // 8 segments
+#define CACHE_SIZE_BLOCK_N         (1u << CACHE_SIZE_BLOCK_LOG2) // 8
 
-#define CACHE_BLOCK_SIZE_ELEM_LOG2 (CACHE_SIZE_ELEM_LOG2 - CACHE_SIZE_BLOCK_LOG2) // expect 2^10
-#define CACHE_BLOCK_SIZE_ELEM_N    (1u << CACHE_BLOCK_SIZE_ELEM_LOG2)
-#define CACHE_BLOCK_SIZE_BYTE_N    (1u << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2))
-#define CACHE_BLOCK_MASK           (CACHE_BLOCK_SIZE_ELEM_N - 1u)
+#define CACHE_BLOCK_SIZE_ELEM_LOG2 (CACHE_SIZE_ELEM_LOG2 - CACHE_SIZE_BLOCK_LOG2)           // 10
+#define CACHE_BLOCK_SIZE_ELEM_N    (1u << CACHE_BLOCK_SIZE_ELEM_LOG2)                       // 1024
+#define CACHE_BLOCK_SIZE_BYTE_N    (1u << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2)) // 8192
+#define CACHE_BLOCK_MASK           ((1u << CACHE_SIZE_BLOCK_LOG2) - 1u)                     // 0b111
 
-#define BUFFER_SIZE_BLOCK_LOG2     (BUFFER_IV_ELEM_LOG2 - CACHE_BLOCK_SIZE_ELEM_LOG2)
-#define BUFFER_SIZE_BLOCK_N        (1u << BUFFER_SIZE_BLOCK_LOG2)
+#define BUFFER_SIZE_BLOCK_LOG2     (BUFFER_IV_ELEM_LOG2 - CACHE_BLOCK_SIZE_ELEM_LOG2) // 10
+#define BUFFER_SIZE_BLOCK_N        (1u << BUFFER_SIZE_BLOCK_LOG2)                     // 1024
+#define BUFFER_BLOCK_MASK          ((1u << BUFFER_SIZE_BLOCK_LOG2) - 1u) // 0b11_1111_1111
 
-#define CACHE_FLAG_SIZE_U32_LOG2   (BUFFER_SIZE_BLOCK_LOG2 - 5u)
-#define CACHE_FLAG_SIZE_U32_N      (1u << CACHE_FLAG_SIZE_U32_LOG2)
+#define CACHE_FLAG_SIZE_U32_LOG2   (BUFFER_SIZE_BLOCK_LOG2 - 5u)    // 5
+#define CACHE_FLAG_SIZE_U32_N      (1u << CACHE_FLAG_SIZE_U32_LOG2) // 32
 
 extern uint32_t __cache_fits_buffer[1 / ((1u << BUFFER_IV_ELEM_LOG2) >= BUFFER_IV_SIZE)];
 

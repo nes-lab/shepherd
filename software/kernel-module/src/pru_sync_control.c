@@ -1,6 +1,6 @@
-#include <asm/io.h> /* gpio0-access */
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
+#include <linux/io.h> /* gpio0-access */
 #include <linux/ktime.h>
 #include <linux/math64.h>
 #include <linux/slab.h> /* kmalloc */
@@ -61,11 +61,9 @@ const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
 void                      sync_exit(void)
 {
-    if (init_done)
-    {
-        hrtimer_cancel(&trigger_loop_timer);
-        hrtimer_cancel(&sync_loop_timer);
-    }
+    if (trigger_loop_timer.base != NULL) hrtimer_cancel(&trigger_loop_timer);
+    if (sync_loop_timer.base != NULL) hrtimer_cancel(&sync_loop_timer);
+
     if (gpio0clear != NULL)
     {
         iounmap(gpio0clear);
@@ -91,8 +89,8 @@ int sync_init(void)
     }
     sync_reset();
 
-    gpio0clear = ioremap(0x44E07000 + 0x190, 4); // BBB, GPIO0
-    gpio0set   = ioremap(0x44E07000 + 0x194, 4);
+    gpio0clear = ioremap(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
+    gpio0set   = ioremap(0x44E07000u + 0x194u, 4u);
 
     /* timer for trigger */
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);

@@ -1,4 +1,4 @@
-#include <asm/io.h>
+#include <linux/io.h>
 #include <linux/kobject.h>
 #include <linux/string.h>
 #include <linux/sysfs.h>

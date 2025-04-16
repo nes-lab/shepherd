@@ -1,5 +1,5 @@
-#include <asm/io.h>
 #include <linux/hrtimer.h>
+#include <linux/io.h>
 #include <linux/ktime.h>
 
 #include "_commons.h"
@@ -46,7 +46,8 @@ void                        mem_interface_init(void)
 
 void mem_interface_exit(void)
 {
-    if (init_done) hrtimer_cancel(&delayed_start_timer);
+    if (delayed_start_timer.base != NULL) hrtimer_cancel(&delayed_start_timer);
+
     if (pru_intc_io != NULL)
     {
         iounmap(pru_intc_io);
