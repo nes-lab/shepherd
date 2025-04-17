@@ -182,14 +182,14 @@ class SharedMemUtilOutput:
         )
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
-        self.warn(data, verbose=False)  # TODO: activate
+        self.check_status(data, verbose=verbose)
 
         if self.index_next == 0:
             self.check_canary()
 
         return data
 
-    def warn(self, data: UtilTrace, *, verbose: bool = False) -> None:
+    def check_status(self, data: UtilTrace, *, verbose: bool = False) -> None:
         # TODO: cleanup, every crit-instance should be reported
         util_mean_val = data.pru0_tsample_mean.mean() * 100 / commons.SAMPLE_INTERVAL_NS
         util_max_val = data.pru0_tsample_max.max() * 100 / commons.SAMPLE_INTERVAL_NS

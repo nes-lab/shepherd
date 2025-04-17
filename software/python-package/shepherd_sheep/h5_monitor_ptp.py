@@ -114,3 +114,21 @@ class PTPMonitor(Monitor):
                     line,
                 )
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        if self.position == 0:
+            log.warning("[%s] Service not running? No data collected yet", type(self).__name__)
+            return
+        offset_ns, freq_Hz, _ = self.data["values"][self.position - 1, :]
+        if abs(offset_ns) > 500_000:
+            log.warning(
+                "[%s] Sync-Offset is unexpected high (%d us)",
+                type(self).__name__,
+                offset_ns // 1000,
+            )
+        if abs(freq_Hz) > 50_000_000:
+            log.warning(
+                "[%s] Sync-Compensation is unexpected high (%.3f MHz)",
+                type(self).__name__,
+                freq_Hz * 1e-6,
+            )

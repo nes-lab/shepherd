@@ -215,3 +215,8 @@ class Writer(CoreWriter):
                 ),
             )
         self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
+
+    def check_monitors(self) -> None:
+        for monitor in self.monitors:
+            if hasattr(monitor, "check_status"):
+                monitor.check_status()

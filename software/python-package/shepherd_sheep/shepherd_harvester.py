@@ -111,6 +111,8 @@ class ShepherdHarvester(ShepherdIO):
         success = self.start(self.start_time, wait_blocking=False)
         if not success:
             return
+        if self.writer is not None:
+            self.writer.check_monitors()
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
         self.handle_pru_messages(panic_on_restart=False)
