@@ -237,14 +237,6 @@ void ocmc_cache_update(void)
     }
 
     //printk(KERN_INFO "shprd.cache: idx [%d, %d] %d", cache_block_idx_tail, cache_block_idx_head, cache_block_fill_lvl);
-    /*
-    if (idx_end_new > idx_start_new + CACHE_SIZE_BLOCK_N)
-    const uint32_t cache_block_idx = index >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-    const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
-    const uint32_t flag_mask       = 1u << (cache_block_idx & 0x1Fu);
-    const bool_ft  in_cache0       = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
-    const bool_ft  in_cache        = 1;
-*/
 }
 
 enum hrtimer_restart update_callback(struct hrtimer *timer_for_restart)
