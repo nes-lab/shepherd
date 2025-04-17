@@ -1,4 +1,3 @@
-import time
 from types import TracebackType
 
 import h5py
@@ -61,7 +60,7 @@ class PruRecorder(Monitor):
             data_length += max(self.increment, pos_end - data_length)
             self.data["values"].resize((data_length, 3))
             self.data["time"].resize((data_length,))
-        self.data["time"][self.position : pos_end] = int(time.time() * 1e9)
+        self.data["time"][self.position : pos_end] = data.timestamps_ns
         self.data["values"][self.position : pos_end, 0] = data.pru0_tsample_mean
         self.data["values"][self.position : pos_end, 1] = data.pru0_tsample_max
         self.data["values"][self.position : pos_end, 2] = data.pru1_tsample_max
