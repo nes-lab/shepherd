@@ -23,9 +23,10 @@ struct SharedMem
     volatile struct GPIOTrace  *buffer_gpio_ptr;
     volatile struct UtilTrace  *buffer_util_ptr;
     /* internal fast index to far-buffers */
-    volatile uint32_t           buffer_iv_idx;   // write by pru0 only
-    volatile uint32_t           buffer_gpio_idx; // write by pru1 only
-    volatile uint32_t           buffer_util_idx; // write by pru1 only
+    volatile uint32_t           buffer_iv_inp_idx; // write by pru0 only, TODO: pru0-internal ATM
+    volatile uint32_t           buffer_iv_out_idx; // write by pru0 only, TODO: pru0-internal ATM
+    volatile uint32_t           buffer_gpio_idx;   // write by pru1 only
+    volatile uint32_t           buffer_util_idx;   // write by pru1 only
     /* size of these buffers - allows cheap verification in userspace */
     volatile uint32_t           buffer_size;
     volatile uint32_t           buffer_iv_inp_size;

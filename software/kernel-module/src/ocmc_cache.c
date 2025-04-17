@@ -169,7 +169,7 @@ void ocmc_cache_update(void)
 
 	-> cache should always be ahead of PRUs read-pointers
 
-	pru_read_index A		SHARED_MEM.buffer_iv_idx [PRU-INTERNAL]
+	pru_read_index A		SHARED_MEM.buffer_iv_inp_idx [PRU-INTERNAL]
 	pru_read_index B		IVTraceInp.idx_pru	[public, written by PRU]
 	python_write_index A	IVTraceInp.idx_sys	[written by Py]
 	python_write_index B	SHARED_MEM.buffer_iv_inp_sys_idx [kMod to Pru]

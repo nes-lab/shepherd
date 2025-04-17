@@ -26,10 +26,11 @@ volatile uint32_t *buf_out_current;
 struct IVSample    ivsample;
 static bool_ft     dac_aux_link_to_mid = false;
 
-static inline void fetch_iv_trace(const uint32_t index)
+static inline void fetch_iv_trace()
 {
     /* check if sample is in cache */
-    const uint32_t cache_block_idx = index >> CACHE_BLOCK_SAMPLES_LOG2;
+    const uint32_t sample_idx      = SHARED_MEM.buffer_iv_inp_idx;
+    const uint32_t cache_block_idx = sample_idx >> CACHE_BLOCK_SAMPLES_LOG2;
     const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
     const uint32_t flag_mask       = 1u << (cache_block_idx & 0x1Fu);
     const bool_ft  in_cache        = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
@@ -40,7 +41,7 @@ static inline void fetch_iv_trace(const uint32_t index)
     if (in_cache)
     {
         /* Cache-Reading, ~ 27 cycles per u32 -> 270 ns */
-        const uint32_t cache_offset = (index & CACHE_IDX_MASK) << IV_SAMPLE_SIZE_LOG2;
+        const uint32_t cache_offset = (sample_idx & CACHE_IDX_MASK) << IV_SAMPLE_SIZE_LOG2;
         __builtin_memcpy((uint8_t *) &ivsample, L3OCMC_ADDR + cache_offset,
                          sizeof(struct IVSample));
     }
@@ -48,18 +49,22 @@ static inline void fetch_iv_trace(const uint32_t index)
     {
         /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
         __builtin_memcpy((uint8_t *) &ivsample,
-                         (uint8_t *) buf_inp_sample + (index << IV_SAMPLE_SIZE_LOG2),
+                         (uint8_t *) buf_inp_sample + (sample_idx << IV_SAMPLE_SIZE_LOG2),
                          sizeof(struct IVSample));
     }
+
+    /* advance index */
+    if (sample_idx >= BUFFER_IV_INP_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_inp_idx = 0u; }
+    else { SHARED_MEM.buffer_iv_inp_idx = sample_idx + 1u; }
+
     /* inform host about current position */
-    SHARED_MEM.buffer_iv_inp_ptr->idx_pru = index;
+    SHARED_MEM.buffer_iv_inp_ptr->idx_pru = sample_idx;
 }
 
 
 static inline void sample_emulator()
 {
-    const uint32_t index = SHARED_MEM.buffer_iv_idx;
-    fetch_iv_trace(index);
+    fetch_iv_trace();
     uint32_t input_current_nA = ivsample.current;
     uint32_t input_voltage_uV = ivsample.voltage;
 
@@ -101,6 +106,7 @@ static inline void sample_emulator()
     if (feedback_to_hrv) { voltage_set_uV = V_input_request_uV; }
 
     /* write back converter-state into shared memory buffer */
+    const uint32_t index = SHARED_MEM.buffer_iv_out_idx;
     if (get_state_log_intermediate())
     {
         buf_out_current[index] = get_I_mid_out_nA();
@@ -114,24 +120,27 @@ static inline void sample_emulator()
 }
 
 
-static inline void sample_emu_loopback(const uint32_t sample_idx)
+static inline void sample_emu_loopback()
 {
-    fetch_iv_trace(sample_idx);
+    fetch_iv_trace();
+    const uint32_t sample_idx   = SHARED_MEM.buffer_iv_out_idx;
     buf_out_current[sample_idx] = ivsample.current;
     buf_out_voltage[sample_idx] = ivsample.voltage;
 }
 
 #endif // EMU_SUPPORT
 
-static inline void sample_emu_ADCs(const uint32_t sample_idx)
+static inline void sample_emu_ADCs()
 {
+    const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
     buf_out_current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
     buf_out_voltage[sample_idx] = 0u;
 }
 
-static inline void sample_hrv_ADCs(const uint32_t sample_idx)
+static inline void sample_hrv_ADCs()
 {
+    const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
     buf_out_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     buf_out_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
@@ -147,12 +156,12 @@ void sample()
         case MODE_EMULATOR: return sample_emulator();
 #endif // EMU_SUPPORT
 #ifdef HRV_SUPPORT
-        case MODE_HARVESTER: return sample_adc_harvester(SHARED_MEM.buffer_iv_idx);
+        case MODE_HARVESTER: return sample_adc_harvester();
 #endif // HRV_SUPPORT
-        case MODE_EMU_ADC_READ: return sample_emu_ADCs(SHARED_MEM.buffer_iv_idx);
-        case MODE_HRV_ADC_READ: return sample_hrv_ADCs(SHARED_MEM.buffer_iv_idx);
+        case MODE_EMU_ADC_READ: return sample_emu_ADCs();
+        case MODE_HRV_ADC_READ: return sample_hrv_ADCs();
 #ifdef EMU_SUPPORT
-        case MODE_EMU_LOOPBACK: return sample_emu_loopback(SHARED_MEM.buffer_iv_idx);
+        case MODE_EMU_LOOPBACK: return sample_emu_loopback();
 #endif // EMU_SUPPORT
         default: msgsys_send_status(MSG_ERR_SAMPLE_MODE, SHARED_MEM.shp_pru0_mode, 0u);
     }

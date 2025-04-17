@@ -130,8 +130,9 @@ void harvester_initialize()
 }
 
 #ifdef HRV_SUPPORT
-void sample_adc_harvester(const uint32_t sample_idx)
+void sample_adc_harvester()
 {
+    const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     if (HRV_CFG.algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(sample_idx);
     else if (HRV_CFG.algorithm >= HRV_MPPT_VOC)
         harvest_adc_2_mppt_voc(sample_idx); // ~ 1300 ns without SPI

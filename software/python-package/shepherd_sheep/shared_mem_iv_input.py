@@ -186,9 +186,23 @@ class SharedMemIVInput:
         iv_data[0::2] = data.voltage[: len(data)]
         iv_data[1::2] = data.current[: len(data)]
         # Seek buffer location in memory and skip header
-        self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
-        self._mm.write(iv_data.tobytes())
-        # TODO: code does not handle boundaries - !!!!!
+        if self.index_next + len(data) <= self.N_SAMPLES:
+            self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
+            self._mm.write(iv_data.tobytes())
+        else:
+            cut_position = 2 * (self.N_SAMPLES - self.index_next)
+            self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
+            self._mm.write(iv_data[:cut_position].tobytes())
+            if len(iv_data[:cut_position]) + len(iv_data[cut_position:]) > len(iv_data):
+                log.error(
+                    "NUMPY specific error %d, %d, %d",
+                    len(iv_data[:cut_position]),
+                    len(iv_data[cut_position:]),
+                    len(iv_data),
+                )
+            self._mm.seek(self._offset_samples)
+            self._mm.write(iv_data[cut_position:].tobytes())
+
         if verbose:
             log.debug(
                 "[%s] Sending idx = %d to PRU took %.2f ms, %.2f %%fill",

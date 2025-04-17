@@ -258,12 +258,12 @@ void event_loop()
                 GPIO_OFF(DEBUG_PIN1_MASK);
 
                 /* counter write & incrementation */
-                const uint32_t idx                              = SHARED_MEM.buffer_iv_idx;
+                const uint32_t idx                              = SHARED_MEM.buffer_iv_out_idx;
                 SHARED_MEM.buffer_iv_out_ptr->timestamp_ns[idx] = last_sample_timestamp_ns;
                 SHARED_MEM.buffer_iv_out_ptr->idx_pru           = idx;
 
-                if (idx >= BUFFER_IV_OUT_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_idx = 0u; }
-                else { SHARED_MEM.buffer_iv_idx = idx + 1u; }
+                if (idx >= BUFFER_IV_OUT_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_out_idx = 0u; }
+                else { SHARED_MEM.buffer_iv_out_idx = idx + 1u; }
             }
 
             /* Did the Linux kernel module ask for reset? */
@@ -353,7 +353,8 @@ reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
     SHARED_MEM.pru0_ns_per_sample = 0u;
 
-    SHARED_MEM.buffer_iv_idx      = 0u;
+    SHARED_MEM.buffer_iv_inp_idx  = 0u;
+    SHARED_MEM.buffer_iv_out_idx  = 0u;
     SHARED_MEM.buffer_gpio_idx    = 0u;
     SHARED_MEM.buffer_util_idx    = 0u;
 

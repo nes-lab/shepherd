@@ -64,7 +64,8 @@ int main(void)
 
     SHARED_MEM.last_sync_timestamp_ns            = 0u;
     SHARED_MEM.next_sync_timestamp_ns            = 0u;
-    SHARED_MEM.buffer_iv_idx                     = 0u;
+    SHARED_MEM.buffer_iv_inp_idx                 = 0u;
+    SHARED_MEM.buffer_iv_out_idx                 = 0u;
     SHARED_MEM.buffer_gpio_idx                   = 0u;
     SHARED_MEM.buffer_util_idx                   = 0u;
 

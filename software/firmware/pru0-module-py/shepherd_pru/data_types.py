@@ -78,7 +78,7 @@ class SharedMemLight(ct.Structure):
         # ("mutex_x", ct.c_uint32 * 2),  # bool_ft
         ("gpio_pin_state", ct.c_uint32),
         ("buffer_idxs", ct.c_uint32 * 2),
-        ("buffer_iv_idx", ct.c_uint32),  # Pointer
+        ("buffer_iv_idx", ct.c_uint32),  # Pointer # TODO: changes here
         ("buffer_gpio_idx", ct.c_uint32),  # Pointer
         ("analog_x", ct.c_uint32 * 5),  # TODO: ivsample_fetch
         ("trigger_x", ct.c_uint32 * 2),  # bool_ft
