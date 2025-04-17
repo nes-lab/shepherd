@@ -28,8 +28,8 @@ class PruRecorder(Monitor):
         self.data["values"].attrs["unit"] = "ns, ns, ns"
         self.data["values"].attrs["description"] = (
             "pru0_vsrc_tsample_mean [ns], "
-            "pru0_vsrc_tsample_max [ns],"
-            "pru1_gpio_tsample_max [ns],"
+            "pru0_vsrc_tsample_max [ns], "
+            "pru1_gpio_tsample_max [ns], "
             f"with {commons.SAMPLE_INTERVAL_NS} ns per sample-step"
         )
         # reset increment AFTER creating all dsets are created
