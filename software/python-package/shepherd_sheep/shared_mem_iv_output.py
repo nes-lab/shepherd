@@ -130,13 +130,14 @@ class SharedMemIVOutput:
         self._mm.seek(self._offset_idx_pru)
         index_pru = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
+        self.fill_level = 100 * avail_length / self.N_SAMPLES
+
         if avail_length < self.N_SAMPLES_PER_CHUNK:
             # nothing to do
             # TODO: detect overflow!!!
             # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
             return None
 
-        self.fill_level = 100 * avail_length / self.N_SAMPLES
         if self.fill_level > 80:
             log.warning(
                 "[%s] Fill-level critical (80%%)",

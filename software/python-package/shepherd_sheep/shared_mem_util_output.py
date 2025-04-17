@@ -125,11 +125,14 @@ class SharedMemUtilOutput:
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
+        self.fill_level = 100 * avail_length / self.N_SAMPLES
+
         if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
+
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
-        self.fill_level = 100 * avail_length / self.N_SAMPLES
+
         if self.fill_level > 80:
             log.warning(
                 "[%s] Fill-level critical (80%%)",
