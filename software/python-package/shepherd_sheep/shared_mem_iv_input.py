@@ -58,14 +58,14 @@ class SharedMemIVInput:
     #       maybe directly move data?
 
     # class is designed for the following size layout (mentioned here mostly for crosscheck)
-    N_SAMPLES: int = commons.BUFFER_IV_SIZE
+    N_SAMPLES: int = commons.BUFFER_IV_INP_SAMPLES_N
     SIZE_SAMPLE: int = 4 + 4  # I & V
     SIZE_SAMPLES: int = N_SAMPLES * SIZE_SAMPLE
     SIZE_CANARY: int = 4
     SIZE_SECTION: int = 4 + 4 + SIZE_SAMPLES + SIZE_CANARY
     # ⤷ consist of index, samples, canary
 
-    N_BUFFER_CHUNKS_DEF: int = 20
+    N_BUFFER_CHUNKS_DEF: int = 16
     N_SAMPLES_PER_CHUNK_DEF: int = N_SAMPLES // N_BUFFER_CHUNKS_DEF
 
     # TODO: something like that would allow automatic processing
@@ -92,10 +92,6 @@ class SharedMemIVInput:
 
         if self.size_by_sys != self.SIZE_SECTION:
             raise ValueError("[%s] Size does not match PRU-data", type(self).__name__)
-        if (self.N_SAMPLES % self.n_buffer_chunks) != 0:
-            raise ValueError(
-                "[%s] Buffer was not cleanly dividable by chunk-count", type(self).__name__
-            )
 
         self.index_next: int | None = None
 

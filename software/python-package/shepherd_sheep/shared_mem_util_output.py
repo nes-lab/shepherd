@@ -44,7 +44,7 @@ class UtilTrace:
 
 class SharedMemUtilOutput:
     # class is designed for the following size layout (mentioned here mostly for crosscheck)
-    N_SAMPLES: int = commons.BUFFER_UTIL_SIZE
+    N_SAMPLES: int = commons.BUFFER_UTIL_SAMPLES_N
     SIZE_SAMPLE: int = 8 + 4 + 4 + 4 + 4  # timestamp, tick- & sample-count
     SIZE_SAMPLES: int = N_SAMPLES * SIZE_SAMPLE
     SIZE_CANARY: int = 4

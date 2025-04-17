@@ -36,7 +36,7 @@ class GPIOTrace:
 
 class SharedMemGPIOOutput:
     # class is designed for the following size layout (mentioned here mostly for crosscheck)
-    N_SAMPLES: int = commons.BUFFER_GPIO_SIZE
+    N_SAMPLES: int = commons.BUFFER_GPIO_SAMPLES_N
     SIZE_SAMPLE: int = 8 + 2  # timestamp & GPIOTrace
     SIZE_SAMPLES: int = N_SAMPLES * SIZE_SAMPLE
     SIZE_CANARY: int = 4

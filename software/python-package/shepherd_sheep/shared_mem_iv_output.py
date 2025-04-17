@@ -16,7 +16,7 @@ from .shared_mem_iv_input import IVTrace
 
 class SharedMemIVOutput:
     # class is designed for the following size layout (mentioned here mostly for crosscheck)
-    N_SAMPLES: int = commons.BUFFER_IV_SIZE
+    N_SAMPLES: int = commons.BUFFER_IV_OUT_SAMPLES_N
     SIZE_SAMPLE: int = 8 + 4 + 4  # timestamp, V, I
     SIZE_SAMPLES: int = N_SAMPLES * SIZE_SAMPLE
     SIZE_CANARY: int = 4

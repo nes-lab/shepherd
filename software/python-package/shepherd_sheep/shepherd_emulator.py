@@ -167,7 +167,9 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
-        self.buffer_segment_count = math.floor(commons.BUFFER_IV_SIZE // self.samples_per_segment)
+        self.buffer_segment_count = math.floor(
+            commons.BUFFER_IV_INP_SAMPLES_N // self.samples_per_segment
+        )
         log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
         prog_bar = tqdm(
             total=self.buffer_segment_count,

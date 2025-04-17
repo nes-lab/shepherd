@@ -4,7 +4,7 @@ import h5py
 import yaml
 from shepherd_core import Compression
 
-from .commons import BUFFER_GPIO_SIZE
+from .commons import BUFFER_GPIO_SAMPLES_N
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .h5_monitor_abc import Monitor
 from .shared_mem_gpio_output import GPIOTrace
@@ -33,7 +33,7 @@ class GpioRecorder(Monitor):
             sort_keys=False,
         )
         # reset increment AFTER creating all dsets are created, TODO: WHY?????
-        self.increment = BUFFER_GPIO_SIZE
+        self.increment = BUFFER_GPIO_SAMPLES_N
 
     def __exit__(
         self,

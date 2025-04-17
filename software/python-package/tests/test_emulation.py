@@ -185,7 +185,7 @@ def test_target_pins() -> None:
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cache_via_loopback(tmp_path: Path) -> None:
     # generate 2.5 buffers of random data
-    duration_s = 2.5e-3 * commons.BUFFER_IV_INTERVAL_MS
+    duration_s = 2.5e-3 * commons.BUFFER_IV_INP_INTERVAL_MS
     path_input = data_h5(tmp_path, duration_s=duration_s)
     path_output = tmp_path / "loopback.h5"
 
@@ -220,7 +220,7 @@ def test_cache_via_loopback(tmp_path: Path) -> None:
         # essentials of emulator.enter()
         # Preload emulator with data
         samples_per_buffer = 10_000
-        buffer_segment_count = math.floor(commons.BUFFER_IV_SIZE // samples_per_buffer)
+        buffer_segment_count = math.floor(commons.BUFFER_IV_INP_SAMPLES_N // samples_per_buffer)
         print("Begin initial fill of IV-Buffer (n=%d segments)", buffer_segment_count)
         for _, dsv, dsc in reader.read_buffers(
             end_n=buffer_segment_count,
