@@ -35,7 +35,7 @@ struct SharedMem
     /* userspace buffer-states */
     volatile uint32_t           buffer_iv_inp_sys_idx; // write by kMod only, TODO: consider in PRU
     /* Cache System (for buffer_iv_inp) to avoid far/slow RAM-reads */
-    volatile uint32_t           cache_flags[CACHE_FLAG_SIZE_U32_N]; // write by kMod only
+    volatile uint32_t           cache_flags[CACHE_U32_FLAGS_N]; // write by kMod only
     /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
      * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
     volatile uint32_t           dac_auxiliary_voltage_raw;

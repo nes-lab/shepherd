@@ -113,13 +113,13 @@ struct IVSample
     uint32_t current;
 } __attribute__((packed));
 
-extern uint32_t __cache_fits_buffer[1 / ((1u << ELEMENT_SIZE_LOG2) == sizeof(struct IVSample))];
+extern uint32_t __cache_fits_buffer[1 / ((1u << IV_SAMPLE_SIZE_LOG2) == sizeof(struct IVSample))];
 
 struct IVTraceInp
 {
     uint32_t idx_pru; // already read, TODO: can be removed? copy of shared_mem.buffer_iv_idx?
     uint32_t idx_sys;
-    struct IVSample sample[BUFFER_IV_SIZE];
+    struct IVSample sample[BUFFER_IV_INP_SAMPLES_N];
     /* safety */
     uint32_t        canary;
 } __attribute__((packed));
@@ -127,9 +127,9 @@ struct IVTraceInp
 struct IVTraceOut
 {
     uint32_t idx_pru;
-    uint64_t timestamp_ns[BUFFER_IV_SIZE];
-    uint32_t voltage[BUFFER_IV_SIZE];
-    uint32_t current[BUFFER_IV_SIZE];
+    uint64_t timestamp_ns[BUFFER_IV_OUT_SAMPLES_N];
+    uint32_t voltage[BUFFER_IV_OUT_SAMPLES_N];
+    uint32_t current[BUFFER_IV_OUT_SAMPLES_N];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));
@@ -137,8 +137,8 @@ struct IVTraceOut
 struct GPIOTrace
 {
     uint32_t idx_pru;
-    uint64_t timestamp_ns[BUFFER_GPIO_SIZE];
-    uint16_t bitmask[BUFFER_GPIO_SIZE];
+    uint64_t timestamp_ns[BUFFER_GPIO_SAMPLES_N];
+    uint16_t bitmask[BUFFER_GPIO_SAMPLES_N];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));
@@ -147,11 +147,11 @@ struct UtilTrace
 {
     /* PRU0 utilization, max ticks per sample (10us), sum of ticks during one sync window (100ms) */
     uint32_t idx_pru;
-    uint64_t timestamp_ns[BUFFER_UTIL_SIZE];
-    uint32_t pru0_tsample_ns_max[BUFFER_UTIL_SIZE];
-    uint32_t pru0_tsample_ns_sum[BUFFER_UTIL_SIZE];
-    uint32_t pru0_sample_count[BUFFER_UTIL_SIZE];
-    uint32_t pru1_tsample_ns_max[BUFFER_UTIL_SIZE];
+    uint64_t timestamp_ns[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru0_tsample_ns_max[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru0_tsample_ns_sum[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru0_sample_count[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru1_tsample_ns_max[BUFFER_UTIL_SAMPLES_N];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));

@@ -12,7 +12,7 @@
 #define OCMC_SIZE              (0xFFFFu)
 #define CLEAR_DISCARDED_BLOCKS (true)
 
-extern uint32_t             __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_BYTE_LOG2) - 1u)];
+extern uint32_t             __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2) - 1u)];
 
 void __iomem               *cache_io             = NULL;
 void __iomem               *buffr_io             = NULL;
@@ -20,15 +20,15 @@ static u8                   init_done            = 0u;
 static u8                   error_detected       = 0u;
 struct SharedMem           *shared_mem           = NULL;
 struct IVTraceInp          *buffr_mem            = NULL;
-uint32_t                    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-uint32_t                    cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
+uint32_t                    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
+uint32_t                    cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
 uint32_t                    cache_block_fill_lvl = 0u;
-uint32_t                    flags_local[CACHE_FLAG_SIZE_U32_N];
+uint32_t                    flags_local[CACHE_U32_FLAGS_N];
 
 /* Timer-system for cache-updates */
 static enum hrtimer_restart update_callback(struct hrtimer *timer_for_restart);
 struct hrtimer              update_timer;
-#define DELAY_TIMER ns_to_ktime(CACHE_BLOCK_SIZE_ELEM_N *SAMPLE_INTERVAL_NS - 1000000u)
+#define DELAY_TIMER ns_to_ktime(CACHE_BLOCK_SAMPLES_N *SAMPLE_INTERVAL_NS - 1000000u)
 
 
 void ocmc_cache_init(void)
@@ -78,8 +78,8 @@ void ocmc_cache_init(void)
 
     init_done = 1u;
     printk(KERN_INFO "shprd.cache: -> %u cache-blocks with %u ivsamples each for %u us",
-           CACHE_SIZE_BLOCK_N, CACHE_BLOCK_SIZE_ELEM_N,
-           CACHE_BLOCK_SIZE_ELEM_N * SAMPLE_INTERVAL_NS / 1000u);
+           CACHE_BLOCKS_N, CACHE_BLOCK_SAMPLES_N,
+           CACHE_BLOCK_SAMPLES_N * SAMPLE_INTERVAL_NS / 1000u);
 }
 
 void ocmc_cache_exit(void)
@@ -103,13 +103,13 @@ void ocmc_cache_exit(void)
 void ocmc_cache_reset(void)
 {
     /* what is done: invalidate indizes, empty fill-level, clear cache, */
-    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-    cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SIZE_ELEM_LOG2;
+    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
+    cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
     cache_block_fill_lvl = 0u;
     memset_io(cache_io, 0u, OCMC_SIZE); // u8-based operation
     shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
-    memset(&flags_local[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
-    memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
+    memset(&flags_local[0], 0u, 4 * CACHE_U32_FLAGS_N);
+    memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_U32_FLAGS_N);
     error_detected = 0u;
 }
 
@@ -121,15 +121,15 @@ uint32_t ocmc_cache_add(uint32_t block_idx)
     uint32_t       cache_offset;
     uint32_t       buffer_offset;
 
-    if (block_idx >= BUFFER_SIZE_BLOCK_N) return 0u;
+    if (block_idx >= BUFFER_BLOCKS_N) return 0u;
     // printk(KERN_INFO "shprd.cache: mk %d, flag i%d m%d", block_idx, flag_idx, flag_mask);
     /* copy from buffer to cache */
-    cache_offset = (block_idx & CACHE_BLOCK_MASK)
-                   << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
-    buffer_offset = block_idx << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
+    cache_offset = (block_idx & CACHE_BLOCK_IDX_MASK)
+                   << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2);
+    buffer_offset = block_idx << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2);
     // note: no mask applied for buffer as first return-check handles range
     memcpy_toio(((uint8_t *) cache_io) + cache_offset,
-                ((uint8_t *) buffr_mem->sample) + buffer_offset, CACHE_BLOCK_SIZE_BYTE_N);
+                ((uint8_t *) buffr_mem->sample) + buffer_offset, CACHE_BLOCK_SIZE);
 
     /* update cache-flags */
     flags_local[flag_idx] |= flag_mask;
@@ -145,7 +145,7 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
     const uint32_t flag_mask = 1u << (block_idx & 0x1Fu);
     uint32_t       cache_offset;
 
-    if (block_idx >= BUFFER_SIZE_BLOCK_N) return 0u;
+    if (block_idx >= BUFFER_BLOCKS_N) return 0u;
     //printk(KERN_INFO "shprd.cache: rm %d, flag i%d m%d", block_idx, flag_idx, flag_mask);
     /* update cache-flags */
     flags_local[flag_idx] &= ~flag_mask;
@@ -154,9 +154,9 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
     /* zero cache-block, optional in theory */
     if (CLEAR_DISCARDED_BLOCKS)
     {
-        cache_offset = (block_idx & CACHE_BLOCK_MASK)
-                       << (CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2);
-        memset_io(((uint8_t *) cache_io) + cache_offset, 0u, CACHE_BLOCK_SIZE_BYTE_N);
+        cache_offset = (block_idx & CACHE_BLOCK_IDX_MASK)
+                       << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2);
+        memset_io(((uint8_t *) cache_io) + cache_offset, 0u, CACHE_BLOCK_SIZE);
     }
 
     return 1u;
@@ -180,28 +180,28 @@ void ocmc_cache_update(void)
 
     uint32_t idx_read, idx_write, head_next;
 
-    if (buffr_mem->idx_sys >= BUFFER_IV_SIZE) return;
+    if (buffr_mem->idx_sys >= BUFFER_IV_INP_SAMPLES_N) return;
 
     /*  Read-path Shortcut for PRU */
     shared_mem->buffer_iv_inp_sys_idx = buffr_mem->idx_sys;
 
     // calculate current external positions
-    idx_read                          = buffr_mem->idx_pru >> CACHE_BLOCK_SIZE_ELEM_LOG2;
-    idx_write                         = buffr_mem->idx_sys >> CACHE_BLOCK_SIZE_ELEM_LOG2;
+    idx_read                          = buffr_mem->idx_pru >> CACHE_BLOCK_SAMPLES_LOG2;
+    idx_write                         = buffr_mem->idx_sys >> CACHE_BLOCK_SAMPLES_LOG2;
 
     /* Cache Cleanup */
     if ((idx_read != cache_block_idx_tail) && (cache_block_fill_lvl > 0u))
     {
         cache_block_fill_lvl -= ocmc_cache_remove(cache_block_idx_tail);
-        if (cache_block_idx_tail++ >= BUFFER_SIZE_BLOCK_N) { cache_block_idx_tail = 0u; }
+        if (cache_block_idx_tail++ >= BUFFER_BLOCKS_N) { cache_block_idx_tail = 0u; }
     }
 
     /* is cache full? */
-    if (cache_block_fill_lvl >= CACHE_SIZE_BLOCK_N) return;
+    if (cache_block_fill_lvl >= CACHE_BLOCKS_N) return;
 
     /* Cache Fill */
     head_next = cache_block_idx_head + 1u;
-    if (head_next >= BUFFER_SIZE_BLOCK_N) { head_next = 0u; }
+    if (head_next >= BUFFER_BLOCKS_N) { head_next = 0u; }
 
     if (head_next != idx_write)
     {
@@ -210,9 +210,8 @@ void ocmc_cache_update(void)
     }
 
     /* report out-of-bound read-index ONCE */
-    if ((error_detected == 0u) && (idx_read < BUFFER_SIZE_BLOCK_N) &&
-        (cache_block_idx_tail < BUFFER_SIZE_BLOCK_N) &&
-        (cache_block_idx_head < BUFFER_SIZE_BLOCK_N))
+    if ((error_detected == 0u) && (idx_read < BUFFER_BLOCKS_N) &&
+        (cache_block_idx_tail < BUFFER_BLOCKS_N) && (cache_block_idx_head < BUFFER_BLOCKS_N))
     {
         if (cache_block_idx_head >= cache_block_idx_tail)
         {

@@ -14,39 +14,44 @@
 /**
  * Length of buffers for storing harvest & emulation, gpio- and util- data
  */
-#define ELEMENT_SIZE_LOG2          (3u) // 8 byte (4 + 4)
-#define BUFFER_IV_ELEM_LOG2        (20u)
+#define IV_SAMPLE_SIZE_LOG2        (3u) // 8 byte (4 + 4)
+#define BUFFER_IV_INP_SAMPLES_LOG2 (20u)
 
-#define BUFFER_IV_SIZE             (1000000u) // 1M for ~10s, TODO: rename to elem
-#define BUFFER_GPIO_SIZE           (1000000u)
-#define BUFFER_UTIL_SIZE           (400u)
+#define BUFFER_IV_INP_SAMPLES_N    (1u << BUFFER_IV_INP_SAMPLES_LOG2) // ~1M for ~10s
+#define BUFFER_IV_OUT_SAMPLES_N    (1000000u)                         // 1M for ~10s
+#define BUFFER_GPIO_SAMPLES_N      (8000000u)                         // ~ 8s @ 1 MHz
+#define BUFFER_UTIL_SAMPLES_N      (400u)
 #define IDX_OUT_OF_BOUND           (0xFFFFFFFFu)
 
 /*
  * Cache for Input-IV-Buffer
  */
-#define CACHE_SIZE_BYTE_LOG2       (16u) // 64kByte
-#define CACHE_SIZE_ELEM_LOG2       (CACHE_SIZE_BYTE_LOG2 - ELEMENT_SIZE_LOG2)
-#define CACHE_SIZE_ELEM_N          (1u << CACHE_SIZE_ELEM_LOG2)
-#define CACHE_ELEM_MASK            (CACHE_SIZE_ELEM_N - 1u)
+#define CACHE_SIZE_LOG2            (16u)                                   // 64kByte
+#define CACHE_SAMPLES_LOG2         (CACHE_SIZE_LOG2 - IV_SAMPLE_SIZE_LOG2) // 13
+#define CACHE_SAMPLES_N            (1u << CACHE_SAMPLES_LOG2)              // 8192
+#define CACHE_IDX_MASK             (CACHE_SAMPLES_N - 1u)
 
-#define CACHE_SIZE_BLOCK_LOG2      (3u) // 8 segments
-#define CACHE_SIZE_BLOCK_N         (1u << CACHE_SIZE_BLOCK_LOG2)
+#define CACHE_BLOCKS_LOG2          (3u)                      // 8 segments
+#define CACHE_BLOCKS_N             (1u << CACHE_BLOCKS_LOG2) // 8
 
-#define CACHE_BLOCK_SIZE_ELEM_LOG2 (CACHE_SIZE_ELEM_LOG2 - CACHE_SIZE_BLOCK_LOG2) // expect 2^10
-#define CACHE_BLOCK_SIZE_ELEM_N    (1u << CACHE_BLOCK_SIZE_ELEM_LOG2)
-#define CACHE_BLOCK_SIZE_BYTE_N    (1u << CACHE_BLOCK_SIZE_ELEM_LOG2 + ELEMENT_SIZE_LOG2)
-#define CACHE_BLOCK_MASK           (CACHE_BLOCK_SIZE_ELEM_N - 1u)
+#define CACHE_BLOCK_SAMPLES_LOG2   (CACHE_SAMPLES_LOG2 - CACHE_BLOCKS_LOG2)                 // 10
+#define CACHE_BLOCK_SAMPLES_N      (1u << CACHE_BLOCK_SAMPLES_LOG2)                         // 1024
+#define CACHE_BLOCK_SIZE           (1u << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2)) // 8192
+#define CACHE_BLOCK_IDX_MASK       ((1u << CACHE_BLOCKS_LOG2) - 1u)                         // 0b111
 
-#define BUFFER_SIZE_BLOCK_LOG2     (BUFFER_IV_ELEM_LOG2 - CACHE_BLOCK_SIZE_ELEM_LOG2)
-#define BUFFER_SIZE_BLOCK_N        (1u << BUFFER_SIZE_BLOCK_LOG2)
+#define BUFFER_BLOCKS_LOG2         (BUFFER_IV_INP_SAMPLES_LOG2 - CACHE_BLOCK_SAMPLES_LOG2) // 10
+#define BUFFER_BLOCKS_N            (1u << BUFFER_BLOCKS_LOG2)                              // 1024
+#define BUFFER_BLOCK_MASK          ((1u << BUFFER_BLOCKS_LOG2) - 1u) // 0b11_1111_1111
 
-#define CACHE_FLAG_SIZE_U32_LOG2   (BUFFER_SIZE_BLOCK_LOG2 - 5u)
-#define CACHE_FLAG_SIZE_U32_N      (1u << CACHE_FLAG_SIZE_U32_LOG2)
+#define CACHE_U32_FLAGS_LOG2       (BUFFER_BLOCKS_LOG2 - 5u)    // 5
+#define CACHE_U32_FLAGS_N          (1u << CACHE_U32_FLAGS_LOG2) // 32
+#define CACHE_U32_FLAG_SIZE        (4u * CACHE_U32_FLAGS_N)     // 128
 
 #define L3OCMC_ADDR                ((uint8_t *) 0x40000000u)
 
-extern uint32_t __cache_fits_buffer[1 / ((1u << BUFFER_IV_ELEM_LOG2) >= BUFFER_IV_SIZE)];
+extern uint32_t
+        __cache_fits_buffer[1 / ((1u << BUFFER_IV_INP_SAMPLES_LOG2) >= BUFFER_IV_INP_SAMPLES_N)];
+// TODO: recheck usefulness?
 
 /**
  * These are the system events that we use to signal events to the PRUs.

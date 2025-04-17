@@ -262,7 +262,7 @@ void event_loop()
                 SHARED_MEM.buffer_iv_out_ptr->timestamp_ns[idx] = last_sample_timestamp_ns;
                 SHARED_MEM.buffer_iv_out_ptr->idx_pru           = idx;
 
-                if (idx >= BUFFER_IV_SIZE - 1u) { SHARED_MEM.buffer_iv_idx = 0u; }
+                if (idx >= BUFFER_IV_OUT_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_idx = 0u; }
                 else { SHARED_MEM.buffer_iv_idx = idx + 1u; }
             }
 

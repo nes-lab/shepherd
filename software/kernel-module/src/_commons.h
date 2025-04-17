@@ -108,7 +108,7 @@ struct IVTraceInp
 {
     uint32_t idx_pru;
     uint32_t idx_sys;
-    uint64_t sample[BUFFER_IV_SIZE];
+    uint64_t sample[BUFFER_IV_INP_SAMPLES_N];
     /* safety */
     uint32_t canary;
 } __attribute__((packed));

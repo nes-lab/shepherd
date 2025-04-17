@@ -120,7 +120,7 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
         buf_gpio->timestamp_ns[cIDX] = SHARED_MEM.last_sync_timestamp_ns + last_sync_offset_ns;
         buf_gpio->bitmask[cIDX]      = (uint16_t) gpio_status;
 
-        if (cIDX >= BUFFER_GPIO_SIZE - 1u)
+        if (cIDX >= BUFFER_GPIO_SAMPLES_N - 1u)
         {
             buf_gpio->idx_pru          = 0u;
             SHARED_MEM.buffer_gpio_idx = 0u;
@@ -340,9 +340,9 @@ int32_t event_loop()
             if (receive_sync_reply(&sync_repl) > 0)
             {
                 sync_state                        = IDLE;
-                // TODO: implement detect error here?
+                // TODO: can we also include timestamp?
                 // hard reset here will also trigger an error when resulting time-jumps show up
-                SHARED_MEM.next_sync_timestamp_ns = sync_repl.next_timestamp_ns;
+                // SHARED_MEM.next_sync_timestamp_ns = sync_repl.next_timestamp_ns;
             }
             DEBUG_EVENT_STATE_0;
             continue; // for more regular gpio-sampling
@@ -370,6 +370,7 @@ int32_t event_loop()
         {
             const uint32_t idx                                   = SHARED_MEM.buffer_util_idx;
             // TODO: add timestamp
+            SHARED_MEM.buffer_util_ptr->timestamp_ns[idx] = SHARED_MEM.last_sync_timestamp_ns;
             SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_sum[idx] = pru0_tsample_ns_sum;
             SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_max[idx] = pru0_tsample_ns_max;
             SHARED_MEM.buffer_util_ptr->pru0_sample_count[idx]   = pru0_sample_count;
@@ -380,7 +381,7 @@ int32_t event_loop()
             pru0_tsample_ns_max                                  = 0u;
             pru0_sample_count                                    = 0u;
             pru1_tsample_ns_max                                  = 0u;
-            if (idx < BUFFER_UTIL_SIZE - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
+            if (idx < BUFFER_UTIL_SAMPLES_N - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
             else { SHARED_MEM.buffer_util_idx = 0u; }
             continue;
         }

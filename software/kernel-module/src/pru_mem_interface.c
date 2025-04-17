@@ -74,7 +74,7 @@ void mem_interface_reset(void)
     }
 
     shared_mem->buffer_iv_inp_sys_idx = IDX_OUT_OF_BOUND;
-    memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_FLAG_SIZE_U32_N);
+    memset_io(&shared_mem->cache_flags[0], 0u, 4 * CACHE_U32_FLAGS_N);
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;

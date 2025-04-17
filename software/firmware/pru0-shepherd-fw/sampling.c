@@ -29,7 +29,7 @@ static bool_ft     dac_aux_link_to_mid = false;
 static inline void fetch_iv_trace(const uint32_t index)
 {
     /* check if sample is in cache */
-    const uint32_t cache_block_idx = index >> CACHE_BLOCK_SIZE_ELEM_LOG2;
+    const uint32_t cache_block_idx = index >> CACHE_BLOCK_SAMPLES_LOG2;
     const uint32_t flag_u32_idx    = cache_block_idx >> 5u;
     const uint32_t flag_mask       = 1u << (cache_block_idx & 0x1Fu);
     const bool_ft  in_cache        = SHARED_MEM.cache_flags[flag_u32_idx] & flag_mask;
@@ -40,7 +40,7 @@ static inline void fetch_iv_trace(const uint32_t index)
     if (in_cache)
     {
         /* Cache-Reading, ~ 27 cycles per u32 -> 270 ns */
-        const uint32_t cache_offset = (index & CACHE_ELEM_MASK) << ELEMENT_SIZE_LOG2;
+        const uint32_t cache_offset = (index & CACHE_IDX_MASK) << IV_SAMPLE_SIZE_LOG2;
         __builtin_memcpy((uint8_t *) &ivsample, L3OCMC_ADDR + cache_offset,
                          sizeof(struct IVSample));
     }
@@ -48,7 +48,7 @@ static inline void fetch_iv_trace(const uint32_t index)
     {
         /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
         __builtin_memcpy((uint8_t *) &ivsample,
-                         (uint8_t *) buf_inp_sample + (index << ELEMENT_SIZE_LOG2),
+                         (uint8_t *) buf_inp_sample + (index << IV_SAMPLE_SIZE_LOG2),
                          sizeof(struct IVSample));
     }
     /* inform host about current position */

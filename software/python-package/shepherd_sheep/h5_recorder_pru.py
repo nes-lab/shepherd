@@ -35,7 +35,7 @@ class PruRecorder(Monitor):
         )
         # reset increment AFTER creating all dsets are created
         self.increment = 1000  # 100 s
-        # TODO: make dependent from commons.BUFFER_GPIO_SIZE
+        # TODO: make dependent from commons.BUFFER_GPIO_SAMPLES_N
 
     def __exit__(
         self,
