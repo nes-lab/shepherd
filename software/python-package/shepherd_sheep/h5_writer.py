@@ -30,6 +30,7 @@ from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_kernel import KernelMonitor
+from .h5_monitor_phc2sys import PHC2SYSMonitor
 from .h5_monitor_ptp import PTPMonitor
 from .h5_monitor_sheep import SheepMonitor
 from .h5_monitor_sysutil import SysUtilMonitor
@@ -134,6 +135,7 @@ class Writer(CoreWriter):
         self.sys_util_grp = self.h5file.create_group("sys_util")
         self.kernel_grp = self.h5file.create_group("kernel")
         self.ptp_grp = self.h5file.create_group("ptp")
+        self.phc_grp = self.h5file.create_group("phc2sys")
         return self
 
     def __exit__(
@@ -201,6 +203,7 @@ class Writer(CoreWriter):
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.ptp:
             self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
+            self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))
         if self.sysutil_log_enabled:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))
         if gpio is not None and gpio.uart_decode:
