@@ -42,7 +42,8 @@
 
 #define BUFFER_IV_INP_SAMPLES_N    (1u << BUFFER_IV_INP_SAMPLES_LOG2) // ~1M for ~10s
 #define BUFFER_IV_OUT_SAMPLES_N    (1000000u)                         // 1M for ~10s
-#define BUFFER_GPIO_SAMPLES_N      (8000000u)                         // ~ 8s @ 1 MHz
+#define BUFFER_GPIO_SAMPLES_N      (2000000u)                         // ~ 2s @ 1 MHz
+// -> 2M is working, >=3M fails, TODO: find sweetspot later, could reduce IV_OUT to 6s
 #define BUFFER_UTIL_SAMPLES_N      (400u)
 #define IDX_OUT_OF_BOUND           (0xFFFFFFFFu)
 

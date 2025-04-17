@@ -339,7 +339,7 @@ int32_t event_loop()
             /* If we are waiting for a reply from Linux kernel module */
             if (receive_sync_reply(&sync_repl) > 0)
             {
-                sync_state                        = IDLE;
+                sync_state = IDLE;
                 // TODO: can we also include timestamp?
                 // hard reset here will also trigger an error when resulting time-jumps show up
                 // SHARED_MEM.next_sync_timestamp_ns = sync_repl.next_timestamp_ns;
@@ -368,7 +368,7 @@ int32_t event_loop()
         /* transmit pru0-util, current design puts this in fresh/next buffer */
         if (transmit_util)
         {
-            const uint32_t idx                                   = SHARED_MEM.buffer_util_idx;
+            const uint32_t idx                            = SHARED_MEM.buffer_util_idx;
             // TODO: add timestamp
             SHARED_MEM.buffer_util_ptr->timestamp_ns[idx] = SHARED_MEM.last_sync_timestamp_ns;
             SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_sum[idx] = pru0_tsample_ns_sum;
