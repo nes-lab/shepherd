@@ -16,9 +16,7 @@ results: dict = {}
 # #####################################################################
 
 for hrv_name in hrv_list[1:]:
-    path_output = path_input.with_name(
-        path_input.stem + "_" + hrv_name + "_cpy_sim" + path_input.suffix
-    )
+    path_output = path_input.with_stem(path_input.stem + "_" + hrv_name + "_cpy_sim")
     if not path_output.exists():
         simulate_harvester(
             config=VirtualHarvesterConfig(name=hrv_name),

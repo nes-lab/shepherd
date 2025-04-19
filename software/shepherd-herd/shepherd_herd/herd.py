@@ -4,6 +4,7 @@ import contextlib
 import logging
 import threading
 import time
+from collections.abc import Set as AbstractSet
 from datetime import datetime
 from datetime import timedelta
 from io import StringIO
@@ -11,8 +12,7 @@ from pathlib import Path
 from pathlib import PurePath
 from pathlib import PurePosixPath
 from types import TracebackType
-from typing import Any
-from typing import ClassVar
+from typing import Any, Mapping
 
 import yaml
 from fabric import Connection
@@ -37,7 +37,7 @@ from .logger import logger
 
 class Herd:
     path_default = PurePosixPath("/var/shepherd/recordings/")
-    _remote_paths_allowed: ClassVar[set] = {
+    _remote_paths_allowed: AbstractSet[Path] = {
         path_default,  # default
         PurePosixPath("/var/shepherd/"),
         PurePosixPath("/etc/shepherd/"),
@@ -267,7 +267,7 @@ class Herd:
 
     @staticmethod
     def print_output(
-        replies: dict[str, Result],
+        replies: Mapping[str, Result],
         *,
         verbose: bool = False,
     ) -> None:

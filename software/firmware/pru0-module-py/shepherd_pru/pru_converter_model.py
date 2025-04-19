@@ -1,4 +1,5 @@
 import ctypes as ct
+from collections.abc import Sequence
 
 from shepherd_core import CalibrationEmulator
 from shepherd_core import logger
@@ -19,7 +20,7 @@ class PruCalibration:
         self.cal = cal_emu if cal_emu else CalibrationEmulator()
 
 
-def flatten_list(dl: list) -> list:
+def flatten_list(dl: Sequence) -> list:
     """Small helper FN to convert (multi-dimensional) lists to 1D list
 
     Args:
@@ -27,14 +28,14 @@ def flatten_list(dl: list) -> list:
     Returns:
         1D list
     """
-    if isinstance(dl, list):
+    if isinstance(dl, Sequence):
         if len(dl) < 1:
-            return dl
+            return [*dl]
         if len(dl) == 1:
-            if isinstance(dl[0], list):
+            if isinstance(dl[0], Sequence):
                 return flatten_list(dl[0])
-            return dl
-        if isinstance(dl[0], list):
+            return [*dl]
+        if isinstance(dl[0], Sequence):
             return flatten_list(dl[0]) + flatten_list(dl[1:])
         return [dl[0], *flatten_list(dl[1:])]
     return [dl]

@@ -5,10 +5,10 @@ from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConf
 
 
 class HarvesterConfig(ct.Structure):
-    _pack_: ClassVar[int] = 1
+    _pack_: int = 1  # TODO: test without ClassVar
     _fields_: ClassVar[list] = [(_key, ct.c_uint32) for _key in HarvesterPRUConfig.model_fields] + [
         ("canary", ct.c_uint32)
-    ]
+    ]  # TODO: a sequence (,) seems to be fine
 
 
 class CalibrationConfig(ct.Structure):

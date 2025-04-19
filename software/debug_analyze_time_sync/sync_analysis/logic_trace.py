@@ -1,4 +1,5 @@
 import pickle
+from collections.abc import Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -227,7 +228,7 @@ class LogicTrace:
         data: np.ndarray,
         name: str,
         path: Path,
-        size: tuple = (18, 8),
+        size: Sequence = (18, 8),
         y_side: int = 1000,
     ) -> None:
         # data with timestamp!

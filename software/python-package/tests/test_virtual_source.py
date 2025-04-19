@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from pathlib import Path
+from typing import Mapping, Any
 
 import pytest
 from shepherd_core import CalibrationCape
@@ -92,7 +93,7 @@ def difference_percent(val1: float, val2: float, offset: float) -> float:
 def test_vsource_add_charge(
     pru_vsource: ShepherdDebug,
     pyt_vsource: VirtualSourceModel,
-    reference_vss: dict,
+    reference_vss: Mapping[str, Any],
 ) -> None:
     # set desired end-voltage of storage-cap:
     V_cap_mV = 3500
@@ -149,7 +150,7 @@ def test_vsource_add_charge(
 def test_vsource_drain_charge(
     pru_vsource: ShepherdDebug,
     pyt_vsource: VirtualSourceModel,
-    reference_vss: dict,
+    reference_vss: Mapping[str, Any],
 ) -> None:
     # set desired end-voltage of storage-cap - low enough to disable output
     V_cap_mV = 2300

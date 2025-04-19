@@ -7,7 +7,6 @@ select = ["ALL"]
 ignore = [
     "N802", "N803", "N806", "N815", "N816", # naming (si-units should stay)
     "PLR2004", # magic values
-    "TID252", # relative imports from parent
     "PLR0904", "PLR0911", "PLR0912", "PLR0913", "PLR0915", # complexity
     "C901", # complexity
     "ANN401",  # Any as valid type

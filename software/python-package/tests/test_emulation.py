@@ -219,8 +219,8 @@ def test_cache_via_loopback(tmp_path: Path) -> None:
 
         # essentials of emulator.enter()
         # Preload emulator with data
-        samples_per_buffer = 10_000
-        buffer_segment_count = math.floor(commons.BUFFER_IV_INP_SAMPLES_N // samples_per_buffer)
+        BUFFER_SAMPLES_N = 10_000
+        buffer_segment_count = math.floor(commons.BUFFER_IV_INP_SAMPLES_N // BUFFER_SAMPLES_N)
         print("Begin initial fill of IV-Buffer (n=%d segments)", buffer_segment_count)
         for _, dsv, dsc in reader.read_buffers(
             end_n=buffer_segment_count,

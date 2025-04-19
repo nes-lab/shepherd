@@ -9,6 +9,7 @@ provided by the shepherd kernel module
 import subprocess
 import time
 from pathlib import Path
+from typing import Mapping
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -335,8 +336,8 @@ def read_dac_aux_voltage_raw() -> int:
 
 
 def write_calibration_settings(
-    cal_pru: dict,
-) -> None:  # more precise dict[str, int], trouble with py3.6
+    cal_pru: Mapping[str, int],
+) -> None:
     """Sends the calibration settings to the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output

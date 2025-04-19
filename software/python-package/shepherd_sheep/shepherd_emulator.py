@@ -67,7 +67,7 @@ class ShepherdEmulator(ShepherdIO):
         if not self.reader.is_valid() and self.cfg.abort_on_error:
             raise RuntimeError("Input-File is not valid!")
 
-        self.samples_per_segment = self.reader.samples_per_buffer
+        self.samples_per_segment = self.reader.BUFFER_SAMPLES_N
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
             cal_inp = CalibrationSeries()

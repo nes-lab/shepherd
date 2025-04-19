@@ -17,9 +17,7 @@ results: dict = {}
 path_input = path_here / host_selected / "hrv_ivcurve.h5"
 
 for hrv_name in hrv_list[1:]:
-    path_output = path_input.with_name(
-        path_input.stem + "_" + hrv_name + "_py_sim" + path_input.suffix
-    )
+    path_output = path_input.with_stem(path_input.stem + "_" + hrv_name + "_py_sim")
     if not path_output.exists():
         simulate_harvester(
             config=VirtualHarvesterConfig(name=hrv_name),
