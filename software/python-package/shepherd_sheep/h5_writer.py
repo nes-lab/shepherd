@@ -9,7 +9,6 @@ HDF5 files.
 from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
-from typing import ClassVar
 
 from typing_extensions import Self
 
@@ -54,11 +53,6 @@ class Writer(CoreWriter):
         force_overwrite (bool): Overwrite existing file with the same name
     """
 
-    mode_dtype_dict: ClassVar[dict[str, list]] = {
-        "harvester": ["ivsample", "ivcurve", "isc_voc"],
-        "emulator": ["ivsample"],
-    }
-
     def __init__(
         self,
         file_path: Path,
@@ -89,7 +83,7 @@ class Writer(CoreWriter):
         )
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            self.samples_per_buffer,
+            self.BUFFER_SAMPLES_N,
         ).astype("u8")
         # TODO: keep this optimization
 
@@ -126,7 +120,7 @@ class Writer(CoreWriter):
         self.gpio_grp = self.h5file.create_group("gpio")
         self.pru_util_grp = self.h5file.create_group("pru_util")
         # prepare recorders
-        self.rec_gpio = GpioRecorder(self.gpio_grp, compression=self._compression)
+        self.rec_gpio = GpioRecorder(self.gpio_grp, compression=None)  # self._compression)
         self.rec_pru = PruRecorder(self.pru_util_grp, compression=self._compression)
 
         # targets for logging-monitor # TODO: redesign? all should be kept in data_0

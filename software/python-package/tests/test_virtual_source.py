@@ -1,6 +1,7 @@
 from collections.abc import Generator
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping, Any
+from typing import Any
 
 import pytest
 from shepherd_core import CalibrationCape

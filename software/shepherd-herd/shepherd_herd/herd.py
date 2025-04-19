@@ -4,6 +4,7 @@ import contextlib
 import logging
 import threading
 import time
+from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
 from datetime import datetime
 from datetime import timedelta
@@ -12,7 +13,7 @@ from pathlib import Path
 from pathlib import PurePath
 from pathlib import PurePosixPath
 from types import TracebackType
-from typing import Any, Mapping
+from typing import Any
 
 import yaml
 from fabric import Connection

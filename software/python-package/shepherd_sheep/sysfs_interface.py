@@ -8,8 +8,8 @@ provided by the shepherd kernel module
 
 import subprocess
 import time
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
