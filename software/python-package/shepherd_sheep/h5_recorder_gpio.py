@@ -4,10 +4,10 @@ import h5py
 import yaml
 from shepherd_core import Compression
 
-from .commons import BUFFER_GPIO_SAMPLES_N
 from .commons import GPIO_LOG_BIT_POSITIONS
 from .h5_monitor_abc import Monitor
 from .shared_mem_gpio_output import GPIOTrace
+from .shared_mem_gpio_output import SharedMemGPIOOutput
 
 
 class GpioRecorder(Monitor):
@@ -16,14 +16,16 @@ class GpioRecorder(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0)
+        super().__init__(
+            target, compression, poll_intervall=0, increment=SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK
+        )
 
         self.data.create_dataset(
             name="value",
             shape=(self.increment,),
             dtype="u2",
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.increment,),
             compression=compression,
         )
         self.data["value"].attrs["unit"] = "n"
@@ -32,8 +34,6 @@ class GpioRecorder(Monitor):
             default_flow_style=False,
             sort_keys=False,
         )
-        # reset increment AFTER creating all dsets are created, TODO: WHY?????
-        self.increment = BUFFER_GPIO_SAMPLES_N
 
     def __exit__(
         self,

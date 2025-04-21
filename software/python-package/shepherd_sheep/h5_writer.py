@@ -120,7 +120,7 @@ class Writer(CoreWriter):
         self.gpio_grp = self.h5file.create_group("gpio")
         self.pru_util_grp = self.h5file.create_group("pru_util")
         # prepare recorders
-        self.rec_gpio = GpioRecorder(self.gpio_grp, compression=None)  # self._compression)
+        self.rec_gpio = GpioRecorder(self.gpio_grp, compression=self._compression)
         self.rec_pru = PruRecorder(self.pru_util_grp, compression=self._compression)
 
         # targets for logging-monitor # TODO: redesign? all should be kept in data_0

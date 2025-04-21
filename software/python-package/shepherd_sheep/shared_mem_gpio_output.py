@@ -43,8 +43,8 @@ class SharedMemGPIOOutput:
     SIZE_SECTION: int = 4 + SIZE_SAMPLES + SIZE_CANARY
     # ⤷ consist of index, samples, canary
 
-    N_BUFFER_CHUNKS: int = 20
-    N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
+    N_SAMPLES_PER_CHUNK: int = 100_000
+    N_BUFFER_CHUNKS: int = N_SAMPLES // N_SAMPLES_PER_CHUNK
 
     def __init__(self, mem_map: mmap, cfg: GpioTracing | None, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
