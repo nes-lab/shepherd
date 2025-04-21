@@ -132,6 +132,7 @@ printStart:
 	@echo ''
 	@echo '************************************************************'
 	@echo 'Building project: $(PROJ_NAME) with Ti CGT'
+	@echo ''
 
 .PHONY: printEnd
 printEnd:
@@ -149,24 +150,24 @@ printEnd:
 $(TARGET): $(OBJECTS) $(LINKER_COMMAND_FILE)
 	@echo ''
 	@echo 'Building target: $@'
-	@echo 'Invoking: PRU Linker'
-	$(PRU_CGT)/bin/clpru $(CFLAGS) -z -i$(PRU_CGT)/lib -i$(PRU_CGT)/include $(LFLAGS) -o $(TARGET) $(OBJECTS) -m$(MAP) $(LINKER_COMMAND_FILE) $(LIBS)
+#   @echo 'Invoking: PRU Linker'
+	@$(PRU_CGT)/bin/clpru $(CFLAGS) -z -i$(PRU_CGT)/lib -i$(PRU_CGT)/include $(LFLAGS) -o $(TARGET) $(OBJECTS) -m$(MAP) $(LINKER_COMMAND_FILE) $(LIBS)
 	@echo 'Finished building target'
 
 # Invokes the compiler on all c files in the directory to create the object files
 $(GEN_DIR)/%.object: %.c
 	@mkdir -p $(GEN_DIR)
-	@echo ''
+#	@echo ''
 	@echo 'Building file: $<'
-	@echo 'Invoking: PRU Compiler'
-	$(PRU_CGT)/bin/clpru --include_path=$(PRU_CGT)/include $(INCLUDE) $(CFLAGS) -D PRU$(PRU_NUM) -fe $@ $<
+#   @echo 'Invoking: PRU Compiler'
+	@$(PRU_CGT)/bin/clpru --include_path=$(PRU_CGT)/include $(INCLUDE) $(CFLAGS) -D PRU$(PRU_NUM) -fe $@ $<
 
 $(GEN_DIR)/%.object: %.asm
 	@mkdir -p $(GEN_DIR)
-	@echo ''
+#	@echo ''
 	@echo 'Building file: $<'
-	@echo 'Invoking: PRU Compiler'
-	$(PRU_CGT)/bin/clpru --include_path=$(PRU_CGT)/include $(INCLUDE) $(CFLAGS) -D PRU$(PRU_NUM) -fe $@ $<
+#	@echo 'Invoking: PRU Compiler'
+	@$(PRU_CGT)/bin/clpru --include_path=$(PRU_CGT)/include $(INCLUDE) $(CFLAGS) -D PRU$(PRU_NUM) -fe $@ $<
 
 
 .PHONY: clean
