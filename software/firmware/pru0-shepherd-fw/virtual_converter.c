@@ -80,6 +80,8 @@ static struct ConverterState state;
 
 void converter_initialize()
 {
+    battery_initialize();
+
     /* Power-flow in and out of system */
     state.V_input_uV                        = 0u; // TODO: is it used?
     state.P_inp_fW_n8                       = 0ull;
@@ -268,6 +270,40 @@ void converter_update_cap_storage(void)
             const uint64_t dV_mid_uV_n32 = mul64(CNV_CFG.Constant_us_per_nF_n28, I_mid_nA_n4);
             state.V_mid_uV_n32           = sub64(state.V_mid_uV_n32, dV_mid_uV_n32);
         }
+    }
+
+    // Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
+    if ((uint32_t) (state.V_mid_uV_n32 >> 32u) > CNV_CFG.V_intermediate_max_uV)
+    {
+        state.V_mid_uV_n32 = ((uint64_t) CNV_CFG.V_intermediate_max_uV) << 32u;
+    }
+    if ((uint32_t) (state.V_mid_uV_n32 >> 32u) < 1u)
+    {
+        state.V_mid_uV_n32 = ((uint64_t) 1u) << 32u;
+    }
+    //GPIO_TOGGLE(DEBUG_PIN1_MASK);
+}
+
+void converter_update_bat_storage(void)
+{
+    if (state.enable_storage)
+    {
+        uint32_t V_mid_uV = state.V_mid_uV_n32 >> 32u;
+        if (V_mid_uV < 1u) V_mid_uV = 1u; // avoid and possible div0
+        const uint64_t P_inp_fW_n4 = state.P_inp_fW_n8 >> 4u;
+        // avoid mixing in signed data-types -> slows pru and reduces resolution
+        if (P_inp_fW_n4 > state.P_out_fW_n4)
+        {
+            set_I_battery_in_nA_n4(div_uV_n4(P_inp_fW_n4 - state.P_out_fW_n4, V_mid_uV));
+            set_I_battery_out_nA_n4(0u);
+        }
+        else
+        {
+            set_I_battery_in_nA_n4(0u);
+            set_I_battery_out_nA_n4(div_uV_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV));
+        }
+        update_battery_states();
+        state.V_mid_uV_n32 = get_V_battery_uV_n32();
     }
 
     // Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
