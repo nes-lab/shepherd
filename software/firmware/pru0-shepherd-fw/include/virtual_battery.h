@@ -16,16 +16,16 @@ struct BatteryState
     uint32_t V_oc_uV_n8; // For testing only
 };
 
-void battery_initialize(const volatile struct BatteryConfig *const config);
+void     battery_initialize(const volatile struct BatteryConfig *const config);
 
 uint32_t get_V_battery_uV(void);
 uint32_t get_SoC_u(void);
-void set_SoC_u(uint32_t SoC_u);
+void     set_SoC_u(uint32_t SoC_u);
 uint32_t get_V_oc_uV(void); // For testing only
 
-void set_I_out_nA(const uint64_t I_out_nA);
-void set_I_in_nA(const uint64_t I_in_nA);
+void     set_I_out_nA(const uint64_t I_out_nA);
+void     set_I_in_nA(const uint64_t I_in_nA);
 
-void update_states();
+void     update_states();
 
 #endif //VIRTUAL_BATTERY_H
