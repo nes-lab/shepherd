@@ -78,6 +78,7 @@ void mem_interface_reset(void)
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;
+    shared_mem->battery_settings     = BatteryConfig_default;
     shared_mem->harvester_settings   = HarvesterConfig_default;
 
     shared_mem->programmer_ctrl      = ProgrammerCtrl_default;

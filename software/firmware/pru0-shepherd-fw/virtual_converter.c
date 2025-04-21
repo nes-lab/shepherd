@@ -4,6 +4,7 @@
 #include "hw_config.h"
 #include "math64_safe.h"
 #include "stdint_fast.h"
+#include "virtual_battery.h"
 #include <stddef.h>
 #include <stdint.h>
 

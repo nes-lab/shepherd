@@ -225,6 +225,22 @@ struct ConverterConfig
     uint32_t canary;
 } __attribute__((packed));
 
+#define VOC_LUT_SIZE     123
+#define RSERIES_LUT_SIZE 100
+
+struct BatteryConfig
+{
+    uint32_t Constant_s_per_mAs_n48;
+    uint32_t Constant_1_per_kOhm_n18;
+
+    uint32_t LUT_voc_SoC_min_log2_u_n32;
+    uint32_t LUT_voc_uV_n8[VOC_LUT_SIZE];
+
+    uint32_t LUT_rseries_SoC_min_log2_u_n32;
+    uint32_t LUT_rseries_KOhm_n32[RSERIES_LUT_SIZE];
+    /* safety */
+    uint32_t canary;
+} __attribute__((packed));
 
 struct HarvesterConfig
 {

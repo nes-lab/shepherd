@@ -83,6 +83,39 @@ const struct ConverterConfig ConverterConfig_default = {
         .canary                    = CANARY_VALUE_U32,
 };
 
+const struct BatteryConfig BatteryConfig_default = {
+        .Constant_s_per_mAs_n48     = 300u,
+        .Constant_1_per_kOhm_n18    = 301u,
+
+        .LUT_voc_SoC_min_log2_u_n32 = 302u,
+        .LUT_voc_uV_n8 =
+                {
+                        401u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 402u, 2u, 3u, 4u, 5u,
+                        6u,   7u,   8u,   9u, 10u, 403u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        404u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 405u, 2u, 3u, 4u, 5u,
+                        6u,   7u,   8u,   9u, 10u, 406u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        407u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 408u, 2u, 3u, 4u, 5u,
+                        6u,   7u,   8u,   9u, 10u, 409u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        410u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 411u, 2u, 3u, 4u, 5u,
+                        6u,   7u,   8u,   9u, 10u, 412u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        421u, 422u, 423u,
+                },
+
+        .LUT_rseries_SoC_min_log2_u_n32 = 303u,
+        .LUT_rseries_KOhm_n32 =
+                {
+                        501u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 502u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 503u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        504u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 505u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 506u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        507u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 508u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 509u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        510u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                },
+
+        .canary = CANARY_VALUE_U32,
+};
+
 const struct HarvesterConfig HarvesterConfig_default = {
         .algorithm        = 0u,
         .hrv_mode         = 200u,

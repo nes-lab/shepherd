@@ -108,7 +108,7 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
 
     prev_gpio_status         = gpio_status;
 
-    if (gpio_diff > 0)
+    if (gpio_diff > 0) // comment out to benchmark full rate
     {
         DEBUG_GPIO_STATE_2;
         // local copy reduces reads to far-ram to current minimum

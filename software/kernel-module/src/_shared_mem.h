@@ -46,6 +46,7 @@ struct SharedMem
     volatile struct CalibrationConfig calibration_settings; // write by kMod only
     /* This structure defines all settings of virtual converter emulation*/
     volatile struct ConverterConfig   converter_settings; // write by kMod only
+    volatile struct BatteryConfig     battery_settings;   // write by kMod only
     volatile struct HarvesterConfig   harvester_settings; // write by kMod only
     /* settings for programmer-subroutines */
     volatile struct ProgrammerCtrl    programmer_ctrl; // write by kMod only
