@@ -27,6 +27,8 @@ class SharedMemIVOutput:
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
     DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
 
+    FETCH_ALL_TIMESTAMPS: bool = True
+
     def __init__(self, mem_map: mmap, cfg: PowerTracing | None, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
         self.size_by_sys: int = sfs.get_trace_iv_out_size()
@@ -153,8 +155,7 @@ class SharedMemIVOutput:
                 type(self).__name__,
             )
 
-        fetch_all_ts: bool = True  # TODO: move 2 init
-        if fetch_all_ts:
+        if self.FETCH_ALL_TIMESTAMPS:
             timestamps_ns = np.frombuffer(
                 self._mm,
                 np.uint64,

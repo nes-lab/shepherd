@@ -173,21 +173,29 @@ class SharedMemGPIOOutput:
                 self.fill_level,
             )
         # prepare & fetch data
-        data = GPIOTrace(
-            timestamps_ns=np.frombuffer(
-                self._mm,
-                np.uint64,
-                count=read_length,
-                offset=self._offset_timestamps + self.index_next * 8,
-            ),
-            bitmasks=np.frombuffer(
-                self._mm,
-                np.uint16,
-                count=read_length,
-                offset=self._offset_bitmasks + self.index_next * 2,
-            ),
+        timestamps = np.frombuffer(
+            self._mm,
+            np.uint64,
+            count=read_length,
+            offset=self._offset_timestamps + self.index_next * 8,
         )
-        # TODO: filter dataset with self.ts_start_gp <= buffer_timestamp <= self.ts_stop_gp
+
+        if (timestamps[0] <= self.ts_stop) and (timestamps[-1] >= self.ts_start):
+            data = GPIOTrace(
+                timestamps_ns=timestamps,
+                bitmasks=np.frombuffer(
+                    self._mm,
+                    np.uint16,
+                    count=read_length,
+                    offset=self._offset_bitmasks + self.index_next * 2,
+                ),
+            )
+        else:
+            data = None
+            log.debug(
+                "[%s] Discarded data - out of time-boundary",
+                type(self).__name__,
+            )
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
 
