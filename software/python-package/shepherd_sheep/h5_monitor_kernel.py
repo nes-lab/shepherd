@@ -18,7 +18,7 @@ class KernelMonitor(Monitor):
         compression: Compression | None = Compression.default,
         backlog: int = 60,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.52)
+        super().__init__(target, compression, poll_interval=0.52)
         self.backlog = backlog
 
         self.data.create_dataset(
@@ -60,7 +60,7 @@ class KernelMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -75,7 +75,7 @@ class KernelMonitor(Monitor):
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
-                self.event.wait(self.poll_intervall)  # rate limiter
+                self.event.wait(self.poll_interval)  # rate limiter
                 continue
             first_space = line.find(" ")
             time_str = line[:first_space]

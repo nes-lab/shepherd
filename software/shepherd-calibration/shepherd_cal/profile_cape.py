@@ -159,7 +159,7 @@ class ProfileCape:
         - v_diff_mean @all, @1-4V;0-40mA, over each voltage + each current
         - v_diff_max @all, @1-4V;0-40mA, over each ...
         - c_error_mean @all, @1-4V;0-40mA -> abs-value?
-          min, max, stddev, minmax-intervall, mean
+          min, max, stddev, minmax-interval, mean
 
         """
         for decision in [False, True]:
@@ -255,12 +255,12 @@ class ProfileCape:
         ax.set_xlabel(r"Voltage [mV]", fontsize=10)
         ax.set_ylabel(r"Current [mA]", fontsize=10)
         ax.set_title(
-            "Position of Setpoints with ADC-MinMax-Intervall as color/size "
+            "Position of Setpoints with ADC-MinMax-Interval as color/size "
             f"(mean = {np.mean(dyn):.2f} uA)",
         )
         plt.colorbar(
             sct,
-            label="ADC-MinMax-Intervall [uA]",
+            label="ADC-MinMax-Interval [uA]",
             orientation="vertical",
             shrink=0.7,
         )

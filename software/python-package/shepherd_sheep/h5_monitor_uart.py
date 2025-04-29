@@ -19,7 +19,7 @@ class UARTMonitor(Monitor):
         uart: str = "/dev/ttyS1",
         baudrate: int | None = None,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.05)
+        super().__init__(target, compression, poll_interval=0.05)
         self.uart = uart
         self.baudrate = baudrate
         self.data.create_dataset(
@@ -64,7 +64,7 @@ class UARTMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -84,7 +84,7 @@ class UARTMonitor(Monitor):
         try:
             # open serial as non-exclusive
             with serial.Serial(self.uart, self.baudrate, timeout=0) as uart:
-                while not self.event.wait(self.poll_intervall):  # rate limiter & exit
+                while not self.event.wait(self.poll_interval):  # rate limiter & exit
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")

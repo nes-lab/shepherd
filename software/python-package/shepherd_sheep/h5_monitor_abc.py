@@ -16,11 +16,11 @@ class Monitor(ABC):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-        poll_intervall: float = 0.25,
+        poll_interval: float = 0.25,
         increment: int = 100,
     ) -> None:
         self.data: h5py.Group = target
-        self.poll_intervall: float = poll_intervall
+        self.poll_interval: float = poll_interval
         self.position: int = 0
         self.increment: int = increment
         self.event = threading.Event()

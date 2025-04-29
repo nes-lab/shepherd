@@ -17,7 +17,7 @@ class PHC2SYSMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.51)
+        super().__init__(target, compression, poll_interval=0.51)
         self.data.create_dataset(
             name="values",
             shape=(self.increment, 3),
@@ -62,7 +62,7 @@ class PHC2SYSMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -80,7 +80,7 @@ class PHC2SYSMonitor(Monitor):
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
-                self.event.wait(self.poll_intervall)  # rate limiter
+                self.event.wait(self.poll_interval)  # rate limiter
                 continue
             try:
                 words = str(line).split()

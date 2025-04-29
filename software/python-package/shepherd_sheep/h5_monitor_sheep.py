@@ -16,7 +16,7 @@ class SheepMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.25)
+        super().__init__(target, compression, poll_interval=0.25)
         self.queue = get_message_queue()
         self.data.create_dataset(
             name="message",
@@ -51,10 +51,10 @@ class SheepMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        time.sleep(2 * self.poll_intervall)  # give thread time to write last bits
+        time.sleep(2 * self.poll_interval)  # give thread time to write last bits
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -87,5 +87,5 @@ class SheepMonitor(Monitor):
                 self.data["level"][self.position] = rec.levelno
                 self.position += 1
             else:
-                self.event.wait(self.poll_intervall)  # rate limiter
+                self.event.wait(self.poll_interval)  # rate limiter
         log.debug("[%s] thread ended itself", type(self).__name__)

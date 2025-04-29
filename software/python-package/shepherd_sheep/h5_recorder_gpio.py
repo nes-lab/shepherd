@@ -17,7 +17,7 @@ class GpioRecorder(Monitor):
         compression: Compression | None = Compression.default,
     ) -> None:
         super().__init__(
-            target, compression, poll_intervall=0, increment=SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK
+            target, compression, poll_interval=0, increment=SharedMemGPIOOutput.N_SAMPLES_PER_CHUNK
         )
 
         self.data.create_dataset(
