@@ -153,9 +153,9 @@ class SharedMemIVInput:
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         if index_pru > self.N_SAMPLES:
             # still out-of-bound (u32_max)
-            index_pru = 0
+            index_pru = self.N_SAMPLES - 1
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        self.fill_level = 100 * (self.N_SAMPLES - avail_length) / self.N_SAMPLES
+        self.fill_level = (self.N_SAMPLES - avail_length) / self.N_SAMPLES
         # detect overflow
         if (self.fill_last <= 0.25) and (self.fill_level >= 0.75):
             log.error("[%s] Possible overflow detected!", type(self).__name__)
@@ -214,7 +214,7 @@ class SharedMemIVInput:
                 type(self).__name__,
                 self.index_next,
                 1e3 * (time.time() - ts_start),
-                self.fill_level,
+                100 * self.fill_level,
             )
         # update sys-index
         self.index_next = (self.index_next + len(data)) % self.N_SAMPLES

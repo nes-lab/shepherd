@@ -127,7 +127,7 @@ class SharedMemUtilOutput:
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        self.fill_level = 100 * avail_length / self.N_SAMPLES
+        self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
         if (self.fill_level <= 0.25) and (self.fill_last >= 0.75):
             log.error("[%s] Possible overflow detected!", type(self).__name__)
@@ -142,7 +142,7 @@ class SharedMemUtilOutput:
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
 
-        if self.fill_level > 80:
+        if self.fill_level > 0.8:
             log.warning(
                 "[%s] Fill-level critical (80%%)",
                 type(self).__name__,
@@ -154,7 +154,7 @@ class SharedMemUtilOutput:
                 self.index_next,
                 read_length,
                 time.time(),
-                self.fill_level,
+                100 * self.fill_level,
             )
         # prepare & fetch data
         sample_count = np.frombuffer(

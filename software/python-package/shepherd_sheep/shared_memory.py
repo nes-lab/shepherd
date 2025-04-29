@@ -125,10 +125,10 @@ class SharedMemory:
         self, *, iv_inp: bool = False, iv_out: bool = False, gpio: bool = False, util: bool = True
     ) -> None:
         if (
-            (iv_inp and self.iv_inp.fill_level < 20)
-            or (iv_out and self.iv_out.fill_level > 80)
-            or (gpio and self.gpio.fill_level > 80)
-            or (util and self.util.fill_level > 80)
+            (iv_inp and self.iv_inp.fill_level < 0.20)
+            or (iv_out and self.iv_out.fill_level > 0.80)
+            or (gpio and self.gpio.fill_level > 0.80)
+            or (util and self.util.fill_level > 0.80)
         ):
             # warning will be generated in read()-fn
             self.gpio.read(discard=True)
