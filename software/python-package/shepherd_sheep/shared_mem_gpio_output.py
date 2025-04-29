@@ -81,6 +81,8 @@ class SharedMemGPIOOutput:
         )
 
         self.fill_level: float = 0
+        self.fill_last: float = 0
+        self.poll_interval: float = commons.BUFFER_GPIO_INTERVAL_MS / 1e3 / 5
 
         self.ts_start: int | None = None
         self.ts_stop: int | None = None
@@ -130,15 +132,22 @@ class SharedMemGPIOOutput:
             return int(delta.total_seconds() * 10**9)
         return int(timedelta(seconds=default_s).total_seconds() * 10**9)
 
-    def read(
-        self, *, force: bool = False, discard: bool = False, verbose: bool = False
-    ) -> GPIOTrace | None:
+    def get_size_available(self) -> int:
         # determine current fill-level
         self._mm.seek(self._offset_idx_pru)
         index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = 100 * avail_length / self.N_SAMPLES
-        # TODO: add overflow detection - its going faster than expected
+        # detect overflow
+        if (self.fill_level <= 0.25) and (self.fill_last >= 0.75):
+            log.error("[%s] Possible overflow detected!", type(self).__name__)
+        self.fill_last = self.fill_level
+        return avail_length
+
+    def read(
+        self, *, force: bool = False, discard: bool = False, verbose: bool = False
+    ) -> GPIOTrace | None:
+        avail_length = self.get_size_available()
         if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
         # adjust read length to stay within chunk-size and also consider end of ring-buffer

@@ -66,6 +66,8 @@ class SharedMemIVOutput:
         )
 
         self.fill_level: float = 0
+        self.fill_last: float = 0
+        self.poll_interval: float = commons.BUFFER_IV_OUT_INTERVAL_MS / 1e3 / 5
         self.xp_start: float = ts_xp_start_ns * 1e-9
 
         self.ts_start: int | None = None
@@ -118,6 +120,19 @@ class SharedMemIVOutput:
             return int(delta.total_seconds() * 10**9)
         return int(timedelta(seconds=default_s).total_seconds() * 10**9)
 
+    def get_size_available(self) -> int:
+        # determine current state
+        # TODO: add mode to wait blocking?
+        self._mm.seek(self._offset_idx_pru)
+        index_pru = struct.unpack("=L", self._mm.read(4))[0]
+        avail_length = (index_pru - self.index_next) % self.N_SAMPLES
+        self.fill_level = 100 * avail_length / self.N_SAMPLES
+        # detect overflow
+        if (self.fill_level <= 0.25) and (self.fill_last >= 0.75):
+            log.error("[%s] Possible overflow detected!", type(self).__name__)
+        self.fill_last = self.fill_level
+        return avail_length
+
     def read(self, *, verbose: bool = False) -> IVTrace | None:
         """Extracts trace from PRU-shared buffer in RAM.
 
@@ -125,16 +140,10 @@ class SharedMemIVOutput:
 
         Returns: IVTrace if available
         """
-        # determine current state
-        # TODO: add mode to wait blocking?
-        self._mm.seek(self._offset_idx_pru)
-        index_pru = struct.unpack("=L", self._mm.read(4))[0]
-        avail_length = (index_pru - self.index_next) % self.N_SAMPLES
-        self.fill_level = 100 * avail_length / self.N_SAMPLES
+        avail_length = self.get_size_available()
 
         if avail_length < self.N_SAMPLES_PER_CHUNK:
             # nothing to do
-            # TODO: detect overflow!!!
             # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
             return None
 

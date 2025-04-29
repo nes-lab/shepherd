@@ -115,6 +115,8 @@ class SharedMemIVInput:
         )
 
         self.fill_level: float = 0
+        self.fill_last: float = 0
+        self.poll_interval: float = commons.BUFFER_IV_INP_INTERVAL_MS / 1e3 / 5
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_idx_sys)
@@ -144,7 +146,7 @@ class SharedMemIVInput:
                 commons.CANARY_VALUE_U32,
             )
 
-    def get_free_space(self) -> int:
+    def get_size_available(self) -> int:
         if self.index_next is None:
             return min(self.N_SAMPLES, self.n_samples_per_chunk)
         self._mm.seek(self._offset_idx_pru)
@@ -154,6 +156,10 @@ class SharedMemIVInput:
             index_pru = 0
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = 100 * (self.N_SAMPLES - avail_length) / self.N_SAMPLES
+        # detect overflow
+        if (self.fill_last <= 0.25) and (self.fill_level >= 0.75):
+            log.error("[%s] Possible overflow detected!", type(self).__name__)
+        self.fill_last = self.fill_level
         return min(
             avail_length,
             self.n_samples_per_chunk,
@@ -162,7 +168,7 @@ class SharedMemIVInput:
         # find cleaner solution here to avoid boundary handling
 
     def can_fit_new_chunk(self) -> bool:
-        return self.get_free_space() >= self.n_samples_per_chunk
+        return self.get_size_available() >= self.n_samples_per_chunk
 
     def write(
         self,
@@ -171,8 +177,7 @@ class SharedMemIVInput:
         *,
         verbose: bool = False,
     ) -> bool:
-        avail_length = self.get_free_space()
-        if len(data) > avail_length:
+        if len(data) > self.get_size_available():
             return False  # no available space
         ts_start = time.time() if verbose else None
         if self.index_next is None:

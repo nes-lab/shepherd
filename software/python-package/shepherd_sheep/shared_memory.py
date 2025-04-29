@@ -1,5 +1,6 @@
 import mmap
 import os
+import threading
 from contextlib import ExitStack
 from types import TracebackType
 
@@ -8,6 +9,7 @@ from shepherd_core.data_models import PowerTracing
 from typing_extensions import Self
 
 from . import sysfs_interface as sfs
+from .logger import log
 from .shared_mem_gpio_output import SharedMemGPIOOutput
 from .shared_mem_iv_input import SharedMemIVInput
 from .shared_mem_iv_output import SharedMemIVOutput
@@ -74,12 +76,27 @@ class SharedMemory:
         self.gpio = SharedMemGPIOOutput(self._mm, cfg_gpio, start_timestamp_ns)
         self.util = SharedMemUtilOutput(self._mm)
         self._stack = ExitStack()
+        # overflow detector
+        self.event = threading.Event()
+        self.thread: threading.Thread | None = None
+        self.poll_interval: float = min(
+            self.iv_inp.poll_interval,
+            self.iv_out.poll_interval,
+            self.gpio.poll_interval,
+            self.util.poll_interval,
+        )
 
     def __enter__(self) -> Self:
         self._stack.enter_context(self.iv_inp)
         self._stack.enter_context(self.iv_out)
         self._stack.enter_context(self.gpio)
         self._stack.enter_context(self.util)
+        self.thread = threading.Thread(
+            target=self.thread_overflow_detection,
+            daemon=True,
+            name="Shp.SharedMem.OverflowDetector",
+        )
+        self.thread.start()
         return self
 
     def __exit__(
@@ -89,6 +106,15 @@ class SharedMemory:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        self.event.set()
+        if self.thread is not None:
+            self.thread.join(timeout=2 * self.poll_interval)
+            if self.thread.is_alive():
+                log.error(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
+            self.thread = None
         self._stack.close()
         if self._mm is not None:
             self._mm.close()
@@ -106,3 +132,14 @@ class SharedMemory:
         ):
             # warning will be generated in read()-fn
             self.gpio.read(discard=True)
+
+    def thread_overflow_detection(self) -> None:
+        log.debug("[%s] Overflow-Detector started", type(self).__name__)
+        while not self.event.is_set():
+            # overflow detection is delegated to each buffer
+            self.iv_inp.get_size_available()
+            self.iv_out.get_size_available()
+            self.gpio.get_size_available()
+            self.util.get_size_available()
+            self.event.wait(self.poll_interval)
+        log.debug("[%s] Overflow-Detector stopped", type(self).__name__)
