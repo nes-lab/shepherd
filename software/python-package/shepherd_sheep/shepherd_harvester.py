@@ -129,9 +129,9 @@ class ShepherdHarvester(ShepherdIO):
 
         # Progress-Bar
         prog_bar = tqdm(
-            total=duration_s,
+            total=int(10 * duration_s),
             desc="Measurement",
-            unit="s",
+            unit="n",
             leave=False,
         )
 
@@ -143,7 +143,7 @@ class ShepherdHarvester(ShepherdIO):
                 self.writer.write_util_buffer(data_ut)
 
             if data_iv is not None:
-                prog_bar.update(n=data_iv.duration())
+                prog_bar.update(n=int(10 * data_iv.duration()))
                 if data_iv.timestamp() >= ts_end:
                     log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     break

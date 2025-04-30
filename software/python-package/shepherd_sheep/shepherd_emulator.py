@@ -227,9 +227,9 @@ class ShepherdEmulator(ShepherdIO):
 
         # Heartbeat-Message
         prog_bar = tqdm(
-            total=duration_s,
+            total=int(10 * duration_s),
             desc="Measurement",
-            unit="s",
+            unit="n",
             leave=False,
         )
 
@@ -261,7 +261,7 @@ class ShepherdEmulator(ShepherdIO):
                     self.writer.write_util_buffer(data_ut)
 
                 if data_iv:
-                    prog_bar.update(n=data_iv.duration())
+                    prog_bar.update(n=int(10 * data_iv.duration()))
                     # TODO: this can't work - with the limiting tracers
                     if data_iv.timestamp() >= ts_end:
                         log.debug("Out of bound timestamp collected -> begin to exit now")
@@ -304,7 +304,7 @@ class ShepherdEmulator(ShepherdIO):
                     self.writer.write_util_buffer(data_ut)
 
                 if data_iv:
-                    prog_bar.update(n=data_iv.duration())
+                    prog_bar.update(n=int(10 * data_iv.duration()))
                     if data_iv.timestamp() >= ts_end:
                         log.debug("Out of bound timestamp collected -> will discard")
                         data_iv = None
