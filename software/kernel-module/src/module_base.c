@@ -138,12 +138,12 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 
     if (shp_pdata != NULL)
     {
-        if (shp_pdata->rproc_prus[1]->state == RPROC_RUNNING)
+        if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
         {
             rproc_shutdown(shp_pdata->rproc_prus[1]);
             printk(KERN_INFO "shprd.k: PRU1 shut down");
         }
-        if (shp_pdata->rproc_prus[0]->state == RPROC_RUNNING)
+        if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
         {
             rproc_shutdown(shp_pdata->rproc_prus[0]);
             printk(KERN_INFO "shprd.k: PRU0 shut down");
@@ -153,11 +153,18 @@ static int shepherd_drv_remove(struct platform_device *pdev)
         pruss_put(pruss_get(shp_pdata->rproc_prus[0]));
         pruss_put(pruss_get(shp_pdata->rproc_prus[1]));
         printk(KERN_INFO "shprd.k: prusses returned");
-        // there is rproc_free(),
         pru_rproc_put(shp_pdata->rproc_prus[0]);
         pru_rproc_put(shp_pdata->rproc_prus[1]);
-        rproc_put(shp_pdata->rproc_prus[0]);
+        printk(KERN_INFO "shprd.k: pru_rproc_put() done");
+        //rproc_put(shp_pdata->rproc_prus[0]);
         //rproc_put(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: rproc_put() done");
+        //rproc_del(shp_pdata->rproc_prus[0]);
+        //rproc_del(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: rproc_del() done");
+        //rproc_free(shp_pdata->rproc_prus[0]);
+        //rproc_free(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: rproc_free() done");
         shp_pdata->rproc_prus[0] = NULL;
         shp_pdata->rproc_prus[1] = NULL;
         printk(KERN_INFO "shprd.k: PRU-handles returned");
