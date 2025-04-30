@@ -33,7 +33,8 @@ class PTPMonitor(Monitor):
             "/usr/bin/journalctl",
             "--unit=ptp4l@eth0",
             "--follow",
-            "--lines=60",
+            "--lines=60",  # backlog
+            "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603

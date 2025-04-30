@@ -36,6 +36,7 @@ class KernelMonitor(Monitor):
             "--dmesg",
             "--follow",
             f"--lines={self.backlog}",
+            "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]
         self.process = subprocess.Popen(  # noqa: S603

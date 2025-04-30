@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import Self
 
 from . import commons
+from .h5_monitor_ntp import NTPMonitor
 
 if TYPE_CHECKING:
     import h5py
@@ -130,6 +131,7 @@ class Writer(CoreWriter):
         self.kernel_grp = self.h5file.create_group("kernel")
         self.ptp_grp = self.h5file.create_group("ptp")
         self.phc_grp = self.h5file.create_group("phc2sys")
+        self.ntp_grp = self.h5file.create_group("ntp")
         return self
 
     def __exit__(
@@ -198,6 +200,7 @@ class Writer(CoreWriter):
         if sys is not None and sys.ptp:
             self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
             self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))
+            self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
         if self.sysutil_log_enabled:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))
         if gpio is not None and gpio.uart_decode:

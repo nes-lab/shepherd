@@ -342,5 +342,5 @@ class ShepherdEmulator(ShepherdIO):
                 log.error(
                     "Recorder missed %.3f s IVTrace after start", file_start - self.start_time
                 )
-            if file_end < ts_end:
-                log.error("Recorder missed %.3f s IVTrace before end", file_end - ts_end)
+            if file_end < ts_end - 1e-3:
+                log.error("Recorder missed %.3f s IVTrace before end", ts_end - file_end)

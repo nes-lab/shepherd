@@ -173,5 +173,5 @@ class ShepherdHarvester(ShepherdIO):
         file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
         if file_start > self.start_time:
             log.error("Recorder missed %.3f s IVTrace after start", file_start - self.start_time)
-        if file_end < ts_end:
+        if file_end < ts_end - 1e-3:
             log.error("Recorder missed %.3f s IVTrace before end", file_end - ts_end)
