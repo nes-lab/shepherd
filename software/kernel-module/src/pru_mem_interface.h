@@ -43,6 +43,7 @@ void               mem_interface_trigger(unsigned int system_event);
  * @param start_time_second desired system time in seconds at which PRUs should start sampling/replaying
  */
 int                mem_interface_schedule_delayed_start(unsigned int start_time_second);
+int                mem_interface_schedule_delayed_stop(unsigned int stop_time_second);
 
 /**
  * Cancel a previously scheduled 'delayed start'
@@ -50,6 +51,7 @@ int                mem_interface_schedule_delayed_start(unsigned int start_time_
  * @see mem_interface_trigger()
  */
 int                mem_interface_cancel_delayed_start(void);
+int                mem_interface_cancel_delayed_stop(void);
 
 /**
  * Read the 'shepherd state' from the PRUs

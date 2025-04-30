@@ -13,30 +13,31 @@
 #include "sysfs_interface.h"
 
 
-int             schedule_start(unsigned int start_time_second);
-
-struct kobject *kobj_ref;
+struct kobject *kobj_shp_ref;
 struct kobject *kobj_mem_ref;
 struct kobject *kobj_sync_ref;
 struct kobject *kobj_prog_ref;
 struct kobject *kobj_firmware_ref;
-static u8       init_done = 0;
 
-static ssize_t  sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+struct kobj_attr_struct_s
+{
+    struct kobj_attribute attr;
+    unsigned int          val_offset;
+};
 
-static ssize_t  sysfs_sync_error_sum_show(struct kobject *kobj, struct kobj_attribute *attr,
-                                          char *buf);
+static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attribute *attr,
+                                    char *const buf);
 
-static ssize_t  sysfs_sync_correction_show(struct kobject *kobj, struct kobj_attribute *attr,
-                                           char *buf);
+static u8      init_done = 0;
 
-static ssize_t  sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attribute *attr,
-                                     char *const buf);
+/* Shepherds Main ATTRIBUTES */
 
-static ssize_t  sysfs_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
-static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf,
-                                 size_t count);
+static ssize_t sysfs_time_start_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                      const char *buf, size_t count);
+static ssize_t sysfs_time_stop_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                     const char *buf, size_t count);
 
 static ssize_t sysfs_mode_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
@@ -71,37 +72,57 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj, struct kobj_attr
 static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attribute *attr,
                                          char *buffer);
 
-static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                      const char *buffer, size_t count);
-static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+struct kobj_attr_struct_s attr_state      = {.attr       = __ATTR(state, 0660, sysfs_state_show, NULL),
+                                             .val_offset = 0};
 
-static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                       const char *buffer, size_t count);
-static ssize_t sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+struct kobj_attr_struct_s attr_time_start = {
+        .attr       = __ATTR(time_start, 0660, NULL, sysfs_time_start_store),
+        .val_offset = 0};
+struct kobj_attr_struct_s attr_time_stop = {
+        .attr       = __ATTR(time_stop, 0660, NULL, sysfs_time_stop_store),
+        .val_offset = 0};
 
-static ssize_t sysfs_prog_datarate_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                         const char *buffer, size_t count);
-static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                         const char *buffer, size_t count);
-static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                    const char *buffer, size_t count);
+struct kobj_attr_struct_s attr_mode = {
+        .attr       = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
+        .val_offset = offsetof(struct SharedMem, shp_pru0_mode)};
+struct kobj_attr_struct_s attr_auxiliary_voltage = {
+        .attr       = __ATTR(dac_auxiliary_voltage_raw, 0660, sysfs_SharedMem_show,
+                             sysfs_auxiliary_voltage_store),
+        .val_offset = offsetof(struct SharedMem, dac_auxiliary_voltage_raw)};
+struct kobj_attr_struct_s attr_calibration_settings = {
+        .attr       = __ATTR(calibration_settings, 0660, sysfs_calibration_settings_show,
+                             sysfs_calibration_settings_store),
+        .val_offset = offsetof(struct SharedMem, calibration_settings)};
+struct kobj_attr_struct_s attr_virtual_converter_settings = {
+        .attr = __ATTR(virtual_converter_settings, 0660, sysfs_virtual_converter_settings_show,
+                       sysfs_virtual_converter_settings_store),
+        .val_offset = offsetof(struct SharedMem, converter_settings)};
+struct kobj_attr_struct_s attr_virtual_harvester_settings = {
+        .attr = __ATTR(virtual_harvester_settings, 0660, sysfs_virtual_harvester_settings_show,
+                       sysfs_virtual_harvester_settings_store),
+        .val_offset = offsetof(struct SharedMem, harvester_settings)};
+struct kobj_attr_struct_s attr_pru_msg_system_settings = {
+        .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show, sysfs_pru_msg_system_store),
+        .val_offset = 0};
 
-static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
-                                        char *buf);
-static ssize_t sysfs_pru1_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
-                                        char *buf);
-static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                         const char *buffer, size_t count);
-static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
-                                         const char *buffer, size_t count);
-
-struct kobj_attr_struct_s
-{
-    struct kobj_attribute attr;
-    unsigned int          val_offset;
+static struct attribute *shp_attrs[] = {
+        &attr_state.attr.attr,
+        &attr_time_start.attr.attr,
+        &attr_time_stop.attr.attr,
+        &attr_mode.attr.attr,
+        &attr_auxiliary_voltage.attr.attr,
+        &attr_calibration_settings.attr.attr,
+        &attr_virtual_converter_settings.attr.attr,
+        &attr_virtual_harvester_settings.attr.attr,
+        &attr_pru_msg_system_settings.attr.attr,
+        NULL,
 };
 
-struct kobj_attribute     attr_state = __ATTR(state, 0660, sysfs_state_show, sysfs_state_store);
+static struct attribute_group attr_shp_group = {
+        .attrs = shp_attrs,
+};
+
+/* Shared Memory Attributes */
 
 struct kobj_attr_struct_s attr_buffer_iv_inp_ptr = {
         .attr       = __ATTR(iv_inp_address, 0660, sysfs_SharedMem_show, NULL),
@@ -128,29 +149,66 @@ struct kobj_attr_struct_s attr_buffer_util_size = {
         .attr       = __ATTR(util_size, 0660, sysfs_SharedMem_show, NULL),
         .val_offset = offsetof(struct SharedMem, buffer_util_size)};
 
-struct kobj_attr_struct_s attr_mode = {
-        .attr       = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
-        .val_offset = offsetof(struct SharedMem, shp_pru0_mode)};
-struct kobj_attr_struct_s attr_auxiliary_voltage = {
-        .attr       = __ATTR(dac_auxiliary_voltage_raw, 0660, sysfs_SharedMem_show,
-                             sysfs_auxiliary_voltage_store),
-        .val_offset = offsetof(struct SharedMem, dac_auxiliary_voltage_raw)};
-struct kobj_attr_struct_s attr_calibration_settings = {
-        .attr       = __ATTR(calibration_settings, 0660, sysfs_calibration_settings_show,
-                             sysfs_calibration_settings_store),
-        .val_offset = offsetof(struct SharedMem, calibration_settings)};
-struct kobj_attr_struct_s attr_virtual_converter_settings = {
-        .attr = __ATTR(virtual_converter_settings, 0660, sysfs_virtual_converter_settings_show,
-                       sysfs_virtual_converter_settings_store),
-        .val_offset = offsetof(struct SharedMem, converter_settings)};
-struct kobj_attr_struct_s attr_virtual_harvester_settings = {
-        .attr = __ATTR(virtual_harvester_settings, 0660, sysfs_virtual_harvester_settings_show,
-                       sysfs_virtual_harvester_settings_store),
-        .val_offset = offsetof(struct SharedMem, harvester_settings)};
-struct kobj_attr_struct_s attr_pru_msg_system_settings = {
-        .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show, sysfs_pru_msg_system_store),
-        .val_offset = 0};
+static struct attribute *pru_mem_attrs[] = {
+        &attr_buffer_iv_inp_ptr.attr.attr,
+        &attr_buffer_iv_inp_size.attr.attr,
+        &attr_buffer_iv_out_ptr.attr.attr,
+        &attr_buffer_iv_out_size.attr.attr,
+        &attr_buffer_gpio_ptr.attr.attr,
+        &attr_buffer_gpio_size.attr.attr,
+        &attr_buffer_util_ptr.attr.attr,
+        &attr_buffer_util_size.attr.attr,
+        NULL,
+};
+static struct attribute_group attr_mem_group = {
+        .attrs = pru_mem_attrs,
+};
 
+/* Sync Attributes */
+
+static ssize_t sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+
+static ssize_t sysfs_sync_error_sum_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                         char *buf);
+
+static ssize_t sysfs_sync_correction_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                          char *buf);
+
+struct kobj_attribute attr_sync_error = __ATTR(error, 0660, sysfs_sync_error_show, NULL);
+
+struct kobj_attribute attr_sync_correction =
+        __ATTR(correction, 0660, sysfs_sync_correction_show, NULL);
+
+struct kobj_attribute attr_sync_error_sum =
+        __ATTR(error_sum, 0660, sysfs_sync_error_sum_show, NULL);
+
+static struct attribute *pru_sync_attrs[] = {
+        &attr_sync_error.attr,
+        &attr_sync_error_sum.attr,
+        &attr_sync_correction.attr,
+        NULL,
+};
+static struct attribute_group attr_sync_group = {
+        .attrs = pru_sync_attrs,
+};
+
+/* Programming Attributes */
+
+
+static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                      const char *buffer, size_t count);
+static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+
+static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                       const char *buffer, size_t count);
+static ssize_t sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+
+static ssize_t sysfs_prog_datarate_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
+static ssize_t sysfs_prog_datasize_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
+static ssize_t sysfs_prog_pin_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                    const char *buffer, size_t count);
 
 struct kobj_attr_struct_s attr_prog_state = {
         .attr       = __ATTR(state, 0660, sysfs_prog_state_show, sysfs_prog_state_store),
@@ -193,52 +251,6 @@ struct kobj_attr_struct_s attr_prog_pin_dir_tms = {
         .val_offset = offsetof(struct SharedMem, programmer_ctrl) +
                       offsetof(struct ProgrammerCtrl, pin_dir_tms)};
 
-struct kobj_attr_struct_s attr_pru0_firmware = {
-        .attr = __ATTR(pru0_firmware, 0660, sysfs_pru0_firmware_show, sysfs_pru0_firmware_store),
-        .val_offset = 0};
-struct kobj_attr_struct_s attr_pru1_firmware = {
-        .attr = __ATTR(pru1_firmware, 0660, sysfs_pru1_firmware_show, sysfs_pru1_firmware_store),
-        .val_offset = 0};
-
-struct kobj_attribute attr_sync_error = __ATTR(error, 0660, sysfs_sync_error_show, NULL);
-
-struct kobj_attribute attr_sync_correction =
-        __ATTR(correction, 0660, sysfs_sync_correction_show, NULL);
-
-struct kobj_attribute attr_sync_error_sum =
-        __ATTR(error_sum, 0660, sysfs_sync_error_sum_show, NULL);
-
-static struct attribute *pru_attrs[] = {
-        &attr_mode.attr.attr,
-        &attr_auxiliary_voltage.attr.attr,
-        &attr_calibration_settings.attr.attr,
-        &attr_virtual_converter_settings.attr.attr,
-        &attr_virtual_harvester_settings.attr.attr,
-        &attr_pru_msg_system_settings.attr.attr,
-        NULL,
-};
-
-static struct attribute_group attr_group = {
-        .attrs = pru_attrs,
-};
-
-
-static struct attribute *pru_mem_attrs[] = {
-        &attr_buffer_iv_inp_ptr.attr.attr,
-        &attr_buffer_iv_inp_size.attr.attr,
-        &attr_buffer_iv_out_ptr.attr.attr,
-        &attr_buffer_iv_out_size.attr.attr,
-        &attr_buffer_gpio_ptr.attr.attr,
-        &attr_buffer_gpio_size.attr.attr,
-        &attr_buffer_util_ptr.attr.attr,
-        &attr_buffer_util_size.attr.attr,
-        NULL,
-};
-static struct attribute_group attr_mem_group = {
-        .attrs = pru_mem_attrs,
-};
-
-
 static struct attribute *pru_prog_attrs[] = {
         &attr_prog_state.attr.attr,
         &attr_prog_target.attr.attr,
@@ -256,17 +268,23 @@ static struct attribute_group attr_prog_group = {
         .attrs = pru_prog_attrs,
 };
 
+/* PRU-Firmware Attributes */
 
-static struct attribute *pru_sync_attrs[] = {
-        &attr_sync_error.attr,
-        &attr_sync_error_sum.attr,
-        &attr_sync_correction.attr,
-        NULL,
-};
-static struct attribute_group attr_sync_group = {
-        .attrs = pru_sync_attrs,
-};
+static ssize_t sysfs_pru0_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf);
+static ssize_t sysfs_pru1_firmware_show(struct kobject *kobj, struct kobj_attribute *attr,
+                                        char *buf);
+static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
+static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                         const char *buffer, size_t count);
 
+struct kobj_attr_struct_s attr_pru0_firmware = {
+        .attr = __ATTR(pru0_firmware, 0660, sysfs_pru0_firmware_show, sysfs_pru0_firmware_store),
+        .val_offset = 0};
+struct kobj_attr_struct_s attr_pru1_firmware = {
+        .attr = __ATTR(pru1_firmware, 0660, sysfs_pru1_firmware_show, sysfs_pru1_firmware_store),
+        .val_offset = 0};
 
 static struct attribute *pru_firmware_attrs[] = {
         &attr_pru0_firmware.attr.attr,
@@ -276,6 +294,9 @@ static struct attribute *pru_firmware_attrs[] = {
 static struct attribute_group attr_firmware_group = {
         .attrs = pru_firmware_attrs,
 };
+
+
+/* Function-Implementations */
 
 
 static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attribute *attr,
@@ -316,28 +337,19 @@ static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *att
     }
 }
 
-static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf,
-                                 size_t count)
+static ssize_t sysfs_time_start_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                      const char *buf, size_t count)
 {
     time64_t kt_sec;
     int      tmp;
 
-    if (strncmp(buf, "start", 5) == 0)
+    if (strncmp(buf, "now", 3) == 0)
     {
-        if ((count < 5) || (count > 6)) return -EINVAL;
+        if ((count < 3) || (count > 4)) return -EINVAL;
 
         if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
         mem_interface_set_state(STATE_RUNNING);
-        return count;
-    }
-
-    else if (strncmp(buf, "stop", 4) == 0)
-    {
-        if ((count < 4) || (count > 5)) return -EINVAL;
-
-        mem_interface_cancel_delayed_start();
-        mem_interface_set_state(STATE_RESET);
         return count;
     }
 
@@ -351,6 +363,36 @@ static ssize_t sysfs_state_store(struct kobject *kobj, struct kobj_attribute *at
         printk(KERN_INFO "shprd.k: Setting start-timestamp to %d", tmp);
         mem_interface_set_state(STATE_ARMED);
         mem_interface_schedule_delayed_start(tmp);
+        return count;
+    }
+    else return -EINVAL;
+}
+
+static ssize_t sysfs_time_stop_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                     const char *buf, size_t count)
+{
+    time64_t kt_sec;
+    int      tmp;
+
+    if (strncmp(buf, "now", 3) == 0)
+    {
+        if ((count < 3) || (count > 4)) return -EINVAL;
+
+        mem_interface_cancel_delayed_start();
+        mem_interface_set_state(STATE_RESET);
+
+        return count;
+    }
+
+    else if (sscanf(buf, "%d", &tmp) == 1)
+    {
+        if (mem_interface_get_state() == STATE_IDLE) return -EBUSY;
+        /* Timestamp system clock */
+        kt_sec = ktime_get_real_seconds();
+
+        if (tmp < kt_sec + 1) return -EINVAL;
+        printk(KERN_INFO "shprd.k: Setting stop-timestamp to %d", tmp);
+        mem_interface_schedule_delayed_stop(tmp);
         return count;
     }
     else return -EINVAL;
@@ -894,27 +936,21 @@ int sysfs_interface_init(void)
         printk(KERN_ERR "shprd.k: sys init requested -> can't init twice!");
         return -1;
     }
-    kobj_ref = kobject_create_and_add("shepherd", NULL);
+    kobj_shp_ref = kobject_create_and_add("shepherd", NULL);
 
-    if ((retval = sysfs_create_file(kobj_ref, &attr_state.attr)))
-    {
-        printk(KERN_ERR "shprd.k: Cannot create sysfs state attrib");
-        goto f_shp_state;
-    }
-
-    if ((retval = sysfs_create_group(kobj_ref, &attr_group)))
+    if ((retval = sysfs_create_group(kobj_shp_ref, &attr_shp_group)))
     {
         printk(KERN_ERR "shprd.k: cannot create sysfs shp-control attrib group");
         goto f_shp_group;
     };
 
-    if ((retval = sysfs_create_group(kobj_ref, &attr_firmware_group)))
+    if ((retval = sysfs_create_group(kobj_shp_ref, &attr_firmware_group)))
     {
         printk(KERN_ERR "shprd.k: cannot create sysfs firmware attrib group");
         goto f_firmware;
     };
 
-    kobj_mem_ref = kobject_create_and_add("memory", kobj_ref);
+    kobj_mem_ref = kobject_create_and_add("memory", kobj_shp_ref);
 
     if ((retval = sysfs_create_group(kobj_mem_ref, &attr_mem_group)))
     {
@@ -922,7 +958,7 @@ int sysfs_interface_init(void)
         goto f_mem;
     };
 
-    kobj_sync_ref = kobject_create_and_add("sync", kobj_ref);
+    kobj_sync_ref = kobject_create_and_add("sync", kobj_shp_ref);
 
     if ((retval = sysfs_create_group(kobj_sync_ref, &attr_sync_group)))
     {
@@ -930,7 +966,7 @@ int sysfs_interface_init(void)
         goto f_sync;
     };
 
-    kobj_prog_ref = kobject_create_and_add("programmer", kobj_ref);
+    kobj_prog_ref = kobject_create_and_add("programmer", kobj_shp_ref);
 
     if ((retval = sysfs_create_group(kobj_prog_ref, &attr_prog_group)))
     {
@@ -943,20 +979,18 @@ int sysfs_interface_init(void)
 
     // last item stays: attr_prog_group
 f_prog:
-    sysfs_remove_group(kobj_ref, &attr_sync_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_sync_group);
     kobject_put(kobj_prog_ref);
 f_sync:
-    sysfs_remove_group(kobj_ref, &attr_mem_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_mem_group);
     kobject_put(kobj_sync_ref);
 f_mem:
-    sysfs_remove_group(kobj_ref, &attr_firmware_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_firmware_group);
     kobject_put(kobj_mem_ref);
 f_firmware:
-    sysfs_remove_group(kobj_ref, &attr_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_shp_group);
 f_shp_group:
-    sysfs_remove_file(kobj_ref, &attr_state.attr);
-f_shp_state:
-    kobject_put(kobj_ref);
+    kobject_put(kobj_shp_ref);
 
     return retval;
 }
@@ -964,16 +998,15 @@ f_shp_state:
 void sysfs_interface_exit(void)
 {
     if (init_done == 0) return;
-    sysfs_remove_group(kobj_ref, &attr_prog_group);
-    sysfs_remove_group(kobj_ref, &attr_sync_group);
-    sysfs_remove_group(kobj_ref, &attr_mem_group);
-    sysfs_remove_group(kobj_ref, &attr_firmware_group);
-    sysfs_remove_group(kobj_ref, &attr_group);
-    sysfs_remove_file(kobj_ref, &attr_state.attr);
+    sysfs_remove_group(kobj_shp_ref, &attr_prog_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_sync_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_mem_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_firmware_group);
+    sysfs_remove_group(kobj_shp_ref, &attr_shp_group);
     kobject_put(kobj_prog_ref);
     kobject_put(kobj_sync_ref);
     kobject_put(kobj_mem_ref);
-    kobject_put(kobj_ref);
+    kobject_put(kobj_shp_ref);
     init_done = 0;
     printk(KERN_INFO "shprd.k: sysfs exited");
 }

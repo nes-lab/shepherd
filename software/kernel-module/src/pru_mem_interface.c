@@ -17,9 +17,11 @@ void __iomem               *pru_shared_mem_io = NULL;
 
 /* This timer is used to schedule a delayed start of the actual sampling on the PRU */
 struct hrtimer              delayed_start_timer;
+struct hrtimer              delayed_stop_timer;
 static u8                   init_done = 0;
 
 static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart delayed_stop_callback(struct hrtimer *timer_for_restart);
 
 void                        mem_interface_init(void)
 {
@@ -37,7 +39,10 @@ void                        mem_interface_init(void)
     hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     delayed_start_timer.function = &delayed_start_callback;
 
-    init_done                    = 1;
+    hrtimer_init(&delayed_stop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    delayed_stop_timer.function = &delayed_stop_callback;
+
+    init_done                   = 1;
     printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%x, size = %d bytes",
            (uint32_t) PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
 
@@ -47,6 +52,7 @@ void                        mem_interface_init(void)
 void mem_interface_exit(void)
 {
     if (delayed_start_timer.base != NULL) hrtimer_cancel(&delayed_start_timer);
+    if (delayed_stop_timer.base != NULL) hrtimer_cancel(&delayed_stop_timer);
 
     if (pru_intc_io != NULL)
     {
@@ -184,6 +190,17 @@ static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_res
     return HRTIMER_NORESTART;
 }
 
+static enum hrtimer_restart delayed_stop_callback(struct hrtimer *timer_for_restart)
+{
+    /* Timestamp system clock */
+    const uint64_t now_ns_system = ktime_get_real_ns();
+
+    mem_interface_set_state(STATE_RESET);
+
+    printk(KERN_INFO "shprd.k: Triggered delayed stop  @ %llu (now)", now_ns_system);
+    return HRTIMER_NORESTART;
+}
+
 int mem_interface_schedule_delayed_start(unsigned int start_time_second)
 {
     ktime_t  kt_trigger;
@@ -196,7 +213,7 @@ int mem_interface_schedule_delayed_start(unsigned int start_time_second)
      * start. This allows the PRU enough time to receive the interrupt and
      * prepare itself to start at exactly the right time.
      */
-    kt_trigger    = ktime_sub_ns(kt_trigger, 3 * SYNC_INTERVAL_NS / 4); // TODO: try 15/16 or larger
+    kt_trigger    = ktime_sub_ns(kt_trigger, 3 * SYNC_INTERVAL_NS / 4);
 
     ts_trigger_ns = ktime_to_ns(kt_trigger);
 
@@ -207,7 +224,30 @@ int mem_interface_schedule_delayed_start(unsigned int start_time_second)
     return 0;
 }
 
+int mem_interface_schedule_delayed_stop(unsigned int stop_time_second)
+{
+    ktime_t  kt_trigger;
+    uint64_t ts_trigger_ns;
+
+    kt_trigger    = ktime_set((const s64) stop_time_second, 0);
+
+    /**
+     * The timer should fire in the middle of the interval after we want to
+     * stop.
+     */
+    kt_trigger    = ktime_add_ns(kt_trigger, 1 * SYNC_INTERVAL_NS / 4);
+
+    ts_trigger_ns = ktime_to_ns(kt_trigger);
+
+    printk(KERN_INFO "shprd.k: Delayed stop timer set to %llu", ts_trigger_ns);
+
+    hrtimer_start(&delayed_stop_timer, kt_trigger, HRTIMER_MODE_ABS);
+
+    return 0;
+}
+
 int  mem_interface_cancel_delayed_start(void) { return hrtimer_cancel(&delayed_start_timer); }
+int  mem_interface_cancel_delayed_stop(void) { return hrtimer_cancel(&delayed_stop_timer); }
 
 void mem_interface_trigger(unsigned int system_event)
 {
