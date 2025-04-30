@@ -25,6 +25,7 @@ from .logger import log
 from .shared_mem_iv_input import IVTrace
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
+from .sysfs_interface import set_stop
 from .target_io import TargetIO
 from .target_io import target_pins
 
@@ -204,8 +205,7 @@ class ShepherdEmulator(ShepherdIO):
         super().__exit__()
 
     def run(self) -> None:
-        success = self.start(self.start_time, wait_blocking=False)
-        if not success:
+        if not self.start(self.start_time, wait_blocking=False):
             return
         if self.writer is not None:
             self.writer.check_monitors()
@@ -222,6 +222,7 @@ class ShepherdEmulator(ShepherdIO):
             duration_s = self.reader.runtime_s
             log.debug("Duration = %s s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
+        set_stop(ts_end)
 
         # Heartbeat-Message
         prog_bar = tqdm(

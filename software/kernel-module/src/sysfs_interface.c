@@ -34,6 +34,8 @@ static u8      init_done = 0;
 
 static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
+static ssize_t sysfs_time_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+
 static ssize_t sysfs_time_start_store(struct kobject *kobj, struct kobj_attribute *attr,
                                       const char *buf, size_t count);
 static ssize_t sysfs_time_stop_store(struct kobject *kobj, struct kobj_attribute *attr,
@@ -76,10 +78,10 @@ struct kobj_attr_struct_s attr_state      = {.attr       = __ATTR(state, 0660, s
                                              .val_offset = 0};
 
 struct kobj_attr_struct_s attr_time_start = {
-        .attr       = __ATTR(time_start, 0660, NULL, sysfs_time_start_store),
+        .attr       = __ATTR(time_start, 0660, sysfs_time_show, sysfs_time_start_store),
         .val_offset = 0};
 struct kobj_attr_struct_s attr_time_stop = {
-        .attr       = __ATTR(time_stop, 0660, NULL, sysfs_time_stop_store),
+        .attr       = __ATTR(time_stop, 0660, sysfs_time_show, sysfs_time_stop_store),
         .val_offset = 0};
 
 struct kobj_attr_struct_s attr_mode = {
@@ -330,11 +332,18 @@ static ssize_t sysfs_state_show(struct kobject *kobj, struct kobj_attribute *att
     {
         case STATE_IDLE: return sprintf(buf, "idle");
         case STATE_ARMED: return sprintf(buf, "armed");
+        case STATE_STARTING: return sprintf(buf, "starting");
         case STATE_RUNNING: return sprintf(buf, "running");
         case STATE_RESET: return sprintf(buf, "reset");
         case STATE_FAULT: return sprintf(buf, "fault");
         default: return sprintf(buf, "unknown");
     }
+}
+
+static ssize_t sysfs_time_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+    /* not needed ATM */
+    return sprintf(buf, "None");
 }
 
 static ssize_t sysfs_time_start_store(struct kobject *kobj, struct kobj_attribute *attr,
@@ -346,13 +355,13 @@ static ssize_t sysfs_time_start_store(struct kobject *kobj, struct kobj_attribut
     if (strncmp(buf, "now", 3) == 0)
     {
         if ((count < 3) || (count > 4)) return -EINVAL;
-
         if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
-        mem_interface_set_state(STATE_RUNNING);
+        mem_interface_set_state(STATE_STARTING);
+        kt_sec = ktime_get_real_seconds();
+        printk(KERN_INFO "shprd.k: Starting PRU now (%lld)", kt_sec);
         return count;
     }
-
     else if (sscanf(buf, "%d", &tmp) == 1)
     {
         if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
@@ -380,10 +389,10 @@ static ssize_t sysfs_time_stop_store(struct kobject *kobj, struct kobj_attribute
 
         mem_interface_cancel_delayed_start();
         mem_interface_set_state(STATE_RESET);
-
+        kt_sec = ktime_get_real_seconds();
+        printk(KERN_INFO "shprd.k: Stopping/Resetting PRU now (%lld)", kt_sec);
         return count;
     }
-
     else if (sscanf(buf, "%d", &tmp) == 1)
     {
         if (mem_interface_get_state() == STATE_IDLE) return -EBUSY;

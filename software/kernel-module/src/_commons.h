@@ -75,12 +75,14 @@ enum ShepherdMode
 
 enum ShepherdState
 {
-    STATE_UNKNOWN = 0x00u,
-    STATE_IDLE    = 0x10u,
-    STATE_ARMED   = 0x20u,
-    STATE_RUNNING = 0x30u,
-    STATE_RESET   = 0xE0,
-    STATE_FAULT   = 0xF0,
+    STATE_UNKNOWN  = 0x00u,
+    STATE_IDLE     = 0x10u,
+    STATE_ARMED    = 0x20u,
+    STATE_STARTING = 0x21u, // transitional state -> running
+    STATE_RUNNING  = 0x30u,
+    STATE_STOPPED  = 0xD0u, // transitional state -> idle (without reset)
+    STATE_RESET    = 0xE0u, // transitional state -> idle
+    STATE_FAULT    = 0xF0u,
 };
 
 enum ProgrammerState

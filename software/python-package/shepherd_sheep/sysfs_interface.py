@@ -159,23 +159,22 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
 
         if time.time() - ts_start > timeout:
             raise SysfsInterfaceError(
-                "timed out waiting for state '%s' - current state is '%s'",
-                wanted_state,
-                current_state,
+                f"timed out waiting for state '{wanted_state}' - current state is '{current_state}'",
             )
 
         time.sleep(0.1)
 
 
-def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
-    """Starts shepherd.
+def set_start(timestamp_s: float | int | None = None) -> True:  # noqa: PYI041
+    """Starts pru-routines.
 
-    Writes 'start' to the 'state' sysfs attribute in order to transition from
-    'idle' to 'running' state. Optionally allows to start at a later point in
+    Writes 'now' to the sysfs/time_start attribute in
+    order to transition from 'idle' to 'running' state.
+    Optionally allows to start at a later point in
     time, transitioning shepherd to 'armed' state.
 
     Args:
-        start_time (int): Desired start time in unix time
+        timestamp_s (int): Desired start time in unix time
     """
     current_state = get_state()
     log.debug("current state of shepherd kernel module: %s", current_state)
@@ -183,34 +182,44 @@ def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
         raise SysfsInterfaceError("Cannot start from state '%s'", current_state)
 
     try:
-        with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
-            if isinstance(start_time, float):
-                start_time = int(start_time)
-            if isinstance(start_time, int):
-                log.debug("writing start-time = %d to sysfs", start_time)
-                fh.write(f"{start_time}")
+        with Path("/sys/shepherd/time_start").open("w", encoding="utf-8") as fh:
+            if isinstance(timestamp_s, float):
+                timestamp_s = int(timestamp_s)
+            if isinstance(timestamp_s, int):
+                log.debug("writing sysfs/start_time = %d", timestamp_s)
+                fh.write(f"{timestamp_s}")
             else:  # unknown type
-                log.debug("writing 'start' to sysfs")
-                fh.write("start")
+                log.debug("writing 'now' to sysfs/time_start")
+                fh.write("now")
     except OSError:
-        log.error("Failed to write 'Start' to sysfs (@%f.3)", time.time())
+        log.error("Failed to write to sysfs/time_start (@%f.3)", time.time())
         return False
     return True
 
 
-def set_stop(*, force: bool = False) -> None:
-    """Stops shepherd.
+def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
+    """Stops pru-routines.
 
-    Writes 'stop' to the 'state' sysfs attribute in order to transition from
-    any state to 'idle'.
+    Writes 'now' to the sysfs/time_stop attribute in order to transition from
+    any state to 'idle' (performs full reset).
+    Optionally allows to stop at a later point in
+    time by adding a specific timestamp. This will keep the PRUs in
+    stopped-mode and will need a full reset to go back to idle.
     """
     if not force:
         current_state = get_state()
         if current_state != "running":
             raise SysfsInterfaceError("Cannot stop from state '%s'", current_state)
 
-    with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
-        fh.write("stop")
+    with Path("/sys/shepherd/time_stop").open("w", encoding="utf-8") as fh:
+        if isinstance(timestamp_s, float):
+            timestamp_s = int(timestamp_s)
+        if isinstance(timestamp_s, int):
+            log.debug("writing sysfs/stop_time = %d", timestamp_s)
+            fh.write(f"{timestamp_s}")
+        else:  # unknown type
+            log.debug("writing 'now' to sysfs/time_stop")
+            fh.write("now")
 
 
 def write_mode(mode: str, *, force: bool = False) -> None:

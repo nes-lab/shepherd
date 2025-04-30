@@ -211,6 +211,10 @@ class Writer(CoreWriter):
         self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
 
     def check_monitors(self) -> None:
+        """Check state of Monitors.
+
+        Emitting Warnings and errors is delegated to each monitor.
+        """
         for monitor in self.monitors:
             if hasattr(monitor, "check_status"):
                 monitor.check_status()

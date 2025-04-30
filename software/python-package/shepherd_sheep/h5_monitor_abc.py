@@ -40,7 +40,7 @@ class Monitor(ABC):
         self.data["time"].attrs["gain"] = 1e-9
         self.data["time"].attrs["offset"] = 0
         log.debug(
-            "[%s] was activated",
+            "[%s] Activated",
             type(self).__name__,
         )
 

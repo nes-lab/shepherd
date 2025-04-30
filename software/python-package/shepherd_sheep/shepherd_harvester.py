@@ -15,6 +15,7 @@ from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
+from .sysfs_interface import set_stop
 
 
 class ShepherdHarvester(ShepherdIO):
@@ -108,8 +109,7 @@ class ShepherdHarvester(ShepherdIO):
         super().__exit__()
 
     def run(self) -> None:
-        success = self.start(self.start_time, wait_blocking=False)
-        if not success:
+        if not self.start(self.start_time, wait_blocking=False):
             return
         if self.writer is not None:
             self.writer.check_monitors()
@@ -125,6 +125,7 @@ class ShepherdHarvester(ShepherdIO):
             duration_s = self.cfg.duration.total_seconds()
             log.debug("Duration = %.3f s (configured runtime)", duration_s)
         ts_end = self.start_time + duration_s
+        set_stop(ts_end)
 
         # Progress-Bar
         prog_bar = tqdm(

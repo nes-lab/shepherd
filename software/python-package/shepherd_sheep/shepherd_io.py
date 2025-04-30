@@ -277,7 +277,7 @@ class ShepherdIO:
         count = 1
         while count < 6 and sfs.get_state() != "idle":
             try:
-                sfs.set_stop(force=True)
+                sfs.set_stop(force=True)  # will trigger reset
             except sfs.SysfsInterfaceError:
                 log.exception(
                     "CleanupRoutine caused an exception while trying to stop PRU (n=%d)",

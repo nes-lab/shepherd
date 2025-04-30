@@ -184,7 +184,7 @@ static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_res
     /* Timestamp system clock */
     const uint64_t now_ns_system = ktime_get_real_ns();
 
-    mem_interface_set_state(STATE_RUNNING);
+    mem_interface_set_state(STATE_STARTING);
 
     printk(KERN_INFO "shprd.k: Triggered delayed start  @ %llu (now)", now_ns_system);
     return HRTIMER_NORESTART;
@@ -195,7 +195,7 @@ static enum hrtimer_restart delayed_stop_callback(struct hrtimer *timer_for_rest
     /* Timestamp system clock */
     const uint64_t now_ns_system = ktime_get_real_ns();
 
-    mem_interface_set_state(STATE_RESET);
+    mem_interface_set_state(STATE_STOPPED);
 
     printk(KERN_INFO "shprd.k: Triggered delayed stop  @ %llu (now)", now_ns_system);
     return HRTIMER_NORESTART;

@@ -218,7 +218,7 @@ int32_t event_loop()
     SHARED_MEM.next_sync_timestamp_ns = ts_repl.value;
     /* Wait for first timer interrupt from Linux host */
     DEBUG_STATE_2;
-    while (!(read_r31() & HOST_INT_TIMESTAMP_MASK)) {}
+    while (!(read_r31() & HOST_INT_TIMESTAMP_MASK));
     DEBUG_STATE_0;
 
     iep_start();
@@ -428,5 +428,6 @@ reset:
     iep_reset();
 
     event_loop();
+
     goto reset;
 }

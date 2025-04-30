@@ -235,7 +235,14 @@ void event_loop()
             /* orward interrupt to pru1 */
             SHARED_MEM.cmp0_trigger_for_pru1  = 1u;
             /* go dark if not running */
-            if (SHARED_MEM.shp_pru_state != STATE_RUNNING) GPIO_OFF(DEBUG_PIN0_MASK);
+            if (SHARED_MEM.shp_pru_state != STATE_RUNNING)
+            {
+                GPIO_OFF(DEBUG_PIN0_MASK);
+                /* Did the Linux kernel module ask for start / stop / reset? */
+                if (SHARED_MEM.shp_pru_state >= STATE_STOPPED) return;
+                if (SHARED_MEM.shp_pru_state == STATE_STARTING)
+                    SHARED_MEM.shp_pru_state = STATE_RUNNING;
+            }
         }
 
         // Sample and receive messages
@@ -266,14 +273,9 @@ void event_loop()
                 else { SHARED_MEM.buffer_iv_out_idx = idx + 1u; }
             }
 
-            /* Did the Linux kernel module ask for reset? */
-            if (SHARED_MEM.shp_pru_state == STATE_RESET) return;
-            else // LogicAnalyzer: 148 ns for just checking, till loop-restart
-            {
-                /* only handle kernel-communications if this is not the last sample */
-                GPIO_ON(DEBUG_PIN1_MASK);
-                handle_kernel_com();
-            }
+            // LogicAnalyzer: 148 ns for just checking
+            GPIO_ON(DEBUG_PIN1_MASK);
+            handle_kernel_com();
         }
 
         /* record loop-duration, compensate for CS -> gets further processed by pru1 */
@@ -364,9 +366,12 @@ reset:
 
     SHARED_MEM.vsource_skip_gpio_logging = false;
 
-    SHARED_MEM.shp_pru_state             = STATE_IDLE;
+stopped:
+    SHARED_MEM.shp_pru_state = STATE_IDLE;
 
     event_loop();
 
+    /* stopped state is used to read remaining buffer content */
+    if (SHARED_MEM.shp_pru_state == STATE_STOPPED) goto stopped;
     goto reset;
 }
