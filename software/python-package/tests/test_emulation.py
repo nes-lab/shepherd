@@ -185,7 +185,7 @@ def test_target_pins() -> None:
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cache_via_loopback(tmp_path: Path) -> None:
     # generate 2.5 buffers of random data
-    duration_s = 2.5e-3 * commons.BUFFER_IV_INP_INTERVAL_MS
+    duration_s = 2.5 * commons.BUFFER_IV_INP_INTERVAL_S
     path_input = data_h5(tmp_path, duration_s=duration_s)
     path_output = tmp_path / "loopback.h5"
 

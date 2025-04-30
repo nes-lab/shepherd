@@ -1,6 +1,5 @@
 import mmap
 import os
-import threading
 from contextlib import ExitStack
 from types import TracebackType
 
@@ -25,6 +24,9 @@ class SharedMemory:
     The userspace application has to map this memory area into its own memory
     space. This is achieved through /dev/mem which allow to map physical memory
     locations into userspace under linux.
+
+    NOTE: Methods of Sub-Buffers must stay atomic (single-threaded), as mem.seek()
+    during a read / write changes current pointer.
     """
 
     def __init__(
@@ -77,13 +79,14 @@ class SharedMemory:
         self.util = SharedMemUtilOutput(self._mm)
         self._stack = ExitStack()
         # overflow detector
-        self.event = threading.Event()
-        self.thread: threading.Thread | None = None
         self.poll_interval: float = min(
-            self.iv_inp.poll_interval,
-            self.iv_out.poll_interval,
-            self.gpio.poll_interval,
-            self.util.poll_interval,
+            self.iv_inp.POLL_INTERVAL,
+            self.iv_out.POLL_INTERVAL,
+            self.gpio.POLL_INTERVAL,
+            self.util.POLL_INTERVAL,
+        )
+        log.debug(
+            "[%s] overflow-detector, min t_poll = %f", type(self).__name__, self.poll_interval
         )
 
     def __enter__(self) -> Self:
@@ -91,12 +94,6 @@ class SharedMemory:
         self._stack.enter_context(self.iv_out)
         self._stack.enter_context(self.gpio)
         self._stack.enter_context(self.util)
-        self.thread = threading.Thread(
-            target=self.thread_overflow_detection,
-            daemon=True,
-            name="Shp.SharedMem.OverflowDetector",
-        )
-        self.thread.start()
         return self
 
     def __exit__(
@@ -106,15 +103,6 @@ class SharedMemory:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_interval)
-            if self.thread.is_alive():
-                log.error(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
         self._stack.close()
         if self._mm is not None:
             self._mm.close()
@@ -133,13 +121,9 @@ class SharedMemory:
             # warning will be generated in read()-fn
             self.gpio.read(discard=True)
 
-    def thread_overflow_detection(self) -> None:
-        log.debug("[%s] Overflow-Detector started", type(self).__name__)
-        while not self.event.is_set():
-            # overflow detection is delegated to each buffer
-            self.iv_inp.get_size_available()
-            self.iv_out.get_size_available()
-            self.gpio.get_size_available()
-            self.util.get_size_available()
-            self.event.wait(self.poll_interval)
-        log.debug("[%s] Overflow-Detector stopped", type(self).__name__)
+    def overflow_detection(self) -> None:
+        # overflow detection is delegated to each buffer
+        self.iv_inp.get_size_available()
+        self.iv_out.get_size_available()
+        self.gpio.get_size_available()
+        self.util.get_size_available()

@@ -53,6 +53,9 @@ class SharedMemUtilOutput:
 
     N_BUFFER_CHUNKS: int = 20
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
+    # Overflow detection
+    FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
+    POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_UTIL_INTERVAL_S
 
     def __init__(self, mem_map: mmap) -> None:
         self._mm: mmap = mem_map
@@ -65,6 +68,11 @@ class SharedMemUtilOutput:
         if (self.N_SAMPLES % self.N_SAMPLES_PER_CHUNK) != 0:
             raise ValueError(
                 "[%s] Buffer was not cleanly dividable by chunk-count", type(self).__name__
+            )
+        if self.POLL_INTERVAL < 0.1:
+            raise ValueError(
+                "[%s] Poll interval for overflow detection too small - increase chunk-size",
+                type(self).__name__,
             )
 
         self.index_next: int = 0
@@ -93,10 +101,11 @@ class SharedMemUtilOutput:
 
         self.fill_level: float = 0
         self.fill_last: float = 0
-        self.poll_interval: float = commons.BUFFER_UTIL_INTERVAL_MS / 1e3 / 5
+
         self.warn_counter: int = 10
 
     def __enter__(self) -> Self:
+        # TODO: there should also be alternative access: _mm[a:b] = b'...'
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
@@ -129,7 +138,7 @@ class SharedMemUtilOutput:
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
-        if (self.fill_level <= 0.25) and (self.fill_last >= 0.75):
+        if (self.fill_level <= 0.5 - self.FILL_GAP) and (self.fill_last >= 0.5 + self.FILL_GAP):
             log.error("[%s] Possible overflow detected!", type(self).__name__)
         self.fill_last = self.fill_level
         return avail_length

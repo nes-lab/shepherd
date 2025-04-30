@@ -67,6 +67,9 @@ class SharedMemIVInput:
 
     N_BUFFER_CHUNKS_DEF: int = 16
     N_SAMPLES_PER_CHUNK_DEF: int = N_SAMPLES // N_BUFFER_CHUNKS_DEF
+    # Overflow detection
+    FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS_DEF
+    POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_INP_INTERVAL_S
 
     # TODO: something like that would allow automatic processing
     SIZES: Mapping[str, int] = MappingProxyType(
@@ -92,6 +95,11 @@ class SharedMemIVInput:
 
         if self.size_by_sys != self.SIZE_SECTION:
             raise ValueError("[%s] Size does not match PRU-data", type(self).__name__)
+        if self.POLL_INTERVAL < 0.1:
+            raise ValueError(
+                "[%s] Poll interval for overflow detection too small - increase chunk-size",
+                type(self).__name__,
+            )
 
         self.index_next: int | None = None
 
@@ -116,7 +124,6 @@ class SharedMemIVInput:
 
         self.fill_level: float = 0
         self.fill_last: float = 0
-        self.poll_interval: float = commons.BUFFER_IV_INP_INTERVAL_MS / 1e3 / 5
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_idx_sys)
@@ -157,7 +164,7 @@ class SharedMemIVInput:
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = (self.N_SAMPLES - avail_length) / self.N_SAMPLES
         # detect overflow
-        if (self.fill_last <= 0.25) and (self.fill_level >= 0.75):
+        if (self.fill_level <= 0.5 - self.FILL_GAP) and (self.fill_last >= 0.5 + self.FILL_GAP):
             log.error("[%s] Possible overflow detected!", type(self).__name__)
         self.fill_last = self.fill_level
         return min(

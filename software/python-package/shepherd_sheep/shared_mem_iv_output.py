@@ -26,6 +26,9 @@ class SharedMemIVOutput:
     N_BUFFER_CHUNKS: int = 20
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
     DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
+    # Overflow detection
+    FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
+    POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_OUT_INTERVAL_S
 
     FETCH_ALL_TIMESTAMPS: bool = True
 
@@ -40,6 +43,11 @@ class SharedMemIVOutput:
         if (self.N_SAMPLES % self.N_SAMPLES_PER_CHUNK) != 0:
             raise ValueError(
                 "[%s] Buffer was not cleanly dividable by chunk-count", type(self).__name__
+            )
+        if self.POLL_INTERVAL < 0.1:
+            raise ValueError(
+                "[%s] Poll interval for overflow detection too small - increase chunk-size",
+                type(self).__name__,
             )
 
         self.ts_start: int | None = None
@@ -69,7 +77,7 @@ class SharedMemIVOutput:
 
         self.fill_level: float = 0
         self.fill_last: float = 0
-        self.poll_interval: float = commons.BUFFER_IV_OUT_INTERVAL_MS / 1e3 / 5
+
         self.xp_start: float = ts_xp_start_ns * 1e-9
 
         self.ts_start: int | None = None
@@ -130,7 +138,7 @@ class SharedMemIVOutput:
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
-        if (self.fill_level <= 0.25) and (self.fill_last >= 0.75):
+        if (self.fill_level <= 0.5 - self.FILL_GAP) and (self.fill_last >= 0.5 + self.FILL_GAP):
             log.error("[%s] Possible overflow detected!", type(self).__name__)
         self.fill_last = self.fill_level
         return avail_length
