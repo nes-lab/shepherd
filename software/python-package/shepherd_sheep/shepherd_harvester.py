@@ -159,6 +159,7 @@ class ShepherdHarvester(ShepherdIO):
 
             self.handle_pru_messages(panic_on_restart=True)
             self.shared_mem.handle_backpressure(iv_inp=False, iv_out=True, gpio=True, util=True)
+            self.shared_mem.overflow_detection()
             if not (data_iv or data_ut):
                 if ts_data_last - time.time() > 5:
                     log.error("Data-collection ran dry for 5s -> begin to exit now")

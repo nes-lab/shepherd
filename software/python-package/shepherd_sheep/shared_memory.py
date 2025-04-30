@@ -1,5 +1,6 @@
 import mmap
 import os
+import time
 from contextlib import ExitStack
 from types import TracebackType
 
@@ -85,8 +86,9 @@ class SharedMemory:
             self.gpio.POLL_INTERVAL,
             self.util.POLL_INTERVAL,
         )
+        self.ts_last = 0
         log.debug(
-            "[%s] overflow-detector, min t_poll = %f", type(self).__name__, self.poll_interval
+            "[%s] overflow-detector, t_poll_min = %f s", type(self).__name__, self.poll_interval
         )
 
     def __enter__(self) -> Self:
@@ -122,6 +124,12 @@ class SharedMemory:
             self.gpio.read(discard=True)
 
     def overflow_detection(self) -> None:
+        ts_now = time.time()
+        if self.ts_last > 0 and ts_now - self.ts_last > self.poll_interval:
+            log.warning(
+                "[%s] Overflow detector missed poll-interval (blind spot)", type(self).__name__
+            )
+        self.ts_last = ts_now
         # overflow detection is delegated to each buffer
         self.iv_inp.get_size_available()
         self.iv_out.get_size_available()

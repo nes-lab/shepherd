@@ -68,7 +68,7 @@ class NTPMonitor(Monitor):
                 )
             self.thread = None
         self.process.terminate()
-        self.data["message"].resize((self.position, 3))
+        self.data["message"].resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -89,7 +89,7 @@ class NTPMonitor(Monitor):
                 if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
-                    self.data["message"].resize((data_length, 3))
+                    self.data["message"].resize((data_length,))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break

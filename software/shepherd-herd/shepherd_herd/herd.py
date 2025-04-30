@@ -90,7 +90,10 @@ class Herd:
                 try:
                     inventory_data = yaml.safe_load(stream)
                 except yaml.YAMLError as _xpt:
-                    msg = f"Couldn't read inventory file {host_path.as_posix()}, please provide a valid one"
+                    msg = (
+                        f"Couldn't read inventory file {host_path.as_posix()}, "
+                        f"please provide a valid one"
+                    )
                     raise FileNotFoundError(msg) from _xpt
             logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
