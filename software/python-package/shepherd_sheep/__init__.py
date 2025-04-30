@@ -305,7 +305,8 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
                 rate_factor *= 0.6  # 40% slower each failed attempt
             failed |= had_error
         else:
-            raise TypeError("Task not implemented: %s", type(element))
+            msg = f"Task not implemented: {type(element)}"
+            raise TypeError(msg)
         reset_verbosity()
         # TODO: handle "failed": retry?
     return failed

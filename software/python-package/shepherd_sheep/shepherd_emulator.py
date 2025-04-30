@@ -57,7 +57,8 @@ class ShepherdEmulator(ShepherdIO):
         self.verbose_extra = False
 
         if not cfg.input_path.exists():
-            raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
+            msg = f"Input-File does not exist ({cfg.input_path})"
+            raise FileNotFoundError(msg)
         self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":

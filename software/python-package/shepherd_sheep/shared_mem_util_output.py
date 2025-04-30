@@ -64,16 +64,17 @@ class SharedMemUtilOutput:
         self.base: int = sfs.get_trace_iv_inp_address()
 
         if self.size_by_sys != self.SIZE_SECTION:
-            raise ValueError("[%s] Size does not match PRU-data", type(self).__name__)
+            msg = f"[{type(self).__name__}] Size does not match PRU-data"
+            raise ValueError(msg)
         if (self.N_SAMPLES % self.N_SAMPLES_PER_CHUNK) != 0:
-            raise ValueError(
-                "[%s] Buffer was not cleanly dividable by chunk-count", type(self).__name__
-            )
+            msg = f"[{type(self).__name__}] Buffer was not cleanly dividable by chunk-count"
+            raise ValueError(msg)
         if self.POLL_INTERVAL < 0.1:
-            raise ValueError(
-                "[%s] Poll interval for overflow detection too small - increase chunk-size",
-                type(self).__name__,
+            msg = (
+                f"[{type(self).__name__}] Poll interval for overflow detection too small"
+                f" - increase chunk-size"
             )
+            raise ValueError(msg)
 
         self.index_next: int = 0
 
@@ -87,7 +88,8 @@ class SharedMemUtilOutput:
         self._offset_canary: int = self._offset_pru1_tsample_max + self.N_SAMPLES * 4
 
         if self._offset_canary != self._offset_base + self.SIZE_SECTION - self.SIZE_CANARY:
-            raise ValueError("[%s] Canary is not at expected position?!?", type(self).__name__)
+            msg = f"[{type(self).__name__}] Canary is not at expected position?!?"
+            raise ValueError(msg)
 
         log.debug(
             "[%s] \t@ %s, size: %d byte, %d elements in %d chunks",
@@ -124,12 +126,11 @@ class SharedMemUtilOutput:
         self._mm.seek(self._offset_canary)
         canary: int = struct.unpack("=L", self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
-            raise BufferError(
-                "[%s] Canary was harmed! It is 0x%X, expected 0x%X",
-                type(self).__name__,
-                canary,
-                commons.CANARY_VALUE_U32,
+            msg = (
+                f"[{type(self).__name__}] Canary was harmed! "
+                f"It is 0x{canary:X}, expected 0x{commons.CANARY_VALUE_U32:X}"
             )
+            raise BufferError(msg)
 
     def get_size_available(self) -> int:
         # determine current fill-level

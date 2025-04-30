@@ -354,9 +354,8 @@ class ShepherdIO:
             return target == TargetPort.A
         if isinstance(target, bool):
             return target
-        raise TypeError(
-            "Parameter 'target' must be A or B (was %s, type = %s)", target, type(target)
-        )
+        msg = f"Parameter 'target' must be A or B (was {target}, type = {type(target)})"
+        raise TypeError(msg)
 
     def select_port_for_power_tracking(
         self,

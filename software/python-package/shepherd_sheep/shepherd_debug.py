@@ -87,7 +87,8 @@ class ShepherdDebug(ShepherdIO):
         }:
             channel_no = 2
         else:
-            raise ValueError("ADC channel '%s' is unknown", channel)
+            msg = f"ADC channel '{channel}' is unknown"
+            raise ValueError(msg)
 
         super()._send_msg(commons.MSG_DBG_ADC, channel_no)
 
