@@ -23,14 +23,12 @@ class SharedMemIVOutput:
     SIZE_SECTION: int = 4 + SIZE_SAMPLES + SIZE_CANARY
     # ⤷ consist of index, samples, canary
 
-    N_BUFFER_CHUNKS: int = 20
+    N_BUFFER_CHUNKS: int = 30
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
     DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_OUT_INTERVAL_S
-
-    FETCH_ALL_TIMESTAMPS: bool = True
 
     def __init__(self, mem_map: mmap, cfg: PowerTracing | None, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
@@ -43,6 +41,12 @@ class SharedMemIVOutput:
             raise ValueError(msg)
         if (self.N_SAMPLES % self.N_SAMPLES_PER_CHUNK) != 0:
             msg = f"[{type(self).__name__}] Buffer was not cleanly dividable by chunk-count"
+            raise ValueError(msg)
+        if (1000 // self.DURATION_CHUNK_MS) * self.DURATION_CHUNK_MS != 1000:
+            msg = f"[{type(self).__name__}] Chunk-duration must fit n ∈ ℕ+ times."  # noqa: RUF001
+            raise ValueError(msg)
+        if self.DURATION_CHUNK_MS % 100 != 0:
+            msg = f"[{type(self).__name__}] Chunk-duration must dividable by 0.1s"
             raise ValueError(msg)
         if self.POLL_INTERVAL < 0.1:
             msg = (
@@ -164,18 +168,13 @@ class SharedMemIVOutput:
                 type(self).__name__,
             )
 
-        if self.FETCH_ALL_TIMESTAMPS:
-            timestamps_ns = np.frombuffer(
-                self._mm,
-                np.uint64,
-                count=self.N_SAMPLES_PER_CHUNK,
-                offset=self._offset_timestamps + self.index_next * 8,
-            )
-            pru_timestamp = int(timestamps_ns[0])
-        else:
-            self._mm.seek(self._offset_timestamps + self.index_next * 8)
-            timestamps_ns = struct.unpack("=Q", self._mm.read(8))[0]
-            pru_timestamp = int(timestamps_ns)
+        timestamps_ns = np.frombuffer(
+            self._mm,
+            np.uint64,
+            count=self.N_SAMPLES_PER_CHUNK,
+            offset=self._offset_timestamps + self.index_next * 8,
+        )
+        pru_timestamp = int(timestamps_ns[0])
 
         if self.timestamp_last > 0:
             diff_ms = (pru_timestamp - self.timestamp_last) // 10**6
@@ -210,7 +209,7 @@ class SharedMemIVOutput:
             )
 
         # prepare & fetch data
-        if self.ts_start <= pru_timestamp <= self.ts_stop:
+        if (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start):
             # TODO: honor boundary - check count + offset
             data = IVTrace(
                 voltage=np.frombuffer(

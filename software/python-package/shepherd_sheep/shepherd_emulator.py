@@ -229,7 +229,6 @@ class ShepherdEmulator(ShepherdIO):
         prog_bar = tqdm(
             total=duration_s,
             desc="Measurement",
-            mininterval=2,
             unit="s",
             leave=False,
         )
@@ -265,7 +264,6 @@ class ShepherdEmulator(ShepherdIO):
                     prog_bar.update(n=data_iv.duration())
                     # TODO: this can't work - with the limiting tracers
                     if data_iv.timestamp() >= ts_end:
-                        # TODO: should already be done in shared_mem.iv_out
                         log.debug("Out of bound timestamp collected -> begin to exit now")
                         break
                     ts_data_last = time.time()
@@ -278,8 +276,6 @@ class ShepherdEmulator(ShepherdIO):
                                 _xpt,
                             )
                             return
-
-                # TODO: implement cleaner exit (pru-statechange or end-timestamp
 
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.handle_backpressure(iv_inp=True, iv_out=True, gpio=True, util=True)
@@ -315,12 +311,11 @@ class ShepherdEmulator(ShepherdIO):
                     ts_data_last = time.time()
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
-                # TODO: implement cleaner exit (pru-statechange or end-timestamp
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.handle_backpressure(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
-                    if time.time() - ts_data_last > 5:
-                        log.info("FINALIZING: Post emu-routine ran dry for 5s -> begin to exit now")
+                    if time.time() - ts_data_last > 3:
+                        log.info("FINALIZING: Post data-collection ran dry for 3s -> begin to exit now")
                         break
                     force_subchunks = True
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
@@ -329,14 +324,14 @@ class ShepherdEmulator(ShepherdIO):
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
             if e.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
-                prog_bar.close()
-                return
-            raise ShepherdPRUError from e
+                log.warning("PRU restarted - samples might be missing")
+            else:
+                raise ShepherdPRUError from e
         except OSError as _xpt:
             log.error(
                 "Failed to write data to HDF5-File - will STOP! error = %s",
                 _xpt,
             )
-            return
         prog_bar.close()
+
+

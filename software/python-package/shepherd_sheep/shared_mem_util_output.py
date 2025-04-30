@@ -173,6 +173,8 @@ class SharedMemUtilOutput:
             count=read_length,
             offset=self._offset_sample_count + self.index_next * 4,
         )
+        sample_count_safe = sample_count
+        sample_count_safe[sample_count_safe < 1] = 1
 
         data = UtilTrace(
             timestamps_ns=np.frombuffer(
@@ -199,7 +201,7 @@ class SharedMemUtilOutput:
                 count=read_length,
                 offset=self._offset_pru0_tsample_sum + self.index_next * 4,
             )
-            / sample_count,
+            / sample_count_safe,
             sample_count=sample_count,
         )
         # TODO: segment should be reset to ZERO to better detect errors

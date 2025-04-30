@@ -213,7 +213,7 @@ int mem_interface_schedule_delayed_start(unsigned int start_time_second)
      * start. This allows the PRU enough time to receive the interrupt and
      * prepare itself to start at exactly the right time.
      */
-    kt_trigger    = ktime_sub_ns(kt_trigger, 3 * SYNC_INTERVAL_NS / 4);
+    kt_trigger    = ktime_sub_ns(kt_trigger, 15 * SYNC_INTERVAL_NS / 16);
 
     ts_trigger_ns = ktime_to_ns(kt_trigger);
 
@@ -235,7 +235,7 @@ int mem_interface_schedule_delayed_stop(unsigned int stop_time_second)
      * The timer should fire in the middle of the interval after we want to
      * stop.
      */
-    kt_trigger    = ktime_add_ns(kt_trigger, 1 * SYNC_INTERVAL_NS / 4);
+    kt_trigger    = ktime_add_ns(kt_trigger, 1 * SYNC_INTERVAL_NS / 16);
 
     ts_trigger_ns = ktime_to_ns(kt_trigger);
 
