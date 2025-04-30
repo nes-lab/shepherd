@@ -131,7 +131,6 @@ class ShepherdHarvester(ShepherdIO):
         prog_bar = tqdm(
             total=duration_s,
             desc="Measurement",
-            mininterval=2,
             unit="s",
             leave=False,
         )
@@ -157,14 +156,22 @@ class ShepherdHarvester(ShepherdIO):
                         _xpt,
                     )
                     break
-            # TODO: implement cleaner exit from pru-statechange or end-TS
+
             self.handle_pru_messages(panic_on_restart=True)
             self.shared_mem.handle_backpressure(iv_inp=False, iv_out=True, gpio=True, util=True)
             if not (data_iv or data_ut):
-                if ts_data_last - time.time() > 10:
-                    log.error("Main sheep-routine ran dry for 10s, will STOP")
+                if ts_data_last - time.time() > 5:
+                    log.error("Data-collection ran dry for 5s -> begin to exit now")
                     break
                 # rest of loop is non-blocking, so we better doze a while if nothing to do
                 time.sleep(self.segment_period_s)
 
         prog_bar.close()
+        # Detect recorder missing start / end
+        gain = self.writer.ds_time.attrs["gain"]
+        file_start = self.writer.ds_time[0] * gain
+        file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
+        if file_start > self.start_time:
+            log.error("Recorder missed %.3f s IVTrace after start", file_start - self.start_time)
+        if file_end < ts_end:
+            log.error("Recorder missed %.3f s IVTrace before end", file_end - ts_end)

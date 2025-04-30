@@ -315,7 +315,7 @@ class ShepherdEmulator(ShepherdIO):
                 self.shared_mem.handle_backpressure(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
                     if time.time() - ts_data_last > 3:
-                        log.info("FINALIZING: Post data-collection ran dry for 3s -> begin to exit now")
+                        log.info("Data-collection ran dry for 3s -> begin to exit now")
                         break
                     force_subchunks = True
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
@@ -333,5 +333,14 @@ class ShepherdEmulator(ShepherdIO):
                 _xpt,
             )
         prog_bar.close()
-
-
+        # Detect recorder missing start / end
+        if self.writer is not None:
+            gain = self.writer.ds_time.attrs["gain"]
+            file_start = self.writer.ds_time[0] * gain
+            file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
+            if file_start > self.start_time:
+                log.error(
+                    "Recorder missed %.3f s IVTrace after start", file_start - self.start_time
+                )
+            if file_end < ts_end:
+                log.error("Recorder missed %.3f s IVTrace before end", file_end - ts_end)
