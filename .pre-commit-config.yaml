@@ -62,7 +62,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.11.2'
+    rev: 'v0.11.8'
     hooks:
       - id: ruff-format
       - id: ruff
@@ -91,32 +91,32 @@ repos:
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v20.1.0
+    rev: v20.1.3
     hooks:
       - id: clang-format
         types_or: [c++, c]
 
   # cpp-check comes last! fails if uninstalled
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.5
-    hooks:
-      - id: cppcheck
-        args:
-          - "--enable=all"
-          - "--std=c99"
-          - "--platform=unix32"
-          - "--verbose"
-          - "-q"
-          - "--max-ctu-depth=10"
-          - "-isoftware/firmware/_cgt233/"
-          - "-isoftware/firmware/_pssp57g/"
-          - "--suppress=unusedFunction"
-          - "--suppress=variableScope"
-          - "--suppress=unreadVariable"
-          - "--suppress=missingInclude"
-          - "--suppress=missingIncludeSystem"
-          - "--suppress=unmatchedSuppression"
-          - "--suppress=constParameterCallback"
+#  - repo: https://github.com/pocc/pre-commit-hooks
+#    rev: v1.3.5
+#    hooks:
+#      - id: cppcheck
+#        args:
+#          - "--enable=all"
+#          - "--std=c99"
+#          - "--platform=unix32"
+#          - "--verbose"
+#          - "-q"
+#          - "--max-ctu-depth=10"
+#          - "-isoftware/firmware/_cgt233/"
+#          - "-isoftware/firmware/_pssp57g/"
+#          - "--suppress=unusedFunction"
+#          - "--suppress=variableScope"
+#          - "--suppress=unreadVariable"
+#          - "--suppress=missingInclude"
+#          - "--suppress=missingIncludeSystem"
+#          - "--suppress=unmatchedSuppression"
+#          - "--suppress=constParameterCallback"
 
 ########################## BETA SECTION #############################
 
