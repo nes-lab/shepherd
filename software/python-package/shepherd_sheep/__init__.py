@@ -225,7 +225,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 log.exception("ValueError: %s", str(xpt))
                 failed = True
 
-        state = "init"
+        state = None
         while state != "idle" and not failed:
             log.info(
                 "Programming in progress,\tpgm_state = %s, shp_state = %s",

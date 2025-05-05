@@ -122,10 +122,10 @@ class ShepherdHarvester(ShepherdIO):
 
         if self.cfg.duration is None:
             duration_s = 10**6  # s, defaults to ~ 100 days
-            log.debug("Duration = %.3f s (100 days runtime, press ctrl+c to exit)", duration_s)
+            log.debug("Duration = %d s (100 days runtime, press ctrl+c to exit)", duration_s)
         else:
             duration_s = self.cfg.duration.total_seconds()
-            log.debug("Duration = %.3f s (configured runtime)", duration_s)
+            log.debug("Duration = %.1f s (configured runtime)", duration_s)
         ts_end = self.start_time + duration_s
         set_stop(ts_end)
 
@@ -145,7 +145,7 @@ class ShepherdHarvester(ShepherdIO):
 
             if data_iv is not None:
                 prog_bar.update(n=int(10 * data_iv.duration()))
-                if data_iv.timestamp() >= ts_end:
+                if data_iv.timestamp() > ts_end:
                     log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     break
                 ts_data_last = time.time()

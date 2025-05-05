@@ -197,7 +197,7 @@ def set_start(timestamp_s: float | int | None = None) -> True:  # noqa: PYI041
                 log.debug("writing 'now' to sysfs/time_start")
                 fh.write("now")
     except OSError:
-        log.error("Failed to write to sysfs/time_start (@%f.3)", time.time())
+        log.error("Failed to write to sysfs/time_start (@%.3f)", time.time())
         return False
     return True
 
@@ -216,16 +216,18 @@ def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
         if current_state != "running":
             msg = f"Cannot stop from state '{current_state}'"
             raise SysfsInterfaceError(msg)
-
-    with Path("/sys/shepherd/time_stop").open("w", encoding="utf-8") as fh:
-        if isinstance(timestamp_s, float):
-            timestamp_s = int(timestamp_s)
-        if isinstance(timestamp_s, int):
-            log.debug("writing sysfs/time_stop = %d", timestamp_s)
-            fh.write(f"{timestamp_s}")
-        else:  # unknown type
-            log.debug("writing 'now' to sysfs/time_stop")
-            fh.write("now")
+    try:
+        with Path("/sys/shepherd/time_stop").open("w", encoding="utf-8") as fh:
+            if isinstance(timestamp_s, float):
+                timestamp_s = int(timestamp_s)
+            if isinstance(timestamp_s, int):
+                log.debug("writing sysfs/time_stop = %d", timestamp_s)
+                fh.write(f"{timestamp_s}")
+            else:  # unknown type
+                log.debug("writing 'now' to sysfs/time_stop")
+                fh.write("now")
+    except OSError:
+        log.error("Failed to write to sysfs/time_stop (@%.3f)", time.time())
 
 
 def write_mode(mode: str, *, force: bool = False) -> None:
@@ -599,8 +601,6 @@ def write_programmer_datasize(value: int) -> None:
 def start_programmer() -> None:
     with Path("/sys/shepherd/programmer/state").open("w", encoding="utf-8") as file:
         file.write("start")
-    # force a pru-reset to jump into programming routine
-    set_stop(force=True)
 
 
 def check_programmer() -> str:

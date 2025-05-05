@@ -218,10 +218,10 @@ class ShepherdEmulator(ShepherdIO):
         duration_s = sys.float_info.max
         if self.cfg.duration is not None:
             duration_s = self.cfg.duration.total_seconds()
-            log.debug("Duration = %s s (configured runtime)", duration_s)
+            log.debug("Duration = %.1f s (configured runtime)", duration_s)
         if self.reader.runtime_s < duration_s:
             duration_s = self.reader.runtime_s
-            log.debug("Duration = %s s (runtime of input file)", duration_s)
+            log.debug("Duration = %.1f s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
         set_stop(ts_end)
 
@@ -302,7 +302,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
-                    if data_iv.timestamp() >= ts_end:
+                    if data_iv.timestamp() > ts_end:
                         log.debug("Out of bound timestamp collected -> will discard")
                         data_iv = None
                 if data_iv:

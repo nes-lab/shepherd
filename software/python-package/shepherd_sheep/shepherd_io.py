@@ -46,11 +46,11 @@ ShepherdIOError = IOError
 
 
 class ShepherdTimeoutError(ShepherdIOError):
-    def __init__(self, id_num: int | None = None, value: int | list | None = None) -> None:
-        msg = f"Timeout waiting for message [id=0x{id_num:X}, val={value}]"
+    def __init__(self) -> None:
+        msg = "Timeout waiting for message"
         super().__init__(msg)
-        self.id_num = id_num
-        self.value = value
+        self.id_num = None
+        self.value = None
 
 
 class ShepherdRxError(ShepherdIOError):
@@ -268,7 +268,7 @@ class ShepherdIO:
         self.shared_mem.__enter__()
 
     def unload_shared_mem(self) -> None:
-        if isinstance(self.shared_mem, SharedMemory):
+        if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMemory):
             self.shared_mem.__exit__()
             self.shared_mem = None
 

@@ -38,7 +38,7 @@ def src_cfg() -> VirtualSourceConfig:
 
 @pytest.fixture
 def data_h5(tmp_path: Path, duration_s: float = 10.0) -> Path:
-    store_path = tmp_path / "record_example.h5"
+    store_path = tmp_path / "hrv_example.h5"
     with Writer(
         store_path,
         cal_data=CalibrationCape().harvester,
@@ -119,7 +119,7 @@ def test_emulation(
 @pytest.mark.usefixtures("_shepherd_up")
 def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
-    start_time = round(time.time() + 14)
+    start_time = round(time.time() + 20)
     emu_cfg = EmulationTask(
         input_path=data_h5,
         output_path=output,
