@@ -278,8 +278,7 @@ class ShepherdEmulator(ShepherdIO):
                             return
 
                 self.handle_pru_messages(panic_on_restart=True)
-                self.shared_mem.handle_backpressure(iv_inp=True, iv_out=True, gpio=True, util=True)
-                self.shared_mem.overflow_detection()
+                self.shared_mem.supervise_buffers(iv_inp=True, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
                     if ts_data_last - time.time() > 10:
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
@@ -313,8 +312,7 @@ class ShepherdEmulator(ShepherdIO):
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
                 self.handle_pru_messages(panic_on_restart=True)
-                self.shared_mem.handle_backpressure(iv_inp=False, iv_out=True, gpio=True, util=True)
-                self.shared_mem.overflow_detection()
+                self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
                     if time.time() - ts_data_last > 3:
                         log.info("Data-collection ran dry for 3s -> begin to exit now")

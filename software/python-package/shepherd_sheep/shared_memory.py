@@ -111,19 +111,10 @@ class SharedMemory:
         if self._fd is not None:
             os.close(self._fd)
 
-    def handle_backpressure(
+    def supervise_buffers(
         self, *, iv_inp: bool = False, iv_out: bool = False, gpio: bool = False, util: bool = True
     ) -> None:
-        if (
-            (iv_inp and self.iv_inp.fill_level < 0.20)
-            or (iv_out and self.iv_out.fill_level > 0.80)
-            or (gpio and self.gpio.fill_level > 0.80)
-            or (util and self.util.fill_level > 0.80)
-        ):
-            # warning will be generated in read()-fn
-            self.gpio.read(discard=True)
-
-    def overflow_detection(self) -> None:
+        """First detect overflow, then check fill levels to handle / relieve backpressure."""
         ts_now = time.time()
         if self.ts_last > 0 and ts_now - self.ts_last > self.poll_interval:
             log.warning(
@@ -135,3 +126,12 @@ class SharedMemory:
         self.iv_out.get_size_available()
         self.gpio.get_size_available()
         self.util.get_size_available()
+        # each fill level is updated by .get_size_available(), so check it now
+        if (
+            (iv_inp and self.iv_inp.fill_level < 0.20)
+            or (iv_out and self.iv_out.fill_level > 0.80)
+            or (gpio and self.gpio.fill_level > 0.80)
+            or (util and self.util.fill_level > 0.80)
+        ):
+            # warning will be generated in read()-fn
+            self.gpio.read(discard=True)
