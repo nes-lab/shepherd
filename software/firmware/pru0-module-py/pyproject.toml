@@ -1,5 +1,5 @@
 [project]
-name = "shepherd_pru"
+name = "shepherd-pru"
 description = "C-Bindings of the pru-code for virtual harvester, converter & power source"
 keywords = ["testbed", "beaglebone", "pru", "batteryless", "energyharvesting", "solar"]
 
@@ -29,8 +29,9 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2024.9.1", # limit due to newest features
+    "shepherd-core>=2025.4.2", # limit due to newest features
     "tqdm",
+    "ctypes",
 ]
 
 [project.optional-dependencies]
@@ -60,7 +61,7 @@ build-backend = "setuptools.build_meta"
 package-dir = {"" = "."}
 zip-safe = true
 include-package-data = true
-platforms = ["unix", "linux"] #"osx", "cygwin", "win32", "win64"]
+platforms = ["unix", "linux"]
 
 [tool.setuptools.packages.find]
 where = ["."]

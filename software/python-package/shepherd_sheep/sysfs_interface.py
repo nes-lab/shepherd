@@ -72,7 +72,7 @@ def load_kernel_module() -> None:
     raise SystemError("Failed to load shepherd kernel module.")
 
 
-def remove_kernel_module() -> None:
+def remove_kernel_module(name: str = "shepherd") -> None:
     _try = 6
     while _try > 0:
         ret = subprocess.run(  # noqa: S603
@@ -82,16 +82,19 @@ def remove_kernel_module() -> None:
             check=False,
         ).returncode
         if ret == 0:
-            log.debug("Deactivated shepherd kernel module")
+            log.debug("Deactivated %s kernel module", name)
             time.sleep(1)
             return
         _try -= 1
         time.sleep(1)
-    raise SystemError("Failed to unload shepherd kernel module.")
+    msg = f"Failed to unload {name} kernel module."
+    raise SystemError(msg)
 
 
 def reload_kernel_module() -> None:
-    remove_kernel_module()
+    remove_kernel_module("shepherd")
+    remove_kernel_module("remoteproc")
+    remove_kernel_module("pruss")
     load_kernel_module()
 
 
@@ -125,7 +128,7 @@ def check_sys_access(iteration: int = 1) -> bool:
                 iteration,
                 iter_max,
             )
-            load_kernel_module()
+            reload_kernel_module()
             check_sys_access(iteration + 1)
         except FileNotFoundError:
             log.error(
@@ -188,7 +191,7 @@ def set_start(timestamp_s: float | int | None = None) -> True:  # noqa: PYI041
             if isinstance(timestamp_s, float):
                 timestamp_s = int(timestamp_s)
             if isinstance(timestamp_s, int):
-                log.debug("writing sysfs/start_time = %d", timestamp_s)
+                log.debug("writing sysfs/time_start = %d", timestamp_s)
                 fh.write(f"{timestamp_s}")
             else:  # unknown type
                 log.debug("writing 'now' to sysfs/time_start")
@@ -218,7 +221,7 @@ def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
         if isinstance(timestamp_s, float):
             timestamp_s = int(timestamp_s)
         if isinstance(timestamp_s, int):
-            log.debug("writing sysfs/stop_time = %d", timestamp_s)
+            log.debug("writing sysfs/time_stop = %d", timestamp_s)
             fh.write(f"{timestamp_s}")
         else:  # unknown type
             log.debug("writing 'now' to sysfs/time_stop")

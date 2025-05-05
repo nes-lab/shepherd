@@ -63,26 +63,43 @@ class ConverterConfig(ct.Structure):
     ]
 
 
+VOC_LUT_SIZE: int = 123
+VOC_LUT_TYPE = ct.c_uint32 * VOC_LUT_SIZE
+RSERIES_LUT_SIZE: int = 100
+RSERIES_LUT_TYPE = ct.c_uint32 * RSERIES_LUT_SIZE
+
+
+class BatteryConfig(ct.Structure):
+    _pack_: ClassVar[int] = 1
+    _fields_: ClassVar[list] = [
+        ("Constant_s_per_mAs_n48", ct.c_uint32),
+        ("Constant_1_per_kOhm_n18", ct.c_uint32),
+        ("LUT_voc_SoC_min_log2_u_n32", ct.c_uint32),
+        ("LUT_voc_uV_n8", VOC_LUT_TYPE),
+        ("LUT_rseries_SoC_min_log2_u_n32", ct.c_uint32),
+        ("LUT_rseries_KOhm_n32", RSERIES_LUT_TYPE),
+        ("canary", ct.c_uint32),
+    ]
+
+
 class SharedMemLight(ct.Structure):
     _pack_: ClassVar[int] = 1
     _fields_: ClassVar[list] = [
-        ("pre_stuff", ct.c_uint32 * 9),  # TODO: update all below
+        ("pre_A", ct.c_uint32 * 9),
+        ("pre_Buff", ct.c_uint32 * (4 + 4 + 5 + 1)),
+        ("pre_Cache", ct.c_uint32 * 32),
+        ("pre_D", ct.c_uint32 * 2),
         ("calibration_settings", CalibrationConfig),
         ("converter_settings", ConverterConfig),
         ("harvester_settings", HarvesterConfig),
         ("programmer_ctrl", ct.c_uint32 * 11),
-        ("proto_msgs", ct.c_uint32 * (4 * 5)),
-        ("sync_msgs", ct.c_uint32 * 7),
+        ("proto_msgs", ct.c_uint32 * (6 * 4)),
         ("canary", ct.c_uint32 * 1),
         ("timestamps", ct.c_uint64 * 2),
-        # ("mutex_x", ct.c_uint32 * 2),  # bool_ft
         ("gpio_pin_state", ct.c_uint32),
-        ("buffer_idxs", ct.c_uint32 * 2),
-        ("buffer_iv_idx", ct.c_uint32),  # Pointer # TODO: changes here
-        ("buffer_gpio_idx", ct.c_uint32),  # Pointer
-        ("analog_x", ct.c_uint32 * 5),  # TODO: ivsample_fetch
         ("trigger_x", ct.c_uint32 * 2),  # bool_ft
         ("vsource_batok_trigger_for_pru1", ct.c_uint32),  # bool_ft
-        ("vsource_skip_gpio_logging", ct.c_uint32),  # bool_ft
         ("vsource_batok_pin_value", ct.c_uint32),  # bool_ft
+        ("vsource_skip_gpio_logging", ct.c_uint32),  # bool_ft
+        ("pru0_ns_per_sample", ct.c_uint32),
     ]

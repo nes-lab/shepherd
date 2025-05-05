@@ -28,7 +28,7 @@ from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_sheep import Writer
 from shepherd_sheep.cli import cli
-from shepherd_sheep.shared_memory import IVTrace
+from shepherd_sheep.shared_mem_iv_input import IVTrace
 
 
 def random_data(length: int) -> np.ndarray:

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem import FakeFilesystem
-from shepherd_sheep.sysfs_interface import load_kernel_module
+from shepherd_sheep.sysfs_interface import reload_kernel_module
 from shepherd_sheep.sysfs_interface import remove_kernel_module
 
 
@@ -79,6 +79,8 @@ def _shepherd_up(
     if fake_fs is not None:
         files = [
             ("/sys/shepherd/state", "idle"),
+            ("/sys/shepherd/time_start", "0"),
+            ("/sys/shepherd/time_stop", "0"),
             ("/sys/shepherd/mode", "harvester"),
             ("/sys/shepherd/n_buffers", "1"),
             ("/sys/shepherd/memory/address", "1"),
@@ -89,12 +91,22 @@ def _shepherd_up(
             ("/sys/shepherd/calibration_settings", "0"),
             ("/sys/shepherd/virtual_converter_settings", "0"),
             ("/sys/shepherd/virtual_harvester_settings", "0"),
+            ("/sys/shepherd/pru_msg_box", "0"),
             ("/sys/shepherd/programmer/protocol", "0"),
             ("/sys/shepherd/programmer/datarate", "0"),
+            ("/sys/shepherd/programmer/datasize", "0"),
             ("/sys/shepherd/programmer/pin_tck", "0"),
             ("/sys/shepherd/programmer/pin_tdio", "0"),
             ("/sys/shepherd/programmer/pin_tdo", "0"),
             ("/sys/shepherd/programmer/pin_tms", "0"),
+            ("/sys/shepherd/memory/iv_inp_address", "0"),
+            ("/sys/shepherd/memory/iv_inp_size", "0"),
+            ("/sys/shepherd/memory/iv_out_address", "0"),
+            ("/sys/shepherd/memory/iv_out_size", "0"),
+            ("/sys/shepherd/memory/gpio_address", "0"),
+            ("/sys/shepherd/memory/gpio_size", "0"),
+            ("/sys/shepherd/memory/util_address", "0"),
+            ("/sys/shepherd/memory/util_size", "0"),
             # TODO: design tests for programmer, also check if all hardware-tests need real hw
             #       -> there should be more tests that don't require a pru
         ]
@@ -106,9 +118,8 @@ def _shepherd_up(
         fake_fs.add_real_file(here / "_test_config_virtsource.yaml")
         yield
     else:
-        load_kernel_module()
+        reload_kernel_module()
         yield
-        remove_kernel_module()
         gc.collect()  # precaution
 
 

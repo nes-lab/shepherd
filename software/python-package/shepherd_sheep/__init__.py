@@ -217,9 +217,9 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                     "Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate
                 )
                 sysfs_interface.start_programmer()
-            # except OSError as xpt:
-            #    log.exception("OSError - Failed to initialize Programmer", str(xpt))
-            #    failed = True
+            except OSError as xpt:
+                log.exception("OSError - Failed to initialize Programmer", str(xpt))
+                failed = True
             except ValueError as xpt:
                 log.exception("ValueError: %s", str(xpt))
                 failed = True

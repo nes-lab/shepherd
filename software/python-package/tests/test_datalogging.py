@@ -10,7 +10,7 @@ from shepherd_core import CalibrationHarvester
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_sheep import Writer
-from shepherd_sheep.shared_memory import IVTrace
+from shepherd_sheep.shared_mem_iv_input import IVTrace
 
 
 def random_data(length: int) -> np.ndarray:
