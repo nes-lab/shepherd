@@ -11,22 +11,15 @@ name: Upload Package to PyPi
 on:
   release:
     types: [published]
-  workflow_call:
-  push:
-    # branches: [ main ]  # this is handled as OR (push to main OR tagged)
-    tags:
-      - 'v*.*.*'
 
 permissions:
   contents: read
 
 jobs:
   run-release:
-    uses: ./.github/workflows/release.yml
-    permissions:
-      contents: write
-  deploy:
+    uses: ./.github/workflows/py_herd_test.yml
 
+  publish:
     runs-on: ubuntu-latest
     needs:
       - run-release
