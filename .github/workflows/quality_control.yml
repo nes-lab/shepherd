@@ -6,16 +6,19 @@ on:
   workflow_call:
 
 jobs:
+  static-analysis:
+    uses: ./.github/workflows/static_analysis.yml
+  compile-firmwares:
+    uses: ./.github/workflows/fw_build_gcc.yml
+  test-sheep:
+    uses: ./.github/workflows/py_sheep_test.yml
+  test-herd:
+    uses: ./.github/workflows/py_herd_test.yml
 
   quality-control:
     runs-on: ubuntu-latest
-
-    steps:
-      - name: static-analysis
-        uses: ./.github/workflows/static_analysis.yml
-      - name: compile-firmwares
-        uses: ./.github/workflows/fw_build_gcc.yml
-      - name: test-sheep
-        uses: ./.github/workflows/py_sheep_test.yml
-      - name: test-herd
-        uses: ./.github/workflows/py_herd_test.yml
+    needs:
+      - static-analysis
+      - compile-firmwares
+      - test-sheep
+      - test-herd
