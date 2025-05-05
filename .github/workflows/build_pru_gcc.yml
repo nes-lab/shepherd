@@ -75,7 +75,7 @@ jobs:
 
       - name: Build SWD Programmer 🧱
         run: |
-          make
+          make TYPE=SWD
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SWD-fw.elf
         working-directory: "software/firmware/pru0-programmer/"
 

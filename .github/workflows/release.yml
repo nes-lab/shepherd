@@ -1,0 +1,24 @@
+name: Release tagged Commit
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  run-quality-control:
+    uses: ./.github/workflows/qc_tests.yml
+  compile-firmwares:
+    uses: ./.github/workflows/build_pru_gcc.yml
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - run-quality-control
+      - compile-firmwares
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Release 🏃
+        uses: softprops/action-gh-release@v2

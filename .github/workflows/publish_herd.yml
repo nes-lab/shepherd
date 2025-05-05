@@ -12,18 +12,24 @@ on:
   release:
     types: [published]
   workflow_call:
+  push:
+    # branches: [ main ]  # this is handled as OR (push to main OR tagged)
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: read
 
 jobs:
-  run-quality-control:
-    uses: ./.github/workflows/qc_tests.yml
+  run-release:
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
   deploy:
 
     runs-on: ubuntu-latest
     needs:
-      - run-quality-control
+      - run-release
     env:
       herd_path: "./software/shepherd-herd"
 
