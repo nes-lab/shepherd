@@ -22,3 +22,6 @@ jobs:
       - compile-firmwares
       - test-sheep
       - test-herd
+    steps:
+      - name: Finished
+        run: echo "finished"
