@@ -225,7 +225,6 @@ class ShepherdEmulator(ShepherdIO):
         ts_end = self.start_time + duration_s
         set_stop(ts_end)
 
-        # Heartbeat-Message
         prog_bar = tqdm(
             total=int(10 * duration_s),
             desc="Measurement",
@@ -245,7 +244,6 @@ class ShepherdEmulator(ShepherdIO):
             # this loop fetches data and tries to fill it into the buffer
             # -> while there is no space it will do other tasks
 
-            # TODO: transform h5_recorders into monitors, make all 3 free threading
             while not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
                 cal=self.cal_pru,

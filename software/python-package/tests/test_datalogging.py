@@ -10,6 +10,7 @@ from shepherd_core import CalibrationHarvester
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_sheep import Writer
+from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.shared_mem_iv_input import IVTrace
 
 
@@ -33,7 +34,11 @@ def data_h5(tmp_path: Path) -> Path:
         store.store_hostname("Pinky")
         for i in range(100):
             len_ = 10_000
-            mock_data = IVTrace(random_data(len_), random_data(len_), i)
+            mock_data = IVTrace(
+                voltage=random_data(len_),
+                current=random_data(len_),
+                timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
+            )
             store.write_iv_buffer(mock_data)
     return name
 

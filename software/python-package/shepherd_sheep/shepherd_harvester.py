@@ -10,11 +10,13 @@ from shepherd_core.data_models.task import HarvestTask
 from tqdm import tqdm
 from typing_extensions import Self
 
+from . import commons
 from .eeprom import retrieve_calibration
 from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
+from .shepherd_io import ShepherdPRUError
 from .sysfs_interface import set_stop
 
 
@@ -120,14 +122,13 @@ class ShepherdHarvester(ShepherdIO):
 
         if self.cfg.duration is None:
             duration_s = 10**6  # s, defaults to ~ 100 days
-            log.debug("Duration = %.3f s (forced runtime, press ctrl+c to exit)", duration_s)
+            log.debug("Duration = %.3f s (100 days runtime, press ctrl+c to exit)", duration_s)
         else:
             duration_s = self.cfg.duration.total_seconds()
             log.debug("Duration = %.3f s (configured runtime)", duration_s)
         ts_end = self.start_time + duration_s
         set_stop(ts_end)
 
-        # Progress-Bar
         prog_bar = tqdm(
             total=int(10 * duration_s),
             desc="Measurement",
@@ -157,10 +158,17 @@ class ShepherdHarvester(ShepherdIO):
                     )
                     break
 
-            self.handle_pru_messages(panic_on_restart=True)
-            self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
+            try:
+                self.handle_pru_messages(panic_on_restart=True)
+            except ShepherdPRUError as _xpt:
+                # We're done when the PRU has processed all emulation data buffers
+                if _xpt.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
+                    log.warning("PRU restarted - samples might be missing")
+                else:
+                    log.error("%s", _xpt)
+            self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=False, util=True)
             if not (data_iv or data_ut):
-                if ts_data_last - time.time() > 5:
+                if time.time() - ts_data_last > 5:
                     log.error("Data-collection ran dry for 5s -> begin to exit now")
                     break
                 # rest of loop is non-blocking, so we better doze a while if nothing to do

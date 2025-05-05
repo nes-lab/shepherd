@@ -47,7 +47,8 @@ ShepherdIOError = IOError
 
 class ShepherdTimeoutError(ShepherdIOError):
     def __init__(self, id_num: int | None = None, value: int | list | None = None) -> None:
-        super().__init__("Timeout waiting for message [id=0x%X, val=%s]", id_num, value)
+        msg = f"Timeout waiting for message [id=0x{id_num:X}, val={value}]"
+        super().__init__(msg)
         self.id_num = id_num
         self.value = value
 
@@ -60,18 +61,18 @@ class ShepherdRxError(ShepherdIOError):
         value: int | list | None = 0,
         note: str | None = None,
     ) -> None:
-        message = "Expected msg-type %X, but got [id=0x%X, val=%s]"
+        message = f"Expected msg-type 0x{id_expected:X}, but got [id=0x{id_num:X}, val={value}]"
         if isinstance(note, str):
             message = message + " - " + note
 
-        super().__init__(message, id_expected, id_num, value)
+        super().__init__(message)
         self.id_num = id_num
         self.value = value
 
 
 class ShepherdPRUError(ShepherdIOError):
     def __init__(self, message: str, id_num: int = 0, value: int | list | None = 0) -> None:
-        super().__init__(message + " with [id=0x%X, val=%s]", id_num, value)
+        super().__init__(message + f" with [id=0x{id_num:X}, val={value}]")
         self.id_num = id_num
         self.value = value
 
@@ -164,7 +165,7 @@ class ShepherdIO:
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
             self._power_down_shp()
-            self._unload_shared_mem()
+            self.unload_shared_mem()
             raise
 
         sfs.wait_for_state("idle", 3)
@@ -180,7 +181,7 @@ class ShepherdIO:
         sfs.write_mode("none", force=True)
         log.info("Now exiting ShepherdIO")
         self._power_down_shp()
-        self._unload_shared_mem()
+        self.unload_shared_mem()
         ShepherdIO._instance = None
 
     @staticmethod
@@ -254,8 +255,7 @@ class ShepherdIO:
         sfs.wait_for_state("idle", 5)
 
     def refresh_shared_mem(self) -> None:
-        if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMemory):
-            self.shared_mem.__exit__()
+        self.unload_shared_mem()
 
         start_time = self.start_time if hasattr(self, "start_time") else time.time()
 
@@ -267,8 +267,8 @@ class ShepherdIO:
         )
         self.shared_mem.__enter__()
 
-    def _unload_shared_mem(self) -> None:
-        if self.shared_mem is not None:
+    def unload_shared_mem(self) -> None:
+        if isinstance(self.shared_mem, SharedMemory):
             self.shared_mem.__exit__()
             self.shared_mem = None
 
@@ -514,7 +514,7 @@ class ShepherdIO:
                 log.debug(
                     "PRU%d is restarting its main routine, val2=%s",
                     values[0],
-                    f"0x{values[0]:X}",
+                    f"0x{values[1]:X}",
                 )
                 # only panic during measurements
                 if not panic_on_restart:

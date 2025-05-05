@@ -18,6 +18,7 @@ from shepherd_sheep import ShepherdEmulator
 from shepherd_sheep import Writer
 from shepherd_sheep import commons
 from shepherd_sheep import run_emulator
+from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.shared_mem_iv_input import IVTrace
 from shepherd_sheep.sysfs_interface import set_stop
 
@@ -47,7 +48,9 @@ def data_h5(tmp_path: Path, duration_s: float = 10.0) -> Path:
         for i in range(round(10 * duration_s)):
             len_ = 10_000
             mock_data = IVTrace(
-                voltage=random_data(len_), current=random_data(len_), timestamp_ns=i
+                voltage=random_data(len_),
+                current=random_data(len_),
+                timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
             )
             store.write_iv_buffer(mock_data)
     return store_path
@@ -284,7 +287,7 @@ def test_cache_via_loopback(tmp_path: Path) -> None:
                     iv_inp=True, iv_out=True, gpio=True, util=True
                 )
                 if not (data_iv or data_gp or data_ut):
-                    if ts_data_last - time.time() > 10:
+                    if time.time() - ts_data_last > 10:
                         print("Main sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do

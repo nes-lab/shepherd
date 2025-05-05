@@ -131,6 +131,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
         # switching target may restart pru
         sysfs_interface.wait_for_state("idle", 5)
 
+        dbg.unload_shared_mem()  # avoids canary-exception
         sysfs_interface.load_pru_firmware(cfg.protocol)
         dbg.refresh_shared_mem()  # address might have changed
 
@@ -193,7 +194,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
 
         with file_tmp.resolve().open("rb") as fw:
             try:
-                dbg.shared_mem.iv_out.write_firmware(fw.read())
+                dbg.shared_mem.iv_inp.write_firmware(fw.read())
 
                 if cfg.simulate:
                     target = "dummy"

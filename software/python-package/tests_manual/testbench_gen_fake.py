@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 from shepherd_core import CalibrationHarvester
 from shepherd_sheep import Writer
+from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.shared_memory import IVTrace
 
 tmp_path = Path("/var/shepherd/recordings")
@@ -22,7 +23,7 @@ with Writer(store_path, cal_data=CalibrationHarvester()) as store:
         mock_data = IVTrace(
             voltage=random_data(len_),
             current=random_data(len_),
-            timestamp_ns=i,
+            timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
         )
         store.write_iv_buffer(mock_data)
 

@@ -87,9 +87,6 @@ class SharedMemory:
             self.util.POLL_INTERVAL,
         )
         self.ts_last = 0
-        log.debug(
-            "[%s] overflow-detector, t_poll_min = %f s", type(self).__name__, self.poll_interval
-        )
 
     def __enter__(self) -> Self:
         self._stack.enter_context(self.iv_inp)

@@ -386,8 +386,12 @@ static ssize_t sysfs_time_stop_store(struct kobject *kobj, struct kobj_attribute
     if (strncmp(buf, "now", 3) == 0)
     {
         if ((count < 3) || (count > 4)) return -EINVAL;
-
         mem_interface_cancel_delayed_start();
+        if (mem_interface_get_state() == STATE_IDLE)
+        {
+            printk(KERN_INFO "shprd.k: Stopping/Resetting PRU not needed, already idle");
+            return count;
+        }
         mem_interface_set_state(STATE_RESET);
         kt_sec = ktime_get_real_seconds();
         printk(KERN_INFO "shprd.k: Stopping/Resetting PRU now (%lld)", kt_sec);
