@@ -62,7 +62,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
 
 
 @pytest.mark.hardware  # TODO: extend with new harvester-options
-@pytest.mark.timeout(40)
+@pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_harvester_fn(tmp_path: Path) -> None:
     path = tmp_path / "rec.h5"

@@ -46,6 +46,7 @@ def cal4sysfs() -> dict:
 @pytest.mark.parametrize("attr", sysfs_interface.attribs)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_getters(attr: str) -> None:
+    sysfs_interface.check_sys_access()
     method_to_call = getattr(sysfs_interface, f"get_{attr}")
     assert method_to_call() is not None
 
@@ -61,6 +62,7 @@ def test_getters_fail(attr: str) -> None:
 @pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_start() -> None:
+    sysfs_interface.check_sys_access()
     sysfs_interface.set_start()
     time.sleep(5)
     assert sysfs_interface.get_state() == "running"
@@ -103,7 +105,7 @@ def test_set_mode(mode: str) -> None:
 @pytest.mark.usefixtures("_shepherd_up")
 def test_initial_mode() -> None:
     # NOTE: initial config is set in main() of pru0
-    assert sysfs_interface.get_mode() == "harvester"
+    assert sysfs_interface.get_mode() == "none"
 
 
 @pytest.mark.hardware

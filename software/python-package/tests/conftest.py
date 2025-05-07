@@ -81,7 +81,7 @@ def _shepherd_up(
             ("/sys/shepherd/state", "idle"),
             ("/sys/shepherd/time_start", "0"),
             ("/sys/shepherd/time_stop", "0"),
-            ("/sys/shepherd/mode", "harvester"),
+            ("/sys/shepherd/mode", "none"),
             ("/sys/shepherd/n_buffers", "1"),
             ("/sys/shepherd/memory/address", "1"),
             ("/sys/shepherd/memory/size", "1"),
