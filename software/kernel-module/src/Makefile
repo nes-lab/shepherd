@@ -8,6 +8,7 @@ ifneq ($(KERNELRELEASE),)
     $(TARGET_MODULE)-objs += pru_firmware.o
     $(TARGET_MODULE)-objs += pru_mem_interface.o
     $(TARGET_MODULE)-objs += pru_msg_sys.o
+    $(TARGET_MODULE)-objs += ocmc_cache.o
     $(TARGET_MODULE)-objs += pru_sync_control.o
     $(TARGET_MODULE)-objs += sysfs_interface.o
 else
@@ -17,9 +18,16 @@ endif
 
 ccflags-y=-I$(src)/../common
 
-#CFLAGS_MODULE = -Wall -Wextra
-# -> not enabled by default because it also includes warnings of all external files
-# Analyze with:
+CFLAGS_MODULE = -Wall
+CFLAGS_MODULE += -Wdeprecated-declarations
+CFLAGS_MODULE += -Wnonnull -Wnonnull-compare -Wnull-dereference
+CFLAGS_MODULE += -Winit-self
+CFLAGS_MODULE += -Wno-implicit-int -Wno-implicit-function-declaration
+CFLAGS_MODULE += -Wmissing-attributes
+CFLAGS_MODULE += -Wuse-after-free=3
+CFLAGS_MODULE += -Wuninitialized
+CFLAGS_MODULE += -Wshadow=local
+# Analyze '-Wextra' or '-Wpedantic' with:
 # make 2> output.txt
 # -> look for "shepherd/software/kernel" but
 # 	 you can ignore lines with: (in file included) from .. shepherd/
@@ -29,6 +37,9 @@ all: build
 
 build:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) modules
+
+includecheck:
+	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) includecheck
 
 clean:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) clean

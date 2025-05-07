@@ -1,7 +1,7 @@
 import os
 import subprocess
 import threading
-import time
+from datetime import datetime
 from types import TracebackType
 
 import h5py
@@ -18,7 +18,7 @@ class KernelMonitor(Monitor):
         compression: Compression | None = Compression.default,
         backlog: int = 60,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.52)
+        super().__init__(target, compression, poll_interval=0.52)
         self.backlog = backlog
 
         self.data.create_dataset(
@@ -36,7 +36,8 @@ class KernelMonitor(Monitor):
             "--dmesg",
             "--follow",
             f"--lines={self.backlog}",
-            "--output=short-precise",
+            "--boot",  # filter for current boot
+            "--output=short-iso-precise",
         ]
         self.process = subprocess.Popen(  # noqa: S603
             command,
@@ -60,7 +61,7 @@ class KernelMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -75,9 +76,13 @@ class KernelMonitor(Monitor):
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
-                self.event.wait(self.poll_intervall)  # rate limiter
+                self.event.wait(self.poll_interval)  # rate limiter
                 continue
-            line = str(line).strip()[:128]
+            first_space = line.find(" ")
+            time_str = line[:first_space]
+            time_ts = datetime.fromisoformat(time_str)
+            time_ns = int(datetime.timestamp(time_ts) * 1e9)
+            line = line[first_space:].strip()[:128]
             try:
                 data_length = self.data["time"].shape[0]
                 if self.position >= data_length:
@@ -88,7 +93,7 @@ class KernelMonitor(Monitor):
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.data["time"][self.position] = int(time.time() * 1e9)
+                self.data["time"][self.position] = time_ns
                 self.data["message"][self.position] = line
                 self.position += 1
             except OSError:

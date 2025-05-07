@@ -4,39 +4,16 @@
 // NOTE: and most of the structs are hardcoded in read_buffer() in shepherd_io.py
 
 #include "shepherd_config.h"
-#include "simple_lock.h"
 #include "stdint_fast.h"
-
-/**
- * Length of buffer for storing harvest & emulation data
- */
-#define FIFO_BUFFER_SIZE                (64U) // 107 is current max (<10'000 pages)
-
-/**
- * These are the system events that we use to signal events to the PRUs.
- * See the AM335x TRM Table 4-22 for a list of all events
- */
-#define HOST_PRU_EVT_TIMESTAMP          (20u)
-
-/* The SharedMem struct resides at the beginning of the PRUs shared memory */
-#define PRU_SHARED_MEM_STRUCT_OFFSET    (0x10000u)
-
-/* gpio_buffer_size that comes with every analog_sample_buffer (0.1s) */
-#define MAX_GPIO_EVT_PER_BUFFER         (16384u)
-
-// Test data-containers and constants with pseudo-assertion with zero cost (if expression evaluates to 0 this causes a div0
-// NOTE: name => alphanum without spaces and without ""
-#define ASSERT(assert_name, expression) extern uint32_t assert_name[1 / (expression)]
 
 /* Message content description used to distinguish messages for PRU0 */
 enum MsgType
 {
-    /* USERSPACE (enum <0xC0) */
+    /* USERSPACE (enum <0xF0) */
     MSG_NONE                      = 0x00u,
-    MSG_BUF_FROM_HOST             = 0x01u,
-    MSG_BUF_FROM_PRU              = 0x02u,
+
     // Programmer
-    //MSG_PGM_ERROR_GENERIC         = 0x91u,
+    //MSG_PGM_ERROR_GENERIC         = 0x91u,  // TODO: move to error-section?
     //MSG_PGM_ERROR_OPEN            = 0x92u,
     MSG_PGM_ERROR_WRITE           = 0x93u, // val0: addr, val1: data
     MSG_PGM_ERROR_VERIFY          = 0x94u, // val0: addr, val1: data (original)
@@ -44,10 +21,10 @@ enum MsgType
     MSG_PGM_ERROR_PARSE           = 0x96u, // val0: ihex_return, val1: line number of hex
     // DEBUG
     MSG_DBG_ADC                   = 0xA0u,
-    MSG_DBG_DAC                   = 0xA1u,
+    MSG_DBG_DAC                   = 0xA1u, // TODO: rename: MSG_CTRL_DAC
     MSG_DBG_GPI                   = 0xA2u,
     MSG_DBG_GP_BATOK              = 0xA3u,
-    MSG_DBG_PRINT                 = 0xA6u,
+    MSG_DBG_PRINT                 = 0xA6u, // TODO: unused
     MSG_DBG_VSRC_P_INP            = 0xA8u,
     MSG_DBG_VSRC_P_OUT            = 0xA9u,
     MSG_DBG_VSRC_V_CAP            = 0xAAu,
@@ -59,52 +36,55 @@ enum MsgType
     MSG_DBG_VSRC_HRV_P_INP        = 0xB1u, // HRV + CNV in one go
 
     // ERROR
-    MSG_ERROR                     = 0xE0u,
-    MSG_ERR_MEMCORRUPTION         = 0xE1u,
+    MSG_ERR_INVLD_CMD             = 0xE0u,
+    MSG_ERR_MEM_CORRUPTION        = 0xE1u,
     MSG_ERR_BACKPRESSURE          = 0xE2u,
-    MSG_ERR_INCMPLT               = 0xE3u,
-    /* TODO: MSG_ERR_INCMPLT could be removed, not possible per design */
-    MSG_ERR_INVLDCMD              = 0xE4u,
-    MSG_ERR_NOFREEBUF             = 0xE5u,
-    MSG_ERR_TIMESTAMP             = 0xE6u,
-    MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE7u,
-    MSG_ERR_VALUE                 = 0xE8u,
-    MSG_ERR_SAMPLE_MODE           = 0xE9u,
-    MSG_ERR_HRV_ALGO              = 0xEAu,
+    MSG_ERR_TIMESTAMP             = 0xE3u,
+    MSG_ERR_CANARY                = 0xE4u, // unused here, done by kMod & py
+    MSG_ERR_SYNC_STATE_NOT_IDLE   = 0xE5u,
+    MSG_ERR_VALUE                 = 0xE6u,
+    MSG_ERR_SAMPLE_MODE           = 0xE7u,
+    MSG_ERR_HRV_ALGO              = 0xE8u,
+    MSG_ERR_ADC_NOT_FOUND         = 0xE9u,
 
     /* KERNELSPACE (enum >=0xF0) */
     // STATUS
     MSG_STATUS_RESTARTING_ROUTINE = 0xF0u,
     // Routines
     MSG_TEST_ROUTINE              = 0xFAu,
-    MSG_SYNC_ROUTINE              = 0xFBu
+    MSG_SYNC_ROUTINE              = 0xFBu,
+    MSG_SYNC_RESET                = 0xFCu,
 };
 
-/* Message IDs used in Mem-Protocol between PRUs and kernel module */
+/* Message IDs used in Mem-Msg-Protocol between PRUs and kernel module */
 enum MsgID
 {
-    MSG_TO_KERNEL = 0x55,
-    MSG_TO_PRU    = 0xAA,
+    MSG_TO_USER   = 0x11u, // python
+    MSG_TO_KERNEL = 0x55u,
+    MSG_TO_PRU    = 0xAAu,
 };
 
 enum ShepherdMode
 {
-    MODE_HARVESTER,
-    MODE_HRV_ADC_READ,
-    MODE_EMULATOR,
-    MODE_EMU_ADC_READ,
-    MODE_DEBUG,
-    MODE_NONE
+    MODE_NONE         = 0x00u,
+    MODE_HARVESTER    = 0x10u,
+    MODE_HRV_ADC_READ = 0x11u,
+    MODE_EMULATOR     = 0x20u,
+    MODE_EMU_ADC_READ = 0x21u,
+    MODE_EMU_LOOPBACK = 0x22u,
+    MODE_DEBUG        = 0xD0u,
 }; // TODO: allow to set "NONE", shuts down hrv & emu
 
 enum ShepherdState
 {
-    STATE_UNKNOWN,
-    STATE_IDLE,
-    STATE_ARMED,
-    STATE_RUNNING,
-    STATE_RESET,
-    STATE_FAULT
+    STATE_UNKNOWN  = 0x00u,
+    STATE_IDLE     = 0x10u,
+    STATE_ARMED    = 0x20u,
+    STATE_STARTING = 0x21u, // transitional state -> running
+    STATE_RUNNING  = 0x30u,
+    STATE_STOPPED  = 0xD0u, // transitional state -> idle (without reset)
+    STATE_RESET    = 0xE0u, // transitional state -> idle
+    STATE_FAULT    = 0xF0u,
 };
 
 enum ProgrammerState
@@ -128,34 +108,54 @@ enum ProgrammerTarget
     PRG_TARGET_DUMMY  = 3u,
 };
 
-struct GPIOEdges
+struct IVSample
 {
-    uint32_t canary;
-    uint32_t idx;
-    uint64_t timestamp_ns[MAX_GPIO_EVT_PER_BUFFER];
-    uint16_t bitmask[MAX_GPIO_EVT_PER_BUFFER];
+    uint32_t voltage;
+    uint32_t current;
 } __attribute__((packed));
 
-struct SampleBuffer
+extern uint32_t __cache_fits_buffer[1 / ((1u << IV_SAMPLE_SIZE_LOG2) == sizeof(struct IVSample))];
+
+struct IVTraceInp
 {
-    uint32_t         canary;
-    uint32_t         len;
-    uint64_t         timestamp_ns;
-    uint32_t         values_voltage[ADC_SAMPLES_PER_BUFFER];
-    uint32_t         values_current[ADC_SAMPLES_PER_BUFFER];
-    struct GPIOEdges gpio_edges;
-    uint32_t         pru0_max_ticks_per_sample;
-    uint32_t         pru0_sum_ticks_for_buffer;
+    uint32_t idx_pru; // already read, TODO: can be removed? copy of shared_mem.buffer_iv_idx?
+    uint32_t idx_sys;
+    struct IVSample sample[BUFFER_IV_INP_SAMPLES_N];
+    /* safety */
+    uint32_t        canary;
 } __attribute__((packed));
-/*
- * TODO: sample-buffer needs big update
- * 	- one large fifo with IV-Struct would have big advantage!
- * 	- overhead on bufferchange would be minimal and
- * 	- pru1 could read ahead, despite a bufferchange
- * 	- python would still fill this fifo block by block, its just easier for the pru to read
- * 	- keep matching V&C / IV Values together -> more efficient for pru
- *  - report size to python (less hardcoded vars)
- */
+
+struct IVTraceOut
+{
+    uint32_t idx_pru;
+    uint64_t timestamp_ns[BUFFER_IV_OUT_SAMPLES_N];
+    uint32_t voltage[BUFFER_IV_OUT_SAMPLES_N];
+    uint32_t current[BUFFER_IV_OUT_SAMPLES_N];
+    /* safety */
+    uint32_t canary;
+} __attribute__((packed));
+
+struct GPIOTrace
+{
+    uint32_t idx_pru;
+    uint64_t timestamp_ns[BUFFER_GPIO_SAMPLES_N];
+    uint16_t bitmask[BUFFER_GPIO_SAMPLES_N];
+    /* safety */
+    uint32_t canary;
+} __attribute__((packed));
+
+struct UtilTrace
+{
+    /* PRU0 utilization, max ticks per sample (10us), sum of ticks during one sync window (100ms) */
+    uint32_t idx_pru;
+    uint64_t timestamp_ns[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru0_tsample_ns_max[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru0_tsample_ns_sum[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru0_sample_count[BUFFER_UTIL_SAMPLES_N];
+    uint32_t pru1_tsample_ns_max[BUFFER_UTIL_SAMPLES_N];
+    /* safety */
+    uint32_t canary;
+} __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
 struct ProgrammerCtrl
@@ -169,9 +169,11 @@ struct ProgrammerCtrl
     uint32_t pin_tdio;     // data-io for SWD & SBW, input-only for JTAG (TDI)
     uint32_t pin_dir_tdio; // direction (HIGH == Output to target)
     /* pins below only for JTAG */
-    uint32_t pin_tdo;      // data-output for JTAG
-    uint32_t pin_tms;      // mode for JTAG
-    uint32_t pin_dir_tms;  // direction (HIGH == Output to target)
+    uint32_t pin_tdo;     // data-output for JTAG
+    uint32_t pin_tms;     // mode for JTAG
+    uint32_t pin_dir_tms; // direction (HIGH == Output to target)
+    /* safety */
+    uint32_t canary;
 } __attribute__((packed)); // TODO: pin_X can be u8,
 
 
@@ -199,6 +201,8 @@ struct CalibrationConfig
     uint32_t dac_voltage_inv_factor_uV_n20; // n20 -> normalized to 2^20 (= 1.0)
     /* Offset of voltage DAC */
     int32_t  dac_voltage_offset_uV;
+    /* safety */
+    uint32_t canary;
 } __attribute__((packed));
 
 #define LUT_SIZE (12)
@@ -211,7 +215,7 @@ struct CalibrationConfig
  * 	_uV-u32 = 4294 V
  * 	_nA-u32 = ~ 4.294 A
  */
-struct ConverterConfig // TODO: should get canary
+struct ConverterConfig
 {
     /* General Reg Config */
     uint32_t converter_mode;                 // bitmask to alter functionality
@@ -262,10 +266,28 @@ struct ConverterConfig // TODO: should get canary
     uint8_t  LUT_inp_efficiency_n8[LUT_SIZE][LUT_SIZE];
     // depending on output_current, inv_n4 means normalized to inverted 2^4 => 1/1024,
     uint32_t LUT_out_inv_efficiency_n4[LUT_SIZE];
+    /* safety */
+    uint32_t canary;
 } __attribute__((packed));
 
+#define VOC_LUT_SIZE     123
+#define RSERIES_LUT_SIZE 100
 
-struct HarvesterConfig // TODO: should get canary
+struct BatteryConfig
+{
+    uint32_t Constant_s_per_mAs_n48;
+    uint32_t Constant_1_per_kOhm_n18;
+
+    uint32_t LUT_voc_SoC_min_log2_u_n32;
+    uint32_t LUT_voc_uV_n8[VOC_LUT_SIZE];
+
+    uint32_t LUT_rseries_SoC_min_log2_u_n32;
+    uint32_t LUT_rseries_KOhm_n32[RSERIES_LUT_SIZE];
+    /* safety */
+    uint32_t canary;
+} __attribute__((packed));
+
+struct HarvesterConfig
 {
     uint32_t algorithm;
     uint32_t hrv_mode;
@@ -279,6 +301,8 @@ struct HarvesterConfig // TODO: should get canary
     uint32_t interval_n;    // between measurements
     uint32_t duration_n;    // of measurement
     uint32_t wait_cycles_n; // for DAC to settle
+    /* safety */
+    uint32_t canary;
 } __attribute__((packed));
 
 /* Format of Message-Protocol between PRUs & Kernel Module */
@@ -294,98 +318,24 @@ struct ProtoMsg
     uint8_t  reserved[1];
     /* Actual Content of message */
     uint32_t value[2];
+    /* safety */
+    uint32_t canary;
 } __attribute__((packed));
 
-/* Control reply message sent from this kernel module to PRU1 after running the control loop */
-struct SyncMsg
+struct ProtoMsg64
 {
     /* Identifier => Canary, This is used to identify memory corruption */
     uint8_t  id;
-    /* Token-System to signal new message & the ack, (sender sets unread, receiver resets) */
+    /* Token-System to signal new message & the ack, (sender sets unread/1, receiver resets/0) */
     uint8_t  unread;
     /* content description used to distinguish messages, see enum MsgType */
-    uint8_t  type; // only needed for debug
+    uint8_t  type;
     /* Alignment with memory, (bytes)mod4 */
-    uint8_t  reserved0[1];
+    uint8_t  reserved[1];
     /* Actual Content of message */
-    uint32_t buffer_block_period;  // corrected ticks that equal 100ms
-    uint32_t analog_sample_period; // ~ 10 us
-    // remainder of buffer_block/sample_count = sample_period
-    uint32_t compensation_steps;
-    uint64_t next_timestamp_ns; // start of next buffer block
+    uint64_t value;
+    /* safety */
+    uint32_t canary;
 } __attribute__((packed));
 
-/* Format of memory structure shared between PRU0, PRU1 and kernel module (lives in shared RAM of PRUs) */
-struct SharedMem
-{
-    uint32_t                 shepherd_state;
-    /* Stores the mode, e.g. harvester or emulator */
-    uint32_t                 shepherd_mode;
-    /* Allows setting a fixed voltage for the seconds DAC-Output (Channel A),
-	 * TODO: this has to be optimized, allow better control (off, link to ch-b, change NOW) */
-    uint32_t                 dac_auxiliary_voltage_raw;
-    /* Physical address of shared area in DDR RAM, that is used to exchange data between user space and PRUs */
-    uint32_t                 mem_base_addr;
-    /* Length of shared area in DDR RAM */
-    uint32_t                 mem_size;
-    /* Maximum number of buffers stored in the shared DDR RAM area */
-    uint32_t                 n_buffers;
-    /* Number of IV samples stored per buffer */
-    uint32_t                 samples_per_buffer;
-    /* The time for sampling samples_per_buffer. Determines sampling rate */
-    uint32_t                 buffer_period_ns;
-    /* active utilization-monitor for PRU0 */
-    uint32_t                 pru0_ticks_per_sample;
-    /* ADC calibration settings */
-    struct CalibrationConfig calibration_settings;
-    /* This structure defines all settings of virtual converter emulation*/
-    struct ConverterConfig   converter_settings;
-    struct HarvesterConfig   harvester_settings;
-    /* settings for programmer-subroutines */
-    struct ProgrammerCtrl    programmer_ctrl;
-    /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
-    struct ProtoMsg          pru0_msg_inbox;
-    struct ProtoMsg          pru0_msg_outbox;
-    struct ProtoMsg          pru0_msg_error;
-    struct SyncMsg           pru1_sync_inbox;
-    struct ProtoMsg          pru1_sync_outbox;
-    struct ProtoMsg          pru1_msg_error;
-    /* NOTE: End of region (also) controlled by kernel module */
-
-    // TODO: this position should get a canary
-
-    /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
-    uint64_t                 last_sample_timestamp_ns;
-    uint64_t                 next_buffer_timestamp_ns;
-    /* Protects write access to below gpio_edges structure */
-    simple_mutex_t           gpio_edges_mutex;
-    /* internal gpio-register from PRU1 (for PRU1, debug), only updated when not running */
-    uint32_t                 gpio_pin_state;
-    /**
-	* Pointer to gpio_edges structure in current buffer. Only PRU0 knows about
-	* which is the current buffer, but PRU1 is sampling GPIOs. Therefore PRU0
-	* shares the memory location of the current gpio_edges struct
-	*/
-    struct GPIOEdges        *gpio_edges;    // far/slow location in RAM
-    struct SampleBuffer     *sample_buffer; // far/slow location in RAM
-    /* Counter for ADC-Samples, updated by PRU0, also needed (non-writing) by PRU1 */
-    uint32_t                 analog_sample_counter;
-    /* Fetch-System where pru0 can instruct pru1 to get the IV-Set from far buffer */
-    uint32_t                 analog_value_request; // managed & written by PRU0
-    uint32_t                 analog_value_index;   // these 3 below are managed & written by PRU1
-    uint32_t                 analog_value_current;
-    uint32_t                 analog_value_voltage;
-    /* Token system to ensure both PRUs can share interrupts */
-    bool_ft                  cmp0_trigger_for_pru1;
-    bool_ft                  cmp1_trigger_for_pru1;
-    /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-    bool_ft                  vsource_batok_trigger_for_pru1;
-    bool_ft                  vsource_batok_pin_value;
-    /* Trigger to control sampling of gpios */
-    bool_ft                  vsource_skip_gpio_logging;
-} __attribute__((packed));
-
-ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000);
-// NOTE: PRUs shared ram should be even 12kb
-
-#endif /* __SHEPHERD_COMMONS_H_ */
+#endif /* SHEPHERD_COMMONS_H_ */

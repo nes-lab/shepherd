@@ -21,7 +21,8 @@ def extract_first_sheep(herd_path: Path) -> str:
         try:
             inventory_data = yaml.safe_load(stream)
         except yaml.YAMLError as _xpt:
-            raise TypeError("Couldn't read inventory file %s", herd_path.as_posix()) from _xpt
+            msg = f"Couldn't read inventory file {herd_path.as_posix()}"
+            raise TypeError(msg) from _xpt
     return next(iter(inventory_data["sheep"]["hosts"].keys()))
 
 
@@ -30,11 +31,13 @@ def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -
     while cli_runner.invoke(cli, ["status"]).exit_code > 0:
         duration = time.time() - ts_start
         if duration > timeout:
-            raise TimeoutError("Shepherd ran into timeout (%f s)", timeout)
+            msg = f"Shepherd ran into timeout ({timeout} s)"
+            raise TimeoutError(msg)
         time.sleep(2)
     duration = time.time() - ts_start
     if duration < tmin:
-        raise TimeoutError("Shepherd only took %f s (min = %f s)", duration, tmin)
+        msg = f"Shepherd only took {duration} s (min = {tmin} s)"
+        raise TimeoutError(msg)
     return False
 
 

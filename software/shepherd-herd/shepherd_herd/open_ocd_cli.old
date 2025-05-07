@@ -59,7 +59,7 @@ def openocd_prepare(
 ) -> None:
     target_port = target_port.upper()
     if target_port not in ["A", "B"]:
-        raise ValueError("Target-Port has to be A or B, but was '%s'", target_port)
+        raise ValueError(f"Target-Port has to be A or B, but was '{target_port}'")
     herd.run_cmd(sudo=True, cmd="systemctl start shepherd-openocd")
     herd.run_cmd(
         sudo=True,

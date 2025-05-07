@@ -40,7 +40,7 @@ static inline uint8_t read_byte(char **ptr)
 }
 
 /* reads a single record from ihex file in memory */
-static int ihex_get_rec(ihex_rec_t *const rec)
+static ihex_ret_t ihex_get_rec(ihex_rec_t *const rec)
 {
     uint32_t i;
 
@@ -67,7 +67,7 @@ static int ihex_get_rec(ihex_rec_t *const rec)
     uint8_t checksum = read_byte(&fptr);
     counter += checksum;
 
-    const int rc = ((counter & 0xFF) == 0) ? IHEX_RET_OK : IHEX_RET_ERR_REC_CHECKSUM;
+    const ihex_ret_t rc = ((counter & 0xFF) == 0) ? IHEX_RET_OK : IHEX_RET_ERR_REC_CHECKSUM;
     line_number++;
 
     /* end of line can be one or two characters */
@@ -81,23 +81,23 @@ static int ihex_get_rec(ihex_rec_t *const rec)
     else return IHEX_RET_ERR_REC_END;
 }
 
-int ihex_reader_init(char *const file_mem)
+ihex_ret_t ihex_reader_init(char *const file_mem)
 {
     ihex_init(file_mem);
     reader_addr    = 0u;
     start_exe_addr = 0u;
-    return 0;
+    return IHEX_RET_OK;
 }
 
 /* consecutive calls read data from hexfile block by block */
 ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
 {
     static ihex_rec_t rec;
-    static int        ret_err;
+    static ihex_ret_t ret_err;
     while (1)
     {
         ret_err = ihex_get_rec(&rec);
-        if (ret_err != 0) return ret_err;
+        if (ret_err != IHEX_RET_OK) return ret_err;
 
         if (rec.type == IHEX_REC_TYPE_DATA)
         {

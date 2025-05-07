@@ -4,6 +4,8 @@ import contextlib
 import logging
 import threading
 import time
+from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from datetime import datetime
 from datetime import timedelta
 from io import StringIO
@@ -12,7 +14,6 @@ from pathlib import PurePath
 from pathlib import PurePosixPath
 from types import TracebackType
 from typing import Any
-from typing import ClassVar
 
 import yaml
 from fabric import Connection
@@ -37,7 +38,7 @@ from .logger import logger
 
 class Herd:
     path_default = PurePosixPath("/var/shepherd/recordings/")
-    _remote_paths_allowed: ClassVar[set] = {
+    _remote_paths_allowed: AbstractSet[Path] = {
         path_default,  # default
         PurePosixPath("/var/shepherd/"),
         PurePosixPath("/etc/shepherd/"),
@@ -89,10 +90,11 @@ class Herd:
                 try:
                     inventory_data = yaml.safe_load(stream)
                 except yaml.YAMLError as _xpt:
-                    raise FileNotFoundError(
-                        "Couldn't read inventory file %s, please provide a valid one",
-                        host_path.as_posix(),
-                    ) from _xpt
+                    msg = (
+                        f"Couldn't read inventory file {host_path.as_posix()}, "
+                        f"please provide a valid one"
+                    )
+                    raise FileNotFoundError(msg) from _xpt
             logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
@@ -267,7 +269,7 @@ class Herd:
 
     @staticmethod
     def print_output(
-        replies: dict[str, Result],
+        replies: Mapping[str, Result],
         *,
         verbose: bool = False,
     ) -> None:
@@ -330,10 +332,8 @@ class Herd:
         else:
             src_path = Path(src).absolute()
             if not src_path.exists():
-                raise FileNotFoundError(
-                    "Local source file '%s' does not exist!",
-                    src_path,
-                )
+                msg = f"Local source file '{src_path}' does not exist!"
+                raise FileNotFoundError(msg)
             logger.info("Local source path = %s", src_path)
 
         if dst is None:
@@ -347,7 +347,8 @@ class Herd:
                 if dst_posix.startswith(path_allowed.as_posix()):
                     is_allowed = True
             if not is_allowed:
-                raise NameError("provided path was forbidden ('%s')", dst_posix)
+                msg = f"provided path was forbidden ('{dst_posix}')"
+                raise NameError(msg)
 
         threads = {}
         for cnx in self.group:
@@ -496,10 +497,8 @@ class Herd:
         ts_diff = ts_max.timestamp() - ts_min.timestamp()
         # Check for excessive time difference among nodes
         if ts_diff > self.timestamp_diff_allowed:
-            raise RuntimeError(
-                "Time difference between hosts greater %f s",
-                self.timestamp_diff_allowed,
-            )
+            msg = f"Time difference between hosts greater {self.timestamp_diff_allowed} s"
+            raise RuntimeError(msg)
         if ts_max.tzinfo is None:
             logger.error("Provided time from host should have time-zone data!")
         # We need to estimate a future point in time such that all nodes are ready
@@ -646,10 +645,8 @@ class Herd:
     def inventorize(self, output_path: Path) -> bool:
         """Collect information about the hosts, including the herd-server."""
         if output_path.is_file():
-            raise ValueError(
-                "Inventorize needs a dir, not a file '%s'",
-                output_path.as_posix(),
-            )
+            msg = f"Inventorize needs a dir, not a file '{output_path.as_posix()}'"
+            raise ValueError(msg)
         file_path = PurePosixPath("/var/shepherd/inventory.yaml")
         self.run_cmd(
             sudo=True,

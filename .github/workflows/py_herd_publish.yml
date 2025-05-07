@@ -11,21 +11,25 @@ name: Upload Package to PyPi
 on:
   release:
     types: [published]
-  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
-  run-quality-control:
-    uses: ./.github/workflows/qc_tests.yml
-  deploy:
+  run-release:
+    uses: ./.github/workflows/py_herd_test.yml
 
+  publish:
     runs-on: ubuntu-latest
     needs:
-      - run-quality-control
+      - run-release
     env:
       herd_path: "./software/shepherd-herd"
+    environment:
+      name: pypi
+      url: https://pypi.org/p/shepherd-herd
+    permissions:
+      id-token: write
 
     steps:
 
@@ -45,8 +49,6 @@ jobs:
         working-directory: "${{ env.herd_path }}"
 
       - name: Publish package 🥳
-        uses: pypa/gh-action-pypi-publish@v1.12.4
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN_HERD_UPLOAD }}
-          packages_dir: "${{ env.herd_path }}/dist"
+          packages-dir: "${{ env.herd_path }}/dist"

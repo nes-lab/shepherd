@@ -31,7 +31,8 @@ def analyze_directory(
     elif folder_path.is_dir():
         files = files + list(folder_path.iterdir())
     else:
-        raise ValueError("Provided Path is neither directory or file (%s)", folder_path.as_posix())
+        msg = f"Provided Path is neither directory or file ({folder_path.as_posix()})"
+        raise ValueError(msg)
 
     for fpath in files:
         if not fpath.is_file():

@@ -1,4 +1,5 @@
 import pickle
+from collections.abc import Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -52,9 +53,9 @@ class LogicTrace:
         if path.suffix.lower() == ".pkl":
             with path.open("rb") as _fh:
                 return pickle.load(_fh)
-        raise TypeError(
-            "File must be .csv or .pkl (pickle) - Don't know how to open '%s'", path.name
-        )
+
+        msg = f"File must be .csv or .pkl (pickle) - Don't know how to open '{path.name}'"
+        raise TypeError(msg)
 
     def to_file(self, path: Path) -> None:
         if path.is_dir():
@@ -227,7 +228,7 @@ class LogicTrace:
         data: np.ndarray,
         name: str,
         path: Path,
-        size: tuple = (18, 8),
+        size: Sequence = (18, 8),
         y_side: int = 1000,
     ) -> None:
         # data with timestamp!

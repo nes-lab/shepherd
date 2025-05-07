@@ -17,7 +17,7 @@ class SysUtilMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.3)
+        super().__init__(target, compression, poll_interval=0.3)
         self.log_interval_ns: int = 1 * (10**9)  # step-size is 1 s
         self.log_timestamp_ns: int = 0
 
@@ -84,7 +84,7 @@ class SysUtilMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -102,7 +102,7 @@ class SysUtilMonitor(Monitor):
             https://psutil.readthedocs.io/en/latest/#cpu
         :return: none
         """
-        while not self.event.wait(self.poll_intervall):  # rate limiter & exit
+        while not self.event.wait(self.poll_interval):  # rate limiter & exit
             ts_now_ns = int(time.time() * 1e9)
             if ts_now_ns >= self.log_timestamp_ns:
                 data_length = self.data["time"].shape[0]

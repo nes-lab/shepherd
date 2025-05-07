@@ -1,5 +1,82 @@
 # History of Changes
 
+## 0.9.0
+
+The main motivation was the replacement of the flawed segmented ring-buffer to a) remove a performance-bottleneck and b) increase reliability.
+This unlocked and triggered a lot of other improvements in both regards.
+
+- Buffer replacement
+  - old system: 64x 0.1 s segments, bidirectional, 2^14 embedded gpio-events in each segment
+  - new: input, output, gpio and utilization has their own buffer
+  - input buffer is now also automatically cached in a 64kB OCMC-Section. This allows PRU0 to fetch data itself, but the kernel module must fill it in time (8x 10ms sections) otherwise the PRU has to access the (slow) RAM (reads could be stalled up to 7 us for 8 byte)
+  - lots overhead is removed from PRU (more consistent sample-duration), a buffer exchange on the old firmware could cause utilization of >110%
+  - kernel module is able to fill OCMC-Cache even with high CPU load! and task overhead is rather small (<5% load)
+  - find sweetspots for buffersizes to maximize GPIO-Recording, but don't harm normal operation. RAM-Area is limited to 48 MB, where GPIO now takes 32 MB instead of initially 10
+  - added loopback-unittest: fileInp - py - ram - cache - pru - ram - py - fileOut
+  - cached buffer is fully verified (correctness via loopback, high load scenario, overhead-estimation on all sub-systems)
+- GPIO-Recording
+  - gpio-recording is consistent now (race condition in software-mutex), closes #57
+  - as GPIO-Sampling-Rate is higher than recording-capability, the system senses back-pressure and drops gpio-samples if buffers are about to overflow
+  - worst read-speed was ~ 120 kHz before (1.75 MHz mean, 1.9 MHz max) because PRU1 had to fetch input-buffer for PRU0
+  - just READ: min 1.429, mean 2.26, max 2.976 MHz (new sync and util1-stats)
+  - always WRITE: min 1.152, mean 1.605, max 1.701 MHz, 112 ns check, 172 ns write
+  - pru1 reports 704 ns as worst loop (1.420 MHz), without debug 660 ns (1.515 MHz)
+- vPowerSource
+  - Emulation from ivsamples uses now 78 % PRU0 (mean), at most 80 % (max)
+  - emu with harvesting (from IVSurface) uses 86 % PRU0, at most 89 %  (max)
+  - add prototype of battery-model to PRU and also integrate config into shared RAM
+  - vharvester - improve similarity to VOC-search by jumping to VOC
+- timesync
+  - overhaul with big performance improvements, includes an accompanying simulation (in kernel-source) and behaves very similar in reality, fixes #19
+  - PI-Algorithm with proper warning via kernel logs (adaptive tuning - 3 stages of accuracy - via error-boundaries)
+  - timesync on hardware-level has reached lower boundary as ktime_get_real(), the fastest way to get the time, takes 332 ns
+  - PRU uses timer-compensation to slow-down/speed-up (clock-skew with bresenham-algo)
+  - improve initial sync for quicker convergence
+  - timestamp handling of PRU is supervised by kMod (warn & correct)
+  - fix unequal ChipSelect-distance on sync-wrap
+- extend Warning-System with the goal to supervise and self-diagnose every critical element during operation
+  - timesync: PTP, PHC2SYS and Sys-to-PRU-sync is recorded and faulty states are detected and reported as warning
+  - for lab-use NTP is also recorded
+  - PRU: utilization of mean and max loop-duration is recorded and broken real-time-condition is reported
+  - System-Stats are recorded: CPU-Util, NW-rates, IO-rates, RAM-usage
+  - kernel and sheep logs are also recorded
+  - PRU errors get reported up the chain and unplanned restarts trigger exceptions
+  - if possible the exact timestamps from the reporting services are used
+  - buffer-supervisor to detect backpressure, overflows (writer overtakes reader), harmed canaries
+  - experiment-supervisor to detect if recorder missed start or ended too early
+  - canaries (4 in buffers, 12 in shared memory)
+- PRU
+  - more direct memory access (before it had 2 layers of pointer-translation)
+  - overhaul of state-machines, remove mutexes
+  - clean up build system
+  - unify message-system
+  - cores record their own util-stats
+- KernelModule
+  - more correct and modern usage of kernel-API
+  - cleaner start/stop of submodules
+  - periodically check canaries
+  - access and fill-routines for OCMC-cache (fast intermediate buffer)
+  - bind io-mem without cache
+- PythonSheep
+  - more modular code (most files now < 500 LOC)
+  - new data-flow: source dictates the chunk-size, the sink deals with it (or complains early)
+  - progress-bar during filling initial buffer and during experiment
+  - buffers get monitored to detect back-pressure (and react to it)
+  - detector for buffer overflows and possible blind spots during detection (low polling rate)
+  - optimize write operation for GPIO - resulting in 3x more throughput - from 9M Events to ~ 26M in 60 s
+  - Benchmark writing full gpio-load, with lots of discarded buffer-segments
+    - full-lzf, 60s, 13.3M GPIO, 105 MB
+    - gpio-None, 60s, 22.6M GPIO, 257 MB
+    - full-None, 60s, 26.0M+ GPIO, 356 MB, all on external uSD (36M discarded)
+  - repaired unittests
+  - make set_stop() & set_start() safer, less prone to raise
+- GitHub-Actions
+  - also test herd on windows & macOS
+  - extend tests to python 3.13
+  - release via tagging
+  - more modular, sub-jobs getting triggered by action
+  - prepare release to pypi via trusted publishing
+
 ## 0.8.5
 
 - sheep bugfix that prevented clean exit after execution (unhandled filled queue did not release thread)

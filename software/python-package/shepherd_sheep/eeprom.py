@@ -110,7 +110,8 @@ class EEPROM:
             KeyError: If key is not a valid attribute
         """
         if key not in eeprom_format:
-            raise KeyError("'%s' is not a valid EEPROM parameter", key)
+            msg = f"'{key}' is not a valid EEPROM parameter"
+            raise KeyError(msg)
         raw_data = self._read(eeprom_format[key]["offset"], eeprom_format[key]["size"])
         if eeprom_format[key]["type"] == "ascii":
             return raw_data.decode("utf-8")
@@ -132,25 +133,22 @@ class EEPROM:
                 attribute
         """
         if key not in eeprom_format:
-            raise KeyError("'%s' is not a valid EEPROM parameter", key)
+            msg = f"'{key}' is not a valid EEPROM parameter"
+            raise KeyError(msg)
         if eeprom_format[key]["type"] == "ascii":
             # TODO: ascii not used anymore -> why limit some fields to exact length?
             if len(value) != eeprom_format[key]["size"]:
-                raise ValueError(
-                    "Value '%s' has wrong size. Required size is %s",
-                    value,
-                    eeprom_format[key]["size"],
+                msg = (
+                    f"Value '{value}' has wrong size. Required size is {eeprom_format[key]['size']}"
                 )
+                raise ValueError(msg)
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         elif eeprom_format[key]["type"] == "str":
             if len(value) < eeprom_format[key]["size"]:
                 value += "\0"
             elif len(value) > eeprom_format[key]["size"]:
-                raise ValueError(
-                    "Value '%s' is longer than maximum size %s",
-                    value,
-                    eeprom_format[key]["size"],
-                )
+                msg = f"Value '{value}' is longer than maximum size {eeprom_format[key]['size']}"
+                raise ValueError(msg)
             self._write(eeprom_format[key]["offset"], value.encode("utf-8"))
         else:
             self._write(eeprom_format[key]["offset"], value)
@@ -186,11 +184,12 @@ class EEPROM:
         """
         data_serialized = cal_cape.to_bytestr()
         if len(data_serialized) != calibration_data_format["size"]:
-            raise ValueError(
-                "WriteCal: data-size is wrong! expected = %s bytes, but got %s",
-                calibration_data_format["size"],
-                len(data_serialized),
+            msg = (
+                "WriteCal: data-size is wrong! "
+                f"expected = {calibration_data_format['size']} bytes, "
+                f"but got {len(data_serialized)}"
             )
+            raise ValueError(msg)
         self._write(calibration_data_format["offset"], data_serialized)
         self._write_cape_data(cal_cape.cape)
 

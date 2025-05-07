@@ -1,3 +1,4 @@
+import math
 import platform
 import sys
 import time
@@ -17,14 +18,14 @@ from tqdm import tqdm
 from typing_extensions import Self
 
 from . import commons
-from . import sysfs_interface
 from .eeprom import retrieve_calibration
 from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
-from .shared_memory import DataBuffer
+from .shared_mem_iv_input import IVTrace
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
+from .sysfs_interface import set_stop
 from .target_io import TargetIO
 from .target_io import target_pins
 
@@ -56,7 +57,8 @@ class ShepherdEmulator(ShepherdIO):
         self.verbose_extra = False
 
         if not cfg.input_path.exists():
-            raise FileNotFoundError("Input-File does not exist (%s)", cfg.input_path)
+            msg = f"Input-File does not exist ({cfg.input_path})"
+            raise FileNotFoundError(msg)
         self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
@@ -67,6 +69,7 @@ class ShepherdEmulator(ShepherdIO):
         if not self.reader.is_valid() and self.cfg.abort_on_error:
             raise RuntimeError("Input-File is not valid!")
 
+        self.samples_per_segment = self.reader.BUFFER_SAMPLES_N
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
             cal_inp = CalibrationSeries()
@@ -87,6 +90,7 @@ class ShepherdEmulator(ShepherdIO):
                 unit="A",
             ),
         )
+        # TODO: set cal_pru to None if input already scaled to PRU
         log.debug("Calibration-Setting of input file:")
         for key, value in self.cal_pru.model_dump(
             exclude_unset=False, exclude_defaults=False
@@ -98,13 +102,8 @@ class ShepherdEmulator(ShepherdIO):
         if cfg.time_start is None:
             self.start_time = round(time.time() + 15)
         else:
-            self.start_time = cfg.time_start.timestamp()
+            self.start_time = round(cfg.time_start.timestamp())
 
-        self.samples_per_buffer = sysfs_interface.get_samples_per_buffer()
-        self.samplerate_sps = (
-            10**9 * self.samples_per_buffer // sysfs_interface.get_buffer_period_ns()
-        )
-        self.fifo_buffer_size = sysfs_interface.get_n_buffers()
         # TODO: write gpio-mask
 
         log_iv = cfg.power_tracing is not None
@@ -135,14 +134,11 @@ class ShepherdEmulator(ShepherdIO):
             self.writer = Writer(
                 file_path=store_path,
                 force_overwrite=cfg.force_overwrite,
-                mode=mode,
+                mode=self.component,  # is a cleaned up mode
                 datatype=EnergyDType.ivsample,
                 cal_data=self.cal_emu,
-                samples_per_buffer=self.samples_per_buffer,
-                samplerate_sps=self.samplerate_sps,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
-                omit_ts=True,  # optimization during runtime
             )
 
         # hard-wire pin-direction until they are configurable
@@ -153,8 +149,6 @@ class ShepherdEmulator(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_recorder(state=False)
-        super().set_power_emulator(state=True)
 
         # TODO: why are there wrappers? just directly access
         super().send_calibration_settings(self.cal_emu)
@@ -176,19 +170,28 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
-        time.sleep(1)
-        init_buffers = [
-            DataBuffer(voltage=dsv, current=dsc)
-            for _, dsv, dsc in self.reader.read_buffers(
-                end_n=self.fifo_buffer_size,
-                is_raw=True,
-                omit_ts=True,
-            )
-        ]
-        for idx, buffer in enumerate(init_buffers):
-            self.return_buffer(idx, buffer, verbose=False)
-            time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
-            # ⤷ could be as low as ~ 10us
+        self.buffer_segment_count = math.floor(
+            commons.BUFFER_IV_INP_SAMPLES_N // self.samples_per_segment
+        )
+        log.debug("Begin initial fill of IV-Buffer (n=%d segments)", self.buffer_segment_count)
+        prog_bar = tqdm(
+            total=self.buffer_segment_count,
+            desc="Fill IV-Buffer",
+            unit="n",
+            leave=False,
+        )
+        for _, dsv, dsc in self.reader.read_buffers(
+            end_n=self.buffer_segment_count,
+            is_raw=True,
+            omit_ts=True,
+        ):
+            if not self.shared_mem.iv_inp.write(
+                data=IVTrace(voltage=dsv, current=dsc),
+                cal=self.cal_pru,
+                verbose=False,
+            ):
+                raise BufferError("Not enough space in buffer during initial fill.")
+            prog_bar.update(1)
         return self
 
     def __exit__(
@@ -198,107 +201,145 @@ class ShepherdEmulator(ShepherdIO):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        super()._power_down_shp()
+        self.set_power_io_level_converter(state=False)
         time.sleep(2)  # TODO: experimental - for releasing uart-backpressure
         self.stack.close()
         super().__exit__()
 
-    def return_buffer(
-        self,
-        index: int,
-        buffer: DataBuffer,
-        *,
-        verbose: bool = False,
-    ) -> None:
-        ts_start = time.time() if verbose else 0
-
-        # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        v_tf = self.cal_pru.voltage.raw_to_si(buffer.voltage).astype("u4")
-        c_tf = self.cal_pru.current.raw_to_si(buffer.current).astype("u4")
-
-        self.shared_mem.clear_buffer(index)
-        self.shared_mem.write_buffer(index, v_tf, c_tf)
-        super()._return_buffer(index)
-        if verbose:
-            log.debug(
-                "Sending emu-buffer #%d to PRU took %.2f ms",
-                index,
-                1e3 * (time.time() - ts_start),
-            )
-
     def run(self) -> None:
-        success = self.start(self.start_time, wait_blocking=False)
-        if not success:
+        if not self.start(self.start_time, wait_blocking=False):
             return
+        if self.writer is not None:
+            self.writer.check_monitors()
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        log.info("shepherd started!")
+        self.handle_pru_messages(panic_on_restart=False)
+        log.info("shepherd started! T_sys = %f", time.time())
 
+        duration_s = sys.float_info.max
         if self.cfg.duration is not None:
-            duration_s = self.cfg.duration.total_seconds()
-            ts_end = self.start_time + duration_s
-            log.debug("Duration = %s (forced runtime)", duration_s)
-        else:
-            duration_s = self.reader.runtime_s
-            ts_end = sys.float_info.max
-            log.debug("Duration = %s (runtime of input file)", duration_s)
+            duration_s = int(self.cfg.duration.total_seconds())
+            log.debug("Duration = %.1f s (configured runtime)", duration_s)
+        if self.reader.runtime_s < duration_s:
+            duration_s = int(self.reader.runtime_s)
+            log.debug("Duration = %.1f s (runtime of input file)", duration_s)
+        ts_end = self.start_time + duration_s
+        set_stop(ts_end)
 
-        # Heartbeat-Message
-        buffer_period_s = self.samples_per_buffer / self.samplerate_sps
         prog_bar = tqdm(
-            total=duration_s,
+            total=int(10 * duration_s),
             desc="Measurement",
-            mininterval=2,
-            unit="s",
+            unit="n",
             leave=False,
         )
 
         # Main Loop
+        ts_data_last = self.start_time
+        buffer_segment_last = math.floor(duration_s / self.segment_period_s)
         for _, dsv, dsc in self.reader.read_buffers(
-            start_n=self.fifo_buffer_size,
+            start_n=self.buffer_segment_count,
+            end_n=buffer_segment_last,
             is_raw=True,
             omit_ts=True,
         ):
-            idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
-            ts_now = emu_buf.timestamp_ns / 1e9
+            # this loop fetches data and tries to fill it into the buffer
+            # -> while there is no space it will do other tasks
 
-            if ts_now >= ts_end:
-                log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
-                break
-            prog_bar.update(n=buffer_period_s)
+            while not self.shared_mem.iv_inp.write(
+                data=IVTrace(voltage=dsv, current=dsc),
+                cal=self.cal_pru,
+                verbose=self.verbose_extra,
+            ):
+                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
 
-            if self.writer is not None:
-                try:
-                    self.writer.write_buffer(emu_buf)
-                except OSError as _xpt:
-                    log.error(
-                        "Failed to write data to HDF5-File - will STOP! error = %s",
-                        _xpt,
-                    )
-                    return
+                if data_gp and self.writer is not None:
+                    self.writer.write_gpio_buffer(data_gp)
+                if data_ut and self.writer is not None:
+                    self.writer.write_util_buffer(data_ut)
 
-            hrvst_buf = DataBuffer(voltage=dsv, current=dsc)
-            self.return_buffer(idx, hrvst_buf, verbose=self.verbose_extra)
+                if data_iv:
+                    prog_bar.update(n=int(10 * data_iv.duration()))
+                    # TODO: this can't work - with the limiting tracers
+                    if data_iv.timestamp() >= ts_end:
+                        log.debug("Out of bound timestamp collected -> begin to exit now")
+                        break
+                    ts_data_last = time.time()
+                    if self.writer is not None:
+                        try:
+                            self.writer.write_iv_buffer(data_iv)
+                        except OSError as _xpt:
+                            log.error(
+                                "Failed to write data to HDF5-File - will STOP! error = %s",
+                                _xpt,
+                            )
+                            return
 
-        prog_bar.close()
-        # Read all remaining buffers from PRU
+                self.handle_pru_messages(panic_on_restart=True)
+                self.shared_mem.supervise_buffers(iv_inp=True, iv_out=True, gpio=True, util=True)
+                if not (data_iv or data_gp or data_ut):
+                    if ts_data_last - time.time() > 10:
+                        log.error("Main sheep-routine ran dry for 10s, will STOP")
+                        break
+                    # rest of loop is non-blocking, so we better doze a while if nothing to do
+                    time.sleep(self.segment_period_s / 10)
+
+        log.debug("FINISHED supplying input-data -> process remaining buffer")
+        force_subchunks = False
         try:
             while True:
-                idx, emu_buf = self.get_buffer(verbose=self.verbose_extra)
-                if emu_buf.timestamp_ns / 1e9 >= ts_end:
-                    log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
-                    return
-                if self.writer is not None:
-                    self.writer.write_buffer(emu_buf)
+                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+                data_gp = self.shared_mem.gpio.read(
+                    force=force_subchunks, verbose=self.verbose_extra
+                )
+                data_ut = self.shared_mem.util.read(
+                    force=force_subchunks, verbose=self.verbose_extra
+                )
+                if data_gp and self.writer is not None:
+                    self.writer.write_gpio_buffer(data_gp)
+                if data_ut and self.writer is not None:
+                    self.writer.write_util_buffer(data_ut)
+
+                if data_iv:
+                    prog_bar.update(n=int(10 * data_iv.duration()))
+                    if data_iv.timestamp() > ts_end:
+                        log.debug("Out of bound timestamp collected -> will discard")
+                        data_iv = None
+                if data_iv:
+                    ts_data_last = time.time()
+                    if self.writer is not None:
+                        self.writer.write_iv_buffer(data_iv)
+                self.handle_pru_messages(panic_on_restart=True)
+                self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
+                if not (data_iv or data_gp or data_ut):
+                    if time.time() - ts_data_last > 3:
+                        log.info("Data-collection ran dry for 3s -> begin to exit now")
+                        break
+                    force_subchunks = True
+                    # rest of loop is non-blocking, so we better doze a while if nothing to do
+                    time.sleep(self.segment_period_s / 5)
+
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
-            if e.id_num == commons.MSG_ERR_NOFREEBUF:
-                log.debug("FINISHED! Collected all Buffers from PRU -> begin to exit now")
-                return
-            raise ShepherdPRUError from e
+            if e.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
+                log.warning("PRU restarted - samples might be missing")
+            else:
+                raise ShepherdPRUError from e
         except OSError as _xpt:
             log.error(
                 "Failed to write data to HDF5-File - will STOP! error = %s",
                 _xpt,
             )
-            return
+        prog_bar.close()
+        # Detect recorder missing start / end
+        if self.writer is not None:
+            gain = self.writer.ds_time.attrs["gain"]
+            file_start = self.writer.ds_time[0] * gain
+            file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
+            if file_start > self.start_time:
+                log.error(
+                    "Recorder missed %.3f s IVTrace after start", file_start - self.start_time
+                )
+            if file_end < ts_end - 1e-3:
+                log.error("Recorder missed %.3f s IVTrace before end", ts_end - file_end)

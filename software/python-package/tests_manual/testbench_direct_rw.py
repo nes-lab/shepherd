@@ -81,10 +81,10 @@ from typing_extensions import Self
 
 class SharedMemory:
     def __init__(self, duration: int) -> None:
-        self.buffer_size = Writer.samples_per_buffer * (2 * 4)
+        self.buffer_size = Writer.BUFFER_SAMPLES_N * (2 * 4)
         self.buffer_count = duration * 10
         self.voltage_offset = 0
-        self.current_offset = Writer.samples_per_buffer * 4
+        self.current_offset = Writer.BUFFER_SAMPLES_N * 4
 
         self.size = self.buffer_count * self.buffer_size
         self.mapped_mem = mmap.mmap(
@@ -112,13 +112,13 @@ class SharedMemory:
         voltage = np.frombuffer(
             self.mapped_mem,
             "=u4",
-            count=Writer.samples_per_buffer,
+            count=Writer.BUFFER_SAMPLES_N,
             offset=buffer_offset + self.voltage_offset,
         )
         current = np.frombuffer(
             self.mapped_mem,
             "=u4",
-            count=Writer.samples_per_buffer,
+            count=Writer.BUFFER_SAMPLES_N,
             offset=buffer_offset + self.current_offset,
         )
         return voltage, current
@@ -143,7 +143,7 @@ def generate_harvest(
     random: bool = True,
 ) -> None:
     rng = np.random.default_rng()
-    samples_per_1s = Writer.samples_per_buffer * 10
+    samples_per_1s = Writer.BUFFER_SAMPLES_N * 10
     with Writer(
         path,
         mode="harvester",
@@ -197,19 +197,19 @@ def file_to_ram_new(path: Path, mem: SharedMemory) -> None:
             buffer=mem.mapped_mem,
         )
         for _iter in range(mem.buffer_count):
-            m_start = 2 * Writer.samples_per_buffer * _iter
-            m_end = 2 * Writer.samples_per_buffer * (_iter + 1)
-            f_start = Writer.samples_per_buffer * _iter
-            f_end = Writer.samples_per_buffer * (_iter + 1)
+            m_start = 2 * Writer.BUFFER_SAMPLES_N * _iter
+            m_end = 2 * Writer.BUFFER_SAMPLES_N * (_iter + 1)
+            f_start = Writer.BUFFER_SAMPLES_N * _iter
+            f_end = Writer.BUFFER_SAMPLES_N * (_iter + 1)
             sr.ds_voltage.read_direct(
                 shared_array,
                 np.s_[f_start:f_end],
-                np.s_[m_start : m_start + Writer.samples_per_buffer],
+                np.s_[m_start : m_start + Writer.BUFFER_SAMPLES_N],
             )
             sr.ds_current.read_direct(
                 shared_array,
                 np.s_[f_start:f_end],
-                np.s_[m_start + Writer.samples_per_buffer : m_end],
+                np.s_[m_start + Writer.BUFFER_SAMPLES_N : m_end],
             )
 
 
@@ -229,21 +229,21 @@ def ram_to_file_new(path: Path, mem: SharedMemory, compression: Compression) -> 
             buffer=mem.mapped_mem,
         )
         for _iter in range(mem.buffer_count):
-            m_start = 2 * Writer.samples_per_buffer * _iter
-            m_end = 2 * Writer.samples_per_buffer * (_iter + 1)
-            f_start = Writer.samples_per_buffer * _iter
-            f_end = Writer.samples_per_buffer * (_iter + 1)
+            m_start = 2 * Writer.BUFFER_SAMPLES_N * _iter
+            m_end = 2 * Writer.BUFFER_SAMPLES_N * (_iter + 1)
+            f_start = Writer.BUFFER_SAMPLES_N * _iter
+            f_end = Writer.BUFFER_SAMPLES_N * (_iter + 1)
             if f_end > sw.ds_voltage.size:
                 sw.ds_voltage.resize((f_end,))
                 sw.ds_current.resize((f_end,))
             sw.ds_voltage.write_direct(
                 shared_array,
-                np.s_[m_start : m_start + Writer.samples_per_buffer],
+                np.s_[m_start : m_start + Writer.BUFFER_SAMPLES_N],
                 np.s_[f_start:f_end],
             )
             sw.ds_current.write_direct(
                 shared_array,
-                np.s_[m_start + Writer.samples_per_buffer : m_end],
+                np.s_[m_start + Writer.BUFFER_SAMPLES_N : m_end],
                 np.s_[f_start:f_end],
             )
         sw.h5file.flush()
@@ -260,7 +260,7 @@ def ram_to_file_new_ts(path: Path, mem: SharedMemory, compression: Compression) 
     ) as sw:
         sw.store_hostname("Emu")
         time_series_ns = sw.sample_interval_ns * np.arange(
-            Writer.samples_per_buffer,
+            Writer.BUFFER_SAMPLES_N,
         ).astype("u8")
 
         shared_array = np.ndarray(
@@ -269,10 +269,10 @@ def ram_to_file_new_ts(path: Path, mem: SharedMemory, compression: Compression) 
             buffer=mem.mapped_mem,
         )
         for _iter in range(mem.buffer_count):
-            m_start = 2 * Writer.samples_per_buffer * _iter
-            m_end = 2 * Writer.samples_per_buffer * (_iter + 1)
-            f_start = Writer.samples_per_buffer * _iter
-            f_end = Writer.samples_per_buffer * (_iter + 1)
+            m_start = 2 * Writer.BUFFER_SAMPLES_N * _iter
+            m_end = 2 * Writer.BUFFER_SAMPLES_N * (_iter + 1)
+            f_start = Writer.BUFFER_SAMPLES_N * _iter
+            f_end = Writer.BUFFER_SAMPLES_N * (_iter + 1)
             if f_end > sw.ds_voltage.size:
                 sw.ds_time.resize((f_end,))
                 sw.ds_voltage.resize((f_end,))
@@ -282,12 +282,12 @@ def ram_to_file_new_ts(path: Path, mem: SharedMemory, compression: Compression) 
             )  # TODO: not really needed anymore
             sw.ds_voltage.write_direct(
                 shared_array,
-                np.s_[m_start : m_start + Writer.samples_per_buffer],
+                np.s_[m_start : m_start + Writer.BUFFER_SAMPLES_N],
                 np.s_[f_start:f_end],
             )
             sw.ds_current.write_direct(
                 shared_array,
-                np.s_[m_start + Writer.samples_per_buffer : m_end],
+                np.s_[m_start + Writer.BUFFER_SAMPLES_N : m_end],
                 np.s_[f_start:f_end],
             )
         sw.h5file.flush()

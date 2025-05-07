@@ -35,9 +35,7 @@ with Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected) as herd:
 
 for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
     path_remote_hrv = paths_remote_hrv[hrv_name]
-    path_remote_src = path_remote_hrv.with_name(
-        path_remote_hrv.stem + "_" + src_name + "_pru_emu" + path_remote_hrv.suffix
-    )
+    path_remote_src = path_remote_hrv.with_stem(path_remote_hrv.stem + "_" + src_name + "_pru_emu")
     path_local_src = path_here / host_selected / path_remote_src.name
 
     if not path_local_src.exists():

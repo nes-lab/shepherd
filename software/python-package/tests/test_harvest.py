@@ -54,17 +54,19 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
     harvester.wait_for_start(15)
 
     for _ in range(100):
-        idx, buf = harvester.get_buffer()
-        writer.write_buffer(buf)
-        harvester.return_buffer(idx)
+        _data = None
+        while _data is None:
+            _data = harvester.shared_mem.iv_out.read()
+            time.sleep(harvester.segment_period_s / 2)
+        writer.write_iv_buffer(_data)
 
 
 @pytest.mark.hardware  # TODO: extend with new harvester-options
-@pytest.mark.timeout(40)
+@pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_harvester_fn(tmp_path: Path) -> None:
     path = tmp_path / "rec.h5"
-    time_start = int(time.time() + 10)
+    time_start = int(time.time() + 15)
     cfg = HarvestTask(
         output_path=path,
         time_start=time_start,

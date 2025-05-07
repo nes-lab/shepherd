@@ -1,7 +1,7 @@
 import os
 import subprocess
 import threading
-import time
+from datetime import datetime
 from types import TracebackType
 
 import h5py
@@ -11,13 +11,13 @@ from .h5_monitor_abc import Monitor
 from .logger import log
 
 
-class PTPMonitor(Monitor):  # TODO: also add phc2sys
+class PTPMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
     ) -> None:
-        super().__init__(target, compression, poll_intervall=0.51)
+        super().__init__(target, compression, poll_interval=0.51)
         self.data.create_dataset(
             name="values",
             shape=(self.increment, 3),
@@ -30,11 +30,12 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
 
         command = [
             "sudo",
-            "journalctl",
+            "/usr/bin/journalctl",
             "--unit=ptp4l@eth0",
             "--follow",
-            "--lines=60",
-            "--output=short-precise",
+            "--lines=60",  # backlog
+            "--boot",  # filter for current boot
+            "--output=short-iso-precise",
         ]  # for client
         self.process = subprocess.Popen(  # noqa: S603
             command,
@@ -62,7 +63,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_intervall)
+            self.thread.join(timeout=2 * self.poll_interval)
             if self.thread.is_alive():
                 log.error(
                     "[%s] thread failed to end itself - will delete that instance",
@@ -79,7 +80,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
-                self.event.wait(self.poll_intervall)  # rate limiter
+                self.event.wait(self.poll_interval)  # rate limiter
                 continue
             try:
                 words = str(line).split()
@@ -89,6 +90,8 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     int(words[i_start + 4]),
                     int(words[i_start + 7]),
                 ]
+                time_ts = datetime.fromisoformat(words[0])
+                time_ns = int(datetime.timestamp(time_ts) * 1e9)
             except ValueError:
                 continue
             try:
@@ -101,7 +104,7 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
-                self.data["time"][self.position] = int(time.time() * 1e9)
+                self.data["time"][self.position] = time_ns
                 self.data["values"][self.position, :] = values[0:3]
                 self.position += 1
             except (OSError, KeyError):
@@ -112,3 +115,21 @@ class PTPMonitor(Monitor):  # TODO: also add phc2sys
                     line,
                 )
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        if self.position == 0:
+            log.warning("[%s] Service not running? No data collected yet", type(self).__name__)
+            return
+        offset_ns, freq_Hz, _ = self.data["values"][self.position - 1, :]
+        if abs(offset_ns) > 500_000:
+            log.warning(
+                "[%s] Sync-Offset is unexpected high (%d us)",
+                type(self).__name__,
+                offset_ns // 1000,
+            )
+        if abs(freq_Hz) > 50_000_000:
+            log.warning(
+                "[%s] Sync-Compensation is unexpected high (%.3f MHz)",
+                type(self).__name__,
+                freq_Hz * 1e-6,
+            )

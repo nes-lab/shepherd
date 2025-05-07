@@ -1,6 +1,5 @@
 import contextlib
 import time
-from typing import NoReturn
 
 import msgpack
 import msgpack_numpy
@@ -61,7 +60,7 @@ class ShepherdDebug(ShepherdIO):
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_recorder(state=True)
+        super().set_power_harvester(state=True)
         super().set_power_emulator(state=True)
         super().reinitialize_prus()
         return self
@@ -88,7 +87,8 @@ class ShepherdDebug(ShepherdIO):
         }:
             channel_no = 2
         else:
-            raise ValueError("ADC channel '%s' is unknown", channel)
+            msg = f"ADC channel '{channel}' is unknown"
+            raise ValueError(msg)
 
         super()._send_msg(commons.MSG_DBG_ADC, channel_no)
 
@@ -135,13 +135,6 @@ class ShepherdDebug(ShepherdIO):
         value = int(value) & ((1 << 16) - 1)
         message = channels | value
         super()._send_msg(commons.MSG_DBG_DAC, message)
-
-    def get_buffer(
-        self,
-        timeout_n: float | None = None,
-        verbose: bool = False,
-    ) -> NoReturn:
-        raise NotImplementedError("Method not implemented for debugging mode")
 
     def dbg_fn_test(self, factor: int, mode: int) -> int:
         super()._send_msg(commons.MSG_DBG_FN_TESTS, [factor, mode])
@@ -373,8 +366,8 @@ class ShepherdDebug(ShepherdIO):
     def set_power_emulator(self, state: bool) -> None:
         super().set_power_emulator(state=state)
 
-    def set_power_recorder(self, state: bool) -> None:
-        super().set_power_recorder(state=state)
+    def set_power_harvester(self, state: bool) -> None:
+        super().set_power_harvester(state=state)
 
     def reinitialize_prus(self) -> None:
         super().reinitialize_prus()
@@ -403,10 +396,10 @@ class ShepherdDebug(ShepherdIO):
 
     def switch_shepherd_mode(self, mode: str) -> str:
         mode_old = sysfs_interface.get_mode()
-        super().set_power_recorder(state=False)
+        super().set_power_harvester(state=False)
         super().set_power_emulator(state=False)
         sysfs_interface.write_mode(mode, force=True)
-        super().set_power_recorder(state=True)
+        super().set_power_harvester(state=True)
         super().set_power_emulator(state=True)
         super().reinitialize_prus()
         if "debug" in mode:
@@ -417,20 +410,20 @@ class ShepherdDebug(ShepherdIO):
         length_n_buffers = int(min(max(length_n_buffers, 1), 55))
         super().reinitialize_prus()
         time.sleep(0.1)
-        for _i in range(length_n_buffers + 4):  # Fill FIFO
-            time.sleep(0.02)
-            super()._return_buffer(_i)
-        time.sleep(0.1)
         super().start(wait_blocking=True)
         c_array = np.empty([0], dtype="=u4")
         v_array = np.empty([0], dtype="=u4")
-        time.sleep(0.1)
+        time.sleep(0.2)
         for _ in range(2):  # flush first 2 buffers out
-            super().get_buffer()
+            super().shared_mem.iv_out.read()
+            time.sleep(self.segment_period_s)
         for _ in range(length_n_buffers):  # get Data
-            _, _buf = super().get_buffer()
-            c_array = np.hstack((c_array, _buf.current))
-            v_array = np.hstack((v_array, _buf.voltage))
+            _data_iv = None
+            while _data_iv is None:
+                _data_iv = super().shared_mem.iv_out.read()
+                time.sleep(self.segment_period_s / 2)
+            c_array = np.hstack((c_array, _data_iv.current))
+            v_array = np.hstack((v_array, _data_iv.voltage))
         super().reinitialize_prus()
         base_array = np.vstack((c_array, v_array))
         return msgpack.packb(

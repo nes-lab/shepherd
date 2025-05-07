@@ -1,6 +1,5 @@
 import datetime
 import platform
-import sys
 import time
 from contextlib import ExitStack
 from types import TracebackType
@@ -11,12 +10,14 @@ from shepherd_core.data_models.task import HarvestTask
 from tqdm import tqdm
 from typing_extensions import Self
 
-from . import sysfs_interface
+from . import commons
 from .eeprom import retrieve_calibration
 from .h5_writer import Writer
 from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
+from .shepherd_io import ShepherdPRUError
+from .sysfs_interface import set_stop
 
 
 class ShepherdHarvester(ShepherdIO):
@@ -53,12 +54,7 @@ class ShepherdHarvester(ShepherdIO):
         if cfg.time_start is None:
             self.start_time = round(time.time() + 10)
         else:
-            self.start_time = cfg.time_start.timestamp()
-
-        self.samples_per_buffer = sysfs_interface.get_samples_per_buffer()
-        self.samplerate_sps = (
-            10**9 * self.samples_per_buffer // sysfs_interface.get_buffer_period_ns()
-        )
+            self.start_time = round(cfg.time_start.timestamp())
 
         self.hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=cfg.virtual_harvester,
@@ -81,15 +77,11 @@ class ShepherdHarvester(ShepherdIO):
             cal_data=self.cal_hrv,
             compression=cfg.output_compression,
             force_overwrite=cfg.force_overwrite,
-            samples_per_buffer=self.samples_per_buffer,
-            samplerate_sps=self.samplerate_sps,
             verbose=get_verbosity(),
         )
 
     def __enter__(self) -> Self:
         super().__enter__()
-        super().set_power_emulator(state=False)
-        super().set_power_recorder(state=True)
 
         super().send_virtual_harvester_settings(self.hrv_pru)
         super().send_calibration_settings(self.cal_hrv)
@@ -100,14 +92,12 @@ class ShepherdHarvester(ShepherdIO):
         # add hostname to file
         self.writer.store_hostname(platform.node().strip())
         self.writer.store_config(self.cfg.model_dump())
-        self.writer.start_monitors(self.cfg.sys_logging)
+        self.writer.start_monitors(
+            sys=self.cfg.sys_logging,
+        )
 
         # Give the PRU empty buffers to begin with
         time.sleep(1)
-        for i in range(self.n_buffers):
-            self.return_buffer(i, verbose=False)
-            time.sleep(0.1 * float(self.buffer_period_ns) / 1e9)
-            # ⤷ could be as low as ~ 10us
         return self
 
     def __exit__(
@@ -117,69 +107,79 @@ class ShepherdHarvester(ShepherdIO):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        super()._power_down_shp()
         self.stack.close()
         super().__exit__()
 
-    def return_buffer(self, index: int, *, verbose: bool = False) -> None:
-        """Returns a buffer to the PRU
-
-        After reading the content of a buffer and potentially filling it with
-        emulation data, we have to release the buffer to the PRU to avoid it
-        running out of buffers.
-
-        :param index: (int) Index of the buffer. 0 <= index < n_buffers
-        :param verbose: chatter-prevention, performance-critical computation saver
-        """
-        self.shared_mem.clear_buffer(index)
-        super()._return_buffer(index)
-        if verbose:
-            log.debug("Sent empty buffer #%s to PRU", index)
-
     def run(self) -> None:
-        success = self.start(self.start_time, wait_blocking=False)
-        if not success:
+        if not self.start(self.start_time, wait_blocking=False):
             return
+        if self.writer is not None:
+            self.writer.check_monitors()
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
-        log.info("shepherd started!")
+        self.handle_pru_messages(panic_on_restart=False)
+        log.info("shepherd started! T_sys = %f", time.time())
 
         if self.cfg.duration is None:
-            ts_end = sys.float_info.max
-            duration_s = None
+            duration_s = 10**6  # s, defaults to ~ 100 days
+            log.debug("Duration = %d s (100 days runtime, press ctrl+c to exit)", duration_s)
         else:
             duration_s = self.cfg.duration.total_seconds()
-            ts_end = self.start_time + duration_s
-            log.debug("Duration = %s (forced runtime)", duration_s)
+            log.debug("Duration = %.1f s (configured runtime)", duration_s)
+        ts_end = self.start_time + duration_s
+        set_stop(ts_end)
 
-        # Heartbeat-Message
-        buffer_period_s = self.samples_per_buffer / self.samplerate_sps
         prog_bar = tqdm(
-            total=duration_s,
+            total=int(10 * duration_s),
             desc="Measurement",
-            mininterval=2,
-            unit="s",
+            unit="n",
             leave=False,
         )
 
+        ts_data_last = self.start_time
         while True:
-            idx, hrv_buf = self.get_buffer(verbose=self.verbose_extra)
-            ts_now = hrv_buf.timestamp_ns / 1e9
-            # TODO: here was a bogus handling of forgivable errors, self.cfg.abort_on_error
+            data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            if data_ut:
+                self.writer.write_util_buffer(data_ut)
 
-            if ts_now >= ts_end:
-                log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
-                break
-            prog_bar.update(n=buffer_period_s)
+            if data_iv is not None:
+                prog_bar.update(n=int(10 * data_iv.duration()))
+                if data_iv.timestamp() > ts_end:
+                    log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
+                    break
+                ts_data_last = time.time()
+                try:
+                    self.writer.write_iv_buffer(data_iv)
+                except OSError as _xpt:
+                    log.error(
+                        "Failed to write data to HDF5-File - will STOP! error = %s",
+                        _xpt,
+                    )
+                    break
 
             try:
-                self.writer.write_buffer(hrv_buf)
-            except OSError as _xpt:
-                log.error(
-                    "Failed to write data to HDF5-File - will STOP! error = %s",
-                    _xpt,
-                )
-                break
-            self.return_buffer(idx, verbose=self.verbose_extra)
+                self.handle_pru_messages(panic_on_restart=True)
+            except ShepherdPRUError as _xpt:
+                # We're done when the PRU has processed all emulation data buffers
+                if _xpt.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
+                    log.warning("PRU restarted - samples might be missing")
+                else:
+                    log.error("%s", _xpt)
+            self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=False, util=True)
+            if not (data_iv or data_ut):
+                if time.time() - ts_data_last > 5:
+                    log.error("Data-collection ran dry for 5s -> begin to exit now")
+                    break
+                # rest of loop is non-blocking, so we better doze a while if nothing to do
+                time.sleep(self.segment_period_s)
 
         prog_bar.close()
+        # Detect recorder missing start / end
+        gain = self.writer.ds_time.attrs["gain"]
+        file_start = self.writer.ds_time[0] * gain
+        file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
+        if file_start > self.start_time:
+            log.error("Recorder missed %.3f s IVTrace after start", file_start - self.start_time)
+        if file_end < ts_end - 1e-3:
+            log.error("Recorder missed %.3f s IVTrace before end", file_end - ts_end)

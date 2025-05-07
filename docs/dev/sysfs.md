@@ -7,8 +7,8 @@ The shepherd kernel module provides a user interface that exposes relevant param
 - `state`: current state of the pru state-machine, mostly `idle` or `running`, plus some transitional states. Also used to control the PRU by setting `start` or `stop`.
 - `mode`: can be either `emulator` or `harvester` and some debug-modes
 - `n_buffers`: The maximum number of buffers used in the data exchange protocol
-- `samples_per_buffer`: The number of samples contained in one buffer. Each sample consists of a current and a voltage value.
-- `buffer_period_ns`: Time period of one 'buffer'. Defines the sampling rate together with `samples_per_buffer`
+- `BUFFER_SAMPLES_N`: The number of samples contained in one buffer. Each sample consists of a current and a voltage value.
+- `buffer_period_ns`: Time period of one 'buffer'. Defines the sampling rate together with `BUFFER_SAMPLES_N`
 - `memory/address`: Physical address of the shared memory area that contains all `n_buffers` data buffers used to exchange data
 - `memory/size`: Size of the shared memory area in bytes
 - `pru_msg_box`: in and out message box to communicate with the PRUs

@@ -1,10 +1,6 @@
 name: Build Pru
 
 on:
-  push:
-    branches: [ "main", "dev" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_call:
 
 jobs:
@@ -13,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # as in roles/sheep/vars/main.yml
-      gcc_pru_cc_release: "pru-elf-2023.05.amd64"
+      gcc_pru_cc_release: "pru-elf-2024.05.amd64"
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
-      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2023.05/"
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2024.05/"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
       PRU_GCC: "${{ github.workspace }}/pru-elf" # was /pru-elf-2022.05.amd64 before
@@ -75,7 +71,7 @@ jobs:
 
       - name: Build SWD Programmer 🧱
         run: |
-          make
+          make TYPE=SWD
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SWD-fw.elf
         working-directory: "software/firmware/pru0-programmer/"
 
@@ -85,6 +81,6 @@ jobs:
 
       - name: Build SBW Programmer 🧱
         run: |
-          make PROTO=SBW
+          make TYPE=SBW
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SBW-fw.elf
         working-directory: "software/firmware/pru0-programmer/"

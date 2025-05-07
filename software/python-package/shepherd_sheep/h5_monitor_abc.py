@@ -16,12 +16,13 @@ class Monitor(ABC):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
-        poll_intervall: float = 0.25,
+        poll_interval: float = 0.25,
+        increment: int = 100,
     ) -> None:
-        self.data = target
-        self.poll_intervall = poll_intervall
-        self.position = 0
-        self.increment = 100
+        self.data: h5py.Group = target
+        self.poll_interval: float = poll_interval
+        self.position: int = 0
+        self.increment: int = increment
         self.event = threading.Event()
         self.thread: threading.Thread | None = None
 
@@ -39,7 +40,7 @@ class Monitor(ABC):
         self.data["time"].attrs["gain"] = 1e-9
         self.data["time"].attrs["offset"] = 0
         log.debug(
-            "[%s] was activated",
+            "[%s] Activated",
             type(self).__name__,
         )
 

@@ -8,6 +8,7 @@ provided by the shepherd kernel module
 
 import subprocess
 import time
+from collections.abc import Mapping
 from pathlib import Path
 
 from pydantic import validate_call
@@ -22,13 +23,14 @@ SysfsInterfaceError = IOError
 
 # dedicated sampling modes
 # - _adc_read - modes are used per rpc (currently to calibrate the hardware)
-# TODO: what is with "None"?
 shepherd_modes = {
     "harvester",
     "hrv_adc_read",
     "emulator",
     "emu_adc_read",
+    "emu_loopback",
     "debug",
+    "none",
 }
 
 
@@ -70,7 +72,7 @@ def load_kernel_module() -> None:
     raise SystemError("Failed to load shepherd kernel module.")
 
 
-def remove_kernel_module() -> None:
+def remove_kernel_module(name: str = "shepherd") -> None:
     _try = 6
     while _try > 0:
         ret = subprocess.run(  # noqa: S603
@@ -80,26 +82,35 @@ def remove_kernel_module() -> None:
             check=False,
         ).returncode
         if ret == 0:
-            log.debug("Deactivated shepherd kernel module")
+            log.debug("Deactivated %s kernel module", name)
             time.sleep(1)
             return
         _try -= 1
         time.sleep(1)
-    raise SystemError("Failed to unload shepherd kernel module.")
+    msg = f"Failed to unload {name} kernel module."
+    raise SystemError(msg)
 
 
 def reload_kernel_module() -> None:
-    remove_kernel_module()
+    remove_kernel_module("shepherd")
+    remove_kernel_module("remoteproc")
+    remove_kernel_module("pruss")
     load_kernel_module()
 
 
 def disable_ntp() -> None:
-    subprocess.run(  # noqa: S603
-        ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
-        timeout=60,
+    ret = subprocess.run(  # noqa: S603
+        ["/usr/bin/systemctl", "is-active", "--quiet", "systemd-timesyncd.service"],
+        timeout=20,
         check=False,
-    )
-    log.debug("Deactivated systemd-timesyncd.service (NTP)")
+    ).returncode
+    if ret == 0:
+        subprocess.run(  # noqa: S603
+            ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
+            timeout=20,
+            check=False,
+        )
+        log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
 def check_sys_access(iteration: int = 1) -> bool:
@@ -117,7 +128,7 @@ def check_sys_access(iteration: int = 1) -> bool:
                 iteration,
                 iter_max,
             )
-            load_kernel_module()
+            reload_kernel_module()
             check_sys_access(iteration + 1)
         except FileNotFoundError:
             log.error(
@@ -150,59 +161,79 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
             return time.time() - ts_start
 
         if time.time() - ts_start > timeout:
-            raise SysfsInterfaceError(
-                "timed out waiting for state '%s' - current state is '%s'",
-                wanted_state,
-                current_state,
+            msg = (
+                f"timed out waiting for state '{wanted_state}' - current state is '{current_state}'"
             )
+            raise SysfsInterfaceError(msg)
 
         time.sleep(0.1)
 
 
-def set_start(start_time: float | int | None = None) -> True:  # noqa: PYI041
-    """Starts shepherd.
+def set_start(timestamp_s: float | int | None = None) -> True:  # noqa: PYI041
+    """Starts pru-routines.
 
-    Writes 'start' to the 'state' sysfs attribute in order to transition from
-    'idle' to 'running' state. Optionally allows to start at a later point in
+    Writes 'now' to the sysfs/time_start attribute in
+    order to transition from 'idle' to 'running' state.
+    Optionally allows to start at a later point in
     time, transitioning shepherd to 'armed' state.
 
     Args:
-        start_time (int): Desired start time in unix time
+        timestamp_s (int): Desired start time in unix time
     """
-    current_state = get_state()
-    log.debug("current state of shepherd kernel module: %s", current_state)
-    if current_state != "idle":
-        raise SysfsInterfaceError("Cannot start from state '%s'", current_state)
+    try:
+        wait_for_state("idle", 2)
+    except SysfsInterfaceError as _xpt:
+        msg = f"Cannot start from state '{get_state()}'"
+        raise SysfsInterfaceError(msg) from _xpt
 
     try:
-        with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
-            if isinstance(start_time, float):
-                start_time = int(start_time)
-            if isinstance(start_time, int):
-                log.debug("writing start-time = %d to sysfs", start_time)
-                fh.write(f"{start_time}")
+        with Path("/sys/shepherd/time_start").open("w", encoding="utf-8") as fh:
+            if isinstance(timestamp_s, float):
+                if int(timestamp_s) != timestamp_s:
+                    log.warning("set_start() can only process whole seconds")
+                timestamp_s = int(timestamp_s)
+            if isinstance(timestamp_s, int):
+                log.debug("writing sysfs/time_start = %d", timestamp_s)
+                fh.write(f"{timestamp_s}")
             else:  # unknown type
-                log.debug("writing 'start' to sysfs")
-                fh.write("start")
+                log.debug("writing 'now' to sysfs/time_start")
+                fh.write("now")
     except OSError:
-        log.error("Failed to write 'Start' to sysfs (@%f.3)", time.time())
+        log.error("Failed to write to sysfs/time_start (@%.3f)", time.time())
         return False
     return True
 
 
-def set_stop(*, force: bool = False) -> None:
-    """Stops shepherd.
+def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
+    """Stops pru-routines.
 
-    Writes 'stop' to the 'state' sysfs attribute in order to transition from
-    any state to 'idle'.
+    Writes 'now' to the sysfs/time_stop attribute in order to transition from
+    any state to 'idle' (performs full reset).
+    Optionally allows to stop at a later point in
+    time by adding a specific timestamp. This will keep the PRUs in
+    stopped-mode and will need a full reset to go back to idle.
     """
     if not force:
-        current_state = get_state()
-        if current_state != "running":
-            raise SysfsInterfaceError("Cannot stop from state '%s'", current_state)
+        try:
+            wait_for_state("running", 2)
+        except SysfsInterfaceError as _xpt:
+            msg = f"Cannot stop from state '{get_state()}'"
+            raise SysfsInterfaceError(msg) from _xpt
 
-    with Path("/sys/shepherd/state").open("w", encoding="utf-8") as fh:
-        fh.write("stop")
+    try:
+        with Path("/sys/shepherd/time_stop").open("w", encoding="utf-8") as fh:
+            if isinstance(timestamp_s, float):
+                if int(timestamp_s) != timestamp_s:
+                    log.warning("set_stop() can only process whole seconds")
+                timestamp_s = int(timestamp_s)
+            if isinstance(timestamp_s, int):
+                log.debug("writing sysfs/time_stop = %d", timestamp_s)
+                fh.write(f"{timestamp_s}")
+            else:  # unknown type
+                log.debug("writing 'now' to sysfs/time_stop")
+                fh.write("now")
+    except OSError:
+        log.error("Failed to write to sysfs/time_stop (@%.3f)", time.time())
 
 
 def write_mode(mode: str, *, force: bool = False) -> None:
@@ -220,7 +251,8 @@ def write_mode(mode: str, *, force: bool = False) -> None:
         set_stop(force=True)
         wait_for_state("idle", 5)
     elif get_state() != "idle":
-        raise SysfsInterfaceError("Cannot set mode when shepherd is '%s'", get_state())
+        msg = f"Cannot set mode when shepherd is '{get_state()}'"
+        raise SysfsInterfaceError(msg)
 
     log.debug("sysfs/mode: '%s'", mode)
     with Path("/sys/shepherd/mode").open("w", encoding="utf-8") as fh:
@@ -255,9 +287,11 @@ def write_dac_aux_voltage(
         return
 
     if voltage < 0.0:
-        raise SysfsInterfaceError("sending voltage with negative value: '%s'", voltage)
+        msg = f"sending voltage with negative value: '{voltage}'"
+        raise SysfsInterfaceError(msg)
     if voltage > 5.0:
-        raise SysfsInterfaceError("sending voltage above limit of 5V: '%s'", voltage)
+        msg = f"sending voltage above limit of 5V: '{voltage}'"
+        raise SysfsInterfaceError(msg)
     if not cal_emu:
         cal_emu = CalibrationEmulator()
     output = int(cal_emu.dac_V_A.si_to_raw(voltage))
@@ -281,7 +315,7 @@ def write_dac_aux_voltage_raw(
 
     Args:
         cap_out: aux will output cap-voltage of vsrc
-        ch_link: switch both dac-channels
+        link_channels: switch both dac-channels
         voltage_raw: desired voltage as raw int for DAC
     """
     if voltage_raw >= (2**16):
@@ -328,25 +362,22 @@ def read_dac_aux_voltage_raw() -> int:
 
 
 def write_calibration_settings(
-    cal_pru: dict,
-) -> None:  # more precise dict[str, int], trouble with py3.6
+    cal_pru: Mapping[str, int],
+) -> None:
     """Sends the calibration settings to the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
 
     """
     if cal_pru["adc_current_gain"] < 0:
-        raise SysfsInterfaceError(
-            "sending calibration with negative ADC-C-gain: %f", cal_pru["adc_current_gain"]
-        )
+        msg = f"sending calibration with negative ADC-C-gain: {cal_pru['adc_current_gain']}"
+        raise SysfsInterfaceError(msg)
     if cal_pru["adc_voltage_gain"] < 0:
-        raise SysfsInterfaceError(
-            "sending calibration with negative ADC-V-gain: %f", cal_pru["adc_voltage_gain"]
-        )
+        msg = f"sending calibration with negative ADC-V-gain: {cal_pru['adc_voltage_gain']}"
+        raise SysfsInterfaceError(msg)
     if cal_pru["dac_voltage_gain"] < 0:
-        raise SysfsInterfaceError(
-            "sending calibration with negative DAC-gain: %f", cal_pru["dac_voltage_gain"]
-        )
+        msg = f"sending calibration with negative DAC-gain: {cal_pru['dac_voltage_gain']}"
+        raise SysfsInterfaceError(msg)
     wait_for_state("idle", 3.0)
 
     with Path("/sys/shepherd/calibration_settings").open("w", encoding="utf-8") as fh:
@@ -401,11 +432,8 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
             _set = [str(i) for i in _set]
             output += " ".join(_set) + " \n"
         else:
-            raise SysfsInterfaceError(
-                "virtual-converter value '%s' has wrong type ('%s')",
-                setting,
-                type(setting),
-            )
+            msg = f"virtual-converter value '{setting}' has wrong type ('{type(setting)}')"
+            raise SysfsInterfaceError(msg)
 
     wait_for_state("idle", 3.0)
     with Path("/sys/shepherd/virtual_converter_settings").open(
@@ -443,11 +471,8 @@ def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
         if isinstance(setting, int):
             output += f"{setting} \n"
         else:
-            raise SysfsInterfaceError(
-                "virtual harvester value %s has wrong type (%s)",
-                setting,
-                type(setting),
-            )
+            msg = f"virtual harvester value {setting} has wrong type ({type(setting)})"
+            raise SysfsInterfaceError(msg)
 
     wait_for_state("idle", 3.0)
     with Path("/sys/shepherd/virtual_harvester_settings").open(
@@ -474,25 +499,26 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
     :param values:
     """
     if (not isinstance(msg_type, int)) or (msg_type < 0) or (msg_type > 255):
-        raise SysfsInterfaceError(
-            "pru_msg-type has invalid type, expected u8 for type (=%s) and content (=%s)",
-            type(msg_type),
-            msg_type,
+        msg = (
+            f"pru_msg-type has invalid type, "
+            f"expected u8 for type (={type(msg_type)}) and content (={msg_type})"
         )
+        raise SysfsInterfaceError(msg)
 
     if isinstance(values, int | float):
         # catch all single ints and floats
         values = [int(values), 0]
     elif not isinstance(values, list):
-        raise TypeError("Outgoing msg to pru should have been list but is %s", values)
+        msg = f"Outgoing msg to pru should have been list but is {values}"
+        raise TypeError(msg)
 
     for value in values:
         if (not isinstance(value, int)) or (value < 0) or (value >= 2**32):
-            raise SysfsInterfaceError(
-                "pru_msg-value has invalid type, expected u32 for type (=%s) and content (=%s)",
-                type(value),
-                value,
+            msg = (
+                f"pru_msg-value has invalid type, "
+                f"expected u32 for type (={type(value)}) and content (={value})"
             )
+            raise SysfsInterfaceError(msg)
 
     with Path("/sys/shepherd/pru_msg_box").open("w", encoding="utf-8") as file:
         file.write(f"{msg_type} {values[0]} {values[1]}")
@@ -554,7 +580,8 @@ def write_programmer_ctrl(
         if value is None:
             continue
         if num > 0 and ((value < 0) or (value >= 2**32)):
-            raise SysfsInterfaceError("at least one parameter out of u32-bounds, value=%d", value)
+            msg = f"at least one parameter out of u32-bounds, value={value}"
+            raise SysfsInterfaceError(msg)
         with (prog_path / attribute).open(
             "w",
             encoding="utf-8",
@@ -580,8 +607,6 @@ def write_programmer_datasize(value: int) -> None:
 def start_programmer() -> None:
     with Path("/sys/shepherd/programmer/state").open("w", encoding="utf-8") as file:
         file.write("start")
-    # force a pru-reset to jump into programming routine
-    set_stop(force=True)
 
 
 def check_programmer() -> str:
@@ -672,13 +697,17 @@ def pru_firmware_is_default() -> bool:
 
 
 attribs = [
+    # TODO: these fn get tested, could also be autogenerated by pytest
     "mode",
     "state",
-    "n_buffers",
-    "buffer_period_ns",
-    "samples_per_buffer",
-    "mem_address",
-    "mem_size",
+    "trace_iv_inp_address",
+    "trace_iv_inp_size",
+    "trace_iv_out_address",
+    "trace_iv_out_size",
+    "trace_gpio_address",
+    "trace_gpio_size",
+    "trace_util_address",
+    "trace_util_size",
 ]
 
 
@@ -692,26 +721,41 @@ def get_state() -> str:
         return str(f.read().rstrip())
 
 
-def get_n_buffers() -> int:
-    with Path("/sys/shepherd/n_buffers").open(encoding="utf-8") as f:
+def get_trace_iv_inp_address() -> int:
+    with Path("/sys/shepherd/memory/iv_inp_address").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
-def get_buffer_period_ns() -> int:
-    with Path("/sys/shepherd/buffer_period_ns").open(encoding="utf-8") as f:
+def get_trace_iv_inp_size() -> int:
+    with Path("/sys/shepherd/memory/iv_inp_size").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
-def get_samples_per_buffer() -> int:
-    with Path("/sys/shepherd/samples_per_buffer").open(encoding="utf-8") as f:
+def get_trace_iv_out_address() -> int:
+    with Path("/sys/shepherd/memory/iv_out_address").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
-def get_mem_address() -> int:
-    with Path("/sys/shepherd/memory/address").open(encoding="utf-8") as f:
+def get_trace_iv_out_size() -> int:
+    with Path("/sys/shepherd/memory/iv_out_size").open(encoding="utf-8") as f:
         return int(f.read().rstrip())
 
 
-def get_mem_size() -> int:
-    with Path("/sys/shepherd/memory/size").open(encoding="utf-8") as f:
+def get_trace_gpio_address() -> int:
+    with Path("/sys/shepherd/memory/gpio_address").open(encoding="utf-8") as f:
+        return int(f.read().rstrip())
+
+
+def get_trace_gpio_size() -> int:
+    with Path("/sys/shepherd/memory/gpio_size").open(encoding="utf-8") as f:
+        return int(f.read().rstrip())
+
+
+def get_trace_util_address() -> int:
+    with Path("/sys/shepherd/memory/util_address").open(encoding="utf-8") as f:
+        return int(f.read().rstrip())
+
+
+def get_trace_util_size() -> int:
+    with Path("/sys/shepherd/memory/util_size").open(encoding="utf-8") as f:
         return int(f.read().rstrip())

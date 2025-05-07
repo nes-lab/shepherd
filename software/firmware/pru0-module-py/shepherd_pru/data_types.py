@@ -5,8 +5,10 @@ from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConf
 
 
 class HarvesterConfig(ct.Structure):
-    _pack_: ClassVar[int] = 1
-    _fields_: ClassVar[list] = [(_key, ct.c_uint32) for _key in HarvesterPRUConfig.model_fields]
+    _pack_: int = 1  # TODO: test without ClassVar
+    _fields_: ClassVar[list] = [(_key, ct.c_uint32) for _key in HarvesterPRUConfig.model_fields] + [
+        ("canary", ct.c_uint32)
+    ]  # TODO: a sequence (,) seems to be fine
 
 
 class CalibrationConfig(ct.Structure):
@@ -19,6 +21,7 @@ class CalibrationConfig(ct.Structure):
         ("dac_voltage_gain", ct.c_uint32),  # dac_voltage_inv_factor_uV_n20
         ("dac_voltage_offset", ct.c_int32),  # dac_voltage_offset_uV
         # NOTE: above are the py-names as the c-struct is handed raw
+        ("canary", ct.c_uint32),
     ]
 
 
@@ -56,27 +59,47 @@ class ConverterConfig(ct.Structure):
         ("LUT_output_I_min_log2_nA", ct.c_uint32),
         ("LUT_inp_efficiency_n8", LUT_INP),
         ("LUT_out_inv_efficiency_n4", LUT_OUT),
+        ("canary", ct.c_uint32),
+    ]
+
+
+VOC_LUT_SIZE: int = 123
+VOC_LUT_TYPE = ct.c_uint32 * VOC_LUT_SIZE
+RSERIES_LUT_SIZE: int = 100
+RSERIES_LUT_TYPE = ct.c_uint32 * RSERIES_LUT_SIZE
+
+
+class BatteryConfig(ct.Structure):
+    _pack_: ClassVar[int] = 1
+    _fields_: ClassVar[list] = [
+        ("Constant_s_per_mAs_n48", ct.c_uint32),
+        ("Constant_1_per_kOhm_n18", ct.c_uint32),
+        ("LUT_voc_SoC_min_log2_u_n32", ct.c_uint32),
+        ("LUT_voc_uV_n8", VOC_LUT_TYPE),
+        ("LUT_rseries_SoC_min_log2_u_n32", ct.c_uint32),
+        ("LUT_rseries_KOhm_n32", RSERIES_LUT_TYPE),
+        ("canary", ct.c_uint32),
     ]
 
 
 class SharedMemLight(ct.Structure):
     _pack_: ClassVar[int] = 1
     _fields_: ClassVar[list] = [
-        ("pre_stuff", ct.c_uint32 * 9),
+        ("pre_A", ct.c_uint32 * 9),
+        ("pre_Buff", ct.c_uint32 * (4 + 4 + 5 + 1)),
+        ("pre_Cache", ct.c_uint32 * 32),
+        ("pre_D", ct.c_uint32 * 2),
         ("calibration_settings", CalibrationConfig),
         ("converter_settings", ConverterConfig),
         ("harvester_settings", HarvesterConfig),
-        ("programmer_ctrl", ct.c_uint32 * 10),
-        ("proto_msgs", ct.c_uint32 * (3 * 5)),
-        ("sync_msgs", ct.c_uint32 * 6),
+        ("programmer_ctrl", ct.c_uint32 * 11),
+        ("proto_msgs", ct.c_uint32 * (6 * 4)),
         ("timestamps", ct.c_uint64 * 2),
-        ("mutex_x", ct.c_uint32 * 2),  # bool_ft
+        ("canary", ct.c_uint32 * 1),
         ("gpio_pin_state", ct.c_uint32),
-        ("gpio_edges", ct.c_uint32),  # Pointer
-        ("sample_buffer", ct.c_uint32),  # Pointer
-        ("analog_x", ct.c_uint32 * 5),
         ("trigger_x", ct.c_uint32 * 2),  # bool_ft
         ("vsource_batok_trigger_for_pru1", ct.c_uint32),  # bool_ft
-        ("vsource_skip_gpio_logging", ct.c_uint32),  # bool_ft
         ("vsource_batok_pin_value", ct.c_uint32),  # bool_ft
+        ("vsource_skip_gpio_logging", ct.c_uint32),  # bool_ft
+        ("pru0_ns_per_sample", ct.c_uint32),
     ]

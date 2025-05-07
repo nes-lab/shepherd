@@ -9,9 +9,11 @@ HDF5 files.
 from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
-from typing import ClassVar
 
 from typing_extensions import Self
+
+from . import commons
+from .h5_monitor_ntp import NTPMonitor
 
 if TYPE_CHECKING:
     import h5py
@@ -28,14 +30,16 @@ from shepherd_core.data_models import SystemLogging
 from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_kernel import KernelMonitor
+from .h5_monitor_phc2sys import PHC2SYSMonitor
 from .h5_monitor_ptp import PTPMonitor
 from .h5_monitor_sheep import SheepMonitor
 from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
 from .h5_recorder_gpio import GpioRecorder
 from .h5_recorder_pru import PruRecorder
-from .logger import log
-from .shared_memory import DataBuffer
+from .shared_mem_gpio_output import GPIOTrace
+from .shared_mem_iv_input import IVTrace
+from .shared_mem_util_output import UtilTrace
 
 
 class Writer(CoreWriter):
@@ -48,17 +52,7 @@ class Writer(CoreWriter):
             units later.
         mode (str): Indicates if this is data from harvester or emulator
         force_overwrite (bool): Overwrite existing file with the same name
-        samples_per_buffer (int): Number of samples contained in a single
-            shepherd buffer
-        samplerate_sps (int): Duration of a single shepherd buffer in
-            nanoseconds
-        omit_ts: (bool) optimize writing - timestamp-stream can be reconstructed later
     """
-
-    mode_dtype_dict: ClassVar[dict[str, list]] = {
-        "harvester": ["ivsample", "ivcurve", "isc_voc"],
-        "emulator": ["ivsample"],
-    }
 
     def __init__(
         self,
@@ -68,17 +62,13 @@ class Writer(CoreWriter):
         window_samples: int | None = None,
         cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
-        samples_per_buffer: int = 10_000,
-        samplerate_sps: int = 100_000,
         *,
-        omit_ts: bool = False,
         modify_existing: bool = False,
         force_overwrite: bool = False,
         verbose: bool | None = True,
     ) -> None:
         # hopefully overwrite defaults from Reader
-        self.samples_per_buffer: int = samples_per_buffer  # TODO: test
-        self.samplerate_sps: int = samplerate_sps
+        self.samplerate_sps: int = 10**9 // commons.SAMPLE_INTERVAL_NS
 
         # TODO: derive verbose-state
         super().__init__(
@@ -94,7 +84,7 @@ class Writer(CoreWriter):
         )
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            self.samples_per_buffer,
+            self.BUFFER_SAMPLES_N,
         ).astype("u8")
         # TODO: keep this optimization
 
@@ -108,7 +98,6 @@ class Writer(CoreWriter):
         self.data_inc = int(100 * self.samplerate_sps)
         # NOTE for possible optimization: align resize with chunk-size
         #      -> rely on autochunking -> inc = h5ds.chunks
-        self.omit_ts = omit_ts
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
@@ -141,10 +130,8 @@ class Writer(CoreWriter):
         self.sys_util_grp = self.h5file.create_group("sys_util")
         self.kernel_grp = self.h5file.create_group("kernel")
         self.ptp_grp = self.h5file.create_group("ptp")
-
-        if self.omit_ts:
-            log.debug("Deactivated writing TS during experiment -> will be added on exit")
-
+        self.phc_grp = self.h5file.create_group("phc2sys")
+        self.ntp_grp = self.h5file.create_group("ntp")
         return self
 
     def __exit__(
@@ -154,9 +141,6 @@ class Writer(CoreWriter):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        # adding omitted ts - if needed
-        self.rec_pru.add_timestamps(self.grp_data, self.buffer_timeseries)
-
         # trim over-provisioned parts
         self.grp_data["time"].resize((self.data_pos,))
         self.grp_data["voltage"].resize((self.data_pos,))
@@ -172,14 +156,14 @@ class Writer(CoreWriter):
 
         super().__exit__()
 
-    def write_buffer(self, buffer: DataBuffer) -> None:
+    def write_iv_buffer(self, data: IVTrace) -> None:
         """Writes data from buffer to file.
 
         Args:
-            buffer: (DataBuffer) Buffer containing IV data
+            data: buffer-segment containing IV data
         """
         # First, we have to resize the corresponding datasets
-        data_length_new = len(buffer)
+        data_length_new = len(data)
         if data_length_new > 0:
             data_end_pos = self.data_pos + data_length_new
             data_length_h5 = self.grp_data["voltage"].shape[0]
@@ -187,29 +171,36 @@ class Writer(CoreWriter):
                 data_length_h5 += self.data_inc
                 self.grp_data["voltage"].resize((data_length_h5,))
                 self.grp_data["current"].resize((data_length_h5,))
-                if not self.omit_ts:
-                    self.grp_data["time"].resize((data_length_h5,))
+                self.grp_data["time"].resize((data_length_h5,))
 
-            self.grp_data["voltage"][self.data_pos : data_end_pos] = buffer.voltage
-            self.grp_data["current"][self.data_pos : data_end_pos] = buffer.current
-            if not self.omit_ts:
+            self.grp_data["voltage"][self.data_pos : data_end_pos] = data.voltage
+            self.grp_data["current"][self.data_pos : data_end_pos] = data.current
+            if isinstance(data.timestamp_ns, int):
                 self.grp_data["time"][self.data_pos : data_end_pos] = (
-                    self.buffer_timeseries + buffer.timestamp_ns
+                    self.buffer_timeseries + data.timestamp_ns
                 )
+            elif isinstance(data.timestamp_ns, np.ndarray):
+                self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
             self.data_pos = data_end_pos
 
-        self.rec_gpio.write(buffer.gpio_edges)
-        self.rec_pru.write(buffer)
+    def write_gpio_buffer(self, data: GPIOTrace) -> None:
+        self.rec_gpio.write(data)
+
+    def write_util_buffer(self, data: UtilTrace) -> None:
+        self.rec_pru.write(data)
 
     def start_monitors(
         self,
         sys: SystemLogging | None = None,
         gpio: GpioTracing | None = None,
+        # TODO: add gpio-callFN & pru_util
     ) -> None:
         if sys is not None and sys.dmesg:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.ptp:
             self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
+            self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))
+            self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
         if self.sysutil_log_enabled:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))
         if gpio is not None and gpio.uart_decode:
@@ -221,3 +212,12 @@ class Writer(CoreWriter):
                 ),
             )
         self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
+
+    def check_monitors(self) -> None:
+        """Check state of Monitors.
+
+        Emitting Warnings and errors is delegated to each monitor.
+        """
+        for monitor in self.monitors:
+            if hasattr(monitor, "check_status"):
+                monitor.check_status()

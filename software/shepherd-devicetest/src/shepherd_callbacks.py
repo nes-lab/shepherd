@@ -12,7 +12,8 @@ def include(filename: str) -> None:
     if Path(filename).exists():
         execfile(filename)
     else:
-        raise OSError("File '%s' not found", filename)
+        msg = f"File '{filename}' not found"
+        raise OSError(msg)
 
 
 # include('../python-package/shepherd/calibration.py')
@@ -218,7 +219,7 @@ def update_power_state_emulator() -> None:
 
 
 def set_power_state_recoder(sender, en_state, user_data) -> None:
-    shepherd_io.set_power_recorder(en_state)
+    shepherd_io.set_power_harvester(en_state)
 
 
 def update_power_state_recorder() -> None:
