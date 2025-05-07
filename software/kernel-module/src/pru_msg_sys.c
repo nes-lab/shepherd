@@ -8,12 +8,12 @@
 /***************************************************************/
 /***************************************************************/
 
-struct RingBuffer msg_ringbuf_from_pru;
-struct RingBuffer msg_ringbuf_to_pru;
+static struct RingBuffer msg_ringbuf_from_pru;
+static struct RingBuffer msg_ringbuf_to_pru;
 
 // TODO: base msg-system on irqs (there are free ones from rpmsg)
 // TODO: maybe replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
-static void       ring_init(struct RingBuffer *const buf)
+static void              ring_init(struct RingBuffer *const buf)
 {
     buf->start  = 0u;
     buf->end    = 0u;

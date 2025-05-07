@@ -16,8 +16,8 @@ static void __iomem        *pru_intc_io       = NULL;
 void __iomem               *pru_shared_mem_io = NULL;
 
 /* This timer is used to schedule a delayed start of the actual sampling on the PRU */
-struct hrtimer              delayed_start_timer;
-struct hrtimer              delayed_stop_timer;
+static struct hrtimer       delayed_start_timer;
+static struct hrtimer       delayed_stop_timer;
 static u8                   init_done = 0;
 
 static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart);

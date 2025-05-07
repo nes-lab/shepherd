@@ -94,8 +94,8 @@ class SharedMemLight(ct.Structure):
         ("harvester_settings", HarvesterConfig),
         ("programmer_ctrl", ct.c_uint32 * 11),
         ("proto_msgs", ct.c_uint32 * (6 * 4)),
-        ("canary", ct.c_uint32 * 1),
         ("timestamps", ct.c_uint64 * 2),
+        ("canary", ct.c_uint32 * 1),
         ("gpio_pin_state", ct.c_uint32),
         ("trigger_x", ct.c_uint32 * 2),  # bool_ft
         ("vsource_batok_trigger_for_pru1", ct.c_uint32),  # bool_ft

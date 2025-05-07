@@ -5,6 +5,7 @@
 #include <linux/math64.h>
 #include <linux/slab.h> /* kmalloc */
 
+#include "_shared_mem.h"
 #include "_shepherd_config.h"
 #include "pru_mem_interface.h"
 #include "pru_sync_control.h"
@@ -16,11 +17,14 @@ static uint64_t             ts_previous_ns      = 0; /* for plausibility-check *
 
 static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart supervisor_loop_callback(struct hrtimer *timer_for_restart);
 
 /* Timer to trigger fast sync_loop */
-struct hrtimer              trigger_loop_timer;
-struct hrtimer              sync_loop_timer;
+static struct hrtimer       trigger_loop_timer;
+static struct hrtimer       sync_loop_timer;
+static struct hrtimer       supervisor_loop_timer;
 static u8                   timers_active = 0u;
+static struct SharedMem    *shared_mem    = NULL;
 
 /* debug gpio - gpio0[22] - P8_19 - BUTTON_LED is suitable */
 static void __iomem        *gpio0set      = NULL;
@@ -63,6 +67,7 @@ void                      sync_exit(void)
 {
     if (trigger_loop_timer.base != NULL) hrtimer_cancel(&trigger_loop_timer);
     if (sync_loop_timer.base != NULL) hrtimer_cancel(&sync_loop_timer);
+    if (supervisor_loop_timer.base != NULL) hrtimer_cancel(&supervisor_loop_timer);
 
     if (gpio0clear != NULL)
     {
@@ -114,6 +119,17 @@ int sync_init(void)
     printk("%sshprd.sync: trigger_hrtimer.is_soft = %d", ret_value == 0 ? KERN_INFO : KERN_ERR,
            ret_value);
     //printk(KERN_INFO "shprd.sync: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
+
+    /* supervisor checks and corrects next_timestamp of PRU */
+    if (pru_shared_mem_io == NULL)
+    {
+        printk(KERN_ERR "shprd.sync: supervisor needs shared-mem of PRU but got NULL");
+        return 0;
+    }
+    shared_mem = (struct SharedMem *) pru_shared_mem_io;
+    hrtimer_init(&supervisor_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    supervisor_loop_timer.function = &supervisor_loop_callback;
+
     sync_start();
     return 0;
 }
@@ -223,10 +239,26 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
 
     //printk(KERN_INFO "shprd.sync: triggered @%llu, next ts = %llu", ts_now_ns, ts_upcoming_ns);
     // NOTE: without load this trigger is accurate < 4 us
-
     hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(ns_to_next_trigger));
 
+    hrtimer_start(&supervisor_loop_timer, ns_to_ktime(ts_upcoming_ns - (SYNC_INTERVAL_NS / 2)),
+                  HRTIMER_MODE_ABS);
+
     return HRTIMER_RESTART;
+}
+
+enum hrtimer_restart supervisor_loop_callback(struct hrtimer *timer_for_restart)
+{
+    /* is executed half way in sync-windows (100 ms) */
+    const uint64_t ts_upcoming_pru = shared_mem->next_sync_timestamp_ns;
+    if (ts_upcoming_pru != ts_upcoming_ns)
+    {
+        printk(KERN_WARNING
+               "shprd.sync: upcoming TS of PRU deviates from kMod -> corrected (%lld vs %lld)",
+               ts_upcoming_pru, ts_upcoming_ns);
+    }
+
+    return HRTIMER_NORESTART;
 }
 
 /* Handler for sync-requests from PRU1 */

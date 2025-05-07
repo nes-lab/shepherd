@@ -14,20 +14,20 @@
 
 extern uint32_t             __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2) - 1u)];
 
-void __iomem               *cache_io             = NULL;
-void __iomem               *buffr_io             = NULL;
+static void __iomem        *cache_io             = NULL;
+static void __iomem        *buffr_io             = NULL;
 static u8                   init_done            = 0u;
 static u8                   error_detected       = 0u;
-struct SharedMem           *shared_mem           = NULL;
-struct IVTraceInp          *buffr_mem            = NULL;
-uint32_t                    cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
-uint32_t                    cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
-uint32_t                    cache_block_fill_lvl = 0u;
-uint32_t                    flags_local[CACHE_U32_FLAGS_N];
+static struct SharedMem    *shared_mem           = NULL;
+static struct IVTraceInp   *buffr_mem            = NULL;
+static uint32_t             cache_block_idx_head = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
+static uint32_t             cache_block_idx_tail = IDX_OUT_OF_BOUND >> CACHE_BLOCK_SAMPLES_LOG2;
+static uint32_t             cache_block_fill_lvl = 0u;
+static uint32_t             flags_local[CACHE_U32_FLAGS_N];
 
 /* Timer-system for cache-updates */
 static enum hrtimer_restart update_callback(struct hrtimer *timer_for_restart);
-struct hrtimer              update_timer;
+static struct hrtimer       update_timer;
 #define DELAY_TIMER ns_to_ktime(CACHE_BLOCK_SAMPLES_N *SAMPLE_INTERVAL_NS - 1000000u)
 
 
