@@ -47,7 +47,7 @@
 #define CACHE_U32_FLAGS_N          (1u << CACHE_U32_FLAGS_LOG2) // 32
 #define CACHE_U32_FLAG_SIZE        (4u * CACHE_U32_FLAGS_N)     // 128
 
-#define L3OCMC_ADDR                ((uint8_t *) 0x40000000u)
+#define L3OCMC_ADDR                ((uint8_t *) 0x40300000u)
 
 extern uint32_t
         __cache_fits_buffer[1 / ((1u << BUFFER_IV_INP_SAMPLES_LOG2) >= BUFFER_IV_INP_SAMPLES_N)];

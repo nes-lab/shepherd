@@ -210,12 +210,12 @@ int32_t event_loop()
     ts_repl.type = 0u;
     while (ts_repl.type != MSG_SYNC_RESET)
     {
-        //if (msgsys_check_delivery()) msgsys_send(MSG_SYNC_RESET, 0u, 1u);
         __delay_cycles(1000u / TICK_INTERVAL_NS);
         receive_sync_reply((struct ProtoMsg *) &ts_repl);
     }
     // schedule hard-set of timestamp
-    SHARED_MEM.next_sync_timestamp_ns = ts_repl.value;
+    SHARED_MEM.last_sync_timestamp_ns = ts_repl.value;
+    SHARED_MEM.next_sync_timestamp_ns = ts_repl.value + SYNC_INTERVAL_NS;
     /* Wait for first timer interrupt from Linux host */
     DEBUG_STATE_2;
     while (!(read_r31() & HOST_INT_TIMESTAMP_MASK));
@@ -369,7 +369,6 @@ int32_t event_loop()
         if (transmit_util)
         {
             const uint32_t idx                            = SHARED_MEM.buffer_util_idx;
-            // TODO: add timestamp
             SHARED_MEM.buffer_util_ptr->timestamp_ns[idx] = SHARED_MEM.last_sync_timestamp_ns;
             SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_sum[idx] = pru0_tsample_ns_sum;
             SHARED_MEM.buffer_util_ptr->pru0_tsample_ns_max[idx] = pru0_tsample_ns_max;

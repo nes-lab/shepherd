@@ -208,7 +208,7 @@ class SharedMemUtilOutput:
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
         self.check_status(data, verbose=verbose)
 
-        if self.index_next == 0:
+        if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()
 
         return data

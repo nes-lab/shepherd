@@ -123,7 +123,7 @@ class ShepherdIO:
 
         self.mode = mode
         if mode in {"harvester", "emulator"}:
-            self.component = mode  # TODO: still needed?
+            self.component = mode
         else:
             self.component = "emulator"
         self.gpios = {}

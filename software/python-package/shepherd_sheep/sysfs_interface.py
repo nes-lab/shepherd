@@ -180,15 +180,17 @@ def set_start(timestamp_s: float | int | None = None) -> True:  # noqa: PYI041
     Args:
         timestamp_s (int): Desired start time in unix time
     """
-    current_state = get_state()
-    log.debug("current state of shepherd kernel module: %s", current_state)
-    if current_state != "idle":
-        msg = f"Cannot start from state '{current_state}'"
-        raise SysfsInterfaceError(msg)
+    try:
+        wait_for_state("idle", 2)
+    except SysfsInterfaceError as _xpt:
+        msg = f"Cannot start from state '{get_state()}'"
+        raise SysfsInterfaceError(msg) from _xpt
 
     try:
         with Path("/sys/shepherd/time_start").open("w", encoding="utf-8") as fh:
             if isinstance(timestamp_s, float):
+                if int(timestamp_s) != timestamp_s:
+                    log.warning("set_start() can only process whole seconds")
                 timestamp_s = int(timestamp_s)
             if isinstance(timestamp_s, int):
                 log.debug("writing sysfs/time_start = %d", timestamp_s)
@@ -212,13 +214,17 @@ def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
     stopped-mode and will need a full reset to go back to idle.
     """
     if not force:
-        current_state = get_state()
-        if current_state != "running":
-            msg = f"Cannot stop from state '{current_state}'"
-            raise SysfsInterfaceError(msg)
+        try:
+            wait_for_state("running", 2)
+        except SysfsInterfaceError as _xpt:
+            msg = f"Cannot stop from state '{get_state()}'"
+            raise SysfsInterfaceError(msg) from _xpt
+
     try:
         with Path("/sys/shepherd/time_stop").open("w", encoding="utf-8") as fh:
             if isinstance(timestamp_s, float):
+                if int(timestamp_s) != timestamp_s:
+                    log.warning("set_stop() can only process whole seconds")
                 timestamp_s = int(timestamp_s)
             if isinstance(timestamp_s, int):
                 log.debug("writing sysfs/time_stop = %d", timestamp_s)

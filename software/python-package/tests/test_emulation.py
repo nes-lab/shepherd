@@ -1,13 +1,12 @@
-import math
 import time
 from collections.abc import Generator
+from contextlib import ExitStack
 from pathlib import Path
 
 import h5py
 import numpy as np
 import pytest
 from shepherd_core import CalibrationCape
-from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_core.data_models import VirtualSourceConfig
@@ -18,9 +17,10 @@ from shepherd_sheep import ShepherdEmulator
 from shepherd_sheep import Writer
 from shepherd_sheep import commons
 from shepherd_sheep import run_emulator
+from shepherd_sheep import set_verbosity
+from shepherd_sheep import sysfs_interface
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.shared_mem_iv_input import IVTrace
-from shepherd_sheep.sysfs_interface import set_stop
 
 
 def random_data(length: int) -> np.ndarray:
@@ -36,7 +36,6 @@ def src_cfg() -> VirtualSourceConfig:
     return VirtualSourceConfig.from_file(file_path)
 
 
-@pytest.fixture
 def data_h5(tmp_path: Path, duration_s: float = 10.0) -> Path:
     store_path = tmp_path / "hrv_example.h5"
     with Writer(
@@ -54,6 +53,11 @@ def data_h5(tmp_path: Path, duration_s: float = 10.0) -> Path:
             )
             store.write_iv_buffer(mock_data)
     return store_path
+
+
+@pytest.fixture(name="data_h5")
+def data_h5_fixture(tmp_path: Path) -> Path:
+    return data_h5(tmp_path)
 
 
 @pytest.fixture
@@ -119,7 +123,7 @@ def test_emulation(
 @pytest.mark.usefixtures("_shepherd_up")
 def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
-    start_time = round(time.time() + 20)
+    start_time = round(time.time() + 25)
     emu_cfg = EmulationTask(
         input_path=data_h5,
         output_path=output,
@@ -191,104 +195,58 @@ def test_target_pins() -> None:
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cache_via_loopback(tmp_path: Path) -> None:
     # generate 2.5 buffers of random data
-    duration_s = 2.5 * commons.BUFFER_IV_INP_INTERVAL_S
+    duration_s = round(2.5 * commons.BUFFER_IV_INP_INTERVAL_S)
     path_input = data_h5(tmp_path, duration_s=duration_s)
     path_output = tmp_path / "loopback.h5"
 
-    # TODO: use default emu - just change mode - make sure it loops back
-    # TODO: compare results
+    emu_cfg = EmulationTask(
+        input_path=path_input,
+        output_path=path_output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        virtual_source=VirtualSourceConfig(name="direct"),
+    )
 
-    # run loopback and write to second file
-    with (
-        ShepherdDebug() as shepherd_io,
-        CoreReader(path_input) as reader,
-        Writer(path_output, mode="emulator", datatype="ivsample", force_overwrite=True) as writer,
-    ):
-        shepherd_io.switch_shepherd_mode("emu_loopback")
+    set_verbosity()
+    stack = ExitStack()
+    emu = ShepherdEmulator(cfg=emu_cfg)
+    emu.cal_pru = None  # disables scaling
+    stack.enter_context(emu)
+    sysfs_interface.write_mode("emu_loopback")  # enables copy in PRU
+    time.sleep(1)
+    print(sysfs_interface.get_mode())
+    print(sysfs_interface.get_state())
+    emu.run()
+    stack.close()
 
-        # essentials of emulator.init()
-        cal_inp = reader.get_calibration_data()
-        if cal_inp is None:
-            cal_inp = CalibrationSeries()
-            print(
-                "No calibration data from emulation-input (harvest) provided - using defaults",
-            )
-        cal_pru = CalibrationSeries(
-            voltage=CalibrationPair(
-                gain=1e6 * cal_inp.voltage.gain,
-                offset=1e6 * cal_inp.voltage.offset,
-                unit="V",
-            ),
-            current=CalibrationPair(
-                gain=1e9 * cal_inp.current.gain,
-                offset=1e9 * cal_inp.current.offset,
-                unit="A",
-            ),
+    # loopback should just copy the data
+    with h5py.File(path_output, "r") as hf_emu, h5py.File(path_input, "r") as hf_hrv:
+        n_samples = min(
+            hf_hrv["data"]["voltage"].shape[0],
+            hf_emu["data"]["voltage"].shape[0],
+            hf_hrv["data"]["current"].shape[0],
+            hf_emu["data"]["current"].shape[0],
         )
 
-        # essentials of emulator.enter()
-        # Preload emulator with data
-        buffer_segment_count = math.floor(
-            commons.BUFFER_IV_INP_SAMPLES_N // reader.BUFFER_SAMPLES_N
-        )
-        print("Begin initial fill of IV-Buffer (n=%d segments)", buffer_segment_count)
-        for _, dsv, dsc in reader.read_buffers(
-            end_n=buffer_segment_count,
-            is_raw=True,
-            omit_ts=True,
-        ):
-            if not shepherd_io.shared_mem.iv_inp.write(
-                data=IVTrace(voltage=dsv, current=dsc),
-                cal=cal_pru,
-                verbose=True,
-            ):
-                raise BufferError("Not enough space in buffer during initial fill.")
+        v1_mean = hf_hrv["data"]["voltage"][:].mean()
+        v2_mean = hf_emu["data"]["voltage"][:].mean()
+        v_match = hf_emu["data"]["voltage"][:n_samples] == hf_hrv["data"]["voltage"][:n_samples]
+        c1_mean = hf_hrv["data"]["current"][:].mean()
+        c2_mean = hf_emu["data"]["current"][:].mean()
+        c_match = hf_emu["data"]["current"][:n_samples] == hf_hrv["data"]["current"][:n_samples]
+        print(f"Voltage matches {100 * np.sum(v_match) / n_samples} %, means={(v1_mean, v2_mean)}")
+        print(f"Current matches {100 * np.sum(c_match) / n_samples} %, means={(c1_mean, c2_mean)}")
 
-        # essentials of emulator.run()
-        time_start = time.time() + 7
-        shepherd_io.start(time_start, wait_blocking=True)
-        shepherd_io.handle_pru_messages(panic_on_restart=False)
-        time_end = time_start + reader.runtime_s
-        set_stop(time_end)
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
+        assert hf_emu["data"]["voltage"].shape[0] == hf_hrv["data"]["voltage"].shape[0]
+        assert hf_emu["data"]["current"].shape[0] == hf_hrv["data"]["current"].shape[0]
 
-        for _, dsv, dsc in reader.read_buffers(
-            start_n=buffer_segment_count,
-            is_raw=True,
-            omit_ts=True,
-        ):
-            while not shepherd_io.shared_mem.iv_inp.write(
-                data=IVTrace(voltage=dsv, current=dsc),
-                cal=cal_pru,
-                verbose=True,
-            ):
-                data_iv = shepherd_io.shared_mem.iv_out.read(verbose=True)
-                data_gp = shepherd_io.shared_mem.gpio.read(verbose=True)
-                data_ut = shepherd_io.shared_mem.util.read(verbose=True)
-                if data_gp:
-                    writer.write_gpio_buffer(data_gp)
-                if data_ut:
-                    writer.write_util_buffer(data_ut)
-                if data_iv:
-                    if data_iv.timestamp() >= time_end:
-                        print("FINISHED! Out of bound timestamp collected -> begin to exit now")
-                        break
-                    ts_data_last = time.time()
-                    try:
-                        writer.write_iv_buffer(data_iv)
-                    except OSError as _xpt:
-                        print(
-                            "Failed to write data to HDF5-File - will STOP! error = %s",
-                            _xpt,
-                        )
-                        return
+        assert hf_emu["data"]["voltage"][0] == hf_hrv["data"]["voltage"][0]
+        assert hf_emu["data"]["current"][0] == hf_hrv["data"]["current"][0]
 
-                shepherd_io.handle_pru_messages(panic_on_restart=True)
-                shepherd_io.shared_mem.supervise_buffers(
-                    iv_inp=True, iv_out=True, gpio=True, util=True
-                )
-                if not (data_iv or data_gp or data_ut):
-                    if time.time() - ts_data_last > 10:
-                        print("Main sheep-routine ran dry for 10s, will STOP")
-                        break
-                    # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(shepherd_io.segment_period_s / 10)
+        assert np.array_equal(hf_emu["data"]["voltage"], hf_hrv["data"]["voltage"])
+        assert np.array_equal(hf_emu["data"]["current"], hf_hrv["data"]["current"])
+
+        assert np.array_equiv(hf_emu["data"]["voltage"], hf_hrv["data"]["voltage"])
+        assert np.array_equiv(hf_emu["data"]["current"], hf_hrv["data"]["current"])

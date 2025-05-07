@@ -207,7 +207,7 @@ class SharedMemGPIOOutput:
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
 
-        if self.index_next == 0:
+        if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()
 
         return data

@@ -59,7 +59,7 @@ class SharedMemIVInput:
 
     # class is designed for the following size layout (mentioned here mostly for crosscheck)
     N_SAMPLES: int = commons.BUFFER_IV_INP_SAMPLES_N
-    SIZE_SAMPLE: int = 4 + 4  # I & V
+    SIZE_SAMPLE: int = 4 + 4  # V & I
     SIZE_SAMPLES: int = N_SAMPLES * SIZE_SAMPLE
     SIZE_CANARY: int = 4
     SIZE_SECTION: int = 4 + 4 + SIZE_SAMPLES + SIZE_CANARY
@@ -109,7 +109,7 @@ class SharedMemIVInput:
         self._offset_idx_pru: int = self._offset_base
         self._offset_idx_sys: int = self._offset_idx_pru + 4
         self._offset_samples: int = self._offset_idx_sys + 4
-        self._offset_canary: int = self._offset_samples + self.N_SAMPLES * 2 * 4
+        self._offset_canary: int = self._offset_samples + self.N_SAMPLES * self.SIZE_SAMPLE
 
         if self._offset_canary != self._offset_base + self.SIZE_SECTION - self.SIZE_CANARY:
             msg = f"[{type(self).__name__}] Canary is not at expected position?!?"
@@ -182,7 +182,7 @@ class SharedMemIVInput:
     def write(
         self,
         data: IVTrace,
-        cal: CalibrationSeries,
+        cal: CalibrationSeries | None,
         *,
         verbose: bool = False,
     ) -> bool:
@@ -193,8 +193,10 @@ class SharedMemIVInput:
             self.index_next = 0
         # TODO: This part could be optimized further - write a benchmark
         # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        data.voltage = cal.voltage.raw_to_si(data.voltage).astype("u4")
-        data.current = cal.current.raw_to_si(data.current).astype("u4")
+        if cal:
+            # option to disable scaling here if already done (performance improvement)
+            data.voltage = cal.voltage.raw_to_si(data.voltage).astype("u4")
+            data.current = cal.current.raw_to_si(data.current).astype("u4")
         # interweave data (voltage | current in parallel)
         iv_data = np.empty((2 * len(data),), dtype=data.voltage.dtype)
         iv_data[0::2] = data.voltage[: len(data)]
@@ -230,7 +232,7 @@ class SharedMemIVInput:
         self._mm.seek(self._offset_idx_sys)
         self._mm.write(struct.pack("=L", self.index_next))
 
-        if self.index_next == 0:
+        if self.index_next < self.n_samples_per_chunk:  # once a cycle
             self.check_canary()
 
         return True

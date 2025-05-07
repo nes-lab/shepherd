@@ -16,10 +16,10 @@
  * Changes in HW or ADC/DAC Config also change the calibration.data!
  * (ie. py-package/shepherd/calibration_default.py)
  */
-static bool_ft     dac_aux_link_to_main = false;
-volatile uint8_t  *buf_inp_sample;
-volatile uint32_t *buf_out_voltage;
-volatile uint32_t *buf_out_current;
+static bool_ft            dac_aux_link_to_main = false;
+volatile struct IVSample *buf_inp_samples;
+volatile uint32_t        *buf_out_voltage;
+volatile uint32_t        *buf_out_current;
 
 #ifdef EMU_SUPPORT
 
@@ -48,9 +48,11 @@ static inline void fetch_iv_trace()
     else
     {
         /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
+        // TODO: Benchmark
         __builtin_memcpy((uint8_t *) &ivsample,
-                         (uint8_t *) buf_inp_sample + (sample_idx << IV_SAMPLE_SIZE_LOG2),
+                         ((uint8_t *) buf_inp_samples) + (sample_idx << IV_SAMPLE_SIZE_LOG2),
                          sizeof(struct IVSample));
+        /* ivsample = buf_inp_samples[sample_idx]; */
     }
 
     /* advance index */
@@ -120,7 +122,6 @@ static inline void sample_emulator()
     }
 }
 
-
 static inline void sample_emu_loopback()
 {
     fetch_iv_trace();
@@ -128,7 +129,6 @@ static inline void sample_emu_loopback()
     buf_out_current[sample_idx] = ivsample.current;
     buf_out_voltage[sample_idx] = ivsample.voltage;
 }
-
 #endif // EMU_SUPPORT
 
 static inline void sample_emu_ADCs()
@@ -267,11 +267,11 @@ void sample_init()
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
-    buf_inp_sample               = (volatile uint8_t *) SHARED_MEM.buffer_iv_inp_ptr->sample;
-    buf_out_voltage              = SHARED_MEM.buffer_iv_out_ptr->voltage;
-    buf_out_current              = SHARED_MEM.buffer_iv_out_ptr->current;
+    buf_inp_samples                              = SHARED_MEM.buffer_iv_inp_ptr->sample;
+    buf_out_voltage                              = SHARED_MEM.buffer_iv_out_ptr->voltage;
+    buf_out_current                              = SHARED_MEM.buffer_iv_out_ptr->current;
 
-    const enum ShepherdMode mode = (enum ShepherdMode) SHARED_MEM.shp_pru0_mode;
+    const enum ShepherdMode mode                 = (enum ShepherdMode) SHARED_MEM.shp_pru0_mode;
     const uint32_t          dac_ch_a_voltage_raw = SHARED_MEM.dac_auxiliary_voltage_raw & 0xFFFF;
     /* switch to set behavior of aux-channel (dac A) */
     dac_aux_link_to_main = ((SHARED_MEM.dac_auxiliary_voltage_raw >> 20u) & 3u) == 1u;

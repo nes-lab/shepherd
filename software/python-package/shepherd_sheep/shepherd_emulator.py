@@ -90,6 +90,7 @@ class ShepherdEmulator(ShepherdIO):
                 unit="A",
             ),
         )
+        # TODO: set cal_pru to None if input already scaled to PRU
         log.debug("Calibration-Setting of input file:")
         for key, value in self.cal_pru.model_dump(
             exclude_unset=False, exclude_defaults=False
@@ -101,7 +102,7 @@ class ShepherdEmulator(ShepherdIO):
         if cfg.time_start is None:
             self.start_time = round(time.time() + 15)
         else:
-            self.start_time = cfg.time_start.timestamp()
+            self.start_time = round(cfg.time_start.timestamp())
 
         # TODO: write gpio-mask
 
@@ -133,7 +134,7 @@ class ShepherdEmulator(ShepherdIO):
             self.writer = Writer(
                 file_path=store_path,
                 force_overwrite=cfg.force_overwrite,
-                mode=mode,
+                mode=self.component,  # is a cleaned up mode
                 datatype=EnergyDType.ivsample,
                 cal_data=self.cal_emu,
                 compression=cfg.output_compression,
@@ -217,10 +218,10 @@ class ShepherdEmulator(ShepherdIO):
 
         duration_s = sys.float_info.max
         if self.cfg.duration is not None:
-            duration_s = self.cfg.duration.total_seconds()
+            duration_s = int(self.cfg.duration.total_seconds())
             log.debug("Duration = %.1f s (configured runtime)", duration_s)
         if self.reader.runtime_s < duration_s:
-            duration_s = self.reader.runtime_s
+            duration_s = int(self.reader.runtime_s)
             log.debug("Duration = %.1f s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
         set_stop(ts_end)

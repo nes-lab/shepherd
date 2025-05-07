@@ -89,8 +89,8 @@ int sync_init(void)
     }
     sync_reset();
 
-    gpio0clear = ioremap(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
-    gpio0set   = ioremap(0x44E07000u + 0x194u, 4u);
+    gpio0clear = ioremap_nocache(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
+    gpio0set   = ioremap_nocache(0x44E07000u + 0x194u, 4u);
 
     /* timer for trigger */
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -173,7 +173,7 @@ void trigger_loop_start(void)
     struct ProtoMsg64 sync_reply64;
     const uint64_t    ts_now_ns = ktime_get_real_ns();
 
-    // initial hard reset of timestamp on PRU on 0.1s - grid
+    // initial hard reset of timestamp on PRU on 0.1s-grid
     div_u64_rem(ts_now_ns, SYNC_INTERVAL_NS, &sys_ts_over_wrap_ns);
     ts_upcoming_ns     = ts_now_ns + SYNC_INTERVAL_NS - sys_ts_over_wrap_ns;
 
@@ -181,10 +181,10 @@ void trigger_loop_start(void)
     sync_reply64.value = ts_upcoming_ns;
     pru1_comm_send_sync_reply((struct ProtoMsg *) &sync_reply64);
 
-    if (sys_ts_over_wrap_ns > 1000u) ndelay(sys_ts_over_wrap_ns - 1000u);
+    while (ktime_get_real_ns() < ts_upcoming_ns - 10000u) udelay(10u);
     mem_interface_trigger(HOST_PRU_EVT_TIMESTAMP);
 
-    ts_previous_ns = 0;
+    ts_previous_ns = 0; // avoids triggering time-jump-detection
     ts_upcoming_ns += SYNC_INTERVAL_NS;
     sys_ts_over_wrap_ns = 0;
     hrtimer_start(&trigger_loop_timer, ns_to_ktime(ts_upcoming_ns),

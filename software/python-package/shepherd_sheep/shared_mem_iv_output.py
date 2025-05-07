@@ -197,20 +197,8 @@ class SharedMemIVOutput:
                 )
         self.timestamp_last = pru_timestamp
 
-        if verbose:
-            log.debug(
-                "[%s] Retrieving index=%6d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
-                type(self).__name__,
-                self.index_next,
-                self.N_SAMPLES_PER_CHUNK,
-                pru_timestamp * 1e-9 - self.xp_start,
-                time.time() - self.xp_start,
-                100 * self.fill_level,
-            )
-
         # prepare & fetch data
         if (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start):
-            # TODO: honor boundary - check count + offset
             data = IVTrace(
                 voltage=np.frombuffer(
                     self._mm,
@@ -234,10 +222,21 @@ class SharedMemIVOutput:
                 pru_timestamp,
             )
 
+        if verbose:
+            log.debug(
+                "[%s] Retrieving index=%6d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
+                type(self).__name__,
+                self.index_next,
+                self.N_SAMPLES_PER_CHUNK,
+                pru_timestamp * 1e-9 - self.xp_start,
+                time.time() - self.xp_start,
+                100 * self.fill_level,
+            )
+
         # TODO: segment in buffer should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + self.N_SAMPLES_PER_CHUNK) % self.N_SAMPLES
 
-        if self.index_next == 0:
+        if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()
 
         return data

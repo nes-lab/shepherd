@@ -54,7 +54,7 @@ class ShepherdHarvester(ShepherdIO):
         if cfg.time_start is None:
             self.start_time = round(time.time() + 10)
         else:
-            self.start_time = cfg.time_start.timestamp()
+            self.start_time = round(cfg.time_start.timestamp())
 
         self.hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=cfg.virtual_harvester,
