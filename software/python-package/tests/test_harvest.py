@@ -66,7 +66,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
 @pytest.mark.usefixtures("_shepherd_up")
 def test_harvester_fn(tmp_path: Path) -> None:
     path = tmp_path / "rec.h5"
-    time_start = int(time.time() + 10)
+    time_start = int(time.time() + 15)
     cfg = HarvestTask(
         output_path=path,
         time_start=time_start,

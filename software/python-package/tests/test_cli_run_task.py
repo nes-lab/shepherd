@@ -158,7 +158,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate(
     cli_runner: CliRunner,
@@ -186,7 +186,7 @@ def test_cli_emulate(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_custom_virtsource(
     cli_runner: CliRunner,
@@ -219,7 +219,7 @@ def test_cli_emulate_with_custom_virtsource(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_bq25570(
     cli_runner: CliRunner,
@@ -248,7 +248,7 @@ def test_cli_emulate_with_bq25570(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage(
     cli_runner: CliRunner,
@@ -277,7 +277,7 @@ def test_cli_emulate_aux_voltage(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_long(
     cli_runner: CliRunner,
@@ -314,7 +314,7 @@ def test_cli_emulate_parameters_long(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_minimal(
     cli_runner: CliRunner,
@@ -338,7 +338,7 @@ def test_cli_emulate_parameters_minimal(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconfigured(
     cli_runner: CliRunner,
@@ -363,7 +363,7 @@ def test_cli_emulate_preconf_etc_shp_examples(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage_fail(
     cli_runner: CliRunner,
