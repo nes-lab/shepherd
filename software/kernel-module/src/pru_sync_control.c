@@ -206,7 +206,7 @@ void trigger_loop_start(void)
     hrtimer_start(&trigger_loop_timer, ns_to_ktime(ts_upcoming_ns),
                   HRTIMER_MODE_ABS); // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
 
-    printk(KERN_WARNING "shprd.sync: pru1-init with reset of time to %llu - starting loop",
+    printk(KERN_INFO "shprd.sync: pru1-init with reset of time to %llu - starting loop",
            ts_upcoming_ns);
 }
 
@@ -251,8 +251,9 @@ enum hrtimer_restart supervisor_loop_callback(struct hrtimer *timer_for_restart)
 {
     /* is executed half way in sync-windows (100 ms) */
     const uint64_t ts_upcoming_pru = shared_mem->next_sync_timestamp_ns;
-    if (ts_upcoming_pru != ts_upcoming_ns)
+    if ((ts_upcoming_pru > 0) && (ts_upcoming_pru != ts_upcoming_ns))
     {
+        shared_mem->next_sync_timestamp_ns = ts_upcoming_ns;
         printk(KERN_WARNING
                "shprd.sync: upcoming TS of PRU deviates from kMod -> corrected (%lld vs %lld)",
                ts_upcoming_pru, ts_upcoming_ns);
