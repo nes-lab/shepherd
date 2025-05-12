@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.realpath("../software/shepherd-herd"))
 # -- Project information -----------------------------------------------------
 
 project = "SHEPHERD"
-project_copyright = "2019-2024, Networked Embedded Systems Lab, TU Dresden & TU Darmstadt"
-author = "Kai Geissdoerfer, Ingmar Splitt"
+project_copyright = "2019-2025, Networked Embedded Systems Lab, TU Darmstadt & TU Dresden"
+author = "Ingmar Splitt, Kai Geissdoerfer"
 release = "0.9.0"
 
 # -- General configuration ---------------------------------------------------
