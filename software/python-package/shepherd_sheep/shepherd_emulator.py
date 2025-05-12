@@ -166,7 +166,7 @@ class ShepherdEmulator(ShepherdIO):
             self.stack.enter_context(self.writer)
             # add hostname to file
             self.writer.store_hostname(platform.node().strip())
-            self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
+            self.writer.start_monitors(self.cfg.sys_logging, self.cfg.uart_tracing)
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data

@@ -25,8 +25,8 @@ from shepherd_core import CalibrationEmulator as CalEmu
 from shepherd_core import CalibrationHarvester as CalHrv
 from shepherd_core import CalibrationSeries as CalSeries
 from shepherd_core import Writer as CoreWriter
-from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import SystemLogging
+from shepherd_core.data_models import UartTracing
 from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_kernel import KernelMonitor
@@ -192,7 +192,7 @@ class Writer(CoreWriter):
     def start_monitors(
         self,
         sys: SystemLogging | None = None,
-        gpio: GpioTracing | None = None,
+        uart: UartTracing | None = None,
         # TODO: add gpio-callFN & pru_util
     ) -> None:
         if sys is not None and sys.dmesg:
@@ -203,12 +203,12 @@ class Writer(CoreWriter):
             self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
         if self.sysutil_log_enabled:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))
-        if gpio is not None and gpio.uart_decode:
+        if uart is not None:
             self.monitors.append(
                 UARTMonitor(
                     self.uart_grp,
                     self._compression,
-                    baudrate=gpio.uart_baudrate,
+                    config=uart,
                 ),
             )
         self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
