@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   run-release:
-    uses: ./.github/workflows/py_herd_test.yml
+    uses: ./.github/workflows/py_herd_test.yaml
 
   publish:
     runs-on: ubuntu-latest

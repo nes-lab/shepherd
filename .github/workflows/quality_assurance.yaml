@@ -7,13 +7,13 @@ on:
 
 jobs:
   static-analysis:
-    uses: ./.github/workflows/static_analysis.yml
+    uses: ./.github/workflows/static_analysis.yaml
   compile-firmwares:
-    uses: ./.github/workflows/fw_build_gcc.yml
+    uses: ./.github/workflows/fw_build_gcc.yaml
   test-sheep:
-    uses: ./.github/workflows/py_sheep_test.yml
+    uses: ./.github/workflows/py_sheep_test.yaml
   test-herd:
-    uses: ./.github/workflows/py_herd_test.yml
+    uses: ./.github/workflows/py_herd_test.yaml
 
   quality-control:
     runs-on: ubuntu-latest

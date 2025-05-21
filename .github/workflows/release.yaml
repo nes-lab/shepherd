@@ -11,13 +11,13 @@ permissions:
   contents: write
 
 jobs:
-  run-quality-control:
-    uses: ./.github/workflows/quality_control.yml
+  run-quality-assurance:
+    uses: ./.github/workflows/quality_assurance.yaml
 
   release:
     runs-on: ubuntu-latest
     needs:
-      - run-quality-control
+      - run-quality-assurance
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4

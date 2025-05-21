@@ -3,6 +3,10 @@ name: Test Sheep
 on:
   workflow_call:
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unittest-sheep:
     runs-on: ubuntu-latest

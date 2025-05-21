@@ -3,6 +3,10 @@ name: Static analysis of whole project
 on:
   workflow_call:
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   static-analysis:
     runs-on: ubuntu-latest

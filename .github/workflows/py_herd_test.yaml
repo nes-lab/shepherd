@@ -4,6 +4,10 @@ name: Test Herd
 on:
   workflow_call:
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unittest-herd:
     strategy:

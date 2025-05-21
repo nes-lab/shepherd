@@ -3,6 +3,10 @@ name: Build Pru CGT
 on:
   workflow_call:
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 # TODO: compilation fails with: exec() error spawning acpiapru: No such file or directory
 
