@@ -106,7 +106,6 @@ def test_cli_harvest_parameters_most(
         duration=10,
         use_cal_default=True,
         time_start=datetime.fromtimestamp(round(time.time() + 20), tz=local_tz()),
-        abort_on_error=False,
         verbose=3,
     ).to_file(tmp_yaml)
     res = cli_runner.invoke(cli, ["-v", "run", tmp_yaml.as_posix()])
@@ -296,7 +295,6 @@ def test_cli_emulate_parameters_long(
         enable_io=True,
         io_port="B",
         pwr_port="B",
-        abort_on_error=False,
         gpio_tracing=GpioTracing(uart_baudrate=9600),
         power_tracing=PowerTracing(discard_current=False, discard_voltage=True),
         verbose=3,

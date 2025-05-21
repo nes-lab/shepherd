@@ -6,7 +6,7 @@ from types import TracebackType
 import h5py
 import serial
 from shepherd_core import Compression
-from shepherd_core.data_models.experiment.observer_features import UartTracing
+from shepherd_core.data_models.experiment.observer_features import UartLogging
 
 from .h5_monitor_abc import Monitor
 from .logger import log
@@ -18,7 +18,7 @@ class UARTMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
-        config: UartTracing | None = None,
+        config: UartLogging | None = None,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.05)
         self.uart = uart

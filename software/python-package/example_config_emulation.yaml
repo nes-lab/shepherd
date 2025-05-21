@@ -27,9 +27,9 @@ parameters:
     # - 0-4.5 for specific const Voltage,
     # - "buffer" will output intermediate voltage (vsource storage cap),
     # - true or "main" to mirror main target voltage
+  uart_logging:
+    baudrate: 115200
   gpio_tracing:
-    uart_decode: true
-    uart_baudrate: 115200
   power_tracing:
     discard_voltage: false
     discard_current: false

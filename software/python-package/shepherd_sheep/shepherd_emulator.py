@@ -62,12 +62,7 @@ class ShepherdEmulator(ShepherdIO):
         self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
-            msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
-            if self.cfg.abort_on_error:
-                raise ValueError(msg)
-            log.error(msg)
-        if not self.reader.is_valid() and self.cfg.abort_on_error:
-            raise RuntimeError("Input-File is not valid!")
+            log.error("Input-File has wrong mode (%s != harvester)", self.reader.get_mode())
 
         self.samples_per_segment = self.reader.BUFFER_SAMPLES_N
         cal_inp = self.reader.get_calibration_data()
@@ -166,7 +161,7 @@ class ShepherdEmulator(ShepherdIO):
             self.stack.enter_context(self.writer)
             # add hostname to file
             self.writer.store_hostname(platform.node().strip())
-            self.writer.start_monitors(self.cfg.sys_logging, self.cfg.uart_tracing)
+            self.writer.start_monitors(self.cfg.sys_logging, self.cfg.uart_logging)
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data

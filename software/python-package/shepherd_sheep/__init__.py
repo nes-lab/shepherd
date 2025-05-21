@@ -254,7 +254,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
 
     sysfs_interface.load_pru_firmware("pru0-shepherd-EMU")
     sysfs_interface.load_pru_firmware("pru1-shepherd")
-    return failed  # TODO: all run_() should emit error and abort_on_error should decide
+    return failed  # TODO: all run_() should emit error and handler should decide
 
 
 def run_task(cfg: ShpModel | Path | str) -> bool:
@@ -272,7 +272,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
 
     log.debug("Got set of tasks: %s", [type(_e).__name__ for _e in content])
     # TODO: parameters currently not handled:
-    #   time_prep, root_path, abort_on_error (but used in emuTask)
+    #   time_prep, root_path (but used in emuTask)
     failed = False
     limit_char = 1000
     for element in content:
