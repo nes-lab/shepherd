@@ -199,7 +199,9 @@ class SharedMemIVOutput:
         self.timestamp_last = pru_timestamp
 
         # prepare & fetch data
-        if (not self.ts_set) or ((timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start)):
+        if (not self.ts_set) or (
+            (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start)
+        ):
             data = IVTrace(
                 voltage=np.frombuffer(
                     self._mm,

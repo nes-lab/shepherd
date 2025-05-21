@@ -28,6 +28,7 @@
 #define GPIO_BATOK_POS          (9u)
 
 #define GPIO_MASK               (0x03FF)
+/* this will be combined with the user-configurable mask to derive the mask used for the Tracer */
 
 #define SANITY_CHECKS           (0) // warning: costs performance, but is helpful for dev / debugging
 
@@ -103,7 +104,8 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
     // batOK is on r30 (output), but that does not mean it is in R31
     // -> workaround: splice in SHARED_MEM.vsource_batok_pin_value
     const uint32_t gpio_status =
-            (read_r31() | (SHARED_MEM.vsource_batok_pin_value << GPIO_BATOK_POS)) & GPIO_MASK;
+            (read_r31() | (SHARED_MEM.vsource_batok_pin_value << GPIO_BATOK_POS)) &
+            SHARED_MEM.gpio_mask;
     const uint32_t gpio_diff = gpio_status ^ prev_gpio_status;
 
     prev_gpio_status         = gpio_status;
@@ -222,6 +224,9 @@ int32_t event_loop()
     DEBUG_STATE_0;
 
     iep_start();
+
+    /* GPIO Tracer final config*/
+    SHARED_MEM.gpio_mask &= GPIO_MASK;
 
     while (1)
     {

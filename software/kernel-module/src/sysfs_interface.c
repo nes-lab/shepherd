@@ -22,7 +22,7 @@ struct kobject *kobj_firmware_ref;
 struct kobj_attr_struct_s
 {
     struct kobj_attribute attr;
-    unsigned int          val_offset;
+    uint32_t              val_offset;
 };
 
 static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attribute *attr,
@@ -74,6 +74,9 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj, struct kobj_attr
 static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attribute *attr,
                                          char *buffer);
 
+static ssize_t sysfs_gpio_tracer_mask_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                            const char *buffer, size_t count);
+
 struct kobj_attr_struct_s attr_state      = {.attr       = __ATTR(state, 0660, sysfs_state_show, NULL),
                                              .val_offset = 0};
 
@@ -106,6 +109,9 @@ struct kobj_attr_struct_s attr_virtual_harvester_settings = {
 struct kobj_attr_struct_s attr_pru_msg_system_settings = {
         .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show, sysfs_pru_msg_system_store),
         .val_offset = 0};
+struct kobj_attr_struct_s attr_gpio_tracer_mask = {
+        .attr = __ATTR(gpio_tracer_mask, 0660, sysfs_SharedMem_show, sysfs_gpio_tracer_mask_store),
+        .val_offset = offsetof(struct SharedMem, gpio_mask)};
 
 static struct attribute *shp_attrs[] = {
         &attr_state.attr.attr,
@@ -117,6 +123,7 @@ static struct attribute *shp_attrs[] = {
         &attr_virtual_converter_settings.attr.attr,
         &attr_virtual_harvester_settings.attr.attr,
         &attr_pru_msg_system_settings.attr.attr,
+        &attr_gpio_tracer_mask.attr.attr,
         NULL,
 };
 
@@ -415,7 +422,7 @@ static ssize_t sysfs_mode_show(struct kobject *kobj, struct kobj_attribute *attr
 {
     const struct kobj_attr_struct_s *const kobj_attr_wrapped =
             container_of(attr, struct kobj_attr_struct_s, attr);
-    const unsigned int mode = ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    const uint32_t mode = ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
     switch (mode)
     {
@@ -434,7 +441,7 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
                                 size_t count)
 {
     const struct kobj_attr_struct_s *kobj_attr_wrapped;
-    unsigned int                     mode;
+    uint32_t                         mode;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
 
@@ -486,10 +493,31 @@ static ssize_t sysfs_mode_store(struct kobject *kobj, struct kobj_attribute *att
     return count;
 }
 
+static ssize_t sysfs_gpio_tracer_mask_store(struct kobject *kobj, struct kobj_attribute *attr,
+                                            const char *buffer, size_t count)
+{
+    uint32_t                         tmp;
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+
+    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+
+    if (sscanf(buffer, "%u", &tmp) == 1)
+    {
+        printk(KERN_INFO "shprd.k: Setting GPIOTracer-Mask to raw 0x%X", tmp);
+        iowrite32(tmp, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+        return count;
+    }
+
+    return -EINVAL;
+}
+
+
 static ssize_t sysfs_auxiliary_voltage_store(struct kobject *kobj, struct kobj_attribute *attr,
                                              const char *buf, size_t count)
 {
-    unsigned int                     tmp;
+    uint32_t                         tmp;
     const struct kobj_attr_struct_s *kobj_attr_wrapped;
 
     if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;

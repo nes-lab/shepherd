@@ -1,5 +1,21 @@
 # History of Changes
 
+## 0.9.1
+
+- adapt to latest naming-changes in core-lib
+  - established `ivsurface` and `ivtrace` instead of curves and sample
+  - use `Reader.read()` instead of `.read_buffer()`
+  - use `Reader.CHUNK_SAMPLES_N`, `Reader.chunks_n`, instead of .buffer_xyz
+  - use `UartLogger` instead of #Tracer
+- programmer: detect and handle hanging startup
+- `GPIOTracer` - implement masking
+  - sheep adapts mask to current cape and writes it to PRU
+- herd: improve config-finding -> [see doc](https://orgua.github.io/shepherd/tools/herd.html#static-config)
+- doc: rip out documentation for public instance -> <https://nes-lab.github.io/shepherd-nova/>
+- workflows: general improvements
+- **tested**: pytest sheep, pytest herd linux & windows
+- **outdated**: Py VSrc shared lib, most of doc,
+
 ## 0.9.0
 
 The main motivation was the replacement of the flawed segmented ring-buffer to a) remove a performance-bottleneck and b) increase reliability.
@@ -158,7 +174,7 @@ This unlocked and triggered a lot of other improvements in both regards.
   - limit pru-warning count
   - fix forced stopping of ntp-service
   - improve debug-output
-  - fix ingestion of ivcurves (windowsize was not propagated)
+  - fix ingestion of ivsurface / curves (windowsize was not propagated)
   - fix copy of emu-input into shared mem (off-by-one-error)
 - herd
   - query for alive status of testbed (all hosts responding)
@@ -175,9 +191,9 @@ This unlocked and triggered a lot of other improvements in both regards.
   - fix calculation of window_size for individual usecases
   - ivcurve - cutout measurements during big step
   - improve code-quality (cleaner fetching of emu-input and special math-functions are easier to understand)
-- harvesting ivcurves
+- harvesting ivsurface / curves
   - fix max age of samples
-  - improve initial interval_step to intake two whole ivcurves before reset
+  - improve initial interval_step to intake two whole curves of the IVSurface before reset
   - improve VOC-harvester
 - python module "shepherd-pru" interfaces pru-c-code via ctypes
   - harvesting & emulation can be done

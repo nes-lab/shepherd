@@ -43,7 +43,7 @@ void                        mem_interface_init(void)
     delayed_stop_timer.function = &delayed_stop_callback;
 
     init_done                   = 1;
-    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%x, size = %d bytes",
+    printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%X, size = %d bytes",
            (uint32_t) PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
 
     mem_interface_reset();

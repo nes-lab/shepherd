@@ -29,7 +29,7 @@ parameters:
     # - true or "main" to mirror main target voltage
   uart_logging:
     baudrate: 115200
-  gpio_tracing:
+  gpio_tracing: {}  # trick for unchanged default
   power_tracing:
     discard_voltage: false
     discard_current: false

@@ -156,6 +156,7 @@ class ShepherdIO:
 
             log.info("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
+            sfs.wait_for_state("idle", 5)
 
             self.refresh_shared_mem()
 
