@@ -85,17 +85,17 @@ enum ShepherdState
     STATE_FAULT    = 0xF0u,
 };
 
-enum ProgrammerState
+enum ProgrammerState  // i32
 {
-    PRG_STATE_ERR_GENERIC  = -1,
-    PRG_STATE_ERR_OPEN     = -2,
-    PRG_STATE_ERR_WRITE    = -3,
-    PRG_STATE_ERR_VERIFY   = -4,
-    PRG_STATE_ERR_ERASE    = -5,
-    PRG_STATE_ERR_PARSE    = -6,
-    PRG_STATE_IDLE         = -0x70000001,
-    PRG_STATE_STARTING     = -0x70000002,
-    PRG_STATE_INITIALIZING = -0x70000003,
+    PRG_STATE_ERR_GENERIC  = -0xE1,
+    PRG_STATE_ERR_OPEN     = -0xE2,
+    PRG_STATE_ERR_WRITE    = -0xE3,
+    PRG_STATE_ERR_VERIFY   = -0xE4,
+    PRG_STATE_ERR_ERASE    = -0xE5,
+    PRG_STATE_ERR_PARSE    = -0xE6,
+    PRG_STATE_IDLE         = -0x7000,
+    PRG_STATE_STARTING     = -0x7001,
+    PRG_STATE_INITIALIZING = -0x7002,
 };
 
 enum ProgrammerTarget

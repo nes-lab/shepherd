@@ -226,6 +226,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 failed = True
 
         state = None
+        counter = 0
         while state != "idle" and not failed:
             log.info(
                 "Programming in progress,\tpgm_state = %s, shp_state = %s",
@@ -240,6 +241,11 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                     state,
                 )
                 failed = True
+            elif "start" in state:
+                counter += 1
+                if counter > 10:
+                    log.error("SystemError - Programmer failed to start")
+                    failed = True
         if failed:
             log.info("Programming - Procedure failed - will exit now!")
         else:

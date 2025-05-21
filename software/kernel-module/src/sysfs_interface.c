@@ -755,7 +755,7 @@ static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute
     if (value == PRG_STATE_IDLE) return sprintf(buf, "idle");
     else if (value == PRG_STATE_STARTING) return sprintf(buf, "starting");
     else if (value == PRG_STATE_INITIALIZING) return sprintf(buf, "initializing");
-    else if (value < 0) return sprintf(buf, "error (%d)", value);
+    else if (value < 0) return sprintf(buf, "error (-0x%X)", -value);
     else return sprintf(buf, "running - %d B written", value);
 }
 
