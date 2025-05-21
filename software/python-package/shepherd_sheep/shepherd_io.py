@@ -132,7 +132,7 @@ class ShepherdIO:
         self.trace_gpio = trace_gpio
 
         # placeholders
-        self.samples_per_segment = Reader.BUFFER_SAMPLES_N
+        self.samples_per_segment = Reader.CHUNK_SAMPLES_N
         self.segment_period_s: float = self.samples_per_segment * commons.SAMPLE_INTERVAL_S
         self.shared_mem: SharedMemory | None = None
 

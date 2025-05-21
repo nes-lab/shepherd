@@ -36,13 +36,16 @@ from typing_extensions import Self
 
 from .logger import logger
 
+
 def _get_xdg_path(variable_name: str, default: str) -> Path:
     _value = os.environ.get(variable_name)
     if _value is None or _value == "":
         return Path("~").expanduser() / default
     return Path(_value)
 
+
 path_xdg_config = _get_xdg_path("XDG_CONFIG_HOME", ".config/")
+
 
 class Herd:
     path_default = PurePosixPath("/var/shepherd/recordings/")
@@ -85,7 +88,7 @@ class Herd:
                 Path("/etc/shepherd/herd.yml"),
             ]
             if isinstance(inventory, Path):
-                inventories = [inventory] + inventories
+                inventories = [inventory, *inventories]
             host_path = None
             for inventory in inventories:
                 _path = Path(inventory)

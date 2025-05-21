@@ -85,7 +85,7 @@ enum ShepherdState
     STATE_FAULT    = 0xF0u,
 };
 
-enum ProgrammerState  // i32
+enum ProgrammerState // i32
 {
     PRG_STATE_ERR_GENERIC  = -0xE1,
     PRG_STATE_ERR_OPEN     = -0xE2,

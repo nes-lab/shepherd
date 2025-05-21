@@ -4,6 +4,10 @@ The shepherd kernel module provides a user interface that exposes relevant param
 
 ## Basic Functionality
 
+```{caution}
+OUT OF DATA
+```
+
 - `state`: current state of the pru state-machine, mostly `idle` or `running`, plus some transitional states. Also used to control the PRU by setting `start` or `stop`.
 - `mode`: can be either `emulator` or `harvester` and some debug-modes
 - `n_buffers`: The maximum number of buffers used in the data exchange protocol
@@ -37,9 +41,9 @@ The shepherd kernel module provides a user interface that exposes relevant param
 - `programmer/pin_tdo`: see comment above
 - `programmer/pin_tms`: see comment above
 
-:::{note}
+```{note}
 PRU0 must be loaded with a special firmware. The sheep-program does that automatically.
-:::
+```
 
 ## References
 

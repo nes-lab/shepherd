@@ -84,7 +84,7 @@ class Writer(CoreWriter):
         )
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            self.BUFFER_SAMPLES_N,
+            self.CHUNK_SAMPLES_N,
         ).astype("u8")
         # TODO: keep this optimization
 

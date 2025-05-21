@@ -64,7 +64,7 @@ class ShepherdEmulator(ShepherdIO):
         if self.reader.get_mode() != "harvester":
             log.error("Input-File has wrong mode (%s != harvester)", self.reader.get_mode())
 
-        self.samples_per_segment = self.reader.BUFFER_SAMPLES_N
+        self.samples_per_segment = self.reader.CHUNK_SAMPLES_N
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
             cal_inp = CalibrationSeries()
@@ -175,7 +175,7 @@ class ShepherdEmulator(ShepherdIO):
             unit="n",
             leave=False,
         )
-        for _, dsv, dsc in self.reader.read_buffers(
+        for _, dsv, dsc in self.reader.read(
             end_n=self.buffer_segment_count,
             is_raw=True,
             omit_ts=True,
@@ -231,7 +231,7 @@ class ShepherdEmulator(ShepherdIO):
         # Main Loop
         ts_data_last = self.start_time
         buffer_segment_last = math.floor(duration_s / self.segment_period_s)
-        for _, dsv, dsc in self.reader.read_buffers(
+        for _, dsv, dsc in self.reader.read(
             start_n=self.buffer_segment_count,
             end_n=buffer_segment_last,
             is_raw=True,
