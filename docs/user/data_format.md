@@ -38,7 +38,7 @@ The data group contains the actual IV data and can consist of (datatypes):
   - directly usable by shepherd as input for a virtual harvester (its output are ivsamples)
   - needs `window_samples` to be set to step count
 - `ìsc_voc` ⇾ a sample pair of open circuit voltage and short circuit current widely used to characterize solar-cells
-  - needs to be (at least) transformed into ivcurves before usage
+  - needs to be (at least) transformed into ivsurface / curves before usage
 
 While the harvester-algorithms are able to produce all three datatypes, the emulator only outputs `ivsamples`.
 The datasets `time`, `current` and `voltage` are raw `uint32` (directly from ADC, when possible) and can be converted to their physical equivalent using the corresponding `gain` and `offset` attributes. For better documentation and automatic processing there are additional attributes attached to the datasets (not shown above):

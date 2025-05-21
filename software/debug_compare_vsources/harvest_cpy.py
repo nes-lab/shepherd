@@ -12,7 +12,7 @@ path_input = Path(__file__).parent / host_selected / "hrv_ivcurve.h5"
 results: dict = {}
 
 # #####################################################################
-# Harvest emulation from IVCurves #####################################
+# Harvest emulation from IVSurface / curves ###########################
 # #####################################################################
 
 for hrv_name in hrv_list[1:]:

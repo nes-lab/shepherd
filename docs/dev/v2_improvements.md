@@ -146,7 +146,7 @@ in [](../user/hardware)
 ### Virtual Harvester
 
 - either harvest right away (MPPT, constant voltage) -> iv-stream
-- or defer the harvesting by sampling ivcurves (or isc & voc)
+- or defer the harvesting by sampling ivsurface / curves (or isc & voc)
 - configurable by 10 parameters
 
 

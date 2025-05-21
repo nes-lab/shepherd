@@ -97,7 +97,7 @@ void harvester_initialize()
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
         interval_step = HRV_CFG.interval_n - (2 * HRV_CFG.window_size);
     else interval_step = 1u << 30u;
-    // ⤷ intake two ivcurves before overflow / reset if possible
+    // ⤷ intake two curves of the IVSurface before overflow / reset if possible
     is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;
 
     // MPPT-PO
