@@ -103,10 +103,11 @@ class SharedMemGPIOOutput:
             self.ts_stop = self.ts_start + self.timedelta_to_ns(cfg.duration, default_s=10**6)
             # ⤷ duration defaults to ~ 100 days (10**6 seconds)
             log.debug(
-                "[%s] Tracer time-boundaries set to [%.2f, %.2f]",
+                "[%s] Tracer time-boundaries set to [%.2f, %.2f] => %.0f s",
                 type(self).__name__,
                 self.ts_start / 1e9,
                 self.ts_stop / 1e9,
+                (self.ts_stop - self.ts_start) / 1e9,
             )
 
     def __enter__(self) -> Self:
@@ -188,7 +189,7 @@ class SharedMemGPIOOutput:
             offset=self._offset_timestamps + self.index_next * 8,
         )
 
-        if (timestamps[0] <= self.ts_stop) and (timestamps[-1] >= self.ts_start):
+        if (not self.ts_set) or ((timestamps[0] <= self.ts_stop) and (timestamps[-1] >= self.ts_start)):
             data = GPIOTrace(
                 timestamps_ns=timestamps,
                 bitmasks=np.frombuffer(

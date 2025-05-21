@@ -41,7 +41,7 @@ class UARTMonitor(Monitor):
 
         if Path(self.uart).exists():
             log.info(
-                "[%s] starts with '%s' @ %d baud, %d bit/byte, %f stopbit, %s parity",
+                "[%s] starts with '%s' @ %d baud, %d bit/byte, %.1f stopbit, %s parity",
                 type(self).__name__,
                 self.uart,
                 self.config.baudrate,

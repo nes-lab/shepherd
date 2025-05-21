@@ -296,7 +296,7 @@ def test_cli_emulate_parameters_long(
         io_port="B",
         pwr_port="B",
         gpio_tracing=GpioTracing(uart_baudrate=9600),
-        power_tracing=PowerTracing(discard_current=False, discard_voltage=True),
+        power_tracing=PowerTracing(discard_current=False, discard_voltage=False),
         verbose=3,
     ).to_file(tmp_yaml)
 
@@ -356,7 +356,7 @@ def test_cli_emulate_preconf_etc_shp_examples(
 ) -> None:
     # NOTE: this needs prior run of example_config_harvest
     file_path = path_here.parent / "example_config_emulation.yaml"
-    res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
+    res = cli_runner.invoke(cli, ["-v", "run", file_path.as_posix()])
     assert res.exit_code == 0
 
 

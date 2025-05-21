@@ -178,7 +178,7 @@ class ShepherdEmulator(ShepherdIO):
         for _, dsv, dsc in self.reader.read(
             end_n=self.buffer_segment_count,
             is_raw=True,
-            omit_ts=True,
+            omit_timestamps=True,
         ):
             if not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
@@ -235,7 +235,7 @@ class ShepherdEmulator(ShepherdIO):
             start_n=self.buffer_segment_count,
             end_n=buffer_segment_last,
             is_raw=True,
-            omit_ts=True,
+            omit_timestamps=True,
         ):
             # this loop fetches data and tries to fill it into the buffer
             # -> while there is no space it will do other tasks

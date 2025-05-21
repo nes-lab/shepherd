@@ -169,7 +169,7 @@ class ShepherdHarvester(ShepherdIO):
             self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=False, util=True)
             if not (data_iv or data_ut):
                 if time.time() - ts_data_last > 5:
-                    log.error("Data-collection ran dry for 5s -> begin to exit now")
+                    log.info("Data-collection ran dry for 5s -> begin to exit now")
                     break
                 # rest of loop is non-blocking, so we better doze a while if nothing to do
                 time.sleep(self.segment_period_s)
