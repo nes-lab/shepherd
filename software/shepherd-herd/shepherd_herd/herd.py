@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+import os
 import threading
 import time
 from collections.abc import Mapping
@@ -35,11 +36,18 @@ from typing_extensions import Self
 
 from .logger import logger
 
+def _get_xdg_path(variable_name: str, default: str) -> Path:
+    _value = os.environ.get(variable_name)
+    if _value is None or _value == "":
+        return Path("~").expanduser() / default
+    return Path(_value)
+
+path_xdg_config = _get_xdg_path("XDG_CONFIG_HOME", ".config/")
 
 class Herd:
     path_default = PurePosixPath("/var/shepherd/recordings/")
     _remote_paths_allowed: AbstractSet[Path] = {
-        path_default,  # default
+        path_default,
         PurePosixPath("/var/shepherd/"),
         PurePosixPath("/etc/shepherd/"),
         PurePosixPath("/tmp/"),  # noqa: S108
@@ -50,7 +58,7 @@ class Herd:
 
     def __init__(
         self,
-        inventory: str | None = None,
+        inventory: str | Path | None = None,
         limit: str | None = None,
         user: str | None = None,
         key_filepath: Path | None = None,
@@ -69,22 +77,24 @@ class Herd:
             hostnames = {hostname: hostname for hostname in hostlist}
         else:
             # look at all these directories for inventory-file
-            if inventory in {"", None}:
-                inventories = [
-                    "/etc/shepherd/herd.yml",
-                    "~/herd.yml",
-                    "inventory/herd.yml",
-                    "herd.yml",  # TODO: use XDG_CACHE_HOME
-                ]
-            else:
-                inventories = [inventory]
+            inventories: list[Path] = [  # highest prio first
+                Path().cwd() / "herd.yml",
+                Path().cwd() / "inventory/herd.yml",
+                Path("~").expanduser() / "herd.yml",
+                path_xdg_config / "shepherd-herd/herd.yml",
+                Path("/etc/shepherd/herd.yml"),
+            ]
+            if isinstance(inventory, Path):
+                inventories = [inventory] + inventories
             host_path = None
             for inventory in inventories:
-                if Path(inventory).exists():
-                    host_path = Path(inventory)
+                _path = Path(inventory)
+                if _path.exists() and _path.is_file():
+                    host_path = _path
+                    break
 
             if host_path is None:
-                raise FileNotFoundError(", ".join(inventories))
+                raise FileNotFoundError(", ".join(_i.as_posix() for _i in inventories))
 
             with host_path.open(encoding="utf-8-sig") as stream:
                 try:
