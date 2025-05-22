@@ -43,8 +43,8 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
         herd = Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected)
         stack.enter_context(herd)
         task = EmulationTask(
-            input_path=path_remote_hrv,
-            output_path=path_remote_src,
+            input_path=Path(path_remote_hrv),
+            output_path=Path(path_remote_src),
             virtual_source=VirtualSourceConfig(inherit_from=src_name, C_output_uF=0),
             force_overwrite=True,
         )

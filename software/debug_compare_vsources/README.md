@@ -8,7 +8,8 @@ Systems that are compared here:
 
 The first two systems harvest from a `ivsurface` (curves), which is a compromise to allow later harvesting.
 
-**NOTES**: `harvest_pru.py` should be run first to get the input files for the other experiments. See setup-section below.
+**NOTES**: `harvest_pru.py` should be run first to get the input files for the other experiments.
+See setup-section below.
 
 ## Harvesting
 
@@ -49,7 +50,8 @@ The main difference is visible for `PRU` running `mppt_opt` with is directly har
 
 ## Emulation
 
-Different virtual source configurations were feed with 3 different harvesting traces. For better controllability the target is a simple resistor.
+Different virtual source configurations were feed with 3 different harvesting traces.
+For better controllability the target is a simple resistor.
 
 ### Setup
 
