@@ -289,6 +289,7 @@ def test_vsource_diodecap(
     print(
         f"DiodeCap Draining to {V_target_mV} mV needed {steps_needed} (pru, py) steps",
     )
+    assert difference_percent(steps_needed[0], steps_needed[1], 0) < 3
     pru_vsource.W_inp_fWs = 0
     pru_vsource.W_out_fWs = 0
     pyt_vsource.W_inp_fWs = 0

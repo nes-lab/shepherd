@@ -127,6 +127,7 @@ class ShepherdHarvester(ShepherdIO):
             duration_s = self.cfg.duration.total_seconds()
             log.debug("Duration = %.1f s (configured runtime)", duration_s)
         ts_end = self.start_time + duration_s
+        ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)
 
         prog_bar = tqdm(
@@ -137,9 +138,12 @@ class ShepherdHarvester(ShepherdIO):
         )
 
         ts_data_last = self.start_time
+        before_ts_end = True
         while True:
             data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
-            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.read(
+                timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
+            )
             if data_ut:
                 self.writer.write_util_buffer(data_ut)
 
@@ -157,19 +161,24 @@ class ShepherdHarvester(ShepherdIO):
                         _xpt,
                     )
                     break
-
+            if before_ts_end and (time.time() > ts_end):
+                log.debug("End of measurement reached -> will collect remaining data")
+                before_ts_end = False
             try:
                 self.handle_pru_messages(panic_on_restart=True)
             except ShepherdPRUError as _xpt:
                 # We're done when the PRU has processed all emulation data buffers
                 if _xpt.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                    log.warning("PRU restarted - samples might be missing")
+                    if before_ts_end:
+                        log.warning("PRU restarted - samples might be missing")
+                    else:
+                        log.debug("PRU restarted")
                 else:
                     log.error("%s", _xpt)
             self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=False, util=True)
             if not (data_iv or data_ut):
                 if time.time() - ts_data_last > 5:
-                    log.error("Data-collection ran dry for 5s -> begin to exit now")
+                    log.info("Data-collection ran dry for 5s -> begin to exit now")
                     break
                 # rest of loop is non-blocking, so we better doze a while if nothing to do
                 time.sleep(self.segment_period_s)

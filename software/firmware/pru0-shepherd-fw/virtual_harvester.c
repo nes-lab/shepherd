@@ -74,6 +74,7 @@ uint32_t        adc_fastread(uint32_t cs_pin) { return cs_pin + hw_value; }
 void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + val; }
 #endif
 
+// TODO: convert to enum
 #define HRV_ISC_VOC       (1u << 3u)
 #define HRV_IVCURVE       (1u << 4u)
 #define HRV_CV            (1u << 8u)
@@ -97,7 +98,7 @@ void harvester_initialize()
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
         interval_step = HRV_CFG.interval_n - (2 * HRV_CFG.window_size);
     else interval_step = 1u << 30u;
-    // ⤷ intake two ivcurves before overflow / reset if possible
+    // ⤷ intake two curves of the IVSurface before overflow / reset if possible
     is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;
 
     // MPPT-PO
@@ -133,7 +134,7 @@ void harvester_initialize()
 void sample_adc_harvester()
 {
     const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
-    if (HRV_CFG.algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(sample_idx);
+    if (HRV_CFG.algorithm >= HRV_MPPT_PO) harvest_adc_2_mppt_po(sample_idx); // includes OPT
     else if (HRV_CFG.algorithm >= HRV_MPPT_VOC)
         harvest_adc_2_mppt_voc(sample_idx); // ~ 1300 ns without SPI
     else if (HRV_CFG.algorithm >= HRV_CV) harvest_adc_2_cv(sample_idx);
@@ -390,7 +391,8 @@ if (current_nA > HRV_CFG.current_limit_nA)
 void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     // check for IVCurve-Input Indicator and use selected algo
-    if (HRV_CFG.window_size <= 1) return;
+    if (HRV_CFG.window_size <= 1) return; // should be first
+    // these >= could be ==, but unittests fail - behavior is wrong with it
     else if (HRV_CFG.algorithm >= HRV_MPPT_OPT)
         harvest_ivcurve_2_mppt_opt(p_voltage_uV, p_current_nA);
     else if (HRV_CFG.algorithm >= HRV_MPPT_PO)
@@ -398,6 +400,7 @@ void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_cu
     else if (HRV_CFG.algorithm >= HRV_MPPT_VOC)
         harvest_ivcurve_2_mppt_voc(p_voltage_uV, p_current_nA);
     else if (HRV_CFG.algorithm >= HRV_CV) harvest_ivcurve_2_cv(p_voltage_uV, p_current_nA);
+    else if (HRV_CFG.algorithm < HRV_ISC_VOC) return;
     else msgsys_send_status(MSG_ERR_HRV_ALGO, HRV_CFG.algorithm, 0u);
 }
 

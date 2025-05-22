@@ -29,7 +29,7 @@ for hrv_name in hrv_list:
         stack.enter_context(herd)
         task = HarvestTask(
             duration=30,
-            output_path=path_remote,
+            output_path=Path(path_remote),
             virtual_harvester=VirtualHarvesterConfig(name=hrv_name),
             use_cal_default=True,
             force_overwrite=True,

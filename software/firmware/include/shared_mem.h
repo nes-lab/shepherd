@@ -61,6 +61,8 @@ struct SharedMem
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
     volatile uint64_t                 last_sync_timestamp_ns;
     volatile uint64_t                 next_sync_timestamp_ns;
+    /* GPIOTracer can be configured here */
+    volatile uint32_t                 gpio_mask;
     /* safety */
     volatile uint32_t                 canary3; // write by pru0 only
     /* NOTE: End of region accessed by kernel module */

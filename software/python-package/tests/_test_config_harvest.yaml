@@ -4,7 +4,7 @@ parameters:
   output_path: /var/shepherd/recordings/hrv_test.h5
   output_compression: lzf
   virtual_harvester:
-    name: ivcurves
+    name: ivsurface
   use_cal_default: true
   force_overwrite: true
   verbose: 2

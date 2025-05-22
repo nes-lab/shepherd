@@ -25,8 +25,8 @@ from shepherd_core import CalibrationEmulator as CalEmu
 from shepherd_core import CalibrationHarvester as CalHrv
 from shepherd_core import CalibrationSeries as CalSeries
 from shepherd_core import Writer as CoreWriter
-from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import SystemLogging
+from shepherd_core.data_models import UartLogging
 from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_kernel import KernelMonitor
@@ -84,7 +84,7 @@ class Writer(CoreWriter):
         )
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            self.BUFFER_SAMPLES_N,
+            self.CHUNK_SAMPLES_N,
         ).astype("u8")
         # TODO: keep this optimization
 
@@ -192,26 +192,26 @@ class Writer(CoreWriter):
     def start_monitors(
         self,
         sys: SystemLogging | None = None,
-        gpio: GpioTracing | None = None,
-        # TODO: add gpio-callFN & pru_util
+        uart: UartLogging | None = None,
     ) -> None:
-        if sys is not None and sys.dmesg:
+        if sys is not None and sys.kernel:
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
-        if sys is not None and sys.ptp:
+        if sys is not None and sys.time_sync:
             self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
             self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))
             self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
-        if self.sysutil_log_enabled:
+        if sys is not None and sys.sys_util:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))
-        if gpio is not None and gpio.uart_decode:
+        if uart is not None:
             self.monitors.append(
                 UARTMonitor(
                     self.uart_grp,
                     self._compression,
-                    baudrate=gpio.uart_baudrate,
+                    config=uart,
                 ),
             )
-        self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
+        if sys is not None and sys.sheep:
+            self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
 
     def check_monitors(self) -> None:
         """Check state of Monitors.

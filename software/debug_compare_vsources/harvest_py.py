@@ -11,7 +11,7 @@ path_here = Path(__file__).parent
 results: dict = {}
 
 # #####################################################################
-# Harvest emulation from IVCurves #####################################
+# Harvest emulation from IVSurface / curves ###########################
 # #####################################################################
 
 path_input = path_here / host_selected / "hrv_ivcurve.h5"

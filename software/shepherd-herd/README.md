@@ -42,6 +42,11 @@ pip3 install . -U
 
 For details either use the help provided by the tool or have a look into the [documentation](https://orgua.github.io/shepherd/tools/herd)
 
+```{caution}
+Usage with Windows is possible, but not recommended.
+At least the unittests are flakey after 5+ tests and can result in zombie-threads crashing the program.
+```
+
 ## Library-Examples
 
 See [example-files](https://github.com/orgua/shepherd/tree/main/software/shepherd-herd/examples/) for details.

@@ -29,6 +29,7 @@ prog2_io = 11   # P8_32, GPIO0[11]
 
 """
 
+from collections.abc import Mapping
 from contextlib import suppress
 
 from .logger import log
@@ -53,6 +54,36 @@ target_pins: list[dict] = [  # pin-order from target-connector
     {"name": "prog2_clk", "pin": 8, "dir": "O"},  # P8_35
     {"name": "prog2_io", "pin": 9, "dir": 11},  # P8_33, dir P8_32, noqa: CM001
 ]
+
+target_port_to_cape_v24_mapping: Mapping[int, int] = {
+    0: 8,  # UART Target RX
+    1: 7,  # UART Target TX
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 0,
+    8: 1,
+    17: 9,  # BatOK aka PowerGoodH
+}
+
+target_port_to_cape_v25_mapping: Mapping[int, int] = {
+    0: 0,  # UART Target RX
+    1: 1,  # UART Target TX
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
+    10: 10,
+    11: 11,
+    16: 12,  # powerGood Low
+    17: 13,  # powerGood High
+}
 
 
 class TargetIO:

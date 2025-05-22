@@ -40,7 +40,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 __all__ = [
     "EEPROM",
@@ -226,12 +226,14 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 failed = True
 
         state = None
+        counter = 0
         while state != "idle" and not failed:
             log.info(
                 "Programming in progress,\tpgm_state = %s, shp_state = %s",
                 state,
                 sysfs_interface.get_state(),
             )
+            dbg.process_programming_messages(timeout_n=2)
             time.sleep(1)
             state = sysfs_interface.check_programmer()
             if "error" in state:
@@ -240,12 +242,17 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                     state,
                 )
                 failed = True
+            elif "start" in state:
+                counter += 1
+                if counter > 10:
+                    log.error("SystemError - Programmer failed to start")
+                    failed = True
         if failed:
             log.info("Programming - Procedure failed - will exit now!")
         else:
             log.info("Finished Programming!")
         log.debug("\tshepherdState   = %s", sysfs_interface.get_state())
-        log.debug("\tprogrammerState = %s", state)
+        log.debug("\tprogrammerState = %s", sysfs_interface.check_programmer())
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
         dbg.process_programming_messages()
     except SystemExit:
@@ -254,7 +261,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
 
     sysfs_interface.load_pru_firmware("pru0-shepherd-EMU")
     sysfs_interface.load_pru_firmware("pru1-shepherd")
-    return failed  # TODO: all run_() should emit error and abort_on_error should decide
+    return failed  # TODO: all run_() should emit error and handler should decide
 
 
 def run_task(cfg: ShpModel | Path | str) -> bool:
@@ -272,7 +279,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
 
     log.debug("Got set of tasks: %s", [type(_e).__name__ for _e in content])
     # TODO: parameters currently not handled:
-    #   time_prep, root_path, abort_on_error (but used in emuTask)
+    #   time_prep, root_path (but used in emuTask)
     failed = False
     limit_char = 1000
     for element in content:

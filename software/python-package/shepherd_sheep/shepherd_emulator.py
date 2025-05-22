@@ -62,14 +62,9 @@ class ShepherdEmulator(ShepherdIO):
         self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
-            msg = f"Input-File has wrong mode ({self.reader.get_mode()} != harvester)"
-            if self.cfg.abort_on_error:
-                raise ValueError(msg)
-            log.error(msg)
-        if not self.reader.is_valid() and self.cfg.abort_on_error:
-            raise RuntimeError("Input-File is not valid!")
+            log.error("Input-File has wrong mode (%s != harvester)", self.reader.get_mode())
 
-        self.samples_per_segment = self.reader.BUFFER_SAMPLES_N
+        self.samples_per_segment = self.reader.CHUNK_SAMPLES_N
         cal_inp = self.reader.get_calibration_data()
         if cal_inp is None:
             cal_inp = CalibrationSeries()
@@ -166,7 +161,7 @@ class ShepherdEmulator(ShepherdIO):
             self.stack.enter_context(self.writer)
             # add hostname to file
             self.writer.store_hostname(platform.node().strip())
-            self.writer.start_monitors(self.cfg.sys_logging, self.cfg.gpio_tracing)
+            self.writer.start_monitors(self.cfg.sys_logging, self.cfg.uart_logging)
             self.writer.store_config(self.cfg.model_dump())
 
         # Preload emulator with data
@@ -180,10 +175,10 @@ class ShepherdEmulator(ShepherdIO):
             unit="n",
             leave=False,
         )
-        for _, dsv, dsc in self.reader.read_buffers(
+        for _, dsv, dsc in self.reader.read(
             end_n=self.buffer_segment_count,
             is_raw=True,
-            omit_ts=True,
+            omit_timestamps=True,
         ):
             if not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
@@ -224,6 +219,7 @@ class ShepherdEmulator(ShepherdIO):
             duration_s = int(self.reader.runtime_s)
             log.debug("Duration = %.1f s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
+        ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)
 
         prog_bar = tqdm(
@@ -236,11 +232,11 @@ class ShepherdEmulator(ShepherdIO):
         # Main Loop
         ts_data_last = self.start_time
         buffer_segment_last = math.floor(duration_s / self.segment_period_s)
-        for _, dsv, dsc in self.reader.read_buffers(
+        for _, dsv, dsc in self.reader.read(
             start_n=self.buffer_segment_count,
             end_n=buffer_segment_last,
             is_raw=True,
-            omit_ts=True,
+            omit_timestamps=True,
         ):
             # this loop fetches data and tries to fill it into the buffer
             # -> while there is no space it will do other tasks
@@ -252,7 +248,9 @@ class ShepherdEmulator(ShepherdIO):
             ):
                 data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
                 data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(
+                    timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
+                )
 
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
@@ -287,6 +285,7 @@ class ShepherdEmulator(ShepherdIO):
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
         force_subchunks = False
+        before_ts_end = True
         try:
             while True:
                 data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
@@ -294,7 +293,7 @@ class ShepherdEmulator(ShepherdIO):
                     force=force_subchunks, verbose=self.verbose_extra
                 )
                 data_ut = self.shared_mem.util.read(
-                    force=force_subchunks, verbose=self.verbose_extra
+                    timestamp_end_ns=ts_end_ns, force=force_subchunks, verbose=self.verbose_extra
                 )
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
@@ -310,6 +309,9 @@ class ShepherdEmulator(ShepherdIO):
                     ts_data_last = time.time()
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
+                if before_ts_end and (time.time() > ts_end):
+                    log.debug("End of measurement reached -> will collect remaining data")
+                    before_ts_end = False
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
@@ -323,7 +325,10 @@ class ShepherdEmulator(ShepherdIO):
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
             if e.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                log.warning("PRU restarted - samples might be missing")
+                if before_ts_end:
+                    log.warning("PRU restarted - samples might be missing")
+                else:
+                    log.debug("PRU restarted")
             else:
                 raise ShepherdPRUError from e
         except OSError as _xpt:

@@ -16,7 +16,8 @@ To simplify usage you should set up an ansible style, YAML-formatted inventory f
 - in your current working directory
 - relative to your current working directory in `inventory/herd.yml`
 - in your local home-directory `~/herd.yml`
-- in the config path `/etc/shepherd/herd.yml` (**recommendation**)
+- in your XDG config directory, typically `~/.config/shepherd-herd/herd.yml` (**recommendation**)
+- in the system config path `/etc/shepherd/herd.yml`
 
 Here is the example `herd.yml`-file in the `inventory` directory of the shepherd repository:
 

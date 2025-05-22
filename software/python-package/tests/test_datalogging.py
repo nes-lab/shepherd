@@ -152,7 +152,7 @@ def test_reader_performance(data_h5: Path) -> None:
     read_durations = []
     with CoreReader(file_path=data_h5) as reader:
         past = time.time()
-        for _ in reader.read_buffers():
+        for _ in reader.read():
             now = time.time()
             elapsed = now - past
             read_durations.append(elapsed)

@@ -132,7 +132,7 @@ class ShepherdIO:
         self.trace_gpio = trace_gpio
 
         # placeholders
-        self.samples_per_segment = Reader.BUFFER_SAMPLES_N
+        self.samples_per_segment = Reader.CHUNK_SAMPLES_N
         self.segment_period_s: float = self.samples_per_segment * commons.SAMPLE_INTERVAL_S
         self.shared_mem: SharedMemory | None = None
 
@@ -156,6 +156,7 @@ class ShepherdIO:
 
             log.info("Switching to '%s'-mode", self.mode)
             sfs.write_mode(self.mode)
+            sfs.wait_for_state("idle", 5)
 
             self.refresh_shared_mem()
 
@@ -296,7 +297,9 @@ class ShepherdIO:
                 "CleanupRoutine gave up changing state, still '%s'",
                 sfs.get_state(),
             )
-        self.set_aux_target_voltage(0.0)
+        else:
+            # will raise OSError if not idle, so avoid it
+            self.set_aux_target_voltage(0.0)
 
         self.set_power_io_level_converter(state=False)
         self.set_power_emulator(state=False)

@@ -431,11 +431,11 @@ class ShepherdDebug(ShepherdIO):
             default=msgpack_numpy.encode,
         )  # zeroRPC / msgpack can not handle numpy-data without this
 
-    def process_programming_messages(self) -> None:
+    def process_programming_messages(self, timeout_n: int = 4) -> None:
         """Prints messages to console until timeout occurs"""
         with contextlib.suppress(ShepherdIOError):
             while True:
-                msg_type, values = self._get_msg(5)
+                msg_type, values = self._get_msg(timeout_n)
                 if msg_type == commons.MSG_PGM_ERROR_WRITE:
                     # TODO: that should trigger an error
                     log.error(
@@ -461,7 +461,7 @@ class ShepherdDebug(ShepherdIO):
                     )
                 else:
                     log.error(
-                        "UNKNOWN PROGRAMMER-ERROR: type=%d, val0=%d, val1=%d",
+                        "UNKNOWN PROGRAMMER-ERROR: type=%s, val0=%d, val1=%d",
                         f"0x{msg_type:X}",
                         values[0],
                         values[1],

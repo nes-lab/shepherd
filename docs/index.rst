@@ -22,16 +22,6 @@ Welcome to SHEPHERD's documentation
    ./user/virtual_source.md
    ./user/virtual_harvester.md
    ./user/virtual_source_old.rst
-   ./user/experiments.md
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Public Testbed
-
-   ./testbed/instance_tud.md
-
-   ./external/readme_targets.md
-   ./testbed/webapi.md
 
 .. toctree::
    :maxdepth: 2
@@ -47,6 +37,8 @@ Welcome to SHEPHERD's documentation
    ./external/readme_sync_analyzer.md
 
    ./external/readme_webservice.md
+
+   ./external/readme_targets.md
 
 .. toctree::
    :maxdepth: 1

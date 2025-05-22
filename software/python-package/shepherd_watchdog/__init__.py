@@ -10,7 +10,7 @@ from types import TracebackType
 
 from typing_extensions import Self
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")

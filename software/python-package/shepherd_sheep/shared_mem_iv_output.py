@@ -96,10 +96,11 @@ class SharedMemIVOutput:
             self.ts_stop = self.ts_start + self.timedelta_to_ns(cfg.duration, default_s=10**6)
             # ⤷ duration defaults to ~ 100 days (10**6 seconds)
             log.debug(
-                "[%s] Tracer time-boundaries set to [%.2f, %.2f]",
+                "[%s] Tracer time-boundaries set to [%.2f, %.2f] => %.0f s",
                 type(self).__name__,
                 self.ts_start / 1e9,
                 self.ts_stop / 1e9,
+                (self.ts_stop - self.ts_start) / 1e9,
             )
 
         self.timestamp_last: int = 0
@@ -198,7 +199,9 @@ class SharedMemIVOutput:
         self.timestamp_last = pru_timestamp
 
         # prepare & fetch data
-        if (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start):
+        if (not self.ts_set) or (
+            (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start)
+        ):
             data = IVTrace(
                 voltage=np.frombuffer(
                     self._mm,

@@ -6,6 +6,7 @@ from types import TracebackType
 import h5py
 import serial
 from shepherd_core import Compression
+from shepherd_core.data_models.experiment.observer_features import UartLogging
 
 from .h5_monitor_abc import Monitor
 from .logger import log
@@ -17,11 +18,11 @@ class UARTMonitor(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
-        baudrate: int | None = None,
+        config: UartLogging | None = None,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.05)
         self.uart = uart
-        self.baudrate = baudrate
+        self.config = config
         self.data.create_dataset(
             name="message",
             shape=(self.increment,),
@@ -32,15 +33,21 @@ class UARTMonitor(Monitor):
         )
         self.data["message"].attrs["description"] = "raw ascii-bytes"
 
-        if (not isinstance(self.baudrate, int)) or (self.baudrate == 0):
+        if config is None:
+            return
+
+        if (not isinstance(self.config.baudrate, int)) or (self.config.baudrate == 0):
             return
 
         if Path(self.uart).exists():
             log.info(
-                "[%s] starts with '%s' @ %d baud",
+                "[%s] starts with '%s' @ %d baud, %d bit/byte, %.1f stopbit, %s parity",
                 type(self).__name__,
                 self.uart,
-                self.baudrate,
+                self.config.baudrate,
+                self.config.bytesize,
+                self.config.stopbits,
+                self.config.parity,
             )
             self.thread = threading.Thread(
                 target=self.thread_fn,
@@ -83,7 +90,14 @@ class UARTMonitor(Monitor):
         # TODO: is there a way to signal backpressure?
         try:
             # open serial as non-exclusive
-            with serial.Serial(self.uart, self.baudrate, timeout=0) as uart:
+            with serial.Serial(
+                self.uart,
+                baudrate=self.config.baudrate,
+                bytesize=self.config.bytesize,
+                stopbits=self.config.stopbits,
+                parity=self.config.parity,
+                timeout=0,
+            ) as uart:
                 while not self.event.wait(self.poll_interval):  # rate limiter & exit
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes

@@ -11,13 +11,14 @@ name: Upload Package to PyPi
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   run-release:
-    uses: ./.github/workflows/py_herd_test.yml
+    uses: ./.github/workflows/py_herd_test.yaml
 
   publish:
     runs-on: ubuntu-latest

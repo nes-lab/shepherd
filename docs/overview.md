@@ -6,7 +6,7 @@ This is the main entry point into the shepherd ecosystem. Based on your experien
 2. To get a basic understanding of what shepherd does, start with the [](user/basics).
 3. If you have the hardware on your desk and want to get started, read [](user/getting_started).
 4. To record/emulate data on a group of shepherd nodes, use the [](tools/herd) command line utility.
-5. To access the testbed-instance go to [](testbed/instance_tud).
+5. To access the testbed-instance go to <https://nes-lab.github.io/Shepherd-Nova>.
 6. If you'd like to contribute or have issues, try the [](dev/contributing)-guide or jump to the [](user/help_me_help_you)-section.
 7. The in-depth DevLog-Documentation is located in: <https://orgua.github.io/shepherd_v2_planning/>
 

@@ -121,8 +121,9 @@ def check_sys_access(iteration: int = 1) -> bool:
     except FileNotFoundError:
         try:
             if iteration > iter_max:
+                log.error("Failed to access sysFS - ran out of retries")
                 return True
-            log.warning(
+            log.debug(
                 "Failed to access sysFS -> "
                 "will try to activate shepherd kernel module (attempt %d/%d)",
                 iteration,
@@ -215,7 +216,7 @@ def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
     """
     if not force:
         try:
-            wait_for_state("running", 2)
+            wait_for_state("running", 3)
         except SysfsInterfaceError as _xpt:
             msg = f"Cannot stop from state '{get_state()}'"
             raise SysfsInterfaceError(msg) from _xpt
@@ -694,6 +695,19 @@ def pru_firmware_is_default() -> bool:
     raise OSError(
         "PRU-Driver still locked up (during pru-fw read) -> consider restarting node",
     )
+
+
+def read_gpio_tracer_mask() -> int:
+    with Path("/sys/shepherd/gpio_tracer_mask").open(encoding="utf-8") as f:
+        return int(f.read().rstrip())
+
+
+def write_gpio_tracer_mask(value: int) -> None:
+    try:
+        with Path("/sys/shepherd/gpio_tracer_mask").open("w", encoding="utf-8") as f:
+            f.write(str(value))
+    except OSError:
+        log.error("Could not write GpioTracer-mask to PRU (it will record all)")
 
 
 attribs = [

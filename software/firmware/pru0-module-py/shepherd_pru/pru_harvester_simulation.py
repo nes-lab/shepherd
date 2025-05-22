@@ -67,7 +67,7 @@ def simulate_harvester(
     e_out_Ws = 0.0
 
     for _t, v_inp, i_inp in tqdm(
-        file_inp.read_buffers(is_raw=True), total=file_inp.buffers_n, desc="Buffers", leave=False
+        file_inp.read(is_raw=True), total=file_inp.chunks_n, desc="Buffers", leave=False
     ):
         v_uV = cal_inp.voltage.raw_to_si(v_inp) * 1e6
         i_nA = cal_inp.current.raw_to_si(i_inp) * 1e9
