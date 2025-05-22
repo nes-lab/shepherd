@@ -215,7 +215,7 @@ def set_stop(timestamp_s: float | None = None, *, force: bool = False) -> None:
     """
     if not force:
         try:
-            wait_for_state("running", 2)
+            wait_for_state("running", 3)
         except SysfsInterfaceError as _xpt:
             msg = f"Cannot stop from state '{get_state()}'"
             raise SysfsInterfaceError(msg) from _xpt

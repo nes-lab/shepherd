@@ -297,7 +297,9 @@ class ShepherdIO:
                 "CleanupRoutine gave up changing state, still '%s'",
                 sfs.get_state(),
             )
-        self.set_aux_target_voltage(0.0)
+        else:
+            # will raise OSError if not idle, so avoid it
+            self.set_aux_target_voltage(0.0)
 
         self.set_power_io_level_converter(state=False)
         self.set_power_emulator(state=False)

@@ -233,6 +233,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 state,
                 sysfs_interface.get_state(),
             )
+            dbg.process_programming_messages(timeout_n=2)
             time.sleep(1)
             state = sysfs_interface.check_programmer()
             if "error" in state:
@@ -251,7 +252,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
         else:
             log.info("Finished Programming!")
         log.debug("\tshepherdState   = %s", sysfs_interface.get_state())
-        log.debug("\tprogrammerState = %s", state)
+        log.debug("\tprogrammerState = %s", sysfs_interface.check_programmer())
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
         dbg.process_programming_messages()
     except SystemExit:

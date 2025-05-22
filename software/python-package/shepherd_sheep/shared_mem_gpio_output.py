@@ -96,22 +96,6 @@ class SharedMemGPIOOutput:
         self.fill_level: float = 0
         self.fill_last: float = 0
 
-        # gpio masking, configured for cape v2.4
-
-        mask_v24 = 0
-        if cfg is not None:
-            for gpio in cfg.gpios:
-                _pin = target_port_to_cape_v24_mapping.get(gpio)
-                if _pin is not None:
-                    mask_v24 |= 2**_pin
-        wait_for_state("idle", 4)
-        write_gpio_tracer_mask(mask_v24)
-        log.debug(
-            "[%s] Tracer GPIO mask = %s (max is 0x3FF for cape 2.4)",
-            type(self).__name__,
-            f"0x{mask_v24:X}",
-        )  # TODO: add unittest!
-
         # time - boundaries
 
         self.ts_start: int | None = None
@@ -130,6 +114,22 @@ class SharedMemGPIOOutput:
                 self.ts_stop / 1e9,
                 (self.ts_stop - self.ts_start) / 1e9,
             )
+
+        # gpio masking, configured for cape v2.4
+
+        mask_v24 = 0
+        if cfg is not None:
+            for gpio in cfg.gpios:
+                _pin = target_port_to_cape_v24_mapping.get(gpio)
+                if _pin is not None:
+                    mask_v24 |= 2**_pin
+        wait_for_state("idle", 4)
+        write_gpio_tracer_mask(mask_v24)
+        log.debug(
+            "[%s] Tracer GPIO mask = %s (max is 0x3FF for cape 2.4)",
+            type(self).__name__,
+            f"0x{mask_v24:X}",
+        )  # TODO: add unittest!
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_base)

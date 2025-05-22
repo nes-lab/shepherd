@@ -30,12 +30,11 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2025.04.2",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2025.05.3",  # limit due to newest features
     "click",
     "numpy",
     "fabric",
     "pyYAML",
-    "chromalog",
     "tqdm",
 ]
 
@@ -88,7 +87,7 @@ test = "pytest"
 
 [tool.pytest.ini_options]
 markers = ["program: test flashing firmware to targets"]
-addopts = "-vvv  --stepwise"
+addopts = "-vvv --stepwise"
 
 [tool.pyright]
 root = "./"

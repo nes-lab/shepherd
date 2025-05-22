@@ -814,6 +814,8 @@ static ssize_t sysfs_prog_target_show(struct kobject *kobj, struct kobj_attribut
     {
         case PRG_TARGET_NRF52: return sprintf(buf, "nrf52");
         case PRG_TARGET_MSP430: return sprintf(buf, "msp430");
+        case PRG_TARGET_DUMMY: return sprintf(buf, "dummy");
+        case PRG_TARGET_NONE: return sprintf(buf, "none");
         default: return sprintf(buf, "unknown");
     }
 }
