@@ -282,6 +282,7 @@ class ShepherdEmulator(ShepherdIO):
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
         force_subchunks = False
+        before_ts_end = True
         try:
             while True:
                 data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
@@ -305,6 +306,9 @@ class ShepherdEmulator(ShepherdIO):
                     ts_data_last = time.time()
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
+                if before_ts_end and (time.time() > ts_end):
+                    log.debug("End of measurement reached -> will collect remaining data")
+                    before_ts_end = False
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
@@ -318,7 +322,10 @@ class ShepherdEmulator(ShepherdIO):
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
             if e.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                log.warning("PRU restarted - samples might be missing")
+                if before_ts_end:
+                    log.warning("PRU restarted - samples might be missing")
+                else:
+                    log.debug("PRU restarted")
             else:
                 raise ShepherdPRUError from e
         except OSError as _xpt:

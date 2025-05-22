@@ -137,6 +137,7 @@ class ShepherdHarvester(ShepherdIO):
         )
 
         ts_data_last = self.start_time
+        before_ts_end = True
         while True:
             data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
             data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
@@ -157,13 +158,18 @@ class ShepherdHarvester(ShepherdIO):
                         _xpt,
                     )
                     break
-
+            if before_ts_end and (time.time() > ts_end):
+                log.debug("End of measurement reached -> will collect remaining data")
+                before_ts_end = False
             try:
                 self.handle_pru_messages(panic_on_restart=True)
             except ShepherdPRUError as _xpt:
                 # We're done when the PRU has processed all emulation data buffers
                 if _xpt.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
-                    log.warning("PRU restarted - samples might be missing")
+                    if before_ts_end:
+                        log.warning("PRU restarted - samples might be missing")
+                    else:
+                        log.debug("PRU restarted")
                 else:
                     log.error("%s", _xpt)
             self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=False, util=True)
