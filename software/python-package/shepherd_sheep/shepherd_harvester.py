@@ -127,6 +127,7 @@ class ShepherdHarvester(ShepherdIO):
             duration_s = self.cfg.duration.total_seconds()
             log.debug("Duration = %.1f s (configured runtime)", duration_s)
         ts_end = self.start_time + duration_s
+        ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)
 
         prog_bar = tqdm(
@@ -140,7 +141,9 @@ class ShepherdHarvester(ShepherdIO):
         before_ts_end = True
         while True:
             data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
-            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.read(
+                timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
+            )
             if data_ut:
                 self.writer.write_util_buffer(data_ut)
 

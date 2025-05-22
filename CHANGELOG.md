@@ -7,13 +7,14 @@
   - use `Reader.read()` instead of `.read_buffer()`
   - use `Reader.CHUNK_SAMPLES_N`, `Reader.chunks_n`, instead of .buffer_xyz
   - use `UartLogger` instead of #Tracer
-- programmer: detect and handle hanging startup
+- programmer: detect and handle hanging startup by forcing retry
 - `GPIOTracer` - implement masking
   - sheep adapts mask to current cape and writes it to PRU
+- sheep: emu & hrv mute / avoid some false warnings right after end of experiment
 - herd: improve config-finding -> [see doc](https://orgua.github.io/shepherd/tools/herd.html#static-config)
 - doc: rip out documentation for public instance -> <https://nes-lab.github.io/shepherd-nova/>
 - workflows: general improvements
-- **tested**: pytest sheep, pytest herd linux & windows
+- **tested**: pytest sheep, pytest herd linux & windows, emu with all major vsrc, stress test programmer
 - **outdated**: Py VSrc shared lib, most of doc,
 
 ## 0.9.0

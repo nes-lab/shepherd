@@ -144,7 +144,9 @@ class SharedMemUtilOutput:
         self.fill_last = self.fill_level
         return avail_length
 
-    def read(self, *, force: bool = False, verbose: bool = False) -> UtilTrace | None:
+    def read(
+        self, timestamp_end_ns: int | None = None, *, force: bool = False, verbose: bool = False
+    ) -> UtilTrace | None:
         avail_length = self.get_size_available()
         if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
@@ -206,7 +208,9 @@ class SharedMemUtilOutput:
         )
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
-        self.check_status(data, verbose=verbose)
+        if timestamp_end_ns is None or data.timestamps_ns[0] < timestamp_end_ns:
+            # avoids warning after experiment ended (cache empty, long reads)
+            self.check_status(data, verbose=verbose)
 
         if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()

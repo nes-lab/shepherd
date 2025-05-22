@@ -121,8 +121,9 @@ def check_sys_access(iteration: int = 1) -> bool:
     except FileNotFoundError:
         try:
             if iteration > iter_max:
+                log.error("Failed to access sysFS - ran out of retries")
                 return True
-            log.warning(
+            log.debug(
                 "Failed to access sysFS -> "
                 "will try to activate shepherd kernel module (attempt %d/%d)",
                 iteration,

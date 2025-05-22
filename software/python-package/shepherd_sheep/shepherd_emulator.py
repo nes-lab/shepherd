@@ -219,6 +219,7 @@ class ShepherdEmulator(ShepherdIO):
             duration_s = int(self.reader.runtime_s)
             log.debug("Duration = %.1f s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
+        ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)
 
         prog_bar = tqdm(
@@ -247,7 +248,9 @@ class ShepherdEmulator(ShepherdIO):
             ):
                 data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
                 data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
-                data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(
+                    timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
+                )
 
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
@@ -290,7 +293,7 @@ class ShepherdEmulator(ShepherdIO):
                     force=force_subchunks, verbose=self.verbose_extra
                 )
                 data_ut = self.shared_mem.util.read(
-                    force=force_subchunks, verbose=self.verbose_extra
+                    timestamp_end_ns=ts_end_ns, force=force_subchunks, verbose=self.verbose_extra
                 )
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
