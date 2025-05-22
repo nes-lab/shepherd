@@ -3,13 +3,12 @@ name: Test Sheep
 on:
   workflow_call:
 
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   unittest-sheep:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
+      cancel-in-progress: true
     strategy:
       matrix:
         python-version: [ "3.13", "3.12", "3.11", "3.10" ]
