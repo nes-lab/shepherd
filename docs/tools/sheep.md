@@ -52,5 +52,5 @@ sudo pytest-3 tests/test_sheep_cli.py
 
 ## Reference
 
-- [core-lib](https://github.com/orgua/shepherd-datalib/tree/main/shepherd_core/shepherd_core/data_models/task) data-models for custom tasks
-- [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) for high-level api routines
+- [core-lib](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/shepherd_core/data_models/task) data-models for custom tasks
+- [sheep/init](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) for high-level api routines

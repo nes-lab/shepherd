@@ -188,4 +188,4 @@ def test_emu_force_stop(cli_runner: CliRunner) -> None:
     wait_for_end(cli_runner, timeout=10)
 
 
-# TODO: retrieve & verify with datalib
+# TODO: retrieve & verify with shepherd-core

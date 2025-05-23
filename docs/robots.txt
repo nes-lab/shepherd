@@ -1,3 +1,3 @@
 User-agent: *
 
-Sitemap: https://orgua.github.io/shepherd/sitemap.xml
+Sitemap: https://nes-lab.github.io/shepherd/sitemap.xml

@@ -23,8 +23,8 @@ ignore = [
 ]
 
 exclude= [  # external projects
-    "software/shepherd-datalib/*",
-    "software/shepherd-webservice/*",
+    "software/shepherd-tools/*",
+    "software/shepherd-webapi/*",
     "software/firmware/pru0-cython-module/*",
 ]
 

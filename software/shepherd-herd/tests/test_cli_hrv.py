@@ -140,4 +140,4 @@ def test_hrv_no_start(cli_runner: CliRunner) -> None:
     wait_for_end(cli_runner, tmin=15)
 
 
-# TODO: retrieve & verify with datalib (length & validity)
+# TODO: retrieve & verify with shepherd-core (length & validity)

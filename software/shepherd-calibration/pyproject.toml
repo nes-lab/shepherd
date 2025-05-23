@@ -37,7 +37,7 @@ dependencies = [
     "pyYAML",
     "scipy",
     "zerorpc",
-    # shepherd @ git+https://github.com/orgua/shepherd.git#subdirectory=software/python-package/
+    # shepherd @ git+https://github.com/nes-lab/shepherd.git#subdirectory=software/python-package/
     "keithley2600",
     "shepherd-core",
 ]
@@ -51,8 +51,8 @@ dev = [
 ]
 
 [project.urls]
-Issues = "https://github.com/orgua/shepherd/issues"
-Source = "https://github.com/orgua/shepherd"
+Issues = "https://github.com/nes-lab/shepherd/issues"
+Source = "https://github.com/nes-lab/shepherd"
 
 [project.readme]
 file = "README.md"

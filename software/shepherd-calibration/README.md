@@ -1,8 +1,8 @@
 # Cape-Calibration-Tool
 
-**Main Documentation**: <https://orgua.github.io/shepherd>
+**Main Documentation**: <https://nes-lab.github.io/shepherd>
 
-**Source Code**: <https://github.com/orgua/shepherd>
+**Source Code**: <https://github.com/nes-lab/shepherd>
 
 ---
 
@@ -22,7 +22,7 @@ pip3 install ./
 For install directly from GitHub-Sources (here `dev`-branch):
 
 ```Shell
- pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/shepherd-calibration -U
+ pip install git+https://github.com/nes-lab/shepherd.git@dev#subdirectory=software/shepherd-calibration -U
 ```
 
 Calibration and profiling **requires a SMU from Keithley**. Our tests and initial calibration are done with a *Keithley 2604B SourceMeter* connected via ethernet. The shepherd-cape has be installed on a beaglebone running the latest shepherd-software and also be accessible via ethernet.

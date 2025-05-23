@@ -12,7 +12,7 @@ Templates for a bug-report and a feature-request are included in the Issue-Proce
 
 Please choose the correct subproject:
 
-- [main-repo](https://github.com/orgua/shepherd/issues) - responsible for the measurement process, emulation and observer-hardware
-- [datalib](https://github.com/orgua/shepherd-datalib/issues) - everything related to the data processing toolchain
-- [targets](https://github.com/orgua/shepherd-targets/issues) - HW & SW for the cyber-physical systems running within the emulated energy environments
-- [webapi](https://github.com/orgua/shepherd_webservice/issues) - the interface between the testbed instance and the user
+- [main-repo](https://github.com/nes-lab/shepherd/issues) - responsible for the measurement process, emulation and observer-hardware
+- [user-tools](https://github.com/nes-lab/shepherd-tools/issues) - everything related to the data processing toolchain
+- [targets-repo](https://github.com/nes-lab/shepherd-targets/issues) - HW & SW for the cyber-physical systems running within the emulated energy environments
+- [webAPI](https://github.com/nes-lab/shepherd-webapi/issues) - the interface between the testbed instance and the user

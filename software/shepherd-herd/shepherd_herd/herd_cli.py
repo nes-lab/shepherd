@@ -280,7 +280,7 @@ def harvest(
             if not file_path.is_absolute():
                 kwargs[path] = Herd.path_default / file_path
             kwargs[path] = Path(kwargs[path])
-            # ⤷ TODO: workaround until datalib uses PurePaths
+            # ⤷ TODO: workaround until shepherd-core uses PurePaths
 
         if kwargs.get("virtual_harvester") is not None:
             kwargs["virtual_harvester"] = {"name": kwargs["virtual_harvester"]}
@@ -395,7 +395,7 @@ def emulate(
             if not file_path.is_absolute():
                 kwargs[path] = Herd.path_default / file_path
             kwargs[path] = Path(kwargs[path])
-            # ⤷ TODO: workaround until datalib uses PurePaths
+            # ⤷ TODO: workaround until shepherd-core uses PurePaths
 
         for port in ["io_port", "pwr_port"]:
             kwargs[port] = TargetPort[kwargs[port]]
@@ -657,7 +657,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
         kwargs["protocol"] = protocol_dict[kwargs["mcu_type"]]
         kwargs["firmware_file"] = PurePosixPath(tmp_file)
         kwargs["firmware_file"] = Path(kwargs["firmware_file"])
-        # ⤷ TODO: workaround until datalib uses PurePaths
+        # ⤷ TODO: workaround until shepherd-core uses PurePaths
 
         kwargs = {key: value for key, value in kwargs.items() if value is not None}
         task = ProgrammingTask(**kwargs)

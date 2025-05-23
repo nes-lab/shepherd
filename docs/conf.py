@@ -73,9 +73,9 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "display_version": True,
 }
-github_url = "https://github.com/orgua/shepherd"
+github_url = "https://github.com/nes-lab/shepherd"
 
-html_baseurl = "https://orgua.github.io/shepherd/"
+html_baseurl = "https://nes-lab.github.io/shepherd/"
 html_extra_path = ["robots.txt"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

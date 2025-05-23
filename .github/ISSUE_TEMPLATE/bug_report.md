@@ -9,10 +9,10 @@ assignees: ''
 
 If possible choose the correct project:
 
-- [main-repo](https://github.com/orgua/shepherd/issues)
-- [datalib](https://github.com/orgua/shepherd-datalib/issues)
-- [targets](https://github.com/orgua/shepherd-targets/issues)
-- [webapi](https://github.com/orgua/shepherd_webservice/issues)
+- [main-repo](https://github.com/nes-lab/shepherd/issues) - infrastructure for the measurement process, emulation and observer-hardware
+- [user-tools](https://github.com/nes-lab/shepherd-tools/issues) - everything related to the data processing toolchain
+- [targets-repo](https://github.com/nes-lab/shepherd-targets/issues) - HW & SW for the cyber-physical systems running within the emulated energy environments
+- [webApi](https://github.com/nes-lab/shepherd-webapi/issues) - the interface between the testbed instance and the user
 
 ## Description
 

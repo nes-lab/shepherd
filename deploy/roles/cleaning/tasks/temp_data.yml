@@ -37,7 +37,7 @@
 
 - name: Find Logs and other tmp-files
   ansible.builtin.find:
-    paths: ["/var/log/", "/var/lib/apt/lists"]
+    paths: ["/var/log/", "/var/cache/", "/var/lib/apt/lists"]
     patterns: '*'
     recurse: true
   register: files_tmp

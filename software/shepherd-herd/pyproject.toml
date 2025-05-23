@@ -54,9 +54,9 @@ test = [
 
 [project.urls]
 Homepage = "https://pypi.org/project/shepherd-herd"
-Documentation = "https://orgua.github.io/shepherd"
-Issues = "https://github.com/orgua/shepherd/issues"
-Source = "https://github.com/orgua/shepherd"
+Documentation = "https://nes-lab.github.io/shepherd"
+Issues = "https://github.com/nes-lab/shepherd/issues"
+Source = "https://github.com/nes-lab/shepherd"
 
 [project.readme]
 file = "README.md"

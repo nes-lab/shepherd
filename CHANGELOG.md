@@ -11,7 +11,7 @@
 - `GPIOTracer` - implement masking
   - sheep adapts mask to current cape and writes it to PRU
 - sheep: emu & hrv mute / avoid some false warnings right after end of experiment
-- herd: improve config-finding -> [see doc](https://orgua.github.io/shepherd/tools/herd.html#static-config)
+- herd: improve config-finding -> [see doc](https://nes-lab.github.io/shepherd/tools/herd.html#static-config)
 - doc: rip out documentation for public instance -> <https://nes-lab.github.io/shepherd-nova/>
 - workflows: general improvements
 - **tested**: pytest sheep, pytest herd linux & windows, emu with all major vsrc, stress test programmer
@@ -274,7 +274,7 @@ This unlocked and triggered a lot of other improvements in both regards.
 - pru-firmware:
    - improve blind-spots of gpio-sampling
    - fix compiler warning (cgt & gcc)
-   - [measure timings](https://github.com/orgua/shepherd_v2_planning/blob/main/scratch/pruBenchmark_2023_10.md)
+   - [measure timings](https://github.com/orgua/shepherd-v2-planning/blob/main/scratch/pruBenchmark_2023_10.md)
    - bugfixes
 - sheep
    - refactoring of monitors
@@ -307,7 +307,7 @@ This unlocked and triggered a lot of other improvements in both regards.
 ## v0.4.5 - 2023.08.23
 
 - add option to build an inventory
-- herd, sheep, cal-tool: fully integrate datalib
+- herd, sheep, cal-tool: fully integrate shepherd-core
 - sheep
   - improve exit behavior
   - various small improvements, refactorings

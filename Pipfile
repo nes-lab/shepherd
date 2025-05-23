@@ -9,8 +9,9 @@ ansible = "*"
 shepherd-sheep = {editable = true, path = "./software/python-package"}
 shepherd-herd = {editable = true, path = "./software/shepherd-herd"}
 shepherd-cal = {editable = true, path = "./software/shepherd-calibration"}
-shepherd-data = "*"
+# shepherd-pru = {editable = true, path = "./software/firmware/pru0-module-py"}
 sync-analysis = {editable = true, path = "./software/debug_analyze_time_sync"}
+shepherd-data = "*"
 # temporary
 dearpygui = "*"
 pre-commit = "*"
@@ -22,6 +23,7 @@ pre-commit = "*"
 shepherd-sheep = {editable = true, extras = ["dev", "test"], path = "./software/python-package"}
 shepherd-herd = {editable = true, extras = ["dev", "test"], path = "./software/shepherd-herd"}
 shepherd-cal = {editable = true, extras = ["dev"], path = "./software/shepherd-calibration"}
+# shepherd-pru = {editable = true, extras = ["dev", "test"], path = "./software/firmware/pru0-module-py"}
 shepherd-data = {extras = ["dev", "test"], version = "*"}
 # DOCs
 sphinx = "*"

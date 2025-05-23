@@ -1,21 +1,21 @@
 # Time-Sync - Analyzer-Tool
 
-**Main Documentation**: <https://orgua.github.io/shepherd>
+**Main Documentation**: <https://nes-lab.github.io/shepherd>
 
-**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/debug_analyze_time_sync>
+**Source Code**: <https://github.com/nes-lab/shepherd/tree/main/software/debug_analyze_time_sync>
 
 ---
 
 Collection of tools to analyze Sync-behavior, recorded with a Saleae Logic Pro.
 
-The measurement-process to get the actual data is described in the dev-guide of the official [documentation](https://orgua.github.io/shepherd).
+The measurement-process to get the actual data is described in the dev-guide of the official [documentation](https://nes-lab.github.io/shepherd).
 
 ## Installation
 
 Similar to the other python tooling you can run
 
 ```Shell
-git clone https://github.com/orgua/shepherd
+git clone https://github.com/nes-lab/shepherd
 cd shepherd/software/debug_analyze_time_sync
 pip install .
 ```
@@ -25,7 +25,7 @@ This assumes that python > v3.10 and git are installed
 For install directly from GitHub-Sources (here `dev`-branch):
 
 ```Shell
- pip install git+https://github.com/orgua/shepherd.git@dev#subdirectory=software/debug_analyze_time_sync -U
+ pip install git+https://github.com/nes-lab/shepherd.git@dev#subdirectory=software/debug_analyze_time_sync -U
 ```
 
 ## Expected Data-Format

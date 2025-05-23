@@ -79,7 +79,7 @@ This allows to record and trace the target-behavior.
 
 ## Remote programming/debugging
 
-Both target-ports feature four programming lines. These can either be used for two separate SWD- and SBW-connections or in theory for one JTAG-connection to program a variety of MCUs. Shepherds current [nRF52-Target with FRAM](https://github.com/orgua/shepherd-targets) makes use of that flexibility by pairing the nRF52 with the MSP430FR.
+Both target-ports feature four programming lines. These can either be used for two separate SWD- and SBW-connections or in theory for one JTAG-connection to program a variety of MCUs. Shepherds current [nRF52-Target with FRAM](https://github.com/nes-lab/shepherd-targets) makes use of that flexibility by pairing the nRF52 with the MSP430FR.
 
 For convenient debugging and development, shepherd implements a fully functional Serial-Wire-Debug (SWD) debugger, leveraging the power of [OpenOCD](https://openocd.org/).
 SWD is supported by most recent ARM Cortex-M and allows flashing images and debugging the execution of code.

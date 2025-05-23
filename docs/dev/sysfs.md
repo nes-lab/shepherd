@@ -47,5 +47,5 @@ PRU0 must be loaded with a special firmware. The sheep-program does that automat
 
 ## References
 
-- [sysfs in kernel module](https://github.com/orgua/shepherd/blob/main/software/kernel-module/src/sysfs_interface.c)
-- [sysfs in sheep program](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/sysfs_interface.py)
+- [sysfs in kernel module](https://github.com/nes-lab/shepherd/blob/main/software/kernel-module/src/sysfs_interface.c)
+- [sysfs in sheep program](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/sysfs_interface.py)
