@@ -1,0 +1,20 @@
+[submodule "software/shepherd-tools"]
+	path = software/shepherd-tools
+	url = https://github.com/nes-lab/shepherd-tools
+[submodule "software/shepherd-webapi"]
+	path = software/shepherd-webapi
+	url = https://github.com/nes-lab/shepherd-webapi
+[submodule "software/shepherd-targets"]
+	path = software/shepherd-targets
+	url = https://github.com/nes-lab/shepherd-targets
+
+# helpful commands:
+
+# git submodule add <link> <rel-path>
+# git submodule add https://github.com/nes-lab/shepherd-tools ./software/shepherd-tools
+
+# git submodule update --init --recursive
+# git submodule update --recursive --remote
+# git submodule foreach git reset --hard
+
+# git rm -f .\software\shepherd-xyz\
