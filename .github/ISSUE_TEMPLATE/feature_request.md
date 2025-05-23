@@ -9,10 +9,10 @@ assignees: ''
 
 If possible choose the correct project:
 
-- [main-repo](https://github.com/orgua/shepherd/issues)
-- [datalib](https://github.com/orgua/shepherd-datalib/issues)
-- [targets](https://github.com/orgua/shepherd-targets/issues)
-- [webapi](https://github.com/orgua/shepherd_webservice/issues)
+- [main-repo](https://github.com/nes-lab/shepherd/issues)
+- [user-tools](https://github.com/nes-lab/shepherd-tools/issues)
+- [targets](https://github.com/nes-lab/shepherd-targets/issues)
+- [webApi](https://github.com/nes-lab/shepherd-webapi/issues)
 
 
 **Is your feature request related to a problem? Please describe.**

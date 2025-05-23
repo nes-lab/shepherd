@@ -16,4 +16,4 @@ pip uninstall shepherd-core
 
 git submodule update --recursive --remote
 rm ~/.cache/shepherd_datalib/fixtures.pickle
-pip install ../software/shepherd-datalib/shepherd_core/
+pip install ../software/shepherd-tools/shepherd_core/

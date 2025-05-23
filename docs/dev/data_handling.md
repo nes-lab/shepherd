@@ -2,7 +2,7 @@
 
 ## Data Acquisition
 
-Data is sampled/replayed through the ADC (`TI ADS8691`) and DAC (`TI DAC8562T`). Both devices are interfaced over a custom, SPI-compatible protocol. For a detailed description of the protocol and timing requirements, refer to the corresponding datasheets. The protocol is bit-banged using the low-latency GPIOs connected to PRU0. The transfer routines itself are [implemented in assembly](https://github.com/orgua/shepherd/blob/main/software/firmware/lib/src/spi_transfer_pru.asm).
+Data is sampled/replayed through the ADC (`TI ADS8691`) and DAC (`TI DAC8562T`). Both devices are interfaced over a custom, SPI-compatible protocol. For a detailed description of the protocol and timing requirements, refer to the corresponding datasheets. The protocol is bit-banged using the low-latency GPIOs connected to PRU0. The transfer routines itself are [implemented in assembly](https://github.com/nes-lab/shepherd/blob/main/software/firmware/lib/src/spi_transfer_pru.asm).
 
 ## PRU to host
 

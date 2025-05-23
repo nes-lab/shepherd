@@ -63,4 +63,4 @@ In numbers:
 
 ## Deeper Dive
 
-Raw data and Plots are at [shepherd-planning](https://github.com/orgua/shepherd_v2_planning/tree/main/timesync'24)
+Raw data and Plots are at [shepherd-planning](https://github.com/orgua/shepherd-v2-planning/tree/main/timesync'24)

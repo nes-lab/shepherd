@@ -1,25 +1,25 @@
 # SHEpHERD: SyncHronized Energy Harvesting Emulator RecorDer
 
-[![QC-Tests](https://github.com/orgua/shepherd/actions/workflows/qc_tests.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/qc_tests.yml)
-[![Documentation](https://github.com/orgua/shepherd/actions/workflows/sphinx_to_pages.yml/badge.svg)](https://orgua.github.io/shepherd/)
-[![Build Pru](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml/badge.svg)](https://github.com/orgua/shepherd/actions/workflows/build_pru_gcc.yml)
-[![Code Quality](https://www.codefactor.io/repository/github/orgua/shepherd/badge)](https://www.codefactor.io/repository/github/orgua/shepherd)
+[![QC-Tests](https://github.com/nes-lab/shepherd/actions/workflows/quality_assurance.yaml/badge.svg)](https://github.com/nes-lab/shepherd/actions/workflows/quality_assurance.yaml)
+[![Documentation](https://github.com/nes-lab/shepherd/actions/workflows/pages_update.yaml/badge.svg)](https://nes-lab.github.io/shepherd/)
+[![Build Pru](https://github.com/nes-lab/shepherd/actions/workflows/fw_build_gcc.yaml/badge.svg)](https://github.com/nes-lab/shepherd/actions/workflows/fw_build_gcc.yaml)
+[![Code Quality](https://www.codefactor.io/repository/github/nes-lab/shepherd/badge)](https://www.codefactor.io/repository/github/nes-lab/shepherd)
 [![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 **Testbed-Webinterface**: <https://shepherd.cfaed.tu-dresden.de>
 
-**Python-Modules for Users**: <https://github.com/orgua/shepherd-datalib>
+**Python-Modules for Users**: <https://github.com/nes-lab/shepherd-tools>
 
-**Documentation**: <https://orgua.github.io/shepherd>
+**Documentation**: <https://nes-lab.github.io/shepherd>
 
-**Main Project**: <https://github.com/orgua/shepherd>
+**Main Project**: <https://github.com/nes-lab/shepherd>
 
-**Target-HW & -SW**: <https://github.com/orgua/shepherd-targets>
+**Target-HW & -SW**: <https://github.com/nes-lab/shepherd-targets>
 
-**Webservice-Repo**: <https://github.com/orgua/shepherd_webservice>
+**Webservice-Repo**: <https://github.com/nes-lab/shepherd-webapi>
 
-**Dev-Documentation**: <https://github.com/orgua/shepherd_v2_planning>
+**Dev-Documentation**: <https://github.com/orgua/shepherd-v2-planning>
 
 ---
 
@@ -37,7 +37,7 @@ The recorded data can be replayed to attached wireless sensor nodes, examining t
  - Configurable, constant voltage power supply for attached sensor nodes
  - Level-translated serial connection to the attached sensor nodes
 
-For a detailed description see our [Paper](https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf) or the [official documentation](https://orgua.github.io/shepherd/).
+For a detailed description see our [Paper](https://wwwpub.zih.tu-dresden.de/~mzimmerl/pubs/geissdoerfer19shepherd.pdf) or the [official documentation](https://nes-lab.github.io/shepherd/).
 
 A *shepherd* instance consists of a group of spatially distributed *shepherd* nodes that are time-synchronized with each other.
 Each *shepherd* node consists of a [BeagleBone](https://beagleboard.org/bone), the *shepherd* cape and either an energy harvesting source or a target MCU board to test.
@@ -49,7 +49,7 @@ This repository contains the hardware design files for the shepherd cape, the so
 Start by assembling your *shepherd* nodes, consisting of a BeagleBone Green/Black, a *shepherd* cape, a harvesting capelet and a target capelet.
 The next step is to manually install the latest Ubuntu Linux on each BeagleBone.
 You can install it to SD-card or the on-board eMMC flash, following [the official instructions](https://elinux.org/BeagleBoardUbuntu).
-Make sure to follow the instructions for **BeagleBone**. Alternatively there are two more detailed guides in the [shepherd documentation](https://orgua.github.io/shepherd/user/getting_started.html).
+Make sure to follow the instructions for **BeagleBone**. Alternatively there are two more detailed guides in the [shepherd documentation](https://nes-lab.github.io/shepherd/user/getting_started.html).
 
 The following instructions describe how to install the *shepherd* software on a group of *shepherd* nodes connected to an Ethernet network.
 We assume that your local machine is connected to the same network, that the nodes have internet access and that you know the IP address of each node.
@@ -57,7 +57,7 @@ We assume that your local machine is connected to the same network, that the nod
 If you haven't done it yet, clone this repository to your local machine:
 
 ```shell
-git clone https://github.com/orgua/shepherd.git
+git clone https://github.com/nes-lab/shepherd.git
 ```
 
 Next, install the tools used for installing and controlling the *shepherd* nodes.
@@ -145,5 +145,5 @@ The following people have contributed to *shepherd*:
  - [Marco Zimmerling](https://wwwpub.zih.tu-dresden.de/~mzimmerl/)
  - [Justus Paulick](https://github.com/kugelbit)
  - [Boris Blokland](https://github.com/borro0)
- - [Jonas Kubicki](https://github.com/Deadbyrd12)
- - [Ingmar Splitt](https://github.com/orgua)
+ - [Jonas Kubicki](https://github.com/jonkub)
+ - [Ingmar Splitt](https://github.com/nes-lab)

@@ -35,7 +35,7 @@ The included components and features are:
 
 ### References
 
-- [/hardware-directory](https://github.com/orgua/shepherd/tree/main/hardware): contains cape, housing and additional design-files
+- [/hardware-directory](https://github.com/nes-lab/shepherd/tree/main/hardware): contains cape, housing and additional design-files
 
 ## Harvesting Port
 
@@ -141,4 +141,4 @@ The components and features are:
 
 ### References
 
-- [shepherd-targets](https://github.com/orgua/shepherd-targets): contains hardware and software sources for supported targets
+- [shepherd-targets](https://github.com/nes-lab/shepherd-targets): contains hardware and software sources for supported targets

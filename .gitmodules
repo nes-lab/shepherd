@@ -1,14 +1,14 @@
 [submodule "software/shepherd-datalib"]
 	path = software/shepherd-datalib
-	url = https://github.com/orgua/shepherd-datalib.git
+	url = https://github.com/nes-lab/shepherd-tools.git
 
 [submodule "software/shepherd-webservice"]
 	path = software/shepherd-webservice
-	url = https://github.com/orgua/shepherd_webservice.git
+	url = https://github.com/nes-lab/shepherd-webapi.git
 
 [submodule "software/shepherd-targets"]
 	path = software/shepherd-targets
-	url = https://github.com/orgua/shepherd-targets.git
+	url = https://github.com/nes-lab/shepherd-targets.git
 
 # helpful commands:
 # git submodule add <link> <rel-path>

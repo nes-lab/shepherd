@@ -32,7 +32,7 @@ This category includes configuration-models for setting up an experiment. Part o
 
 These are some of the sub-systems for configuring [experiments](#experiment) and also [tasks](#tasks).
 
-[Link to Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/experiment)
+[Link to Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/experiment)
 
 ```{eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.experiment.PowerTracing
@@ -56,7 +56,7 @@ deactiveated due to Error (TODO)
 
 Reusable user-defined meta-data for fw, h5 and vsrc-definitions.
 
-[Link to Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content)
+[Link to Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/content)
 
 ```{eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.content.EnergyEnvironment
@@ -78,7 +78,7 @@ Reusable user-defined meta-data for fw, h5 and vsrc-definitions.
 
 These are digestible configs for shepherd-herd or -sheep.
 
-[Link to Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/experiment)
+[Link to Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/experiment)
 
 ```{eval-rst}
 .. autopydantic_model:: shepherd_core.data_models.task.HarvestTask

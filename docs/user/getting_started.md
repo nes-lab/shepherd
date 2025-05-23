@@ -66,7 +66,7 @@ nmap 192.168.178.0/24
 Clone the shepherd repository to your machine:
 
 ```Shell
-git clone https://github.com/orgua/shepherd.git
+git clone https://github.com/nes-lab/shepherd.git
 ```
 
 Add an inventory file in the `inventory` folder in the repository, assigning hostnames to the IP addresses of the shepherd observers.

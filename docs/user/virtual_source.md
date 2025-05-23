@@ -35,9 +35,9 @@ As an actual YAML-Example:
 
 ### References
 
-- [VirtualHarvesterConfig in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester.py)
-- [Harvester-Fixtures in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester_fixture.yaml)
-- [VirtualHarvester-Model in PRU](https://github.com/orgua/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_harvester.c)
+- [VirtualHarvesterConfig in corelib](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester.py)
+- [Harvester-Fixtures in corelib](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_harvester_fixture.yaml)
+- [VirtualHarvester-Model in PRU](https://github.com/nes-lab/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_harvester.c)
 
 ## Emulator
 
@@ -83,7 +83,7 @@ BQ25504 with default slow pwr-good
 BQ25504 with fast schmitt-trigger
 ```
 
-[Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/examples/vsource_simulation.py)
+[Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/examples/vsource_simulation.py)
 
 ## Sim-Example 2
 
@@ -102,12 +102,12 @@ The input-voltage is too small to charge the circuit up to V_power_good, so the 
 diode + cap circuit with fast schmitt-trigger for power-good
 ```
 
-[Source](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/examples/vsource_simulation.py)
+[Source](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/examples/vsource_simulation.py)
 
 ### References
 
-- [VirtualSourceConfig in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source.py)
-- [Source-Fixtures in corelib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source_fixture.yaml)
-- [VirtualSource-Model in PRU](https://github.com/orgua/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_converter.c)
-- [VirtualSource-Model in corelib](https://github.com/orgua/shepherd-datalib/tree/main/shepherd_core/shepherd_core/vsource)
-- [example of a VirtualSource-Simulation](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/examples/vsource_simulation.py)
+- [VirtualSourceConfig in corelib](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source.py)
+- [Source-Fixtures in corelib](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/content/virtual_source_fixture.yaml)
+- [VirtualSource-Model in PRU](https://github.com/nes-lab/shepherd/blob/main/software/firmware/pru0-shepherd-fw/virtual_converter.c)
+- [VirtualSource-Model in corelib](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/shepherd_core/vsource)
+- [example of a VirtualSource-Simulation](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/examples/vsource_simulation.py)

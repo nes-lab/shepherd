@@ -5,7 +5,7 @@ With the introduction of the [core-lib](https://pypi.org/project/shepherd-core/)
 
 For lower-level access, have a look at the [](sheep_low_level.md). There is a third option called `debug-api`, used i.e. by the programmer.
 It will not be documented here.
-To learn about the functionality [the source](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/shepherd_emulator.py) should be consulted.
+To learn about the functionality [the source](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/shepherd_emulator.py) should be consulted.
 
 ## Harvesting
 
@@ -23,7 +23,7 @@ from shepherd_sheep.logger import set_verbosity
 :pyobject: run_harvester
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [HarvestTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/harvest.py)
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [HarvestTask](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/task/harvest.py)
 
 ## Emulating
 
@@ -41,7 +41,7 @@ from shepherd_sheep.logger import set_verbosity
 :pyobject: run_emulator
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [EmulationTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/emulation.py).
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [EmulationTask](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/task/emulation.py).
 
 :::{note}
 TODO: add user/task-config and relink both tasks above
@@ -67,7 +67,7 @@ from shepherd_sheep.sysfs_interface import check_sys_access
 :pyobject: run_firmware_mod
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [FirmwareModTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/firmware_mod.py).
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [FirmwareModTask](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/task/firmware_mod.py).
 
 ## Program Target
 
@@ -87,7 +87,7 @@ from shepherd_sheep.shepherd_debug import ShepherdDebug
 :pyobject: run_programmer
 ```
 
-The snippet is taken from the actual implementation in [sheep/init](https://github.com/orgua/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [ProgrammingTask](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/task/programming.py).
+The snippet is taken from the actual implementation in [sheep/init](https://github.com/nes-lab/shepherd/blob/main/software/python-package/shepherd_sheep/__init__.py) and references the [ProgrammingTask](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/task/programming.py).
 
 ## Example-Code
 
@@ -97,4 +97,4 @@ This snippet shows the harvester and emulator instantiated with custom config-mo
 :language: python
 ```
 
-Source: [./tests_manual/testbench_longrun.py](https://github.com/orgua/shepherd/blob/main/software/python-package/tests_manual/testbench_longrun.py)
+Source: [./tests_manual/testbench_longrun.py](https://github.com/nes-lab/shepherd/blob/main/software/python-package/tests_manual/testbench_longrun.py)

@@ -23,5 +23,5 @@ These values can be stored in the EEPROM on the shepherd cape and, at the beginn
 
 ## References
 
-- [data-models in datalib](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/data_models/base/calibration.py)
+- [data-models in user-tools](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/data_models/base/calibration.py)
 - [cal-tool-documentation](../external/readme_cal.md)

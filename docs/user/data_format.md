@@ -130,6 +130,6 @@ Setup:
 
 ## References
 
-- [core/writer.py](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/writer.py) to see the complete file-structure
-- [core/reader.py](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_core/shepherd_core/reader.py) for file-reading, -validation, -extractions and -conversions
-- [data/reader.py](https://github.com/orgua/shepherd-datalib/blob/main/shepherd_data/shepherd_data/reader.py) for higher functions like resampling, plotting and extracting metadata
+- [core/writer.py](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/writer.py) to see the complete file-structure
+- [core/reader.py](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_core/shepherd_core/reader.py) for file-reading, -validation, -extractions and -conversions
+- [data/reader.py](https://github.com/nes-lab/shepherd-tools/blob/main/shepherd_data/shepherd_data/reader.py) for higher functions like resampling, plotting and extracting metadata

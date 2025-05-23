@@ -1,8 +1,8 @@
 # PRU-Firmware
 
-**Main Documentation**: <https://orgua.github.io/shepherd>
+**Main Documentation**: <https://nes-lab.github.io/shepherd>
 
-**Source Code**: <https://github.com/orgua/shepherd/tree/main/software/firmware>
+**Source Code**: <https://github.com/nes-lab/shepherd/tree/main/software/firmware>
 
 ---
 
@@ -129,7 +129,7 @@ Challenges while porting firmware to also be compatible with GCC.
 - **possible partial solution: divide codebase into the two subsystems.**
   - but timing-constraints were tough already. Probably GCC won't help us here for now. But we keep this solution in our sight.
 
-[more details](https://github.com/orgua/shepherd/blob/main/software/firmware/readme_overflow_issue.md)
+[more details](https://github.com/nes-lab/shepherd/blob/main/software/firmware/readme_overflow_issue.md)
 
 ### Optional
 
