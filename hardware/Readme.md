@@ -8,7 +8,7 @@ Hardware-Subdirectories contain the necessary design-files to manufacture a shep
 - `cape_v#.#`: most recent version of shepherd cape for the BBone
 - `case_lasercut`: deployment version for testbed
 - ~~`power_in`:~~ low noise voltage regulator with < 17 V Input for TP-Link POE-Adapters that fail to produce 5V on newer Cisco Switches
-- Targets are in dedicated [target-repo](https://github.com/nes-lab/shepherd-targets/tree/main/hardware)
+- Targets are in dedicated [targets-repo](https://github.com/nes-lab/shepherd-targets/tree/main/hardware)
 
 ## Photos
 

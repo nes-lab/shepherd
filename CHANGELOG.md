@@ -307,7 +307,7 @@ This unlocked and triggered a lot of other improvements in both regards.
 ## v0.4.5 - 2023.08.23
 
 - add option to build an inventory
-- herd, sheep, cal-tool: fully integrate datalib
+- herd, sheep, cal-tool: fully integrate shepherd-core
 - sheep
   - improve exit behavior
   - various small improvements, refactorings

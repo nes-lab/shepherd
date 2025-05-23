@@ -141,4 +141,4 @@ The components and features are:
 
 ### References
 
-- [shepherd-targets](https://github.com/nes-lab/shepherd-targets): contains hardware and software sources for supported targets
+- [shepherd-targets-repo](https://github.com/nes-lab/shepherd-targets): contains hardware and software sources for supported targets

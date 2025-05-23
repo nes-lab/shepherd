@@ -11,7 +11,7 @@ If possible choose the correct project:
 
 - [main-repo](https://github.com/nes-lab/shepherd/issues)
 - [user-tools](https://github.com/nes-lab/shepherd-tools/issues)
-- [targets](https://github.com/nes-lab/shepherd-targets/issues)
+- [targets-repo](https://github.com/nes-lab/shepherd-targets/issues)
 - [webApi](https://github.com/nes-lab/shepherd-webapi/issues)
 
 ## Description

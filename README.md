@@ -1,23 +1,23 @@
 # SHEpHERD: SyncHronized Energy Harvesting Emulator RecorDer
 
-[![QC-Tests](https://github.com/nes-lab/shepherd/actions/workflows/quality_assurance.yaml/badge.svg)](https://github.com/nes-lab/shepherd/actions/workflows/quality_assurance.yaml)
+[![QA-Tests](https://github.com/nes-lab/shepherd/actions/workflows/quality_assurance.yaml/badge.svg)](https://github.com/nes-lab/shepherd/actions/workflows/quality_assurance.yaml)
 [![Documentation](https://github.com/nes-lab/shepherd/actions/workflows/pages_update.yaml/badge.svg)](https://nes-lab.github.io/shepherd/)
 [![Build Pru](https://github.com/nes-lab/shepherd/actions/workflows/fw_build_gcc.yaml/badge.svg)](https://github.com/nes-lab/shepherd/actions/workflows/fw_build_gcc.yaml)
 [![Code Quality](https://www.codefactor.io/repository/github/nes-lab/shepherd/badge)](https://www.codefactor.io/repository/github/nes-lab/shepherd)
-[![PyPiVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
+[![PyPIVersion](https://img.shields.io/pypi/v/shepherd_herd.svg)](https://pypi.org/project/shepherd_herd)
 [![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-**Testbed-Webinterface**: <https://shepherd.cfaed.tu-dresden.de>
+**Testbed-Website**: <https://nes-lab.github.io/shepherd-nova>
 
-**Python-Modules for Users**: <https://github.com/nes-lab/shepherd-tools>
+**Python-Tools for Users**: <https://github.com/nes-lab/shepherd-tools>
 
 **Documentation**: <https://nes-lab.github.io/shepherd>
 
 **Main Project**: <https://github.com/nes-lab/shepherd>
 
-**Target-HW & -SW**: <https://github.com/nes-lab/shepherd-targets>
+**Targets-HW & -SW**: <https://github.com/nes-lab/shepherd-targets>
 
-**Webservice-Repo**: <https://github.com/nes-lab/shepherd-webapi>
+**WebAPI-Repo**: <https://github.com/nes-lab/shepherd-webapi>
 
 **Dev-Documentation**: <https://github.com/orgua/shepherd-v2-planning>
 

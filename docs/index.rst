@@ -36,7 +36,7 @@ Welcome to SHEPHERD's documentation
    ./external/readme_cal.md
    ./external/readme_sync_analyzer.md
 
-   ./external/readme_webservice.md
+   ./external/readme_webapi.md
 
    ./external/readme_targets.md
 

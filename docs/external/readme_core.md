@@ -1,2 +1,2 @@
-:::{include} ../../software/shepherd-datalib/shepherd_core/README.md
+:::{include} ../../software/shepherd-tools/shepherd_core/README.md
 :::

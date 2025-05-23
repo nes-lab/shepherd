@@ -310,20 +310,20 @@ GPIO Implementation
 
 ![trigger_improvement](../media_recap/sync_improvement_trigger_statistics_boxplot.png)
 
-### Datalib
+### User-Tools
 
 - API for py and cli
 - read, write (and generate) shepherd-files
 - check for plausibility and validity
 - extract data and metadata, convert, downsample, plot, repair
 
-![datalib_progress](../media_recap/datalib_converter.png)
+![data_progress](../media_recap/datalib_converter.png)
 
 #### Plotting
 
 Multiplot for different harvesting strategies: ivcurve, isc / voc, voc-harvester and optimal po-harvester:
 
-![datalib_plot](../media_recap/datalib_jogging_10m.multiplot_0s000_to_1s000.png)
+![data_plot](../media_recap/datalib_jogging_10m.multiplot_0s000_to_1s000.png)
 
 ### TODO
 

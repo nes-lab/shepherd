@@ -71,7 +71,7 @@ doc = ["dbus-python"]
 # requirements.append("dbus-python")
 
 [project.urls]
-Homepage = "https://shepherd.cfaed.tu-dresden.de"
+Homepage = "https://nes-lab.github.io/shepherd-nova"
 Documentation = "https://nes-lab.github.io/shepherd"
 Issues = "https://github.com/nes-lab/shepherd/issues"
 Source = "https://github.com/nes-lab/shepherd"

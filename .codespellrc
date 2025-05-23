@@ -2,7 +2,7 @@
 
 builtin = clear,rare,informal,usage,code,en-GB_to_en-US
 
-skip = hardware/_deprecated/*,*.svg,*/sphinx_to_pages.yml,*/nrf52840.h,*/nrf52840_bitfields.h,*/core_cm4.h
+skip = hardware/_deprecated/*,*.svg,*/pages_update.yaml,*/nrf52840.h,*/nrf52840_bitfields.h,*/core_cm4.h
 # TODO: sphinx-entry only included temporarily
 # TODO: programmer header-files contain external code
 ignore-words-list = dout,jupyter,stdio,astroid,uint,fram,arange,ro

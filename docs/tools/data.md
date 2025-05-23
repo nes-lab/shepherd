@@ -1,6 +1,6 @@
 # Shepherd-Data
 
-```{include} ../../software/shepherd-datalib/shepherd_data/README.md
+```{include} ../../software/shepherd-tools/shepherd_data/README.md
    :start-line: 2
    :end-line: 31
 ```
@@ -28,7 +28,7 @@ To run the testbench, follow these steps:
 3. run the testbench (~ 30 tests):
 
 ```Shell
-cd shepherd-datalib/shepherd-data
+cd shepherd-tools/shepherd-data
 pip3 install .[tests]
 pytest
 ```

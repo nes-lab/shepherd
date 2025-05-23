@@ -1,7 +1,7 @@
 -e ./software/python-package
 -e ./software/shepherd-herd
-#-e ./software/shepherd-datalib/shepherd-core
-#-e ./software/shepherd-datalib/shepherd-data
+#-e ./software/shepherd-tools/shepherd-core
+#-e ./software/shepherd-tools/shepherd-data
 alabaster
 asn1crypto
 autodoc_pydantic

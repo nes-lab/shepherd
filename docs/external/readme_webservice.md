@@ -1,2 +1,2 @@
-:::{include} ../../software/shepherd-webservice/README.md
+:::{include} ../../software/shepherd-webapi/README.md
 :::
