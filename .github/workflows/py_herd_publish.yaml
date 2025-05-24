@@ -17,13 +17,13 @@ permissions:
   contents: read
 
 jobs:
-  run-release:
+  herd-tests:
     uses: ./.github/workflows/py_herd_test.yaml
 
   publish:
     runs-on: ubuntu-latest
     needs:
-      - run-release
+      - herd-tests
     env:
       herd_path: "./software/shepherd-herd"
     environment:

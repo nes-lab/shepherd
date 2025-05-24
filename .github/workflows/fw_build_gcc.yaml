@@ -3,13 +3,12 @@ name: Build Pru
 on:
   workflow_call:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
 
-  pru-tests:
+  pru-gcc:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
       # as in roles/sheep/vars/main.yml
