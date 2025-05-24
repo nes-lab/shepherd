@@ -1,5 +1,11 @@
 version: 2
 updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: ⬆
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
