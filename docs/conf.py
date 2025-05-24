@@ -11,6 +11,10 @@ import sys
 
 sys.path.insert(0, os.path.realpath("../software/python-package"))
 sys.path.insert(0, os.path.realpath("../software/shepherd-herd"))
+# external
+sys.path.insert(0, os.path.realpath("../software/shepherd-targets"))
+sys.path.insert(0, os.path.realpath("../software/shepherd-tools"))
+sys.path.insert(0, os.path.realpath("../software/shepherd-webapi"))
 
 
 # -- Project information -----------------------------------------------------
@@ -71,7 +75,7 @@ html_permalinks_icon = "<span>#</span>"
 
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    "display_version": True,
+#    "display_version": True,
 }
 github_url = "https://github.com/nes-lab/shepherd"
 
