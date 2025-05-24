@@ -75,7 +75,7 @@ html_permalinks_icon = "<span>#</span>"
 
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-#    "display_version": True,
+    #    "display_version": True,
 }
 github_url = "https://github.com/nes-lab/shepherd"
 
