@@ -7,7 +7,6 @@ from types import FrameType
 from typing import TypedDict
 
 import click
-import shepherd_core
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
@@ -77,7 +76,6 @@ def cli(
     key_filepath: Path | None,
     *,
     verbose: bool,
-    version: bool,
 ) -> None:
     """Entry for command line with settings to interface the herd."""
     signal.signal(signal.SIGTERM, exit_gracefully)
@@ -85,12 +83,6 @@ def cli(
 
     if verbose:
         activate_verbosity()
-
-    if version:
-        log.info("Shepherd-Cal v%s", __version__)
-        log.debug("Shepherd-Core v%s", shepherd_core.__version__)
-        log.debug("Python v%s", sys.version)
-        log.debug("Click v%s", click.__version__)
 
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
@@ -101,6 +93,25 @@ def cli(
 # #############################################################################
 #                               Misc-Commands
 # #############################################################################
+
+
+@cli.command(short_help="Print version-info (combine with -v for more)")
+def version() -> None:
+    """Print version-info (combine with -v for more)."""
+    from h5py import __version__ as ver_h5py
+    from numpy import __version__ as ver_numpy
+    from pydantic import __version__ as ver_pydantic
+    from shepherd_core import __version__ as ver_core
+    from yaml import __version__ as ver_yaml
+
+    log.info("Shepherd-Herd v%s", __version__)
+    log.info("Shepherd-core v%s", ver_core)
+    log.debug("Python v%s", sys.version)
+    log.debug("click v%s", click.__version__)
+    log.debug("h5py v%s", ver_h5py)
+    log.debug("numpy v%s", ver_numpy)
+    log.debug("pydantic v%s", ver_pydantic)
+    log.debug("PyYAML v%s", ver_yaml)
 
 
 @cli.command(
