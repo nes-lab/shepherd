@@ -183,7 +183,7 @@ int32_t event_loop()
     uint32_t        timer_ns               = 0u;
     bool_ft         host_int_early         = 0u;
     /* Tracks our local state, allowing to execute actions at the right time */
-    struct ProtoMsg sync_repl;
+    struct ProtoMsg sync_repl = {.id=0u, .unread=0u, .type=0u, .value={0u, 0u,},};
     enum SyncState  sync_state          = IDLE;
 
     /* pru0 util monitor */
