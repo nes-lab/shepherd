@@ -47,6 +47,7 @@ jobs:
         working-directory: "${{ github.workspace }}"
 
       - name: temporary size-hack for PRU0 🕚
+        if: false
         run: "sudo cp software/firmware/lib/am335xl.pru0 ${{ env.PRU_GCC }}/pru-elf/lib/device-specs/am335xl.pru0"
         working-directory: "${{ github.workspace }}"
 
