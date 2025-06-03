@@ -80,6 +80,10 @@ class KernelMonitor(Monitor):
                 continue
             first_space = line.find(" ")
             time_str = line[:first_space]
+            time_str = time_str[:-2] + ":" + time_str[-2:]
+            # TODO: workaround for py < 3.11, .fromisoformat() can handle
+            #       YYYY-MM-DDTHH:MM:SS+HH:MM, BUT NOT
+            #       YYYY-MM-DDTHH:MM:SS+HHMM (default from --output=short-iso-precise
             time_ts = datetime.fromisoformat(time_str)
             time_ns = int(datetime.timestamp(time_ts) * 1e9)
             line = line[first_space:].strip()[:128]

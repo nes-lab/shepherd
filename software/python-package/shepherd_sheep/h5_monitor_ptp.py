@@ -90,7 +90,11 @@ class PTPMonitor(Monitor):
                     int(words[i_start + 4]),
                     int(words[i_start + 7]),
                 ]
-                time_ts = datetime.fromisoformat(words[0])
+                time_str = words[0][:-2] + ":" + words[0][-2:]
+                # TODO: workaround for py < 3.11, .fromisoformat() can handle
+                #       YYYY-MM-DDTHH:MM:SS+HH:MM, BUT NOT
+                #       YYYY-MM-DDTHH:MM:SS+HHMM (default from --output=short-iso-precise
+                time_ts = datetime.fromisoformat(time_str)
                 time_ns = int(datetime.timestamp(time_ts) * 1e9)
             except ValueError:
                 continue
