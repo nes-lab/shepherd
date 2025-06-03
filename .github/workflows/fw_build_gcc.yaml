@@ -3,20 +3,19 @@ name: Build Pru
 on:
   workflow_call:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
 
-  pru-tests:
+  pru-gcc:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
       # as in roles/sheep/vars/main.yml
-      gcc_pru_cc_release: "pru-elf-2024.05.amd64"
+      gcc_pru_cc_release: "pru-elf-2025.05.amd64"
       gcc_pru_support_branch: "linux-4.19-rproc"
       # weblinks
-      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2024.05/"
+      link_gcc: "https://github.com/dinuxbg/gnupru/releases/download/2025.05/"
       link_pssp: "https://github.com/dinuxbg/pru-software-support-package.git"
       # env for makefile
       PRU_GCC: "${{ github.workspace }}/pru-elf" # was /pru-elf-2022.05.amd64 before
@@ -48,6 +47,7 @@ jobs:
         working-directory: "${{ github.workspace }}"
 
       - name: temporary size-hack for PRU0 🕚
+        if: false
         run: "sudo cp software/firmware/lib/am335xl.pru0 ${{ env.PRU_GCC }}/pru-elf/lib/device-specs/am335xl.pru0"
         working-directory: "${{ github.workspace }}"
 

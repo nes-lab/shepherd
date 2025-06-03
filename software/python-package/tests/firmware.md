@@ -30,7 +30,7 @@ Edit the `pins` array and the UART pin definitions at the top of `src/main.c` to
 	- active: P0_20 - P0_25 (GPIO 0 to 5)
 	- switch on for 100 us after receiving on UART ("(%u)\r\n")
 
-[Source](https://github.com/nes-lab/shepherd-targets/tree/main/nrf52_testable)
+[Source](https://github.com/nes-lab/shepherd-targets/tree/main/firmware/nrf52_testable)
 
 ## firmware_msp52_testable.hex
 
@@ -45,4 +45,4 @@ The firmware toggles all 3 LEDs 16 times for 100 ms and does the same for the 10
     - active: P0_20 - P0_25 (GPIO 0 to 5)
     - switch on for 100 us after receiving on UART ("(%u)\r\n")
 
-[Source](https://github.com/nes-lab/shepherd-targets/tree/main/msp430_testable)
+[Source](https://github.com/nes-lab/shepherd-targets/tree/main/firmware/msp430_testable)

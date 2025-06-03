@@ -8,6 +8,7 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 import time
 from contextlib import suppress
 from types import TracebackType
+from typing import TypedDict
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
@@ -19,7 +20,6 @@ from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConf
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
-from typing_extensions import TypedDict
 from typing_extensions import Unpack
 
 from . import commons

@@ -77,13 +77,8 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     is_flag=True,
     help="4 Levels, but level 4 has serious performance impact",
 )
-@click.option(
-    "--version",
-    is_flag=True,
-    help="Prints version-info at start (combinable with -v)",
-)
 @click.pass_context
-def cli(ctx: click.Context, *, verbose: bool, version: bool) -> None:
+def cli(ctx: click.Context, *, verbose: bool) -> None:
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
@@ -95,14 +90,29 @@ def cli(ctx: click.Context, *, verbose: bool, version: bool) -> None:
         # this adds a usage-entry when sheep exits
         atexit.register(usage_logger, datetime.now().astimezone(), ctx.invoked_subcommand)
 
-    if version:
-        log.info("Shepherd-Sheep v%s", __version__)
-        log.debug("Python v%s", sys.version)
-        log.debug("Click v%s", click.__version__)
     if check_sys_access():
         ctx.exit(1)
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
+
+
+@cli.command(short_help="Print version-info (combine with -v for more)")
+def version() -> None:
+    """Print version-info (combine with -v for more)."""
+    from h5py import __version__ as ver_h5py
+    from numpy import __version__ as ver_numpy
+    from pydantic import __version__ as ver_pydantic
+    from shepherd_core import __version__ as ver_core
+    from yaml import __version__ as ver_yaml
+
+    log.info("Shepherd-Sheep v%s", __version__)
+    log.info("Shepherd-core v%s", ver_core)
+    log.debug("Python v%s", sys.version)
+    log.debug("click v%s", click.__version__)
+    log.debug("h5py v%s", ver_h5py)
+    log.debug("numpy v%s", ver_numpy)
+    log.debug("pydantic v%s", ver_pydantic)
+    log.debug("PyYAML v%s", ver_yaml)
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")

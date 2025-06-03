@@ -142,6 +142,11 @@ printEnd:
 	@echo 'Size in bytes:'
 	@stat -L -c %s $(TARGET_PATH)
 	@echo ''
+	@echo 'Statistics of ELF-Internals:'
+	@size $(TARGET_PATH)
+	@echo ''
+	@nm --size-sort --print-size $(TARGET_PATH)  | grep -w '[Tt]'
+	@echo ''
 	@echo 'Finished building project: $(PROJ_NAME)'
 	@echo '************************************************************'
 	@echo ''

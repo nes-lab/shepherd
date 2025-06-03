@@ -183,17 +183,26 @@ int32_t event_loop()
     uint32_t        timer_ns               = 0u;
     bool_ft         host_int_early         = 0u;
     /* Tracks our local state, allowing to execute actions at the right time */
-    struct ProtoMsg sync_repl;
-    enum SyncState  sync_state          = IDLE;
+    struct ProtoMsg sync_repl              = {
+                         .id     = 0u,
+                         .unread = 0u,
+                         .type   = 0u,
+                         .value =
+                    {
+                            0u,
+                            0u,
+                    },
+    };
+    enum SyncState sync_state          = IDLE;
 
     /* pru0 util monitor */
-    uint32_t        pru0_tsample_ns_max = 0u;
-    uint32_t        pru0_tsample_ns_sum = 0u;
-    uint32_t        pru0_sample_count   = 0u;
+    uint32_t       pru0_tsample_ns_max = 0u;
+    uint32_t       pru0_tsample_ns_sum = 0u;
+    uint32_t       pru0_sample_count   = 0u;
     /* pru1 util monitor */
-    uint32_t        pru1_tsample_ns_max = 0u;
-    uint32_t        last_timer_ns       = 0u;
-    bool_ft         transmit_util       = 0u;
+    uint32_t       pru1_tsample_ns_max = 0u;
+    uint32_t       last_timer_ns       = 0u;
+    bool_ft        transmit_util       = 0u;
 
     /* Configure timer */
     iep_set_cmp_val(IEP_CMP0, SYNC_INTERVAL_NS);   // 20 MTicks -> 100 ms

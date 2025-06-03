@@ -1,4 +1,4 @@
-name: Test for Quality Assurance
+name: QA-Test
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
   test-herd:
     uses: ./.github/workflows/py_herd_test.yaml
 
-  quality-control:
+  QA-tests:
     runs-on: ubuntu-latest
     needs:
       - static-analysis
