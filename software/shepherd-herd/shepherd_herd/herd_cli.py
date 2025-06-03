@@ -62,11 +62,6 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     help="Path to private ssh key file",
 )
 @click.option("--verbose", "-v", is_flag=True)
-@click.option(
-    "--version",
-    is_flag=True,
-    help="Prints version-infos (combinable with -v)",
-)
 @click.pass_context
 def cli(
     ctx: click.Context,
