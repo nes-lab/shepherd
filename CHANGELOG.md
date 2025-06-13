@@ -1,5 +1,13 @@
 # History of Changes
 
+## 0.9.2
+
+- update all links and referenced for moving repos to `nes-lab`
+- herd & sheep: transform version into own command
+- update to gnupru 2025.05
+- herd-tool now looks for herd.yaml instead of .yml
+- various small improvements and fixes
+
 ## 0.9.1
 
 - adapt to latest naming-changes in core-lib
