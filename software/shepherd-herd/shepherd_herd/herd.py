@@ -81,11 +81,11 @@ class Herd:
         else:
             # look at all these directories for inventory-file
             inventories: list[Path] = [  # highest prio first
-                Path().cwd() / "herd.yml",
-                Path().cwd() / "inventory/herd.yml",
-                Path("~").expanduser() / "herd.yml",
-                path_xdg_config / "shepherd-herd/herd.yml",
-                Path("/etc/shepherd/herd.yml"),
+                Path().cwd() / "herd.yaml",
+                Path().cwd() / "inventory/herd.yaml",
+                Path("~").expanduser() / "herd.yaml",
+                path_xdg_config / "shepherd/herd.yaml",
+                Path("/etc/shepherd/herd.yaml"),
             ]
             if isinstance(inventory, Path):
                 inventories = [inventory, *inventories]

@@ -70,7 +70,7 @@ git clone https://github.com/nes-lab/shepherd.git
 ```
 
 Add an inventory file in the `inventory` folder in the repository, assigning hostnames to the IP addresses of the shepherd observers.
-Just start by editing the provided `inventory/herd.yml` example.
+Just start by editing the provided `inventory/herd.yaml` example.
 Pick a username that you want to use to log in to the system and assign as `ansible_user` variable.
 
 ```yaml
@@ -93,7 +93,7 @@ sheep:
 ```
 
 :::{note}
-Deployment supports roles that can be assigned directly in `herd.yml`.
+Deployment supports roles that can be assigned directly in `herd.yaml`.
 The example above shows how to use them exemplary by setting up `sheep0` as a PTP-Server (`ptp_servers`) and the remaining nodes as Clients (`ptp_clients`).
 Additional roles are called `ntp_clients`, `gps_clients` and `secured`. The last one is used to reduce the attack surface when used in a testbed by removing default accounts, open ports and other listeners.
 :::
@@ -177,7 +177,7 @@ sudo dd if=/dev/mmcblk0p1 of=/dev/mmcblk1p1
 
 After the command finishes shut down the Beaglebone either by `sudo shutdown now` or by pushing the button next to the ethernet socket. Remove the sd-card and boot the system back up again. Repeat the tests from above and make sure that the output matches except that `mount` now shows `mmcblk1p1` (eMMC) as root-directory.
 
-For password-less entry & usage of the Beaglebone we prepared an `ansible playbook`. Make sure that you cloned the shepherd-repository locally and installed ansible (compare with general installation-guide from previous section) and also configured the `herd.yml` in consultation with the full installation guide.
+For password-less entry & usage of the Beaglebone we prepared an `ansible playbook`. Make sure that you cloned the shepherd-repository locally and installed ansible (compare with general installation-guide from previous section) and also configured the `herd.yaml` in consultation with the full installation guide.
 
 ```Shell
 # execute in shepherd-repo on host

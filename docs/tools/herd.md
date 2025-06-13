@@ -11,17 +11,17 @@ All `shepherd-herd` commands require the list of hosts on which to perform the r
 
 ### Static Config
 
-To simplify usage you should set up an ansible style, YAML-formatted inventory file named `herd.yml` in either of these directories (highest priority first):
+To simplify usage you should set up an ansible style, YAML-formatted inventory file named `herd.yaml` in either of these directories (highest priority first):
 
 - in your current working directory
-- relative to your current working directory in `inventory/herd.yml`
-- in your local home-directory `~/herd.yml`
-- in your XDG config directory, typically `~/.config/shepherd-herd/herd.yml` (**recommendation**)
-- in the system config path `/etc/shepherd/herd.yml`
+- relative to your current working directory in `inventory/herd.yaml`
+- in your local home-directory `~/herd.yaml`
+- in your XDG config directory, typically `~/.config/shepherd/herd.yaml` (**recommendation**)
+- in the system config path `/etc/shepherd/herd.yaml`
 
-Here is the example `herd.yml`-file in the `inventory` directory of the shepherd repository:
+Here is the example `herd.yaml`-file in the `inventory` directory of the shepherd repository:
 
-```{literalinclude} ../../inventory/herd.yml
+```{literalinclude} ../../inventory/herd.yaml
 :language: yaml
 ```
 
@@ -71,7 +71,7 @@ The command-line Interface is as follows:
 
 ## Unittests
 
-For testing `shepherd-herd` there must be a valid `herd.yml` at one of the mentioned locations (look at [](#configuration)) with accessible sheep-nodes (at least one).
+For testing `shepherd-herd` there must be a valid `herd.yaml` at one of the mentioned locations (look at [](#configuration)) with accessible sheep-nodes (at least one).
 
 1. Navigate your host-shell into the package-folder and
 2. install dependencies

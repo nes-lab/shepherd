@@ -25,7 +25,7 @@ for hrv_name in hrv_list:
     if not path_local.exists():
         logger.info("Start harvesting with '%s'", hrv_name)
         stack = ExitStack()
-        herd = Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected)
+        herd = Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected)
         stack.enter_context(herd)
         task = HarvestTask(
             duration=30,
