@@ -21,7 +21,7 @@ results: dict = {}
 
 paths_local_hrv = {}
 paths_remote_hrv = {}
-with Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected) as herd:
+with Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected) as herd:
     for hrv_name in emu_hrv_list:
         file_name = f"hrv_{hrv_name}.h5"
         paths_local_hrv[hrv_name] = path_here / host_selected / file_name
@@ -40,7 +40,7 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
 
     if not path_local_src.exists():
         stack = ExitStack()
-        herd = Herd(inventory="/etc/shepherd/herd.yml", limit=host_selected)
+        herd = Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected)
         stack.enter_context(herd)
         task = EmulationTask(
             input_path=Path(path_remote_hrv),

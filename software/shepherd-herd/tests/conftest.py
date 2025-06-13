@@ -70,10 +70,10 @@ def data_h5_path(tmp_path: Path) -> Path:
 def local_herd(tmp_path: Path) -> Path:
     # locations copied from herd.cli()
     inventories = [
-        "/etc/shepherd/herd.yml",
-        "~/herd.yml",
-        "inventory/herd.yml",
-        "herd.yml",
+        "/etc/shepherd/herd.yaml",
+        "~/herd.yaml",
+        "inventory/herd.yaml",
+        "herd.yaml",
     ]
     host_path = None
     for inventory in inventories:
@@ -81,7 +81,7 @@ def local_herd(tmp_path: Path) -> Path:
             host_path = Path(inventory)
     if host_path is None:
         raise FileNotFoundError(", ".join(inventories))
-    local_path = tmp_path / "herd.yml"
+    local_path = tmp_path / "herd.yaml"
     copy(host_path, local_path)
 
     return local_path

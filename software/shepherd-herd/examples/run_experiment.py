@@ -3,7 +3,7 @@ This describes a typical scripted workflow for running experiments on the Testbe
 
 Example assumes:
 - access to herd-server
-- inventory at /etc/shepherd/herd.yml
+- inventory at /etc/shepherd/herd.yaml
 - passwordless access to sheep
 
 """
@@ -11,7 +11,7 @@ Example assumes:
 from pathlib import Path
 from pathlib import PurePosixPath
 
-from shepherd_core import TestbedClient
+from shepherd_core import WebClient
 from shepherd_core.data_models import EnergyEnvironment
 from shepherd_core.data_models import Experiment
 from shepherd_core.data_models import Firmware
@@ -66,7 +66,7 @@ xp1 = Experiment(
 
 # TODO: this will definitely change in the near future or at least needs a login
 
-tb_client = TestbedClient()
+tb_client = WebClient()
 do_connect = False
 
 if do_connect:
@@ -83,7 +83,7 @@ tb_tasks1.to_file(path_tasks)
 # alternative: use herd CLI
 # [herd-run-start]
 
-with Herd(inventory="/etc/shepherd/herd.yml") as herd:
+with Herd(inventory="/etc/shepherd/herd.yaml") as herd:
     # NOTE: that's one of the default paths for the inventory
     #       and therefore not needed here
 

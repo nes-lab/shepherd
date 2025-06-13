@@ -70,7 +70,7 @@ Install the tools using `pip`:
 pip3 install ansible shepherd-herd
 ```
 
-The `inventory/herd.yml` file shows an example of how to provide the host names and known IP addresses of your BeagleBones.
+The `inventory/herd.yaml` file shows an example of how to provide the host names and known IP addresses of your BeagleBones.
 Adjust it to reflect your setup.
 You can arbitrarily choose and assign the hostnames (sheep0, sheep1, in this example) and the ansible_user (jane in this example).
 [**TODO:** update description with roles].
