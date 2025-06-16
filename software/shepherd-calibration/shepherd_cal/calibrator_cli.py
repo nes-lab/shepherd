@@ -25,7 +25,7 @@ from .cli_helper import smu_ip_opt_t
 from .cli_helper import smu_nc_opt_t
 from .cli_helper import user_opt_t
 from .cli_helper import verbose_opt_t
-from .logger import logger
+from .logger import log
 
 cli_cal = typer.Typer(
     name="calibration",
@@ -103,9 +103,9 @@ def measure(
         timestamp = datetime.fromtimestamp(time(), tz=local_tz())
         timestring = timestamp.strftime("%Y-%m-%d_%H-%M")
         outfile = Path(f"./{timestring}_shepherd_cape_{cape_serial}.measurement.yaml")
-        logger.debug("No filename provided -> set to '%s'.", outfile)
+        log.debug("No filename provided -> set to '%s'.", outfile)
     msr_cape.to_file(outfile)
-    logger.info("Saved Cal-Measurement to '%s'.", outfile)
+    log.info("Saved Cal-Measurement to '%s'.", outfile)
 
     if len(outfile.stem.split(".")) > 1:
         outfile = outfile.with_stem(
@@ -115,9 +115,9 @@ def measure(
         outfile = outfile.with_stem(outfile.stem + ".cal_data")
 
     cal_cape = msr_cape.to_cal()
-    logger.info("Measured Cal-Data:\n\n%s", str(cal_cape))
+    log.info("Measured Cal-Data:\n\n%s", str(cal_cape))
     cal_cape.to_file(outfile)
-    logger.info("Saved Cal-Data to '%s'.", outfile)
+    log.info("Saved Cal-Data to '%s'.", outfile)
 
     if write:
         shp_cal.write(outfile)
@@ -125,7 +125,7 @@ def measure(
 
     outfile = outfile.with_stem(".".join(outfile.stem.split(".")[0:-1]))
     plot_calibration(msr_cape, cal_cape, outfile)
-    logger.info("Plotted data to '%s.xyz'.", outfile.name)
+    log.info("Plotted data to '%s.xyz'.", outfile.name)
 
 
 @cli_cal.command()

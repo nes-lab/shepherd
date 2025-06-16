@@ -6,9 +6,9 @@ from pathlib import PurePosixPath
 from config import emu_hrv_list
 from config import emu_src_list
 from config import host_selected
-from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.logger import log
 from shepherd_data import Reader
 from shepherd_herd import Herd
 
@@ -26,7 +26,7 @@ with Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected) as herd:
         file_name = f"hrv_{hrv_name}.h5"
         paths_local_hrv[hrv_name] = path_here / host_selected / file_name
         paths_remote_hrv[hrv_name] = PurePosixPath("/tmp/" + file_name)  # noqa: S108
-        logger.info("Start transferring '%s'", file_name)
+        log.info("Start transferring '%s'", file_name)
         herd.put_file(paths_local_hrv[hrv_name], paths_remote_hrv[hrv_name], force_overwrite=True)
 
 # #####################################################################
@@ -51,12 +51,12 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
         if herd.run_task(task, attach=True) == 0:
             herd.get_file(path_remote_src, path_here, separate=True, delete_src=True)
         else:
-            logger.error("Failed to emulate with '%s'", hrv_name)
+            log.error("Failed to emulate with '%s'", hrv_name)
         stack.close()
 
     with Reader(path_local_src) as _fh:
         results[path_local_src.stem] = _fh.energy()
 
-logger.info("Finished with:")
+log.info("Finished with:")
 for _key, _value in results.items():
-    logger.info("\t%s = %.6f mWs", _key, 1e3 * _value)
+    log.info("\t%s = %.6f mWs", _key, 1e3 * _value)

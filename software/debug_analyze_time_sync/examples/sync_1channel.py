@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 from sync_analysis import LogicTrace
 from sync_analysis import LogicTraces
-from sync_analysis import logger
+from sync_analysis import log
 
 path_here = Path(__file__).parent
 save_pickle = False
@@ -46,9 +46,9 @@ _stat_df = {
     _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header()) for _k, _v in _stat.items()
 }
 for _k, _v in _stat_df.items():
-    logger.info("")
-    logger.info("TYPE: %s", _k)
-    logger.info(_v.to_string())
+    log.info("")
+    log.info("TYPE: %s", _k)
+    log.info(_v.to_string())
 
 chosen = ["002_", "014_", "034_", "042_"]
 ltraces.traces = [trace for trace in ltraces.traces if trace.name[:4] in chosen]

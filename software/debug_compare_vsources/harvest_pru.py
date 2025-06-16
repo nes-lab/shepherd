@@ -4,9 +4,9 @@ from pathlib import PurePosixPath
 
 from config import host_selected
 from config import hrv_list
-from shepherd_core import logger
 from shepherd_core.data_models import VirtualHarvesterConfig
 from shepherd_core.data_models.task import HarvestTask
+from shepherd_core.logger import log
 from shepherd_data import Reader
 from shepherd_herd import Herd
 
@@ -23,7 +23,7 @@ for hrv_name in hrv_list:
     path_local = path_here / host_selected / file_name
 
     if not path_local.exists():
-        logger.info("Start harvesting with '%s'", hrv_name)
+        log.info("Start harvesting with '%s'", hrv_name)
         stack = ExitStack()
         herd = Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected)
         stack.enter_context(herd)
@@ -38,12 +38,12 @@ for hrv_name in hrv_list:
             # note: herd will add host-name to path
             herd.get_file(path_remote, path_here, separate=True, delete_src=True)
         else:
-            logger.error("Failed to harvest with '%s'", hrv_name)
+            log.error("Failed to harvest with '%s'", hrv_name)
         stack.close()
 
     with Reader(path_local) as _fh:
         results[path_local.stem] = _fh.energy()
 
-logger.info("Finished with:")
+log.info("Finished with:")
 for _key, _value in results.items():
-    logger.info("\t%s = %.6f mWs", _key, 1e3 * _value)
+    log.info("\t%s = %.6f mWs", _key, 1e3 * _value)

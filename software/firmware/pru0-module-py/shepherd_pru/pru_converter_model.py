@@ -2,8 +2,8 @@ import ctypes as ct
 from collections.abc import Sequence
 
 from shepherd_core import CalibrationEmulator
-from shepherd_core import logger
 from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.logger import log
 
 from ._virtual_pru import virtual_pru
 from .data_types import LUT_INP
@@ -53,9 +53,9 @@ class PruConverterModel:
         self.cnv_cfg = ConverterConfig(**cnv_dict)
         self.cal_cfg = CalibrationConfig(**cal.cal.export_for_sysfs())
         self.shared_mem = SharedMemLight()
-        logger.info("This is the PRU-C-CNV-Model.")
-        logger.info(cfg.model_dump())
-        logger.info(cal.cal.export_for_sysfs())
+        log.info("This is the PRU-C-CNV-Model.")
+        log.info(cfg.model_dump())
+        log.info(cal.cal.export_for_sysfs())
         self.pru = virtual_pru
         self.pru.calibration_initialize(ct.byref(self.cal_cfg))
         self.pru.converter_initialize(ct.byref(self.cnv_cfg))

@@ -5,7 +5,12 @@
 - update all links and referenced for moving repos to `nes-lab`
 - herd & sheep: transform version into own command
 - update to gnupru 2025.05
-- herd-tool now looks for herd.yaml instead of .yml
+- herd-tool
+  - now looks for herd.yaml instead of .yml
+  - allow quiet run_task()
+  - sort output before it gets printed
+- sheep - tracers are now properly disabled
+-
 - various small improvements and fixes
 
 ## 0.9.1

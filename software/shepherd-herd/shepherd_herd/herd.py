@@ -34,7 +34,7 @@ from shepherd_core.testbed_client import tb_client
 from tqdm import tqdm
 from typing_extensions import Self
 
-from .logger import logger
+from .logger import log
 
 
 def _get_xdg_path(variable_name: str, default: str) -> Path:
@@ -108,7 +108,7 @@ class Herd:
                         f"please provide a valid one"
                     )
                     raise FileNotFoundError(msg) from _xpt
-            logger.info("Shepherd-Inventory = '%s'", host_path.as_posix())
+            log.info("Shepherd-Inventory = '%s'", host_path.as_posix())
 
             hostlist = []
             hostnames: dict[str, str] = {}
@@ -147,7 +147,7 @@ class Herd:
         )
         self.hostnames: dict[str, str] = hostnames
 
-        logger.info("Herd consists of %d sheep", len(self.group))
+        log.info("Herd consists of %d sheep", len(self.group))
 
     def __del__(self) -> None:
         # ... overcautious closing of connections
@@ -161,7 +161,7 @@ class Herd:
     def __enter__(self) -> Self:
         self._open()
         if len(self.group) < 1:
-            logger.error("No remote sheep in current herd! Will run dry")
+            log.error("No remote sheep in current herd! Will run dry")
         return self
 
     def __exit__(
@@ -194,7 +194,7 @@ class Herd:
         try:
             cnx.open()
         except (NoValidConnectionsError, SSHException, TimeoutError):
-            logger.error(
+            log.error(
                 "[%s] failed to open connection -> will exclude node from inventory",
                 cnx.host,  # = IP
             )
@@ -210,7 +210,7 @@ class Herd:
         for host, thread in threads.items():
             thread.join(timeout=10.0)
             if thread.is_alive():
-                logger.error(
+                log.error(
                     "Connection.Open() did fail to finish on %s - will delete that thread",
                     host,
                 )
@@ -233,7 +233,7 @@ class Herd:
             else:
                 results[hostname] = cnx.run(cmd, warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
-            logger.error(
+            log.error(
                 "[%s] failed to run '%s' -> will exclude node from inventory",
                 cnx.host,  # IP
                 cmd,
@@ -256,7 +256,7 @@ class Herd:
         results: dict[str, Result] = {}
         threads = {}
         level = logging.INFO if verbose else logging.DEBUG
-        logger.log(level, "Sheep-CMD = %s", cmd)
+        log.log(level, "Sheep-CMD = %s", cmd)
         for cnx in self.group:
             _name = self.hostnames[cnx.host]
             if exclusive_host and _name != exclusive_host:
@@ -271,13 +271,13 @@ class Herd:
         ):
             thread.join()  # timeout=10.0
             if thread.is_alive():
-                logger.error(
+                log.error(
                     "Command.Run() did fail to finish on %s - will delete that thread",
                     host,
                 )
             del thread  # ... overcautious
         if len(results) < 1:
-            logger.error("ZERO nodes answered - check your config")
+            log.error("ZERO nodes answered - check your config")
         return results
 
     @staticmethod
@@ -293,12 +293,12 @@ class Herd:
             if not verbose and reply.exited == 0:
                 continue
             if len(reply.stdout) > 0:
-                logger.info("\n************** %s - stdout **************", hostname)
-                logger.info(reply.stdout)
+                log.info("\n************** %s - stdout **************", hostname)
+                log.info(reply.stdout)
             if len(reply.stderr) > 0:
-                logger.error("\n~~~~~~~~~~~~~~ %s - stderr ~~~~~~~~~~~~~~", hostname)
-                logger.error(reply.stderr)
-            logger.info("Exit-code of %s = %s", hostname, reply.exited)
+                log.error("\n~~~~~~~~~~~~~~ %s - stderr ~~~~~~~~~~~~~~", hostname)
+                log.error(reply.stderr)
+            log.info("Exit-code of %s = %s", hostname, reply.exited)
 
     @staticmethod
     def _thread_put(
@@ -320,13 +320,13 @@ class Herd:
             return
 
         tmp_path = PurePosixPath("/tmp") / filename  # noqa: S108
-        logger.debug("temp-path for %s is %s", cnx.host, tmp_path)
+        log.debug("temp-path for %s is %s", cnx.host, tmp_path)
         try:
             cnx.put(src, tmp_path.as_posix())
             xtr_arg = "-f" if force_overwrite else "-n"
             cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
-            logger.error(
+            log.error(
                 "[%s] failed to put to '%s' -> will exclude node from inventory",
                 cnx.host,
                 dst.as_posix(),
@@ -347,11 +347,11 @@ class Herd:
             if not src_path.exists():
                 msg = f"Local source file '{src_path}' does not exist!"
                 raise FileNotFoundError(msg)
-            logger.info("Local source path = %s", src_path)
+            log.info("Local source path = %s", src_path)
 
         if dst is None:
             dst_path = self.path_default
-            logger.debug("Remote path not provided -> use default = %s", dst_path)
+            log.debug("Remote path not provided -> use default = %s", dst_path)
         else:
             dst_path = PurePosixPath(dst)
             dst_posix = dst_path.as_posix()
@@ -376,7 +376,7 @@ class Herd:
         ):
             thread.join()  # timeout=10.0
             if thread.is_alive():
-                logger.error(
+                log.error(
                     "File.Put() did fail to finish on %s - will delete that thread",
                     host,
                 )
@@ -389,7 +389,7 @@ class Herd:
         try:
             cnx.get(src.as_posix(), local=dst.as_posix())
         except (NoValidConnectionsError, SSHException, TimeoutError):
-            logger.error(
+            log.error(
                 "[%s] failed to get '%s' -> will exclude node from inventory",
                 cnx.host,
                 src.as_posix(),
@@ -441,7 +441,7 @@ class Herd:
             if not isinstance(replies.get(hostname), Result):
                 continue
             if abs(replies[hostname].exited) != 0:
-                logger.error(
+                log.error(
                     "remote file '%s' does not exist on node %s",
                     src_path,
                     hostname,
@@ -450,10 +450,10 @@ class Herd:
                 continue
 
             if not dst_paths[i].parent.exists():
-                logger.info("creating local dir of %s", dst_paths[i])
+                log.info("creating local dir of %s", dst_paths[i])
                 dst_paths[i].parent.mkdir()
 
-            logger.debug(
+            log.debug(
                 "retrieving remote src-file '%s' from %s to local dst '%s'",
                 src_path,
                 hostname,
@@ -465,7 +465,7 @@ class Herd:
                 args=(cnx, src_path, dst_paths[i]),
             )
             threads[i].start()
-        logger.debug("  .. threads started - will wait until finished")
+        log.debug("  .. threads started - will wait until finished")
         for i, cnx in enumerate(
             tqdm(self.group, desc="  .. joining threads", unit="n", leave=False)
         ):
@@ -476,13 +476,13 @@ class Herd:
                 continue
             threads[i].join()  # timeout=10.0
             if threads[i].is_alive():
-                logger.error(
+                log.error(
                     "Command.Run() did fail to finish on %s - will delete that thread",
                     hostname,
                 )
             del threads[i]  # ... overcautious
             if delete_src:
-                logger.info(
+                log.info(
                     "deleting %s from remote %s",
                     src_path,
                     hostname,
@@ -513,7 +513,7 @@ class Herd:
             msg = f"Time difference between hosts greater {self.timestamp_diff_allowed} s"
             raise RuntimeError(msg)
         if ts_max.tzinfo is None:
-            logger.error("Provided time from host should have time-zone data!")
+            log.error("Provided time from host should have time-zone data!")
         # We need to estimate a future point in time such that all nodes are ready
         ts_start = ts_max + timedelta(seconds=self.start_delay_s)
         return ts_start, float(self.start_delay_s + ts_diff / 2)
@@ -557,7 +557,7 @@ class Herd:
         if not isinstance(remote_path, PurePath):
             remote_path = PurePosixPath(remote_path)
 
-        logger.info(
+        log.info(
             "Rolling out the config to '%s'",
             remote_path.as_posix(),
         )
@@ -584,12 +584,12 @@ class Herd:
             if replies[hostname].exited != 3:
                 active = True
                 if warn:
-                    logger.warning(
+                    log.warning(
                         "shepherd still active on %s",
                         hostname,
                     )
                 else:
-                    logger.debug(
+                    log.debug(
                         "shepherd still active on %s",
                         hostname,
                     )
@@ -618,7 +618,7 @@ class Herd:
     def start_measurement(self) -> int:
         """Start shepherd service on the group of hosts."""
         if self.check_status(warn=True):
-            logger.info("-> won't start while shepherd-instances are active")
+            log.info("-> won't start while shepherd-instances are active")
             return 1
 
         replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
@@ -626,23 +626,23 @@ class Herd:
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
-        logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
+        log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
-        logger.info("Shepherd was forcefully stopped")
+        log.info("Shepherd was forcefully stopped")
         if exit_code > 0:
-            logger.debug("-> max exit-code = %d", exit_code)
+            log.debug("-> max exit-code = %d", exit_code)
         return exit_code
 
     @validate_call
     def poweroff(self, *, restart: bool) -> int:
-        logger.debug("Shepherd-nodes affected: %s", self.hostnames.values())
+        log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
             replies = self.run_cmd(sudo=True, cmd="reboot")
-            logger.info("Command for rebooting nodes was issued")
+            log.info("Command for rebooting nodes was issued")
         else:
             replies = self.run_cmd(sudo=True, cmd="poweroff")
-            logger.info("Command for powering off nodes was issued")
+            log.info("Command for powering off nodes was issued")
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     @validate_call
@@ -707,9 +707,9 @@ class Herd:
         ts_min = min(ts_nows)
         ts_diff = ts_max.timestamp() - ts_min.timestamp()
         if ts_diff > 5:
-            logger.error("Timediff after resync is too large (%d s)", ts_diff)
+            log.error("Timediff after resync is too large (%d s)", ts_diff)
             return 1
-        logger.info("Timediff is OK (%d s)", ts_diff)
+        log.info("Timediff is OK (%d s)", ts_diff)
         return exit_code
 
     @validate_call
@@ -723,16 +723,16 @@ class Herd:
             replies = self.run_cmd(sudo=True, cmd=command)
             exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
             if exit_code:
-                logger.error("Running Task failed - will exit now!")
+                log.error("Running Task failed - will exit now!")
             if not quiet:
                 self.print_output(replies, verbose=True)
         else:
             remote_path = PurePosixPath("/etc/shepherd/config.yaml")
             self.put_task(config, remote_path)
             exit_code = self.start_measurement()
-            logger.info("Shepherd started.")
+            log.info("Shepherd started.")
             if exit_code > 0:
-                logger.debug("-> max exit-code = %d", exit_code)
+                log.debug("-> max exit-code = %d", exit_code)
         return exit_code
 
     @validate_call
@@ -748,14 +748,14 @@ class Herd:
         tbed_di = tb_client.query_item("Testbed", tbed_id)
         tbed = Testbed(**tbed_di)
         if tbed.shared_storage:
-            logger.info("Data should be locally at: %s", {tbed.data_on_server})
+            log.info("Data should be locally at: %s", {tbed.data_on_server})
 
         wrap = prepare_task(config)
         tasks = extract_tasks(wrap, no_task_sets=False)
         failed = False
         for task in tasks:
             if hasattr(task, "output_path"):
-                logger.info("General remote path is: %s", task.output_path)
+                log.info("General remote path is: %s", task.output_path)
                 failed |= self.get_file(
                     task.output_path,
                     dst_dir,
@@ -764,7 +764,7 @@ class Herd:
                 )
             elif hasattr(task, "get_output_paths"):
                 for host, path in task.get_output_paths().items():
-                    logger.info("Remote path of '%s' is: %s", host, path)
+                    log.info("Remote path of '%s' is: %s", host, path)
                     failed |= self.get_file(
                         path,
                         dst_dir,

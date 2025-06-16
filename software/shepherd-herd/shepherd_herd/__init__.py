@@ -10,7 +10,7 @@ images to target sensor nodes.
 from .herd import Herd
 from .logger import activate_verbosity
 from .logger import get_verbosity
-from .logger import logger
+from .logger import log
 
 __version__ = "0.9.2"
 
@@ -18,6 +18,6 @@ __all__ = [
     "Herd",
     "activate_verbosity",
     "get_verbosity",
-    "logger",
-    "logger",
+    "log",
+    "log",
 ]

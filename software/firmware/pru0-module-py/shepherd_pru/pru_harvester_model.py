@@ -1,7 +1,7 @@
 import ctypes as ct
 
-from shepherd_core import logger
 from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.logger import log
 
 from ._virtual_pru import virtual_pru
 from .data_types import HarvesterConfig
@@ -11,8 +11,8 @@ from .data_types import HarvesterConfig
 class PruHarvesterModel:
     def __init__(self, cfg: HarvesterPRUConfig) -> None:
         self.hrv_cfg = HarvesterConfig(**cfg.model_dump())
-        logger.info("This is the PRU-C-HRV-Model.")
-        logger.info(cfg.model_dump())
+        log.info("This is the PRU-C-HRV-Model.")
+        log.info(cfg.model_dump())
         self.pru = virtual_pru
         self.pru.harvester_initialize(ct.byref(self.hrv_cfg))
 
