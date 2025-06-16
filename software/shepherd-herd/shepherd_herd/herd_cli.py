@@ -17,7 +17,7 @@ from typing_extensions import Unpack
 from . import __version__
 from .herd import Herd
 from .logger import activate_verbosity
-from .logger import logger as log
+from .logger import log
 
 # TODO:
 #  - click.command shorthelp can also just be the first sentence of docstring
