@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing_extensions import Self
 
-from .logger import logger
+from .logger import log
 
 
 class LogicTrace:
@@ -42,7 +42,7 @@ class LogicTrace:
             raise FileNotFoundError
         if path.with_suffix(".pkl").exists():
             path = path.with_suffix(".pkl")
-            # logger.debug("File")
+            # log.debug("File")
         if path.suffix.lower() == ".csv":
             data: np.ndarray = np.loadtxt(
                 path.as_posix(),
@@ -91,7 +91,7 @@ class LogicTrace:
         # discard first&last entry AND make sure state=low starts
         _ds = _ds[2:-1] if (_d0[0] == 0) else _ds[1:-1]
         if len(_d0) > len(_ds):
-            logger.debug(
+            log.debug(
                 "filtered out %d/%d events (redundant)",
                 len(_d0) - len(_ds),
                 len(_d0),
@@ -107,7 +107,7 @@ class LogicTrace:
         )
         _num = len(_filter1) - _filter1.sum()
         if _num > 0:
-            logger.debug("filtered out %d glitches", _num)
+            log.debug("filtered out %d glitches", _num)
         return data[_filter2]
 
     def calc_durations_ns(

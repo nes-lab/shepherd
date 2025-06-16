@@ -3,10 +3,10 @@ import logging
 import chromalog
 
 chromalog.basicConfig(format="%(message)s")
-logger: logging.Logger = logging.getLogger("Receiver")
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.NullHandler())
+log: logging.Logger = logging.getLogger("Receiver")
+log.setLevel(logging.INFO)
+log.addHandler(logging.NullHandler())
 
 
 def activate_verbosity() -> None:
-    logger.setLevel(logging.DEBUG)
+    log.setLevel(logging.DEBUG)

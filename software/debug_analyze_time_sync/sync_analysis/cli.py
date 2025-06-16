@@ -8,7 +8,7 @@ import pandas as pd
 
 from . import __version__
 from .logger import activate_verbosity
-from .logger import logger as log
+from .logger import log
 from .logic_trace import LogicTrace
 from .logic_traces import LogicTraces
 

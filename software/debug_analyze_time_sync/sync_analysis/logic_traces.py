@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from . import logger
+from . import log
 from .logic_trace import LogicTrace
 
 
@@ -15,7 +15,7 @@ class LogicTraces:
     ) -> None:
         self.traces: list[LogicTrace] = []
         _fcsv = list(path.rglob("*.csv"))
-        logger.debug(" -> got %s csv-files", len(_fcsv))
+        log.debug(" -> got %s csv-files", len(_fcsv))
 
         for _f in _fcsv:
             self.traces.append(LogicTrace.from_file(_f, glitch_ns=glitch_ns))
