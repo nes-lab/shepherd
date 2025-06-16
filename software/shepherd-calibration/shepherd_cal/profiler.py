@@ -19,7 +19,7 @@ from keithley2600.keithley_driver import KeithleyClass
 from shepherd_core.data_models.testbed.cape import TargetPort
 
 from .calibrator import Calibrator
-from .logger import logger
+from .logger import log
 
 # ruff: noqa: FBT003
 
@@ -129,7 +129,7 @@ class Profiler:
                 adc_current_raw,
             )
 
-        logger.info(
+        log.info(
             "  DAC @ %.3f V; \tSMU: %.3f mA @ %.4f V; \tI_raw: mean=%.2f, stddev=%.2f",
             voltage_V,
             1000 * current_A,
@@ -173,7 +173,7 @@ class Profiler:
         smu_voltage = smu.measure.v()
         smu.source.output = smu.OUTPUT_OFF
 
-        logger.info(
+        log.info(
             "  DAC @ %.3f V;"
             " \tSMU: %.3f mA @ %.4f V;"
             " \tI_raw: mean=%.2f, stddev=%.2f;"
@@ -191,7 +191,7 @@ class Profiler:
         return adc_currents_raw, adc_voltages_raw, smu_voltage, current_A
 
     def measure_harvester(self) -> np.ndarray:
-        logger.info("Measurement - Harvester - Voltage & Current")
+        log.info("Measurement - Harvester - Voltage & Current")
         if True:  # TODO: test if leakage is fixed
             self._cal.sheep.switch_shepherd_mode("hrv_adc_read")
             self._cal.sheep.set_aux_target_voltage_raw(0, True)  # = link_channels
@@ -227,7 +227,7 @@ class Profiler:
         return results
 
     def measure_emulator_a(self) -> np.ndarray:
-        logger.info("Measurement - Emulator - Current - ADC Channel A - Target A")
+        log.info("Measurement - Emulator - Current - ADC Channel A - Target A")
         self._cal.sheep.switch_shepherd_mode("emu_adc_read")
         results = np.zeros(
             [6, len(self.voltages_V) * len(self.currents_A)],
@@ -257,7 +257,7 @@ class Profiler:
         return results
 
     def measure_emulator_b(self) -> np.ndarray:
-        logger.info("Measurement - Emulator - Current - ADC Channel A - Target B")
+        log.info("Measurement - Emulator - Current - ADC Channel A - Target B")
         self._cal.sheep.switch_shepherd_mode("emu_adc_read")
         results = np.zeros([6, len(self.voltages_V)], dtype=object)
         self._cal.sheep.select_port_for_power_tracking(TargetPort.B)

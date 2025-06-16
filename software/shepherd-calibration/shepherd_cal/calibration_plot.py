@@ -5,7 +5,7 @@ import numpy as np
 from shepherd_core import CalibrationCape
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 
-from .logger import logger
+from .logger import log
 
 
 def plot_calibration(
@@ -16,7 +16,7 @@ def plot_calibration(
     for component in ["harvester", "emulator"]:
         msr_component = measurements[component]
         if msr_component is None:
-            logger.info(
+            log.info(
                 "NOTE: data for component '%s' not found - will skip plot",
                 component,
             )
@@ -34,13 +34,13 @@ def plot_calibration(
                 xl = [xp[0], xp[-1]]
                 yl = [gain * xlp + offset for xlp in xl]
             except KeyError:
-                logger.info(
+                log.info(
                     "NOTE: data for channel '%s' was not found - will skip plot",
                     channel,
                 )
                 continue
             except ValueError as e:
-                logger.info(
+                log.info(
                     "NOTE: data for channel '%s' was faulty - will skip plot",
                     channel,
                     exc_info=e,

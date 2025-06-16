@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from .logger import logger
+from .logger import log
 from .profile_calibration import ProfileCalibration
 
 component_dict: dict[str, str] = {
@@ -44,7 +44,7 @@ class ProfileCape:
             # TODO: is this useful?
             file = Path(file.stem + ".npz")
 
-        logger.debug("processing '%s'", file)
+        log.debug("processing '%s'", file)
         meas_file = np.load(str(file), allow_pickle=True)
         self.file_name: str = file.stem
 
@@ -62,7 +62,7 @@ class ProfileCape:
                 continue
             if (meas_file[comp_i] is None) or (meas_file[comp_i].size < 2):
                 continue
-            logger.debug("  component '%s'", comp_o)
+            log.debug("  component '%s'", comp_o)
 
             self._prepare_data(comp_o, meas_file[comp_i])
             # ⤷ changes self.data !
@@ -95,7 +95,7 @@ class ProfileCape:
         # fix the known case of missing SMU (PART 1)
         if component == "emu_b" and "emu_a" in self.cals:
             cal = self.cals["emu_a"]
-            logger.debug("  -> replaced Cal of emu_b with _a")
+            log.debug("  -> replaced Cal of emu_b with _a")
         else:
             cal = ProfileCalibration.from_measurement(data_df)
 
@@ -108,7 +108,7 @@ class ProfileCape:
             resistor = (data_df["v_shp_V"] / data_df["c_shp_A"]).median()
             data_df["c_ref_A"] = data_df["v_shp_V"] / resistor
             data_df["v_ref_V"] = data_df.loc[:, "v_shp_V"]
-            logger.debug(
+            log.debug(
                 "  -> replaced SMU-values with shp-values and estimate resistor (%.3f Ohm)",
                 resistor,
             )

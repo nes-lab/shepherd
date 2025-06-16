@@ -8,7 +8,7 @@ from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from typing_extensions import Self
 
-from .logger import logger
+from .logger import log
 
 # ruff: noqa: PD008
 
@@ -36,7 +36,7 @@ class ProfileCalibration(CalibrationSeries):
         offset = float(result.intercept)
         gain = float(result.slope)
         if result.rvalue < 0.999:
-            logger.warning(
+            log.warning(
                 "WARNING: a calibration had a low rvalue = %f",
                 result.rvalue,
             )
@@ -54,7 +54,7 @@ class ProfileCalibration(CalibrationSeries):
         filter0 = (result.c_ref_A >= 60e-6) & (result.c_ref_A <= 14e-3) & (result.v_shp_V == v1)
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
-            logger.warning(
+            log.warning(
                 "NOTE: skipped determining current_calibration (missing data)",
             )
             return None
@@ -64,11 +64,11 @@ class ProfileCalibration(CalibrationSeries):
                 result.c_shp_raw,
             )
         except ValueError:
-            logger.warning(
+            log.warning(
                 "NOTE: skipped determining current_calibration (failed linregress)",
             )
             return None
-        logger.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
+        log.info("  -> resulting C-Cal: gain = %.9f, offset = %f", gain, offset)
         return CalibrationPair(gain=gain, offset=offset, unit="A")
 
     @staticmethod
@@ -83,7 +83,7 @@ class ProfileCalibration(CalibrationSeries):
         filter0 = (result.v_shp_V >= 0.3) & (result.v_shp_V <= 2.6) & (result.c_ref_A == c1)
         result = result[filter0].reset_index(drop=True)
         if filter0.sum() <= 1:
-            logger.warning(
+            log.warning(
                 "NOTE: skipped determining voltage_calibration (missing data)",
             )
             return None
@@ -93,9 +93,9 @@ class ProfileCalibration(CalibrationSeries):
                 result.v_shp_raw,
             )
         except ValueError:
-            logger.warning(
+            log.warning(
                 "NOTE: skipped determining voltage_calibration (failed linregress)",
             )
             return None
-        logger.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
+        log.info("  -> resulting V-Cal: gain = %.9f, offset = %f", gain, offset)
         return CalibrationPair(gain=gain, offset=offset, unit="V")

@@ -8,11 +8,11 @@ import typer
 
 from . import __version__
 from .logger import activate_verbosity
-from .logger import logger
+from .logger import log
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    logger.warning("Exiting!")
+    log.warning("Exiting!")
     sys.exit(0)
 
 
@@ -24,11 +24,11 @@ def cli_setup_callback(*, verbose: bool = False, print_version: bool = False) ->
         activate_verbosity()
 
     if print_version:
-        logger.info("Shepherd-Cal v%s", __version__)
-        logger.debug("Shepherd-Core v%s", shepherd_core.__version__)
-        logger.debug("Python v%s", sys.version)
-        logger.debug("Typer v%s", typer.__version__)
-        logger.debug("Click v%s", click.__version__)
+        log.info("Shepherd-Cal v%s", __version__)
+        log.debug("Shepherd-Core v%s", shepherd_core.__version__)
+        log.debug("Python v%s", sys.version)
+        log.debug("Typer v%s", typer.__version__)
+        log.debug("Click v%s", click.__version__)
 
 
 # NOTE: typer.Option seems to imply Optional[type]

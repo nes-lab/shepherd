@@ -20,7 +20,7 @@ from .cli_helper import smu_ip_opt_t
 from .cli_helper import smu_nc_opt_t
 from .cli_helper import user_opt_t
 from .cli_helper import verbose_opt_t
-from .logger import logger
+from .logger import log
 from .profile_analyzer import analyze_directory
 from .profiler import INSTR_PROFILE_SHP
 from .profiler import Profiler
@@ -93,7 +93,7 @@ def measure(
         click.echo(INSTR_PROFILE_SHP)
         if not smu_4wire:
             click.echo(INSTR_4WIRE)
-        logger.info(
+        log.info(
             " -> Profiler will sweep through %d voltages and %d currents (each Channel)",
             len(profiler.voltages_V),
             len(profiler.currents_A),
@@ -110,8 +110,8 @@ def measure(
         file_path,
         **results,
     )
-    logger.info("Data was written to '%s'", file_path)
-    logger.debug("Profiling took %.1f s", time() - time_now)
+    log.info("Data was written to '%s'", file_path)
+    log.debug("Profiling took %.1f s", time() - time_now)
 
 
 in_files_arg_t = typer.Argument(

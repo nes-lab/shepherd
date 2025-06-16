@@ -17,7 +17,7 @@ from shepherd_core.data_models.base.cal_measurement import CalMeasurementHarvest
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementPair
 from shepherd_core.data_models.testbed.cape import TargetPort
 
-from .logger import logger
+from .logger import log
 
 INSTR_CAL_HRV = """
 ---------------------- Harvester calibration -----------------------
@@ -65,7 +65,7 @@ class Calibrator:
         # TODO: check connection or else .sudo below throws socket.error when sheep unavail
 
         if smu_ip is None:
-            logger.debug("SMU: No IP provided, device not usable this session")
+            log.debug("SMU: No IP provided, device not usable this session")
             self.kth = None
         else:
             self.kth: Keithley2600Base = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
@@ -136,7 +136,7 @@ class Calibrator:
         dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
         mode_old = self.sheep.switch_shepherd_mode("hrv_adc_read")
-        logger.debug(
+        log.debug(
             " -> setting dac-voltage to %s V (raw = %s) -> upper limit now max",
             dac_voltage_V,
             dac_voltage_raw,
@@ -167,7 +167,7 @@ class Calibrator:
                     shepherd_raw=adc_voltage_raw,
                 ),
             )
-            logger.debug(
+            log.debug(
                 "  SMU-reference: %.4f V @ %.3f mA;"
                 "  adc-v: %.4f raw; adc-c: %.3f raw; filtered out %.2f %% of values",
                 voltage_V,
@@ -191,7 +191,7 @@ class Calibrator:
         dac_voltage_raw = dac_voltage_to_raw(dac_voltage_V)
 
         mode_old = self.sheep.switch_shepherd_mode("hrv_adc_read")
-        logger.debug(
+        log.debug(
             " -> setting dac-voltage to %s V (raw = %s)",
             dac_voltage_V,
             dac_voltage_raw,
@@ -222,7 +222,7 @@ class Calibrator:
                     shepherd_raw=adc_current_raw,
                 ),
             )
-            logger.debug(
+            log.debug(
                 "  SMU-reference: %.3f mA @ %.4f V;"
                 "  adc-c: %.4f raw; filtered out %.2f %% of values",
                 1000 * current_A,
@@ -240,7 +240,7 @@ class Calibrator:
         dac_voltage_V = 2.5
 
         mode_old = self.sheep.switch_shepherd_mode("emu_adc_read")
-        logger.debug(" -> setting dac-voltage to %s V", dac_voltage_V)
+        log.debug(" -> setting dac-voltage to %s V", dac_voltage_V)
         # write both dac-channels of emulator
         self.sheep.set_aux_target_voltage_raw(
             dac_voltage_to_raw(dac_voltage_V),
@@ -273,7 +273,7 @@ class Calibrator:
                     shepherd_raw=adc_current_raw,
                 ),
             )
-            logger.debug(
+            log.debug(
                 "  SMU-reference: %.3f mA @ %.4f V;"
                 "  adc-c: %.4f raw; filtered out %.2f %% of values",
                 1000 * current_A,
@@ -319,7 +319,7 @@ class Calibrator:
             smu_current_mA = 1000 * smu.measure.i()
 
             results.append(CalMeasurementPair(reference_si=mean, shepherd_raw=_val))
-            logger.debug(
+            log.debug(
                 "  shp-dac: %.3f V (%.0f raw);"
                 "  SMU-reference: %.6f V (median = %.6f); current: %.3f mA",
                 voltages_V[_iter],
@@ -334,27 +334,27 @@ class Calibrator:
 
     def measure_harvester(self) -> CalMeasurementHarvester:
         results: dict[str, CalMeasPairs] = {}
-        logger.info("Measurement - Harvester - ADC . Voltage")
+        log.info("Measurement - Harvester - ADC . Voltage")
         results["adc_V_Sense"] = self.measure_harvester_adc_voltage(self.kth.smub)
 
-        logger.info("Measurement - Harvester - ADC . Current")
+        log.info("Measurement - Harvester - ADC . Current")
         results["adc_C_Hrv"] = self.measure_harvester_adc_current(self.kth.smub)
 
-        logger.info("Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
+        log.info("Measurement - Harvester - DAC . Voltage - Channel A (VSim)")
         results["dac_V_Sim"] = self.measure_dac_voltage(self.kth.smua, dac_bitmask=0b0001)
 
-        logger.info("Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
+        log.info("Measurement - Harvester - DAC . Voltage - Channel B (VHarv)")
         results["dac_V_Hrv"] = self.measure_dac_voltage(self.kth.smub, dac_bitmask=0b0010)
         return CalMeasurementHarvester(**results)
 
     def measure_emulator(self) -> CalMeasurementEmulator:
         results: dict[str, CalMeasPairs] = {}
-        logger.info("Measurement - Emulator - ADC . Current - Target A")
+        log.info("Measurement - Emulator - ADC . Current - Target A")
         # targetA-Port will get the monitored dac-channel-b
         self.sheep.select_port_for_power_tracking(TargetPort.A)
         results["adc_C_A"] = self.measure_emulator_current(self.kth.smua)
 
-        logger.info("Measurement - Emulator - ADC . Current - Target B")
+        log.info("Measurement - Emulator - ADC . Current - Target B")
         # targetB-Port will get the monitored dac-channel-b
         self.sheep.select_port_for_power_tracking(TargetPort.B)
         # NOTE: adc_voltage does not exist for emulator, but gets used for target port B
@@ -362,14 +362,14 @@ class Calibrator:
 
         self.sheep.select_port_for_power_tracking(TargetPort.B)
         # routes DAC.A to TGT.A to SMU-A
-        logger.info("Measurement - Emulator - DAC . Voltage - Channel A")
+        log.info("Measurement - Emulator - DAC . Voltage - Channel A")
         results["dac_V_A"] = self.measure_dac_voltage(
             self.kth.smua,
             dac_bitmask=0b1100,
             drain=True,
         )
 
-        logger.info("Measurement - Emulator - DAC . Voltage - Channel B")
+        log.info("Measurement - Emulator - DAC . Voltage - Channel B")
         results["dac_V_B"] = self.measure_dac_voltage(
             self.kth.smub,
             dac_bitmask=0b1100,
@@ -387,28 +387,28 @@ class Calibrator:
         CalibrationCape.from_file(cal_file)  # test data
 
         self._cnx.put(cal_file, temp_file)
-        logger.info("----------EEPROM WRITE------------")
-        logger.info("Local  file: %s", cal_file.as_posix())
-        logger.info("Remote file: %s", temp_file)
+        log.info("----------EEPROM WRITE------------")
+        log.info("Local  file: %s", cal_file.as_posix())
+        log.info("Remote file: %s", temp_file)
         result = self._cnx.sudo(
             f"shepherd-sheep --verbose eeprom write {temp_file}",
             warn=True,
             hide=True,
         )
-        logger.info(result.stdout)
-        logger.info(result.stderr)
-        logger.info("---------------------------------")
+        log.info(result.stdout)
+        log.info(result.stderr)
+        log.info("---------------------------------")
 
     def read(self) -> None:
-        logger.info("----------EEPROM READ------------")
+        log.info("----------EEPROM READ------------")
         result = self._cnx.sudo(
             "shepherd-sheep --verbose eeprom read",
             warn=True,
             hide=True,
         )
-        logger.info(result.stdout)
-        logger.info(result.stderr)
-        logger.info("---------------------------------")
+        log.info(result.stdout)
+        log.info(result.stderr)
+        log.info("---------------------------------")
 
     def retrieve(self, cal_file: Path) -> None:
         temp_file = "/tmp/calib.yaml"  # noqa: S108
@@ -417,6 +417,6 @@ class Calibrator:
             warn=True,
             hide=True,
         )
-        logger.info(result.stdout)
-        logger.info(result.stderr)
+        log.info(result.stdout)
+        log.info(result.stderr)
         self._cnx.get(temp_file, local=cal_file.as_posix())
