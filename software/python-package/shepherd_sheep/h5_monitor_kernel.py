@@ -31,7 +31,7 @@ class KernelMonitor(Monitor):
         )
 
         command = [
-            "sudo",
+            "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
             "/usr/bin/journalctl",
             "--dmesg",
             "--follow",

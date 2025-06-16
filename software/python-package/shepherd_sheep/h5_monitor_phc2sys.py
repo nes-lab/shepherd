@@ -29,7 +29,7 @@ class PHC2SYSMonitor(Monitor):
         self.data["values"].attrs["description"] = "phc offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
-            "sudo",
+            "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
             "/usr/bin/journalctl",
             "--unit=phc2sys@eth0",
             "--follow",

@@ -582,7 +582,11 @@ def retrieve(
             if herd.await_stop(timeout=30):
                 raise TimeoutError("shepherd still active after timeout")
 
-        if filename.is_file() and filename.exists() and filename.suffix in [".yaml", ".yml"]:
+        if (
+            filename.is_file()
+            and filename.exists()
+            and filename.suffix in [".yaml", ".yml", ".pickle"]
+        ):
             failed = herd.get_task_files(filename, outdir, separate=separate, delete_src=delete)
         else:
             filename = PurePosixPath(filename)
