@@ -75,7 +75,7 @@ from shepherd_core import Compression
 from shepherd_core import Reader
 from shepherd_core import Writer
 from shepherd_core.data_models import EnergyDType
-from shepherd_core.logger import logger
+from shepherd_core.logger import log
 from typing_extensions import Self
 
 
@@ -336,24 +336,24 @@ if __name__ == "__main__":
                     globals=globals(),
                     number=1,
                 )
-                logger.info(
+                log.info(
                     "RUN with duration %d s, compression %s, random %s",
                     duration,
                     str(compression),
                     str(random),
                 )
-                logger.info(
+                log.info(
                     "\tOld F2RAM = %f s, RAM2F = %f s",
                     round(two, 3),
                     round(tro, 3),
                 )
-                logger.info(
+                log.info(
                     "\tNew F2RAM = %f s, RAM2F = %f s, RAM2Fts = %f",
                     round(twn, 3),
                     round(trn, 3),
                     round(trt, 3),
                 )
-                logger.info(
+                log.info(
                     "\tSize f_in = %f MB, f_old = %f MB, f_new = %f MB, f_nts = %f MB",
                     round(path_i.stat().st_size / 2**20, 3),
                     round(path_o1.stat().st_size / 2**20, 3),

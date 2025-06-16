@@ -2,8 +2,8 @@ from pathlib import Path
 
 from config import host_selected
 from config import hrv_list
-from shepherd_core import logger
 from shepherd_core.data_models import VirtualHarvesterConfig
+from shepherd_core.logger import log
 from shepherd_core.vsource import simulate_harvester
 from shepherd_data import Reader
 
@@ -27,6 +27,6 @@ for hrv_name in hrv_list[1:]:
     with Reader(path_output) as _fh:
         results[path_output.stem] = _fh.energy()
 
-logger.info("Finished with:")
+log.info("Finished with:")
 for _key, _value in results.items():
-    logger.info("\t%s = %.6f mWs", _key, 1e3 * _value)
+    log.info("\t%s = %.6f mWs", _key, 1e3 * _value)

@@ -4,7 +4,7 @@ import dearpygui.dearpygui as dpg
 import zerorpc
 from past.builtins import execfile
 from shepherd_core.data_models.testbed import TargetPort
-from shepherd_core.logger import logger
+from shepherd_core.logger import log
 from shepherd_sheep import ShepherdDebug
 
 
@@ -28,7 +28,7 @@ refresh_next = 0
 
 def program_start_callback(sender, data) -> None:
     update_gui_elements()
-    logger.debug("Program started")
+    log.debug("Program started")
 
 
 def schedule_refresh() -> None:
@@ -95,7 +95,7 @@ def update_gui_elements() -> None:
 def refresh_rate_callback(sender, element_data, user_data) -> None:
     global refresh_interval
     refresh_interval = round(1.0 / float(element_data), 3)
-    logger.debug("Wished for %f fps, %f s", element_data, refresh_interval)
+    log.debug("Wished for %f fps, %f s", element_data, refresh_interval)
 
 
 ########################
@@ -140,9 +140,9 @@ def connect_button_callback(sender, element_data, user_data) -> None:
         shepherd_io = connect_to_node(host)
     else:
         shepherd_io = None
-        logger.debug("Disconnected from Host '%s'", host)
+        log.debug("Disconnected from Host '%s'", host)
     if check_connection():
-        logger.debug("Connected to Host '%s'", host)
+        log.debug("Connected to Host '%s'", host)
         # shepherd_cal = shepherd_io._cal.from_default()
     update_gui_elements()
 
@@ -229,7 +229,7 @@ def update_power_state_recorder() -> None:
 def reinitialize_prus(sender, element_data, user_data) -> None:
     shepherd_io.reinitialize_prus()
     shepherd_io.set_shepherd_state(shepherd_state)
-    logger.debug("reinitialized PRUs")
+    log.debug("reinitialized PRUs")
     update_gui_elements()
 
 
@@ -363,17 +363,17 @@ def gpio_batok_callback(sender, en_state, user_data) -> None:
 
 
 def filter_update_callback(sender, element_data, user_data) -> None:
-    logger.debug("filter_update_callback")
+    log.debug("filter_update_callback")
     # update_table()
 
 
 def update_buttons() -> None:
-    logger.debug("update_buttons")
+    log.debug("update_buttons")
 
 
 def update_button_callback(sender, element_data, user_data) -> None:
-    logger.debug("update_button_callback")
+    log.debug("update_button_callback")
 
 
 def save_button_callback(_sender, _element_data, _user_data) -> None:
-    logger.debug("connect_button_callback")
+    log.debug("connect_button_callback")

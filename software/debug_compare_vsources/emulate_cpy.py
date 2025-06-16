@@ -5,8 +5,8 @@ from config import emu_hrv_list
 from config import emu_src_list
 from config import emu_target
 from config import host_selected
-from shepherd_core import logger
 from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.logger import log
 from shepherd_data import Reader
 from shepherd_pru.pru_source_simulation import simulate_source
 
@@ -33,6 +33,6 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
     with Reader(path_output, verbose=False) as _fh:
         results[path_output.stem] = _fh.energy()
 
-logger.info("Finished with:")
+log.info("Finished with:")
 for _key, _value in results.items():
-    logger.info("\t%s = %.6f mWs", _key, 1e3 * _value)
+    log.info("\t%s = %.6f mWs", _key, 1e3 * _value)
