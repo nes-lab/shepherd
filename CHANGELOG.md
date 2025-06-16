@@ -4,13 +4,14 @@
 
 - update all links and referenced for moving repos to `nes-lab`
 - herd & sheep: transform version into own command
+- herd & sheep: allow config be pickled, repickled (10 MB YAML Testbed-tasks takes 350 s to load on sheep)
 - update to gnupru 2025.05
 - herd-tool
   - now looks for herd.yaml instead of .yml
   - allow quiet run_task()
   - sort output before it gets printed
-- sheep - tracers are now properly disabled
--
+- sheep - tracers are now properly disabled (run-conditions were messed up before)
+- py-ecosystem - rename logger to log to avoid name-collision
 - various small improvements and fixes
 
 ## 0.9.1
