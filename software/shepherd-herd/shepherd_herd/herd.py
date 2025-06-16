@@ -3,13 +3,14 @@
 import contextlib
 import logging
 import os
+import pickle
 import threading
 import time
 from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
 from datetime import datetime
 from datetime import timedelta
-from io import StringIO
+from io import BytesIO
 from pathlib import Path
 from pathlib import PurePath
 from pathlib import PurePosixPath
@@ -303,11 +304,11 @@ class Herd:
     @staticmethod
     def _thread_put(
         cnx: Connection,
-        src: Path | StringIO,
+        src: Path | BytesIO,
         dst: PurePosixPath,
         force_overwrite: bool,  # noqa: FBT001
     ) -> None:
-        if isinstance(src, StringIO):
+        if isinstance(src, BytesIO):
             filename = dst.name
         else:
             filename = src.name
@@ -335,12 +336,12 @@ class Herd:
 
     def put_file(
         self,
-        src: StringIO | Path | str,
+        src: BytesIO | Path | str,
         dst: PurePosixPath | str,
         *,
         force_overwrite: bool = False,
     ) -> None:
-        if isinstance(src, StringIO):
+        if isinstance(src, BytesIO):
             src_path = src
         else:
             src_path = Path(src).absolute()
@@ -530,25 +531,22 @@ class Herd:
         service.
 
         """
-        if isinstance(task, ShpModel):
+        if isinstance(task, ShpModel):  # Model gets pickled
             task_dict = task.model_dump(exclude_unset=True)
             task_wrap = Wrapper(
                 datatype=type(task).__name__,
                 created=datetime.now(tz=local_tz()),
                 parameters=task_dict,
             )
-            task_yaml = yaml.safe_dump(
-                task_wrap.model_dump(exclude_unset=True),
-                default_flow_style=False,
-                sort_keys=False,
-            )
-            task = StringIO()  # TODO: wanted is StringIO(task_yaml), but large inputs produce bugs
-            task.write(task_yaml)
-        elif isinstance(task, Path):
+            task = BytesIO(pickle.dumps(task_wrap))
+
+        elif isinstance(task, Path):  # file gets pickled if it is YAML (speedup sheep)
             if not task.is_file() or not task.exists():
                 raise FileNotFoundError("Task-Path must be an existing file")
-            with task.open(encoding="utf-8-sig") as stream:
-                task_yaml = yaml.safe_load(stream)
+            if task.is_file():
+                task_wrap = prepare_task(task)
+                if task.suffix.lower() == ".yaml":
+                    task = BytesIO(pickle.dumps(task_wrap))
         else:
             raise TypeError("Task must either be model or path to a model")
 

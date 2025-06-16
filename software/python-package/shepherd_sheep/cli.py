@@ -165,7 +165,7 @@ def target_power(target_port: str, voltage: float, *, on: bool, gpio_pass: bool)
 
 
 @cli.command(
-    short_help="Runs a task or set of tasks with provided config/task file (YAML).",
+    short_help="Runs a task or set of tasks with provided config/task file (YAML, pickle).",
 )
 @click.argument(
     "config",
