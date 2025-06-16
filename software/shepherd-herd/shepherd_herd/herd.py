@@ -287,9 +287,9 @@ class Herd:
         verbose: bool = False,
     ) -> None:
         """Log output-results of shell commands."""
+        # sort dict by key first
+        replies = dict(sorted(replies.items()))
         for hostname, reply in replies.items():
-            # TODO: incorrect when sheep are missing in between
-            #       -> also throw out in hostname-dict?
             if not verbose and reply.exited == 0:
                 continue
             if len(reply.stdout) > 0:
@@ -713,7 +713,9 @@ class Herd:
         return exit_code
 
     @validate_call
-    def run_task(self, config: Path | ShpModel, *, attach: bool = False) -> int:
+    def run_task(
+        self, config: Path | ShpModel, *, attach: bool = False, quiet: bool = False
+    ) -> int:
         if attach:
             remote_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
             self.put_task(config, remote_path)
@@ -722,8 +724,8 @@ class Herd:
             exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
             if exit_code:
                 logger.error("Running Task failed - will exit now!")
-            self.print_output(replies, verbose=True)
-
+            if not quiet:
+                self.print_output(replies, verbose=True)
         else:
             remote_path = PurePosixPath("/etc/shepherd/config.yaml")
             self.put_task(config, remote_path)
