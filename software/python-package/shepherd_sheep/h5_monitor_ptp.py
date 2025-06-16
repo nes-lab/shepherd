@@ -29,7 +29,7 @@ class PTPMonitor(Monitor):
         self.data["values"].attrs["description"] = "main offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
-            "sudo",
+            "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
             "/usr/bin/journalctl",
             "--unit=ptp4l@eth0",
             "--follow",

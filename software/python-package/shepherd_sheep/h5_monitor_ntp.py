@@ -26,7 +26,7 @@ class NTPMonitor(Monitor):
             chunks=True,
         )
         command = [
-            "sudo",
+            "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
             "/usr/bin/journalctl",
             "--unit=systemd-timesyncd.service",
             "--follow",
