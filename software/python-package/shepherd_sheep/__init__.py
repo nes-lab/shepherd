@@ -104,9 +104,12 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
         return True
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
+        log.info("Patching ID %d to %s", cfg.custom_id, file_path.as_posix())
         modify_uid(file_path, cfg.custom_id)
         file_path = firmware_to_hex(file_path)
+        log.debug("Converted file to intel-HEX: %s", file_path.as_posix())
     if file_path.as_posix() != cfg.firmware_file.as_posix():
+        log.info("Moving file %s to %s", file_path.name, cfg.firmware_file.as_posix())
         shutil.move(file_path, cfg.firmware_file)
     return False
 
