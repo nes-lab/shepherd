@@ -114,6 +114,8 @@ class SharedMemGPIOOutput:
                 self.ts_stop / 1e9,
                 (self.ts_stop - self.ts_start) / 1e9,
             )
+        else:
+            log.debug("[%s] Tracer deactivated", type(self).__name__)
 
         # gpio masking, configured for cape v2.4
 
@@ -210,9 +212,9 @@ class SharedMemGPIOOutput:
             offset=self._offset_timestamps + self.index_next * 8,
         )
 
-        if (not self.ts_set) or (
-            (timestamps[0] <= self.ts_stop) and (timestamps[-1] >= self.ts_start)
-        ):
+        if not self.ts_set:  # recording not wanted
+            data = None
+        elif (timestamps[0] <= self.ts_stop) and (timestamps[-1] >= self.ts_start):
             data = GPIOTrace(
                 timestamps_ns=timestamps,
                 bitmasks=np.frombuffer(
