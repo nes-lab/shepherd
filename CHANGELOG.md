@@ -13,6 +13,7 @@
 - sheep - tracers are now properly disabled (run-conditions were messed up before)
 - py-ecosystem - rename logger to log to avoid name-collision
 - various small improvements and fixes
+- **tested**: pytest sheep, pytest herd windows
 
 ## 0.9.1
 
