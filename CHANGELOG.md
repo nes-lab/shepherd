@@ -4,7 +4,7 @@
 
 - update all links and referenced for moving repos to `nes-lab`
 - herd & sheep: transform version into own command
-- herd & sheep: allow config be pickled, repickled 
+- herd & sheep: allow config be pickled, repickled
   - 10 MB YAML Testbed-tasks takes 350 s to load on sheep
   - that 10 MB has same size as pickle, but loads in .5 s
   - Models get wrapped, dumped to dict and platform-dependant pathlib.Path get replaced by string
