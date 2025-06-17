@@ -28,6 +28,7 @@ from shepherd_core import Inventory
 from shepherd_core import local_tz
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
+from shepherd_core.data_models.base.shepherd import path_to_str
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
@@ -523,7 +524,7 @@ class Herd:
     def put_task(
         self,
         task: Path | ShpModel,
-        remote_path: PurePosixPath | str = "/etc/shepherd/config.yaml",
+        remote_path: PurePosixPath | str = "/etc/shepherd/config.pickle",
     ) -> None:
         """Transfer shepherd tasks to the group of hosts / sheep.
 
@@ -531,6 +532,8 @@ class Herd:
         service.
 
         """
+        if remote_path.suffix.lower() != ".pickle":
+            raise NameError("Remote path must point to '.pickle'")
         if isinstance(task, ShpModel):  # Model gets pickled
             task_dict = task.model_dump(exclude_unset=True)
             task_wrap = Wrapper(
@@ -538,7 +541,8 @@ class Herd:
                 created=datetime.now(tz=local_tz()),
                 parameters=task_dict,
             )
-            task = BytesIO(pickle.dumps(task_wrap))
+            wrap_dict = path_to_str(task_wrap.model_dump(exclude_unset=True))
+            task = BytesIO(pickle.dumps(wrap_dict))
 
         elif isinstance(task, Path):  # file gets pickled if it is YAML (speedup sheep)
             if not task.is_file() or not task.exists():
@@ -546,7 +550,8 @@ class Herd:
             if task.is_file():
                 task_wrap = prepare_task(task)
                 if task.suffix.lower() == ".yaml":
-                    task = BytesIO(pickle.dumps(task_wrap))
+                    wrap_dict = path_to_str(task_wrap.model_dump(exclude_unset=True))
+                    task = BytesIO(pickle.dumps(wrap_dict))
         else:
             raise TypeError("Task must either be model or path to a model")
 
@@ -715,7 +720,7 @@ class Herd:
         self, config: Path | ShpModel, *, attach: bool = False, quiet: bool = False
     ) -> int:
         if attach:
-            remote_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
+            remote_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
             replies = self.run_cmd(sudo=True, cmd=command)
@@ -725,7 +730,7 @@ class Herd:
             if not quiet:
                 self.print_output(replies, verbose=True)
         else:
-            remote_path = PurePosixPath("/etc/shepherd/config.yaml")
+            remote_path = PurePosixPath("/etc/shepherd/config.pickle")
             self.put_task(config, remote_path)
             exit_code = self.start_measurement()
             log.info("Shepherd started.")

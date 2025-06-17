@@ -657,7 +657,7 @@ def retrieve(
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     """Programmer for Target-Controller."""
     tmp_file = PurePosixPath("/tmp/target_image.hex")  # noqa: S108
-    cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
+    cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
 
     with ctx.obj["herd"] as herd:
         herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
