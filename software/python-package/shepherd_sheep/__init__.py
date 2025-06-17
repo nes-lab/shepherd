@@ -82,7 +82,7 @@ def run_harvester(cfg: HarvestTask) -> bool:
 
 
 def run_emulator(cfg: EmulationTask) -> bool:
-    stack = ExitStack()
+    stack = ExitStack()  # TODO: use correctly in context
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
     try:

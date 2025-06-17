@@ -219,7 +219,8 @@ def alive(ctx: click.Context) -> None:
 
 
 @cli.command(
-    short_help="Run a task or set of tasks with provided config/task file (YAML).",
+    short_help="Run a task or set of tasks with provided config/task file (YAML). "
+               "NOTE: if no start-time is present, observers will not start synchronously.",
 )
 @click.argument(
     "config",
