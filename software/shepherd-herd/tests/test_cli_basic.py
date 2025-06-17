@@ -14,7 +14,7 @@ def test_run_standard(cli_runner: CliRunner) -> None:
     res = cli_runner.invoke(
         cli,
         [
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )
@@ -28,7 +28,7 @@ def test_run_extra(cli_runner: CliRunner) -> None:
         cli,
         [
             "-v",
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )
@@ -56,7 +56,7 @@ def test_run_sudo(cli_runner: CliRunner) -> None:
         cli,
         [
             "-v",
-            "shell-cmd",
+            "shell",
             "-s",
             "echo 'it's me: $USER",
         ],
@@ -71,7 +71,7 @@ def test_run_sudo_long(cli_runner: CliRunner) -> None:
         cli,
         [
             "-v",
-            "shell-cmd",
+            "shell",
             "--sudo",
             "echo 'it's me: $USER",
         ],
@@ -88,7 +88,7 @@ def test_provide_inventory(cli_runner: CliRunner, local_herd: Path) -> None:
             "-v",
             "-i",
             local_herd.as_posix(),
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )
@@ -104,7 +104,7 @@ def test_provide_inventory_long(cli_runner: CliRunner, local_herd: Path) -> None
             "--inventory",
             local_herd.as_posix(),
             "--verbose",
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )
@@ -123,7 +123,7 @@ def test_provide_limit(cli_runner: CliRunner, local_herd: Path) -> None:
             "-l",
             f"{sheep},",
             "-v",
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )
@@ -142,7 +142,7 @@ def test_provide_limit_long(cli_runner: CliRunner, local_herd: Path) -> None:
             "--limit",
             f"{sheep},",
             "-v",
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )
@@ -159,7 +159,7 @@ def test_provide_limit_fail(cli_runner: CliRunner, local_herd: Path) -> None:
             local_herd.as_posix(),
             "-l",
             "MrMeeseeks,",
-            "shell-cmd",
+            "shell",
             "date",
         ],
     )

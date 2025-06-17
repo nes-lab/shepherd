@@ -219,7 +219,8 @@ def alive(ctx: click.Context) -> None:
 
 
 @cli.command(
-    short_help="Run a task or set of tasks with provided config/task file (YAML).",
+    short_help="Run a task or set of tasks with provided config/task file (YAML). "
+    "NOTE: if no start-time is present, observers will not start synchronously.",
 )
 @click.argument(
     "config",
@@ -656,7 +657,7 @@ def retrieve(
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     """Programmer for Target-Controller."""
     tmp_file = PurePosixPath("/tmp/target_image.hex")  # noqa: S108
-    cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.yaml")
+    cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
 
     with ctx.obj["herd"] as herd:
         herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)

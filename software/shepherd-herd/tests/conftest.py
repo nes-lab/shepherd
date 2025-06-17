@@ -8,6 +8,7 @@ import yaml
 from click.testing import CliRunner
 from shepherd_data import Writer
 from shepherd_herd import Herd
+from shepherd_herd.herd import path_xdg_config
 from shepherd_herd.herd_cli import cli
 
 
@@ -68,12 +69,13 @@ def data_h5_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def local_herd(tmp_path: Path) -> Path:
-    # locations copied from herd.cli()
-    inventories = [
-        "/etc/shepherd/herd.yaml",
-        "~/herd.yaml",
-        "inventory/herd.yaml",
-        "herd.yaml",
+    # locations copied from herd.__innit__()
+    inventories: list[Path] = [
+        Path().cwd() / "herd.yaml",
+        Path().cwd() / "inventory/herd.yaml",
+        Path("~").expanduser() / "herd.yaml",
+        path_xdg_config / "shepherd/herd.yaml",
+        Path("/etc/shepherd/herd.yaml"),
     ]
     host_path = None
     for inventory in inventories:
