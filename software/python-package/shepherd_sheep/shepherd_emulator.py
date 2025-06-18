@@ -132,6 +132,8 @@ class ShepherdEmulator(ShepherdIO):
                 mode=self.component,  # is a cleaned up mode
                 datatype=EnergyDType.ivsample,
                 cal_data=self.cal_emu,
+                sample_rate=cfg.power_tracing.sample_rate,
+                only_power=cfg.power_tracing.only_power,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
             )
@@ -346,5 +348,5 @@ class ShepherdEmulator(ShepherdIO):
                 log.error(
                     "Recorder missed %.3f s IVTrace after start", file_start - self.start_time
                 )
-            if file_end < ts_end - 1e-3:
-                log.error("Recorder missed %.3f s IVTrace before end", ts_end - file_end)
+            if file_end < ts_end - max(1e-3, 2.0 / self.writer.samplerate_sps):
+                log.error("Recorder missed ~ %.3f s IVTrace before end", ts_end - file_end)

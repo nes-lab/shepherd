@@ -296,7 +296,7 @@ def test_cli_emulate_parameters_long(
         io_port="B",
         pwr_port="B",
         gpio_tracing=GpioTracing(uart_baudrate=9600),
-        power_tracing=PowerTracing(discard_current=False, discard_voltage=False),
+        power_tracing=PowerTracing(),
         verbose=3,
     ).to_file(tmp_yaml)
 

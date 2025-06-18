@@ -75,6 +75,8 @@ class ShepherdHarvester(ShepherdIO):
             datatype=cfg.virtual_harvester.get_datatype(),
             window_samples=cfg.virtual_harvester.calc_window_size(for_emu=True),
             cal_data=self.cal_hrv,
+            sample_rate=cfg.power_tracing.sample_rate,  # TODO: should raise for ivcurves
+            only_power=cfg.power_tracing.only_power,
             compression=cfg.output_compression,
             force_overwrite=cfg.force_overwrite,
             verbose=get_verbosity(),
@@ -190,5 +192,5 @@ class ShepherdHarvester(ShepherdIO):
         file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
         if file_start > self.start_time:
             log.error("Recorder missed %.3f s IVTrace after start", file_start - self.start_time)
-        if file_end < ts_end - 1e-3:
-            log.error("Recorder missed %.3f s IVTrace before end", file_end - ts_end)
+        if file_end < ts_end - max(1e-3, 2.0 / self.writer.samplerate_sps):
+            log.error("Recorder missed ~ %.3f s IVTrace before end", file_end - ts_end)

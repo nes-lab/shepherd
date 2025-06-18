@@ -99,6 +99,7 @@ class Writer(CoreWriter):
             verbose=verbose,
         )
         self.only_power = only_power
+
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
             self.CHUNK_SAMPLES_N,
         ).astype("u8")
