@@ -78,7 +78,7 @@ pru_errors: dict[int, str] = {
 }
 
 # fmt: off
-# ruff: noqa: E241, E501
+# ruff: noqa: E501
 GPIO_LOG_BIT_POSITIONS = {
     0: {"pru_reg": "r31_00", "name": "tgt_gpio0",   "bb_pin": "P8_45", "sys_pin": "P8_14", "sys_reg": "26"},
     1: {"pru_reg": "r31_01", "name": "tgt_gpio1",   "bb_pin": "P8_46", "sys_pin": "P8_17", "sys_reg": "27"},

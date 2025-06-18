@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from . import log
+from .logger import log
 from .logic_trace import LogicTrace
 
 

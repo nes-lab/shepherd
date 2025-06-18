@@ -14,6 +14,7 @@ from typing_extensions import Self
 
 from . import commons
 from .h5_monitor_ntp import NTPMonitor
+from .h5_recorder_power import PowerRecorder
 
 if TYPE_CHECKING:
     import h5py
@@ -37,8 +38,10 @@ from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
 from .h5_recorder_gpio import GpioRecorder
 from .h5_recorder_pru import PruRecorder
+from .logger import log
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_iv_input import IVTrace
+from .shared_mem_iv_output import SharedMemIVOutput
 from .shared_mem_util_output import UtilTrace
 
 
@@ -54,6 +57,8 @@ class Writer(CoreWriter):
         force_overwrite (bool): Overwrite existing file with the same name
     """
 
+    RATES_SUPPORTED = (10, 100, 1_000, 100_000)
+
     def __init__(
         self,
         file_path: Path,
@@ -62,13 +67,28 @@ class Writer(CoreWriter):
         window_samples: int | None = None,
         cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
+        sample_rate: int | None = None,
         *,
         modify_existing: bool = False,
         force_overwrite: bool = False,
+        only_power: bool = False,
         verbose: bool | None = True,
     ) -> None:
         # hopefully overwrite defaults from Reader
         self.samplerate_sps: int = 10**9 // commons.SAMPLE_INTERVAL_NS
+        self.reduce: bool = False
+        self.reduction_factor: int = 1
+        if isinstance(sample_rate, int):
+            if sample_rate not in self.RATES_SUPPORTED:
+                raise ValueError(
+                    "Data-rate for Power must be in [Hz, Samples-per-second]: %s",
+                    self.RATES_SUPPORTED,
+                )
+            self.reduce: bool = sample_rate != self.samplerate_sps
+            self.reduction_factor: int = self.samplerate_sps // sample_rate
+            self.samplerate_sps = sample_rate
+        if self.reduce:
+            log.info("Activated custom sample-rate: %d", self.samplerate_sps)
 
         # TODO: derive verbose-state
         super().__init__(
@@ -82,11 +102,11 @@ class Writer(CoreWriter):
             force_overwrite=force_overwrite,
             verbose=verbose,
         )
+        self.only_power = only_power
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            self.CHUNK_SAMPLES_N,
+            SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
         ).astype("u8")
-        # TODO: keep this optimization
 
         self.grp_data: h5py.Group = self.h5file["data"]
 
@@ -123,6 +143,14 @@ class Writer(CoreWriter):
         # prepare recorders
         self.rec_gpio = GpioRecorder(self.gpio_grp, compression=self._compression)
         self.rec_pru = PruRecorder(self.pru_util_grp, compression=self._compression)
+        if self.only_power:
+            self.power_grp = self.h5file.create_group("power")
+            self.rec_power = PowerRecorder(
+                data_rate=self.samplerate_sps,
+                cal_data=self._cal,
+                target=self.power_grp,
+                compression=self._compression,
+            )
 
         # targets for logging-monitor # TODO: redesign? all should be kept in data_0
         self.sheep_grp = self.h5file.create_group("sheep")
@@ -149,6 +177,8 @@ class Writer(CoreWriter):
         # end recorders
         self.rec_gpio.__exit__()
         self.rec_pru.__exit__()
+        if hasattr(self, "rec_power"):
+            self.rec_power.__exit__()
 
         # end monitors
         for monitor in self.monitors:
@@ -163,9 +193,31 @@ class Writer(CoreWriter):
             data: buffer-segment containing IV data
         """
         # First, we have to resize the corresponding datasets
-        data_length_new = len(data)
-        if data_length_new > 0:
-            data_end_pos = self.data_pos + data_length_new
+        if self.only_power:
+            self.rec_power.write(data)
+            return
+        if self.reduce:  # aka resampling via binning
+            len_add = len(data)
+            len_new = len_add // self.reduction_factor
+            data.voltage = (
+                np.reshape(data.voltage[:len_add], (len_new, self.reduction_factor))
+                .mean(axis=1)
+                .astype("u4")
+            )
+            data.current = (
+                np.reshape(data.current[:len_add], (len_new, self.reduction_factor))
+                .mean(axis=1)
+                .astype("u4")
+            )
+            if isinstance(data.timestamp_ns, np.ndarray):
+                # benchmarked slices: [:] is as fast as [::1] on BBB
+                data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
+            else:
+                raise ValueError("timestamp_ns must be np.ndarray")
+
+        len_add = len(data)
+        if len_add > 0:
+            data_end_pos = self.data_pos + len_add
             data_length_h5 = self.grp_data["voltage"].shape[0]
             if data_end_pos >= data_length_h5:
                 data_length_h5 += self.data_inc
@@ -178,8 +230,9 @@ class Writer(CoreWriter):
             if isinstance(data.timestamp_ns, int):
                 self.grp_data["time"][self.data_pos : data_end_pos] = (
                     self.buffer_timeseries + data.timestamp_ns
-                )
-            elif isinstance(data.timestamp_ns, np.ndarray):
+                )[:len_add]
+
+            if isinstance(data.timestamp_ns, np.ndarray):
                 self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
             self.data_pos = data_end_pos
 

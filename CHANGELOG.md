@@ -1,5 +1,15 @@
 # History of Changes
 
+## 0.9.3
+
+- herd - bugfix for sending Task to sheep
+  - always convert to file now
+  - ByteIO and StringIO seems broken on some py versions - stream gets corrupted
+- sheep - emu / hrv
+  - allow custom samplerate for power-tracing - data will be binned by mean() the samples
+  - allow to record only power (U * I)
+  - **Caution**: resampling IV-Samples with that method might lead to faulty results for target-voltages that are not constant (Sum(U * I) != Sum(U) * Sum(I))
+
 ## 0.9.2
 
 - update all links and referenced for moving repos to `nes-lab`

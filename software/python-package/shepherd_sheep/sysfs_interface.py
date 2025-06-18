@@ -58,7 +58,7 @@ def flatten_list(dl: list) -> list:
 def load_kernel_module() -> None:
     _try = 6
     while _try > 0:
-        ret = subprocess.run(  # noqa: S603
+        ret = subprocess.run(
             ["/usr/sbin/modprobe", "-a", "shepherd"],
             timeout=60,
             check=False,
@@ -75,7 +75,7 @@ def load_kernel_module() -> None:
 def remove_kernel_module(name: str = "shepherd") -> None:
     _try = 6
     while _try > 0:
-        ret = subprocess.run(  # noqa: S603
+        ret = subprocess.run(
             ["/usr/sbin/modprobe", "-rf", "shepherd"],
             timeout=60,
             capture_output=True,
@@ -99,13 +99,13 @@ def reload_kernel_module() -> None:
 
 
 def disable_ntp() -> None:
-    ret = subprocess.run(  # noqa: S603
+    ret = subprocess.run(
         ["/usr/bin/systemctl", "is-active", "--quiet", "systemd-timesyncd.service"],
         timeout=20,
         check=False,
     ).returncode
     if ret == 0:
-        subprocess.run(  # noqa: S603
+        subprocess.run(
             ["/usr/bin/systemctl", "stop", "systemd-timesyncd.service"],
             timeout=20,
             check=False,

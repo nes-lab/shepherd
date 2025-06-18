@@ -30,7 +30,5 @@ parameters:
   uart_logging:
     baudrate: 115200
   gpio_tracing: {}  # trick for unchanged default
-  power_tracing:
-    discard_voltage: false
-    discard_current: false
+  power_tracing: {}
   verbose: 2 # serious performance impact for value > 3

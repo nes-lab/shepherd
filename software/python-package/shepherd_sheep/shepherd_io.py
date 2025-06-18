@@ -348,7 +348,7 @@ class ShepherdIO:
             time.sleep(0.5)  # time to stabilize voltage-drop
 
     @staticmethod
-    def convert_target_port_to_bool(target: TargetPort | str | bool | None) -> bool:
+    def convert_target_port_to_bool(target: TargetPort | str | bool | None) -> bool:  # noqa: FBT001
         if target is None:
             return True
         if isinstance(target, str):
@@ -362,7 +362,7 @@ class ShepherdIO:
 
     def select_port_for_power_tracking(
         self,
-        target: TargetPort | bool | None,
+        target: TargetPort | bool | None,  # noqa: FBT001
     ) -> None:
         """
         choose which targets (A or B) gets the supply with current-monitor,
@@ -387,7 +387,7 @@ class ShepherdIO:
 
     def select_port_for_io_interface(
         self,
-        target: TargetPort | bool | None,
+        target: TargetPort | bool | None,  # noqa: FBT001
     ) -> None:
         """Choose which targets (A or B) gets the io-connection (serial, swd, gpio) from beaglebone,
 
