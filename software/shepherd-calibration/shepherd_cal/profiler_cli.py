@@ -25,7 +25,7 @@ from .profile_analyzer import analyze_directory
 from .profiler import INSTR_PROFILE_SHP
 from .profiler import Profiler
 
-# ruff: noqa: FBT001, FBT003
+# ruff: noqa: FBT001
 
 cli_pro = typer.Typer(
     name="profile",
