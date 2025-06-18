@@ -42,7 +42,7 @@ class PowerRecorder(Monitor):
         elif isinstance(cal_data, CalSeries):
             self.cal_data = cal_data
         else:
-            raise ValueError("calibration must be CalibrationSeries or CalibrationEmulator")
+            raise TypeError("calibration must be CalibrationSeries or CalibrationEmulator")
 
         self.gain: float = 1e-9  # nW
         self.data.create_dataset(
@@ -93,7 +93,7 @@ class PowerRecorder(Monitor):
             # benchmarked slices: [:] is as fast as [::1] on BBB
             _ts = data.timestamp_ns[: len(data) : self.reduction_factor]
         else:
-            raise ValueError("timestamp_ns must be int or np.ndarray")
+            raise TypeError("timestamp_ns must be int or np.ndarray")
 
         pos_end = self.position + len_add
         data_length = self.data["time"].shape[0]
