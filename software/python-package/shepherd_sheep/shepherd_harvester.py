@@ -69,14 +69,16 @@ class ShepherdHarvester(ShepherdIO):
             # ⤷ closest to ISO 8601, avoids ":"
             store_path = store_path / f"hrv_{timestring}.h5"
 
+        log_iv = cfg.power_tracing is not None
         self.writer = Writer(
             file_path=store_path,
             mode=mode,
             datatype=cfg.virtual_harvester.get_datatype(),
             window_samples=cfg.virtual_harvester.calc_window_size(for_emu=True),
             cal_data=self.cal_hrv,
-            sample_rate=cfg.power_tracing.samplerate,  # TODO: should raise for ivcurves
-            only_power=cfg.power_tracing.only_power,
+            sample_rate=cfg.power_tracing.samplerate if log_iv else None,
+            only_power=cfg.power_tracing.only_power if log_iv else False,
+            # TODO: enabled options above should raise for ivcurves
             compression=cfg.output_compression,
             force_overwrite=cfg.force_overwrite,
             verbose=get_verbosity(),
