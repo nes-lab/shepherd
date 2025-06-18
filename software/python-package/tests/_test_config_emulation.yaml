@@ -15,7 +15,5 @@ parameters:
   voltage_aux: 3.3
   gpio_tracing:
     uart_baudrate: 9600
-  power_tracing:
-    discard_voltage: false
-    discard_current: false
+  power_tracing: {}
   verbose: 2

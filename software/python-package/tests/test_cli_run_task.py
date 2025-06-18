@@ -140,6 +140,7 @@ def test_cli_harvest_preconfigured(
     path_here: Path,
 ) -> None:
     file_path = path_here / "_test_config_harvest.yaml"
+    assert file_path.exists()
     res = cli_runner.invoke(cli, ["run", file_path.as_posix()])
     assert res.exit_code == 0
 
@@ -152,6 +153,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
     path_here: Path,
 ) -> None:
     file_path = path_here.parent / "example_config_harvest.yaml"
+    assert file_path.exists()
     res = cli_runner.invoke(cli, ["run", f"{file_path}"])
     assert res.exit_code == 0
 

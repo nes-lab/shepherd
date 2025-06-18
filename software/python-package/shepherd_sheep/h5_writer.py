@@ -41,6 +41,7 @@ from .h5_recorder_pru import PruRecorder
 from .logger import log
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_iv_input import IVTrace
+from .shared_mem_iv_output import SharedMemIVOutput
 from .shared_mem_util_output import UtilTrace
 
 
@@ -104,10 +105,8 @@ class Writer(CoreWriter):
         self.only_power = only_power
 
         self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            self.CHUNK_SAMPLES_N,
+            SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
         ).astype("u8")
-        # TODO: keep this optimization, but it is also currently not used (and has wrong size)
-        #       length should be SharedMemIVOutput.N_SAMPLES_PER_CHUNK
 
         self.grp_data: h5py.Group = self.h5file["data"]
 
@@ -229,13 +228,10 @@ class Writer(CoreWriter):
             self.grp_data["voltage"][self.data_pos : data_end_pos] = data.voltage
             self.grp_data["current"][self.data_pos : data_end_pos] = data.current
             if isinstance(data.timestamp_ns, int):
-                # NOTE: this mode is currently not used,
-                #       BUG - the buffer_timeseries has wrong length!
-                #             should be SharedMemIVOutput.N_SAMPLES_PER_CHUNK
                 self.grp_data["time"][self.data_pos : data_end_pos] = (
                     self.buffer_timeseries + data.timestamp_ns
-                )
-                raise NotImplementedError
+                )[:len_add]
+
             if isinstance(data.timestamp_ns, np.ndarray):
                 self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
             self.data_pos = data_end_pos

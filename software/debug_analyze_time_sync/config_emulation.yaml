@@ -30,9 +30,7 @@ parameters:
   gpio_tracing: null
 #    uart_decode: true
 #    uart_baudrate: 115200
-  power_tracing:
-    discard_voltage: false
-    discard_current: false
+  power_tracing: {}
   sys_logging:
     dmesg: false
     ptp: false
