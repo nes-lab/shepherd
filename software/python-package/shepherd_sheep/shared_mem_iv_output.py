@@ -161,9 +161,7 @@ class SharedMemIVOutput:
         avail_length = self.get_size_available()
 
         if avail_length < self.N_SAMPLES_PER_CHUNK:
-            # nothing to do
-            # TODO: abandon segment-idea, read up to pru-index, add force to go below segment_size
-            return None
+            return None  # nothing to do
 
         if self.fill_level > 0.8:
             log.warning(
