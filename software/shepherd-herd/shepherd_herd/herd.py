@@ -14,6 +14,7 @@ from io import BytesIO
 from pathlib import Path
 from pathlib import PurePath
 from pathlib import PurePosixPath
+from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any
 
@@ -343,6 +344,7 @@ class Herd:
         force_overwrite: bool = False,
     ) -> None:
         if isinstance(src, BytesIO):
+            log.warning("BytesIO is buggy on some py-versions (only partial copy) -> use paths")
             src_path = src
         else:
             src_path = Path(src).absolute()
@@ -534,41 +536,48 @@ class Herd:
         """
         if remote_path.suffix.lower() != ".pickle":
             raise NameError("Remote path must point to '.pickle'")
-        if isinstance(task, ShpModel):  # Model gets pickled
-            task_dict = task.model_dump(exclude_unset=True)
-            task_wrap = Wrapper(
-                datatype=type(task).__name__,
-                created=datetime.now(tz=local_tz()),
-                parameters=task_dict,
+
+        with TemporaryDirectory() as temp_dir:
+            if isinstance(task, ShpModel):  # Model gets pickled to file
+                task_dict = task.model_dump(exclude_unset=True)
+                task_wrap = Wrapper(
+                    datatype=type(task).__name__,
+                    created=datetime.now(tz=local_tz()),
+                    parameters=task_dict,
+                )
+                wrap_dict = path_to_str(task_wrap.model_dump(exclude_unset=True))
+                task = Path(temp_dir) / "herd.pickle"
+                # NOTE: preferred way is ByteIO/StringIO, but it is highly buggy
+                with task.open("wb") as fd:
+                    pickle.dump(wrap_dict, fd)
+
+            elif isinstance(task, Path):  # file gets pickled if it is YAML (speedup sheep)
+                if not task.is_file() or not task.exists():
+                    raise FileNotFoundError("Task-Path must be an existing file")
+                if task.is_file():
+                    task_wrap = prepare_task(task)  # also functions as test
+                    if task.suffix.lower() == ".yaml":  # repickle to file
+                        wrap_dict = path_to_str(task_wrap.model_dump(exclude_unset=True))
+                        task = Path(temp_dir) / "herd.pickle"
+                        with task.open("wb") as fd:
+                            pickle.dump(wrap_dict, fd)
+            else:
+                raise TypeError("Task must either be model or path to a model")
+
+            if self.check_status(warn=True):
+                raise RuntimeError("Shepherd still active!")
+            if not isinstance(remote_path, PurePath):
+                remote_path = PurePosixPath(remote_path)
+
+            log.info(
+                "Rolling out the config to '%s'",
+                remote_path.as_posix(),
             )
-            wrap_dict = path_to_str(task_wrap.model_dump(exclude_unset=True))
-            task = BytesIO(pickle.dumps(wrap_dict))
-
-        elif isinstance(task, Path):  # file gets pickled if it is YAML (speedup sheep)
-            if not task.is_file() or not task.exists():
-                raise FileNotFoundError("Task-Path must be an existing file")
-            if task.is_file():
-                task_wrap = prepare_task(task)
-                if task.suffix.lower() == ".yaml":
-                    wrap_dict = path_to_str(task_wrap.model_dump(exclude_unset=True))
-                    task = BytesIO(pickle.dumps(wrap_dict))
-        else:
-            raise TypeError("Task must either be model or path to a model")
-
-        if self.check_status(warn=True):
-            raise RuntimeError("Shepherd still active!")
-        if not isinstance(remote_path, PurePath):
-            remote_path = PurePosixPath(remote_path)
-
-        log.info(
-            "Rolling out the config to '%s'",
-            remote_path.as_posix(),
-        )
-        self.put_file(
-            task,
-            remote_path,
-            force_overwrite=True,
-        )
+            self.put_file(
+                task,
+                remote_path,
+                force_overwrite=True,
+            )
 
     @validate_call
     def check_status(self, *, warn: bool = False) -> bool:
