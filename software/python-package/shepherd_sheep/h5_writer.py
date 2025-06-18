@@ -38,6 +38,7 @@ from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
 from .h5_recorder_gpio import GpioRecorder
 from .h5_recorder_pru import PruRecorder
+from .logger import log
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_iv_input import IVTrace
 from .shared_mem_util_output import UtilTrace
@@ -85,6 +86,8 @@ class Writer(CoreWriter):
             self.reduce: bool = sample_rate != self.samplerate_sps
             self.reduction_factor: int = self.samplerate_sps // sample_rate
             self.samplerate_sps = sample_rate
+        if self.reduce:
+            log.info("Activated custom sample-rate: %d", self.samplerate_sps)
 
         # TODO: derive verbose-state
         super().__init__(
@@ -175,6 +178,8 @@ class Writer(CoreWriter):
         # end recorders
         self.rec_gpio.__exit__()
         self.rec_pru.__exit__()
+        if hasattr(self, "rec_power"):
+            self.rec_power.__exit__()
 
         # end monitors
         for monitor in self.monitors:
@@ -194,13 +199,14 @@ class Writer(CoreWriter):
             return
         if self.reduce:  # aka resampling via binning
             len_add = len(data)
+            len_new = len_add // self.reduction_factor
             data.voltage = (
-                np.reshape(data.voltage[:len_add], (len_add, self.reduction_factor))
+                np.reshape(data.voltage[:len_add], (len_new, self.reduction_factor))
                 .mean(axis=1)
                 .astype("u4")
             )
             data.current = (
-                np.reshape(data.current[:len_add], (len_add, self.reduction_factor))
+                np.reshape(data.current[:len_add], (len_new, self.reduction_factor))
                 .mean(axis=1)
                 .astype("u4")
             )

@@ -75,7 +75,7 @@ class ShepherdHarvester(ShepherdIO):
             datatype=cfg.virtual_harvester.get_datatype(),
             window_samples=cfg.virtual_harvester.calc_window_size(for_emu=True),
             cal_data=self.cal_hrv,
-            sample_rate=cfg.power_tracing.sample_rate,  # TODO: should raise for ivcurves
+            sample_rate=cfg.power_tracing.samplerate,  # TODO: should raise for ivcurves
             only_power=cfg.power_tracing.only_power,
             compression=cfg.output_compression,
             force_overwrite=cfg.force_overwrite,
