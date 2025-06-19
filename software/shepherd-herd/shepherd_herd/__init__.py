@@ -12,7 +12,7 @@ from .logger import activate_verbosity
 from .logger import get_verbosity
 from .logger import log
 
-__version__ = "0.9.3"
+__version__ = "0.9.4"
 
 __all__ = [
     "Herd",
