@@ -278,7 +278,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
             observer_name,
             xcp,
         )
-        return True
+        return False
 
     log.debug("Got set of tasks: %s", [type(_e).__name__ for _e in content])
     # TODO: parameters currently not handled:
