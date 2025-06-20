@@ -281,7 +281,7 @@ class Herd:
             del thread  # ... overcautious
         if len(results) < 1:
             log.error("ZERO nodes answered - check your config")
-        return results
+        return dict(sorted(results.items()))
 
     @staticmethod
     def print_output(
