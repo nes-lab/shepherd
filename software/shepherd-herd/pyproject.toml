@@ -51,6 +51,7 @@ test = [
     "pytest-click",
     "shepherd-data",
 ]
+all = ["shepherd-herd[dev,test]"]
 
 [project.urls]
 Homepage = "https://pypi.org/project/shepherd-herd"

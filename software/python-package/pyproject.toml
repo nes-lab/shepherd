@@ -63,6 +63,7 @@ test = [
     "flaky",  # TODO: integrate
 ]
 doc = ["dbus-python"]
+all = ["shepherd-sheep[dev,test,doc]"]
 # TODO doc should trigger on
 # We are installing the DBUS module to build the docs, but the C libraries
 # required to build dbus aren't available on RTD, so we need to exclude it
