@@ -793,3 +793,25 @@ class Herd:
         - hostnames contains all hosts in inventory
         """
         return len(self.group) >= len(self.hostnames)
+
+    def min_space_left(self) -> int:
+        replies = self.run_cmd(
+            sudo=True,
+            cmd="/usr/bin/df --type=ext4 --local --output=avail | grep ' /'",
+            verbose=False,
+        )
+        min_space = 2**64
+        for reply in replies.values():
+            if abs(reply.exited) > 0:
+                continue
+            msg = reply.stdout.rstrip().split()  # expected lines like: 1822340 /
+            pos = msg.index("/")
+            min_space = min(min_space, int(msg[pos - 1]))
+        return min_space
+
+    def sysrq_reboot(self, host: str) -> None:
+        reverse = {v: k for k, v in self.hostnames.items()}
+        ip = reverse.get(host)
+        if ip is None:
+            raise ValueError("Host not found")
+        # TODO: telnet session to sysrqd
