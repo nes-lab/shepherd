@@ -1,24 +1,16 @@
 ---
 
-- name: Look for Kernel Module
-  ansible.builtin.shell:  # pipefail-setting prevents surprises
-    cmd: "set -o pipefail && lsmod | grep shepherd"
-  register: kmod_ret
-  failed_when: false
-  changed_when: false
-
 - name: Stop Kernel Module
   ansible.builtin.command: 'modprobe -rf shepherd'
-  register: modprobe_ret
-  until: modprobe_ret is not failed
-  retries: 5
-  # when: kmod_ret.rc == 0 # NOT WORKING as expected
-  changed_when: true
-  # fails at least on first install -> check for presence of shepherd
+  failed_when: '{{ item }}'
+  loop:
+    - false  # just repeat 3 times
+    - false
+    - false
   # lsmod | grep shepherd
   #   -> loaded: 2 lines, exit 0
   #   -> notload: 0 lines, exit 1
-  # modinfo could work -> test above -> FAIL
+  # return of lsmod not working as expected
 
 - name: Check if PRU1 is present
   ansible.builtin.stat:

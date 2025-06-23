@@ -13,7 +13,6 @@
         "linux-headers-{{ sheep_kernel_pin }}",
       ]
     state: present
-  when: kernelrelease.stdout.strip() != sheep_kernel_pin
 
 - name: Restart device
   ansible.builtin.reboot:
