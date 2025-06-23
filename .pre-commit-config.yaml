@@ -72,7 +72,7 @@ repos:
 # TODO: disable, until bug is resolved, maybe connected to
 # https://github.com/ansible/ansible-lint/issues/3636
 #  - repo: https://github.com/ansible-community/ansible-lint.git
-#    rev: v24.6.1
+#    rev: v25.6.1
 #    hooks:
 #      - id: ansible-lint
 
