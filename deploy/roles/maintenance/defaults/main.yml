@@ -1,8 +1,6 @@
 ---
 
 # user can control rule by altering these vars from outside
-maintenance_update_kernel: false
-
-# rule config
-maintenance_default_kernel: lts-4_19
 maintenance_timezone: Europe/Berlin
+maintenance_kernel_pin: "4.19.280-bone76" # TODO: trial
+  # 4.19.94-ti-r74"  # 2025-06-23: r74 was newest
