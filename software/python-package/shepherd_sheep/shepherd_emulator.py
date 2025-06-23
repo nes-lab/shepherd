@@ -132,8 +132,8 @@ class ShepherdEmulator(ShepherdIO):
                 mode=self.component,  # is a cleaned up mode
                 datatype=EnergyDType.ivsample,
                 cal_data=self.cal_emu,
-                sample_rate=cfg.power_tracing.samplerate,
-                only_power=cfg.power_tracing.only_power,
+                sample_rate=cfg.power_tracing.samplerate if log_iv else None,
+                only_power=cfg.power_tracing.only_power if log_iv else False,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
             )

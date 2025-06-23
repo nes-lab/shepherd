@@ -1,0 +1,25 @@
+# image is now automatically expanded on first boot
+# switching to 4.19 kernel fails with the scripts
+
+- name: Check if boot-scripts-Repo exists
+  ansible.builtin.stat:
+    path: /opt/scripts
+  register: scripts_dir
+- name: GIT - Clone & Update boot-script-tools from RobertCNelson
+  ansible.builtin.git:
+    repo: https://github.com/RobertCNelson/boot-scripts
+    dest: /opt/scripts
+    update: true
+    version: HEAD  # noqa latest[git]
+    force: true
+  when: not scripts_dir.stat.exists
+
+- name: "SCRIPT - Switch to newest release of Kernel Branch {{ maintenance_default_kernel }}"
+  ansible.builtin.command: '/opt/scripts/tools/update_kernel.sh --{{ maintenance_default_kernel }}'
+  when: maintenance_update_kernel | bool
+  changed_when: true
+  failed_when: false # allow to fail
+
+- name: Grow root partition to drive-size
+  ansible.builtin.command: '/opt/scripts/tools/grow_partition.sh'
+  changed_when: true

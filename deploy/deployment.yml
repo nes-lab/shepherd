@@ -22,8 +22,6 @@
     - name: Update kernel & software
       ansible.builtin.include_role:
         name: maintenance
-      vars:
-        maintenance_update_kernel: false
 
 
 - name: Role - PTP-Client only (not recommended! all should be server as well)

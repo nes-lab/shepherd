@@ -26,7 +26,6 @@
   ansible.builtin.command: 'uname --kernel-release'
   register: kernelrelease
   changed_when: false
-  when: kernelrelease.stdout.strip() != sheep_kernel_pin
 - name: Warn if required Kernel-Version is missing
   ansible.builtin.fail:
     msg: |
