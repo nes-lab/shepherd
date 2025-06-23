@@ -9,7 +9,7 @@ from shepherd_core.logger import set_log_verbose_level
 # Top-Level Package-logger
 log = logging.getLogger("Shp")
 log.setLevel(logging.DEBUG)
-log.propagate = 0
+log.propagate = False
 
 # handler for CLI
 console_handler = chromalog.ColorizingStreamHandler(sys.stdout)
