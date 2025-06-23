@@ -1,0 +1,23 @@
+
+- name: Clean pip-caches - A
+  ansible.builtin.file:
+    path: "/root/.cache/pip"
+    state: absent
+  become: true
+- name: Clean pip-caches - B
+  ansible.builtin.file:
+    path: "~/.cache/pip"
+    state: absent
+  become: false
+
+- name: Find Logs and other tmp-files
+  ansible.builtin.find:
+    paths: ["/var/log/", "/var/cache/", "/var/lib/apt/lists"]
+    patterns: '*'
+    recurse: true
+  register: files_tmp
+- name: Delete Logs and other tmp-files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{ files_tmp.files | map(attribute='path') }}"
