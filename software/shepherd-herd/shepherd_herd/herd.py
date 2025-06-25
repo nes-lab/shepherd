@@ -762,6 +762,9 @@ class Herd:
             time.sleep(1)
         return False
 
+    def kill_sheep_process(self) -> None:
+        self.run_cmd(sudo=True, cmd="pkill shepherd-sheep", timeout=20)
+
     @validate_call
     def inventorize(self, output_path: Path) -> bool:
         """Collect information about the hosts, including the herd-server."""

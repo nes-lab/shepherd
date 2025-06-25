@@ -11,6 +11,7 @@
   - add .service_is_active(), .service_is_failed() to determine status
   - add .service_get_logs() & .service_erase_logs() to fetch terminal output
   - add separate .reboot() to already existing .poweroff()
+  - add .kill_sheep_process() to get a clean slate
 - ansible
   - remove usage of nelson boot scripts (update kernel & grow partition)
   - try newer non-ti kernel
