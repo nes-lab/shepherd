@@ -610,6 +610,13 @@ class Herd:
     def check_status(self, *, warn: bool = False) -> bool:
         """Return true as long as one instance is still measuring.
 
+        This only monitors sheep running unattached (via systemd-service).
+
+        systemctl is-active XYZ returns with exit-code:
+        - active -> 0
+        - inactive -> 3
+        - failed -> 3
+
         :param warn:
         :return: True is one node is still active
         """
@@ -635,6 +642,60 @@ class Herd:
                         hostname,
                     )
         return active
+
+    def service_is_active(self) -> bool:
+        return self.check_status(warn=False)
+
+    def service_is_failed(self) -> bool:
+        """Return true if at least one sheep failed.
+
+        systemctl is-failed XYZ returns with exit-code:
+        - active -> 1
+        - inactive -> 1
+        - failed -> 0
+        """
+        replies = self.run_cmd(
+            sudo=True, cmd="systemctl is-failed shepherd", timeout=20, verbose=False
+        )
+        failed = False
+        for cnx in self.group:
+            hostname = self.hostnames[cnx.host]
+            if not isinstance(replies.get(hostname), Result):
+                continue
+            if replies[hostname].exited == 0:
+                failed = True
+        return failed
+
+    def service_erase_log(self) -> None:
+        self.run_cmd(
+            sudo=True,
+            cmd="journalctl --unit=shepherd.service --vacuum-time=10s",
+            timeout=30,
+            verbose=False,
+        )
+
+    def service_get_logs(self) -> dict[str, Result]:
+        failings = self.run_cmd(
+            sudo=True, cmd="systemctl is-failed shepherd", timeout=20, verbose=False
+        )
+        replies = self.run_cmd(
+            sudo=True,
+            cmd="journalctl --unit=shepherd.service "
+            "--no-pager --output=short-iso-precise "
+            "--utc --boot --all",
+            timeout=40,
+            verbose=False,
+        )
+        logs: dict[str, Result] = {}
+        for hostname, result in replies.items():
+            if not isinstance(result, Result):
+                continue
+            if not isinstance(failings.get(hostname), Result):
+                result.exited = 1  # failed by default
+            else:
+                result.exited = int(failings.get(hostname).exited == 0)
+            logs[hostname] = result
+        return logs
 
     def get_last_usage(self) -> timedelta | None:
         """Gives time-delta of last testbed usage."""
@@ -678,15 +739,18 @@ class Herd:
             log.debug("-> max exit-code = %d", exit_code)
         return exit_code
 
+    def reboot(self) -> int:
+        replies = self.run_cmd(sudo=True, cmd="reboot", timeout=20)
+        log.info("Command for rebooting nodes was issued")
+        return max([0] + [abs(reply.exited) for reply in replies.values()])
+
     @validate_call
     def poweroff(self, *, restart: bool) -> int:
         log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
-            replies = self.run_cmd(sudo=True, cmd="reboot", timeout=20)
-            log.info("Command for rebooting nodes was issued")
-        else:
-            replies = self.run_cmd(sudo=True, cmd="poweroff", timeout=20)
-            log.info("Command for powering off nodes was issued")
+            return self.reboot()
+        replies = self.run_cmd(sudo=True, cmd="poweroff", timeout=20)
+        log.info("Command for powering off nodes was issued")
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     @validate_call

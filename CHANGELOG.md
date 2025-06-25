@@ -1,5 +1,25 @@
 # History of Changes
 
+## 0.9.4
+
+- py-packaging: allow installing everything via .[all]
+- sheep
+  - won't exit with != 0 if config is not for that specific sheep
+- herd
+  - threads now have a configurable timeout for safer runtime (.run_cmd(), .get_file(), .put_file())
+  - add .min_space_left() to determine observer fill-level
+  - add .service_is_active(), .service_is_failed() to determine status
+  - add .service_get_logs() & .service_erase_logs() to fetch terminal output
+  - add separate .reboot() to already existing .poweroff()
+- ansible
+  - remove usage of nelson boot scripts (update kernel & grow partition)
+  - try newer non-ti kernel
+  - make cleaning-role safer
+  - improve kernel preparation
+  - switch python components to UV and venv
+- kMod - disable experimental code - not compatible with non-ti kernel
+-
+
 ## 0.9.3
 
 - herd - bugfix for sending Task to sheep
