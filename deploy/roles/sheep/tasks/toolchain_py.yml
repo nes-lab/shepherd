@@ -9,7 +9,7 @@
         "libjpeg-dev",
         "hdf5-tools", # h5py
         "libhdf5-dev", # h5py
-        "libopenblas*" # numpy
+        "libopenblas*", # numpy
         "libdbus-glib-1-dev",
         "libgirepository1.0-dev",
         "srecord",
