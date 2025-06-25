@@ -34,11 +34,9 @@
   failed_when: false
   changed_when: true
 
-- name: Uninstall shepherd python package
-  ansible.builtin.pip:
-    name: "{{ item }}"
-    state: absent
-    extra_args: "--yes --break-system-packages"
+- name: UV - Uninstall shepherd python package
+  ansible:builtin:command:
+    cmd: "uv pip uninstall {{ item }}"
   loop:
     - shepherd-core
     - shepherd_core
@@ -48,7 +46,7 @@
     - install
     - python
   when: sheep_rebuild_python_package | bool
-  become: true
+  become: false
   # there were situations were the core-lib stayed old
 
 - name: Get full path of repository

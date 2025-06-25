@@ -109,14 +109,11 @@
     - install
     - device-tree
 
-- name: Install shepherd python package
-  ansible.builtin.pip:
-    name: ".[test]"
-    state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
-    chdir: '{{ sheep_install_path }}/software/python-package'
-    extra_args: --break-system-packages
+- name: UV - Install shepherd python package
+  ansible:builtin:command:
+    cmd: "uv pip install {{ sheep_install_path }}/software/python-package/.[test]"
   tags:
     - install
     - python
   when: sheep_rebuild_python_package | bool
-  become: true
+  become: false
