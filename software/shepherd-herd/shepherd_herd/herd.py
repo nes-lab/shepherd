@@ -26,6 +26,7 @@ from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
 from shepherd_core import Inventory
+from shepherd_core import local_now
 from shepherd_core import local_tz
 from shepherd_core.data_models import ShpModel
 from shepherd_core.data_models import Wrapper
@@ -247,6 +248,7 @@ class Herd:
     def run_cmd(
         self,
         cmd: str,
+        timeout: float | None = None,
         exclusive_host: str | None = None,
         *,
         sudo: bool = False,
@@ -269,10 +271,16 @@ class Herd:
                 args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
+        started = local_now()
         for host, thread in tqdm(
             threads.items(), desc="  .. joining threads", unit="n", leave=False
         ):
-            thread.join()  # timeout=10.0
+            if timeout is not None:
+                time_passed = local_now() - started
+                time_left = max(1.0, timeout - time_passed.total_seconds())
+            else:
+                time_left = None
+            thread.join(timeout=time_left)
             if thread.is_alive():
                 log.error(
                     "Command.Run() did fail to finish on %s - will delete that thread",
@@ -340,6 +348,7 @@ class Herd:
         self,
         src: BytesIO | Path | str,
         dst: PurePosixPath | str,
+        timeout: float | None = None,
         *,
         force_overwrite: bool = False,
     ) -> None:
@@ -375,10 +384,16 @@ class Herd:
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
             threads[_name].start()
+        started = local_now()
         for host, thread in tqdm(
             threads.items(), desc="  .. joining threads", unit="n", leave=False
         ):
-            thread.join()  # timeout=10.0
+            if timeout is not None:
+                time_passed = local_now() - started
+                time_left = max(1.0, timeout - time_passed.total_seconds())
+            else:
+                time_left = None
+            thread.join(timeout=time_left)
             if thread.is_alive():
                 log.error(
                     "File.Put() did fail to finish on %s - will delete that thread",
@@ -405,6 +420,7 @@ class Herd:
         self,
         src: PurePosixPath | str,
         dst_dir: Path | str,
+        timeout: float | None = None,
         exclusive_host: str | None = None,
         *,
         timestamp: bool = False,
@@ -436,7 +452,11 @@ class Herd:
 
         # check if file is present
         replies = self.run_cmd(
-            sudo=False, exclusive_host=exclusive_host, cmd=f"test -f {src_path}", verbose=False
+            sudo=False,
+            exclusive_host=exclusive_host,
+            cmd=f"test -f {src_path}",
+            timeout=20,
+            verbose=False,
         )
 
         # try to fetch data
@@ -470,6 +490,7 @@ class Herd:
             )
             threads[i].start()
         log.debug("  .. threads started - will wait until finished")
+        started = local_now()
         for i, cnx in enumerate(
             tqdm(self.group, desc="  .. joining threads", unit="n", leave=False)
         ):
@@ -478,7 +499,12 @@ class Herd:
                 continue
             if replies[hostname].exited != 0:
                 continue
-            threads[i].join()  # timeout=10.0
+            if timeout is not None:
+                time_passed = local_now() - started
+                time_left = max(1.0, timeout - time_passed.total_seconds())
+            else:
+                time_left = None
+            threads[i].join(timeout=time_left)
             if threads[i].is_alive():
                 log.error(
                     "Command.Run() did fail to finish on %s - will delete that thread",
@@ -505,7 +531,7 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", timeout=20, verbose=False)
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
         if len(ts_nows) == 0:
             raise RuntimeError("No active hosts found to synchronize.")
@@ -576,6 +602,7 @@ class Herd:
             self.put_file(
                 task,
                 remote_path,
+                timeout=20,
                 force_overwrite=True,
             )
 
@@ -586,7 +613,9 @@ class Herd:
         :param warn:
         :return: True is one node is still active
         """
-        replies = self.run_cmd(sudo=True, cmd="systemctl status shepherd", verbose=False)
+        replies = self.run_cmd(
+            sudo=True, cmd="systemctl is-active shepherd", timeout=20, verbose=False
+        )
         active = False
 
         for cnx in self.group:
@@ -605,13 +634,16 @@ class Herd:
                         "shepherd still active on %s",
                         hostname,
                     )
-                    # shepherd-herd -v shell-cmd -s "systemctl status shepherd"
         return active
 
     def get_last_usage(self) -> timedelta | None:
         """Gives time-delta of last testbed usage."""
-        replies1 = self.run_cmd(sudo=True, cmd="tail -n 1 /var/shepherd/log.csv", verbose=False)
-        replies2 = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
+        replies1 = self.run_cmd(
+            sudo=True, cmd="tail -n 1 /var/shepherd/log.csv", timeout=20, verbose=False
+        )
+        replies2 = self.run_cmd(
+            sudo=False, cmd="date --iso-8601=seconds", timeout=20, verbose=False
+        )
         deltas = []
         for cnx in self.group:
             hostname = self.hostnames[cnx.host]
@@ -633,13 +665,13 @@ class Herd:
             log.info("-> won't start while shepherd-instances are active")
             return 1
 
-        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd")
+        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd", timeout=20)
         self.print_output(replies)
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
-        replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd")
+        replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd", timeout=30)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         log.info("Shepherd was forcefully stopped")
         if exit_code > 0:
@@ -650,10 +682,10 @@ class Herd:
     def poweroff(self, *, restart: bool) -> int:
         log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
         if restart:
-            replies = self.run_cmd(sudo=True, cmd="reboot")
+            replies = self.run_cmd(sudo=True, cmd="reboot", timeout=20)
             log.info("Command for rebooting nodes was issued")
         else:
-            replies = self.run_cmd(sudo=True, cmd="poweroff")
+            replies = self.run_cmd(sudo=True, cmd="poweroff", timeout=20)
             log.info("Command for powering off nodes was issued")
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
@@ -676,6 +708,7 @@ class Herd:
         self.run_cmd(
             sudo=True,
             cmd=f"shepherd-sheep inventorize --output-path {file_path.as_posix()}",
+            timeout=60,
         )
         server_inv = Inventory.collect()
         output_path = Path(output_path)
@@ -686,6 +719,7 @@ class Herd:
         return self.get_file(
             file_path,
             output_path,
+            timeout=20,
             timestamp=False,
             separate=False,
             delete_src=True,
@@ -704,12 +738,14 @@ class Herd:
         ]
         exit_code = 0
         for command in commands:
-            ret = self.run_cmd(sudo=True, cmd=command)
+            ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
             self.print_output(ret, verbose=True)
             exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
 
         # Get the current time on each target node
-        replies_date = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", verbose=False)
+        replies_date = self.run_cmd(
+            sudo=False, cmd="date --iso-8601=seconds", timeout=20, verbose=False
+        )
         self.print_output(replies_date, verbose=True)
         # calc diff
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies_date.values()]
@@ -732,7 +768,7 @@ class Herd:
             remote_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
-            replies = self.run_cmd(sudo=True, cmd=command)
+            replies = self.run_cmd(sudo=True, cmd=command, timeout=None)
             exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
             if exit_code:
                 log.error("Running Task failed - will exit now!")
@@ -771,6 +807,7 @@ class Herd:
                 failed |= self.get_file(
                     task.output_path,
                     dst_dir,
+                    timeout=None,
                     separate=separate,
                     delete_src=delete_src,
                 )
@@ -780,6 +817,7 @@ class Herd:
                     failed |= self.get_file(
                         path,
                         dst_dir,
+                        timeout=None,
                         exclusive_host=host,
                         separate=separate,
                         delete_src=delete_src,
@@ -798,6 +836,7 @@ class Herd:
         replies = self.run_cmd(
             sudo=True,
             cmd="/usr/bin/df --type=ext4 --local --output=avail | grep ' /'",
+            timeout=20,
             verbose=False,
         )
         min_space = 2**64

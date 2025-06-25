@@ -127,10 +127,11 @@ def poweroff(ctx: click.Context, *, restart: bool) -> None:
 @click.pass_context
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-def shell_cmd(ctx: click.Context, command: str, *, sudo: bool) -> None:
+@click.option("--infinite", "-i", is_flag=True, help="remove 30s timeout limit")
+def shell_cmd(ctx: click.Context, command: str, *, sudo: bool, infinite: bool) -> None:
     """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
-        replies = herd.run_cmd(sudo=sudo, cmd=command)
+        replies = herd.run_cmd(sudo=sudo, cmd=command, timeout=None if infinite else 30)
         herd.print_output(replies, verbose=True)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     ctx.exit(exit_code)
@@ -161,6 +162,7 @@ def fix(ctx: click.Context) -> None:
         replies = herd.run_cmd(
             sudo=True,
             cmd="shepherd-sheep fix",
+            timeout=40,
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
@@ -192,6 +194,7 @@ def blink(ctx: click.Context, duration: int) -> None:
         replies = herd.run_cmd(
             sudo=True,
             cmd=f"shepherd-sheep blink {duration}",
+            timeout=duration + 30,
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
@@ -519,8 +522,9 @@ def distribute(
     force_overwrite: bool,
 ) -> None:
     """Upload a file FILENAME to the remote observers, which will be stored in REMOTE_PATH."""
+    # TODO: if actively used in testbed use timeout
     with ctx.obj["herd"] as herd:
-        herd.put_file(filename, remote_path, force_overwrite=force_overwrite)
+        herd.put_file(filename, remote_path, timeout=None, force_overwrite=force_overwrite)
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
@@ -594,6 +598,7 @@ def retrieve(
             failed = herd.get_file(
                 filename,
                 outdir,
+                timeout=None,
                 timestamp=timestamp,
                 separate=separate,
                 delete_src=delete,
@@ -660,7 +665,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
 
     with ctx.obj["herd"] as herd:
-        herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
+        herd.put_file(kwargs["firmware_file"], tmp_file, timeout=30, force_overwrite=True)
         protocol_dict = {
             "nrf52": ProgrammerProtocol.swd,
             "msp430": ProgrammerProtocol.sbw,
@@ -675,7 +680,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
         herd.put_task(task, cfg_path)
 
         command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
-        replies = herd.run_cmd(sudo=True, cmd=command)
+        replies = herd.run_cmd(sudo=True, cmd=command, timeout=4 * 60)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         if exit_code:
             log.error("Programming - Procedure failed - will exit now!")

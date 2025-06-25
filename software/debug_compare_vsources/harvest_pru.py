@@ -36,7 +36,7 @@ for hrv_name in hrv_list:
         )
         if herd.run_task(task, attach=True) == 0:
             # note: herd will add host-name to path
-            herd.get_file(path_remote, path_here, separate=True, delete_src=True)
+            herd.get_file(path_remote, path_here, separate=True, delete_src=True, timeout=None)
         else:
             log.error("Failed to harvest with '%s'", hrv_name)
         stack.close()
