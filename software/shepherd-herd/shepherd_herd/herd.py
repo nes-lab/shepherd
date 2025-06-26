@@ -279,7 +279,7 @@ class Herd:
             leave=False,
         )
         while len(threads) > 0 and local_now() < time_end:
-            hosts = threads.keys()
+            hosts = list(threads.keys())
             for host in hosts:
                 thread = threads[host]
                 thread.join(timeout=1)
