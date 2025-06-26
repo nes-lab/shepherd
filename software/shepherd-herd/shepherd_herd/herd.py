@@ -1,7 +1,6 @@
 """Herd-Baseclass for controlling the sheep-observer-nodes."""
 
 import contextlib
-import copy
 import logging
 import os
 import pickle
@@ -280,7 +279,7 @@ class Herd:
             leave=False,
         )
         while len(threads) > 0 and local_now() < time_end:
-            for host, thread in copy.deepcopy(threads).items():
+            for host, thread in threads.items():
                 thread.join(timeout=1)
                 if not thread.is_alive():
                     del thread  # ... overcautious
