@@ -279,7 +279,9 @@ class Herd:
             leave=False,
         )
         while len(threads) > 0 and local_now() < time_end:
-            for host, thread in threads.items():
+            hosts = threads.keys()
+            for host in hosts:
+                thread = threads[host]
                 thread.join(timeout=1)
                 if not thread.is_alive():
                     del thread  # ... overcautious
