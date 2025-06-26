@@ -158,9 +158,7 @@ class Herd:
         if not hasattr(self, "group") or not isinstance(self.group, Group):
             return
         with contextlib.suppress(TypeError):
-            for cnx in self.group:
-                cnx.close()
-                del cnx
+            self.group.close()
 
     def __enter__(self) -> Self:
         self._open()
@@ -178,8 +176,7 @@ class Herd:
         if not hasattr(self, "group") or not isinstance(self.group, Group):
             return
         with contextlib.suppress(TypeError):
-            for cnx in self.group:
-                cnx.close()
+            self.group.close()
 
     def __getitem__(self, key: str) -> Any:
         if key in self.hostnames:
