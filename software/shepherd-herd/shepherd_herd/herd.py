@@ -1,6 +1,7 @@
 """Herd-Baseclass for controlling the sheep-observer-nodes."""
 
 import contextlib
+import copy
 import logging
 import os
 import pickle
@@ -271,22 +272,23 @@ class Herd:
                 args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
-        started = local_now()
-        for host, thread in tqdm(
-            threads.items(), desc="  .. joining threads", unit="n", leave=False
-        ):
-            if timeout is not None:
-                time_passed = local_now() - started
-                time_left = max(1.0, timeout - time_passed.total_seconds())
-            else:
-                time_left = None
-            thread.join(timeout=time_left)
-            if thread.is_alive():
-                log.error(
-                    "Command.Run() did fail to finish on %s - will delete that thread",
-                    host,
-                )
-            del thread  # ... overcautious
+        time_end = local_now() + timedelta(seconds=60 * 60 if timeout is None else timeout)
+        progress_bar = tqdm(
+            total=len(threads),
+            desc="  .. joining threads",
+            unit="n",
+            leave=False,
+        )
+        while len(threads) > 0 and local_now() < time_end:
+            for host, thread in copy.deepcopy(threads).items():
+                thread.join(timeout=1)
+                if not thread.is_alive():
+                    del thread  # ... overcautious
+                    threads.pop(host)
+                    progress_bar.update(n=1)
+        if len(threads) > 0:
+            log.error("Command.Run() failed to finish - will delete threads")
+        del threads
         if len(results) < 1:
             log.error("ZERO nodes answered - check your config")
         return dict(sorted(results.items()))
@@ -623,6 +625,8 @@ class Herd:
         replies = self.run_cmd(
             sudo=True, cmd="systemctl is-active shepherd", timeout=20, verbose=False
         )
+        # TODO: this should go into .service_is_active()
+        # TODO: put "ps ax | grep shepherd-sheep" here
         active = False
 
         for cnx in self.group:
