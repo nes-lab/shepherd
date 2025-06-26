@@ -127,11 +127,11 @@ def poweroff(ctx: click.Context, *, restart: bool) -> None:
 @click.pass_context
 @click.argument("command", type=click.STRING)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-@click.option("--infinite", "-i", is_flag=True, help="remove 30s timeout limit")
+@click.option("--infinite", "-i", is_flag=True, help="replace 30s timeout limit by 1h")
 def shell_cmd(ctx: click.Context, command: str, *, sudo: bool, infinite: bool) -> None:
     """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
-        replies = herd.run_cmd(sudo=sudo, cmd=command, timeout=None if infinite else 30)
+        replies = herd.run_cmd(sudo=sudo, cmd=command, timeout=60 * 60 if infinite else 30)
         herd.print_output(replies, verbose=True)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     ctx.exit(exit_code)
@@ -524,7 +524,7 @@ def distribute(
     """Upload a file FILENAME to the remote observers, which will be stored in REMOTE_PATH."""
     # TODO: if actively used in testbed use timeout
     with ctx.obj["herd"] as herd:
-        herd.put_file(filename, remote_path, timeout=None, force_overwrite=force_overwrite)
+        herd.put_file(filename, remote_path, timeout=60 * 60, force_overwrite=force_overwrite)
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
@@ -598,7 +598,7 @@ def retrieve(
             failed = herd.get_file(
                 filename,
                 outdir,
-                timeout=None,
+                timeout=60 * 60,
                 timestamp=timestamp,
                 separate=separate,
                 delete_src=delete,

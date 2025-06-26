@@ -212,7 +212,7 @@ class Herd:
             threads[_name] = threading.Thread(target=self._thread_open, args=[cnx])
             threads[_name].start()
         for host, thread in threads.items():
-            thread.join(timeout=10.0)
+            thread.join(timeout=5.0)
             if thread.is_alive():
                 log.error(
                     "Connection.Open() did fail to finish on %s - will delete that thread",
@@ -248,7 +248,7 @@ class Herd:
     def run_cmd(
         self,
         cmd: str,
-        timeout: float | None = None,
+        timeout: float = 60 * 60,  # 1h by default
         exclusive_host: str | None = None,
         *,
         sudo: bool = False,
@@ -271,7 +271,7 @@ class Herd:
                 args=(cnx, sudo, cmd, results, _name),
             )
             threads[_name].start()
-        time_end = local_now() + timedelta(seconds=60 * 60 if timeout is None else timeout)
+        time_end = local_now() + timedelta(seconds=timeout)
         progress_bar = tqdm(
             total=len(threads),
             desc="  .. joining threads",
@@ -351,7 +351,7 @@ class Herd:
         self,
         src: BytesIO | Path | str,
         dst: PurePosixPath | str,
-        timeout: float | None = None,
+        timeout: float = 60 * 60,  # 1h default
         *,
         force_overwrite: bool = False,
     ) -> None:
@@ -387,22 +387,25 @@ class Herd:
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
             threads[_name].start()
-        started = local_now()
-        for host, thread in tqdm(
-            threads.items(), desc="  .. joining threads", unit="n", leave=False
-        ):
-            if timeout is not None:
-                time_passed = local_now() - started
-                time_left = max(1.0, timeout - time_passed.total_seconds())
-            else:
-                time_left = None
-            thread.join(timeout=time_left)
-            if thread.is_alive():
-                log.error(
-                    "File.Put() did fail to finish on %s - will delete that thread",
-                    host,
-                )
-            del thread  # ... overcautious
+        time_end = local_now() + timedelta(seconds=timeout)
+        progress_bar = tqdm(
+            total=len(threads),
+            desc="  .. joining threads",
+            unit="n",
+            leave=False,
+        )
+        while len(threads) > 0 and local_now() < time_end:
+            hosts = list(threads.keys())
+            for host in hosts:
+                thread = threads[host]
+                thread.join(timeout=1)
+                if not thread.is_alive():
+                    del thread  # ... overcautious
+                    threads.pop(host)
+                    progress_bar.update(n=1)
+        if len(threads) > 0:
+            log.error("File.Put() failed to finish - will delete threads")
+        del threads
 
     @staticmethod
     def _thread_get(cnx: Connection, src: PurePosixPath, dst: Path) -> None:
@@ -423,7 +426,7 @@ class Herd:
         self,
         src: PurePosixPath | str,
         dst_dir: Path | str,
-        timeout: float | None = None,
+        timeout: float = 60 * 60,  # 1h default
         exclusive_host: str | None = None,
         *,
         timestamp: bool = False,
@@ -442,7 +445,7 @@ class Herd:
             PurePosixPath(src) if PurePosixPath(src).is_absolute() else self.path_default / src
         )
 
-        for i, cnx in enumerate(self.group):
+        for cnx in self.group:
             hostname = self.hostnames[cnx.host]
             if separate:
                 target_path = Path(dst_dir) / hostname
@@ -451,7 +454,9 @@ class Herd:
                 target_path = Path(dst_dir)
                 xtra_node = "" if hostname in src_path.stem else f"_{hostname}"
 
-            dst_paths[i] = target_path / (src_path.stem + xtra_ts + xtra_node + src_path.suffix)
+            dst_paths[hostname] = target_path / (
+                src_path.stem + xtra_ts + xtra_node + src_path.suffix
+            )
 
         # check if file is present
         replies = self.run_cmd(
@@ -463,7 +468,7 @@ class Herd:
         )
 
         # try to fetch data
-        for i, cnx in enumerate(self.group):
+        for cnx in self.group:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
@@ -476,52 +481,52 @@ class Herd:
                 failed_retrieval = True
                 continue
 
-            if not dst_paths[i].parent.exists():
-                log.info("creating local dir of %s", dst_paths[i])
-                dst_paths[i].parent.mkdir()
+            if not dst_paths[hostname].parent.exists():
+                log.info("creating local dir of %s", dst_paths[hostname])
+                dst_paths[hostname].parent.mkdir()
 
             log.debug(
                 "retrieving remote src-file '%s' from %s to local dst '%s'",
                 src_path,
                 hostname,
-                dst_paths[i],
+                dst_paths[hostname],
             )
 
-            threads[i] = threading.Thread(
+            threads[hostname] = threading.Thread(
                 target=self._thread_get,
-                args=(cnx, src_path, dst_paths[i]),
+                args=(cnx, src_path, dst_paths[hostname]),
             )
-            threads[i].start()
+            threads[hostname].start()
         log.debug("  .. threads started - will wait until finished")
-        started = local_now()
-        for i, cnx in enumerate(
-            tqdm(self.group, desc="  .. joining threads", unit="n", leave=False)
-        ):
-            hostname = self.hostnames[cnx.host]
-            if not isinstance(replies.get(hostname), Result):
-                continue
-            if replies[hostname].exited != 0:
-                continue
-            if timeout is not None:
-                time_passed = local_now() - started
-                time_left = max(1.0, timeout - time_passed.total_seconds())
-            else:
-                time_left = None
-            threads[i].join(timeout=time_left)
-            if threads[i].is_alive():
-                log.error(
-                    "Command.Run() did fail to finish on %s - will delete that thread",
-                    hostname,
-                )
-            del threads[i]  # ... overcautious
-            if delete_src:
+        time_end = local_now() + timedelta(seconds=timeout)
+        progress_bar = tqdm(
+            total=len(threads),
+            desc="  .. joining threads",
+            unit="n",
+            leave=False,
+        )
+        while len(threads) > 0 and local_now() < time_end:
+            hosts = list(threads.keys())
+            for host in hosts:
+                thread = threads[host]
+                thread.join(timeout=1)
+                if not thread.is_alive():
+                    del thread  # ... overcautious
+                    threads.pop(host)
+                    progress_bar.update(n=1)
+        if delete_src:
+            for cnx in self.group:
+                hostname = self.hostnames[cnx.host]
+                if isinstance(threads.get(hostname), threading.Thread):
+                    continue
                 log.info(
                     "deleting %s from remote %s",
                     src_path,
                     hostname,
                 )
                 cnx.sudo(f"rm {src_path}", hide=True)
-
+        if len(threads) > 0:
+            log.error("File.get() failed to finish - will delete threads")
         del threads
         return failed_retrieval
 
@@ -837,10 +842,11 @@ class Herd:
         self, config: Path | ShpModel, *, attach: bool = False, quiet: bool = False
     ) -> int:
         if attach:
+            log.warning("Execution will timeout after 2 hours!")
             remote_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
             self.put_task(config, remote_path)
             command = f"shepherd-sheep --verbose run {remote_path.as_posix()}"
-            replies = self.run_cmd(sudo=True, cmd=command, timeout=None)
+            replies = self.run_cmd(sudo=True, cmd=command, timeout=2 * 60 * 60)
             exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
             if exit_code:
                 log.error("Running Task failed - will exit now!")
@@ -879,7 +885,7 @@ class Herd:
                 failed |= self.get_file(
                     task.output_path,
                     dst_dir,
-                    timeout=None,
+                    timeout=60 * 60,
                     separate=separate,
                     delete_src=delete_src,
                 )
@@ -889,7 +895,7 @@ class Herd:
                     failed |= self.get_file(
                         path,
                         dst_dir,
-                        timeout=None,
+                        timeout=60 * 60,
                         exclusive_host=host,
                         separate=separate,
                         delete_src=delete_src,

@@ -51,7 +51,9 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
             force_overwrite=True,
         )
         if herd.run_task(task, attach=True) == 0:
-            herd.get_file(path_remote_src, path_here, separate=True, delete_src=True, timeout=None)
+            herd.get_file(
+                path_remote_src, path_here, separate=True, delete_src=True, timeout=60 * 60
+            )
         else:
             log.error("Failed to emulate with '%s'", hrv_name)
         stack.close()
