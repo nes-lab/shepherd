@@ -616,6 +616,35 @@ class Herd:
 
     @validate_call
     def check_status(self, *, warn: bool = False) -> bool:
+        """Return true as long as one instance is still has an active shepherd-sheep.
+
+        :param warn:
+        :return: True is one node is still active
+        """
+        replies = self.run_cmd(
+            sudo=True, cmd="ps aux | grep shepherd-sheep | grep -v grep", timeout=20, verbose=False
+        )
+        active = False
+
+        for cnx in self.group:
+            hostname = self.hostnames[cnx.host]
+            if not isinstance(replies.get(hostname), Result):
+                continue
+            if replies[hostname].exited == 0:
+                active = True
+                if warn:
+                    log.warning(
+                        "shepherd-sheep still active on %s",
+                        hostname,
+                    )
+                else:
+                    log.debug(
+                        "shepherd-sheep still active on %s",
+                        hostname,
+                    )
+        return active
+
+    def service_is_active(self) -> bool:
         """Return true as long as one instance is still measuring.
 
         This only monitors sheep running unattached (via systemd-service).
@@ -625,14 +654,11 @@ class Herd:
         - inactive -> 3
         - failed -> 3
 
-        :param warn:
         :return: True is one node is still active
         """
         replies = self.run_cmd(
             sudo=True, cmd="systemctl is-active shepherd", timeout=20, verbose=False
         )
-        # TODO: this should go into .service_is_active()
-        # TODO: put "ps ax | grep shepherd-sheep" here
         active = False
 
         for cnx in self.group:
@@ -641,20 +667,7 @@ class Herd:
                 continue
             if replies[hostname].exited != 3:
                 active = True
-                if warn:
-                    log.warning(
-                        "shepherd still active on %s",
-                        hostname,
-                    )
-                else:
-                    log.debug(
-                        "shepherd still active on %s",
-                        hostname,
-                    )
         return active
-
-    def service_is_active(self) -> bool:
-        return self.check_status(warn=False)
 
     def service_is_failed(self) -> bool:
         """Return true if at least one sheep failed.
