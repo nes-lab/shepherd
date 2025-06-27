@@ -931,7 +931,7 @@ class Herd:
         for reply in replies.values():
             if abs(reply.exited) > 0:
                 continue
-            msg = reply.stdout.rstrip().split()  # expected lines like: 1822340 /
+            msg = reply.stdout.strip().split()  # expected lines like: 1822340 /
             pos = msg.index("/")
             min_space = min(min_space, int(msg[pos - 1]))
         return min_space
