@@ -923,7 +923,7 @@ class Herd:
     def min_space_left(self) -> int:
         replies = self.run_cmd(
             sudo=True,
-            cmd="/usr/bin/df --type=ext4 --local --output=avail | grep ' /'",
+            cmd="/usr/bin/df --type=ext4 --local --output=avail,target -B1 | grep ' /'",
             timeout=20,
             verbose=False,
         )
