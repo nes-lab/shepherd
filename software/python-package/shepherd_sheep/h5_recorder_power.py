@@ -52,6 +52,10 @@ class PowerRecorder(Monitor):
             raise TypeError("calibration must be CalibrationSeries or CalibrationEmulator")
 
         self.gain: float = 1e-9  # nW
+        self.offset_V_raw = int(self.cal_data.voltage.offset / self.cal_data.voltage.gain)
+        self.offset_C_raw = int(self.cal_data.current.offset / self.cal_data.current.gain)
+        self.gain_P_nW = self.cal_data.voltage.gain * self.cal_data.current.gain / self.gain
+
         self.data.create_dataset(
             name="value",
             shape=(self.increment,),
@@ -84,15 +88,15 @@ class PowerRecorder(Monitor):
         len_red = len_add // self.reduction_factor
         len_add = len_red * self.reduction_factor
 
-        power = (
-            (
-                self.cal_data.voltage.raw_to_si(data.voltage[:len_add])
-                * self.cal_data.current.raw_to_si(data.current[:len_add])
+        """wanted:
+                self.cal_data.voltage.raw_to_si(data.voltage[:len_add]).astype(np.float32)
+                * self.cal_data.current.raw_to_si(data.current[:len_add]).astype(np.float32)
                 / self.gain
-            )
-            .clip(0, 2**32)
-            .astype(np.uint32)
-        )
+        Problem: upcast to float64 - which crashes the beaglebone
+        """
+        _V = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
+        _C = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
+        power = ((_V * _C) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
 
         # timestamps are automatically reduced
         if isinstance(data.timestamp_ns, int):
