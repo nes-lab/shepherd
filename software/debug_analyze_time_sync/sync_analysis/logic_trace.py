@@ -22,7 +22,7 @@ class LogicTrace:
         self.channel_count: int = data.shape[1] - 1
         self.data: list = []
         # TODO: analyze & store
-        data_ts: np.ndarray = data[:, 0].astype("float64")
+        data_ts: np.ndarray = data[:, 0].astype(np.float64)
         for _i in range(1, data.shape[1]):
             _data = data[:, _i]
             _data = self._convert_analog2digital(_data)
@@ -84,7 +84,7 @@ class LogicTrace:
 
         -> returns timestamps of alternating states, starting with 0.
         """
-        _d0 = data[:].astype("uint8")
+        _d0 = data[:].astype(np.uint8)
         _d1 = np.concatenate([[not _d0[0]], _d0[:-1]])
         _df = _d0 + _d1
         _ds = timestamps[_df == 1]
@@ -100,7 +100,7 @@ class LogicTrace:
 
     @staticmethod
     def _filter_glitches(data: np.ndarray, duration_ns: int = 10) -> np.ndarray:
-        _diff = ((data[1:] - data[:-1]) * 1e9).astype("uint64")
+        _diff = ((data[1:] - data[:-1]) * 1e9).astype(np.uint64)
         _filter1 = _diff > duration_ns
         _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate(
             [[True], _filter1],

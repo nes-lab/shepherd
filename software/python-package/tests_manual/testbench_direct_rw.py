@@ -193,7 +193,7 @@ def file_to_ram_new(path: Path, mem: SharedMemory) -> None:
     with Reader(path, verbose=False) as sr:
         shared_array = np.ndarray(
             shape=(mem.size // 4,),
-            dtype="u4",
+            dtype=np.uint32,
             buffer=mem.mapped_mem,
         )
         for _iter in range(mem.buffer_count):
@@ -225,7 +225,7 @@ def ram_to_file_new(path: Path, mem: SharedMemory, compression: Compression) -> 
         sw.store_hostname("Emu")
         shared_array = np.ndarray(
             shape=(mem.size // 4,),
-            dtype="u4",
+            dtype=np.uint32,
             buffer=mem.mapped_mem,
         )
         for _iter in range(mem.buffer_count):
@@ -261,11 +261,11 @@ def ram_to_file_new_ts(path: Path, mem: SharedMemory, compression: Compression) 
         sw.store_hostname("Emu")
         time_series_ns = sw.sample_interval_ns * np.arange(
             Writer.CHUNK_SAMPLES_N,
-        ).astype("u8")
+        ).astype(np.uint64)
 
         shared_array = np.ndarray(
             shape=(mem.size // 4,),
-            dtype="u4",
+            dtype=np.uint32,
             buffer=mem.mapped_mem,
         )
         for _iter in range(mem.buffer_count):

@@ -20,7 +20,7 @@ from typing import Any
 
 import yaml
 from fabric import Connection
-from fabric import Group
+from fabric import Group  # There is a ThreadingGroup, but its no match to this code
 from fabric import Result
 from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.ssh_exception import SSHException
