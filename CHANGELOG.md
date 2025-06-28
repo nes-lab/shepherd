@@ -4,7 +4,9 @@
 
 - py-packaging: allow installing everything via .[all]
 - sheep
-  - won't exit with != 0 if config is not for that specific sheep
+  - ~~won't exit with != 0 if config is not for that specific sheep~~
+  - improve and bugfix resampling of output-data (also direct power-calculation) -> numpy brings beaglebone to a halt on vector-float-operations during measurement
+  - add benchmark to find cheapest resampling method
 - herd
   - threads now have a configurable timeout for safer runtime (.run_cmd(), .get_file(), .put_file())
   - add .min_space_left() to determine observer fill-level
@@ -12,6 +14,8 @@
   - add .service_get_logs() & .service_erase_logs() to fetch terminal output
   - add separate .reboot() to already existing .poweroff()
   - add .kill_sheep_process() to get a clean slate
+  - .check_status() now directly monitors sheep-software (not only service)
+  - progressbar is now more responsive, as it constantly cycles through all still active threads
 - ansible
   - remove usage of nelson boot scripts (update kernel & grow partition)
   - try newer non-ti kernel
@@ -19,7 +23,6 @@
   - improve kernel preparation
   - switch python components to UV and venv
 - kMod - disable experimental code - not compatible with non-ti kernel
--
 
 ## 0.9.3
 
