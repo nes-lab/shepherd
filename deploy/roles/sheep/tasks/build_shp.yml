@@ -109,7 +109,7 @@
     - install
     - device-tree
 
-- name: UV - Install shepherd python package
+- name: UV - Install shepherd-sheep tools
   ansible.builtin.command:
     cmd: "/home/jane/.local/bin/uv tool install {{ sheep_install_path }}/software/python-package/.[test]"
   tags:

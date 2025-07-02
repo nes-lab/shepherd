@@ -38,12 +38,15 @@ dependencies = [
     "h5py",
     "psutil",
     "pyserial",
-    "pyYAML>=6.0.0",   # not compatible with prior versions
+    "pyYAML>6.0.0",   # not compatible with prior versions
     "msgpack",
     "msgpack-numpy",
     "gevent",
     "chromalog",
     "pydantic>2.11.0",  # this release gives a speedbump
+    "greenlet",  # added here to allow sourcing from custom uv-index
+    "zstandard",  # added here to allow sourcing from custom uv-index
+    "pyzmq",  # added here to allow sourcing from custom uv-index
 ]
 
 [project.optional-dependencies]
