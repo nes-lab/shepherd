@@ -12,8 +12,9 @@
         "libdbus-glib-1-dev",
         "libgirepository1.0-dev",
         "srecord",
-        "cmake", # custom build
-        "build-essential", # custom build
+        "cmake", # for custom build
+        "build-essential", # for custom build
+        "python3-dev", # for custom build
       ]
     state: present
 

@@ -36,7 +36,8 @@
 
 - name: UV - Uninstall shepherd python package
   ansible.builtin.command:
-    cmd: "uv pip uninstall {{ item }}"
+    cmd: "/home/jane/.local/bin/uv pip uninstall {{ item }}"
+    chdir: '/home/{{ ansible_user }}'
   loop:
     - shepherd-core
     - shepherd_core
@@ -82,5 +83,7 @@
     - python
 
 - name: UV - update itself
-  ansible.builtin.command: '/home/jane/.local/bin/uv self update'
+  ansible.builtin.command:
+    cmd: '/home/jane/.local/bin/uv self update'
+    chdir: '/home/{{ ansible_user }}'
   become: false
