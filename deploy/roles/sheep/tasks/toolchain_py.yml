@@ -23,7 +23,7 @@
   # this should add to .bashrc: . "$HOME/.local/bin/env"
 
 - name: UV - redirect tool-install to global dir
-  ansible:builtin:lineinfile:
+  ansible.builtin.lineinfile:
     dest: '{{ item }}/.bashrc'
     line: "export UV_TOOL_BIN_DIR=/usr/local/bin/"
     regex: ^.*?UV_TOOL_BIN_DIR=.*$

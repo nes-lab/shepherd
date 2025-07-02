@@ -35,7 +35,7 @@
   changed_when: true
 
 - name: UV - Uninstall shepherd python package
-  ansible:builtin:command:
+  ansible.builtin.command:
     cmd: "uv pip uninstall {{ item }}"
   loop:
     - shepherd-core
