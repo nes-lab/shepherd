@@ -16,8 +16,8 @@
     state: present
 
 - name: UV - install
-  ansible.builtin.command:
-    cmd: 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+  ansible.builtin.shell:
+    cmd: 'set -o pipefail && curl -LsSf https://astral.sh/uv/install.sh | sh'
     chdir: '/home/{{ ansible_user }}'
   become: false
   # this should add to .bashrc: . "$HOME/.local/bin/env"
