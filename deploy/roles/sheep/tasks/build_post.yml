@@ -10,3 +10,7 @@
 - name: Load Shepherd-Module
   ansible.builtin.command: 'modprobe -a shepherd'
   changed_when: true
+
+- name: UV - prune cache
+  ansible.builtin.command: 'uv cache prune'
+  become: false

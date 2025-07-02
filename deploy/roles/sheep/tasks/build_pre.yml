@@ -80,3 +80,7 @@
   tags:
     - source-code
     - python
+
+- name: UV - update itself
+  ansible.builtin.command: 'uv self update'
+  become: false
