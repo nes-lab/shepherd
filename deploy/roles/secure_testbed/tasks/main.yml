@@ -10,6 +10,12 @@
     remove: true
     state: absent
 
+- name: SYS - Remove default User "debian"
+  ansible.builtin.user:
+    name: debian
+    remove: true
+    state: absent
+
 - name: CFG - Improve SSHd-Security
   ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
@@ -20,7 +26,7 @@
     - {regex: '^.*Protocol.*$', line: 'Protocol 2'}
     - {regex: '^.*StrictModes.*$', line: 'StrictModes yes'}
     - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 1m'}
-    - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 3'}
+#    - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 3'}
     - {regex: '^.*PermitRootLogin.*$', line: 'PermitRootLogin no'}
     - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # disable for debug
     - {regex: '^.*PermitEmptyPasswords.*$', line: 'PermitEmptyPasswords no'}
@@ -29,15 +35,18 @@
     - {regex: '^.*AuthorizedKeysFile.*$', line: 'AuthorizedKeysFile .ssh/authorized_keys'}
     - {regex: '^.*RhostsRSAAuthentication.*$', line: 'RhostsRSAAuthentication no'}
     - {regex: '^.*ChallengeResponseAuthentication.*$', line: 'ChallengeResponseAuthentication no'}
-    - {regex: '^.*X11Forwarding.*$', line: 'X11Forwarding no'}
+    - {regex: '^.*X11Forwarding .*$', line: 'X11Forwarding no'}
     - {regex: '^.*AllowUsers.*$', line: 'AllowUsers {{ ansible_user }}'}
-    # select good AND exclude weak algorithms: TODO: just forbid
-    - {regex: '^.*KexAlgorithms.*$', line: 'KexAlgorithms -ecdh-sha2*,diffie-hellman-group-exchange*,diffie-hellman-group14-sha1'}
-    - {regex: '^.*HostKeyAlgorithms.*$', line: 'HostKeyAlgorithms -ecda-sha2*,ecdsa-sha2*'}
-    - {regex: '^.*Ciphers.*$', line: 'Ciphers -arcfour*,chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr'}
-    # cipher aes256-ctr is used by paramico (herd) - last remaining option - so keep it for now even it is considered insecure
-    - {regex: '^.*MACs.*$', line: 'MACs -umac-64*,hmac-sha1*,hmac-sha2-256,hmac-sha2-512,umac-128@open*'}
+    # exclude weak algorithms (prefixed `-` forbids whole list):
+    - {regex: '^.*KexAlgorithms.*$', line: 'KexAlgorithms -diffie-hellman-group-exchange*,diffie-hellman-group14-sha1'}
+    # kex - suspected trouble with windows: ecdh-sha2*
+    - {regex: '^.*HostKeyAlgorithms.*$', line: '#HostKeyAlgorithms -ecda-sha2*,ecdsa-sha2*'}
+    - {regex: '^.*Ciphers.*$', line: 'Ciphers -arcfour*,chacha20-poly1305@openssh.com'}
+    # ciphers aes256-ctr is used by paramiko (herd) - last remaining option - so keep it for now even it is considered insecure
+    # Ciphers - suspected trouble with windows: aes128-ctr,aes192-ctr
+    - {regex: '^.*MACs.*$', line: '#MACs -umac-64*,hmac-sha1*,hmac-sha2-256,hmac-sha2-512,umac-128@open*'}
   # TODO: x11Forwarding is twice in file, one yes and one no
+  # TODO: deactivated maxAuthTries and some algos to hopefully make the connection more stable
 
 - name: CFG - Install custom SSHd-Banner for Login
   ansible.builtin.copy:
