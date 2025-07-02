@@ -41,11 +41,28 @@
     mode: 'a+rwx' # everyone can list and access files inside
   become: true
 
+- name: UV - create virtual Env
+  ansible.builtin.command:
+    cmd: '/home/jane/.local/bin/uv venv'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
+- name: UV - activate vEnv on login
+  ansible.builtin.lineinfile:
+    dest: '{{ item }}/.bashrc'
+    line: ". '/home/{{ ansible_user }}/.venv/bin/activate'"
+    regex: ^#?\. ["'].*venv\/bin\/activate["'].*$
+    insertafter: 'EOF'
+    state: present
+  loop:
+    - '/home/{{ ansible_user }}'
+    - '/root'
+  become: true
+
 - name: UV - compile & install python-packages
   # NOTE: with the added index a compilation can be avoided
   # only possible up to debian bookworm / py 3.11 ATM
   ansible.builtin.command:
-    cmd: 'uv pip install {{ item }} --index=https://www.piwheels.org/simple'
+    cmd: '/home/jane/.local/bin/uv pip install {{ item }} --index=https://www.piwheels.org/simple'
     chdir: '/home/{{ ansible_user }}'
   loop:
     - numpy  # 110 min
@@ -57,7 +74,7 @@
 
 - name: UV - install more python-packages (< 1min/item)
   ansible.builtin.command:
-    cmd: 'uv pip install {{ item }}'
+    cmd: '/home/jane/.local/bin/uv pip install {{ item }}'
     chdir: '/home/{{ ansible_user }}'
   loop:
     - psutil

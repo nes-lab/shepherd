@@ -82,5 +82,5 @@
     - python
 
 - name: UV - update itself
-  ansible.builtin.command: 'uv self update'
+  ansible.builtin.command: '/home/jane/.local/bin/uv self update'
   become: false
