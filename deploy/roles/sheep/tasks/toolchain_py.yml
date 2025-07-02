@@ -4,7 +4,6 @@
   ansible.builtin.apt:
     name:
       [
-        "ntpdate", # allows manual time updates via ntpdate -s time.nist.gov
         "zlib1g-dev",
         "libjpeg-dev",
         "hdf5-tools", # h5py
@@ -23,21 +22,23 @@
   become: false
   # this should add to .bashrc: . "$HOME/.local/bin/env"
 
-- name: UV - create venv
-  ansible.builtin.command:
-    cmd: 'uv venv'
-    chdir: '/home/{{ ansible_user }}'
-
-- name: UV - activate venv on login
+- name: UV - redirect tool-install to global dir
   ansible:builtin:lineinfile:
-    dest: '{{ item[1] }}/.bashrc'
-    line: ". '/home/{{ ansible_user }}/.venv/bin/activate'"
-    regex: "#?\. [\"'].*venv\/bin\/activate[\"'].*$"
+    dest: '{{ item }}/.bashrc'
+    line: "export UV_TOOL_BIN_DIR=/usr/local/bin/"
+    regex: ^.*?UV_TOOL_BIN_DIR=.*$
     insertafter: 'EOF'
     state: present
   loop:
     - '/home/{{ ansible_user }}'
     - '/root'
+  become: true
+
+- name: Allow install to tool-dir without sudo
+  ansible.builtin.file:
+    path: "/usr/local/bin/"
+    state: directory
+    mode: 'a+rwx' # everyone can list and access files inside
   become: true
 
 - name: UV - compile & install python-packages
@@ -52,6 +53,7 @@
     - gevent  # 35 min
     - zstandard  # 21 min
     - pyzmq  # 25 min
+  become: false
 
 - name: UV - install more python-packages (< 1min/item)
   ansible.builtin.command:
@@ -63,3 +65,4 @@
     - pydantic
     - click
     - shepherd-core
+  become: false

@@ -25,7 +25,7 @@
   tags: gps
 
 - name: Install python ubxserial modules
-  ansible.builtin.pip:
+  ansible.builtin.pip:  # TODO: upgrade to uv
     name: ubxserial
 
 - name: Configure chrony and gpsd (not active)

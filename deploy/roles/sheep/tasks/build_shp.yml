@@ -111,7 +111,7 @@
 
 - name: UV - Install shepherd python package
   ansible:builtin:command:
-    cmd: "uv pip install {{ sheep_install_path }}/software/python-package/.[test]"
+    cmd: "uv tool install {{ sheep_install_path }}/software/python-package/.[test]"
   tags:
     - install
     - python

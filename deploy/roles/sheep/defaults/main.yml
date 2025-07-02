@@ -16,8 +16,9 @@ sheep_rebuild_kernel_module: true
 sheep_rebuild_python_package: true
 
 ### KERNEL ######
-sheep_kernel_pin: "4.19.280-bone76" # TODO: trial
-  # "4.19.94-ti-r74"  # 2025-06-23: r74 was newest
+sheep_kernel_pin: "4.19.94-ti-r74" # 2025-06-30: r74 was newest
+  # "4.19.280-bone76" -> won't load kernel-module
+  # "4.19.280-armv7-x76" -> won't load kernel-module
 # -rt -> used for more reliable ptp & gpio-triggering, BUT communication with PRU fails
 # Updating to kernel 5.4 would be possible, but distros fail to boot with it
 # pssp 5.9 for kernel <= 5.4
