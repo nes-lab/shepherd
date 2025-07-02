@@ -128,3 +128,27 @@ include = ['./shepherd', ]
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
 reportMissingParameterType = true
+
+[tool.uv]
+concurrent-downloads = 1
+concurrent-builds = 1
+concurrent-installs  = 1
+config-settings = { UV_REQUEST_TIMEOUT = 180, UV_TOOL_BIN_DIR = "/usr/local/bin/"}
+no-build-package = ["numpy", "h5py", "zstandard", "gevent", "pyzmq", "greenlet", "msgpack"]
+# export UV_TOOL_BIN_DIR=/usr/local/bin/
+
+[[tool.uv.index]]
+name = "piwheels"
+url = "https://www.piwheels.org/simple"
+explicit = true
+default = true
+
+[tool.uv.sources]
+numpy = { index = "piwheels"}       # 110 min compile
+h5py = { index = "piwheels"}        # 54 min
+zstandard = { index = "piwheels"}   # 21 min
+gevent = { index = "piwheels"}      # 35 min
+pyzmq = { index = "piwheels"}       # 25 min
+greenlet = { index = "piwheels"}
+msgpack = { index = "piwheels"}     # 2 min
+shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
