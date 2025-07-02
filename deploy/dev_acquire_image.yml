@@ -23,8 +23,11 @@
 
     - name: Last Step - run the following backup-command manually
       ansible.builtin.debug:
-        msg: "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of={{ image_name }}"
+        msg:
+          - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of={{ image_name }}   -> eMMC"
+          - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk0' | xz -6 - | dd of={{ image_name }}   -> SD-Card"
 
+# TODO: could shrink the actual fs with: sudo resize2fs -p /dev/mmcblk0p1 3G
 # TODO: test - do actual command
 # hostvars[inventory_hostname]['ansible_default_ipv4']['address']
 
