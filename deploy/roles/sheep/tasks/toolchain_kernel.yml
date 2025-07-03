@@ -16,8 +16,11 @@
 
 - name: APT - install replacement for NTP-service
   ansible.builtin.apt:
-    name: "ntpdate" # allows manual time updates via: ntpdate -s time.nist.gov
+    name: "{{ item }}"
     state: present
+  loop:
+    - "ntpdate" # allows manual time updates via: ntpdate -s time.nist.gov
+    - "sysrqd" # remote reboot
 
 - name: Restart device
   ansible.builtin.reboot:
