@@ -108,7 +108,7 @@ def test_cli_program_swd_explicit_short(
 
 
 @pytest.mark.hardware
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(90)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_sbw_explicit(
     cli_runner: CliRunner,

@@ -26,6 +26,7 @@
         msg:
           - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of={{ image_name }}   -> eMMC"
           - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk0' | xz -6 - | dd of={{ image_name }}   -> SD-Card"
+          - "better: shutdown, remove card and prepare image on external device"
 
 # TODO: could shrink the actual fs with: sudo resize2fs -p /dev/mmcblk0p1 3G
 # TODO: test - do actual command

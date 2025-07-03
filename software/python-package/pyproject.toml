@@ -63,7 +63,7 @@ test = [
     "pytest-timeout",
     "pytest-click",
     "coverage",
-    "flaky",  # TODO: integrate
+#    "flaky",  # TODO: precaution - suspicious instability when installed
 ]
 doc = ["dbus-python"]
 all = ["shepherd-sheep[dev,test,doc]"]
@@ -136,8 +136,8 @@ reportMissingParameterType = true
 concurrent-downloads = 1
 concurrent-builds = 1
 concurrent-installs  = 1
-config-settings = { UV_REQUEST_TIMEOUT = 180, UV_TOOL_BIN_DIR = "/usr/local/bin/"}
-no-build-package = ["numpy", "h5py", "zstandard", "gevent", "pyzmq", "greenlet", "msgpack"]
+# config-settings = { UV_REQUEST_TIMEOUT = 180, UV_TOOL_BIN_DIR = "/usr/local/bin/"}
+# no-build-package = ["numpy", "h5py", "zstandard", "gevent", "pyzmq", "greenlet", "msgpack"]
 # export UV_TOOL_BIN_DIR=/usr/local/bin/
 
 [[tool.uv.index]]

@@ -2,7 +2,13 @@
 
 ## 0.9.4
 
-- py-packaging: allow installing everything via .[all]
+- py-packaging:
+  - allow installing everything via .[all]
+  - switch to UV (from pip)
+- switch to UV for python tooling
+  - tools are installed via `uv tool install /opt/shepherd/software/python-package/.`
+  - for testing there is a jane-venv automatically activated for jane and root (pytest has to be done from `sudo su`)
+  - ansible, services and packages are migrated
 - sheep
   - ~~won't exit with != 0 if config is not for that specific sheep~~
   - improve and bugfix resampling of output-data (also direct power-calculation) -> numpy brings beaglebone to a halt on vector-float-operations during measurement
@@ -22,6 +28,7 @@
   - make cleaning-role safer
   - improve kernel preparation
   - switch python components to UV and venv
+  -
 - kMod - disable experimental code - not compatible with non-ti kernel
 
 ## 0.9.3

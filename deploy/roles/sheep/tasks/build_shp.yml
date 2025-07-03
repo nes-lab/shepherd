@@ -81,7 +81,7 @@
     chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: all
     params:
-      PROTO: SBW
+      TYPE: SBW
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -93,7 +93,7 @@
     chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: install
     params:
-      PROTO: SBW
+      TYPE: SBW
   become: true
 
 - name: Clean shepherd device tree

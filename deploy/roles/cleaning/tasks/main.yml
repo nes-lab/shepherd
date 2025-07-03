@@ -25,10 +25,10 @@
     path: "{{ item }}"
     state: absent
   loop:
-    - "/opt/shepherd/.git/"
-    - "/opt/shepherd/hardware/"
-    - "/opt/shepherd/docs/"
-    - "/opt/shepherd/deploy/"
+#    - "/opt/shepherd/.git/"
+#    - "/opt/shepherd/hardware/"
+#    - "/opt/shepherd/docs/"
+#    - "/opt/shepherd/deploy/"
     - "/opt/scripts/.git/"
     - "/opt/scripts/device/"
     - "/opt/scripts/images/"

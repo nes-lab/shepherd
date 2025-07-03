@@ -82,6 +82,21 @@
     - source-code
     - python
 
+- name: Enable execution of manual build-scripts
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: file
+    owner: "{{ ansible_user }}"
+    mode: "a+rwx"
+  become: true
+  loop:
+    - "{{ sheep_install_path }}/software/build_py.sh"
+    - "{{ sheep_install_path }}/software/build_pru.sh"
+    - "{{ sheep_install_path }}/software/build_kernel.sh"
+  tags:
+    - source-code
+    - python
+
 - name: UV - update itself
   ansible.builtin.command:
     cmd: '/home/jane/.local/bin/uv self update'
