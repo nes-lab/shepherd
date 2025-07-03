@@ -112,10 +112,12 @@
   ansible.builtin.shell:
     cmd: 'find / -xdev -perm +o=w ! \( -type d -perm +o=t \) ! -type l -ok chmod -v o-w {} \;'
   changed_when: true
+  when: false
 
 - name: SYS - Prevent active User from creating new world writables
   ansible.builtin.shell: 'umask 002 && umask'
   changed_when: true
+  when: false
 
 - name: Restart device
   ansible.builtin.reboot:

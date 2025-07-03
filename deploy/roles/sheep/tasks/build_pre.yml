@@ -1,12 +1,12 @@
 ---
 
 - name: Stop Kernel Module
-  ansible.builtin.command: 'modprobe -rf shepherd'
-  failed_when: '{{ item }}'
+  ansible.builtin.command: 'modprobe -rf {{ item }}'
+  failed_when: false
   loop:
-    - false  # just repeat 3 times
-    - false
-    - false
+    - shepherd  # just repeat 3 times
+    - shepherd
+    - shepherd
   # lsmod | grep shepherd
   #   -> loaded: 2 lines, exit 0
   #   -> notload: 0 lines, exit 1

@@ -14,7 +14,7 @@
       ]
     state: present
 
-- name: APT - install replacement for NTP-service
+- name: APT - install replacement for NTP-service and direct access
   ansible.builtin.apt:
     name: "{{ item }}"
     state: present

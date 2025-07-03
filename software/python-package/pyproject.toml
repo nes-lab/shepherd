@@ -88,6 +88,7 @@ shepherd-launcher = "shepherd_launcher:main"
 shepherd-watchdog = "shepherd_watchdog:main"
 
 [build-system]
+# TODO: could be replaced by UV: https://docs.astral.sh/uv/concepts/build-backend/
 requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 

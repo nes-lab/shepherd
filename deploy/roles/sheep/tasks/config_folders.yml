@@ -41,3 +41,14 @@
   tags:
     - source-code
     - python
+
+- name: Start in software-dir after login
+  ansible.builtin.lineinfile:
+    dest: '{{ item }}/.bashrc'
+    line: 'cd /opt/shepherd/software'
+    regex: "#?cd \/opt\/shepherd.*$"
+    insertafter: 'EOF'
+    state: present
+  loop:
+    - '/home/{{ ansible_user }}'
+    - '/root'
