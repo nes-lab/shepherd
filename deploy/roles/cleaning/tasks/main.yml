@@ -20,7 +20,7 @@
   when: cleaning_delete_recordings | bool
   # NOTE: could be done with just .find, but this leaves directory intact
 
-- name: Remove space-waster in /opt/shepherd
+- name: Remove space-waster
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
