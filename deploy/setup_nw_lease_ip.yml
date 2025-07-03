@@ -52,6 +52,10 @@
       ansible.builtin.set_fact:
         mac_add: "{{ mac_ret.stdout | upper | replace(':', '_') }}"
 
+    - name: Show MAC
+      ansible.builtin.debug:
+        var: mac_add
+
     - name: Lookup new host-name & -ip
       ansible.builtin.set_fact:
         host_name: "{{ mac_2_ip[mac_add][0] }}"

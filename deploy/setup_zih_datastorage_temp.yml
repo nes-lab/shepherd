@@ -30,6 +30,11 @@
       ansible.builtin.debug:
         var: ansible_hostname
 
+    - name: APT - Install required packages for Python
+      ansible.builtin.apt:
+        name: "nfs-common"
+        state: present
+
     - name: create mount-point
       ansible.builtin.file:
         path: "/tmp/shp_drive/"
