@@ -7,7 +7,8 @@
   gather_facts: false
 
   tasks:
-
+    # TODO: newer bookworm (v12.11) does not use it anymore
+    # TODO: only go that route if file exists
     - name: Delete old netplan-config
       ansible.builtin.file:
         path: "/etc/netplan/bbone.yaml"
