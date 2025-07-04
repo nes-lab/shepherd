@@ -71,6 +71,7 @@
         regexp: "^lease {.*$"
         line: "lease {interface 'eth0'; fixed-address {{ host_ip }};}"
         state: present
+      when: false
 
     - name: Return current lease
       ansible.builtin.command: "dhclient -r -v eth0"
@@ -82,12 +83,12 @@
       ansible.builtin.file:
         path: "/var/lib/dhcp/dhclient.leases"
         state: absent
-      when: host_name != inventory_hostname
+      when: false # host_name != inventory_hostname
 
     - name: Set hostname (from MAC)
       ansible.builtin.hostname:
         name: "{{ mac_2_ip[mac_add][0] }}"
-      when: host_name != inventory_hostname
+      #when: host_name != inventory_hostname
 
     - name: Adjust /etc/hosts (from MAC)
       ansible.builtin.lineinfile:
@@ -95,13 +96,13 @@
         regexp: '^127\.0\.1\.1\s+.+\.localdomain\s+.+'
         line: "127.0.1.1  {{ host_name }}.localdomain  {{ host_name }}"
         state: present
-      when: host_name != inventory_hostname
+      when: false #host_name != inventory_hostname
 
     - name: Ask for new lease
       ansible.builtin.command: "dhclient -v eth0"
       failed_when: false
       changed_when: true
-      when: host_name != inventory_hostname
+      when: false #host_name != inventory_hostname
 
   post_tasks:
 

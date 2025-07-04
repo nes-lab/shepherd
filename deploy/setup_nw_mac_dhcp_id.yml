@@ -8,10 +8,36 @@
 
   tasks:
 
+    - name: Delete previous config
+      ansible.builtin.file:
+        path: "/etc/systemd/network/eth0.network"
+        state: absent
+
+    - name: Use MAC as unique ID (Systemd - NetworkD)
+      ansible.builtin.blockinfile:
+        path: "/etc/systemd/network/eth0.network"
+        create: true
+        mode: "a+rw"
+        block: |
+          [Match]
+          Name=eth0
+          Type=ether
+          
+          [Link]
+          RequiredForOnline=yes
+          
+          [Network]
+          DHCP=ipv4
+          
+          [DHCPv4]
+          ClientIdentifier=mac
+          DUIDType=link-layer
+
     - name: Delete old netplan-config
       ansible.builtin.file:
         path: "/etc/netplan/bbone.yaml"
         state: absent
+      when: false
 
     - name: Use MAC as unique ID
       ansible.builtin.blockinfile:
@@ -26,6 +52,7 @@
               eth0:
                 dhcp4: true
                 dhcp-identifier: mac
+      when: false
 
     # TODO: this seems to be unused in recent ubuntu versions
     # what works: sudo dhclient -v eth0  -> gets you a second ip in correct range (MAC-look-up)
