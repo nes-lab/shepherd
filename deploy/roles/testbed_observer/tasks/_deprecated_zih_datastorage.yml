@@ -1,12 +1,9 @@
 ---
-# proposed by helpdesk - login-server and dgw share home-directory
-# hard to do as a role because of vars_prompt of temp user-data
+# deprecated because it was overly complex - not needed
 # offline pre-tasks
 # - get network storage with nfs share
 # - enable access for server AND testbed-network
 # - authorize function-account
-
-# TODO: it is better to store a set of authorized keys and distribute them
 
 # Storage-benchmarks from BBB:
 # sudo dd if=/dev/zero of=./testfile bs=4096 count=40000 oflag=direct

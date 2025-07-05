@@ -1,0 +1,52 @@
+---
+
+testbed_observer_hostname: ansible_hostname
+
+testbed_observer_data_path_local: /var/shepherd
+
+testbed_observer_nfs_server: cephnfs.zih.tu-dresden.de:/glw/shepherd_b
+# data will be stored in       {{nfs_server}}/experiments/{{ansible_hostname}}/
+# content will be sourced from {{nfs_server}}/content/
+
+# Storage-benchmarks from BBB:
+# sudo dd if=/dev/zero of=./testfile bs=100M count=10 oflag=direct
+#     vs-grp07.zih.tu-dresden.de:/shepherd_d      -> 1000 mb in 91 s, 11.5 MB/s
+#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> much worse
+
+# Storage-benchmarks from vServer:
+# sudo dd if=/dev/zero of=./testfile bs=400M count=20 oflag=direct
+#     vs-grp07.zih.tu-dresden.de:/shepherd_d      -> 8.4 GB in 34 s, 250 MB/s
+#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> ~35 MB
+
+# hardcoded LUT with key: uppercase MAC & with '_' instead of ':'
+testbed_observer_mac_2_ip:  # TODO: IP not needed anymore, MAC_2_NAME is enough
+  18_62_E4_E4_41_8D: ["sheep01", "192.168.165.201"]
+  18_62_E4_D0_DE_3F: ["sheep02", "192.168.165.202"]
+  18_62_E4_D0_9E_6A: ["sheep03", "192.168.165.203"]
+  18_62_E4_D0_61_4D: ["sheep04", "192.168.165.204"]
+  18_62_E4_E3_6E_13: ["sheep05", "192.168.165.205"]
+  18_62_E4_D0_AF_0B: ["sheep06", "192.168.165.206"]
+  18_62_E4_E4_39_D7: ["sheep07", "192.168.165.207"]
+  18_62_E4_D0_E5_FB: ["sheep08", "192.168.165.208"]
+  18_62_E4_D0_D4_A9: ["sheep09", "192.168.165.209"]
+  18_62_E4_E4_24_C5: ["sheep10", "192.168.165.210"]
+  18_62_E4_E4_0E_5D: ["sheep11", "192.168.165.211"]
+  18_62_E4_D0_AA_F7: ["sheep12", "192.168.165.212"]
+  18_62_E4_D0_D7_70: ["sheep13", "192.168.165.213"]
+  18_62_E4_E3_89_43: ["sheep14", "192.168.165.214"]
+  18_62_E4_D0_BC_79: ["sheep15", "192.168.165.215"]
+  18_62_E4_D0_59_40: ["sheep16", "192.168.165.216"]
+  18_62_E4_E3_F8_00: ["sheep17", "192.168.165.217"]
+  18_62_E4_D0_DA_04: ["sheep18", "192.168.165.218"]
+  18_62_E4_D0_CB_D3: ["sheep19", "192.168.165.219"]
+  18_62_E4_D0_CB_B8: ["sheep20", "192.168.165.220"]
+  18_62_E4_D0_CE_79: ["sheep21", "192.168.165.221"]
+  18_62_E4_D1_16_76: ["sheep22", "192.168.165.222"]
+  18_62_E4_E3_B0_9D: ["sheep23", "192.168.165.223"]
+  18_62_E4_E4_2C_5D: ["sheep24", "192.168.165.224"]
+  18_62_E4_D0_C3_F6: ["sheep25", "192.168.165.225"]
+  18_62_E4_D0_B6_C1: ["sheep26", "192.168.165.226"]
+  18_62_E4_D0_C3_DB: ["sheep27", "192.168.165.227"]
+  18_62_E4_D0_C5_5E: ["sheep28", "192.168.165.228"]
+  18_62_E4_D0_E5_BF: ["sheep29", "192.168.165.229"]
+  18_62_E4_D1_27_47: ["sheep30", "192.168.165.230"]

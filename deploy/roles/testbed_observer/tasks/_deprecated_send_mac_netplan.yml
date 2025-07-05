@@ -1,0 +1,21 @@
+# Newer debian bookworm (v12.11) does not use it anymore
+# -> only go that route if file exists
+
+- name: Delete old netplan-config
+  ansible.builtin.file:
+    path: "/etc/netplan/bbone.yaml"
+    state: absent
+
+- name: Use MAC as unique ID
+  ansible.builtin.blockinfile:
+    path: "/etc/netplan/bbone.yaml"
+    create: true
+    mode: "a+rw"
+    block: |
+      network:
+        renderer: networkd
+        version: 2
+        ethernets:
+          eth0:
+            dhcp4: true
+            dhcp-identifier: mac

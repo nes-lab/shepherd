@@ -1,0 +1,54 @@
+---
+
+- name: Determine local MAC-Address
+  ansible.builtin.shell: # pipefail-setting prevents surprises
+    #cmd: "set -o pipefail && ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
+    cmd: "ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
+  register: mac_ret
+  failed_when: false
+  changed_when: false
+
+- name: Reformat MAC-Address
+  ansible.builtin.set_fact:
+    mac_add: "{{ mac_ret.stdout | upper | replace(':', '_') }}"
+
+- name: Show MAC
+  ansible.builtin.debug:
+    var: mac_add
+
+- name: Lookup new host-name
+  ansible.builtin.set_fact:
+    testbed_observer_hostname: "{{ testbed_observer_mac_2_ip[mac_add][0] }}"
+
+- name: Show new Name
+  ansible.builtin.debug:
+    var: testbed_observer_hostname
+
+- name: Set hostname (from MAC)
+  ansible.builtin.hostname:
+    name: "{{ testbed_observer_hostname }}"
+  when: testbed_observer_hostname != inventory_hostname
+
+- name: Integrate NW-Storage
+  ansible.builtin.include_tasks:
+    file: integrate_zih_datastorage.yml
+
+
+- name: Enable Broadcast of MAC
+  ansible.builtin.include_tasks:
+    file: broadcast_mac.yml
+
+
+
+
+- name: Restart device
+  ansible.builtin.reboot:
+    connect_timeout: 20
+    reboot_timeout: 100
+    post_reboot_delay: 30
+  failed_when: false
+  # these nodes should not come back - as the range is about to change
+  # from here:
+  # - check new IPs (might change after some minutes runtime)
+  # - check if host-name matches - reboot accordingly
+  # - and/or rerun bootstrap to rewrite host-names

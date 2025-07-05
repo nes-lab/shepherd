@@ -1,0 +1,38 @@
+# These are deprecated ways to disable IPv6
+# debian bookworm / 12 has a sysctl.conf, but it seems unused -> systemd is now THE way
+
+- name: Disable IPv6 (sysctl)
+  ansible.builtin.lineinfile:
+    dest: '/etc/sysctl.conf'
+    regexp: "{{ item.regexpress }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    # NOTE: "." in regex should be canceled with "\.", but ansible does not like it
+    - {
+      regexpress: "#?net.ipv6.conf.all.disable_ipv6.*$",
+      replacement: "net.ipv6.conf.all.disable_ipv6=1",
+    }
+    - {
+      regexpress: "#?net.ipv6.conf.default.disable_ipv6.*$",
+      replacement: "net.ipv6.conf.default.disable_ipv6=1",
+    }
+    - {
+      regexpress: "#?net.ipv6.conf.lo.disable_ipv6.*$",
+      replacement: "net.ipv6.conf.lo.disable_ipv6=1",
+    }
+  when: false
+  # trouble: does not work
+  # console OK: sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1  ... and so on
+  # loading config with: sudo sysctl -p    .... also ok for current boot
+
+# disable ipv6-lines in /etc/hosts?
+
+# test in uEnv.txt: cmdline += ipv6.disable=1   -> WORKS, TODO: not clean!
+- name: Disable IPv6 (uEnv)
+  ansible.builtin.lineinfile:
+    dest: '/boot/uEnv.txt'
+    regexp: "^cmdline.*=.*[ipv6.disable]?.*$"
+    line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 quiet ipv6.disable=1"
+    state: present
+  when: false
