@@ -1,5 +1,6 @@
 ---
 # Fix unique identifier of dhcp-client -> MAC
+# NOTE: copy of deploy/roles/testbed_observer/tasks/broadcast_mac.yml
 
 - name: Delete previous config
   ansible.builtin.stat:
