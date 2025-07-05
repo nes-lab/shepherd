@@ -62,7 +62,7 @@ def test_emu_example_fail(cli_runner: CliRunner) -> None:
         ],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner, timeout=40)  # TODO: was 15 but got worse with core-lib
+    wait_for_end(cli_runner, timeout=60)  # TODO: was 15 but got worse with core-lib
 
 
 @pytest.mark.timeout(150)

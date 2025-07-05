@@ -215,7 +215,7 @@ class Herd:
             threads[_name].start()
         time_end = local_now() + timedelta(seconds=5)
         while len(threads) > 0 and local_now() < time_end:
-            hosts = list(threads.keys())
+            hosts = list(threads.keys())  # makes sure it's a copy
             for host in hosts:
                 thread = threads[host]
                 thread.join(timeout=1)
@@ -288,7 +288,7 @@ class Herd:
             leave=False,
         )
         while len(threads) > 0 and local_now() < time_end:
-            hosts = list(threads.keys())
+            hosts = list(threads.keys())  # makes sure it's a copy
             for host in hosts:
                 thread = threads[host]
                 thread.join(timeout=1)
@@ -406,7 +406,7 @@ class Herd:
             leave=False,
         )
         while len(threads) > 0 and local_now() < time_end:
-            hosts = list(threads.keys())
+            hosts = list(threads.keys())  # makes sure it's a copy
             for host in hosts:
                 thread = threads[host]
                 thread.join(timeout=1)
@@ -519,7 +519,7 @@ class Herd:
             leave=False,
         )
         while len(threads) > 0 and local_now() < time_end:
-            hosts = list(threads.keys())
+            hosts = list(threads.keys())  # makes sure it's a copy
             for host in hosts:
                 thread = threads[host]
                 thread.join(timeout=1)
@@ -583,7 +583,7 @@ class Herd:
         service.
 
         """
-        if remote_path.suffix.lower() != ".pickle":
+        if Path(remote_path).suffix.lower() != ".pickle":
             raise NameError("Remote path must point to '.pickle'")
 
         with TemporaryDirectory() as temp_dir:
@@ -637,7 +637,10 @@ class Herd:
         :return: True is one node is still active
         """
         replies = self.run_cmd(
-            sudo=True, cmd="ps aux | grep shepherd-sheep | grep -v grep", timeout=30, verbose=False
+            sudo=True,
+            cmd="ps aux | grep bin/shepherd-sheep | grep -v grep",
+            timeout=30,
+            verbose=False,
         )
         active = False
 
@@ -769,7 +772,7 @@ class Herd:
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
-        log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
+        log.debug("Shepherd-nodes affected: %s", list(self.hostnames.values()))
         replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd", timeout=30)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         log.info("Shepherd was forcefully stopped")
@@ -784,7 +787,7 @@ class Herd:
 
     @validate_call
     def poweroff(self, *, restart: bool) -> int:
-        log.debug("Shepherd-nodes affected: %s", self.hostnames.values())
+        log.debug("Shepherd-nodes affected: %s", list(self.hostnames.values()))
         if restart:
             return self.reboot()
         replies = self.run_cmd(sudo=True, cmd="poweroff", timeout=20)
