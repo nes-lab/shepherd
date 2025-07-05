@@ -33,13 +33,9 @@
   ansible.builtin.include_tasks:
     file: integrate_zih_datastorage.yml
 
-
 - name: Enable Broadcast of MAC
   ansible.builtin.include_tasks:
     file: broadcast_mac.yml
-
-
-
 
 - name: Restart device
   ansible.builtin.reboot:
