@@ -126,12 +126,14 @@ def poweroff(ctx: click.Context, *, restart: bool) -> None:
 @cli.command(short_help="Run COMMAND on the shell")
 @click.pass_context
 @click.argument("command", type=click.STRING)
+@click.option(
+    "--timeout", "-t", type=click.INT, default=60, help="forced time (in minutes) to finish"
+)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-@click.option("--infinite", "-i", is_flag=True, help="replace 30s timeout limit by 1h")
-def shell_cmd(ctx: click.Context, command: str, *, sudo: bool, infinite: bool) -> None:
+def shell(ctx: click.Context, command: str, timeout: int, *, sudo: bool) -> None:
     """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
-        replies = herd.run_cmd(sudo=sudo, cmd=command, timeout=60 * 60 if infinite else 30)
+        replies = herd.run_cmd(sudo=sudo, cmd=command, timeout=60 * timeout)
         herd.print_output(replies, verbose=True)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     ctx.exit(exit_code)
@@ -162,7 +164,7 @@ def fix(ctx: click.Context) -> None:
         replies = herd.run_cmd(
             sudo=True,
             cmd="shepherd-sheep fix",
-            timeout=40,
+            timeout=60,
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
@@ -522,7 +524,7 @@ def distribute(
     force_overwrite: bool,
 ) -> None:
     """Upload a file FILENAME to the remote observers, which will be stored in REMOTE_PATH."""
-    # TODO: if actively used in testbed use timeout
+    # TODO: if actively used in testbed use custom timeout
     with ctx.obj["herd"] as herd:
         herd.put_file(filename, remote_path, timeout=60 * 60, force_overwrite=force_overwrite)
 
@@ -680,7 +682,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
         herd.put_task(task, cfg_path)
 
         command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
-        replies = herd.run_cmd(sudo=True, cmd=command, timeout=4 * 60)
+        replies = herd.run_cmd(sudo=True, cmd=command, timeout=5 * 60)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         if exit_code:
             log.error("Programming - Procedure failed - will exit now!")

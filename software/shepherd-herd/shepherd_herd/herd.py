@@ -143,26 +143,27 @@ class Herd:
         if key_filepath is not None:
             connect_kwargs["key_filename"] = str(key_filepath)
 
-        self.group: Group = Group(
+        self.group_all: Group = Group(
             *hostlist,
             user=user,
             connect_timeout=5,
             connect_kwargs=connect_kwargs,
         )
+        self.group_online: list[Connection] = []
         self.hostnames: dict[str, str] = hostnames
 
-        log.info("Herd consists of %d sheep", len(self.group))
+        log.info("Herd consists of %d sheep", len(self.group_all))
 
     def __del__(self) -> None:
         # ... overcautious closing of connections
-        if not hasattr(self, "group") or not isinstance(self.group, Group):
+        if not hasattr(self, "group") or not isinstance(self.group_all, Group):
             return
         with contextlib.suppress(TypeError):
-            self.group.close()
+            self.group_all.close()
 
     def __enter__(self) -> Self:
-        self._open()
-        if len(self.group) < 1:
+        self.open()
+        if len(self.group_online) < 1:
             log.error("No remote sheep in current herd! Will run dry")
         return self
 
@@ -173,10 +174,10 @@ class Herd:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        if not hasattr(self, "group") or not isinstance(self.group, Group):
+        if not hasattr(self, "group") or not isinstance(self.group_all, Group):
             return
         with contextlib.suppress(TypeError):
-            self.group.close()
+            self.group_all.close()
 
     def __getitem__(self, key: str) -> Any:
         if key in self.hostnames:
@@ -201,22 +202,33 @@ class Herd:
             )
             cnx.close()
 
-    def _open(self) -> None:
-        """Open Connection on all Nodes."""
+    def open(self) -> None:
+        """Open Connection on all Nodes.
+
+        Can safely be called more than once, as it might
+        re-add prior offline nodes into active host-pool.
+        """
         threads = {}
-        for cnx in self.group:
+        for cnx in self.group_all:
             _name = self.hostnames[cnx.host]
             threads[_name] = threading.Thread(target=self._thread_open, args=[cnx])
             threads[_name].start()
-        for host, thread in threads.items():
-            thread.join(timeout=5.0)
-            if thread.is_alive():
-                log.error(
-                    "Connection.Open() did fail to finish on %s - will delete that thread",
-                    host,
-                )
-            del thread  # ... overcautious
-        self.group = [cnx for cnx in self.group if cnx.is_connected]
+        time_end = local_now() + timedelta(seconds=5)
+        while len(threads) > 0 and local_now() < time_end:
+            hosts = list(threads.keys())
+            for host in hosts:
+                thread = threads[host]
+                thread.join(timeout=1)
+                if not thread.is_alive():
+                    del thread  # ... overcautious
+                    threads.pop(host)
+        if len(threads) > 0:
+            log.error(
+                "Connection.Open() failed to finish - will delete threads of %s",
+                list(threads.keys()),
+            )
+        del threads
+        self.group_online = [cnx for cnx in self.group_all if cnx.is_connected]
 
     @staticmethod
     def _thread_run(
@@ -259,7 +271,7 @@ class Herd:
         threads = {}
         level = logging.INFO if verbose else logging.DEBUG
         log.log(level, "Sheep-CMD = %s", cmd)
-        for cnx in self.group:
+        for cnx in self.group_online:
             _name = self.hostnames[cnx.host]
             if exclusive_host and _name != exclusive_host:
                 continue
@@ -285,7 +297,9 @@ class Herd:
                     threads.pop(host)
                     progress_bar.update(n=1)
         if len(threads) > 0:
-            log.error("Command.Run() failed to finish - will delete threads")
+            log.error(
+                "Command.Run() failed to finish - will delete threads of %s", list(threads.keys())
+            )
         del threads
         if len(results) < 1:
             log.error("ZERO nodes answered - check your config")
@@ -377,7 +391,7 @@ class Herd:
                 raise NameError(msg)
 
         threads = {}
-        for cnx in self.group:
+        for cnx in self.group_online:
             _name = self.hostnames[cnx.host]
             threads[_name] = threading.Thread(
                 target=self._thread_put,
@@ -401,7 +415,9 @@ class Herd:
                     threads.pop(host)
                     progress_bar.update(n=1)
         if len(threads) > 0:
-            log.error("File.Put() failed to finish - will delete threads")
+            log.error(
+                "File.Put() failed to finish - will delete threads of %s", list(threads.keys())
+            )
         del threads
 
     @staticmethod
@@ -442,7 +458,7 @@ class Herd:
             PurePosixPath(src) if PurePosixPath(src).is_absolute() else self.path_default / src
         )
 
-        for cnx in self.group:
+        for cnx in self.group_online:
             hostname = self.hostnames[cnx.host]
             if separate:
                 target_path = Path(dst_dir) / hostname
@@ -460,12 +476,12 @@ class Herd:
             sudo=False,
             exclusive_host=exclusive_host,
             cmd=f"test -f {src_path}",
-            timeout=20,
+            timeout=30,
             verbose=False,
         )
 
         # try to fetch data
-        for cnx in self.group:
+        for cnx in self.group_online:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
@@ -512,7 +528,7 @@ class Herd:
                     threads.pop(host)
                     progress_bar.update(n=1)
         if delete_src:
-            for cnx in self.group:
+            for cnx in self.group_online:
                 hostname = self.hostnames[cnx.host]
                 if isinstance(threads.get(hostname), threading.Thread):
                     continue
@@ -523,7 +539,9 @@ class Herd:
                 )
                 cnx.sudo(f"rm {src_path}", hide=True)
         if len(threads) > 0:
-            log.error("File.get() failed to finish - will delete threads")
+            log.error(
+                "File.get() failed to finish - will delete threads of %s", list(threads.keys())
+            )
         del threads
         return failed_retrieval
 
@@ -536,7 +554,7 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", timeout=20, verbose=False)
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False)
         ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
         if len(ts_nows) == 0:
             raise RuntimeError("No active hosts found to synchronize.")
@@ -607,7 +625,7 @@ class Herd:
             self.put_file(
                 task,
                 remote_path,
-                timeout=20,
+                timeout=30,
                 force_overwrite=True,
             )
 
@@ -619,11 +637,11 @@ class Herd:
         :return: True is one node is still active
         """
         replies = self.run_cmd(
-            sudo=True, cmd="ps aux | grep shepherd-sheep | grep -v grep", timeout=20, verbose=False
+            sudo=True, cmd="ps aux | grep shepherd-sheep | grep -v grep", timeout=30, verbose=False
         )
         active = False
 
-        for cnx in self.group:
+        for cnx in self.group_online:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
@@ -654,11 +672,11 @@ class Herd:
         :return: True is one node is still active
         """
         replies = self.run_cmd(
-            sudo=True, cmd="systemctl is-active shepherd", timeout=20, verbose=False
+            sudo=True, cmd="systemctl is-active shepherd", timeout=30, verbose=False
         )
         active = False
 
-        for cnx in self.group:
+        for cnx in self.group_online:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
@@ -675,10 +693,10 @@ class Herd:
         - failed -> 0
         """
         replies = self.run_cmd(
-            sudo=True, cmd="systemctl is-failed shepherd", timeout=20, verbose=False
+            sudo=True, cmd="systemctl is-failed shepherd", timeout=30, verbose=False
         )
         failed = False
-        for cnx in self.group:
+        for cnx in self.group_online:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
@@ -696,7 +714,7 @@ class Herd:
 
     def service_get_logs(self) -> dict[str, Result]:
         failings = self.run_cmd(
-            sudo=True, cmd="systemctl is-failed shepherd", timeout=20, verbose=False
+            sudo=True, cmd="systemctl is-failed shepherd", timeout=30, verbose=False
         )
         replies = self.run_cmd(
             sudo=True,
@@ -720,13 +738,13 @@ class Herd:
     def get_last_usage(self) -> timedelta | None:
         """Gives time-delta of last testbed usage."""
         replies1 = self.run_cmd(
-            sudo=True, cmd="tail -n 1 /var/shepherd/log.csv", timeout=20, verbose=False
+            sudo=True, cmd="tail -n 1 /var/shepherd/log.csv", timeout=30, verbose=False
         )
         replies2 = self.run_cmd(
-            sudo=False, cmd="date --iso-8601=seconds", timeout=20, verbose=False
+            sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False
         )
         deltas = []
-        for cnx in self.group:
+        for cnx in self.group_online:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies1.get(hostname), Result):
                 continue
@@ -746,7 +764,7 @@ class Herd:
             log.info("-> won't start while shepherd-instances are active")
             return 1
 
-        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd", timeout=20)
+        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd", timeout=30)
         self.print_output(replies)
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
@@ -783,7 +801,7 @@ class Herd:
         return False
 
     def kill_sheep_process(self) -> None:
-        self.run_cmd(sudo=True, cmd="pkill shepherd-sheep", timeout=20)
+        self.run_cmd(sudo=True, cmd="pkill shepherd-sheep", timeout=30)
 
     @validate_call
     def inventorize(self, output_path: Path) -> bool:
@@ -806,7 +824,7 @@ class Herd:
         return self.get_file(
             file_path,
             output_path,
-            timeout=20,
+            timeout=30,
             timestamp=False,
             separate=False,
             delete_src=True,
@@ -831,7 +849,7 @@ class Herd:
 
         # Get the current time on each target node
         replies_date = self.run_cmd(
-            sudo=False, cmd="date --iso-8601=seconds", timeout=20, verbose=False
+            sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False
         )
         self.print_output(replies_date, verbose=True)
         # calc diff
@@ -918,7 +936,7 @@ class Herd:
         - Group is list of hosts with live connection,
         - hostnames contains all hosts in inventory
         """
-        return len(self.group) >= len(self.hostnames)
+        return len(self.group_online) >= len(self.group_all)
 
     def min_space_left(self) -> int:
         replies = self.run_cmd(

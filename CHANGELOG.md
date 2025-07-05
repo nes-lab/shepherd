@@ -15,11 +15,13 @@
   - add benchmark to find cheapest resampling method
 - herd
   - threads now have a configurable timeout for safer runtime (.run_cmd(), .get_file(), .put_file())
+  - cli-command 'shell' now has an additional timeout-argument which defaults to 60 minutes
   - add .min_space_left() to determine observer fill-level
   - add .service_is_active(), .service_is_failed() to determine status
   - add .service_get_logs() & .service_erase_logs() to fetch terminal output
   - add separate .reboot() to already existing .poweroff()
   - add .kill_sheep_process() to get a clean slate
+  - add .open() to re-add hosts that were offline before
   - .check_status() now directly monitors sheep-software (not only service)
   - progressbar is now more responsive, as it constantly cycles through all still active threads
 - ansible
