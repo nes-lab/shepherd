@@ -204,6 +204,17 @@ def blink(ctx: click.Context, duration: int) -> None:
 
 
 @cli.command(
+    short_help="Check storage left on nodes and return global minimum.",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def storage(ctx: click.Context) -> None:
+    with ctx.obj["herd"] as herd:
+        bytes_min = herd.min_space_left()
+    log.info("Remaining storage: %.2f MiB", bytes_min / 1024 / 1024)
+
+
+@cli.command(
     short_help="Check if all remote hosts are present & responding.",
     context_settings={"ignore_unknown_options": True},
 )
