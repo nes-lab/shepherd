@@ -9,14 +9,17 @@ testbed_observer_nfs_server: cephnfs.zih.tu-dresden.de:/glw/shepherd_b
 # content will be sourced from {{nfs_server}}/content/
 
 # Storage-benchmarks from BBB:
-# sudo dd if=/dev/zero of=./testfile bs=100M count=10 oflag=direct
-#     vs-grp07.zih.tu-dresden.de:/shepherd_d      -> 1000 mb in 91 s, 11.5 MB/s
-#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> much worse
+# sudo dd if=/dev/zero of=/var/shepherd/experiments/testfile bs=100M count=10 oflag=direct
+#     vs-grp07.zih.tu-dresden.de:/shepherd_d      -> 1000 MiB in 91 s, 11.5 MB/s
+#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> 1000 MiB in 109 s, 9.6 MB/s
+
+# shepherd-herd shell "sudo dd if=/dev/zero of=/var/shepherd/experiments/testfile bs=100M count=10 oflag=direct"
+#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> 1000 MiB in ~102 s, ~10.2 MB/s
 
 # Storage-benchmarks from vServer:
 # sudo dd if=/dev/zero of=./testfile bs=400M count=20 oflag=direct
 #     vs-grp07.zih.tu-dresden.de:/shepherd_d      -> 8.4 GB in 34 s, 250 MB/s
-#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> ~35 MB
+#     cephnfs.zih.tu-dresden.de:/glw/shepherd_b   -> 8.4 GB in 72 s, 117 MB/s
 
 # hardcoded LUT with key: uppercase MAC & with '_' instead of ':'
 testbed_observer_mac_2_ip:  # TODO: IP not needed anymore, MAC_2_NAME is enough
