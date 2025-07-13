@@ -120,6 +120,11 @@ uint32_t mem_interface_check_canaries(void)
         printk(KERN_ERR "shprd.k: canary of converter_settings was harmed!");
         ret |= 1u << 1u;
     }
+    if (shared_mem->battery_settings.canary != CANARY_VALUE_U32)
+    {
+        printk(KERN_ERR "shprd.k: canary of battery_settings was harmed!");
+        ret |= 1u << 1u;
+    }
     if (shared_mem->harvester_settings.canary != CANARY_VALUE_U32)
     {
         printk(KERN_ERR "shprd.k: canary of harvester_settings was harmed!");

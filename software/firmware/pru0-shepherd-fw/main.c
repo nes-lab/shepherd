@@ -232,7 +232,7 @@ void event_loop()
             *  NOTE: incrementing of next_sync_timestamp_ns is done by PRU1
             * */
             SHARED_MEM.last_sync_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
-            /* orward interrupt to pru1 */
+            /* forward interrupt to pru1 */
             SHARED_MEM.cmp0_trigger_for_pru1  = 1u;
             /* go dark if not running */
             if (SHARED_MEM.shp_pru_state != STATE_RUNNING)
