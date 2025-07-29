@@ -710,7 +710,13 @@ class Herd:
     def service_erase_log(self) -> None:
         self.run_cmd(
             sudo=True,
-            cmd="journalctl --unit=shepherd.service --vacuum-time=10s",
+            cmd="journalctl --rotate",
+            timeout=30,
+            verbose=False,
+        )
+        self.run_cmd(
+            sudo=True,
+            cmd="journalctl --vacuum-time=10s",  # --unit=shepherd.service
             timeout=30,
             verbose=False,
         )
