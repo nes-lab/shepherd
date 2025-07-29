@@ -110,9 +110,10 @@ def version() -> None:
 
 
 @cli.command(
-    short_help="Power off shepherd observers."
+    short_help="Power off shepherd observers. "
     "Be sure to have physical access to the hardware "
-    "for manually starting them again."
+    "for manually starting them again. If cape is present "
+    "the integrated watchdog will handle that."
 )
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
@@ -120,6 +121,15 @@ def poweroff(ctx: click.Context, *, restart: bool) -> None:
     """Power off shepherd observers."""
     with ctx.obj["herd"] as herd:
         exit_code = herd.poweroff(restart=restart)
+    ctx.exit(exit_code)
+
+
+@cli.command(short_help="Restart shepherd observers.")
+@click.pass_context
+def reboot(ctx: click.Context) -> None:
+    """Reboot shepherd observers."""
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.poweroff(restart=True)
     ctx.exit(exit_code)
 
 
@@ -211,7 +221,7 @@ def blink(ctx: click.Context, duration: int) -> None:
 def storage(ctx: click.Context) -> None:
     with ctx.obj["herd"] as herd:
         bytes_min = herd.min_space_left()
-    log.info("Remaining storage: %.2f MiB", bytes_min / 1024 / 1024)
+    log.info("Remaining storage: %.2f MiB (abs min)", bytes_min / 1024 / 1024)
 
 
 @cli.command(
