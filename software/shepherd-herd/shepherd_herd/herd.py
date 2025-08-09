@@ -976,3 +976,9 @@ class Herd:
         if ip is None:
             raise ValueError("Host not found")
         # TODO: telnet session to sysrqd
+
+    @staticmethod
+    def disable_progress_bar() -> None:
+        from functools import partialmethod
+
+        tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
