@@ -686,7 +686,7 @@ class Herd:
             hostname = self.hostnames[cnx.host]
             if not isinstance(replies.get(hostname), Result):
                 continue
-            if replies[hostname].exited != 3:
+            if replies[hostname].exited == 0:
                 active = True
         return active
 
