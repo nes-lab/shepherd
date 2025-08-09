@@ -731,7 +731,7 @@ class Herd:
         failings = self.run_cmd(
             sudo=True, cmd="/usr/bin/systemctl is-failed shepherd", timeout=30, verbose=False
         )
-        addition = f" --since{since.isoformat(sep=' ')[:19]}" if since is not None else ""
+        addition = f" --since='{since.isoformat(sep=' ')[:19]}'" if since is not None else ""
         replies = self.run_cmd(
             sudo=True,
             cmd="/usr/bin/journalctl --unit=shepherd.service "
