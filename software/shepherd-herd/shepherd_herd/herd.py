@@ -347,9 +347,12 @@ class Herd:
         tmp_path = PurePosixPath("/tmp") / filename  # noqa: S108
         log.debug("temp-path for %s is %s", cnx.host, tmp_path)
         try:
+            cnx.sudo(f"rm -f {tmp_path.as_posix()}")
             cnx.put(src, tmp_path.as_posix())
             xtr_arg = "-f" if force_overwrite else "-n"
-            cnx.sudo(f"mv {xtr_arg} {tmp_path} {dst}", warn=True, hide=True)
+            if force_overwrite:
+                cnx.sudo(f"rm -f {dst.as_posix()}")
+            cnx.sudo(f"mv {xtr_arg} {tmp_path.as_posix()} {dst.as_posix()}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
             log.error(
                 "[%s] failed to put to '%s' -> will exclude node from inventory",
