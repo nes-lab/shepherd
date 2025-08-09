@@ -545,6 +545,10 @@ class Herd:
         del threads
         return failed_retrieval
 
+    def get_local_timestamps(self) -> list[datetime]:
+        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False)
+        return [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
+
     def find_consensus_time(self) -> tuple[datetime, float]:
         """Find a start time in the future when all nodes should start service.
 
@@ -554,8 +558,7 @@ class Herd:
         node.
         """
         # Get the current time on each target node
-        replies = self.run_cmd(sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False)
-        ts_nows = [datetime.fromisoformat(reply.stdout.rstrip()) for reply in replies.values()]
+        ts_nows = self.get_local_timestamps()
         if len(ts_nows) == 0:
             raise RuntimeError("No active hosts found to synchronize.")
         ts_max = max(ts_nows)
@@ -696,7 +699,7 @@ class Herd:
         - failed -> 0
         """
         replies = self.run_cmd(
-            sudo=True, cmd="systemctl is-failed shepherd", timeout=30, verbose=False
+            sudo=True, cmd="/usr/bin/systemctl is-failed shepherd", timeout=30, verbose=False
         )
         failed = False
         for cnx in self.group_online:
@@ -710,26 +713,27 @@ class Herd:
     def service_erase_log(self) -> None:
         self.run_cmd(
             sudo=True,
-            cmd="journalctl --rotate",
+            cmd="/usr/bin/journalctl --rotate",
             timeout=30,
             verbose=False,
         )
         self.run_cmd(
             sudo=True,
-            cmd="journalctl --vacuum-time=10s",  # --unit=shepherd.service
+            cmd="/usr/bin/journalctl --vacuum-time=10s",  # --unit=shepherd.service
             timeout=30,
             verbose=False,
         )
 
-    def service_get_logs(self) -> dict[str, Result]:
+    def service_get_logs(self, since: datetime | None = None) -> dict[str, Result]:
         failings = self.run_cmd(
-            sudo=True, cmd="systemctl is-failed shepherd", timeout=30, verbose=False
+            sudo=True, cmd="/usr/bin/systemctl is-failed shepherd", timeout=30, verbose=False
         )
+        addition = f" --since{since.isoformat(sep=' ')[:19]}" if since is not None else ""
         replies = self.run_cmd(
             sudo=True,
-            cmd="journalctl --unit=shepherd.service "
+            cmd="/usr/bin/journalctl --unit=shepherd.service "
             "--no-pager --output=short-iso-precise "
-            "--utc --boot --all",
+            "--utc --boot --all" + addition,
             timeout=40,
             verbose=False,
         )
