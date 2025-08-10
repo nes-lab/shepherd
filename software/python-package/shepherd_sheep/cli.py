@@ -77,14 +77,27 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     is_flag=True,
     help="4 Levels, but level 4 has serious performance impact",
 )
+@click.option(
+    "--no-progress",
+    "-b",
+    is_flag=True,
+    help="Don't show progress-bar for operations (good for sys-logs & services)",
+)
 @click.pass_context
-def cli(ctx: click.Context, *, verbose: bool) -> None:
+def cli(ctx: click.Context, *, verbose: bool, no_progress: bool) -> None:
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
         set_verbosity()
+
+    if no_progress:
+        from functools import partialmethod
+
+        from tqdm import tqdm
+
+        tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
     if ctx.invoked_subcommand and ctx.invoked_subcommand not in ["usage"]:
         # this adds a usage-entry when sheep exits
