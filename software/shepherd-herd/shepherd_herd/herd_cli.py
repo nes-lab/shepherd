@@ -62,6 +62,12 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     help="Path to private ssh key file",
 )
 @click.option("--verbose", "-v", is_flag=True)
+@click.option(
+    "--no-progress",
+    "-b",
+    is_flag=True,
+    help="Don't show progress-bar for operations (good for sys-logs & services)",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -71,6 +77,7 @@ def cli(
     key_filepath: Path | None,
     *,
     verbose: bool,
+    no_progress: bool,
 ) -> None:
     """Entry for command line with settings to interface the herd."""
     signal.signal(signal.SIGTERM, exit_gracefully)
@@ -83,6 +90,9 @@ def cli(
         click.echo("Please specify a valid command")
 
     ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
+
+    if no_progress:
+        ctx.obj["herd"].disable_progress_bar()
 
 
 # #############################################################################
