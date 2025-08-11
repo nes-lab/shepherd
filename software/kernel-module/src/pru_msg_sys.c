@@ -171,7 +171,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 {
     struct ProtoMsg pru_msg;
     static uint32_t step_pos       = 0;
-    const  uint32_t canary_wrap = 240000u; // ~ 2 min
+    const uint32_t  canary_wrap    = 240000u; // ~ 2 min
     static uint32_t canary_counter = canary_wrap;
     uint8_t         had_work;
     uint32_t        iter;
