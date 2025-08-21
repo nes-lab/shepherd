@@ -30,7 +30,6 @@ class PruRecorder(Monitor):
             "pru0_vsrc_tsample_mean [ns], "
             "pru0_vsrc_tsample_max [ns], "
             f"pru1_gpio_tsample_max [ns/{commons.SAMPLE_INTERVAL_NS}ns]"
-            # f"with {commons.SAMPLE_INTERVAL_NS} ns per sample-step"
         )
         # reset increment AFTER creating all dsets are created
         self.increment = 1000  # 100 s
