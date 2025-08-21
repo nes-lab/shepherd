@@ -1,5 +1,9 @@
 # History of Changes
 
+## 2025.8.1
+
+- project changes to stable and adjusts version-format to YYYY.MM.r (year, month, release-number)
+
 ## 0.9.4
 
 - py-packaging:

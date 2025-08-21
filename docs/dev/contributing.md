@@ -117,14 +117,14 @@ For a tutorial see the dedicated sections in the tool-documentations:
 
 Before committing to the repository please run our [pre-commit](https://pre-commit.com/)-workflow described in [](#codestyle).
 
-Once you have a clean, stable and tested version, you should decide if your release is a patch, minor or major update (see [Semantic Versioning](https://semver.org/)).
+Once you have a clean, stable and tested version, you should bump the version number to current year, month and release-number (YYYY.MM.r).
 Use `bump2version` to update the version number across the repository:
 
 ```shell
 pipenv shell
 pre-commit run --all-files
-bump2version --allow-dirty --new-version 0.9.4 patch
-# version-format: major.minor.patch
+bump2version --allow-dirty --new-version 2025.8.1 patch
+# version-format: YYYY.MM.r
 ```
 
 Finally, open a pull-request to allow merging your changes into the main-branch and to trigger the test-pipeline.

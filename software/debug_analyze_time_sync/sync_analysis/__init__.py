@@ -2,7 +2,7 @@ from .logger import log
 from .logic_trace import LogicTrace
 from .logic_traces import LogicTraces
 
-__version__ = "0.9.4"
+__version__ = "2025.8.1"
 
 __all__ = [
     "LogicTrace",
