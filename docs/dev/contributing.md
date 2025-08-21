@@ -75,15 +75,16 @@ Or you use the playbook described in [](#option-1).
 Make sure you have the python requirements installed:
 
 ```shell
-pip install --upgrade pip pipenv wheel setuptools
+pip install --upgrade uv wheel setuptools
 
-pipenv install
+uv venv
 ```
 
-Activate the `pipenv` environment:
+Uv will tell you how to activate the environment.
+Install dependencies into that env:
 
 ```shell
-pipenv shell
+uv pip install .[doc]
 ```
 
 Change into the docs directory and build the html documentation
@@ -121,7 +122,10 @@ Once you have a clean, stable and tested version, you should bump the version nu
 Use `bump2version` to update the version number across the repository:
 
 ```shell
-pipenv shell
+uv venv
+# activate env - on winOS with .venv\Scripts\activate
+uv pip install .[dev]
+# and then
 pre-commit run --all-files
 bump2version --allow-dirty --new-version 2025.8.1 patch
 # version-format: YYYY.MM.r

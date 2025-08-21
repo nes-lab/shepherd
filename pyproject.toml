@@ -1,3 +1,66 @@
+# virtual project for a dev-environment, usable via:
+# uv venv
+# uv pip install .
+[project]
+name = "shepherd-main"
+version = "2025.08.1"
+description = "Infrastructure for the Testbed, mainly focused on the Observers "
+readme = "README.md"
+
+dependencies = [
+    "shepherd-sheep[dev,test]",
+    "shepherd-herd[all]",
+    "shepherd-cal[dev]",
+    #"shepherd-pru",
+    "sync-analysis",
+    "shepherd-data[all]",
+    "ansible",
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+    "twine",  # TODO: could be done with uv
+    "pre-commit",
+    "pre-commit-uv", # check with `pre-commit --version`
+    "bump2version",
+    "ty",
+    "pyright",
+    "mypy",
+    # temporary
+    "dearpygui",
+]
+
+doc = [
+   "sphinx",
+   "sphinx-click",
+   "sphinx-rtd-theme",
+   "sphinx-sitemap",
+   "sphinx-design",
+   "sphinx-copybutton",
+   "sphinxcontrib-typer",
+   "autodoc_pydantic",
+   #"sphinx-autodoc2",  # TODO: https://myst-parser.readthedocs.io/en/latest/intro.html#extending-sphinx
+   "myst-parser",
+]
+
+all = ["shepherd-main[dev,doc]"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+shepherd-sheep = { path = "./software/python-package", editable = true}
+shepherd-herd = { path = "./software/shepherd-herd", editable = true}
+shepherd-cal = { path = "./software/shepherd-calibration", editable = true}
+shepherd-pru = { path = "./software/firmware/pru0-module-py", editable = true}
+sync-analysis = { path = "./software/debug_analyze_time_sync", editable = true}
+
+[tool.setuptools]
+# alibi declaration to avoid auto-discovery
+packages = ["shepherd-herd",]
+package-dir = {"" = "./software" }
+
 [tool.pyright]
 root = "./"
 include = [
@@ -8,3 +71,9 @@ include = [
 pythonVersion = "3.10"
 pythonPlatform = "All"
 reportMissingParameterType = true
+
+[tool.ty.terminal]
+output-format = "concise"
+
+[tool.ty.src]
+exclude = ["*/tests/**"]

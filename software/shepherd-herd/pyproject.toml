@@ -40,10 +40,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "twine",
-    "pre-commit",
-    "pyright",
-    "ruff",
+    "shepherd-core[dev]",
 ]
 test = [
     "pytest",

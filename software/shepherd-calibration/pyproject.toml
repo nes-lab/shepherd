@@ -44,9 +44,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "twine",
-    "pre-commit",
-    "pyright",
     "pandas-stubs",
 ]
 
