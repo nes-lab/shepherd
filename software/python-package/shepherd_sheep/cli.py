@@ -26,7 +26,6 @@ from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.inventory import Inventory
 from typing_extensions import Unpack
 
-from . import __version__
 from . import run_task
 from . import sysfs_interface
 from .eeprom import EEPROM
@@ -77,14 +76,27 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     is_flag=True,
     help="4 Levels, but level 4 has serious performance impact",
 )
+@click.option(
+    "--no-progress",
+    "-b",
+    is_flag=True,
+    help="Don't show progress-bar for operations (good for sys-logs & services)",
+)
 @click.pass_context
-def cli(ctx: click.Context, *, verbose: bool) -> None:
+def cli(ctx: click.Context, *, verbose: bool, no_progress: bool) -> None:
     """Shepherd: Synchronized Energy Harvesting Emulator and Recorder"""
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
 
     if verbose:
         set_verbosity()
+
+    if no_progress:
+        from functools import partialmethod
+
+        from tqdm import tqdm
+
+        tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
     if ctx.invoked_subcommand and ctx.invoked_subcommand not in ["usage"]:
         # this adds a usage-entry when sheep exits
@@ -99,20 +111,16 @@ def cli(ctx: click.Context, *, verbose: bool) -> None:
 @cli.command(short_help="Print version-info (combine with -v for more)")
 def version() -> None:
     """Print version-info (combine with -v for more)."""
-    from h5py import __version__ as ver_h5py
-    from numpy import __version__ as ver_numpy
-    from pydantic import __version__ as ver_pydantic
-    from shepherd_core import __version__ as ver_core
-    from yaml import __version__ as ver_yaml
+    from importlib import metadata
 
-    log.info("Shepherd-Sheep v%s", __version__)
-    log.info("Shepherd-core v%s", ver_core)
     log.debug("Python v%s", sys.version)
-    log.debug("click v%s", click.__version__)
-    log.debug("h5py v%s", ver_h5py)
-    log.debug("numpy v%s", ver_numpy)
-    log.debug("pydantic v%s", ver_pydantic)
-    log.debug("PyYAML v%s", ver_yaml)
+    log.info("Shepherd-Sheep v%s", metadata.version("shepherd_sheep"))
+    log.info("Shepherd-Core v%s", metadata.version("shepherd_core"))
+    log.debug("h5py v%s", metadata.version("h5py"))
+    log.debug("numpy v%s", metadata.version("numpy"))
+    log.debug("click v%s", metadata.version("click"))
+    log.debug("pydantic v%s", metadata.version("pydantic"))
+    log.debug("PyYAML v%s", metadata.version("yaml"))
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")

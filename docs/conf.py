@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.realpath("../software/shepherd-webapi"))
 project = "SHEPHERD"
 project_copyright = "2019-2025, Networked Embedded Systems Lab, TU Darmstadt & TU Dresden"
 author = "Ingmar Splitt, Kai Geissdoerfer"
-release = "0.9.4"
+release = "2025.8.1"
 
 # -- General configuration ---------------------------------------------------
 

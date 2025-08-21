@@ -1,5 +1,45 @@
 # History of Changes
 
+## 2025.8.1
+
+- project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
+- py-packaging:
+  - allow installing everything via `.[all]`
+  - switch to UV (from pip)
+  - improve query for version-numbers
+- switch to uv for python tooling (on observer)
+  - tools are installed via `uv tool install /opt/shepherd/software/python-package/.`
+  - for testing there is a jane-venv automatically activated for jane and root (pytest has to be done from `sudo su`)
+  - ansible, services and packages are migrated
+- switch to uv for dev-environment
+- sheep
+  - ~~won't exit with != 0 if config is not for that specific sheep~~
+  - improve and bugfix resampling of output-data (also direct power-calculation) -> numpy brings beaglebone to a halt on vector-float-operations during measurement
+  - add benchmark to find the cheapest resampling method
+  - fix csv-header for pru-util
+- herd
+  - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
+  - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
+  - add `.min_space_left()` to determine observer fill-level (cli `storage`)
+  - add `.service_is_active()`, `.service_is_failed()` to determine status
+  - add `.service_get_logs()` & `.service_erase_logs()` to fetch terminal output
+  - add separate `.reboot()` to already existing `.poweroff()`
+  - add `.kill_sheep_process()` to get a clean slate
+  - add `.open()` to re-add hosts that were offline before
+  - `.check_status()` now directly monitors sheep-software (not only service)
+  - put & copy of files now removes possible prior files at destination
+  - progressbar is now more responsive, as it constantly cycles through all still active threads
+  - add option to disable progress-bar via `.disable_progress_bar()` and `--no-progress`, to keep logs clean
+- ansible
+  - remove usage of nelson boot scripts (update kernel & grow partition)
+  - try newer non-ti kernel
+  - make cleaning-role safer
+  - improve kernel preparation
+  - switch python components to UV and venv
+- kMod
+  - disable experimental code - not compatible with non-ti kernel
+  - verify canaries less often (~ 2 min)
+
 ## 0.9.3
 
 - herd - bugfix for sending Task to sheep

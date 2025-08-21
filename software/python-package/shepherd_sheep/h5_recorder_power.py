@@ -36,6 +36,14 @@ class PowerRecorder(Monitor):
         self.reduction_factor: int = self.samplerate_sps // self.data_rate
         self.reduce: bool = self.data_rate != self.samplerate_sps
 
+        self.buffer_timeseries = (
+            self.reduction_factor
+            * SAMPLE_INTERVAL_NS
+            * np.arange(
+                SharedMemIVOutput.N_SAMPLES_PER_CHUNK // self.reduction_factor,
+            ).astype(np.uint64)
+        )
+
         if isinstance(cal_data, CalEmu):
             self.cal_data = CalSeries.from_cal(cal_data)
         elif isinstance(cal_data, CalSeries):
@@ -44,6 +52,10 @@ class PowerRecorder(Monitor):
             raise TypeError("calibration must be CalibrationSeries or CalibrationEmulator")
 
         self.gain: float = 1e-9  # nW
+        self.offset_V_raw = int(self.cal_data.voltage.offset / self.cal_data.voltage.gain)
+        self.offset_C_raw = int(self.cal_data.current.offset / self.cal_data.current.gain)
+        self.gain_P_nW = self.cal_data.voltage.gain * self.cal_data.current.gain / self.gain
+
         self.data.create_dataset(
             name="value",
             shape=(self.increment,),
@@ -69,30 +81,40 @@ class PowerRecorder(Monitor):
 
     def write(self, data: IVTrace) -> None:
         len_add = len(data)
-        if len_add < 1:
+        if len_add < self.reduction_factor:  # is 1 when not used
             return
-        if self.reduce and len_add % self.data_rate != 0:
-            log.warning("Power-Tracer got odd size - some samples will be discarded")
-        power = (
-            self.cal_data.voltage.raw_to_si(data.voltage[:len_add])
-            * self.cal_data.current.raw_to_si(data.current[:len_add])
-            / self.gain
-        )
-        if self.reduce:
-            len_add = len_add // self.reduction_factor
-            power = np.reshape(power, (len_add, self.reduction_factor)).mean(axis=1)
-        power = np.clip(power, 0, 2**32).astype("u4")
+        if len_add % self.reduction_factor != 0:
+            log.warning("Power-Tracer Input got odd size - some samples will be discarded")
+        len_red = len_add // self.reduction_factor
+        len_add = len_red * self.reduction_factor
+
+        """wanted:
+                self.cal_data.voltage.raw_to_si(data.voltage[:len_add]).astype(np.float32)
+                * self.cal_data.current.raw_to_si(data.current[:len_add]).astype(np.float32)
+                / self.gain
+        Problem: upcast to float64 - which crashes the beaglebone
+        """
+        _V = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
+        _C = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
+        power = ((_V * _C) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
+
+        # timestamps are automatically reduced
         if isinstance(data.timestamp_ns, int):
             # This is currently not used
-            _ts = (
-                self.reduction_factor * SAMPLE_INTERVAL_NS * np.arange(len_add).astype("u8")
-                + data.timestamp_ns
-            )
+            data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
         elif isinstance(data.timestamp_ns, np.ndarray):
             # benchmarked slices: [:] is as fast as [::1] on BBB
-            _ts = data.timestamp_ns[: len(data) : self.reduction_factor]
+            data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
         else:
             raise TypeError("timestamp_ns must be int or np.ndarray")
+
+        if self.reduce:
+            power = (
+                power.reshape(len_red, self.reduction_factor)
+                .mean(axis=1, dtype=np.uint64)
+                .astype(np.uint32)
+            )
+            len_add = len_red
 
         pos_end = self.position + len_add
         data_length = self.data["time"].shape[0]
@@ -101,7 +123,7 @@ class PowerRecorder(Monitor):
             data_length += max(self.increment, pos_end - data_length)
             self.data["time"].resize((data_length,))
             self.data["value"].resize((data_length,))
-        self.data["time"][self.position : pos_end] = _ts
+        self.data["time"][self.position : pos_end] = data.timestamp_ns
         self.data["value"][self.position : pos_end] = power
         self.position = pos_end
 

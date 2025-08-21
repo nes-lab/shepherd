@@ -13,7 +13,14 @@
         "linux-headers-{{ sheep_kernel_pin }}",
       ]
     state: present
-  when: kernelrelease.stdout.strip() != sheep_kernel_pin
+
+- name: APT - install replacement for NTP-service and direct access
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "ntpdate" # allows manual time updates via: ntpdate -s time.nist.gov
+    - "sysrqd" # remote reboot
 
 - name: Restart device
   ansible.builtin.reboot:

@@ -92,9 +92,9 @@ with Herd(inventory="/etc/shepherd/herd.yaml") as herd:
     if variant1:
         # more control
         remote_config = PurePosixPath("/etc/shepherd/config_task.yaml")
-        herd.put_file(path_tasks, dst=remote_config, force_overwrite=True)
+        herd.put_file(path_tasks, dst=remote_config, timeout=30, force_overwrite=True)
         command = f"shepherd-sheep --verbose run {remote_config.as_posix()}"
-        replies = herd.run_cmd(sudo=True, cmd=command)
+        replies = herd.run_cmd(sudo=True, cmd=command, timeout=xp1.duration.total_seconds() + 120)
         herd.print_output(replies, verbose=True)
     else:
         herd.run_task(tb_tasks1, attach=True)

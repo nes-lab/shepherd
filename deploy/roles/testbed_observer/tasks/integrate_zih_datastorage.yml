@@ -1,0 +1,66 @@
+---
+# Add (network) datastorage to remote nodes
+# proposed by helpdesk - login-server and dgw share home-directory
+# - get network storage with nfs share
+# - enable access for server AND testbed-network
+
+- name: Report hostname
+  ansible.builtin.debug:
+    var: testbed_observer_hostname
+
+- name: APT - Install required packages for Python
+  ansible.builtin.apt:
+    name: "nfs-common"
+    state: present
+
+- name: create temporary mount-point
+  ansible.builtin.file:
+    path: "/tmp/shp_drive/"
+    state: directory
+    mode: "a+rwx"
+
+- name: Mount root of datastorage (temporary)
+  ansible.builtin.command:
+    cmd: "mount -t nfs4 {{ testbed_observer_nfs_server }} /tmp/shp_drive/"
+
+- name: Create directories (future mount-points of nfs-share)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "a+rwx"
+  loop:
+    - "/tmp/shp_drive/experiments/"
+    - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
+    - "/tmp/shp_drive/content/"
+
+# Main tasks
+
+- name: Create local mount-directory
+  ansible.builtin.file:
+    path: "{{ item }}/"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: 'a+rwx'
+  loop:
+    - "{{ testbed_observer_data_path_local }}/experiments"
+    - "{{ testbed_observer_data_path_local }}/content"
+
+- name: Remove previous fstab-mountings
+  ansible.builtin.lineinfile:
+    dest: /etc/fstab
+    regex: '^.*{{ testbed_observer_nfs_server }}.*$'
+    state: absent
+
+- name: Allow automatic Mounting (Experiments)
+  ansible.builtin.lineinfile:
+    dest: /etc/fstab
+    regex: '^.*{{ testbed_observer_nfs_server }}/experiments.*$'
+    line: '{{ testbed_observer_nfs_server }}/experiments/{{ testbed_observer_hostname }}/ {{ testbed_observer_data_path_local }}/experiments nfs4 rw,user,noexec,posix 0 1'
+    state: present
+
+- name: Allow automatic Mounting (Content, readonly)
+  ansible.builtin.lineinfile:
+    dest: /etc/fstab
+    regex: '^.*{{ testbed_observer_nfs_server }}/content.*$'
+    line: '{{ testbed_observer_nfs_server }}/content/ {{ testbed_observer_data_path_local }}/content nfs4 ro,user,noexec,posix 0 1'
+    state: present

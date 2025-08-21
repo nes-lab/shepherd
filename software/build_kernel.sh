@@ -4,7 +4,7 @@ sudo modprobe -rf shepherd
 #
 cd /opt/shepherd/software/kernel-module/src/
 #
-make clean
+sudo make clean
 make
 sudo make install
 #

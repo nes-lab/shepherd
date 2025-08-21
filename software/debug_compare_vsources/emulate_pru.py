@@ -27,7 +27,9 @@ with Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected) as herd:
         paths_local_hrv[hrv_name] = path_here / host_selected / file_name
         paths_remote_hrv[hrv_name] = PurePosixPath("/tmp/" + file_name)  # noqa: S108
         log.info("Start transferring '%s'", file_name)
-        herd.put_file(paths_local_hrv[hrv_name], paths_remote_hrv[hrv_name], force_overwrite=True)
+        herd.put_file(
+            paths_local_hrv[hrv_name], paths_remote_hrv[hrv_name], timeout=30, force_overwrite=True
+        )
 
 # #####################################################################
 # Emulate with real Target     ########################################
@@ -49,7 +51,9 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
             force_overwrite=True,
         )
         if herd.run_task(task, attach=True) == 0:
-            herd.get_file(path_remote_src, path_here, separate=True, delete_src=True)
+            herd.get_file(
+                path_remote_src, path_here, separate=True, delete_src=True, timeout=60 * 60
+            )
         else:
             log.error("Failed to emulate with '%s'", hrv_name)
         stack.close()

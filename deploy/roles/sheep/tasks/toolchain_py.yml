@@ -4,45 +4,85 @@
   ansible.builtin.apt:
     name:
       [
-        "ntpdate", # allows manual time updates via ntpdate -s time.nist.gov
         "zlib1g-dev",
         "libjpeg-dev",
-        "python3-numpy",
-        "python3-zmq",
-        "python3-gevent",
-        "python3-h5py",
-        "python3-pip",
-        "python3-setuptools",
-        "python3-virtualenv",
-        "python3-msgpack",
+        "hdf5-tools", # h5py
+        "libhdf5-dev", # h5py
+        "libopenblas*", # numpy
         "libdbus-glib-1-dev",
         "libgirepository1.0-dev",
-        # pip on ubuntu 22.04 began to compile (forever) ... so use apt instead:
-        "python3-pytest",
-        "python3-pytest-click",
-        "python3-pytest-timeout",
-        "python3-pyfakefs",
-        "python3-coverage",
-        # normal shepherd-package
-        "python3-click",
-        "python3-psutil",
-        # shepherd-core - database-support
-        "python3-zstd",
-        # "python3-sqlalchemy",  # TODO: temporary
         "srecord",
+        "cmake", # for custom build
+        "build-essential", # for custom build
+        "python3-dev", # for custom build
       ]
     state: present
 
-- name: PIP - update essential base-packages (setuptools, pip, ...)
-  ansible.builtin.pip:
-    name:
-      [
-        "pip",
-        "setuptools",
-        "wheel",
-        "virtualenv",
-      ]
-    extra_args: --upgrade --break-system-packages # debian locks root env
-  when: true
-  # NOTE: not the cleanest solution - packages managed by apt but setup for pyPackage failed recently
-  # TODO: switch all pip-additions to virtual env?
+- name: UV - install
+  ansible.builtin.shell:
+    cmd: 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
+  # this should add to .bashrc: . "$HOME/.local/bin/env"
+
+- name: UV - redirect tool-install to global dir
+  ansible.builtin.lineinfile:
+    dest: '{{ item }}/.bashrc'
+    line: "export UV_TOOL_BIN_DIR=/usr/local/bin/"
+    regex: ^.*?UV_TOOL_BIN_DIR=.*$
+    insertafter: 'EOF'
+    state: present
+  loop:
+    - '/home/{{ ansible_user }}'
+    - '/root'
+  become: true
+
+- name: Allow install to tool-dir without sudo
+  ansible.builtin.file:
+    path: "/usr/local/bin/"
+    state: directory
+    mode: 'a+rwx' # everyone can list and access files inside
+  become: true
+
+- name: UV - create virtual Env
+  ansible.builtin.command:
+    cmd: '/home/jane/.local/bin/uv venv'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
+- name: UV - activate vEnv on login
+  ansible.builtin.lineinfile:
+    dest: '{{ item }}/.bashrc'
+    line: ". '/home/{{ ansible_user }}/.venv/bin/activate'"
+    regex: ^#?\. ["'].*venv\/bin\/activate["'].*$
+    insertafter: 'EOF'
+    state: present
+  loop:
+    - '/home/{{ ansible_user }}'
+    - '/root'
+  become: true
+
+- name: UV - compile & install python-packages
+  # NOTE: with the added index a compilation can be avoided
+  # only possible up to debian bookworm / py 3.11 ATM
+  ansible.builtin.command:
+    cmd: '/home/jane/.local/bin/uv pip install {{ item }} --index=https://www.piwheels.org/simple'
+    chdir: '/home/{{ ansible_user }}'
+  loop:
+    - numpy  # 110 min
+    - h5py  # 54 min, needs numpy
+    - gevent  # 35 min
+    - zstandard  # 21 min
+    - pyzmq  # 25 min
+  become: false
+
+- name: UV - install more python-packages (< 1min/item)
+  ansible.builtin.command:
+    cmd: '/home/jane/.local/bin/uv pip install {{ item }}'
+    chdir: '/home/{{ ansible_user }}'
+  loop:
+    - psutil
+    - msgpack
+    - pydantic
+    - click
+    - shepherd-core
+  become: false

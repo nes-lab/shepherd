@@ -1,0 +1,49 @@
+---
+# Bind / lease an IP for a specific MAC
+# Problems:
+# - valid approach, but does not work for the TUD DHCP
+# - returning lease and asking for new one disconnects sheep
+
+- name: Configure a Lease for a specific IP
+  ansible.builtin.lineinfile:
+    dest: '/etc/dhcp/dhclient.conf'
+    regexp: "^lease {.*$"
+    line: "lease {interface 'eth0'; fixed-address {{ host_ip }};}"
+    state: present
+
+- name: Return current lease
+  ansible.builtin.command: "dhclient -r -v eth0"
+  failed_when: false
+  changed_when: true
+
+- name: Delete lease-file
+  ansible.builtin.file:
+    path: "/var/lib/dhcp/dhclient.leases"
+    state: absent
+
+
+- name: Find DHCP program data
+  ansible.builtin.find:
+    paths: '/var/lib/dhcp/'
+    patterns: '*'
+  register: files_dhcp
+- name: Delete DHCP program data (more
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{ files_dhcp.files | map(attribute='path') }}"
+  when: false
+
+
+
+- name: Adjust /etc/hosts (from MAC)
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+.+\.localdomain\s+.+'
+    line: "127.0.1.1  {{ host_name }}.localdomain  {{ host_name }}"
+    state: present
+
+- name: Ask for new lease
+  ansible.builtin.command: "dhclient -v eth0"
+  failed_when: false
+  changed_when: true

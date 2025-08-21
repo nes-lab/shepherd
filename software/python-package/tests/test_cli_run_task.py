@@ -34,7 +34,7 @@ from shepherd_sheep.shared_mem_iv_input import IVTrace
 
 def random_data(length: int) -> np.ndarray:
     rng = np.random.default_rng()
-    return rng.integers(low=0, high=2**18, size=length, dtype="u4")
+    return rng.integers(low=0, high=2**18, size=length, dtype=np.uint32)
 
 
 @pytest.fixture

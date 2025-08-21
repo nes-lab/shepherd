@@ -40,7 +40,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "0.9.4"
+__version__ = "2025.8.1"
 
 __all__ = [
     "EEPROM",
@@ -278,7 +278,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
             observer_name,
             xcp,
         )
-        return False
+        return True
 
     log.debug("Got set of tasks: %s", [type(_e).__name__ for _e in content])
     # TODO: parameters currently not handled:

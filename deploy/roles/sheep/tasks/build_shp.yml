@@ -81,7 +81,7 @@
     chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: all
     params:
-      PROTO: SBW
+      TYPE: SBW
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -93,7 +93,7 @@
     chdir: "{{ sheep_install_path }}/software/firmware/pru0-programmer"
     target: install
     params:
-      PROTO: SBW
+      TYPE: SBW
   become: true
 
 - name: Clean shepherd device tree
@@ -109,14 +109,11 @@
     - install
     - device-tree
 
-- name: Install shepherd python package
-  ansible.builtin.pip:
-    name: ".[test]"
-    state: present  # NOTE: forcereinstall preferred, but that seems to compile dependencies?
-    chdir: '{{ sheep_install_path }}/software/python-package'
-    extra_args: --break-system-packages
+- name: UV - Install shepherd-sheep tools
+  ansible.builtin.command:
+    cmd: "export UV_TOOL_BIN_DIR=/usr/local/bin/ && /home/jane/.local/bin/uv tool install {{ sheep_install_path }}/software/python-package/.[test] --force"
   tags:
     - install
     - python
   when: sheep_rebuild_python_package | bool
-  become: true
+  become: false

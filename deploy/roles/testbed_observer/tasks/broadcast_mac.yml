@@ -1,0 +1,51 @@
+---
+# Fix unique identifier of dhcp-client -> MAC
+
+- name: Delete previous config
+  ansible.builtin.stat:
+    path: "/etc/systemd/network/eth0.network"
+  register: eth0_file
+
+- name: Delete previous config
+  ansible.builtin.file:
+    path: "/etc/systemd/network/eth0.network"
+    state: absent
+  when: eth0_file.isreg is defined and eth0_file.isreg  # is file
+
+- name: Use MAC as unique ID (Systemd - NetworkD)
+  ansible.builtin.blockinfile:
+    path: "/etc/systemd/network/eth0.network"
+    create: true
+    mode: "a+rw"
+    block: |
+      [Match]
+      Name=eth0
+      Type=ether
+
+      [Link]
+      RequiredForOnline=yes
+
+      [Network]
+      DHCP=ipv4
+
+      [DHCPv4]
+      ClientIdentifier=mac
+      DUIDType=link-layer
+  when: eth0_file.isreg is defined and eth0_file.isreg  # is file
+
+# TODO: this seems to be unused in recent ubuntu versions
+- name: Send MAC as unique ID
+  ansible.builtin.lineinfile:
+    dest: '/etc/dhcp/dhclient.conf'
+    regexp: "{{ item.regexpress }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regexpress: "#?send dhcp-client-identifier.*$",
+      replacement: "send dhcp-client-identifier = hardware;",
+    }
+    - {
+      regexpress: "#?send host-name.*$",
+      replacement: "#send host-name = gethostname();",
+    }

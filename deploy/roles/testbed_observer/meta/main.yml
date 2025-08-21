@@ -1,0 +1,14 @@
+---
+
+galaxy_info:
+  description: Prepares Sheep to run in Testbed, by correcting IP and including network-storage.
+  company: NES-Lab
+  author: Ingmar
+  license: MIT
+  standalone: true
+  min_ansible_version: 2.8
+  platforms:
+    - name: Debian
+      versions: all
+    - name: Ubuntu
+      versions: all

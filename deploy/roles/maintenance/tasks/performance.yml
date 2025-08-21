@@ -7,8 +7,19 @@
     line: "{{ item.line }}"
     state: present
   loop:
-    - {regex: '^.*UseDNS.*$', line: 'UseDNS no'}
-    - {regex: '^.*Compression.*$', line: 'Compression no'}
+    - {regex: '^.*UseDNS.*$', line: 'UseDNS no'}  # additional check with added latency
+    - {regex: '^.*Compression.*$', line: 'Compression no'}  # additional CPU-load
+
+- name: CFG - Improve SSH-Stability
+  ansible.builtin.lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "{{ item.regex }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - {regex: '^.*ClientAliveInterval .*$', line: 'ClientAliveInterval  60'}
+    - {regex: '^.*ClientAliveCountMax.*$', line: 'ClientAliveCountMax 10'}
+    - {regex: '^.*TCPKeepAlive.*$', line: 'TCPKeepAlive yes'}
 
 - name: CFG - Adapt default Target to multi-user
   ansible.builtin.command: 'systemctl set-default multi-user'

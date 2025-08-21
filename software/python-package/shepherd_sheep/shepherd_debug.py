@@ -411,8 +411,8 @@ class ShepherdDebug(ShepherdIO):
         super().reinitialize_prus()
         time.sleep(0.1)
         super().start(wait_blocking=True)
-        c_array = np.empty([0], dtype="=u4")
-        v_array = np.empty([0], dtype="=u4")
+        c_array = np.empty([0], dtype=np.uint32)
+        v_array = np.empty([0], dtype=np.uint32)
         time.sleep(0.2)
         for _ in range(2):  # flush first 2 buffers out
             super().shared_mem.iv_out.read()

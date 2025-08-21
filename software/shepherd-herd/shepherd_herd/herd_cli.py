@@ -14,7 +14,6 @@ from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Unpack
 
-from . import __version__
 from .herd import Herd
 from .logger import activate_verbosity
 from .logger import log
@@ -62,6 +61,12 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     help="Path to private ssh key file",
 )
 @click.option("--verbose", "-v", is_flag=True)
+@click.option(
+    "--no-progress",
+    "-b",
+    is_flag=True,
+    help="Don't show progress-bar for operations (good for sys-logs & services)",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -71,6 +76,7 @@ def cli(
     key_filepath: Path | None,
     *,
     verbose: bool,
+    no_progress: bool,
 ) -> None:
     """Entry for command line with settings to interface the herd."""
     signal.signal(signal.SIGTERM, exit_gracefully)
@@ -84,6 +90,9 @@ def cli(
 
     ctx.obj["herd"] = Herd(inventory, limit, user, key_filepath)
 
+    if no_progress:
+        ctx.obj["herd"].disable_progress_bar()
+
 
 # #############################################################################
 #                               Misc-Commands
@@ -93,26 +102,23 @@ def cli(
 @cli.command(short_help="Print version-info (combine with -v for more)")
 def version() -> None:
     """Print version-info (combine with -v for more)."""
-    from h5py import __version__ as ver_h5py
-    from numpy import __version__ as ver_numpy
-    from pydantic import __version__ as ver_pydantic
-    from shepherd_core import __version__ as ver_core
-    from yaml import __version__ as ver_yaml
+    from importlib import metadata
 
-    log.info("Shepherd-Herd v%s", __version__)
-    log.info("Shepherd-core v%s", ver_core)
     log.debug("Python v%s", sys.version)
-    log.debug("click v%s", click.__version__)
-    log.debug("h5py v%s", ver_h5py)
-    log.debug("numpy v%s", ver_numpy)
-    log.debug("pydantic v%s", ver_pydantic)
-    log.debug("PyYAML v%s", ver_yaml)
+    log.info("Shepherd-Herd v%s", metadata.version("shepherd_herd"))
+    log.debug("Shepherd-Core v%s", metadata.version("shepherd_core"))
+    log.debug("click v%s", metadata.version("click"))
+    log.debug("h5py v%s", metadata.version("h5py"))
+    log.debug("numpy v%s", metadata.version("numpy"))
+    log.debug("pydantic v%s", metadata.version("pydantic"))
+    log.debug("PyYAML v%s", metadata.version("yaml"))
 
 
 @cli.command(
-    short_help="Power off shepherd observers."
+    short_help="Power off shepherd observers. "
     "Be sure to have physical access to the hardware "
-    "for manually starting them again."
+    "for manually starting them again. If cape is present "
+    "the integrated watchdog will handle that."
 )
 @click.option("--restart", "-r", is_flag=True, help="Reboot")
 @click.pass_context
@@ -123,14 +129,26 @@ def poweroff(ctx: click.Context, *, restart: bool) -> None:
     ctx.exit(exit_code)
 
 
+@cli.command(short_help="Restart shepherd observers.")
+@click.pass_context
+def reboot(ctx: click.Context) -> None:
+    """Reboot shepherd observers."""
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.poweroff(restart=True)
+    ctx.exit(exit_code)
+
+
 @cli.command(short_help="Run COMMAND on the shell")
 @click.pass_context
 @click.argument("command", type=click.STRING)
+@click.option(
+    "--timeout", "-t", type=click.INT, default=60, help="forced time (in minutes) to finish"
+)
 @click.option("--sudo", "-s", is_flag=True, help="Run command with sudo")
-def shell_cmd(ctx: click.Context, command: str, *, sudo: bool) -> None:
+def shell(ctx: click.Context, command: str, timeout: int, *, sudo: bool) -> None:
     """Run COMMAND on the shell."""
     with ctx.obj["herd"] as herd:
-        replies = herd.run_cmd(sudo=sudo, cmd=command)
+        replies = herd.run_cmd(sudo=sudo, cmd=command, timeout=60 * timeout)
         herd.print_output(replies, verbose=True)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     ctx.exit(exit_code)
@@ -161,6 +179,7 @@ def fix(ctx: click.Context) -> None:
         replies = herd.run_cmd(
             sudo=True,
             cmd="shepherd-sheep fix",
+            timeout=60,
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
@@ -192,10 +211,22 @@ def blink(ctx: click.Context, duration: int) -> None:
         replies = herd.run_cmd(
             sudo=True,
             cmd=f"shepherd-sheep blink {duration}",
+            timeout=duration + 30,
         )
         herd.print_output(replies, verbose=False)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
     ctx.exit(exit_code)
+
+
+@cli.command(
+    short_help="Check storage left on nodes and return global minimum.",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def storage(ctx: click.Context) -> None:
+    with ctx.obj["herd"] as herd:
+        bytes_min = herd.min_space_left()
+    log.info("Remaining storage: %.2f MiB (abs min)", bytes_min / 1024 / 1024)
 
 
 @cli.command(
@@ -519,8 +550,9 @@ def distribute(
     force_overwrite: bool,
 ) -> None:
     """Upload a file FILENAME to the remote observers, which will be stored in REMOTE_PATH."""
+    # TODO: if actively used in testbed use custom timeout
     with ctx.obj["herd"] as herd:
-        herd.put_file(filename, remote_path, force_overwrite=force_overwrite)
+        herd.put_file(filename, remote_path, timeout=60 * 60, force_overwrite=force_overwrite)
 
 
 @cli.command(short_help="Retrieves remote hdf file FILENAME and stores in OUTDIR")
@@ -594,6 +626,7 @@ def retrieve(
             failed = herd.get_file(
                 filename,
                 outdir,
+                timeout=60 * 60,
                 timestamp=timestamp,
                 separate=separate,
                 delete_src=delete,
@@ -660,7 +693,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")
 
     with ctx.obj["herd"] as herd:
-        herd.put_file(kwargs["firmware_file"], tmp_file, force_overwrite=True)
+        herd.put_file(kwargs["firmware_file"], tmp_file, timeout=30, force_overwrite=True)
         protocol_dict = {
             "nrf52": ProgrammerProtocol.swd,
             "msp430": ProgrammerProtocol.sbw,
@@ -675,7 +708,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
         herd.put_task(task, cfg_path)
 
         command = f"shepherd-sheep --verbose run {cfg_path.as_posix()}"
-        replies = herd.run_cmd(sudo=True, cmd=command)
+        replies = herd.run_cmd(sudo=True, cmd=command, timeout=5 * 60)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         if exit_code:
             log.error("Programming - Procedure failed - will exit now!")

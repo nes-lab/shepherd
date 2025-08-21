@@ -95,7 +95,7 @@ def _herd_alive() -> None:
     for _ in range(3):
         time.sleep(1)
         with Herd() as herd:
-            if len(herd.group) > 0:
+            if len(herd.group_online) > 0:
                 time.sleep(1)
                 return
     raise RuntimeError("No Sheep seems to be alive")

@@ -171,7 +171,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
 {
     struct ProtoMsg pru_msg;
     static uint32_t step_pos       = 0;
-    static uint32_t canary_counter = 100000;
+    const uint32_t  canary_wrap    = 240000u; // ~ 2 min
+    static uint32_t canary_counter = canary_wrap;
     uint8_t         had_work;
     uint32_t        iter;
 
@@ -266,7 +267,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         step_pos = coord_timer_steps_ns_size - 1u;
     }
 
-    if (canary_counter++ > 100000u)
+    if (canary_counter++ > canary_wrap)
     {
         canary_counter   = 0u;
         pru_msg.value[0] = mem_interface_check_canaries();
@@ -277,7 +278,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             pru_msg.canary = CANARY_VALUE_U32;
             ring_put(&msg_ringbuf_from_pru, &pru_msg);
         }
-        else printk(KERN_INFO "shprd.k: verified canaries");
+        else printk(KERN_INFO "shprd.k: canaries verified");
     }
 
     /* variable sleep cycle */

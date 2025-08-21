@@ -9,7 +9,7 @@
 #include <linux/of_irq.h>      // TODO: test
 #include <linux/of_platform.h> // todo: test
 #include <linux/platform_device.h>
-#include <linux/pruss.h> // todo: test
+//#include <linux/pruss.h> // todo: test
 #include <linux/remoteproc.h>
 #include <linux/types.h>
 
@@ -150,12 +150,15 @@ static int shepherd_drv_remove(struct platform_device *pdev)
         }
         // pt->pruss = pruss_get(pt->pru); // struct pruss *
         //pruss_release_mem_region(pt->pruss, &pt->mem);
-        pruss_put(pruss_get(shp_pdata->rproc_prus[0]));
-        pruss_put(pruss_get(shp_pdata->rproc_prus[1]));
-        printk(KERN_INFO "shprd.k: prusses returned");
-        pru_rproc_put(shp_pdata->rproc_prus[0]);
-        pru_rproc_put(shp_pdata->rproc_prus[1]);
-        printk(KERN_INFO "shprd.k: pru_rproc_put() done");
+
+        // tested with #include <linux/pruss.h>, didn't help unload problem
+        //pruss_put(pruss_get(shp_pdata->rproc_prus[0]));
+        //pruss_put(pruss_get(shp_pdata->rproc_prus[1]));
+        //printk(KERN_INFO "shprd.k: prusses returned");
+        //pru_rproc_put(shp_pdata->rproc_prus[0]);
+        //pru_rproc_put(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: pru_rproc_put() done");
+
         //rproc_put(shp_pdata->rproc_prus[0]);
         //rproc_put(shp_pdata->rproc_prus[1]);
         //printk(KERN_INFO "shprd.k: rproc_put() done");
@@ -198,5 +201,5 @@ module_platform_driver(shepherd_driver);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kai Geissdoerfer");
 MODULE_DESCRIPTION("Shepherd kernel module for time synchronization and data exchange to PRUs");
-MODULE_VERSION("0.9.4");
+MODULE_VERSION("2025.8.1");
 // MODULE_ALIAS("rpmsg:rpmsg-shprd"); // TODO: is this still needed?

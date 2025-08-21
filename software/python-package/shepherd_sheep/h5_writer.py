@@ -104,9 +104,13 @@ class Writer(CoreWriter):
         )
         self.only_power = only_power
 
-        self.buffer_timeseries = self.sample_interval_ns * np.arange(
-            SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
-        ).astype("u8")
+        self.buffer_timeseries = (
+            self.reduction_factor
+            * commons.SAMPLE_INTERVAL_NS
+            * np.arange(
+                SharedMemIVOutput.N_SAMPLES_PER_CHUNK // self.reduction_factor,
+            ).astype(np.uint64)
+        )
 
         self.grp_data: h5py.Group = self.h5file["data"]
 
@@ -196,45 +200,55 @@ class Writer(CoreWriter):
         if self.only_power:
             self.rec_power.write(data)
             return
-        if self.reduce:  # aka resampling via binning
-            len_add = len(data)
-            len_new = len_add // self.reduction_factor
-            data.voltage = (
-                np.reshape(data.voltage[:len_add], (len_new, self.reduction_factor))
-                .mean(axis=1)
-                .astype("u4")
-            )
-            data.current = (
-                np.reshape(data.current[:len_add], (len_new, self.reduction_factor))
-                .mean(axis=1)
-                .astype("u4")
-            )
-            if isinstance(data.timestamp_ns, np.ndarray):
-                # benchmarked slices: [:] is as fast as [::1] on BBB
-                data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
-            else:
-                raise ValueError("timestamp_ns must be np.ndarray")
 
         len_add = len(data)
-        if len_add > 0:
-            data_end_pos = self.data_pos + len_add
-            data_length_h5 = self.grp_data["voltage"].shape[0]
-            if data_end_pos >= data_length_h5:
-                data_length_h5 += self.data_inc
-                self.grp_data["voltage"].resize((data_length_h5,))
-                self.grp_data["current"].resize((data_length_h5,))
-                self.grp_data["time"].resize((data_length_h5,))
+        if len_add < self.reduction_factor:  # is 1 when not used
+            return
+        if len_add % self.reduction_factor != 0:
+            log.warning("Power-Tracer Input got odd size - some samples will be discarded")
+        len_red = len(data) // self.reduction_factor
+        len_add = len_red * self.reduction_factor
 
-            self.grp_data["voltage"][self.data_pos : data_end_pos] = data.voltage
-            self.grp_data["current"][self.data_pos : data_end_pos] = data.current
-            if isinstance(data.timestamp_ns, int):
-                self.grp_data["time"][self.data_pos : data_end_pos] = (
-                    self.buffer_timeseries + data.timestamp_ns
-                )[:len_add]
+        # timestamps are automatically reduced
+        if isinstance(data.timestamp_ns, int):
+            data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
+        elif isinstance(data.timestamp_ns, np.ndarray):
+            # benchmarked slices: [:] is as fast as [::1] on BBB
+            data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
+        else:
+            raise TypeError("timestamp_ns must be int or np.ndarray")
 
-            if isinstance(data.timestamp_ns, np.ndarray):
-                self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
-            self.data_pos = data_end_pos
+        if self.reduce:  # aka resampling via binning
+            # Note: input is u18, max reduction is 10k (u14), so u32 should be fine
+            data.voltage = (
+                data.voltage[:len_add]
+                .reshape(len_red, self.reduction_factor)
+                .mean(axis=1, dtype=np.uint64)
+                .clip(0, 2**32)
+                .astype(np.uint32)
+            )
+            data.current = (
+                data.current[:len_add]
+                .reshape(len_red, self.reduction_factor)
+                .mean(axis=1, dtype=np.uint64)
+                .clip(0, 2**32)
+                .astype(np.uint32)
+            )
+            len_add = len_red
+
+        # add to file
+        data_end_pos = self.data_pos + len_add
+        data_length_h5 = self.grp_data["voltage"].shape[0]
+        if data_end_pos >= data_length_h5:
+            data_length_h5 += self.data_inc
+            self.grp_data["voltage"].resize((data_length_h5,))
+            self.grp_data["current"].resize((data_length_h5,))
+            self.grp_data["time"].resize((data_length_h5,))
+
+        self.grp_data["voltage"][self.data_pos : data_end_pos] = data.voltage
+        self.grp_data["current"][self.data_pos : data_end_pos] = data.current
+        self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
+        self.data_pos = data_end_pos
 
     def write_gpio_buffer(self, data: GPIOTrace) -> None:
         self.rec_gpio.write(data)

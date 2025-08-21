@@ -1,24 +1,16 @@
 ---
 
-- name: Look for Kernel Module
-  ansible.builtin.shell:  # pipefail-setting prevents surprises
-    cmd: "set -o pipefail && lsmod | grep shepherd"
-  register: kmod_ret
-  failed_when: false
-  changed_when: false
-
 - name: Stop Kernel Module
-  ansible.builtin.command: 'modprobe -rf shepherd'
-  register: modprobe_ret
-  until: modprobe_ret is not failed
-  retries: 5
-  # when: kmod_ret.rc == 0 # NOT WORKING as expected
-  changed_when: true
-  # fails at least on first install -> check for presence of shepherd
+  ansible.builtin.command: 'modprobe -rf {{ item }}'
+  failed_when: false
+  loop:
+    - shepherd  # just repeat 3 times
+    - shepherd
+    - shepherd
   # lsmod | grep shepherd
   #   -> loaded: 2 lines, exit 0
   #   -> notload: 0 lines, exit 1
-  # modinfo could work -> test above -> FAIL
+  # return of lsmod not working as expected
 
 - name: Check if PRU1 is present
   ansible.builtin.stat:
@@ -42,11 +34,10 @@
   failed_when: false
   changed_when: true
 
-- name: Uninstall shepherd python package
-  ansible.builtin.pip:
-    name: "{{ item }}"
-    state: absent
-    extra_args: "--yes --break-system-packages"
+- name: UV - Uninstall shepherd python package
+  ansible.builtin.command:
+    cmd: "/home/jane/.local/bin/uv pip uninstall {{ item }}"
+    chdir: '/home/{{ ansible_user }}'
   loop:
     - shepherd-core
     - shepherd_core
@@ -56,7 +47,7 @@
     - install
     - python
   when: sheep_rebuild_python_package | bool
-  become: true
+  become: false
   # there were situations were the core-lib stayed old
 
 - name: Get full path of repository
@@ -90,3 +81,24 @@
   tags:
     - source-code
     - python
+
+- name: Enable execution of manual build-scripts
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: file
+    owner: "{{ ansible_user }}"
+    mode: "a+rwx"
+  become: true
+  loop:
+    - "{{ sheep_install_path }}/software/build_py.sh"
+    - "{{ sheep_install_path }}/software/build_pru.sh"
+    - "{{ sheep_install_path }}/software/build_kernel.sh"
+  tags:
+    - source-code
+    - python
+
+- name: UV - update itself
+  ansible.builtin.command:
+    cmd: '/home/jane/.local/bin/uv self update'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
