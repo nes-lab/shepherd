@@ -14,7 +14,6 @@ from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Unpack
 
-from . import __version__
 from .herd import Herd
 from .logger import activate_verbosity
 from .logger import log
@@ -103,20 +102,16 @@ def cli(
 @cli.command(short_help="Print version-info (combine with -v for more)")
 def version() -> None:
     """Print version-info (combine with -v for more)."""
-    from h5py import __version__ as ver_h5py
-    from numpy import __version__ as ver_numpy
-    from pydantic import __version__ as ver_pydantic
-    from shepherd_core import __version__ as ver_core
-    from yaml import __version__ as ver_yaml
+    from importlib import metadata
 
-    log.info("Shepherd-Herd v%s", __version__)
-    log.info("Shepherd-core v%s", ver_core)
     log.debug("Python v%s", sys.version)
-    log.debug("click v%s", click.__version__)
-    log.debug("h5py v%s", ver_h5py)
-    log.debug("numpy v%s", ver_numpy)
-    log.debug("pydantic v%s", ver_pydantic)
-    log.debug("PyYAML v%s", ver_yaml)
+    log.info("Shepherd-Herd v%s", metadata.version("shepherd_herd"))
+    log.debug("Shepherd-Core v%s", metadata.version("shepherd_core"))
+    log.debug("click v%s", metadata.version("click"))
+    log.debug("h5py v%s", metadata.version("h5py"))
+    log.debug("numpy v%s", metadata.version("numpy"))
+    log.debug("pydantic v%s", metadata.version("pydantic"))
+    log.debug("PyYAML v%s", metadata.version("yaml"))
 
 
 @cli.command(
