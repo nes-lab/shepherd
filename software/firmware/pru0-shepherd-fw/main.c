@@ -191,7 +191,9 @@ static bool_ft handle_kernel_com()
             // pipeline-test for msg-system
             msgsys_send_status(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
         }
-        else { msgsys_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u); }
+        else {
+            msgsys_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u);
+        }
     }
     return 0u;
 }
@@ -270,7 +272,9 @@ void event_loop()
                 SHARED_MEM.buffer_iv_out_ptr->idx_pru           = idx;
 
                 if (idx >= BUFFER_IV_OUT_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_out_idx = 0u; }
-                else { SHARED_MEM.buffer_iv_out_idx = idx + 1u; }
+                else {
+                    SHARED_MEM.buffer_iv_out_idx = idx + 1u;
+                }
             }
 
             // LogicAnalyzer: 148 ns for just checking

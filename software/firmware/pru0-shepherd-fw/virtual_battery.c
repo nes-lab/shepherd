@@ -102,8 +102,7 @@ void update_battery_states()
 
         state.V_oc_uV_n8                 = V_oc_uV_n8; // For testing only
     }
-    else
-    {
+    else {
         const uint64_t I_delta_nA_n4 = I_out_nA_n4 - state.I_in_nA_n4;
 
         // Update SoC by tracking the charge (equation 6)
@@ -111,7 +110,9 @@ void update_battery_states()
                 mul64(BAT_CFG.Constant_s_per_mAs_n48, I_delta_nA_n4) >> 20u;
         // Protect from overflow
         if (state.SoC_u_n32 > SoC_delta_u_n32) { state.SoC_u_n32 -= SoC_delta_u_n32; }
-        else { state.SoC_u_n32 = 0u; }
+        else {
+            state.SoC_u_n32 = 0u;
+        }
 
         // Get open-circuit voltage (equation 7)
         const uint64_t V_oc_uV_n8        = lookup_V_oc_uV_n8(state.SoC_u_n32);

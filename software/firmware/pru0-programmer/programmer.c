@@ -58,8 +58,7 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
     if (pctrl->target == PRG_TARGET_MSP430) drv = &msp430fr_driver;
 #endif
     else if (pctrl->target == PRG_TARGET_DUMMY) drv = &dummy_driver;
-    else
-    {
+    else {
         pctrl->state = PRG_STATE_ERR_GENERIC;
         goto exit;
     }

@@ -45,8 +45,7 @@ static inline void fetch_iv_trace()
         __builtin_memcpy((uint8_t *) &ivsample, L3OCMC_ADDR + cache_offset,
                          sizeof(struct IVSample));
     }
-    else
-    {
+    else {
         /* Mem-Reading for PRU -> can vary from 530 to 5400 ns (rare) */
         // TODO: Benchmark
         __builtin_memcpy((uint8_t *) &ivsample,
@@ -57,7 +56,9 @@ static inline void fetch_iv_trace()
 
     /* advance index */
     if (sample_idx >= BUFFER_IV_INP_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_inp_idx = 0u; }
-    else { SHARED_MEM.buffer_iv_inp_idx = sample_idx + 1u; }
+    else {
+        SHARED_MEM.buffer_iv_inp_idx = sample_idx + 1u;
+    }
 
     /* inform host about current position */
     SHARED_MEM.buffer_iv_inp_ptr->idx_pru = sample_idx;
@@ -93,8 +94,7 @@ static inline void sample_emulator()
         /* set both channels with same voltage */
         dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_AB_ADDR | voltage_dac);
     }
-    else
-    {
+    else {
         /* only set main channel (CHANNEL B has current-monitor) */
         dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | voltage_dac);
     }
@@ -115,8 +115,7 @@ static inline void sample_emulator()
         buf_out_current[index] = get_I_mid_out_nA();
         buf_out_voltage[index] = get_V_intermediate_uV();
     }
-    else
-    {
+    else {
         buf_out_current[index] = current_adc_raw;
         buf_out_voltage[index] = voltage_dac;
     }
@@ -232,8 +231,7 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
         __delay_cycles(1000u / TICK_INTERVAL_NS);
         adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | NOT_PWRDOWN | NAP_EN);
     }
-    else
-    {
+    else {
         __delay_cycles(1000u / TICK_INTERVAL_NS);
         adc_readwrite(cs_pin, REGISTER_WRITE | ADDR_REG_PWRCTL | WRITE_KEY);
         __delay_cycles(1000u / TICK_INTERVAL_NS);
