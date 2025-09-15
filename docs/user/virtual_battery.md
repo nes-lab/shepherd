@@ -99,3 +99,20 @@ While the old shepherd capacitor (`ShpCap`) was not designed to mimic a battery 
 This time the simple KiBaM and the stripped PRU-Model (`VirtualStorage`) match, as both don't support transients during charging.
 Looking at the voltages a non-linear trend shows, typical for lithium batteries.
 In addition `KiBaMPlus` handles the rate capacity effect during charging, which shows as voltage increase while current is flowing.
+
+## DC-Bias Effect
+
+Some capacitors like MLCC-variants show a variable capacity, depending on the voltage they are used.
+Small packages with high capacity are particularly susceptible to this DC-bias effect.
+The datasheet of the JMK316ABJ107ML a 100 uF X5R MLCC with a rated voltage of 6.3 V show a capacity decrease of 80 % when run at the rated voltage.
+
+![dc-bias](./media_battery/comparison_dc_bias.png)
+
+In comparison to an ideal capacitor the charge- and discharge-curves differ substantially.
+We were able to verify the datasheet for that specific capacitor by measuring both curves and plotting the datasheet data next to it (`direct`).
+As an experiment the `VirtualStorage` PRU-Model (called `BatteryModel` in plot) was adapted to contain this effect in the SoC-LuT.
+
+:::{note}
+TODO: WORK IN PROGRESS
+The DC-bias effect will be included in the near future. More measurements and research are needed to offer a parameter-set.
+:::
