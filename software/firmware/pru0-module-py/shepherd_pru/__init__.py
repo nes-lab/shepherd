@@ -5,6 +5,7 @@ from .pru_harvester_model import PruHarvesterModel
 from .pru_harvester_simulation import simulate_harvester
 from .pru_source_model import PruSourceModel
 from .pru_source_simulation import simulate_source
+from .pru_storage_model import PruStorageModel
 
 __version__ = "2025.8.1"
 
@@ -12,6 +13,7 @@ __all__ = [
     "PruConverterModel",
     "PruHarvesterModel",
     "PruSourceModel",
+    "PruStorageModel",
     "simulate_harvester",
     "simulate_source",
 ]

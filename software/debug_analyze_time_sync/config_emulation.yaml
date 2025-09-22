@@ -14,7 +14,9 @@ parameters:
     inherit_from: BQ25570
     harvester:
       name: mppt_bq_solar
-    V_intermediate_init_mV: 3600
+    storage:
+      name: Capacitor_100uF_6.3V
+      SoC_init: 0.8 # allow a proper / fast startup
     V_buck_drop_mV: 0
     V_output_mV: 3000
   use_cal_default: false

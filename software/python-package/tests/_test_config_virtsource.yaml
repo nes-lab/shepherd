@@ -17,9 +17,9 @@ parameters:
   I_input_max_mA: 100
   V_input_drop_mV: 0  # simulate input-diode
 
-  C_intermediate_uF: 100  # primary storage-Cap
-  V_intermediate_init_mV: 3000 # allow a proper / fast startup
-  I_intermediate_leak_nA: 9
+  storage: # primary storage-Cap
+    name: Capacitor_100uF_10.0V
+    SoC_init: 0.8 # allow a proper / fast startup
 
   V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
   V_pwr_good_disable_threshold_mV: 2400
@@ -55,8 +55,8 @@ parameters:
   V_output_mV: 2000
   V_buck_drop_mV: 0  # simulate LDO min voltage differential or output-diode
 
-  V_intermediate_enable_threshold_mV: 2600 # -> target gets connected (hysteresis-combo with next value)
-  V_intermediate_disable_threshold_mV: 2300 # -> target gets disconnected
+  V_intermediate_enable_output_threshold_mV: 2600 # -> target gets connected (hysteresis-combo with next value)
+  V_intermediate_disable_output_threshold_mV: 2300 # -> target gets disconnected
   interval_check_thresholds_ms: 64.0  # some BQs check every 64 ms if output should be disconnected
 
   # TODO: add dropdown-voltage and option to keep output enabled

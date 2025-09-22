@@ -75,6 +75,8 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
 
 uint32_t mul32(const uint32_t value1, const uint32_t value2)
 {
+    // an extending version could just do:
+    // return (uint64_t) value1 * (uint64_t) value2;
     const uint64_t product = (uint64_t) value1 * (uint64_t) value2;
     // check for possible overflow - return max
     if (product < 0xFFFFFFFFull) return (uint32_t) product;

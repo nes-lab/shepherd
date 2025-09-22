@@ -84,7 +84,7 @@ void mem_interface_reset(void)
 
     shared_mem->calibration_settings = CalibrationConfig_default;
     shared_mem->converter_settings   = ConverterConfig_default;
-    shared_mem->battery_settings     = BatteryConfig_default;
+    shared_mem->storage_settings     = StorageConfig_default;
     shared_mem->harvester_settings   = HarvesterConfig_default;
 
     shared_mem->programmer_ctrl      = ProgrammerCtrl_default;
@@ -120,9 +120,9 @@ uint32_t mem_interface_check_canaries(void)
         printk(KERN_ERR "shprd.k: canary of converter_settings was harmed!");
         ret |= 1u << 1u;
     }
-    if (shared_mem->battery_settings.canary != CANARY_VALUE_U32)
+    if (shared_mem->storage_settings.canary != CANARY_VALUE_U32)
     {
-        printk(KERN_ERR "shprd.k: canary of battery_settings was harmed!");
+        printk(KERN_ERR "shprd.k: canary of storage_settings was harmed!");
         ret |= 1u << 1u;
     }
     if (shared_mem->harvester_settings.canary != CANARY_VALUE_U32)

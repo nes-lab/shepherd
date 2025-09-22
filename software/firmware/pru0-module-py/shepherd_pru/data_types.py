@@ -1,14 +1,16 @@
 import ctypes as ct
 from typing import ClassVar
 
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 
 
 class HarvesterConfig(ct.Structure):
-    _pack_: int = 1  # TODO: test without ClassVar
+    # NOTE: iterator possible here because PRUConfig == Struct
+    _pack_: ClassVar[int] = 1
     _fields_: ClassVar[list] = [(_key, ct.c_uint32) for _key in HarvesterPRUConfig.model_fields] + [
         ("canary", ct.c_uint32)
-    ]  # TODO: a sequence (,) seems to be fine
+    ]
+    # TODO: a sequence (,) seems to be fine
 
 
 class CalibrationConfig(ct.Structure):
@@ -39,19 +41,16 @@ class ConverterConfig(ct.Structure):
         ("I_input_max_nA", ct.c_uint32),
         ("V_input_drop_uV", ct.c_uint32),
         ("R_input_kOhm_n22", ct.c_uint32),
-        ("Constant_us_per_nF_n28", ct.c_uint32),
-        ("V_intermediate_init_uV", ct.c_uint32),
-        ("I_intermediate_leak_nA", ct.c_uint32),
-        ("V_enable_output_threshold_uV", ct.c_uint32),
-        ("V_disable_output_threshold_uV", ct.c_uint32),
-        ("dV_enable_output_uV", ct.c_uint32),
+        ("V_mid_enable_output_threshold_uV", ct.c_uint32),
+        ("V_mid_disable_output_threshold_uV", ct.c_uint32),
+        ("dV_mid_enable_output_uV", ct.c_uint32),
         ("interval_check_thresholds_n", ct.c_uint32),
         ("V_pwr_good_enable_threshold_uV", ct.c_uint32),
         ("V_pwr_good_disable_threshold_uV", ct.c_uint32),
         ("immediate_pwr_good_signal", ct.c_uint32),
         ("V_output_log_gpio_threshold_uV", ct.c_uint32),
         ("V_input_boost_threshold_uV", ct.c_uint32),
-        ("V_intermediate_max_uV", ct.c_uint32),
+        ("V_mid_max_uV", ct.c_uint32),
         ("V_output_uV", ct.c_uint32),
         ("V_buck_drop_uV", ct.c_uint32),
         ("LUT_input_V_min_log2_uV", ct.c_uint32),
@@ -63,21 +62,18 @@ class ConverterConfig(ct.Structure):
     ]
 
 
-VOC_LUT_SIZE: int = 123
-VOC_LUT_TYPE = ct.c_uint32 * VOC_LUT_SIZE
-RSERIES_LUT_SIZE: int = 100
-RSERIES_LUT_TYPE = ct.c_uint32 * RSERIES_LUT_SIZE
+LUT_STORAGE_SIZE: int = 128
+LUT_STORAGE_TYPE = ct.c_uint32 * LUT_STORAGE_SIZE
 
 
-class BatteryConfig(ct.Structure):
+class StorageConfig(ct.Structure):
     _pack_: ClassVar[int] = 1
     _fields_: ClassVar[list] = [
-        ("Constant_s_per_mAs_n48", ct.c_uint32),
-        ("Constant_1_per_kOhm_n18", ct.c_uint32),
-        ("LUT_voc_SoC_min_log2_u_n32", ct.c_uint32),
-        ("LUT_voc_uV_n8", VOC_LUT_TYPE),
-        ("LUT_rseries_SoC_min_log2_u_n32", ct.c_uint32),
-        ("LUT_rseries_KOhm_n32", RSERIES_LUT_TYPE),
+        ("SoC_init_1_n30", ct.c_uint32),
+        ("Constant_1_per_nA_n60", ct.c_uint32),
+        ("Constant_1_per_uV_n60", ct.c_uint32),
+        ("LuT_VOC_uV_n8", LUT_STORAGE_TYPE),
+        ("LuT_RSeries_kOhm_n32", LUT_STORAGE_TYPE),
         ("canary", ct.c_uint32),
     ]
 
@@ -85,16 +81,20 @@ class BatteryConfig(ct.Structure):
 class SharedMemLight(ct.Structure):
     _pack_: ClassVar[int] = 1
     _fields_: ClassVar[list] = [
-        ("pre_A", ct.c_uint32 * 9),
-        ("pre_Buff", ct.c_uint32 * (4 + 4 + 5 + 1)),
-        ("pre_Cache", ct.c_uint32 * 32),
-        ("pre_D", ct.c_uint32 * 2),
+        ("pre_A", ct.c_uint32 * 3),  # canary, state, mode
+        ("pre_Buff", ct.c_void_p * 4),
+        ("pre_idx", ct.c_uint32 * (4 + 1)),
+        ("pre_sizes", ct.c_uint32 * 5),
+        ("pre_cache", ct.c_uint32 * 32),
+        ("pre_B", ct.c_uint32 * 2),  # aux, canary
         ("calibration_settings", CalibrationConfig),
         ("converter_settings", ConverterConfig),
+        ("storage_settings", StorageConfig),
         ("harvester_settings", HarvesterConfig),
         ("programmer_ctrl", ct.c_uint32 * 11),
         ("proto_msgs", ct.c_uint32 * (6 * 4)),
         ("timestamps", ct.c_uint64 * 2),
+        ("gpio_mask", ct.c_uint64 * 1),
         ("canary", ct.c_uint32 * 1),
         ("gpio_pin_state", ct.c_uint32),
         ("trigger_x", ct.c_uint32 * 2),  # bool_ft

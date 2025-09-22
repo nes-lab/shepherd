@@ -56,6 +56,9 @@ shepherd-cal = { path = "./software/shepherd-calibration", editable = true}
 shepherd-pru = { path = "./software/firmware/pru0-module-py", editable = true}
 sync-analysis = { path = "./software/debug_analyze_time_sync", editable = true}
 
+shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
+# temporary dev-versions of sub-packets
+
 [tool.setuptools]
 # alibi declaration to avoid auto-discovery
 packages = ["shepherd-herd",]

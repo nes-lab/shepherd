@@ -10,7 +10,7 @@ from .data_types import SharedMemLight
 def get_device() -> ct.CDLL:
     path = Path(__file__).parent / "_shared_pru.so"
     fn_signatures = {
-        # virtual_harvester.d ##############################
+        # virtual_harvester.c ##############################
         "harvester_initialize": ([ct.POINTER(HarvesterConfig)], None),
         "sample_ivcurve_harvester": ([ct.POINTER(ct.c_uint32), ct.POINTER(ct.c_uint32)], None),
         # calibration.c ##############################
@@ -18,11 +18,17 @@ def get_device() -> ct.CDLL:
         "cal_conv_adc_raw_to_nA": ([ct.c_uint32], ct.c_uint32),
         "cal_conv_adc_raw_to_uV": ([ct.c_uint32], ct.c_uint32),
         "cal_conv_uV_to_dac_raw": ([ct.c_uint32], ct.c_uint32),
-        # virtual_converter.d ##############################
+        # virtual_storage.c ##############################
+        "storage_initialize": (None, None),
+        "get_V_OC_uV": (None, ct.c_uint32),
+        "get_SoC_1_n30": (None, ct.c_uint32),
+        "get_storage_update": ([ct.c_uint64, ct.c_uint32], ct.c_uint32),
+        # virtual_converter.c ##############################
         "converter_initialize": ([ct.POINTER(ConverterConfig)], None),
         "converter_calc_inp_power": ([ct.c_uint32, ct.c_uint32], None),
         "converter_calc_out_power": ([ct.c_uint32], None),
-        "converter_update_cap_storage": (None, None),
+        "converter_update_legacy_storage": (None, None),
+        "converter_update_storage": (None, None),
         "converter_update_states_and_output": ([ct.POINTER(SharedMemLight)], ct.c_uint32),
         "set_P_input_fW": ([ct.c_uint32], None),
         "set_P_output_fW": ([ct.c_uint32], None),

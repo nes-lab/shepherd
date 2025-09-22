@@ -84,8 +84,8 @@ static inline void sample_emulator()
 
     converter_calc_out_power(current_adc_raw);
 
-    converter_update_cap_storage();
-    // converter_update_bat_storage();
+    converter_update_legacy_storage();
+    // converter_update_storage();
 
     const uint32_t voltage_dac = converter_update_states_and_output();
 
