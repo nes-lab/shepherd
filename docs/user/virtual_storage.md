@@ -5,7 +5,7 @@
 The model is based on the electrical model introduced in [_An Accurate Electrical Battery Model Capable of Predicting Runtime and I–V Performance_](https://rincon-mora.gatech.edu/publicat/jrnls/tec05_batt_mdl.pdf).
 
 The circuit diagram of the electrical model is shown here:
-![electrical circuit model](./media_battery/electrical_mdl.png)
+![electrical circuit model](./media_storage/electrical_mdl.png)
 
 The model uses:
 
@@ -16,7 +16,7 @@ The model uses:
 - a resistor to model self-discharge (however, they later omit this, deeming it negligible)
 
 The component values depend on the SoC through a set of equations:
-![electrical circuit model equations](./media_battery/electrical_equ.png)
+![electrical circuit model equations](./media_storage/electrical_equ.png)
 
 These parameters model a specific battery and are provided by the authors.
 
@@ -39,13 +39,19 @@ Experiments showed that a broad range of configurations can be covered by this m
 
 ## Modifications
 
+For a more generalized `virtual storage`, the following extensions were implemented for `KiBaM`:
+
+- support the rate capacity effect and transients during charging (the original focuses only on discharge)
+- self discharge was added as it is relevant for capacitors
+- a 0 % SoC will let the voltage break down to 0
+- future extension: include DC-bias effect, see section below
+
 Due to processing-constraints the following modifications are made implementing the model on the PRU:
 
 - the transient effects (e.g. the two RC elements, eq. 4 - 7) are omitted
 - the equations (2, 3) for the open-circuit voltage and series resistor are replaced by lookup-tables (LuTs) which are generated from the model equations ahead of time
   - future plan: the quantized output voltage (due to the 128-entry LuT) may be smoothed via interpolation
 - the capacitor is modeled discretely: `V_soc(t + dt) = V_soc(t) - (1 / C_capacity) * I_batt * dt`
-- self discharge was added as it is relevant for capacitors
 
 ## Comparison of Models
 
@@ -75,11 +81,11 @@ The python scripts can be found in [shepherd_core/examples/simulations/vstorage.
 
 Putting a 20 Ohm load on the capacitor shows no surprises - all 4 models match in behavior:
 
-![comparison cap resistive load](./media_battery/Capacitor_10000000uF_4.2V_resistive_load_20_Ohm.png)
+![comparison cap resistive load](./media_storage/Capacitor_10000000uF_4.2V_resistive_load_20_Ohm.png)
 
 Differences start to show when looking at the LiPo battery:
 
-![comparison lipo resistive load](./media_battery/LiPo_10mAh_3.7V_resistive_load_20_Ohm.png)
+![comparison lipo resistive load](./media_storage/LiPo_10mAh_3.7V_resistive_load_20_Ohm.png)
 
 The KiBaM-based models both match in behavior and show the voltage curve of a typical lithium battery.
 Even the stripped PRU-model (`VirtualStorage`) is close by, but lacks the rate capacity effect and is therefore missing the voltage drop.
@@ -89,11 +95,11 @@ The old shepherd capacitor (`ShpCap`) was not designed to mimic a battery and mi
 
 Charging a capacitor with pulsed 100 mA is again covered by all 4 models:
 
-![comparison cap pulsed_charging](./media_battery/Capacitor_10000000uF_4.2V_pulsed_charge_.1A.png)
+![comparison cap pulsed_charging](./media_storage/Capacitor_10000000uF_4.2V_pulsed_charge_.1A.png)
 
 Differences show again when looking at the LiPo:
 
-![comparison bat pulsed_charging](./media_battery/LiPo_10mAh_3.7V_pulsed_charge_.1A.png)
+![comparison bat pulsed_charging](./media_storage/LiPo_10mAh_3.7V_pulsed_charge_.1A.png)
 
 While the old shepherd capacitor (`ShpCap`) was not designed to mimic a battery and can be ignored, the other models show interesting behaviors.
 This time the simple KiBaM and the stripped PRU-Model (`VirtualStorage`) match, as both don't support transients during charging.
@@ -106,7 +112,7 @@ Some capacitors like MLCC-variants show a variable capacity, depending on the vo
 Small packages with high capacity are particularly susceptible to this DC-bias effect.
 The datasheet of the JMK316ABJ107ML a 100 uF X5R MLCC with a rated voltage of 6.3 V show a capacity decrease of 80 % when run at the rated voltage.
 
-![dc-bias](./media_battery/comparison_dc_bias.png)
+![dc-bias](./media_storage/comparison_dc_bias.png)
 
 In comparison to an ideal capacitor the charge- and discharge-curves differ substantially.
 We were able to verify the datasheet for that specific capacitor by measuring both curves and plotting the datasheet data next to it (`direct`).
@@ -116,3 +122,11 @@ As an experiment the `VirtualStorage` PRU-Model (called `BatteryModel` in plot) 
 TODO: WORK IN PROGRESS
 The DC-bias effect will be included in the near future. More measurements and research are needed to offer a parameter-set.
 :::
+
+## References
+
+- parameters for the config can be found as [data-model in the core-tool](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/shepherd_core/data_models/content)
+  - a fixture creation script and the fixtures itself are in the same directory
+- the virtual storage for the testbed is implemented in c and [part of the PRU-firmware](https://github.com/nes-lab/shepherd/tree/main/software/firmware/pru0-shepherd-fw)
+- the 1-to-1 simulation-models are part of the [python vSource-implementation](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/shepherd_core/vsource)
+- simulation-experiments are kept in the [examples-directory of the core-tool](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/examples/simulation)

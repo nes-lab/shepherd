@@ -20,7 +20,7 @@ Welcome to SHEPHERD's documentation
    ./user/data_format.md
    ./user/performance.rst
    ./user/virtual_source.md
-   ./user/virtual_battery.md
+   ./user/virtual_storage.md
    ./user/virtual_harvester.md
    ./user/virtual_source_old.rst
 
