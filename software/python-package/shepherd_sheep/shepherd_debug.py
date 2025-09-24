@@ -12,6 +12,7 @@ from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 
@@ -163,6 +164,8 @@ class ShepherdDebug(ShepherdIO):
             log_intermediate_node=log_intermediate,
         )
         super().send_virtual_converter_settings(src_pru)
+        storage_pru = StoragePRUConfig.from_vstorage(data=src_cfg.storage)
+        super().send_virtual_storage_settings(storage_pru)
 
         hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=src_cfg.harvester,

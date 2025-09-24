@@ -15,6 +15,7 @@ from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 
 from .logger import log
 
@@ -490,6 +491,49 @@ def read_virtual_harvester_settings() -> list:
 
     """
     with Path("/sys/shepherd/virtual_harvester_settings").open(encoding="utf-8") as f:
+        settings = f.read().rstrip()
+    return [int(x) for x in settings.split()]
+
+
+@validate_call
+def write_virtual_storage_settings(settings: StoragePRUConfig) -> None:
+    """Send the settings to the PRU core.
+
+    The pru-algorithm uses these settings to configure emulator.
+
+    """
+    settings = list(settings.model_dump().values())
+    log.debug(
+        "Writing virtual storage to sysfs_interface, first values are\n\t%s",
+        settings[0:10],
+    )
+    output = ""
+    for setting in settings:
+        if isinstance(setting, int):
+            output += f"{setting} \n"
+        elif isinstance(setting, list):
+            _set = flatten_list(setting)
+            _set = [str(i) for i in _set]
+            output += " ".join(_set) + " \n"
+        else:
+            msg = f"virtual storage value {setting} has wrong type ({type(setting)})"
+            raise SysfsInterfaceError(msg)
+
+    wait_for_state("idle", 3.0)
+    with Path("/sys/shepherd/virtual_storage_settings").open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        file.write(output)
+
+
+def read_virtual_storage_settings() -> list:
+    """Retrieve the settings from the PRU core.
+
+    The  pru-algorithm uses these settings to configure emulator.
+
+    """
+    with Path("/sys/shepherd/virtual_storage_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
     return [int(x) for x in settings.split()]
 

@@ -13,6 +13,7 @@ from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.data_models.task import EmulationTask
 from tqdm import tqdm
 from typing_extensions import Self
@@ -116,6 +117,7 @@ class ShepherdEmulator(ShepherdIO):
             window_size=window_size if window_size > 0 else None,
             voltage_step_V=self.reader.get_voltage_step(),
         )
+        self.storage_pru = StoragePRUConfig.from_vstorage(data=cfg.virtual_source.storage)
         log.info("Virtual Source will be initialized to:\n%s", cfg.virtual_source)
 
         self.writer: Writer | None = None
@@ -147,8 +149,9 @@ class ShepherdEmulator(ShepherdIO):
     def __enter__(self) -> Self:
         super().__enter__()
 
-        # TODO: why are there wrappers? just directly access
+        # TODO: why use wrappers? just directly access
         super().send_calibration_settings(self.cal_emu)
+        super().send_virtual_storage_settings(self.storage_pru)
         super().send_virtual_converter_settings(self.cnv_pru)
         super().send_virtual_harvester_settings(self.hrv_pru)
 
