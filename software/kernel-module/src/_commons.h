@@ -223,7 +223,8 @@ struct ConverterConfig
     uint32_t canary;
 } __attribute__((packed));
 
-#define LUT_STORAGE_SIZE (128)
+#define LUT_STORAGE_sLOG (7u)
+#define LUT_STORAGE_SIZE (1u << LUT_STORAGE_sLOG)
 
 struct StorageConfig
 {

@@ -48,8 +48,6 @@ class PruStorageModel:
         """Slower outer step with step-size of simulation."""
         I_delta_nA_n4 = int(abs(2**4 * (1e9 * I_charge_A)))
         is_charging = I_charge_A >= 0
-        # for _ in range(self.steps_per_frame - 1):
-        #    self.pru.storage_update(I_delta_nA_n4, is_charging)
         V_cell_uV_n8 = self.pru.storage_update(I_delta_nA_n4, is_charging)
         # code below just for simulation
         V_OC = 1e-6 * self.pru.get_V_OC_uV
