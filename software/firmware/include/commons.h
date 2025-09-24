@@ -158,7 +158,7 @@ struct UtilTrace
 } __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
-struct ProgrammerCtrl
+struct ProgrammerCtrl // TODO: also rename to *Config?
 {
     int32_t  state;
     /* Target chip to be programmed */

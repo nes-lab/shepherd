@@ -131,7 +131,7 @@ struct ProgrammerCtrl // TODO: also rename to *Config?
     uint32_t pin_tms;     // mode for JTAG
     uint32_t pin_dir_tms; // direction (HIGH == Output to target)
     /* safety */
-    uint32_t canary;       // TODO: should these near structs have canaries in between?
+    uint32_t canary;
 } __attribute__((packed)); // TODO: pin_X can be u8,
 
 /* calibration values - usage example: voltage_uV = adc_value * gain_factor + offset

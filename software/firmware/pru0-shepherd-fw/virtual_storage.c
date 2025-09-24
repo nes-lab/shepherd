@@ -68,6 +68,8 @@ uint32_t get_V_OC_uV() { return (uint32_t) (state.V_OC_uV_n8 >> 8u); }
 
 uint32_t get_SoC_1_n30() { return (uint32_t) (state.SoC_1_n62 >> 32u); }
 
+#ifdef EMU_SUPPORT
+
 uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
 // TODO: current could be u32?!?
 {
@@ -106,3 +108,4 @@ uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
     if (state.SoC_1_n62 == 0u) return 0u;
     return V_cell_uV_n8;
 }
+#endif //EMU_SUPPORT

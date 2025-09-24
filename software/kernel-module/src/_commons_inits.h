@@ -41,26 +41,26 @@ const struct ConverterConfig ConverterConfig_default = {
         .V_input_drop_uV                   = 104u,
         .R_input_kOhm_n22                  = 105u,
 
-        .V_mid_enable_output_threshold_uV  = 109u,
-        .V_mid_disable_output_threshold_uV = 110u,
-        .dV_mid_enable_output_uV           = 111u,
-        .interval_check_thresholds_n       = 112u,
+        .V_mid_enable_output_threshold_uV  = 106u,
+        .V_mid_disable_output_threshold_uV = 107u,
+        .dV_mid_enable_output_uV           = 108u,
+        .interval_check_thresholds_n       = 109u,
 
-        .V_pwr_good_enable_threshold_uV    = 113u,
-        .V_pwr_good_disable_threshold_uV   = 114u,
-        .immediate_pwr_good_signal         = 115u,
+        .V_pwr_good_enable_threshold_uV    = 110u,
+        .V_pwr_good_disable_threshold_uV   = 111u,
+        .immediate_pwr_good_signal         = 112u,
 
-        .V_output_log_gpio_threshold_uV    = 116u,
+        .V_output_log_gpio_threshold_uV    = 113u,
 
-        .V_input_boost_threshold_uV        = 117u,
-        .V_mid_max_uV                      = 118u,
+        .V_input_boost_threshold_uV        = 114u,
+        .V_mid_max_uV                      = 115u,
 
-        .V_output_uV                       = 119u,
-        .V_buck_drop_uV                    = 120u,
+        .V_output_uV                       = 116u,
+        .V_buck_drop_uV                    = 117u,
 
-        .LUT_input_V_min_log2_uV           = 121u,
-        .LUT_input_I_min_log2_nA           = 122u,
-        .LUT_output_I_min_log2_nA          = 123u,
+        .LUT_input_V_min_log2_uV           = 118u,
+        .LUT_input_I_min_log2_nA           = 119u,
+        .LUT_output_I_min_log2_nA          = 120u,
 
         .LUT_inp_efficiency_n8 =
                 {{0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u, 10u, 11u},

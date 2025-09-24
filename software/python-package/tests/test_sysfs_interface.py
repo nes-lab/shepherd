@@ -225,7 +225,7 @@ def test_writing_storage_settings(
 def test_initial_virtsource_settings() -> None:
     # NOTE: initial config is set in main() of pru0
     vsource_settings = [
-        list(range(100, 124)),
+        list(range(100, 121)),
         list(range(12 * 12)),
         list(range(12)),
     ]
