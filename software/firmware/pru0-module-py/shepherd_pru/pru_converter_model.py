@@ -2,7 +2,8 @@ import ctypes as ct
 from collections.abc import Sequence
 
 from shepherd_core import CalibrationEmulator
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.logger import log
 
 from ._virtual_pru import virtual_pru
@@ -10,7 +11,7 @@ from .data_types import LUT_INP
 from .data_types import LUT_OUT
 from .data_types import CalibrationConfig
 from .data_types import ConverterConfig
-from .data_types import SharedMemLight
+from .data_types import StorageConfig
 
 
 class PruCalibration:
@@ -42,7 +43,9 @@ def flatten_list(dl: Sequence) -> list:
 
 
 class PruConverterModel:
-    def __init__(self, cfg: ConverterPRUConfig, cal: PruCalibration) -> None:
+    def __init__(
+        self, cfg: ConverterPRUConfig, cal: PruCalibration, storage_cfg: StoragePRUConfig
+    ) -> None:
         cnv_dict = cfg.model_dump()
         cnv_dict["LUT_inp_efficiency_n8"] = LUT_INP(
             *flatten_list(cnv_dict["LUT_inp_efficiency_n8"])
@@ -52,13 +55,17 @@ class PruConverterModel:
         )
         self.cnv_cfg = ConverterConfig(**cnv_dict)
         self.cal_cfg = CalibrationConfig(**cal.cal.export_for_sysfs())
-        self.shared_mem = SharedMemLight()
+        self.store_cfg = StorageConfig(**storage_cfg.model_dump())
+
         log.info("This is the PRU-C-CNV-Model.")
         log.info(cfg.model_dump())
         log.info(cal.cal.export_for_sysfs())
         self.pru = virtual_pru
-        self.pru.calibration_initialize(ct.byref(self.cal_cfg))
-        self.pru.converter_initialize(ct.byref(self.cnv_cfg))
+        self.pru.set_calibration_config(ct.byref(self.cal_cfg))
+        self.pru.set_storage_config(ct.byref(self.store_cfg))
+        self.pru.set_converter_config(ct.byref(self.cnv_cfg))
+        self.pru.calibration_initialize()
+        self.pru.converter_initialize()  # does also .storage_initialize()
 
     def calc_inp_power(self, input_voltage_uV: float, input_current_nA: float) -> int:
         self.pru.converter_calc_inp_power(int(input_voltage_uV), int(input_current_nA))
@@ -69,11 +76,11 @@ class PruConverterModel:
         return self.pru.get_P_output_fW()
 
     def update_cap_storage(self) -> int:
-        self.pru.converter_update_cap_storage()
+        self.pru.converter_update_storage()
         return self.pru.get_V_intermediate_uV()
 
     def update_states_and_output(self) -> int:
-        return self.pru.converter_update_states_and_output(ct.byref(self.shared_mem))
+        return self.pru.converter_update_states_and_output()
 
     def get_input_efficiency(self, voltage_uV: float, current_nA: float) -> float:
         raise NotImplementedError
@@ -106,7 +113,8 @@ class PruConverterModel:
         return self.pru.get_V_output_uV()
 
     def get_power_good(self) -> bool:
-        return bool(self.shared_mem.vsource_batok_pin_value)
+        # TODO: vsource_batok_trigger_for_pru1 is also set
+        return bool(self.pru.get_vsource_batok_pin_value)
 
     def get_I_mid_out_nA(self) -> float:
         return self.pru.get_I_mid_out_nA()
@@ -115,7 +123,7 @@ class PruConverterModel:
         return bool(self.pru.get_state_log_intermediate())
 
     def get_state_log_gpio(self) -> bool:
-        return bool(self.shared_mem.vsource_skip_gpio_logging)
+        return bool(self.pru.get_vsource_skip_gpio_logging())
 
     def vsrc_iterate_sampling(
         self, V_inp_uV: int = 0, I_inp_nA: int = 0, I_out_raw: int = 0

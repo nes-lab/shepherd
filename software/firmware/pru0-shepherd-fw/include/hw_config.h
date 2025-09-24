@@ -26,7 +26,7 @@
 #define DEBUG_PIN0_MASK       BIT_SHIFT(P8_12)
 #define DEBUG_PIN1_MASK       BIT_SHIFT(P8_11)
 
-#ifdef __PYTHON__
+#ifdef __PYTHON_TMP_OFF__
 void __delay_cycles(const uint32_t num)
 {
     // needs no faking

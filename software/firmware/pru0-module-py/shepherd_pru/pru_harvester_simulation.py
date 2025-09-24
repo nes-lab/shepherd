@@ -14,8 +14,8 @@ from unittest.mock import patch
 from shepherd_core import CalibrationHarvester
 from shepherd_core import Reader
 from shepherd_core import Writer
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_harvester import VirtualHarvesterConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import VirtualHarvesterConfig
 from tqdm import tqdm
 
 from .pru_harvester_model import PruHarvesterModel

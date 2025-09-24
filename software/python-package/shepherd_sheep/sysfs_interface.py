@@ -13,8 +13,8 @@ from pathlib import Path
 
 from pydantic import validate_call
 from shepherd_core import CalibrationEmulator
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
 
 from .logger import log
 

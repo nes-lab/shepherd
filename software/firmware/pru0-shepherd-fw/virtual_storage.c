@@ -48,25 +48,23 @@ static struct StorageState state;
 
 #define SoC_MAX_1_n62  ((1ull << 62u) - 1ull)
 #define SoC_TO_POS_DIV (62u - 32u - LUT_STORAGE_sLOG)
+static uint8_ft position_LuT(void);
 
-void storage_initialize()
+void            storage_initialize()
 {
     state.SoC_1_n62  = ((uint64_t) STORE_CFG.SoC_init_1_n30) << 32u;
     state.V_OC_uV_n8 = STORE_CFG.LuT_VOC_uV_n8[position_LuT()];
 }
 
-static uint8_t position_LuT()
+static uint8_ft position_LuT()
 {
     const uint32_t SoC_n30 = state.SoC_1_n62 >> 32u;
-    uint8_t        pos_SoC = SoC_n30 >> SoC_TO_POS_DIV;
+    uint8_ft       pos_SoC = SoC_n30 >> SoC_TO_POS_DIV;
     if (pos_SoC >= LUT_STORAGE_SIZE) pos_SoC = LUT_STORAGE_SIZE - 1u;
     return pos_SoC;
 }
 
-uint32_t get_V_OC_uV() // For testing only
-{
-    return (uint32_t) (state.V_OC_uV_n8 >> 8u);
-}
+uint32_t get_V_OC_uV() { return (uint32_t) (state.V_OC_uV_n8 >> 8u); }
 
 uint32_t get_SoC_1_n30() { return (uint32_t) (state.SoC_1_n62 >> 32u); }
 
@@ -81,23 +79,20 @@ uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
     uint64_t dSoC_leak_1_n62 =
             (uint64_t) (state.V_OC_uV_n8 >> 6u) * (uint64_t) STORE_CFG.Constant_1_per_uV_n60;
     // alternatively this could be added to P_out_fW (like before)
-    if (state.SoC_1_n62 >= dSoC_leak_1_n62)
-        state.SoC_1_n62 = state.SoC_1_n62 - dSoC_leak_1_n62 else self.SoC_1_n62 = 0
+    if (state.SoC_1_n62 >= dSoC_leak_1_n62) state.SoC_1_n62 = state.SoC_1_n62 - dSoC_leak_1_n62;
+    else state.SoC_1_n62 = 0;
 
-                const uint64_t dSoc_1_n62 =
-                        mul64(I_delta_nA_n4, STORE_CFG.Constant_1_per_nA_n60) >> 2u;
+    const uint64_t dSoC_1_n62 = mul64(I_delta_nA_n4, STORE_CFG.Constant_1_per_nA_n60) >> 2u;
     // TODO could be mul32e() above
     if (is_charging)
     {
-        state.SoC_1_n62 += dSoc_1_n62;
+        state.SoC_1_n62 += dSoC_1_n62;
         if (state.SoC_1_n62 > SoC_MAX_1_n62) state.SoC_1_n62 = SoC_MAX_1_n62;
     }
-    else {
-        if (self.Soc_1_n62 > dSoc_1_n62) self.SoC_1_n62 -= dSoc_1_n62;
-        else self.SoC_1_n62 = 0u;
-    }
+    else if (state.SoC_1_n62 > dSoC_1_n62) state.SoC_1_n62 -= dSoC_1_n62;
+    else state.SoC_1_n62 = 0u;
 
-    const uint8_t pos_lut            = position_LuT();
+    const uint8_ft pos_lut           = position_LuT();
     state.V_OC_uV_n8                 = STORE_CFG.LuT_VOC_uV_n8[pos_lut];
     const uint32_t R_series_kOhm_n32 = STORE_CFG.LuT_RSeries_kOhm_n32[pos_lut];
     const uint32_t V_delta_uV_n8     = mul64(I_delta_nA_n4, R_series_kOhm_n32) >> 28u;
@@ -108,6 +103,6 @@ uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
     else if (state.V_OC_uV_n8 > V_delta_uV_n8) V_cell_uV_n8 = state.V_OC_uV_n8 - V_delta_uV_n8;
     else V_cell_uV_n8 = 0u;
 
-    if (self.SoC_1_n62 == 0u) return 0u;
+    if (state.SoC_1_n62 == 0u) return 0u;
     return V_cell_uV_n8;
 }

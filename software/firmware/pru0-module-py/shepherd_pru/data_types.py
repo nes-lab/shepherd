@@ -76,30 +76,3 @@ class StorageConfig(ct.Structure):
         ("LuT_RSeries_kOhm_n32", LUT_STORAGE_TYPE),
         ("canary", ct.c_uint32),
     ]
-
-
-class SharedMemLight(ct.Structure):
-    _pack_: ClassVar[int] = 1
-    _fields_: ClassVar[list] = [
-        ("pre_A", ct.c_uint32 * 3),  # canary, state, mode
-        ("pre_Buff", ct.c_void_p * 4),
-        ("pre_idx", ct.c_uint32 * (4 + 1)),
-        ("pre_sizes", ct.c_uint32 * 5),
-        ("pre_cache", ct.c_uint32 * 32),
-        ("pre_B", ct.c_uint32 * 2),  # aux, canary
-        ("calibration_settings", CalibrationConfig),
-        ("converter_settings", ConverterConfig),
-        ("storage_settings", StorageConfig),
-        ("harvester_settings", HarvesterConfig),
-        ("programmer_ctrl", ct.c_uint32 * 11),
-        ("proto_msgs", ct.c_uint32 * (6 * 4)),
-        ("timestamps", ct.c_uint64 * 2),
-        ("gpio_mask", ct.c_uint64 * 1),
-        ("canary", ct.c_uint32 * 1),
-        ("gpio_pin_state", ct.c_uint32),
-        ("trigger_x", ct.c_uint32 * 2),  # bool_ft
-        ("vsource_batok_trigger_for_pru1", ct.c_uint32),  # bool_ft
-        ("vsource_batok_pin_value", ct.c_uint32),  # bool_ft
-        ("vsource_skip_gpio_logging", ct.c_uint32),  # bool_ft
-        ("pru0_ns_per_sample", ct.c_uint32),
-    ]

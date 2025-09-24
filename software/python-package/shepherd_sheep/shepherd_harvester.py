@@ -5,7 +5,7 @@ from contextlib import ExitStack
 from types import TracebackType
 
 from shepherd_core import local_tz
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from tqdm import tqdm
 from typing_extensions import Self

@@ -47,7 +47,7 @@ pru-nm --size-sort --print-size out/pru-core0.elf  | grep -w '[Tt]'
 200019d8 000000a0 t converter_calc_out_power
 20000590 000000c0 t harvest_ivcurve_2_cv
 20000338 000000c4 t converter_initialize
-200003fc 000000dc t converter_update_cap_storage
+200003fc 000000dc t converter_update_legacy_storage
 200018a8 000000ec t converter_calc_inp_power
 20000888 00000100 t harvest_ivcurve_2_mppt_opt
 20000650 00000108 t harvest_ivcurve_2_mppt_voc
@@ -159,7 +159,7 @@ change target in makefile
 20002640 000001c4 T main
 20001d74 000001d4 t sample_init.constprop.0
 20000d60 0000020c t converter_update_states_and_output.constprop.0
-20001004 00000214 t converter_update_cap_storage
+20001004 00000214 t converter_update_legacy_storage
 20002428 00000218 t event_loop.constprop.0
 ```
 
@@ -176,7 +176,7 @@ u64 u32 x fn_name
 108 0a0 t converter_calc_out_power              -> 264 vs 160 bytes
     0c0 t harvest_ivcurve_2_cv
 188 0c4 t converter_initialize                  -> 392 vs 196 bytes
-214 0dc t converter_update_cap_storage          -> 532 vs 220 bytes
+214 0dc t converter_update_legacy_storage          -> 532 vs 220 bytes
 1a4 0ec t converter_calc_inp_power              -> 420 vs 236 bytes
 100 100 t harvest_ivcurve_2_mppt_opt
 120 108 t harvest_ivcurve_2_mppt_voc

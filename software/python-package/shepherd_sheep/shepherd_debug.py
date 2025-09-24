@@ -10,8 +10,8 @@ from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 

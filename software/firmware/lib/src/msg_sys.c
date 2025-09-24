@@ -1,5 +1,6 @@
 #include "msg_sys.h"
 #include "commons.h"
+#include "hw_config.h" // give python special __delay_cycles()
 #include "shared_mem.h"
 #include <stddef.h>
 #include <stdint.h>

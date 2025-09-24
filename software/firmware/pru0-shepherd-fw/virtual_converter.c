@@ -89,7 +89,7 @@ void converter_initialize()
     state.interval_startup_disabled_drain_n = CNV_CFG.interval_startup_delay_drain_n;
 
     /* container for the stored energy: */
-    state.V_mid_uV_n32                      = ((uint64_t) storage_V_OC_uV()) << 32u;
+    state.V_mid_uV_n32                      = ((uint64_t) get_V_OC_uV()) << 32u;
 
     /* Buck Boost */
     state.enable_storage                    = (CNV_CFG.converter_mode & 0b0001) > 0;
@@ -117,7 +117,7 @@ void converter_initialize()
 
     /* feedback to harvester */
     feedback_to_hrv    = (CNV_CFG.converter_mode & 0b10000) > 0u;
-    V_input_request_uV = storage_V_OC_uV();
+    V_input_request_uV = get_V_OC_uV();
 
     /* compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
 	 * -> this can be const value, because the converter always turns on with "V_intermediate_enable_output_threshold_uV"
@@ -224,8 +224,8 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
     // output: with eta being 14 bit in size, there is 50 bit headroom for P = U*I = ~ 1 W
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
     /* BUCK, Calculate current flowing out of the storage capacitor */
-    const uint64_t V_mid_uV_n4 = (state.V_mid_uV_n32 >> 28u);
-    const uint32_t I_out_nA    = cal_conv_adc_raw_to_nA(current_adc_raw);
+    //const uint64_t V_mid_uV_n4 = (state.V_mid_uV_n32 >> 28u);
+    const uint32_t I_out_nA = cal_conv_adc_raw_to_nA(current_adc_raw);
     const uint32_t eta_inv_out_n4 =
             (state.enable_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
     state.P_out_fW_n4 = mul64((uint64_t) eta_inv_out_n4 * (uint64_t) state.V_out_dac_uV, I_out_nA);
@@ -239,7 +239,7 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
-void converter_update_legacy_storage(void)  // TODO: just for reference, remove
+void converter_update_legacy_storage(void) // TODO: just for reference, remove
 {
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
     /* Sum up Power and calculate new Capacitor Voltage
@@ -286,11 +286,11 @@ void converter_update_storage(void)
         if (V_mid_uV < 1u) V_mid_uV = 1u; // avoid and possible div0
         const uint64_t P_inp_fW_n4 = state.P_inp_fW_n8 >> 4u;
         // avoid mixing in signed data-types -> slows pru and reduces resolution
-        const bool_ft  is_charging =
-                P_inp_fW_n4 >= state.P_out_fW_n4 const uint64_t I_delta_nA_n4 =
-                        is_charging ? div_uV_n4(P_inp_fW_n4 - state.P_out_fW_n4, V_mid_uV)
-                                    : div_uV_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
-        state.V_mid_uV_n32 = (uint64_t) storage_update() << 24u;
+        const bool_ft  is_charging = P_inp_fW_n4 >= state.P_out_fW_n4;
+        const uint64_t I_delta_nA_n4 =
+                is_charging ? div_uV_n4(P_inp_fW_n4 - state.P_out_fW_n4, V_mid_uV)
+                            : div_uV_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
+        state.V_mid_uV_n32 = (uint64_t) storage_update(I_delta_nA_n4, is_charging) << 24u;
     }
 
     // Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?

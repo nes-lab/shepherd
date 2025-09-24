@@ -6,8 +6,8 @@ from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep import flatten_list
 from shepherd_sheep import sysfs_interface

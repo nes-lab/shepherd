@@ -1,4 +1,5 @@
 #include "simple_lock.h"
+#include "hw_config.h" // give python special __delay_cycles()
 
 #if defined PRU0
   #define MY_LOCK    lock_pru0

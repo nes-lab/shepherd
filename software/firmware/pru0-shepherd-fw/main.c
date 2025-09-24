@@ -133,7 +133,7 @@ static bool_ft handle_kernel_com()
                 return 1u;
 
             case MSG_DBG_VSRC_V_CAP:
-                converter_update_cap_storage();
+                converter_update_storage();
                 msgsys_send(MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
                 return 1u;
 
@@ -152,7 +152,7 @@ static bool_ft handle_kernel_com()
             case MSG_DBG_VSRC_CHARGE:
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
                 converter_calc_out_power(0u);
-                converter_update_cap_storage();
+                converter_update_storage();
                 res = converter_update_states_and_output();
                 msgsys_send(MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
@@ -160,7 +160,7 @@ static bool_ft handle_kernel_com()
             case MSG_DBG_VSRC_DRAIN:
                 converter_calc_inp_power(0u, 0u);
                 converter_calc_out_power(msg_in.value[0]);
-                converter_update_cap_storage();
+                converter_update_storage();
                 res = converter_update_states_and_output();
                 msgsys_send(MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;

@@ -11,8 +11,8 @@ from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
 from shepherd_core.data_models.task import EmulationTask
 from tqdm import tqdm
 from typing_extensions import Self
