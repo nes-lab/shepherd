@@ -1,6 +1,6 @@
 # History of Changes
 
-## 2025.8.1
+## 2025.9.1
 
 - project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
 - py-packaging:
@@ -39,6 +39,9 @@
 - kMod
   - disable experimental code - not compatible with non-ti kernel
   - verify canaries less often (~ 2 min)
+- add virtual storage (battery)
+  - tbd
+
 
 ## 0.9.3
 
