@@ -14,6 +14,7 @@ bool_ft msgsys_send(enum MsgType type, const uint32_t value1, const uint32_t val
 
 // return 1 if received
 bool_ft msgsys_check_delivery(void);
+void    msgsys_revoke_send(void);
 
 // only one central hub should receive, because a message is only handed out once
 bool_ft msgsys_receive(struct ProtoMsg *const container);

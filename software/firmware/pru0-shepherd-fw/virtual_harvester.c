@@ -96,7 +96,7 @@ void harvester_initialize()
 
     const bool_ft is_emu = (HRV_CFG.hrv_mode >> 0u) & 1u;
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
-        interval_step = HRV_CFG.interval_n - (2 * HRV_CFG.window_size);
+        interval_step = HRV_CFG.interval_n - (2u * HRV_CFG.window_size);
     else interval_step = 1u << 30u;
     // ⤷ intake two curves of the IVSurface before overflow / reset if possible
     is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;

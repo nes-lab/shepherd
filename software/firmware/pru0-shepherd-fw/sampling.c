@@ -84,8 +84,8 @@ static inline void sample_emulator()
 
     converter_calc_out_power(current_adc_raw);
 
-    converter_update_legacy_storage();
-    // converter_update_storage();  // TODO: switch
+    // converter_update_legacy_storage();
+    converter_update_storage();
 
     const uint32_t voltage_dac = converter_update_states_and_output();
 
@@ -319,5 +319,6 @@ void sample_init()
     /* init harvester & converter */
     calibration_initialize();
     harvester_initialize();
+    GPIO_TOGGLE(DEBUG_PIN1_MASK);
     if (mode == MODE_EMULATOR) { converter_initialize(); }
 }

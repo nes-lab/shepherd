@@ -62,12 +62,12 @@ static inline bool_ft receive_sync_reply(struct ProtoMsg *const msg)
     {
         switch (msg->type)
         {
-            case MSG_SYNC_ROUTINE:
-            case MSG_SYNC_RESET: return 1u; // hand to caller
+            case MSG_SYNC_ROUTINE: return 1u; // hand to caller
+            case MSG_SYNC_RESET: return 1u;   // hand to caller
             case MSG_TEST_ROUTINE:
                 // pipeline-test for msg-system
-                msgsys_send_status(MSG_TEST_ROUTINE, 3, 0u);
-                // NOTE: msgsys_send() is deliberatedly NOT used
+                msgsys_send_status(MSG_TEST_ROUTINE, 3u, 0u);
+                // NOTE: msgsys_send() is deliberately NOT used
                 //       (sync-reset does test pipeline)
                 return 0u; // hide from caller
             default:
@@ -115,6 +115,7 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
         DEBUG_GPIO_STATE_2;
         // local copy reduces reads to far-ram to current minimum
         volatile struct GPIOTrace *const buf_gpio = SHARED_MEM.buffer_gpio_ptr;
+        // TODO: is there a direct link possible?
         const uint32_t                   cIDX     = SHARED_MEM.buffer_gpio_idx;
 
         /* Calculate timestamp of gpio event, cnt_val should be equal to offset_ns */
@@ -127,8 +128,7 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
             buf_gpio->idx_pru          = 0u;
             SHARED_MEM.buffer_gpio_idx = 0u;
         }
-        else
-        {
+        else {
             buf_gpio->idx_pru          = cIDX + 1u;
             SHARED_MEM.buffer_gpio_idx = cIDX + 1u;
         }
@@ -216,12 +216,16 @@ int32_t event_loop()
 
     /* sync with kernel module - wait for start-signal */
     DEBUG_STATE_1;
+    // TODO: revoke could cause problems, as PRU only sets unread high
+    msgsys_revoke_send();
     msgsys_send(MSG_SYNC_RESET, 1u, 0u);
     struct ProtoMsg64 ts_repl;
-    ts_repl.type = 0u;
+    ts_repl.type     = 0u;
+    uint32_t retries = 0u;
     while (ts_repl.type != MSG_SYNC_RESET)
     {
-        __delay_cycles(1000u / TICK_INTERVAL_NS);
+        if (retries++ >= 500000) return 0;        // > 500 ms, force reset
+        __delay_cycles(1000u / TICK_INTERVAL_NS); // 1 us
         receive_sync_reply((struct ProtoMsg *) &ts_repl);
     }
     // schedule hard-set of timestamp
@@ -279,8 +283,7 @@ int32_t event_loop()
             INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
             if (sync_state == IDLE) sync_state = REPLY_PENDING;
-            else
-            {
+            else {
                 msgsys_send_status(MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state, 0u);
                 return 0;
             }
@@ -308,8 +311,7 @@ int32_t event_loop()
                 compensation_increment = sync_repl.value[0] - SAMPLE_INTERVAL_TICKS;
                 iep_set_compensation_inc(TICK_INTERVAL_NS - 1u);
             }
-            else
-            {
+            else {
                 // PRU is behind, speed up
                 compensation_increment = SAMPLE_INTERVAL_TICKS - sync_repl.value[0];
                 iep_set_compensation_inc(TICK_INTERVAL_NS + 1u);
@@ -370,8 +372,7 @@ int32_t event_loop()
                 GPIO_ON(GPIO_BATOK);
                 DEBUG_PGOOD_STATE_1;
             }
-            else
-            {
+            else {
                 GPIO_OFF(GPIO_BATOK);
                 DEBUG_PGOOD_STATE_0;
             }
@@ -395,7 +396,9 @@ int32_t event_loop()
             pru0_sample_count                                    = 0u;
             pru1_tsample_ns_max                                  = 0u;
             if (idx < BUFFER_UTIL_SAMPLES_N - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
-            else { SHARED_MEM.buffer_util_idx = 0u; }
+            else {
+                SHARED_MEM.buffer_util_idx = 0u;
+            }
             continue;
         }
 
@@ -422,7 +425,7 @@ int main(void)
 {
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-    DEBUG_STATE_0;
+    DEBUG_STATE_3;
 
     /* Enable 'timestamp' interrupt from ARM host */
     CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
@@ -430,17 +433,21 @@ int main(void)
     /* wait until pru0 is ready */
     while (SHARED_MEM.cmp0_trigger_for_pru1 == 0u) __delay_cycles(10);
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u;
+    DEBUG_STATE_0;
     msgsys_init();
 
 reset:
+    DEBUG_STATE_1;
     msgsys_send_status(MSG_STATUS_RESTARTING_ROUTINE, 1u, 0u);
+    DEBUG_STATE_2;
 
-    DEBUG_STATE_0;
     iep_init();
     iep_set_increment(TICK_INTERVAL_NS);
     iep_reset();
 
+    DEBUG_STATE_0;
     event_loop();
 
+    DEBUG_STATE_0;
     goto reset;
 }
