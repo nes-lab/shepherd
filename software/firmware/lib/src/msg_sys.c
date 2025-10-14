@@ -87,6 +87,12 @@ bool_ft msgsys_check_delivery(void)
     return MSG_OUTBOX.unread == 0u; // return 1 if sent
 }
 
+void msgsys_revoke_send(void)
+{
+    MSG_OUTBOX.unread = 0u;
+    // TODO: could cause problems, as PRU only sets unread=1
+}
+
 // only one central hub should receive, because a message is only handed out once
 bool_ft msgsys_receive(struct ProtoMsg *const container)
 {
