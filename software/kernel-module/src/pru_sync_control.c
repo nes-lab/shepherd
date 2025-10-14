@@ -10,6 +10,8 @@
 #include "pru_mem_interface.h"
 #include "pru_sync_control.h"
 
+//#define DEBUG_SYNC
+
 #define U32T_MAX (0xFFFFFFFFu)
 static uint32_t             sys_ts_over_wrap_ns = U32T_MAX;
 static uint64_t             ts_upcoming_ns      = 0;
@@ -107,17 +109,17 @@ int sync_init(void)
     sync_loop_timer.function = &sync_loop_callback;
 
     init_done                = 1;
-    printk(KERN_INFO "shprd.sync: pru-sync-system initialized (wanted: hres, abs, hard)");
+    printk(KERN_INFO "shprd.sync: pru-sync-system initialized");
 
     ret_value = hrtimer_is_hres_active(&trigger_loop_timer);
-    printk("%sshprd.sync: trigger_hrtimer.hres    = %d", ret_value == 1 ? KERN_INFO : KERN_ERR,
-           ret_value);
+    printk("%sshprd.sync: trigger_hrtimer.hres    = %d (hres wanted)",
+           ret_value == 1 ? KERN_INFO : KERN_ERR, ret_value);
     ret_value = trigger_loop_timer.is_rel;
-    printk("%sshprd.sync: trigger_hrtimer.is_rel  = %d", ret_value == 0 ? KERN_INFO : KERN_ERR,
-           ret_value);
+    printk("%sshprd.sync: trigger_hrtimer.is_rel  = %d (abs wanted)",
+           ret_value == 0 ? KERN_INFO : KERN_ERR, ret_value);
     ret_value = trigger_loop_timer.is_soft;
-    printk("%sshprd.sync: trigger_hrtimer.is_soft = %d", ret_value == 0 ? KERN_INFO : KERN_ERR,
-           ret_value);
+    printk("%sshprd.sync: trigger_hrtimer.is_soft = %d (hard wanted)",
+           ret_value == 0 ? KERN_INFO : KERN_ERR, ret_value);
     //printk(KERN_INFO "shprd.sync: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
 
     /* supervisor checks and corrects next_timestamp of PRU */
@@ -168,11 +170,11 @@ void sync_start(void)
     div_u64_rem(ts_now_ns, SYNC_INTERVAL_NS, &ns_over_wrap);
     if (ns_over_wrap > (SYNC_INTERVAL_NS / 2))
         ns_to_next_trigger = 2 * SYNC_INTERVAL_NS - ns_over_wrap;
-    else ns_to_next_trigger = SYNC_INTERVAL_NS - ns_over_wrap;
+    else ns_to_next_trigger = SYNC_INTERVAL_NS - ns_over_wrap; // TODO: unused?
 
+    timers_active = 1;
     hrtimer_start(&sync_loop_timer, ns_to_ktime(ts_now_ns + 1000000u), HRTIMER_MODE_ABS);
     printk(KERN_INFO "shprd.sync: pru-sync-system started");
-    timers_active = 1;
 }
 
 void sync_reset(void)
@@ -237,7 +239,10 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     else ns_to_next_trigger = SYNC_INTERVAL_NS - sys_ts_over_wrap_ns;
     ts_upcoming_ns = ts_now_ns + ns_to_next_trigger;
 
-    //printk(KERN_INFO "shprd.sync: triggered @%llu, next ts = %llu", ts_now_ns, ts_upcoming_ns);
+#ifdef DEBUG_SYNC
+    printk(KERN_INFO "shprd.sync: triggered @%llu, next ts = %llu", ts_now_ns, ts_upcoming_ns);
+#endif
+
     // NOTE: without load this trigger is accurate < 4 us
     hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(ns_to_next_trigger));
 
@@ -273,8 +278,11 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
     static unsigned int   step_pos         = 0;
     /* Timestamp system clock */
     const uint64_t        ts_now_ns        = ktime_get_real_ns();
+#ifdef DEBUG_SYNC
+    printk(KERN_INFO "shprd.sync: triggered sync-loop-callback");
+#endif
 
-    if (!timers_active) return HRTIMER_NORESTART;
+    if (timers_active < 1u) return HRTIMER_NORESTART;
 
     if (pru1_comm_receive_sync_request(&sync_rqst))
     {

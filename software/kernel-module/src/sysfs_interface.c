@@ -811,7 +811,7 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj, struct kobj_attr
 
     if (sscanf(buffer, "%hhu %u %u", &pru_msg.type, &pru_msg.value[0], &pru_msg.value[1]) != 0)
     {
-        put_msg_to_pru(&pru_msg);
+        put_msg_to_pru0(&pru_msg);
         return count;
     }
 
@@ -824,7 +824,7 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attri
     int             count = 0;
     struct ProtoMsg pru_msg;
 
-    if (get_msg_from_pru(&pru_msg))
+    if (get_msg_from_pru0(&pru_msg))
     {
         count += sprintf(buf + strlen(buf), "%hhu %u %u", pru_msg.type, pru_msg.value[0],
                          pru_msg.value[1]);

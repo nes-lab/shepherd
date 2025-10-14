@@ -11,8 +11,8 @@ struct RingBuffer
     uint32_t        active;
 };
 
-void    put_msg_to_pru(const struct ProtoMsg *const element);
-uint8_t get_msg_from_pru(struct ProtoMsg *const element);
+void    put_msg_to_pru0(const struct ProtoMsg *const element);
+uint8_t get_msg_from_pru0(struct ProtoMsg *const element);
 
 void    msg_sys_exit(void);
 void    msg_sys_reset(void);

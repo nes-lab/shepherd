@@ -8,8 +8,8 @@
 /***************************************************************/
 /***************************************************************/
 
-static struct RingBuffer msg_ringbuf_from_pru;
-static struct RingBuffer msg_ringbuf_to_pru;
+static struct RingBuffer msg_ringbuf_from_pru0;
+static struct RingBuffer msg_ringbuf_to_pru0;
 
 // TODO: base msg-system on irqs (there are free ones from rpmsg)
 // TODO: maybe replace by official kfifo, https://tuxthink.blogspot.com/2020/03/creating-fifo-in-linux-kernel.html
@@ -48,14 +48,14 @@ static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const ele
     return 1;
 }
 
-void put_msg_to_pru(const struct ProtoMsg *const element)
+void put_msg_to_pru0(const struct ProtoMsg *const element)
 {
-    ring_put(&msg_ringbuf_to_pru, element);
+    ring_put(&msg_ringbuf_to_pru0, element);
 }
 
-uint8_t get_msg_from_pru(struct ProtoMsg *const element)
+uint8_t get_msg_from_pru0(struct ProtoMsg *const element)
 {
-    return ring_get(&msg_ringbuf_from_pru, element);
+    return ring_get(&msg_ringbuf_from_pru0, element);
 }
 
 /***************************************************************/
@@ -63,8 +63,9 @@ uint8_t get_msg_from_pru(struct ProtoMsg *const element)
 
 struct hrtimer              coordinator_loop_timer;
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart);
-static u8                   timers_active          = 0;
-static u8                   init_done              = 0;
+static u8                   timers_active          = 0u;
+static u8                   init_done              = 0u;
+static u8                   pipelines_passed       = 0u;
 /* series of halving sleep cycles, sleep less coming slowly near a total of 100ms of sleep */
 static const unsigned int   coord_timer_steps_ns[] = {500000u, 200000u, 100000u,
                                                       50000u,  20000u,  10000u};
@@ -86,25 +87,25 @@ void msg_sys_exit(void)
 
 void msg_sys_reset(void)
 {
-    ring_init(&msg_ringbuf_from_pru);
-    ring_init(&msg_ringbuf_to_pru);
+    ring_init(&msg_ringbuf_from_pru0);
+    ring_init(&msg_ringbuf_to_pru0);
 }
 
 void msg_sys_test(void)
 {
     struct ProtoMsg msg = {.id       = MSG_TO_PRU,
                            .unread   = 0u,
-                           .type     = MSG_NONE,
+                           .type     = MSG_TEST_ROUTINE,
                            .reserved = {0u},
                            .value    = {0u, 0u}};
+    pipelines_passed    = 0u;
     printk(KERN_INFO "shprd.k: test msg-pipelines between kM and PRUs -> triggering "
                      "roundtrip-messages for pipeline 1-3");
-    msg.type     = MSG_TEST_ROUTINE;
-    msg.value[0] = 1;
-    put_msg_to_pru(&msg); // message-pipeline pru0
-    msg.value[0] = 2;
-    put_msg_to_pru(&msg); // error-pipeline pru0
-    msg.value[0] = 3;
+    msg.value[0] = 1u;
+    put_msg_to_pru0(&msg); // message-pipeline pru0
+    msg.value[0] = 2u;
+    put_msg_to_pru0(&msg); // error-pipeline pru0
+    msg.value[0] = 3u;
     pru1_comm_send_sync_reply(&msg); // error-pipeline pru1
 }
 
@@ -185,6 +186,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         if (pru0_comm_receive_msg(&pru_msg)) had_work = 2;
         else if (pru0_comm_receive_error(&pru_msg)) had_work = 4;
         else if (pru1_comm_receive_error(&pru_msg)) had_work = 5;
+        // NOTE: 4th channel (sync) not checked here
         else {
             had_work = 0;
             break;
@@ -193,7 +195,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         if (pru_msg.type <= 0xF0u)
         {
             // relay everything below kernelspace to sheep and also RESTARTING_ROUTINE
-            ring_put(&msg_ringbuf_from_pru, &pru_msg);
+            ring_put(&msg_ringbuf_from_pru0, &pru_msg);
         }
 
         if (pru_msg.type >= 0xE0u)
@@ -242,9 +244,13 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
                     printk(KERN_INFO "shprd.pru%u: (re)starting main-routine", had_work & 1u);
                     break;
                 case MSG_TEST_ROUTINE:
+                    pipelines_passed |= 1u << (pru_msg.value[0] - 1u);
                     printk(KERN_INFO "shprd.k: [test passed] received answer from "
-                                     "pru%u / pipeline %u",
-                           had_work & 1u, pru_msg.value[0]);
+                                     "pru%u / pipeline %u -> passed 0b%u%u%u", //%02X/7",
+                           had_work & 1u, pru_msg.value[0], (pipelines_passed & 0x4) > 0,
+                           (pipelines_passed & 0x2) > 0, (pipelines_passed & 0x1) > 0);
+                    if (pipelines_passed == 0b111u)
+                        printk(KERN_INFO "shprd.k: All 3 pipeline-tests passed!");
                     break;
                 default:
                     /* these are all handled in userspace and will be passed by sys-fs */
@@ -258,7 +264,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         step_pos = coord_timer_steps_ns_size - 1u;
     }
 
-    if (pru0_comm_check_send_status() && ring_get(&msg_ringbuf_to_pru, &pru_msg))
+    if (pru0_comm_check_send_status() && ring_get(&msg_ringbuf_to_pru0, &pru_msg))
     {
         pru0_comm_send_msg(&pru_msg);
         /* resetting to the shortest sleep period */
@@ -274,7 +280,7 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
             pru_msg.id     = MSG_TO_USER;
             pru_msg.type   = MSG_ERR_CANARY;
             pru_msg.canary = CANARY_VALUE_U32;
-            ring_put(&msg_ringbuf_from_pru, &pru_msg);
+            ring_put(&msg_ringbuf_from_pru0, &pru_msg);
         }
         else printk(KERN_INFO "shprd.k: canaries verified");
     }
