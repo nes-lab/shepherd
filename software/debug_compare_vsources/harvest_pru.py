@@ -1,4 +1,3 @@
-from contextlib import ExitStack
 from pathlib import Path
 from pathlib import PurePosixPath
 
@@ -24,22 +23,22 @@ for hrv_name in hrv_list:
 
     if not path_local.exists():
         log.info("Start harvesting with '%s'", hrv_name)
-        stack = ExitStack()
-        herd = Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected)
-        stack.enter_context(herd)
-        task = HarvestTask(
-            duration=30,
-            output_path=Path(path_remote),
-            virtual_harvester=VirtualHarvesterConfig(name=hrv_name),
-            use_cal_default=True,
-            force_overwrite=True,
-        )
-        if herd.run_task(task, attach=True) == 0:
-            # note: herd will add host-name to path
-            herd.get_file(path_remote, path_here, separate=True, delete_src=True, timeout=60 * 60)
-        else:
-            log.error("Failed to harvest with '%s'", hrv_name)
-        stack.close()
+
+        with Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected) as herd:
+            task = HarvestTask(
+                duration=30,
+                output_path=Path(path_remote),
+                virtual_harvester=VirtualHarvesterConfig(name=hrv_name),
+                use_cal_default=True,
+                force_overwrite=True,
+            )
+            if herd.run_task(task, attach=True) == 0:
+                # note: herd will add host-name to path
+                herd.get_file(
+                    path_remote, path_here, separate=True, delete_src=True, timeout=60 * 60
+                )
+            else:
+                log.error("Failed to harvest with '%s'", hrv_name)
 
     with Reader(path_local) as _fh:
         results[path_local.stem] = _fh.energy()

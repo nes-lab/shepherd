@@ -209,16 +209,15 @@ def test_cache_via_loopback(tmp_path: Path) -> None:
     )
 
     set_verbosity()
-    stack = ExitStack()
-    emu = ShepherdEmulator(cfg=emu_cfg)
-    emu.cal_pru = None  # disables scaling
-    stack.enter_context(emu)
-    sysfs_interface.write_mode("emu_loopback")  # enables copy in PRU
-    time.sleep(1)
-    print(sysfs_interface.get_mode())
-    print(sysfs_interface.get_state())
-    emu.run()
-    stack.close()
+    with ExitStack() as stack:
+        emu = ShepherdEmulator(cfg=emu_cfg)
+        emu.cal_pru = None  # disables scaling
+        stack.enter_context(emu)
+        sysfs_interface.write_mode("emu_loopback")  # enables copy in PRU
+        time.sleep(1)
+        print(sysfs_interface.get_mode())
+        print(sysfs_interface.get_state())
+        emu.run()
 
     # loopback should just copy the data
     with h5py.File(path_output, "r") as hf_emu, h5py.File(path_input, "r") as hf_hrv:
