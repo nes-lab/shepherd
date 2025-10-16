@@ -44,7 +44,6 @@ static struct StorageState state;
 #define STORE_CFG                                                                                  \
     (*((volatile struct StorageConfig *) (PRU_SHARED_MEM_OFFSET +                                  \
                                           offsetof(struct SharedMem, storage_settings))))
-// TODO: can these be defined const? pointer and struct itself
 
 #define SoC_MAX_1_n62  ((1ull << 62u) - 1ull)
 #define SoC_TO_POS_DIV (62u - 32u - LUT_STORAGE_sLOG)

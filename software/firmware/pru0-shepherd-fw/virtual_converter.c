@@ -74,6 +74,7 @@ uint32_t                     V_input_request_uV = 0u;
 
 /* (local) global vars to access in update function */
 static struct ConverterState state;
+
 #define CNV_CFG                                                                                    \
     (*((volatile struct ConverterConfig *) (PRU_SHARED_MEM_OFFSET +                                \
                                             offsetof(struct SharedMem, converter_settings))))
