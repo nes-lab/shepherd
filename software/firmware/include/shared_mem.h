@@ -85,6 +85,12 @@ struct SharedMem
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000u);
 // NOTE: PRUs shared ram should be even 12kb
 
+#ifdef __PYTHON__
+extern volatile struct SharedMem shared_mem; // defined in py_module/pru_source.c
+  //#undef PRU_SHARED_MEM_OFFSET  // Precaution (throws if code uses it, avoids segfault)
+  #define PRU_SHARED_MEM_OFFSET ((volatile void *) &shared_mem)
+#endif
+
 // NOTE: GCC-way preferred as cgt builds to 62204 bytes instead of 64244
 #define SHARED_MEM (*((volatile struct SharedMem *) PRU_SHARED_MEM_OFFSET))
 //volatile struct SharedMem SHARED_MEM __attribute__((cregister("PRU_SHAREDMEM", near), peripheral));

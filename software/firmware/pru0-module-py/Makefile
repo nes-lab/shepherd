@@ -14,6 +14,7 @@ CFLAGS += -fanalyzer
 # workaround to allow compilation without pru
 CFLAGS += -D__PYTHON__
 CFLAGS += -DPRU0
+CFLAGS += -DEMU_SUPPORT
 
 LDFLAGS= -shared -lm
 

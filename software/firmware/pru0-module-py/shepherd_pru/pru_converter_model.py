@@ -9,6 +9,7 @@ from shepherd_core.logger import log
 from ._virtual_pru import virtual_pru
 from .data_types import LUT_INP
 from .data_types import LUT_OUT
+from .data_types import LUT_STORAGE_TYPE
 from .data_types import CalibrationConfig
 from .data_types import ConverterConfig
 from .data_types import StorageConfig
@@ -55,7 +56,10 @@ class PruConverterModel:
         )
         self.cnv_cfg = ConverterConfig(**cnv_dict)
         self.cal_cfg = CalibrationConfig(**cal.cal.export_for_sysfs())
-        self.store_cfg = StorageConfig(**storage_cfg.model_dump())
+        store_dict = storage_cfg.model_dump()
+        for item in ["LuT_VOC_uV_n8", "LuT_RSeries_kOhm_n32"]:
+            store_dict[item] = LUT_STORAGE_TYPE(*flatten_list(store_dict[item]))
+        self.store_cfg = StorageConfig(**store_dict)
 
         log.info("This is the PRU-C-CNV-Model.")
         log.info(cfg.model_dump())

@@ -43,7 +43,7 @@ def get_device() -> ct.CDLL:
         "get_I_mid_out_nA": (None, ct.c_uint32),
         "get_V_output_uV": (None, ct.c_uint32),
         "get_state_log_intermediate": (None, bool_ft),
-        "set_batok_pin": (bool_ft, None),
+        "set_batok_pin": ([bool_ft], None),
         # pru_source.c (local vSource-helper-fn) #####
         "set_harvester_config": ([ct.POINTER(HarvesterConfig)], None),
         "set_storage_config": ([ct.POINTER(StorageConfig)], None),

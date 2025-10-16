@@ -12,13 +12,13 @@ NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 
 import ctypes as ct
 
-from data_types import StorageConfig
 from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.data_models.content.virtual_storage_config import TIMESTEP_s_DEFAULT
 from shepherd_core.data_models.content.virtual_storage_config import VirtualStorageConfig
 from shepherd_core.data_models.content.virtual_storage_config import soc_t
 
 from ._virtual_pru import virtual_pru
+from .data_types import StorageConfig
 
 
 class PruStorageModel:

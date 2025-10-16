@@ -5,11 +5,19 @@
 #include "virtual_harvester.h"
 #include <stdint.h>
 
-#define EMU_SUPPORT
+volatile struct SharedMem shared_mem;
 
-struct SharedMem shared_mem;
+void msgsys_send_status(enum MsgType type, const uint32_t value1, const uint32_t value2)
+{
+    // just a mockup to avoid including more sources -> harvester uses this FN
+    if (type == MSG_NONE)
+    {
+        shared_mem.canary1 = value1;
+        shared_mem.canary2 = value2;
+    }
+}
 
-void             set_harvester_config(const volatile struct HarvesterConfig *const config)
+void set_harvester_config(const volatile struct HarvesterConfig *const config)
 {
     shared_mem.harvester_settings = *config;
 }

@@ -29,9 +29,8 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core>=2025.8.1", # limit due to newest features
+    "shepherd-core>=2025.9.1", # limit due to newest features
     "tqdm",
-    "ctypes",
 ]
 
 [project.optional-dependencies]
