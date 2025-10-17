@@ -10,7 +10,7 @@
 #include "msg_sys.h"
 #include "shared_mem.h"
 
-// internal variables
+/* internal variables */
 uint32_t        voltage_set_uV = 0u; // global
 static bool_ft  is_rising      = 0u;
 
@@ -26,6 +26,24 @@ static uint32_t voc_nxt            = 0u;
 static uint32_t voc_min            = 0u;
 
 static bool_ft  lin_extrapolation  = 0u;
+
+/* static vars: CV */
+static uint32_t voltage_last = 0u, current_last = 0u;
+static int32_t  voltage_delta = 0u, current_delta = 0u;
+static bool_ft  compare_last = 0u;
+
+/* static vars: VOC */
+static uint32_t age_now      = 0u;
+static uint32_t age_nxt      = 0u;
+
+/* static vars: PO */
+static uint64_t power_last   = 0u;
+
+/* static vars: OPT */
+/* already done in VOC: age_now, age_nxt */
+static uint32_t voltage_now = 0u, current_now = 0u;
+static uint32_t voltage_nxt = 0u, current_nxt = 0u;
+static uint64_t power_now = 0ull, power_nxt = 0ull;
 
 #endif // EMU_SUPPORT
 
@@ -87,7 +105,7 @@ void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + v
 void harvester_initialize()
 {
     // basic (shared) states for ADC- and IVCurve-Version
-    voltage_set_uV = HRV_CFG.voltage_uV + 1u; // deliberately off for cv-version
+    voltage_set_uV = add32(HRV_CFG.voltage_uV, 1u); // deliberately off for cv-version
 #ifdef HRV_SUPPORT
     buffer       = SHARED_MEM.buffer_iv_out_ptr;
     // TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_ptr->samples
@@ -96,7 +114,7 @@ void harvester_initialize()
 
     const bool_ft is_emu = (HRV_CFG.hrv_mode >> 0u) & 1u;
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
-        interval_step = HRV_CFG.interval_n - (2u * HRV_CFG.window_size);
+        interval_step = sub32(HRV_CFG.interval_n, (2u * HRV_CFG.window_size));
     else interval_step = 1u << 30u;
     // ⤷ intake two curves of the IVSurface before overflow / reset if possible
     is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;
@@ -107,11 +125,12 @@ void harvester_initialize()
     power_last_raw = 0u;
 #endif //HRV_SUPPORT
 
-    // for IV-Curve-Version, mostly resets states
+    /* for IV-Curve-Version, mostly resets states */
     voltage_hold = 0u;
     current_hold = 0u;
 
 #ifdef EMU_SUPPORT
+    /* globals for iv_cv */
     voltage_step_x4_uV = 4u * HRV_CFG.voltage_step_uV;
     age_max            = 2u * HRV_CFG.window_size;
 
@@ -121,6 +140,30 @@ void harvester_initialize()
 
     /* extrapolation */
     lin_extrapolation  = (HRV_CFG.hrv_mode >> 2u) & 1u;
+
+    /* INIT static vars: CV */
+    voltage_last       = 0u;
+    current_last       = 0u;
+    voltage_delta      = 0u;
+    current_delta      = 0u;
+    compare_last       = 0u;
+
+    /* INIT static vars: VOC  */
+    age_now            = 0;
+    age_nxt            = 0;
+
+    /* INIT static vars: PO  */
+    power_last         = 0;
+
+    /* INIT static vars: OPT  */
+    /* already done in VOC: age_now, age_nxt  */
+    voltage_now        = 0;
+    current_now        = 0;
+    voltage_nxt        = 0;
+    current_nxt        = 0;
+    power_now          = 0;
+    power_nxt          = 0;
+
 #endif // EMU_SUPPORT
 
     // TODO: all static vars in sub-fns should be globals (they are anyway), saves space due to overlaps
@@ -407,22 +450,14 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
 	 * - influencing parameters: voltage_uV (in init)
 	 * - no min/max usage here, the main FNs do that, or python if cv() is used directly
 	 * */
-    static uint32_t voltage_last = 0u, current_last = 0u;
-    static int32_t  voltage_delta = 0u, current_delta = 0u;
-    static bool_ft  compare_last  = 0u;
 
     /* find matching voltage with threshold-crossing-detection -> direction of curve is irrelevant */
-    const bool_ft   compare_now   = *p_voltage_uV < voltage_set_uV;
+    const bool_ft compare_now = *p_voltage_uV < voltage_set_uV;
     /* abs(step_size) -> for detecting reset of sawtooth */
-    const uint32_t  step_size_now = (*p_voltage_uV > voltage_last) ? (*p_voltage_uV - voltage_last)
-                                                                   : (voltage_last - *p_voltage_uV);
+    const uint32_t step_size_now = abs_delta32(*p_voltage_uV, voltage_last);
     /* voltage_set_uV can change outside of loop, so algo has to keep track */
-    const uint32_t  distance_now  = (*p_voltage_uV > voltage_set_uV)
-                                            ? (*p_voltage_uV - voltage_set_uV)
-                                            : (voltage_set_uV - *p_voltage_uV);
-    const uint32_t  distance_last = (voltage_last > voltage_set_uV)
-                                            ? (voltage_last - voltage_set_uV)
-                                            : (voltage_set_uV - voltage_last);
+    const uint32_t distance_now  = abs_delta32(*p_voltage_uV, voltage_set_uV);
+    const uint32_t distance_last = abs_delta32(voltage_last, voltage_set_uV);
 
     if ((compare_now != compare_last) && (step_size_now < voltage_step_x4_uV))
     {
@@ -448,16 +483,12 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
         /* apply the proper delta if needed */
         if ((voltage_hold < voltage_set_uV) == (voltage_delta > 0))
         {
-            voltage_hold += voltage_delta;
-            current_hold += current_delta;
+            voltage_hold = add32s(voltage_hold, voltage_delta);
+            current_hold = add32s(current_hold, current_delta);
         }
         else {
-            const uint32_t uvd = voltage_delta >= 0 ? (uint32_t) voltage_delta : 0u;
-            const uint32_t ucd = current_delta >= 0 ? (uint32_t) current_delta : 0u;
-            if (voltage_hold > uvd) voltage_hold -= voltage_delta;
-            else voltage_hold = 0u;
-            if (current_hold > ucd) current_hold -= current_delta;
-            else current_hold = 0u;
+            voltage_hold = sub32s(voltage_hold, voltage_delta);
+            current_hold = sub32s(current_hold, current_delta);
         }
     }
     voltage_last  = *p_voltage_uV;
@@ -476,9 +507,6 @@ static void harvest_ivcurve_2_mppt_voc(uint32_t *const p_voltage_uV, uint32_t *c
 	 *  - influencing parameters: interval_n, duration_n, current_limit_nA, voltage_min_uV, voltage_max_uV, setpoint_n8, window_size
 	 * 		   from init: (wait_cycles_n), voltage_uV (for cv())
 	 */
-    static uint32_t age_now = 0u;
-    static uint32_t age_nxt = 0u;
-
     /* keep track of time, do  step = mod(step + 1, n) */
     if (++interval_step >= HRV_CFG.interval_n) interval_step = 0u;
     age_nxt++;
@@ -525,7 +553,6 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
 	 * NOTE with no memory, there is a time-gap before CV gets picked up by harvest_ivcurve_2_cv()
 	 * - influencing parameters: interval_n, voltage_step_uV, voltage_max_uV, voltage_min_uV
 	 */
-    static uint64_t power_last = 0u;
 
     /* keep track of time, do  step = mod(step + 1, n) */
     if (++interval_step >= HRV_CFG.interval_n) interval_step = 0u;
@@ -589,9 +616,6 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
     /* Derivate of VOC -> selects the highest power directly
 	 * - influencing parameters: window_size, voltage_min_uV, voltage_max_uV,
 	 */
-    static uint32_t age_now = 0u, voltage_now = 0u, current_now = 0u;
-    static uint32_t age_nxt = 0u, voltage_nxt = 0u, current_nxt = 0u;
-    static uint64_t power_now = 0ull, power_nxt = 0ull;
 
     /* keep track of time */
     age_nxt++;
