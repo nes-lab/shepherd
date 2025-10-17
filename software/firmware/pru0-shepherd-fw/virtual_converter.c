@@ -177,7 +177,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     else if (state.enable_storage)
     {
         // no boost, but cap, for ie. diode+cap (+resistor)
-        const uint32_t V_mid_uV = (state.V_mid_uV_n32 >> 32u);
+        const uint32_t V_mid_uV  = (state.V_mid_uV_n32 >> 32u);
         const uint32_t V_diff_uV = sub32(input_voltage_uV, V_mid_uV);
         const uint32_t V_res_drop_uV =
                 (uint32_t) (((uint64_t) input_current_nA * (uint64_t) CNV_CFG.R_input_kOhm_n22) >>
@@ -190,7 +190,8 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         if (feedback_to_hrv)
         {
             // IF input==ivcurve request new CV
-            V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV; // TODO: add add32?
+            V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV;
+            // TODO: add add32?
         }
         else if (input_voltage_uV < V_mid_uV)
         {
