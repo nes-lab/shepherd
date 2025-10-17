@@ -36,17 +36,9 @@ uint8_ft log2safe(const uint32_t value)
     return count - 1u;
 }
 
-uint32_t max_value(uint32_t value1, uint32_t value2)
-{
-    if (value1 > value2) return value1;
-    else return value2;
-}
+uint32_t max_value(uint32_t value1, uint32_t value2) { return (value1 > value2) ? value1 : value2; }
 
-uint32_t min_value(uint32_t value1, uint32_t value2)
-{
-    if (value1 < value2) return value1;
-    else return value2;
-}
+uint32_t min_value(uint32_t value1, uint32_t value2) { return (value1 < value2) ? value1 : value2; }
 #endif
 
 
@@ -73,55 +65,48 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
     else return (uint64_t) (0xFFFFFFFFFFFFFFFFull);
 }
 
-uint32_t mul32(const uint32_t value1, const uint32_t value2)
+inline uint32_t mul32(const uint32_t value1, const uint32_t value2)
 {
     // an extending version could just do:
     // return (uint64_t) value1 * (uint64_t) value2;
     const uint64_t product = (uint64_t) value1 * (uint64_t) value2;
     // check for possible overflow - return max
-    if (product < 0xFFFFFFFFull) return (uint32_t) product;
-    else return (uint32_t) (0xFFFFFFFFu);
+    return (product < 0xFFFFFFFFull) ? (uint32_t) product : (uint32_t) (0xFFFFFFFFu);
 }
 
 uint64_t add64(const uint64_t value1, const uint64_t value2)
 {
     const uint64_t sum = value1 + value2;
-    if ((sum < value1) || (sum < value2)) return (uint64_t) (0xFFFFFFFFFFFFFFFFull);
-    else return sum;
+    return ((sum < value1) || (sum < value2)) ? (uint64_t) (0xFFFFFFFFFFFFFFFFull) : sum;
 }
 
-uint32_t add32(const uint32_t value1, const uint32_t value2)
+inline uint32_t add32(const uint32_t value1, const uint32_t value2)
 {
     const uint32_t sum = value1 + value2;
-    if ((sum < value1) || (sum < value2)) return (uint32_t) (0xFFFFFFFFu);
-    else return sum;
+    return ((sum < value1) || (sum < value2)) ? (uint32_t) (0xFFFFFFFFu) : sum;
 }
 
-uint32_t add32s(const uint32_t value1, const int32_t value2)
+inline uint32_t add32s(const uint32_t value1, const int32_t value2)
 {
-    if (value2 >= 0) return add32(value1, (uint32_t) value2);
-    else return sub32(value1, (uint32_t) (-value2));
+    return (value2 >= 0) ? add32(value1, (uint32_t) value2) : sub32(value1, (uint32_t) (-value2));
 }
 
-uint64_t sub64(const uint64_t value1, const uint64_t value2)
+inline uint64_t sub64(const uint64_t value1, const uint64_t value2)
 {
-    if (value1 > value2) return (value1 - value2);
-    else return 0ull;
+    return (value1 > value2) ? (value1 - value2) : 0ull;
 }
 
-uint32_t sub32(const uint32_t value1, const uint32_t value2)
+inline uint32_t sub32(const uint32_t value1, const uint32_t value2)
 {
-    if (value1 > value2) return (value1 - value2);
-    else return 0u;
+    return (value1 > value2) ? (value1 - value2) : 0u;
 }
 
-uint32_t sub32s(const uint32_t value1, const int32_t value2)
+inline uint32_t sub32s(const uint32_t value1, const int32_t value2)
 {
-    if (value2 >= 0) return sub32(value1, (uint32_t) value2);
-    else return add32(value1, (uint32_t) (-value2));
+    return (value2 >= 0) ? sub32(value1, (uint32_t) value2) : add32(value1, (uint32_t) (-value2));
 }
 
-uint32_t abs_delta32(uint32_t value1, uint32_t value2)
+inline uint32_t abs_delta32(uint32_t value1, uint32_t value2)
 {
     return (value1 > value2) ? (value1 - value2) : (value2 - value1);
 }

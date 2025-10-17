@@ -22,10 +22,10 @@ uint32_t max_value(uint32_t value1, uint32_t value2);
 uint32_t min_value(uint32_t value1, uint32_t value2);
 #else
 /* use from asm-file */
-extern uint8_ft get_size_in_bits(uint32_t value);
-extern uint8_ft log2safe(uint32_t value);
-extern uint32_t max_value(uint32_t value1, uint32_t value2);
-extern uint32_t min_value(uint32_t value1, uint32_t value2);
+extern uint8_ft inline get_size_in_bits(uint32_t value);
+extern uint8_ft inline log2safe(uint32_t value);
+extern uint32_t inline max_value(uint32_t value1, uint32_t value2);
+extern uint32_t inline min_value(uint32_t value1, uint32_t value2);
 #endif
 
 
