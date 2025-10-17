@@ -402,8 +402,9 @@ int32_t event_loop()
             continue;
         }
 
-        /* pru0 util monitoring */
-        // TODO: move to PRU0?
+        /* pru0 util monitoring
+           here on pru1 due to timing-constraints over there.
+        */
         if (SHARED_MEM.pru0_ns_per_sample != IDX_OUT_OF_BOUND)
         {
             if (SHARED_MEM.pru0_ns_per_sample < (1u << 20u))
@@ -411,6 +412,9 @@ int32_t event_loop()
                 if (SHARED_MEM.pru0_ns_per_sample > pru0_tsample_ns_max)
                 {
                     pru0_tsample_ns_max = SHARED_MEM.pru0_ns_per_sample;
+#ifdef DEBUG_RTIME_EN
+                    if (pru0_tsample_ns_max > 10000u) DEBUG_RTIME_STATE_1;
+#endif
                 }
                 pru0_tsample_ns_sum += SHARED_MEM.pru0_ns_per_sample;
                 pru0_sample_count += 1;
@@ -418,6 +422,7 @@ int32_t event_loop()
             SHARED_MEM.pru0_ns_per_sample = IDX_OUT_OF_BOUND;
             continue;
         }
+        DEBUG_RTIME_STATE_0;
     }
 }
 
