@@ -358,7 +358,7 @@ int main(void)
 
 reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
-    SHARED_MEM.pru0_ns_per_sample = 0u;
+    SHARED_MEM.pru0_ns_per_sample = IDX_OUT_OF_BOUND;
 
     SHARED_MEM.buffer_iv_inp_idx  = 0u;
     SHARED_MEM.buffer_iv_out_idx  = 0u;
