@@ -105,7 +105,7 @@ void            dac_write(uint32_t cs_pin, uint32_t val) { hw_value = cs_pin + v
 void harvester_initialize()
 {
     // basic (shared) states for ADC- and IVCurve-Version
-    voltage_set_uV = add32(HRV_CFG.voltage_uV, 1u); // deliberately off for cv-version
+    voltage_set_uV = HRV_CFG.voltage_uV + 1u; // deliberately off for cv-version
 #ifdef HRV_SUPPORT
     buffer       = SHARED_MEM.buffer_iv_out_ptr;
     // TODO: replace with buffer_samples = SHARED_MEM.buffer_iv_ptr->samples
@@ -114,7 +114,7 @@ void harvester_initialize()
 
     const bool_ft is_emu = (HRV_CFG.hrv_mode >> 0u) & 1u;
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
-        interval_step = sub32(HRV_CFG.interval_n, (2u * HRV_CFG.window_size));
+        interval_step = HRV_CFG.interval_n - 2u * HRV_CFG.window_size;
     else interval_step = 1u << 30u;
     // ⤷ intake two curves of the IVSurface before overflow / reset if possible
     is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;
@@ -149,20 +149,20 @@ void harvester_initialize()
     compare_last       = 0u;
 
     /* INIT static vars: VOC  */
-    age_now            = 0;
-    age_nxt            = 0;
+    age_now            = 0u;
+    age_nxt            = 0u;
 
     /* INIT static vars: PO  */
-    power_last         = 0;
+    power_last         = 0u;
 
     /* INIT static vars: OPT  */
     /* already done in VOC: age_now, age_nxt  */
-    voltage_now        = 0;
-    current_now        = 0;
-    voltage_nxt        = 0;
-    current_nxt        = 0;
-    power_now          = 0;
-    power_nxt          = 0;
+    voltage_now        = 0u;
+    current_now        = 0u;
+    voltage_nxt        = 0u;
+    current_nxt        = 0u;
+    power_now          = 0u;
+    power_nxt          = 0u;
 
 #endif // EMU_SUPPORT
 

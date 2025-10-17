@@ -184,14 +184,14 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
                             22u);
         if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
         else {
-            input_voltage_uV -= V_res_drop_uV; // TODO: add sub32?
+            input_voltage_uV -= V_res_drop_uV; // TODO: use sub32? no spare ticks left ATM
         }
 
         if (feedback_to_hrv)
         {
             // IF input==ivcurve request new CV
             V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV;
-            // TODO: add add32?
+            // TODO: use add32 above? no spare ticks left ATM
         }
         else if (input_voltage_uV < V_mid_uV)
         {

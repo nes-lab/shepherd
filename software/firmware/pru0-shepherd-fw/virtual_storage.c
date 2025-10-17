@@ -100,7 +100,8 @@ uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
     // TODO could be mul32e() above
 
     uint32_t       V_cell_uV_n8;
-    if (is_charging) V_cell_uV_n8 = add32(state.V_OC_uV_n8, V_delta_uV_n8);
+    if (is_charging) V_cell_uV_n8 = state.V_OC_uV_n8 + V_delta_uV_n8;
+    // TODO: use add32 above? no spare ticks left ATM
     else if (state.V_OC_uV_n8 > V_delta_uV_n8) V_cell_uV_n8 = state.V_OC_uV_n8 - V_delta_uV_n8;
     else V_cell_uV_n8 = 0u;
 
