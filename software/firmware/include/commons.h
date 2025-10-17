@@ -206,6 +206,7 @@ struct CalibrationConfig
 } __attribute__((packed));
 
 #define LUT_SIZE (12)
+extern uint32_t __ASSERT_LUT_CONVERTER_SIZE[1 / ((LUT_SIZE > 1u) && (LUT_SIZE < 32u))];
 
 /* This structure defines all settings of virtual converter emulation
  * more complex converters use vars in their section and above
@@ -268,6 +269,9 @@ struct ConverterConfig
 
 #define LUT_STORAGE_sLOG (7u)
 #define LUT_STORAGE_SIZE (1u << LUT_STORAGE_sLOG)
+
+extern uint32_t
+        __ASSERT_LUT_STORAGE_SIZE[1 / ((LUT_STORAGE_sLOG > 1u) && (LUT_STORAGE_sLOG < 32u))];
 
 struct StorageConfig
 {

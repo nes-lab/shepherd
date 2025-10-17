@@ -452,7 +452,7 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
 	 * */
 
     /* find matching voltage with threshold-crossing-detection -> direction of curve is irrelevant */
-    const bool_ft compare_now = *p_voltage_uV < voltage_set_uV;
+    const bool_ft  compare_now   = *p_voltage_uV < voltage_set_uV;
     /* abs(step_size) -> for detecting reset of sawtooth */
     const uint32_t step_size_now = abs_delta32(*p_voltage_uV, voltage_last);
     /* voltage_set_uV can change outside of loop, so algo has to keep track */
