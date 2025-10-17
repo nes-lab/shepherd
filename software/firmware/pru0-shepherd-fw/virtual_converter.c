@@ -178,20 +178,19 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     {
         // no boost, but cap, for ie. diode+cap (+resistor)
         const uint32_t V_mid_uV = (state.V_mid_uV_n32 >> 32u);
-        const uint32_t V_diff_uV =
-                (input_voltage_uV >= V_mid_uV) ? input_voltage_uV - V_mid_uV : 0u;
+        const uint32_t V_diff_uV = sub32(input_voltage_uV, V_mid_uV);
         const uint32_t V_res_drop_uV =
                 (uint32_t) (((uint64_t) input_current_nA * (uint64_t) CNV_CFG.R_input_kOhm_n22) >>
                             22u);
         if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
         else {
-            input_voltage_uV -= V_res_drop_uV;
+            input_voltage_uV -= V_res_drop_uV; // TODO: add sub32?
         }
 
         if (feedback_to_hrv)
         {
             // IF input==ivcurve request new CV
-            V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV;
+            V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV; // TODO: add add32?
         }
         else if (input_voltage_uV < V_mid_uV)
         {
@@ -359,8 +358,7 @@ uint32_t converter_update_states_and_output()
         if ((state.enable_buck == false) ||
             (V_mid_uV <= CNV_CFG.V_output_uV + CNV_CFG.V_buck_drop_uV))
         {
-            state.V_out_dac_uV =
-                    (V_mid_uV > CNV_CFG.V_buck_drop_uV) ? V_mid_uV - CNV_CFG.V_buck_drop_uV : 0u;
+            state.V_out_dac_uV = sub32(V_mid_uV, CNV_CFG.V_buck_drop_uV);
         }
         else {
             state.V_out_dac_uV = CNV_CFG.V_output_uV;
