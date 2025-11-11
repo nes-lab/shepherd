@@ -6,7 +6,7 @@ from .profile_analyzer import analyze_directory
 from .profile_cape import ProfileCape
 from .profiler import Profiler
 
-__version__ = "2025.9.1"
+__version__ = "2025.11.1"
 
 __all__ = [
     "Calibrator",

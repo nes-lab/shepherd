@@ -7,7 +7,7 @@ from .pru_source_model import PruSourceModel
 from .pru_source_simulation import simulate_source
 from .pru_storage_model import PruStorageModel
 
-__version__ = "2025.9.1"
+__version__ = "2025.11.1"
 
 __all__ = [
     "PruConverterModel",
