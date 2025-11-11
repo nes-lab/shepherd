@@ -3,7 +3,7 @@
 # uv pip install .
 [project]
 name = "shepherd-main"
-version = "2025.08.1"
+version = "2025.11.1"
 description = "Infrastructure for the Testbed, mainly focused on the Observers "
 readme = "README.md"
 
@@ -56,8 +56,9 @@ shepherd-cal = { path = "./software/shepherd-calibration", editable = true}
 shepherd-pru = { path = "./software/firmware/pru0-module-py", editable = true}
 sync-analysis = { path = "./software/debug_analyze_time_sync", editable = true}
 
-shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
 # temporary dev-versions of sub-packets
+shepherd-data = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_data"}
+shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
 
 [tool.setuptools]
 # alibi declaration to avoid auto-discovery
