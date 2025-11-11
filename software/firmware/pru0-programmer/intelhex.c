@@ -150,7 +150,8 @@ ihex_ret_t ihex_reader_get(ihex_mem_block_t *const block)
             start_exe_addr |= ((uint32_t) rec.data[2] << 8u);
             start_exe_addr |= ((uint32_t) rec.data[3] << 0u);
         }
-        else {
+        else
+        {
             // all known types are handled above, so this is undefined territory
             return IHEX_RET_ERR_TYPE_UNKNOWN;
         }

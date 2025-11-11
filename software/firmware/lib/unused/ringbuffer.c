@@ -15,7 +15,8 @@ void ring_put(struct RingBuffer *const buf, const uint8_t element)
     if (++(buf->end) == FIFO_BUFFER_SIZE) buf->end = 0U;
 
     if (buf->active < FIFO_BUFFER_SIZE) buf->active++;
-    else {
+    else
+    {
         if (++(buf->start) == FIFO_BUFFER_SIZE) buf->start = 0U; // fast modulo
     }
 }

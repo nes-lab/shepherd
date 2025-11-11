@@ -160,7 +160,8 @@ static int transceive(const swd_header_t *const header, uint32_t *const data)
         rc = data_read(data);
         iotrn(GPIO_DIR_OUT);
     }
-    else {
+    else
+    {
         iotrn(GPIO_DIR_OUT);
         rc = data_write(data);
     }

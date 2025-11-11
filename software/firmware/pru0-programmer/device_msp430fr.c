@@ -126,7 +126,8 @@ static int WriteMem_430Xv2(const uint16_t format, uint32_t addr, uint16_t data)
     clr_tclk_sbw();
     IR_Shift(IR_CNTRL_SIG_16BIT);
     if (format == F_WORD) { DR_Shift16(0x0500); }
-    else {
+    else
+    {
         DR_Shift16(0x0510);
     }
     IR_Shift(IR_ADDR_16BIT);
@@ -171,7 +172,8 @@ uint16_t ReadMem_430Xv2(const uint16_t format, uint32_t addr)
         {
             DR_Shift16(0x0501); // Set uint16_t read
         }
-        else {
+        else
+        {
             DR_Shift16(0x0511); // Set byte read
         }
         IR_Shift(IR_ADDR_16BIT);
@@ -241,7 +243,8 @@ static int ExecutePOR_430Xv2(void)
     // in the WDT_CNTRL register
     uint16_t id = IR_Shift(IR_CNTRL_SIG_CAPTURE);
     if (id == JTAG_ID98) { WriteMem_430Xv2(F_WORD, 0x01CC, 0x5A80); }
-    else {
+    else
+    {
         WriteMem_430Xv2(F_WORD, 0x015C, 0x5A80);
     }
 
@@ -337,7 +340,8 @@ static int GetJtagID(uint16_t *jtag_id)
                 // if magic pattern failed and 4 tries passed -> return status error
                 return (SC_ERR_GENERIC);
             }
-            else {
+            else
+            {
                 break;
             }
         }
@@ -352,7 +356,8 @@ static int GetJtagID(uint16_t *jtag_id)
     {
         return (SC_ERR_NONE);
     }
-    else {
+    else
+    {
         return (SC_ERR_ET_DCDC_DEVID);
     }
 }
@@ -447,7 +452,8 @@ static int ReleaseDevice_430Xv2(const uint32_t addr)
     {
         return (SC_ERR_NONE);
     }
-    else {
+    else
+    {
         return (SC_ERR_GENERIC);
     }
 }
@@ -469,7 +475,8 @@ static int DisableMpu_430Xv2(void)
         if ((ReadMem_430Xv2(F_WORD, FR4xx_LOCKREGISTER) & 0x3) == 0x0) { return SC_ERR_NONE; }
         return SC_ERR_GENERIC;
     }
-    else {
+    else
+    {
         uint16_t MPUCTL0    = 0x0000;
         uint16_t FramCtlKey = 0xA500;
 

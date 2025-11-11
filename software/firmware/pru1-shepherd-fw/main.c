@@ -128,7 +128,8 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
             buf_gpio->idx_pru          = 0u;
             SHARED_MEM.buffer_gpio_idx = 0u;
         }
-        else {
+        else
+        {
             buf_gpio->idx_pru          = cIDX + 1u;
             SHARED_MEM.buffer_gpio_idx = cIDX + 1u;
         }
@@ -283,7 +284,8 @@ int32_t event_loop()
             INTC_CLEAR_EVENT(HOST_PRU_EVT_TIMESTAMP);
 
             if (sync_state == IDLE) sync_state = REPLY_PENDING;
-            else {
+            else
+            {
                 msgsys_send_status(MSG_ERR_SYNC_STATE_NOT_IDLE, sync_state, 0u);
                 return 0;
             }
@@ -311,7 +313,8 @@ int32_t event_loop()
                 compensation_increment = sync_repl.value[0] - SAMPLE_INTERVAL_TICKS;
                 iep_set_compensation_inc(TICK_INTERVAL_NS - 1u);
             }
-            else {
+            else
+            {
                 // PRU is behind, speed up
                 compensation_increment = SAMPLE_INTERVAL_TICKS - sync_repl.value[0];
                 iep_set_compensation_inc(TICK_INTERVAL_NS + 1u);
@@ -372,7 +375,8 @@ int32_t event_loop()
                 GPIO_ON(GPIO_BATOK);
                 DEBUG_PGOOD_STATE_1;
             }
-            else {
+            else
+            {
                 GPIO_OFF(GPIO_BATOK);
                 DEBUG_PGOOD_STATE_0;
             }
@@ -396,7 +400,8 @@ int32_t event_loop()
             pru0_sample_count                                    = 0u;
             pru1_tsample_ns_max                                  = 0u;
             if (idx < BUFFER_UTIL_SAMPLES_N - 1u) { SHARED_MEM.buffer_util_idx = idx + 1u; }
-            else {
+            else
+            {
                 SHARED_MEM.buffer_util_idx = 0u;
             }
             continue;

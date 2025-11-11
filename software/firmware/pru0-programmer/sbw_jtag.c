@@ -107,7 +107,8 @@ static uint32_t AllShifts(const uint16_t format, uint32_t data)
         {
             tdo = ((data & MSB) == 0) ? tmsh_tdil_tdo_rd() : tmsh_tdih_tdo_rd();
         }
-        else {
+        else
+        {
             tdo = ((data & MSB) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd();
         }
         data <<= 1;
@@ -116,7 +117,8 @@ static uint32_t AllShifts(const uint16_t format, uint32_t data)
     }
     tmsh_tdih(); // update IR
     if (get_tclk()) { tmsl_tdih(); }
-    else {
+    else
+    {
         tmsl_tdil();
     }
 
@@ -130,7 +132,8 @@ uint32_t IR_Shift(uint8_t instruction)
 {
     // JTAG FSM state = Run-Test/Idle
     if (get_tclk()) { tmsh_tdih(); }
-    else {
+    else
+    {
         tmsh_tdil();
     }
     // JTAG FSM state = Select DR-Scan
@@ -149,7 +152,8 @@ uint16_t DR_Shift16(uint16_t data)
 {
     // JTAG FSM state = Run-Test/Idle
     if (get_tclk()) { tmsh_tdih(); }
-    else {
+    else
+    {
         tmsh_tdil();
     }
     // JTAG FSM state = Select DR-Scan
@@ -166,7 +170,8 @@ uint32_t DR_Shift20(uint32_t address)
 {
     // JTAG FSM state = Run-Test/Idle
     if (get_tclk()) { tmsh_tdih(); }
-    else {
+    else
+    {
         tmsh_tdil();
     }
     // JTAG FSM state = Select DR-Scan

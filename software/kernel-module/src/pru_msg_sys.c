@@ -29,7 +29,8 @@ static void ring_put(struct RingBuffer *const buf, const struct ProtoMsg *const 
     if (++(buf->end) == MSG_FIFO_SIZE) buf->end = 0U;
 
     if (buf->active < MSG_FIFO_SIZE) buf->active++;
-    else {
+    else
+    {
         if (++(buf->start) == MSG_FIFO_SIZE) buf->start = 0U; // fast modulo
         /* fire warning - maybe not the best place to do this - could start an avalanche */
         printk(KERN_ERR "shprd.k: FIFO of msg-system is full - lost oldest msg!");
@@ -187,7 +188,8 @@ static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_resta
         else if (pru0_comm_receive_error(&pru_msg)) had_work = 4;
         else if (pru1_comm_receive_error(&pru_msg)) had_work = 5;
         // NOTE: 4th channel (sync) not checked here
-        else {
+        else
+        {
             had_work = 0;
             break;
         }

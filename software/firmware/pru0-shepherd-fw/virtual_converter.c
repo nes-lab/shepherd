@@ -156,7 +156,8 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     /* BOOST, Calculate current flowing into the storage capacitor */
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
     if (input_voltage_uV > CNV_CFG.V_input_drop_uV) { input_voltage_uV -= CNV_CFG.V_input_drop_uV; }
-    else {
+    else
+    {
         input_voltage_uV = 0u;
     }
 
@@ -183,7 +184,8 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
                 (uint32_t) (((uint64_t) input_current_nA * (uint64_t) CNV_CFG.R_input_kOhm_n22) >>
                             22u);
         if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
-        else {
+        else
+        {
             input_voltage_uV -= V_res_drop_uV; // TODO: use sub32? no spare ticks left ATM
         }
 
@@ -199,7 +201,8 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
             input_voltage_uV = 0u;
         }
     }
-    else {
+    else
+    {
         /* direct connection
            modifying V_mid here is not clean, but simpler
            -> V_mid is needed in calc_out, before cap is updated
@@ -259,7 +262,8 @@ void converter_update_legacy_storage(void) // TODO: just for reference, remove
             const uint64_t dV_mid_uV_n32 = mul64(Constant_us_per_nF_n28, I_mid_nA_n4);
             state.V_mid_uV_n32           = add64(state.V_mid_uV_n32, dV_mid_uV_n32);
         }
-        else {
+        else
+        {
             const uint64_t I_mid_nA_n4   = div_uV_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
             const uint64_t dV_mid_uV_n32 = mul64(Constant_us_per_nF_n28, I_mid_nA_n4);
             state.V_mid_uV_n32           = sub64(state.V_mid_uV_n32, dV_mid_uV_n32);
@@ -328,7 +332,8 @@ uint32_t converter_update_states_and_output()
                 is_outputting = false;
             }
         }
-        else {
+        else
+        {
             if (state.V_mid_uV_n32 >= state.V_mid_enable_output_threshold_uV_n32)
             {
                 is_outputting      = true;
@@ -345,7 +350,8 @@ uint32_t converter_update_states_and_output()
         {
             if (V_mid_uV <= CNV_CFG.V_pwr_good_disable_threshold_uV) { state.power_good = false; }
         }
-        else {
+        else
+        {
             if (V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV)
             {
                 state.power_good = is_outputting;
@@ -361,12 +367,14 @@ uint32_t converter_update_states_and_output()
         {
             state.V_out_dac_uV = sub32(V_mid_uV, CNV_CFG.V_buck_drop_uV);
         }
-        else {
+        else
+        {
             state.V_out_dac_uV = CNV_CFG.V_output_uV;
         }
         state.V_out_dac_raw = cal_conv_uV_to_dac_raw(state.V_out_dac_uV);
     }
-    else {
+    else
+    {
         state.V_out_dac_uV =
                 0u; /* needs to be higher or equal min(V_mid_uV) to avoid jitter on low voltages */
         state.V_out_dac_raw = 0u;

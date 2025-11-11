@@ -829,7 +829,8 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attri
         count += sprintf(buf + strlen(buf), "%hhu %u %u", pru_msg.type, pru_msg.value[0],
                          pru_msg.value[1]);
     }
-    else {
+    else
+    {
         count += sprintf(buf + strlen(buf), "%u ", 0x00u);
     }
     return count;
@@ -895,7 +896,8 @@ static ssize_t sysfs_prog_target_store(struct kobject *kobj, struct kobj_attribu
     if (strncmp(buffer, "nrf52", 5) == 0) value = PRG_TARGET_NRF52;
     else if (strncmp(buffer, "msp430", 6) == 0) value = PRG_TARGET_MSP430;
     else if (strncmp(buffer, "dummy", 5) == 0) value = PRG_TARGET_DUMMY;
-    else {
+    else
+    {
         printk(KERN_INFO "shprd.k: setting programmer-target failed -> unknown value");
         return -EINVAL;
     }
@@ -1004,7 +1006,8 @@ static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attri
     {
         swap_pru_firmware(PRU0_FW_PRG_SBW, "");
     }
-    else {
+    else
+    {
         swap_pru_firmware(PRU0_FW_DEFAULT, "");
     }
 
@@ -1025,7 +1028,8 @@ static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attri
         printk(KERN_ERR "shprd.k: sync-fw was removed");
         // NOTE: this could be removed, but that makes the whole FN useless
     }
-    else {
+    else
+    {
         swap_pru_firmware("", PRU1_FW_DEFAULT);
     }
 

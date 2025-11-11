@@ -26,7 +26,8 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
         const uint32_t adc_offset_nA = CAL_CFG.adc_current_offset_nA;
         return add32(I_nA, adc_offset_nA);
     }
-    else {
+    else
+    {
         static uint32_t negative_residue_nA = 0;
         const uint32_t  adc_offset_nA       = -CAL_CFG.adc_current_offset_nA + negative_residue_nA;
 
@@ -35,7 +36,8 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
             negative_residue_nA = 0;
             return (I_nA - adc_offset_nA);
         }
-        else {
+        else
+        {
             negative_residue_nA = adc_offset_nA - I_nA;
             if (negative_residue_nA > RESIDUE_MAX_nA) negative_residue_nA = RESIDUE_MAX_nA;
             return 0u;
@@ -53,7 +55,8 @@ uint32_t cal_conv_adc_raw_to_uV(const uint32_t voltage_raw)
         const uint32_t adc_offset_uV = CAL_CFG.adc_voltage_offset_uV;
         return add32(V_uV, adc_offset_uV);
     }
-    else {
+    else
+    {
         const uint32_t adc_offset_uV = -CAL_CFG.adc_voltage_offset_uV;
         return sub32(V_uV, adc_offset_uV);
     }
@@ -73,7 +76,8 @@ uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
                     mul64(voltage_uV - dac_offset_uV, CAL_CFG.dac_voltage_inv_factor_uV_n20) >> 20u;
         else dac_raw = 0u;
     }
-    else {
+    else
+    {
         const uint32_t dac_offset_uV = -CAL_CFG.dac_voltage_offset_uV;
         dac_raw = mul64(voltage_uV + dac_offset_uV, CAL_CFG.dac_voltage_inv_factor_uV_n20) >> 20u;
     }

@@ -223,7 +223,8 @@ void ocmc_cache_update(void)
                 error_detected = 1u;
             }
         }
-        else {
+        else
+        {
             /* head wrapped, tail not */
             if ((idx_read < cache_block_idx_tail) && (idx_read > cache_block_idx_head))
             {

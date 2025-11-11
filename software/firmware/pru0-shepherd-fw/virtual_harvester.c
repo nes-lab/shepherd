@@ -229,7 +229,8 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     {
         // set lowest & highest 18 bit value of ADC
         if (is_rising) voltage_adc = 0u;
-        else {
+        else
+        {
             voltage_adc = 0x3FFFFu;
             current_adc = 0u;
         }
@@ -243,7 +244,8 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
             voltage_set_uV = is_rising ? HRV_CFG.voltage_min_uV : HRV_CFG.voltage_max_uV;
             interval_step  = 0u;
         }
-        else {
+        else
+        {
             /* stepping through */
             if (is_rising) voltage_set_uV = add32(voltage_set_uV, HRV_CFG.voltage_step_uV);
             else voltage_set_uV = sub32(voltage_set_uV, HRV_CFG.voltage_step_uV);
@@ -343,7 +345,8 @@ static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
         buffer->current[sample_idx] = 0u;
         buffer->voltage[sample_idx] = voltage_adc; // keep voltage for debug-purposes
     }
-    else {
+    else
+    {
         /* converter-mode at pre-set VOC */
         buffer->current[sample_idx] = current_adc;
         buffer->voltage[sample_idx] = voltage_adc;
@@ -380,7 +383,8 @@ static void harvest_adc_2_mppt_po(const uint32_t sample_idx)
             volt_step_uV = mul32(2u, volt_step_uV);
             if (volt_step_uV > 300000u) volt_step_uV = 300000u; // TODO: new, max step size
         }
-        else {
+        else
+        {
             /* got less power -> reverse direction, restart step-size */
             is_rising ^= 1u;
             volt_step_uV = HRV_CFG.voltage_step_uV;
@@ -486,7 +490,8 @@ static void harvest_ivcurve_2_cv(uint32_t *const p_voltage_uV, uint32_t *const p
             voltage_hold = add32s(voltage_hold, voltage_delta);
             current_hold = add32s(current_hold, current_delta);
         }
-        else {
+        else
+        {
             voltage_hold = sub32s(voltage_hold, voltage_delta);
             current_hold = sub32s(current_hold, current_delta);
         }
@@ -571,7 +576,8 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
             else voltage_set_uV = sub32(voltage_set_uV, volt_step_uV);
             volt_step_uV = mul32(2u, volt_step_uV);
         }
-        else {
+        else
+        {
             if ((power_fW == 0u) && (voltage_set_uV > 0u))
             {
                 /* lost tracking - or started with bad init */
@@ -579,7 +585,8 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
                 volt_step_uV   = HRV_CFG.voltage_step_uV;
                 voltage_set_uV = sub32(voltage_set_uV, voltage_step_x4_uV);
             }
-            else {
+            else
+            {
                 /* got less power -> reverse direction */
                 is_rising ^= 1u;
                 volt_step_uV = HRV_CFG.voltage_step_uV;
