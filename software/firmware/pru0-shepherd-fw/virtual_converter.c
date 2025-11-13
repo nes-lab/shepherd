@@ -68,9 +68,9 @@ struct ConverterState
     uint32_t V_out_dac_uV;
     uint32_t V_out_dac_raw;
     /* hysteresis */
-    uint64_t V_mid_enable_output_threshold_uV_n32;
-    uint64_t V_mid_disable_output_threshold_uV_n32;
-    uint64_t dV_mid_enable_output_uV_n32;
+    uint32_t V_mid_enable_output_threshold_uV;
+    uint32_t V_mid_disable_output_threshold_uV;
+    uint32_t dV_mid_enable_output_uV;
     bool_ft  power_good;
 };
 
@@ -109,17 +109,15 @@ void converter_initialize()
     state.power_good                        = true;
 
     /* prepare hysteresis-thresholds */
-    state.dV_mid_enable_output_uV_n32       = ((uint64_t) CNV_CFG.dV_mid_enable_output_uV) << 32u;
-    state.V_mid_enable_output_threshold_uV_n32 =
-            ((uint64_t) CNV_CFG.V_mid_enable_output_threshold_uV) << 32u;
-    state.V_mid_disable_output_threshold_uV_n32 =
-            ((uint64_t) CNV_CFG.V_mid_disable_output_threshold_uV) << 32u;
+    state.dV_mid_enable_output_uV           = CNV_CFG.dV_mid_enable_output_uV;
+    state.V_mid_enable_output_threshold_uV  = CNV_CFG.V_mid_enable_output_threshold_uV;
+    state.V_mid_disable_output_threshold_uV = CNV_CFG.V_mid_disable_output_threshold_uV;
 
-    if (state.dV_mid_enable_output_uV_n32 > state.V_mid_enable_output_threshold_uV_n32)
+    if (state.dV_mid_enable_output_uV > state.V_mid_enable_output_threshold_uV)
     {
         // safe V_mid_uV_n32 from underflow in vsource_update_states_and_output()
         // this should not happen, but better safe than ...
-        state.V_mid_enable_output_threshold_uV_n32 = state.dV_mid_enable_output_uV_n32;
+        state.V_mid_enable_output_threshold_uV = state.dV_mid_enable_output_uV;
     }
 
     /* feedback to harvester */
@@ -316,7 +314,7 @@ void converter_update_storage(void)
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
-// TODO: not optimized
+// TODO: not optimized, initial t_exec is quite high
 uint32_t converter_update_states_and_output()
 {
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
@@ -333,19 +331,13 @@ uint32_t converter_update_states_and_output()
         sample_count = 0;
         if (is_outputting)
         {
-            if (state.V_mid_uV_n32 < state.V_mid_disable_output_threshold_uV_n32)
-            {
-                is_outputting = false;
-            }
+            if (V_mid_uV < state.V_mid_disable_output_threshold_uV) { is_outputting = false; }
         }
-        else
+        else if (V_mid_uV >= state.V_mid_enable_output_threshold_uV)
         {
-            if (state.V_mid_uV_n32 >= state.V_mid_enable_output_threshold_uV_n32)
-            {
-                is_outputting      = true;
-                /* fast charge external virtual output-cap */
-                state.V_mid_uV_n32 = sub64(state.V_mid_uV_n32, state.dV_mid_enable_output_uV_n32);
-            }
+            is_outputting      = true;
+            /* fast charge external virtual output-cap */
+            state.V_mid_uV_n32 = ((uint64_t) sub32(V_mid_uV, state.dV_mid_enable_output_uV)) << 32u;
         }
     }
 
@@ -356,12 +348,9 @@ uint32_t converter_update_states_and_output()
         {
             if (V_mid_uV <= CNV_CFG.V_pwr_good_disable_threshold_uV) { state.power_good = false; }
         }
-        else
+        else if (V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV)
         {
-            if (V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV)
-            {
-                state.power_good = is_outputting;
-            }
+            state.power_good = is_outputting;
         }
         set_batok_pin(state.power_good);
     }
