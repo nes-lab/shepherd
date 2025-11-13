@@ -120,7 +120,7 @@ def version() -> None:
     log.debug("numpy v%s", metadata.version("numpy"))
     log.debug("click v%s", metadata.version("click"))
     log.debug("pydantic v%s", metadata.version("pydantic"))
-    log.debug("PyYAML v%s", metadata.version("yaml"))
+    log.debug("PyYAML v%s", metadata.version("pyyaml"))
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
