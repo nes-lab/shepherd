@@ -72,8 +72,9 @@ The firmwares use GPIO to signal their states. Additionally, the Chip-Select of 
 
 ### Debug PRU0-MainLoop
 
+- ADC-CS 100 ns Low -> Start of 10 us Frame
 - GPIO.0 buffer-cycle (toggle every 0.1s)
-- ADC-CS 100 ns Low -> Start of Frame
+  - initial Frame0 shows up with a ~ 220 ns high
 - GPIO.1 high -> sample-routine (read, calc, output)
 - GPIO.1 low -> update counter & indizes
 - GPIO.1 high -> kernel-com-check
