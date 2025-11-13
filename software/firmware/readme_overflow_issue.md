@@ -176,7 +176,7 @@ u64 u32 x fn_name
 108 0a0 t converter_calc_out_power              -> 264 vs 160 bytes
     0c0 t harvest_ivcurve_2_cv
 188 0c4 t converter_initialize                  -> 392 vs 196 bytes
-214 0dc t converter_update_legacy_storage          -> 532 vs 220 bytes
+214 0dc t converter_update_legacy_storage       -> 532 vs 220 bytes
 1a4 0ec t converter_calc_inp_power              -> 420 vs 236 bytes
 100 100 t harvest_ivcurve_2_mppt_opt
 120 108 t harvest_ivcurve_2_mppt_voc

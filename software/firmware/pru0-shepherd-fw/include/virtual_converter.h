@@ -8,7 +8,7 @@ void            converter_initialize();
 
 void            converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void            converter_calc_out_power(uint32_t current_adc_raw);
-void            converter_update_legacy_storage(void);
+
 void            converter_update_storage(void);
 uint32_t        converter_update_states_and_output();
 

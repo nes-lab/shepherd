@@ -247,45 +247,6 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
 
-void converter_update_legacy_storage(void) // TODO: just for reference, remove
-{
-    //GPIO_TOGGLE(DEBUG_PIN1_MASK);
-    /* Sum up Power and calculate new Capacitor Voltage
-	 */
-    static const uint32_t Constant_us_per_nF_n28 = 424242u; // was part of CNV_CFG
-
-    if (state.enable_storage)
-    {
-        uint32_t V_mid_uV = state.V_mid_uV_n32 >> 32u;
-        if (V_mid_uV < 1u) V_mid_uV = 1u; // avoid and possible div0
-        const uint64_t P_inp_fW_n4 = state.P_inp_fW_n8 >> 4u;
-        // avoid mixing in signed data-types -> slows pru and reduces resolution
-        if (P_inp_fW_n4 > state.P_out_fW_n4)
-        {
-            const uint64_t I_mid_nA_n4   = div_uV_n4(P_inp_fW_n4 - state.P_out_fW_n4, V_mid_uV);
-            const uint64_t dV_mid_uV_n32 = mul64(Constant_us_per_nF_n28, I_mid_nA_n4);
-            state.V_mid_uV_n32           = add64(state.V_mid_uV_n32, dV_mid_uV_n32);
-        }
-        else
-        {
-            const uint64_t I_mid_nA_n4   = div_uV_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
-            const uint64_t dV_mid_uV_n32 = mul64(Constant_us_per_nF_n28, I_mid_nA_n4);
-            state.V_mid_uV_n32           = sub64(state.V_mid_uV_n32, dV_mid_uV_n32);
-        }
-    }
-
-    // Make sure the voltage stays in it's boundaries, TODO: is this also in 65ms interval?
-    if ((uint32_t) (state.V_mid_uV_n32 >> 32u) > CNV_CFG.V_mid_max_uV)
-    {
-        state.V_mid_uV_n32 = ((uint64_t) CNV_CFG.V_mid_max_uV) << 32u;
-    }
-    if ((uint32_t) (state.V_mid_uV_n32 >> 32u) < 1u)
-    {
-        state.V_mid_uV_n32 = ((uint64_t) 1u) << 32u;
-    }
-    //GPIO_TOGGLE(DEBUG_PIN1_MASK);
-}
-
 void converter_update_storage(void)
 {
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);

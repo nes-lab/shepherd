@@ -53,7 +53,6 @@ uint32_t vsrc_iterate_sampling(uint32_t input_voltage_uV, uint32_t input_current
 
     converter_calc_out_power(current_adc_raw);
 
-    //converter_update_legacy_storage();  // TODO: remove
     converter_update_storage();
 
     converter_update_states_and_output();

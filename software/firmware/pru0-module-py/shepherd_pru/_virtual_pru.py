@@ -30,7 +30,6 @@ def get_device() -> ct.CDLL:
         "converter_initialize": (None, None),
         "converter_calc_inp_power": ([ct.c_uint32, ct.c_uint32], None),
         "converter_calc_out_power": ([ct.c_uint32], None),
-        "converter_update_legacy_storage": (None, None),
         "converter_update_storage": (None, None),
         "converter_update_states_and_output": (None, ct.c_uint32),
         "set_P_input_fW": ([ct.c_uint32], None),
