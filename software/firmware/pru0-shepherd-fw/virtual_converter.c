@@ -16,6 +16,12 @@
  * ----------------------------------------------------------------------
  */
 
+inline void set_batok_pin(const bool_ft value)
+{
+    SHARED_MEM.vsource_batok_pin_value        = value;
+    SHARED_MEM.vsource_batok_trigger_for_pru1 = true;
+}
+
 #ifdef EMU_SUPPORT
 /* private FNs */
 static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
@@ -375,12 +381,12 @@ uint32_t converter_update_states_and_output()
     }
     else
     {
-        state.V_out_dac_uV =
-                0u; /* needs to be higher or equal min(V_mid_uV) to avoid jitter on low voltages */
+        state.V_out_dac_uV  = 0u;
+        /* ⤷ needs to be higher or equal min(V_mid_uV) to avoid jitter on low voltages */
         state.V_out_dac_raw = 0u;
     }
 
-    // helps to prevent jitter-noise in gpio-traces
+    // helps to prevent jitter / noise in gpio-traces
     SHARED_MEM.vsource_skip_gpio_logging =
             (state.V_out_dac_uV < CNV_CFG.V_output_log_gpio_threshold_uV);
 
@@ -409,36 +415,33 @@ uint32_t get_output_inv_efficiency_n4(const uint32_t current_nA)
     return CNV_CFG.LUT_out_inv_efficiency_n4[pos_c];
 }
 
-void set_P_input_fW(const uint32_t P_fW) { state.P_inp_fW_n8 = ((uint64_t) P_fW) << 8u; }
+inline void set_P_input_fW(const uint32_t P_fW) { state.P_inp_fW_n8 = ((uint64_t) P_fW) << 8u; }
 
-void set_P_output_fW(const uint32_t P_fW) { state.P_out_fW_n4 = ((uint64_t) P_fW) << 4u; }
+inline void set_P_output_fW(const uint32_t P_fW) { state.P_out_fW_n4 = ((uint64_t) P_fW) << 4u; }
 
-void set_V_intermediate_uV(const uint32_t C_uV) { state.V_mid_uV_n32 = ((uint64_t) C_uV) << 32u; }
+inline void set_V_intermediate_uV(const uint32_t C_uV)
+{
+    state.V_mid_uV_n32 = ((uint64_t) C_uV) << 32u;
+}
 
-uint64_t get_P_input_fW(void) { return (state.P_inp_fW_n8 >> 8u); }
+inline uint64_t get_P_input_fW(void) { return (state.P_inp_fW_n8 >> 8u); }
 
-uint64_t get_P_output_fW(void) { return (state.P_out_fW_n4 >> 4u); }
+inline uint64_t get_P_output_fW(void) { return (state.P_out_fW_n4 >> 4u); }
 
-uint32_t get_V_intermediate_uV(void) { return (uint32_t) (state.V_mid_uV_n32 >> 32u); }
+inline uint32_t get_V_intermediate_uV(void) { return (uint32_t) (state.V_mid_uV_n32 >> 32u); }
 
-uint32_t get_V_intermediate_raw(void)
+inline uint32_t get_V_intermediate_raw(void)
 {
     return cal_conv_uV_to_dac_raw((uint32_t) (state.V_mid_uV_n32 >> 32u));
 }
 
-uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
+inline uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
-uint32_t get_I_mid_out_nA(void)
+uint32_t        get_I_mid_out_nA(void)
 {
     return (uint32_t) div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);
 }
 
-bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
+inline bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
 
 #endif // EMU_SUPPORT
-
-void set_batok_pin(const bool_ft value)
-{
-    SHARED_MEM.vsource_batok_pin_value        = value;
-    SHARED_MEM.vsource_batok_trigger_for_pru1 = true;
-}
