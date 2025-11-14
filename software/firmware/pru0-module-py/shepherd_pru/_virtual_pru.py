@@ -55,9 +55,12 @@ def get_device() -> ct.CDLL:
         "mul32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
         "mul64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),
         "add32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
+        "add32s": ([ct.c_uint32, ct.c_int32], ct.c_uint32),
         "add64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),
         "sub32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
+        "sub32s": ([ct.c_uint32, ct.c_int32], ct.c_uint32),
         "sub64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),  # TODO: add new math fn + unittests
+        "abs_delta32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
         "get_size_in_bits": ([ct.c_uint32], uint8_ft),
         "log2safe": ([ct.c_uint32], uint8_ft),
         "max_value": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
