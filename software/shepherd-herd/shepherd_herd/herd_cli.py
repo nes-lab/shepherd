@@ -111,7 +111,7 @@ def version() -> None:
     log.debug("h5py v%s", metadata.version("h5py"))
     log.debug("numpy v%s", metadata.version("numpy"))
     log.debug("pydantic v%s", metadata.version("pydantic"))
-    log.debug("PyYAML v%s", metadata.version("yaml"))
+    log.debug("PyYAML v%s", metadata.version("pyyaml"))
 
 
 @cli.command(
