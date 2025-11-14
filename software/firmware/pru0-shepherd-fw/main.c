@@ -216,10 +216,12 @@ void event_loop()
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK) // LogicAnalyzer: 104 ns
         {
             GPIO_OFF(SPI_CS_ADCs_MASK);
-            // determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
+            /*  determine minimal low duration for starting sampling
+                -> datasheet not clear, but 15-50 ns could be enough
+                NOTE: 1 us has to pass before trying to read that value
+            */
             __delay_cycles(100 / 5);
             GPIO_ON(SPI_CS_ADCs_MASK);
-            // TODO: make sure that 1 us passes before trying to get that value
         }
         // timestamp pru0 to monitor utilization
         const uint32_t timer_start = iep_get_cnt_val();
@@ -237,14 +239,14 @@ void event_loop()
             SHARED_MEM.last_sync_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
             /* forward interrupt to pru1 */
             SHARED_MEM.cmp0_trigger_for_pru1  = 1u;
-            /* go dark if not running */
-            if (SHARED_MEM.shp_pru_state != STATE_RUNNING)
+            /* update state-machine */
+            if (SHARED_MEM.shp_pru_state == STATE_STARTING)
+                SHARED_MEM.shp_pru_state = STATE_RUNNING;
+            else if (SHARED_MEM.shp_pru_state != STATE_RUNNING)
             {
-                GPIO_OFF(DEBUG_PIN0_MASK);
+                GPIO_OFF(DEBUG_PIN0_MASK); /* go dark if not running */
                 /* Did the Linux kernel module ask for start / stop / reset? */
                 if (SHARED_MEM.shp_pru_state >= STATE_STOPPED) return;
-                if (SHARED_MEM.shp_pru_state == STATE_STARTING)
-                    SHARED_MEM.shp_pru_state = STATE_RUNNING;
             }
         }
 
