@@ -67,7 +67,7 @@ def cli(
         log.warning("No traces found! Will exit now")
         return
 
-    _stat: dict[str, list] = {
+    stat_: dict[str, list] = {
         "diff": [],
         "rising": [],
         "falling": [],
@@ -80,43 +80,43 @@ def cli(
             trace.to_file(input_path)
 
         for _ch in range(trace.channel_count):
-            _data_r = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
-            _expt_r = trace.calc_expected_value(_data_r, mode_log10=True)  # in nsec
-            _name = trace.name + f"_ch{_ch}_rising_{round(_expt_r / 1e3)}us"
-            _data_r[:, 1] = _data_r[:, 1] - _expt_r
-            trace.plot_series_jitter(_data_r, _name, dir_path)
-            _stat["rising"].append(trace.get_statistics(_data_r, _name))
+            data_r = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=True)
+            expt_r = trace.calc_expected_value(data_r, mode_log10=True)  # in nsec
+            name_ = trace.name + f"_ch{_ch}_rising_{round(expt_r / 1e3)}us"
+            data_r[:, 1] = data_r[:, 1] - expt_r
+            trace.plot_series_jitter(data_r, name_, dir_path)
+            stat_["rising"].append(trace.get_statistics(data_r, name_))
 
-            _data_f = trace.calc_durations_ns(_ch, edge_a_rising=False, edge_b_rising=False)
-            _expt_f = trace.calc_expected_value(_data_f, mode_log10=True)
-            _name = trace.name + f"_ch{_ch}_falling_{round(_expt_f / 1e3)}us"
-            _data_f[:, 1] = _data_f[:, 1] - _expt_f
-            trace.plot_series_jitter(_data_f, _name, dir_path)
-            _stat["falling"].append(trace.get_statistics(_data_f, _name))
+            data_f = trace.calc_durations_ns(_ch, edge_a_rising=False, edge_b_rising=False)
+            expt_f = trace.calc_expected_value(data_f, mode_log10=True)
+            name_ = trace.name + f"_ch{_ch}_falling_{round(expt_f / 1e3)}us"
+            data_f[:, 1] = data_f[:, 1] - expt_f
+            trace.plot_series_jitter(data_f, name_, dir_path)
+            stat_["falling"].append(trace.get_statistics(data_f, name_))
 
-            _data_l = trace.calc_durations_ns(_ch, edge_a_rising=False, edge_b_rising=True)
-            _name = trace.name + f"_ch{_ch}_low"
-            _stat["low"].append(trace.get_statistics(_data_l, _name))
+            data_l = trace.calc_durations_ns(_ch, edge_a_rising=False, edge_b_rising=True)
+            name_ = trace.name + f"_ch{_ch}_low"
+            stat_["low"].append(trace.get_statistics(data_l, name_))
 
-            _data_h = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=False)
-            _name = trace.name + f"_ch{_ch}_high"
-            _stat["high"].append(trace.get_statistics(_data_h, _name))
+            data_h = trace.calc_durations_ns(_ch, edge_a_rising=True, edge_b_rising=False)
+            name_ = trace.name + f"_ch{_ch}_high"
+            stat_["high"].append(trace.get_statistics(data_h, name_))
 
         # sync between channels
         for _ch1 in range(trace.channel_count):
-            _data1 = trace.get_edge_timestamps(_ch1, rising=True)
+            data_1 = trace.get_edge_timestamps(_ch1, rising=True)
             for _ch2 in range(_ch1 + 1, trace.channel_count):
-                _data2 = trace.get_edge_timestamps(_ch2, rising=True)
-                _diff = trace.calc_duration_free_ns(_data1, _data2)
-                _name = trace.name + f"_diff_{_ch1}u{_ch2}"
-                trace.plot_series_jitter(_diff, _name, dir_path)
-                _stat["diff"].append(trace.get_statistics(_diff, _name))
+                data_2 = trace.get_edge_timestamps(_ch2, rising=True)
+                diff_ = trace.calc_duration_free_ns(data_1, data_2)
+                name_ = trace.name + f"_diff_{_ch1}u{_ch2}"
+                trace.plot_series_jitter(diff_, name_, dir_path)
+                stat_["diff"].append(trace.get_statistics(diff_, name_))
 
     ltraces.plot_comparison_series(start=0)
-    _stat_df = {
-        _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header()) for _k, _v in _stat.items()
+    stat_df = {
+        _k: pd.DataFrame(_v, columns=LogicTrace.get_statistics_header()) for _k, _v in stat_.items()
     }
-    for _k, _v in _stat_df.items():
+    for _k, _v in stat_df.items():
         log.info("")
         log.info("TYPE: %s", _k)
         log.info(_v.to_string())

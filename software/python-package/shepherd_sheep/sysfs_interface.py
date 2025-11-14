@@ -57,8 +57,8 @@ def flatten_list(dl: list) -> list:
 
 
 def load_kernel_module() -> None:
-    _try = 6
-    while _try > 0:
+    try_ = 6
+    while try_ > 0:
         ret = subprocess.run(
             ["/usr/sbin/modprobe", "-a", "shepherd"],
             timeout=60,
@@ -68,14 +68,14 @@ def load_kernel_module() -> None:
             log.debug("Activated shepherd kernel module")
             time.sleep(3)
             return
-        _try -= 1
+        try_ -= 1
         time.sleep(1)
     raise SystemError("Failed to load shepherd kernel module.")
 
 
 def remove_kernel_module(name: str = "shepherd") -> None:
-    _try = 6
-    while _try > 0:
+    try_ = 6
+    while try_ > 0:
         ret = subprocess.run(
             ["/usr/sbin/modprobe", "-rf", "shepherd"],
             timeout=60,
@@ -86,7 +86,7 @@ def remove_kernel_module(name: str = "shepherd") -> None:
             log.debug("Deactivated %s kernel module", name)
             time.sleep(1)
             return
-        _try -= 1
+        try_ -= 1
         time.sleep(1)
     msg = f"Failed to unload {name} kernel module."
     raise SystemError(msg)
@@ -430,9 +430,9 @@ def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
         if isinstance(setting, int):
             output += f"{setting} \n"
         elif isinstance(setting, list):
-            _set = flatten_list(setting)
-            _set = [str(i) for i in _set]
-            output += " ".join(_set) + " \n"
+            set_ = flatten_list(setting)
+            set_ = [str(i) for i in set_]
+            output += " ".join(set_) + " \n"
         else:
             msg = f"virtual-converter value '{setting}' has wrong type ('{type(setting)}')"
             raise SysfsInterfaceError(msg)
@@ -512,9 +512,9 @@ def write_virtual_storage_settings(settings: StoragePRUConfig) -> None:
         if isinstance(setting, int):
             output += f"{setting} \n"
         elif isinstance(setting, list):
-            _set = flatten_list(setting)
-            _set = [str(i) for i in _set]
-            output += " ".join(_set) + " \n"
+            set_ = flatten_list(setting)
+            set_ = [str(i) for i in set_]
+            output += " ".join(set_) + " \n"
         else:
             msg = f"virtual storage value {setting} has wrong type ({type(setting)})"
             raise SysfsInterfaceError(msg)
@@ -607,11 +607,11 @@ def write_programmer_ctrl(
     pin_list = [pin_tck, pin_tdio, pin_dir_tdio, pin_tdo, pin_tms, pin_dir_tms]
     pin_set = set(pin_list)
 
-    if sum([pin > 0 for pin in pin_list[0:3]]) < 3:
+    if sum(pin > 0 for pin in pin_list[0:3]) < 3:
         raise ValueError(
             "the first 3 programmer pins (tck, tdio, dir_tdio) have to be set!",
         )
-    if sum([pin > 0 for pin in pin_list]) != sum([pin > 0 for pin in pin_set]):
+    if sum(pin > 0 for pin in pin_list) != sum(pin > 0 for pin in pin_set):
         raise ValueError("all programming pins need unique pin-numbers!")
     if datarate == 0 or datarate > 1_000_000:
         raise ValueError("Programming datarate must be within: 0 < datarate < 1 MB/s!")
@@ -685,9 +685,9 @@ def load_pru_firmware(value: str) -> None:
     pru_num = 1 if ("pru1" in request) else 0
     log.debug("\t- set pru%d-firmware to '%s'", pru_num, request)
     sys_path = Path(f"/sys/shepherd/pru{pru_num}_firmware")
-    _count = 0
-    while _count < 6:
-        _count += 1
+    count_ = 0
+    while count_ < 6:
+        count_ += 1
         try:
             with sys_path.open(
                 "w",
@@ -703,13 +703,13 @@ def load_pru_firmware(value: str) -> None:
                 "Requested PRU-FW (%s) was not set (is '%s'), retry-count=%d",
                 request,
                 result,
-                _count,
+                count_,
             )
         except OSError:
             log.warning(
                 "PRU-Driver is locked up (during pru-fw change)"
                 " -> will restart kernel-module (n=%d)",
-                _count,
+                count_,
             )
             reload_kernel_module()
     raise OSError(
@@ -718,8 +718,8 @@ def load_pru_firmware(value: str) -> None:
 
 
 def pru_firmware_is_default() -> bool:
-    _count = 1
-    while _count < 6:
+    count_ = 1
+    while count_ < 6:
         try:
             with Path("/sys/shepherd/pru0_firmware").open(encoding="utf-8") as file:
                 if "shepherd-fw" not in file.read().rstrip():
@@ -730,10 +730,10 @@ def pru_firmware_is_default() -> bool:
         except OSError:  # noqa: PERF203
             log.warning(
                 "PRU-Driver is locked up (during pru-fw read) -> will restart kernel-module (n=%d)",
-                _count,
+                count_,
             )
             reload_kernel_module()
-            _count += 1
+            count_ += 1
         else:
             return True
     raise OSError(

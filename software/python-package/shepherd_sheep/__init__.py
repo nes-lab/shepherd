@@ -187,7 +187,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
 
         if not (0.1 <= rate_factor <= 1.0):
             raise ValueError("Scaler for data-rate must be between 0.1 and 1.0")
-        _data_rate = int(rate_factor * cfg.datarate)
+        data_rate = int(rate_factor * cfg.datarate)
 
         with file_tmp.resolve().open("rb") as fw:
             try:
@@ -198,7 +198,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 if cfg.mcu_port == 1:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        _data_rate,
+                        data_rate,
                         5,
                         4,
                         10,
@@ -206,14 +206,12 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 else:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        _data_rate,
+                        data_rate,
                         8,
                         9,
                         11,
                     )
-                log.info(
-                    "Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate
-                )
+                log.info("Programmer initialized, will start now (data-rate = %d bit/s)", data_rate)
                 sysfs_interface.start_programmer()
             except OSError as xpt:
                 log.exception("OSError - Failed to initialize Programmer", str(xpt))

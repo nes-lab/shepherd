@@ -54,11 +54,11 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
     harvester.wait_for_start(15)
 
     for _ in range(100):
-        _data = None
-        while _data is None:
-            _data = harvester.shared_mem.iv_out.read()
+        data_ = None
+        while data_ is None:
+            data_ = harvester.shared_mem.iv_out.read()
             time.sleep(harvester.segment_period_s / 2)
-        writer.write_iv_buffer(_data)
+        writer.write_iv_buffer(data_)
 
 
 @pytest.mark.hardware  # TODO: extend with new harvester-options

@@ -65,9 +65,9 @@ def get_device() -> ct.CDLL:
     }
     pru = ct.CDLL(path.as_posix())
     for _fname, _sig in fn_signatures.items():
-        _fn = getattr(pru, _fname)
-        _fn.argtypes = _sig[0]
-        _fn.restype = _sig[1]
+        fn_ = getattr(pru, _fname)
+        fn_.argtypes = _sig[0]
+        fn_.restype = _sig[1]
     return pru
 
 

@@ -421,12 +421,12 @@ class ShepherdDebug(ShepherdIO):
             super().shared_mem.iv_out.read()
             time.sleep(self.segment_period_s)
         for _ in range(length_n_buffers):  # get Data
-            _data_iv = None
-            while _data_iv is None:
-                _data_iv = super().shared_mem.iv_out.read()
+            data_iv_ = None
+            while data_iv_ is None:
+                data_iv_ = super().shared_mem.iv_out.read()
                 time.sleep(self.segment_period_s / 2)
-            c_array = np.hstack((c_array, _data_iv.current))
-            v_array = np.hstack((v_array, _data_iv.voltage))
+            c_array = np.hstack((c_array, data_iv_.current))
+            v_array = np.hstack((v_array, data_iv_.voltage))
         super().reinitialize_prus()
         base_array = np.vstack((c_array, v_array))
         return msgpack.packb(

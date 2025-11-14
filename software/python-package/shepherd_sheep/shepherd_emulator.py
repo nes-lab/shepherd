@@ -127,7 +127,7 @@ class ShepherdEmulator(ShepherdIO):
                 timestamp = datetime.fromtimestamp(self.start_time, tz=local_tz())
                 timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
                 # ⤷ closest to ISO 8601, avoids ":"
-                store_path = store_path / f"emu_{timestring}.h5"
+                store_path /= f"emu_{timestring}.h5"
             self.writer = Writer(
                 file_path=store_path,
                 force_overwrite=cfg.force_overwrite,

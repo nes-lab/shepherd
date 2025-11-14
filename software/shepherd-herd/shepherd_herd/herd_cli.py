@@ -618,7 +618,7 @@ def retrieve(
         if (
             filename.is_file()
             and filename.exists()
-            and filename.suffix in [".yaml", ".yml", ".pickle"]
+            and filename.suffix in {".yaml", ".yml", ".pickle"}
         ):
             failed = herd.get_task_files(filename, outdir, separate=separate, delete_src=delete)
         else:

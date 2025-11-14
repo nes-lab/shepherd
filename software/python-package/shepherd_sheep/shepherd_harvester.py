@@ -67,7 +67,7 @@ class ShepherdHarvester(ShepherdIO):
             timestamp = datetime.datetime.fromtimestamp(self.start_time, tz=local_tz())
             timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
             # ⤷ closest to ISO 8601, avoids ":"
-            store_path = store_path / f"hrv_{timestring}.h5"
+            store_path /= f"hrv_{timestring}.h5"
 
         log_iv = cfg.power_tracing is not None
         self.writer = Writer(

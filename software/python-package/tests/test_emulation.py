@@ -105,16 +105,16 @@ def test_emulation(
         while not emulator.shared_mem.iv_inp.write(
             data=IVTrace(voltage=dsv, current=dsc), cal=emulator.cal_pru, verbose=True
         ):
-            _data = emulator.shared_mem.iv_out.read(verbose=True)
-            if _data:
-                writer.write_iv_buffer(_data)
+            data_ = emulator.shared_mem.iv_out.read(verbose=True)
+            if data_:
+                writer.write_iv_buffer(data_)
             else:
                 time.sleep(emulator.segment_period_s / 2)
 
     for _ in range(emulator.buffer_segment_count):
-        _data = emulator.shared_mem.iv_out.read(verbose=True)
-        if _data:
-            writer.write_iv_buffer(_data)
+        data_ = emulator.shared_mem.iv_out.read(verbose=True)
+        if data_:
+            writer.write_iv_buffer(data_)
         else:
             time.sleep(emulator.segment_period_s / 2)
 
