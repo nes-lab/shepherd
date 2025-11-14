@@ -17,3 +17,12 @@ make
 # install shepherd-pru python-module
 pip install . -U
 ```
+
+## Testsuite
+
+The unittests cover all custom math-functions used by the PRU.
+They can be tested by running
+
+```Shell
+pytest
+```
