@@ -85,7 +85,7 @@ class SharedMemIVInput:
         self._mm: mmap = mem_map
 
         self.n_samples_per_chunk: int = (
-            n_samples_per_segment if n_samples_per_segment else self.N_SAMPLES_PER_CHUNK_DEF
+            n_samples_per_segment or self.N_SAMPLES_PER_CHUNK_DEF
         )
         self.n_buffer_chunks: int = self.N_SAMPLES // self.n_samples_per_chunk
 

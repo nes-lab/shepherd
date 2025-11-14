@@ -19,7 +19,7 @@ class PruCalibration:
     """part of calibration.h."""
 
     def __init__(self, cal_emu: CalibrationEmulator | None = None) -> None:
-        self.cal = cal_emu if cal_emu else CalibrationEmulator()
+        self.cal = cal_emu or CalibrationEmulator()
 
 
 def flatten_list(dl: Sequence) -> list:
