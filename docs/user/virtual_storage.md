@@ -130,3 +130,4 @@ The DC-bias effect will be included in the near future. More measurements and re
 - the virtual storage for the testbed is implemented in c and [part of the PRU-firmware](https://github.com/nes-lab/shepherd/tree/main/software/firmware/pru0-shepherd-fw)
 - the 1-to-1 simulation-models are part of the [python vSource-implementation](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/shepherd_core/vsource)
 - simulation-experiments are kept in the [examples-directory of the core-tool](https://github.com/nes-lab/shepherd-tools/tree/main/shepherd_core/examples/simulation)
+- performance analysis between python-models, c-code and actual are [documented here](https://github.com/nes-lab/shepherd/blob/main/software/debug_compare_vsources/README.md)

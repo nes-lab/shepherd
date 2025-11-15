@@ -3,12 +3,14 @@
 ## 2025.11.1
 
 - project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
-- add new virtual battery (generalized energy storage)
+- new virtual battery (generalized energy storage for vsource)
+  - pru-firmware (c-code) got port of python-model
   - models and parametrization were evaluated in core-lib
-  - added documentation (user / virtual_battery)
-  - update python pru-module (interface to c-code)
+  - added [documentation for storage](https://nes-lab.github.io/shepherd/user/virtual_storage.html)
+  - update python pru-module (sim interface to c-code)
   - extend testing of custom math functions (c-code)
   - make storage configurable via kernel-module and sheep-package
+  - added [performance analysis](https://github.com/nes-lab/shepherd/blob/main/software/debug_compare_vsources/README.md) that documents harvesting and emulation results (python models vs. c-code vs. emulation by pru-firmware)
 - sheep
   - ~~won't exit with != 0 if config is not for that specific sheep~~
   - improve and bugfix resampling of output-data (also direct power-calculation) -> numpy brings beaglebone to a halt on vector-float-operations during measurement
