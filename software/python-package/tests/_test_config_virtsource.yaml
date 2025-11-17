@@ -18,8 +18,9 @@ parameters:
   V_input_drop_mV: 0  # simulate input-diode
 
   storage: # primary storage-Cap
-    name: Capacitor_100uF_10.0V
-    SoC_init: 0.8 # allow a proper / fast startup
+    name: Capacitor_100uF_6.3V
+    SoC_init: 0.6 # allow a proper / fast startup
+    R_leak_Ohm: 333e6
 
   V_pwr_good_enable_threshold_mV: 2900 # target is informed by pwr-good on output-pin (hysteresis) -> for intermediate voltage
   V_pwr_good_disable_threshold_mV: 2400
@@ -32,7 +33,7 @@ parameters:
 
   # Boost Converter, ie. BQ25504
   V_input_boost_threshold_mV: 130 # min input-voltage for the boost converter to work
-  V_intermediate_max_mV: 3600 # -> boost converter shuts off
+  V_intermediate_max_mV: 8000 # -> boost converter shuts off
 
   LUT_input_efficiency: [
     [  0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50, 0.50 ], # rows are current -> here a[V=0][:]
@@ -57,7 +58,7 @@ parameters:
 
   V_intermediate_enable_output_threshold_mV: 2600 # -> target gets connected (hysteresis-combo with next value)
   V_intermediate_disable_output_threshold_mV: 2300 # -> target gets disconnected
-  interval_check_thresholds_ms: 64.0  # some BQs check every 64 ms if output should be disconnected
+  interval_check_thresholds_ms: 10.0  # some BQs check every 64 ms if output should be disconnected
 
   # TODO: add dropdown-voltage and option to keep output enabled
   LUT_output_efficiency: [0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80]
