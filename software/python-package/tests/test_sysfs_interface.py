@@ -215,9 +215,8 @@ def test_writing_storage_settings(
     storage_cfg: StoragePRUConfig,
 ) -> None:
     sysfs_interface.write_virtual_storage_settings(storage_cfg)
-    assert sysfs_interface.read_virtual_storage_settings() == list(
-        storage_cfg.model_dump().values(),
-    )
+    values_1d = flatten_list(list(storage_cfg.model_dump().values()))
+    assert sysfs_interface.read_virtual_storage_settings() == values_1d
 
 
 @pytest.mark.hardware
