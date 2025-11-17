@@ -56,17 +56,11 @@ def test_hrv_example_fail(cli_runner: CliRunner) -> None:
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_herd_stopped")
 def test_hrv_minimal(cli_runner: CliRunner) -> None:
-    res = cli_runner.invoke(
-        cli,
-        ["harvest"],
-    )
+    res = cli_runner.invoke(cli, ["harvest"])
     assert res.exit_code == 0
     time.sleep(10)
     # forced stop
-    res = cli_runner.invoke(
-        cli,
-        ["-v", "stop"],
-    )
+    res = cli_runner.invoke(cli, ["-v", "stop"])
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=10)
 
@@ -132,10 +126,7 @@ def test_hrv_no_start(cli_runner: CliRunner) -> None:
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=15)
     # manual start
-    res = cli_runner.invoke(
-        cli,
-        ["-v", "start"],
-    )
+    res = cli_runner.invoke(cli, ["-v", "start"])
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=15)
 

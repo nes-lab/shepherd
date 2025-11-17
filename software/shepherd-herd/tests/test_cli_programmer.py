@@ -28,12 +28,7 @@ def fw_empty(tmp_path: Path) -> Path:
 def test_cli_program_minimal(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(
         cli,
-        [
-            "-v",
-            "program",
-            "--simulate",
-            fw_example.as_posix(),
-        ],
+        ["-v", "program", "--simulate", fw_example.as_posix()],
     )
     assert res.exit_code == 0
 
@@ -119,15 +114,7 @@ def test_cli_program_sbw_explicit(cli_runner: CliRunner, fw_example: Path) -> No
 @pytest.mark.timeout(60)  # TODO: fails in big runs - so add alive-checker here
 @pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_file_defective_a(cli_runner: CliRunner, fw_empty: Path) -> None:
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-v",
-            "program",
-            "--simulate",
-            fw_empty.as_posix(),
-        ],
-    )
+    res = cli_runner.invoke(cli, ["-v", "program", "--simulate", fw_empty.as_posix()])
     assert res.exit_code != 0
 
 
