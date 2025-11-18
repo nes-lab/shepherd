@@ -12,6 +12,8 @@ jobs:
     uses: ./.github/workflows/fw_build_gcc.yaml
   test-sheep:
     uses: ./.github/workflows/py_sheep_test.yaml
+  test-pru:
+    uses: ./.github/workflows/py_pru_module_test.yaml
   test-herd:
     uses: ./.github/workflows/py_herd_test.yaml
 
@@ -21,6 +23,7 @@ jobs:
       - static-analysis
       - compile-firmwares
       - test-sheep
+      - test-pru
       - test-herd
     steps:
       - name: Finished

@@ -1,0 +1,33 @@
+name: Test shepherd_pru
+
+on:
+  workflow_call:
+
+jobs:
+  sheep-test:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.13"]
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }} 🐍
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependency 🔧
+        run: sudo apt install build-essential
+
+      - name: Build shepherd_pru Py-Module 🧱
+        run: "make"
+        working-directory: "./software/firmware/pru0-module-py"
+      - name: Install the shepherd_pru Py-package 🐑
+        run: "pip3 install .[test]"
+        working-directory: "./software/firmware/pru0-module-py"
+      - name: Test the shepherd py-package (limited test-range) 🐐
+        run: "pytest"
+        working-directory: "./software/firmware/pru0-module-py"
