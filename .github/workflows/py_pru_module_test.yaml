@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  sheep-test:
+  pru-test:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
       cancel-in-progress: true
@@ -28,6 +28,6 @@ jobs:
       - name: Install the shepherd_pru Py-package 🐑
         run: "pip3 install .[test]"
         working-directory: "./software/firmware/pru0-module-py"
-      - name: Test the shepherd py-package (limited test-range) 🐐
+      - name: Test the shepherd py-package 🐐
         run: "pytest"
         working-directory: "./software/firmware/pru0-module-py"
