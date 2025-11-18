@@ -20,19 +20,20 @@ volatile struct IVSample *buf_inp_samples;
 volatile uint32_t        *buf_out_voltage;
 volatile uint32_t        *buf_out_current;
 
-#ifdef EMU_SUPPORT
-
-struct IVSample ivsample = {.current = 0u, .voltage = 0u};
 
 //#define ENABLE_AUX
-  #ifdef ENABLE_AUX
+#ifdef ENABLE_AUX
 static bool_ft dac_aux_link_to_mid  = false;
 static bool_ft dac_aux_link_to_main = false;
-  #else
-    // Note: branches below will be automatically optimized away
-    #define dac_aux_link_to_mid  (0u)
-    #define dac_aux_link_to_main (0u)
-  #endif // ENABLE_AUX
+#else
+  // Note: branches below will be automatically optimized away
+  #define dac_aux_link_to_mid  (0u)
+  #define dac_aux_link_to_main (0u)
+#endif // ENABLE_AUX
+
+#ifdef EMU_SUPPORT
+
+struct IVSample    ivsample = {.current = 0u, .voltage = 0u};
 
 static inline void fetch_iv_trace()
 {
