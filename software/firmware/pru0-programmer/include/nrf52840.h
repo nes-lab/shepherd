@@ -1727,17 +1727,13 @@ extern "C"
                               Frame Delay Timer           */
         uint32_t              PACKETPTR; /*!< (@ 0x00000510) Packet pointer for TXD and RXD data
                          storage in Data RAM */
-        uint32_t              MAXLEN; /*!< (@ 0x00000514) Size of the RAM buffer allocated to TXD
-                        and RXD   data storage each   */
-        NFCT_TXD_Type         TXD;    /*!< (@ 0x00000518) Unspecified */
-        NFCT_RXD_Type         RXD;    /*!< (@ 0x00000520) Unspecified */
+        uint32_t              MAXLEN;
+        NFCT_TXD_Type         TXD;
+        NFCT_RXD_Type         RXD;
         uint32_t              RESERVED13[26];
-        uint32_t              NFCID1_LAST; /*!< (@ 0x00000590) Last NFCID1 part (4, 7 or 10 bytes
-                           ID)                     */
-        uint32_t              NFCID1_2ND_LAST; /*!< (@ 0x00000594) Second last NFCID1 part (7 or 10
-                               bytes ID)                 */
-        uint32_t              NFCID1_3RD_LAST; /*!< (@ 0x00000598) Third last NFCID1 part (10 bytes
-                               ID)                       */
+        uint32_t              NFCID1_LAST;
+        uint32_t              NFCID1_2ND_LAST;
+        uint32_t              NFCID1_3RD_LAST;
         uint32_t              AUTOCOLRESCONFIG; /*!< (@ 0x0000059C) Controls the auto collision
                                 resolution function. This setting must be done
                                 before the NFCT peripheral is enabled. */
@@ -2453,14 +2449,10 @@ extern "C"
             uint32_t ERASEPCR1; /*!< (@ 0x00000508) Deprecated register - Register for
                       erasing a page in code area. Equivalent to ERASEPAGE. */
         };
-        uint32_t ERASEALL;         /*!< (@ 0x0000050C) Register for erasing all non-volatile
-                        user memory          */
-        uint32_t ERASEPCR0;        /*!< (@ 0x00000510) Deprecated register - Register for erasing
-                    a page in code area. Equivalent to ERASEPAGE. */
-        uint32_t ERASEUICR;        /*!< (@ 0x00000514) Register for erasing user information
-                         configuration registers */
-        uint32_t ERASEPAGEPARTIAL; /*!< (@ 0x00000518) Register for partial erase of a
-                                page in code area */
+        uint32_t ERASEALL;
+        uint32_t ERASEPCR0;
+        uint32_t ERASEUICR;
+        uint32_t ERASEPAGEPARTIAL;
         uint32_t ERASEPAGEPARTIALCFG; /*!< (@ 0x0000051C) Register for partial erase
                                    configuration                   */
         uint32_t RESERVED3[8];
@@ -2657,15 +2649,10 @@ extern "C"
         uint32_t         EVENTS_ENDISOOUT;   /*!< (@ 0x00000150) The whole ISOOUT buffer has
                                 been consumed. The RAM buffer can be accessed
                                 safely by software.             */
-        uint32_t         EVENTS_SOF;      /*!< (@ 0x00000154) Signals that a SOF (start of frame)
-                          condition has been detected on USB lines */
-        uint32_t         EVENTS_USBEVENT; /*!< (@ 0x00000158) An event or an error not covered
-                               by specific events has occurred. Check EVENTCAUSE
-                               register to find the cause. */
-        uint32_t         EVENTS_EP0SETUP; /*!< (@ 0x0000015C) A valid SETUP token has been received
-                          (and acknowledged) on the control endpoint */
-        uint32_t         EVENTS_EPDATA; /*!< (@ 0x00000160) A data transfer has occurred on a data
-                        endpoint, indicated by the EPDATASTATUS register */
+        uint32_t         EVENTS_SOF;
+        uint32_t         EVENTS_USBEVENT;
+        uint32_t         EVENTS_EP0SETUP;
+        uint32_t         EVENTS_EPDATA;
         uint32_t         RESERVED2[39];
         uint32_t         SHORTS; /*!< (@ 0x00000200) Shortcuts between local events and tasks */
         uint32_t         RESERVED3[63];
