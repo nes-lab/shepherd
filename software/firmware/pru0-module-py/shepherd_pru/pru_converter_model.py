@@ -47,6 +47,7 @@ class PruConverterModel:
     def __init__(
         self, cfg: ConverterPRUConfig, cal: PruCalibration, storage_cfg: StoragePRUConfig
     ) -> None:
+        self.pru_cfg = cfg
         cnv_dict = cfg.model_dump()
         cnv_dict["LUT_inp_efficiency_n8"] = LUT_INP(
             *flatten_list(cnv_dict["LUT_inp_efficiency_n8"])
@@ -99,7 +100,7 @@ class PruConverterModel:
         self.pru.set_P_output_fW(int(value))
 
     def set_V_intermediate_uV(self, value: float) -> None:
-        self.set_V_intermediate_uV(int(value))
+        self.pru.set_V_intermediate_uV(int(value))
 
     def get_P_input_fW(self) -> int:
         return self.pru.get_P_input_fW()

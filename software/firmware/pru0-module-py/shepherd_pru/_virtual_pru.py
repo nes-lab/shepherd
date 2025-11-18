@@ -9,6 +9,11 @@ from .data_types import StorageConfig
 bool_ft = ct.c_uint32
 uint8_ft = ct.c_uint32
 
+# TODO: add tests for
+#       virtual_harvester, calibration,
+#       virtual_storage, virtual_converter,
+#       pru_source
+
 
 def get_device() -> ct.CDLL:
     path = Path(__file__).parent / "_shared_pru.so"
@@ -51,7 +56,7 @@ def get_device() -> ct.CDLL:
         "get_vsource_batok_pin_value": (None, bool_ft),
         "get_vsource_skip_gpio_logging": (None, bool_ft),
         "vsrc_iterate_sampling": ([ct.c_uint32, ct.c_uint32, ct.c_uint32], ct.c_uint32),
-        # math64_safe.c ##############################
+        # math64_safe.c ############################## fully tested
         "mul32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
         "mul64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),
         "add32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
@@ -59,7 +64,7 @@ def get_device() -> ct.CDLL:
         "add64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),
         "sub32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
         "sub32s": ([ct.c_uint32, ct.c_int32], ct.c_uint32),
-        "sub64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),  # TODO: add new math fn + unittests
+        "sub64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),
         "abs_delta32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
         "get_size_in_bits": ([ct.c_uint32], uint8_ft),
         "log2safe": ([ct.c_uint32], uint8_ft),
