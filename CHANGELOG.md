@@ -34,7 +34,9 @@
   - improve over / underflow-protection of variables for harvester, storage, converter
   - allow disabling aux functionality (small overhead not needed for testbed) via `ENABLE_AUX` compile-switch
   - add more unittests for c-code via python-module
-  - tests pru-code automatically via GitHub workflow
+  - automatically test pru-code via GitHub workflow
+  - activated GCC safety / sanitation switches for the python-module (details in [issue #73](https://github.com/nes-lab/shepherd/issues/73))
+  - c-code compiles without warnings for CGT, GCC, GNUPRU
 - kMod
   - fix race-condition bug that prevented start of pru0 (reliably)
   - disable experimental code - not compatible with non-ti kernel
