@@ -15,6 +15,22 @@ CFLAGS += -fanalyzer
 CFLAGS += -D__PYTHON__
 CFLAGS += -DPRU0
 CFLAGS += -DEMU_SUPPORT
+# sanitizers for unittests (should be disabled if used as sim-model)
+CFLAGS += -fsanitize=undefined
+#CFLAGS += -fsanitize=leak  # -> Runtime-error 'cannot allocate memory in static TLS block'
+#CFLAGS += -fsanitize=shadow-call-stack # -> compile-error (not implemented / supported)
+#CFLAGS += -fsanitize=address # -> unittests don't run at all
+CFLAGS += -fcf-protection=full
+CFLAGS += -fsanitize-address-use-after-scope
+CFLAGS += -fsanitize-trap=all
+CFLAGS += -fharden-conditional-branches
+# CFLAGS += -fhardened # -> not existing, but it activates the following
+CFLAGS += -D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS
+CFLAGS += -ftrivial-auto-var-init=zero
+CFLAGS += -fPIE  -pie  -Wl,-z,relro,-z,now
+CFLAGS += -fstack-protector-strong
+CFLAGS += -fstack-clash-protection
+CFLAGS += -fPIC  # -> allows symbol 'shared_mem' for hardened shared object
 
 LDFLAGS= -shared -lm
 
