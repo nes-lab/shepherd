@@ -105,16 +105,16 @@ def test_emulation(
         while not emulator.shared_mem.iv_inp.write(
             data=IVTrace(voltage=dsv, current=dsc), cal=emulator.cal_pru, verbose=True
         ):
-            _data = emulator.shared_mem.iv_out.read(verbose=True)
-            if _data:
-                writer.write_iv_buffer(_data)
+            data_ = emulator.shared_mem.iv_out.read(verbose=True)
+            if data_:
+                writer.write_iv_buffer(data_)
             else:
                 time.sleep(emulator.segment_period_s / 2)
 
     for _ in range(emulator.buffer_segment_count):
-        _data = emulator.shared_mem.iv_out.read(verbose=True)
-        if _data:
-            writer.write_iv_buffer(_data)
+        data_ = emulator.shared_mem.iv_out.read(verbose=True)
+        if data_:
+            writer.write_iv_buffer(data_)
         else:
             time.sleep(emulator.segment_period_s / 2)
 
@@ -209,16 +209,15 @@ def test_cache_via_loopback(tmp_path: Path) -> None:
     )
 
     set_verbosity()
-    stack = ExitStack()
-    emu = ShepherdEmulator(cfg=emu_cfg)
-    emu.cal_pru = None  # disables scaling
-    stack.enter_context(emu)
-    sysfs_interface.write_mode("emu_loopback")  # enables copy in PRU
-    time.sleep(1)
-    print(sysfs_interface.get_mode())
-    print(sysfs_interface.get_state())
-    emu.run()
-    stack.close()
+    with ExitStack() as stack:
+        emu = ShepherdEmulator(cfg=emu_cfg)
+        emu.cal_pru = None  # disables scaling
+        stack.enter_context(emu)
+        sysfs_interface.write_mode("emu_loopback")  # enables copy in PRU
+        time.sleep(1)
+        print(sysfs_interface.get_mode())
+        print(sysfs_interface.get_state())
+        emu.run()
 
     # loopback should just copy the data
     with h5py.File(path_output, "r") as hf_emu, h5py.File(path_input, "r") as hf_hrv:

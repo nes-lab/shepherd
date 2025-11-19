@@ -24,11 +24,11 @@ class LogicTrace:
         # TODO: analyze & store
         data_ts: np.ndarray = data[:, 0].astype(np.float64)
         for _i in range(1, data.shape[1]):
-            _data = data[:, _i]
-            _data = self._convert_analog2digital(_data)
-            _data = self._filter_redundant_states(_data, data_ts)
-            _data = self._filter_glitches(_data, glitch_ns)
-            self.data.append(_data)
+            data_ = data[:, _i]
+            data_ = self._convert_analog2digital(data_)
+            data_ = self._filter_redundant_states(data_, data_ts)
+            data_ = self._filter_glitches(data_, glitch_ns)
+            self.data.append(data_)
         # data = self.filter_cs_falling_edge()
 
     @classmethod
@@ -59,7 +59,7 @@ class LogicTrace:
 
     def to_file(self, path: Path) -> None:
         if path.is_dir():
-            path = path / (self.name + ".pkl")
+            path /= self.name + ".pkl"
         path.with_suffix(".pkl")
         with path.open("wb") as _fh:
             pickle.dump(self, _fh)
@@ -71,8 +71,8 @@ class LogicTrace:
         invert: bool = False,
     ) -> np.ndarray:
         """Divide dimension in two, divided by mean-value."""
-        _theshold = np.mean(data)
-        data = (data <= _theshold) if invert else (data >= _theshold)
+        threshold = np.mean(data)
+        data = (data <= threshold) if invert else (data >= threshold)
         return data.astype("bool")
 
     @staticmethod
@@ -84,31 +84,31 @@ class LogicTrace:
 
         -> returns timestamps of alternating states, starting with 0.
         """
-        _d0 = data[:].astype(np.uint8)
-        _d1 = np.concatenate([[not _d0[0]], _d0[:-1]])
-        _df = _d0 + _d1
-        _ds = timestamps[_df == 1]
+        d0_ = data[:].astype(np.uint8)
+        d1_ = np.concatenate([[not d0_[0]], d0_[:-1]])
+        df_ = d0_ + d1_
+        ds_ = timestamps[df_ == 1]
         # discard first&last entry AND make sure state=low starts
-        _ds = _ds[2:-1] if (_d0[0] == 0) else _ds[1:-1]
-        if len(_d0) > len(_ds):
+        ds_ = ds_[2:-1] if (d0_[0] == 0) else ds_[1:-1]
+        if len(d0_) > len(ds_):
             log.debug(
                 "filtered out %d/%d events (redundant)",
-                len(_d0) - len(_ds),
-                len(_d0),
+                len(d0_) - len(ds_),
+                len(d0_),
             )
-        return _ds
+        return ds_
 
     @staticmethod
     def _filter_glitches(data: np.ndarray, duration_ns: int = 10) -> np.ndarray:
-        _diff = ((data[1:] - data[:-1]) * 1e9).astype(np.uint64)
-        _filter1 = _diff > duration_ns
-        _filter2 = np.concatenate([_filter1, [True]]) & np.concatenate(
-            [[True], _filter1],
+        diff_ = ((data[1:] - data[:-1]) * 1e9).astype(np.uint64)
+        filter1 = diff_ > duration_ns
+        filter2 = np.concatenate([filter1, [True]]) & np.concatenate(
+            [[True], filter1],
         )
-        _num = len(_filter1) - _filter1.sum()
-        if _num > 0:
-            log.debug("filtered out %d glitches", _num)
-        return data[_filter2]
+        num_ = len(filter1) - filter1.sum()
+        if num_ > 0:
+            log.debug("filtered out %d glitches", num_)
+        return data[filter2]
 
     def calc_durations_ns(
         self,
@@ -117,24 +117,24 @@ class LogicTrace:
         edge_a_rising: bool,
         edge_b_rising: bool,
     ) -> np.ndarray:
-        _d0 = self.data[channel]
+        d0_ = self.data[channel]
         if edge_b_rising:
             if edge_a_rising:
-                _da = _d0[1::2]
-                _db = _d0[3::2]
+                da_ = d0_[1::2]
+                db_ = d0_[3::2]
             else:
-                _da = _d0[0::2]
-                _db = _d0[1::2]
+                da_ = d0_[0::2]
+                db_ = d0_[1::2]
         elif edge_a_rising:
-            _da = _d0[1::2]
-            _db = _d0[2::2]
+            da_ = d0_[1::2]
+            db_ = d0_[2::2]
         else:
-            _da = _d0[0::2]
-            _db = _d0[2::2]
-        _len = min(len(_da), len(_db))
-        _diff = _db[:_len] - _da[:_len]
+            da_ = d0_[0::2]
+            db_ = d0_[2::2]
+        len_ = min(len(da_), len(db_))
+        diff_ = db_[:len_] - da_[:len_]
         return np.column_stack(
-            [_da[:_len], _diff * 1e9],
+            [da_[:len_], diff_ * 1e9],
         )  # 2 columns: timestamp, duration [ns]
 
     def get_edge_timestamps(self, channel: int = 0, *, rising: bool = True) -> np.ndarray:
@@ -153,13 +153,13 @@ class LogicTrace:
         if (off_2 <= off_0) & (off_2 <= off_1):
             data_a = data_a[1:]
         # cut data to same length
-        _len = min(len(data_a), len(data_b))
-        data_a = data_a[:_len]
-        data_b = data_b[:_len]
+        len_ = min(len(data_a), len(data_b))
+        data_a = data_a[:len_]
+        data_b = data_b[:len_]
         # calculate duration of offset
-        _diff = data_b[:_len] - data_a[:_len]
+        diff_ = data_b[:len_] - data_a[:len_]
         return np.column_stack(
-            [data_a[:_len], _diff * 1e9],
+            [data_a[:len_], diff_ * 1e9],
         )  # 2 columns: timestamp, duration [ns]
 
     @staticmethod
@@ -237,15 +237,15 @@ class LogicTrace:
         if data.shape[1] != 2:
             raise ValueError("Function needs matrix with timestamps and durations")
 
-        _path = path / (name + "_jitter.png") if path.is_dir() else path
+        path_ = path / (name + "_jitter.png") if path.is_dir() else path
 
-        _center = np.median(data[:, 1])
-        _range = [_center - y_side, _center + y_side]
+        center_ = np.median(data[:, 1])
+        range_ = [center_ - y_side, center_ + y_side]
         fig, ax = plt.subplots(figsize=size)
         plt.plot(data[:, 0], data[:, 1])  # X,Y
         ax.set_xlabel("time [s]")
-        ax.axes.set_ylim(_range)
+        ax.axes.set_ylim(range_)
         ax.axes.set_ylabel("trigger-jitter [ns]")
-        ax.axes.set_title(_path.stem)
-        fig.savefig(_path)
+        ax.axes.set_title(path_.stem)
+        fig.savefig(path_)
         plt.close()

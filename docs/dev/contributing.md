@@ -127,7 +127,7 @@ uv venv
 uv pip install .[dev]
 # and then
 pre-commit run --all-files
-bump2version --allow-dirty --new-version 2025.8.1 patch
+bump2version --allow-dirty --new-version 2025.11.1 patch
 # version-format: YYYY.MM.r
 ```
 

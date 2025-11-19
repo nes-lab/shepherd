@@ -40,7 +40,7 @@ from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
 from .target_io import TargetIO
 
-__version__ = "2025.8.1"
+__version__ = "2025.11.1"
 
 __all__ = [
     "EEPROM",
@@ -65,36 +65,30 @@ __all__ = [
 
 
 def run_harvester(cfg: HarvestTask) -> bool:
-    stack = ExitStack()
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
     try:
-        hrv = ShepherdHarvester(cfg=cfg)
-        stack.enter_context(hrv)
-        hrv.run()
+        with ShepherdHarvester(cfg=cfg) as hrv:
+            hrv.run()
         failed = False
     except SystemExit:
         pass
     except ShepherdIOError:
         log.exception("Caught an unrecoverable error")
-    stack.close()
     return failed
 
 
 def run_emulator(cfg: EmulationTask) -> bool:
-    stack = ExitStack()  # TODO: use correctly in context
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
     try:
-        emu = ShepherdEmulator(cfg=cfg)
-        stack.enter_context(emu)
-        emu.run()
+        with ShepherdEmulator(cfg=cfg) as emu:
+            emu.run()
         failed = False
     except SystemExit:
         pass
     except ShepherdIOError:
         log.exception("Caught an unrecoverable error")
-    stack.close()
     return failed
 
 
@@ -193,7 +187,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
 
         if not (0.1 <= rate_factor <= 1.0):
             raise ValueError("Scaler for data-rate must be between 0.1 and 1.0")
-        _data_rate = int(rate_factor * cfg.datarate)
+        data_rate = int(rate_factor * cfg.datarate)
 
         with file_tmp.resolve().open("rb") as fw:
             try:
@@ -204,7 +198,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 if cfg.mcu_port == 1:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        _data_rate,
+                        data_rate,
                         5,
                         4,
                         10,
@@ -212,14 +206,12 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 else:
                     sysfs_interface.write_programmer_ctrl(
                         target,
-                        _data_rate,
+                        data_rate,
                         8,
                         9,
                         11,
                     )
-                log.info(
-                    "Programmer initialized, will start now (data-rate = %d bit/s)", _data_rate
-                )
+                log.info("Programmer initialized, will start now (data-rate = %d bit/s)", data_rate)
                 sysfs_interface.start_programmer()
             except OSError as xpt:
                 log.exception("OSError - Failed to initialize Programmer", str(xpt))

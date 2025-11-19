@@ -42,10 +42,10 @@ from .logger import log
 
 
 def _get_xdg_path(variable_name: str, default: str) -> Path:
-    _value = os.environ.get(variable_name)
-    if _value is None or _value == "":
+    val_ = os.environ.get(variable_name)
+    if not val_:  # catches None and ""
         return Path("~").expanduser() / default
-    return Path(_value)
+    return Path(val_)
 
 
 path_xdg_config = _get_xdg_path("XDG_CONFIG_HOME", ".config/")
@@ -95,9 +95,9 @@ class Herd:
                 inventories = [inventory, *inventories]
             host_path = None
             for inventory in inventories:
-                _path = Path(inventory)
-                if _path.exists() and _path.is_file():
-                    host_path = _path
+                path_ = Path(inventory)
+                if path_.exists() and path_.is_file():
+                    host_path = path_
                     break
 
             if host_path is None:
@@ -210,9 +210,9 @@ class Herd:
         """
         threads = {}
         for cnx in self.group_all:
-            _name = self.hostnames[cnx.host]
-            threads[_name] = threading.Thread(target=self._thread_open, args=[cnx])
-            threads[_name].start()
+            hname = self.hostnames[cnx.host]
+            threads[hname] = threading.Thread(target=self._thread_open, args=[cnx])
+            threads[hname].start()
         time_end = local_now() + timedelta(seconds=5)
         while len(threads) > 0 and local_now() < time_end:
             hosts = list(threads.keys())  # makes sure it's a copy
@@ -272,14 +272,14 @@ class Herd:
         level = logging.INFO if verbose else logging.DEBUG
         log.log(level, "Sheep-CMD = %s", cmd)
         for cnx in self.group_online:
-            _name = self.hostnames[cnx.host]
-            if exclusive_host and _name != exclusive_host:
+            hname = self.hostnames[cnx.host]
+            if exclusive_host and hname != exclusive_host:
                 continue
-            threads[_name] = threading.Thread(
+            threads[hname] = threading.Thread(
                 target=self._thread_run,
-                args=(cnx, sudo, cmd, results, _name),
+                args=(cnx, sudo, cmd, results, hname),
             )
-            threads[_name].start()
+            threads[hname].start()
         time_end = local_now() + timedelta(seconds=timeout)
         progress_bar = tqdm(
             total=len(threads),
@@ -395,12 +395,12 @@ class Herd:
 
         threads = {}
         for cnx in self.group_online:
-            _name = self.hostnames[cnx.host]
-            threads[_name] = threading.Thread(
+            hname = self.hostnames[cnx.host]
+            threads[hname] = threading.Thread(
                 target=self._thread_put,
                 args=(cnx, src_path, dst_path, force_overwrite),
             )
-            threads[_name].start()
+            threads[hname].start()
         time_end = local_now() + timedelta(seconds=timeout)
         progress_bar = tqdm(
             total=len(threads),

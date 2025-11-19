@@ -1,0 +1,24 @@
+datatype: VirtualStorageConfig
+parameters:
+  id: 1029502305869010729
+  name: Capacitor_10uF_10.0V
+  description: Model of an ideal Capacitor (true to spec, no losses)
+  comment: null
+  created: 2025-09-11 19:47:04.395946
+  updated_last: 2025-09-11 19:47:04.395948
+  owner: NES Lab
+  group: NES Lab
+  visible2group: true
+  visible2all: true
+  SoC_init: 0.8
+  q_As: 9.999999999999999e-05
+  p_VOC:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 10.0
+  - 0.0
+  - 0.0
+  p_rce: 1.0
+  kdash: 2.2250738585072014e-308
+  R_leak_Ohm: 1.7976931348623157e+308

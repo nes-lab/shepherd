@@ -8,8 +8,8 @@ void            converter_initialize();
 
 void            converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
 void            converter_calc_out_power(uint32_t current_adc_raw);
-void            converter_update_cap_storage(void);
-void            converter_update_bat_storage(void);
+
+void            converter_update_storage(void);
 uint32_t        converter_update_states_and_output();
 
 void            set_P_input_fW(uint32_t P_fW);
@@ -43,7 +43,7 @@ extern uint32_t V_input_request_uV;
  * - converter has min input threshold voltage, max capacitor voltage (shutoff), efficiency-LUT (depending on input current & voltage)
  * - capacitor-guard has enable and disable threshold voltage (hysteresis) to detach target
  * - target / output disconnect check is only every 65 ms
- * - TODO: to disable set V_intermediate_max_uV to 0
+ * - TODO: to disable set V_mid_max_uV to 0
  * - input voltage can not be higher than cap_voltage and will be limited by algo
  * - the power point setting will be handled in pyPackage and work with IV-Curves
  */

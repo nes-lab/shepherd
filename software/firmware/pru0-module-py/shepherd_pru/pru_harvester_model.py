@@ -1,6 +1,6 @@
 import ctypes as ct
 
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.logger import log
 
 from ._virtual_pru import virtual_pru
@@ -14,7 +14,8 @@ class PruHarvesterModel:
         log.info("This is the PRU-C-HRV-Model.")
         log.info(cfg.model_dump())
         self.pru = virtual_pru
-        self.pru.harvester_initialize(ct.byref(self.hrv_cfg))
+        self.pru.set_harvester_config(ct.byref(self.hrv_cfg))
+        self.pru.harvester_initialize()
 
     def ivcurve_sample(self, _voltage_uV: int, _current_nA: int) -> tuple[int, int]:
         val_v = ct.c_uint32(_voltage_uV)

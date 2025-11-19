@@ -13,8 +13,9 @@ NOTE: DO NOT OPTIMIZE -> stay close to original code-base
 from shepherd_core.data_models import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 
 from .pru_converter_model import PruCalibration
 from .pru_converter_model import PruConverterModel as VirtualConverterModel
@@ -41,7 +42,10 @@ class PruSourceModel:
         cnv_config = ConverterPRUConfig.from_vsrc(
             data=self.cfg_src, dtype_in=dtype_in, log_intermediate_node=log_intermediate
         )
-        self.cnv: VirtualConverterModel = VirtualConverterModel(cnv_config, self._cal_pru)
+        self.cfg_store = StoragePRUConfig.from_vstorage(vsrc.storage)
+        self.cnv: VirtualConverterModel = VirtualConverterModel(
+            cnv_config, self._cal_pru, self.cfg_store
+        )
 
         hrv_config = HarvesterPRUConfig.from_vhrv(
             self.cfg_src.harvester,

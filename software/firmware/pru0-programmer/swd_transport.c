@@ -175,7 +175,8 @@ int swd_transport_read(uint32_t *const dst, const swd_port_t port, const uint8_t
     int rc;
     header_init(&hdr, port, SWD_RW_R, addr);
 
-    do {
+    do
+    {
         rc = transceive(&hdr, dst);
         if (rc <= 0) return rc;
         retries--;
@@ -188,7 +189,8 @@ int swd_transport_write(const swd_port_t port, const uint8_t addr, uint32_t data
 {
     int rc;
     header_init(&hdr, port, SWD_RW_W, addr);
-    do {
+    do
+    {
         rc = transceive(&hdr, &data);
         if (rc <= 0) return rc;
         retries--;

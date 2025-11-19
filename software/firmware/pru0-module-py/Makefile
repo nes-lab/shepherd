@@ -14,6 +14,7 @@ CFLAGS += -fanalyzer
 # workaround to allow compilation without pru
 CFLAGS += -D__PYTHON__
 CFLAGS += -DPRU0
+CFLAGS += -DEMU_SUPPORT
 
 LDFLAGS= -shared -lm
 
@@ -29,6 +30,7 @@ INCLUDE += -I$(BASE_PATH)/include
 # sources - add manually
 SOURCES = $(BASE_PATH)/pru0-shepherd-fw/virtual_harvester.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/virtual_converter.c
+SOURCES += $(BASE_PATH)/pru0-shepherd-fw/virtual_storage.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/calibration.c
 SOURCES += $(BASE_PATH)/pru0-shepherd-fw/math64_safe.c
 SOURCES += $(BASE_PATH)/pru0-module-py/shepherd_pru/pru_source.c

@@ -39,12 +39,7 @@ def test_cli_program_minimal(
 ) -> None:
     res = cli_runner.invoke(
         cli,
-        [
-            "-v",
-            "program",
-            "--simulate",
-            fw_nrf.as_posix(),
-        ],
+        ["-v", "program", "--simulate", fw_nrf.as_posix()],
     )
     assert res.exit_code == 0
 
@@ -143,15 +138,7 @@ def test_cli_program_file_defective_a(
     cli_runner: CliRunner,
     fw_empty: Path,
 ) -> None:
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-v",
-            "program",
-            "--simulate",
-            fw_empty.as_posix(),
-        ],
-    )
+    res = cli_runner.invoke(cli, ["-v", "program", "--simulate", fw_empty.as_posix()])
     assert res.exit_code != 0
 
 

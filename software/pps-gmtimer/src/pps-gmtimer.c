@@ -42,7 +42,7 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dan Drown");
 MODULE_DESCRIPTION("PPS Client Driver using OMAP Timer hardware");
-MODULE_VERSION("2025.8.1");
+MODULE_VERSION("2025.11.1");
 
 struct pps_gmtimer_platform_data
 {
@@ -335,7 +335,10 @@ static void pps_gmtimer_clocksource_init(struct pps_gmtimer_platform_data *pdata
             pr_err("Could not register clocksource %s\n", pdata->clksrc.name);
             clocksource_timer = NULL;
         }
-        else { pr_info("clocksource: %s at %u Hz\n", pdata->clksrc.name, pdata->frequency); }
+        else
+        {
+            pr_info("clocksource: %s at %u Hz\n", pdata->clksrc.name, pdata->frequency);
+        }
     }
 }
 
@@ -422,7 +425,10 @@ static int pps_gmtimer_probe(struct platform_device *pdev)
 
     match = of_match_device(pps_gmtimer_dt_ids, &pdev->dev);
     if (match) { pdev->dev.platform_data = of_get_pps_gmtimer_pdata(pdev); }
-    else { pr_err("of_match_device failed\n"); }
+    else
+    {
+        pr_err("of_match_device failed\n");
+    }
     pdata = pdev->dev.platform_data;
     if (!pdata) return -ENODEV;
 
@@ -435,7 +441,10 @@ static int pps_gmtimer_probe(struct platform_device *pdev)
 
     use_tclkin = of_get_property(pdev->dev.of_node, "use-tclkin", NULL);
     if (use_tclkin && be32_to_cpup(use_tclkin) == 1) { omap_dm_timer_use_tclkin(pdata); }
-    else { pr_info("using system clock\n"); }
+    else
+    {
+        pr_info("using system clock\n");
+    }
 
     pdata->info.mode  = PPS_CAPTUREASSERT | PPS_ECHOASSERT | PPS_CANWAIT | PPS_TSFMT_TSPEC;
     pdata->info.owner = THIS_MODULE;

@@ -5,7 +5,7 @@ from contextlib import ExitStack
 from types import TracebackType
 
 from shepherd_core import local_tz
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from tqdm import tqdm
 from typing_extensions import Self
@@ -67,7 +67,7 @@ class ShepherdHarvester(ShepherdIO):
             timestamp = datetime.datetime.fromtimestamp(self.start_time, tz=local_tz())
             timestring = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
             # ⤷ closest to ISO 8601, avoids ":"
-            store_path = store_path / f"hrv_{timestring}.h5"
+            store_path /= f"hrv_{timestring}.h5"
 
         log_iv = cfg.power_tracing is not None
         self.writer = Writer(

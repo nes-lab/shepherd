@@ -47,7 +47,51 @@ The firmwares use GPIO to signal their states. Additionally, the Chip-Select of 
 
 - Pru0 debug pin0 = P8_12, pin1 = P8_11
 - Pru1 debug pin0 = P8_28, pin1 = P8_30
-- Pru0 spi-cs = P9_25
+- Pru0 spi-cs = P9_25 (ADCs)
+
+### Init-Routine
+
+### Debug PRU0-Init
+
+  - GPIO.b11, init all states
+  - GPIO.b00, init msg_sys
+  - GPIO.b11, unblock PRU1 and wait (Sync PRUs)
+  - GPIO.b00, init buffers
+  - GPIO.b11, sample_init (4x toggle of GPIO1)
+  - GPIO.b00, idle -> sampleloop
+  - long wait, then normal looping?
+  - pin1 high while sampling()
+  -
+### Debug PRU1-Init
+
+  - GPIO.b11, small init + wait for pru0 (Sync PRUs)
+  - GPIO.b00, init msg_sys
+  - GPIO.b01, send status
+  - GPIO.b10, (re)init IEP
+  - GPIO.b00, event_loop
+
+### Debug PRU0-MainLoop
+
+- ADC-CS 100 ns Low -> Start of 10 us Frame
+- GPIO.0 buffer-cycle (toggle every 0.1s)
+  - initial Frame0 shows up with a ~ 220 ns high
+- GPIO.1 high -> sample-routine (read, calc, output)
+- GPIO.1 low -> update counter & indizes
+- GPIO.1 high -> kernel-com-check
+- GPIO.1 low -> wait for IEP (start of loop)
+
+#### Benchmark Legacy Capacitor
+
+- 430 ns ADC-trigger & maintenance
+- 7.2 us Sample-Routine
+- 160 ns update counters
+- 140 ns kernel-com
+- 2.1 us spare-time
+
+#### Benchmark KiBam
+
+- 8.4 us Sample-Routine
+- 680 ns spare-time
 
 ## Install CGT
 

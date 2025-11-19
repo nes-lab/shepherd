@@ -14,32 +14,32 @@ class LogicTraces:
         glitch_ns: int = 0,
     ) -> None:
         self.traces: list[LogicTrace] = []
-        _fcsv = list(path.rglob("*.csv"))
-        log.debug(" -> got %s csv-files", len(_fcsv))
+        fcsv_ = list(path.rglob("*.csv"))
+        log.debug(" -> got %s csv-files", len(fcsv_))
 
-        for _f in _fcsv:
+        for _f in fcsv_:
             self.traces.append(LogicTrace.from_file(_f, glitch_ns=glitch_ns))
 
     def plot_comparison_series(self, start: int = 0) -> None:
-        _names: list = [_t.name for _t in self.traces]
-        _data: list = [
+        names_: list = [_t.name for _t in self.traces]
+        data_: list = [
             _t.calc_durations_ns(0, edge_a_rising=True, edge_b_rising=True) for _t in self.traces
         ]
-        _data = [pd.Series(data[:, 1] - LogicTrace.calc_expected_value(data)) for data in _data]
+        data_ = [pd.Series(data[:, 1] - LogicTrace.calc_expected_value(data)) for data in data_]
 
-        _len = len(_names)
-        _names = _names[start:]
-        _data = _data[start:]
+        len_ = len(names_)
+        names_ = names_[start:]
+        data_ = data_[start:]
 
-        if len(_names) < 1 or len(_data) < 1:
+        if len(names_) < 1 or len(data_) < 1:
             return
         # TODO: this just takes first CH0
         # file_names_short.reverse()
-        fig_title = f"improvement_trigger_statistics_boxplot_{start}to{_len}"
+        fig_title = f"improvement_trigger_statistics_boxplot_{start}to{len_}"
         # TODO: could also print a histogram-overlay for some
-        _df = pd.concat(_data, axis=1)
-        _df.columns = _names
-        ax = _df.plot.box(
+        df_ = pd.concat(data_, axis=1)
+        df_.columns = names_
+        ax = df_.plot.box(
             figsize=(20, 8),
             return_type="axes",
             ylim=[-10_000, 10_000],

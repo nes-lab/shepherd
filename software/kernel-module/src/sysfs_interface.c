@@ -69,6 +69,13 @@ static ssize_t sysfs_virtual_harvester_settings_store(struct kobject        *kob
 static ssize_t sysfs_virtual_harvester_settings_show(struct kobject        *kobj,
                                                      struct kobj_attribute *attr, char *buf);
 
+static ssize_t sysfs_virtual_storage_settings_store(struct kobject        *kobj,
+                                                    struct kobj_attribute *attr, const char *buf,
+                                                    size_t count);
+
+static ssize_t sysfs_virtual_storage_settings_show(struct kobject        *kobj,
+                                                   struct kobj_attribute *attr, char *buf);
+
 static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj, struct kobj_attribute *attr,
                                           const char *buffer, size_t count);
 static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attribute *attr,
@@ -106,6 +113,10 @@ struct kobj_attr_struct_s attr_virtual_harvester_settings = {
         .attr = __ATTR(virtual_harvester_settings, 0660, sysfs_virtual_harvester_settings_show,
                        sysfs_virtual_harvester_settings_store),
         .val_offset = offsetof(struct SharedMem, harvester_settings)};
+struct kobj_attr_struct_s attr_virtual_storage_settings = {
+        .attr       = __ATTR(virtual_storage_settings, 0660, sysfs_virtual_storage_settings_show,
+                             sysfs_virtual_storage_settings_store),
+        .val_offset = offsetof(struct SharedMem, storage_settings)};
 struct kobj_attr_struct_s attr_pru_msg_system_settings = {
         .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show, sysfs_pru_msg_system_store),
         .val_offset = 0};
@@ -122,6 +133,7 @@ static struct attribute *shp_attrs[] = {
         &attr_calibration_settings.attr.attr,
         &attr_virtual_converter_settings.attr.attr,
         &attr_virtual_harvester_settings.attr.attr,
+        &attr_virtual_storage_settings.attr.attr,
         &attr_pru_msg_system_settings.attr.attr,
         &attr_gpio_tracer_mask.attr.attr,
         NULL,
@@ -740,6 +752,54 @@ static ssize_t sysfs_virtual_harvester_settings_show(struct kobject        *kobj
     return count;
 }
 
+static ssize_t sysfs_virtual_storage_settings_store(struct kobject        *kobj,
+                                                    struct kobj_attribute *attr, const char *buffer,
+                                                    size_t count)
+{
+    static const uint32_t            struct_size = sizeof(struct StorageConfig) - 4u;
+    // ignore canary
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+    uint32_t                         mem_offset = 0u;
+    int32_t                          buf_pos    = 0;
+    uint32_t                         i          = 0u;
+
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+
+    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+    mem_offset        = kobj_attr_wrapped->val_offset;
+    for (i = 0; i < struct_size; i += 4)
+    {
+        uint32_t value_retrieved;
+        int32_t  value_length;
+        int32_t  ret = sscanf(&buffer[buf_pos], "%u%n ", &value_retrieved, &value_length);
+        buf_pos += value_length;
+        if (ret != 1) return -EINVAL;
+        iowrite32(value_retrieved, pru_shared_mem_io + mem_offset + i);
+    }
+    printk(KERN_INFO "shprd.k: writing struct StorageConfig");
+    return count;
+}
+
+static ssize_t sysfs_virtual_storage_settings_show(struct kobject        *kobj,
+                                                   struct kobj_attribute *attr, char *buf)
+{ // NOTE: these are very generic and could be generalized with
+    static const uint32_t                  struct_size = sizeof(struct StorageConfig) - 4u;
+    // ignore canary
+    const struct kobj_attr_struct_s *const kobj_attr_wrapped =
+            container_of(attr, struct kobj_attr_struct_s, attr);
+    uint32_t mem_offset = 0u;
+    uint32_t i          = 0u;
+    int      count      = 0;
+
+    mem_offset          = kobj_attr_wrapped->val_offset;
+    for (i = 0; i < struct_size; i += 4)
+    {
+        count += sprintf(buf + strlen(buf), "%u \n", ioread32(pru_shared_mem_io + mem_offset + i));
+    }
+    printk(KERN_INFO "shprd.k: reading struct StorageConfig");
+    return count;
+}
+
 static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj, struct kobj_attribute *attr,
                                           const char *buffer, size_t count)
 {
@@ -751,7 +811,7 @@ static ssize_t sysfs_pru_msg_system_store(struct kobject *kobj, struct kobj_attr
 
     if (sscanf(buffer, "%hhu %u %u", &pru_msg.type, &pru_msg.value[0], &pru_msg.value[1]) != 0)
     {
-        put_msg_to_pru(&pru_msg);
+        put_msg_to_pru0(&pru_msg);
         return count;
     }
 
@@ -764,12 +824,15 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attri
     int             count = 0;
     struct ProtoMsg pru_msg;
 
-    if (get_msg_from_pru(&pru_msg))
+    if (get_msg_from_pru0(&pru_msg))
     {
         count += sprintf(buf + strlen(buf), "%hhu %u %u", pru_msg.type, pru_msg.value[0],
                          pru_msg.value[1]);
     }
-    else { count += sprintf(buf + strlen(buf), "%u ", 0x00u); }
+    else
+    {
+        count += sprintf(buf + strlen(buf), "%u ", 0x00u);
+    }
     return count;
 }
 
@@ -943,7 +1006,10 @@ static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attri
     {
         swap_pru_firmware(PRU0_FW_PRG_SBW, "");
     }
-    else { swap_pru_firmware(PRU0_FW_DEFAULT, ""); }
+    else
+    {
+        swap_pru_firmware(PRU0_FW_DEFAULT, "");
+    }
 
     return count;
 }
@@ -962,7 +1028,10 @@ static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attri
         printk(KERN_ERR "shprd.k: sync-fw was removed");
         // NOTE: this could be removed, but that makes the whole FN useless
     }
-    else { swap_pru_firmware("", PRU1_FW_DEFAULT); }
+    else
+    {
+        swap_pru_firmware("", PRU1_FW_DEFAULT);
+    }
 
     return count;
 }

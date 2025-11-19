@@ -16,8 +16,9 @@ from shepherd_core import CalibrationHarvester
 from shepherd_core import Reader
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 from typing_extensions import Unpack
@@ -483,6 +484,18 @@ class ShepherdIO:
         :param settings: Contains the settings for the virtual source.
         """
         sfs.write_virtual_converter_settings(settings)
+
+    @staticmethod
+    def send_virtual_storage_settings(
+        settings: StoragePRUConfig,
+    ) -> None:
+        """Sends virtual storage settings to PRU core
+        looks like a simple one-liner but is needed by the child-classes
+        Note: to apply these settings the pru has to do a re-init (reset)
+
+        :param settings: Contains the settings for the virtual storage.
+        """
+        sfs.write_virtual_storage_settings(settings)
 
     @staticmethod
     def send_virtual_harvester_settings(

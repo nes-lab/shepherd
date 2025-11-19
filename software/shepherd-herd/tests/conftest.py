@@ -106,10 +106,4 @@ def _herd_stopped(cli_runner: CliRunner, _herd_alive: None) -> None:
     cli_runner.invoke(cli, ["-v", "stop"])
     wait_for_end(cli_runner)
     # make sure kernel module is active
-    cli_runner.invoke(
-        cli,
-        [
-            "-v",
-            "fix",
-        ],
-    )
+    cli_runner.invoke(cli, ["-v", "fix"])

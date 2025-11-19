@@ -10,8 +10,9 @@ from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 
@@ -163,6 +164,8 @@ class ShepherdDebug(ShepherdIO):
             log_intermediate_node=log_intermediate,
         )
         super().send_virtual_converter_settings(src_pru)
+        storage_pru = StoragePRUConfig.from_vstorage(data=src_cfg.storage)
+        super().send_virtual_storage_settings(storage_pru)
 
         hrv_pru = HarvesterPRUConfig.from_vhrv(
             data=src_cfg.harvester,
@@ -418,12 +421,12 @@ class ShepherdDebug(ShepherdIO):
             super().shared_mem.iv_out.read()
             time.sleep(self.segment_period_s)
         for _ in range(length_n_buffers):  # get Data
-            _data_iv = None
-            while _data_iv is None:
-                _data_iv = super().shared_mem.iv_out.read()
+            data_iv_ = None
+            while data_iv_ is None:
+                data_iv_ = super().shared_mem.iv_out.read()
                 time.sleep(self.segment_period_s / 2)
-            c_array = np.hstack((c_array, _data_iv.current))
-            v_array = np.hstack((v_array, _data_iv.voltage))
+            c_array = np.hstack((c_array, data_iv_.current))
+            v_array = np.hstack((v_array, data_iv_.voltage))
         super().reinitialize_prus()
         base_array = np.vstack((c_array, v_array))
         return msgpack.packb(

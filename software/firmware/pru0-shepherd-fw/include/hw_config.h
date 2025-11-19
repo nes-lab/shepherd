@@ -26,7 +26,12 @@
 #define DEBUG_PIN0_MASK       BIT_SHIFT(P8_12)
 #define DEBUG_PIN1_MASK       BIT_SHIFT(P8_11)
 
-#ifdef __PYTHON__
+#define DEBUG_STATE_0         write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+#define DEBUG_STATE_1         write_r30((read_r30() | DEBUG_PIN0_MASK) & ~DEBUG_PIN1_MASK)
+#define DEBUG_STATE_2         write_r30((read_r30() | DEBUG_PIN1_MASK) & ~DEBUG_PIN0_MASK)
+#define DEBUG_STATE_3         write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+
+#ifdef __PYTHON_TMP_OFF__
 void __delay_cycles(const uint32_t num)
 {
     // needs no faking

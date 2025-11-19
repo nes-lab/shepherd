@@ -122,9 +122,9 @@ class SharedMemGPIOOutput:
         mask_v24 = 0
         if cfg is not None:
             for gpio in cfg.gpios:
-                _pin = target_port_to_cape_v24_mapping.get(gpio)
-                if _pin is not None:
-                    mask_v24 |= 2**_pin
+                pin_num = target_port_to_cape_v24_mapping.get(gpio)
+                if pin_num is not None:
+                    mask_v24 |= 2**pin_num
         wait_for_state("idle", 4)
         write_gpio_tracer_mask(mask_v24)
         log.debug(

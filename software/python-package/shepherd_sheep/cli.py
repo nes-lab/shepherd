@@ -98,7 +98,7 @@ def cli(ctx: click.Context, *, verbose: bool, no_progress: bool) -> None:
 
         tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
-    if ctx.invoked_subcommand and ctx.invoked_subcommand not in ["usage"]:
+    if ctx.invoked_subcommand and ctx.invoked_subcommand not in {"usage"}:
         # this adds a usage-entry when sheep exits
         atexit.register(usage_logger, datetime.now().astimezone(), ctx.invoked_subcommand)
 
@@ -120,7 +120,7 @@ def version() -> None:
     log.debug("numpy v%s", metadata.version("numpy"))
     log.debug("click v%s", metadata.version("click"))
     log.debug("pydantic v%s", metadata.version("pydantic"))
-    log.debug("PyYAML v%s", metadata.version("yaml"))
+    log.debug("PyYAML v%s", metadata.version("pyyaml"))
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
@@ -255,7 +255,7 @@ def read(ctx: click.Context, cal_file: Path | None, *, revision: bool, full: boo
     if revision:
         log.info("%s", cal.cape.version)
     elif cal_file is None:
-        _data = (
+        cal_data = (
             yaml.safe_dump(
                 cal.model_dump(exclude_unset=True, exclude_defaults=False),
                 default_flow_style=False,
@@ -264,7 +264,7 @@ def read(ctx: click.Context, cal_file: Path | None, *, revision: bool, full: boo
             if full
             else str(cal)
         )
-        log.info("Retrieved Cal-Data:\n\n%s", str(_data))
+        log.info("Retrieved Cal-Data:\n\n%s", str(cal_data))
     else:
         cal.to_file(cal_file)
 

@@ -155,12 +155,12 @@ def generate_harvest(
         sw.store_hostname("Hrv")
         for _iter in range(duration):
             if random:
-                _v = rng.uniform(low=1.0, high=3.0, size=samples_per_1s)
-                _i = rng.uniform(low=0.001, high=0.05, size=samples_per_1s)
+                v_ = rng.uniform(low=1.0, high=3.0, size=samples_per_1s)
+                i_ = rng.uniform(low=0.001, high=0.05, size=samples_per_1s)
             else:
-                _v = np.linspace(3.30, 3.30, samples_per_1s)
-                _i = np.linspace(100e-6, 2000e-6, samples_per_1s)
-            sw.append_iv_data_si(timestamp=_iter, voltage=_v, current=_i)
+                v_ = np.linspace(3.30, 3.30, samples_per_1s)
+                i_ = np.linspace(100e-6, 2000e-6, samples_per_1s)
+            sw.append_iv_data_si(timestamp=_iter, voltage=v_, current=i_)
         sw.h5file.flush()
 
 
@@ -184,8 +184,8 @@ def ram_to_file_old(path: Path, mem: SharedMemory, compression: Compression) -> 
     ) as sw:
         sw.store_hostname("Emu")
         for _iter in range(mem.buffer_count):
-            _v, _i = mem.read_old(_iter)
-            sw.append_iv_data_raw(_iter / 10, _v, _i)
+            v_, i_ = mem.read_old(_iter)
+            sw.append_iv_data_raw(_iter / 10, v_, i_)
         sw.h5file.flush()
 
 

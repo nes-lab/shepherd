@@ -48,7 +48,7 @@ class IVTrace:
         raise TypeError("Got unexpected timestamp type")
 
     def duration(self) -> float:
-        return self.__len__() * commons.SAMPLE_INTERVAL_S
+        return len(self) * commons.SAMPLE_INTERVAL_S
 
 
 class SharedMemIVInput:
@@ -84,9 +84,7 @@ class SharedMemIVInput:
     def __init__(self, mem_map: mmap, n_samples_per_segment: int | None = None) -> None:
         self._mm: mmap = mem_map
 
-        self.n_samples_per_chunk: int = (
-            n_samples_per_segment if n_samples_per_segment else self.N_SAMPLES_PER_CHUNK_DEF
-        )
+        self.n_samples_per_chunk: int = n_samples_per_segment or self.N_SAMPLES_PER_CHUNK_DEF
         self.n_buffer_chunks: int = self.N_SAMPLES // self.n_samples_per_chunk
 
         self.size_by_sys: int = sfs.get_trace_iv_inp_size()

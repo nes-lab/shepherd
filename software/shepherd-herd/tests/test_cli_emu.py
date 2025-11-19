@@ -14,15 +14,7 @@ from .conftest import wait_for_end
 def test_emu_prepare(cli_runner: CliRunner, tmp_path: Path) -> None:
     # distribute file and emulate from it in following tests
     test_file = generate_h5_file(tmp_path, "pytest_src.h5")
-    res = cli_runner.invoke(
-        cli,
-        [
-            "-v",
-            "distribute",
-            "--force-overwrite",
-            test_file.as_posix(),
-        ],
-    )
+    res = cli_runner.invoke(cli, ["-v", "distribute", "--force-overwrite", test_file.as_posix()])
     assert res.exit_code == 0
     wait_for_end(cli_runner)
 
@@ -68,13 +60,7 @@ def test_emu_example_fail(cli_runner: CliRunner) -> None:
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_herd_stopped")
 def test_emu_minimal(cli_runner: CliRunner) -> None:
-    res = cli_runner.invoke(
-        cli,
-        [
-            "emulate",
-            "pytest_src.h5",
-        ],
-    )
+    res = cli_runner.invoke(cli, ["emulate", "pytest_src.h5"])
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=20)
 
@@ -159,10 +145,7 @@ def test_emu_no_start(cli_runner: CliRunner) -> None:
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=15)
     # manual start
-    res = cli_runner.invoke(
-        cli,
-        ["-v", "start"],
-    )
+    res = cli_runner.invoke(cli, ["-v", "start"])
     assert res.exit_code == 0
     wait_for_end(cli_runner, tmin=15)
 
@@ -170,20 +153,11 @@ def test_emu_no_start(cli_runner: CliRunner) -> None:
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_herd_stopped")
 def test_emu_force_stop(cli_runner: CliRunner) -> None:
-    res = cli_runner.invoke(
-        cli,
-        [
-            "emulate",
-            "pytest_src.h5",
-        ],
-    )
+    res = cli_runner.invoke(cli, ["emulate", "pytest_src.h5"])
     assert res.exit_code == 0
     time.sleep(10)
     # forced stop
-    res = cli_runner.invoke(
-        cli,
-        ["-v", "stop"],
-    )
+    res = cli_runner.invoke(cli, ["-v", "stop"])
     assert res.exit_code == 0
     wait_for_end(cli_runner, timeout=10)
 

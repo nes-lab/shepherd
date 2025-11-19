@@ -1,4 +1,3 @@
-from contextlib import ExitStack
 from itertools import product
 from pathlib import Path
 from pathlib import PurePosixPath
@@ -41,22 +40,19 @@ for hrv_name, src_name in product(emu_hrv_list, emu_src_list):
     path_local_src = path_here / host_selected / path_remote_src.name
 
     if not path_local_src.exists():
-        stack = ExitStack()
-        herd = Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected)
-        stack.enter_context(herd)
-        task = EmulationTask(
-            input_path=Path(path_remote_hrv),
-            output_path=Path(path_remote_src),
-            virtual_source=VirtualSourceConfig(inherit_from=src_name, C_output_uF=0),
-            force_overwrite=True,
-        )
-        if herd.run_task(task, attach=True) == 0:
-            herd.get_file(
-                path_remote_src, path_here, separate=True, delete_src=True, timeout=60 * 60
+        with Herd(inventory="/etc/shepherd/herd.yaml", limit=host_selected) as herd:
+            task = EmulationTask(
+                input_path=Path(path_remote_hrv),
+                output_path=Path(path_remote_src),
+                virtual_source=VirtualSourceConfig(inherit_from=src_name, C_output_uF=0),
+                force_overwrite=True,
             )
-        else:
-            log.error("Failed to emulate with '%s'", hrv_name)
-        stack.close()
+            if herd.run_task(task, attach=True) == 0:
+                herd.get_file(
+                    path_remote_src, path_here, separate=True, delete_src=True, timeout=60 * 60
+                )
+            else:
+                log.error("Failed to emulate with '%s'", hrv_name)
 
     with Reader(path_local_src) as _fh:
         results[path_local_src.stem] = _fh.energy()

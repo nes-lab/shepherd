@@ -6,8 +6,10 @@ from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.content.virtual_storage_config import VirtualStorageConfig
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep import flatten_list
 from shepherd_sheep import sysfs_interface
@@ -29,6 +31,13 @@ def hrv_cfg() -> HarvesterPRUConfig:
     path = Path(__file__).parent / "_test_config_harvest.yaml"
     hrv_cfg = HarvestTask.from_file(path.as_posix())
     return HarvesterPRUConfig.from_vhrv(hrv_cfg.virtual_harvester)
+
+
+@pytest.fixture
+def storage_cfg() -> StoragePRUConfig:
+    path = Path(__file__).parent / "_test_config_storage.yaml"
+    store_cfg = VirtualStorageConfig.from_file(path.as_posix())
+    return StoragePRUConfig.from_vstorage(store_cfg)
 
 
 @pytest.fixture
@@ -182,10 +191,40 @@ def test_writing_harvester_settings(
 
 @pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
+def test_initial_storage_settings() -> None:
+    store_list1 = [
+        300,
+        301,
+        302,
+        401,
+        2,
+        3,
+        4,
+        5,
+    ]  # start
+    store_list2 = [513, 2, 3, 4, 5, 6, 7, 8]  # ending
+    store_sysfs = sysfs_interface.read_virtual_storage_settings()
+    assert store_sysfs[: len(store_list1)] == store_list1
+    assert store_sysfs[-len(store_list2) :] == store_list2
+    assert len(store_sysfs) == 259
+
+
+@pytest.mark.hardware
+@pytest.mark.usefixtures("_shepherd_up")
+def test_writing_storage_settings(
+    storage_cfg: StoragePRUConfig,
+) -> None:
+    sysfs_interface.write_virtual_storage_settings(storage_cfg)
+    values_1d = flatten_list(list(storage_cfg.model_dump().values()))
+    assert sysfs_interface.read_virtual_storage_settings() == values_1d
+
+
+@pytest.mark.hardware
+@pytest.mark.usefixtures("_shepherd_up")
 def test_initial_virtsource_settings() -> None:
     # NOTE: initial config is set in main() of pru0
     vsource_settings = [
-        list(range(100, 124)),
+        list(range(100, 121)),
         list(range(12 * 12)),
         list(range(12)),
     ]

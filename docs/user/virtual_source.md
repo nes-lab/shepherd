@@ -57,7 +57,8 @@ As an actual YAML-Example describing a simple diode & capacitor circuit:
     description: Simple Converter based on diode and buffer capacitor
     inherit_from: neutral
     V_input_drop_mV: 300  # simulate input-diode
-    C_intermediate_uF: 10  # primary storage-Cap
+    storage:  # primary storage-Cap
+      name: Capacitor_10uF_10.0V
 ```
 
 ## Sim-Example 1

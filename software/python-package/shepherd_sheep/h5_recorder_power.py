@@ -94,9 +94,9 @@ class PowerRecorder(Monitor):
                 / self.gain
         Problem: upcast to float64 - which crashes the beaglebone
         """
-        _V = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
-        _C = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
-        power = ((_V * _C) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
+        V_ = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
+        C_ = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
+        power = ((V_ * C_) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
 
         # timestamps are automatically reduced
         if isinstance(data.timestamp_ns, int):

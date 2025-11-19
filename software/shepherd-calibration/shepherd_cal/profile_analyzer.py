@@ -29,7 +29,7 @@ def analyze_directory(
     if folder_path.is_file():
         files.append(folder_path)
     elif folder_path.is_dir():
-        files = files + list(folder_path.iterdir())
+        files += list(folder_path.iterdir())
     else:
         msg = f"Provided Path is neither directory or file ({folder_path.as_posix()})"
         raise ValueError(msg)

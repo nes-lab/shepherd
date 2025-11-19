@@ -103,7 +103,8 @@ static int nvm_wait(uint32_t retries)
 {
     int      rc;
     uint32_t ready = 0u;
-    do {
+    do
+    {
         if ((rc = mem_read(&ready, NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, READY)))) return rc;
         if (--retries == 0) return -1;
     }

@@ -47,7 +47,7 @@ struct SharedMem
     volatile struct CalibrationConfig calibration_settings; // write by kMod only
     /* This structure defines all settings of virtual converter emulation*/
     volatile struct ConverterConfig   converter_settings; // write by kMod only
-    volatile struct BatteryConfig     battery_settings;   // write by kMod only
+    volatile struct StorageConfig     storage_settings;   // write by kMod only
     volatile struct HarvesterConfig   harvester_settings; // write by kMod only
     /* settings for programmer-subroutines */
     volatile struct ProgrammerCtrl    programmer_ctrl; // write by kMod only
@@ -84,6 +84,12 @@ struct SharedMem
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000u);
 // NOTE: PRUs shared ram should be even 12kb
+
+#ifdef __PYTHON__
+extern volatile struct SharedMem shared_mem; // defined in py_module/pru_source.c
+  //#undef PRU_SHARED_MEM_OFFSET  // Precaution (throws if code uses it, avoids segfault)
+  #define PRU_SHARED_MEM_OFFSET ((volatile void *) &shared_mem)
+#endif
 
 // NOTE: GCC-way preferred as cgt builds to 62204 bytes instead of 64244
 #define SHARED_MEM (*((volatile struct SharedMem *) PRU_SHARED_MEM_OFFSET))

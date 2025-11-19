@@ -190,7 +190,10 @@ gpio_state_t tmsh_tdil_tdo_rd(void)
 void clr_tclk_sbw(void)
 {
     if (tclk_state == GPIO_STATE_HIGH) { tmsldh(); }
-    else { tmsl(); }
+    else
+    {
+        tmsl();
+    }
 
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
 
@@ -202,7 +205,10 @@ void clr_tclk_sbw(void)
 void set_tclk_sbw(void)
 {
     if (tclk_state == GPIO_STATE_HIGH) { tmsldh(); }
-    else { tmsl(); }
+    else
+    {
+        tmsl();
+    }
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
 
     tdih();

@@ -57,11 +57,12 @@ extern uint32_t
  * These are the system events that we use to signal events to the PRUs.
  * See the AM335x TRM Table 4-22 for a list of all events
  */
-#define HOST_PRU_EVT_TIMESTAMP          (20u)
+#define HOST_PRU_EVT_TIMESTAMP (20u)
 
 /* The SharedMem struct resides at the beginning of the PRUs shared memory */
-#define PRU_SHARED_MEM_OFFSET           (0x10000u)
-
+#ifndef __PYTHON__
+  #define PRU_SHARED_MEM_OFFSET (0x10000u)
+#endif // __PYTHON__
 
 // Test data-containers and constants with pseudo-assertion with zero cost (if expression evaluates to 0 this causes a div0
 // NOTE: name => alphanum without spaces and without ""

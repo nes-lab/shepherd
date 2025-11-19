@@ -1,22 +1,22 @@
 # History of Changes
 
-## 2025.8.1
+## 2025.11.1
 
 - project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
-- py-packaging:
-  - allow installing everything via `.[all]`
-  - switch to UV (from pip)
-  - improve query for version-numbers
-- switch to uv for python tooling (on observer)
-  - tools are installed via `uv tool install /opt/shepherd/software/python-package/.`
-  - for testing there is a jane-venv automatically activated for jane and root (pytest has to be done from `sudo su`)
-  - ansible, services and packages are migrated
-- switch to uv for dev-environment
+- new virtual battery (generalized energy storage for vsource)
+  - pru-firmware (c-code) got port of python-model
+  - models and parametrization were evaluated in core-lib
+  - added [documentation for storage](https://nes-lab.github.io/shepherd/user/virtual_storage.html)
+  - update python pru-module (sim interface to c-code)
+  - extend testing of custom math functions (c-code)
+  - make storage configurable via kernel-module and sheep-package
+  - added [performance analysis](https://github.com/nes-lab/shepherd/blob/main/software/debug_compare_vsources/README.md) that documents harvesting and emulation results (python models vs. c-code vs. emulation by pru-firmware)
 - sheep
   - ~~won't exit with != 0 if config is not for that specific sheep~~
   - improve and bugfix resampling of output-data (also direct power-calculation) -> numpy brings beaglebone to a halt on vector-float-operations during measurement
   - add benchmark to find the cheapest resampling method
   - fix csv-header for pru-util
+  - use ExitStack() more correctly
 - herd
   - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
   - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
@@ -30,15 +30,32 @@
   - put & copy of files now removes possible prior files at destination
   - progressbar is now more responsive, as it constantly cycles through all still active threads
   - add option to disable progress-bar via `.disable_progress_bar()` and `--no-progress`, to keep logs clean
+- PRU
+  - improve over / underflow-protection of variables for harvester, storage, converter
+  - allow disabling aux functionality (small overhead not needed for testbed) via `ENABLE_AUX` compile-switch
+  - add more unittests for c-code via python-module
+  - tests pru-code automatically via GitHub workflow
+- kMod
+  - fix race-condition bug that prevented start of pru0 (reliably)
+  - disable experimental code - not compatible with non-ti kernel
+  - verify canaries less often (~ 2 min)
+- py-packaging:
+  - allow installing everything via `.[all]`
+  - switch to UV (from pip)
+  - improve query for version-numbers
+- switch to uv for python tooling (on observer)
+  - tools are installed via `uv tool install /opt/shepherd/software/python-package/.`
+  - for testing there is a jane-venv automatically activated for jane and root (pytest has to be done from `sudo su`)
+  - ansible, services and packages are migrated
+- switch to uv for dev-environment
 - ansible
   - remove usage of nelson boot scripts (update kernel & grow partition)
   - try newer non-ti kernel
   - make cleaning-role safer
   - improve kernel preparation
   - switch python components to UV and venv
-- kMod
-  - disable experimental code - not compatible with non-ti kernel
-  - verify canaries less often (~ 2 min)
+- update tooling
+- **tested**: pytest sheep, pytest herd windows, pytest shepherd_pru
 
 ## 0.9.3
 

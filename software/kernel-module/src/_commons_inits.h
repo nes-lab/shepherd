@@ -33,38 +33,34 @@ const struct CalibrationConfig CalibrationConfig_default = {
 };
 
 const struct ConverterConfig ConverterConfig_default = {
-        .converter_mode                  = 100u,
-        .interval_startup_delay_drain_n  = 101u,
+        .converter_mode                    = 100u,
+        .interval_startup_delay_drain_n    = 101u,
 
-        .V_input_max_uV                  = 102u,
-        .I_input_max_nA                  = 103u,
-        .V_input_drop_uV                 = 104u,
-        .R_input_kOhm_n22                = 105u,
+        .V_input_max_uV                    = 102u,
+        .I_input_max_nA                    = 103u,
+        .V_input_drop_uV                   = 104u,
+        .R_input_kOhm_n22                  = 105u,
 
-        .Constant_us_per_nF_n28          = 106u,
-        .V_intermediate_init_uV          = 107u,
-        .I_intermediate_leak_nA          = 108u,
+        .V_mid_enable_output_threshold_uV  = 106u,
+        .V_mid_disable_output_threshold_uV = 107u,
+        .dV_mid_enable_output_uV           = 108u,
+        .interval_check_thresholds_n       = 109u,
 
-        .V_enable_output_threshold_uV    = 109u,
-        .V_disable_output_threshold_uV   = 110u,
-        .dV_enable_output_uV             = 111u,
-        .interval_check_thresholds_n     = 112u,
+        .V_pwr_good_enable_threshold_uV    = 110u,
+        .V_pwr_good_disable_threshold_uV   = 111u,
+        .immediate_pwr_good_signal         = 112u,
 
-        .V_pwr_good_enable_threshold_uV  = 113u,
-        .V_pwr_good_disable_threshold_uV = 114u,
-        .immediate_pwr_good_signal       = 115u,
+        .V_output_log_gpio_threshold_uV    = 113u,
 
-        .V_output_log_gpio_threshold_uV  = 116u,
+        .V_input_boost_threshold_uV        = 114u,
+        .V_mid_max_uV                      = 115u,
 
-        .V_input_boost_threshold_uV      = 117u,
-        .V_intermediate_max_uV           = 118u,
+        .V_output_uV                       = 116u,
+        .V_buck_drop_uV                    = 117u,
 
-        .V_output_uV                     = 119u,
-        .V_buck_drop_uV                  = 120u,
-
-        .LUT_input_V_min_log2_uV         = 121u,
-        .LUT_input_I_min_log2_nA         = 122u,
-        .LUT_output_I_min_log2_nA        = 123u,
+        .LUT_input_V_min_log2_uV           = 118u,
+        .LUT_input_I_min_log2_nA           = 119u,
+        .LUT_output_I_min_log2_nA          = 120u,
 
         .LUT_inp_efficiency_n8 =
                 {{0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u, 10u, 11u},
@@ -83,26 +79,26 @@ const struct ConverterConfig ConverterConfig_default = {
         .canary                    = CANARY_VALUE_U32,
 };
 
-const struct BatteryConfig BatteryConfig_default = {
-        .Constant_s_per_mAs_n48     = 300u,
-        .Constant_1_per_kOhm_n18    = 301u,
+const struct StorageConfig StorageConfig_default = {
+        .SoC_init_1_n30        = 300u,
 
-        .LUT_voc_SoC_min_log2_u_n32 = 302u,
-        .LUT_voc_uV_n8 =
+        .Constant_1_per_nA_n60 = 301u,
+        .Constant_1_per_uV_n60 = 302u,
+
+        .LuT_VOC_uV_n8 =
                 {
-                        401u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 402u, 2u, 3u, 4u, 5u,
-                        6u,   7u,   8u,   9u, 10u, 403u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
-                        404u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 405u, 2u, 3u, 4u, 5u,
-                        6u,   7u,   8u,   9u, 10u, 406u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
-                        407u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 408u, 2u, 3u, 4u, 5u,
-                        6u,   7u,   8u,   9u, 10u, 409u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
-                        410u, 2u,   3u,   4u, 5u,  6u,   7u, 8u, 9u, 10u, 411u, 2u, 3u, 4u, 5u,
-                        6u,   7u,   8u,   9u, 10u, 412u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
-                        421u, 422u, 423u,
+                        401u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 402u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 403u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        404u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 405u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 406u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        407u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 408u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 409u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        410u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 411u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 412u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        413u, 2u, 3u, 4u, 5u,  6u,   7u, 8u,
                 },
 
-        .LUT_rseries_SoC_min_log2_u_n32 = 303u,
-        .LUT_rseries_KOhm_n32 =
+        .LuT_RSeries_kOhm_n32 =
                 {
                         501u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 502u, 2u, 3u, 4u, 5u,
                         6u,   7u, 8u, 9u, 10u, 503u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
@@ -110,7 +106,9 @@ const struct BatteryConfig BatteryConfig_default = {
                         6u,   7u, 8u, 9u, 10u, 506u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
                         507u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 508u, 2u, 3u, 4u, 5u,
                         6u,   7u, 8u, 9u, 10u, 509u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
-                        510u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        510u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u, 511u, 2u, 3u, 4u, 5u,
+                        6u,   7u, 8u, 9u, 10u, 512u, 2u, 3u, 4u, 5u,  6u,   7u, 8u, 9u, 10u,
+                        513u, 2u, 3u, 4u, 5u,  6u,   7u, 8u,
                 },
 
         .canary = CANARY_VALUE_U32,

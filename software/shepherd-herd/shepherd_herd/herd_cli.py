@@ -111,7 +111,7 @@ def version() -> None:
     log.debug("h5py v%s", metadata.version("h5py"))
     log.debug("numpy v%s", metadata.version("numpy"))
     log.debug("pydantic v%s", metadata.version("pydantic"))
-    log.debug("PyYAML v%s", metadata.version("yaml"))
+    log.debug("PyYAML v%s", metadata.version("pyyaml"))
 
 
 @cli.command(
@@ -618,7 +618,7 @@ def retrieve(
         if (
             filename.is_file()
             and filename.exists()
-            and filename.suffix in [".yaml", ".yml", ".pickle"]
+            and filename.suffix in {".yaml", ".yml", ".pickle"}
         ):
             failed = herd.get_task_files(filename, outdir, separate=separate, delete_src=delete)
         else:

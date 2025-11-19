@@ -1,12 +1,11 @@
 from pathlib import Path
 
+from config import host_selected
+from config import hrv_list
 from shepherd_core.data_models import VirtualHarvesterConfig
 from shepherd_core.logger import log
 from shepherd_data import Reader
 from shepherd_pru import simulate_harvester
-
-from .config import host_selected
-from .config import hrv_list
 
 path_input = Path(__file__).parent / host_selected / "hrv_ivcurve.h5"
 results: dict = {}

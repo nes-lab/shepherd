@@ -31,7 +31,8 @@ int ap_init()
     if ((rc = dp_write(DP_REG_CTRLSTAT, 0x50000000))) return rc;
 
     uint8_t retries = 10u;
-    do {
+    do
+    {
         if ((rc = dp_read(&data, DP_REG_CTRLSTAT))) return rc;
         retries--;
     }

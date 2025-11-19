@@ -8,6 +8,7 @@ from shepherd_core import CalibrationCape
 from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models import VirtualStorageConfig
 from shepherd_core.vsource import VirtualSourceModel
 from shepherd_sheep import ShepherdDebug
 
@@ -73,12 +74,12 @@ def pyt_vsource(
 def reference_vss() -> dict:
     # keep in sync with "_test_config_virtsource.yaml"
     return {
-        "C_intermediate_uF": 100 * (10**0),
-        "V_intermediate_init_mV": 3000,
+        "storage": VirtualStorageConfig(
+            name="Capacitor_100uF_6.3V", SoC_init=0.6, R_leak_Ohm=3.0 / 9.0e-9
+        ),
         "eta_in": 0.5,
         "eta_out": 0.8,
-        "I_intermediate_leak_nA": 9 * (10**0),
-        "V_intermediate_disable_threshold_mV": 2300,
+        "V_intermediate_disable_output_threshold_mV": 2300,
         "V_output_mV": 2000,
         "t_sample_s": 10 * (10**-6),
     }
@@ -97,12 +98,16 @@ def test_vsource_add_charge(
     reference_vss: Mapping[str, Any],
 ) -> None:
     # set desired end-voltage of storage-cap:
-    V_cap_mV = 3500
+    V_cap_goal_mV = 4000
     dt_s = 0.100
     V_inp_mV = 1000
-    dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_init_mV"]
-    I_cIn_nA = dV_cap_mV * reference_vss["C_intermediate_uF"] / dt_s
-    P_inp_pW = I_cIn_nA * reference_vss["V_intermediate_init_mV"] / reference_vss["eta_in"]
+    store = reference_vss["storage"]
+    dV_cap_mV = V_cap_goal_mV - 1e3 * store.V_init
+    assert dV_cap_mV > 0
+    I_cIn_nA = dV_cap_mV * store.capacity_in_uF / dt_s
+    assert I_cIn_nA > 0
+    P_inp_pW = I_cIn_nA * 1e3 * store.V_init / reference_vss["eta_in"]
+    assert P_inp_pW > 0
     I_inp_nA = P_inp_pW / V_inp_mV
     # prepare fn-parameters
     V_inp_uV = int(V_inp_mV * 10**3)
@@ -110,7 +115,7 @@ def test_vsource_add_charge(
     n_samples = int(dt_s / reference_vss["t_sample_s"])
     print(
         f"CHARGE - feeding I = {I_inp_nA} nA, V = {V_inp_mV} mV "
-        f"into vSource with {n_samples} steps",
+        f"into vSource with {n_samples} steps, V_init = {store.V_init}",
     )
     print(f" PRU PInp = {pru_vsource.cnv_calc_inp_power(V_inp_uV, I_inp_nA)} fW")
     print(f" PRU VCap = {pru_vsource.cnv_update_cap_storage()} uV")
@@ -118,10 +123,8 @@ def test_vsource_add_charge(
     print(f" Py  VCap = {pyt_vsource.cnv.update_cap_storage()} uV")
 
     for _ in range(n_samples):
-        pru_vsource.cnv_charge(
-            V_inp_uV,
-            I_inp_nA,
-        )  # combines P_in, P_out, V_cap, state_update
+        # combines P_in, P_out, V_cap, state_update
+        pru_vsource.cnv_charge(V_inp_uV, I_inp_nA)
         pyt_vsource.cnv.calc_inp_power(V_inp_uV, I_inp_nA)
         pyt_vsource.cnv.update_cap_storage()
 
@@ -130,13 +133,13 @@ def test_vsource_add_charge(
     pyt_vsource.cnv.calc_inp_power(0, 0)
     V_cap_pyt_mV = float(pyt_vsource.cnv.update_cap_storage()) * 10**-3
 
-    dVCap_pru = V_cap_pru_mV - reference_vss["V_intermediate_init_mV"]
-    dVCap_pyt = V_cap_pyt_mV - reference_vss["V_intermediate_init_mV"]
+    dVCap_pru = V_cap_pru_mV - 1e3 * store.V_init
+    dVCap_pyt = V_cap_pyt_mV - 1e3 * store.V_init
     deviation_pru = difference_percent(dVCap_pru, dV_cap_mV, 40)  # %
     deviation_pyt = difference_percent(dVCap_pyt, dV_cap_mV, 40)  # %
     deviation_rel = difference_percent(dVCap_pru, dVCap_pyt, 40)  # %
     print(
-        f"CHARGE - VCap goal = {V_cap_mV} mV, "
+        f"CHARGE - VCap goal = {V_cap_goal_mV} mV, "
         f"py = {V_cap_pyt_mV:.3f} mV (dev={deviation_pyt} %), "
         f"pru = {V_cap_pru_mV:.3f} mV (dev={deviation_pru} %), "
         f"dev_rel = {deviation_rel} %",
@@ -154,16 +157,17 @@ def test_vsource_drain_charge(
     reference_vss: Mapping[str, Any],
 ) -> None:
     # set desired end-voltage of storage-cap - low enough to disable output
-    V_cap_mV = 2300
+    V_cap_goal_mV = reference_vss["V_intermediate_disable_output_threshold_mV"] - 1
     dt_s = 0.50
-
-    dV_cap_mV = V_cap_mV - reference_vss["V_intermediate_init_mV"]
-    I_cOut_nA = (
-        -dV_cap_mV * reference_vss["C_intermediate_uF"] / dt_s
-        - reference_vss["I_intermediate_leak_nA"]
-    )
-    P_out_pW = I_cOut_nA * reference_vss["V_intermediate_init_mV"] * reference_vss["eta_out"]
+    store = reference_vss["storage"]
+    dV_cap_mV = V_cap_goal_mV - 1e3 * store.V_init
+    assert dV_cap_mV < 0
+    I_cOut_nA = -dV_cap_mV * store.capacity_in_uF / dt_s - 1e9 * store.V_init / store.R_leak_Ohm
+    assert I_cOut_nA > 0
+    P_out_pW = I_cOut_nA * 1e3 * store.V_init * reference_vss["eta_out"]
+    assert P_out_pW > 0
     I_out_nA = P_out_pW / reference_vss["V_output_mV"]
+    assert I_out_nA > 0
     # prepare fn-parameters
     cal = CalibrationEmulator()
     I_out_adc_raw = cal.adc_C_A.si_to_raw(I_out_nA * 10**-9)
@@ -171,7 +175,7 @@ def test_vsource_drain_charge(
 
     print(
         f"DRAIN - feeding I = {I_out_nA} nA as {I_out_adc_raw} raw "
-        f"into vSource with {n_samples} steps",
+        f"into vSource with {n_samples} steps, V_init = {store.V_init}",
     )
     print(f" PRU POut = {pru_vsource.cnv_calc_out_power(I_out_adc_raw)} fW")
     print(f" PRU VCap = {pru_vsource.cnv_update_cap_storage()} uV")
@@ -181,9 +185,8 @@ def test_vsource_drain_charge(
     print(f" Py  VOut = {pyt_vsource.cnv.update_states_and_output()} raw")
 
     for index in range(n_samples):
-        _, v_raw1 = pru_vsource.cnv_drain(
-            I_out_adc_raw,
-        )  # combines P_in, P_out, V_cap, state_update
+        # combines P_in, P_out, V_cap, state_update
+        _, v_raw1 = pru_vsource.cnv_drain(I_out_adc_raw)
         pyt_vsource.cnv.calc_out_power(I_out_adc_raw)
         pyt_vsource.cnv.update_cap_storage()
         v_raw2 = pyt_vsource.cnv.update_states_and_output()
@@ -201,24 +204,21 @@ def test_vsource_drain_charge(
     V_mid_pyt_mV = float(pyt_vsource.cnv.update_cap_storage()) * 10**-3
     V_out_pyt_raw = pyt_vsource.cnv.update_states_and_output()
 
-    dVCap_ref = (
-        reference_vss["V_intermediate_init_mV"]
-        - reference_vss["V_intermediate_disable_threshold_mV"]
-    )
-    dVCap_pru = reference_vss["V_intermediate_init_mV"] - V_mid_pru_mV
-    dVCap_pyt = reference_vss["V_intermediate_init_mV"] - V_mid_pyt_mV
+    dVCap_ref = -dV_cap_mV
+    dVCap_pru = 1e3 * store.V_init - V_mid_pru_mV
+    dVCap_pyt = 1e3 * store.V_init - V_mid_pyt_mV
     deviation_pru = difference_percent(dVCap_pru, dVCap_ref, 40)  # %
     deviation_pyt = difference_percent(dVCap_pyt, dVCap_ref, 40)  # %
     deviation_rel = difference_percent(dVCap_pyt, dVCap_pru, 40)  # %
     print(
-        f"DRAIN - VCap goal = {V_cap_mV} mV, "
+        f"DRAIN - VCap goal = {V_cap_goal_mV} mV, "
         f"pyt = {V_mid_pyt_mV} mV (dev={deviation_pyt} %), "
         f"pru = {V_mid_pru_mV} mV (dev={deviation_pru} %), "
         f"dev_rel = {deviation_rel} %",
     )
     print(f"DRAIN - VOut goal = 0 n, py = {V_out_pyt_raw} n, pru = {V_out_pru_raw} n")
     assert deviation_pyt < 3.0  # %
-    assert deviation_pru < 4.0  # %  # TODO: was 3, recheck when vsource was updated
+    assert deviation_pru < 3.0  # %
     assert deviation_rel < 1.0  # %
     assert V_out_pru_raw < 1  # output disabled
     assert V_out_pyt_raw < 1
@@ -259,7 +259,7 @@ def test_vsource_diodecap(
     )
     A_inp_nA = 10**3
     for V_inp_mV in voltages_mV:
-        if V_inp_mV > pyt_vsource.cfg_src.V_intermediate_init_mV:
+        if V_inp_mV > 1e3 * pyt_vsource.cfg_src.storage.V_init:
             # selection must be below cap-init-voltage
             continue
         V_pru2_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
@@ -278,8 +278,8 @@ def test_vsource_diodecap(
     assert pru_vsource.W_inp_fWs >= pru_vsource.W_out_fWs
 
     # drain Cap for next tests
-    # NOTE: must be above V_intermediate_disable_threshold_mV
-    V_target_mV = max(2200, pyt_vsource.cfg_src.V_intermediate_disable_threshold_mV + 100)
+    # NOTE: must be above V_intermediate_disable_output_threshold_mV
+    V_target_mV = max(2200, pyt_vsource.cfg_src.V_intermediate_disable_output_threshold_mV + 100)
     A_out_nA = 10**6  # 1mA
     steps_needed = [0, 0]
     while pru_vsource.iterate_sampling(0, 0, A_out_nA) > V_target_mV * 10**3:
@@ -334,7 +334,7 @@ def test_vsource_diodecap(
     # feed 5 mA, drain double of that -> output should settle at (V_in - V_drop)/2
     A_inp_nA = 5 * 10**6
     A_out_nA = 2 * A_inp_nA
-    V_settle_mV = max(2200, pyt_vsource.cfg_src.V_intermediate_disable_threshold_mV + 100)
+    V_settle_mV = max(2200, pyt_vsource.cfg_src.V_intermediate_disable_output_threshold_mV + 100)
     V_inp_uV = (V_settle_mV * 2 + V_diode_mV) * 1e3
     assert V_inp_uV <= pyt_vsource.cfg_src.V_input_max_mV * 1e3
     # how many steps? charging took 9 steps at 200mA, so roughly 9 * 200 / (10 - 5)

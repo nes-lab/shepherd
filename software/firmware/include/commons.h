@@ -158,7 +158,7 @@ struct UtilTrace
 } __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
-struct ProgrammerCtrl
+struct ProgrammerCtrl // TODO: also rename to *Config?
 {
     int32_t  state;
     /* Target chip to be programmed */
@@ -206,6 +206,7 @@ struct CalibrationConfig
 } __attribute__((packed));
 
 #define LUT_SIZE (12)
+extern uint32_t __ASSERT_LUT_CONVERTER_SIZE[1 / ((LUT_SIZE > 1u) && (LUT_SIZE < 32u))];
 
 /* This structure defines all settings of virtual converter emulation
  * more complex converters use vars in their section and above
@@ -226,16 +227,12 @@ struct ConverterConfig
     uint32_t V_input_drop_uV;  // simulate possible diode
     uint32_t R_input_kOhm_n22; // resistance only active with disabled boost
 
-    uint32_t Constant_us_per_nF_n28;
-    uint32_t V_intermediate_init_uV; // allow a proper / fast startup
-    uint32_t I_intermediate_leak_nA;
-
     // -> output gets connected (hysteresis-combo with next value)
-    uint32_t V_enable_output_threshold_uV;
+    uint32_t V_mid_enable_output_threshold_uV;
     // -> output gets disconnected
-    uint32_t V_disable_output_threshold_uV;
+    uint32_t V_mid_disable_output_threshold_uV;
     // compensate C_out, for disable state when V_intermediate < V_enable/disable_threshold_uV
-    uint32_t dV_enable_output_uV;
+    uint32_t dV_mid_enable_output_uV;
     // some BQs check every 65 ms if output should be disconnected
     uint32_t interval_check_thresholds_n;
 
@@ -252,7 +249,7 @@ struct ConverterConfig
     // min input-voltage for the boost converter to work
     uint32_t V_input_boost_threshold_uV;
     // -> boost shuts off
-    uint32_t V_intermediate_max_uV;
+    uint32_t V_mid_max_uV;
 
     /* Buck Reg */
     uint32_t V_output_uV;
@@ -270,19 +267,22 @@ struct ConverterConfig
     uint32_t canary;
 } __attribute__((packed));
 
-#define VOC_LUT_SIZE     123
-#define RSERIES_LUT_SIZE 100
+#define LUT_STORAGE_sLOG (7u)
+#define LUT_STORAGE_SIZE (1u << LUT_STORAGE_sLOG)
 
-struct BatteryConfig
+extern uint32_t
+        __ASSERT_LUT_STORAGE_SIZE[1 / ((LUT_STORAGE_sLOG > 1u) && (LUT_STORAGE_sLOG < 32u))];
+
+struct StorageConfig
 {
-    uint32_t Constant_s_per_mAs_n48;
-    uint32_t Constant_1_per_kOhm_n18;
+    uint32_t SoC_init_1_n30;
 
-    uint32_t LUT_voc_SoC_min_log2_u_n32;
-    uint32_t LUT_voc_uV_n8[VOC_LUT_SIZE];
+    uint32_t Constant_1_per_nA_n60;
+    uint32_t Constant_1_per_uV_n60;
 
-    uint32_t LUT_rseries_SoC_min_log2_u_n32;
-    uint32_t LUT_rseries_KOhm_n32[RSERIES_LUT_SIZE];
+    uint32_t LuT_VOC_uV_n8[LUT_STORAGE_SIZE];
+    uint32_t LuT_RSeries_kOhm_n32[LUT_STORAGE_SIZE];
+
     /* safety */
     uint32_t canary;
 } __attribute__((packed));

@@ -133,7 +133,7 @@ static bool_ft handle_kernel_com()
                 return 1u;
 
             case MSG_DBG_VSRC_V_CAP:
-                converter_update_cap_storage();
+                converter_update_storage();
                 msgsys_send(MSG_DBG_VSRC_V_CAP, get_V_intermediate_uV(), 0);
                 return 1u;
 
@@ -152,7 +152,7 @@ static bool_ft handle_kernel_com()
             case MSG_DBG_VSRC_CHARGE:
                 converter_calc_inp_power(msg_in.value[0], msg_in.value[1]);
                 converter_calc_out_power(0u);
-                converter_update_cap_storage();
+                converter_update_storage();
                 res = converter_update_states_and_output();
                 msgsys_send(MSG_DBG_VSRC_CHARGE, get_V_intermediate_uV(), res);
                 return 1u;
@@ -160,7 +160,7 @@ static bool_ft handle_kernel_com()
             case MSG_DBG_VSRC_DRAIN:
                 converter_calc_inp_power(0u, 0u);
                 converter_calc_out_power(msg_in.value[0]);
-                converter_update_cap_storage();
+                converter_update_storage();
                 res = converter_update_states_and_output();
                 msgsys_send(MSG_DBG_VSRC_DRAIN, get_V_intermediate_uV(), res);
                 return 1u;
@@ -191,7 +191,10 @@ static bool_ft handle_kernel_com()
             // pipeline-test for msg-system
             msgsys_send_status(MSG_TEST_ROUTINE, msg_in.value[0], 0u);
         }
-        else { msgsys_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u); }
+        else
+        {
+            msgsys_send(MSG_ERR_INVLD_CMD, msg_in.type, 0u);
+        }
     }
     return 0u;
 }
@@ -213,10 +216,12 @@ void event_loop()
         if (iep_tmr_cmp_sts & IEP_CMP1_MASK) // LogicAnalyzer: 104 ns
         {
             GPIO_OFF(SPI_CS_ADCs_MASK);
-            // determine minimal low duration for starting sampling -> datasheet not clear, but 15-50 ns could be enough
+            /*  determine minimal low duration for starting sampling
+                -> datasheet not clear, but 15-50 ns could be enough
+                NOTE: 1 us has to pass before trying to read that value
+            */
             __delay_cycles(100 / 5);
             GPIO_ON(SPI_CS_ADCs_MASK);
-            // TODO: make sure that 1 us passes before trying to get that value
         }
         // timestamp pru0 to monitor utilization
         const uint32_t timer_start = iep_get_cnt_val();
@@ -234,14 +239,14 @@ void event_loop()
             SHARED_MEM.last_sync_timestamp_ns = SHARED_MEM.next_sync_timestamp_ns;
             /* forward interrupt to pru1 */
             SHARED_MEM.cmp0_trigger_for_pru1  = 1u;
-            /* go dark if not running */
-            if (SHARED_MEM.shp_pru_state != STATE_RUNNING)
+            /* update state-machine */
+            if (SHARED_MEM.shp_pru_state == STATE_STARTING)
+                SHARED_MEM.shp_pru_state = STATE_RUNNING;
+            else if (SHARED_MEM.shp_pru_state != STATE_RUNNING)
             {
-                GPIO_OFF(DEBUG_PIN0_MASK);
+                GPIO_OFF(DEBUG_PIN0_MASK); /* go dark if not running */
                 /* Did the Linux kernel module ask for start / stop / reset? */
                 if (SHARED_MEM.shp_pru_state >= STATE_STOPPED) return;
-                if (SHARED_MEM.shp_pru_state == STATE_STARTING)
-                    SHARED_MEM.shp_pru_state = STATE_RUNNING;
             }
         }
 
@@ -270,7 +275,10 @@ void event_loop()
                 SHARED_MEM.buffer_iv_out_ptr->idx_pru           = idx;
 
                 if (idx >= BUFFER_IV_OUT_SAMPLES_N - 1u) { SHARED_MEM.buffer_iv_out_idx = 0u; }
-                else { SHARED_MEM.buffer_iv_out_idx = idx + 1u; }
+                else
+                {
+                    SHARED_MEM.buffer_iv_out_idx = idx + 1u;
+                }
             }
 
             // LogicAnalyzer: 148 ns for just checking
@@ -286,8 +294,7 @@ void event_loop()
 
 int main(void)
 {
-    GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
-
+    DEBUG_STATE_3;
 
     /* Initialize struct-Members Part A, must come first - this blocks PRU1! */
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
@@ -343,26 +350,28 @@ int main(void)
     SHARED_MEM.programmer_ctrl.state             = PRG_STATE_IDLE;
     SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NONE;
 
+    DEBUG_STATE_0;
+
     msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT   = 0u;
 
-    /* allow PRU1 to enter event-loop */
+    /* allow PRU1 to enter event-loop and wait till it is ready */
     SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.shp_pru0_mode);
-    SHARED_MEM.pru0_ns_per_sample = 0u;
+    SHARED_MEM.pru0_ns_per_sample = IDX_OUT_OF_BOUND;
 
     SHARED_MEM.buffer_iv_inp_idx  = 0u;
     SHARED_MEM.buffer_iv_out_idx  = 0u;
     SHARED_MEM.buffer_gpio_idx    = 0u;
     SHARED_MEM.buffer_util_idx    = 0u;
 
-    GPIO_ON(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+    DEBUG_STATE_3;
     sample_init();
-    GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+    DEBUG_STATE_0;
 
     SHARED_MEM.vsource_skip_gpio_logging = false;
 
@@ -372,6 +381,7 @@ stopped:
     event_loop();
 
     /* stopped state is used to read remaining buffer content */
+    DEBUG_STATE_0;
     if (SHARED_MEM.shp_pru_state == STATE_STOPPED) goto stopped;
     goto reset;
 }

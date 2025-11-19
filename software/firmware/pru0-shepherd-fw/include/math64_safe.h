@@ -7,8 +7,11 @@ uint64_t mul64(uint64_t value1, uint64_t value2);
 uint32_t mul32(uint32_t value1, uint32_t value2);
 uint64_t add64(uint64_t value1, uint64_t value2);
 uint32_t add32(uint32_t value1, uint32_t value2);
+uint32_t add32s(uint32_t value1, int32_t value2);
 uint64_t sub64(uint64_t value1, uint64_t value2);
 uint32_t sub32(uint32_t value1, uint32_t value2);
+uint32_t sub32s(uint32_t value1, int32_t value2);
+uint32_t abs_delta32(uint32_t value1, uint32_t value2);
 
 
 #if defined(__GNUC__) || defined(__PYTHON__)
@@ -19,10 +22,10 @@ uint32_t max_value(uint32_t value1, uint32_t value2);
 uint32_t min_value(uint32_t value1, uint32_t value2);
 #else
 /* use from asm-file */
-extern uint8_ft get_size_in_bits(uint32_t value);
-extern uint8_ft log2safe(uint32_t value);
-extern uint32_t max_value(uint32_t value1, uint32_t value2);
-extern uint32_t min_value(uint32_t value1, uint32_t value2);
+extern uint8_ft inline get_size_in_bits(uint32_t value);
+extern uint8_ft inline log2safe(uint32_t value);
+extern uint32_t inline max_value(uint32_t value1, uint32_t value2);
+extern uint32_t inline min_value(uint32_t value1, uint32_t value2);
 #endif
 
 
