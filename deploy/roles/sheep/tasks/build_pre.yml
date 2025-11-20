@@ -36,7 +36,7 @@
 
 - name: UV - Uninstall shepherd python package
   ansible.builtin.command:
-    cmd: "/home/jane/.local/bin/uv pip uninstall {{ item }}"
+    cmd: "/usr/local/bin/uv pip uninstall {{ item }}"
     chdir: '/home/{{ ansible_user }}'
   loop:
     - shepherd-core
@@ -47,8 +47,8 @@
     - install
     - python
   when: sheep_rebuild_python_package | bool
-  become: false
-  # there were situations were the core-lib stayed old
+  become: true
+  # there were situations were the core-lib stayed old (installed via pip)
 
 - name: Get full path of repository
   ansible.builtin.command: "realpath {{ role_path }}/../../.."
@@ -97,8 +97,7 @@
     - source-code
     - python
 
-- name: UV - update itself
+- name: PIP - update UV
   ansible.builtin.command:
-    cmd: '/home/jane/.local/bin/uv self update'
-    chdir: '/home/{{ ansible_user }}'
-  become: false
+    cmd: '/usr/bin/pip install uv --upgrade --break-system-packages'
+  become: true

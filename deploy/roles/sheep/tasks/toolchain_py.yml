@@ -18,23 +18,10 @@
       ]
     state: present
 
-- name: UV - install
-  ansible.builtin.shell:
-    cmd: 'curl -LsSf https://astral.sh/uv/install.sh | sh'
-    chdir: '/home/{{ ansible_user }}'
-  become: false
-  # this should add to .bashrc: . "$HOME/.local/bin/env"
-
-- name: UV - redirect tool-install to global dir
-  ansible.builtin.lineinfile:
-    dest: '{{ item }}/.bashrc'
-    line: "export UV_TOOL_BIN_DIR=/usr/local/bin/"
-    regex: ^.*?UV_TOOL_BIN_DIR=.*$
-    insertafter: 'EOF'
-    state: present
-  loop:
-    - '/home/{{ ansible_user }}'
-    - '/root'
+- name: PIP - Install | upgrade UV
+  # Note: done via pip to get universal access (root, sudo, jane)
+  ansible.builtin.command:
+    cmd: pip install uv --upgrade --break-system-packages
   become: true
 
 - name: Allow install to tool-dir without sudo
@@ -43,46 +30,3 @@
     state: directory
     mode: 'a+rwx' # everyone can list and access files inside
   become: true
-
-- name: UV - create virtual Env
-  ansible.builtin.command:
-    cmd: '/home/jane/.local/bin/uv venv'
-    chdir: '/home/{{ ansible_user }}'
-  become: false
-- name: UV - activate vEnv on login
-  ansible.builtin.lineinfile:
-    dest: '{{ item }}/.bashrc'
-    line: ". '/home/{{ ansible_user }}/.venv/bin/activate'"
-    regex: ^#?\. ["'].*venv\/bin\/activate["'].*$
-    insertafter: 'EOF'
-    state: present
-  loop:
-    - '/home/{{ ansible_user }}'
-    - '/root'
-  become: true
-
-- name: UV - compile & install python-packages
-  # NOTE: with the added index a compilation can be avoided
-  # only possible up to debian bookworm / py 3.11 ATM
-  ansible.builtin.command:
-    cmd: '/home/jane/.local/bin/uv pip install {{ item }} --index=https://www.piwheels.org/simple'
-    chdir: '/home/{{ ansible_user }}'
-  loop:
-    - numpy  # 110 min
-    - h5py  # 54 min, needs numpy
-    - gevent  # 35 min
-    - zstandard  # 21 min
-    - pyzmq  # 25 min
-  become: false
-
-- name: UV - install more python-packages (< 1min/item)
-  ansible.builtin.command:
-    cmd: '/home/jane/.local/bin/uv pip install {{ item }}'
-    chdir: '/home/{{ ansible_user }}'
-  loop:
-    - psutil
-    - msgpack
-    - pydantic
-    - click
-    - shepherd-core
-  become: false

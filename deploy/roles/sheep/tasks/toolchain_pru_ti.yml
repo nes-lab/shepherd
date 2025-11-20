@@ -76,19 +76,16 @@
   tags:
     - pru-tools
 
-- name: Adding PRU environment vars in bashrc file
+- name: Adding PRU environment vars in user-profile
   ansible.builtin.lineinfile:
-    dest: '{{ item[1] }}/.bashrc'
-    line: 'export {{ item[0]["name"] }}={{ item[0]["path"] }}'
-    regex: "#?export {{ item[0]['name'] }}=.*$"
+    dest: '/etc/profile.d/shepherd.sh'
+    line: 'export {{ item.name }}={{ item.path }}'
+    regex: "#?export {{ item.name }}=.*$"
     insertafter: 'EOF'
     state: present
-  with_nested:
-    - [
-      { name: PRU_CGT, path: "{{ sheep_ti_pru_cgt_path }}" },
-      { name: PRU_CGT_SUPPORT, path: "{{ sheep_ti_pru_support_path }}" }
-    ]
-    - ['/home/{{ ansible_user }}', '/root']
+  loop:
+    - { name: PRU_CGT, path: "{{ sheep_ti_pru_cgt_path }}" }
+    - { name: PRU_CGT_SUPPORT, path: "{{ sheep_ti_pru_support_path }}" }
   become: true
   tags:
     - pru-tools

@@ -13,6 +13,6 @@
 
 - name: UV - prune cache
   ansible.builtin.command:
-    cmd: '/home/jane/.local/bin/uv cache prune'
+    cmd: '/usr/local/bin/uv cache prune'
     chdir: '/home/{{ ansible_user }}'
-  become: false
+  become: true

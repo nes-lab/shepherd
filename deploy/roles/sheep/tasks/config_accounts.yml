@@ -1,0 +1,22 @@
+---
+
+- name: Configure sudo to remember relevant env-vars
+  ansible.builtin.copy:
+    src: "jane"
+    dest: "/etc/sudoers.d/"
+    mode: '0644'
+
+- name: Activate custom profile (generalized .bashrc)
+  ansible.builtin.copy:
+    src: 'shepherd.sh'
+    dest: '/etc/profile.d/'
+    mode: '0644'
+    # this will be extended with PRU_CGT-vars in later scripts
+
+- name: Activate custom profile for root
+  ansible.builtin.lineinfile:
+    dest: '/root/.bashrc'
+    line: ". '/etc/profile.d/shepherd.sh'"
+    regex: '#?.*\/shepherd\.sh.*$'
+    insertafter: 'EOF'
+    state: present
