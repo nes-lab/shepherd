@@ -53,7 +53,10 @@
   - try newer non-ti kernel
   - make cleaning-role safer
   - improve kernel preparation
-  - switch python components to UV and venv
+  - switch python components to UV ~~and venv~~
+  - improve usage via UV, without venv
+  - improve modifications to user-account (custom sudoers-file and generalized .bashrc)
+- improve usage of ntpdate for forced resync
 - update tooling
 - **tested**: pytest sheep, pytest herd windows, pytest shepherd_pru
 

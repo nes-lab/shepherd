@@ -22,7 +22,6 @@
     - '/home/{{ ansible_user }}'
     - '/root'
   become: true
-  when: false #
 
 - name: UV - create virtual Env
   ansible.builtin.command:
