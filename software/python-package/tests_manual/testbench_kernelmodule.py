@@ -12,13 +12,13 @@ from testbench_kernelmodule_fn_v2 import reload_kernel_module as reload_v2
 
 
 def reload_and_check_v1() -> bool:
-    """takes 7.990 s minimum, rarely ~45 s"""
+    """takes ~6.0 s minimum (was originally 8), rarely ~45 s"""
     reload_v1()
     return check_v1()
 
 
 def reload_and_check_v2() -> bool:
-    """takes ~1.0 s minimum, rarely ~30 s, mean 3s over 100iterations"""
+    """takes ~1.0 s minimum, rarely ~30 s, mean 1.3s over 100iterations"""
     reload_v2()
     return check_v2()
 

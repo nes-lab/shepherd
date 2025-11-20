@@ -30,30 +30,28 @@ def load_kernel_module() -> None:
     raise SystemError("Failed to load shepherd kernel module.")
 
 
-def remove_kernel_module(name: str = "shepherd") -> None:
+def remove_kernel_module() -> None:
     try_max: int = 6
     run_: int = 0
     while run_ < try_max:
-        ret = subprocess.run(  # noqa: S603
-            ["/usr/sbin/modprobe", "-rf", name],
+        ret = subprocess.run(
+            ["/usr/sbin/modprobe", "-rf", "shepherd"],
             timeout=60,
             capture_output=True,
             check=False,
         ).returncode
         run_ += 1
         if ret == 0:
-            log.debug("Deactivated %s kernel module (%d. try)", name, run_)
+            log.debug("Deactivated shepherd kernel module (%d. try)", run_)
             time.sleep(1)
             return
         time.sleep(1)
-    msg = f"Failed to unload {name} kernel module."
+    msg = "Failed to unload shepherd kernel module."
     raise SystemError(msg)
 
 
 def reload_kernel_module() -> None:
-    remove_kernel_module("shepherd")
-    remove_kernel_module("remoteproc")
-    remove_kernel_module("pruss")
+    remove_kernel_module()
     load_kernel_module()
 
 

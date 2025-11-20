@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem import FakeFilesystem
-from shepherd_sheep.sysfs_interface import reload_kernel_module
+from shepherd_sheep.sysfs_interface import check_sys_access
 from shepherd_sheep.sysfs_interface import remove_kernel_module
 
 
@@ -118,7 +118,7 @@ def _shepherd_up(
         fake_fs.add_real_file(here / "_test_config_virtsource.yaml")
         yield
     else:
-        reload_kernel_module()
+        check_sys_access(force_kmod_reload=True)
         yield
         gc.collect()  # precaution
 

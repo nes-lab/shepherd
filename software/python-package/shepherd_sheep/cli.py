@@ -35,7 +35,6 @@ from .shepherd_debug import ShepherdDebug
 from .shepherd_io import gpio_pin_nums
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import disable_ntp
-from .sysfs_interface import reload_kernel_module
 from .usage_log import get_last_usage
 from .usage_log import usage_logger
 
@@ -102,8 +101,6 @@ def cli(ctx: click.Context, *, verbose: bool, no_progress: bool) -> None:
         # this adds a usage-entry when sheep exits
         atexit.register(usage_logger, datetime.now().astimezone(), ctx.invoked_subcommand)
 
-    if check_sys_access():
-        ctx.exit(1)
     if not ctx.invoked_subcommand:
         click.echo("Please specify a valid command")
 
@@ -144,7 +141,12 @@ def version() -> None:
     default="A",
     help="Choose Target-Port of Cape for powering",
 )
-def target_power(target_port: str, voltage: float, *, on: bool, gpio_pass: bool) -> None:
+@click.pass_context
+def target_power(
+    ctx: click.Context, target_port: str, voltage: float, *, on: bool, gpio_pass: bool
+) -> None:
+    if check_sys_access():
+        ctx.exit(1)
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base
@@ -182,7 +184,9 @@ def target_power(target_port: str, voltage: float, *, on: bool, gpio_pass: bool)
 )
 @click.pass_context
 def run(ctx: click.Context, config: Path) -> None:
-    reload_kernel_module()  # more reliable with fresh states
+    if check_sys_access(force_kmod_reload=True):
+        # increases reliability with fresh states
+        ctx.exit(1)
     disable_ntp()
     failed = run_task(config)
     if failed:
@@ -273,6 +277,8 @@ def read(ctx: click.Context, cal_file: Path | None, *, revision: bool, full: boo
 @click.option("--port", "-p", type=click.INT, default=4242)
 @click.pass_context
 def rpc(ctx: click.Context, port: int | None) -> None:
+    if check_sys_access(force_kmod_reload=True):
+        ctx.exit(1)
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     log.info("Shepherd Debug Interface: Initialized")
@@ -362,6 +368,8 @@ def inventorize(output_path: Path) -> None:
 )
 @click.pass_context
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
+    if check_sys_access():
+        ctx.exit(1)
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,
@@ -376,9 +384,11 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     short_help="Reloads the shepherd-kernel-module",
     context_settings={"ignore_unknown_options": True},
 )
-def fix() -> None:
+@click.pass_context
+def fix(ctx: click.Context) -> None:
     set_verbosity()
-    reload_kernel_module()
+    if check_sys_access(force_kmod_reload=True):
+        ctx.exit(1)
 
 
 @cli.command(
@@ -390,8 +400,10 @@ def fix() -> None:
     type=click.Choice(["default", "emu", "hrv", "swd", "sbw", "sync"]),
     default="default",
 )
-def pru(firmware: str) -> None:
+def pru(ctx: click.Context, firmware: str) -> None:
     set_verbosity()
+    if check_sys_access():
+        ctx.exit(1)
     sysfs_interface.load_pru_firmware(firmware)
 
 
@@ -400,8 +412,11 @@ def pru(firmware: str) -> None:
     context_settings={"ignore_unknown_options": True},
 )
 @click.argument("duration", type=click.INT, default=30)
-def blink(duration: int) -> None:
+@click.pass_context
+def blink(ctx: click.Context, duration: int) -> None:
     set_verbosity()
+    if check_sys_access():
+        ctx.exit(1)
     log.info("Blinks LEDs IO & EMU next to Target-Ports for %d s", duration)
     with ShepherdDebug(use_io=False) as dbg:
         dbg.set_power_emulator(True)

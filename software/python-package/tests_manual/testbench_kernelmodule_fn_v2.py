@@ -62,10 +62,8 @@ def remove_kernel_module() -> None:
                     "--remove",
                     "--force",
                     "--quiet",
-                    "--wait",
-                    "300",
                     "shepherd",
-                ],
+                ],  # "--wait 300" does not help
                 timeout=10,
                 check=True,
                 shell=False,
@@ -86,10 +84,10 @@ def reload_kernel_module() -> None:
     load_kernel_module()
 
 
-def check_sys_access(iteration: int = 1, *, force_reload: bool = False) -> bool:
+def check_sys_access(iteration: int = 1, *, force_kmod_reload: bool = False) -> bool:
     """Return True if access failed."""
     retry_max: int = 5
-    if force_reload:
+    if force_kmod_reload:
         reload_kernel_module()
     try:  # test for correct usage -> fail early!
         get_mode()
