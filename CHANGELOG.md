@@ -17,6 +17,7 @@
   - add benchmark to find the cheapest resampling method
   - fix csv-header for pru-util
   - use ExitStack() more correctly
+  - speed up (factor 8) & stabilize reload of kernel module
 - herd
   - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
   - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
@@ -35,8 +36,9 @@
   - allow disabling aux functionality (small overhead not needed for testbed) via `ENABLE_AUX` compile-switch
   - add more unittests for c-code via python-module
   - tests pru-code automatically via GitHub workflow
+  - bugfix in statemachine of PRU0 - wait_for_state() sometimes locked up with "reset"
 - kMod
-  - fix race-condition bug that prevented start of pru0 (reliably)
+  - fix race-condition bug that prevented start of pru0 (reliably-improvement)
   - disable experimental code - not compatible with non-ti kernel
   - verify canaries less often (~ 2 min)
 - py-packaging:

@@ -250,7 +250,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
         log.debug("\tprogrammerState = %s", sysfs_interface.check_programmer())
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
         dbg.process_programming_messages()
-    except IOError:  # wait_for_state() fails
+    except OSError:  # when wait_for_state() fails
         failed = True
     except SystemExit:
         pass

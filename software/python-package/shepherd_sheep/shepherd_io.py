@@ -166,6 +166,7 @@ class ShepherdIO:
 
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
+            check_sys_access(force_kmod_reload=True)
             self._power_down_shp()
             self.unload_shared_mem()
             raise
@@ -292,6 +293,7 @@ class ShepherdIO:
                     "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
                     count,
                 )
+                check_sys_access()
             count += 1
         if sfs.get_state() != "idle":
             log.warning(
