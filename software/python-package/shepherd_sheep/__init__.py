@@ -250,6 +250,8 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
         log.debug("\tprogrammerState = %s", sysfs_interface.check_programmer())
         log.debug("\tprogrammerCtrl  = %s", sysfs_interface.read_programmer_ctrl())
         dbg.process_programming_messages()
+    except IOError:  # wait_for_state() fails
+        failed = True
     except SystemExit:
         pass
     stack.close()
@@ -298,7 +300,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, FirmwareModTask):
             failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            retries = 1 if element.simulate else 5
+            retries = 5
             rate_factor = 1.0
             had_error = True
             while retries > 0 and had_error:

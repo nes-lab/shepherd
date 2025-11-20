@@ -368,7 +368,7 @@ def inventorize(output_path: Path) -> None:
 )
 @click.pass_context
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
-    if check_sys_access():
+    if check_sys_access(force_kmod_reload=True):
         ctx.exit(1)
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
