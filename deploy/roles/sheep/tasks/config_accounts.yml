@@ -2,8 +2,8 @@
 
 - name: Configure sudo to remember relevant env-vars
   ansible.builtin.copy:
-    src: "jane"
-    dest: "/etc/sudoers.d/"
+    src: "sudoer"
+    dest: "/etc/sudoers.d/{{ ansible_user }}"
     mode: '0644'
 
 - name: Activate custom profile (generalized .bashrc)
