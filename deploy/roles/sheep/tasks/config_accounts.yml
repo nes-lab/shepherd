@@ -20,3 +20,11 @@
     regex: '#?.*\/shepherd\.sh.*$'
     insertafter: 'EOF'
     state: present
+
+- name: Prepare lab-usage without PTP (commented-out line in .bashrc)
+  ansible.builtin.lineinfile:
+    dest: '/home/{{ ansible_user }}/.bashrc'
+    line: "#sudo /usr/sbin/ntpdate -b -s -u pool.ntp.org"
+    regex: '#?.*\/ntpdate.*$'
+    insertafter: 'EOF'
+    state: present

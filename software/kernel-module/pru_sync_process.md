@@ -82,7 +82,7 @@ To resync a ptp-environment a simply `shepherd-herd resync` helps. It will do:
 ```Shell
 sudo systemctl stop phc2sys@eth0
 sudo systemctl stop ptp4l@eth0
-sudo ntpdate -s time.nist.gov
+sudo /usr/sbin/ntpdate -b -s -u pool.ntp.org
 sudo systemctl start phc2sys@eth0
 sudo systemctl start ptp4l@eth0
 # restart kernel module

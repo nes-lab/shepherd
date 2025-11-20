@@ -852,7 +852,7 @@ class Herd:
         commands = [
             "systemctl stop phc2sys@eth0",
             "systemctl stop ptp4l@eth0",
-            "ntpdate -s time.nist.gov",
+            "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
             "systemctl start phc2sys@eth0",
             "systemctl start ptp4l@eth0",
             "shepherd-sheep fix",  # restarts kernel module
