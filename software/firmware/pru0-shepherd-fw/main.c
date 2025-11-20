@@ -285,6 +285,7 @@ void event_loop()
             GPIO_ON(DEBUG_PIN1_MASK);
             handle_kernel_com();
         }
+        else if (SHARED_MEM.shp_pru_state >= STATE_STOPPED) return; /* allows forced stop */
 
         /* record loop-duration, compensate for CS -> gets further processed by pru1 */
         SHARED_MEM.pru0_ns_per_sample = iep_get_cnt_val() - timer_start + 110u;
