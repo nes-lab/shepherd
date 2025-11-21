@@ -23,7 +23,8 @@
 
 int main(void)
 {
-    GPIO_OFF(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
+    /* COPY of pru0/main from here up to 'reset:' - except additional index-init */
+    DEBUG_STATE_3;
 
     /* Initialize struct-Members Part A, must come first - this blocks PRU1! */
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
@@ -58,12 +59,15 @@ int main(void)
     SHARED_MEM.buffer_gpio_ptr->idx_pru          = IDX_OUT_OF_BOUND;
     SHARED_MEM.buffer_util_ptr->idx_pru          = IDX_OUT_OF_BOUND;
 
+    /* accumulated length is documented in resourceTable.shared_memory.len */
+
     SHARED_MEM.dac_auxiliary_voltage_raw         = 0u;
     SHARED_MEM.shp_pru_state                     = STATE_IDLE;
     SHARED_MEM.shp_pru0_mode                     = MODE_NONE;
 
     SHARED_MEM.last_sync_timestamp_ns            = 0u;
     SHARED_MEM.next_sync_timestamp_ns            = 0u;
+
     SHARED_MEM.buffer_iv_inp_idx                 = 0u;
     SHARED_MEM.buffer_iv_out_idx                 = 0u;
     SHARED_MEM.buffer_gpio_idx                   = 0u;
@@ -81,6 +85,8 @@ int main(void)
     SHARED_MEM.programmer_ctrl.state             = PRG_STATE_IDLE;
     SHARED_MEM.programmer_ctrl.target            = PRG_TARGET_NONE;
 
+    DEBUG_STATE_0;
+
     msgsys_init();
 
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
@@ -90,6 +96,8 @@ int main(void)
     SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
+    DEBUG_STATE_3;
+
     msgsys_send(MSG_STATUS_RESTARTING_ROUTINE, 0u, SHARED_MEM.programmer_ctrl.state);
     SHARED_MEM.pru0_ns_per_sample        = IDX_OUT_OF_BOUND;
 
@@ -97,11 +105,15 @@ reset:
 
     SHARED_MEM.shp_pru_state             = STATE_IDLE;
 
+    DEBUG_STATE_0;
+
     while (SHARED_MEM.shp_pru_state == STATE_IDLE)
     {
         if (SHARED_MEM.programmer_ctrl.state == PRG_STATE_STARTING)
         {
+            DEBUG_STATE_3;
             programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *) resourceTable.shared_memory.pa);
+            DEBUG_STATE_0;
         }
     }
 
