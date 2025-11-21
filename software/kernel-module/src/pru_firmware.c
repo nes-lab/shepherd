@@ -61,9 +61,10 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 	   - reduce 300 to 100 ms (for testing)
 		 - 300 ms sleep causes pru1 to wait for 400 ms for sync-reset
 		 - 100 ms sleep reduces busy wait to 200 ms (and also directly speeds up reloading the kMod)
-		 - 50 ms sleept reduces busy twait to 154 ms
+		 - 50 ms sleep -> 154 ms busy wait
+		 - 10 ms sleep -> 114 ms busy wait
 	*/
-    msleep(50);
+    msleep(10);
 
     if (init_done)
     {
