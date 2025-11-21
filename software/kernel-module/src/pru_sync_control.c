@@ -13,24 +13,24 @@
 //#define DEBUG_SYNC
 
 #define U32T_MAX (0xFFFFFFFFu)
-static uint32_t             sys_ts_over_wrap_ns = U32T_MAX;
-static uint64_t             ts_upcoming_ns      = 0;
-static uint64_t             ts_previous_ns      = 0; /* for plausibility-check */
+static uint32_t               sys_ts_over_wrap_ns = U32T_MAX;
+static uint64_t               ts_upcoming_ns      = 0;
+static uint64_t               ts_previous_ns      = 0; /* for plausibility-check */
 
-static enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart);
-static enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart);
-static enum hrtimer_restart supervisor_loop_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   trigger_loop_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   sync_loop_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   supervisor_loop_callback(struct hrtimer *timer_for_restart);
 
 /* Timer to trigger fast sync_loop */
-static struct hrtimer       trigger_loop_timer;
-static struct hrtimer       sync_loop_timer;
-static struct hrtimer       supervisor_loop_timer;
-static u8                   timers_active = 0u;
-static struct SharedMem    *shared_mem    = NULL;
+static struct hrtimer         trigger_loop_timer;
+static struct hrtimer         sync_loop_timer;
+static struct hrtimer         supervisor_loop_timer;
+static u8                     timers_active = 0u;
+static struct SharedMem      *shared_mem    = NULL;
 
 /* debug gpio - gpio0[22] - P8_19 - BUTTON_LED is suitable */
-static void __iomem        *gpio0set      = NULL;
-static void __iomem        *gpio0clear    = NULL;
+static volatile void __iomem *gpio0set      = NULL;
+static volatile void __iomem *gpio0clear    = NULL;
 #define GPIO_P819_SET iowrite32(0b1u << 22u, gpio0set);
 #define GPIO_P819_CLR iowrite32(0b1u << 22u, gpio0clear);
 

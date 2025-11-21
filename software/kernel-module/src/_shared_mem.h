@@ -68,6 +68,6 @@ struct SharedMem
 } __attribute__((packed));
 
 /* This is external to expose some attributes through sysfs */
-extern void __iomem *pru_shared_mem_io;
+extern volatile void __iomem *pru_shared_mem_io;
 
 #endif //_SHARED_MEM_H

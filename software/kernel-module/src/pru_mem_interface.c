@@ -14,18 +14,18 @@
 #define PRU_INTC_SIZE        (0x400)
 #define PRU_INTC_SISR_OFFSET (0x20)
 
-static void __iomem        *pru_intc_io       = NULL;
-void __iomem               *pru_shared_mem_io = NULL;
+static volatile void __iomem *pru_intc_io       = NULL;
+volatile void __iomem        *pru_shared_mem_io = NULL;
 
 /* This timer is used to schedule a delayed start of the actual sampling on the PRU */
-static struct hrtimer       delayed_start_timer;
-static struct hrtimer       delayed_stop_timer;
-static u8                   init_done = 0;
+static struct hrtimer         delayed_start_timer;
+static struct hrtimer         delayed_stop_timer;
+static u8                     init_done = 0;
 
-static enum hrtimer_restart delayed_start_callback(struct hrtimer *timer_for_restart);
-static enum hrtimer_restart delayed_stop_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   delayed_start_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   delayed_stop_callback(struct hrtimer *timer_for_restart);
 
-void                        mem_interface_init(void)
+void                          mem_interface_init(void)
 {
     if (init_done)
     {
@@ -72,7 +72,8 @@ void mem_interface_exit(void)
 
 void mem_interface_reset(void)
 {
-    struct SharedMem *const shared_mem = (struct SharedMem *const) pru_shared_mem_io;
+    volatile struct SharedMem *const shared_mem =
+            (volatile struct SharedMem *const) pru_shared_mem_io;
     // TODO: why not use this as default interface?
 
     if (!init_done)
@@ -107,8 +108,8 @@ void mem_interface_reset(void)
 /* verify the 13 canaries that are placed in shared-mem */
 uint32_t mem_interface_check_canaries(void)
 {
-    uint32_t                ret        = 0u;
-    struct SharedMem *const shared_mem = (struct SharedMem *) pru_shared_mem_io;
+    uint32_t                         ret        = 0u;
+    volatile struct SharedMem *const shared_mem = (volatile struct SharedMem *) pru_shared_mem_io;
     if (pru_shared_mem_io == NULL) return 0u;
 
     if (shared_mem->calibration_settings.canary != CANARY_VALUE_U32)
