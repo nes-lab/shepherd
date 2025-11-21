@@ -257,7 +257,6 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     stack.close()
 
     sysfs_interface.load_pru_firmware("pru0-shepherd-EMU")
-    sysfs_interface.load_pru_firmware("pru1-shepherd")
     return failed  # TODO: all run_() should emit error and handler should decide
 
 

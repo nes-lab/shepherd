@@ -714,6 +714,8 @@ def load_pru_firmware(value: str) -> None:
             request = firmware
             break
     pru_num = 1 if ("pru1" in request) else 0
+    if pru_num == 1:
+        raise ValueError("Changing FW of PRU1 is (currently) not supported")
     log.debug("\t- set pru%d-firmware to '%s'", pru_num, request)
     sys_path = Path(f"/sys/shepherd/pru{pru_num}_firmware")
     count_ = 0

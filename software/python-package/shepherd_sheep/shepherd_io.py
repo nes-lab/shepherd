@@ -120,7 +120,6 @@ class ShepherdIO:
             sfs.load_pru_firmware("pru0-shepherd-HRV")
         else:
             sfs.load_pru_firmware("pru0-shepherd-EMU")
-        sfs.load_pru_firmware("pru1-shepherd")
 
         self.mode = mode
         if mode in {"harvester", "emulator"}:
