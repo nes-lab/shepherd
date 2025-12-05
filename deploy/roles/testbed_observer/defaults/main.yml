@@ -4,7 +4,7 @@ testbed_observer_hostname: ansible_hostname
 
 testbed_observer_data_path_local: /var/shepherd
 
-testbed_observer_nfs_server: cephnfs.zih.tu-dresden.de:/glw/shepherd_b
+testbed_observer_nfs_server: 192.168.165.195:/mnt/Willow/shp
 # data will be stored in       {{nfs_server}}/experiments/{{ansible_hostname}}/
 # content will be sourced from {{nfs_server}}/content/
 
