@@ -30,7 +30,7 @@
     - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
     - "/tmp/shp_drive/content/"
 
-# Main tasks
+# Cleanup
 
 - name: Remove previous fstab-mountings
   ansible.builtin.lineinfile:
@@ -41,6 +41,10 @@
     - '^.*\/experiments nfs.*$'
     - '^.*\/content nfs.*$'
 
+- name: Refresh Systemd-state (to avoid automount)
+  ansible.builtin.command:
+    cmd: "systemctl daemon-reload"
+
 - name: Unmount previous shares
   ansible.builtin.command:
     cmd: "umount {{ item }}"
@@ -48,6 +52,8 @@
     - "{{ testbed_observer_data_path_local }}/experiments"
     - "{{ testbed_observer_data_path_local }}/content"
   failed_when: false  # shares may not exist
+
+# Main tasks
 
 - name: Create & configure local mount-directory
   ansible.builtin.file:
