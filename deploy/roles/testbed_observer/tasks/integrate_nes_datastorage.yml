@@ -30,25 +30,7 @@
     - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
     - "/tmp/shp_drive/content/"
 
-- name: Unmount previous shares
-  ansible.builtin.command:
-    cmd: "umount {{ item }}"
-  loop:
-    - "{{ testbed_observer_data_path_local }}/experiments"
-    - "{{ testbed_observer_data_path_local }}/content"
-  failed_when: false  # shares may not exist
-
 # Main tasks
-
-- name: Create local mount-directory
-  ansible.builtin.file:
-    path: "{{ item }}/"
-    state: directory
-    owner: "{{ ansible_user }}"
-    mode: 'a+rwx'
-  loop:
-    - "{{ testbed_observer_data_path_local }}/experiments"
-    - "{{ testbed_observer_data_path_local }}/content"
 
 - name: Remove previous fstab-mountings
   ansible.builtin.lineinfile:
@@ -58,6 +40,24 @@
   loop:
     - '^.*\/experiments nfs.*$'
     - '^.*\/content nfs.*$'
+
+- name: Unmount previous shares
+  ansible.builtin.command:
+    cmd: "umount {{ item }}"
+  loop:
+    - "{{ testbed_observer_data_path_local }}/experiments"
+    - "{{ testbed_observer_data_path_local }}/content"
+  failed_when: false  # shares may not exist
+
+- name: Create & configure local mount-directory
+  ansible.builtin.file:
+    path: "{{ item }}/"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: 'a+rwx'
+  loop:
+    - "{{ testbed_observer_data_path_local }}/experiments"
+    - "{{ testbed_observer_data_path_local }}/content"
 
 - name: Allow automatic Mounting (Experiment-Data)
   ansible.builtin.lineinfile:
