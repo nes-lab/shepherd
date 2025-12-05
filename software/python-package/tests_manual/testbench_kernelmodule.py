@@ -18,7 +18,7 @@ def reload_and_check_v1() -> bool:
 
 
 def reload_and_check_v2() -> bool:
-    """takes ~1.0 s minimum, rarely ~30 s, mean 1.3s over 100iterations"""
+    """takes 0.695 s (mean over 100iterations), rarely ~30 s (seem gone)"""
     reload_v2()
     return check_v2()
 

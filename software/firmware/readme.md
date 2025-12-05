@@ -54,7 +54,7 @@ The firmwares use GPIO to signal their states. Additionally, the Chip-Select of 
 ### Debug PRU0-Init
 
   - GPIO.b11, init all states, ~ 800 ns
-  - GPIO.b00, init msg_sys, unblock PRU1, init buffers, ~ 450 ns
+  - GPIO.b00, init msg_sys, unblock PRU1, (reset-marker), send-status, init buffers, ~ 450 ns
   - GPIO.b11, sample_init, ~ 20 us
     - 4x toggle of GPIO1
   - GPIO.b00, idle -> enter sample-loop, ~ 400 ns
@@ -66,13 +66,15 @@ Note: during restart of kernel module, Pru0 seems to boot ~ 60 ms earlier than P
 
   - GPIO.b11, small init + wait for pru0 (Sync PRUs), ~ 180 ns
   - GPIO.b00, init msg_sys, ~ 140 ns
+  - (reset-marker)
   - GPIO.b01, send status, ~ 310 ns
   - GPIO.b10, (re)init IEP, ~ 800 ns
-  - GPIO.b00, event_loop
-    - GPIO.b00, init event-loop, ~ 520 ns
-    - GPIO.b01, wait for kernels sync-reset, ~ 400 ms (with 300 ms wait of kernel after loading fw)
-    - GPIO.b10, wait for first interrupt from linux host, < 100 ms
-    - GPIO.b00, start central-loop
+  - (begin of event_loop)
+  - GPIO.b00, init event-loop, ~ 520 ns
+  - GPIO.b01, wait for kernels sync-reset, ~ 114 ms (with 10 ms wait of kernel after loading fw)
+  - GPIO.b10, wait for first interrupt from linux host, < 100 ms
+  - GPIO.b00, start central-loop
+  - (exit of event loop)
 
 ### Debug PRU0-MainLoop
 

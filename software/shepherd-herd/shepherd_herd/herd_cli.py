@@ -346,7 +346,7 @@ def harvest(
 
 
 @cli.command(
-    short_help="Use the previously recorded harvest-data "
+    short_help="Use previously recorded harvest-data "
     "(INPUT-PATH is a hdf5-file on the sheep-hosts) "
     "for emulating an energy environment for the attached "
     "sensor nodes and monitor their power consumption and GPIO events",
