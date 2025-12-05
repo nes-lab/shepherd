@@ -17,7 +17,8 @@
   - add benchmark to find the cheapest resampling method
   - fix csv-header for pru-util
   - use ExitStack() more correctly
-  - speed up (factor 8) & stabilize reload of kernel module
+  - speed up (factor 8, later ~ x12) & stabilize reload of kernel module
+  - disable changing fw of Pru1 (gets now automatically selected, based on fw for pru0)
 - herd
   - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
   - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
@@ -41,6 +42,10 @@
   - fix race-condition bug that prevented start of pru0 (reliably-improvement)
   - disable experimental code - not compatible with non-ti kernel
   - verify canaries less often (~ 2 min)
+  - reduce wait-time of kernel-module after pru-firmware is loaded (300 ms -> 10 ms) after analyzing the PRU-init behavior
+  - optimize firmware-switching of PRUs (now simultaneous instead of sequential)
+  - reboot both PRUs even if only one firmware was changed
+  - selecting firmware for Pru0 now also writes accompanying fw for pru1
 - py-packaging:
   - allow installing everything via `.[all]`
   - switch to UV (from pip)
