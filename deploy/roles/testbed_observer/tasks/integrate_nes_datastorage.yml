@@ -30,6 +30,13 @@
     - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
     - "/tmp/shp_drive/content/"
 
+- name: Unmount previous shares
+  ansible.builtin.command:
+    cmd: "umount {{ item }}"
+  loop:
+    - "{{ testbed_observer_data_path_local }}/experiments"
+    - "{{ testbed_observer_data_path_local }}/content"
+
 # Main tasks
 
 - name: Create local mount-directory
