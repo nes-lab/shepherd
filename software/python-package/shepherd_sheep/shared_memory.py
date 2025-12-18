@@ -115,8 +115,13 @@ class SharedMemory:
         ts_now = time.time()
         if self.ts_last > 0 and ts_now - self.ts_last > self.poll_interval:
             log.warning(
-                "[%s] Overflow detector missed poll-interval (blind spot)", type(self).__name__
+                "[%s] Watchdog for FIFO-Overflows missed a poll-interval. "
+                "Faults in data-stream might stay undetected (blind spot). "
+                "Probably caused by high system load of GPIO- or UART-Tracers.",
+                type(self).__name__,
             )
+            # TODO: explain that its only relevant for EEnv to PRU & GPIO-Recording,
+            #       -> PowerTracing is checked separately
         self.ts_last = ts_now
         # overflow detection is delegated to each buffer
         self.iv_inp.get_size_available()
