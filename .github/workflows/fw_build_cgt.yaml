@@ -8,7 +8,7 @@ jobs:
 
   pru-cgt:
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: pru-cgt-${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     env:

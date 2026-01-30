@@ -10,7 +10,7 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: [ "3.14", "3.12", "3.10" ]
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
+      group: herd-${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
       cancel-in-progress: true
     runs-on: ${{ matrix.os }}
     steps:
