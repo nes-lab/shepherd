@@ -89,4 +89,4 @@
     # nofail      avoid kernel-panic and just resume on fatal error
     # noatime     don't write access-time to files
     # nodiratime  don't write access-time to dirs
-    # x-systemd.automount ->
+    # x-systemd.automount -> mount on access if not already done
