@@ -1,6 +1,6 @@
 # History of Changes
 
-## 2025.11.1
+## 2026.02.1
 
 - project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
 - new virtual battery (generalized energy storage for vsource)
@@ -19,6 +19,8 @@
   - use ExitStack() more correctly
   - speed up (factor 8, later ~ x12) & stabilize reload of kernel module
   - disable changing fw of Pru1 (gets now automatically selected, based on fw for pru0)
+  - improve warning of watchdog for possible fifo-overflows (more explaining, less scary)
+  - use correct scaling for sampling intermediate power values (bugfix for #133)
 - herd
   - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
   - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
@@ -54,7 +56,9 @@
   - tools are installed via `uv tool install /opt/shepherd/software/python-package/.`
   - for testing there is a jane-venv automatically activated for jane and root (pytest has to be done from `sudo su`)
   - ansible, services and packages are migrated
+- datastorage integration -> improve mounting parameters
 - switch to uv for dev-environment
+- switch to prek as replacement for pre-commit
 - ansible
   - remove usage of nelson boot scripts (update kernel & grow partition)
   - try newer non-ti kernel
