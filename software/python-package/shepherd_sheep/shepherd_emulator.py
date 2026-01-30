@@ -11,10 +11,12 @@ from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
 from shepherd_core.data_models.task import EmulationTask
+from shepherd_core.data_models.testbed import TargetPort
 from tqdm import tqdm
 from typing_extensions import Self
 
@@ -93,7 +95,13 @@ class ShepherdEmulator(ShepherdIO):
         ).items():
             log.debug("\t%s: %s", key, value)
 
-        self.cal_emu = retrieve_calibration(use_default_cal=cfg.use_cal_default).emulator
+        self.cal_emu = retrieve_calibration(
+            trace_intermediate=isinstance(cfg.power_tracing, PowerTracing)
+            and cfg.power_tracing.intermediate_voltage,
+            use_default_cal=cfg.use_cal_default,
+            # TODO: unhandled edge case if aux is selected?
+            # NOTE: shouldn't the logic be contained as property in EmulationTask?
+        ).emulator
 
         if cfg.time_start is None:
             self.start_time = round(time.time() + 15)
@@ -133,7 +141,9 @@ class ShepherdEmulator(ShepherdIO):
                 force_overwrite=cfg.force_overwrite,
                 mode=self.component,  # is a cleaned up mode
                 datatype=EnergyDType.ivsample,
-                cal_data=self.cal_emu,
+                cal_data=CalibrationSeries.from_cal(
+                    self.cal_emu, emu_port_a=(cfg.pwr_port == TargetPort.A)
+                ),
                 sample_rate=cfg.power_tracing.samplerate if log_iv else None,
                 only_power=cfg.power_tracing.only_power if log_iv else False,
                 compression=cfg.output_compression,
