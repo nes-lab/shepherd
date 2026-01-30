@@ -58,6 +58,8 @@
   - ansible, services and packages are migrated
 - datastorage integration -> improve mounting parameters
 - switch to uv for dev-environment
+  - also for installing py-sheep on observers
+  - also for GitHub workflows
 - switch to prek as replacement for pre-commit
 - ansible
   - remove usage of nelson boot scripts (update kernel & grow partition)
