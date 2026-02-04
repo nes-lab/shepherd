@@ -634,6 +634,23 @@ def retrieve(
     ctx.exit(int(failed))
 
 
+@cli.command(short_help="Determine state of content files")
+@click.option(
+    "--verify",
+    is_flag=True,
+    help="In addition to check if files exist, this will also check validity",
+)
+@click.pass_context
+def content(
+    ctx: click.Context,
+    *,
+    verify: bool,
+) -> None:
+    with ctx.obj["herd"] as herd:
+        invalid = herd.find_invalid_content(verify=verify)
+    ctx.exit(int(invalid))
+
+
 # #############################################################################
 #                               Pru Programmer
 # #############################################################################

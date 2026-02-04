@@ -982,3 +982,27 @@ class Herd:
         from functools import partialmethod
 
         tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
+
+    @staticmethod
+    def find_invalid_content(*, verify: bool = False) -> bool:
+        """Determine state of content files.
+
+        Content like Energy-Envs and firmware (rarely) are not
+        kept in database (only its metadata).
+        This routine can check if files still exists and are valid.
+
+        TODO: should be done on each sheep, but currently assumes
+              that the server has same path-access
+        """
+        invalid = False
+        for content_type in ["Firmware", "EnergyEnvironment"]:
+            content_names = tb_client.query_names(model_type=content_type)
+            for name in content_names:
+                content = tb_client.query_item(model_type=content_type, name=name)
+                if hasattr(content, "exists") and not content.exists():
+                    log.error(f"{content_type} '{name}' is missing!")
+                    invalid = True
+                if verify and hasattr(content, "check") and not content.check():
+                    log.error(f"{content_type} '{name}' is invalid!")
+                    invalid = True
+        return invalid
