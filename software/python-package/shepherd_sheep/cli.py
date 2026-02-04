@@ -97,7 +97,7 @@ def cli(ctx: click.Context, *, verbose: bool, no_progress: bool) -> None:
 
         tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
-    if ctx.invoked_subcommand and ctx.invoked_subcommand not in {"usage"}:
+    if ctx.invoked_subcommand and ctx.invoked_subcommand not in {"usage"}:  # noqa: FURB171
         # this adds a usage-entry when sheep exits
         atexit.register(usage_logger, datetime.now().astimezone(), ctx.invoked_subcommand)
 

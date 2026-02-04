@@ -40,7 +40,7 @@ repos:
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24.1
+    rev: v0.25
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -60,7 +60,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.0
     hooks:
       - id: ruff-format
       - id: ruff-check
