@@ -169,7 +169,7 @@ class ShepherdHarvester(ShepherdIO):
                 log.debug("End of measurement reached -> will collect remaining data")
                 before_ts_end = False
             try:
-                self.handle_pru_messages(panic_on_restart=True)
+                self.handle_pru_messages(panic_on_restart=before_ts_end)
             except ShepherdPRUError as _xpt:
                 # We're done when the PRU has processed all emulation data buffers
                 if _xpt.id_num == commons.MSG_STATUS_RESTARTING_ROUTINE:
