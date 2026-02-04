@@ -3,6 +3,7 @@
 ## 2026.02.1
 
 - project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
+- this release needs core-lib >= 2026.02.1 due to new features
 - new virtual battery (generalized energy storage for vsource)
   - pru-firmware (c-code) got port of python-model
   - models and parametrization were evaluated in core-lib
@@ -34,6 +35,7 @@
   - put & copy of files now removes possible prior files at destination
   - progressbar is now more responsive, as it constantly cycles through all still active threads
   - add option to disable progress-bar via `.disable_progress_bar()` and `--no-progress`, to keep logs clean
+  - add `.find_invalid_content()` to determine state of files external to DB
 - PRU
   - improve over / underflow-protection of variables for harvester, storage, converter
   - allow disabling aux functionality (small overhead not needed for testbed) via `ENABLE_AUX` compile-switch
