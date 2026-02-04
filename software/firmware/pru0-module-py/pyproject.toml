@@ -29,7 +29,7 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core>=2025.10.1", # limit due to newest features
+    "shepherd-core>=2026.02.1", # limit due to newest features
     "tqdm",
 ]
 
