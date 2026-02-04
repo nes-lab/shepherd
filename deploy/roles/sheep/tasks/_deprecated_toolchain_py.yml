@@ -1,0 +1,80 @@
+---
+# former approach of installing sheep as tool via uv
+# disadvantages were:
+# - unittesting is not possible (needs install into venv)
+# - special config needed to allow access for jane, root, sudo
+
+- name: UV - install
+  ansible.builtin.shell:
+    cmd: 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
+  # this should add to .bashrc: . "$HOME/.local/bin/env"
+
+- name: UV - redirect tool-install to global dir
+  ansible.builtin.lineinfile:
+    dest: '{{ item }}/.bashrc'
+    line: "export UV_TOOL_BIN_DIR=/usr/local/bin/"
+    regex: ^.*?UV_TOOL_BIN_DIR=.*$
+    insertafter: 'EOF'
+    state: present
+  loop:
+    - '/home/{{ ansible_user }}'
+    - '/root'
+  become: true
+
+- name: UV - create virtual Env
+  ansible.builtin.command:
+    cmd: '/usr/local/bin/uv venv'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
+- name: UV - activate vEnv on login
+  ansible.builtin.lineinfile:
+    dest: '{{ item }}/.bashrc'
+    line: ". '/home/{{ ansible_user }}/.venv/bin/activate'"
+    regex: ^#?\. ["'].*venv\/bin\/activate["'].*$
+    insertafter: 'EOF'
+    state: present
+  loop:
+    - '/home/{{ ansible_user }}'
+    - '/root'
+  become: true
+
+## the following steps became optional as sheep/pyproject.toml directly configured this
+
+- name: UV - compile & install python-packages
+  # NOTE: with the added index a compilation can be avoided
+  # only possible up to debian bookworm / py 3.11 ATM
+  ansible.builtin.command:
+    cmd: '/usr/local/bin/uv pip install {{ item }} --index=https://www.piwheels.org/simple --upgrade --break-system-packages'
+    chdir: '/home/{{ ansible_user }}' # only needed for venv
+  loop:
+    - numpy  # 110 min
+    - h5py  # 54 min, needs numpy
+    - gevent  # 35 min
+    - zstandard  # 21 min
+    - pyzmq  # 25 min
+  become: false
+
+- name: UV - install more python-packages (< 1min/item)
+  ansible.builtin.command:
+    cmd: '/usr/local/bin/uv pip install {{ item }} --upgrade --break-system-packages'
+    chdir: '/home/{{ ansible_user }}' # only needed for venv
+  loop:
+    - psutil
+    - msgpack
+    - pydantic
+    - click
+    - shepherd-core
+  become: false
+
+## from build_shp.yml (last entry)
+
+- name: UV - Install shepherd-sheep tools
+  ansible.builtin.command:
+    cmd: "export UV_TOOL_BIN_DIR=/usr/local/bin/ && /usr/local/bin/uv tool install {{ sheep_install_path }}/software/python-package/. --force"
+  tags:
+    - install
+    - python
+  #when: sheep_rebuild_python_package | bool
+  become: false

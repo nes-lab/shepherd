@@ -1,0 +1,16 @@
+# custom & generalized sudo-extension for user
+# -> copy to /etc/sudoers.d/jane
+
+%admin ALL=(ALL:ALL) ALL
+
+# allow skipping "-E" for sudo-cmd
+Defaults:%sudo env_keep += "PATH"
+Defaults:%sudo env_keep += "UV_TOOL_BIN_DIR"
+Defaults:%sudo env_keep += "UV_CACHE_DIR"
+Defaults:%sudo env_keep += "PRU_CGT"
+Defaults:%sudo env_keep += "PRU_CGT_SUPPORT"
+
+# Defaults secure_path += ":/home/jane/.local/bin" -> not allowed
+# so the original list from /etc/sudoer.d is modified
+# Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/jane/.local/bin"
+# -> deactivated, as the bin-dir has changed to /usr/local/bin

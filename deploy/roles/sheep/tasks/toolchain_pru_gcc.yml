@@ -50,19 +50,17 @@
   tags:
     - pru-tools
 
-- name: Adding PRU environment vars in bashrc file
+- name: Adding PRU environment vars in user-profile
   ansible.builtin.lineinfile:
-    dest: '{{ item[1] }}/.bashrc'
-    line: 'export {{ item[0]["name"] }}={{ item[0]["value"] }}'
-    regex: "#?export {{ item[0]['name'] }}=.*$"
+    dest: '/etc/profile.d/shepherd.sh'
+    line: 'export {{ item.name }}={{ item.path }}'
+    regex: "#?export {{ item.name }}=.*$"
     insertafter: 'EOF'
     state: present
-  with_nested:
-    - [
-      { name: PRU_GCC, value: '{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}' },
-      { name: PRU_GCC_SUPPORT, value: "{{ sheep_gcc_pru_support_path }}" }
-    ] # TODO: PRU_GCC probably just []/pru-elf now
-    - ['/home/{{ ansible_user }}', '/root']
+  loop:
+    - { name: PRU_GCC, path: '{{ sheep_gcc_tools_path }}/{{ sheep_gcc_pru_cc_release }}' }
+    - { name: PRU_GCC_SUPPORT, path: "{{ sheep_gcc_pru_support_path }}" }
+    # TODO: PRU_GCC probably just []/pru-elf now
   become: true
   tags:
     - pru-tools

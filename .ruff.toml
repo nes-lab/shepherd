@@ -21,6 +21,7 @@ ignore = [
     "PLC0415",  # not only import at top-level
     # TODO: for releasing now - do add documentation later
     "D",
+    "CPY001", "DOC201", "DOC402",
 ]
 
 exclude= [  # external projects
@@ -28,6 +29,7 @@ exclude= [  # external projects
     "software/shepherd-webapi/*",
     "software/firmware/pru0-cython-module/*",
 ]
+#preview = true
 
 [lint.per-file-ignores]
 "*/tests/**" = ["ARG", "S", "D", "SLF001", "T201"]

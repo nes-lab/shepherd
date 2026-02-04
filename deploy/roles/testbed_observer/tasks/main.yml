@@ -31,7 +31,7 @@
 
 - name: Integrate NW-Storage
   ansible.builtin.include_tasks:
-    file: integrate_zih_datastorage.yml
+    file: integrate_nes_datastorage.yml
 
 - name: Enable Broadcast of MAC
   ansible.builtin.include_tasks:

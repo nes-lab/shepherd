@@ -346,7 +346,7 @@ def harvest(
 
 
 @cli.command(
-    short_help="Use the previously recorded harvest-data "
+    short_help="Use previously recorded harvest-data "
     "(INPUT-PATH is a hdf5-file on the sheep-hosts) "
     "for emulating an energy environment for the attached "
     "sensor nodes and monitor their power consumption and GPIO events",
@@ -632,6 +632,23 @@ def retrieve(
                 delete_src=delete,
             )
     ctx.exit(int(failed))
+
+
+@cli.command(short_help="Determine state of content files")
+@click.option(
+    "--verify",
+    is_flag=True,
+    help="In addition to check if files exist, this will also check validity",
+)
+@click.pass_context
+def content(
+    ctx: click.Context,
+    *,
+    verify: bool,
+) -> None:
+    with ctx.obj["herd"] as herd:
+        invalid = herd.find_invalid_content(verify=verify)
+    ctx.exit(int(invalid))
 
 
 # #############################################################################

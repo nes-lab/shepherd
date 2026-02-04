@@ -19,6 +19,6 @@
 - name: Role - Testbed Observer
   hosts: sheep
   become: true
-  strategy: free # noqa: run-once[play]
+  # strategy: free # noqa: run-once[play]
   roles:
     - testbed_observer

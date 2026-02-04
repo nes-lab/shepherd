@@ -24,17 +24,6 @@
   community.general.timezone:
     name: "{{ maintenance_timezone }}"
 
-- name: Add ll-alias
-  ansible.builtin.lineinfile:
-    dest: '{{ item }}/.bashrc'
-    line: "alias ll='ls -l'"
-    regex: "#?alias ll='ls -l'.*$"
-    insertafter: 'EOF'
-    state: present
-  loop:
-    - '/home/{{ ansible_user }}'
-    - '/root'
-
   # TODO: - name: CFG - Set CPU Governor to more relaxed state (powersave)
 
 - name: Performance-modifications

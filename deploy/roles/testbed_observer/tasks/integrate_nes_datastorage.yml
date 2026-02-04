@@ -1,0 +1,92 @@
+---
+# Add our NES filer to remote nodes
+
+- name: Report hostname
+  ansible.builtin.debug:
+    var: testbed_observer_hostname
+
+- name: APT - Install required packages for Python
+  ansible.builtin.apt:
+    name: "nfs-common"
+    state: present
+
+- name: create temporary mount-point
+  ansible.builtin.file:
+    path: "/tmp/shp_drive/"
+    state: directory
+    mode: "a+rwx"
+
+- name: Mount root of datastorage (temporary)
+  ansible.builtin.command:
+    cmd: "mount -t nfs4 {{ testbed_observer_nfs_server }} /tmp/shp_drive/"
+
+- name: Create directories (future mount-points of nfs-share)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "a+rwx"
+  loop:
+    - "/tmp/shp_drive/experiments/"
+    - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
+    - "/tmp/shp_drive/content/"
+
+# Cleanup
+
+- name: Remove previous fstab-mountings
+  ansible.builtin.lineinfile:
+    dest: /etc/fstab
+    regex: "{{ item }}"
+    state: absent
+  loop:
+    - '^.*\/experiments nfs.*$'
+    - '^.*\/content nfs.*$'
+
+- name: Refresh Systemd-state (to avoid automount)
+  ansible.builtin.command:
+    cmd: "systemctl daemon-reload"
+
+- name: Unmount previous shares
+  ansible.builtin.command:
+    cmd: "umount {{ item }}"
+  loop:
+    - "{{ testbed_observer_data_path_local }}/experiments"
+    - "{{ testbed_observer_data_path_local }}/content"
+  failed_when: false  # shares may not exist
+
+# Main tasks
+
+- name: Create & configure local mount-directory
+  ansible.builtin.file:
+    path: "{{ item }}/"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: 'a+rwx'
+  loop:
+    - "{{ testbed_observer_data_path_local }}/experiments"
+    - "{{ testbed_observer_data_path_local }}/content"
+
+- name: Allow automatic Mounting (Experiment-Data)
+  ansible.builtin.lineinfile:
+    dest: /etc/fstab
+    regex: '^.*{{ testbed_observer_nfs_server }}/experiments.*$'
+    line: '{{ testbed_observer_nfs_server }}/experiments/{{ testbed_observer_hostname }} {{ testbed_observer_data_path_local }}/experiments nfs4 auto,rw,user,noexec,posix,_netdev,nofail,noatime,nodiratime,x-systemd.automount 0 0'
+    state: present
+
+- name: Allow automatic Mounting (Content, readonly)
+  ansible.builtin.lineinfile:
+    dest: /etc/fstab
+    regex: '^.*{{ testbed_observer_nfs_server }}/content.*$'
+    line: '{{ testbed_observer_nfs_server }}/content {{ testbed_observer_data_path_local }}/content nfs4 auto,ro,user,noexec,posix,_netdev,nofail,x-systemd.automount 0 0'
+    state: present
+
+    # Explanation for fstab-options:
+    # auto        mount on boot (default)
+    # rw          allow writing (default)
+    # user        allow mounting without sudo
+    # noexec      running programs from there is disabled
+    # posix
+    # _netdev     wait with mounting until ethernet available
+    # nofail      avoid kernel-panic and just resume on fatal error
+    # noatime     don't write access-time to files
+    # nodiratime  don't write access-time to dirs
+    # x-systemd.automount -> mount on access if not already done

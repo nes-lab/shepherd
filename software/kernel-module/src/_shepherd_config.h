@@ -10,10 +10,10 @@
 #define PRU0_FW_HRV                ("am335x-pru0-shepherd-HRV-fw")
 #define PRU0_FW_PRG_SWD            ("am335x-pru0-programmer-SWD-fw") /* 29 chars */
 #define PRU0_FW_PRG_SBW            ("am335x-pru0-programmer-SBW-fw")
-#define PRU0_FW_SLEEP              ("am335x-pru0-fw.sleep")
+#define PRU0_FW_SLEEP              ("am335x-pru0-fw.sleep") /* 20 chars */
 #define PRU0_FW_DEFAULT            PRU0_FW_EMU
-#define PRU1_FW_SLEEP              ("am335x-pru1-fw.sleep") // TODO: make use of it (for programming)
-#define PRU1_FW_SHEPHERD           ("am335x-pru1-shepherd-fw")
+#define PRU1_FW_SLEEP              ("am335x-pru1-fw.sleep")
+#define PRU1_FW_SHEPHERD           ("am335x-pru1-shepherd-fw") /* 22 chars */
 #define PRU1_FW_DEFAULT            PRU1_FW_SHEPHERD
 
 /**

@@ -1,7 +1,7 @@
-# install     pip3 install pre-commit
-#             sudo apt install cppcheck
-# run         pre-commit run -a
-# update deps pre-commit autoupdate
+# install       uv pip install prek
+#               sudo apt install cppcheck
+# run           prek run -a
+# update deps   prek auto-update
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -34,13 +34,13 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24.1
+    rev: v0.25
     hooks:
       - id: validate-pyproject
         # files: "./software/python-package/pyproject.toml"
@@ -60,7 +60,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.5
+    rev: v0.15.0
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -89,7 +89,7 @@ repos:
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v21.1.5
+    rev: v21.1.8
     hooks:
       - id: clang-format
         types_or: [c++, c]

@@ -57,45 +57,74 @@ def flatten_list(dl: list) -> list:
 
 
 def load_kernel_module() -> None:
-    try_ = 6
-    while try_ > 0:
-        ret = subprocess.run(
-            ["/usr/sbin/modprobe", "-a", "shepherd"],
-            timeout=60,
-            check=False,
-        ).returncode
-        if ret == 0:
-            log.debug("Activated shepherd kernel module")
-            time.sleep(3)
-            return
-        try_ -= 1
-        time.sleep(1)
-    raise SystemError("Failed to load shepherd kernel module.")
+    retry_max: int = 10
+    run_: int = 0
+    path_check = Path("/sys/shepherd/mode")
+    wait_max = 3.0
+    while run_ < retry_max:
+        run_ += 1
+        try:
+            subprocess.run(
+                ["/usr/sbin/modprobe", "--quiet", "shepherd"],
+                timeout=10,
+                check=True,
+                shell=False,
+                capture_output=False,
+            )
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            time_start = time.time()
+            while not path_check.exists():
+                time.sleep(0.1)
+                if time.time() - time_start > wait_max:
+                    break
+            if time.time() - time_start < wait_max:
+                log.debug(
+                    "Activated shepherd kernel module (%d. try, %.1f s wait)",
+                    run_,
+                    time.time() - time_start,
+                )
+                return
+        # cleanup
+        remove_kernel_module()
+        time.sleep(0.2)
+
+    msg = "Failed to load shepherd kernel module."
+    raise SystemError(msg)
 
 
-def remove_kernel_module(name: str = "shepherd") -> None:
-    try_ = 6
-    while try_ > 0:
-        ret = subprocess.run(
-            ["/usr/sbin/modprobe", "-rf", "shepherd"],
-            timeout=60,
-            capture_output=True,
-            check=False,
-        ).returncode
-        if ret == 0:
-            log.debug("Deactivated %s kernel module", name)
-            time.sleep(1)
+def remove_kernel_module() -> None:
+    retry_max: int = 10
+    run_: int = 0
+    while run_ < retry_max:
+        run_ += 1
+        try:
+            subprocess.run(
+                [
+                    "/usr/sbin/modprobe",
+                    "--remove",
+                    "--force",
+                    "--quiet",
+                    "shepherd",
+                ],  # "--wait 300" does not help
+                timeout=10,
+                check=True,
+                shell=False,
+                capture_output=False,
+            )
+        except subprocess.CalledProcessError:
+            continue
+        else:
+            log.debug("Deactivated shepherd kernel module (%d. try)", run_)
             return
-        try_ -= 1
-        time.sleep(1)
-    msg = f"Failed to unload {name} kernel module."
+
+    msg = "Failed to unload shepherd kernel module."
     raise SystemError(msg)
 
 
 def reload_kernel_module() -> None:
-    remove_kernel_module("shepherd")
-    remove_kernel_module("remoteproc")
-    remove_kernel_module("pruss")
+    remove_kernel_module()
     load_kernel_module()
 
 
@@ -114,21 +143,23 @@ def disable_ntp() -> None:
         log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
-def check_sys_access(iteration: int = 1) -> bool:
+def check_sys_access(iteration: int = 1, *, force_kmod_reload: bool = False) -> bool:
     """Return True if access failed."""
-    iter_max: int = 5
+    retry_max: int = 5
+    if force_kmod_reload:
+        reload_kernel_module()
     try:  # test for correct usage -> fail early!
         get_mode()
     except FileNotFoundError:
         try:
-            if iteration > iter_max:
+            if iteration > retry_max:
                 log.error("Failed to access sysFS - ran out of retries")
                 return True
             log.debug(
                 "Failed to access sysFS -> "
                 "will try to activate shepherd kernel module (attempt %d/%d)",
                 iteration,
-                iter_max,
+                retry_max,
             )
             reload_kernel_module()
             check_sys_access(iteration + 1)
@@ -683,6 +714,8 @@ def load_pru_firmware(value: str) -> None:
             request = firmware
             break
     pru_num = 1 if ("pru1" in request) else 0
+    if pru_num == 1:
+        raise ValueError("Changing FW of PRU1 is (currently) not supported")
     log.debug("\t- set pru%d-firmware to '%s'", pru_num, request)
     sys_path = Path(f"/sys/shepherd/pru{pru_num}_firmware")
     count_ = 0
@@ -711,7 +744,7 @@ def load_pru_firmware(value: str) -> None:
                 " -> will restart kernel-module (n=%d)",
                 count_,
             )
-            reload_kernel_module()
+            check_sys_access(force_kmod_reload=True)
     raise OSError(
         "PRU-Driver still locked up (during pru-fw change) -> consider restarting node",
     )
@@ -732,7 +765,7 @@ def pru_firmware_is_default() -> bool:
                 "PRU-Driver is locked up (during pru-fw read) -> will restart kernel-module (n=%d)",
                 count_,
             )
-            reload_kernel_module()
+            check_sys_access(force_kmod_reload=True)
             count_ += 1
         else:
             return True

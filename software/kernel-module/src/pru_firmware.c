@@ -14,27 +14,6 @@
 
 struct shepherd_platform_data *shp_pdata = NULL;
 
-int                            load_pru_firmware(u8 pru_num, const char *file_name)
-{
-    int ret = 0;
-
-    if (shp_pdata == NULL) return 1;
-    if (pru_num > 1) return 2;
-
-    if (shp_pdata->rproc_prus[pru_num]->state == RPROC_RUNNING)
-    {
-        rproc_shutdown(shp_pdata->rproc_prus[pru_num]);
-    }
-
-    sprintf(shp_pdata->rproc_prus[pru_num]->firmware, file_name);
-
-    if ((ret = rproc_boot(shp_pdata->rproc_prus[pru_num])))
-    {
-        printk(KERN_ERR "shprd.k: Couldn't boot PRU%d", pru_num);
-    }
-    return ret;
-}
-
 int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 {
     int       ret       = 0;
@@ -49,21 +28,43 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 
     if (shp_pdata == NULL) { return 1; }
 
-    /* swap firmware */
-    if (strlen(pru0_file_name) > 0)
+    /* halt PRUs */
+    // NOTE: code is intertwined for simultaneous startup and clean states
+    if (shp_pdata->rproc_prus[0]->state == RPROC_RUNNING)
     {
-        ret = load_pru_firmware(0, pru0_file_name);
-        if (ret) return ret;
+        rproc_shutdown(shp_pdata->rproc_prus[0]);
+    }
+    if (shp_pdata->rproc_prus[1]->state == RPROC_RUNNING)
+    {
+        rproc_shutdown(shp_pdata->rproc_prus[1]);
     }
 
-    if (strlen(pru1_file_name) > 0)
+    /* swap firmware (only reboot if no name is supplied) */
+    if (strlen(pru0_file_name) > 0) { sprintf(shp_pdata->rproc_prus[0]->firmware, pru0_file_name); }
+    if (strlen(pru1_file_name) > 0) { sprintf(shp_pdata->rproc_prus[1]->firmware, pru1_file_name); }
+
+    /* (re)start PRUs */
+    if ((ret = rproc_boot(shp_pdata->rproc_prus[0])))
     {
-        ret = load_pru_firmware(1, pru1_file_name);
-        if (ret) return ret;
+        printk(KERN_ERR "shprd.k: Couldn't boot PRU0");
+        return ret;
+    }
+    if ((ret = rproc_boot(shp_pdata->rproc_prus[1])))
+    {
+        printk(KERN_ERR "shprd.k: Couldn't boot PRU1");
+        return ret;
     }
 
-    /* Allow some time for the PRUs to initialize. This is critical! */
-    msleep(300);
+    /* Allow some time for the PRUs to initialize. This is critical!
+	   - 300 ms worked fine
+	   - logic analyzer shows that 55 ms should suffice (time between pru-bootups)
+	   - reduce 300 to 100 ms (for testing)
+		 - 300 ms sleep causes pru1 to wait for 400 ms for sync-reset
+		 - 100 ms sleep reduces busy wait to 200 ms (and also directly speeds up reloading the kMod)
+		 - 50 ms sleep -> 154 ms busy wait
+		 - 10 ms sleep -> 114 ms busy wait, TODO: observe stability
+	*/
+    msleep(10);
 
     if (init_done)
     {

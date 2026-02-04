@@ -27,7 +27,7 @@
     paths: '/var/lib/dhcp/'
     patterns: '*'
   register: files_dhcp
-- name: Delete DHCP program data (more
+- name: Delete DHCP program data
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent

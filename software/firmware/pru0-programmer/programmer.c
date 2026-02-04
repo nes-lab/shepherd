@@ -8,6 +8,7 @@
 #include "device.h"
 #include "intelhex.h"
 #include "msg_sys.h"
+#include "shared_mem.h"
 #include "swd_transport.h"
 #include "sys_gpio.h"
 #include <stdint.h>
@@ -84,7 +85,7 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
 
     int rc;
     /* Iterate content of hex file entry by entry */
-    while ((ret = ihex_reader_get(&block)) == 0)
+    while (((ret = ihex_reader_get(&block)) == 0) && (SHARED_MEM.shp_pru_state == STATE_IDLE))
     {
         /* Write block data to target device memory */
         if ((rc = write_to_target(drv, &block)) != 0)

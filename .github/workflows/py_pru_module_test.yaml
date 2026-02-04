@@ -6,7 +6,7 @@ on:
 jobs:
   pru-test:
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
+      group: pypru-${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     strategy:
@@ -15,10 +15,14 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v6
-      - name: Set up Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v6
+
+      - name: Install uv 🔧 & set up Python 🐍
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          activate-environment: true
+
       - name: Install dependency 🔧
         run: sudo apt install build-essential
 
@@ -26,7 +30,7 @@ jobs:
         run: "make"
         working-directory: "./software/firmware/pru0-module-py"
       - name: Install the shepherd_pru Py-package 🐑
-        run: "pip3 install .[test]"
+        run: "uv pip install .[test]"
         working-directory: "./software/firmware/pru0-module-py"
       - name: Test the shepherd py-package 🐐
         run: "pytest"

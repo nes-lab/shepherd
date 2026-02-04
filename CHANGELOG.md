@@ -1,8 +1,9 @@
 # History of Changes
 
-## 2025.11.1
+## 2026.02.1
 
 - project changes to stable and adjusts version-format to `YYYY.MM.r` (year, month, release-number)
+- this release needs core-lib >= 2026.02.1 due to new features
 - new virtual battery (generalized energy storage for vsource)
   - pru-firmware (c-code) got port of python-model
   - models and parametrization were evaluated in core-lib
@@ -17,6 +18,10 @@
   - add benchmark to find the cheapest resampling method
   - fix csv-header for pru-util
   - use ExitStack() more correctly
+  - speed up (factor 8, later ~ x12) & stabilize reload of kernel module
+  - disable changing fw of Pru1 (gets now automatically selected, based on fw for pru0)
+  - improve warning of watchdog for possible fifo-overflows (more explaining, less scary)
+  - use correct scaling for sampling intermediate power values (bugfix for #133)
 - herd
   - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
   - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
@@ -30,17 +35,21 @@
   - put & copy of files now removes possible prior files at destination
   - progressbar is now more responsive, as it constantly cycles through all still active threads
   - add option to disable progress-bar via `.disable_progress_bar()` and `--no-progress`, to keep logs clean
+  - add `.find_invalid_content()` to determine state of files external to DB
 - PRU
   - improve over / underflow-protection of variables for harvester, storage, converter
   - allow disabling aux functionality (small overhead not needed for testbed) via `ENABLE_AUX` compile-switch
   - add more unittests for c-code via python-module
-  - automatically test pru-code via GitHub workflow
-  - activated GCC safety / sanitation switches for the python-module (details in [issue #73](https://github.com/nes-lab/shepherd/issues/73))
-  - c-code compiles without warnings for CGT, GCC, GNUPRU
+  - tests pru-code automatically via GitHub workflow
+  - bugfix in statemachine of PRU0 - wait_for_state() sometimes locked up with "reset"
 - kMod
-  - fix race-condition bug that prevented start of pru0 (reliably)
+  - fix race-condition bug that prevented start of pru0 (reliably-improvement)
   - disable experimental code - not compatible with non-ti kernel
   - verify canaries less often (~ 2 min)
+  - reduce wait-time of kernel-module after pru-firmware is loaded (300 ms -> 10 ms) after analyzing the PRU-init behavior
+  - optimize firmware-switching of PRUs (now simultaneous instead of sequential)
+  - reboot both PRUs even if only one firmware was changed
+  - selecting firmware for Pru0 now also writes accompanying fw for pru1
 - py-packaging:
   - allow installing everything via `.[all]`
   - switch to UV (from pip)
@@ -49,13 +58,20 @@
   - tools are installed via `uv tool install /opt/shepherd/software/python-package/.`
   - for testing there is a jane-venv automatically activated for jane and root (pytest has to be done from `sudo su`)
   - ansible, services and packages are migrated
+- datastorage integration -> improve mounting parameters
 - switch to uv for dev-environment
+  - also for installing py-sheep on observers
+  - also for GitHub workflows
+- switch to prek as replacement for pre-commit
 - ansible
   - remove usage of nelson boot scripts (update kernel & grow partition)
   - try newer non-ti kernel
   - make cleaning-role safer
   - improve kernel preparation
-  - switch python components to UV and venv
+  - switch python components to UV ~~and venv~~
+  - improve usage via UV, without venv
+  - improve modifications to user-account (custom sudoers-file and generalized .bashrc)
+- improve usage of ntpdate for forced resync
 - update tooling
 - **tested**: pytest sheep, pytest herd windows, pytest shepherd_pru
 

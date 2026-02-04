@@ -21,19 +21,19 @@ To ensure quality standards we implemented the [pre-commit](https://pre-commit.c
 
 Pull Requests to the main branch will be tested online with **GitHub Actions**.
 
-To run it on your own make sure you have pre-commit installed:
+To run it on your own make sure you have prek (a faster pre-commit plugin-replacement) installed:
 
 ```shell
-pip3 install pre-commit
+uv pip install prek
 sudo apt install cppcheck
 ```
 
 Now you can run the pre-commit checks:
 
 ```Shell
-pre-commit run --all-files
+prek run --all-files
 # or in short
-pre-commit run -a
+prek run -a
 ```
 
 ## Development setup
@@ -116,7 +116,7 @@ For a tutorial see the dedicated sections in the tool-documentations:
 
 ## Releasing
 
-Before committing to the repository please run our [pre-commit](https://pre-commit.com/)-workflow described in [](#codestyle).
+Before committing to the repository please run our [pre-commit](https://prek.j178.dev/)-workflow described in [](#codestyle).
 
 Once you have a clean, stable and tested version, you should bump the version number to current year, month and release-number (YYYY.MM.r).
 Use `bump2version` to update the version number across the repository:
@@ -126,8 +126,8 @@ uv venv
 # activate env - on winOS with .venv\Scripts\activate
 uv pip install .[dev]
 # and then
-pre-commit run --all-files
-bump2version --allow-dirty --new-version 2025.11.1 patch
+prek run --all-files
+bump2version --allow-dirty --new-version 2026.02.1 patch
 # version-format: YYYY.MM.r
 ```
 

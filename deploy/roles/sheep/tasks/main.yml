@@ -19,6 +19,7 @@
   ansible.builtin.include_tasks:
     file: "{{ file_item }}"
   loop:
+    - config_accounts.yml
     - config_folders.yml
     - config_overlays.yml
   loop_control:

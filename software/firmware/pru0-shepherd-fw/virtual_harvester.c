@@ -174,6 +174,9 @@ void harvester_initialize()
 }
 
 #ifdef HRV_SUPPORT
+
+  #define ADC_READ_DELAY (800 / TICK_INTERVAL_NS) // 800 us
+
 void sample_adc_harvester()
 {
     const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
@@ -196,7 +199,7 @@ static void harvest_adc_2_cv(const uint32_t sample_idx)
 
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
-    __delay_cycles(800 / 5);
+    __delay_cycles(ADC_READ_DELAY);
     const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
@@ -220,7 +223,7 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
 
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
-    __delay_cycles(800 / 5);
+    __delay_cycles(ADC_READ_DELAY);
     uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
@@ -277,7 +280,7 @@ static void harvest_adc_2_isc_voc(const uint32_t sample_idx)
 
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
-    __delay_cycles(800 / 5);
+    __delay_cycles(ADC_READ_DELAY);
     const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
@@ -310,7 +313,7 @@ static void harvest_adc_2_mppt_voc(const uint32_t sample_idx)
  */
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations later */
-    __delay_cycles(800 / 5);
+    __delay_cycles(ADC_READ_DELAY);
     const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
@@ -365,7 +368,7 @@ static void harvest_adc_2_mppt_po(const uint32_t sample_idx)
 	 */
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
     /* NOTE: it's in here so this timeslot can be used for calculations */
-    __delay_cycles(800 / 5);
+    __delay_cycles(ADC_READ_DELAY);
     const uint32_t current_adc = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     const uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 

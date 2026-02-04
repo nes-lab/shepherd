@@ -983,32 +983,30 @@ static ssize_t sysfs_pru0_firmware_store(struct kobject *kobj, struct kobj_attri
     /* FAIL with no file-name or not matching start-string */
     if (strlen(buffer) == 0) return -EINVAL;
 
-    /*
-    if (strncmp(buffer, "am335x-pru0-", 12)) return -EINVAL;
-    swap_pru_firmware(buffer, "");
-     */
-    /* NOTE: this does not work as expected as buffer contains xtra chars at the end
-     * ignore for now and hardcode
-     */
+    /* TODO: PRU1-FW is hardcoded now - test */
     if ((strncmp(buffer, "emu", 3) == 0) || (strncmp(buffer, PRU0_FW_EMU, 27) == 0))
     {
-        swap_pru_firmware(PRU0_FW_EMU, "");
+        swap_pru_firmware(PRU0_FW_EMU, PRU1_FW_DEFAULT);
     }
     else if ((strncmp(buffer, "hrv", 3) == 0) || (strncmp(buffer, PRU0_FW_HRV, 27) == 0))
     {
-        swap_pru_firmware(PRU0_FW_HRV, "");
+        swap_pru_firmware(PRU0_FW_HRV, PRU1_FW_DEFAULT);
     }
     else if ((strncmp(buffer, "swd", 3) == 0) || (strncmp(buffer, PRU0_FW_PRG_SWD, 29) == 0))
     {
-        swap_pru_firmware(PRU0_FW_PRG_SWD, "");
+        swap_pru_firmware(PRU0_FW_PRG_SWD, PRU1_FW_SLEEP);
     }
     else if ((strncmp(buffer, "sbw", 3) == 0) || (strncmp(buffer, PRU0_FW_PRG_SBW, 29) == 0))
     {
-        swap_pru_firmware(PRU0_FW_PRG_SBW, "");
+        swap_pru_firmware(PRU0_FW_PRG_SBW, PRU1_FW_SLEEP);
+    }
+    else if ((strncmp(buffer, "sleep", 4) == 0) || (strncmp(buffer, PRU0_FW_SLEEP, 22) == 0))
+    {
+        swap_pru_firmware(PRU0_FW_SLEEP, PRU1_FW_SLEEP);
     }
     else
     {
-        swap_pru_firmware(PRU0_FW_DEFAULT, "");
+        printk(KERN_ERR "shprd.k: fw-request for Pru0 was not recognized");
     }
 
     return count;

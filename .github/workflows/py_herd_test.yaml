@@ -8,19 +8,34 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [ "3.13", "3.12", "3.10" ]
+        python-version: [ "3.14", "3.12", "3.10" ]
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
+      group: herd-${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
       cancel-in-progress: true
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v6
-      - name: Set up Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v6
+
+      - name: Install uv 🔧 & set up python 🐍
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          activate-environment: true
 
-      - name: Install the shepherd-herd py-package 𓋿 𓀍
-        run: "pip3 install ./"
+      - name: Test-Build herd-package 🧱
+        run: uv build --clear
+        working-directory: "./software/shepherd-herd"
+
+      - name: Install the shepherd-herd package 𓋿 𓀍
+        run: "uv pip install . -U"
+        working-directory: "./software/shepherd-herd"
+
+      - name: Install the dev-deps of the herd-package
+        run: "uv pip install .[dev]"
+        working-directory: "./software/shepherd-herd"
+
+      - name: Install the test-deps of the herd-package
+        run: "uv pip install .[test]"
         working-directory: "./software/shepherd-herd"

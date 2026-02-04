@@ -9,10 +9,6 @@
 - name: Clean apt-caches - B
   ansible.builtin.apt:
     autoclean: true
-- name: Clean apt-caches - C
-  ansible.builtin.apt:
-    clean: true
-  when: false # ansible states that "clean" parameter does not exist
 - name: Clean apt-caches - D - builtin.apt seems broken
   ansible.builtin.command: 'apt autoclean'
   become: true

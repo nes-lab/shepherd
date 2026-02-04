@@ -3,7 +3,7 @@
 # uv pip install .
 [project]
 name = "shepherd-main"
-version = "2025.11.1"
+version = "2026.02.1"
 description = "Infrastructure for the Testbed, mainly focused on the Observers "
 readme = "README.md"
 
@@ -21,8 +21,7 @@ requires-python = ">=3.10"
 [project.optional-dependencies]
 dev = [
     "twine",  # TODO: could be done with uv
-    "pre-commit",
-    "pre-commit-uv", # check with `pre-commit --version`
+    "prek",  # pre-commit plugin-replacement
     "bump2version",
     "ty",
     "pyright",

@@ -24,13 +24,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2025.06.4",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2026.02.1",  # limit due to newest features
     "click",
     "numpy",
     "fabric",

@@ -19,7 +19,7 @@
     name: "{{ item }}"
     state: present
   loop:
-    - "ntpdate" # allows manual time updates via: ntpdate -s time.nist.gov
+    - "ntpdate" # allows manual time updates via: sudo ntpdate -b -s -u pool.ntp.org
     - "sysrqd" # remote reboot
 
 - name: Restart device

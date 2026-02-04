@@ -17,4 +17,4 @@ jobs:
           ansible-galaxy collection install ansible.posix
           ansible-galaxy collection install community.general
       - name: Run Pre-Commit Tests 🧪
-        uses: pre-commit/action@v3.0.1
+        uses: j178/prek-action@v1

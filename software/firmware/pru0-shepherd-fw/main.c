@@ -220,7 +220,7 @@ void event_loop()
                 -> datasheet not clear, but 15-50 ns could be enough
                 NOTE: 1 us has to pass before trying to read that value
             */
-            __delay_cycles(100 / 5);
+            __delay_cycles(100 / TICK_INTERVAL_NS);
             GPIO_ON(SPI_CS_ADCs_MASK);
         }
         // timestamp pru0 to monitor utilization
@@ -285,6 +285,7 @@ void event_loop()
             GPIO_ON(DEBUG_PIN1_MASK);
             handle_kernel_com();
         }
+        else if (SHARED_MEM.shp_pru_state >= STATE_STOPPED) return; /* allows forced stop */
 
         /* record loop-duration, compensate for CS -> gets further processed by pru1 */
         SHARED_MEM.pru0_ns_per_sample = iep_get_cnt_val() - timer_start + 110u;
@@ -357,7 +358,7 @@ int main(void)
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT   = 0u;
 
-    /* allow PRU1 to enter event-loop and wait till it is ready */
+    /* allow PRU1 to enter event-loop */
     SHARED_MEM.cmp0_trigger_for_pru1 = 1u;
 
 reset:
