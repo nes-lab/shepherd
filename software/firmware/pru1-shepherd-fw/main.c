@@ -417,7 +417,7 @@ int32_t event_loop()
                 if (SHARED_MEM.pru0_ns_per_sample > pru0_tsample_ns_max)
                 {
                     pru0_tsample_ns_max = SHARED_MEM.pru0_ns_per_sample;
-#ifdef DEBUG_RTIME_EN
+#if DEBUG_RTIME_EN
                     if (pru0_tsample_ns_max > 10000u) DEBUG_RTIME_STATE_1;
 #endif
                 }
