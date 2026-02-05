@@ -18,10 +18,13 @@
   - add benchmark to find the cheapest resampling method
   - fix csv-header for pru-util
   - use ExitStack() more correctly
-  - speed up (factor 8, later ~ x12) & stabilize reload of kernel module
+  - speed up & stabilize reload of kernel module
+    - factor 8, later ~ x12, so from 8 to 45 s down to .7 s
+    - this shaves 20 min off unittests and makes them run through again
   - disable changing fw of Pru1 (gets now automatically selected, based on fw for pru0)
   - improve warning of watchdog for possible fifo-overflows (more explaining, less scary)
   - use correct scaling for sampling intermediate power values (bugfix for #133)
+  - bugfix for stopping prematurely while collecting remaining data
 - herd
   - threads now have a configurable timeout for safer runtime (`.run_cmd()`, `.get_file()`, `.put_file()`)
   - cli-command `shell` now has an additional timeout-argument which defaults to 60 minutes
@@ -42,6 +45,7 @@
   - add more unittests for c-code via python-module
   - tests pru-code automatically via GitHub workflow
   - bugfix in statemachine of PRU0 - wait_for_state() sometimes locked up with "reset"
+  - simplify debug-switches for PRU1
 - kMod
   - fix race-condition bug that prevented start of pru0 (reliably-improvement)
   - disable experimental code - not compatible with non-ti kernel

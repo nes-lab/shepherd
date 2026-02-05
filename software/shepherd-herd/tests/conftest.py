@@ -45,7 +45,7 @@ def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -
 def generate_h5_file(file_path: Path, file_name: str = "harvest_example.h5") -> Path:
     store_path = file_path / file_name
 
-    with Writer(store_path, compression=None) as file:
+    with Writer(store_path) as file:
         file.store_hostname("artificial")
         duration_s = 2
         repetitions = 10

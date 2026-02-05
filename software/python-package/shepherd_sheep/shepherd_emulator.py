@@ -327,7 +327,7 @@ class ShepherdEmulator(ShepherdIO):
                 if before_ts_end and (time.time() > ts_end):
                     log.debug("End of measurement reached -> will collect remaining data")
                     before_ts_end = False
-                self.handle_pru_messages(panic_on_restart=True)
+                self.handle_pru_messages(panic_on_restart=before_ts_end)
                 self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
                     if time.time() - ts_data_last > 3:
