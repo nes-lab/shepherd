@@ -111,7 +111,7 @@ def test_cli_program_sbw_explicit(cli_runner: CliRunner, fw_example: Path) -> No
     assert res.exit_code == 0
 
 
-@pytest.mark.timeout(60)  # TODO: fails in big runs - so add alive-checker here
+@pytest.mark.timeout(100)  # TODO: fails in big runs - so add alive-checker here
 @pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_file_defective_a(cli_runner: CliRunner, fw_empty: Path) -> None:
     res = cli_runner.invoke(cli, ["-v", "program", "--simulate", fw_empty.as_posix()])

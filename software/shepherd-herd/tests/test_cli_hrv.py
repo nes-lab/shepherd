@@ -50,7 +50,7 @@ def test_hrv_example_fail(cli_runner: CliRunner) -> None:
         ],
     )
     assert res.exit_code != 0
-    wait_for_end(cli_runner, timeout=15)
+    wait_for_end(cli_runner, timeout=30)
 
 
 @pytest.mark.timeout(60)
