@@ -34,6 +34,12 @@
   failed_when: false
   changed_when: true
 
+- name: PIP - Install | upgrade UV
+  # Note: done via pip to get universal access (root, sudo, jane)
+  ansible.builtin.command:
+    cmd: pip install uv --upgrade --break-system-packages
+  become: true
+
 - name: UV - Uninstall shepherd python package
   ansible.builtin.command:
     cmd: "/usr/local/bin/uv pip uninstall {{ item }}"
