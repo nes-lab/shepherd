@@ -23,7 +23,6 @@
   ansible.builtin.command:
     cmd: pip install uv --upgrade --break-system-packages
   become: true
-  # TODO: now also done in build_pre to update UV
 
 - name: Allow install to tool-dir without sudo
   ansible.builtin.file:
