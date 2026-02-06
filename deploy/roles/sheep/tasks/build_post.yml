@@ -11,14 +11,14 @@
   ansible.builtin.command: 'modprobe -a shepherd'
   changed_when: true
 
-- name: UV - prune local cache
+- name: UV - clean local cache
   ansible.builtin.command:
-    cmd: 'sudo -E /usr/local/bin/uv cache prune'
+    cmd: 'sudo -E /usr/local/bin/uv cache clean'
     chdir: '/home/{{ ansible_user }}'
   become: false
 
-- name: UV - prune root cache
+- name: UV - clean root cache
   ansible.builtin.command:
-    cmd: '/usr/local/bin/uv cache prune'
+    cmd: '/usr/local/bin/uv cache clean'
     chdir: '/root/'
   become: true
