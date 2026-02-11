@@ -43,6 +43,12 @@ def flatten_list(dl: Sequence) -> list:
     return [dl]
 
 
+def calc_current(power_W: float, voltage_V: float) -> float:
+    p_fW_n4 = int(power_W * 1e15 * 2**4)
+    v_uV = int(voltage_V * 1e6)
+    return virtual_pru.calc_current_nA_n4(p_fW_n4, v_uV) / 1e9 / 2**4
+
+
 class PruConverterModel:
     def __init__(
         self, cfg: ConverterPRUConfig, cal: PruCalibration, storage_cfg: StoragePRUConfig
