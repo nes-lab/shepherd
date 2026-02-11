@@ -34,6 +34,7 @@
 
 
 #ifdef ENABLE_DEBUG_MATH_FN
+// TODO: remove? seems like a relict, pru can be better tested
 uint64_t debug_math_fns(const uint32_t factor, const uint32_t mode)
 {
     uint64_t       result = 0;
