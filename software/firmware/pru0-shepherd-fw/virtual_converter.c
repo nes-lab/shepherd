@@ -27,26 +27,39 @@ inline void set_batok_pin(const bool_ft value)
 static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
 static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
 
-  #define DIV_SHIFT    (17u) // 2^17 as uV is ~ 131 mV
-  #define DIV_LUT_SIZE (40u)
+  #define DIV_SHIFT    (17u)
+  // 2^17 for uV is ~ 131 mV -> stepsize
+  #define DIV_LUT_SIZE (128u)
+// 80 increments allows range from 131 mV to 10 V
+// TODO: 128 increments would allow range of 131 mV to 16 V
 
 /* LUT for faster division
- * Generation:
- * - array[n] = (1u << 27) / (n * (1u << 17)) = (1u << 10u) / (n + 0.5)
- * - limit array[0] to 1023 -> not needed anymore due to mult with overflow-protection, instead overprovision
- * - the largest value array[39] is 5.11 V
+ *    current_nA = power_fW / voltage_uV              -> baseline
+ *    current_nA_n4 = power_fW_n4 * 1 / voltage_uV    -> wanted format
+ *   current_nA_n4 = (power_fW_n4 / 1_n15) * (1_n15 / voltage_uV)
+ *    current_nA_n4 = power_fW_n4 * (1_n15 / voltage_uV_p17) / 1_n17 / 1_n15
+ *    current_nA_n4 = power_fW_n4 * (1_n15 / voltage_uV_p17) / 1_n32
  * python:
- *    LUT = [(2**10)/(n + 0.5) for n in range(40)]
+ *    print(", ".join([str(round(max(2**16-1, 2**15 / (n + 0.5))) for n in range(80)]))
  */
-static const uint32_t LUT_div_uV_n27[DIV_LUT_SIZE] = {
-        16383, 683, 410, 293, 228, 186, 158, 137, 120, 108, 98, 89, 82, 76, 71, 66, 62, 59, 55, 53,
-        50,    48,  46,  44,  42,  40,  39,  37,  36,  35,  34, 33, 32, 31, 30, 29, 28, 27, 27, 26};
+static const uint16_t LUT_div_uV_n27[DIV_LUT_SIZE] = {
+        65535, 21845, 13107, 9362, 7282, 5958, 5041, 4369, 3855, 3449, 3121, 2849, 2621, 2427, 2260,
+        2114,  1986,  1872,  1771, 1680, 1598, 1524, 1456, 1394, 1337, 1285, 1237, 1192, 1150, 1111,
+        1074,  1040,  1008,  978,  950,  923,  898,  874,  851,  830,  809,  790,  771,  753,  736,
+        720,   705,   690,   676,  662,  649,  636,  624,  612,  601,  590,  580,  570,  560,  551,
+        542,   533,   524,   516,  508,  500,  493,  485,  478,  471,  465,  458,  452,  446,  440,
+        434,   428,   423,   417,  412,  407,  402,  397,  392,  388,  383,  379,  374,  370,  366,
+        362,   358,   354,   350,  347,  343,  340,  336,  333,  329,  326,  323,  320,  317,  314,
+        311,   308,   305,   302,  299,  297,  294,  291,  289,  286,  284,  281,  279,  277,  274,
+        272,   270,   267,   265,  263,  261,  259,  257,
+};
 
 static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 {
+    /* ATTENTION: this fn needs exact inputs and is optimized for range of 130 mV to 16 V */
     uint8_t lut_pos = (voltage_uV >> DIV_SHIFT);
     if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
-    return mul64((power_fW_n4 >> 10u), LUT_div_uV_n27[lut_pos]) >> 17u;
+    return mul64(power_fW_n4, (uint64_t) LUT_div_uV_n27[lut_pos]) >> 32u;
 }
 #endif // EMU_SUPPORT
 
@@ -389,7 +402,7 @@ inline uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
 uint32_t        get_I_mid_out_nA(void)
 {
-    return (uint32_t) div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 28u);
+    return (uint32_t) (div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u);
 }
 
 inline bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
