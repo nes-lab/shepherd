@@ -27,21 +27,19 @@ inline void set_batok_pin(const bool_ft value)
 static uint32_t get_input_efficiency_n8(uint32_t voltage_uV, uint32_t current_nA);
 static uint32_t get_output_inv_efficiency_n4(uint32_t current_nA);
 
-  #define DIV_SHIFT    (17u)
-  // 2^17 for uV is ~ 131 mV -> stepsize
-  #define DIV_LUT_SIZE (128u)
-// 80 increments allows range from 131 mV to 10 V
-// TODO: 128 increments would allow range of 131 mV to 16 V
 
-/* LUT for faster division
+  /* LUT for faster division
  *    current_nA = power_fW / voltage_uV              -> baseline
  *    current_nA_n4 = power_fW_n4 * 1 / voltage_uV    -> wanted format
- *   current_nA_n4 = (power_fW_n4 / 1_n15) * (1_n15 / voltage_uV)
+ *    current_nA_n4 = (power_fW_n4 / 1_n15) * (1_n15 / voltage_uV)
  *    current_nA_n4 = power_fW_n4 * (1_n15 / voltage_uV_p17) / 1_n17 / 1_n15
  *    current_nA_n4 = power_fW_n4 * (1_n15 / voltage_uV_p17) / 1_n32
  * python:
- *    print(", ".join([str(round(max(2**16-1, 2**15 / (n + 0.5))) for n in range(80)]))
+ *    LUT_div = [round(2**15 / (n + 0.5)) for n in range(128)]
+ *    print(", ".join([str(min(div, 2**16-1)) for div in LUT_div]))  # noqa: T201
  */
+  #define DIV_LUT_SIZE (128u)
+// 128 allows range of 131 mV to 16 V
 static const uint16_t LUT_div_uV_n27[DIV_LUT_SIZE] = {
         65535, 21845, 13107, 9362, 7282, 5958, 5041, 4369, 3855, 3449, 3121, 2849, 2621, 2427, 2260,
         2114,  1986,  1872,  1771, 1680, 1598, 1524, 1456, 1394, 1337, 1285, 1237, 1192, 1150, 1111,
@@ -54,12 +52,12 @@ static const uint16_t LUT_div_uV_n27[DIV_LUT_SIZE] = {
         272,   270,   267,   265,  263,  261,  259,  257,
 };
 
-static uint64_t div_uV_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
+uint32_t calc_current_nA_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV)
 {
     /* ATTENTION: this fn needs exact inputs and is optimized for range of 130 mV to 16 V */
-    uint8_t lut_pos = (voltage_uV >> DIV_SHIFT);
+    uint8_t lut_pos = (voltage_uV >> 17u); // 131 mV stepsize
     if (lut_pos >= DIV_LUT_SIZE) lut_pos = DIV_LUT_SIZE - 1u;
-    return mul64(power_fW_n4, (uint64_t) LUT_div_uV_n27[lut_pos]) >> 32u;
+    return (uint32_t) (mul64(power_fW_n4, (uint64_t) LUT_div_uV_n27[lut_pos]) >> 32u);
 }
 #endif // EMU_SUPPORT
 
@@ -198,8 +196,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         const uint32_t V_mid_uV  = (state.V_mid_uV_n32 >> 32u);
         const uint32_t V_diff_uV = sub32(input_voltage_uV, V_mid_uV);
         const uint32_t V_res_drop_uV =
-                (uint32_t) (((uint64_t) input_current_nA * (uint64_t) CNV_CFG.R_input_kOhm_n22) >>
-                            22u);
+                (uint32_t) (mul32e(input_current_nA, CNV_CFG.R_input_kOhm_n22) >> 22u);
         if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
         else
         {
@@ -232,8 +229,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     const uint32_t eta_inp_n8 =
             (state.enable_boost) ? get_input_efficiency_n8(input_voltage_uV, input_current_nA)
                                  : (1u << 8u);
-    state.P_inp_fW_n8 =
-            mul64((uint64_t) eta_inp_n8 * (uint64_t) input_voltage_uV, input_current_nA);
+    state.P_inp_fW_n8 = mul64(mul32e(eta_inp_n8, input_voltage_uV), input_current_nA);
 
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
 }
@@ -249,7 +245,7 @@ void converter_calc_out_power(const uint32_t current_adc_raw)
     const uint32_t I_out_nA = cal_conv_adc_raw_to_nA(current_adc_raw);
     const uint32_t eta_inv_out_n4 =
             (state.enable_buck) ? get_output_inv_efficiency_n4(I_out_nA) : (1u << 4u);
-    state.P_out_fW_n4 = mul64((uint64_t) eta_inv_out_n4 * (uint64_t) state.V_out_dac_uV, I_out_nA);
+    state.P_out_fW_n4 = mul64(mul32e(eta_inv_out_n4, state.V_out_dac_uV), I_out_nA);
 
     // allows target to initialize and go to sleep
     if (state.interval_startup_disabled_drain_n > 0u)
@@ -270,9 +266,9 @@ void converter_update_storage(void)
         const uint64_t P_inp_fW_n4 = state.P_inp_fW_n8 >> 4u;
         // avoid mixing in signed data-types -> slows pru and reduces resolution
         const bool_ft  is_charging = P_inp_fW_n4 >= state.P_out_fW_n4;
-        const uint64_t I_delta_nA_n4 =
-                is_charging ? div_uV_n4(P_inp_fW_n4 - state.P_out_fW_n4, V_mid_uV)
-                            : div_uV_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
+        const uint32_t I_delta_nA_n4 =
+                is_charging ? calc_current_nA_n4(P_inp_fW_n4 - state.P_out_fW_n4, V_mid_uV)
+                            : calc_current_nA_n4(state.P_out_fW_n4 - P_inp_fW_n4, V_mid_uV);
         state.V_mid_uV_n32 = (uint64_t) storage_update(I_delta_nA_n4, is_charging) << 24u;
     }
 
@@ -402,7 +398,7 @@ inline uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
 uint32_t        get_I_mid_out_nA(void)
 {
-    return (uint32_t) (div_uV_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u);
+    return (uint32_t) (calc_current_nA_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u);
 }
 
 inline bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }

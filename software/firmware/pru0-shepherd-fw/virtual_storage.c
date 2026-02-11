@@ -69,22 +69,19 @@ uint32_t get_SoC_1_n30() { return (uint32_t) (state.SoC_1_n62 >> 32u); }
 
 #ifdef EMU_SUPPORT
 
-uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
-// TODO: current could be u32?!?
+uint32_t storage_update(const uint32_t I_delta_nA_n4, const bool_ft is_charging)
 {
     /*  3 Multiplications in this FN
         dSoC_leak   u64 = u32 * u32
-        dSoC_curr   u64 = u64 * u32 -> TODO
-        V_delta     u64 = u64 * u32 -> TODO
+        dSoC_curr   u64 = u32 * u32
+        V_delta     u64 = u32 * u32
     */
-    uint64_t dSoC_leak_1_n62 =
-            (uint64_t) (state.V_OC_uV_n8 >> 6u) * (uint64_t) STORE_CFG.Constant_1_per_uV_n60;
+    uint64_t dSoC_leak_1_n62 = mul32e(state.V_OC_uV_n8 >> 6u, STORE_CFG.Constant_1_per_uV_n60);
     // alternatively this could be added to P_out_fW (like before)
     if (state.SoC_1_n62 >= dSoC_leak_1_n62) state.SoC_1_n62 = state.SoC_1_n62 - dSoC_leak_1_n62;
     else state.SoC_1_n62 = 0;
 
-    const uint64_t dSoC_1_n62 = mul64(I_delta_nA_n4, STORE_CFG.Constant_1_per_nA_n60) >> 2u;
-    // TODO could be mul32e() above
+    const uint64_t dSoC_1_n62 = mul32e(I_delta_nA_n4, STORE_CFG.Constant_1_per_nA_n60) >> 2u;
     if (is_charging)
     {
         state.SoC_1_n62 += dSoC_1_n62;
@@ -96,8 +93,7 @@ uint32_t storage_update(const uint64_t I_delta_nA_n4, const bool_ft is_charging)
     const uint8_ft pos_lut           = position_LuT();
     state.V_OC_uV_n8                 = STORE_CFG.LuT_VOC_uV_n8[pos_lut];
     const uint32_t R_series_kOhm_n32 = STORE_CFG.LuT_RSeries_kOhm_n32[pos_lut];
-    const uint32_t V_delta_uV_n8     = mul64(I_delta_nA_n4, R_series_kOhm_n32) >> 28u;
-    // TODO could be mul32e() above
+    const uint32_t V_delta_uV_n8     = mul32e(I_delta_nA_n4, R_series_kOhm_n32) >> 28u;
 
     uint32_t       V_cell_uV_n8;
     if (is_charging) V_cell_uV_n8 = state.V_OC_uV_n8 + V_delta_uV_n8;

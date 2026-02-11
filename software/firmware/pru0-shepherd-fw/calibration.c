@@ -19,7 +19,7 @@ void calibration_initialize() {}
 #define RESIDUE_MAX_nA      (NOISE_ESTIMATE_nA * RESIDUE_SIZE_FACTOR)
 uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
 {
-    const uint32_t I_nA = mul64(current_raw, CAL_CFG.adc_current_factor_nA_n8) >> 8u;
+    const uint32_t I_nA = mul32e(current_raw, CAL_CFG.adc_current_factor_nA_n8) >> 8u;
     // avoid mixing signed and unsigned OPs
     if (CAL_CFG.adc_current_offset_nA >= 0)
     {
@@ -49,6 +49,7 @@ uint32_t cal_conv_adc_raw_to_nA(const uint32_t current_raw)
 uint32_t cal_conv_adc_raw_to_uV(const uint32_t voltage_raw)
 {
     const uint32_t V_uV = mul32(voltage_raw, CAL_CFG.adc_voltage_factor_uV_n8) >> 8u;
+    // TODO: wouldn't be mul32e safer?
     // avoid mixing signed and unsigned OPs
     if (CAL_CFG.adc_voltage_offset_uV >= 0)
     {
@@ -72,14 +73,14 @@ uint32_t cal_conv_uV_to_dac_raw(const uint32_t voltage_uV)
     {
         const uint32_t dac_offset_uV = CAL_CFG.dac_voltage_offset_uV;
         if (voltage_uV > dac_offset_uV)
-            dac_raw =
-                    mul64(voltage_uV - dac_offset_uV, CAL_CFG.dac_voltage_inv_factor_uV_n20) >> 20u;
+            dac_raw = mul32e(voltage_uV - dac_offset_uV, CAL_CFG.dac_voltage_inv_factor_uV_n20) >>
+                      20u;
         else dac_raw = 0u;
     }
     else
     {
         const uint32_t dac_offset_uV = -CAL_CFG.dac_voltage_offset_uV;
-        dac_raw = mul64(voltage_uV + dac_offset_uV, CAL_CFG.dac_voltage_inv_factor_uV_n20) >> 20u;
+        dac_raw = mul32e(voltage_uV + dac_offset_uV, CAL_CFG.dac_voltage_inv_factor_uV_n20) >> 20u;
     }
     return (dac_raw > 0xFFFFu) ? 0xFFFFu : dac_raw;
 }

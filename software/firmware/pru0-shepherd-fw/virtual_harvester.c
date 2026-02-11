@@ -571,7 +571,7 @@ static void harvest_ivcurve_2_mppt_po(uint32_t *const p_voltage_uV, uint32_t *co
 
     if (interval_step == 0u)
     {
-        const uint64_t power_fW = (uint64_t) (*p_voltage_uV) * (uint64_t) (*p_current_nA);
+        const uint64_t power_fW = mul32e(*p_voltage_uV, *p_current_nA);
         if (power_fW > power_last)
         {
             /* got higher power -> keep direction, move further, speed up */
@@ -632,7 +632,7 @@ static void harvest_ivcurve_2_mppt_opt(uint32_t *const p_voltage_uV, uint32_t *c
     age_now++;
 
     /* search for new max */
-    const uint64_t power_fW = (uint64_t) (*p_voltage_uV) * (uint64_t) (*p_current_nA);
+    const uint64_t power_fW = mul32e(*p_voltage_uV, *p_current_nA);
     if ((power_fW >= power_nxt) && (*p_voltage_uV >= HRV_CFG.voltage_min_uV) &&
         (*p_voltage_uV <= HRV_CFG.voltage_max_uV))
     {

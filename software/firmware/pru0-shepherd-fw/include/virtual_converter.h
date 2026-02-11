@@ -4,6 +4,10 @@
 #include "commons.h"
 #include <stdint.h>
 
+#ifdef __PYTHON__
+uint32_t calc_current_nA_n4(const uint64_t power_fW_n4, const uint32_t voltage_uV);
+#endif
+
 void            converter_initialize();
 
 void            converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_nA);
