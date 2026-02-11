@@ -12,9 +12,7 @@ import struct
 from contextlib import suppress
 from types import TracebackType
 
-from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.base.calibration import CalibrationCape
-from shepherd_core.data_models.base.calibration import CalibrationPair
 from shepherd_core.data_models.base.calibration import CapeData
 from typing_extensions import Self
 
@@ -217,21 +215,7 @@ class EEPROM:
         return cal
 
 
-def retrieve_calibration(
-    *, trace_intermediate: bool = False, use_default_cal: bool = False
-) -> CalibrationCape:
-    if trace_intermediate:
-        # propagate internal PRUs fixed point scaling
-        cal_v = CalibrationPair(gain=1e-6, unit="V")  # uV based
-        cal_c = CalibrationPair(gain=1e-9, unit="A")  # nA based
-        return CalibrationCape(
-            emulator=CalibrationEmulator(
-                dac_V_A=cal_v,
-                dac_V_B=cal_v,
-                adc_C_A=cal_c,
-                adc_C_B=cal_c,
-            )
-        )
+def retrieve_calibration(*, use_default_cal: bool = False) -> CalibrationCape:
     if use_default_cal:
         return CalibrationCape()
 
