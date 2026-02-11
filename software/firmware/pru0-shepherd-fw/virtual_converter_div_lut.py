@@ -4,7 +4,7 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 
 
-def div_uV_n4_v1(power_fW_n4: float, voltage_uV: float) -> int:
+def calc_current_n4_v1(power_fW_n4: float, voltage_uV: float) -> int:
     DIV_SHIFT = 17  # ~ 131 mV
     LUT_div_uV_n27 = [
         16383,
@@ -54,7 +54,7 @@ def div_uV_n4_v1(power_fW_n4: float, voltage_uV: float) -> int:
     return (int(power_fW_n4 / 2**10) * LUT_div_uV_n27[lut_pos]) // 2**17
 
 
-def div_uV_n4_v2(power_fW_n4: float, voltage_uV: float) -> int:
+def calc_current_nA_n4_v2(power_fW_n4: float, voltage_uV: float) -> int:
     """ "
     current_nA = power_fW / voltage_uV              -> baseline
     current_nA_n4 = power_fW_n4 * 1 / voltage_uV    -> wanted format
@@ -79,15 +79,15 @@ voltages_uV = list(range(1_500_000, 10_000_000, 10_000))
 currents_nA = [power_fW / V_uV for V_uV in voltages_uV]
 ax.plot(voltages_uV, currents_nA, label="ground_truth")
 
-currents_nA = [div_uV_n4_v1(power_fW * 2**4, V_uV) // 2**4 for V_uV in voltages_uV]
-ax.plot(voltages_uV, currents_nA, label="div_uv_n4_v1 (before battery)")
+currents_nA = [calc_current_n4_v1(power_fW * 2**4, V_uV) // 2**4 for V_uV in voltages_uV]
+ax.plot(voltages_uV, currents_nA, label="calc_current_n4_v1 (div_uv_n4()  before battery)")
 
-currents_nA = [div_uV_n4_v2(power_fW * 2**4, V_uV) // 2**4 for V_uV in voltages_uV]
-ax.plot(voltages_uV, currents_nA, label="div_uv_n4_v2")
+currents_nA = [calc_current_nA_n4_v2(power_fW * 2**4, V_uV) // 2**4 for V_uV in voltages_uV]
+ax.plot(voltages_uV, currents_nA, label="calc_current_n4_v2")
 
 ax.legend()
 fig.savefig(Path(__file__).with_suffix(".png"))
 plt.close()
 
 LUT_div = [round(2**15 / (n + 0.5)) for n in range(128)]
-print(", ".join([str(min(div, 2**16-1)) for div in LUT_div]))  # noqa: T201
+print(", ".join([str(min(div, 2**16 - 1)) for div in LUT_div]))  # noqa: T201
