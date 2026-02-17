@@ -1,4 +1,3 @@
-# noqa: INP001
 from pathlib import Path
 
 from matplotlib import pyplot as plt
@@ -97,5 +96,5 @@ fig.savefig(Path(__file__).with_suffix(".png"))
 plt.close()
 
 LUT_div = [round(2**15 / (n + 0.5)) for n in range(128)]
-print("LUT-Values for calc_current_nA_n4() ")
-print(", ".join([str(min(div, 2**16 - 1)) for div in LUT_div]))  # noqa: T201
+print("LUT-Values for calc_current_nA_n4()")
+print(", ".join([str(min(div, 2**16 - 1)) for div in LUT_div]))

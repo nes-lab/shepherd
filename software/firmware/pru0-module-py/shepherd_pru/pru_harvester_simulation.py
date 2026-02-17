@@ -40,7 +40,7 @@ def simulate_harvester(
 
     Fn return the harvested energy.
     """
-    # return sim_hrv_core(config, path_input, path_output)  # noqa: ERA001
+    # return sim_hrv_core(config, path_input, path_output)
     with ExitStack() as stack:
         file_inp = Reader(path_input, verbose=False)
         stack.enter_context(file_inp)
