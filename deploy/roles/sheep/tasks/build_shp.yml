@@ -111,7 +111,7 @@
 
 - name: UV - Install shepherd-sheep tools
   ansible.builtin.command:
-    cmd: "/usr/local/bin/uv pip install {{ sheep_install_path }}/software/python-package/.[test] --upgrade --system --break-system-packages"
+    cmd: "sudo -E /usr/local/bin/uv pip install {{ sheep_install_path }}/software/python-package/.[test] --upgrade --system --break-system-packages"
   tags:
     - install
     - python

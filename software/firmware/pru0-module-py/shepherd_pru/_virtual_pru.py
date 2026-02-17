@@ -27,10 +27,11 @@ def get_device() -> ct.CDLL:
         "cal_conv_adc_raw_to_uV": ([ct.c_uint32], ct.c_uint32),
         "cal_conv_uV_to_dac_raw": ([ct.c_uint32], ct.c_uint32),
         # virtual_storage.c ##############################
+        "calc_current_nA_n4": ([ct.c_uint64, ct.c_uint32], ct.c_uint32),
         "storage_initialize": (None, None),
         "get_V_OC_uV": (None, ct.c_uint32),
         "get_SoC_1_n30": (None, ct.c_uint32),
-        "storage_update": ([ct.c_uint64, bool_ft], ct.c_uint32),
+        "storage_update": ([ct.c_uint32, bool_ft], ct.c_uint32),
         # virtual_converter.c ##############################
         "converter_initialize": (None, None),
         "converter_calc_inp_power": ([ct.c_uint32, ct.c_uint32], None),
@@ -58,6 +59,7 @@ def get_device() -> ct.CDLL:
         "vsrc_iterate_sampling": ([ct.c_uint32, ct.c_uint32, ct.c_uint32], ct.c_uint32),
         # math64_safe.c ############################## fully tested
         "mul32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
+        "mul32e": ([ct.c_uint32, ct.c_uint32], ct.c_uint64),
         "mul64": ([ct.c_uint64, ct.c_uint64], ct.c_uint64),
         "add32": ([ct.c_uint32, ct.c_uint32], ct.c_uint32),
         "add32s": ([ct.c_uint32, ct.c_int32], ct.c_uint32),

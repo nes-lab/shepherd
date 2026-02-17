@@ -646,8 +646,7 @@ def content(
     *,
     verify: bool,
 ) -> None:
-    with ctx.obj["herd"] as herd:
-        invalid = herd.find_invalid_content(verify=verify)
+    invalid = ctx.obj["herd"].find_invalid_content(verify=verify)
     ctx.exit(int(invalid))
 
 

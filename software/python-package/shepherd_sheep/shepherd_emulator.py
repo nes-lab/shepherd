@@ -6,6 +6,7 @@ from contextlib import ExitStack
 from datetime import datetime
 from types import TracebackType
 
+from shepherd_core import CalibrationEmulator
 from shepherd_core import CalibrationPair
 from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
@@ -96,8 +97,6 @@ class ShepherdEmulator(ShepherdIO):
             log.debug("\t%s: %s", key, value)
 
         self.cal_emu = retrieve_calibration(
-            trace_intermediate=isinstance(cfg.power_tracing, PowerTracing)
-            and cfg.power_tracing.intermediate_voltage,
             use_default_cal=cfg.use_cal_default,
             # TODO: unhandled edge case if aux is selected?
             # NOTE: shouldn't the logic be contained as property in EmulationTask?
@@ -110,12 +109,24 @@ class ShepherdEmulator(ShepherdIO):
 
         # TODO: write gpio-mask
 
-        log_iv = cfg.power_tracing is not None
-        log_cap = log_iv and cfg.power_tracing.intermediate_voltage
+        trace_iv = isinstance(cfg.power_tracing, PowerTracing)
+        trace_cap = trace_iv and cfg.power_tracing.intermediate_voltage
+        cal_file = self.cal_emu
+        if trace_cap:
+            # propagate internal PRUs fixed point scaling
+            cal_v = CalibrationPair(gain=1e-6, unit="V")  # uV based
+            cal_c = CalibrationPair(gain=1e-9, unit="A")  # nA based
+            cal_file = CalibrationEmulator(
+                dac_V_A=cal_v,
+                dac_V_B=cal_v,
+                adc_C_A=cal_c,
+                adc_C_B=cal_c,
+            )
+
         self.cnv_pru = ConverterPRUConfig.from_vsrc(
             data=cfg.virtual_source,
             dtype_in=self.reader.get_datatype(),
-            log_intermediate_node=log_cap,
+            log_intermediate_node=trace_cap,
         )
         window_size = self.reader.get_window_samples()
         self.hrv_pru = HarvesterPRUConfig.from_vhrv(
@@ -142,10 +153,10 @@ class ShepherdEmulator(ShepherdIO):
                 mode=self.component,  # is a cleaned up mode
                 datatype=EnergyDType.ivsample,
                 cal_data=CalibrationSeries.from_cal(
-                    self.cal_emu, emu_port_a=(cfg.pwr_port == TargetPort.A)
+                    cal_file, emu_port_a=(cfg.pwr_port == TargetPort.A)
                 ),
-                sample_rate=cfg.power_tracing.samplerate if log_iv else None,
-                only_power=cfg.power_tracing.only_power if log_iv else False,
+                sample_rate=cfg.power_tracing.samplerate if trace_iv else None,
+                only_power=cfg.power_tracing.only_power if trace_iv else False,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
             )

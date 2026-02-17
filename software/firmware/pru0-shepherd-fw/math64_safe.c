@@ -67,11 +67,15 @@ uint64_t mul64(const uint64_t value1, const uint64_t value2)
 
 inline uint32_t mul32(const uint32_t value1, const uint32_t value2)
 {
-    // an extending version could just do:
-    // return (uint64_t) value1 * (uint64_t) value2;
     const uint64_t product = (uint64_t) value1 * (uint64_t) value2;
     // check for possible overflow - return max
     return (product < 0xFFFFFFFFull) ? (uint32_t) product : (uint32_t) (0xFFFFFFFFu);
+}
+
+inline uint64_t mul32e(const uint32_t value1, const uint32_t value2)
+{
+    // extends to u64 (full non-bound u32-multiplication)
+    return (uint64_t) value1 * (uint64_t) value2;
 }
 
 uint64_t add64(const uint64_t value1, const uint64_t value2)

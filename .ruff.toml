@@ -37,6 +37,7 @@ exclude= [  # external projects
 "docs/**" = ["INP001"]
 "software/debug_analyze_time_sync/**" = ["ERA001", "S301"]  # comments
 "software/kernel-module/**" = ["INP001", "T201", "ERA001"]  # no namespace, print & commented-out code
+"software/firmware/**" = ["INP001", "T201", "ERA001"]  # print & commented-out code
 "software/python-package/shepherd_sheep/shepherd_debug.py" = ["FBT001", "FBT002"]
 "software/shepherd-calibration/**" = ["ERA001"]  # comments
 "software/shepherd-calibration/shepherd_cal/**" = ["FBT003"]  # rpc had trouble with named params

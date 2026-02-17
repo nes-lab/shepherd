@@ -5,6 +5,7 @@
 
 uint64_t mul64(uint64_t value1, uint64_t value2);
 uint32_t mul32(uint32_t value1, uint32_t value2);
+uint64_t mul32e(uint32_t value1, uint32_t value2);
 uint64_t add64(uint64_t value1, uint64_t value2);
 uint32_t add32(uint32_t value1, uint32_t value2);
 uint32_t add32s(uint32_t value1, int32_t value2);

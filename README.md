@@ -147,3 +147,32 @@ The following people have contributed to *shepherd*:
  - [Boris Blokland](https://github.com/borro0)
  - [Jonas Kubicki](https://github.com/jonkub)
  - [Ingmar Splitt](https://github.com/nes-lab)
+
+## Release-Procedure
+
+Once you have a clean, stable and tested version, you should bump the version number to current year, month and release-number (YYYY.MM.r).
+
+- increase version number by executing ``bump2version`` (see cmds below)
+- update changelog in ``CHANGELOG.md``
+- run unittests locally
+  - sheep-package on observers
+  - herd-tool on host
+  - pru-python-module (in `software/firmware/pru0-module-py`)
+  - fresh installation on Linux image via ansible
+  - additionally every push gets automatically tested by GitHub workflows
+- install and run ``prek`` for QA-Checks (pre-commit plugin-replacement), see steps below
+- move code from dev-branch to main by PR
+- add tag to commit - reflecting current version number - i.e. ``v25.5.1``
+  - GitHub automatically creates a release & pushes the release to PyPI
+- update release-text with latest Changelog (from `CHANGELOG.md`)
+- rebase dev-branch
+
+```Shell
+prek run --all-files
+
+# additional QA-Tests (currently with open issues)
+ty check
+
+bump2version --allow-dirty --new-version 2026.02.2 patch
+# version-format: YYYY.MM.r
+```

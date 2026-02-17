@@ -28,6 +28,13 @@ def test_mul32(val1: int, val2: int) -> None:
     assert virtual_pru.mul32(val1, val2) == val_ref
 
 
+@pytest.mark.parametrize("val1", val_u32)
+@pytest.mark.parametrize("val2", val_u32)
+def test_mul32e(val1: int, val2: int) -> None:
+    val_ref = min(2**64 - 1, max(0, val1 * val2))
+    assert virtual_pru.mul32e(val1, val2) == val_ref
+
+
 @pytest.mark.parametrize("val1", val_u32 + val_u64)
 @pytest.mark.parametrize("val2", val_u32 + val_u64)
 def test_mul64(val1: int, val2: int) -> None:

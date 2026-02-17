@@ -11,7 +11,8 @@ alias ll='ls $LS_OPTIONS -l'
 
 # uv config -> elevation via 'sudo -E uv ...'
 export UV_TOOL_BIN_DIR=/usr/local/bin
-export UV_CACHE_DIR=/tmp/uv-cache
+#export UV_CACHE_DIR=/tmp/uv-cache
+# -> abandon global cache idea - as access-rights will clash
 
 # directly start in dev-env
 cd /opt/shepherd/software

@@ -113,13 +113,13 @@ For a tutorial see the dedicated sections in the tool-documentations:
 
 - [sheep-testbench](../tools/sheep.md#unittests)
 - [herd-testbench](../tools/herd.md#unittests)
+- [pru-testbench](../../software/firmware/pru0-module-py/README.md#testsuite)
 
-## Releasing
+It is also recommended to test the installation on fresh Linux image via ansible before publishing a new version.
+
+## Pull-Requests
 
 Before committing to the repository please run our [pre-commit](https://prek.j178.dev/)-workflow described in [](#codestyle).
-
-Once you have a clean, stable and tested version, you should bump the version number to current year, month and release-number (YYYY.MM.r).
-Use `bump2version` to update the version number across the repository:
 
 ```shell
 uv venv
@@ -127,8 +127,6 @@ uv venv
 uv pip install .[dev]
 # and then
 prek run --all-files
-bump2version --allow-dirty --new-version 2026.02.1 patch
-# version-format: YYYY.MM.r
 ```
 
 Finally, open a pull-request to allow merging your changes into the main-branch and to trigger the test-pipeline.
