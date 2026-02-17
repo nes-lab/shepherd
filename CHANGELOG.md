@@ -2,12 +2,15 @@
 
 ## 2026.02.2
 
+- pru - fix wrong cal being written to PRU when tracing energy storage
 - pru - optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
+  - add python script for calculation and visualization
 - pru - add special mul32e() to allow full u32*u32 = u64
 - pru - optimize VSrc in PRU0 to use less u64-calculations
   - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
+  - fixes #123
 - sheep - increase warning for pru0-util from 95 % to 98 %
-- sheep - fix for a fix - tracing intermediate voltage now works as expected
+- sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
 - py / uv - abandon global cache
 - ansible - improve uv commands
 - internal - move doc for the release-procedure to root readme
