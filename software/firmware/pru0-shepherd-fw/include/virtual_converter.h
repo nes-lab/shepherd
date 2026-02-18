@@ -27,7 +27,7 @@ uint32_t        get_I_mid_out_nA(void);
 uint32_t        get_V_output_uV(void);
 bool_ft         get_state_log_intermediate(void);
 
-void            set_batok_pin(bool_ft value);
+void            set_power_good_pin(uint8_ft value);
 
 /* feedback to harvester - global vars */
 extern bool_ft  feedback_to_hrv;

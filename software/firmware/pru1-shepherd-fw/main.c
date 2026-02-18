@@ -24,8 +24,9 @@
 #define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK         BIT_SHIFT(P8_30)
 
-#define GPIO_BATOK              BIT_SHIFT(P8_29)
-#define GPIO_BATOK_POS          (9u)
+#define GPIO_POWER_GOOD_HIGH    BIT_SHIFT(P8_29)
+#define GPIO_POWER_GOOD_LOW     BIT_SHIFT(P8_29)
+#define GPIO_POWER_GOOD_POS     (9u)
 
 #define GPIO_MASK               (0x03FF)
 /* this will be combined with the user-configurable mask to derive the mask used for the Tracer */
@@ -96,15 +97,16 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
     {
         prev_gpio_status = 0x00;
         SHARED_MEM.gpio_pin_state =
-                (read_r31() | (SHARED_MEM.vsource_batok_pin_value << GPIO_BATOK_POS)) & GPIO_MASK;
+                (read_r31() | (SHARED_MEM.vsource_power_good_pin_values << GPIO_POWER_GOOD_POS)) &
+                GPIO_MASK;
         return;
     }
     else if (SHARED_MEM.vsource_skip_gpio_logging) { return; }
 
-    // batOK is on r30 (output), but that does not mean it is in R31
-    // -> workaround: splice in SHARED_MEM.vsource_batok_pin_value
+    // PowerGood / BatOK is on r30 (output), but that does not mean it is in R31
+    // -> workaround: splice in SHARED_MEM.vsource_power_good_pin_values
     const uint32_t gpio_status =
-            (read_r31() | (SHARED_MEM.vsource_batok_pin_value << GPIO_BATOK_POS)) &
+            (read_r31() | (SHARED_MEM.vsource_power_good_pin_values << GPIO_POWER_GOOD_POS)) &
             SHARED_MEM.gpio_mask;
     const uint32_t gpio_diff = gpio_status ^ prev_gpio_status;
 
@@ -239,7 +241,7 @@ int32_t event_loop()
 
     iep_start();
 
-    /* GPIO Tracer final config*/
+    /* GPIO Tracer final config */
     SHARED_MEM.gpio_mask &= GPIO_MASK;
 
     while (1)
@@ -368,19 +370,29 @@ int32_t event_loop()
         }
 
         /* remote gpio-triggering for pru0 */
-        if (SHARED_MEM.vsource_batok_trigger_for_pru1)
+        if (SHARED_MEM.vsource_power_good_trigger_for_pru1)
         {
-            if (SHARED_MEM.vsource_batok_pin_value)
+            if (SHARED_MEM.vsource_power_good_pin_values & 0b10u)
             {
-                GPIO_ON(GPIO_BATOK);
-                DEBUG_PGOOD_STATE_1;
+                GPIO_ON(GPIO_POWER_GOOD_HIGH);
+                DEBUG_PGOOD_STATE_H1;
             }
             else
             {
-                GPIO_OFF(GPIO_BATOK);
-                DEBUG_PGOOD_STATE_0;
+                GPIO_OFF(GPIO_POWER_GOOD_HIGH);
+                DEBUG_PGOOD_STATE_H0;
             }
-            SHARED_MEM.vsource_batok_trigger_for_pru1 = false;
+            if (SHARED_MEM.vsource_power_good_pin_values & 0b01u)
+            {
+                GPIO_ON(GPIO_POWER_GOOD_LOW);
+                DEBUG_PGOOD_STATE_L1;
+            }
+            else
+            {
+                GPIO_OFF(GPIO_POWER_GOOD_LOW);
+                DEBUG_PGOOD_STATE_L0;
+            }
+            SHARED_MEM.vsource_power_good_trigger_for_pru1 = false;
             continue;
         }
 

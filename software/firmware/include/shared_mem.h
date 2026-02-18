@@ -73,9 +73,9 @@ struct SharedMem
     /* Token system to ensure both PRUs can share interrupts */
     volatile bool_ft                  cmp0_trigger_for_pru1;
     volatile bool_ft                  cmp1_trigger_for_pru1;
-    /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-    volatile bool_ft                  vsource_batok_trigger_for_pru1;
-    volatile bool_ft                  vsource_batok_pin_value;
+    /* PowerGood / BatOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
+    volatile bool_ft                  vsource_power_good_trigger_for_pru1;
+    volatile uint8_ft                 vsource_power_good_pin_values;
     /* Trigger to control sampling of gpios */
     volatile bool_ft                  vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */

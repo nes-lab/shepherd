@@ -40,11 +40,15 @@
 #endif
 
 #if DEBUG_PGOOD_EN
-  #define DEBUG_PGOOD_STATE_0 write_r30(read_r30() & ~DEBUG_PIN1_MASK)
-  #define DEBUG_PGOOD_STATE_1 write_r30(read_r30() | DEBUG_PIN1_MASK)
+  #define DEBUG_PGOOD_STATE_L0 write_r30(read_r30() & ~DEBUG_PIN0_MASK)
+  #define DEBUG_PGOOD_STATE_L1 write_r30(read_r30() | DEBUG_PIN0_MASK)
+  #define DEBUG_PGOOD_STATE_H0 write_r30(read_r30() & ~DEBUG_PIN1_MASK)
+  #define DEBUG_PGOOD_STATE_H1 write_r30(read_r30() | DEBUG_PIN1_MASK)
 #else
-  #define DEBUG_PGOOD_STATE_0
-  #define DEBUG_PGOOD_STATE_1
+  #define DEBUG_PGOOD_STATE_L0
+  #define DEBUG_PGOOD_STATE_L1
+  #define DEBUG_PGOOD_STATE_H0
+  #define DEBUG_PGOOD_STATE_H1
 #endif
 
 #if DEBUG_RAMRD_EN
@@ -131,10 +135,10 @@ static void inline debug_gpio_sweep(void)
     {
         value = iter;
         while (value--) __delay_cycles(1);
-        GPIO_TOGGLE(GPIO_BATOK);
+        GPIO_TOGGLE(GPIO_POWER_GOOD_HIGH);
         value = iter;
         while (value--) __delay_cycles(1);
-        GPIO_TOGGLE(GPIO_BATOK);
+        GPIO_TOGGLE(GPIO_POWER_GOOD_HIGH);
     }
 }
 #endif

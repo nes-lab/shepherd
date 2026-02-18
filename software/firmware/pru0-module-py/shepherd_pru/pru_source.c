@@ -37,7 +37,10 @@ void set_converter_config(const volatile struct ConverterConfig *const config)
     shared_mem.converter_settings = *config;
 }
 
-bool_ft  get_vsource_batok_pin_value(void) { return shared_mem.vsource_batok_pin_value; }
+uint8_ft get_vsource_power_good_pin_values(void)
+{
+    return shared_mem.vsource_power_good_pin_values;
+}
 
 bool_ft  get_vsource_skip_gpio_logging(void) { return shared_mem.vsource_skip_gpio_logging; }
 

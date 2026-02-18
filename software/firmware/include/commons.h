@@ -23,7 +23,7 @@ enum MsgType
     MSG_DBG_ADC                   = 0xA0u,
     MSG_DBG_DAC                   = 0xA1u, // TODO: rename: MSG_CTRL_DAC
     MSG_DBG_GPI                   = 0xA2u,
-    MSG_DBG_GP_BATOK              = 0xA3u,
+    MSG_DBG_GP_POWER_GOOD         = 0xA3u,
     MSG_DBG_PRINT                 = 0xA6u, // TODO: unused
     MSG_DBG_VSRC_P_INP            = 0xA8u,
     MSG_DBG_VSRC_P_OUT            = 0xA9u,

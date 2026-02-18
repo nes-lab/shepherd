@@ -310,6 +310,7 @@ gpio_channels = [
     "None",
 ]
 gpio_dir_channels = {"0to3": 0, "ser_io": 8, "pr1": 10, "pr2": 12}
+power_good = 0
 
 
 def gpio_refresh() -> None:
@@ -332,8 +333,23 @@ def gpio_dir_callback(sender, element_data, user_data) -> None:
     shepherd_io.set_gpio_direction(user_data, element_data)
 
 
-def gpio_batok_callback(sender, en_state, user_data) -> None:
-    shepherd_io.gp_set_batok(en_state)
+def gpio_power_good_high_callback(sender, en_state, user_data) -> None:
+    global power_good
+    if en_state:
+        power_good |= 2
+    else:
+        power_good &= 1
+    shepherd_io.gp_set_power_good(power_good)
+    gpio_refresh()
+
+
+def gpio_power_good_low_callback(sender, en_state, user_data) -> None:
+    global power_good
+    if en_state:
+        power_good |= 1
+    else:
+        power_good &= 2
+    shepherd_io.gp_set_power_good(power_good)
     gpio_refresh()
 
 

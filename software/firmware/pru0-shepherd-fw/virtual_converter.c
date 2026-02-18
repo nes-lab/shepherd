@@ -16,10 +16,10 @@
  * ----------------------------------------------------------------------
  */
 
-inline void set_batok_pin(const bool_ft value)
+inline void set_power_good_pin(const uint8_ft value)
 {
-    SHARED_MEM.vsource_batok_pin_value        = value;
-    SHARED_MEM.vsource_batok_trigger_for_pru1 = true;
+    SHARED_MEM.vsource_power_good_pin_values       = value & 0b11u;
+    SHARED_MEM.vsource_power_good_trigger_for_pru1 = true;
 }
 
 #ifdef EMU_SUPPORT
@@ -322,7 +322,7 @@ uint32_t converter_update_states_and_output()
         {
             state.power_good = is_outputting;
         }
-        set_batok_pin(state.power_good);
+        set_power_good_pin(state.power_good);
     }
 
     if (is_outputting || (state.interval_startup_disabled_drain_n > 0u))

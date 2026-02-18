@@ -287,10 +287,16 @@ def assemble_window() -> None:
             dpg.add_text(tag="text_C_gpio", default_value="PRU Output")
             dpg.add_spacer(width=10)
             dpg.add_checkbox(
-                tag="gpio_BAT_OK",
-                label="BAT_OK",
+                tag="gpio_PGOOD_LOW",
+                label="PGOOD_LOW",
                 default_value=False,
-                callback=gpio_batok_callback,
+                callback=gpio_power_good_low_callback,
+            )
+            dpg.add_checkbox(
+                tag="gpio_PGOOD_HIGH",
+                label="PGOOD_HIGH",
+                default_value=False,
+                callback=gpio_power_good_high_callback,
             )
 
     # TODO: restore old dpg v0.6 functionality (v0.8.64 is still missing themes)

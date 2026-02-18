@@ -118,8 +118,8 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0]
 
-    def gp_set_batok(self, value: int) -> None:
-        super()._send_msg(commons.MSG_DBG_GP_BATOK, value)
+    def gp_set_power_good(self, value: int) -> None:
+        super()._send_msg(commons.MSG_DBG_GP_POWER_GOOD, value)
 
     def dac_write(self, channels: int, value: int) -> None:
         """Writes value to specified DAC channel, DAC8562
