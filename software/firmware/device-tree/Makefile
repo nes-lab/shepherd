@@ -1,4 +1,8 @@
-TARGET = BB-SHPRD-00A0
+CAPE_HW_VER ?= 25E0
+TARGET = BB-SHPRD-$(CAPE_HW_VER)
+# command above sets the default (v2.5 Emu Rev 0)
+# i.e. overwrite with: make CAPE_HW_VER=24A0
+# TODO: could be dynamically determined by reading EEPROM
 
 $(TARGET).dtbo: $(TARGET).dtsp
 	@echo ' '
