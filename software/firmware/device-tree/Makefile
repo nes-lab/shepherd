@@ -1,6 +1,7 @@
 CAPE_HW_VER ?= 25E0
 TARGET = BB-SHPRD-$(CAPE_HW_VER)
 # command above sets the default (v2.5 Emu Rev 0)
+# -> currently supported: 24A0 (HRV & EMU) & 25E0 (EMU only)
 # i.e. overwrite with: make CAPE_HW_VER=24A0
 # TODO: could be dynamically determined by reading EEPROM
 

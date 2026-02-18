@@ -105,6 +105,8 @@
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: install
+    params:
+      CAPE_HW_VER: "{{ sheep_cape_hw_ver }}"
   tags:
     - install
     - device-tree

@@ -3,6 +3,9 @@
 sheep_install_path: /opt/shepherd
 sheep_data_path: /var/shepherd/recordings
 sheep_config_path: /etc/shepherd
+sheep_cape_hw_ver: "25E0"
+# -> currently supported: 24A0 (HRV & EMU) & 25E0 (EMU only)
+# TODO: could be dynamically determined by reading EEPROM
 
 ### program flow
 sheep_install_basics: true
