@@ -76,7 +76,7 @@ int main(void)
     SHARED_MEM.gpio_pin_state                      = 0u;
 
     SHARED_MEM.vsource_power_good_trigger_for_pru1 = false;
-    SHARED_MEM.vsource_power_good_pin_values       = 0b00u;
+    SHARED_MEM.vsource_power_good_pins_state       = 0b00u;
 
     /* minimal init for these structs to make them safe */
     /* NOTE: more inits are done in kernel */

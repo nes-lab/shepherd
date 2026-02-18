@@ -125,7 +125,7 @@ class PruConverterModel:
 
     def get_power_good(self) -> int:
         # TODO: vsource_power_good_trigger_for_pru1 is also set
-        return self.pru.get_vsource_power_good_pin_values
+        return self.pru.get_vsource_power_good_pins_state
 
     def get_I_mid_out_nA(self) -> float:
         return self.pru.get_I_mid_out_nA()

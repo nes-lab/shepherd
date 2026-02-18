@@ -75,7 +75,7 @@ struct SharedMem
     volatile bool_ft                  cmp1_trigger_for_pru1;
     /* PowerGood / BatOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
     volatile bool_ft                  vsource_power_good_trigger_for_pru1;
-    volatile uint8_ft                 vsource_power_good_pin_values;
+    volatile uint8_ft                 vsource_power_good_pins_state;
     /* Trigger to control sampling of gpios */
     volatile bool_ft                  vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */

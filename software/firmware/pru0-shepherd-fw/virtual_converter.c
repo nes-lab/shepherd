@@ -16,9 +16,9 @@
  * ----------------------------------------------------------------------
  */
 
-inline void set_power_good_pin(const uint8_ft value)
+inline void set_power_good_state(const uint8_ft value)
 {
-    SHARED_MEM.vsource_power_good_pin_values       = value & 0b11u;
+    SHARED_MEM.vsource_power_good_pins_state       = value & 0b11u;
     SHARED_MEM.vsource_power_good_trigger_for_pru1 = true;
 }
 
@@ -82,7 +82,6 @@ struct ConverterState
     uint32_t V_mid_enable_output_threshold_uV;
     uint32_t V_mid_disable_output_threshold_uV;
     uint32_t dV_mid_enable_output_uV;
-    bool_ft  power_good;
 };
 
 /* feedback to harvester - global vars */
@@ -117,7 +116,6 @@ void converter_initialize()
 
     state.V_out_dac_uV                      = CNV_CFG.V_output_uV;
     state.V_out_dac_raw                     = cal_conv_uV_to_dac_raw(CNV_CFG.V_output_uV);
-    state.power_good                        = true;
 
     /* prepare hysteresis-thresholds */
     state.dV_mid_enable_output_uV           = CNV_CFG.dV_mid_enable_output_uV;
@@ -313,16 +311,10 @@ uint32_t converter_update_states_and_output()
 
     if (check_thresholds || CNV_CFG.immediate_pwr_good_signal)
     {
-        /* emulate power-good-signal */
-        if (state.power_good)
-        {
-            if (V_mid_uV <= CNV_CFG.V_pwr_good_disable_threshold_uV) { state.power_good = false; }
-        }
-        else if (V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV)
-        {
-            state.power_good = is_outputting;
-        }
-        set_power_good_pin(state.power_good);
+        /* emulate two power-good-signals (low & high) */
+        const bool pgood_high = V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV;
+        const bool pgood_low  = V_mid_uV > CNV_CFG.V_pwr_good_disable_threshold_uV;
+        set_power_good_state(is_outputting ? (pgood_low | (pgood_high << 1u)) : 0u);
     }
 
     if (is_outputting || (state.interval_startup_disabled_drain_n > 0u))

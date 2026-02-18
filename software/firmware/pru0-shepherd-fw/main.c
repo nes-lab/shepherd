@@ -112,7 +112,7 @@ static bool_ft handle_kernel_com()
                 sample_dbg_dac(msg_in.value[0]);
                 return 1u;
 
-            case MSG_DBG_GP_POWER_GOOD: set_power_good_pin(msg_in.value[0] > 0); return 1U;
+            case MSG_DBG_GP_POWER_GOOD: set_power_good_state(msg_in.value[0]); return 1U;
 
             case MSG_DBG_GPI: msgsys_send(MSG_DBG_GPI, SHARED_MEM.gpio_pin_state, 0); return 1U;
 
@@ -343,7 +343,7 @@ int main(void)
     SHARED_MEM.gpio_pin_state                      = 0u;
 
     SHARED_MEM.vsource_power_good_trigger_for_pru1 = false;
-    SHARED_MEM.vsource_power_good_pin_values       = 0b00u;
+    SHARED_MEM.vsource_power_good_pins_state       = 0b00u;
 
     /* minimal init for these structs to make them safe */
     /* NOTE: more inits are done in kernel */

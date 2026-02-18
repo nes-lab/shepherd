@@ -24,8 +24,9 @@
 #define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK         BIT_SHIFT(P8_30)
 
-#define GPIO_POWER_GOOD_HIGH    BIT_SHIFT(P8_29)
-#define GPIO_POWER_GOOD_LOW     BIT_SHIFT(P8_29)
+#define GPIO_POWER_GOOD_HIGH    BIT_SHIFT(P8_29) // default PGOOD pin for cape v2.4
+//#define GPIO_POWER_GOOD_LOW     BIT_SHIFT(P8_29)
+/* Algo will switch to hysteresis if _LOW-pin is missing */
 #define GPIO_POWER_GOOD_POS     (9u)
 
 #define GPIO_MASK               (0x03FF)
@@ -97,16 +98,16 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
     {
         prev_gpio_status = 0x00;
         SHARED_MEM.gpio_pin_state =
-                (read_r31() | (SHARED_MEM.vsource_power_good_pin_values << GPIO_POWER_GOOD_POS)) &
+                (read_r31() | (SHARED_MEM.vsource_power_good_pins_state << GPIO_POWER_GOOD_POS)) &
                 GPIO_MASK;
         return;
     }
     else if (SHARED_MEM.vsource_skip_gpio_logging) { return; }
 
     // PowerGood / BatOK is on r30 (output), but that does not mean it is in R31
-    // -> workaround: splice in SHARED_MEM.vsource_power_good_pin_values
+    // -> workaround: splice in SHARED_MEM.vsource_power_good_pins_state
     const uint32_t gpio_status =
-            (read_r31() | (SHARED_MEM.vsource_power_good_pin_values << GPIO_POWER_GOOD_POS)) &
+            (read_r31() | (SHARED_MEM.vsource_power_good_pins_state << GPIO_POWER_GOOD_POS)) &
             SHARED_MEM.gpio_mask;
     const uint32_t gpio_diff = gpio_status ^ prev_gpio_status;
 
@@ -372,7 +373,8 @@ int32_t event_loop()
         /* remote gpio-triggering for pru0 */
         if (SHARED_MEM.vsource_power_good_trigger_for_pru1)
         {
-            if (SHARED_MEM.vsource_power_good_pin_values & 0b10u)
+#ifdef GPIO_POWER_GOOD_LOW // use both pins to signal pgood
+            if (SHARED_MEM.vsource_power_good_pins_state & 0b10u)
             {
                 GPIO_ON(GPIO_POWER_GOOD_HIGH);
                 DEBUG_PGOOD_STATE_H1;
@@ -382,7 +384,7 @@ int32_t event_loop()
                 GPIO_OFF(GPIO_POWER_GOOD_HIGH);
                 DEBUG_PGOOD_STATE_H0;
             }
-            if (SHARED_MEM.vsource_power_good_pin_values & 0b01u)
+            if (SHARED_MEM.vsource_power_good_pins_state & 0b01u)
             {
                 GPIO_ON(GPIO_POWER_GOOD_LOW);
                 DEBUG_PGOOD_STATE_L1;
@@ -392,6 +394,18 @@ int32_t event_loop()
                 GPIO_OFF(GPIO_POWER_GOOD_LOW);
                 DEBUG_PGOOD_STATE_L0;
             }
+#else // hysteresis
+            if (SHARED_MEM.vsource_power_good_pins_state >= 0b11u)
+            {
+                GPIO_ON(GPIO_POWER_GOOD_HIGH);
+                DEBUG_PGOOD_STATE_H1;
+            }
+            if (SHARED_MEM.vsource_power_good_pins_state == 0b00u)
+            {
+                GPIO_OFF(GPIO_POWER_GOOD_HIGH);
+                DEBUG_PGOOD_STATE_H0;
+            }
+#endif
             SHARED_MEM.vsource_power_good_trigger_for_pru1 = false;
             continue;
         }
