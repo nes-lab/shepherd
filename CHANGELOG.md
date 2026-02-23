@@ -2,6 +2,16 @@
 
 ## 2026.02.2
 
+### Highlights
+
+- execution time of VSrc significantly reduced by > 20%
+- increased resolution and range of LUT-division for VSrc in PRU
+- fix wrong cal being used when tracing energy storage
+- add support for new cape hardware v2.5e (more target IO, two power good pins)
+- power good is now calculated with two pins in mind (low & high threshold) and automatically translated to hysteresis if second pin is missing
+
+### Details
+
 - pru - fix wrong cal being written to PRU when tracing energy storage
 - pru - optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
   - add python script for calculation and visualization
@@ -9,7 +19,15 @@
 - pru - optimize VSrc in PRU0 to use less u64-calculations
   - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
   - fixes #123
-- sheep - increase warning for pru0-util from 95 % to 98 %
+- ~~sheep - increase warning for pru0-util from 95 % to 98 %
+- add support for new cape hw v25
+  - split & add device tree to support both capes
+  - add cape-abstraction to PRU, sheep, ansible
+- power good is now calculated with two pins in mind (low & high threshold)
+  - it is automatically translated to hysteresis if second pin is missing
+  - for cape v2.5 it will be set on PRU0, making room for slightly higher GPIO-tracing rates
+- PRU0 - disable LED-DEBUGGING as all available pins are used for IO on cape 2.5 (will also make GPIO-Tracing faster)
+- PRU0 - add error when gpio-trace result won't fit into current buffer-design
 - sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
 - py / uv - abandon global cache
 - ansible - improve uv commands
