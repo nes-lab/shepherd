@@ -296,7 +296,7 @@ void event_loop()
 
 int main(void)
 {
-    DEBUG_STATE_3;
+    DEBUG_EVENT_STATE_3;
 
     /* Initialize struct-Members Part A, must come first - this blocks PRU1! */
     SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
@@ -352,7 +352,7 @@ int main(void)
     SHARED_MEM.programmer_ctrl.state               = PRG_STATE_IDLE;
     SHARED_MEM.programmer_ctrl.target              = PRG_TARGET_NONE;
 
-    DEBUG_STATE_0;
+    DEBUG_EVENT_STATE_0;
 
     msgsys_init();
 
@@ -371,9 +371,9 @@ reset:
     SHARED_MEM.buffer_gpio_idx    = 0u;
     SHARED_MEM.buffer_util_idx    = 0u;
 
-    DEBUG_STATE_3;
+    DEBUG_EVENT_STATE_3;
     sample_init();
-    DEBUG_STATE_0;
+    DEBUG_EVENT_STATE_0;
 
     SHARED_MEM.vsource_skip_gpio_logging = false;
 
@@ -383,7 +383,7 @@ stopped:
     event_loop();
 
     /* stopped state is used to read remaining buffer content */
-    DEBUG_STATE_0;
+    DEBUG_EVENT_STATE_0;
     if (SHARED_MEM.shp_pru_state == STATE_STOPPED) goto stopped;
     goto reset;
 }

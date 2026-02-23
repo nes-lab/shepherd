@@ -46,6 +46,10 @@ INCLUDE += -I$(BASE_PATH)/lib/include
 #SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.c))
 #ASM_SOURCES += $(notdir $(wildcard $(BASE_PATH)/lib/src/*.asm))
 
+## Cape Hardware, with sensible default
+CAPE_HW_VER ?= 25
+CFLAGS += -DCAPE_HW_VER=$(CAPE_HW_VER)
+
 # Debug symbols and intermediate file keeping
 CFLAGS += -g
 #CFLAGS += -save-temps

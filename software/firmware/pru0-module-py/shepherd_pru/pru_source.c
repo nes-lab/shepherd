@@ -63,5 +63,7 @@ uint32_t vsrc_iterate_sampling(uint32_t input_voltage_uV, uint32_t input_current
     /* feedback path - important for boost-less circuits */
     if (feedback_to_hrv) { voltage_set_uV = V_input_request_uV; }
 
+    // power_good_update();
+
     return get_V_output_uV();
 }
