@@ -14,7 +14,7 @@ from . import sysfs_interface as sfs
 from .logger import log
 from .sysfs_interface import wait_for_state
 from .sysfs_interface import write_gpio_tracer_mask
-from .target_io import target_port_to_cape_v24_mapping
+from .target_io import target_port_to_cape_mapping
 
 
 @dataclass
@@ -119,18 +119,18 @@ class SharedMemGPIOOutput:
 
         # gpio masking, configured for cape v2.4
 
-        mask_v24 = 0
+        mask_gpio = 0
         if cfg is not None:
             for gpio in cfg.gpios:
-                pin_num = target_port_to_cape_v24_mapping.get(gpio)
+                pin_num = target_port_to_cape_mapping.get(gpio)
                 if pin_num is not None:
-                    mask_v24 |= 2**pin_num
+                    mask_gpio |= 2**pin_num
         wait_for_state("idle", 4)
-        write_gpio_tracer_mask(mask_v24)
+        write_gpio_tracer_mask(mask_gpio)
         log.debug(
-            "[%s] Tracer GPIO mask = %s (max is 0x3FF for cape 2.4)",
+            "[%s] Tracer GPIO mask = %s (max is 0x03FF for cape v2.4, 0x3FFF for v2.5)",
             type(self).__name__,
-            f"0x{mask_v24:X}",
+            f"0x{mask_gpio:X}",
         )  # TODO: add unittest!
 
     def __enter__(self) -> Self:
