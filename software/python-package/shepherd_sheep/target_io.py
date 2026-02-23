@@ -1,89 +1,27 @@
 """
 shepherd.target_io
 ~~~~~
-Lib to talk to the targets. there are 7x GPIO, 1x UART and 2x SWD (or 1x JTAG)
-IO has semi-static direction, low-power, and is good for several MBit
-
-GPIO 0            - dir1-pin / rxtx
-GPIO 1            - dir1-pin / rxtx
-GPIO 2            - dir1-pin / rxtx
-GPIO 3            - dir1-pin / rxtx
-GPIO 4            - always RX
-GPIO 5            - always RX
-GPIO 6            - always RX
-GPIO 7 - uart rx  - always RX
-GPIO 8 - uart tx  - dir2-pin / rxtx
-BAT OK            - always TX
-
-Prog1 CLK - jtag TCK   - always TX
-Prog1 IO  - jtag TDI   - pDir1-pin / rxtx
-Prog2 CLK - jtag TDO   - always TX
-Prog2 IO  - jtag TMS   - pDir2-pin / rxtx
-
-Direction Pins:
-
-gpio0to3 = 78  # P8_37, GPIO2[14]
-uart_tx = 79   # P8_38, GPIO2[15]
-prog1_io = 10   # P8_31, GPIO0[10]
-prog2_io = 11   # P8_32, GPIO0[11]
+Lib to talk to the targets. See the dedicated sub
 
 """
 
-from collections.abc import Mapping
 from contextlib import suppress
 
+from .commons import CAPE_HW_VER
 from .logger import log
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
-
-target_pins: list[dict] = [  # pin-order from target-connector
-    {"name": "gpio0", "pin": 26, "dir": 78},
-    {"name": "gpio1", "pin": 27, "dir": 78},
-    {"name": "gpio2", "pin": 46, "dir": 78},
-    {"name": "gpio3", "pin": 47, "dir": 78},
-    {"name": "gpio4", "pin": 61, "dir": "I"},
-    {"name": "gpio5", "pin": 80, "dir": "I"},
-    {"name": "gpio6", "pin": 81, "dir": "I"},
-    {"name": "uart_rx", "pin": 14, "dir": "I"},
-    {"name": "uart_tx", "pin": 15, "dir": 79},  # TODO: why not BatOK here?
-    {"name": "prog1_clk", "pin": 5, "dir": "O"},  # P9_17
-    {"name": "prog1_io", "pin": 4, "dir": 10},  # P9_18, dir P8_31
-    {"name": "prog2_clk", "pin": 8, "dir": "O"},  # P8_35
-    {"name": "prog2_io", "pin": 9, "dir": 11},  # P8_33, dir P8_32, noqa: CM001
-]
-
-target_port_to_cape_v24_mapping: Mapping[int, int] = {
-    0: 8,  # UART Target RX
-    1: 7,  # UART Target TX
-    2: 2,
-    3: 3,
-    4: 4,
-    5: 5,
-    6: 6,
-    7: 0,
-    8: 1,
-    17: 9,  # BatOK aka PowerGoodH
-}
-
-target_port_to_cape_v25_mapping: Mapping[int, int] = {
-    0: 0,  # UART Target RX
-    1: 1,  # UART Target TX
-    2: 2,
-    3: 3,
-    4: 4,
-    5: 5,
-    6: 6,
-    7: 7,
-    8: 8,
-    9: 9,
-    10: 10,
-    11: 11,
-    16: 12,  # powerGood Low
-    17: 13,  # powerGood High
-}
+if CAPE_HW_VER == 25:
+    from .target_io_v25 import GPIO_LOG_BIT_POSITIONS
+    from .target_io_v25 import target_pins
+    from .target_io_v25 import target_port_to_cape_mapping
+else:
+    from .target_io_v24 import GPIO_LOG_BIT_POSITIONS
+    from .target_io_v24 import target_pins
+    from .target_io_v24 import target_port_to_cape_mapping
 
 
 class TargetIO:
@@ -191,3 +129,11 @@ class TargetIO:
 
             return True
         return False
+
+
+__all__ = [
+    "GPIO_LOG_BIT_POSITIONS",
+    "TargetIO",
+    "target_pins",
+    "target_port_to_cape_mapping",
+]
