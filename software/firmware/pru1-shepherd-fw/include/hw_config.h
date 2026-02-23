@@ -17,7 +17,7 @@
   /* Algo will switch to hysteresis if _LOW-pin is missing */
   #define GPIO_POWER_GOOD_POS  (9u)
 
-  #define GPIO_MASK            (0x03FF)
+  #define GPIO_MASK            (0x03FFu)
     /* this will be combined with the user-configurable mask to derive the mask used for the Tracer */
 
     /* overview for pin-mirroring - HW-Rev2.4b
@@ -44,7 +44,7 @@ Note: this table is copied (for hdf5-reference) in commons.py
   /* Algo will switch to hysteresis if _LOW-pin is missing */
   #define GPIO_POWER_GOOD_POS (12u)
 
-  #define GPIO_MASK           (0x03FFF)
+  #define GPIO_MASK           (0x3FFFu)
     /* this will be combined with the user-configurable mask to derive the mask used for the Tracer */
 
     /* overview for pin-mirroring - HW-Rev2.5e
@@ -70,5 +70,10 @@ Note: this table is copied (for hdf5-reference) in commons.py
 */
 
 #endif
+
+#if (GPIO_MASK > 0xFFFFu)
+  #error "Current GPIO-Buffer won't fit the masked values"
+#endif
+
 
 #endif /* HW_CONFIG_H_ */
