@@ -5,10 +5,11 @@
 #include "hw_config.h"
 
 // Debug Code - Config, TODO: enable by makefile or compile-command for both PRUs
+// NOTE: cape v25 has no free debug pins for LEDs
 #define DEBUG_GPIO_EN  0 // state1= gpio-checking, state2=writing data, state0=loop&event-routines
 #define DEBUG_EVENT_EN 0 // state1=Event1, s2=e2, s3=e3 (expensive part)
 #define DEBUG_LOOP_EN  0
-#define DEBUG_PGOOD_EN 1 // send power_good to LED1		-> default ON
+#define DEBUG_PGOOD_EN 0 // send power_good to LED1		-> default ON
 #define DEBUG_RAMRD_EN 0 // far ram read (for pru0) on LED0
 #define DEBUG_RTIME_EN 0 // violations of realtime
 
