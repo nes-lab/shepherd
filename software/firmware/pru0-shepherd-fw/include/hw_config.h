@@ -52,7 +52,7 @@
 #define HRV_AVAILABLE                                                                              \
     (defined(SPI_CS_HRV_DAC_PIN) && defined(SPI_CS_HRV_V_ADC_PIN) && defined(SPI_CS_HRV_C_ADC_PIN))
 #define EMU_AVAILABLE   (defined(SPI_CS_EMU_DAC_PIN) && defined(SPI_CS_EMU_ADC_PIN))
-// TODO: it would be cleaner to just 
+// TODO: it would be cleaner to just disable individual PIN_usage
 
 
 #define DEBUG_EVENT_EN  0
