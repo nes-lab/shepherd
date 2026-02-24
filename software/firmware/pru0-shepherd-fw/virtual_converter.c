@@ -312,8 +312,8 @@ uint32_t converter_update_states_and_output()
     if (check_thresholds || CNV_CFG.immediate_pwr_good_signal)
     {
         /* emulate two power-good-signals (low & high) */
-        const bool pgood_high = V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV;
-        const bool pgood_low  = V_mid_uV > CNV_CFG.V_pwr_good_disable_threshold_uV;
+        const bool_ft pgood_high = V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV;
+        const bool_ft pgood_low  = V_mid_uV > CNV_CFG.V_pwr_good_disable_threshold_uV;
         set_power_good_state(is_outputting ? (pgood_low | (pgood_high << 1u)) : 0u);
     }
 
