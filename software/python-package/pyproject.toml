@@ -140,7 +140,7 @@ concurrent-installs  = 1
 
 [[tool.uv.index]]
 name = "piwheels"
-url = "https://www.piwheels.org/simple"
+url = "https://www.piwheels.org/simple"  # TODO: 3.13 supported! switch to py build by astral?
 explicit = true
 # default = true
 
