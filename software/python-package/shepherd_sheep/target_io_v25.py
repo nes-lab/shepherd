@@ -47,6 +47,11 @@ target_pins: list[dict] = [  # pin-order from target-connector
     {"name": "gpio6", "pin": 81, "dir": 50},  # group C
     {"name": "gpio7", "pin": 26, "dir": 50},  # group C
     {"name": "gpio8", "pin": 27, "dir": "I"},
+    # {"name": "gpio9"},  # these have no sys-pin connected
+    # {"name": "gpio10"},
+    # {"name": "gpio11"},
+    # {"name": "pwr_good_low"},
+    # {"name": "pwr_good_high"},
     {"name": "prog1_clk", "pin": 5, "dir": "O"},  # P9_17
     {"name": "prog1_io", "pin": 4, "dir": 10},  # P9_18, dir P8_31
     {"name": "prog2_clk", "pin": 8, "dir": "O"},  # P8_35
