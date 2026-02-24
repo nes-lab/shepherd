@@ -29,6 +29,7 @@
 - PRU0 - disable LED-DEBUGGING as all available pins are used for IO on cape 2.5 (will also make GPIO-Tracing faster)
 - PRU0 - add error when gpio-trace result won't fit into current buffer-design
 - sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
+- PRU - internal refactoring & renaming mostly around BATOK (now called power good)
 - py / uv - abandon global cache
 - ansible - improve uv commands
 - internal - move doc for the release-procedure to root readme

@@ -92,6 +92,12 @@
 
 - header to interface SBC as SMD?
 - NOTE: PI5 is the hardest part to place & source (but has to be replaced anyway)
+- Target-Connector is more useful right-angled, there are two versions:
+  - `-RA`: SMD, right angle, Double the price
+  - `-EM2`: Edge-mount, needs paste on both sides, even pricier than `-RA`
+  - maybe it is cheaper to just plug in an interface PCB with a second connector to get the same result
+- P2 Connector for external triggering & signaling has no real use-case
+- describe P3 on PCB -> sync-port
 
 ## Target Pin Def
 
@@ -139,19 +145,20 @@ pru0_r30_07   - (free)          P9_25     (was CS_ADC2_REC)
 
 - 2Pin Screw-Header ⇾ VoltageInput
 - 2x 2x46 Pinheader ⇾ BBone Port
-- 5x 220 uF 6V3 on backside
-- 2x 47 uF 16V on backside
+- 5x 220 uF 6V3 MLCC on backside
+- 2x 47 uF 16V MLCC 0on backside
 
 ### Initial Test
 
 - visual
   - all ICs and diodes correct orientation
   - no visible shorts or other defects
-- 8V In:
-  - 17mA, with 18x PI5 180deg flipped
-  - 15mA with PI5 removed
-  - first converter (TPS62913) warms up by 7K above ambient
-- EN-Pin: 52 mA, OK, Converter +10K
+  - R13 is DNP (at left edge, middle, next to coil)
+- 7V In:
+  - 15-17 mA, with 18x PI5 180deg flipped
+  - 14-15 mA with PI5 removed or correctly oriented
+  - first converter (U5/TPS62913) and its coil warms up by 7 K above ambient
+- EN-Pin: 52-55 mA, OK, Converter +10K
   - 5V In directly after 17V stage (with TPS removed) 1 mA off vs 50 mA when on
   - warmest part is U3 - AD8421 InAmp (+5K from Ambient)
   - Power-Hotspots: U22, U19, U21,
@@ -165,3 +172,36 @@ pru0_r30_07   - (free)          P9_25     (was CS_ADC2_REC)
     - -6V ⇾ -5.99 V
     - 10mV ⇾ 0.010 V
     - 5V ⇾ 5.20 V
+
+### Verification and Log
+
+Logs are stored in [Planning-Repo](https://github.com/orgua/shepherd-v2-planning/blob/main/doc_testbed/Cape25e_pre-deployment-tests.xlsx)
+
+run test-firmware with real harvest (will be intermittent)
+
+```Shell
+sudo shepherd-sheep -v run ./python-package/example_config_emulation.yaml
+```
+
+run test-firmware with direct-vsrc and 3000mV recording
+
+```Shell
+sudo shepherd-sheep -v run /etc/shepherd/example_config_emulation.yaml
+ll /var/shepherd/recordings/
+scp jane@sheep0://var/shepherd/recordings/emu_2026-02-* ./ 
+# -> run also on second port
+```
+
+Plot both
+
+```Shell
+shepherd-data plot .\ -e10
+shepherd-data plot .\ -e"0.2"
+```
+
+Extract GPIO
+
+```Shell
+shepherd-data extract-gpio .\ 
+# ! GPIO9to11 show no movement, these are allwaysRX, same as GPIO8 -> old device-tree
+```
