@@ -40,7 +40,8 @@ target_pins: list[dict] = [  # pin-order from target-connector
     {"name": "gpio5", "pin": 80, "dir": "I"},
     {"name": "gpio6", "pin": 81, "dir": "I"},
     {"name": "uart_rx", "pin": 14, "dir": "I"},
-    {"name": "uart_tx", "pin": 15, "dir": 79},  # TODO: why not BatOK here?
+    {"name": "uart_tx", "pin": 15, "dir": 79},
+    # BatOK has no sys-pin connected
     {"name": "prog1_clk", "pin": 5, "dir": "O"},  # P9_17
     {"name": "prog1_io", "pin": 4, "dir": 10},  # P9_18, dir P8_31
     {"name": "prog2_clk", "pin": 8, "dir": "O"},  # P8_35

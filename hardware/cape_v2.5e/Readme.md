@@ -188,7 +188,7 @@ run test-firmware with direct-vsrc and 3000mV recording
 ```Shell
 sudo shepherd-sheep -v run /etc/shepherd/example_config_emulation.yaml
 ll /var/shepherd/recordings/
-scp jane@sheep0://var/shepherd/recordings/emu_2026-02-* ./ 
+scp jane@sheep0://var/shepherd/recordings/emu_2026-02-* ./
 # -> run also on second port
 ```
 
@@ -202,6 +202,6 @@ shepherd-data plot .\ -e"0.2"
 Extract GPIO
 
 ```Shell
-shepherd-data extract-gpio .\ 
+shepherd-data extract-gpio .\
 # ! GPIO9to11 show no movement, these are allwaysRX, same as GPIO8 -> old device-tree
 ```
