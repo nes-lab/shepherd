@@ -173,7 +173,7 @@ void harvester_initialize()
     // TODO: embed HRV_CFG.current_limit_nA as a limiter if resources allow for it
 }
 
-#if (defined(HRV_SUPPORT) && HRV_AVAILABLE)
+#if (defined(HRV_SUPPORT) && defined(HRV_AVAILABLE))
 
   #define ADC_READ_DELAY (800 / TICK_INTERVAL_NS) // 800 us
 
@@ -433,7 +433,7 @@ const uint32_t current_nA = cal_conv_adc_raw_to_nA(current_adc); // TODO: could 
 if (current_nA > HRV_CFG.current_limit_nA)
 */
 
-#if (defined(EMU_SUPPORT) && EMU_AVAILABLE)
+#if (defined(EMU_SUPPORT) && defined(EMU_AVAILABLE))
 void sample_ivcurve_harvester(uint32_t *const p_voltage_uV, uint32_t *const p_current_nA)
 {
     // check for IVCurve-Input Indicator and use selected algo
