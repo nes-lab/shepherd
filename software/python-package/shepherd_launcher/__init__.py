@@ -15,7 +15,7 @@ from types import TracebackType
 
 from typing_extensions import Self
 
-__version__ = "2026.02.2"
+__version__ = "2026.03.1"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpLauncher")

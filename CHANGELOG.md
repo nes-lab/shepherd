@@ -1,6 +1,6 @@
 # History of Changes
 
-## 2026.02.2
+## 2026.03.1
 
 ### Highlights
 
@@ -8,7 +8,7 @@
 - increased resolution and range of LUT-division for VSrc in PRU
 - fix wrong cal being used when tracing energy storage
 - add support for new cape hardware v2.5e (more target IO, two power good pins)
-- power good is now calculated with two pins in mind (low & high threshold) and automatically translated to hysteresis if second pin is missing
+- power good is now calculated with two pins in mind (low & high threshold) and automatically falls back to hysteresis if second pin is missing in hardware (capes before v2.5)
 
 ### Details
 
