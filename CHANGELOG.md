@@ -8,6 +8,7 @@
 - increased resolution and range of LUT-division for VSrc in PRU
 - fix wrong cal being used when tracing energy storage
 - add support for new cape hardware v2.5e (more target IO, two power good pins)
+  - the altered wiring frees up PRU1 - so idle GPIO sampling improves by 20 % (from 1.4 to 1.67 MHz)
 - power good is now calculated with two pins in mind (low & high threshold) and automatically falls back to hysteresis if second pin is missing in hardware (capes before v2.5)
 
 ### Details
@@ -20,15 +21,20 @@
   - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
   - fixes #123
 - activate `-Wpedantic` for py-module / c-code and fix warning
-- ~~sheep - increase warning for pru0-util from 95 % to 98 %
+- ~~sheep - increase warning for pru0-util from 95 % to 98 %~~
 - add support for new cape hw v25
   - split & add device tree to support both capes
   - add cape-abstraction to PRU, sheep, ansible
+- add `CAPE_HW_VER` to build-systems for altering config
+  - `shepherd-sheep -v eeprom read -r ` now returns that version (i.e. prints `25` on screen)
 - power good is now calculated with two pins in mind (low & high threshold)
   - it is automatically translated to hysteresis if second pin is missing
   - for cape v2.5 it will be set on PRU0, making room for slightly higher GPIO-tracing rates
 - PRU0 - disable LED-DEBUGGING as all available pins are used for IO on cape 2.5 (will also make GPIO-Tracing faster)
 - PRU0 - add error when gpio-trace result won't fit into current buffer-design
+- the new cape has a different wiring - the PRU1 sampling GPIO has less maintenance to do
+  - so the worst execution time resulted in 1.4 MHz idle sampling before
+  - the new cape is able to sample at 1.67 MHz (minimum, idle) -> 20 % improvement
 - sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
 - PRU - internal refactoring & renaming mostly around BATOK (now called power good)
 - py / uv - abandon global cache

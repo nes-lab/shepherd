@@ -90,8 +90,10 @@
 
 ## Errata & future Improvements
 
-- header to interface SBC as SMD?
+- header to interface SBC as SMD? the goal is to speed up assembly with more automation
+  - this would also make it worthwhile to p'n'p the bottom side (7 Caps)
 - NOTE: PI5 is the hardest part to place & source (but has to be replaced anyway)
+  - main point of failure during production & hard to fix
 - Target-Connector is more useful right-angled, there are two versions:
   - `-RA`: SMD, right angle, Double the price
   - `-EM2`: Edge-mount, needs paste on both sides, even pricier than `-RA`
