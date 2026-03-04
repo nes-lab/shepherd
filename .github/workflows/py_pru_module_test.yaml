@@ -6,12 +6,13 @@ on:
 jobs:
   pru-test:
     concurrency:
-      group: pypru-${{ github.workflow }}-${{ github.ref }}-${{ matrix.os }}-${{ matrix.python-version }}
+      group: pypru-${{ github.workflow }}-${{ github.ref }}-${{ matrix.cape_hw_ver }}-${{ matrix.python-version }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [ "3.13"]
+        cape_hw_ver: [ "24", "25" ]
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v6
