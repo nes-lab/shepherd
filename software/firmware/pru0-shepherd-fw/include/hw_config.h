@@ -50,11 +50,17 @@
 #endif
 
 #if (defined(SPI_CS_HRV_DAC_PIN) && defined(SPI_CS_HRV_V_ADC_PIN) && defined(SPI_CS_HRV_C_ADC_PIN))
-  #define HRV_AVAILABLE
+  #define HRV_AVAILABLE (true)
+    // TODO: these macro are used together with XXX_AVAILABLE, but are used differently
+    //       the value here avoids compile issues
+#else
+  #define HRV_AVAILABLE (false)
 #endif
 
 #if (defined(SPI_CS_EMU_DAC_PIN) && defined(SPI_CS_EMU_ADC_PIN))
-  #define EMU_AVAILABLE
+  #define EMU_AVAILABLE (true)
+#else
+  #define EMU_AVAILABLE (false)
     // TODO: it would be cleaner to just disable individual PIN_usage
 #endif
 

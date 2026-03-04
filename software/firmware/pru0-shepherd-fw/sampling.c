@@ -32,7 +32,7 @@ static bool_ft dac_aux_link_to_main = false;
   #define dac_aux_link_to_main (0u)
 #endif // ENABLE_AUX
 
-#if (defined(EMU_SUPPORT) && defined(EMU_AVAILABLE))
+#if (defined(EMU_SUPPORT) && EMU_AVAILABLE)
 
 struct IVSample    ivsample = {.current = 0u, .voltage = 0u};
 
@@ -150,7 +150,7 @@ static inline void sample_emu_ADCs()
 {
     const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
-#ifdef EMU_AVAILABLE
+#if EMU_AVAILABLE
     buf_out_current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
 #else
     buf_out_current[sample_idx] = 0u
@@ -163,7 +163,7 @@ static inline void sample_hrv_ADCs()
 {
     const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
-#ifdef HRV_AVAILABLE
+#if HRV_AVAILABLE
     buf_out_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     buf_out_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 #else
@@ -182,7 +182,7 @@ void sample()
         case MODE_EMULATOR: return sample_emulator();
         case MODE_EMU_LOOPBACK: return sample_emu_loopback();
 #endif // EMU_SUPPORT
-#if (defined(HRV_SUPPORT) && defined(HRV_AVAILABLE))
+#if (defined(HRV_SUPPORT) && HRV_AVAILABLE)
         case MODE_HARVESTER: return sample_adc_harvester();
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ: return sample_emu_ADCs();
@@ -200,7 +200,7 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
     switch (channel_num)
     {
-#ifdef HRV_AVAILABLE
+#if HRV_AVAILABLE
         case 0: result = adc_fastread(SPI_CS_HRV_C_ADC_PIN); break;
         case 1: result = adc_fastread(SPI_CS_HRV_V_ADC_PIN); break;
 #else
@@ -208,7 +208,7 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
         case 1: result = 0u; break;
 #endif
 
-#ifdef EMU_AVAILABLE
+#if EMU_AVAILABLE
         default: result = adc_fastread(SPI_CS_EMU_ADC_PIN); break;
 #else
         default: result = 0u; break;
@@ -220,11 +220,11 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
 void sample_dbg_dac(const uint32_t value)
 {
-#ifdef HRV_AVAILABLE
+#if HRV_AVAILABLE
     if (value & (1u << 20u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
     if (value & (1u << 21u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
 #endif
-#ifdef EMU_AVAILABLE
+#if EMU_AVAILABLE
     if (value & (1u << 22u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
     if (value & (1u << 23u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
 #endif
@@ -302,10 +302,10 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 void sample_init()
 {
     /* Chip-Select signals are active low */
-#ifdef HRV_AVAILABLE
+#if HRV_AVAILABLE
     GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
 #endif
-#ifdef EMU_AVAILABLE
+#if EMU_AVAILABLE
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
 #endif
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
@@ -327,7 +327,7 @@ void sample_init()
 
     /* deactivate hw-units when not needed, initialize the other */
 
-#ifdef HRV_AVAILABLE
+#if HRV_AVAILABLE
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     const bool_ft use_harvester =
             (mode == MODE_HARVESTER) || (mode == MODE_HRV_ADC_READ) || (mode == MODE_DEBUG);
@@ -352,7 +352,7 @@ void sample_init()
     ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
 #endif // HRV_AVAILABLE
 
-#ifdef EMU_AVAILABLE
+#if EMU_AVAILABLE
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     const bool_ft use_emulator =
             (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
