@@ -124,8 +124,8 @@ uint32_t ocmc_cache_add(uint32_t block_idx)
     if (block_idx >= BUFFER_BLOCKS_N) return 0u;
     // printk(KERN_INFO "shprd.cache: mk %d, flag i%d m%d", block_idx, flag_idx, flag_mask);
     /* copy from buffer to cache */
-    cache_offset = (block_idx & CACHE_BLOCK_IDX_MASK)
-                   << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2);
+    cache_offset  = (block_idx & CACHE_BLOCK_IDX_MASK)
+                    << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2);
     buffer_offset = block_idx << (CACHE_BLOCK_SAMPLES_LOG2 + IV_SAMPLE_SIZE_LOG2);
     // note: no mask applied for buffer as first return-check handles range
     memcpy_toio(((uint8_t *) cache_io) + cache_offset,

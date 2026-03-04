@@ -110,10 +110,10 @@
 #define ERASE_BANK                0xA504 // erase of a single flash memory bank
 #define ERASE_SEGMENT             0xA502 // erase of the selected flash memory segment
 #define MAIN_ERASE                0x1A1A // erase of the FRAM Main memory on FR5xx/FR6xx
-#define TOTAL_ERASE               0x1B1B // erase of the FRAM Main, INFO  & IP protected memory on FR5xx/FR6xx
+#define TOTAL_ERASE     0x1B1B // erase of the FRAM Main, INFO  & IP protected memory on FR5xx/FR6xx
 /* Erase of the FRAM Main & INFO memory including JTAG lock signature on FR4xx */
-#define USER_CODE_ERASE           0x1A1A
-#define STOP_DEVICE               0xA55A
+#define USER_CODE_ERASE 0x1A1A
+#define STOP_DEVICE     0xA55A
 
 /**
  * Reads a 32bit value from the JTAG mailbox.

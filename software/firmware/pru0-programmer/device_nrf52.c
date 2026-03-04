@@ -123,9 +123,7 @@ static int nvm_wp_disable(void)
 
 /* Enables write-protection of non-volatile flash memory */
 static int nvm_wp_enable(void)
-{
-    return mem_write(NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, CONFIG), 0x0);
-}
+{ return mem_write(NRF_NVMC_BASE + offsetof(NRF_NVMC_Type, CONFIG), 0x0); }
 
 /* Erases the whole flash */
 static int nvm_erase(void)

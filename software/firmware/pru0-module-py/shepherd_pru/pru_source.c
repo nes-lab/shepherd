@@ -18,29 +18,19 @@ void msgsys_send_status(enum MsgType type, const uint32_t value1, const uint32_t
 }
 
 void set_harvester_config(const volatile struct HarvesterConfig *const config)
-{
-    shared_mem.harvester_settings = *config;
-}
+{ shared_mem.harvester_settings = *config; }
 
 void set_storage_config(const volatile struct StorageConfig *const config)
-{
-    shared_mem.storage_settings = *config;
-}
+{ shared_mem.storage_settings = *config; }
 
 void set_calibration_config(const volatile struct CalibrationConfig *const config)
-{
-    shared_mem.calibration_settings = *config;
-}
+{ shared_mem.calibration_settings = *config; }
 
 void set_converter_config(const volatile struct ConverterConfig *const config)
-{
-    shared_mem.converter_settings = *config;
-}
+{ shared_mem.converter_settings = *config; }
 
 uint8_ft get_vsource_power_good_pins_state(void)
-{
-    return shared_mem.vsource_power_good_pins_state;
-}
+{ return shared_mem.vsource_power_good_pins_state; }
 
 bool_ft  get_vsource_skip_gpio_logging(void) { return shared_mem.vsource_skip_gpio_logging; }
 

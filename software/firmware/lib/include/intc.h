@@ -21,8 +21,6 @@
 inline uint32_t intc_get_secr0() { return CT_INTC.SECR0; }
 
 inline uint32_t intc_check_event(const uint32_t secr0, const uint32_t pos)
-{
-    return ((secr0) & (1U << (pos)));
-}
+{ return ((secr0) & (1U << (pos))); }
 
 #endif /* SHEPHERD_INTC_H_ */

@@ -329,9 +329,7 @@ static ssize_t sysfs_SharedMem_show(struct kobject *const kobj, struct kobj_attr
 }
 
 static ssize_t sysfs_sync_error_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-    return sprintf(buf, "%u", 0u);
-}
+{ return sprintf(buf, "%u", 0u); }
 
 static ssize_t sysfs_sync_error_sum_show(struct kobject *kobj, struct kobj_attribute *attr,
                                          char *buf)

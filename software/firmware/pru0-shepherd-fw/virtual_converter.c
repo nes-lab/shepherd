@@ -371,9 +371,7 @@ inline void set_P_input_fW(const uint32_t P_fW) { state.P_inp_fW_n8 = ((uint64_t
 inline void set_P_output_fW(const uint32_t P_fW) { state.P_out_fW_n4 = ((uint64_t) P_fW) << 4u; }
 
 inline void set_V_intermediate_uV(const uint32_t C_uV)
-{
-    state.V_mid_uV_n32 = ((uint64_t) C_uV) << 32u;
-}
+{ state.V_mid_uV_n32 = ((uint64_t) C_uV) << 32u; }
 
 inline uint64_t get_P_input_fW(void) { return (state.P_inp_fW_n8 >> 8u); }
 
@@ -382,16 +380,12 @@ inline uint64_t get_P_output_fW(void) { return (state.P_out_fW_n4 >> 4u); }
 inline uint32_t get_V_intermediate_uV(void) { return (uint32_t) (state.V_mid_uV_n32 >> 32u); }
 
 inline uint32_t get_V_intermediate_raw(void)
-{
-    return cal_conv_uV_to_dac_raw((uint32_t) (state.V_mid_uV_n32 >> 32u));
-}
+{ return cal_conv_uV_to_dac_raw((uint32_t) (state.V_mid_uV_n32 >> 32u)); }
 
 inline uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
 uint32_t        get_I_mid_out_nA(void)
-{
-    return (uint32_t) (calc_current_nA_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u);
-}
+{ return (uint32_t) (calc_current_nA_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u); }
 
 inline bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
 

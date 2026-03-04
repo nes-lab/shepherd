@@ -270,9 +270,7 @@ enum ShepherdState mem_interface_get_state(void)
 }
 
 void mem_interface_set_state(enum ShepherdState state)
-{
-    iowrite32(state, pru_shared_mem_io + offsetof(struct SharedMem, shp_pru_state));
-}
+{ iowrite32(state, pru_shared_mem_io + offsetof(struct SharedMem, shp_pru_state)); }
 
 // TODO: unify send/receive functions a lot of duplication
 unsigned char pru1_comm_receive_sync_request(struct ProtoMsg *const msg)

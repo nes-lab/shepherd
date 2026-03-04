@@ -91,26 +91,16 @@ inline uint32_t add32(const uint32_t value1, const uint32_t value2)
 }
 
 inline uint32_t sub32(const uint32_t value1, const uint32_t value2)
-{
-    return (value1 > value2) ? (value1 - value2) : 0u;
-}
+{ return (value1 > value2) ? (value1 - value2) : 0u; }
 
 inline uint32_t add32s(const uint32_t value1, const int32_t value2)
-{
-    return (value2 >= 0) ? add32(value1, (uint32_t) value2) : sub32(value1, (uint32_t) (-value2));
-}
+{ return (value2 >= 0) ? add32(value1, (uint32_t) value2) : sub32(value1, (uint32_t) (-value2)); }
 
 inline uint64_t sub64(const uint64_t value1, const uint64_t value2)
-{
-    return (value1 > value2) ? (value1 - value2) : 0ull;
-}
+{ return (value1 > value2) ? (value1 - value2) : 0ull; }
 
 inline uint32_t sub32s(const uint32_t value1, const int32_t value2)
-{
-    return (value2 >= 0) ? sub32(value1, (uint32_t) value2) : add32(value1, (uint32_t) (-value2));
-}
+{ return (value2 >= 0) ? sub32(value1, (uint32_t) value2) : add32(value1, (uint32_t) (-value2)); }
 
 inline uint32_t abs_delta32(uint32_t value1, uint32_t value2)
-{
-    return (value1 > value2) ? (value1 - value2) : (value2 - value1);
-}
+{ return (value1 > value2) ? (value1 - value2) : (value2 - value1); }

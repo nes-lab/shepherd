@@ -136,9 +136,7 @@ static inline void sys_gpio_set(const uint8_t pin, const gpio_state_t state)
 }
 
 static inline gpio_state_t sys_gpio_get(const uint8_t pin)
-{
-    return (gpio_state_t) ((CT_GPIO0.GPIO_DATAIN >> pin) & 1u);
-}
+{ return (gpio_state_t) ((CT_GPIO0.GPIO_DATAIN >> pin) & 1u); }
 
 // faster versions below, only works with mask = (1u << pin)
 #define SYS_GPIO_SET_DIR_IN(mask)  CT_GPIO0.GPIO_OE |= mask;

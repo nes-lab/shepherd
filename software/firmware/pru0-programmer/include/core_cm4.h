@@ -332,12 +332,12 @@ typedef struct
     (0x1FFUL /*<< SCB_ICSR_VECTACTIVE_Pos*/) /*!< SCB ICSR: VECTACTIVE Mask */
 
 /* SCB Vector Table Offset Register Definitions */
-#define SCB_VTOR_TBLOFF_Pos       7U /*!< SCB VTOR: TBLOFF Position */
-#define SCB_VTOR_TBLOFF_Msk       (0x1FFFFFFUL << SCB_VTOR_TBLOFF_Pos) /*!< SCB VTOR: TBLOFF Mask */
+#define SCB_VTOR_TBLOFF_Pos   7U                                   /*!< SCB VTOR: TBLOFF Position */
+#define SCB_VTOR_TBLOFF_Msk   (0x1FFFFFFUL << SCB_VTOR_TBLOFF_Pos) /*!< SCB VTOR: TBLOFF Mask */
 
 /* SCB Application Interrupt and Reset Control Register Definitions */
-#define SCB_AIRCR_VECTKEY_Pos     16U /*!< SCB AIRCR: VECTKEY Position */
-#define SCB_AIRCR_VECTKEY_Msk     (0xFFFFUL << SCB_AIRCR_VECTKEY_Pos) /*!< SCB AIRCR: VECTKEY Mask */
+#define SCB_AIRCR_VECTKEY_Pos 16U /*!< SCB AIRCR: VECTKEY Position */
+#define SCB_AIRCR_VECTKEY_Msk (0xFFFFUL << SCB_AIRCR_VECTKEY_Pos) /*!< SCB AIRCR: VECTKEY Mask */
 
 #define SCB_AIRCR_VECTKEYSTAT_Pos 16U /*!< SCB AIRCR: VECTKEYSTAT Position */
 #define SCB_AIRCR_VECTKEYSTAT_Msk                                                                  \
@@ -799,29 +799,29 @@ typedef struct
 } DWT_Type;
 
 /* DWT Control Register Definitions */
-#define DWT_CTRL_NUMCOMP_Pos     28U                             /*!< DWT CTRL: NUMCOMP Position */
-#define DWT_CTRL_NUMCOMP_Msk     (0xFUL << DWT_CTRL_NUMCOMP_Pos) /*!< DWT CTRL: NUMCOMP Mask */
+#define DWT_CTRL_NUMCOMP_Pos    28U                             /*!< DWT CTRL: NUMCOMP Position */
+#define DWT_CTRL_NUMCOMP_Msk    (0xFUL << DWT_CTRL_NUMCOMP_Pos) /*!< DWT CTRL: NUMCOMP Mask */
 
-#define DWT_CTRL_NOTRCPKT_Pos    27U /*!< DWT CTRL: NOTRCPKT Position */
-#define DWT_CTRL_NOTRCPKT_Msk    (0x1UL << DWT_CTRL_NOTRCPKT_Pos) /*!< DWT CTRL: NOTRCPKT Mask */
+#define DWT_CTRL_NOTRCPKT_Pos   27U                              /*!< DWT CTRL: NOTRCPKT Position */
+#define DWT_CTRL_NOTRCPKT_Msk   (0x1UL << DWT_CTRL_NOTRCPKT_Pos) /*!< DWT CTRL: NOTRCPKT Mask */
 
-#define DWT_CTRL_NOEXTTRIG_Pos   26U /*!< DWT CTRL: NOEXTTRIG Position */
-#define DWT_CTRL_NOEXTTRIG_Msk   (0x1UL << DWT_CTRL_NOEXTTRIG_Pos) /*!< DWT CTRL: NOEXTTRIG Mask */
+#define DWT_CTRL_NOEXTTRIG_Pos  26U /*!< DWT CTRL: NOEXTTRIG Position */
+#define DWT_CTRL_NOEXTTRIG_Msk  (0x1UL << DWT_CTRL_NOEXTTRIG_Pos) /*!< DWT CTRL: NOEXTTRIG Mask */
 
-#define DWT_CTRL_NOCYCCNT_Pos    25U /*!< DWT CTRL: NOCYCCNT Position */
-#define DWT_CTRL_NOCYCCNT_Msk    (0x1UL << DWT_CTRL_NOCYCCNT_Pos) /*!< DWT CTRL: NOCYCCNT Mask */
+#define DWT_CTRL_NOCYCCNT_Pos   25U                              /*!< DWT CTRL: NOCYCCNT Position */
+#define DWT_CTRL_NOCYCCNT_Msk   (0x1UL << DWT_CTRL_NOCYCCNT_Pos) /*!< DWT CTRL: NOCYCCNT Mask */
 
-#define DWT_CTRL_NOPRFCNT_Pos    24U /*!< DWT CTRL: NOPRFCNT Position */
-#define DWT_CTRL_NOPRFCNT_Msk    (0x1UL << DWT_CTRL_NOPRFCNT_Pos) /*!< DWT CTRL: NOPRFCNT Mask */
+#define DWT_CTRL_NOPRFCNT_Pos   24U                              /*!< DWT CTRL: NOPRFCNT Position */
+#define DWT_CTRL_NOPRFCNT_Msk   (0x1UL << DWT_CTRL_NOPRFCNT_Pos) /*!< DWT CTRL: NOPRFCNT Mask */
 
-#define DWT_CTRL_CYCEVTENA_Pos   22U /*!< DWT CTRL: CYCEVTENA Position */
-#define DWT_CTRL_CYCEVTENA_Msk   (0x1UL << DWT_CTRL_CYCEVTENA_Pos) /*!< DWT CTRL: CYCEVTENA Mask */
+#define DWT_CTRL_CYCEVTENA_Pos  22U /*!< DWT CTRL: CYCEVTENA Position */
+#define DWT_CTRL_CYCEVTENA_Msk  (0x1UL << DWT_CTRL_CYCEVTENA_Pos) /*!< DWT CTRL: CYCEVTENA Mask */
 
-#define DWT_CTRL_FOLDEVTENA_Pos  21U /*!< DWT CTRL: FOLDEVTENA Position */
-#define DWT_CTRL_FOLDEVTENA_Msk  (0x1UL << DWT_CTRL_FOLDEVTENA_Pos) /*!< DWT CTRL: FOLDEVTENA Mask */
+#define DWT_CTRL_FOLDEVTENA_Pos 21U /*!< DWT CTRL: FOLDEVTENA Position */
+#define DWT_CTRL_FOLDEVTENA_Msk (0x1UL << DWT_CTRL_FOLDEVTENA_Pos) /*!< DWT CTRL: FOLDEVTENA Mask */
 
-#define DWT_CTRL_LSUEVTENA_Pos   20U /*!< DWT CTRL: LSUEVTENA Position */
-#define DWT_CTRL_LSUEVTENA_Msk   (0x1UL << DWT_CTRL_LSUEVTENA_Pos) /*!< DWT CTRL: LSUEVTENA Mask */
+#define DWT_CTRL_LSUEVTENA_Pos  20U /*!< DWT CTRL: LSUEVTENA Position */
+#define DWT_CTRL_LSUEVTENA_Msk  (0x1UL << DWT_CTRL_LSUEVTENA_Pos) /*!< DWT CTRL: LSUEVTENA Mask */
 
 #define DWT_CTRL_SLEEPEVTENA_Pos 19U /*!< DWT CTRL: SLEEPEVTENA Position */
 #define DWT_CTRL_SLEEPEVTENA_Msk                                                                   \
@@ -856,12 +856,12 @@ typedef struct
     (0x1UL /*<< DWT_CTRL_CYCCNTENA_Pos*/) /*!< DWT CTRL: CYCCNTENA Mask */
 
 /* DWT CPI Count Register Definitions */
-#define DWT_CPICNT_CPICNT_Pos     0U /*!< DWT CPICNT: CPICNT Position */
-#define DWT_CPICNT_CPICNT_Msk     (0xFFUL /*<< DWT_CPICNT_CPICNT_Pos*/) /*!< DWT CPICNT: CPICNT Mask */
+#define DWT_CPICNT_CPICNT_Pos 0U /*!< DWT CPICNT: CPICNT Position */
+#define DWT_CPICNT_CPICNT_Msk (0xFFUL /*<< DWT_CPICNT_CPICNT_Pos*/) /*!< DWT CPICNT: CPICNT Mask */
 
 /* DWT Exception Overhead Count Register Definitions */
-#define DWT_EXCCNT_EXCCNT_Pos     0U /*!< DWT EXCCNT: EXCCNT Position */
-#define DWT_EXCCNT_EXCCNT_Msk     (0xFFUL /*<< DWT_EXCCNT_EXCCNT_Pos*/) /*!< DWT EXCCNT: EXCCNT Mask */
+#define DWT_EXCCNT_EXCCNT_Pos 0U /*!< DWT EXCCNT: EXCCNT Position */
+#define DWT_EXCCNT_EXCCNT_Msk (0xFFUL /*<< DWT_EXCCNT_EXCCNT_Pos*/) /*!< DWT EXCCNT: EXCCNT Mask */
 
 /* DWT Sleep Count Register Definitions */
 #define DWT_SLEEPCNT_SLEEPCNT_Pos 0U /*!< DWT SLEEPCNT: SLEEPCNT Position */
@@ -869,8 +869,8 @@ typedef struct
     (0xFFUL /*<< DWT_SLEEPCNT_SLEEPCNT_Pos*/) /*!< DWT SLEEPCNT: SLEEPCNT Mask */
 
 /* DWT LSU Count Register Definitions */
-#define DWT_LSUCNT_LSUCNT_Pos   0U /*!< DWT LSUCNT: LSUCNT Position */
-#define DWT_LSUCNT_LSUCNT_Msk   (0xFFUL /*<< DWT_LSUCNT_LSUCNT_Pos*/) /*!< DWT LSUCNT: LSUCNT Mask */
+#define DWT_LSUCNT_LSUCNT_Pos 0U /*!< DWT LSUCNT: LSUCNT Position */
+#define DWT_LSUCNT_LSUCNT_Msk (0xFFUL /*<< DWT_LSUCNT_LSUCNT_Pos*/) /*!< DWT LSUCNT: LSUCNT Mask */
 
 /* DWT Folded-instruction Count Register Definitions */
 #define DWT_FOLDCNT_FOLDCNT_Pos 0U /*!< DWT FOLDCNT: FOLDCNT Position */
@@ -1063,24 +1063,24 @@ typedef struct
     (0x1UL /*<< TPI_ITATBCTR0_ATREADY1_Pos*/) /*!< TPI ITATBCTR0: ATREADY1 Mask */
 
 /* TPI Integration Mode Control Register Definitions */
-#define TPI_ITCTRL_Mode_Pos        0U /*!< TPI ITCTRL: Mode Position */
-#define TPI_ITCTRL_Mode_Msk        (0x3UL /*<< TPI_ITCTRL_Mode_Pos*/) /*!< TPI ITCTRL: Mode Mask */
+#define TPI_ITCTRL_Mode_Pos     0U                                 /*!< TPI ITCTRL: Mode Position */
+#define TPI_ITCTRL_Mode_Msk     (0x3UL /*<< TPI_ITCTRL_Mode_Pos*/) /*!< TPI ITCTRL: Mode Mask */
 
 /* TPI DEVID Register Definitions */
-#define TPI_DEVID_NRZVALID_Pos     11U /*!< TPI DEVID: NRZVALID Position */
-#define TPI_DEVID_NRZVALID_Msk     (0x1UL << TPI_DEVID_NRZVALID_Pos) /*!< TPI DEVID: NRZVALID Mask */
+#define TPI_DEVID_NRZVALID_Pos  11U /*!< TPI DEVID: NRZVALID Position */
+#define TPI_DEVID_NRZVALID_Msk  (0x1UL << TPI_DEVID_NRZVALID_Pos) /*!< TPI DEVID: NRZVALID Mask */
 
-#define TPI_DEVID_MANCVALID_Pos    10U /*!< TPI DEVID: MANCVALID Position */
-#define TPI_DEVID_MANCVALID_Msk    (0x1UL << TPI_DEVID_MANCVALID_Pos) /*!< TPI DEVID: MANCVALID Mask */
+#define TPI_DEVID_MANCVALID_Pos 10U /*!< TPI DEVID: MANCVALID Position */
+#define TPI_DEVID_MANCVALID_Msk (0x1UL << TPI_DEVID_MANCVALID_Pos) /*!< TPI DEVID: MANCVALID Mask */
 
-#define TPI_DEVID_PTINVALID_Pos    9U /*!< TPI DEVID: PTINVALID Position */
-#define TPI_DEVID_PTINVALID_Msk    (0x1UL << TPI_DEVID_PTINVALID_Pos) /*!< TPI DEVID: PTINVALID Mask */
+#define TPI_DEVID_PTINVALID_Pos 9U /*!< TPI DEVID: PTINVALID Position */
+#define TPI_DEVID_PTINVALID_Msk (0x1UL << TPI_DEVID_PTINVALID_Pos) /*!< TPI DEVID: PTINVALID Mask */
 
-#define TPI_DEVID_MinBufSz_Pos     6U /*!< TPI DEVID: MinBufSz Position */
-#define TPI_DEVID_MinBufSz_Msk     (0x7UL << TPI_DEVID_MinBufSz_Pos) /*!< TPI DEVID: MinBufSz Mask */
+#define TPI_DEVID_MinBufSz_Pos  6U /*!< TPI DEVID: MinBufSz Position */
+#define TPI_DEVID_MinBufSz_Msk  (0x7UL << TPI_DEVID_MinBufSz_Pos) /*!< TPI DEVID: MinBufSz Mask */
 
-#define TPI_DEVID_AsynClkIn_Pos    5U /*!< TPI DEVID: AsynClkIn Position */
-#define TPI_DEVID_AsynClkIn_Msk    (0x1UL << TPI_DEVID_AsynClkIn_Pos) /*!< TPI DEVID: AsynClkIn Mask */
+#define TPI_DEVID_AsynClkIn_Pos 5U /*!< TPI DEVID: AsynClkIn Position */
+#define TPI_DEVID_AsynClkIn_Msk (0x1UL << TPI_DEVID_AsynClkIn_Pos) /*!< TPI DEVID: AsynClkIn Mask */
 
 #define TPI_DEVID_NrTraceInput_Pos 0U /*!< TPI DEVID: NrTraceInput Position */
 #define TPI_DEVID_NrTraceInput_Msk                                                                 \
@@ -1177,8 +1177,8 @@ typedef struct
 #define FPU_MVFR0_Square_root_Msk                                                                  \
     (0xFUL << FPU_MVFR0_Square_root_Pos) /*!< MVFR0: Square root bits Mask */
 
-#define FPU_MVFR0_Divide_Pos            16U /*!< MVFR0: Divide bits Position */
-#define FPU_MVFR0_Divide_Msk            (0xFUL << FPU_MVFR0_Divide_Pos) /*!< MVFR0: Divide bits Mask */
+#define FPU_MVFR0_Divide_Pos 16U                             /*!< MVFR0: Divide bits Position */
+#define FPU_MVFR0_Divide_Msk (0xFUL << FPU_MVFR0_Divide_Pos) /*!< MVFR0: Divide bits Mask */
 
 #define FPU_MVFR0_FP_excep_trapping_Pos 12U /*!< MVFR0: FP exception trapping bits Position */
 #define FPU_MVFR0_FP_excep_trapping_Msk                                                            \

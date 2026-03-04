@@ -160,10 +160,10 @@ int32_t event_loop()
     bool_ft         host_int_early         = 0u;
     /* Tracks our local state, allowing to execute actions at the right time */
     struct ProtoMsg sync_repl              = {
-                         .id     = 0u,
-                         .unread = 0u,
-                         .type   = 0u,
-                         .value =
+            .id     = 0u,
+            .unread = 0u,
+            .type   = 0u,
+            .value =
                     {
                             0u,
                             0u,
