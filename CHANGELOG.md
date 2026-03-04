@@ -19,6 +19,7 @@
 - pru - optimize VSrc in PRU0 to use less u64-calculations
   - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
   - fixes #123
+- activate `-Wpedantic` for py-module / c-code and fix warning
 - ~~sheep - increase warning for pru0-util from 95 % to 98 %
 - add support for new cape hw v25
   - split & add device tree to support both capes

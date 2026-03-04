@@ -18,7 +18,7 @@
 
 inline void set_power_good_state(const uint8_ft value)
 {
-    SHARED_MEM.vsource_power_good_pins_state       = value & 0b11u;
+    SHARED_MEM.vsource_power_good_pins_state       = value & 0x03u;
     SHARED_MEM.vsource_power_good_trigger_for_pru1 = true;
 }
 
@@ -109,10 +109,10 @@ void converter_initialize()
     state.V_mid_uV_n32                      = ((uint64_t) get_V_OC_uV()) << 32u;
 
     /* Buck Boost */
-    state.enable_storage                    = (CNV_CFG.converter_mode & 0b0001) > 0;
-    state.enable_boost                      = (CNV_CFG.converter_mode & 0b0010) > 0;
-    state.enable_buck                       = (CNV_CFG.converter_mode & 0b0100) > 0;
-    state.enable_log_mid                    = (CNV_CFG.converter_mode & 0b1000) > 0;
+    state.enable_storage                    = (CNV_CFG.converter_mode & (1u << 0u)) > 0;
+    state.enable_boost                      = (CNV_CFG.converter_mode & (1u << 1u)) > 0;
+    state.enable_buck                       = (CNV_CFG.converter_mode & (1u << 2u)) > 0;
+    state.enable_log_mid                    = (CNV_CFG.converter_mode & (1u << 3u)) > 0;
 
     state.V_out_dac_uV                      = CNV_CFG.V_output_uV;
     state.V_out_dac_raw                     = cal_conv_uV_to_dac_raw(CNV_CFG.V_output_uV);
@@ -130,7 +130,7 @@ void converter_initialize()
     }
 
     /* feedback to harvester */
-    feedback_to_hrv    = (CNV_CFG.converter_mode & 0b10000) > 0u;
+    feedback_to_hrv    = (CNV_CFG.converter_mode & (1u << 4u)) > 0u;
     V_input_request_uV = get_V_OC_uV();
 
     /* compensate for (hard to detect) current-surge of real capacitors when converter gets turned on

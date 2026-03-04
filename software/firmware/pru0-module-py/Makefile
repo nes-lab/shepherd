@@ -14,7 +14,6 @@ CFLAGS += -g
 CFLAGS += -flto
 
 CFLAGS += -Wall -Wextra -Wpedantic
-# TODO: add -Wpedantic and fix warnings
 CFLAGS += -fanalyzer
 # workaround to allow compilation without pru
 CFLAGS += -D__PYTHON__
