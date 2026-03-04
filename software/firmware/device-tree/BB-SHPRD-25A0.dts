@@ -17,7 +17,7 @@
    compatible = "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green";
 
    part-number = "BB-SHPRD";
-   version = "25E0";
+   version = "25A0";
 
    /* This overlay uses the following resources */
    exclusive-use =
@@ -107,7 +107,7 @@
       __overlay__ {
          chosen {
             overlays {
-               BB-SHPRD-25E0 = __TIMESTAMP__;
+               BB-SHPRD-25A0 = __TIMESTAMP__;
             };
          };
       };

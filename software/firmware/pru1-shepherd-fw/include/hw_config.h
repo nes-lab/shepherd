@@ -10,7 +10,7 @@
 #define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
 #define DEBUG_PIN1_MASK         BIT_SHIFT(P8_30)
 
-#if (CAPE_HW_VER == 24)
+#if ((CAPE_HW_VER == 24) || (CAPE_HW_VER == 23) || (CAPE_HW_VER == 22))
 
   #define GPIO_POWER_GOOD_HIGH BIT_SHIFT(P8_29) // default PGOOD pin for cape v2.4
   //#define GPIO_POWER_GOOD_LOW     BIT_SHIFT(P8_29)

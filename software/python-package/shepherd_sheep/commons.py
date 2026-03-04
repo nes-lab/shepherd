@@ -9,8 +9,8 @@ corresponding implementation in `software/firmware/include/commons.h`
 
 # TODO: this could be done by asking the eeprom
 CAPE_HW_VER = 25
-CAPE_HAS_HRV = CAPE_HW_VER in {23, 24}
-CAPE_HAS_EMU = CAPE_HW_VER in {23, 24, 25}
+CAPE_HAS_HRV = CAPE_HW_VER in {22, 23, 24}
+CAPE_HAS_EMU = CAPE_HW_VER in {22, 23, 24, 25}
 
 # ############################################################################
 # PRU - CONFIG  ##############################################################

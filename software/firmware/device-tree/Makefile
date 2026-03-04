@@ -1,8 +1,15 @@
-CAPE_HW_VER ?= 25E0
-TARGET = BB-SHPRD-$(CAPE_HW_VER)
-# command above sets the default (v2.5 Emu Rev 0)
-# -> currently supported: 24A0 (HRV & EMU) & 25E0 (EMU only)
-# i.e. overwrite with: make CAPE_HW_VER=24A0
+CAPE_HW_VER ?= 25
+
+ifeq ($(CAPE_HW_VER), 22)
+override CAPE_HW_VER = 24
+else ifeq ($(CAPE_HW_VER), 23)
+override CAPE_HW_VER = 24
+endif
+
+TARGET = BB-SHPRD-$(CAPE_HW_VER)A0
+# command above sets the default (v2.5e Rev 0, Emu only)
+# -> currently supported: 22, 23, 24 (HRV & EMU) & 25 (EMU only)
+# i.e. overwrite with: make CAPE_HW_VER=24
 # TODO: could be dynamically determined by reading EEPROM
 
 $(TARGET).dtbo: $(TARGET).dtsp

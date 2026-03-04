@@ -3,7 +3,7 @@
 
 #include "gpio.h"
 
-#if (CAPE_HW_VER == 24)
+#if ((CAPE_HW_VER == 24) || (CAPE_HW_VER == 23) || (CAPE_HW_VER == 22))
 
   #define SPI_CS_HRV_DAC_PIN    (P9_27)
   #define SPI_CS_HRV_DAC_MASK   BIT_SHIFT(SPI_CS_HRV_DAC_PIN)
