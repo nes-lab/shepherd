@@ -65,8 +65,8 @@
 #endif
 
 
-#define DEBUG_EVENT_EN  0
-#define DEBUG_PGOOD_EN  1 // send power_good to LED1		-> default ON
+#define DEBUG_EVENT_EN  (0u)
+#define DEBUG_PGOOD_EN  (1u) // send power_good to LED1		-> default ON
 
 // both pins have a LED
 #define DEBUG_PIN0_MASK BIT_SHIFT(P8_12)

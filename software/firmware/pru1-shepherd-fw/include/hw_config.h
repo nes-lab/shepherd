@@ -76,4 +76,72 @@ Note: this table is copied (for hdf5-reference) in commons.py
 #endif
 
 
+// Debug Code - Config, TODO: enable by makefile or compile-command for both PRUs
+// NOTE: cape v25 has no free debug pins for LEDs
+#define DEBUG_GPIO_EN (0u) // state1= gpio-checking, state2=writing data, state0=loop&event-routines
+#define DEBUG_EVENT_EN (0u) // state1=Event1, s2=e2, s3=e3 (expensive part)
+#define DEBUG_LOOP_EN  (0u)
+#define DEBUG_PGOOD_EN (0u) // send power_good to LEDs -> default ON
+#define DEBUG_RAMRD_EN (0u) // far ram read (for pru0) on LED0
+#define DEBUG_RTIME_EN (0u) // violations of realtime
+
+// Debug Code, state-changes add ~2 ticks (s1 & 2), ~1 ticks (s0 & s3)
+#define DEBUG_STATE_0  write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+#define DEBUG_STATE_1  write_r30((read_r30() | DEBUG_PIN0_MASK) & ~DEBUG_PIN1_MASK)
+#define DEBUG_STATE_2  write_r30((read_r30() | DEBUG_PIN1_MASK) & ~DEBUG_PIN0_MASK)
+#define DEBUG_STATE_3  write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
+
+#if DEBUG_GPIO_EN
+  #define DEBUG_GPIO_STATE_0 DEBUG_STATE_0
+  #define DEBUG_GPIO_STATE_1 DEBUG_STATE_1
+  #define DEBUG_GPIO_STATE_2 DEBUG_STATE_2
+  #define DEBUG_GPIO_STATE_3 DEBUG_STATE_3
+#else
+  #define DEBUG_GPIO_STATE_0
+  #define DEBUG_GPIO_STATE_1
+  #define DEBUG_GPIO_STATE_2
+  #define DEBUG_GPIO_STATE_3
+#endif
+
+#if DEBUG_EVENT_EN
+  #define DEBUG_EVENT_STATE_0 DEBUG_STATE_0
+  #define DEBUG_EVENT_STATE_1 DEBUG_STATE_1
+  #define DEBUG_EVENT_STATE_2 DEBUG_STATE_2
+  #define DEBUG_EVENT_STATE_3 DEBUG_STATE_3
+#else
+  #define DEBUG_EVENT_STATE_0
+  #define DEBUG_EVENT_STATE_1
+  #define DEBUG_EVENT_STATE_2
+  #define DEBUG_EVENT_STATE_3
+#endif
+
+#if DEBUG_PGOOD_EN
+  #define DEBUG_PGOOD_STATE_L0 write_r30(read_r30() & ~DEBUG_PIN0_MASK)
+  #define DEBUG_PGOOD_STATE_L1 write_r30(read_r30() | DEBUG_PIN0_MASK)
+  #define DEBUG_PGOOD_STATE_H0 write_r30(read_r30() & ~DEBUG_PIN1_MASK)
+  #define DEBUG_PGOOD_STATE_H1 write_r30(read_r30() | DEBUG_PIN1_MASK)
+#else
+  #define DEBUG_PGOOD_STATE_L0
+  #define DEBUG_PGOOD_STATE_L1
+  #define DEBUG_PGOOD_STATE_H0
+  #define DEBUG_PGOOD_STATE_H1
+#endif
+
+#if DEBUG_RAMRD_EN
+  #define DEBUG_RAMRD_STATE_0 DEBUG_STATE_0
+  #define DEBUG_RAMRD_STATE_1 DEBUG_STATE_1
+#else
+  #define DEBUG_RAMRD_STATE_0
+  #define DEBUG_RAMRD_STATE_1
+#endif
+
+#if DEBUG_RTIME_EN
+  #define DEBUG_RTIME_STATE_0 DEBUG_STATE_0
+  #define DEBUG_RTIME_STATE_1 DEBUG_STATE_1
+#else
+  #define DEBUG_RTIME_STATE_0
+  #define DEBUG_RTIME_STATE_1
+#endif
+
+
 #endif /* HW_CONFIG_H_ */
