@@ -26,7 +26,7 @@
   - split & add device tree to support both capes
   - add cape-abstraction to PRU, sheep, ansible
 - add `CAPE_HW_VER` to build-systems for altering config
-  - `shepherd-sheep -v eeprom read -r ` now returns that version (i.e. prints `25` on screen)
+  - `shepherd-sheep eeprom read --hw-version` now returns that version (i.e. prints `25` on screen)
 - power good is now calculated with two pins in mind (low & high threshold)
   - it is automatically translated to hysteresis if second pin is missing
   - for cape v2.5 it will be set on PRU0, making room for slightly higher GPIO-tracing rates
