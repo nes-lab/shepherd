@@ -89,7 +89,7 @@ CFLAGS += -mloop
 CFLAGS += -fno-exceptions
 
 # Warnings and Static Analyzer
-CFLAGS += -Wall -Wextra
+CFLAGS += -Wall -Wextra -Wpedantic
 CFLAGS += -fanalyzer
 
 # Add external Headers: remoteproc?, PSSP
