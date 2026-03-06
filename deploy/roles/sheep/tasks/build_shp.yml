@@ -22,12 +22,12 @@
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: all
+    params:
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   loop:
     - pru0-shepherd-fw  # default: EMU
     - pru1-shepherd-fw
     - pru0-programmer   # default: SWD
-  params:
-    CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -40,8 +40,8 @@
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: install
-  params:
-    CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
+    params:
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   loop:
     - pru0-shepherd-fw
     - pru1-shepherd-fw
