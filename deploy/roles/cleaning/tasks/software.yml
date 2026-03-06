@@ -24,6 +24,7 @@
     purge: true
   failed_when: false
   with_items: "{{ cleaning_packages }}"
+  become: true
 
 - name: Remove extra Firmwares
   ansible.builtin.command: 'rm {{ item }}'
@@ -35,4 +36,5 @@
     - "/lib/firmware/BEAGLE*"
     - "/lib/firmware/am57*"
 #    - "/lib/firmware/bb-*"
-  when: false
+  when: true
+  become: true

@@ -11,7 +11,7 @@
     - name: delete_recordings
       prompt: "Do you want to cleanout /var/shepherd/recordings/ on nodes?"
       private: false
-      default: "no"
+      default: "false"
 
   tasks:
 
