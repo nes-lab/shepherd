@@ -16,15 +16,17 @@
 - pru - fix wrong cal being written to PRU when tracing energy storage
 - pru - optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
   - add python script for calculation and visualization
-- pru - add special mul32e() to allow full u32*u32 = u64
+- pru - add special mul32e() to allow full expansion u32*u32 = u64
 - pru - optimize VSrc in PRU0 to use less u64-calculations
   - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
   - fixes #123
-- activate `-Wpedantic` for py-module / c-code and fix warning
-- ~~sheep - increase warning for pru0-util from 95 % to 98 %~~
+- activate `-Wpedantic` for py-module / c-code and fix warnings
+- activate `-Wpedantic` for pru-firmwares / c-code ~~and fix warnings~~
+- ~~sheep - increase warning for pru0-util from 95 % to 98 %~~ (reverted for early warning of overload)
 - add support for new cape hw v25
-  - split & add device tree to support both capes
+  - split & add device-tree to support both capes
   - add cape-abstraction to PRU, sheep, ansible
+  - test both cape versions in GH workflows
 - add `CAPE_HW_VER` to build-systems for altering config
   - `shepherd-sheep eeprom read --hw-version` now returns that version (i.e. prints `25` on screen)
 - power good is now calculated with two pins in mind (low & high threshold)
