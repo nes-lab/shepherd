@@ -2,7 +2,7 @@
 # Fix unique identifier of dhcp-client -> MAC
 # NOTE: copy of deploy/roles/testbed_observer/tasks/broadcast_mac.yml
 
-- name: Delete previous config
+- name: Check if previous config present
   ansible.builtin.stat:
     path: "/etc/systemd/network/eth0.network"
   register: eth0_file
@@ -11,6 +11,7 @@
   ansible.builtin.file:
     path: "/etc/systemd/network/eth0.network"
     state: absent
+  become: true
   when: eth0_file.isreg is defined and eth0_file.isreg  # is file
 
 - name: Use MAC as unique ID (Systemd - NetworkD)
@@ -32,7 +33,7 @@
       [DHCPv4]
       ClientIdentifier=mac
       DUIDType=link-layer
-  when: eth0_file.isreg is defined and eth0_file.isreg  # is file
+  become: true
 
 # TODO: this seems to be unused in recent ubuntu versions
 - name: Send MAC as unique ID
@@ -50,3 +51,4 @@
       regexpress: "#?send host-name.*$",
       replacement: "#send host-name = gethostname();",
     }
+  become: true
