@@ -30,6 +30,9 @@
   ansible.builtin.command: 'rm {{ item }}'
   loop:
 #    - "/lib/firmware/BB*"
+    - "/lib/firmware/BBAI*"
+    - "/lib/firmware/BBBLUE*"
+    - "/lib/firmware/BBORG*"
     - "/lib/firmware/PB*"
     - "/lib/firmware/GHI-*"
     - "/lib/firmware/BW-*"
