@@ -101,12 +101,27 @@
     chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: clean
 
-- name: Build and install device tree overlay
+- name: Build and install device tree overlay v24
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: install
     params:
-      CAPE_HW_VER: "{{ sheep_cape_hw_ver }}"
+      CAPE_HW_VER: 24
+  tags:
+    - install
+    - device-tree
+
+- name: Clean shepherd device tree
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
+    target: clean
+
+- name: Build and install device tree overlay v25
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
+    target: install
+    params:
+      CAPE_HW_VER: 25
   tags:
     - install
     - device-tree
