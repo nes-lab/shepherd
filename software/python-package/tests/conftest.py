@@ -63,17 +63,19 @@ def pytest_collection_modifyitems(
     skip_mock = pytest.mark.skip(reason="cannot be mocked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
     skip_missing_hardware = pytest.mark.skip(reason="not correct hw to test on")
+    skip_missing_harvester = pytest.mark.skip(reason="cape without harvester")
+    skip_missing_emulator = pytest.mark.skip(reason="cape without emulator")
     real_hardware = check_beagleboard()
     hrv_available = cape_has_harvester()
     emu_available = cape_has_emulator()
 
     for item in items:
-        if (
-            ("hardware" in item.keywords and not real_hardware)
-            or ("harvester" in item.keywords and not hrv_available)
-            or ("emulator" in item.keywords and not emu_available)
-        ):
+        if "hardware" in item.keywords and not real_hardware:
             item.add_marker(skip_missing_hardware)
+        elif "harvester" in item.keywords and not hrv_available:
+            item.add_marker(skip_missing_harvester)
+        elif "emulator" in item.keywords and not emu_available:
+            item.add_marker(skip_missing_emulator)
 
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)

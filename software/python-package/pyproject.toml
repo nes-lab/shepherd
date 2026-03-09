@@ -112,6 +112,8 @@ test = "pytest"
 markers = [
     "hardware: test requires specific hardware, i.e. needs to run on BBone.",
     "mock_hardware: test on simulated hardware (gets activated automatically when not on BBone)",
+    "emulator: shepher-cape must at least have an emulator-cicuit",
+    "harvester: shepher-cape must at least have an harvester-cicuit",
     "eeprom_write: test requires writing of EEPROM (add opt --eeprom-write)",
     "src_name: name of virtual source settings (yaml-file or config-entry)",
     "timeout: limit for individual test to finish",

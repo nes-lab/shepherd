@@ -310,6 +310,7 @@ def test_cli_emulate_parameters_minimal(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester  # uses recording of hrv
 @pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
@@ -323,6 +324,7 @@ def test_cli_emulate_preconfigured(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester  # uses recording of hrv
 @pytest.mark.emulator
 @pytest.mark.timeout(80)
 @pytest.mark.usefixtures("_shepherd_up")
