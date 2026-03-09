@@ -90,7 +90,7 @@ def difference_percent(val1: float, val2: float, offset: float) -> float:
     return round(100 * abs((val1 + offset) / (val2 + offset) - 1), 3)
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware  # TODO: might need @pytest.mark.emulator
 @pytest.mark.src_name("./_test_config_virtsource.yaml")
 def test_vsource_add_charge(
     pru_vsource: ShepherdDebug,

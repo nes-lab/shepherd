@@ -94,6 +94,7 @@ def emulator(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 def test_emulation(
     writer: Writer,
     shp_reader: CoreReader,
@@ -120,6 +121,7 @@ def test_emulation(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.usefixtures("_shepherd_up")
 def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     output = tmp_path / "rec.h5"
@@ -148,6 +150,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.skip(reason="REQUIRES CAPE HARDWARE v2.4")  # real cape needed
 @pytest.mark.usefixtures("_shepherd_up")
 def test_target_pins() -> None:

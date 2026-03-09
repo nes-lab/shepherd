@@ -31,6 +31,7 @@ def fw_empty(tmp_path: Path) -> Path:
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_minimal(
@@ -45,6 +46,7 @@ def test_cli_program_minimal(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_swd_explicit(
@@ -74,6 +76,7 @@ def test_cli_program_swd_explicit(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_swd_explicit_short(
@@ -103,6 +106,7 @@ def test_cli_program_swd_explicit_short(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(90)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_sbw_explicit(
@@ -132,6 +136,7 @@ def test_cli_program_sbw_explicit(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_a(
@@ -143,6 +148,7 @@ def test_cli_program_file_defective_a(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_b(
@@ -162,6 +168,7 @@ def test_cli_program_file_defective_b(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_file_defective_c(
@@ -181,6 +188,7 @@ def test_cli_program_file_defective_c(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_datarate_invalid_a(
@@ -202,6 +210,7 @@ def test_cli_program_datarate_invalid_a(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_datarate_invalid_b(
@@ -223,6 +232,7 @@ def test_cli_program_datarate_invalid_b(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_program_target_invalid(
