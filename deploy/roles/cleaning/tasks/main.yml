@@ -37,7 +37,7 @@
 
 - name: Include cleaning shepherd-repo
   ansible.builtin.include_tasks:
-    file: software.yml
+    file: shepherd.yml
   when: cleaning_shepherd_repo_files | bool
 
 - name: Include removal of software
