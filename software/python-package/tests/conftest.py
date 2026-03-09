@@ -62,7 +62,7 @@ def pytest_collection_modifyitems(
 ) -> None:
     skip_mock = pytest.mark.skip(reason="cannot be mocked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
-    skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
+    skip_missing_hardware = pytest.mark.skip(reason="not correct hw to test on")
     real_hardware = check_beagleboard()
     hrv_available = cape_has_harvester()
     emu_available = cape_has_emulator()
