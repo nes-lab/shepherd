@@ -48,6 +48,8 @@
   - improve uv commands
   - make scripts compatible with new cape
   - repair and tune functionality
+  - extend cleanup before image-generation
+  - add config for journald, to limit storage usage
 - documentation
   - improve information about compatible linux distros
   - add info about how to set up a read-to-use linux-image
