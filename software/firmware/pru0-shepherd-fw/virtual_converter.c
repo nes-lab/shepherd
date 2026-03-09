@@ -200,7 +200,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         if (feedback_to_hrv)
         {
             // IF input==ivcurve request new CV
-            V_input_request_uV = add32(V_mid_uV, add32(V_res_drop_uV + CNV_CFG.V_input_drop_uV));
+            V_input_request_uV = add32(V_mid_uV, add32(V_res_drop_uV, CNV_CFG.V_input_drop_uV));
         }
         else if (input_voltage_uV < V_mid_uV)
         {

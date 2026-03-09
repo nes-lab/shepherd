@@ -90,11 +90,11 @@ inline uint32_t add32(const uint32_t value1, const uint32_t value2)
     return ((sum < value1) || (sum < value2)) ? (uint32_t) (0xFFFFFFFFu) : sum;
 }
 
-inline uint32_t sub32(const uint32_t value1, const uint32_t value2)
-{ return (value1 > value2) ? (value1 - value2) : 0u; }
-
 inline uint32_t add32s(const uint32_t value1, const int32_t value2)
 { return (value2 >= 0) ? add32(value1, (uint32_t) value2) : sub32(value1, (uint32_t) (-value2)); }
+
+inline uint32_t sub32(const uint32_t value1, const uint32_t value2)
+{ return (value1 > value2) ? (value1 - value2) : 0u; }
 
 inline uint64_t sub64(const uint64_t value1, const uint64_t value2)
 { return (value1 > value2) ? (value1 - value2) : 0ull; }
