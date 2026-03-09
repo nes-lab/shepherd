@@ -168,11 +168,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     // NOTE: p_inp_fW could be calculated in python, even with efficiency-interpolation -> hand voltage and power to pru
     /* BOOST, Calculate current flowing into the storage capacitor */
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
-    if (input_voltage_uV > CNV_CFG.V_input_drop_uV) { input_voltage_uV -= CNV_CFG.V_input_drop_uV; }
-    else
-    {
-        input_voltage_uV = 0u;
-    }
+    input_voltage_uV = sub32(input_voltage_uV, CNV_CFG.V_input_drop_uV);
 
     if (input_voltage_uV > CNV_CFG.V_input_max_uV) { input_voltage_uV = CNV_CFG.V_input_max_uV; }
 
@@ -198,14 +194,13 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
         else
         {
-            input_voltage_uV -= V_res_drop_uV; // TODO: use sub32? no spare ticks left ATM
+            input_voltage_uV = sub32(input_voltage_uV, V_res_drop_uV);
         }
 
         if (feedback_to_hrv)
         {
             // IF input==ivcurve request new CV
-            V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV;
-            // TODO: use add32 above? no spare ticks left ATM
+            V_input_request_uV = add32(V_mid_uV, add32(V_res_drop_uV + CNV_CFG.V_input_drop_uV));
         }
         else if (input_voltage_uV < V_mid_uV)
         {
