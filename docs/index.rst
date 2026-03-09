@@ -61,6 +61,7 @@ Welcome to SHEPHERD's documentation
    ./dev/data_handling.md
    ./dev/sysfs.md
    ./dev/gps_sync.md
+   ./dev/image_creation.md
    ./external/readme_pru_firmware.md
    ./dev/v2_improvements.md
 
