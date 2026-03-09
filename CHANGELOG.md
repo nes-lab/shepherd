@@ -6,6 +6,7 @@
 
 - execution time of VSrc significantly reduced by > 20%
 - increased resolution and range of LUT-division for VSrc in PRU
+- use more safe math FNs in vsource code (now, that there is room)
 - fix wrong cal being used when tracing energy storage
 - add support for new cape hardware v2.5e (more target IO, two power good pins)
   - the altered wiring frees up PRU1 - so idle GPIO sampling improves by 20 % (from 1.4 to 1.67 MHz)
@@ -13,13 +14,16 @@
 
 ### Details
 
-- pru - fix wrong cal being written to PRU when tracing energy storage
-- pru - optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
-  - add python script for calculation and visualization
-- pru - add special mul32e() to allow full expansion u32*u32 = u64
-- pru - optimize VSrc in PRU0 to use less u64-calculations
-  - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
-  - fixes #123
+- PRU
+  - fix wrong cal being written to PRU when tracing energy storage
+  - optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
+    - add python script for calculation and visualization
+  - add special mul32e() to allow full expansion u32*u32 = u64
+  - optimize VSrc in PRU0 to use less u64-calculations
+    - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
+    - fixes #123
+  - use more safe math FNs in vsource code
+  - internal refactoring & renaming mostly around BATOK (now called power good)
 - activate `-Wpedantic` for py-module / c-code and fix warnings
 - activate `-Wpedantic` for pru-firmwares / c-code ~~and fix warnings~~
 - ~~sheep - increase warning for pru0-util from 95 % to 98 %~~ (reverted for early warning of overload)
@@ -38,9 +42,16 @@
   - so the worst execution time resulted in 1.4 MHz idle sampling before
   - the new cape is able to sample at 1.67 MHz (minimum, idle) -> 20 % improvement
 - sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
-- PRU - internal refactoring & renaming mostly around BATOK (now called power good)
+- sheep-unittests - limit tests to capabilities of cape (hrv, emu)
 - py / uv - abandon global cache
-- ansible - improve uv commands
+- ansible
+  - improve uv commands
+  - make scripts compatible with new cape
+  - repair and tune functionality
+- documentation
+  - improve information about compatible linux distros
+  - add info about how to set up a read-to-use linux-image
+  - add info about how to switch software to another cape-versions
 - internal - move doc for the release-procedure to root readme
 
 ## 2026.02.1
