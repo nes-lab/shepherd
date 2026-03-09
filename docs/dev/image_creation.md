@@ -51,7 +51,7 @@ ip a
 - burn image to other SD-cards
 - activate sysrqd
 - ansible `deploy/setup_testbed_observer.yml` (secure, MAC broadcasting, NFS mounting)
-- grow partition? growpart /dev/mmcblk1p1 -> add to observer-role?
+- grow partition? -> add to observer-role?
 
 Activate [SysRqd](https://github.com/jd/sysrqd)
 
@@ -69,4 +69,12 @@ telnet 192.168.165.200 4094  --> only working inside sheep-network
 > b  (for hard reboot)
 
 to exit: ctrl + altgr + ] -> on telnet-console: quit
+```
+
+Grow Main-Partition on SD
+
+```shell
+yes | sudo parted /dev/mmcblk0 resizepart 1 100%
+sudo resize2fs /dev/mmcblk0p1
+df -h
 ```
