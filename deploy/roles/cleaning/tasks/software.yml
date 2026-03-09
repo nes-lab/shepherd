@@ -27,7 +27,8 @@
   become: true
 
 - name: Remove extra Firmwares
-  ansible.builtin.command: 'rm {{ item }}'
+  ansible.builtin.command: 'rm --force {{ item }}'
+  # --force -> ignore non-existing files
   loop:
 #    - "/lib/firmware/BB*"
     - "/lib/firmware/BBAI*"
@@ -39,5 +40,4 @@
     - "/lib/firmware/BEAGLE*"
     - "/lib/firmware/am57*"
 #    - "/lib/firmware/bb-*"
-  when: true
   become: true
