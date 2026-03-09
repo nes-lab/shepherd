@@ -7,10 +7,17 @@ corresponding implementation in `software/firmware/include/commons.h`
 
 """
 
-# TODO: this should be done by asking the eeprom
-CAPE_HW_VER = 25
+from shepherd_sheep.eeprom import retrieve_hw_version
+
+CAPE_HW_VER_DEFAULT = 25
+CAPE_HW_VER = retrieve_hw_version(ver_default=CAPE_HW_VER_DEFAULT)
+
 CAPE_HAS_HRV = CAPE_HW_VER in {22, 23, 24}
 CAPE_HAS_EMU = CAPE_HW_VER in {22, 23, 24, 25}
+
+if CAPE_HW_VER not in range(22, 26):
+    msg = f"Shepherd can't handle this CAPE (HW_VER={CAPE_HW_VER})"
+    raise ValueError(msg)
 
 # ############################################################################
 # PRU - CONFIG  ##############################################################
