@@ -239,15 +239,9 @@ def retrieve_hw_version(ver_default: int) -> int:
     try:
         with EEPROM() as storage:
             cal = storage.read_calibration()
-    except ValueError:
+    except (OSError, ValueError, FileNotFoundError):
         log.warning(
-            "Couldn't read CAPE_HW_VER from EEPROM (ValueError). Fall back to default = %s",
-            ver_default,
-        )
-        return ver_default
-    except FileNotFoundError:
-        log.warning(
-            "Couldn't read CAPE_HW_VER from EEPROM (FileNotFoundError). Fall back to default = %s",
+            "Couldn't read CAPE_HW_VER from EEPROM. Fall back to default = %s",
             ver_default,
         )
         return ver_default
