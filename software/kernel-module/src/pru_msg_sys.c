@@ -50,14 +50,10 @@ static uint8_t ring_get(struct RingBuffer *const buf, struct ProtoMsg *const ele
 }
 
 void put_msg_to_pru0(const struct ProtoMsg *const element)
-{
-    ring_put(&msg_ringbuf_to_pru0, element);
-}
+{ ring_put(&msg_ringbuf_to_pru0, element); }
 
 uint8_t get_msg_from_pru0(struct ProtoMsg *const element)
-{
-    return ring_get(&msg_ringbuf_from_pru0, element);
-}
+{ return ring_get(&msg_ringbuf_from_pru0, element); }
 
 /***************************************************************/
 /***************************************************************/

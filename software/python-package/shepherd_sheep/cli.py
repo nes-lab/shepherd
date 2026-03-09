@@ -231,10 +231,16 @@ def write(
     help="If provided, calibration data is dumped to this file",
 )
 @click.option(
+    "--hw-version",
+    "-v",
+    is_flag=True,
+    help="only output version of cape hardware on console (i.e. 25 for v2.5)",
+)
+@click.option(
     "--revision",
     "-r",
     is_flag=True,
-    help="only output version of cape hardware on console",
+    help="only output revision of cape hardware on console (i.e. 25E0)",
 )
 @click.option(
     "--full",
@@ -243,7 +249,14 @@ def write(
     help="output all fields on console",
 )
 @click.pass_context
-def read(ctx: click.Context, cal_file: Path | None, *, revision: bool, full: bool) -> None:
+def read(
+    ctx: click.Context,
+    cal_file: Path | None,
+    *,
+    hw_version: bool = False,
+    revision: bool = False,
+    full: bool = False,
+) -> None:
     try:
         with EEPROM() as storage:
             cal = storage.read_calibration()
@@ -256,7 +269,9 @@ def read(ctx: click.Context, cal_file: Path | None, *, revision: bool, full: boo
         log.error("Access to EEPROM failed (FS) -> is Shepherd-Cape missing?")
         ctx.exit(3)
 
-    if revision:
+    if hw_version:
+        log.info("%s", cal.cape.version[:2])
+    elif revision:
         log.info("%s", cal.cape.version)
     elif cal_file is None:
         cal_data = (

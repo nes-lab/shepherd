@@ -65,6 +65,10 @@ CFLAGS += -v3 #                              silicon version
 CFLAGS += --endian=little #                 for data and code, both (big, little) is possible
 CFLAGS += --hardware_mac=on #               use Multiply and Accumulate Unit (no division though)
 
+## Cape Hardware, with sensible default
+CAPE_HW_VER ?= 25
+CFLAGS += -DCAPE_HW_VER=$(CAPE_HW_VER)
+
 # Compile Options
 CFLAGS += --c99 #                           C-Standard
 CFLAGS += --float_operations_allowed=none # usage of FP results in compile-error

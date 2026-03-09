@@ -3,12 +3,12 @@
 # uv pip install .
 [project]
 name = "shepherd-main"
-version = "2026.02.1"
+version = "2026.03.1"
 description = "Infrastructure for the Testbed, mainly focused on the Observers "
 readme = "README.md"
 
 dependencies = [
-    "shepherd-sheep[dev,test]",
+    # "shepherd-sheep[dev,test]",
     "shepherd-herd[all]",
     "shepherd-cal[dev]",
     #"shepherd-pru",

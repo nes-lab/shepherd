@@ -43,9 +43,10 @@ The DHCP server and your machine (for installation/control) must be connected to
 Shepherd is been tested and used on Debian based distributions. Fresh images can be sourced from the [rcn-ee](https://rcn-ee.com/rootfs/)-repo. Be sure to select the ones that `armhf`, `minimal`, `-ti` and `am335x` in the name / path. The following overview gives some recommendations. Be aware that this repo is updated constantly and links may break. Time of writing is 2024-07-08.
 
 - [Debian 12 Bookwork](https://rcn-ee.com/rootfs/debian-armhf-12-bookworm-minimal-v6.1-ti/) is tested, fully working and recommended. It comes with python 3.11
+- Debian 13 Trixie does NOT work due to issues downgrading the kernel to 4.19
 - ~[Ubuntu 20.04](https://rcn-ee.com/rootfs/ubuntu-armhf-20.04-console-v5.10-ti/)~ is not supported anymore, due to the outdated bundled python 3.8
 - [Ubuntu 22.04](https://rcn-ee.com/rootfs/ubuntu-armhf-22.04-console-v5.10-ti/) is tested and working, but not recommended anymore, due to the outdated bundled python 3.10
-- ~[Ubuntu 24.04](https://rcn-ee.com/rootfs/ubuntu-armhf-24.04-console-v5.10-ti/)~ is not supported yet. It comes with the newest python 3.12, but properly boot with `linux-image-4.19.x`
+- ~[Ubuntu 24.04](https://rcn-ee.com/rootfs/ubuntu-armhf-24.04-console-v5.10-ti/)~ is not supported yet. It comes with the newest python 3.12, but does not properly boot with `linux-image-4.19.x`
 
 NOTE: you can also choose to download pre-configured shepherd-images. See the more entry-friendly guide below.
 

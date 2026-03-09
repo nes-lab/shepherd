@@ -1,67 +1,10 @@
 #ifndef PRU1_DEBUG_ROUTINES_H_
 #define PRU1_DEBUG_ROUTINES_H_
 
-// Debug Code - Config, TODO: enable by makefile or compile-command for both PRUs
-#define DEBUG_GPIO_EN  0 // state1= gpio-checking, state2=writing data, state0=loop&event-routines
-#define DEBUG_EVENT_EN 0 // state1=Event1, s2=e2, s3=e3 (expensive part)
-#define DEBUG_LOOP_EN  0
-#define DEBUG_PGOOD_EN 1 // send power_good to LED1		-> default ON
-#define DEBUG_RAMRD_EN 0 // far ram read (for pru0) on LED0
-#define DEBUG_RTIME_EN 0 // violations of realtime
+#include "gpio.h"
+#include "hw_config.h"
 
-// Debug Code, state-changes add ~2 ticks (s1 & 2), ~1 ticks (s0 & s3)
-#define DEBUG_STATE_0  write_r30(read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
-#define DEBUG_STATE_1  write_r30((read_r30() | DEBUG_PIN0_MASK) & ~DEBUG_PIN1_MASK)
-#define DEBUG_STATE_2  write_r30((read_r30() | DEBUG_PIN1_MASK) & ~DEBUG_PIN0_MASK)
-#define DEBUG_STATE_3  write_r30(read_r30() | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK))
-
-#if DEBUG_GPIO_EN
-  #define DEBUG_GPIO_STATE_0 DEBUG_STATE_0
-  #define DEBUG_GPIO_STATE_1 DEBUG_STATE_1
-  #define DEBUG_GPIO_STATE_2 DEBUG_STATE_2
-  #define DEBUG_GPIO_STATE_3 DEBUG_STATE_3
-#else
-  #define DEBUG_GPIO_STATE_0
-  #define DEBUG_GPIO_STATE_1
-  #define DEBUG_GPIO_STATE_2
-  #define DEBUG_GPIO_STATE_3
-#endif
-
-#if DEBUG_EVENT_EN
-  #define DEBUG_EVENT_STATE_0 DEBUG_STATE_0
-  #define DEBUG_EVENT_STATE_1 DEBUG_STATE_1
-  #define DEBUG_EVENT_STATE_2 DEBUG_STATE_2
-  #define DEBUG_EVENT_STATE_3 DEBUG_STATE_3
-#else
-  #define DEBUG_EVENT_STATE_0
-  #define DEBUG_EVENT_STATE_1
-  #define DEBUG_EVENT_STATE_2
-  #define DEBUG_EVENT_STATE_3
-#endif
-
-#if DEBUG_PGOOD_EN
-  #define DEBUG_PGOOD_STATE_0 write_r30(read_r30() & ~DEBUG_PIN1_MASK)
-  #define DEBUG_PGOOD_STATE_1 write_r30(read_r30() | DEBUG_PIN1_MASK)
-#else
-  #define DEBUG_PGOOD_STATE_0
-  #define DEBUG_PGOOD_STATE_1
-#endif
-
-#if DEBUG_RAMRD_EN
-  #define DEBUG_RAMRD_STATE_0 DEBUG_STATE_0
-  #define DEBUG_RAMRD_STATE_1 DEBUG_STATE_1
-#else
-  #define DEBUG_RAMRD_STATE_0
-  #define DEBUG_RAMRD_STATE_1
-#endif
-
-#if DEBUG_RTIME_EN
-  #define DEBUG_RTIME_STATE_0 DEBUG_STATE_0
-  #define DEBUG_RTIME_STATE_1 DEBUG_STATE_1
-#else
-  #define DEBUG_RTIME_STATE_0
-  #define DEBUG_RTIME_STATE_1
-#endif
+// debug macros moved to hw_config.h to be consistent with PRU0
 
 #if DEBUG_LOOP_EN
 // "print" number by toggling debug pins bitwise, lowest bitvalue first
@@ -131,10 +74,10 @@ static void inline debug_gpio_sweep(void)
     {
         value = iter;
         while (value--) __delay_cycles(1);
-        GPIO_TOGGLE(GPIO_BATOK);
+        GPIO_TOGGLE(GPIO_POWER_GOOD_HIGH);
         value = iter;
         while (value--) __delay_cycles(1);
-        GPIO_TOGGLE(GPIO_BATOK);
+        GPIO_TOGGLE(GPIO_POWER_GOOD_HIGH);
     }
 }
 #endif

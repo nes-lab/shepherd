@@ -16,10 +16,10 @@
  * ----------------------------------------------------------------------
  */
 
-inline void set_batok_pin(const bool_ft value)
+inline void set_power_good_state(const uint8_ft value)
 {
-    SHARED_MEM.vsource_batok_pin_value        = value;
-    SHARED_MEM.vsource_batok_trigger_for_pru1 = true;
+    SHARED_MEM.vsource_power_good_pins_state       = value & 0x03u;
+    SHARED_MEM.vsource_power_good_trigger_for_pru1 = true;
 }
 
 #ifdef EMU_SUPPORT
@@ -82,7 +82,6 @@ struct ConverterState
     uint32_t V_mid_enable_output_threshold_uV;
     uint32_t V_mid_disable_output_threshold_uV;
     uint32_t dV_mid_enable_output_uV;
-    bool_ft  power_good;
 };
 
 /* feedback to harvester - global vars */
@@ -110,14 +109,13 @@ void converter_initialize()
     state.V_mid_uV_n32                      = ((uint64_t) get_V_OC_uV()) << 32u;
 
     /* Buck Boost */
-    state.enable_storage                    = (CNV_CFG.converter_mode & 0b0001) > 0;
-    state.enable_boost                      = (CNV_CFG.converter_mode & 0b0010) > 0;
-    state.enable_buck                       = (CNV_CFG.converter_mode & 0b0100) > 0;
-    state.enable_log_mid                    = (CNV_CFG.converter_mode & 0b1000) > 0;
+    state.enable_storage                    = (CNV_CFG.converter_mode & (1u << 0u)) > 0;
+    state.enable_boost                      = (CNV_CFG.converter_mode & (1u << 1u)) > 0;
+    state.enable_buck                       = (CNV_CFG.converter_mode & (1u << 2u)) > 0;
+    state.enable_log_mid                    = (CNV_CFG.converter_mode & (1u << 3u)) > 0;
 
     state.V_out_dac_uV                      = CNV_CFG.V_output_uV;
     state.V_out_dac_raw                     = cal_conv_uV_to_dac_raw(CNV_CFG.V_output_uV);
-    state.power_good                        = true;
 
     /* prepare hysteresis-thresholds */
     state.dV_mid_enable_output_uV           = CNV_CFG.dV_mid_enable_output_uV;
@@ -132,7 +130,7 @@ void converter_initialize()
     }
 
     /* feedback to harvester */
-    feedback_to_hrv    = (CNV_CFG.converter_mode & 0b10000) > 0u;
+    feedback_to_hrv    = (CNV_CFG.converter_mode & (1u << 4u)) > 0u;
     V_input_request_uV = get_V_OC_uV();
 
     /* compensate for (hard to detect) current-surge of real capacitors when converter gets turned on
@@ -170,11 +168,7 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
     // NOTE: p_inp_fW could be calculated in python, even with efficiency-interpolation -> hand voltage and power to pru
     /* BOOST, Calculate current flowing into the storage capacitor */
     //GPIO_TOGGLE(DEBUG_PIN1_MASK);
-    if (input_voltage_uV > CNV_CFG.V_input_drop_uV) { input_voltage_uV -= CNV_CFG.V_input_drop_uV; }
-    else
-    {
-        input_voltage_uV = 0u;
-    }
+    input_voltage_uV = sub32(input_voltage_uV, CNV_CFG.V_input_drop_uV);
 
     if (input_voltage_uV > CNV_CFG.V_input_max_uV) { input_voltage_uV = CNV_CFG.V_input_max_uV; }
 
@@ -200,14 +194,13 @@ void converter_calc_inp_power(uint32_t input_voltage_uV, uint32_t input_current_
         if (V_res_drop_uV > V_diff_uV) { input_voltage_uV = V_mid_uV; }
         else
         {
-            input_voltage_uV -= V_res_drop_uV; // TODO: use sub32? no spare ticks left ATM
+            input_voltage_uV = sub32(input_voltage_uV, V_res_drop_uV);
         }
 
         if (feedback_to_hrv)
         {
             // IF input==ivcurve request new CV
-            V_input_request_uV = V_mid_uV + V_res_drop_uV + CNV_CFG.V_input_drop_uV;
-            // TODO: use add32 above? no spare ticks left ATM
+            V_input_request_uV = add32(V_mid_uV, add32(V_res_drop_uV, CNV_CFG.V_input_drop_uV));
         }
         else if (input_voltage_uV < V_mid_uV)
         {
@@ -313,16 +306,10 @@ uint32_t converter_update_states_and_output()
 
     if (check_thresholds || CNV_CFG.immediate_pwr_good_signal)
     {
-        /* emulate power-good-signal */
-        if (state.power_good)
-        {
-            if (V_mid_uV <= CNV_CFG.V_pwr_good_disable_threshold_uV) { state.power_good = false; }
-        }
-        else if (V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV)
-        {
-            state.power_good = is_outputting;
-        }
-        set_batok_pin(state.power_good);
+        /* emulate two power-good-signals (low & high) */
+        const bool_ft pgood_high = V_mid_uV >= CNV_CFG.V_pwr_good_enable_threshold_uV;
+        const bool_ft pgood_low  = V_mid_uV > CNV_CFG.V_pwr_good_disable_threshold_uV;
+        set_power_good_state(is_outputting ? (pgood_low | (pgood_high << 1u)) : 0u);
     }
 
     if (is_outputting || (state.interval_startup_disabled_drain_n > 0u))
@@ -379,9 +366,7 @@ inline void set_P_input_fW(const uint32_t P_fW) { state.P_inp_fW_n8 = ((uint64_t
 inline void set_P_output_fW(const uint32_t P_fW) { state.P_out_fW_n4 = ((uint64_t) P_fW) << 4u; }
 
 inline void set_V_intermediate_uV(const uint32_t C_uV)
-{
-    state.V_mid_uV_n32 = ((uint64_t) C_uV) << 32u;
-}
+{ state.V_mid_uV_n32 = ((uint64_t) C_uV) << 32u; }
 
 inline uint64_t get_P_input_fW(void) { return (state.P_inp_fW_n8 >> 8u); }
 
@@ -390,16 +375,12 @@ inline uint64_t get_P_output_fW(void) { return (state.P_out_fW_n4 >> 4u); }
 inline uint32_t get_V_intermediate_uV(void) { return (uint32_t) (state.V_mid_uV_n32 >> 32u); }
 
 inline uint32_t get_V_intermediate_raw(void)
-{
-    return cal_conv_uV_to_dac_raw((uint32_t) (state.V_mid_uV_n32 >> 32u));
-}
+{ return cal_conv_uV_to_dac_raw((uint32_t) (state.V_mid_uV_n32 >> 32u)); }
 
 inline uint32_t get_V_output_uV(void) { return state.V_out_dac_uV; }
 
 uint32_t        get_I_mid_out_nA(void)
-{
-    return (uint32_t) (calc_current_nA_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u);
-}
+{ return (uint32_t) (calc_current_nA_n4(state.P_out_fW_n4, state.V_mid_uV_n32 >> 32u) >> 4u); }
 
 inline bool_ft get_state_log_intermediate(void) { return state.enable_log_mid; }
 

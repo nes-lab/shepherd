@@ -73,9 +73,9 @@ struct SharedMem
     /* Token system to ensure both PRUs can share interrupts */
     volatile bool_ft                  cmp0_trigger_for_pru1;
     volatile bool_ft                  cmp1_trigger_for_pru1;
-    /* BATOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin */
-    volatile bool_ft                  vsource_batok_trigger_for_pru1;
-    volatile bool_ft                  vsource_batok_pin_value;
+    /* PowerGood / BatOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin (V24)*/
+    volatile bool_ft                  vsource_power_good_trigger_for_pru1;
+    volatile uint8_ft                 vsource_power_good_pins_state; // also needed for GPIO-tracing
     /* Trigger to control sampling of gpios */
     volatile bool_ft                  vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */
@@ -88,7 +88,9 @@ ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000u);
 #ifdef __PYTHON__
 extern volatile struct SharedMem shared_mem; // defined in py_module/pru_source.c
   //#undef PRU_SHARED_MEM_OFFSET  // Precaution (throws if code uses it, avoids segfault)
-  #define PRU_SHARED_MEM_OFFSET ((volatile void *) &shared_mem)
+  // the type of pointer is unknown, but 'void *' is discouraged
+  // code needs 1 byte steps, so it is cast to uint8_t
+  #define PRU_SHARED_MEM_OFFSET ((volatile uint8_t *) &shared_mem)
 #endif
 
 // NOTE: GCC-way preferred as cgt builds to 62204 bytes instead of 64244

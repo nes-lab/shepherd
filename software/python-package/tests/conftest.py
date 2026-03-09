@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from pyfakefs.fake_filesystem import FakeFilesystem
+from shepherd_sheep.commons import CAPE_HAS_EMU
+from shepherd_sheep.commons import CAPE_HAS_HRV
 from shepherd_sheep.sysfs_interface import check_sys_access
 from shepherd_sheep.sysfs_interface import remove_kernel_module
 
@@ -16,6 +18,14 @@ def check_beagleboard() -> bool:
         if "AM33XX" in info.read():
             return True
     return False
+
+
+def cape_has_harvester() -> bool:
+    return CAPE_HAS_HRV
+
+
+def cape_has_emulator() -> bool:
+    return CAPE_HAS_EMU
 
 
 @pytest.fixture(
@@ -52,12 +62,21 @@ def pytest_collection_modifyitems(
 ) -> None:
     skip_mock = pytest.mark.skip(reason="cannot be mocked")
     skip_eeprom_write = pytest.mark.skip(reason="requires --eeprom-write option")
-    skip_missing_hardware = pytest.mark.skip(reason="no hw to test on")
+    skip_missing_hardware = pytest.mark.skip(reason="not correct hw to test on")
+    skip_missing_harvester = pytest.mark.skip(reason="cape without harvester")
+    skip_missing_emulator = pytest.mark.skip(reason="cape without emulator")
     real_hardware = check_beagleboard()
+    hrv_available = cape_has_harvester()
+    emu_available = cape_has_emulator()
 
     for item in items:
         if "hardware" in item.keywords and not real_hardware:
             item.add_marker(skip_missing_hardware)
+        elif "harvester" in item.keywords and not hrv_available:
+            item.add_marker(skip_missing_harvester)
+        elif "emulator" in item.keywords and not emu_available:
+            item.add_marker(skip_missing_emulator)
+
         if "eeprom_write" in item.keywords and not config.getoption("--eeprom-write"):
             item.add_marker(skip_eeprom_write)
         if "mock_hardware" in item.keywords and "hardware" in item.keywords:

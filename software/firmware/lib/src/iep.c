@@ -31,9 +31,7 @@ void iep_set_us(const uint32_t value)
 
 
 inline bool_ft iep_check_evt_cmp(const uint8_ft compare_channel)
-{
-    return (bool_ft) (CT_IEP.TMR_CMP_STS & (1U << compare_channel));
-}
+{ return (bool_ft) (CT_IEP.TMR_CMP_STS & (1U << compare_channel)); }
 
 // allow to build external, faster iep_check_evt_cmp, for when this fn is called more often in a loop
 // -> READs from IEP take 12 Cycles
@@ -41,29 +39,19 @@ inline uint32_t iep_get_tmr_cmp_sts() { return CT_IEP.TMR_CMP_STS; }
 
 inline uint32_t iep_check_evt_cmp_fast(const uint32_t tmr_cmp_sts,
                                        const uint32_t compare_channel_mask)
-{
-    return (tmr_cmp_sts & compare_channel_mask);
-}
+{ return (tmr_cmp_sts & compare_channel_mask); }
 
 inline void iep_clear_evt_cmp(const uint8_ft compare_channel)
-{
-    CT_IEP.TMR_CMP_STS |= (1U << compare_channel);
-}
+{ CT_IEP.TMR_CMP_STS |= (1U << compare_channel); }
 
 inline void iep_enable_evt_cmp(const uint8_ft compare_channel)
-{
-    CT_IEP.TMR_CMP_CFG_bit.CMP_EN |= (1U << compare_channel);
-}
+{ CT_IEP.TMR_CMP_CFG_bit.CMP_EN |= (1U << compare_channel); }
 
 inline bool_ft iep_enable_status_evt_cmp(const uint8_ft compare_channel)
-{
-    return (CT_IEP.TMR_CMP_CFG_bit.CMP_EN & (1U << compare_channel));
-}
+{ return (CT_IEP.TMR_CMP_CFG_bit.CMP_EN & (1U << compare_channel)); }
 
 inline void iep_disable_evt_cmp(const uint8_ft compare_channel)
-{
-    CT_IEP.TMR_CMP_CFG_bit.CMP_EN &= ~(1U << compare_channel);
-}
+{ CT_IEP.TMR_CMP_CFG_bit.CMP_EN &= ~(1U << compare_channel); }
 
 inline void iep_set_cmp_val(const uint8_ft compare_channel, const uint32_t value)
 {
@@ -80,9 +68,7 @@ inline uint32_t iep_get_cmp_val(const uint8_ft compare_channel)
 inline void iep_compensate() { CT_IEP.TMR_COMPEN_bit.COMPEN_CNT = 1u; }
 
 inline void iep_set_compensation_inc(const uint32_t value)
-{
-    CT_IEP.TMR_GLB_CFG_bit.CMP_INC = value;
-}
+{ CT_IEP.TMR_GLB_CFG_bit.CMP_INC = value; }
 
 
 inline void iep_set_increment(const uint32_t value) { CT_IEP.TMR_GLB_CFG_bit.DEFAULT_INC = value; }

@@ -17,18 +17,13 @@
     path: "{{ item }}"
     state: absent
   with_items: "{{ files_rec.files | map(attribute='path') }}"
+  become: true
   when: cleaning_delete_recordings | bool
   # NOTE: could be done with just .find, but this leaves directory intact
 
 - name: Remove space-waster
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
+  ansible.builtin.command: "rm -rf {{ item }}"
   loop:
-#    - "/opt/shepherd/.git/"
-#    - "/opt/shepherd/hardware/"
-#    - "/opt/shepherd/docs/"
-#    - "/opt/shepherd/deploy/"
     - "/opt/scripts/.git/"
     - "/opt/scripts/device/"
     - "/opt/scripts/images/"
@@ -36,6 +31,14 @@
     - "/usr/share/ti/pru-software-support-package/.git/"
     - "/usr/share/ti/pru-software-support-package/examples/"
     - "/lib/firmware/ti-connectivity/"
+    - "/usr/share/ti/ticgttemp*"
+    - "/opt/source/dtb-6.*"
+    - "/opt/source/dtb-5.*"
+
+- name: Include cleaning shepherd-repo
+  ansible.builtin.include_tasks:
+    file: shepherd.yml
+  when: cleaning_shepherd_repo_files | bool
 
 - name: Include removal of software
   ansible.builtin.include_tasks:

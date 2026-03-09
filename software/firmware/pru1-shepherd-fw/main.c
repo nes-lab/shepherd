@@ -12,42 +12,16 @@
 
 #include "commons.h"
 #include "debug_routines.h"
+
 #include "resource_table.h"
 #include "shared_mem.h"
 #include "shepherd_config.h"
 #include "stdint_fast.h"
 
-/* The Arm to Host interrupt for the timestamp event is mapped to Host interrupt 0 -> Bit 30 (see resource_table.h) */
-#define HOST_INT_TIMESTAMP_MASK (1U << 30U)
+#include "hw_config.h"
+#include "power_good.h"
 
-// both pins have a LED
-#define DEBUG_PIN0_MASK         BIT_SHIFT(P8_28)
-#define DEBUG_PIN1_MASK         BIT_SHIFT(P8_30)
-
-#define GPIO_BATOK              BIT_SHIFT(P8_29)
-#define GPIO_BATOK_POS          (9u)
-
-#define GPIO_MASK               (0x03FF)
-/* this will be combined with the user-configurable mask to derive the mask used for the Tracer */
-
-#define SANITY_CHECKS           (0) // warning: costs performance, but is helpful for dev / debugging
-
-/* overview for pin-mirroring - HW-Rev2.4b
-
-pru_reg     name            BB_pin	sys_pin sys_reg
-r31_00      TARGET_GPIO0    P8_45	P8_14, g0[26] -> 26
-r31_01      TARGET_GPIO1    P8_46	P8_17, g0[27] -> 27
-r31_02      TARGET_GPIO2    P8_43	P8_16, g1[14] -> 46
-r31_03      TARGET_GPIO3    P8_44	P8_15, g1[15] -> 47
-r31_04      TARGET_GPIO4    P8_41	P8_26, g1[29] -> 61
-r31_05      TARGET_GPIO5    P8_42	P8_36, g2[16] -> 80
-r31_06      TARGET_GPIO6    P8_39	P8_34, g2[17] -> 81
-r31_07      TARGET_UART_RX  P8_40	P9_26, g0[14] -> 14
-r31_08      TARGET_UART_TX  P8_27	P9_24, g0[15] -> 15
-r30_09/out  TARGET_BAT_OK   P8_29	-
-
-Note: this table is copied (for hdf5-reference) in commons.py
-*/
+#define SANITY_CHECKS (0) // warning: costs performance, but is helpful for dev / debugging
 
 enum SyncState
 {
@@ -96,15 +70,16 @@ static inline void check_gpio(const uint32_t last_sync_offset_ns)
     {
         prev_gpio_status = 0x00;
         SHARED_MEM.gpio_pin_state =
-                (read_r31() | (SHARED_MEM.vsource_batok_pin_value << GPIO_BATOK_POS)) & GPIO_MASK;
+                (read_r31() | (SHARED_MEM.vsource_power_good_pins_state << GPIO_POWER_GOOD_POS)) &
+                GPIO_MASK;
         return;
     }
     else if (SHARED_MEM.vsource_skip_gpio_logging) { return; }
 
-    // batOK is on r30 (output), but that does not mean it is in R31
-    // -> workaround: splice in SHARED_MEM.vsource_batok_pin_value
+    // PowerGood / BatOK is on r30 (output), but that does not mean it is in R31
+    // -> workaround: splice in SHARED_MEM.vsource_power_good_pins_state
     const uint32_t gpio_status =
-            (read_r31() | (SHARED_MEM.vsource_batok_pin_value << GPIO_BATOK_POS)) &
+            (read_r31() | (SHARED_MEM.vsource_power_good_pins_state << GPIO_POWER_GOOD_POS)) &
             SHARED_MEM.gpio_mask;
     const uint32_t gpio_diff = gpio_status ^ prev_gpio_status;
 
@@ -185,10 +160,10 @@ int32_t event_loop()
     bool_ft         host_int_early         = 0u;
     /* Tracks our local state, allowing to execute actions at the right time */
     struct ProtoMsg sync_repl              = {
-                         .id     = 0u,
-                         .unread = 0u,
-                         .type   = 0u,
-                         .value =
+            .id     = 0u,
+            .unread = 0u,
+            .type   = 0u,
+            .value =
                     {
                             0u,
                             0u,
@@ -239,7 +214,7 @@ int32_t event_loop()
 
     iep_start();
 
-    /* GPIO Tracer final config*/
+    /* GPIO Tracer final config */
     SHARED_MEM.gpio_mask &= GPIO_MASK;
 
     while (1)
@@ -368,21 +343,7 @@ int32_t event_loop()
         }
 
         /* remote gpio-triggering for pru0 */
-        if (SHARED_MEM.vsource_batok_trigger_for_pru1)
-        {
-            if (SHARED_MEM.vsource_batok_pin_value)
-            {
-                GPIO_ON(GPIO_BATOK);
-                DEBUG_PGOOD_STATE_1;
-            }
-            else
-            {
-                GPIO_OFF(GPIO_BATOK);
-                DEBUG_PGOOD_STATE_0;
-            }
-            SHARED_MEM.vsource_batok_trigger_for_pru1 = false;
-            continue;
-        }
+        if (power_good_update()) continue;
 
         /* transmit pru0-util, current design puts this in fresh/next buffer */
         if (transmit_util)

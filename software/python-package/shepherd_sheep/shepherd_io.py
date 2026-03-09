@@ -117,8 +117,12 @@ class ShepherdIO:
             raise RuntimeError
 
         if mode == "harvester":
+            if not commons.CAPE_HAS_HRV:
+                raise RuntimeError("Harvester mode not available for that Cape")
             sfs.load_pru_firmware("pru0-shepherd-HRV")
         else:
+            if not commons.CAPE_HAS_EMU:
+                raise RuntimeError("Emulator mode not available for that Cape")
             sfs.load_pru_firmware("pru0-shepherd-EMU")
 
         self.mode = mode
@@ -329,6 +333,8 @@ class ShepherdIO:
         :param state: bool, enable to get ADC out of reset
         :return:
         """
+        if not commons.CAPE_HAS_HRV:
+            return
         state_str = "enabled" if state else "disabled"
         log.debug("Set Harvester of shepherd-cape to %s", state_str)
         self.gpios["en_harvester"].write(value=state)
@@ -343,6 +349,8 @@ class ShepherdIO:
         :param state: bool, enable to get ADC out of reset
         :return:
         """
+        if not commons.CAPE_HAS_EMU:
+            return
         state_str = "enabled" if state else "disabled"
         log.debug("Set Emulator of shepherd-cape to %s", state_str)
         self.gpios["en_emulator"].write(value=state)

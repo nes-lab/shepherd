@@ -8,6 +8,7 @@
 
 #include "fw_config.h"
 #include "msg_sys.h"
+#include "power_good.h"
 #include "shared_mem.h"
 #include "virtual_converter.h"
 #include "virtual_harvester.h"
@@ -31,7 +32,7 @@ static bool_ft dac_aux_link_to_main = false;
   #define dac_aux_link_to_main (0u)
 #endif // ENABLE_AUX
 
-#ifdef EMU_SUPPORT
+#if (defined(EMU_SUPPORT) && EMU_AVAILABLE)
 
 struct IVSample    ivsample = {.current = 0u, .voltage = 0u};
 
@@ -120,6 +121,8 @@ static inline void sample_emulator()
     /* feedback path - important for boost-less circuits */
     if (feedback_to_hrv) { voltage_set_uV = V_input_request_uV; }
 
+    power_good_update();
+
     /* write back converter-state into shared memory buffer */
     const uint32_t index = SHARED_MEM.buffer_iv_out_idx;
     if (get_state_log_intermediate())
@@ -147,7 +150,12 @@ static inline void sample_emu_ADCs()
 {
     const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
+#if EMU_AVAILABLE
     buf_out_current[sample_idx] = adc_fastread(SPI_CS_EMU_ADC_PIN);
+#else
+    buf_out_current[sample_idx] = 0u
+#endif
+
     buf_out_voltage[sample_idx] = 0u;
 }
 
@@ -155,8 +163,13 @@ static inline void sample_hrv_ADCs()
 {
     const uint32_t sample_idx = SHARED_MEM.buffer_iv_out_idx;
     __delay_cycles(1000u / TICK_INTERVAL_NS); // fill up to 1000 ns since adc-trigger (if needed)
+#if HRV_AVAILABLE
     buf_out_current[sample_idx] = adc_fastread(SPI_CS_HRV_C_ADC_PIN);
     buf_out_voltage[sample_idx] = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
+#else
+    buf_out_current[sample_idx] = 0u;
+    buf_out_voltage[sample_idx] = 0u;
+#endif
 }
 
 
@@ -169,7 +182,7 @@ void sample()
         case MODE_EMULATOR: return sample_emulator();
         case MODE_EMU_LOOPBACK: return sample_emu_loopback();
 #endif // EMU_SUPPORT
-#ifdef HRV_SUPPORT
+#if (defined(HRV_SUPPORT) && HRV_AVAILABLE)
         case MODE_HARVESTER: return sample_adc_harvester();
 #endif // HRV_SUPPORT
         case MODE_EMU_ADC_READ: return sample_emu_ADCs();
@@ -187,9 +200,19 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
     switch (channel_num)
     {
+#if HRV_AVAILABLE
         case 0: result = adc_fastread(SPI_CS_HRV_C_ADC_PIN); break;
         case 1: result = adc_fastread(SPI_CS_HRV_V_ADC_PIN); break;
+#else
+        case 0: result = 0u; break;
+        case 1: result = 0u; break;
+#endif
+
+#if EMU_AVAILABLE
         default: result = adc_fastread(SPI_CS_EMU_ADC_PIN); break;
+#else
+        default: result = 0u; break;
+#endif
     }
     return result;
 }
@@ -197,10 +220,14 @@ uint32_t sample_dbg_adc(const uint32_t channel_num)
 
 void sample_dbg_dac(const uint32_t value)
 {
+#if HRV_AVAILABLE
     if (value & (1u << 20u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
     if (value & (1u << 21u)) dac_write(SPI_CS_HRV_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
+#endif
+#if EMU_AVAILABLE
     if (value & (1u << 22u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_A_ADDR | (value & 0xFFFF));
     if (value & (1u << 23u)) dac_write(SPI_CS_EMU_DAC_PIN, DAC_CH_B_ADDR | (value & 0xFFFF));
+#endif
 }
 
 
@@ -275,8 +302,12 @@ static void ads8691_init(const uint32_t cs_pin, const bool_ft activate)
 void sample_init()
 {
     /* Chip-Select signals are active low */
+#if HRV_AVAILABLE
     GPIO_ON(SPI_CS_HRV_DAC_MASK | SPI_CS_HRV_C_ADC_MASK | SPI_CS_HRV_V_ADC_MASK);
+#endif
+#if EMU_AVAILABLE
     GPIO_ON(SPI_CS_EMU_DAC_MASK | SPI_CS_EMU_ADC_MASK);
+#endif
     GPIO_OFF(SPI_SCLK_MASK | SPI_MOSI_MASK);
 
     buf_inp_samples                              = SHARED_MEM.buffer_iv_inp_ptr->sample;
@@ -295,12 +326,12 @@ void sample_init()
 #endif   // ENABLE_AUX
 
     /* deactivate hw-units when not needed, initialize the other */
+
+#if HRV_AVAILABLE
+    GPIO_TOGGLE(DEBUG_PIN1_MASK);
     const bool_ft use_harvester =
             (mode == MODE_HARVESTER) || (mode == MODE_HRV_ADC_READ) || (mode == MODE_DEBUG);
-    const bool_ft use_emulator =
-            (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
 
-    GPIO_TOGGLE(DEBUG_PIN1_MASK);
     dac8562_init(SPI_CS_HRV_DAC_PIN, use_harvester);
     // TODO: init more efficient, can be done all same ICs at the same time (common cs_low)
     // just init-emulator takes 10.5 us, 5x DAC * 750 ns, 4x ADC x 1440 ns
@@ -319,8 +350,13 @@ void sample_init()
     ads8691_init(SPI_CS_HRV_C_ADC_PIN, use_harvester);
     // ⤷ TODO: when asm-spi-code would take pin-mask, the init could be done in parallel
     ads8691_init(SPI_CS_HRV_V_ADC_PIN, use_harvester);
+#endif // HRV_AVAILABLE
 
+#if EMU_AVAILABLE
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
+    const bool_ft use_emulator =
+            (mode == MODE_EMULATOR) || (mode == MODE_EMU_ADC_READ) || (mode == MODE_DEBUG);
+
     dac8562_init(SPI_CS_EMU_DAC_PIN, use_emulator);
     ads8691_init(SPI_CS_EMU_ADC_PIN, use_emulator);
 
@@ -331,6 +367,7 @@ void sample_init()
         // TODO: we also need to make sure, that this fn returns voltages to same, zero or similar
         //  (init is called after sampling, but is the mode correct?)
     }
+#endif // EMU_AVAILABLE
 
     GPIO_TOGGLE(DEBUG_PIN1_MASK);
     /* init harvester & converter */

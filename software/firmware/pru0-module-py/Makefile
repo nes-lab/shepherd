@@ -4,12 +4,16 @@ CFLAGS = -std=gnu99
 CFLAGS += -funsigned-char
 CFLAGS += -funsigned-bitfields
 
+# Cape Hardware, with sensible default
+CAPE_HW_VER ?= 25
+CFLAGS += -DCAPE_HW_VER=$(CAPE_HW_VER)
+
 # Optimization -> space-saving
 CFLAGS += -Os
 CFLAGS += -g
 CFLAGS += -flto
 
-CFLAGS += -Wall -Wextra
+CFLAGS += -Wall -Wextra -Wpedantic
 CFLAGS += -fanalyzer
 # workaround to allow compilation without pru
 CFLAGS += -D__PYTHON__

@@ -22,6 +22,8 @@
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: all
+    params:
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   loop:
     - pru0-shepherd-fw  # default: EMU
     - pru1-shepherd-fw
@@ -38,6 +40,8 @@
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/{{ item }}"
     target: install
+    params:
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   loop:
     - pru0-shepherd-fw
     - pru1-shepherd-fw
@@ -56,6 +60,7 @@
     target: all
     params:
       TYPE: HRV
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -69,6 +74,7 @@
     target: install
     params:
       TYPE: HRV
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   become: true
 
 # build second programmer
@@ -82,6 +88,7 @@
     target: all
     params:
       TYPE: SBW
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   environment:
     PRU_CGT: '{{ sheep_ti_pru_cgt_path }}'
     PRU_CGT_SUPPORT: '{{ sheep_ti_pru_support_path }}'
@@ -94,6 +101,7 @@
     target: install
     params:
       TYPE: SBW
+      CAPE_HW_VER: '{{ sheep_cape_hw_ver }}'
   become: true
 
 - name: Clean shepherd device tree
@@ -101,10 +109,27 @@
     chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: clean
 
-- name: Build and install device tree overlay
+- name: Build and install device tree overlay v24
   community.general.make:
     chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
     target: install
+    params:
+      CAPE_HW_VER: 24
+  tags:
+    - install
+    - device-tree
+
+- name: Clean shepherd device tree
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
+    target: clean
+
+- name: Build and install device tree overlay v25
+  community.general.make:
+    chdir: "{{ sheep_install_path }}/software/firmware/device-tree"
+    target: install
+    params:
+      CAPE_HW_VER: 25
   tags:
     - install
     - device-tree

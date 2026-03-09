@@ -7,10 +7,10 @@
 // #include <dt-bindings/pinctrl/omap.h>
 
 // 335x bit defines, Provided by SPRUH73q, chapter 9.2.2 Pad Control Register
-#define PULL_DISABLE                  (1 << 3) // 0: enable        1: disable (strange, but switched)
-#define PULL_UP                       (1 << 4) // 0: PD            1: PU
-#define RX_ACTIVE                     (1 << 5) // 0: output,       1: in&out
-#define SLEW_CTRL                     (1 << 6) // 0: fast,         1: slow
+#define PULL_DISABLE (1 << 3) // 0: enable        1: disable (strange, but switched)
+#define PULL_UP      (1 << 4) // 0: PD            1: PU
+#define RX_ACTIVE    (1 << 5) // 0: output,       1: in&out
+#define SLEW_CTRL    (1 << 6) // 0: fast,         1: slow
 // for clean
 
 /* omap.h */
@@ -23,14 +23,14 @@
  */
 
 /* 34xx mux mode options for each pin. See TRM for options */
-#define MUX_MODE0                     0
-#define MUX_MODE1                     1
-#define MUX_MODE2                     2
-#define MUX_MODE3                     3
-#define MUX_MODE4                     4
-#define MUX_MODE5                     5
-#define MUX_MODE6                     6
-#define MUX_MODE7                     7
+#define MUX_MODE0    (0)
+#define MUX_MODE1    (1)
+#define MUX_MODE2    (2)
+#define MUX_MODE3    (3)
+#define MUX_MODE4    (4)
+#define MUX_MODE5    (5)
+#define MUX_MODE6    (6)
+#define MUX_MODE7    (7)
 
 /* REMOVED A SECTION | REMOVED A SECTION | REMOVED A SECTION | REMOVED A SECTION */
 

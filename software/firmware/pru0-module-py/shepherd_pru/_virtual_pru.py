@@ -48,13 +48,13 @@ def get_device() -> ct.CDLL:
         "get_I_mid_out_nA": (None, ct.c_uint32),
         "get_V_output_uV": (None, ct.c_uint32),
         "get_state_log_intermediate": (None, bool_ft),
-        "set_batok_pin": ([bool_ft], None),
+        "set_power_good_state": ([uint8_ft], None),
         # pru_source.c (local vSource-helper-fn) #####
         "set_harvester_config": ([ct.POINTER(HarvesterConfig)], None),
         "set_storage_config": ([ct.POINTER(StorageConfig)], None),
         "set_calibration_config": ([ct.POINTER(CalibrationConfig)], None),
         "set_converter_config": ([ct.POINTER(ConverterConfig)], None),
-        "get_vsource_batok_pin_value": (None, bool_ft),
+        "get_vsource_power_good_pins_state": (None, uint8_ft),
         "get_vsource_skip_gpio_logging": (None, bool_ft),
         "vsrc_iterate_sampling": ([ct.c_uint32, ct.c_uint32, ct.c_uint32], ct.c_uint32),
         # math64_safe.c ############################## fully tested

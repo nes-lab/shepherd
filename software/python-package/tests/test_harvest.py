@@ -40,6 +40,7 @@ def harvester(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 @pytest.mark.usefixtures("_shepherd_up")
 def test_instantiation(tmp_path: Path) -> None:
     cfg = HarvestTask(output_path=tmp_path / "hrv_123.h5")
@@ -49,6 +50,7 @@ def test_instantiation(tmp_path: Path) -> None:
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
     harvester.start(wait_blocking=False)
     harvester.wait_for_start(15)
@@ -62,6 +64,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
 
 
 @pytest.mark.hardware  # TODO: extend with new harvester-options
+@pytest.mark.harvester
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_harvester_fn(tmp_path: Path) -> None:

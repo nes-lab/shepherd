@@ -6,6 +6,7 @@ from shepherd_sheep.cli import cli
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_target_power_min_arg_a(
@@ -16,6 +17,7 @@ def test_cli_target_power_min_arg_a(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_target_power_min_arg_b(
@@ -26,6 +28,7 @@ def test_cli_target_power_min_arg_b(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_target_power_min_arg_c(
@@ -36,6 +39,7 @@ def test_cli_target_power_min_arg_c(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_target_power_explicit_a(
@@ -49,6 +53,7 @@ def test_cli_target_power_explicit_a(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_target_power_explicit_b(

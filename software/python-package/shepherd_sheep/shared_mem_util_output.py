@@ -221,7 +221,7 @@ class SharedMemUtilOutput:
         # TODO: cleanup, every crit-instance should be reported
         util_mean_val = data.pru0_tsample_mean.mean() * 100 / commons.SAMPLE_INTERVAL_NS
         util_max_val = data.pru0_tsample_max.max() * 100 / commons.SAMPLE_INTERVAL_NS
-        util_mean_crit = util_mean_val > 98.0
+        util_mean_crit = util_mean_val > 95.0
         util_max_crit = util_max_val >= 100.0
 
         if (self.warn_counter > 0) and (util_mean_crit or util_max_crit):

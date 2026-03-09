@@ -7,6 +7,18 @@ corresponding implementation in `software/firmware/include/commons.h`
 
 """
 
+from shepherd_sheep.eeprom import retrieve_hw_version
+
+CAPE_HW_VER_DEFAULT = 25
+CAPE_HW_VER = retrieve_hw_version(ver_default=CAPE_HW_VER_DEFAULT)
+
+CAPE_HAS_HRV = CAPE_HW_VER in {22, 23, 24}
+CAPE_HAS_EMU = CAPE_HW_VER in {22, 23, 24, 25}
+
+if CAPE_HW_VER not in range(22, 26):
+    msg = f"Shepherd can't handle this CAPE (HW_VER={CAPE_HW_VER})"
+    raise ValueError(msg)
+
 # ############################################################################
 # PRU - CONFIG  ##############################################################
 # ############################################################################
@@ -47,7 +59,7 @@ MSG_PGM_ERROR_PARSE = 0x96  # val0: ihex_return, val1: line number of hex
 MSG_DBG_ADC = 0xA0
 MSG_DBG_DAC = 0xA1
 MSG_DBG_GPI = 0xA2
-MSG_DBG_GP_BATOK = 0xA3
+MSG_DBG_GP_POWER_GOOD = 0xA3
 MSG_DBG_PRINT = 0xA6
 
 MSG_DBG_VSRC_P_INP = 0xA8
@@ -76,22 +88,3 @@ pru_errors: dict[int, str] = {
     0xE9: "[ERR_ADC_NOT_FOUND] PRU failed to read back from ADC -> is cape powered?",
     0xF0: "[ERR_RESTART] PRU-restart was unwanted",
 }
-
-# fmt: off
-# ruff: noqa: E501
-GPIO_LOG_BIT_POSITIONS = {
-    0: {"pru_reg": "r31_00", "name": "tgt_gpio0",   "bb_pin": "P8_45", "sys_pin": "P8_14", "sys_reg": "26"},
-    1: {"pru_reg": "r31_01", "name": "tgt_gpio1",   "bb_pin": "P8_46", "sys_pin": "P8_17", "sys_reg": "27"},
-    2: {"pru_reg": "r31_02", "name": "tgt_gpio2",   "bb_pin": "P8_43", "sys_pin": "P8_16", "sys_reg": "14"},
-    3: {"pru_reg": "r31_03", "name": "tgt_gpio3",   "bb_pin": "P8_44", "sys_pin": "P8_15", "sys_reg": "15"},
-    4: {"pru_reg": "r31_04", "name": "tgt_gpio4",   "bb_pin": "P8_41", "sys_pin": "P8_26", "sys_reg": "29"},
-    5: {"pru_reg": "r31_05", "name": "tgt_gpio5",   "bb_pin": "P8_42", "sys_pin": "P8_36", "sys_reg": "16"},
-    6: {"pru_reg": "r31_06", "name": "tgt_gpio6",   "bb_pin": "P8_39", "sys_pin": "P8_34", "sys_reg": "17"},
-    7: {"pru_reg": "r31_07", "name": "tgt_uart_rx", "bb_pin": "P8_40", "sys_pin": "P9_26", "sys_reg": "14"},
-    8: {"pru_reg": "r31_08", "name": "tgt_uart_tx", "bb_pin": "P8_27", "sys_pin": "P9_24", "sys_reg": "15"},
-    9: {"pru_reg": "r31_09", "name": "tgt_bat_ok",  "bb_pin": "P8_29", "sys_pin": "",      "sys_reg": ""},
-}
-# Note: this table is copied (for hdf5-reference) from pru1/main.c, HW-Rev2.4b
-# Note: shepherd-core has gpio-models + data! this lives now in
-#       shepherd_core/shepherd_core/data_models/testbed/gpio_fixture.yaml
-# fmt: on

@@ -1,0 +1,11 @@
+---
+
+- name: Remove shepherd-related space-waster
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/opt/shepherd/.git/"
+    - "/opt/shepherd/hardware/"
+    - "/opt/shepherd/docs/"
+    - "/opt/shepherd/deploy/"

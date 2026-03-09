@@ -76,10 +76,9 @@ uint32_t storage_update(const uint32_t I_delta_nA_n4, const bool_ft is_charging)
         dSoC_curr   u64 = u32 * u32
         V_delta     u64 = u32 * u32
     */
-    uint64_t dSoC_leak_1_n62 = mul32e(state.V_OC_uV_n8 >> 6u, STORE_CFG.Constant_1_per_uV_n60);
+    uint64_t dSoC_leak_1_n62  = mul32e(state.V_OC_uV_n8 >> 6u, STORE_CFG.Constant_1_per_uV_n60);
     // alternatively this could be added to P_out_fW (like before)
-    if (state.SoC_1_n62 >= dSoC_leak_1_n62) state.SoC_1_n62 = state.SoC_1_n62 - dSoC_leak_1_n62;
-    else state.SoC_1_n62 = 0;
+    state.SoC_1_n62           = sub64(state.SoC_1_n62, dSoC_leak_1_n62);
 
     const uint64_t dSoC_1_n62 = mul32e(I_delta_nA_n4, STORE_CFG.Constant_1_per_nA_n60) >> 2u;
     if (is_charging)
@@ -87,8 +86,7 @@ uint32_t storage_update(const uint32_t I_delta_nA_n4, const bool_ft is_charging)
         state.SoC_1_n62 += dSoC_1_n62;
         if (state.SoC_1_n62 > SoC_MAX_1_n62) state.SoC_1_n62 = SoC_MAX_1_n62;
     }
-    else if (state.SoC_1_n62 > dSoC_1_n62) state.SoC_1_n62 -= dSoC_1_n62;
-    else state.SoC_1_n62 = 0u;
+    else state.SoC_1_n62 = sub64(state.SoC_1_n62, dSoC_1_n62);
 
     const uint8_ft pos_lut           = position_LuT();
     state.V_OC_uV_n8                 = STORE_CFG.LuT_VOC_uV_n8[pos_lut];
@@ -96,10 +94,8 @@ uint32_t storage_update(const uint32_t I_delta_nA_n4, const bool_ft is_charging)
     const uint32_t V_delta_uV_n8     = mul32e(I_delta_nA_n4, R_series_kOhm_n32) >> 28u;
 
     uint32_t       V_cell_uV_n8;
-    if (is_charging) V_cell_uV_n8 = state.V_OC_uV_n8 + V_delta_uV_n8;
-    // TODO: use add32 above? no spare ticks left ATM
-    else if (state.V_OC_uV_n8 > V_delta_uV_n8) V_cell_uV_n8 = state.V_OC_uV_n8 - V_delta_uV_n8;
-    else V_cell_uV_n8 = 0u;
+    if (is_charging) V_cell_uV_n8 = add32(state.V_OC_uV_n8, V_delta_uV_n8);
+    else V_cell_uV_n8 = sub32(state.V_OC_uV_n8, V_delta_uV_n8);
 
     if (state.SoC_1_n62 == 0u) return 0u;
     return V_cell_uV_n8;

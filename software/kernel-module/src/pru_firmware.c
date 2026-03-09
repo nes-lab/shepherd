@@ -82,9 +82,7 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 }
 
 void read_pru_firmware(u8 pru_num, char *file_name)
-{
-    sprintf(file_name, shp_pdata->rproc_prus[pru_num]->firmware);
-}
+{ sprintf(file_name, shp_pdata->rproc_prus[pru_num]->firmware); }
 
 int fwncmp(u8 pru_num, const char *file_name)
 {

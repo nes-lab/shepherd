@@ -40,9 +40,9 @@
     cmd: pip install uv --upgrade --break-system-packages
   become: true
 
-- name: UV - Uninstall shepherd python package
+- name: UV - Uninstall shepherd python package (Sys instead of vEnv)
   ansible.builtin.command:
-    cmd: "/usr/local/bin/uv pip uninstall {{ item }}"
+    cmd: "/usr/local/bin/uv pip uninstall {{ item }} --system --break-system-packages"
     chdir: '/home/{{ ansible_user }}'
   loop:
     - shepherd-core

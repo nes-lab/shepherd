@@ -7,9 +7,12 @@ jobs:
 
   pru-gcc:
     concurrency:
-      group: pru-gcc-${{ github.workflow }}-${{ github.ref }}
+      group: pru-gcc-${{ github.workflow }}-${{ github.ref }}-${{ matrix.cape_hw_ver }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cape_hw_ver: [ "24", "25" ]
     env:
       # as in roles/sheep/vars/main.yml
       gcc_pru_cc_release: "pru-elf-2025.05.amd64"
@@ -53,38 +56,35 @@ jobs:
 
       - name: Build PRU0 - SHP EMU 🧱
         run: |
-          make TYPE=EMU
+          make clean
+          make TYPE=EMU CAPE_HW_VER=${{ matrix.cape_hw_ver }}
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-EMU-fw.elf
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
-      - name: Clean Programmer 🧹
-        run: make clean
-        working-directory: "software/firmware/pru0-programmer/"
-
       - name: Build PRU0 - SHP HRV 🧱
         run: |
-          make TYPE=HRV
+          make clean
+          make TYPE=HRV CAPE_HW_VER=${{ matrix.cape_hw_ver }}
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-shepherd-HRV-fw.elf
         working-directory: "software/firmware/pru0-shepherd-fw/"
 
       - name: Build PRU1 🧱
         run: |
-          make
+          make clean
+          make CAPE_HW_VER=${{ matrix.cape_hw_ver }}
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru1-shepherd-fw.elf
         working-directory: "software/firmware/pru1-shepherd-fw/"
 
       - name: Build SWD Programmer 🧱
         run: |
-          make TYPE=SWD
+          make clean
+          make TYPE=SWD CAPE_HW_VER=${{ matrix.cape_hw_ver }}
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SWD-fw.elf
-        working-directory: "software/firmware/pru0-programmer/"
-
-      - name: Clean Programmer 🧹
-        run: make clean
         working-directory: "software/firmware/pru0-programmer/"
 
       - name: Build SBW Programmer 🧱
         run: |
-          make TYPE=SBW
+          make clean
+          make TYPE=SBW CAPE_HW_VER=${{ matrix.cape_hw_ver }}
           ${{ env.PRU_GCC }}/bin/pru-size gen_gcc/pru0-programmer-SBW-fw.elf
         working-directory: "software/firmware/pru0-programmer/"

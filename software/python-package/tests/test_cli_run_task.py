@@ -73,6 +73,7 @@ def path_here() -> Path:
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 @pytest.mark.timeout(120)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_no_cal(
@@ -93,6 +94,7 @@ def test_cli_harvest_no_cal(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_parameters_most(
@@ -114,6 +116,7 @@ def test_cli_harvest_parameters_most(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_parameters_minimal(
@@ -133,6 +136,7 @@ def test_cli_harvest_parameters_minimal(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_preconfigured(
@@ -146,6 +150,7 @@ def test_cli_harvest_preconfigured(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_harvest_preconf_etc_shp_examples(
@@ -159,6 +164,7 @@ def test_cli_harvest_preconf_etc_shp_examples(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_default_minimal(
@@ -181,6 +187,7 @@ def test_cli_emulate_default_minimal(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_custom_virtsource(
@@ -205,6 +212,7 @@ def test_cli_emulate_with_custom_virtsource(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_with_bq25570(
@@ -228,6 +236,7 @@ def test_cli_emulate_with_bq25570(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage(
@@ -251,6 +260,7 @@ def test_cli_emulate_aux_voltage(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_long(
@@ -281,6 +291,7 @@ def test_cli_emulate_parameters_long(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_parameters_minimal(
@@ -299,6 +310,8 @@ def test_cli_emulate_parameters_minimal(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester  # uses recording of hrv
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconfigured(
@@ -311,6 +324,8 @@ def test_cli_emulate_preconfigured(
 
 
 @pytest.mark.hardware
+@pytest.mark.harvester  # uses recording of hrv
+@pytest.mark.emulator
 @pytest.mark.timeout(80)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_preconf_etc_shp_examples(
@@ -324,6 +339,7 @@ def test_cli_emulate_preconf_etc_shp_examples(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(70)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_emulate_aux_voltage_fail(
@@ -374,6 +390,7 @@ def test_cli_fw_mod_task(
 
 
 @pytest.mark.hardware
+@pytest.mark.emulator
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_cli_programming(

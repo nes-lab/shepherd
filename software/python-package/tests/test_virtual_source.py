@@ -90,7 +90,7 @@ def difference_percent(val1: float, val2: float, offset: float) -> float:
     return round(100 * abs((val1 + offset) / (val2 + offset) - 1), 3)
 
 
-@pytest.mark.hardware
+@pytest.mark.hardware  # TODO: might need @pytest.mark.emulator
 @pytest.mark.src_name("./_test_config_virtsource.yaml")
 def test_vsource_add_charge(
     pru_vsource: ShepherdDebug,
@@ -308,9 +308,13 @@ def test_vsource_diodecap(
         )
         assert difference_percent(V_pru_mV, V_target_mV, 50) < 3
         assert difference_percent(V_pyt_mV, V_target_mV, 50) < 3
+    assert pyt_vsource.W_inp_fWs == 0
+    assert pyt_vsource.W_out_fWs == 0
+    assert pru_vsource.W_inp_fWs == 0
+    assert pru_vsource.W_out_fWs == 0
 
-    # feed 200 mA -> fast charging cap
-    A_inp_nA = 200 * 10**6
+    # feed 100 mA -> fast charging cap
+    A_inp_nA = 100 * 10**6
     print(f"DiodeCap input different voltage with {A_inp_nA * 1e-6} mA -> fast charge")
     V_diode_mV = pyt_vsource.cfg_src.V_input_drop_mV
     for V_inp_mV in voltages_mV:
@@ -318,11 +322,11 @@ def test_vsource_diodecap(
         if V_postDiode_mV < V_pru_mV and V_postDiode_mV < V_pyt_mV:
             # input must be above cap-voltage
             continue
-        for _ in range(100):
+        for _ in range(200):
             V_pru_mV = pru_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
             V_pyt_mV = pyt_vsource.iterate_sampling(V_inp_mV * 10**3, A_inp_nA, 0) * 10**-3
         print(
-            " -> inp=200mA - "
+            " -> inp=100mA - "
             f"Inp = {V_inp_mV} mV, "
             f"PostDiode = {V_postDiode_mV} mV, "
             f"OutPru = {V_pru_mV:.3f} mV, "
@@ -330,6 +334,11 @@ def test_vsource_diodecap(
         )
         assert difference_percent(V_pru_mV, V_postDiode_mV, 50) < 3
         assert difference_percent(V_pyt_mV, V_postDiode_mV, 50) < 3
+    print(f"Energy Input: Py = {pyt_vsource.W_inp_fWs}, PRU = {pru_vsource.W_inp_fWs} fWs")
+    assert pyt_vsource.W_out_fWs == 0
+    assert pru_vsource.W_out_fWs == 0
+    assert pyt_vsource.W_inp_fWs > pyt_vsource.W_out_fWs
+    assert pru_vsource.W_inp_fWs > pru_vsource.W_out_fWs
 
     # feed 5 mA, drain double of that -> output should settle at (V_in - V_drop)/2
     A_inp_nA = 5 * 10**6
@@ -349,6 +358,8 @@ def test_vsource_diodecap(
         print(
             f" -> OutPru = {V_pru_mV:.3f} mV, OutPy = {V_pyt_mV:.3f} mV",
         )
+    print(f"python energy-efficiency = {100 * pyt_vsource.W_out_fWs / pyt_vsource.W_inp_fWs:.3f} %")
+    print(f"PRU    energy-efficiency = {100 * pru_vsource.W_out_fWs / pru_vsource.W_inp_fWs:.3f} %")
     assert difference_percent(V_pru_mV, V_settle_mV, 50) < 3
     assert difference_percent(V_pyt_mV, V_settle_mV, 50) < 3
     assert pyt_vsource.W_inp_fWs >= pyt_vsource.W_out_fWs

@@ -47,7 +47,7 @@
     } # TODO: this _overlay_pru should maybe be _overlay_addr0? it is not listed in recent uEnvs
     - {
       regexpress: '#?dtb_overlay=.*$',
-      replacement: "dtb_overlay=/lib/firmware/BB-SHPRD-00A0.dtbo",
+      replacement: "dtb_overlay=/lib/firmware/BB-SHPRD-{{ sheep_cape_hw_ver }}A0.dtbo",
     }
     - {
       regexpress: '#?uboot_overlay_addr4=.*$',

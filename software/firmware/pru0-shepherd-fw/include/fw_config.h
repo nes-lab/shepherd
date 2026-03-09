@@ -5,7 +5,7 @@
    -> select a primary mode when none is chosen
 */
 #if !(defined(EMU_SUPPORT) || defined(HRV_SUPPORT))
-  #define EMU_SUPPORT
+  #define EMU_SUPPORT (true)
 #endif
 
 #endif // PRU0_FW_CONFIG_H_

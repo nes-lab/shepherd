@@ -24,15 +24,20 @@
     purge: true
   failed_when: false
   with_items: "{{ cleaning_packages }}"
+  become: true
 
 - name: Remove extra Firmwares
-  ansible.builtin.command: 'rm {{ item }}'
+  ansible.builtin.command: 'rm --force {{ item }}'
+  # --force -> ignore non-existing files
   loop:
 #    - "/lib/firmware/BB*"
+    - "/lib/firmware/BBAI*"
+    - "/lib/firmware/BBBLUE*"
+    - "/lib/firmware/BBORG*"
     - "/lib/firmware/PB*"
     - "/lib/firmware/GHI-*"
     - "/lib/firmware/BW-*"
     - "/lib/firmware/BEAGLE*"
     - "/lib/firmware/am57*"
 #    - "/lib/firmware/bb-*"
-  when: false
+  become: true
