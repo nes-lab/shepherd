@@ -19,7 +19,7 @@
         cleaning_delete_recordings: true
         cleaning_remove_software: false
         cleaning_zero_free_space: true
-
+        cleaning_shepherd_repo_files: true
 
     - name: Last Step - run the following backup-command manually
       ansible.builtin.debug:

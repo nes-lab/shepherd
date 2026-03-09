@@ -29,6 +29,7 @@ For an active installation:
 - distribute ssh keys of server & admin (`NESLAB/2026-misc/authorized_keys`)
 - run ansible `deploy/dev_acquire_image.yml`
 - pull image with command given by `deploy/dev_acquire_image.yml`
+  - best is to boot from a second SD-Card that was just bootstrapped to avoid data-corruption
 - burn image to SD and check if it boots properly
 
 useful commands
