@@ -100,6 +100,7 @@
   - maybe it is cheaper to just plug in an interface PCB with a second connector to get the same result
 - P2 Connector for external triggering & signaling has no real use-case
 - describe P3 on PCB -> sync-port
+- allow routing AUX-voltage (second output of DAC) to the same target port to mimic V_Sense to allow developing better intermittent algorithms (allows sensing emulated V_harvest or V_storage_cap)
 
 ## Target Pin Def
 
