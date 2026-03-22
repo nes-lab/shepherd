@@ -196,6 +196,21 @@ def resync(ctx: click.Context) -> None:
     activate_verbosity()
     with ctx.obj["herd"] as herd:
         exit_code = herd.resync()
+        if exit_code == 0:
+            exit_code = herd.get_sync()
+    ctx.exit(exit_code)
+
+
+@cli.command(
+    short_help="Gets current sync time-difference of sheep",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def timediff(ctx: click.Context) -> None:
+    """Get current time and restarts PTP on each sheep."""
+    activate_verbosity()
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.get_sync()
     ctx.exit(exit_code)
 
 

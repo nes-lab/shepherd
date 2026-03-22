@@ -847,22 +847,8 @@ class Herd:
         )
         # TODO: best case - add all to one file or a new inventories-model?
 
-    def resync(self) -> int:
-        """Get current time via ntp and restart PTP on each sheep."""
-        commands = [
-            "systemctl stop phc2sys@eth0",
-            "systemctl stop ptp4l@eth0",
-            "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
-            "systemctl start phc2sys@eth0",
-            "systemctl start ptp4l@eth0",
-            "shepherd-sheep fix",  # restarts kernel module
-        ]
-        exit_code = 0
-        for command in commands:
-            ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
-            self.print_output(ret, verbose=True)
-            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
-
+    def get_sync(self) -> int:
+        """Get current time-variation of each sheep."""
         # Get the current time on each target node
         replies_date = self.run_cmd(
             sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False
@@ -879,6 +865,23 @@ class Herd:
             log.error("Timediff after resync is too large (%d s)", ts_diff)
             return 1
         log.info("Timediff is OK (%d s)", ts_diff)
+        return 0
+
+    def resync(self) -> int:
+        """Get current time via ntp and restart PTP on each sheep."""
+        commands = [
+            "systemctl stop phc2sys@eth0",
+            "systemctl stop ptp4l@eth0",
+            "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
+            "systemctl start phc2sys@eth0",
+            "systemctl start ptp4l@eth0",
+            "shepherd-sheep fix",  # restarts kernel module
+        ]
+        exit_code = 0
+        for command in commands:
+            ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
+            self.print_output(ret, verbose=True)
+            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
         return exit_code
 
     @validate_call
