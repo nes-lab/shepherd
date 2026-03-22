@@ -33,7 +33,7 @@
 - name: Set hostname (from MAC)
   ansible.builtin.hostname:
     name: "{{ testbed_observer_hostname }}"
-  when: testbed_observer_hostname != old_hostname
+  when: old_hostname.stdout.strip() is not testbed_observer_hostname
 
 - name: Integrate NW-Storage
   ansible.builtin.include_tasks:

@@ -64,17 +64,28 @@ shepherd-herd shell "sudo chmod 0600 /etc/sysrqd.secret"
 shepherd-herd shell "sudo systemctl restart sysrqd"
 shepherd-herd shell "sudo systemctl status sysrqd"
 
-telnet 192.168.165.200 4094  --> only working inside sheep-network
+telnet 192.168.165.200 4094
+# -> only working inside sheep-network
 > PW
 > b  (for hard reboot)
-
-to exit: ctrl + altgr + ] -> on telnet-console: quit
+# to exit: ctrl + altgr + ] -> on telnet-console: quit
 ```
 
 Grow Main-Partition on SD
 
 ```shell
-yes | sudo parted /dev/mmcblk0 resizepart 1 100%
-sudo resize2fs /dev/mmcblk0p1
-df -h
+shepherd-herd shell "yes | sudo parted /dev/mmcblk0 resizepart 1 100% ---pretend-input-tty"
+shepherd-herd shell "sudo resize2fs /dev/mmcblk0p1"
+shepherd-herd shell "df -h | grep mmc"
+```
+
+Add local shepherd-repo
+
+```shell
+shepherd-herd shell "sudo rm -rf /opt/shepherd"
+shepherd-herd shell "cd /opt/ && sudo git clone https://github.com/nes-lab/shepherd"
+#shepherd-herd shell "cd /opt/shepherd && git checkout dev"
+shepherd-herd shell "cd /opt/shepherd && git pull"
+shepherd-herd shell "sudo chown -R jane /opt/shepherd/"
+shepherd-herd shell "sudo chmod a+rwx -R /opt/shepherd/"
 ```
