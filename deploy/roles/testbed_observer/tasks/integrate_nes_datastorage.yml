@@ -5,6 +5,11 @@
   ansible.builtin.debug:
     var: testbed_observer_hostname
 
+- name: APT - Update Cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
 - name: APT - Install required packages for Python
   ansible.builtin.apt:
     name: "nfs-common"
