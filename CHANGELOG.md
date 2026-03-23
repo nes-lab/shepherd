@@ -50,11 +50,22 @@
   - repair and tune functionality
   - extend cleanup before image-generation
   - add config for journald, to limit storage usage
+  - tweak renaming of hostnames
 - documentation
   - improve information about compatible linux distros
   - add info about how to set up a read-to-use linux-image
   - add info about how to switch software to another cape-versions
 - internal - move doc for the release-procedure to root readme
+- hardware
+  - add case for observer
+  - add test-routine for new capes
+  - update testbed information-sticker
+  - add cage for cape
+  - add bulk holders for up to 5x cape and 10x target PCBs (can be configured via OpenSCAD) 
+- herd - add timediff-command
+- cal-tool
+  - add plotting-script to show multiple cal
+  - add CLI-command to plot a cal
 
 ## 2026.02.1
 
