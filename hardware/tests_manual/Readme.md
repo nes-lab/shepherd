@@ -54,4 +54,4 @@ python3 emu_plot.py
 
 ## Final Steps
 
-Run the calibration with the SMU
+Run the calibration with the SMU, located in `\software\shepherd-calibration\`.
