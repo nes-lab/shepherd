@@ -62,6 +62,7 @@
   - update testbed information-sticker
   - add cage for cape
   - add bulk holders for up to 5x cape and 10x target PCBs (can be configured via OpenSCAD)
+  - add cable clip 3d-file
 - herd - add timediff-command
 - cal-tool
   - add plotting-script to show multiple cal
