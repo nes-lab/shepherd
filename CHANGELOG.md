@@ -61,7 +61,7 @@
   - add test-routine for new capes
   - update testbed information-sticker
   - add cage for cape
-  - add bulk holders for up to 5x cape and 10x target PCBs (can be configured via OpenSCAD) 
+  - add bulk holders for up to 5x cape and 10x target PCBs (can be configured via OpenSCAD)
 - herd - add timediff-command
 - cal-tool
   - add plotting-script to show multiple cal
