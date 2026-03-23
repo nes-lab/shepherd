@@ -177,12 +177,13 @@ def read(
         shpcal.retrieve(cal_file)
 
 
+meas_path_arg_t = typer.Argument(
+    default=Path().cwd(), help="root path or single .measurement.yaml-file"
+)
+
+
 @cli_cal.command()
-def plot(
-    meas_path: Path | None = typer.Argument(
-        default=Path().cwd(), help="root path or single .measurement.yaml-file"
-    ),
-) -> None:
+def plot(meas_path: Path | None = meas_path_arg_t) -> None:
     """Plot measured calibration-data (provide root path or single .measurement.yaml-file)"""
     if meas_path is None:
         meas_path = Path().cwd()
