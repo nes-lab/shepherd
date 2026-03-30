@@ -53,6 +53,13 @@ ip a
 - ansible `deploy/setup_testbed_observer.yml` (secure, MAC broadcasting, NFS mounting)
 - grow partition? -> add to observer-role?
 
+Update distro
+
+```Shell
+shepherd-herd shell "sudo apt update"
+shepherd-herd shell "sudo apt dist-upgrade -y"
+```
+
 Activate [SysRqd](https://github.com/jd/sysrqd)
 
 ```Shell
@@ -64,6 +71,7 @@ shepherd-herd shell "sudo chmod 0600 /etc/sysrqd.secret"
 shepherd-herd shell "sudo systemctl restart sysrqd"
 shepherd-herd shell "sudo systemctl status sysrqd"
 
+# optional test:
 telnet 192.168.165.200 4094
 # -> only working inside sheep-network
 > PW
@@ -84,8 +92,14 @@ Add local shepherd-repo
 ```shell
 shepherd-herd shell "sudo rm -rf /opt/shepherd"
 shepherd-herd shell "cd /opt/ && sudo git clone https://github.com/nes-lab/shepherd"
-#shepherd-herd shell "cd /opt/shepherd && git checkout dev"
-shepherd-herd shell "cd /opt/shepherd && git pull"
 shepherd-herd shell "sudo chown -R jane /opt/shepherd/"
 shepherd-herd shell "sudo chmod a+rwx -R /opt/shepherd/"
+#shepherd-herd shell "cd /opt/shepherd && git checkout dev"
+shepherd-herd shell "cd /opt/shepherd && git pull"
+```
+
+In your local shepherd-repo you can add the observer-roll to the nodes:
+
+```Shell
+ansible-playbook deploy/setup_testbed_observer.yml
 ```
