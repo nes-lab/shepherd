@@ -7,7 +7,7 @@
 
 **Main Project**: <https://github.com/nes-lab/shepherd>
 
-**Source Code**: <https://github.com/nes-lab/shepherd/tree/main/software/shepherd_herd>
+**Source Code**: <https://github.com/nes-lab/shepherd/tree/main/software/shepherd-herd>
 
 ---
 
