@@ -30,6 +30,12 @@
   ansible.builtin.command: 'rm -rf /var/lib/apt/lists'
   become: true
 
+- name: UV - clean local cache
+  ansible.builtin.command:
+    cmd: 'sudo -E /usr/local/bin/uv cache clean'
+    chdir: '/home/{{ ansible_user }}'
+  become: false
+
 - name: Sync
   ansible.builtin.command: 'sync'
   changed_when: true
