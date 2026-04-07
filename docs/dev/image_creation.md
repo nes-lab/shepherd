@@ -17,8 +17,8 @@ For ansible setup:
 
 For an active installation:
 
-- change device-tree loaded during boot in `/boot/uEnv.txt` (24A0 or 25A0)
-- update pru-firmwares (modify envVar in `./software/build_pru.sh` and run script)
+- change device-tree loaded during boot in `/boot/uEnv.txt` (24A0 or 25A0) -> needs reboot
+- modify envVar in `./software/build_pru.sh` (24 or 25) and run script to update pru-firmwares 
 - python pulls cape-version from EEPROM automatically or defaults to the newest version
 
 ## Custom Install
