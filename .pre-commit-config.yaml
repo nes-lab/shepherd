@@ -94,6 +94,12 @@ repos:
         additional_dependencies: ["tomli"]  # for py<3.11
         exclude: \.(sch|brd|lbr)$
 
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.23.1
+    hooks:
+      - id: zizmor
+        args: ["--min-severity", "high", "--no-progress", "--fix", "."]
+
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v22.1.2
     hooks:
