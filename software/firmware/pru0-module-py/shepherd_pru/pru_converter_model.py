@@ -1,9 +1,9 @@
 import ctypes as ct
 from collections.abc import Sequence
 
-from shepherd_core import CalibrationEmulator
-from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
-from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
+from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.logger import log
 
 from ._virtual_pru import virtual_pru

@@ -11,36 +11,28 @@ from types import TracebackType
 from typing import TypedDict
 
 from pydantic import validate_call
-from shepherd_core import CalibrationEmulator
-from shepherd_core import CalibrationHarvester
 from shepherd_core import Reader
 from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
-from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
+from shepherd_core.data_models.base.calibration import CalibrationHarvester
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 from typing_extensions import Unpack
 
 from . import commons
-from . import sysfs_interface as sfs
+from . import sysfs_interface as sysfs
+from .hardware_cape_io import gpio_pin_nums
 from .logger import log
 from .shared_memory import SharedMemory
-from .sysfs_interface import check_sys_access
+from .sys_access import check_sys_access
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
     from periphery import GPIO
-
-gpio_pin_nums = {
-    "target_pwr_sel": 31,
-    "target_io_en": 60,
-    "target_io_sel": 30,
-    "en_shepherd": 23,
-    "en_harvester": 50,
-    "en_emulator": 51,
-}
 
 
 ShepherdIOError = IOError
@@ -119,11 +111,11 @@ class ShepherdIO:
         if mode == "harvester":
             if not commons.CAPE_HAS_HRV:
                 raise RuntimeError("Harvester mode not available for that Cape")
-            sfs.load_pru_firmware("pru0-shepherd-HRV")
+            sysfs.load_pru_firmware("pru0-shepherd-HRV")
         else:
             if not commons.CAPE_HAS_EMU:
                 raise RuntimeError("Emulator mode not available for that Cape")
-            sfs.load_pru_firmware("pru0-shepherd-EMU")
+            sysfs.load_pru_firmware("pru0-shepherd-EMU")
 
         self.mode = mode
         if mode in {"harvester", "emulator"}:
@@ -159,8 +151,8 @@ class ShepherdIO:
             log.debug("Shepherd hardware is powered up")
 
             log.info("Switching to '%s'-mode", self.mode)
-            sfs.write_mode(self.mode)
-            sfs.wait_for_state("idle", 5)
+            sysfs.write_mode(self.mode)
+            sysfs.wait_for_state("idle", 5)
 
             self.refresh_shared_mem()
 
@@ -174,7 +166,7 @@ class ShepherdIO:
             self.unload_shared_mem()
             raise
 
-        sfs.wait_for_state("idle", 3)
+        sysfs.wait_for_state("idle", 3)
         return self
 
     def __exit__(
@@ -184,7 +176,7 @@ class ShepherdIO:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        sfs.write_mode("none", force=True)
+        sysfs.write_mode("none", force=True)
         log.info("Now exiting ShepherdIO")
         self._power_down_shp()
         self.unload_shared_mem()
@@ -199,7 +191,7 @@ class ShepherdIO:
                 message types part of the data exchange protocol
             values (int): Actual content of the message
         """
-        sfs.write_pru_msg(msg_type, values)
+        sysfs.write_pru_msg(msg_type, values)
 
     def _get_msg(self, timeout_n: int = 5) -> tuple[int, list[int]]:
         """Tries to retrieve formatted message from PRU0.
@@ -212,8 +204,8 @@ class ShepherdIO:
         # TODO: cleanest way without exception: ask sysfs-file with current msg-count
         for _ in range(timeout_n):
             try:
-                return sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:  # noqa: PERF203
+                return sysfs.read_pru_msg()
+            except sysfs.SysfsInterfaceError:  # noqa: PERF203
                 time.sleep(self.segment_period_s)
                 continue
         raise ShepherdTimeoutError
@@ -223,8 +215,8 @@ class ShepherdIO:
         """Flushes msg_channel by reading all available bytes."""
         try:
             while True:
-                sfs.read_pru_msg()
-        except sfs.SysfsInterfaceError:
+                sysfs.read_pru_msg()
+        except sysfs.SysfsInterfaceError:
             pass
 
     def start(
@@ -241,7 +233,7 @@ class ShepherdIO:
         """
         if isinstance(start_time, float | int):
             log.debug("asking kernel module for start at %.2f", start_time)
-        success = sfs.set_start(start_time)
+        success = sysfs.set_start(start_time)
         if wait_blocking:
             self.wait_for_start(3_000_000)
         return success
@@ -253,12 +245,12 @@ class ShepherdIO:
         Args:
             timeout (float): Time to wait in seconds
         """
-        sfs.wait_for_state("running", timeout)
+        sysfs.wait_for_state("running", timeout)
 
     @staticmethod
     def reinitialize_prus() -> None:
-        sfs.set_stop(force=True)  # forces idle
-        sfs.wait_for_state("idle", 5)
+        sysfs.set_stop(force=True)  # forces idle
+        sysfs.wait_for_state("idle", 5)
 
     def refresh_shared_mem(self) -> None:
         self.unload_shared_mem()
@@ -281,27 +273,27 @@ class ShepherdIO:
     def _power_down_shp(self) -> None:
         log.debug("ShepherdIO is commanded to power down / cleanup")
         count = 1
-        while count < 6 and sfs.get_state() != "idle":
+        while count < 6 and sysfs.get_state() != "idle":
             try:
-                sfs.set_stop(force=True)  # will trigger reset
-            except sfs.SysfsInterfaceError:
+                sysfs.set_stop(force=True)  # will trigger reset
+            except sysfs.SysfsInterfaceError:
                 log.exception(
                     "CleanupRoutine caused an exception while trying to stop PRU (n=%d)",
                     count,
                 )
             try:
-                sfs.wait_for_state("idle", 3.0)
-            except sfs.SysfsInterfaceError:
+                sysfs.wait_for_state("idle", 3.0)
+            except sysfs.SysfsInterfaceError:
                 log.warning(
                     "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
                     count,
                 )
                 check_sys_access()
             count += 1
-        if sfs.get_state() != "idle":
+        if sysfs.get_state() != "idle":
             log.warning(
                 "CleanupRoutine gave up changing state, still '%s'",
-                sfs.get_state(),
+                sysfs.get_state(),
             )
         else:
             # will raise OSError if not idle, so avoid it
@@ -383,7 +375,7 @@ class ShepherdIO:
         Args:
             target: A or B for that specific Target-Port
         """
-        current_state = sfs.get_state()
+        current_state = sysfs.get_state()
         if current_state != "idle":
             self.reinitialize_prus()
         value = self.convert_target_port_to_bool(target)
@@ -443,7 +435,7 @@ class ShepherdIO:
                 False disables supply, setting it to True will link it
                 to the other channel
         """
-        sfs.write_dac_aux_voltage(voltage, cal_emu)
+        sysfs.write_dac_aux_voltage(voltage, cal_emu)
 
     @staticmethod
     def get_aux_voltage(cal_emu: CalibrationEmulator | None = None) -> float:
@@ -455,7 +447,7 @@ class ShepherdIO:
         Returns:
             aux voltage
         """
-        return sfs.read_dac_aux_voltage(cal_emu)
+        return sysfs.read_dac_aux_voltage(cal_emu)
 
     @validate_call
     def send_calibration_settings(
@@ -480,7 +472,7 @@ class ShepherdIO:
         for key, value in cal_.model_dump(exclude_unset=False, exclude_defaults=False).items():
             log.debug("\t%s: %s", key, value)
         cal_dict = cal_.export_for_sysfs()
-        sfs.write_calibration_settings(cal_dict)
+        sysfs.write_calibration_settings(cal_dict)
 
     @staticmethod
     def send_virtual_converter_settings(
@@ -492,7 +484,7 @@ class ShepherdIO:
 
         :param settings: Contains the settings for the virtual source.
         """
-        sfs.write_virtual_converter_settings(settings)
+        sysfs.write_virtual_converter_settings(settings)
 
     @staticmethod
     def send_virtual_storage_settings(
@@ -504,7 +496,7 @@ class ShepherdIO:
 
         :param settings: Contains the settings for the virtual storage.
         """
-        sfs.write_virtual_storage_settings(settings)
+        sysfs.write_virtual_storage_settings(settings)
 
     @staticmethod
     def send_virtual_harvester_settings(
@@ -516,7 +508,7 @@ class ShepherdIO:
 
         :param settings: Contains the settings for the virtual source.
         """
-        sfs.write_virtual_harvester_settings(settings)
+        sysfs.write_virtual_harvester_settings(settings)
 
     @staticmethod
     def handle_pru_messages(*, panic_on_restart: bool = False) -> None:
@@ -527,8 +519,8 @@ class ShepherdIO:
         """
         while True:
             try:
-                msg_type, values = sfs.read_pru_msg()
-            except sfs.SysfsInterfaceError:
+                msg_type, values = sysfs.read_pru_msg()
+            except sysfs.SysfsInterfaceError:
                 return
 
             if msg_type == commons.MSG_DBG_PRINT:

@@ -6,16 +6,16 @@ from contextlib import ExitStack
 from datetime import datetime
 from types import TracebackType
 
-from shepherd_core import CalibrationEmulator
-from shepherd_core import CalibrationPair
-from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
 from shepherd_core import local_tz
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import PowerTracing
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
-from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
+from shepherd_core.data_models.base.calibration import CalibrationPair
+from shepherd_core.data_models.base.calibration import CalibrationSeries
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 from tqdm import tqdm
@@ -24,14 +24,14 @@ from typing_extensions import Self
 from . import commons
 from .eeprom import retrieve_calibration
 from .h5_writer import Writer
+from .hardware_target_io import TargetIO
+from .hardware_target_io import target_pins
 from .logger import get_verbosity
 from .logger import log
 from .shared_mem_iv_input import IVTrace
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
 from .sysfs_interface import set_stop
-from .target_io import TargetIO
-from .target_io import target_pins
 
 
 class ShepherdEmulator(ShepherdIO):

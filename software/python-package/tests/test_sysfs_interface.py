@@ -2,14 +2,14 @@ import time
 from pathlib import Path
 
 import pytest
-from shepherd_core import CalibrationCape
-from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
-from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationCape
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config import VirtualStorageConfig
+from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep import flatten_list
 from shepherd_sheep import sysfs_interface
