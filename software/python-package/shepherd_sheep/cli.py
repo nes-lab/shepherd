@@ -181,7 +181,7 @@ def run(ctx: click.Context, config: Path) -> None:
     if check_sys_access(force_kmod_reload=True):
         # increases reliability with fresh states
         ctx.exit(1)
-    from . import run_task
+    from .shepherd_run_functions import run_task
 
     disable_ntp()
     failed = run_task(config)
@@ -392,7 +392,7 @@ def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
     from shepherd_core.data_models.task import ProgrammingTask
     from shepherd_core.data_models.testbed import ProgrammerProtocol
 
-    from . import run_task
+    from .shepherd_run_functions import run_task
 
     if check_sys_access(force_kmod_reload=True):
         ctx.exit(1)

@@ -9,8 +9,9 @@ authors = [
 ]
 maintainers = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
 
-license = {text = "MIT"}
-dynamic = ["version"]
+version = "2026.03.1"
+
+license = "MIT"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -22,14 +23,13 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Natural Language :: English",
 ]
 
 requires-python = ">= 3.10"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2026.02.1",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2026.04.2",  # limit due to newest features
     "click",
     "numpy",
     "python-periphery<2.0.0", # v2 has no persistence anymore
@@ -85,25 +85,13 @@ shepherd-launcher = "shepherd_launcher:main"
 shepherd-watchdog = "shepherd_watchdog:main"
 
 [build-system]
-# TODO: could be replaced by UV: https://docs.astral.sh/uv/concepts/build-backend/
-requires = ["setuptools>=61.2"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+# ⤷ switched to uv because package is not public
 
-[tool.setuptools]
+[tool.uv.build-backend]
+module-root = "./"
 platforms = ["unix", "linux"]
-package-dir = {"" = "."}
-zip-safe = true
-include-package-data = true
-
-[tool.setuptools.packages.find]
-where = ["."]
-namespaces = false
-
-[tool.setuptools.package-data]
-"*" = ["*.yaml"]
-
-[tool.setuptools.dynamic]
-version = {attr = "shepherd_sheep.__version__"}
 
 [tool.aliases]
 test = "pytest"
@@ -154,4 +142,4 @@ gevent = { index = "piwheels", marker = "platform_machine == 'armv7l'"}      # 3
 pyzmq = { index = "piwheels", marker = "platform_machine == 'armv7l'"}       # 25 min
 greenlet = { index = "piwheels", marker = "platform_machine == 'armv7l'"}
 msgpack = { index = "piwheels", marker = "platform_machine == 'armv7l'"}     # 2 min
-shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
+shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "opt_startup", subdirectory = "shepherd_core"}

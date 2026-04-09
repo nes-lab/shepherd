@@ -5,9 +5,9 @@ import yaml
 from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_abc import Monitor
+from .hardware_target_io import GPIO_LOG_BIT_POSITIONS
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_gpio_output import SharedMemGPIOOutput
-from .hardware_target_io import GPIO_LOG_BIT_POSITIONS
 
 
 class GpioRecorder(Monitor):

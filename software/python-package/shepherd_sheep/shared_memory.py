@@ -8,7 +8,7 @@ from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
 from typing_extensions import Self
 
-from . import sysfs_interface as sfs
+from . import sysfs_interface as sysfs
 from .logger import log
 from .shared_mem_gpio_output import SharedMemGPIOOutput
 from .shared_mem_iv_input import SharedMemIVInput
@@ -45,24 +45,27 @@ class SharedMemory:
         """
         # With knowledge of structure of each buffer, we calculate its total size
         if (
-            sfs.get_trace_iv_inp_size()
-            != sfs.get_trace_iv_out_address() - sfs.get_trace_iv_inp_address()
+            sysfs.get_trace_iv_inp_size()
+            != sysfs.get_trace_iv_out_address() - sysfs.get_trace_iv_inp_address()
         ):
             raise ValueError("IV-Inp-Buffer does not fit into address-space?!?")
         if (
-            sfs.get_trace_iv_out_size()
-            > sfs.get_trace_gpio_address() - sfs.get_trace_iv_out_address()
+            sysfs.get_trace_iv_out_size()
+            > sysfs.get_trace_gpio_address() - sysfs.get_trace_iv_out_address()
         ):
             raise ValueError("IV-Out-Buffer does not fit into address-space?!?")
-        if sfs.get_trace_gpio_size() > sfs.get_trace_util_address() - sfs.get_trace_gpio_address():
+        if (
+            sysfs.get_trace_gpio_size()
+            > sysfs.get_trace_util_address() - sysfs.get_trace_gpio_address()
+        ):
             raise ValueError("GPIO-Buffer does not fit into address-space?!?")
 
-        self._address = sfs.get_trace_iv_inp_address()
+        self._address = sysfs.get_trace_iv_inp_address()
         self._size = (
-            sfs.get_trace_iv_inp_size()
-            + sfs.get_trace_iv_out_size()
-            + sfs.get_trace_gpio_size()
-            + sfs.get_trace_util_size()
+            sysfs.get_trace_iv_inp_size()
+            + sysfs.get_trace_iv_out_size()
+            + sysfs.get_trace_gpio_size()
+            + sysfs.get_trace_util_size()
         )
         self._fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
         self._mm = mmap.mmap(
