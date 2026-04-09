@@ -19,22 +19,13 @@ import click
 import gevent
 import yaml
 import zerorpc
-from shepherd_core import CalibrationCape
-from shepherd_core.data_models.task import ProgrammingTask
-from shepherd_core.data_models.testbed import ProgrammerProtocol
-from shepherd_core.data_models.testbed import TargetPort
-from shepherd_core.inventory import Inventory
 from typing_extensions import Unpack
 
-from . import run_task
-from . import sysfs_interface
-from .eeprom import EEPROM
+from .cape_io import gpio_pin_nums
 from .logger import log
 from .logger import set_verbosity
-from .shepherd_debug import ShepherdDebug
-from .shepherd_io import gpio_pin_nums
-from .sysfs_interface import check_sys_access
-from .sysfs_interface import disable_ntp
+from .sys_access import check_sys_access
+from .sys_access import disable_ntp
 from .usage_log import get_last_usage
 from .usage_log import usage_logger
 
@@ -147,6 +138,9 @@ def target_power(
 ) -> None:
     if check_sys_access():
         ctx.exit(1)
+
+    from . import sysfs_interface
+
     if not on:
         voltage = 0.0
     # TODO: output would be nicer when this uses shepherdDebug as base
@@ -187,6 +181,8 @@ def run(ctx: click.Context, config: Path) -> None:
     if check_sys_access(force_kmod_reload=True):
         # increases reliability with fresh states
         ctx.exit(1)
+    from . import run_task
+
     disable_ntp()
     failed = run_task(config)
     if failed:
@@ -212,6 +208,10 @@ def write(
     ctx: click.Context,
     cal_file: Path | None,
 ) -> None:
+    from shepherd_core.data_models.base.calibration import CalibrationCape
+
+    from .eeprom import EEPROM
+
     cal_cape = CalibrationCape.from_file(cal_file)
     try:
         log.debug("Will write Cal-Data:\n\n%s", str(cal_cape))
@@ -257,6 +257,8 @@ def read(
     revision: bool = False,
     full: bool = False,
 ) -> None:
+    from .eeprom import EEPROM
+
     try:
         with EEPROM() as storage:
             cal = storage.read_calibration()
@@ -294,6 +296,8 @@ def read(
 def rpc(ctx: click.Context, port: int | None) -> None:
     if check_sys_access(force_kmod_reload=True):
         ctx.exit(1)
+    from .shepherd_debug import ShepherdDebug
+
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
     log.info("Shepherd Debug Interface: Initialized")
@@ -327,6 +331,8 @@ def rpc(ctx: click.Context, port: int | None) -> None:
     help="Path to resulting YAML-formatted calibration data file",
 )
 def inventorize(output_path: Path) -> None:
+    from shepherd_core.inventory import Inventory
+
     output_path = Path(output_path)
     sheep_inv = Inventory.collect()
     sheep_inv.to_file(path=output_path, minimal=True)
@@ -383,6 +389,11 @@ def inventorize(output_path: Path) -> None:
 )
 @click.pass_context
 def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
+    from shepherd_core.data_models.task import ProgrammingTask
+    from shepherd_core.data_models.testbed import ProgrammerProtocol
+
+    from . import run_task
+
     if check_sys_access(force_kmod_reload=True):
         ctx.exit(1)
     protocol_dict = {
@@ -419,7 +430,9 @@ def pru(ctx: click.Context, firmware: str) -> None:
     set_verbosity()
     if check_sys_access():
         ctx.exit(1)
-    sysfs_interface.load_pru_firmware(firmware)
+    from .sysfs_interface import load_pru_firmware
+
+    load_pru_firmware(firmware)
 
 
 @cli.command(
@@ -432,8 +445,12 @@ def blink(ctx: click.Context, duration: int) -> None:
     set_verbosity()
     if check_sys_access():
         ctx.exit(1)
+    from .shepherd_debug import ShepherdDebug
+
     log.info("Blinks LEDs IO & EMU next to Target-Ports for %d s", duration)
     with ShepherdDebug(use_io=False) as dbg:
+        from shepherd_core.data_models.testbed import TargetPort
+
         dbg.set_power_emulator(True)
         dbg.set_power_io_level_converter(True)
         for _ in range(duration * 2):
