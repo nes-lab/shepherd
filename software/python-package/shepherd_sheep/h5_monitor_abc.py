@@ -6,7 +6,7 @@ from abc import abstractmethod
 from types import TracebackType
 
 import h5py
-from shepherd_core import Compression
+from shepherd_core.data_models.task import Compression
 
 from .logger import log
 

@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from shepherd_core import CalibrationCape
-from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models import EnergyDType
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models import VirtualStorageConfig
+from shepherd_core.data_models.base.calibration import CalibrationCape
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
 from shepherd_core.vsource import VirtualSourceModel
 from shepherd_sheep import ShepherdDebug
 

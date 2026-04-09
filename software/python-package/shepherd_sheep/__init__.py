@@ -13,8 +13,8 @@ import time
 from contextlib import ExitStack
 from pathlib import Path
 
-from shepherd_core.data_models import FirmwareDType
-from shepherd_core.data_models import ShpModel
+from shepherd_core.data_models.base.shepherd import ShpModel
+from shepherd_core.data_models.content.firmware import FirmwareDType
 from shepherd_core.data_models.content.firmware import suffix_to_DType
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import FirmwareModTask

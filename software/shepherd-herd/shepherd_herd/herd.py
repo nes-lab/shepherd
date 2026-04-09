@@ -25,7 +25,6 @@ from fabric import Result
 from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
-from shepherd_core import Inventory
 from shepherd_core import local_now
 from shepherd_core import local_tz
 from shepherd_core.data_models import ShpModel
@@ -34,6 +33,7 @@ from shepherd_core.data_models.base.shepherd import path_to_str
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
+from shepherd_core.inventory import Inventory
 from shepherd_core.testbed_client import tb_client
 from tqdm import tqdm
 from typing_extensions import Self

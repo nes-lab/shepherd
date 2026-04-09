@@ -1,7 +1,7 @@
 from types import TracebackType
 
 import h5py
-from shepherd_core import Compression
+from shepherd_core.data_models.task import Compression
 
 from . import commons
 from .h5_monitor_abc import Monitor

@@ -7,7 +7,7 @@ from types import MappingProxyType
 from types import TracebackType
 
 import numpy as np
-from shepherd_core import CalibrationSeries
+from shepherd_core.data_models.base.calibration import CalibrationSeries
 from typing_extensions import Self
 
 from . import commons

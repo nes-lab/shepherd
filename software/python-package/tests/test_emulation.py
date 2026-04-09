@@ -6,10 +6,10 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from shepherd_core import CalibrationCape
-from shepherd_core import CalibrationSeries
 from shepherd_core import Reader as CoreReader
-from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.base.calibration import CalibrationCape
+from shepherd_core.data_models.base.calibration import CalibrationSeries
+from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_sheep import ShepherdDebug

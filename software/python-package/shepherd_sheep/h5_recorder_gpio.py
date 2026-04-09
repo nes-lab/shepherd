@@ -2,7 +2,7 @@ from types import TracebackType
 
 import h5py
 import yaml
-from shepherd_core import Compression
+from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_abc import Monitor
 from .shared_mem_gpio_output import GPIOTrace

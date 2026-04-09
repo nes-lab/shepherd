@@ -11,13 +11,13 @@ Example assumes:
 from pathlib import Path
 from pathlib import PurePosixPath
 
-from shepherd_core import WebClient
 from shepherd_core.data_models import EnergyEnvironment
 from shepherd_core.data_models import Experiment
 from shepherd_core.data_models import Firmware
 from shepherd_core.data_models import TargetConfig
 from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.task import TestbedTasks
+from shepherd_core.testbed_client.client_web import WebClient
 from shepherd_herd import Herd
 
 path_local = Path(__file__).parent

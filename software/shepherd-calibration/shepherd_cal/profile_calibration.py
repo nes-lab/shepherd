@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from scipy import stats
-from shepherd_core import CalibrationPair
-from shepherd_core import CalibrationSeries
+from shepherd_core.data_models.base.calibration import CalibrationPair
+from shepherd_core.data_models.base.calibration import CalibrationSeries
 from typing_extensions import Self
 
 from .logger import log

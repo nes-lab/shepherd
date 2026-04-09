@@ -2,8 +2,8 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from shepherd_core import CalibrationEmulator
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
 from shepherd_core.logger import log
 
 # Config

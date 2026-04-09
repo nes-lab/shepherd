@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import numpy as np
-from shepherd_core import CalibrationHarvester
+from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_sheep import Writer
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.shared_memory import IVTrace

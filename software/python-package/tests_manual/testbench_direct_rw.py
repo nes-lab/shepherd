@@ -71,10 +71,10 @@ from timeit import timeit
 from types import TracebackType
 
 import numpy as np
-from shepherd_core import Compression
 from shepherd_core import Reader
 from shepherd_core import Writer
 from shepherd_core.data_models import EnergyDType
+from shepherd_core.data_models.task import Compression
 from shepherd_core.logger import log
 from typing_extensions import Self
 
