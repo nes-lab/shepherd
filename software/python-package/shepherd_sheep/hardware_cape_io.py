@@ -1,4 +1,4 @@
-gpio_pin_nums = {
+gpio_pin_nums: dict[str, int] = {
     "target_pwr_sel": 31,
     "target_io_en": 60,
     "target_io_sel": 30,

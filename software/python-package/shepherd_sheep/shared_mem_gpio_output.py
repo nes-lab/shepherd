@@ -14,7 +14,7 @@ from . import sysfs_interface as sfs
 from .logger import log
 from .sysfs_interface import wait_for_state
 from .sysfs_interface import write_gpio_tracer_mask
-from .target_io import target_port_to_cape_mapping
+from .hardware_target_io import target_port_to_cape_mapping
 
 
 @dataclass

@@ -21,7 +21,7 @@ import yaml
 import zerorpc
 from typing_extensions import Unpack
 
-from .cape_io import gpio_pin_nums
+from .hardware_cape_io import gpio_pin_nums
 from .logger import log
 from .logger import set_verbosity
 from .sys_access import check_sys_access

@@ -38,7 +38,7 @@ from .shepherd_harvester import ShepherdHarvester
 from .shepherd_io import ShepherdIOError
 from .sysfs_interface import check_sys_access
 from .sysfs_interface import flatten_list
-from .target_io import TargetIO
+from .hardware_target_io import TargetIO
 
 __version__ = "2026.03.1"
 
