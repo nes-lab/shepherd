@@ -5,12 +5,11 @@ import signal
 import sys
 import time
 from contextlib import suppress
+from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
 from typing_extensions import Self
-
-__version__ = "2026.03.1"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
@@ -42,7 +41,7 @@ class Watchdog:
     ) -> None:
         log.debug(
             "Initializing Watchdog-Resetter v%s (pin = %d, interval = %d s)",
-            __version__,
+            metadata.version("shepherd-sheep"),
             pin_ack,
             interval,
         )
