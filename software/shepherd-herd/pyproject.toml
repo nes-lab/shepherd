@@ -11,8 +11,9 @@ maintainers = [
     {name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"},
 ]
 
-license = {text = "MIT"}
-dynamic = ["version"]
+version = "2026.03.1"
+
+license = "MIT"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -25,7 +26,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
@@ -65,21 +65,13 @@ content-type = "text/markdown"
 shepherd-herd = "shepherd_herd.herd_cli:cli"
 
 [build-system]
-requires = ["setuptools>=61.2"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+# ⤷ switched to uv because package is not public
 
-[tool.setuptools]
-package-dir = {"" = "."}
-zip-safe = true
-include-package-data = true
+[tool.uv.build-backend]
+module-root = "./"
 platforms = ["unix", "linux", "osx", "cygwin", "win32", "win64"]
-
-[tool.setuptools.packages.find]
-where = ["."]
-namespaces = false
-
-[tool.setuptools.dynamic]
-version = {attr = "shepherd_herd.__version__"}
 
 [tool.aliases]
 test = "pytest"

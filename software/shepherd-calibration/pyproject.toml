@@ -1,15 +1,15 @@
-[build-system]
-requires = ["setuptools>=61.2"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "shepherd_cal"
 authors = [{name = "Kai Geissdoerfer", email = "kai.geissdoerfer@tu-dresden.de"}, {name = "Ingmar Splitt"}]
 maintainers = [{email = "ingmar.splitt@tu-dresden.de"}]
-license = {text = "MIT"}
+
 description = "Synchronized Energy Harvesting Emulator and Recorder CLI"
 keywords = ["testbed", "beaglebone", "pru", "batteryless", "energyharvesting", "solar"]
-dynamic = ["version"]
+
+version = "2026.03.1"
+
+license = "MIT"
+
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -19,7 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
@@ -36,7 +35,6 @@ dependencies = [
     "msgpack_numpy",
     "numpy",
     "pandas>=2.0.0",  # not compatible with prior versions
-    "pyYAML",
     "scipy",
     "zerorpc",
     # shepherd @ git+https://github.com/nes-lab/shepherd.git#subdirectory=software/python-package/
@@ -60,18 +58,14 @@ content-type = "text/markdown"
 [project.scripts]
 shepherd-cal = "shepherd_cal.cli:cli"
 
-[tool.setuptools]
-package-dir = {"" = "."}
-zip-safe = true
-include-package-data = true
-platforms = ["unix", "linux", "osx", "cygwin", "win32", "win64"]
+[build-system]
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
+# ⤷ switched to uv because package is not public
 
-[tool.setuptools.packages.find]
-where = ["."]
-namespaces = false
-
-[tool.setuptools.dynamic]
-version = {attr = "shepherd_cal.__version__"}
+[tool.uv.build-backend]
+module-root = "./"
+platforms = ["unix", "linux",  "osx", "cygwin", "win32", "win64"]
 
 [tool.pyright]
 root = "./"

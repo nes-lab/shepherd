@@ -27,7 +27,7 @@ classifiers = [
     "Natural Language :: English",
 ]
 
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 dependencies = [
     "shepherd-core[elf,inventory]>=2026.04.2",  # limit due to newest features
     "click",
@@ -51,9 +51,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "types-PyYAML",
-]
+dev = []
 test = [
     "pytest>7.4.0",  # not compatible with prior versions
     "pyfakefs>5.0.0",  # not compatible with prior versions
@@ -92,7 +90,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-root = "./"
 module-name = ["shepherd_sheep", "shepherd_launcher", "shepherd_watchdog"]
-#namespace = true
 platforms = ["unix", "linux"]
 
 [tool.aliases]

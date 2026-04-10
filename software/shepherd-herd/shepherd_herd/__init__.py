@@ -12,8 +12,6 @@ from .logger import activate_verbosity
 from .logger import get_verbosity
 from .logger import log
 
-__version__ = "2026.03.1"
-
 __all__ = [
     "Herd",
     "activate_verbosity",
