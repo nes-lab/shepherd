@@ -16,9 +16,7 @@ from types import FrameType
 from typing import TypedDict
 
 import click
-import gevent
-import yaml
-import zerorpc
+
 from typing_extensions import Unpack
 
 from .hardware_cape_io import gpio_pin_nums
@@ -102,13 +100,13 @@ def version() -> None:
     from importlib import metadata
 
     log.debug("Python v%s", sys.version)
-    log.info("Shepherd-Sheep v%s", metadata.version("shepherd_sheep"))
-    log.info("Shepherd-Core v%s", metadata.version("shepherd_core"))
+    log.info("Shepherd-Sheep v%s", metadata.version("shepherd-sheep"))
+    log.info("Shepherd-Core v%s", metadata.version("shepherd-core"))
     log.debug("h5py v%s", metadata.version("h5py"))
     log.debug("numpy v%s", metadata.version("numpy"))
     log.debug("click v%s", metadata.version("click"))
     log.debug("pydantic v%s", metadata.version("pydantic"))
-    log.debug("PyYAML v%s", metadata.version("pyyaml"))
+    log.debug("rYAML v%s", metadata.version("ryaml"))
 
 
 @cli.command(short_help="Turns target power supply on or off (i.e. for programming)")
@@ -181,9 +179,10 @@ def run(ctx: click.Context, config: Path) -> None:
     if check_sys_access(force_kmod_reload=True):
         # increases reliability with fresh states
         ctx.exit(1)
+    disable_ntp()
+
     from .shepherd_run_functions import run_task
 
-    disable_ntp()
     failed = run_task(config)
     if failed:
         log.debug("Tasks signaled an error (failed).")
@@ -258,6 +257,7 @@ def read(
     full: bool = False,
 ) -> None:
     from .eeprom import EEPROM
+    import ryaml
 
     try:
         with EEPROM() as storage:
@@ -277,10 +277,8 @@ def read(
         log.info("%s", cal.cape.version)
     elif cal_file is None:
         cal_data = (
-            yaml.safe_dump(
+            ryaml.dumps(
                 cal.model_dump(exclude_unset=True, exclude_defaults=False),
-                default_flow_style=False,
-                sort_keys=False,
             )
             if full
             else str(cal)
@@ -297,6 +295,8 @@ def rpc(ctx: click.Context, port: int | None) -> None:
     if check_sys_access(force_kmod_reload=True):
         ctx.exit(1)
     from .shepherd_debug import ShepherdDebug
+    import gevent
+    import zerorpc
 
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()

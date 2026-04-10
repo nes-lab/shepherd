@@ -91,6 +91,8 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = "./"
+module-name = ["shepherd_sheep", "shepherd_launcher", "shepherd_watchdog"]
+#namespace = true
 platforms = ["unix", "linux"]
 
 [tool.aliases]
@@ -142,4 +144,8 @@ gevent = { index = "piwheels", marker = "platform_machine == 'armv7l'"}      # 3
 pyzmq = { index = "piwheels", marker = "platform_machine == 'armv7l'"}       # 25 min
 greenlet = { index = "piwheels", marker = "platform_machine == 'armv7l'"}
 msgpack = { index = "piwheels", marker = "platform_machine == 'armv7l'"}     # 2 min
+ryaml = { index = "piwheels", marker = "platform_machine == 'armv7l'"}   # 25 min
 shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "opt_startup", subdirectory = "shepherd_core"}
+
+rapidyaml = { index = "piwheels", marker = "platform_machine == 'armv7l'"}   # does not finish, not used ATM
+rtoml = { index = "piwheels", marker = "platform_machine == 'armv7l'"} # not used ATM

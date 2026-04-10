@@ -1,7 +1,7 @@
 from types import TracebackType
 
 import h5py
-import yaml
+import ryaml
 from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_abc import Monitor
@@ -29,11 +29,7 @@ class GpioRecorder(Monitor):
             compression=compression,
         )
         self.data["value"].attrs["unit"] = "n"
-        self.data["value"].attrs["description"] = yaml.safe_dump(
-            GPIO_LOG_BIT_POSITIONS,
-            default_flow_style=False,
-            sort_keys=False,
-        )
+        self.data["value"].attrs["description"] = ryaml.dumps(GPIO_LOG_BIT_POSITIONS)
 
     def __exit__(
         self,

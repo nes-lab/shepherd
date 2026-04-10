@@ -188,7 +188,7 @@ class ShepherdEmulator(ShepherdIO):
             # add hostname to file
             self.writer.store_hostname(platform.node().strip())
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.uart_logging)
-            self.writer.store_config(self.cfg.model_dump())
+            self.writer.store_config(self.cfg)
 
         # Preload emulator with data
         self.buffer_segment_count = math.floor(
