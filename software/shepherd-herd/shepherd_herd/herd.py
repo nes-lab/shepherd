@@ -18,7 +18,7 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any
 
-import yaml
+import ryaml
 from fabric import Connection
 from fabric import Group  # There is a ThreadingGroup, but its no match to this code
 from fabric import Result
@@ -105,8 +105,8 @@ class Herd:
 
             with host_path.open(encoding="utf-8-sig") as stream:
                 try:
-                    inventory_data = yaml.safe_load(stream)
-                except yaml.YAMLError as _xpt:
+                    inventory_data = ryaml.load(stream)
+                except ryaml.InvalidYamlError as _xpt:
                     msg = (
                         f"Couldn't read inventory file {host_path.as_posix()}, "
                         f"please provide a valid one"

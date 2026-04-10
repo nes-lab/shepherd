@@ -4,7 +4,7 @@ from shutil import copy
 
 import numpy as np
 import pytest
-import yaml
+import ryaml
 from click.testing import CliRunner
 from shepherd_data import Writer
 from shepherd_herd import Herd
@@ -20,8 +20,8 @@ def cli_runner() -> CliRunner:
 def extract_first_sheep(herd_path: Path) -> str:
     with herd_path.open(encoding="utf-8-sig") as stream:
         try:
-            inventory_data = yaml.safe_load(stream)
-        except yaml.YAMLError as _xpt:
+            inventory_data = ryaml.load(stream)
+        except ryaml.InvalidYamlError as _xpt:
             msg = f"Couldn't read inventory file {herd_path.as_posix()}"
             raise TypeError(msg) from _xpt
     return next(iter(inventory_data["sheep"]["hosts"].keys()))
