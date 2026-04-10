@@ -6,7 +6,6 @@ from types import FrameType
 import click
 import pandas as pd
 
-from . import __version__
 from .logger import activate_verbosity
 from .logger import log
 from .logic_trace import LogicTrace
@@ -49,9 +48,12 @@ def cli(
         activate_verbosity()
 
     if version:
-        log.info("sync-analysis v%s", __version__)
+        from importlib import metadata
+
         log.debug("Python v%s", sys.version)
-        log.debug("Click v%s", click.__version__)
+        log.info("Sync-Analysis v%s", metadata.version("sync-analysis"))
+        log.info("Shepherd-Core v%s", metadata.version("shepherd-core"))
+        log.info("Click v%s", metadata.version("click"))
 
     if input_path is None:
         input_path = Path.cwd()
