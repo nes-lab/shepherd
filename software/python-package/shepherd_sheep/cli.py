@@ -16,7 +16,6 @@ from types import FrameType
 from typing import TypedDict
 
 import click
-
 from typing_extensions import Unpack
 
 from .hardware_cape_io import gpio_pin_nums
@@ -256,8 +255,9 @@ def read(
     revision: bool = False,
     full: bool = False,
 ) -> None:
-    from .eeprom import EEPROM
     import ryaml
+
+    from .eeprom import EEPROM
 
     try:
         with EEPROM() as storage:
@@ -294,9 +294,10 @@ def read(
 def rpc(ctx: click.Context, port: int | None) -> None:
     if check_sys_access(force_kmod_reload=True):
         ctx.exit(1)
-    from .shepherd_debug import ShepherdDebug
     import gevent
     import zerorpc
+
+    from .shepherd_debug import ShepherdDebug
 
     shepherd_io = ShepherdDebug()
     shepherd_io.__enter__()
