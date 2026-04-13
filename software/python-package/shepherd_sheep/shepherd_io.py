@@ -8,7 +8,6 @@ kernel module. User-space part of the double-buffered data exchange protocol.
 import time
 from contextlib import suppress
 from types import TracebackType
-from typing import TypedDict
 
 from pydantic import validate_call
 from shepherd_core import Reader
@@ -85,7 +84,7 @@ class ShepherdIO:
     _instance: Self | None = None
 
     @classmethod
-    def __new__(cls, *_args: tuple, **_kwargs: Unpack[TypedDict]) -> Self:
+    def __new__(cls, *_args: tuple, **_kwargs: Unpack[dict]) -> Self:
         """Implements singleton class."""
         if cls._instance is None:
             cls._instance = object.__new__(cls)

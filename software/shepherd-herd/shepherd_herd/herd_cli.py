@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from pathlib import PurePosixPath
 from types import FrameType
-from typing import TypedDict
 
 import click
 from shepherd_core.data_models.task import EmulationTask
@@ -324,7 +323,7 @@ def harvest(
     ctx: click.Context,
     *,
     no_start: bool,
-    **kwargs: Unpack[TypedDict],
+    **kwargs: Unpack[dict],
 ) -> None:
     """Simultaneously record IV data from harvesting-sources on the chosen observers."""
     with ctx.obj["herd"] as herd:
@@ -434,7 +433,7 @@ def emulate(
     ctx: click.Context,
     *,
     no_start: bool,
-    **kwargs: Unpack[TypedDict],
+    **kwargs: Unpack[dict],
 ) -> None:
     """Emulate an energy environment for the attached sensor nodes.
 
@@ -718,7 +717,7 @@ def content(
     help="dry-run the programmer - no data gets written",
 )
 @click.pass_context
-def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
+def program(ctx: click.Context, **kwargs: Unpack[dict]) -> None:
     """Programmer for Target-Controller."""
     tmp_file = PurePosixPath("/tmp/target_image.hex")  # noqa: S108
     cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")

@@ -187,7 +187,7 @@ class Writer(CoreWriter):
         # end monitors
         for monitor in self.monitors:
             monitor.__exit__()
-
+        log.info("Wrote result to: %s", self.file_path.as_posix())
         super().__exit__()
 
     def write_iv_buffer(self, data: IVTrace) -> None:

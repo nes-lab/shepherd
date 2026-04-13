@@ -13,7 +13,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 from types import FrameType
-from typing import TypedDict
 
 import click
 from typing_extensions import Unpack
@@ -25,13 +24,6 @@ from .sys_access import check_sys_access
 from .sys_access import disable_ntp
 from .usage_log import get_last_usage
 from .usage_log import usage_logger
-
-# allow importing shepherd on x86 - for testing
-try:
-    from periphery import GPIO
-except ModuleNotFoundError:
-    log.warning("Periphery-Package missing - hardware-access will not work")
-
 
 # TODO: correct docs
 # --length -l is now --duration -d ->
@@ -135,6 +127,8 @@ def target_power(
 ) -> None:
     if check_sys_access():
         ctx.exit(1)
+
+    from periphery import GPIO
 
     from . import sysfs_interface
 
@@ -389,7 +383,7 @@ def inventorize(output_path: Path) -> None:
     help="dry-run the programmer - no data gets written",
 )
 @click.pass_context
-def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
+def program(ctx: click.Context, **kwargs: Unpack[dict]) -> None:
     from shepherd_core.data_models.task import ProgrammingTask
     from shepherd_core.data_models.testbed import ProgrammerProtocol
 
