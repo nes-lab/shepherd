@@ -5,10 +5,10 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
-from shepherd_core import Reader as CoreReader
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.base.calibration import CalibrationSeries
+from shepherd_core.reader import Reader as CoreReader
 from shepherd_sheep import Writer
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.shared_mem_iv_input import IVTrace

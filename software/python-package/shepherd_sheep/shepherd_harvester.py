@@ -4,7 +4,7 @@ import time
 from contextlib import ExitStack
 from types import TracebackType
 
-from shepherd_core import local_tz
+from shepherd_core.data_models.base.timezone import local_tz
 from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from tqdm import tqdm

@@ -7,10 +7,10 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
-from shepherd_core import Compression
-from shepherd_core import Reader as ShpReader
-from shepherd_core import Writer as ShpWriter
+from shepherd_core.data_models.content.enum_datatypes import Compression
 from shepherd_core.logger import log
+from shepherd_core.reader import Reader as ShpReader
+from shepherd_core.writer import Writer as ShpWriter
 from tqdm import trange
 
 # Config

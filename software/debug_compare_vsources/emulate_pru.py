@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 from config import emu_hrv_list
 from config import emu_src_list
 from config import host_selected
-from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.logger import log
 from shepherd_data import Reader

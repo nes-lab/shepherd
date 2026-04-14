@@ -15,12 +15,12 @@ import numpy as np
 import pytest
 from click.testing import CliRunner
 from pydantic import ValidationError
-from shepherd_core import local_tz
-from shepherd_core.data_models import Firmware
-from shepherd_core.data_models import GpioTracing
-from shepherd_core.data_models import PowerTracing
-from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
+from shepherd_core.data_models.base.timezone import local_tz
+from shepherd_core.data_models.content import Firmware
+from shepherd_core.data_models.content import VirtualSourceConfig
+from shepherd_core.data_models.experiment import GpioTracing
+from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask

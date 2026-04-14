@@ -2,7 +2,7 @@ from types import TracebackType
 
 import h5py
 import ryaml
-from shepherd_core.data_models.task import Compression
+from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .h5_monitor_abc import Monitor
 from .hardware_target_io import GPIO_LOG_BIT_POSITIONS

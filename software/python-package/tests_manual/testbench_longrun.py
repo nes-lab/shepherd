@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep import log

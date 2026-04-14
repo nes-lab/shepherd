@@ -4,8 +4,8 @@ import time
 from contextlib import ExitStack
 from types import TracebackType
 
-from shepherd_core.data_models import GpioTracing
-from shepherd_core.data_models import PowerTracing
+from shepherd_core.data_models.experiment import GpioTracing
+from shepherd_core.data_models.experiment import PowerTracing
 from typing_extensions import Self
 
 from . import sysfs_interface as sysfs

@@ -10,15 +10,15 @@ from contextlib import suppress
 from types import TracebackType
 
 from pydantic import validate_call
-from shepherd_core import Reader
-from shepherd_core.data_models import GpioTracing
-from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationEmulator
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
 from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
+from shepherd_core.data_models.experiment import GpioTracing
+from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
+from shepherd_core.reader import Reader
 from typing_extensions import Self
 from typing_extensions import Unpack
 

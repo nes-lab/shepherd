@@ -8,8 +8,8 @@ Input data is the jogging-dataset from the shepherd-tools.
 from pathlib import Path
 from urllib.request import urlretrieve
 
-from shepherd_core import log
-from shepherd_core.data_models import VirtualHarvesterConfig
+from shepherd_core.data_models.content import VirtualHarvesterConfig
+from shepherd_core.logger import log
 from shepherd_core.vsource import simulate_harvester
 from shepherd_data import ivonne
 

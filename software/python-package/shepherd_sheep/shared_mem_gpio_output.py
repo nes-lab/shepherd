@@ -6,7 +6,7 @@ from datetime import timedelta
 from types import TracebackType
 
 import numpy as np
-from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models.experiment import GpioTracing
 from typing_extensions import Self
 
 from . import commons

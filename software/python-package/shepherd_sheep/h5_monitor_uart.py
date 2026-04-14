@@ -5,8 +5,8 @@ from types import TracebackType
 
 import h5py
 import serial
+from shepherd_core.data_models.content.enum_datatypes import Compression
 from shepherd_core.data_models.experiment.observer_features import UartLogging
-from shepherd_core.data_models.task import Compression
 
 from .h5_monitor_abc import Monitor
 from .logger import log

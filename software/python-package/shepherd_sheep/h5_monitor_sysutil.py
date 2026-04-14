@@ -5,7 +5,7 @@ from types import TracebackType
 import h5py
 import numpy as np
 import psutil
-from shepherd_core.data_models.task import Compression
+from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .h5_monitor_abc import Monitor
 from .logger import log

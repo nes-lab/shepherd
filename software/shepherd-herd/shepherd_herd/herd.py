@@ -25,11 +25,11 @@ from fabric import Result
 from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
-from shepherd_core import local_now
-from shepherd_core import local_tz
-from shepherd_core.data_models import ShpModel
-from shepherd_core.data_models import Wrapper
+from shepherd_core.data_models.base.shepherd import ShpModel
 from shepherd_core.data_models.base.shepherd import path_to_str
+from shepherd_core.data_models.base.timezone import local_now
+from shepherd_core.data_models.base.timezone import local_tz
+from shepherd_core.data_models.base.wrapper import Wrapper
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
@@ -997,8 +997,8 @@ class Herd:
         TODO: should be done on each sheep, but currently assumes
               that the server has same path-access
         """
-        from shepherd_core.data_models import EnergyEnvironment
-        from shepherd_core.data_models import Firmware
+        from shepherd_core.data_models.content import EnergyEnvironment
+        from shepherd_core.data_models.content import Firmware
 
         invalid = False
         for content_class in [Firmware, EnergyEnvironment]:
