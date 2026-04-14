@@ -3,6 +3,8 @@ name: Test shepherd_pru
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   pru-test:
     concurrency:

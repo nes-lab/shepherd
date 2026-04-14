@@ -3,6 +3,8 @@ name: Test Sheep
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   sheep-test:
     concurrency:

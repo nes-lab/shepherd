@@ -3,6 +3,8 @@ name: Build Pru CGT
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
 # TODO: compilation fails with: exec() error spawning acpiapru: No such file or directory
 

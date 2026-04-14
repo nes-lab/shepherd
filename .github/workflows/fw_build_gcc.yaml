@@ -3,6 +3,8 @@ name: Build Pru
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
 
   pru-gcc:
