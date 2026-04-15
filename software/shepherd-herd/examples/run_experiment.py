@@ -11,12 +11,14 @@ Example assumes:
 from pathlib import Path
 from pathlib import PurePosixPath
 
+from shepherd_core.config import core_config
 from shepherd_core.data_models.content import EnergyEnvironment
 from shepherd_core.data_models.content import Firmware
 from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.experiment import Experiment
 from shepherd_core.data_models.experiment import TargetConfig
 from shepherd_core.data_models.task import TestbedTasks
+from shepherd_core.data_models.testbed import Testbed
 from shepherd_core.testbed_client.client_web import WebClient
 from shepherd_herd import Herd
 
@@ -71,8 +73,8 @@ do_connect = False
 
 if do_connect:
     tb_client.connect()
-
-tb_tasks1 = TestbedTasks.from_xp(xp1)
+testbed = Testbed(name=core_config.TESTBED)
+tb_tasks1 = TestbedTasks.from_xp(xp1, testbed)
 
 tb_tasks1.to_file(path_tasks)
 

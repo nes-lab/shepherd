@@ -38,7 +38,7 @@ dependencies = [
     "h5py",
     "psutil",
     "pyserial",
-    "pyYAML>6.0.0",   # not compatible with prior versions
+    "ryaml",
     "msgpack",
     "msgpack-numpy",
     "gevent",

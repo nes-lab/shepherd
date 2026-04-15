@@ -1,6 +1,6 @@
 # History of Changes
 
-## 2026.03.1
+## 2026.04.1 - unreleased
 
 ### Highlights
 
@@ -11,6 +11,9 @@
 - add support for new cape hardware v2.5e (more target IO, two power good pins)
   - the altered wiring frees up PRU1 - so idle GPIO sampling improves by 20 % (from 1.4 to 1.67 MHz)
 - power good is now calculated with two pins in mind (low & high threshold) and automatically falls back to hysteresis if second pin is missing in hardware (capes before v2.5)
+- massive speedup of sheep-tool, see https://github.com/nes-lab/shepherd/issues/150 for benchmarks
+  - big refactoring or core-lib and cli.py to avoid expensive imports
+  - replace PyYAML with faster ryaml
 
 ### Details
 
@@ -42,7 +45,11 @@
   - so the worst execution time resulted in 1.4 MHz idle sampling before
   - the new cape is able to sample at 1.67 MHz (minimum, idle) -> 20 % improvement
 - sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
+- sheep - move from setuptools to uv
 - sheep-unittests - limit tests to capabilities of cape (hrv, emu)
+- python-tools
+  - modernize codebase
+  - switch from utf-8-sig to plain utf-8
 - py / uv - abandon global cache
 - ansible
   - improve uv commands
@@ -63,10 +70,13 @@
   - add cage for cape
   - add bulk holders for up to 5x cape and 10x target PCBs (can be configured via OpenSCAD)
   - add cable clip 3d-file
+  - revert deprecation of cape v2.4c, as it is essential for harvesting
 - herd - add timediff-command
 - cal-tool
   - add plotting-script to show multiple cal
   - add CLI-command to plot a cal
+- add zizmor to find vulnerabilities in GH actions
+  - explicitly clear permissions of GH-actions and reduce elevation-surface
 
 ## 2026.02.1
 
