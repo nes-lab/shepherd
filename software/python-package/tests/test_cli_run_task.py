@@ -26,9 +26,9 @@ from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
-from shepherd_sheep import Writer
 from shepherd_sheep.cli import cli
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
+from shepherd_sheep.h5_writer import Writer
 from shepherd_sheep.shared_mem_iv_input import IVTrace
 
 

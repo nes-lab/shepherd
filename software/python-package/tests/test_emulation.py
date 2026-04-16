@@ -12,15 +12,15 @@ from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.reader import Reader as CoreReader
-from shepherd_sheep import ShepherdDebug
-from shepherd_sheep import ShepherdEmulator
-from shepherd_sheep import Writer
 from shepherd_sheep import commons
-from shepherd_sheep import run_emulator
-from shepherd_sheep import set_verbosity
 from shepherd_sheep import sysfs_interface
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
+from shepherd_sheep.h5_writer import Writer
+from shepherd_sheep.logger import set_verbosity
 from shepherd_sheep.shared_mem_iv_input import IVTrace
+from shepherd_sheep.shepherd_debug import ShepherdDebug
+from shepherd_sheep.shepherd_emulator import ShepherdEmulator
+from shepherd_sheep.shepherd_run_functions import run_emulator
 
 
 def random_data(length: int) -> np.ndarray:

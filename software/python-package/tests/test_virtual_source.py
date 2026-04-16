@@ -10,7 +10,7 @@ from shepherd_core.data_models.content import EnergyDType
 from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.content import VirtualStorageConfig
 from shepherd_core.vsource import VirtualSourceModel
-from shepherd_sheep import ShepherdDebug
+from shepherd_sheep.shepherd_debug import ShepherdDebug
 
 
 @pytest.fixture

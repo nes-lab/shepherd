@@ -4,7 +4,7 @@ import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CapeData
-from shepherd_sheep import EEPROM
+from shepherd_sheep.eeprom import EEPROM
 
 
 @pytest.fixture

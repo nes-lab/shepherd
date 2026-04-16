@@ -71,7 +71,7 @@ class Calibrator:
             self.kth: Keithley2600Base = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
 
         # enter
-        self._cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
+        self._cnx.sudo("/usr/bin/systemctl restart shepherd-rpc", hide=True, warn=True)
         time.sleep(2)
         self.sheep.connect(f"tcp://{host}:4242")
         if self.kth is not None:
@@ -79,7 +79,7 @@ class Calibrator:
 
     def __del__(self) -> None:
         # ... overcautious
-        self._cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
+        self._cnx.sudo("/usr/bin/systemctl stop shepherd-rpc", hide=True, warn=True)
         self._cnx.close()
         del self._cnx
 

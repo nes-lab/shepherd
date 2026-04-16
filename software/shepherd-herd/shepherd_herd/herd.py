@@ -681,7 +681,7 @@ class Herd:
         :return: True is one node is still active
         """
         replies = self.run_cmd(
-            sudo=True, cmd="systemctl is-active shepherd", timeout=30, verbose=False
+            sudo=True, cmd="/usr/bin/systemctl is-active shepherd", timeout=30, verbose=False
         )
         active = False
 
@@ -780,13 +780,13 @@ class Herd:
             log.info("-> won't start while shepherd-instances are active")
             return 1
 
-        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd", timeout=30)
+        replies = self.run_cmd(sudo=True, cmd="/usr/bin/systemctl start shepherd", timeout=30)
         self.print_output(replies)
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         log.debug("Shepherd-nodes affected: %s", list(self.hostnames.values()))
-        replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd", timeout=30)
+        replies = self.run_cmd(sudo=True, cmd="/usr/bin/systemctl stop shepherd", timeout=30)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         log.info("Shepherd was forcefully stopped")
         if exit_code > 0:
@@ -870,11 +870,11 @@ class Herd:
     def resync(self) -> int:
         """Get current time via ntp and restart PTP on each sheep."""
         commands = [
-            "systemctl stop phc2sys@eth0",
-            "systemctl stop ptp4l@eth0",
+            "/usr/bin/systemctl stop phc2sys@eth0",
+            "/usr/bin/systemctl stop ptp4l@eth0",
             "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
-            "systemctl start phc2sys@eth0",
-            "systemctl start ptp4l@eth0",
+            "/usr/bin/systemctl start phc2sys@eth0",
+            "/usr/bin/systemctl start ptp4l@eth0",
             "shepherd-sheep fix",  # restarts kernel module
         ]
         exit_code = 0

@@ -32,7 +32,7 @@ from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
 from .shepherd_io import ShepherdIOError
-from .sysfs_interface import check_sys_access
+from .sys_access import check_sys_access
 
 # NOTE:
 #   ExitStack enables a cleaner Exit-Behaviour
