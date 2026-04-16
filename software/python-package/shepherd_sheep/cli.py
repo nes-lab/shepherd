@@ -22,6 +22,7 @@ from .logger import log
 from .logger import set_verbosity
 from .sys_access import check_sys_access
 from .sys_access import disable_ntp
+from .sys_access import resync_ptp
 from .usage_log import get_last_usage
 from .usage_log import usage_logger
 
@@ -413,6 +414,17 @@ def fix(ctx: click.Context) -> None:
 
 
 @cli.command(
+    short_help="Reloads PTP",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def resync(ctx: click.Context) -> None:
+    set_verbosity()
+    if resync_ptp():
+        ctx.exit(1)
+
+
+@cli.command(
     short_help="Loads a specific firmware to the PRUs",
     context_settings={"ignore_unknown_options": True},
 )
@@ -421,6 +433,7 @@ def fix(ctx: click.Context) -> None:
     type=click.Choice(["default", "emu", "hrv", "swd", "sbw", "sync"]),
     default="default",
 )
+@click.pass_context
 def pru(ctx: click.Context, firmware: str) -> None:
     set_verbosity()
     if check_sys_access():

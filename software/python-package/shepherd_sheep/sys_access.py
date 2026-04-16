@@ -92,6 +92,21 @@ def disable_ntp() -> None:
         log.debug("Deactivated systemd-timesyncd.service (NTP)")
 
 
+def resync_ptp() -> bool:
+    commands = [
+        ["/usr/bin/systemctl", "stop", "phc2sys@eth0"],
+        ["/usr/bin/systemctl", "stop", "ptp4l@eth0"],
+        ["/usr/sbin/ntpdate", "-b", "-s", "-u", "pool.ntp.org"],
+        ["/usr/bin/systemctl", "start", "phc2sys@eth0"],
+        ["/usr/bin/systemctl", "start", "ptp4l@eth0"],
+    ]
+    had_error = False
+    for command in commands:
+        had_error |= subprocess.run(command, timeout=10, check=False).returncode > 0  # noqa: S603
+    reload_kernel_module()
+    return had_error
+
+
 def check_sys_access(iteration: int = 1, *, force_kmod_reload: bool = False) -> bool:
     """Return True if access failed."""
     retry_max: int = 5
