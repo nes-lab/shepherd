@@ -17,5 +17,4 @@ __all__ = [
     "activate_verbosity",
     "get_verbosity",
     "log",
-    "log",
 ]

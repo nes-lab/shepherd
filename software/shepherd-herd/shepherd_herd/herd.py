@@ -917,8 +917,8 @@ class Herd:
         separate: bool = False,
         delete_src: bool = False,
     ) -> bool:
-        tbed_id = tb_client.query_ids("Testbed")[0]
-        tbed_di = tb_client.query_item("Testbed", tbed_id)
+        tbed_id = tb_client.list_content_ids("Testbed")[0]
+        tbed_di = tb_client.get_content_item("Testbed", tbed_id)
         tbed = Testbed(**tbed_di)
         if tbed.shared_storage:
             log.info("Data should be locally at: %s", {tbed.data_on_server})
@@ -1003,10 +1003,10 @@ class Herd:
         invalid = False
         for content_class in [Firmware, EnergyEnvironment]:
             content_type = content_class.__name__
-            content_names = tb_client.query_names(model_type=content_type)
+            content_names = tb_client.list_content_names(model_type=content_type)
             log.debug(f"Will scan {len(content_names)} {content_type}-models")
             for name in content_names:
-                content_dict = tb_client.query_item(model_type=content_type, name=name)
+                content_dict = tb_client.get_content_item(model_type=content_type, name=name)
                 content = content_class(**content_dict)
                 if hasattr(content, "exists") and not content.exists():
                     log.error(f"- {content_type} '{content.name}' is missing!")

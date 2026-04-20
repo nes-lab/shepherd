@@ -19,7 +19,7 @@ from shepherd_core.data_models.experiment import Experiment
 from shepherd_core.data_models.experiment import TargetConfig
 from shepherd_core.data_models.task import TestbedTasks
 from shepherd_core.data_models.testbed import Testbed
-from shepherd_core.testbed_client.client_web import WebClient
+from shepherd_core.testbed_client.client_testbed import TestbedClient
 from shepherd_herd import Herd
 
 path_local = Path(__file__).parent
@@ -68,11 +68,10 @@ xp1 = Experiment(
 
 # TODO: this will definitely change in the near future or at least needs a login
 
-tb_client = WebClient()
 do_connect = False
 
 if do_connect:
-    tb_client.connect()
+    TestbedClient()
 testbed = Testbed(name=core_config.TESTBED)
 tb_tasks1 = TestbedTasks.from_xp(xp1, testbed)
 
