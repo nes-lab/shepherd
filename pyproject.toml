@@ -13,8 +13,10 @@ dependencies = [
     "shepherd-cal[dev]",
     #"shepherd-pru",
     "sync-analysis",
-    "shepherd-data[all]",
     "ansible",
+    # forced dev versions:
+    "shepherd-core[all]",
+    "shepherd-data[all]",
 ]
 requires-python = ">=3.10"
 
@@ -56,8 +58,8 @@ shepherd-pru = { path = "./software/firmware/pru0-module-py", editable = true}
 sync-analysis = { path = "./software/debug_analyze_time_sync", editable = true}
 
 # temporary dev-versions of sub-packets
-#shepherd-data = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_data"}
-#shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
+shepherd-data = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_data"}
+shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
 
 [tool.setuptools]
 # alibi declaration to avoid auto-discovery
