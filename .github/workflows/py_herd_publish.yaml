@@ -10,8 +10,12 @@ name: Upload Package to PyPi
 
 on:
   release:
-    types: [published]
+    types: [published]  # This does not work!
   workflow_dispatch:
+  push:
+    # branches: [ main ]  # this is handled as OR (push to main OR tagged)
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: read
