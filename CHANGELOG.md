@@ -1,6 +1,8 @@
 # History of Changes
 
-## 2026.04.2 - unreleased
+## 2026.05.1 - unreleased
+
+## 2026.04.2
 
 This update brings performance improvements, fewer bugs and removes limitations that are problematic for additional future testbeds.
 
