@@ -1,0 +1,39 @@
+# This is an example configuration for shepherd.
+# Instead of modifying, better make a copy and name it config.yaml
+# Behavior: emulate a BQ-Controller for target A, enable io-connection
+datatype: EmulationTask
+parameters:
+  duration: 10
+  input_path: /opt/shepherd/hardware/tests_manual/eenv_static_3000mV_5mA.h5
+  # output_path:
+  # - providing a directory -> file is named emu_timestamp.h5
+  # - for a complete path the filename is not changed except it exists and overwrite is disabled -> emu#num.h5
+  output_path: /var/shepherd/recordings/emu_tp2_hrv.h5
+  output_compression: lzf  # should be lzf, 1 (gzip level 1) or None (order of recommendation)
+  virtual_source: # provide path, name (ie. default, BQ25570) or parameters
+#     name: direct
+    inherit_from: BQ25570s
+    harvester:
+      name: mppt_bq_solar
+    storage:
+      name: Capacitor_100uF_6.3V
+      SoC_init: 0.8 # allow a proper / fast startup
+    V_buck_drop_mV: 0
+    V_output_mV: 3000
+  force_overwrite: true
+  use_cal_default: false
+  enable_io: true
+  io_port: B  # either Port A or B
+  pwr_port: B
+  voltage_aux: 3.3
+    # aux_voltage options:
+    # - None to disable (0 V),
+    # - 0-4.5 for specific const Voltage,
+    # - "buffer" will output intermediate voltage (vsource storage cap),
+    # - true or "main" to mirror main target voltage
+  uart_logging:
+    baudrate: 115200
+  gpio_tracing: {}  # trick for unchanged default
+  power_tracing: {}
+#    intermediate_voltage: true
+  verbose: 2 # serious performance impact for value > 3

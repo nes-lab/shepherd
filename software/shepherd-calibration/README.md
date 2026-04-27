@@ -17,6 +17,8 @@ For install from local sources:
 ```Shell
 cd shepherd/software/shepherd-calibration/
 pip3 install ./
+# or
+uv tool install shepherd/software/shepherd-calibration/.[dev] -p 3.12
 ```
 
 For install directly from GitHub-Sources (here `dev`-branch):
@@ -25,7 +27,7 @@ For install directly from GitHub-Sources (here `dev`-branch):
  pip install git+https://github.com/nes-lab/shepherd.git@dev#subdirectory=software/shepherd-calibration -U
 ```
 
-Calibration and profiling **requires a SMU from Keithley**. Our tests and initial calibration are done with a *Keithley 2604B SourceMeter* connected via ethernet. The shepherd-cape has be installed on a beaglebone running the latest shepherd-software and also be accessible via ethernet.
+Calibration and profiling **requires a SMU from Keithley**. Our tests and initial calibration are done with a *Keithley 2604B SourceMeter* connected via ethernet. The shepherd-cape must be installed on a beaglebone running the latest shepherd-software and also be accessible via ethernet.
 
 ## Usage
 
@@ -54,10 +56,10 @@ For actual measurements the program will tell you how to connect the SMU to the 
 ### Calibration
 
 ```Shell
-shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270060 --outfile sheep0_cape_v240b.yaml --verbose
-shepherd-cal calibration write sheep0 --user jane --cal-file sheep0_cape_v240b.yml --verbose
+shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --cape-serial 1270060 --outfile sheep0_cape_v250e.yaml --verbose
+shepherd-cal calibration write sheep0 --user jane --cal-file sheep0_cape_v250e.yaml --verbose
 # or new combined measure & write, specialized for the testbed
-shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --emulator-only --write --verbose --cape-serial 1270057
+shepherd-cal calibration measure sheep0 --user jane --smu-ip 10.0.0.24 --emulator-only --write --verbose --cape-serial 20252524
 ```
 
 ### Profiling

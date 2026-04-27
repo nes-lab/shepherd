@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
-from shepherd_sheep import log
-from shepherd_sheep import run_emulator
-from shepherd_sheep import run_harvester
+from shepherd_sheep.logger import log
+from shepherd_sheep.shepherd_run_functions import run_emulator
+from shepherd_sheep.shepherd_run_functions import run_harvester
 
 # run on observer with
 # sudo python3 /opt/shepherd/software/python-package/tests_manual/testbench_longrun.py

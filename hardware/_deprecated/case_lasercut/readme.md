@@ -1,5 +1,7 @@
 # LaserCut Case-Concept
 
+**!!! Deprecated !!!** - Due to thermal issues this approach was abandoned.
+
 ## Inner Parts
 
 - POE-Splitter 82x54x25

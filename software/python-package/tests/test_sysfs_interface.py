@@ -2,17 +2,17 @@ import time
 from pathlib import Path
 
 import pytest
-from shepherd_core import CalibrationCape
-from shepherd_core import CalibrationEmulator
-from shepherd_core.data_models import EnergyDType
-from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
-from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationCape
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
+from shepherd_core.data_models.content import EnergyDType
+from shepherd_core.data_models.content import VirtualSourceConfig
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config import VirtualStorageConfig
+from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.task import HarvestTask
-from shepherd_sheep import flatten_list
 from shepherd_sheep import sysfs_interface
+from shepherd_sheep.sys_access import check_sys_access
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ def cal4sysfs() -> dict:
 @pytest.mark.parametrize("attr", sysfs_interface.attribs)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_getters(attr: str) -> None:
-    sysfs_interface.check_sys_access()
+    check_sys_access()
     method_to_call = getattr(sysfs_interface, f"get_{attr}")
     assert method_to_call() is not None
 
@@ -71,7 +71,7 @@ def test_getters_fail(attr: str) -> None:
 @pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_start() -> None:
-    sysfs_interface.check_sys_access()
+    check_sys_access()
     sysfs_interface.set_start()
     time.sleep(5)
     assert sysfs_interface.get_state() == "running"
@@ -215,7 +215,7 @@ def test_writing_storage_settings(
     storage_cfg: StoragePRUConfig,
 ) -> None:
     sysfs_interface.write_virtual_storage_settings(storage_cfg)
-    values_1d = flatten_list(list(storage_cfg.model_dump().values()))
+    values_1d = sysfs_interface.flatten_list(list(storage_cfg.model_dump().values()))
     assert sysfs_interface.read_virtual_storage_settings() == values_1d
 
 
@@ -228,7 +228,7 @@ def test_initial_virtsource_settings() -> None:
         list(range(12 * 12)),
         list(range(12)),
     ]
-    values_1d = flatten_list(vsource_settings)
+    values_1d = sysfs_interface.flatten_list(vsource_settings)
     assert sysfs_interface.read_virtual_converter_settings() == values_1d
 
 
@@ -237,5 +237,5 @@ def test_writing_virtsource_settings(
     cnv_cfg: ConverterPRUConfig,
 ) -> None:
     sysfs_interface.write_virtual_converter_settings(cnv_cfg)
-    values_1d = flatten_list(list(cnv_cfg.model_dump().values()))
+    values_1d = sysfs_interface.flatten_list(list(cnv_cfg.model_dump().values()))
     assert sysfs_interface.read_virtual_converter_settings() == values_1d

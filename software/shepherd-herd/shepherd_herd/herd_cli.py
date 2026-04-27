@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from pathlib import PurePosixPath
 from types import FrameType
-from typing import TypedDict
 
 import click
 from shepherd_core.data_models.task import EmulationTask
@@ -111,7 +110,7 @@ def version() -> None:
     log.debug("h5py v%s", metadata.version("h5py"))
     log.debug("numpy v%s", metadata.version("numpy"))
     log.debug("pydantic v%s", metadata.version("pydantic"))
-    log.debug("PyYAML v%s", metadata.version("pyyaml"))
+    log.debug("rYAML v%s", metadata.version("ryaml"))
 
 
 @cli.command(
@@ -196,6 +195,21 @@ def resync(ctx: click.Context) -> None:
     activate_verbosity()
     with ctx.obj["herd"] as herd:
         exit_code = herd.resync()
+        if exit_code == 0:
+            exit_code = herd.get_sync()
+    ctx.exit(exit_code)
+
+
+@cli.command(
+    short_help="Gets current sync time-difference of sheep",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def timediff(ctx: click.Context) -> None:
+    """Get current time and restarts PTP on each sheep."""
+    activate_verbosity()
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.get_sync()
     ctx.exit(exit_code)
 
 
@@ -309,7 +323,7 @@ def harvest(
     ctx: click.Context,
     *,
     no_start: bool,
-    **kwargs: Unpack[TypedDict],
+    **kwargs: Unpack[dict],
 ) -> None:
     """Simultaneously record IV data from harvesting-sources on the chosen observers."""
     with ctx.obj["herd"] as herd:
@@ -419,7 +433,7 @@ def emulate(
     ctx: click.Context,
     *,
     no_start: bool,
-    **kwargs: Unpack[TypedDict],
+    **kwargs: Unpack[dict],
 ) -> None:
     """Emulate an energy environment for the attached sensor nodes.
 
@@ -703,7 +717,7 @@ def content(
     help="dry-run the programmer - no data gets written",
 )
 @click.pass_context
-def program(ctx: click.Context, **kwargs: Unpack[TypedDict]) -> None:
+def program(ctx: click.Context, **kwargs: Unpack[dict]) -> None:
     """Programmer for Target-Controller."""
     tmp_file = PurePosixPath("/tmp/target_image.hex")  # noqa: S108
     cfg_path = PurePosixPath("/etc/shepherd/config_for_herd.pickle")

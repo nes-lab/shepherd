@@ -6,11 +6,11 @@ check correctness of meta-files, mostly yaml, in & around the project
 from pathlib import Path
 
 import pytest
-from shepherd_core import CalibrationCape
-from shepherd_core.data_models import VirtualSourceConfig
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
-from shepherd_core.data_models.task import EmulationTask
-from shepherd_core.data_models.task import HarvestTask
+from shepherd_core.data_models.base.calibration import CalibrationCape
+from shepherd_core.data_models.content.virtual_source_config import VirtualSourceConfig
+from shepherd_core.data_models.task.emulation import EmulationTask
+from shepherd_core.data_models.task.harvest import HarvestTask
 
 
 @pytest.fixture

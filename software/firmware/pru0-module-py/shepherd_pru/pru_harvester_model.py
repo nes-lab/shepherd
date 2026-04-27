@@ -1,6 +1,6 @@
 import ctypes as ct
 
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
 from shepherd_core.logger import log
 
 from ._virtual_pru import virtual_pru

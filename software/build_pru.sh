@@ -1,29 +1,29 @@
 # dev-script for faster rebuilding (compared to ansible)
-CAPE_HW_VER=25
+CAPE_HW_VER=24
 cd /opt/shepherd/software/firmware/pru0-shepherd-fw/
 # EMU
 sudo make clean
-make TYPE=EMU
-sudo make install TYPE=EMU
+make TYPE=EMU CAPE_HW_VER=$CAPE_HW_VER
+sudo -E make install TYPE=EMU CAPE_HW_VER=$CAPE_HW_VER
 # HRV
 sudo make clean
-make TYPE=HRV
-sudo make install TYPE=HRV
+make TYPE=HRV CAPE_HW_VER=$CAPE_HW_VER
+sudo -E make install TYPE=HRV CAPE_HW_VER=$CAPE_HW_VER
 #
 cd /opt/shepherd/software/firmware/pru1-shepherd-fw/
 # GPIO
 sudo make clean
-make
-sudo make install
+make CAPE_HW_VER=$CAPE_HW_VER
+sudo -E make install CAPE_HW_VER=$CAPE_HW_VER
 #
 cd /opt/shepherd/software/firmware/pru0-programmer/
 # PRG SWD
 sudo make clean
-make TYPE=SWD
-sudo make install TYPE=SWD
+make TYPE=SWD CAPE_HW_VER=$CAPE_HW_VER
+sudo -E make install TYPE=SWD CAPE_HW_VER=$CAPE_HW_VER
 # PROG SBW
 sudo make clean
-make TYPE=SBW
-sudo make install TYPE=SBW
+make TYPE=SBW CAPE_HW_VER=$CAPE_HW_VER
+sudo -E make install TYPE=SBW CAPE_HW_VER=$CAPE_HW_VER
 #
 cd /opt/shepherd/software/

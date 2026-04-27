@@ -5,7 +5,7 @@ import zerorpc
 from past.builtins import execfile
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.logger import log
-from shepherd_sheep import ShepherdDebug
+from shepherd_sheep.shepherd_debug import ShepherdDebug
 
 
 def include(filename: str) -> None:

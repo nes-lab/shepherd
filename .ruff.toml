@@ -42,6 +42,7 @@ exclude= [  # external projects
 "software/shepherd-calibration/**" = ["ERA001"]  # comments
 "software/shepherd-calibration/shepherd_cal/**" = ["FBT003"]  # rpc had trouble with named params
 "software/shepherd-devicetest/**" = ["ERA001", "ARG001", "PLW0603", "F405", "F403", "ANN001"]
+"hardware/tests_manual/**" = ["INP001", "ERA001"]
 
 [lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.

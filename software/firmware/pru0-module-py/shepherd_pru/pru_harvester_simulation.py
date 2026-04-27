@@ -11,11 +11,11 @@ from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 
-from shepherd_core import CalibrationHarvester
-from shepherd_core import Reader
-from shepherd_core import Writer
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.content.virtual_harvester_config import VirtualHarvesterConfig
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
+from shepherd_core.reader import Reader
+from shepherd_core.writer import Writer
 from tqdm import tqdm
 
 from .pru_harvester_model import PruHarvesterModel

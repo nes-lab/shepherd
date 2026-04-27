@@ -9,12 +9,12 @@ from fabric import Connection
 from keithley2600 import Keithley2600
 from keithley2600.keithley_driver import Keithley2600Base
 from keithley2600.keithley_driver import KeithleyClass
-from shepherd_core import CalibrationCape
 from shepherd_core.calibration_hw_def import dac_voltage_to_raw
 from shepherd_core.data_models.base.cal_measurement import CalMeasPairs
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementEmulator
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementHarvester
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementPair
+from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.testbed.cape import TargetPort
 
 from .logger import log
@@ -71,7 +71,7 @@ class Calibrator:
             self.kth: Keithley2600Base = Keithley2600(f"TCPIP0::{smu_ip}::INSTR")
 
         # enter
-        self._cnx.sudo("systemctl restart shepherd-rpc", hide=True, warn=True)
+        self._cnx.sudo("/usr/bin/systemctl restart shepherd-rpc", hide=True, warn=True)
         time.sleep(2)
         self.sheep.connect(f"tcp://{host}:4242")
         if self.kth is not None:
@@ -79,7 +79,7 @@ class Calibrator:
 
     def __del__(self) -> None:
         # ... overcautious
-        self._cnx.sudo("systemctl stop shepherd-rpc", hide=True, warn=True)
+        self._cnx.sudo("/usr/bin/systemctl stop shepherd-rpc", hide=True, warn=True)
         self._cnx.close()
         del self._cnx
 

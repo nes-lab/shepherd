@@ -4,7 +4,6 @@ import multiprocessing
 import sys
 
 import chromalog
-from shepherd_core.logger import set_log_verbose_level
 
 # Top-Level Package-logger
 log = logging.getLogger("Shp")
@@ -28,6 +27,30 @@ verbosity_state: bool = False
 
 def get_verbosity() -> bool:
     return verbosity_state
+
+
+def set_log_verbose_level(log_: logging.Logger | logging.Handler, verbose: int) -> None:
+    """Set log level of shepherd."""
+    if verbose == 0:
+        log_.setLevel(logging.ERROR)
+        logging.basicConfig(level=logging.ERROR)
+    elif verbose == 1:
+        log_.setLevel(logging.WARNING)
+    elif verbose == 2:
+        log_.setLevel(logging.INFO)
+    elif verbose > 2:
+        log_.setLevel(logging.DEBUG)
+
+    if verbose < 3:
+        # reduce log-overhead when not debugging, also more user-friendly exceptions
+        logging._srcfile = None  # noqa: SLF001
+        logging.logThreads = False
+        logging.logProcesses = False
+
+    if verbose > 2:
+        chromalog.basicConfig(format="%(name)s %(levelname)s: %(message)s")
+    else:
+        chromalog.basicConfig(format="%(message)s")  # reduce internals
 
 
 def set_verbosity(*, state: bool | int = True, temporary: bool = False) -> None:

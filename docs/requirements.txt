@@ -37,7 +37,6 @@ PyNaCl
 pyparsing
 python-periphery<2.0.0
 pytz
-PyYAML>=6.0.0
 pyzmq
 requests
 scipy

@@ -4,26 +4,26 @@ import time
 import msgpack
 import msgpack_numpy
 import numpy as np
-from shepherd_core import CalibrationCape
-from shepherd_core import CalibrationEmulator
-from shepherd_core.data_models import EnergyDType
-from shepherd_core.data_models import GpioTracing
-from shepherd_core.data_models import PowerTracing
-from shepherd_core.data_models import VirtualSourceConfig
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
-from shepherd_core.data_models.content.virtual_source_config import ConverterPRUConfig
-from shepherd_core.data_models.content.virtual_storage_config import StoragePRUConfig
+from shepherd_core.data_models.base.calibration import CalibrationCape
+from shepherd_core.data_models.base.calibration import CalibrationEmulator
+from shepherd_core.data_models.content import EnergyDType
+from shepherd_core.data_models.content import VirtualSourceConfig
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
+from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
+from shepherd_core.data_models.experiment import GpioTracing
+from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 
 from . import commons
 from . import sysfs_interface
 from .eeprom import EEPROM
+from .hardware_target_io import TargetIO
 from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOError
 from .shepherd_io import ShepherdRxError
-from .target_io import TargetIO
 
 
 class ShepherdDebug(ShepherdIO):
@@ -418,12 +418,12 @@ class ShepherdDebug(ShepherdIO):
         v_array = np.empty([0], dtype=np.uint32)
         time.sleep(0.2)
         for _ in range(2):  # flush first 2 buffers out
-            super().shared_mem.iv_out.read()
+            self.shared_mem.iv_out.read()
             time.sleep(self.segment_period_s)
         for _ in range(length_n_buffers):  # get Data
             data_iv_ = None
             while data_iv_ is None:
-                data_iv_ = super().shared_mem.iv_out.read()
+                data_iv_ = self.shared_mem.iv_out.read()
                 time.sleep(self.segment_period_s / 2)
             c_array = np.hstack((c_array, data_iv_.current))
             v_array = np.hstack((v_array, data_iv_.voltage))

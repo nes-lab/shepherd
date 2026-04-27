@@ -5,6 +5,7 @@
   register: kernelrelease
   changed_when: false
 
+# NOTE: apt cache update was done in main.yml
 - name: APT - install hardcoded kernel image & headers
   ansible.builtin.apt:
     name:

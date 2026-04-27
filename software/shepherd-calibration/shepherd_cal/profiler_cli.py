@@ -5,7 +5,7 @@ from time import time
 import click
 import numpy as np
 import typer
-from shepherd_core import local_tz
+from shepherd_core.data_models.base.timezone import local_tz
 
 from .calibrator import INSTR_4WIRE
 from .calibrator import Calibrator
@@ -64,6 +64,7 @@ def measure(
     emulator: bool = emu_opt_t,
     short: bool = short_opt_t,
     cape_serial: str = serial_opt_t,
+    # TODO: version of cape is missing! so cal must run first for non-default versions
     quiet: bool = quiet_opt_t,
     verbose: bool = verbose_opt_t,
 ) -> None:

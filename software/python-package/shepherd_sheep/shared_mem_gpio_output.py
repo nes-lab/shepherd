@@ -6,15 +6,13 @@ from datetime import timedelta
 from types import TracebackType
 
 import numpy as np
-from shepherd_core.data_models import GpioTracing
+from shepherd_core.data_models.experiment import GpioTracing
 from typing_extensions import Self
 
 from . import commons
-from . import sysfs_interface as sfs
+from . import sysfs_interface as sysfs
+from .hardware_target_io import target_port_to_cape_mapping
 from .logger import log
-from .sysfs_interface import wait_for_state
-from .sysfs_interface import write_gpio_tracer_mask
-from .target_io import target_port_to_cape_mapping
 
 
 @dataclass
@@ -54,9 +52,9 @@ class SharedMemGPIOOutput:
 
     def __init__(self, mem_map: mmap, cfg: GpioTracing | None, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
-        self.size_by_sys: int = sfs.get_trace_gpio_size()
-        self.address: int = sfs.get_trace_gpio_address()
-        self.base: int = sfs.get_trace_iv_inp_address()
+        self.size_by_sys: int = sysfs.get_trace_gpio_size()
+        self.address: int = sysfs.get_trace_gpio_address()
+        self.base: int = sysfs.get_trace_iv_inp_address()
 
         if self.size_by_sys != self.SIZE_SECTION:
             msg = f"[{type(self).__name__}] Size does not match PRU-data"
@@ -125,8 +123,8 @@ class SharedMemGPIOOutput:
                 pin_num = target_port_to_cape_mapping.get(gpio)
                 if pin_num is not None:
                     mask_gpio |= 2**pin_num
-        wait_for_state("idle", 4)
-        write_gpio_tracer_mask(mask_gpio)
+        sysfs.wait_for_state("idle", 4)
+        sysfs.write_gpio_tracer_mask(mask_gpio)
         log.debug(
             "[%s] Tracer GPIO mask = %s (max is 0x03FF for cape v2.4, 0x3FFF for v2.5)",
             type(self).__name__,

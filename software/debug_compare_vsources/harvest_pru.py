@@ -3,7 +3,7 @@ from pathlib import PurePosixPath
 
 from config import host_selected
 from config import hrv_list
-from shepherd_core.data_models import VirtualHarvesterConfig
+from shepherd_core.data_models.content import VirtualHarvesterConfig
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.logger import log
 from shepherd_data import Reader

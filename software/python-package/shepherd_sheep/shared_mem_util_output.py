@@ -8,7 +8,7 @@ import numpy as np
 from typing_extensions import Self
 
 from . import commons
-from . import sysfs_interface as sfs
+from . import sysfs_interface as sysfs
 from .logger import log
 
 
@@ -59,9 +59,9 @@ class SharedMemUtilOutput:
 
     def __init__(self, mem_map: mmap) -> None:
         self._mm: mmap = mem_map
-        self.size_by_sys: int = sfs.get_trace_util_size()
-        self.address: int = sfs.get_trace_util_address()
-        self.base: int = sfs.get_trace_iv_inp_address()
+        self.size_by_sys: int = sysfs.get_trace_util_size()
+        self.address: int = sysfs.get_trace_util_address()
+        self.base: int = sysfs.get_trace_iv_inp_address()
 
         if self.size_by_sys != self.SIZE_SECTION:
             msg = f"[{type(self).__name__}] Size does not match PRU-data"

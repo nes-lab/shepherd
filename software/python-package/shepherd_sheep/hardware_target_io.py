@@ -15,13 +15,13 @@ with suppress(ModuleNotFoundError):
     from periphery import GPIO
 
 if CAPE_HW_VER == 25:
-    from .target_io_v25 import GPIO_LOG_BIT_POSITIONS
-    from .target_io_v25 import target_pins
-    from .target_io_v25 import target_port_to_cape_mapping
+    from .hardware_target_io_v25 import GPIO_LOG_BIT_POSITIONS
+    from .hardware_target_io_v25 import target_pins
+    from .hardware_target_io_v25 import target_port_to_cape_mapping
 else:
-    from .target_io_v24 import GPIO_LOG_BIT_POSITIONS
-    from .target_io_v24 import target_pins
-    from .target_io_v24 import target_port_to_cape_mapping
+    from .hardware_target_io_v24 import GPIO_LOG_BIT_POSITIONS
+    from .hardware_target_io_v24 import target_pins
+    from .hardware_target_io_v24 import target_port_to_cape_mapping
 
 
 class TargetIO:

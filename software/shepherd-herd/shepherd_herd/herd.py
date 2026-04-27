@@ -18,22 +18,22 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any
 
-import yaml
+import ryaml
 from fabric import Connection
 from fabric import Group  # There is a ThreadingGroup, but its no match to this code
 from fabric import Result
 from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.ssh_exception import SSHException
 from pydantic import validate_call
-from shepherd_core import Inventory
-from shepherd_core import local_now
-from shepherd_core import local_tz
-from shepherd_core.data_models import ShpModel
-from shepherd_core.data_models import Wrapper
+from shepherd_core.data_models.base.shepherd import ShpModel
 from shepherd_core.data_models.base.shepherd import path_to_str
+from shepherd_core.data_models.base.timezone import local_now
+from shepherd_core.data_models.base.timezone import local_tz
+from shepherd_core.data_models.base.wrapper import Wrapper
 from shepherd_core.data_models.task import extract_tasks
 from shepherd_core.data_models.task import prepare_task
 from shepherd_core.data_models.testbed import Testbed
+from shepherd_core.inventory import Inventory
 from shepherd_core.testbed_client import tb_client
 from tqdm import tqdm
 from typing_extensions import Self
@@ -105,8 +105,8 @@ class Herd:
 
             with host_path.open(encoding="utf-8-sig") as stream:
                 try:
-                    inventory_data = yaml.safe_load(stream)
-                except yaml.YAMLError as _xpt:
+                    inventory_data = ryaml.load(stream)
+                except ryaml.InvalidYamlError as _xpt:
                     msg = (
                         f"Couldn't read inventory file {host_path.as_posix()}, "
                         f"please provide a valid one"
@@ -350,8 +350,6 @@ class Herd:
             cnx.sudo(f"rm -f {tmp_path.as_posix()}")
             cnx.put(src, tmp_path.as_posix())
             xtr_arg = "-f" if force_overwrite else "-n"
-            if force_overwrite:
-                cnx.sudo(f"rm -f {dst.as_posix()}")
             cnx.sudo(f"mv {xtr_arg} {tmp_path.as_posix()} {dst.as_posix()}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
             log.error(
@@ -681,7 +679,7 @@ class Herd:
         :return: True is one node is still active
         """
         replies = self.run_cmd(
-            sudo=True, cmd="systemctl is-active shepherd", timeout=30, verbose=False
+            sudo=True, cmd="/usr/bin/systemctl is-active shepherd", timeout=30, verbose=False
         )
         active = False
 
@@ -780,13 +778,13 @@ class Herd:
             log.info("-> won't start while shepherd-instances are active")
             return 1
 
-        replies = self.run_cmd(sudo=True, cmd="systemctl start shepherd", timeout=30)
+        replies = self.run_cmd(sudo=True, cmd="/usr/bin/systemctl start shepherd", timeout=30)
         self.print_output(replies)
         return max([0] + [abs(reply.exited) for reply in replies.values()])
 
     def stop_measurement(self) -> int:
         log.debug("Shepherd-nodes affected: %s", list(self.hostnames.values()))
-        replies = self.run_cmd(sudo=True, cmd="systemctl stop shepherd", timeout=30)
+        replies = self.run_cmd(sudo=True, cmd="/usr/bin/systemctl stop shepherd", timeout=30)
         exit_code = max([0] + [abs(reply.exited) for reply in replies.values()])
         log.info("Shepherd was forcefully stopped")
         if exit_code > 0:
@@ -847,22 +845,8 @@ class Herd:
         )
         # TODO: best case - add all to one file or a new inventories-model?
 
-    def resync(self) -> int:
-        """Get current time via ntp and restart PTP on each sheep."""
-        commands = [
-            "systemctl stop phc2sys@eth0",
-            "systemctl stop ptp4l@eth0",
-            "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
-            "systemctl start phc2sys@eth0",
-            "systemctl start ptp4l@eth0",
-            "shepherd-sheep fix",  # restarts kernel module
-        ]
-        exit_code = 0
-        for command in commands:
-            ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
-            self.print_output(ret, verbose=True)
-            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
-
+    def get_sync(self) -> int:
+        """Get current time-variation of each sheep."""
         # Get the current time on each target node
         replies_date = self.run_cmd(
             sudo=False, cmd="date --iso-8601=seconds", timeout=30, verbose=False
@@ -879,6 +863,23 @@ class Herd:
             log.error("Timediff after resync is too large (%d s)", ts_diff)
             return 1
         log.info("Timediff is OK (%d s)", ts_diff)
+        return 0
+
+    def resync(self) -> int:
+        """Get current time via ntp and restart PTP on each sheep."""
+        commands = [
+            "/usr/bin/systemctl stop phc2sys@eth0",
+            "/usr/bin/systemctl stop ptp4l@eth0",
+            "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
+            "/usr/bin/systemctl start phc2sys@eth0",
+            "/usr/bin/systemctl start ptp4l@eth0",
+            "shepherd-sheep fix",  # restarts kernel module
+        ]
+        exit_code = 0
+        for command in commands:
+            ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
+            self.print_output(ret, verbose=True)
+            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
         return exit_code
 
     @validate_call
@@ -914,8 +915,8 @@ class Herd:
         separate: bool = False,
         delete_src: bool = False,
     ) -> bool:
-        tbed_id = tb_client.query_ids("Testbed")[0]
-        tbed_di = tb_client.query_item("Testbed", tbed_id)
+        tbed_id = tb_client.list_resource_ids("Testbed")[0]
+        tbed_di = tb_client.get_resource_item("Testbed", tbed_id)
         tbed = Testbed(**tbed_di)
         if tbed.shared_storage:
             log.info("Data should be locally at: %s", {tbed.data_on_server})
@@ -994,16 +995,16 @@ class Herd:
         TODO: should be done on each sheep, but currently assumes
               that the server has same path-access
         """
-        from shepherd_core.data_models import EnergyEnvironment
-        from shepherd_core.data_models import Firmware
+        from shepherd_core.data_models.content import EnergyEnvironment
+        from shepherd_core.data_models.content import Firmware
 
         invalid = False
         for content_class in [Firmware, EnergyEnvironment]:
             content_type = content_class.__name__
-            content_names = tb_client.query_names(model_type=content_type)
+            content_names = tb_client.list_resource_names(model_type=content_type)
             log.debug(f"Will scan {len(content_names)} {content_type}-models")
             for name in content_names:
-                content_dict = tb_client.query_item(model_type=content_type, name=name)
+                content_dict = tb_client.get_resource_item(model_type=content_type, name=name)
                 content = content_class(**content_dict)
                 if hasattr(content, "exists") and not content.exists():
                     log.error(f"- {content_type} '{content.name}' is missing!")

@@ -1,5 +1,6 @@
 ---
 
+# NOTE: apt cache update was done in main.yml
 - name: APT - Install required packages for Python
   ansible.builtin.apt:
     name:

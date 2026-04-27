@@ -17,8 +17,8 @@ For ansible setup:
 
 For an active installation:
 
-- change device-tree loaded during boot in `/boot/uEnv.txt` (24A0 or 25A0)
-- update pru-firmwares (modify envVar in `./software/build_pru.sh` and run script)
+- change device-tree loaded during boot in `/boot/uEnv.txt` (24A0 or 25A0) -> needs reboot
+- modify envVar in `./software/build_pru.sh` (24 or 25) and run script to update pru-firmwares
 - python pulls cape-version from EEPROM automatically or defaults to the newest version
 
 ## Custom Install
@@ -53,6 +53,13 @@ ip a
 - ansible `deploy/setup_testbed_observer.yml` (secure, MAC broadcasting, NFS mounting)
 - grow partition? -> add to observer-role?
 
+Update distro
+
+```Shell
+shepherd-herd shell "sudo apt update"
+shepherd-herd shell "sudo apt dist-upgrade -y"
+```
+
 Activate [SysRqd](https://github.com/jd/sysrqd)
 
 ```Shell
@@ -64,17 +71,35 @@ shepherd-herd shell "sudo chmod 0600 /etc/sysrqd.secret"
 shepherd-herd shell "sudo systemctl restart sysrqd"
 shepherd-herd shell "sudo systemctl status sysrqd"
 
-telnet 192.168.165.200 4094  --> only working inside sheep-network
+# optional test:
+telnet 192.168.165.200 4094
+# -> only working inside sheep-network
 > PW
 > b  (for hard reboot)
-
-to exit: ctrl + altgr + ] -> on telnet-console: quit
+# to exit: ctrl + altgr + ] -> on telnet-console: quit
 ```
 
 Grow Main-Partition on SD
 
 ```shell
-yes | sudo parted /dev/mmcblk0 resizepart 1 100%
-sudo resize2fs /dev/mmcblk0p1
-df -h
+shepherd-herd shell "yes | sudo parted /dev/mmcblk0 resizepart 1 100% ---pretend-input-tty"
+shepherd-herd shell "sudo resize2fs /dev/mmcblk0p1"
+shepherd-herd shell "df -h | grep mmc"
+```
+
+Add local shepherd-repo
+
+```shell
+shepherd-herd shell "sudo rm -rf /opt/shepherd"
+shepherd-herd shell "cd /opt/ && sudo git clone https://github.com/nes-lab/shepherd"
+shepherd-herd shell "sudo chown -R jane /opt/shepherd/"
+shepherd-herd shell "sudo chmod a+rwx -R /opt/shepherd/"
+#shepherd-herd shell "cd /opt/shepherd && git checkout dev"
+shepherd-herd shell "cd /opt/shepherd && git pull"
+```
+
+In your local shepherd-repo you can add the observer-roll to the nodes:
+
+```Shell
+ansible-playbook deploy/setup_testbed_observer.yml
 ```

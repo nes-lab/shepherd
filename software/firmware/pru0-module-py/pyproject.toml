@@ -10,8 +10,9 @@ maintainers = [
     {name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"},
 ]
 
-license = {text = "MIT"}
-dynamic = ["version"]
+version = "2026.04.2"
+
+license = "MIT"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -23,7 +24,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Natural Language :: English",
 ]
@@ -51,6 +51,7 @@ content-type = "text/markdown"
 [build-system]
 requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
+# do not switch to uv yet, as this is currently easier
 
 [tool.setuptools]
 package-dir = {"" = "."}
@@ -64,9 +65,6 @@ namespaces = false
 
 [tool.setuptools.package-data]
 "*" = ["*.so"]
-
-[tool.setuptools.dynamic]
-version = {attr = "shepherd_pru.__version__"}
 
 [tool.aliases]
 test = "pytest"

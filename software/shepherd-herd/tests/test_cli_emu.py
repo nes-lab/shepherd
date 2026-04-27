@@ -1,27 +1,36 @@
+import tempfile
 import time
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from shepherd_core import Reader
 from shepherd_herd.herd_cli import cli
 
 from .conftest import generate_h5_file
 from .conftest import wait_for_end
 
 
-@pytest.mark.timeout(60)
-@pytest.mark.usefixtures("_herd_stopped")
-def test_emu_prepare(cli_runner: CliRunner, tmp_path: Path) -> None:
+@pytest.fixture(scope="module")
+def eenv_file(cli_runner: CliRunner) -> Generator[Path, None, None]:
     # distribute file and emulate from it in following tests
-    test_file = generate_h5_file(tmp_path, "pytest_src.h5")
-    res = cli_runner.invoke(cli, ["-v", "distribute", "--force-overwrite", test_file.as_posix()])
-    assert res.exit_code == 0
-    wait_for_end(cli_runner)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = Path(tmp_dir)
+        file_path = generate_h5_file(tmp_path, "pytest_src.h5")
+        res = cli_runner.invoke(
+            cli, ["-v", "distribute", "--force-overwrite", file_path.as_posix()]
+        )
+        # -> expected at /tmp/pytest_src.h5
+        assert res.exit_code == 0
+        wait_for_end(cli_runner, timeout=60)
+        yield file_path
 
 
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_herd_stopped")
-def test_emu_example(cli_runner: CliRunner) -> None:
+def test_emu_example(cli_runner: CliRunner, eenv_file: Path) -> None:
+    runtime = Reader(file_path=eenv_file, verbose=False).runtime_s
     res = cli_runner.invoke(
         cli,
         [
@@ -31,11 +40,11 @@ def test_emu_example(cli_runner: CliRunner) -> None:
             "BQ25504",
             "-o",
             "pytest_emu.h5",
-            "pytest_src.h5",
+            eenv_file.name,
         ],
-    )
+    )  # -> config expected in /etc/shepherd/config.pickle
     assert res.exit_code == 0
-    wait_for_end(cli_runner, tmin=20)
+    wait_for_end(cli_runner, tmin=runtime)
 
 
 @pytest.mark.timeout(80)
@@ -59,15 +68,17 @@ def test_emu_example_fail(cli_runner: CliRunner) -> None:
 
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_herd_stopped")
-def test_emu_minimal(cli_runner: CliRunner) -> None:
-    res = cli_runner.invoke(cli, ["emulate", "pytest_src.h5"])
+def test_emu_minimal(cli_runner: CliRunner, eenv_file: Path) -> None:
+    runtime = Reader(file_path=eenv_file, verbose=False).runtime_s
+    res = cli_runner.invoke(cli, ["emulate", eenv_file.name])
     assert res.exit_code == 0
-    wait_for_end(cli_runner, tmin=20)
+    wait_for_end(cli_runner, tmin=runtime)
 
 
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_herd_stopped")
-def test_emu_all_args_long(cli_runner: CliRunner) -> None:
+def test_emu_all_args_long(cli_runner: CliRunner, eenv_file: Path) -> None:
+    runtime = Reader(file_path=eenv_file, verbose=False).runtime_s
     res = cli_runner.invoke(
         cli,
         [
@@ -88,16 +99,17 @@ def test_emu_all_args_long(cli_runner: CliRunner) -> None:
             "BQ25504",
             "--output-path",
             "pytest_emu.h5",
-            "pytest_src.h5",
+            eenv_file.name,
         ],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner, tmin=15)
+    wait_for_end(cli_runner, tmin=runtime)
 
 
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_herd_stopped")
-def test_emu_all_args_short(cli_runner: CliRunner) -> None:
+def test_emu_all_args_short(cli_runner: CliRunner, eenv_file: Path) -> None:
+    runtime = Reader(file_path=eenv_file, verbose=False).runtime_s
     # short arg or opposite bool val
     res = cli_runner.invoke(
         cli,
@@ -119,16 +131,17 @@ def test_emu_all_args_short(cli_runner: CliRunner) -> None:
             "BQ25570",
             "-o",
             "pytest_emu.h5",
-            "pytest_src.h5",
+            eenv_file.name,
         ],
     )
     assert res.exit_code == 0
-    wait_for_end(cli_runner, tmin=15)
+    wait_for_end(cli_runner, tmin=runtime)
 
 
 @pytest.mark.timeout(150)
 @pytest.mark.usefixtures("_herd_stopped")
-def test_emu_no_start(cli_runner: CliRunner) -> None:
+def test_emu_no_start(cli_runner: CliRunner, eenv_file: Path) -> None:
+    runtime = Reader(file_path=eenv_file, verbose=False).runtime_s
     res = cli_runner.invoke(
         cli,
         [
@@ -139,7 +152,7 @@ def test_emu_no_start(cli_runner: CliRunner) -> None:
             "-o",
             "pytest_emu.h5",
             "--no-start",
-            "pytest_src.h5",
+            eenv_file.name,
         ],
     )
     assert res.exit_code == 0
@@ -147,13 +160,13 @@ def test_emu_no_start(cli_runner: CliRunner) -> None:
     # manual start
     res = cli_runner.invoke(cli, ["-v", "start"])
     assert res.exit_code == 0
-    wait_for_end(cli_runner, tmin=15)
+    wait_for_end(cli_runner, tmin=runtime)
 
 
 @pytest.mark.timeout(60)
 @pytest.mark.usefixtures("_herd_stopped")
-def test_emu_force_stop(cli_runner: CliRunner) -> None:
-    res = cli_runner.invoke(cli, ["emulate", "pytest_src.h5"])
+def test_emu_force_stop(cli_runner: CliRunner, eenv_file: Path) -> None:
+    res = cli_runner.invoke(cli, ["emulate", eenv_file.name])
     assert res.exit_code == 0
     time.sleep(10)
     # forced stop

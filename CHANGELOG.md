@@ -1,48 +1,69 @@
 # History of Changes
 
-## 2026.03.1
+## 2026.04.2 - unreleased
+
+This update brings performance improvements, fewer bugs and removes limitations that are problematic for additional future testbeds.
+
+**Breaking Changes:** The whole shepherd-software-stack will have to be updated.
 
 ### Highlights
 
-- execution time of VSrc significantly reduced by > 20%
+- execution time of VSrc on PRU significantly reduced by > 20%
 - increased resolution and range of LUT-division for VSrc in PRU
 - use more safe math FNs in vsource code (now, that there is room)
 - fix wrong cal being used when tracing energy storage
 - add support for new cape hardware v2.5e (more target IO, two power good pins)
   - the altered wiring frees up PRU1 - so idle GPIO sampling improves by 20 % (from 1.4 to 1.67 MHz)
-- power good is now calculated with two pins in mind (low & high threshold) and automatically falls back to hysteresis if second pin is missing in hardware (capes before v2.5)
+- power-good is now calculated with two pins in mind (low & high threshold) and automatically falls back to hysteresis if second pin is missing in hardware (capes before v2.5)
+- massive speedup of sheep-tool, see https://github.com/nes-lab/shepherd/issues/150 for benchmarks
+  - big refactoring or core-lib and cli.py to avoid expensive imports
+  - replace PyYAML with faster ryaml
 
 ### Details
 
-- PRU
-  - fix wrong cal being written to PRU when tracing energy storage
-  - optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
-    - add python script for calculation and visualization
-  - add special mul32e() to allow full expansion u32*u32 = u64
-  - optimize VSrc in PRU0 to use less u64-calculations
-    - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
-    - fixes #123
-  - use more safe math FNs in vsource code
-  - internal refactoring & renaming mostly around BATOK (now called power good)
+Sheep
+
+- fix for a fix #133 - tracing intermediate voltage now works as expected
+- move from setuptools to uv
+- unittests - limit tests to capabilities of cape (hrv, emu)
+- CLI - add `resync`
+- ~~increase warning for pru0-util from 95 % to 98 %~~ (reverted for early warning of overload)
+
+PRU
+
+- fix wrong cal being written to PRU when tracing energy storage
+- optimize LUT-division to cover 0.13 to 16 V and be more precise and less compute-heavy
+  - add python script for calculation and visualization
+- add special mul32e() to allow full expansion u32*u32 = u64
+- optimize VSrc in PRU0 to use less u64-calculations
+  - utilization drops from 96 % mean, 99 % max with a heavy config to 75 % / 78 %
+  - fixes #123
+- use more safe math FNs in vsource code
+- internal refactoring & renaming mostly around BATOK (now called power good)
 - activate `-Wpedantic` for py-module / c-code and fix warnings
 - activate `-Wpedantic` for pru-firmwares / c-code ~~and fix warnings~~
-- ~~sheep - increase warning for pru0-util from 95 % to 98 %~~ (reverted for early warning of overload)
-- add support for new cape hw v25
-  - split & add device-tree to support both capes
-  - add cape-abstraction to PRU, sheep, ansible
-  - test both cape versions in GH workflows
+- PRU0 - add error when gpio-trace result won't fit into current buffer-design
+
+Support for new cape hw v25
+
+- split & add device-tree to support both capes
+- add cape-abstraction to PRU, sheep, ansible
+- test both cape versions in GH workflows
 - add `CAPE_HW_VER` to build-systems for altering config
   - `shepherd-sheep eeprom read --hw-version` now returns that version (i.e. prints `25` on screen)
 - power good is now calculated with two pins in mind (low & high threshold)
   - it is automatically translated to hysteresis if second pin is missing
   - for cape v2.5 it will be set on PRU0, making room for slightly higher GPIO-tracing rates
 - PRU0 - disable LED-DEBUGGING as all available pins are used for IO on cape 2.5 (will also make GPIO-Tracing faster)
-- PRU0 - add error when gpio-trace result won't fit into current buffer-design
 - the new cape has a different wiring - the PRU1 sampling GPIO has less maintenance to do
   - so the worst execution time resulted in 1.4 MHz idle sampling before
   - the new cape is able to sample at 1.67 MHz (minimum, idle) -> 20 % improvement
-- sheep - fix for a fix #133 - tracing intermediate voltage now works as expected
-- sheep-unittests - limit tests to capabilities of cape (hrv, emu)
+
+Misc
+
+- python-tools
+  - modernize codebase
+  - switch from utf-8-sig to plain utf-8
 - py / uv - abandon global cache
 - ansible
   - improve uv commands
@@ -50,11 +71,27 @@
   - repair and tune functionality
   - extend cleanup before image-generation
   - add config for journald, to limit storage usage
+  - tweak renaming of hostnames
 - documentation
   - improve information about compatible linux distros
   - add info about how to set up a read-to-use linux-image
   - add info about how to switch software to another cape-versions
 - internal - move doc for the release-procedure to root readme
+- hardware
+  - add case for observer
+  - add test-routine for new capes
+  - update testbed information-sticker
+  - add cage for cape
+  - add bulk holders for up to 5x cape and 10x target PCBs (can be configured via OpenSCAD)
+  - add cable clip 3d-file
+  - revert deprecation of cape v2.4c, as it is essential for harvesting
+- herd - add timediff-command
+- cal-tool
+  - add plotting-script to show multiple cal
+  - add CLI-command to plot a cal
+- add zizmor to find vulnerabilities in GH actions
+  - explicitly clear permissions of GH-actions and reduce elevation-surface
+- **tested**: ansible install, pytest sheep, pytest herd windows, ~~pytest shepherd_pru~~ unchanged
 
 ## 2026.02.1
 

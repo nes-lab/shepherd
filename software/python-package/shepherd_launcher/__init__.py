@@ -10,12 +10,11 @@ import signal
 import sys
 import time
 from contextlib import suppress
+from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
 from typing_extensions import Self
-
-__version__ = "2026.03.1"
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpLauncher")
@@ -54,7 +53,7 @@ class Launcher:
     ) -> None:
         log.debug(
             "Initializing Launcher v%s for '%s' (pin_button = %d, pin_led = %d)",
-            __version__,
+            metadata.version("shepherd-sheep"),
             service_name,
             pin_button,
             pin_led,

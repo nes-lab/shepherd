@@ -3,6 +3,8 @@ name: Static analysis of whole project
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   static-analysis:
     runs-on: ubuntu-latest

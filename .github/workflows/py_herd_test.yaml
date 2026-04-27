@@ -3,6 +3,8 @@ name: Test Herd
 on:
   workflow_call:
 
+permissions: {}
+
 jobs:
   herd-tests:
     strategy:

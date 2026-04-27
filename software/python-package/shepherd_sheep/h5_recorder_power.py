@@ -2,9 +2,9 @@ from types import TracebackType
 
 import h5py
 import numpy as np
-from shepherd_core import CalibrationEmulator as CalEmu
-from shepherd_core import CalibrationSeries as CalSeries
-from shepherd_core import Compression
+from shepherd_core.data_models.base.calibration import CalibrationEmulator as CalEmu
+from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
+from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .commons import SAMPLE_INTERVAL_NS
 from .h5_monitor_abc import Monitor

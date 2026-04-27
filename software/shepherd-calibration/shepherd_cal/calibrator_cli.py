@@ -4,9 +4,9 @@ from time import time
 
 import click
 import typer
-from shepherd_core import local_tz
 from shepherd_core.data_models.base.cal_measurement import CalMeasurementCape
 from shepherd_core.data_models.base.calibration import CapeData
+from shepherd_core.data_models.base.timezone import local_tz
 
 from . import plot_calibration
 from .calibrator import INSTR_4WIRE
@@ -175,3 +175,39 @@ def read(
     else:
         cal_file = Path(cal_file)
         shpcal.retrieve(cal_file)
+
+
+meas_path_arg_t = typer.Argument(
+    default=Path().cwd(), help="root path or single .measurement.yaml-file"
+)
+
+
+@cli_cal.command()
+def plot(meas_path: Path | None = meas_path_arg_t) -> None:
+    """Plot measured calibration-data (provide root path or single .measurement.yaml-file)"""
+    if meas_path is None:
+        meas_path = Path().cwd()
+    if not meas_path.exists():
+        raise click.UsageError("provided path does not exist")
+    if meas_path.is_dir():
+        meas_files = meas_path.glob("*.measurement.yaml")
+    elif meas_path.is_file():
+        meas_files = [meas_path]
+    else:
+        raise click.UsageError("provided path is neither file nor directory")
+
+    for meas_file in meas_files:
+        try:
+            cms = CalMeasurementCape.from_file(meas_file)
+        except ValueError:
+            log.warning("Could not load provided %s -> will skip", meas_file)
+            continue
+
+        try:
+            cal = cms.to_cal()
+        except ValueError:
+            log.warning("Could not generate Cal from %s -> will skip", meas_file)
+            continue
+        out_file = meas_file.with_stem(".".join(meas_file.stem.split(".")[0:-1]))
+        plot_calibration(cms, cal, out_file)
+        log.info("Plotted data to '%s.xyz'.", out_file.name)

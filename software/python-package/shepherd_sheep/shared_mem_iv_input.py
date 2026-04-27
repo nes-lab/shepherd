@@ -7,11 +7,11 @@ from types import MappingProxyType
 from types import TracebackType
 
 import numpy as np
-from shepherd_core import CalibrationSeries
+from shepherd_core.data_models.base.calibration import CalibrationSeries
 from typing_extensions import Self
 
 from . import commons
-from . import sysfs_interface as sfs
+from . import sysfs_interface as sysfs
 from .logger import log
 
 
@@ -87,9 +87,9 @@ class SharedMemIVInput:
         self.n_samples_per_chunk: int = n_samples_per_segment or self.N_SAMPLES_PER_CHUNK_DEF
         self.n_buffer_chunks: int = self.N_SAMPLES // self.n_samples_per_chunk
 
-        self.size_by_sys: int = sfs.get_trace_iv_inp_size()
-        self.address: int = sfs.get_trace_iv_inp_address()
-        self.base: int = sfs.get_trace_iv_inp_address()
+        self.size_by_sys: int = sysfs.get_trace_iv_inp_size()
+        self.address: int = sysfs.get_trace_iv_inp_address()
+        self.base: int = sysfs.get_trace_iv_inp_address()
 
         if self.size_by_sys != self.SIZE_SECTION:
             msg = f"[{type(self).__name__}] Size does not match PRU-data"
@@ -243,7 +243,7 @@ class SharedMemIVInput:
             raise ValueError("Firmware file is empty")
         self._mm.seek(self._offset_base)
         self._mm.write(data)
-        sfs.write_programmer_datasize(data_size)
+        sysfs.write_programmer_datasize(data_size)
         log.debug(
             "[%s] Wrote Firmware-Data to SharedMEM-Buffer (size = %d bytes)",
             type(self).__name__,

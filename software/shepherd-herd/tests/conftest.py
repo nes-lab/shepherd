@@ -4,7 +4,7 @@ from shutil import copy
 
 import numpy as np
 import pytest
-import yaml
+import ryaml
 from click.testing import CliRunner
 from shepherd_data import Writer
 from shepherd_herd import Herd
@@ -12,7 +12,7 @@ from shepherd_herd.herd import path_xdg_config
 from shepherd_herd.herd_cli import cli
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def cli_runner() -> CliRunner:
     return CliRunner()
 
@@ -20,8 +20,8 @@ def cli_runner() -> CliRunner:
 def extract_first_sheep(herd_path: Path) -> str:
     with herd_path.open(encoding="utf-8-sig") as stream:
         try:
-            inventory_data = yaml.safe_load(stream)
-        except yaml.YAMLError as _xpt:
+            inventory_data = ryaml.load(stream)
+        except ryaml.InvalidYamlError as _xpt:
             msg = f"Couldn't read inventory file {herd_path.as_posix()}"
             raise TypeError(msg) from _xpt
     return next(iter(inventory_data["sheep"]["hosts"].keys()))
@@ -34,7 +34,7 @@ def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -
         if duration > timeout:
             msg = f"Shepherd ran into timeout ({timeout} s)"
             raise TimeoutError(msg)
-        time.sleep(2)
+        time.sleep(1)
     duration = time.time() - ts_start
     if duration < tmin:
         msg = f"Shepherd only took {duration} s (min = {tmin} s)"

@@ -1,7 +1,7 @@
 import ctypes as ct
 from typing import ClassVar
 
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
 
 
 class HarvesterConfig(ct.Structure):

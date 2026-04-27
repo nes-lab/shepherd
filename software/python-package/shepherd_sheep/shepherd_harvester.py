@@ -4,8 +4,8 @@ import time
 from contextlib import ExitStack
 from types import TracebackType
 
-from shepherd_core import local_tz
-from shepherd_core.data_models.content.virtual_harvester_config import HarvesterPRUConfig
+from shepherd_core.data_models.base.timezone import local_tz
+from shepherd_core.data_models.content.virtual_harvester_config_pru import HarvesterPRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from tqdm import tqdm
 from typing_extensions import Self
@@ -95,7 +95,7 @@ class ShepherdHarvester(ShepherdIO):
         self.stack.enter_context(self.writer)
         # add hostname to file
         self.writer.store_hostname(platform.node().strip())
-        self.writer.store_config(self.cfg.model_dump())
+        self.writer.store_config(self.cfg)
         self.writer.start_monitors(
             sys=self.cfg.sys_logging,
         )

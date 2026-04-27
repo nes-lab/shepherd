@@ -1,13 +1,13 @@
 from types import TracebackType
 
 import h5py
-import yaml
-from shepherd_core import Compression
+import ryaml
+from shepherd_core.data_models.content.enum_datatypes import Compression
 
 from .h5_monitor_abc import Monitor
+from .hardware_target_io import GPIO_LOG_BIT_POSITIONS
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_gpio_output import SharedMemGPIOOutput
-from .target_io import GPIO_LOG_BIT_POSITIONS
 
 
 class GpioRecorder(Monitor):
@@ -29,11 +29,7 @@ class GpioRecorder(Monitor):
             compression=compression,
         )
         self.data["value"].attrs["unit"] = "n"
-        self.data["value"].attrs["description"] = yaml.safe_dump(
-            GPIO_LOG_BIT_POSITIONS,
-            default_flow_style=False,
-            sort_keys=False,
-        )
+        self.data["value"].attrs["description"] = ryaml.dumps(GPIO_LOG_BIT_POSITIONS)
 
     def __exit__(
         self,

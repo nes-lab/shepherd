@@ -22,13 +22,13 @@ if TYPE_CHECKING:
     from .h5_monitor_abc import Monitor
 
 import numpy as np
-from shepherd_core import CalibrationEmulator as CalEmu
-from shepherd_core import CalibrationHarvester as CalHrv
-from shepherd_core import CalibrationSeries as CalSeries
-from shepherd_core import Writer as CoreWriter
-from shepherd_core.data_models import SystemLogging
-from shepherd_core.data_models import UartLogging
-from shepherd_core.data_models.task import Compression
+from shepherd_core.data_models.base.calibration import CalibrationEmulator as CalEmu
+from shepherd_core.data_models.base.calibration import CalibrationHarvester as CalHrv
+from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
+from shepherd_core.data_models.content.enum_datatypes import Compression
+from shepherd_core.data_models.experiment import SystemLogging
+from shepherd_core.data_models.experiment import UartLogging
+from shepherd_core.writer import Writer as CoreWriter
 
 from .h5_monitor_kernel import KernelMonitor
 from .h5_monitor_phc2sys import PHC2SYSMonitor
@@ -187,7 +187,7 @@ class Writer(CoreWriter):
         # end monitors
         for monitor in self.monitors:
             monitor.__exit__()
-
+        log.info("Wrote result to: %s", self.file_path.as_posix())
         super().__exit__()
 
     def write_iv_buffer(self, data: IVTrace) -> None:

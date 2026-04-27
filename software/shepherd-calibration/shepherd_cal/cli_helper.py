@@ -2,11 +2,8 @@ import signal
 import sys
 from types import FrameType
 
-import click
-import shepherd_core
 import typer
 
-from . import __version__
 from .logger import activate_verbosity
 from .logger import log
 
@@ -24,11 +21,13 @@ def cli_setup_callback(*, verbose: bool = False, print_version: bool = False) ->
         activate_verbosity()
 
     if print_version:
-        log.info("Shepherd-Cal v%s", __version__)
-        log.debug("Shepherd-Core v%s", shepherd_core.__version__)
+        from importlib import metadata
+
         log.debug("Python v%s", sys.version)
-        log.debug("Typer v%s", typer.__version__)
-        log.debug("Click v%s", click.__version__)
+        log.info("Sync-Analysis v%s", metadata.version("sync-analysis"))
+        log.info("Shepherd-Core v%s", metadata.version("shepherd-core"))
+        log.info("Typer v%s", metadata.version("typer"))
+        log.info("Click v%s", metadata.version("click"))
 
 
 # NOTE: typer.Option seems to imply Optional[type]
