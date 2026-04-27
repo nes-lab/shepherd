@@ -30,7 +30,7 @@ classifiers = [
 ]
 requires-python = ">= 3.11"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2026.02.1",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2026.04.2",  # limit due to newest features
     "click",
     "numpy",
     "fabric",

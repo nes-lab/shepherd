@@ -72,7 +72,7 @@ do_connect = False
 
 if do_connect:
     TestbedClient()
-testbed = Testbed(name=core_config.TESTBED)
+testbed = Testbed(name=core_config.testbed_name)
 tb_tasks1 = TestbedTasks.from_xp(xp1, testbed)
 
 tb_tasks1.to_file(path_tasks)
