@@ -350,8 +350,6 @@ class Herd:
             cnx.sudo(f"rm -f {tmp_path.as_posix()}")
             cnx.put(src, tmp_path.as_posix())
             xtr_arg = "-f" if force_overwrite else "-n"
-            if force_overwrite:
-                cnx.sudo(f"rm -f {dst.as_posix()}")
             cnx.sudo(f"mv {xtr_arg} {tmp_path.as_posix()} {dst.as_posix()}", warn=True, hide=True)
         except (NoValidConnectionsError, SSHException, TimeoutError):
             log.error(
