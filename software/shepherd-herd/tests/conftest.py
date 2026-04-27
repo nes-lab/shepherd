@@ -12,7 +12,7 @@ from shepherd_herd.herd import path_xdg_config
 from shepherd_herd.herd_cli import cli
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def cli_runner() -> CliRunner:
     return CliRunner()
 
@@ -34,7 +34,7 @@ def wait_for_end(cli_runner: CliRunner, tmin: float = 0, timeout: float = 999) -
         if duration > timeout:
             msg = f"Shepherd ran into timeout ({timeout} s)"
             raise TimeoutError(msg)
-        time.sleep(2)
+        time.sleep(1)
     duration = time.time() - ts_start
     if duration < tmin:
         msg = f"Shepherd only took {duration} s (min = {tmin} s)"
