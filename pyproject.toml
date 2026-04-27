@@ -3,7 +3,7 @@
 # uv pip install .
 [project]
 name = "shepherd-main"
-version = "2026.04.1"
+version = "2026.04.2"
 description = "Infrastructure for the Testbed, mainly focused on the Observers "
 readme = "README.md"
 
@@ -42,10 +42,19 @@ doc = [
    "myst-parser",
 ]
 
-all = ["shepherd-main[dev,doc]"]
+all = ["shepherd-main[dev,doc]",]
+
+[build-system]
+requires = ["uv_build>=0.11.0,<0.12.0"]
+build-backend = "uv_build"
 
 [tool.uv]
 package = false
+
+[tool.uv.build-backend]
+# alibi declaration of herd to avoid auto-discovery
+module-name = "shepherd_herd"
+module-root = "./software/shepherd-herd"
 
 [tool.uv.sources]
 shepherd-sheep = { path = "./software/python-package", editable = true}

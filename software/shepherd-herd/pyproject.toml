@@ -11,7 +11,7 @@ maintainers = [
     {name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"},
 ]
 
-version = "2026.04.1"
+version = "2026.04.2"
 
 license = "MIT"
 
@@ -67,7 +67,6 @@ shepherd-herd = "shepherd_herd.herd_cli:cli"
 [build-system]
 requires = ["uv_build>=0.11.0,<0.12.0"]
 build-backend = "uv_build"
-# ⤷ switched to uv because package is not public
 
 [tool.uv.build-backend]
 module-root = "./"

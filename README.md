@@ -173,6 +173,6 @@ prek run --all-files
 # additional QA-Tests (currently with open issues)
 ty check
 
-bump2version --allow-dirty --new-version 2026.04.1 patch
+bump2version --allow-dirty --new-version 2026.04.2 patch
 # version-format: YYYY.MM.r
 ```
