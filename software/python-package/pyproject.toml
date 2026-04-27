@@ -47,7 +47,6 @@ dependencies = [
     "greenlet",  # added here to allow sourcing from custom uv-index
     "zstandard",  # added here to allow sourcing from custom uv-index
     "pyzmq",  # added here to allow sourcing from custom uv-index
-    "setuptools",  # uv complains sometimes, that it is not there
 ]
 
 [project.optional-dependencies]
@@ -111,13 +110,6 @@ addopts = "-vvv --stepwise"
 
 [tool.coverage.run]
 source = ["shepherd_sheep"]
-
-[tool.pyright]
-root = "./"
-include = ['./shepherd', ]
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-reportMissingParameterType = true
 
 [tool.uv]
 concurrent-downloads = 1

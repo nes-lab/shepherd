@@ -69,10 +69,3 @@ test = "pytest"
 [tool.pytest.ini_options]
 addopts = "-vvv --stepwise"
 # continue after fail: sudo pytest-3 --stepwise
-
-[tool.pyright]
-root = "./"
-include = ['./sync_analysis', ]
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-reportMissingParameterType = true

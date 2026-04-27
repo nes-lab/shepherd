@@ -66,14 +66,3 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-root = "./"
 platforms = ["unix", "linux",  "osx", "cygwin", "win32", "win64"]
-
-[tool.pyright]
-root = "./"
-include = ['./shepherd_cal', ]
-pythonVersion = "3.10"
-pythonPlatform = "All"
-# strict = ["./"]
-#reportUnknownParameterType = true
-#reportUnknownArgumentType = true
-#reportUnknownMemberType = true
-reportMissingParameterType = true

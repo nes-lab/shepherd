@@ -78,10 +78,3 @@ test = "pytest"
 [tool.pytest.ini_options]
 markers = ["program: test flashing firmware to targets"]
 addopts = "-vvv --stepwise"
-
-[tool.pyright]
-root = "./"
-include = ['./shepherd_herd', ]
-pythonVersion = "3.10"
-pythonPlatform = "All"
-reportMissingParameterType = true

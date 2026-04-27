@@ -58,22 +58,6 @@ sync-analysis = { path = "./software/debug_analyze_time_sync", editable = true}
 shepherd-data = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_data"}
 shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
 
-[tool.setuptools]
-# alibi declaration to avoid auto-discovery
-packages = ["shepherd-herd",]
-package-dir = {"" = "./software" }
-
-[tool.pyright]
-root = "./"
-include = [
-    './software/python-package',
-    './software/shepherd-herd',
-    './tests',
-]
-pythonVersion = "3.10"
-pythonPlatform = "All"
-reportMissingParameterType = true
-
 [tool.ty.terminal]
 output-format = "concise"
 
