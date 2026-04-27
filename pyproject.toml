@@ -3,7 +3,7 @@
 # uv pip install .
 [project]
 name = "shepherd-main"
-version = "2026.03.1"
+version = "2026.04.1"
 description = "Infrastructure for the Testbed, mainly focused on the Observers "
 readme = "README.md"
 
@@ -18,16 +18,13 @@ dependencies = [
     "shepherd-core[all]",
     "shepherd-data[all]",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
-    "twine",  # TODO: could be done with uv
     "prek",  # pre-commit plugin-replacement
     "bump2version",
     "ty",
-    "pyright",
-    "mypy",
     # temporary
     "dearpygui",
 ]

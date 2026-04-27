@@ -9,7 +9,7 @@ authors = [
 ]
 maintainers = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
 
-version = "2026.03.1"
+version = "2026.04.1"
 
 license = "MIT"
 
@@ -19,17 +19,17 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: POSIX :: Linux",
     "Natural Language :: English",
 ]
 
 requires-python = ">= 3.11"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2026.04.2",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2026.04.1",  # limit due to newest features
     "click",
     "numpy",
     "python-periphery<2.0.0", # v2 has no persistence anymore
