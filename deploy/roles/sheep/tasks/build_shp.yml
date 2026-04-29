@@ -134,6 +134,15 @@
     - install
     - device-tree
 
+- name: UV - Install rYAML (~27min) as there is no ArmV7-wheel yet
+  ansible.builtin.command:
+    cmd: "sudo -E /usr/local/bin/uv pip install ryaml --upgrade --system --break-system-packages"
+  tags:
+    - install
+    - python
+  when: sheep_rebuild_python_package | bool
+  become: false
+
 - name: UV - Install shepherd-sheep tools
   ansible.builtin.command:
     cmd: "sudo -E /usr/local/bin/uv pip install {{ sheep_install_path }}/software/python-package/.[test] --upgrade --system --break-system-packages"

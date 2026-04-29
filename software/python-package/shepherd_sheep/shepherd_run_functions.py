@@ -32,7 +32,6 @@ from .shepherd_debug import ShepherdDebug
 from .shepherd_emulator import ShepherdEmulator
 from .shepherd_harvester import ShepherdHarvester
 from .shepherd_io import ShepherdIOError
-from .sys_access import check_sys_access
 
 # NOTE:
 #   ExitStack enables a cleaner Exit-Behaviour
@@ -69,8 +68,6 @@ def run_emulator(cfg: EmulationTask) -> bool:
 
 def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
-    if check_sys_access():  # not really needed here
-        return True
     file_path = extract_firmware(cfg.data, cfg.data_type, cfg.firmware_file)
     if cfg.data_type in {FirmwareDType.path_elf, FirmwareDType.base64_elf}:
         log.info("Patching ID %d to %s", cfg.custom_id, file_path.as_posix())

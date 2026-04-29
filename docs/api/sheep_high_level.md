@@ -60,7 +60,6 @@ from shepherd_core.fw_tools import extract_firmware
 from shepherd_core.fw_tools import firmware_to_hex
 from shepherd_core.fw_tools import modify_uid
 from shepherd_sheep.logger import set_verbosity
-from shepherd_sheep.sysfs_interface import check_sys_access
 ```
 ```{literalinclude} ../../software/python-package/shepherd_sheep/__init__.py
 :language: python

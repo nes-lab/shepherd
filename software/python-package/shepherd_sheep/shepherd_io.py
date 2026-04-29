@@ -27,7 +27,7 @@ from . import sysfs_interface as sysfs
 from .hardware_cape_io import gpio_pin_nums
 from .logger import log
 from .shared_memory import SharedMemory
-from .sys_access import check_sys_access
+from .sys_access import check_on_kernel_module
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
@@ -104,8 +104,7 @@ class ShepherdIO:
         Args:
             mode (str): Shepherd mode, see sysfs_interface for more
         """
-        if check_sys_access():
-            raise RuntimeError
+        check_on_kernel_module()
 
         if mode == "harvester":
             if not commons.CAPE_HAS_HRV:
@@ -160,7 +159,7 @@ class ShepherdIO:
 
         except Exception:
             log.exception("ShepherdIO.Init caught an exception -> exit now")
-            check_sys_access(force_kmod_reload=True)
+            check_on_kernel_module()
             self._power_down_shp()
             self.unload_shared_mem()
             raise
@@ -266,7 +265,10 @@ class ShepherdIO:
 
     def unload_shared_mem(self) -> None:
         if hasattr(self, "shared_mem") and isinstance(self.shared_mem, SharedMemory):
-            self.shared_mem.__exit__()
+            try:  # noqa: SIM105
+                self.shared_mem.__exit__()
+            except BufferError:
+                pass
             self.shared_mem = None
 
     def _power_down_shp(self) -> None:
@@ -287,7 +289,7 @@ class ShepherdIO:
                     "CleanupRoutine caused an exception while waiting for PRU to go to idle (n=%d)",
                     count,
                 )
-                check_sys_access()
+                check_on_kernel_module()
             count += 1
         if sysfs.get_state() != "idle":
             log.warning(

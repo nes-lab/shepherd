@@ -20,8 +20,9 @@ from typing_extensions import Unpack
 from .hardware_cape_io import gpio_pin_nums
 from .logger import log
 from .logger import set_verbosity
-from .sys_access import check_sys_access
+from .sys_access import check_on_kernel_module
 from .sys_access import disable_ntp
+from .sys_access import reload_kernel_module
 from .sys_access import resync_ptp
 from .usage_log import get_last_usage
 from .usage_log import usage_logger
@@ -126,7 +127,7 @@ def version() -> None:
 def target_power(
     ctx: click.Context, target_port: str, voltage: float, *, on: bool, gpio_pass: bool
 ) -> None:
-    if check_sys_access():
+    if check_on_kernel_module():
         ctx.exit(1)
 
     from periphery import GPIO
@@ -170,9 +171,8 @@ def target_power(
 )
 @click.pass_context
 def run(ctx: click.Context, config: Path) -> None:
-    if check_sys_access(force_kmod_reload=True):
-        # increases reliability with fresh states
-        ctx.exit(1)
+    # increases reliability with fresh states
+    reload_kernel_module()
     disable_ntp()
 
     from .shepherd_run_functions import run_task
@@ -287,8 +287,8 @@ def read(
 @click.option("--port", "-p", type=click.INT, default=4242)
 @click.pass_context
 def rpc(ctx: click.Context, port: int | None) -> None:
-    if check_sys_access(force_kmod_reload=True):
-        ctx.exit(1)
+    # increases reliability with fresh states
+    reload_kernel_module()
     import gevent
     import zerorpc
 
@@ -385,13 +385,14 @@ def inventorize(output_path: Path) -> None:
 )
 @click.pass_context
 def program(ctx: click.Context, **kwargs: Unpack[dict]) -> None:
+    # increases reliability with fresh states
+    reload_kernel_module()
+
     from shepherd_core.data_models.task import ProgrammingTask
     from shepherd_core.data_models.testbed import ProgrammerProtocol
 
     from .shepherd_run_functions import run_task
 
-    if check_sys_access(force_kmod_reload=True):
-        ctx.exit(1)
     protocol_dict = {
         "nrf52": ProgrammerProtocol.swd,
         "msp430": ProgrammerProtocol.sbw,
@@ -406,11 +407,9 @@ def program(ctx: click.Context, **kwargs: Unpack[dict]) -> None:
     short_help="Reloads the shepherd-kernel-module",
     context_settings={"ignore_unknown_options": True},
 )
-@click.pass_context
-def fix(ctx: click.Context) -> None:
+def fix() -> None:
     set_verbosity()
-    if check_sys_access(force_kmod_reload=True):
-        ctx.exit(1)
+    reload_kernel_module()
 
 
 @cli.command(
@@ -433,11 +432,9 @@ def resync(ctx: click.Context) -> None:
     type=click.Choice(["default", "emu", "hrv", "swd", "sbw", "sync"]),
     default="default",
 )
-@click.pass_context
-def pru(ctx: click.Context, firmware: str) -> None:
+def pru(firmware: str) -> None:
     set_verbosity()
-    if check_sys_access():
-        ctx.exit(1)
+    check_on_kernel_module()
     from .sysfs_interface import load_pru_firmware
 
     load_pru_firmware(firmware)
@@ -448,11 +445,10 @@ def pru(ctx: click.Context, firmware: str) -> None:
     context_settings={"ignore_unknown_options": True},
 )
 @click.argument("duration", type=click.INT, default=30)
-@click.pass_context
-def blink(ctx: click.Context, duration: int) -> None:
+def blink(duration: int) -> None:
     set_verbosity()
-    if check_sys_access():
-        ctx.exit(1)
+    check_on_kernel_module()
+
     from .shepherd_debug import ShepherdDebug
 
     log.info("Blinks LEDs IO & EMU next to Target-Ports for %d s", duration)

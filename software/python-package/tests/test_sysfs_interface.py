@@ -12,7 +12,7 @@ from shepherd_core.data_models.content.virtual_storage_config import VirtualStor
 from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep import sysfs_interface
-from shepherd_sheep.sys_access import check_sys_access
+from shepherd_sheep.sys_access import check_on_kernel_module
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ def cal4sysfs() -> dict:
 @pytest.mark.parametrize("attr", sysfs_interface.attribs)
 @pytest.mark.usefixtures("_shepherd_up")
 def test_getters(attr: str) -> None:
-    check_sys_access()
+    check_on_kernel_module()
     method_to_call = getattr(sysfs_interface, f"get_{attr}")
     assert method_to_call() is not None
 
@@ -71,7 +71,7 @@ def test_getters_fail(attr: str) -> None:
 @pytest.mark.hardware
 @pytest.mark.usefixtures("_shepherd_up")
 def test_start() -> None:
-    check_sys_access()
+    check_on_kernel_module()
     sysfs_interface.set_start()
     time.sleep(5)
     assert sysfs_interface.get_state() == "running"

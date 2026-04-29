@@ -17,7 +17,7 @@ from shepherd_core.data_models.content.virtual_source_config_pru import Converte
 from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 
 from .logger import log
-from .sys_access import check_sys_access
+from .sys_access import reload_kernel_module
 
 SysfsInterfaceError = IOError
 
@@ -623,7 +623,7 @@ def load_pru_firmware(value: str) -> None:
                 " -> will restart kernel-module (n=%d)",
                 count_,
             )
-            check_sys_access(force_kmod_reload=True)
+            reload_kernel_module()
     raise OSError(
         "PRU-Driver still locked up (during pru-fw change) -> consider restarting node",
     )
@@ -644,7 +644,7 @@ def pru_firmware_is_default() -> bool:
                 "PRU-Driver is locked up (during pru-fw read) -> will restart kernel-module (n=%d)",
                 count_,
             )
-            check_sys_access(force_kmod_reload=True)
+            reload_kernel_module()
             count_ += 1
         else:
             return True
