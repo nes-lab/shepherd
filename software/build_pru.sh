@@ -1,5 +1,5 @@
 # dev-script for faster rebuilding (compared to ansible)
-CAPE_HW_VER=24
+CAPE_HW_VER=25
 cd /opt/shepherd/software/firmware/pru0-shepherd-fw/
 # EMU
 sudo make clean
