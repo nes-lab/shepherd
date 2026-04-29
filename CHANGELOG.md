@@ -2,6 +2,15 @@
 
 ## 2026.05.1 - unreleased
 
+Sheep
+
+- improve handling of kernel module - this prevents an endless reload-loop
+- prevent early exit if power-tracing is disabled (10 s missing)
+
+Ansible
+
+- install / build rYAML separately from install sheep
+
 ## 2026.04.2
 
 This update brings performance improvements, fewer bugs and removes limitations that are problematic for additional future testbeds.
