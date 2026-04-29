@@ -337,11 +337,14 @@ class ShepherdEmulator(ShepherdIO):
                         self.writer.write_iv_buffer(data_iv)
                 if before_ts_end and (time.time() > ts_end):
                     log.debug("End of measurement reached -> will collect remaining data")
+                    # refresh TS before the routine can run dry
+                    # this prevents early exit when power-tracing is disabled
+                    ts_data_last = time.time()
                     before_ts_end = False
                 self.handle_pru_messages(panic_on_restart=before_ts_end)
                 self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
-                    if time.time() - ts_data_last > 3:
+                    if not before_ts_end and (time.time() - ts_data_last > 3):
                         log.info("Data-collection ran dry for 3s -> begin to exit now")
                         break
                     force_subchunks = True
