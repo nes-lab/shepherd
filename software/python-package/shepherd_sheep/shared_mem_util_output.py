@@ -208,7 +208,7 @@ class SharedMemUtilOutput:
         )
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
-        if timestamp_end_ns is None or data.timestamps_ns[0] < timestamp_end_ns:
+        if timestamp_end_ns is None or data.timestamps_ns[-1] < timestamp_end_ns:
             # avoids warning after experiment ended (cache empty, long reads)
             self.check_status(data, verbose=verbose)
 

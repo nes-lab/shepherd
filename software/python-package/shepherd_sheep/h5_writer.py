@@ -15,6 +15,7 @@ from typing_extensions import Self
 from . import commons
 from .h5_monitor_ntp import NTPMonitor
 from .h5_recorder_power import PowerRecorder
+from .shared_mem_util_output import SharedMemUtilOutput
 
 if TYPE_CHECKING:
     import h5py
@@ -32,17 +33,16 @@ from shepherd_core.writer import Writer as CoreWriter
 
 from .h5_monitor_kernel import KernelMonitor
 from .h5_monitor_phc2sys import PHC2SYSMonitor
+from .h5_monitor_pru import PruMonitor
 from .h5_monitor_ptp import PTPMonitor
 from .h5_monitor_sheep import SheepMonitor
 from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
 from .h5_recorder_gpio import GpioRecorder
-from .h5_recorder_pru import PruRecorder
 from .logger import log
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_iv_input import IVTrace
 from .shared_mem_iv_output import SharedMemIVOutput
-from .shared_mem_util_output import UtilTrace
 
 
 class Writer(CoreWriter):
@@ -143,10 +143,8 @@ class Writer(CoreWriter):
 
         # Create group for additional recorders
         self.gpio_grp = self.h5file.create_group("gpio")
-        self.pru_util_grp = self.h5file.create_group("pru_util")
         # prepare recorders
         self.rec_gpio = GpioRecorder(self.gpio_grp, compression=self._compression)
-        self.rec_pru = PruRecorder(self.pru_util_grp, compression=self._compression)
         if self.only_power:
             self.power_grp = self.h5file.create_group("power")
             self.rec_power = PowerRecorder(
@@ -157,6 +155,7 @@ class Writer(CoreWriter):
             )
 
         # targets for logging-monitor # TODO: redesign? all should be kept in data_0
+        self.pru_util_grp = self.h5file.create_group("pru_util")
         self.sheep_grp = self.h5file.create_group("sheep")
         self.uart_grp = self.h5file.create_group("uart")
         self.sys_util_grp = self.h5file.create_group("sys_util")
@@ -180,7 +179,6 @@ class Writer(CoreWriter):
 
         # end recorders
         self.rec_gpio.__exit__()
-        self.rec_pru.__exit__()
         if hasattr(self, "rec_power"):
             self.rec_power.__exit__()
 
@@ -253,9 +251,6 @@ class Writer(CoreWriter):
     def write_gpio_buffer(self, data: GPIOTrace) -> None:
         self.rec_gpio.write(data)
 
-    def write_util_buffer(self, data: UtilTrace) -> None:
-        self.rec_pru.write(data)
-
     def start_monitors(
         self,
         sys: SystemLogging | None = None,
@@ -279,6 +274,23 @@ class Writer(CoreWriter):
             )
         if sys is not None and sys.sheep:
             self.monitors.append(SheepMonitor(self.sheep_grp, self._compression))
+
+    def start_pru_util_monitor(
+        self,
+        source: SharedMemUtilOutput,
+        timestamp_end_ns: int | None = None,
+        *,
+        verbose: bool = False,
+    ) -> None:
+        self.monitors.append(
+            PruMonitor(
+                self.pru_util_grp,
+                source=source,
+                compression=self._compression,
+                timestamp_end_ns=timestamp_end_ns,
+                verbose=verbose,
+            )
+        )
 
     def check_monitors(self) -> None:
         """Check state of Monitors.
