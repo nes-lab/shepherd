@@ -56,4 +56,4 @@ class GpioRecorder(Monitor):
         self.position = pos_end
 
     def thread_fn(self) -> None:
-        raise NotImplementedError
+        raise NotImplementedError("A non-atomic monitor-thread corrupts shared-memory-access")

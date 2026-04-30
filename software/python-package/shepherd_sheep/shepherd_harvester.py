@@ -118,6 +118,20 @@ class ShepherdHarvester(ShepherdIO):
         if not self.start(self.start_time, wait_blocking=False):
             return
 
+        self.writer.check_monitors()
+
+        log.info("waiting %.2f s until start", self.start_time - time.time())
+        while self.wait_for_start(5, raising=False):
+            # pre-experiment loop that collects pru-util values
+            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            if data_ut:
+                self.writer.write_util_buffer(data_ut)
+            if time.time() > self.start_time + 10:
+                raise TimeoutError("Timed out waiting for Start")
+
+        self.handle_pru_messages(panic_on_restart=False)
+        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
+
         if self.cfg.duration is None:
             duration_s = 10**6  # s, defaults to ~ 100 days
             log.debug("Duration = %d s (100 days runtime, press ctrl+c to exit)", duration_s)
@@ -125,20 +139,7 @@ class ShepherdHarvester(ShepherdIO):
             duration_s = self.cfg.duration.total_seconds()
             log.debug("Duration = %.1f s (configured runtime)", duration_s)
         ts_end = self.start_time + duration_s
-
-        if self.writer is not None:
-            self.writer.start_pru_util_monitor(
-                source=self.shared_mem.util,
-                timestamp_end_ns=int(ts_end * 1e9),
-                verbose=self.verbose_extra,
-            )
-            self.writer.check_monitors()
-
-        log.info("waiting %.2f s until start", self.start_time - time.time())
-        self.wait_for_start(self.start_time - time.time() + 15)
-        self.handle_pru_messages(panic_on_restart=False)
-        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
-
+        ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)
 
         prog_bar = tqdm(
@@ -152,6 +153,11 @@ class ShepherdHarvester(ShepherdIO):
         before_ts_end = True
         while True:
             data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.read(
+                timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
+            )
+            if data_ut:
+                self.writer.write_util_buffer(data_ut)
 
             if data_iv is not None:
                 prog_bar.update(n=int(10 * data_iv.duration()))
@@ -182,7 +188,7 @@ class ShepherdHarvester(ShepherdIO):
                 else:
                     log.error("%s", _xpt)
             self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=False, util=True)
-            if not data_iv:
+            if not (data_iv or data_ut):
                 if time.time() - ts_data_last > 5:
                     log.info("Data-collection ran dry for 5s -> begin to exit now")
                     break

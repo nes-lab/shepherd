@@ -237,13 +237,23 @@ class ShepherdIO:
         return success
 
     @staticmethod
-    def wait_for_start(timeout: float) -> None:
+    def wait_for_start(timeout: float, *, raising: bool = True) -> bool:
         """Waits until shepherd has started sampling.
+
+        Returns True if routine timed out (only if raises == False)
 
         Args:
             timeout (float): Time to wait in seconds
+            raising (bool): If true, raising timeout exception
         """
-        sysfs.wait_for_state("running", timeout)
+        if raising:
+            sysfs.wait_for_state("running", timeout)
+            return False
+        try:
+            sysfs.wait_for_state("running", timeout)
+        except OSError:  # should be TimeoutError, but wait is still using that
+            return True
+        return False
 
     @staticmethod
     def reinitialize_prus() -> None:

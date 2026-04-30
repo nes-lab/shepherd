@@ -77,6 +77,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
                 f"timed out waiting for state '{wanted_state}' - current state is '{current_state}'"
             )
             raise SysfsInterfaceError(msg)
+            # TODO: this should be a TimeoutError (check all uses before)
 
         time.sleep(0.1)
 

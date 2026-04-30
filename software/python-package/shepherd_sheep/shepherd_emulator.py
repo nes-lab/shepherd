@@ -231,6 +231,21 @@ class ShepherdEmulator(ShepherdIO):
         if not self.start(self.start_time, wait_blocking=False):
             return
 
+        if self.writer is not None:
+            self.writer.check_monitors()
+
+        log.info("waiting %.2f s until start", self.start_time - time.time())
+        while self.wait_for_start(5, raising=False):
+            # pre-experiment loop that collects pru-util values
+            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            if data_ut and self.writer is not None:
+                self.writer.write_util_buffer(data_ut)
+            if time.time() > self.start_time + 10:
+                raise TimeoutError("Timed out waiting for Start")
+
+        self.handle_pru_messages(panic_on_restart=False)
+        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
+
         duration_s = sys.float_info.max
         if self.cfg.duration is not None:
             duration_s = int(self.cfg.duration.total_seconds())
@@ -239,19 +254,7 @@ class ShepherdEmulator(ShepherdIO):
             duration_s = int(self.reader.runtime_s)
             log.debug("Duration = %.1f s (runtime of input file)", duration_s)
         ts_end = self.start_time + duration_s
-
-        if self.writer is not None:
-            self.writer.start_pru_util_monitor(
-                source=self.shared_mem.util,
-                timestamp_end_ns=int(ts_end * 1e9),
-                verbose=self.verbose_extra,
-            )
-            self.writer.check_monitors()
-        log.info("waiting %.2f s until start", self.start_time - time.time())
-        self.wait_for_start(self.start_time - time.time() + 15)
-        self.handle_pru_messages(panic_on_restart=False)
-        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
-
+        ts_end_ns = int(ts_end * 1e9)
         set_stop(ts_end)
 
         prog_bar = tqdm(
@@ -280,9 +283,14 @@ class ShepherdEmulator(ShepherdIO):
             ):
                 data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
                 data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
+                data_ut = self.shared_mem.util.read(
+                    timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
+                )
 
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
+                if data_ut and self.writer is not None:
+                    self.writer.write_util_buffer(data_ut)
 
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
@@ -303,7 +311,7 @@ class ShepherdEmulator(ShepherdIO):
 
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.supervise_buffers(iv_inp=True, iv_out=True, gpio=True, util=True)
-                if not (data_iv or data_gp):
+                if not (data_iv or data_gp or data_ut):
                     if ts_data_last - time.time() > 10:
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
                         break
@@ -319,9 +327,13 @@ class ShepherdEmulator(ShepherdIO):
                 data_gp = self.shared_mem.gpio.read(
                     force=force_subchunks, verbose=self.verbose_extra
                 )
-
+                data_ut = self.shared_mem.util.read(
+                    timestamp_end_ns=ts_end_ns, force=force_subchunks, verbose=self.verbose_extra
+                )
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
+                if data_ut and self.writer is not None:
+                    self.writer.write_util_buffer(data_ut)
 
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
@@ -340,7 +352,7 @@ class ShepherdEmulator(ShepherdIO):
                     before_ts_end = False
                 self.handle_pru_messages(panic_on_restart=before_ts_end)
                 self.shared_mem.supervise_buffers(iv_inp=False, iv_out=True, gpio=True, util=True)
-                if not (data_iv or data_gp):
+                if not (data_iv or data_gp or data_ut):
                     if not before_ts_end and (time.time() - ts_data_last > 3):
                         log.info("Data-collection ran dry for 3s -> begin to exit now")
                         break
