@@ -137,7 +137,7 @@ class ShepherdHarvester(ShepherdIO):
         log.info("waiting %.2f s until start", self.start_time - time.time())
         self.wait_for_start(self.start_time - time.time() + 15)
         self.handle_pru_messages(panic_on_restart=False)
-        log.info("shepherd started! T_sys = %f", time.time())
+        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
 
         set_stop(ts_end)
 
