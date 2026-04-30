@@ -81,7 +81,7 @@ def load_kernel_module() -> None:
             "Failed to load shepherd kernel module - will remove & try again (%d. try)", run_
         )
         remove_kernel_module()
-        time.sleep(0.2)
+        time.sleep(0.5)
 
     msg = "Failed to load shepherd kernel module."
     raise SystemError(msg)
