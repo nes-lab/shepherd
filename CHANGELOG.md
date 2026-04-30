@@ -6,7 +6,6 @@ Sheep
 
 - improve handling of kernel module - this prevents an endless reload-loop
 - prevent early exit if power-tracing is disabled (10 s missing)
-- transform pru_util into a monitor-thread to prevent overfilling buffer during waiting
 
 Ansible
 
