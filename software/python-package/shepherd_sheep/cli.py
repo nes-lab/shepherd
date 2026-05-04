@@ -273,7 +273,7 @@ def read(
     elif cal_file is None:
         cal_data = (
             ryaml.dumps(
-                cal.model_dump(exclude_unset=True, exclude_defaults=False),
+                cal.model_dump(exclude_unset=True, exclude_defaults=False, mode="json"),
             )
             if full
             else str(cal)
