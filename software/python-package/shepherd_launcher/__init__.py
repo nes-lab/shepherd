@@ -40,7 +40,9 @@ class Launcher:
     Args:
         pin_button (int): pin-number where button is connected. Must be
             configured as input with pull up and connected against ground
+            cape v2 uses P8_18 / GPIO 65
         pin_led (int): pin-number of LED for displaying launcher status
+            cape v2 uses P8_19 / GPIO 22
         service_name (str): Name of shepherd systemd service
 
     """
