@@ -16,6 +16,8 @@ from types import TracebackType
 from shepherd_sheep.usage_log import usage_logger
 from typing_extensions import Self
 
+from shepherd_watchdog.config import WatchdogConfig
+
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
 log.addHandler(logging.StreamHandler())
@@ -33,44 +35,25 @@ def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
 
 
 class Watchdog:
-    """Allows to periodically reset hardware-watchdog on Cape.
+    """Allows to periodically reset hardware-watchdog on Cape."""
 
-    Args:
-        pin_ack: pin that is resetting the hardware watchdog
-                 cape v2 uses P8_10 / GPIO 68
-        interval: how often to send the ACK. somewhere between 60 s to 30 minutes
-        network_needed: boolean indicating if watchdog should check network connection
+    def __init__(self) -> None:
+        self.cfg = WatchdogConfig.from_file()
+        if self.cfg is None:
+            self.cfg: WatchdogConfig = WatchdogConfig()
+            self.cfg.to_file()
 
-    """
-
-    def __init__(
-        self,
-        pin_ack: int,
-        interval: int,
-        *,
-        network_needed: bool = False,
-    ) -> None:
         log.debug("Initializing Shepherd-Watchdog v%s", metadata.version("shepherd-sheep"))
-        self.pin_ack = pin_ack
-        self.interval = interval
-        log.debug("  -> Ack-Signal on pin = %d, interval = %d s", pin_ack, interval)
-
-        self.network_needed = network_needed
-        if self.network_needed:
+        log.debug(
+            "  -> Ack-Signal on pin = %d, interval = %d s", self.cfg.pin_ack, self.cfg.interval
+        )
+        if self.cfg.network_needed:
             log.info("  -> will also check network connection")
-        # TODO: this not only tests network access, but internet access
-        self.hosts: list[str] = [
-            "8.8.4.4",  # google
-            "8.8.8.8",  # google
-            "1.1.1.1",  # cloudflare
-            "4.2.2.1",  # L3 nameserver
-            "4.2.2.2",  # L3 nameserver
-        ]
-        self.hosts_iter = itertools.cycle(self.hosts)
-        self.hosts_stat = dict.fromkeys(self.hosts, True)
+        self.hosts_iter = itertools.cycle(self.cfg.network_hosts)
+        self.hosts_stat = dict.fromkeys(self.cfg.network_hosts, True)
 
     def __enter__(self) -> Self:
-        self.gpio_ack = GPIO(self.pin_ack, "out")
+        self.gpio_ack = GPIO(self.cfg.pin_ack, "out")
         log.debug("Configured GPIO")
         return self
 
@@ -136,13 +119,13 @@ class Watchdog:
         """
         try:
             while True:
-                if self.network_needed:
+                if self.cfg.network_needed:
                     self.check_connection()
                 self.gpio_ack.write(value=True)
                 time.sleep(0.002)
                 self.gpio_ack.write(value=False)
                 log.debug("Signaled ACK to Watchdog")
-                time.sleep(self.interval)
+                time.sleep(self.cfg.interval)
         except SystemExit:
             return
 
@@ -150,7 +133,7 @@ class Watchdog:
 def main() -> None:
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
-    with Watchdog(pin_ack=68, interval=60, network_needed=True) as watchdog:
+    with Watchdog() as watchdog:
         watchdog.run()
 
 
