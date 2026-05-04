@@ -20,7 +20,7 @@ from typing_extensions import Self
 log = logging.getLogger("ShpLauncher")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.DEBUG)
-log.propagate = 0
+log.propagate = False
 
 
 # allow importing shepherd on x86 - for testing

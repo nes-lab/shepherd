@@ -1,21 +1,26 @@
 """Allows to periodically reset hardware-watchdog on Cape."""
 
+import contextlib
+import itertools
 import logging
 import signal
+import subprocess
 import sys
 import time
 from contextlib import suppress
+from datetime import datetime
 from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
+from shepherd_sheep.usage_log import usage_logger
 from typing_extensions import Self
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.DEBUG)
-log.propagate = 0
+log.propagate = False
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
@@ -32,21 +37,37 @@ class Watchdog:
 
     Args:
         pin_ack: pin that is resetting the hardware watchdog
+                 cape v2 uses P8_10 / GPIO 68
+        interval: how often to send the ACK. somewhere between 60 s to 30 minutes
+        network_needed: boolean indicating if watchdog should check network connection
+
     """
 
     def __init__(
         self,
         pin_ack: int,
         interval: int,
+        *,
+        network_needed: bool = False,
     ) -> None:
-        log.debug(
-            "Initializing Watchdog-Resetter v%s (pin = %d, interval = %d s)",
-            metadata.version("shepherd-sheep"),
-            pin_ack,
-            interval,
-        )
+        log.debug("Initializing Shepherd-Watchdog v%s", metadata.version("shepherd-sheep"))
         self.pin_ack = pin_ack
         self.interval = interval
+        log.debug("  -> Ack-Signal on pin = %d, interval = %d s", pin_ack, interval)
+
+        self.network_needed = network_needed
+        if self.network_needed:
+            log.info("  -> will also check network connection")
+        # TODO: this not only tests network access, but internet access
+        self.hosts: list[str] = [
+            "8.8.4.4",  # google
+            "8.8.8.8",  # google
+            "1.1.1.1",  # cloudflare
+            "4.2.2.1",  # L3 nameserver
+            "4.2.2.2",  # L3 nameserver
+        ]
+        self.hosts_iter = itertools.cycle(self.hosts)
+        self.hosts_stat = dict.fromkeys(self.hosts, True)
 
     def __enter__(self) -> Self:
         self.gpio_ack = GPIO(self.pin_ack, "out")
@@ -62,13 +83,61 @@ class Watchdog:
     ) -> None:
         self.gpio_ack.close()
 
+    @staticmethod
+    def ping(host: str) -> bool:
+        """Ping a desired host and return True on success.
+
+        Ping is configured to collect 1 reply and timeout after 2 seconds (wait).
+        """
+        return (
+            subprocess.run(  # noqa: S603
+                ["/usr/bin/ping", "-c1", "-w2", host],
+                timeout=3,
+                check=False,
+                shell=False,
+                capture_output=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            ).returncode
+            == 0
+        )
+
+    @staticmethod
+    def reboot() -> None:
+        """Force restart of system."""
+        subprocess.run(
+            ["/usr/bin/sudo", "/usr/sbin/reboot"],
+            timeout=3,
+            check=False,
+        )
+
+    def check_connection(self) -> None:
+        """Test if public internet servers are reachable.
+
+        The host-list could also be populated with internal IPs to just check network access.
+        """
+        host = next(self.hosts_iter)
+        self.hosts_stat[host] = self.ping(host)
+        count = sum(self.hosts_stat.values())
+        if self.hosts_stat[host]:
+            log.debug("Pinged %s", host)
+        else:
+            log.warning("Failed to ping to %s (%d still online)", host, count)
+        if count < 1:
+            log.error("Network connection failed persistently -> will reboot!")
+            with contextlib.suppress(BaseException):
+                usage_logger(datetime.now().astimezone(), "reboot due to connection failure")
+            self.reboot()
+
     def run(self) -> None:
         """Prevent system-reset from watchdog.
 
-        cape-rev2 has a watchdog that can turn on the BB every ~60 min
+        cape-rev2 has a watchdog that can turn on (or restart) the BB every ~60 min
         """
         try:
             while True:
+                if self.network_needed:
+                    self.check_connection()
                 self.gpio_ack.write(value=True)
                 time.sleep(0.002)
                 self.gpio_ack.write(value=False)
@@ -81,7 +150,7 @@ class Watchdog:
 def main() -> None:
     signal.signal(signal.SIGTERM, exit_gracefully)
     signal.signal(signal.SIGINT, exit_gracefully)
-    with Watchdog(pin_ack=68, interval=600) as watchdog:
+    with Watchdog(pin_ack=68, interval=60, network_needed=True) as watchdog:
         watchdog.run()
 
 
