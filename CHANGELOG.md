@@ -9,6 +9,13 @@ Sheep
 - ~~transform pru_util into a monitor-thread to prevent overfilling buffer during waiting~~
   - bad idea as a non-atomic monitor-thread corrupts shared-memory-access
   - better: add pre-experiment-loop that collects pru-util data
+- add pre-experiment loop that collects pru-util data (avoids warning to user)
+
+Watchdog
+
+- add network-checker that pings 5 internet-hosts and reboots after all failed
+  - feature is turned off per default as it can misbehave in harvesting-scenarios without internet access
+- put config into dedicated file: `/etc/shepherd/watchdog.yaml`
 
 Ansible
 
