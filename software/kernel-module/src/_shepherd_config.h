@@ -37,7 +37,7 @@
 /**
  * Length of buffer for storing harvest & emulation data
  */
-#define IV_SAMPLE_SIZE_LOG2        (3u) // 8 byte
+#define IV_SAMPLE_SIZE_LOG2        (3u) // 8 byte (4 + 4)
 #define BUFFER_IV_INP_SAMPLES_LOG2 (20u)
 
 #define BUFFER_IV_INP_SAMPLES_N    (1u << BUFFER_IV_INP_SAMPLES_LOG2) // ~1M for ~10s

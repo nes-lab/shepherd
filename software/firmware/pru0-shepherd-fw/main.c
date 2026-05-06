@@ -373,6 +373,7 @@ reset:
 
     DEBUG_EVENT_STATE_3;
     sample_init();
+    SHARED_MEM.pru_applied_settings = true;
     DEBUG_EVENT_STATE_0;
 
     SHARED_MEM.vsource_skip_gpio_logging = false;

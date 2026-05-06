@@ -274,9 +274,7 @@ def read_dac_aux_voltage_raw() -> int:
     return int_settings[0]
 
 
-def write_calibration_settings(
-    cal_pru: Mapping[str, int],
-) -> None:
+def write_calibration_settings(cal_pru: Mapping[str, int]) -> None:
     """Sends the calibration settings to the PRU core.
 
     The virtual-source algorithms use adc measurements and dac-output
@@ -323,6 +321,17 @@ def read_calibration_settings() -> dict[str, int]:
     }
 
 
+def verify_virtual_calibration_settings(cal_pru: Mapping[str, int]) -> bool:
+    """Compare expected and actual settings in PRU-memory."""
+    values_present = read_calibration_settings()
+    success = values_present == cal_pru
+    if not success:
+        log.warning("vConverter settings - expected vs present in pru-memory:")
+        log.warning("\t%s", cal_pru)
+        log.warning("\t%s", values_present)
+    return success
+
+
 @validate_call
 def write_virtual_converter_settings(settings: ConverterPRUConfig) -> None:
     """Send the virtual-converter settings to the PRU core.
@@ -367,6 +376,18 @@ def read_virtual_converter_settings() -> list:
     return [int(x) for x in settings.split()]
 
 
+def verify_virtual_converter_settings(settings: ConverterPRUConfig) -> bool:
+    """Compare expected and actual settings in PRU-memory."""
+    values_wanted = flatten_list(list(settings.model_dump().values()))
+    values_present = read_virtual_converter_settings()
+    success = values_wanted == values_present
+    if not success:
+        log.warning("vConverter settings - expected vs present in pru-memory:")
+        log.warning("\t%s", values_wanted)
+        log.warning("\t%s", values_present)
+    return success
+
+
 @validate_call
 def write_virtual_harvester_settings(settings: HarvesterPRUConfig) -> None:
     """Send the settings to the PRU core.
@@ -404,6 +425,18 @@ def read_virtual_harvester_settings() -> list:
     with Path("/sys/shepherd/virtual_harvester_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
     return [int(x) for x in settings.split()]
+
+
+def verify_virtual_harvester_settings(settings: HarvesterPRUConfig) -> bool:
+    """Compare expected and actual settings in PRU-memory."""
+    values_wanted = flatten_list(list(settings.model_dump().values()))
+    values_present = read_virtual_harvester_settings()
+    success = values_wanted == values_present
+    if not success:
+        log.warning("vHarvester settings - expected vs present in pru-memory:")
+        log.warning("\t%s", values_wanted)
+        log.warning("\t%s", values_present)
+    return success
 
 
 @validate_call
@@ -447,6 +480,34 @@ def read_virtual_storage_settings() -> list:
     with Path("/sys/shepherd/virtual_storage_settings").open(encoding="utf-8") as f:
         settings = f.read().rstrip()
     return [int(x) for x in settings.split()]
+
+
+def verify_virtual_storage_settings(settings: StoragePRUConfig) -> bool:
+    """Compare expected and actual settings in PRU-memory."""
+    values_wanted = flatten_list(list(settings.model_dump().values()))
+    values_present = read_virtual_storage_settings()
+    success = values_wanted == values_present
+    if not success:
+        log.warning("vStorage settings - expected vs present in pru-memory:")
+        log.warning("\t%s", values_wanted)
+        log.warning("\t%s", values_present)
+    return success
+
+
+def reset_pru_applied_settings() -> None:
+    """Reset the PRU applied settings - read receipt."""
+    with Path("/sys/shepherd/pru_applied_settings").open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+        file.write("0")  # content does not matter here
+
+
+def check_pru_applied_settings() -> bool:
+    """Verify that the PRU applied settings."""
+    with Path("/sys/shepherd/pru_applied_settings").open(encoding="utf-8") as file:
+        success = file.read().rstrip()
+    return success == "1"
 
 
 def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: PYI041

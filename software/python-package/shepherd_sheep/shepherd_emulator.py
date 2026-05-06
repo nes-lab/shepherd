@@ -31,6 +31,8 @@ from .logger import log
 from .shared_mem_iv_input import IVTrace
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
+from .sysfs_interface import check_pru_applied_settings
+from .sysfs_interface import reset_pru_applied_settings
 from .sysfs_interface import set_stop
 
 
@@ -175,7 +177,7 @@ class ShepherdEmulator(ShepherdIO):
         super().send_virtual_storage_settings(self.storage_pru)
         super().send_virtual_converter_settings(self.cnv_pru)
         super().send_virtual_harvester_settings(self.hrv_pru)
-
+        reset_pru_applied_settings()  # check later if applied
         super().reinitialize_prus()  # needed for ADCs
 
         super().set_power_io_level_converter(state=self.cfg.enable_io)
@@ -190,7 +192,7 @@ class ShepherdEmulator(ShepherdIO):
             self.writer.start_monitors(self.cfg.sys_logging, self.cfg.uart_logging)
             self.writer.store_config(self.cfg)
 
-        # Preload emulator with data
+        # Prefill emulator with data
         self.buffer_segment_count = math.floor(
             commons.BUFFER_IV_INP_SAMPLES_N // self.samples_per_segment
         )
@@ -245,6 +247,8 @@ class ShepherdEmulator(ShepherdIO):
 
         self.handle_pru_messages(panic_on_restart=False)
         log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
+        if not check_pru_applied_settings():
+            log.error("PRU has NOT yet applied the settings!")
 
         duration_s = sys.float_info.max
         if self.cfg.duration is not None:

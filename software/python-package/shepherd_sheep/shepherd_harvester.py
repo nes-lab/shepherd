@@ -17,6 +17,8 @@ from .logger import get_verbosity
 from .logger import log
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
+from .sysfs_interface import check_pru_applied_settings
+from .sysfs_interface import reset_pru_applied_settings
 from .sysfs_interface import set_stop
 
 
@@ -89,7 +91,7 @@ class ShepherdHarvester(ShepherdIO):
 
         super().send_virtual_harvester_settings(self.hrv_pru)
         super().send_calibration_settings(self.cal_hrv)
-
+        reset_pru_applied_settings()  # check later if applied
         super().reinitialize_prus()  # needed for ADCs
 
         self.stack.enter_context(self.writer)
@@ -131,6 +133,8 @@ class ShepherdHarvester(ShepherdIO):
 
         self.handle_pru_messages(panic_on_restart=False)
         log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
+        if not check_pru_applied_settings():
+            log.error("PRU has NOT yet applied the settings!")
 
         if self.cfg.duration is None:
             duration_s = 10**6  # s, defaults to ~ 100 days

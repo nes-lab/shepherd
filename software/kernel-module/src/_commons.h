@@ -106,13 +106,19 @@ enum ProgrammerTarget
     PRG_TARGET_DUMMY  = 3u,
 };
 
+struct IVSample
+{
+    uint32_t voltage;
+    uint32_t Current; // deliberate change, as kernel-compiler resolves macro here (not used anyway)
+} __attribute__((packed));
+
 struct IVTraceInp
 {
-    uint32_t idx_pru;
+    uint32_t idx_pru; // already read, TODO: can be removed? copy of shared_mem.buffer_iv_idx?
     uint32_t idx_sys;
-    uint64_t sample[BUFFER_IV_INP_SAMPLES_N];
+    struct IVSample sample[BUFFER_IV_INP_SAMPLES_N];
     /* safety */
-    uint32_t canary;
+    uint32_t        canary;
 } __attribute__((packed));
 
 /* Programmer-Control as part of SharedMem-Struct */
@@ -226,6 +232,7 @@ struct ConverterConfig
 
 #define LUT_STORAGE_sLOG (7u)
 #define LUT_STORAGE_SIZE (1u << LUT_STORAGE_sLOG)
+
 extern uint32_t
         __ASSERT_LUT_STORAGE_SIZE[1 / ((LUT_STORAGE_sLOG > 1u) && (LUT_STORAGE_sLOG < 32u))];
 

@@ -49,37 +49,39 @@ struct SharedMem
     volatile struct ConverterConfig   converter_settings; // write by kMod only
     volatile struct StorageConfig     storage_settings;   // write by kMod only
     volatile struct HarvesterConfig   harvester_settings; // write by kMod only
+    volatile uint32_t pru_applied_settings; // kMod writes 0, PRU0 write 1 (read receipt)
+    /* note: bool would be enough for pru_applied_settings */
     /* settings for programmer-subroutines */
-    volatile struct ProgrammerCtrl    programmer_ctrl; // write by kMod only
+    volatile struct ProgrammerCtrl programmer_ctrl; // write by kMod only
     /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
-    volatile struct ProtoMsg          pru0_msg_inbox; // write by kMod only
-    volatile struct ProtoMsg          pru0_msg_outbox;
-    volatile struct ProtoMsg          pru0_msg_error;
-    volatile struct ProtoMsg          pru1_msg_inbox; // write by kMod only
-    volatile struct ProtoMsg          pru1_msg_outbox;
-    volatile struct ProtoMsg          pru1_msg_error;
+    volatile struct ProtoMsg       pru0_msg_inbox; // write by kMod only
+    volatile struct ProtoMsg       pru0_msg_outbox;
+    volatile struct ProtoMsg       pru0_msg_error;
+    volatile struct ProtoMsg       pru1_msg_inbox; // write by kMod only
+    volatile struct ProtoMsg       pru1_msg_outbox;
+    volatile struct ProtoMsg       pru1_msg_error;
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
-    volatile uint64_t                 last_sync_timestamp_ns;
-    volatile uint64_t                 next_sync_timestamp_ns;
+    volatile uint64_t              last_sync_timestamp_ns;
+    volatile uint64_t              next_sync_timestamp_ns;
     /* GPIOTracer can be configured here */
-    volatile uint32_t                 gpio_mask;
+    volatile uint32_t              gpio_mask;
     /* safety */
-    volatile uint32_t                 canary3; // write by pru0 only
+    volatile uint32_t              canary3; // write by pru0 only
     /* NOTE: End of region accessed by kernel module */
 
     /* internal gpio-register from PRU1 (for PRU1, debug), only updated when not running */
-    volatile uint32_t                 gpio_pin_state;
+    volatile uint32_t              gpio_pin_state;
 
     /* Token system to ensure both PRUs can share interrupts */
-    volatile bool_ft                  cmp0_trigger_for_pru1;
-    volatile bool_ft                  cmp1_trigger_for_pru1;
+    volatile bool_ft               cmp0_trigger_for_pru1;
+    volatile bool_ft               cmp1_trigger_for_pru1;
     /* PowerGood / BatOK Msg system -> PRU0 decides about state, but PRU1 has control over Pin (V24)*/
-    volatile bool_ft                  vsource_power_good_trigger_for_pru1;
-    volatile uint8_ft                 vsource_power_good_pins_state; // also needed for GPIO-tracing
+    volatile bool_ft               vsource_power_good_trigger_for_pru1;
+    volatile uint8_ft              vsource_power_good_pins_state; // also needed for GPIO-tracing
     /* Trigger to control sampling of gpios */
-    volatile bool_ft                  vsource_skip_gpio_logging;
+    volatile bool_ft               vsource_skip_gpio_logging;
     /* active utilization-monitor for PRU0 */
-    volatile uint32_t                 pru0_ns_per_sample;
+    volatile uint32_t              pru0_ns_per_sample;
 } __attribute__((packed));
 
 ASSERT(shared_mem_size, sizeof(struct SharedMem) < 10000u);

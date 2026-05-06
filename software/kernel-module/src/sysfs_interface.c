@@ -84,6 +84,9 @@ static ssize_t sysfs_pru_msg_system_show(struct kobject *kobj, struct kobj_attri
 static ssize_t sysfs_gpio_tracer_mask_store(struct kobject *kobj, struct kobj_attribute *attr,
                                             const char *buffer, size_t count);
 
+static ssize_t sysfs_pru_applied_settings_reset(struct kobject *kobj, struct kobj_attribute *attr,
+                                                const char *buffer, size_t count);
+
 struct kobj_attr_struct_s attr_state      = {.attr       = __ATTR(state, 0660, sysfs_state_show, NULL),
                                              .val_offset = 0};
 
@@ -124,6 +127,11 @@ struct kobj_attr_struct_s attr_gpio_tracer_mask = {
         .attr = __ATTR(gpio_tracer_mask, 0660, sysfs_SharedMem_show, sysfs_gpio_tracer_mask_store),
         .val_offset = offsetof(struct SharedMem, gpio_mask)};
 
+struct kobj_attr_struct_s attr_pru_applied_settings = {
+        .attr       = __ATTR(pru_applied_settings, 0660, sysfs_SharedMem_show,
+                             sysfs_pru_applied_settings_reset),
+        .val_offset = offsetof(struct SharedMem, pru_applied_settings)};
+
 static struct attribute *shp_attrs[] = {
         &attr_state.attr.attr,
         &attr_time_start.attr.attr,
@@ -136,6 +144,7 @@ static struct attribute *shp_attrs[] = {
         &attr_virtual_storage_settings.attr.attr,
         &attr_pru_msg_system_settings.attr.attr,
         &attr_gpio_tracer_mask.attr.attr,
+        &attr_pru_applied_settings.attr.attr,
         NULL,
 };
 
@@ -521,6 +530,20 @@ static ssize_t sysfs_gpio_tracer_mask_store(struct kobject *kobj, struct kobj_at
     }
 
     return -EINVAL;
+}
+
+static ssize_t sysfs_pru_applied_settings_reset(struct kobject *kobj, struct kobj_attribute *attr,
+                                                const char *buffer, size_t count)
+{
+    const struct kobj_attr_struct_s *kobj_attr_wrapped;
+
+    if (mem_interface_get_state() != STATE_IDLE) return -EBUSY;
+
+    kobj_attr_wrapped = container_of(attr, struct kobj_attr_struct_s, attr);
+
+    printk(KERN_INFO "shprd.k: Reset pru_applied_settings to 0");
+    iowrite32(0u, pru_shared_mem_io + kobj_attr_wrapped->val_offset);
+    return count;
 }
 
 

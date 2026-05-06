@@ -48,22 +48,23 @@ struct SharedMem
     volatile struct ConverterConfig   converter_settings; // write by kMod only
     volatile struct StorageConfig     storage_settings;   // write by kMod only
     volatile struct HarvesterConfig   harvester_settings; // write by kMod only
+    volatile uint32_t pru_applied_settings; // kMod writes 0, PRU0 write 1 (read receipt)
     /* settings for programmer-subroutines */
-    volatile struct ProgrammerCtrl    programmer_ctrl; // write by kMod only
+    volatile struct ProgrammerCtrl programmer_ctrl; // write by kMod only
     /* Msg-System-replacement for slow rpmsg (check 640ns, receive 2820 on pru0 and 4820ns on pru1) */
-    volatile struct ProtoMsg          pru0_msg_inbox; // write by kMod only
-    volatile struct ProtoMsg          pru0_msg_outbox;
-    volatile struct ProtoMsg          pru0_msg_error;
-    volatile struct ProtoMsg          pru1_msg_inbox; // write by kMod only
-    volatile struct ProtoMsg          pru1_msg_outbox;
-    volatile struct ProtoMsg          pru1_msg_error;
+    volatile struct ProtoMsg       pru0_msg_inbox; // write by kMod only
+    volatile struct ProtoMsg       pru0_msg_outbox;
+    volatile struct ProtoMsg       pru0_msg_error;
+    volatile struct ProtoMsg       pru1_msg_inbox; // write by kMod only
+    volatile struct ProtoMsg       pru1_msg_outbox;
+    volatile struct ProtoMsg       pru1_msg_error;
     /* Used to use/exchange timestamp of last sample taken & next buffer between PRU1 and PRU0 */
-    volatile uint64_t                 last_sync_timestamp_ns;
-    volatile uint64_t                 next_sync_timestamp_ns;
+    volatile uint64_t              last_sync_timestamp_ns;
+    volatile uint64_t              next_sync_timestamp_ns;
     /* GPIOTracer can be configured here */
-    volatile uint32_t                 gpio_mask;
+    volatile uint32_t              gpio_mask;
     /* safety */
-    volatile uint32_t                 canary3; // write by pru0 only
+    volatile uint32_t              canary3; // write by pru0 only
     /* NOTE: End of region accessed by kernel module */
 } __attribute__((packed));
 

@@ -135,7 +135,7 @@ printStart:
 	@echo ''
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Building project: $(PROJ_NAME) with Ti CGT'
+	@echo 'Building project: $(PROJ_NAME) with Ti CGT (HW v$(CAPE_HW_VER))'
 	@echo ''
 
 .PHONY: printEnd
@@ -199,7 +199,7 @@ install: all
 	@echo ''
 	@echo ''
 	@echo '************************************************************'
-	@echo 'Installing project: $(PROJ_NAME)'
+	@echo 'Installing project: $(PROJ_NAME) (HW v$(CAPE_HW_VER))'
 	@echo ''
 	@echo 'Installing firmware to /lib/firmware'
 	install -D $(TARGET) $(DESTDIR)/lib/firmware/am335x-pru$(PRU_NUM)-$(FW_NAME)-fw
