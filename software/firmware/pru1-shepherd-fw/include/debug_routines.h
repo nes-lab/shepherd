@@ -13,7 +13,9 @@ static void inline shift_gpio(const uint32_t number)
     const uint32_t gpio_off  = read_r30() & ~(DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     const uint32_t gpio_one  = gpio_off | (DEBUG_PIN0_MASK | DEBUG_PIN1_MASK);
     const uint32_t gpio_zero = gpio_off | DEBUG_PIN0_MASK;
-    uint32_t       value     = number << 1u;
+    uint32_t       value     = number;
+    write_r30(gpio_off);
+    write_r30((value & 1u) ? gpio_one : gpio_zero);
     while (value >>= 1u)
     {
         write_r30(gpio_off);

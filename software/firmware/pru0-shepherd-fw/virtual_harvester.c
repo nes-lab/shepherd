@@ -112,13 +112,12 @@ void harvester_initialize()
     settle_steps = 0u;
 #endif //HRV_SUPPORT
 
-    const bool_ft is_emu = (HRV_CFG.hrv_mode >> 0u) & 1u;
+    const bool_ft is_emu = (HRV_CFG.hrv_mode & (1u << 0u));
     if (is_emu && (HRV_CFG.interval_n > 2 * HRV_CFG.window_size))
         interval_step = HRV_CFG.interval_n - 2u * HRV_CFG.window_size;
     else interval_step = 1u << 30u;
     // ⤷ intake two curves of the IVSurface before overflow / reset if possible
-    is_rising    = (HRV_CFG.hrv_mode >> 1u) & 1u;
-
+    is_rising = (HRV_CFG.hrv_mode & (1u << 1u);
     // MPPT-PO
     volt_step_uV = HRV_CFG.voltage_step_uV;
 #ifdef HRV_SUPPORT
@@ -139,7 +138,7 @@ void harvester_initialize()
     voc_min            = HRV_CFG.voltage_min_uV > 1000u ? HRV_CFG.voltage_min_uV : 1000u;
 
     /* extrapolation */
-    lin_extrapolation  = (HRV_CFG.hrv_mode >> 2u) & 1u;
+    lin_extrapolation  = (HRV_CFG.hrv_mode & (1u << 2u));
 
     /* INIT static vars: CV */
     voltage_last       = 0u;
@@ -230,13 +229,10 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     /* discard initial readings during reset */
     if (interval_step < STEP_IV_CUTOUT)
     {
+        // eliminate possible spikes during the large transition
         // set lowest & highest 18 bit value of ADC
         if (is_rising) voltage_adc = 0u;
-        else
-        {
-            voltage_adc = 0x3FFFFu;
-            current_adc = 0u;
-        }
+        else current_adc = 0u;
     }
 
     if (settle_steps == 0u)
