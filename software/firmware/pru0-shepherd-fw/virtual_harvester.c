@@ -117,7 +117,7 @@ void harvester_initialize()
         interval_step = HRV_CFG.interval_n - 2u * HRV_CFG.window_size;
     else interval_step = 1u << 30u;
     // ⤷ intake two curves of the IVSurface before overflow / reset if possible
-    is_rising = (HRV_CFG.hrv_mode & (1u << 1u);
+    is_rising    = (HRV_CFG.hrv_mode & (1u << 1u));
     // MPPT-PO
     volt_step_uV = HRV_CFG.voltage_step_uV;
 #ifdef HRV_SUPPORT
