@@ -61,13 +61,6 @@ static volatile struct IVTraceOut *buffer;
 static uint32_t                    settle_steps   = 0;  // used for adc_ivcurve()
 static uint32_t                    power_last_raw = 0u; // used for adc_mppt_po()
 
-/* ivcurve cutout
-   - prevents power-spike during the non-linear reset-step of the ivcurve
-   - slow analog filters show this behavior with cape 2.4
-   TODO: make value configurable by frontend
-*/
-static const uint32_t              STEP_IV_CUTOUT = 5u;
-
 // to be used with harvester-frontend
 static void                        harvest_adc_2_ivcurve(const uint32_t sample_idx);
 static void                        harvest_adc_2_isc_voc(const uint32_t sample_idx);
@@ -217,7 +210,7 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
 {
     /* 	Record iv-curves
  * 	- by controlling voltage with sawtooth
- * 	- influencing parameters: window_size, voltage_min_uV, voltage_max_uV, voltage_step_uV, wait_cycles_n, hrv_mode (init)
+ * 	- influencing parameters: window_size, voltage_min_uV, voltage_max_uV, voltage_step_uV, wait_cycles_n, cutout_cycles_n, hrv_mode (init)
  */
 
     /* ADC-Sample probably not ready -> Trigger at timer_cmp -> ads8691 needs 1us to acquire and convert */
@@ -227,12 +220,22 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
     /* discard initial readings during reset */
-    if (interval_step < STEP_IV_CUTOUT)
+    if (interval_step < HRV_CFG.cutout_cycles_n)
     {
-        // eliminate possible spikes during the large transition
-        // set lowest & highest 18 bit value of ADC
-        if (is_rising) voltage_adc = 0u;
-        else current_adc = 0u;
+        if (true)
+        {
+            // overwrite with hold samples
+            current_adc = current_hold;
+            voltage_adc = voltage_hold;
+        }
+        else
+        {
+            // previous default
+            // eliminate possible spikes during the large transition
+            // set lowest & highest 18 bit value of ADC
+            if (is_rising) voltage_adc = 0u;
+            else current_adc = 0u;
+        }
     }
 
     if (settle_steps == 0u)
@@ -262,8 +265,8 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     }
     else settle_steps--;
 
-    buffer->current[sample_idx] = current_adc;
-    buffer->voltage[sample_idx] = voltage_adc;
+    buffer->current[sample_idx] = current_hold = current_adc;
+    buffer->voltage[sample_idx] = voltage_hold = voltage_adc;
 }
 
 static void harvest_adc_2_isc_voc(const uint32_t sample_idx)
