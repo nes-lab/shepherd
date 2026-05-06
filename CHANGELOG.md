@@ -10,6 +10,13 @@ Sheep
   - bad idea as a non-atomic monitor-thread corrupts shared-memory-access
   - better: add pre-experiment-loop that collects pru-util data
 - add pre-experiment loop that collects pru-util data (avoids warning to user)
+- read back and verify written settings in pru-memory (now default for emu & hrv)
+- verify that settings where actually applied in pru before starting a measurement (wasn't fully done for hrv)
+
+KModule
+
+- allow reading and resetting pru-applied-settings-flag
+- bugfix - forced PRU-reset could be discarded before
 
 Watchdog
 
