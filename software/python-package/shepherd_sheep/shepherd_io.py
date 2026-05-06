@@ -462,8 +462,7 @@ class ShepherdIO:
 
     @validate_call
     def send_calibration_settings(
-        self,
-        cal_: CalibrationEmulator | CalibrationHarvester | None,
+        self, cal_: CalibrationEmulator | CalibrationHarvester | None, *, verify: bool = True
     ) -> None:
         """Sends calibration settings to PRU core
 
@@ -473,6 +472,7 @@ class ShepherdIO:
         Args:
             cal_ (CalibrationEmulation or CalibrationHarvester): Contains the device's
             calibration settings.
+            verify: read back from PRU and compare
         """
         if not cal_:
             if self.component == "harvester":
@@ -484,42 +484,51 @@ class ShepherdIO:
             log.debug("\t%s: %s", key, value)
         cal_dict = cal_.export_for_sysfs()
         sysfs.write_calibration_settings(cal_dict)
+        if verify and not sysfs.verify_virtual_calibration_settings(cal_dict):
+            log.error("Settings for Calibration in PRU-Mem do not match expected values")
 
     @staticmethod
     def send_virtual_converter_settings(
-        settings: ConverterPRUConfig,
+        settings: ConverterPRUConfig, *, verify: bool = True
     ) -> None:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
 
         :param settings: Contains the settings for the virtual source.
+        :param verify: read back from PRU and compare
         """
         sysfs.write_virtual_converter_settings(settings)
+        if verify and not sysfs.verify_virtual_converter_settings(settings):
+            log.error("Settings for vConverter in PRU-Mem do not match expected values")
 
     @staticmethod
-    def send_virtual_storage_settings(
-        settings: StoragePRUConfig,
-    ) -> None:
+    def send_virtual_storage_settings(settings: StoragePRUConfig, *, verify: bool = True) -> None:
         """Sends virtual storage settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
 
         :param settings: Contains the settings for the virtual storage.
+        :param verify: read back from PRU and compare
         """
         sysfs.write_virtual_storage_settings(settings)
+        if verify and not sysfs.verify_virtual_storage_settings(settings):
+            log.error("Settings for vStorage in PRU-Mem do not match expected values")
 
     @staticmethod
     def send_virtual_harvester_settings(
-        settings: HarvesterPRUConfig,
+        settings: HarvesterPRUConfig, *, verify: bool = True
     ) -> None:
         """Sends virtsource settings to PRU core
         looks like a simple one-liner but is needed by the child-classes
         Note: to apply these settings the pru has to do a re-init (reset)
 
         :param settings: Contains the settings for the virtual source.
+        :param verify: read back from PRU and compare
         """
         sysfs.write_virtual_harvester_settings(settings)
+        if verify and not sysfs.verify_virtual_harvester_settings(settings):
+            log.error("Settings for vHarvester in PRU-Mem do not match expected values")
 
     @staticmethod
     def handle_pru_messages(*, panic_on_restart: bool = False) -> None:
