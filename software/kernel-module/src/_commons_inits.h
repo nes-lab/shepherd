@@ -127,6 +127,7 @@ const struct HarvesterConfig HarvesterConfig_default = {
         .interval_n       = 208u,
         .duration_n       = 209u,
         .wait_cycles_n    = 210u,
+        .cutout_cycles_n  = 211u,
         .canary           = CANARY_VALUE_U32,
 };
 
