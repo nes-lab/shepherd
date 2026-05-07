@@ -16,6 +16,7 @@ static bool_ft  is_rising      = 0u;
 
 static uint32_t voltage_hold   = 0u;
 static uint32_t current_hold   = 0u;
+static uint32_t voltage_last   = 0u;
 
 #ifdef EMU_SUPPORT
 static uint32_t voltage_step_x4_uV = 0u;
@@ -28,7 +29,7 @@ static uint32_t voc_min            = 0u;
 static bool_ft  lin_extrapolation  = 0u;
 
 /* static vars: CV */
-static uint32_t voltage_last = 0u, current_last = 0u;
+static uint32_t current_last       = 0u;
 static int32_t  voltage_delta = 0u, current_delta = 0u;
 static bool_ft  compare_last = 0u;
 
@@ -58,8 +59,11 @@ static uint32_t volt_step_uV  = 0u;
 
 static volatile struct IVTraceOut *buffer;
 
-static uint32_t                    settle_steps   = 0;  // used for adc_ivcurve()
-static uint32_t                    power_last_raw = 0u; // used for adc_mppt_po()
+static uint32_t                    settle_steps     = 0;  // used for adc_ivcurve()
+static uint32_t                    power_last_raw   = 0u; // used for adc_mppt_po()
+
+static bool_ft                     automatic_cutout = 0u; // used for adc_ivcurve()
+static bool_ft                     cutout_active    = 0u; // used for adc_ivcurve()
 
 // to be used with harvester-frontend
 static void                        harvest_adc_2_ivcurve(const uint32_t sample_idx);
@@ -114,12 +118,16 @@ void harvester_initialize()
     // MPPT-PO
     volt_step_uV = HRV_CFG.voltage_step_uV;
 #ifdef HRV_SUPPORT
-    power_last_raw = 0u;
+    power_last_raw   = 0u;
+    automatic_cutout = (HRV_CFG.hrv_mode & (1u << 3u));
+    cutout_active    = 0u;
 #endif //HRV_SUPPORT
 
     /* for IV-Curve-Version, mostly resets states */
     voltage_hold = 0u;
     current_hold = 0u;
+    /* for iv-curves and CV */
+    voltage_last = 0u;
 
 #ifdef EMU_SUPPORT
     /* globals for iv_cv */
@@ -134,7 +142,6 @@ void harvester_initialize()
     lin_extrapolation  = (HRV_CFG.hrv_mode & (1u << 2u));
 
     /* INIT static vars: CV */
-    voltage_last       = 0u;
     current_last       = 0u;
     voltage_delta      = 0u;
     current_delta      = 0u;
@@ -220,21 +227,53 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
     uint32_t voltage_adc = adc_fastread(SPI_CS_HRV_V_ADC_PIN);
 
     /* discard initial readings during reset */
-    if (interval_step < HRV_CFG.cutout_cycles_n)
+    if (automatic_cutout)
     {
-        if (true)
+        /* Automatic mode works by
+            - gets activated during reset of voltage-ramp
+            - hold the previous adc-samples during that transition
+            - check if transition is complete to disable cutout
+              (i.e. if rising of voltage stops for a falling ramp)
+            - compensation for noise via `cutout_cycles_n`-parameter acting as buffer
+              (forgiving that number of cycles that can violate condition before ending the cutout)
+        */
+        if (cutout_active > 0u)
         {
-            // overwrite with hold samples
-            current_adc = current_hold;
+            if ((is_rising && (voltage_adc <= voltage_last)) ||
+                (!is_rising && (voltage_adc > voltage_last))) // inverse XOR
+            {
+                /* still transitioning */
+                voltage_last = voltage_adc;
+            }
+            else
+            {
+                /* grace period - compensate for noise */
+                cutout_active--;
+            }
             voltage_adc = voltage_hold;
+            current_adc = current_hold;
         }
-        else
+    }
+    else
+    {
+        /* Fixed length Cutout mode */
+        if (cutout_active > 0u)
         {
-            // previous default
-            // eliminate possible spikes during the large transition
-            // set lowest & highest 18 bit value of ADC
-            if (is_rising) voltage_adc = 0u;
-            else current_adc = 0u;
+            cutout_active--;
+            if (true)
+            {
+                /* overwrite with hold samples (new default mode) */
+                current_adc = current_hold;
+                voltage_adc = voltage_hold;
+            }
+            else
+            {
+                // previous default
+                // eliminate possible spikes during the large transition
+                // set lowest & highest 18 bit value of ADC
+                if (is_rising) voltage_adc = 0u;
+                else current_adc = 0u;
+            }
         }
     }
 
@@ -245,6 +284,9 @@ static void harvest_adc_2_ivcurve(const uint32_t sample_idx)
             /* reset curve to start */
             voltage_set_uV = is_rising ? HRV_CFG.voltage_min_uV : HRV_CFG.voltage_max_uV;
             interval_step  = 0u;
+            /* configure automatic_cutout */
+            cutout_active  = HRV_CFG.cutout_cycles_n;
+            voltage_last   = voltage_adc;
         }
         else
         {
