@@ -40,7 +40,7 @@ With automatic cutout (+3 buffer cycles):
 Note that there is another unwanted effect that raises the Voltage slightly higher when the ramp crosses V_OC.
 Due to the design of the harvesting-circuit the recorded voltage shouldn't rise higher than V_OC.
 
-### Example 1 - Solar with Falling Ramp
+### Example 2 - Solar with Falling Ramp
 
 After restarting the voltage ramp (jumping up to 5 V), the voltage step is rounded off.
 In addition, a small spike can be found in the power-trace.
