@@ -12,6 +12,9 @@ Sheep
 - add pre-experiment loop that collects pru-util data (avoids warning to user)
 - read back and verify written settings in pru-memory (now default for emu & hrv)
 - verify that settings where actually applied in pru before starting a measurement (wasn't fully done for hrv)
+- virtual harvester - ivsurface recorder - add fixed-length and automatic cutout-mode
+  - the config-model got new parameters and the firmware is respecting them
+  - documentation can be found here: https://github.com/nes-lab/shepherd/blob/main/docs/user/virtual_harvester.md#ivsurface---transition-cutout
 
 KModule
 

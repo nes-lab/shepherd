@@ -26,8 +26,12 @@ Automatic mode works by
 ### Example 1 - Solar with Rising Ramp
 
 After restarting the voltage ramp (jumping down to 0 V), the current is higher than it should.
-As a result, the power has an undesired spike.
-This behavior varies with the cell-type and illumination and hints at some capacitive load on the cell
+As a result, the power-trace has an undesired spike.
+This behavior varies with the cell-type and illumination and hints at some capacitive load on the cell.
+Note that the 0 V level (I_SC) is lost for this mode, because it is hidden in the transition-period or the cutout.
+
+There is another unwanted effect that raises the Voltage slightly higher when the ramp crosses V_OC.
+Due to the design of the harvesting-circuit the recorded voltage shouldn't rise higher than V_OC.
 
 Without cutout:
 
@@ -37,13 +41,11 @@ With automatic cutout (+3 buffer cycles):
 
 ![iv110-recording with automatic cutout](./media_cutout/hrv_110ra.plot_0s000_to_0s020.png)
 
-Note that there is another unwanted effect that raises the Voltage slightly higher when the ramp crosses V_OC.
-Due to the design of the harvesting-circuit the recorded voltage shouldn't rise higher than V_OC.
-
 ### Example 2 - Solar with Falling Ramp
 
 After restarting the voltage ramp (jumping up to 5 V), the voltage step is rounded off.
 In addition, a small spike can be found in the power-trace.
+The transition-phase (or cutout) usually falls in the part of the voltage ramp that is above the V_OC, so no information is lost.
 
 Without cutout:
 
