@@ -29,7 +29,7 @@ classifiers = [
 
 requires-python = ">= 3.11"
 dependencies = [
-    "shepherd-core[elf,inventory]>=2026.04.2",  # limit due to newest features
+    "shepherd-core[elf,inventory]>=2026.05.1",  # limit due to newest features
     "click",
     "numpy",
     "python-periphery<2.0.0", # v2 has no persistence anymore
@@ -136,3 +136,6 @@ ryaml = { index = "piwheels", marker = "platform_machine == 'armv7l'"}   # 25 mi
 
 rapidyaml = { index = "piwheels", marker = "platform_machine == 'armv7l'"}   # does not finish, not used ATM
 rtoml = { index = "piwheels", marker = "platform_machine == 'armv7l'"} # not used ATM
+
+# temporary dev-versions of shepherd-packets
+# shepherd-core = { git = "https://github.com/nes-lab/shepherd-tools/", branch = "dev", subdirectory = "shepherd_core"}
