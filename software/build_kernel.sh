@@ -2,12 +2,12 @@
 sudo modprobe -rf 'shepherd'
 sudo modprobe -rf 'shepherd'
 #
-cd /opt/shepherd/software/kernel-module/src/
+cd /opt/shepherd/software/kernel-module/src
 #
 sudo make clean
 make
 sudo make install
 #
-cd /opt/shepherd/software/
+cd /opt/shepherd/software
 #
 sudo modprobe -a 'shepherd'

@@ -25,11 +25,15 @@ Watchdog
 
 - add network-checker that pings 5 internet-hosts and reboots after all failed
   - feature is turned off per default as it can misbehave in harvesting-scenarios without internet access
-- put config into dedicated file: `/etc/shepherd/watchdog.yaml`
+- config is located @ `/etc/shepherd/watchdog.yaml`
 
 Ansible
 
 - install / build rYAML separately from install sheep
+
+Github
+
+- compile PRU-firmware with GCC 16.1, gnupru 2026.05
 
 ## 2026.04.2
 
