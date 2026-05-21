@@ -168,7 +168,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 if cfg.simulate:
                     target = "dummy"
                 if cfg.mcu_port == 1:
-                    sysfs_interface.write_programmer_ctrl(
+                    sysfs_interface.send_programmer_ctrl(
                         target,
                         data_rate,
                         5,
@@ -176,13 +176,14 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                         10,
                     )
                 else:
-                    sysfs_interface.write_programmer_ctrl(
+                    sysfs_interface.send_programmer_ctrl(
                         target,
                         data_rate,
                         8,
                         9,
                         11,
                     )
+                sysfs_interface.reset_pru_applied_settings()
                 log.info("Programmer initialized, will start now (data-rate = %d bit/s)", data_rate)
                 sysfs_interface.start_programmer()
             except OSError as xpt:
@@ -192,9 +193,12 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 log.exception("ValueError: %s", str(xpt))
                 failed = True
 
+        time.sleep(1)  # give PRU some time to start (relax race-condition for settings-check)
         state = None
         counter = 0
         while state != "idle" and not failed:
+            if not sysfs_interface.check_pru_applied_settings():
+                log.error("PRU has NOT yet applied the settings!")
             log.info(
                 "Programming in progress,\tpgm_state = %s, shp_state = %s",
                 state,
