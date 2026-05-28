@@ -616,6 +616,38 @@ def read_programmer_ctrl() -> list:
     return parameters
 
 
+def send_programmer_ctrl(
+    target: str,
+    datarate: int,
+    pin_tck: int,
+    pin_tdio: int,
+    pin_dir_tdio: int,
+    pin_tdo: int = 0,
+    pin_tms: int = 0,
+    pin_dir_tms: int = 0,
+    *,
+    verify: bool = True,
+) -> bool:
+    write_programmer_ctrl(
+        target, datarate, pin_tck, pin_tdio, pin_dir_tdio, pin_tdo, pin_tms, pin_dir_tms
+    )
+    if verify:
+        identical = True
+        values_wanted = locals()
+        values_present = read_programmer_ctrl()
+        for num, attribute in enumerate(prog_attribs):
+            identical &= (
+                str(values_wanted[attribute]).lower().strip()
+                == str(values_present[num]).lower().strip()
+            )
+        if not identical:
+            log.warning("Programmer-settings - expected vs present in pru-memory:")
+            log.warning("\t%s", values_wanted)
+            log.warning("\t%s", values_present)
+        return identical
+    return True
+
+
 def write_programmer_datasize(value: int) -> None:
     with Path("/sys/shepherd/programmer/datasize").open("w", encoding="utf-8") as file:
         file.write(str(value))

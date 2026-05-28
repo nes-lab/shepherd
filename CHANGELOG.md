@@ -1,6 +1,15 @@
 # History of Changes
 
-## 2026.05.1 - unreleased
+## 2026.05.2 - unreleased
+
+PRU-Programmer got the same reliability-booster as emulation & harvester
+
+- PRU logs that settings were applied
+- python checks if config was written correctly to PRU-memory
+- python checks if PRU applied settings
+- note that the programmer got more reliable with the last release as well -> forced pru-resets are not occasionally discarded
+
+## 2026.05.1
 
 Sheep
 

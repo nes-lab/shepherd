@@ -79,9 +79,10 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
     }
 
     ihex_reader_init((char *) fw_data);
+    SHARED_MEM.pru_applied_settings = true;
 
     /* State specifies number of bytes written to target */
-    pctrl->state = 0;
+    pctrl->state                    = 0;
 
     int rc;
     /* Iterate content of hex file entry by entry */
