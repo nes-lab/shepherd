@@ -31,7 +31,7 @@ packaging
 paramiko
 pbr
 pycparser
-pydantic>=2.13.3
+pydantic>=2.13.4
 Pygments
 PyNaCl
 pyparsing
