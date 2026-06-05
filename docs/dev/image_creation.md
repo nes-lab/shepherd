@@ -21,6 +21,14 @@ For an active installation:
 - modify envVar in `./software/build_pru.sh` (24 or 25) and run script to update pru-firmwares
 - python pulls cape-version from EEPROM automatically or defaults to the newest version
 
+Check with:
+
+```shell
+shepherd-herd shell "sudo cat /boot/uEnv.txt | grep BB-SHPRD-"
+shepherd-herd shell "sudo shepherd-sheep eeprom read --hw-version"
+shepherd-herd shell "sudo shepherd-sheep -v version"
+```
+
 ## Custom Install
 
 - adapt your herd.yaml to point to the one beaglebone, activate roles for sheep and ptp-client
@@ -73,7 +81,7 @@ shepherd-herd shell "sudo systemctl status sysrqd"
 
 # optional test:
 telnet 192.168.165.200 4094
-# -> only working inside sheep-network
+# -> only working inside sheep-network (also from web-server)
 > PW
 > b  (for hard reboot)
 # to exit: ctrl + altgr + ] -> on telnet-console: quit
