@@ -15,6 +15,13 @@ Sheep
 - ID-patching now informs if it skips due to wrong file-format
 - shorten programmer error-count before failing -> gives more time for retries
 
+KMod
+
+- Pru-phandles leaked during loading and unloading of module
+  - when PRUs were not fully ready during boot a reference was lost
+  - during removal, the references were not returned at all
+  - code was made much safer by handling all possible code-paths
+
 ## 2026.05.1
 
 Sheep

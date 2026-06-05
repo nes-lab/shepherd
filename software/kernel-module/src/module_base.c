@@ -22,7 +22,8 @@
 
 #define MODULE_NAME "shepherd"
 MODULE_SOFTDEP("pre: pruss");
-MODULE_SOFTDEP("pre: remoteproc");
+MODULE_SOFTDEP("pre: pru_rproc");
+//MODULE_SOFTDEP("pre: remoteproc");
 
 static const struct of_device_id shepherd_dt_ids[] = {{
                                                               .compatible = "nes,shepherd",
@@ -81,20 +82,23 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
                 return -1;
             }
 
-            if (strncmp(tmp_rproc->name, "4a334000.pru", 12) == 0)
+            if ((strncmp(tmp_rproc->name, "4a334000.pru", 12) == 0) &&
+                (shp_pdata->rproc_prus[0] == NULL))
             {
+
                 printk(KERN_INFO "shprd.k: Found PRU0 at phandle 0x%02X", child->phandle);
                 shp_pdata->rproc_prus[0] = tmp_rproc;
             }
 
-            else if (strncmp(tmp_rproc->name, "4a338000.pru", 12) == 0)
+            else if ((strncmp(tmp_rproc->name, "4a338000.pru", 12) == 0) &&
+                     (shp_pdata->rproc_prus[1] == NULL))
             {
                 printk(KERN_INFO "shprd.k: Found PRU1 at phandle 0x%02X", child->phandle);
                 shp_pdata->rproc_prus[1] = tmp_rproc;
             }
             else
             {
-                /* not OUR handle - give it back immediately */
+                /* not OUR handle or handle already acquired -> give it back immediately */
                 rproc_put(tmp_rproc);
             }
         }
