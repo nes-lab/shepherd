@@ -1,6 +1,6 @@
 # History of Changes
 
-## 2026.05.2 - unreleased
+## 2026.06.1 - unreleased
 
 PRU-Programmer got the same reliability-booster as emulation & harvester
 
@@ -8,6 +8,12 @@ PRU-Programmer got the same reliability-booster as emulation & harvester
 - python checks if config was written correctly to PRU-memory
 - python checks if PRU applied settings
 - note that the programmer got more reliable with the last release as well -> forced pru-resets are not occasionally discarded
+
+Sheep
+
+- cleaner exit on already misbehaving sheep-routines
+- ID-patching now informs if it skips due to wrong file-format
+- shorten programmer error-count before failing -> gives more time for retries
 
 ## 2026.05.1
 
