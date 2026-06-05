@@ -92,6 +92,11 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
                 printk(KERN_INFO "shprd.k: Found PRU1 at phandle 0x%02X", child->phandle);
                 shp_pdata->rproc_prus[1] = tmp_rproc;
             }
+            else
+            {
+                /* not OUR handle - give it back immediately */
+                rproc_put(tmp_rproc);
+            }
         }
     }
 
