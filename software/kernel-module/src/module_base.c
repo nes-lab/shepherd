@@ -63,6 +63,9 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
         devm_kfree(&pdev->dev, shp_pdata);
         return -1;
     }
+    /* init values to known state */
+    shp_pdata->rproc_prus[0] = NULL;
+    shp_pdata->rproc_prus[1] = NULL;
 
     for_each_child_of_node(pruss_dn, child)
     {
@@ -138,16 +141,30 @@ static int shepherd_drv_remove(struct platform_device *pdev)
 
     if (shp_pdata != NULL)
     {
-        if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
+        if (shp_pdata->rproc_prus[1] != NULL)
         {
-            rproc_shutdown(shp_pdata->rproc_prus[1]);
-            printk(KERN_INFO "shprd.k: PRU1 shut down");
+            if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
+            {
+                rproc_shutdown(shp_pdata->rproc_prus[1]);
+                printk(KERN_INFO "shprd.k: PRU1 shut down");
+            }
+            rproc_put(shp_pdata->rproc_prus[1]);
+            shp_pdata->rproc_prus[1] = NULL;
+            printk(KERN_INFO "shprd.k: phandle for PRU1 was returned");
         }
-        if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
+
+        if (shp_pdata->rproc_prus[0] != NULL)
         {
-            rproc_shutdown(shp_pdata->rproc_prus[0]);
-            printk(KERN_INFO "shprd.k: PRU0 shut down");
+            if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
+            {
+                rproc_shutdown(shp_pdata->rproc_prus[0]);
+                printk(KERN_INFO "shprd.k: PRU0 shut down");
+            }
+            rproc_put(shp_pdata->rproc_prus[0]);
+            shp_pdata->rproc_prus[0] = NULL;
+            printk(KERN_INFO "shprd.k: phandle for PRU0 was returned");
         }
+
         // pt->pruss = pruss_get(pt->pru); // struct pruss *
         //pruss_release_mem_region(pt->pruss, &pt->mem);
 
@@ -159,17 +176,13 @@ static int shepherd_drv_remove(struct platform_device *pdev)
         //pru_rproc_put(shp_pdata->rproc_prus[1]);
         //printk(KERN_INFO "shprd.k: pru_rproc_put() done");
 
-        //rproc_put(shp_pdata->rproc_prus[0]);
-        //rproc_put(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: rproc_put() done");
         //rproc_del(shp_pdata->rproc_prus[0]);
         //rproc_del(shp_pdata->rproc_prus[1]);
         //printk(KERN_INFO "shprd.k: rproc_del() done");
         //rproc_free(shp_pdata->rproc_prus[0]);
         //rproc_free(shp_pdata->rproc_prus[1]);
         //printk(KERN_INFO "shprd.k: rproc_free() done");
-        shp_pdata->rproc_prus[0] = NULL;
-        shp_pdata->rproc_prus[1] = NULL;
+
         printk(KERN_INFO "shprd.k: PRU-handles returned");
         devm_kfree(&pdev->dev, shp_pdata);
         printk(KERN_INFO "shprd.k: platform-data 1 freed");
@@ -177,7 +190,7 @@ static int shepherd_drv_remove(struct platform_device *pdev)
         pdev->dev.platform_data = NULL;
         printk(KERN_INFO "shprd.k: platform-data 2 nulled");
     }
-    // TODO: testing-ground - module will not fully exit with
+    // TODO: testing-ground - module will not fully exit & error with
     //  "modprobe: FATAL: Module remoteproc is in use."
     platform_set_drvdata(pdev, NULL);
     printk(KERN_INFO "shprd.k: module exited from kernel!!!");
