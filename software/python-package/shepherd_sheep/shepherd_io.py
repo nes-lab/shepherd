@@ -28,6 +28,8 @@ from .hardware_cape_io import gpio_pin_nums
 from .logger import log
 from .shared_memory import SharedMemory
 from .sys_access import check_on_kernel_module
+from .sys_access import reload_kernel_module
+from .sysfs_interface import SysfsInterfaceError
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
@@ -174,7 +176,10 @@ class ShepherdIO:
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        sysfs.write_mode("none", force=True)
+        try:
+            sysfs.write_mode("none", force=True)
+        except SysfsInterfaceError:
+            reload_kernel_module()  # hard reset if soft-approach fails
         log.info("Now exiting ShepherdIO")
         self._power_down_shp()
         self.unload_shared_mem()
