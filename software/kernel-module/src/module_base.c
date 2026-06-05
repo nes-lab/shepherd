@@ -23,7 +23,7 @@
 #define MODULE_NAME "shepherd"
 MODULE_SOFTDEP("pre: pruss");
 MODULE_SOFTDEP("pre: pru_rproc");
-//MODULE_SOFTDEP("pre: remoteproc");
+MODULE_SOFTDEP("pre: remoteproc");
 
 static const struct of_device_id shepherd_dt_ids[] = {{
                                                               .compatible = "nes,shepherd",
@@ -36,7 +36,7 @@ MODULE_DEVICE_TABLE(of, shepherd_dt_ids);
  * the pruss-device-tree-node must have a shepherd entry with a pointer to the prusses.
  */
 
-static int prepare_shepherd_platform_data(struct platform_device *pdev)
+static int shepherd_platform_data_init(struct platform_device *pdev)
 {
     struct device_node *np = pdev->dev.of_node, *pruss_dn = NULL;
     struct device_node *child;
@@ -78,7 +78,6 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
             {
                 of_node_put(pruss_dn);
                 dev_err(&pdev->dev, "Not yet able to parse %s device node\n", child->name);
-                devm_kfree(&pdev->dev, shp_pdata);
                 return -1;
             }
 
@@ -108,21 +107,82 @@ static int prepare_shepherd_platform_data(struct platform_device *pdev)
     return 1;
 }
 
+static int shepherd_platform_data_exit(struct platform_device *pdev)
+{
+    if (shp_pdata != NULL)
+    {
+        if (shp_pdata->rproc_prus[1] != NULL)
+        {
+            if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
+            {
+                rproc_shutdown(shp_pdata->rproc_prus[1]);
+                printk(KERN_INFO "shprd.k: PRU1 shut down");
+            }
+            rproc_put(shp_pdata->rproc_prus[1]);
+            shp_pdata->rproc_prus[1] = NULL;
+            printk(KERN_INFO "shprd.k: ref/handle for PRU1 was returned");
+        }
+
+        if (shp_pdata->rproc_prus[0] != NULL)
+        {
+            if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
+            {
+                rproc_shutdown(shp_pdata->rproc_prus[0]);
+                printk(KERN_INFO "shprd.k: PRU0 shut down");
+            }
+            rproc_put(shp_pdata->rproc_prus[0]);
+            shp_pdata->rproc_prus[0] = NULL;
+            printk(KERN_INFO "shprd.k: ref/handle for PRU0 was returned");
+        }
+
+        // pt->pruss = pruss_get(pt->pru); // struct pruss *
+        //pruss_release_mem_region(pt->pruss, &pt->mem);
+
+        // tested with #include <linux/pruss.h>, didn't help unload problem
+        //pruss_put(pruss_get(shp_pdata->rproc_prus[0]));
+        //pruss_put(pruss_get(shp_pdata->rproc_prus[1]));
+        //printk(KERN_INFO "shprd.k: prusses returned");
+        //pru_rproc_put(shp_pdata->rproc_prus[0]);
+        //pru_rproc_put(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: pru_rproc_put() done");
+
+        //rproc_del(shp_pdata->rproc_prus[0]);
+        //rproc_del(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: rproc_del() done");
+        //rproc_free(shp_pdata->rproc_prus[0]);
+        //rproc_free(shp_pdata->rproc_prus[1]);
+        //printk(KERN_INFO "shprd.k: rproc_free() done");
+
+        devm_kfree(&pdev->dev, shp_pdata);
+        printk(KERN_INFO "shprd.k: platform-data 1 freed");
+        shp_pdata               = NULL;
+        pdev->dev.platform_data = NULL;
+        printk(KERN_INFO "shprd.k: platform-data 2 nulled");
+    }
+    return 0;
+}
+
+
 static int shepherd_drv_probe(struct platform_device *pdev)
 {
     int ret = 0;
 
     printk(KERN_INFO "shprd.k: found shepherd device!!!");
 
-    if (prepare_shepherd_platform_data(pdev) < 0)
+    if (shepherd_platform_data_init(pdev) < 0)
     {
         /*pru device are not ready yet so kernel should retry the probe function later again*/
+        shepherd_platform_data_exit(pdev);
         return -EPROBE_DEFER;
     }
 
     /* swap FW -> also handles sub-services for PRU */
     ret = swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT);
-    if (ret) { return ret; }
+    if (ret)
+    {
+        shepherd_platform_data_exit(pdev);
+        return ret;
+    }
 
     /* Initialize shared memory and PRU interrupt controller */
     mem_interface_init();
@@ -147,60 +207,8 @@ static int shepherd_drv_remove(struct platform_device *pdev)
     msg_sys_exit();
     sync_exit();
     mem_interface_exit();
-
-    if (shp_pdata != NULL)
-    {
-        if (shp_pdata->rproc_prus[1] != NULL)
-        {
-            if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
-            {
-                rproc_shutdown(shp_pdata->rproc_prus[1]);
-                printk(KERN_INFO "shprd.k: PRU1 shut down");
-            }
-            rproc_put(shp_pdata->rproc_prus[1]);
-            shp_pdata->rproc_prus[1] = NULL;
-            printk(KERN_INFO "shprd.k: phandle for PRU1 was returned");
-        }
-
-        if (shp_pdata->rproc_prus[0] != NULL)
-        {
-            if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
-            {
-                rproc_shutdown(shp_pdata->rproc_prus[0]);
-                printk(KERN_INFO "shprd.k: PRU0 shut down");
-            }
-            rproc_put(shp_pdata->rproc_prus[0]);
-            shp_pdata->rproc_prus[0] = NULL;
-            printk(KERN_INFO "shprd.k: phandle for PRU0 was returned");
-        }
-
-        // pt->pruss = pruss_get(pt->pru); // struct pruss *
-        //pruss_release_mem_region(pt->pruss, &pt->mem);
-
-        // tested with #include <linux/pruss.h>, didn't help unload problem
-        //pruss_put(pruss_get(shp_pdata->rproc_prus[0]));
-        //pruss_put(pruss_get(shp_pdata->rproc_prus[1]));
-        //printk(KERN_INFO "shprd.k: prusses returned");
-        //pru_rproc_put(shp_pdata->rproc_prus[0]);
-        //pru_rproc_put(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: pru_rproc_put() done");
-
-        //rproc_del(shp_pdata->rproc_prus[0]);
-        //rproc_del(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: rproc_del() done");
-        //rproc_free(shp_pdata->rproc_prus[0]);
-        //rproc_free(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: rproc_free() done");
-
-        printk(KERN_INFO "shprd.k: PRU-handles returned");
-        devm_kfree(&pdev->dev, shp_pdata);
-        printk(KERN_INFO "shprd.k: platform-data 1 freed");
-        shp_pdata               = NULL;
-        pdev->dev.platform_data = NULL;
-        printk(KERN_INFO "shprd.k: platform-data 2 nulled");
-    }
-    // TODO: testing-ground - module will not fully exit & error with
-    //  "modprobe: FATAL: Module remoteproc is in use."
+    /* last active components get cleaned */
+    shepherd_platform_data_exit(pdev);
     platform_set_drvdata(pdev, NULL);
     printk(KERN_INFO "shprd.k: module exited from kernel!!!");
     return 0;

@@ -15,12 +15,11 @@ Sheep
 - ID-patching now informs if it skips due to wrong file-format
 - shorten programmer error-count before failing -> gives more time for retries
 
-KMod
-
-- Pru-phandles leaked during loading and unloading of module
-  - when PRUs were not fully ready during boot a reference was lost
-  - during removal, the references were not returned at all
-  - code was made much safer by handling all possible code-paths
+KMod - fixed leakage of Pru-handles during loading and unloading of module
+- when PRUs were not fully ready during boot, references were lost in several places
+- during removal, the references were not returned at all
+- code was made much safer by handling all possible code-paths (proper cleanup)
+- test with `sudo lsmod | grep pru_rproc` before and after `sudo python3 python-package/tests_manual/testbench_kernelmodule.py`
 
 ## 2026.05.1
 
