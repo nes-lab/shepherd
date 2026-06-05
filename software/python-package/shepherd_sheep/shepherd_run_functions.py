@@ -74,6 +74,8 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
         modify_uid(file_path, cfg.custom_id)
         file_path = firmware_to_hex(file_path)
         log.debug("Converted file to intel-HEX: %s", file_path.as_posix())
+    else:
+        log.info("ELF-Patching was skipped - due to wrong file format.")
     if file_path.as_posix() != cfg.firmware_file.as_posix():
         log.info("Moving file %s to %s", file_path.name, cfg.firmware_file.as_posix())
         shutil.move(file_path, cfg.firmware_file)
@@ -215,8 +217,8 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
                 failed = True
             elif "start" in state:
                 counter += 1
-                if counter > 10:
-                    log.error("SystemError - Programmer failed to start")
+                if counter > 5:
+                    log.error("Possible SystemError - Programmer failed to start")
                     failed = True
         if failed:
             log.info("Programming - Procedure failed - will exit now!")
