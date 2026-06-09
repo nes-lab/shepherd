@@ -16,10 +16,12 @@ Sheep
 - shorten programmer error-count before failing -> gives more time for retries
 
 KMod - fixed leakage of Pru-handles during loading and unloading of module
+
 - when PRUs were not fully ready during boot, references were lost in several places
 - during removal, the references were not returned at all
 - code was made much safer by handling all possible code-paths (proper cleanup)
 - test with `sudo lsmod | grep pru_rproc` before and after `sudo python3 python-package/tests_manual/testbench_kernelmodule.py`
+  - reference count of sub-modules is correct and does not increase during usage
 
 ## 2026.05.1
 
