@@ -87,6 +87,15 @@ telnet 192.168.165.200 4094
 # to exit: ctrl + altgr + ] -> on telnet-console: quit
 ```
 
+Activate Internet-Watchdog by copying / modifying config (BETA):
+
+```Shell
+# on local observer
+sudo nano /etc/shepherd/watchdog.yaml
+# set
+#   network_needed: true
+```
+
 Grow Main-Partition on SD
 
 ```shell
