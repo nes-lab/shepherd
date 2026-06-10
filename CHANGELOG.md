@@ -1,8 +1,6 @@
 # History of Changes
 
-## 2026.06.2 - unreleased
-
-## 2026.06.1
+## 2026.06.1 - unreleased
 
 PRU-Programmer got the same reliability-booster as emulation & harvester
 

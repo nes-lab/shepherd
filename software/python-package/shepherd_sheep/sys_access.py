@@ -48,14 +48,14 @@ def remove_kernel_module() -> None:
 
 
 def load_kernel_module() -> None:
-    retry_max: int = 10
+    retry_max: int = 15  # even heavy load-problems should solve itself after ~ 30 s
     run_: int = 0
     wait_max = 3.0
     while run_ < retry_max:
         run_ += 1
         try:
             subprocess.run(
-                ["/usr/sbin/modprobe", "--quiet", "shepherd"],
+                ["/usr/sbin/modprobe", "--force", "--quiet", "shepherd"],
                 timeout=10,
                 check=True,
                 shell=False,
