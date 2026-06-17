@@ -39,6 +39,7 @@
         cmd: "set -o pipefail && df -h | grep mmcblk1p1"
       register: booted_eMMC
       changed_when: false
+      failed_when: false
     - name: Make eMMC-FS safer
       ansible.builtin.lineinfile:
         dest: /etc/fstab
@@ -53,6 +54,7 @@
         cmd: "set -o pipefail && df -h | grep mmcblk0p1"
       register: booted_microSD
       changed_when: false
+      failed_when: false
     - name: Make microSD-FS safer
       ansible.builtin.lineinfile:
         dest: /etc/fstab
