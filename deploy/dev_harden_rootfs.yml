@@ -1,0 +1,72 @@
+---
+- name: Strategies to prevent filesystem corruption
+  hosts: all
+  become: true
+
+  tasks:
+
+    # STRATEGY 1 - move temporary data to RAM
+    - name: Convert /tmp to temporary file system
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^tmpfs.+\/tmp.*$'
+        line: 'tmpfs   /tmp        tmpfs   defaults,noatime,nosuid,size=100M   0  0'
+        state: present
+      become: true
+    - name: Convert /var/log  to temporary file system
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^tmpfs.+\/var\/log.*$'
+        line: 'tmpfs   /var/log    tmpfs   defaults,noatime,nosuid,size=64M    0  0'
+        state: present
+      become: true
+    - name: Convert /var/run  to temporary file system
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^tmpfs.+\/var\/run.*$'
+        line: 'tmpfs   /var/run    tmpfs   defaults,noatime,nosuid,size=64M    0  0'
+        state: present
+      become: true
+
+    # STRATEGY 2 - make root-filesystem more robust
+    # - noatime & nodiratime -> prevent logging access of files and directories
+    # - data=ordered -> write data first, then metadata (cost a bit of performance,
+    #                   but prevents corrupted orphan linked lists
+    # - errors=continue -> continue booting
+    #                      default is: errors=remount-ro
+    - name: Detect eMMC-usage
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && df -h | grep mmcblk1p1"
+      register: booted_eMMC
+      changed_when: false
+    - name: Make eMMC-FS safer
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^\/dev\/mmcblk.*$'
+        line: '/dev/mmcblk1p1  /  ext4  noatime,nodiratime,data=ordered,errors=continue  0  1'
+        state: present
+      when: booted_eMMC.rc == 0
+      become: true
+
+    - name: Detect microSD-usage
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && df -h | grep mmcblk0p1"
+      register: booted_microSD
+      changed_when: false
+    - name: Make microSD-FS safer
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^\/dev\/mmcblk.*$'
+        line: '/dev/mmcblk0p1  /  ext4  noatime,nodiratime,data=ordered,errors=continue  0  1'
+        state: present
+      when: booted_microSD.rc == 0
+      become: true
+
+      # STRATEGY 3 - check filesystem on every boot
+    - name: Check root-filesystem on every boot
+      ansible.builtin.lineinfile:
+        dest: "/boot/uEnv.txt"
+        regexp: "#?cmdline=coherent.*. quiet$"
+        line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 rootdelay=10 fsck.mode=force fsck.repair=yes quiet"
+        state: present
+      become: true
