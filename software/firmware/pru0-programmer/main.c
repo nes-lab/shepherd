@@ -27,53 +27,48 @@ int main(void)
     DEBUG_EVENT_STATE_3;
 
     /* Initialize struct-Members Part A, must come first - this blocks PRU1! */
-    SHARED_MEM.cmp0_trigger_for_pru1 = 0u; // Reset Token-System to init-values
-    SHARED_MEM.cmp1_trigger_for_pru1 = 0u;
+    SHARED_MEM.cmp0_trigger_for_pru1      = 0u; // Reset Token-System to init-values
+    SHARED_MEM.cmp1_trigger_for_pru1      = 0u;
 
     /* establish safety-boundary around critical sections */
-    SHARED_MEM.canary1               = CANARY_VALUE_U32;
-    SHARED_MEM.canary2               = CANARY_VALUE_U32;
-    SHARED_MEM.canary3               = CANARY_VALUE_U32;
+    SHARED_MEM.canary1                    = CANARY_VALUE_U32;
+    SHARED_MEM.canary2                    = CANARY_VALUE_U32;
+    SHARED_MEM.canary3                    = CANARY_VALUE_U32;
 
     /* Initialize all struct-Members Part B */
-    SHARED_MEM.buffer_iv_inp_ptr     = (struct IVTraceInp *) resourceTable.shared_memory.pa;
-    SHARED_MEM.buffer_iv_out_ptr =
-            (struct IVTraceOut *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp));
-    SHARED_MEM.buffer_gpio_ptr =
-            (struct GPIOTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
-                                  sizeof(struct IVTraceOut));
-    SHARED_MEM.buffer_util_ptr =
-            (struct UtilTrace *) (resourceTable.shared_memory.pa + sizeof(struct IVTraceInp) +
-                                  sizeof(struct IVTraceOut) + sizeof(struct GPIOTrace));
+    SHARED_MEM.buffer_iv_inp_ptr          = (struct IVTraceInp *) resourceTable.sh_mem_iv_inp.pa;
+    SHARED_MEM.buffer_iv_out_ptr          = (struct IVTraceOut *) resourceTable.sh_mem_iv_out.pa;
+    SHARED_MEM.buffer_gpio_ptr            = (struct GPIOTrace *) resourceTable.sh_mem_gpio.pa;
+    SHARED_MEM.buffer_util_ptr            = (struct UtilTrace *) resourceTable.sh_mem_util.pa;
 
-    SHARED_MEM.buffer_size                         = resourceTable.shared_memory.len;
-    SHARED_MEM.buffer_iv_inp_size                  = sizeof(struct IVTraceInp);
-    SHARED_MEM.buffer_iv_out_size                  = sizeof(struct IVTraceOut);
-    SHARED_MEM.buffer_gpio_size                    = sizeof(struct GPIOTrace);
-    SHARED_MEM.buffer_util_size                    = sizeof(struct UtilTrace);
+    SHARED_MEM.buffer_size                = SIZE_CARVEOUT;
+    SHARED_MEM.buffer_iv_inp_size         = sizeof(struct IVTraceInp);
+    SHARED_MEM.buffer_iv_out_size         = sizeof(struct IVTraceOut);
+    SHARED_MEM.buffer_gpio_size           = sizeof(struct GPIOTrace);
+    SHARED_MEM.buffer_util_size           = sizeof(struct UtilTrace);
 
-    SHARED_MEM.buffer_iv_inp_sys_idx               = IDX_OUT_OF_BOUND;
-    SHARED_MEM.buffer_iv_inp_ptr->idx_sys          = IDX_OUT_OF_BOUND;
-    SHARED_MEM.buffer_iv_inp_ptr->idx_pru          = IDX_OUT_OF_BOUND;
-    SHARED_MEM.buffer_iv_out_ptr->idx_pru          = IDX_OUT_OF_BOUND;
-    SHARED_MEM.buffer_gpio_ptr->idx_pru            = IDX_OUT_OF_BOUND;
-    SHARED_MEM.buffer_util_ptr->idx_pru            = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_inp_sys_idx      = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_inp_ptr->idx_sys = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_inp_ptr->idx_pru = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_iv_out_ptr->idx_pru = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_gpio_ptr->idx_pru   = IDX_OUT_OF_BOUND;
+    SHARED_MEM.buffer_util_ptr->idx_pru   = IDX_OUT_OF_BOUND;
 
     /* accumulated length is documented in resourceTable.shared_memory.len */
 
-    SHARED_MEM.dac_auxiliary_voltage_raw           = 0u;
-    SHARED_MEM.shp_pru_state                       = STATE_IDLE;
-    SHARED_MEM.shp_pru0_mode                       = MODE_NONE;
+    SHARED_MEM.dac_auxiliary_voltage_raw  = 0u;
+    SHARED_MEM.shp_pru_state              = STATE_IDLE;
+    SHARED_MEM.shp_pru0_mode              = MODE_NONE;
 
-    SHARED_MEM.last_sync_timestamp_ns              = 0u;
-    SHARED_MEM.next_sync_timestamp_ns              = 0u;
+    SHARED_MEM.last_sync_timestamp_ns     = 0u;
+    SHARED_MEM.next_sync_timestamp_ns     = 0u;
 
-    SHARED_MEM.buffer_iv_inp_idx                   = 0u;
-    SHARED_MEM.buffer_iv_out_idx                   = 0u;
-    SHARED_MEM.buffer_gpio_idx                     = 0u;
-    SHARED_MEM.buffer_util_idx                     = 0u;
+    SHARED_MEM.buffer_iv_inp_idx          = 0u;
+    SHARED_MEM.buffer_iv_out_idx          = 0u;
+    SHARED_MEM.buffer_gpio_idx            = 0u;
+    SHARED_MEM.buffer_util_idx            = 0u;
 
-    SHARED_MEM.gpio_pin_state                      = 0u;
+    SHARED_MEM.gpio_pin_state             = 0u;
 
     SHARED_MEM.vsource_power_good_trigger_for_pru1 = false;
     SHARED_MEM.vsource_power_good_pins_state       = 0b00u;
@@ -112,7 +107,7 @@ reset:
         if (SHARED_MEM.programmer_ctrl.state == PRG_STATE_STARTING)
         {
             DEBUG_EVENT_STATE_3;
-            programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *) resourceTable.shared_memory.pa);
+            programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *) resourceTable.sh_mem_iv_inp.pa);
             DEBUG_EVENT_STATE_0;
         }
     }

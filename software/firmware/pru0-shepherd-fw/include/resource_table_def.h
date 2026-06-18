@@ -68,21 +68,31 @@ extern uint32_t
 struct my_resource_table resourceTable = {
         {
                 1, /* Resource table version: only version 1 is supported by the current driver */
-                1, /* number of entries in the table */
+                4, /* number of entries in the table */
                 {0U, 0U} /* reserved, must be zero */
         },
         /* offsets to entries */
         {
-                offsetof(struct my_resource_table, shared_memory),
+                offsetof(struct my_resource_table, sh_mem_iv_inp),
+                offsetof(struct my_resource_table, sh_mem_iv_out),
+                offsetof(struct my_resource_table, sh_mem_gpio),
+                offsetof(struct my_resource_table, sh_mem_util),
         },
 
-        /* resource entries */
-        {TYPE_CARVEOUT, 0x0, /* Memory address */
-         0x0,                /* Physical address */
-         SIZE_CARVEOUT,      /* ~ 34 MB */
-         0,                  /* Flags */
-         0,                  /* Reserved */
-         "PRU_HOST_SHARED_MEM"},
+        /* resource entries
+           for Carveouts the fields are:
+           - TYPE of Resource
+           - Memory address (da)
+           - Physical address (pa)
+           - length in bytes / size
+           - Flags for iommu
+           - Reserved, must be zero
+           - human-readable name of region
+        */
+        {TYPE_CARVEOUT, 0x0, 0x0, sizeof(struct GPIOTrace), 0, 0, "PRU_HOST_SHARED_MEM_GPIO"},
+        {TYPE_CARVEOUT, 0x0, 0x0, sizeof(struct IVTraceInp), 0, 0, "PRU_HOST_SHARED_MEM_IV_INP"},
+        {TYPE_CARVEOUT, 0x0, 0x0, sizeof(struct IVTraceOut), 0, 0, "PRU_HOST_SHARED_MEM_IV_OUT"},
+        {TYPE_CARVEOUT, 0x0, 0x0, sizeof(struct UtilTrace), 0, 0, "PRU_HOST_SHARED_MEM_UTIL"},
 };
 
 #endif /* SHEPHERD_PRU0_RESOURCE_TABLE_DEF_H_ */
