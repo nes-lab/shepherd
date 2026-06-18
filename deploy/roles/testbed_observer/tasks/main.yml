@@ -1,39 +1,8 @@
 ---
 
-- name: Determine old local hostname
-  ansible.builtin.shell:
-    cmd: "hostname"
-  register: old_hostname
-  changed_when: false
-
-- name: Determine local MAC-Address
-  ansible.builtin.shell: # pipefail-setting prevents surprises
-    #cmd: "set -o pipefail && ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
-    cmd: "ip link show eth0 | grep link/ether | cut -d ' ' --fields=6"
-  register: mac_ret
-  failed_when: false
-  changed_when: false
-
-- name: Reformat MAC-Address
-  ansible.builtin.set_fact:
-    mac_add: "{{ mac_ret.stdout | upper | replace(':', '_') }}"
-
-- name: Show MAC
-  ansible.builtin.debug:
-    var: mac_add
-
-- name: Lookup new host-name
-  ansible.builtin.set_fact:
-    testbed_observer_hostname: "{{ testbed_observer_mac_2_ip[mac_add][0] }}"
-
-- name: Show new Name
-  ansible.builtin.debug:
-    var: testbed_observer_hostname
-
-- name: Set hostname (from MAC)
-  ansible.builtin.hostname:
-    name: "{{ testbed_observer_hostname }}"
-  when: old_hostname.stdout.strip() != testbed_observer_hostname
+- name: Derive Hostname from MAC
+  ansible.builtin.include_tasks:
+    file: derive_hostname_from_mac.yml
 
 - name: Integrate NW-Storage
   ansible.builtin.include_tasks:
@@ -71,4 +40,4 @@
 
 - name: Show actual new hostname
   ansible.builtin.debug:
-    var: new_hostname
+    msg: "{{ new_hostname.stdout }}"
