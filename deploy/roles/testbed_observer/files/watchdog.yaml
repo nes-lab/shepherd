@@ -1,0 +1,12 @@
+datatype: WatchdogConfig
+created: 2026-06-03T17:18:34.021559+02:00
+parameters:
+  interval: 600
+  pin_ack: 68
+  network_needed: true
+  network_hosts:
+  - 8.8.4.4
+  - 8.8.8.8
+  - 1.1.1.1
+  - 4.2.2.1
+  - 4.2.2.2

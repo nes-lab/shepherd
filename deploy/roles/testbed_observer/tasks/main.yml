@@ -43,6 +43,10 @@
   ansible.builtin.include_tasks:
     file: broadcast_mac.yml
 
+- name: Extended watchdog reboots unreachable observers in testbed
+  ansible.builtin.include_tasks:
+    file: activate_internet_watchdog.yml
+
 - name: Restart device
   ansible.builtin.reboot:
     connect_timeout: 20
