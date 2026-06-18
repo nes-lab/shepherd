@@ -25,7 +25,9 @@
     #                      default is: errors=remount-ro
     - name: Detect root partition (eMMC vs SD-Card)
       ansible.builtin.shell:
-        cmd: "mount | grep ' / ' | cut -d ' ' --fields=1"
+        # cmd: "set -o pipefail && mount | grep ' / ' | cut -d' ' --fields=1"
+        # cmd: "mount | grep ' / ' | cut -d' ' --fields=1"
+        cmd: "df -h | grep mmcblk | cut -d' ' --fields=1"
         # note: "set -o pipefail &&" in front does not work here -> empty string
       register: booted_part
       failed_when: false
@@ -57,3 +59,4 @@
         connect_timeout: 20
         reboot_timeout: 200
         post_reboot_delay: 30
+      when: false
