@@ -1,6 +1,22 @@
 # History of Changes
 
-## 2026.06.1 - unreleased
+## 2026.06.2 - unreleased
+
+Make the root filesystem less prone to errors
+
+- added playbook `dev_harden_rootfs.yml`
+- strategy 1 - move temporary data from FS to RAM
+- strategy 2 - make mounting of root-filesystem more robust
+- strategy 3 - check filesystem on every boot (NOT active)
+  - this caused the kMod to NOT start up, because PRU0 could not load firmware, because allocation of buffers in DRAM failed
+  - 3 possible fixes were tried (https://github.com/nes-lab/shepherd/issues/162), all failed
+  - migration to a newer kernel is recommended
+
+Other Changes
+
+- kModule informs about buffer-specs in DRAM (address & size)
+
+## 2026.06.1
 
 PRU-Programmer got the same reliability-booster as emulation & harvester
 

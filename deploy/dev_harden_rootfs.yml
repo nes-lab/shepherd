@@ -17,7 +17,7 @@
         - { dir: '/var/log', size: 64 }
         - { dir: '/var/run', size: 64 }
 
-    # STRATEGY 2 - make root-filesystem more robust
+    # STRATEGY 2 - make mounting of root-filesystem more robust
     # - noatime & nodiratime -> prevent logging access of files and directories
     # - data=ordered -> write data first, then metadata (cost a bit of performance,
     #                   but prevents corrupted orphan linked lists
