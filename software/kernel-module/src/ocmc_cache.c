@@ -66,10 +66,17 @@ void ocmc_cache_init(void)
 
     ocmc_cache_reset();
 
-    printk(KERN_INFO "shprd.cache: OCMC initialized @ 0x%X, size = %d bytes",
+    printk(KERN_INFO "shprd.cache: OCMC initialized  @ 0x%X, size = %d bytes",
            (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
-    printk(KERN_INFO "shprd.cache:     input-buffer @ 0x%X, size = %d bytes",
-           (uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp));
+    printk(KERN_INFO "shprd.cache:     input-buffer  @ 0x%X, size = %d bytes",
+           (uint32_t) shared_mem->buffer_iv_inp_ptr, shared_mem->buffer_iv_inp_size);
+    // more info on current memory regions
+    printk(KERN_INFO "shprd.info:      output-buffer @ 0x%X, size = %d bytes",
+           (uint32_t) shared_mem->buffer_iv_out_ptr, shared_mem->buffer_iv_out_size);
+    printk(KERN_INFO "shprd.info:      gpio-buffer   @ 0x%X, size = %d bytes",
+           (uint32_t) shared_mem->buffer_gpio_ptr, shared_mem->buffer_gpio_size);
+    printk(KERN_INFO "shprd.info:      util-buffer   @ 0x%X, size = %d bytes",
+           (uint32_t) shared_mem->buffer_util_ptr, shared_mem->buffer_util_size);
 
     /* timer for updates */
     hrtimer_init(&update_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);

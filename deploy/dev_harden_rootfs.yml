@@ -1,0 +1,61 @@
+---
+- name: Strategies to prevent filesystem corruption
+  hosts: sheep
+  become: true
+
+  tasks:
+
+    # STRATEGY 1 - move temporary data from FS to RAM
+    - name: Move temporary data from filesystem to RAM
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: "^tmpfs.+{{ item.dir | replace('/', '\/') }}.*$"
+        line: 'tmpfs   {{ item.dir }}    tmpfs   defaults,noatime,nosuid,size={{ item.size }}M    0  0'
+        state: present
+      loop:
+        - { dir: '/tmp', size: 100 }
+        - { dir: '/var/log', size: 64 }
+        - { dir: '/var/run', size: 64 }
+
+    # STRATEGY 2 - make mounting of root-filesystem more robust
+    # - noatime & nodiratime -> prevent logging access of files and directories
+    # - data=ordered -> write data first, then metadata (cost a bit of performance,
+    #                   but prevents corrupted orphan linked lists
+    # - errors=continue -> continue booting
+    #                      default is: errors=remount-ro
+    - name: Detect root partition (eMMC vs SD-Card)
+      ansible.builtin.shell:
+        # cmd: "set -o pipefail && mount | grep ' / ' | cut -d' ' --fields=1"
+        # cmd: "mount | grep ' / ' | cut -d' ' --fields=1"
+        cmd: "df -h | grep mmcblk | cut -d' ' --fields=1"
+        # note: "set -o pipefail &&" in front does not work here -> empty string
+      register: booted_part
+      failed_when: false
+      changed_when: false
+    - name: Root partition is
+      ansible.builtin.debug:
+        msg: "{{ booted_part.stdout }}"
+    - name: Make mounting of root partition safer
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: '^.* \/ .*$'
+        line: '{{ booted_part.stdout }}  /  ext4  noatime,nodiratime,data=ordered,errors=continue  0  1'
+        state: present
+        insertafter: EOF
+
+      # STRATEGY 3 - check filesystem on every boot (NOT active)
+    - name: Check root-filesystem on every boot
+      ansible.builtin.lineinfile:
+        dest: "/boot/uEnv.txt"
+        regexp: "#?cmdline=coherent.*. quiet$"
+        line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 fsck.mode=yes fsck.repair=yes quiet"
+        # TODO: removed 'fsck.mode=force' for now, as this prevents PRU0 from carving out RAM
+        #       tried 3 ways to circumvent this, all failed
+        #       https://github.com/nes-lab/shepherd/issues/162
+        state: present
+
+    - name: Restart device
+      ansible.builtin.reboot:
+        connect_timeout: 20
+        reboot_timeout: 200
+        post_reboot_delay: 30
