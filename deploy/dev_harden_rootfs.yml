@@ -1,6 +1,6 @@
 ---
 - name: Strategies to prevent filesystem corruption
-  hosts: all
+  hosts: sheep
   become: true
 
   tasks:
