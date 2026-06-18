@@ -5,7 +5,7 @@
 
   tasks:
 
-    # STRATEGY 1 - move temporary data to RAM
+    # STRATEGY 1 - move temporary data from FS to RAM
     - name: Convert /tmp to temporary file system
       ansible.builtin.lineinfile:
         dest: /etc/fstab
@@ -31,38 +31,28 @@
     #                   but prevents corrupted orphan linked lists
     # - errors=continue -> continue booting
     #                      default is: errors=remount-ro
-    - name: Detect eMMC-usage
+    - name: Detect root partition (eMMC vs SD-Card)
       ansible.builtin.shell:
-        cmd: "set -o pipefail && df -h | grep mmcblk1p1"
-      register: booted_emmc
+        cmd: "set -o pipefail && df -h | grep mmcblk | cut -d ' ' --fields=1"
+      register: booted_part
       failed_when: false
-    - name: Make eMMC-FS safer
+      changed_when: false
+    - name: Make mounting of root partition safer
       ansible.builtin.lineinfile:
         dest: /etc/fstab
         regex: '^\/dev\/mmcblk.*$'
-        line: '/dev/mmcblk1p1  /  ext4  noatime,nodiratime,data=ordered,errors=continue  0  1'
+        line: '{{ booted_part.stdout }}  /  ext4  noatime,nodiratime,data=ordered,errors=continue  0  1'
         state: present
-      when: booted_emmc is not failed
 
-    - name: Detect microSD-usage
-      ansible.builtin.shell:
-        cmd: "set -o pipefail && df -h | grep mmcblk0p1"
-      register: booted_microsd
-      failed_when: false
-    - name: Make microSD-FS safer
-      ansible.builtin.lineinfile:
-        dest: /etc/fstab
-        regex: '^\/dev\/mmcblk.*$'
-        line: '/dev/mmcblk0p1  /  ext4  noatime,nodiratime,data=ordered,errors=continue  0  1'
-        state: present
-      when: booted_microsd is not failed
-
-      # STRATEGY 3 - check filesystem on every boot
+      # STRATEGY 3 - check filesystem on every boot (NOT active)
     - name: Check root-filesystem on every boot
       ansible.builtin.lineinfile:
         dest: "/boot/uEnv.txt"
         regexp: "#?cmdline=coherent.*. quiet$"
-        line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 rootdelay=10 fsck.mode=force fsck.repair=yes quiet"
+        line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 fsck.mode=yes fsck.repair=yes quiet"
+        # TODO: removed 'fsck.mode=force' for now, as this prevents PRU0 from carving out RAM
+        #       tried 3 ways to circumvent this, all failed
+        #       https://github.com/nes-lab/shepherd/issues/162
         state: present
 
 # TODO: reboot
