@@ -195,6 +195,7 @@
             status = "okay";
             pinctrl-names = "default";
             pinctrl-0 = <&bb_shprd_pins>;
+            //memory-region = <&pru_dma_pool>;
             shepherd{
                compatible = "nes,shepherd";
                prusses = <&pruss>;
@@ -202,4 +203,26 @@
        };
    };
 
+/*
+    // also needed is "memory-region =" in fragment@2
+    // TODO: PRU carves out its own memory, so it won't use this (yet)
+    fragment@3 {
+        target-path = "/";
+        __overlay__ {
+            reserved-memory {
+                #address-cells = <0x01>;
+                #size-cells = <0x01>;
+                ranges;
+
+                pru_dma_pool: pru-dma-pool@9C200000 {
+                    compatible = "shared-dma-pool";
+                    //reg = <0x9C200000 0x3000000>; // 50 MB
+                    reg = <0x9C000000 0x02dc6524>; // 48 MB
+                    no-map;
+                    status = "okay";
+                };
+            };
+        };
+    };
+*/
 };
