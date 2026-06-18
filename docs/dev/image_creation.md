@@ -115,7 +115,7 @@ shepherd-herd shell "sudo chmod a+rwx -R /opt/shepherd/"
 shepherd-herd shell "cd /opt/shepherd && git pull"
 ```
 
-In your local shepherd-repo you can add the observer-roll to the nodes:
+In your local shepherd-repo you can add the observer-role to the nodes:
 
 ```Shell
 ansible-playbook deploy/setup_testbed_observer.yml
