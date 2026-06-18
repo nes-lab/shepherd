@@ -47,6 +47,7 @@ dependencies = [
     "greenlet",  # added here to allow sourcing from custom uv-index
     "zstandard",  # added here to allow sourcing from custom uv-index
     "pyzmq",  # added here to allow sourcing from custom uv-index
+    "bson", # needed for unpacking pickles from timeaware mongodb-server
 ]
 
 [project.optional-dependencies]
