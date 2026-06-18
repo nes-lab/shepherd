@@ -47,7 +47,8 @@ dependencies = [
     "greenlet",  # added here to allow sourcing from custom uv-index
     "zstandard",  # added here to allow sourcing from custom uv-index
     "pyzmq",  # added here to allow sourcing from custom uv-index
-    "bson", # needed for unpacking pickles from timeaware mongodb-server
+    # "bson", # needed for unpacking pickles from timeaware mongodb-server
+    # bson has trouble in CI-pipeline from GH -> install in observer-role
 ]
 
 [project.optional-dependencies]

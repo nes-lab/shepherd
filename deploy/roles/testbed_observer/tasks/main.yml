@@ -47,6 +47,10 @@
   ansible.builtin.include_tasks:
     file: activate_internet_watchdog.yml
 
+- name: UV - Install bson - needed for unpacking pickles from timeaware mongodb-server
+  ansible.builtin.command:
+    cmd: "sudo -E /usr/local/bin/uv pip install bson --upgrade --system --break-system-packages"
+
 - name: Restart device
   ansible.builtin.reboot:
     connect_timeout: 20
