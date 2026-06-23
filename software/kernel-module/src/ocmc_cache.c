@@ -70,6 +70,12 @@ void ocmc_cache_init(void)
            (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
     printk(KERN_INFO "shprd.cache:     input-buffer  @ 0x%X, size = %d bytes",
            (uint32_t) shared_mem->buffer_iv_inp_ptr, shared_mem->buffer_iv_inp_size);
+    /* small plausability-check */
+    if (shared_mem->buffer_iv_inp_size != sizeof(struct IVTraceInp))
+    {
+        printk(KERN_ERR "shprd.cache: BUF_IV_INP size-difference between PRU & KMod (%d vs %d)",
+               shared_mem->buffer_iv_inp_size, sizeof(struct IVTraceInp));
+    }
     // more info on current memory regions
     printk(KERN_INFO "shprd.info:      output-buffer @ 0x%X, size = %d bytes",
            (uint32_t) shared_mem->buffer_iv_out_ptr, shared_mem->buffer_iv_out_size);
