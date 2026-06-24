@@ -41,7 +41,7 @@
 #include "delay.h"
 
 static gpio_state_t tclk_state = GPIO_STATE_LOW;
-static uint32_t     clk_delay_cycles;
+#define sbw_clk_delay_cycles    (F_CPU / 500000ul / 2u)
 
 static struct
 {
@@ -50,77 +50,77 @@ static struct
     uint8_t sbw_dir;
 } pins;
 
-static void tmsh(void)
+static inline void tmsh(void)
 {
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
-static void tmsl(void)
+static inline void tmsl(void)
 {
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
-static void tmsldh(void)
+static inline void tmsldh(void)
 {
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
-static void tdih(void)
+static inline void tdih(void)
 {
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
-static void tdil(void)
+static inline void tdil(void)
 {
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
-static gpio_state_t tdo_rd(void)
+static inline gpio_state_t tdo_rd(void)
 {
     gpio_state_t res;
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     res = sys_gpio_get(pins.sbw_tdio);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_OUT);
-
+    
     return res;
 }
 
-static void tdo_sbw(void)
+static inline void tdo_sbw(void)
 {
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
-    __delay_var_cycles(clk_delay_cycles);
+    __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
@@ -256,7 +256,7 @@ int sbw_transport_init(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio,
 	 * In SLAU320AJ section 2.2.3.1., the 'delay' is specified as 5 clock cycles at 18MHz, but this seems
 	 * to not work reliably and contradicts the reference implementation.
 	 */
-    clk_delay_cycles = F_CPU / 500000ul / 2u;
+    // sbw_clk_delay_cycles = F_CPU / 500000ul / 2u;
 
     return 0;
 }
