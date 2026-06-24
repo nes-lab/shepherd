@@ -12,9 +12,16 @@ Make the root filesystem less prone to errors
   - 3 possible fixes were tried (https://github.com/nes-lab/shepherd/issues/162), all failed
   - migration to a newer kernel is recommended
 
+Programmer
+
+- OpenOCD now works with v2 capes and is able to program, mass-erase and chip-erase the nRF52 (and probably all other supported targets)
+  - this will replace the limited pru-programmer
+
 Other Changes
 
 - kModule informs about buffer-specs in DRAM (address & size)
+  - also tests size of buffers it can see
+- ansible: add internet-watchdog to observer-role -> in addition to dedicated watchdog IC, which restarts system when reset-pin is not constantly polled, this internet-watchdog checks access to remote IP addresses and restarts system if the network is down
 
 ## 2026.06.1
 
