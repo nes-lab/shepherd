@@ -2,8 +2,8 @@
 #define __DELAY_H_
 #include <stdint.h>
 
-#define F_CPU (200000000ul)
-#define TICK_INTERVAL_NS           (5U)
+#define F_CPU            (200000000ul)
+#define TICK_INTERVAL_NS (5U)
 
 static inline void delay_us(uint32_t time_us)
 {

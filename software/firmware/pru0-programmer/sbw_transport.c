@@ -41,7 +41,7 @@
 #include "delay.h"
 
 static gpio_state_t tclk_state = GPIO_STATE_LOW;
-#define sbw_clk_delay_cycles    (F_CPU / 500000ul / 2u)
+#define sbw_clk_delay_cycles (F_CPU / 500000ul / 2u)
 
 static struct
 {
@@ -98,19 +98,20 @@ static inline void tdil(void)
 
 static inline gpio_state_t tdo_rd(void)
 {
-    gpio_state_t res;
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
+
     __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
     __delay_cycles(sbw_clk_delay_cycles);
-    res = sys_gpio_get(pins.sbw_tdio);
+    const gpio_state_t res = sys_gpio_get(pins.sbw_tdio);
     __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_OUT);
-    
+    __delay_cycles(clk_delay_cycles);
+
     return res;
 }
 
@@ -118,6 +119,7 @@ static inline void tdo_sbw(void)
 {
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_IN);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_LOW); // LOW => SWD_IO is INPUT
+
     __delay_cycles(sbw_clk_delay_cycles);
     sys_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
     __delay_cycles(sbw_clk_delay_cycles);
@@ -125,11 +127,13 @@ static inline void tdo_sbw(void)
     sys_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
     sys_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH); // LOW => SWD_IO is INPUT
     sys_gpio_cfg_dir(pins.sbw_tdio, GPIO_DIR_OUT);
+
+    __delay_cycles(clk_delay_cycles);
 }
 
-void set_sbwtdio(gpio_state_t state) { sys_gpio_set(pins.sbw_tdio, state); }
+void set_sbwtdio(const gpio_state_t state) { sys_gpio_set(pins.sbw_tdio, state); }
 
-void set_sbwtck(gpio_state_t state) { sys_gpio_set(pins.sbw_tck, state); }
+void set_sbwtck(const gpio_state_t state) { sys_gpio_set(pins.sbw_tck, state); }
 
 void tmsl_tdil(void)
 {
