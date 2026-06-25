@@ -207,7 +207,7 @@ int sbw_jtag_write_jmb_in16(const uint16_t data)
         tap_dr_shift16(sJMBINCTL);
         tap_dr_shift16(sJMBIN0);
     }
-    return SBW_ERR_NONE;
+    return SBW_SUCCESS;
 }
 
 /* TODO: not used ATM */
@@ -236,7 +236,7 @@ int sbw_jtag_write_jmb_in32(uint16_t dataX, uint16_t dataY)
         tap_dr_shift16(sJMBIN0);
         tap_dr_shift16(sJMBIN1);
     }
-    return SBW_ERR_NONE;
+    return SBW_SUCCESS;
 }
 
 /**
@@ -316,7 +316,7 @@ int sbw_jtag_sync(void)
 
     // continues if sync was successful
     if (i >= 50u) { return SBW_ERR_GENERIC; }
-    return SBW_ERR_NONE;
+    return SBW_SUCCESS;
 }
 
 /* TODO: riotee does not use this */
@@ -332,7 +332,7 @@ uint16_t magicPattern(void)
     // reset TAP state machine -> Run-Test/Idle
     tap_reset();
     // feed JTAG mailbox with magic pattern
-    if (sbw_jtag_write_jmb_in16(STOP_DEVICE) == SBW_ERR_NONE)
+    if (sbw_jtag_write_jmb_in16(STOP_DEVICE) == SBW_SUCCESS)
     {
         // Apply again 4wire/SBW entry Sequence.
 
@@ -370,7 +370,7 @@ int sbw_jtag_connect()
         tap_reset();
         uint16_t jtag_id = (uint16_t) tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
         if ((jtag_id == JTAG_ID91) || (jtag_id == JTAG_ID99) || (jtag_id == JTAG_ID98))
-            return SBW_ERR_NONE;
+            return SBW_SUCCESS;
         delay_us(500);
         sbw_transport_disconnect();
     }

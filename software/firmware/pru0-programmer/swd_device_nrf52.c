@@ -161,8 +161,8 @@ static int nvm_write(uint32_t data, uint32_t address)
 static int verify(uint32_t data, uint32_t address)
 {
     uint32_t read_back = 0u;
-    if (mem_read(&read_back, address) != DRV_ERR_OK) return DRV_ERR_GENERIC;
-    if (data == read_back) return DRV_ERR_OK;
+    if (mem_read(&read_back, address) != DRV_SUCCESS) return DRV_ERR_GENERIC;
+    if (data == read_back) return DRV_SUCCESS;
     else return DRV_ERR_VERIFY;
 }
 
@@ -175,7 +175,7 @@ static int verify(uint32_t data, uint32_t address)
  * @param pin_swd_dir pin number for direction signal for SWD_IO. Note: Only supports pins of GPIO port 0.
  * @param f_clk frequency of SWDCLK signal
  *
- * @returns DRV_ERR_OK on success
+ * @returns DRV_SUCCESS on success
  */
 static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint8_t pin_swd_dir,
                 const uint32_t f_clk)
@@ -190,7 +190,7 @@ static int open(const uint8_t pin_swd_clk, const uint8_t pin_swd_io, const uint8
     if (ap_init()) return DRV_ERR_GENERIC;
     if (dev_reset_halt()) return DRV_ERR_GENERIC;
     if (nvm_wp_disable()) return DRV_ERR_GENERIC;
-    return DRV_ERR_OK;
+    return DRV_SUCCESS;
 }
 
 /* Disables access to and communication with the nRF52. After this, the core should be reset and running */
@@ -200,7 +200,7 @@ static int close(void)
     dev_continue();
     ap_exit();
     swd_transport_release();
-    return DRV_ERR_OK;
+    return DRV_SUCCESS;
 }
 
 device_driver_t nrf52_driver = {
