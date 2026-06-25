@@ -15,7 +15,7 @@ typedef enum
     DRV_ERR_TIMEOUT   = -3,
     DRV_ERR_VERIFY    = -2,
     DRV_ERR_GENERIC   = -1,
-    DRV_ERR_OK        = 0,
+    DRV_SUCCESS       = 0,
     DRV_ERR_PROTECTED = 1,
 } drv_err_t;
 

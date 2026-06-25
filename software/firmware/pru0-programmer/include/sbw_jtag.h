@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define SBW_ERR_NONE               (0u)
+#define SBW_SUCCESS                (0u)
 #define SBW_ERR_GENERIC            (1u)
 #define SBW_ERR_ET_DCDC_IDCODE     (2u)
 #define SBW_ERR_ET_DCDC_DEVID      (3u)
@@ -173,7 +173,7 @@ uint16_t magicPattern(void);
 /**
  * Resync the JTAG connection
  *
- * @returns SBW_ERR_NONE if operation was successful, SBW_ERR_GENERIC otherwise
+ * @returns SBW_SUCCESS if operation was successful, SBW_ERR_GENERIC otherwise
  *
  * @see SLAU320AJ 2.3.2.2.1
  */
