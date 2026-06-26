@@ -98,6 +98,7 @@ The config was extended for useful functions:
 ```Shell
 sudo openocd -f shepherd.cfg -c chip_erase
 sudo openocd -f shepherd.cfg -c mass_erase
-sudo openocd -f shepherd.cfg -c 'prog /opt/shepherd/hardware/tests_manual/nrf52_testable.hex'
-
+sudo openocd -f /opt/shepherd/software/openocd/shepherd.cfg -c 'prog /opt/shepherd/hardware/tests_manual/nrf52_testable.hex'
+# now integrated into sheep
+sudo shepherd-sheep program -pA -m1 --mcu-type nrf52 /opt/shepherd/hardware/tests_manual/nrf52_testable.hex
 ```
