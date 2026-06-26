@@ -16,6 +16,7 @@
         "cmake", # for custom build
         "build-essential", # for custom build
         "python3-dev", # for custom build
+        "openocd", # faster programmer for nRF52
       ]
     state: present
 
