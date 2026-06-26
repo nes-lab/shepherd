@@ -82,7 +82,74 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     return False
 
 
-def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
+def run_ocd_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
+    stack = ExitStack()
+    set_verbosity(state=cfg.verbose, temporary=True)
+    failed = False
+
+    try:
+        dbg = ShepherdDebug(use_io=False)  # TODO: this could all go into ShepherdDebug
+        stack.enter_context(dbg)
+
+        dbg.select_port_for_power_tracking(
+            not dbg.convert_target_port_to_bool(cfg.target_port),
+        )
+        dbg.set_power_emulator(True)
+        dbg.select_port_for_io_interface(cfg.target_port)
+        dbg.set_power_io_level_converter(True)
+
+        sysfs_interface.write_dac_aux_voltage(cfg.voltage)
+        # switching target may restart pru
+        sysfs_interface.wait_for_state("idle", 5)
+
+        log.info("processing file %s", cfg.firmware_file.name)
+        d_type = suffix_to_DType.get(cfg.firmware_file.suffix.lower())
+        if d_type != FirmwareDType.base64_hex:
+            log.warning("Firmware seems not to be HEX - but will try to program anyway")
+
+        # derive target-info
+        target = cfg.mcu_type.lower()
+        if "nrf52" not in target:
+            log.warning(
+                "MCU-Type needs to be [nrf52] but was: %s",
+                target,
+            )
+
+        log.debug("\tchip-erase via OpenOCD")
+        cmd = [
+            "sudo",
+            "/usr/bin/openocd",
+            "-f",
+            "/opt/shepherd/software/openocd/shepherd.cfg",
+            "-c",
+            "'init; reset halt; nrf52_recover; exit;'",
+        ]
+        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        if ret.returncode > 0:
+            log.error("Error during chip-erase (OpenOCD): %s", ret.stderr)
+            raise OSError
+        log.debug("\tprogramming via OpenOCD")
+        cmd = [
+            "sudo",
+            "/usr/bin/openocd",
+            "-f",
+            "/opt/shepherd/software/openocd/shepherd.cfg",
+            "-c",
+            f"'program {cfg.firmware_file.as_posix()} verify reset; exit;'",
+        ]
+        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        if ret.returncode > 0:
+            log.error("Error during programming (OpenOCD): %s", ret.stderr)
+            raise OSError  # noqa: TRY301
+        log.info("Finished Programming!")
+    except OSError:  # when wait_for_state() fails
+        failed = True
+
+    stack.close()
+    return failed  # TODO: all run_() should emit error and handler should decide
+
+
+def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     stack = ExitStack()
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = False
@@ -237,6 +304,8 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     sysfs_interface.load_pru_firmware("pru0-shepherd-EMU")
     return failed  # TODO: all run_() should emit error and handler should decide
 
+def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
+
 
 def run_task(cfg: ShpModel | Path | str) -> bool:
     observer_name = platform.node().strip()
@@ -283,7 +352,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
             while retries > 0 and had_error:
                 log.info("Starting Programmer (%d retries left)", retries)
                 retries -= 1
-                had_error = run_programmer(element, rate_factor)
+                had_error = run_pru_programmer(element, rate_factor)
                 rate_factor *= 0.6  # 40% slower each failed attempt
             failed |= had_error
         else:

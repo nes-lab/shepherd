@@ -54,12 +54,13 @@ Chip-Erase
 
 ```Shell
 sudo openocd -f shepherd.cfg -c init -c 'reset halt' -c 'nrf52_recover' -c exit
+sudo /usr/bin/openocd -f /opt/shepherd/software/openocd/shepherd.cfg -c 'init; reset halt; nrf52_recover; exit;'
 ```
 
 ### Program
 
 ```Shell
-sudo openocd -f shepherd.cfg -c "program /opt/shepherd/hardware/tests_manual/nrf52_testable.hex verify reset exit"
+sudo openocd -f shepherd.cfg -c "program /opt/shepherd/hardware/tests_manual/nrf52_testable.hex verify reset; exit;"
 ```
 
 Works, with the output
