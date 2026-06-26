@@ -16,7 +16,7 @@
   - BUT relies mostly on programmers (i.e. [rpi-project](https://github.com/jonathangjertsen/rpi-msp430))
   - PIF (parallel port) programmer for GPIO is available, BUT it only supports JTAG
   - it also seems
-- Putting a raspberry pico inbetween as a programmer would also work
+- Putting a raspberry pico in between as a programmer would also work
   - Pi-Pico-Sbw https://github.com/bigjosh/pi-pico-sbw
   - could leverage https://github.com/bigjosh/pi-pico-sbw/blob/main2/mpy/sbw_native.c
 
@@ -27,6 +27,7 @@
 - TI OpenOCD (also not our targets)
   - https://software-dl.ti.com/ccs/esd/vscode/ti-embedded-debug/ti-openocd.html
   - https://github.com/TexasInstruments/ti-openocd
+- official mirror: https://github.com/openocd-org/openocd/
 - adapt SBW to openOCD?
   - analog to https://github.com/arduino/OpenOCD/blob/c404ff5d3a2ec568daa106455845dd403b08dab4/src/target/adi_v5_swd.c
   - patchguide https://openocd.org/doc-release/doxygen/patchguide.html
@@ -40,13 +41,13 @@ https://github.com/dlbeer/mspdebug
 Olimex Programmers
 - MSP430-JTAG-TINY
   - https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-TINY-V2/
-- MSP430-JTAG-ISO 
+- MSP430-JTAG-ISO
   - https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-ISO/ (obsolete)
   - https://www.olimex.com/Products/MSP430/JTAG/MSP430-JTAG-ISO-MK2/
 
-There seems to be a [device_gpio & device_bp](https://github.com/dlbeer/mspdebug/blob/master/drivers/pif.h)
+There seems to be a [device_gpio & device_bp](https://github.com/dlbeer/mspdebug/tree/v0.26/drivers/pif.h)
 - pif is parallel port, bp is bus-pirate
-- device_gpio uses [/sys/class/gpio](https://github.com/dlbeer/mspdebug/blob/master/drivers/pif.c#L445)
+- device_gpio uses [/sys/class/gpio](https://github.com/dlbeer/mspdebug/tree/v0.26/drivers/pif.c#L445)
 - HOW? `mspdebug --help` does not list GPIO. change was 12 years old, but apt-version is 13 years old ...
 - according to [this website](https://rpm.pbone.net/manpage_idpl_29179731_numer_1_nazwa_mspdebug.html) only JTAG is supported for GPIO-device, proposed call: `mspdebug gpio -d "tdi=7 tdo=8 tms=9 tck=4"`
 - **it seems all 3 devices in pif.c lack SBW-support
@@ -73,6 +74,10 @@ sudo make install WITHOUT_READLINE=1
 
 TODO:
 - adapt gpio-driver of openOCD for mspdebug?
+- sbw_transport
+- sbw_jtag
+- sbw_device
+- _linuxgpio
 
 ## Program
 
