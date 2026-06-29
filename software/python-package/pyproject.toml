@@ -108,6 +108,9 @@ markers = [
 # opts: summary for all except passed, verbose result for each tests
 addopts = "-vvv --stepwise"
 # continue after fail: sudo pytest-3 --stepwise
+tmp_path_retention_policy = "none"
+tmp_path_retention_count = 1
+# -> don't spam tempfs
 
 [tool.coverage.run]
 source = ["shepherd_sheep"]
