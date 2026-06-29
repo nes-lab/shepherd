@@ -3,7 +3,7 @@
 # uv pip install .
 [project]
 name = "shepherd-main"
-version = "2026.06.1"
+version = "2026.06.2"
 description = "Infrastructure for the Testbed, mainly focused on the Observers "
 readme = "README.md"
 

@@ -5,6 +5,8 @@
 /* bit width of SWD transfer -> always 32 bit */
 #define TP_TCV_WIDTH (32u)
 
+extern void __delay_var_cycles(uint32_t cycles);
+
 /* Selects direction of SWD transfer */
 typedef enum
 {

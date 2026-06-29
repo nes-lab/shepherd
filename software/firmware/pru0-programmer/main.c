@@ -109,7 +109,7 @@ reset:
 
     while (SHARED_MEM.shp_pru_state == STATE_IDLE)
     {
-        if (SHARED_MEM.programmer_ctrl.state == PRG_STATE_STARTING)
+        if (SHARED_MEM.programmer_ctrl.state == PRG_CMD_START)
         {
             DEBUG_EVENT_STATE_3;
             programmer(&SHARED_MEM.programmer_ctrl, (uint32_t *) resourceTable.shared_memory.pa);

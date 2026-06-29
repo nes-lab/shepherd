@@ -1,0 +1,10 @@
+---
+# Extended watchdog reboots unreachable observers in testbed
+
+- name: Watchdog - enable monitoring internet-connection
+  ansible.builtin.copy:
+    src: 'watchdog.yaml'
+    dest: '/etc/shepherd/watchdog.yaml'
+    force: true
+    mode: '0644'
+  become: true

@@ -82,7 +82,82 @@ def run_firmware_mod(cfg: FirmwareModTask) -> bool:
     return False
 
 
-def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
+def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
+    stack = ExitStack()
+    set_verbosity(state=cfg.verbose, temporary=True)
+    failed = False
+
+    try:
+        dbg = ShepherdDebug(use_io=False)  # TODO: this could all go into ShepherdDebug
+        stack.enter_context(dbg)
+
+        dbg.select_port_for_power_tracking(
+            not dbg.convert_target_port_to_bool(cfg.target_port),
+        )
+        dbg.set_power_emulator(True)
+        dbg.select_port_for_io_interface(cfg.target_port)
+        dbg.set_power_io_level_converter(True)
+
+        sysfs_interface.write_dac_aux_voltage(cfg.voltage)
+        # switching target may restart pru
+        sysfs_interface.wait_for_state("idle", 5)
+
+        log.info("processing file %s", cfg.firmware_file.name)
+        d_type = suffix_to_DType.get(cfg.firmware_file.suffix.lower())
+        if d_type != FirmwareDType.base64_hex:
+            log.warning("Firmware seems not to be HEX - but will try to program anyway")
+
+        # derive target-info
+        target = cfg.mcu_type.lower()
+        if "nrf52" not in target:
+            log.warning(
+                "MCU-Type needs to be [nrf52] but was: %s",
+                target,
+            )
+
+        log.debug("\tchip-erase via OpenOCD")
+        cmd = [
+            "sudo",
+            "/usr/bin/openocd",
+            "-f",
+            "/opt/shepherd/software/openocd/shepherd.cfg",
+            # also callable by short procedure "chip_erase"
+            "--command=init",
+            "--command=reset halt",
+            "--command=nrf52_recover",
+            "--command=exit",
+        ]
+        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        if ret.returncode > 0:
+            log.error("Error during chip-erase (OpenOCD): %s", ret.stderr)
+            raise RuntimeError  # noqa: TRY301
+        log.debug("\tprogramming via OpenOCD")
+        # TODO: pins are hardcoded in shepherd.cfg
+        cmd = [
+            "sudo",
+            "/usr/bin/openocd",
+            "-f",
+            "/opt/shepherd/software/openocd/shepherd.cfg",
+            f"--command=program {cfg.firmware_file.as_posix()} verify reset",
+            "--command=exit",
+        ]
+        ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
+        if ret.returncode > 0:
+            log.error("Error during programming (OpenOCD): %s", ret.stderr)
+            raise RuntimeError  # noqa: TRY301
+        log.info("Finished Programming!")
+    except OSError:
+        failed = True
+    except RuntimeError:
+        failed = True
+    except SystemExit:
+        pass
+
+    stack.close()
+    return failed
+
+
+def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     stack = ExitStack()
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = False
@@ -238,6 +313,23 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     return failed  # TODO: all run_() should emit error and handler should decide
 
 
+def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
+    retry_now = 0
+    retry_max = 5
+    had_error = True
+    while retry_now < retry_max and had_error:
+        log.info("Starting Programmer (retry %d/%d)", retry_now, retry_max)
+        target = cfg.mcu_type.lower()
+        if retry_now == 0 and not cfg.simulate and "nrf52" in target:  # filter for SWD?
+            # faster & more reliable programmer first
+            had_error = run_ocd_programmer(cfg)
+        else:
+            had_error = run_pru_programmer(cfg, rate_factor)
+        retry_now += 1
+        rate_factor *= 0.6  # 40% slower each failed attempt
+    return had_error
+
+
 def run_task(cfg: ShpModel | Path | str) -> bool:
     observer_name = platform.node().strip()
     try:
@@ -277,15 +369,7 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         elif isinstance(element, FirmwareModTask):
             failed |= run_firmware_mod(element)
         elif isinstance(element, ProgrammingTask):
-            retries = 5
-            rate_factor = 1.0
-            had_error = True
-            while retries > 0 and had_error:
-                log.info("Starting Programmer (%d retries left)", retries)
-                retries -= 1
-                had_error = run_programmer(element, rate_factor)
-                rate_factor *= 0.6  # 40% slower each failed attempt
-            failed |= had_error
+            failed |= run_programmer(element)
         else:
             msg = f"Task not implemented: {type(element)}"
             raise TypeError(msg)

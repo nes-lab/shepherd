@@ -26,16 +26,16 @@ int write_to_target(device_driver_t *drv, const ihex_mem_block_t *const block)
     for (uint32_t i = 0; i < n_words; i++)
     {
         uint32_t data = *((uint32_t *) src);
-        if (drv->write(data, addr) != DRV_ERR_OK)
+        if (drv->write(data, addr) != DRV_SUCCESS)
         {
             msgsys_send(MSG_PGM_ERROR_WRITE, addr, data);
-            return PRG_STATE_ERR_WRITE;
+            return PRG_ERR_WRITE;
         }
-        if (drv->verify(data, addr) != DRV_ERR_OK)
+        if (drv->verify(data, addr) != DRV_SUCCESS)
         {
             // TODO: maybe add switch to read-back & send-out data
             msgsys_send(MSG_PGM_ERROR_VERIFY, addr, data);
-            return PRG_STATE_ERR_VERIFY;
+            return PRG_ERR_VERIFY;
         }
 
         src += drv->word_width_bytes;
@@ -52,6 +52,11 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
     // TODO: pctrl -> PGM_CFG - HARDCODE
     pctrl->state = PRG_STATE_INITIALIZING;
 
+    ihex_reader_init((char *) fw_data);
+    SHARED_MEM.pru_applied_settings = true;
+    // -> apply could be done later (after erase), but there is no point
+    //    doing it here avoids error-prints by sheep
+
 #ifdef SWD_SUPPORT
     if (pctrl->target == PRG_TARGET_NRF52) drv = &nrf52_driver;
 #endif
@@ -61,28 +66,27 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
     else if (pctrl->target == PRG_TARGET_DUMMY) drv = &dummy_driver;
     else
     {
-        pctrl->state = PRG_STATE_ERR_GENERIC;
+        pctrl->state = PRG_ERR_GENERIC;
         goto exit;
     }
 
+    pctrl->state = PRG_STATE_CONNECTING;
     if (drv->open(pctrl->pin_tck, pctrl->pin_tdio, pctrl->pin_dir_tdio, pctrl->datarate) !=
-        DRV_ERR_OK)
+        DRV_SUCCESS)
     {
-        pctrl->state = PRG_STATE_ERR_OPEN;
+        pctrl->state = PRG_ERR_OPEN;
         goto exit;
     }
 
-    if (drv->erase() != DRV_ERR_OK)
+    pctrl->state = PRG_STATE_ERASING;
+    if (drv->erase() != DRV_SUCCESS)
     {
-        pctrl->state = PRG_STATE_ERR_ERASE;
+        pctrl->state = PRG_ERR_ERASE;
         goto exit;
     }
-
-    ihex_reader_init((char *) fw_data);
-    SHARED_MEM.pru_applied_settings = true;
 
     /* State specifies number of bytes written to target */
-    pctrl->state                    = 0;
+    pctrl->state = 0;
 
     int rc;
     /* Iterate content of hex file entry by entry */
@@ -100,7 +104,7 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
     if (ret != IHEX_RET_DONE)
     {
         msgsys_send(MSG_PGM_ERROR_PARSE, ret, 0u);
-        pctrl->state = PRG_STATE_ERR_PARSE;
+        pctrl->state = PRG_ERR_PARSE;
         goto exit;
     }
 

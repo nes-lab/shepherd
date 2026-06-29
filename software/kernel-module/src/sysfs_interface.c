@@ -860,9 +860,23 @@ static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute
     const int32_t value = ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset);
 
     if (value == PRG_STATE_IDLE) return sprintf(buf, "idle");
-    else if (value == PRG_STATE_STARTING) return sprintf(buf, "starting");
+    else if (value == PRG_CMD_START) return sprintf(buf, "starting");
     else if (value == PRG_STATE_INITIALIZING) return sprintf(buf, "initializing");
-    else if (value < 0) return sprintf(buf, "error (-0x%X)", -value);
+    else if (value == PRG_STATE_CONNECTING) return sprintf(buf, "connecting");
+    else if (value == PRG_STATE_ERASING) return sprintf(buf, "erasing");
+    else if (value < 0)
+    {
+        if (value == PRG_ERR_GENERIC) return sprintf(buf, "error generic (-0x%X)", -value);
+        else if (value == PRG_ERR_OPEN)
+            return sprintf(buf, "error open/connecting (-0x%X)", -value);
+        else if (value == PRG_ERR_WRITE) return sprintf(buf, "error writing data (-0x%X)", -value);
+        else if (value == PRG_ERR_VERIFY)
+            return sprintf(buf, "error verifying data (-0x%X)", -value);
+        else if (value == PRG_ERR_ERASE)
+            return sprintf(buf, "error erasing target (-0x%X)", -value);
+        else if (value == PRG_ERR_PARSE) return sprintf(buf, "error parsing hex (-0x%X)", -value);
+        return sprintf(buf, "error unknown (-0x%X)", -value);
+    }
     else return sprintf(buf, "running - %d B written", value);
 }
 
@@ -873,11 +887,11 @@ static ssize_t sysfs_prog_state_store(struct kobject *kobj, struct kobj_attribut
             container_of(attr, struct kobj_attr_struct_s, attr);
     int32_t value = 0u;
 
-    if (strncmp(buffer, "start", 5) == 0) value = PRG_STATE_STARTING;
+    if (strncmp(buffer, "start", 5) == 0) value = PRG_CMD_START;
     else if (strncmp(buffer, "stop", 4) == 0) value = PRG_STATE_IDLE;
     else return -EINVAL;
 
-    if ((value == PRG_STATE_STARTING) && (mem_interface_get_state() != STATE_IDLE)) return -EBUSY;
+    if ((value == PRG_CMD_START) && (mem_interface_get_state() != STATE_IDLE)) return -EBUSY;
     // TODO: kernel should test validity of struct (instead of pru) -> best place is here
 
     iowrite32(value, pru_shared_mem_io + kobj_attr_wrapped->val_offset);

@@ -10,11 +10,26 @@ Make the root filesystem less prone to errors
 - strategy 3 - check filesystem on every boot (NOT active)
   - this caused the kMod to NOT start up, because PRU0 could not load firmware, because allocation of buffers in DRAM failed
   - 3 possible fixes were tried (https://github.com/nes-lab/shepherd/issues/162), all failed
-  - migration to a newer kernel is recommended
+  - ~~migration to a newer kernel is recommended~~
+  - **increasing Contiguous Memory allocation (CMA) in u-boot from 50M (default) to 200M solved the issue**
+
+Programmer
+
+- OpenOCD now works with v2 capes and is able to program, mass-erase and chip-erase the nRF52 (and probably all other supported targets)
+  - this will replace the limited pru-programmer
+
+KMod - fix sporadically failing start of module
+
+- increasing CMA (see above) fixed the issue of a sometimes failing load of the module due to a failed allocation
+- PRU0-firmware requests ~47M of RAM, which was dodgy for a 50M default value
+- benchmarks show no degradation over 400 loads. mean-time = min time = 390 ms
+- available cma can be checked with `cat /proc/meminfo | grep Cma`
 
 Other Changes
 
 - kModule informs about buffer-specs in DRAM (address & size)
+  - also tests size of buffers it can see
+- ansible: add internet-watchdog to observer-role -> in addition to dedicated watchdog IC, which restarts system when reset-pin is not constantly polled, this internet-watchdog checks access to remote IP addresses and restarts system if the network is down
 
 ## 2026.06.1
 

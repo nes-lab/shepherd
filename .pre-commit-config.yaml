@@ -39,7 +39,7 @@ repos:
       - id: check-executables-have-shebangs
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.48.0
+    rev: v0.49.0
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
@@ -65,7 +65,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.17
+    rev: v0.15.20
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -94,7 +94,7 @@ repos:
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.25.2
+    rev: v1.26.1
     hooks:
       - id: zizmor
         args: ["--min-severity", "high", "--no-progress", "--fix", "."]

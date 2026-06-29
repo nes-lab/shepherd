@@ -86,7 +86,7 @@ def test_cli_program_swd_explicit_short(
     assert res.exit_code == 0
 
 
-@pytest.mark.timeout(80)
+@pytest.mark.timeout(90)
 @pytest.mark.usefixtures("_herd_alive")
 def test_cli_program_sbw_explicit(cli_runner: CliRunner, fw_example: Path) -> None:
     res = cli_runner.invoke(

@@ -64,7 +64,12 @@
   ansible.builtin.lineinfile:
     dest: "/boot/uEnv.txt"
     regexp: "#?cmdline=coherent.*. quiet$"
-    line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 quiet"
+    line: "cmdline=coherent_pool=1M net.ifnames=0 lpj=1990656 rng_core.default_quality=100 fsck.mode=force fsck.repair=yes cma=200M quiet"
+    # explanation of new parameters (originates in strategy 3 of harden-root-filesystem-playbook)
+    # - fsck.mode=force   -> run fsck on every boot
+    # - fsck.repair=yes   -> enable repair-mode of fsck
+    # - cma=200M          -> increase Contiguous Memory allocation (CMA) from 50M to 200M
+    #                        as pru0 currently requests 47M (and fails sometimes)
     state: present  # TODO: also usable to enable overlayFS / read-only root
   become: true
   tags: device-tree
