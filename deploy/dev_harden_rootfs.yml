@@ -13,7 +13,7 @@
         line: 'tmpfs   {{ item.dir }}    tmpfs   defaults,noatime,nosuid,size={{ item.size }}M    0  0'
         state: present
       loop:
-        - { dir: '/tmp', size: 100 }
+        - { dir: '/tmp', size: 160 }
         - { dir: '/var/log', size: 64 }
         - { dir: '/var/run', size: 64 }
 
