@@ -22,7 +22,7 @@ KMod - fix sporadically failing start of module
 
 - increasing CMA (see above) fixed the issue of a sometimes failing load of the module due to a failed allocation
 - PRU0-firmware requests ~47M of RAM, which was dodgy for a 50M default value
-- benchmarks show no degradation over 400 loads. mean-time = min time = 390 ms
+- benchmarks show no degradation over 400 loads. mean-time = min time = 390 ms (before it needed ~40 s sporadically)
 - available cma can be checked with `cat /proc/meminfo | grep Cma`
 
 Other Changes
