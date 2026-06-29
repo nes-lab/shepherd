@@ -132,6 +132,7 @@ def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
             log.error("Error during chip-erase (OpenOCD): %s", ret.stderr)
             raise RuntimeError  # noqa: TRY301
         log.debug("\tprogramming via OpenOCD")
+        # TODO: pins are hardcoded in shepherd.cfg
         cmd = [
             "sudo",
             "/usr/bin/openocd",
@@ -153,7 +154,7 @@ def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
         pass
 
     stack.close()
-    return failed  # TODO: all run_() should emit error and handler should decide
+    return failed
 
 
 def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
@@ -319,7 +320,7 @@ def run_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
     while retry_now < retry_max and had_error:
         log.info("Starting Programmer (retry %d/%d)", retry_now, retry_max)
         target = cfg.mcu_type.lower()
-        if retry_now == 0 and "nrf52" in target:  # filter for SWD?
+        if retry_now == 0 and not cfg.simulate and "nrf52" in target:  # filter for SWD?
             # faster & more reliable programmer first
             had_error = run_ocd_programmer(cfg)
         else:
