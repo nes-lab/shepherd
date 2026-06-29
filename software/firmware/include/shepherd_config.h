@@ -1,4 +1,5 @@
 #ifndef SHEPHERD_CONFIG_H
+
 #define SHEPHERD_CONFIG_H
 
 #include <stdint.h>

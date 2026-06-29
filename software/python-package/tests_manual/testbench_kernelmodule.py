@@ -28,7 +28,9 @@ def reload_and_check_v2() -> bool:
 def reload_and_check_v3() -> bool:
     """latest sheep-implementation with minor improvements since v2.
 
-    takes 0.695 s (mean over 100iterations), min is 380 ms, rarely ~30 s"""
+    takes 0.695 s (mean over 100iterations), min is 380 ms, rarely ~30 s
+    update: after increasing cma to 200M the module always loads, mean=397ms
+    """
     reload_v3()
     return check_v3()
 
