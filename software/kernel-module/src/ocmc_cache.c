@@ -68,6 +68,17 @@ void ocmc_cache_init(void)
 
     printk(KERN_INFO "shprd.cache: OCMC initialized  @ 0x%X, size = %d bytes",
            (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
+
+    /* timer for updates */
+    hrtimer_init(&update_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
+    update_timer.function = &update_callback;
+    hrtimer_start(&update_timer, ts_now + DELAY_TIMER, HRTIMER_MODE_ABS);
+
+    init_done = 1u;
+    printk(KERN_INFO "shprd.cache: -> %u cache-blocks with %u ivsamples each for %u us",
+           CACHE_BLOCKS_N, CACHE_BLOCK_SAMPLES_N,
+           CACHE_BLOCK_SAMPLES_N * SAMPLE_INTERVAL_NS / 1000u);
+
     printk(KERN_INFO "shprd.cache:     input-buffer  @ 0x%X, size = %d bytes",
            (uint32_t) shared_mem->buffer_iv_inp_ptr, shared_mem->buffer_iv_inp_size);
     /* small plausability-check */
@@ -83,16 +94,10 @@ void ocmc_cache_init(void)
            (uint32_t) shared_mem->buffer_gpio_ptr, shared_mem->buffer_gpio_size);
     printk(KERN_INFO "shprd.info:      util-buffer   @ 0x%X, size = %d bytes",
            (uint32_t) shared_mem->buffer_util_ptr, shared_mem->buffer_util_size);
-
-    /* timer for updates */
-    hrtimer_init(&update_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    update_timer.function = &update_callback;
-    hrtimer_start(&update_timer, ts_now + DELAY_TIMER, HRTIMER_MODE_ABS);
-
-    init_done = 1u;
-    printk(KERN_INFO "shprd.cache: -> %u cache-blocks with %u ivsamples each for %u us",
-           CACHE_BLOCKS_N, CACHE_BLOCK_SAMPLES_N,
-           CACHE_BLOCK_SAMPLES_N * SAMPLE_INTERVAL_NS / 1000u);
+    printk(KERN_INFO "shprd.info:                   -> total size = %d kiB",
+           (shared_mem->buffer_iv_inp_size + shared_mem->buffer_iv_out_size +
+            shared_mem->buffer_gpio_size + shared_mem->buffer_util_size) /
+                   1024);
 }
 
 void ocmc_cache_exit(void)
