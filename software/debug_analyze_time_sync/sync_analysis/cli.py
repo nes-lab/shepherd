@@ -14,8 +14,8 @@ from .logic_traces import LogicTraces
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     """Signal-handling for a clean exit-strategy."""
-    log.warning("Exiting!")
-    sys.exit(0)
+    log.warning("Exiting from signal %d!", _signum)
+    sys.exit(128 + _signum)
 
 
 @click.command(short_help="Analyze sync measurement files")

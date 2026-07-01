@@ -26,8 +26,8 @@ from .logger import log
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
     """Signal-handling for a clean exit-strategy."""
-    log.warning("Exiting!")
-    sys.exit(0)
+    log.warning("Exiting from signal %d!", _signum)
+    sys.exit(128 + _signum)
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})

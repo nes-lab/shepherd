@@ -9,8 +9,8 @@ from .logger import log
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    log.warning("Exiting!")
-    sys.exit(0)
+    log.warning("Exiting from signal %d!", _signum)
+    sys.exit(128 + _signum)
 
 
 def cli_setup_callback(*, verbose: bool = False, print_version: bool = False) -> None:
