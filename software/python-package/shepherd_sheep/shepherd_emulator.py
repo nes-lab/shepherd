@@ -325,6 +325,11 @@ class ShepherdEmulator(ShepherdIO):
                     time.sleep(self.segment_period_s / 10)
                 if get_state() == "idle":
                     log.info("PRU-State changed to idle -> will STOP")
+                    # TODO: timer in kMod stops PRU to idle -> this should be improved
+                    #       a) one command-channel, one report-variable
+                    #           (not intertwined like shp_pru_state)
+                    #       b) running -> stopped /finish operations -> reset /able to start again
+                    break
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
         force_subchunks = False
