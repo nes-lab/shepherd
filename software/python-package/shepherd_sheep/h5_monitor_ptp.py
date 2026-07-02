@@ -16,6 +16,7 @@ class PTPMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
+        backlog: int = 60,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
         self.data.create_dataset(
@@ -33,7 +34,7 @@ class PTPMonitor(Monitor):
             "/usr/bin/journalctl",
             "--unit=ptp4l@eth0",
             "--follow",
-            "--lines=60",  # backlog
+            f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]  # for client

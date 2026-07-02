@@ -19,7 +19,6 @@ class KernelMonitor(Monitor):
         backlog: int = 60,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.52)
-        self.backlog = backlog
 
         self.data.create_dataset(
             name="message",
@@ -35,7 +34,7 @@ class KernelMonitor(Monitor):
             "/usr/bin/journalctl",
             "--dmesg",
             "--follow",
-            f"--lines={self.backlog}",
+            f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]
