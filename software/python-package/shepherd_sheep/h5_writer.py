@@ -32,7 +32,9 @@ from shepherd_core.writer import Writer as CoreWriter
 
 from .h5_monitor_kernel import KernelMonitor
 from .h5_monitor_phc2sys import PHC2SYSMonitor
+from .h5_monitor_phc2sys_log import PHC2SYSLogMonitor
 from .h5_monitor_ptp import PTPMonitor
+from .h5_monitor_ptp_log import PTPLogMonitor
 from .h5_monitor_sheep import SheepMonitor
 from .h5_monitor_sysutil import SysUtilMonitor
 from .h5_monitor_uart import UARTMonitor
@@ -162,7 +164,9 @@ class Writer(CoreWriter):
         self.sys_util_grp = self.h5file.create_group("sys_util")
         self.kernel_grp = self.h5file.create_group("kernel")
         self.ptp_grp = self.h5file.create_group("ptp")
+        self.ptp_log_grp = self.h5file.create_group("ptp_log")
         self.phc_grp = self.h5file.create_group("phc2sys")
+        self.phc_log_grp = self.h5file.create_group("phc2sys_log")
         self.ntp_grp = self.h5file.create_group("ntp")
         return self
 
@@ -265,7 +269,9 @@ class Writer(CoreWriter):
             self.monitors.append(KernelMonitor(self.kernel_grp, self._compression))
         if sys is not None and sys.time_sync:
             self.monitors.append(PTPMonitor(self.ptp_grp, self._compression))
+            self.monitors.append(PTPLogMonitor(self.ptp_log_grp, self._compression))
             self.monitors.append(PHC2SYSMonitor(self.phc_grp, self._compression))
+            self.monitors.append(PHC2SYSLogMonitor(self.phc_log_grp, self._compression))
             self.monitors.append(NTPMonitor(self.ntp_grp, self._compression))
         if sys is not None and sys.sys_util:
             self.monitors.append(SysUtilMonitor(self.sys_util_grp, self._compression))

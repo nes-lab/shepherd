@@ -46,8 +46,8 @@ from .usage_log import usage_logger
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-    log.warning("Exiting!")
-    sys.exit(0)
+    log.warning("Exiting from signal %d!", _signum)
+    sys.exit(128 + _signum)
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"], "obj": {}})

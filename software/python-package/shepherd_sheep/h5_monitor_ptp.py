@@ -16,6 +16,7 @@ class PTPMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
+        backlog: int = 60,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
         self.data.create_dataset(
@@ -33,7 +34,7 @@ class PTPMonitor(Monitor):
             "/usr/bin/journalctl",
             "--unit=ptp4l@eth0",
             "--follow",
-            "--lines=60",  # backlog
+            f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]  # for client
@@ -76,7 +77,8 @@ class PTPMonitor(Monitor):
 
     def thread_fn(self) -> None:
         # example:
-        # sheep1 ptp4l[378]: [821.629] main offset -4426 s2 freq +285889 path delay 12484
+        # 2026-07-02T12:13:15.865238+0200 sheep10 ptp4l[408]:
+        # [83308.751] main offset         62 s2 freq +129116 path delay      9749
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:

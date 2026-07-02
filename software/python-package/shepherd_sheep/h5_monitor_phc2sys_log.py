@@ -11,7 +11,7 @@ from .h5_monitor_abc import Monitor
 from .logger import log
 
 
-class PHC2SYSMonitor(Monitor):
+class PHC2SYSLogMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
@@ -19,15 +19,15 @@ class PHC2SYSMonitor(Monitor):
         backlog: int = 60,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.51)
+
         self.data.create_dataset(
-            name="values",
-            shape=(self.increment, 3),
-            dtype="i8",
-            maxshape=(None, 3),
+            name="message",
+            shape=(self.increment,),
+            dtype=h5py.special_dtype(vlen=str),
+            maxshape=(None,),
             chunks=True,
+            compression=compression,
         )
-        self.data["values"].attrs["unit"] = "ns, Hz, ns"
-        self.data["values"].attrs["description"] = "phc offset [ns], s2 freq [Hz], path delay [ns]"
 
         command = [
             "/usr/bin/sudo",  # sheep runs with sudo, but it can't hurt
@@ -51,7 +51,7 @@ class PHC2SYSMonitor(Monitor):
         self.thread = threading.Thread(
             target=self.thread_fn,
             daemon=True,
-            name="Shp.H5Mon.PHC2SYS",
+            name="Shp.H5Mon.PHC2SYS.Log",
         )
         self.thread.start()
 
@@ -72,7 +72,7 @@ class PHC2SYSMonitor(Monitor):
                 )
             self.thread = None
         self.process.terminate()
-        self.data["values"].resize((self.position, 3))
+        self.data["message"].resize((self.position,))
         super().__exit__()
 
     def thread_fn(self) -> None:
@@ -84,36 +84,32 @@ class PHC2SYSMonitor(Monitor):
             if len(line) < 1:
                 self.event.wait(self.poll_interval)  # rate limiter
                 continue
-            try:
-                words = str(line).split()
-                i_start = words.index("offset")
-                values = [
-                    int(words[i_start + 1]),
-                    int(words[i_start + 4]),
-                    int(words[i_start + 6]),
-                ]
-                time_str = words[0][:-2] + ":" + words[0][-2:]
-                # TODO: workaround for py < 3.11, .fromisoformat() can handle
-                #       YYYY-MM-DDTHH:MM:SS+HH:MM, BUT NOT
-                #       YYYY-MM-DDTHH:MM:SS+HHMM (default from --output=short-iso-precise
-                time_ts = datetime.fromisoformat(time_str)
-                time_ns = int(datetime.timestamp(time_ts) * 1e9)
-            except ValueError:
-                continue
+            first_space = line.find(" ")
+            time_str = line[:first_space]
+            time_str = time_str[:-2] + ":" + time_str[-2:]
+            # TODO: workaround for py < 3.11, .fromisoformat() can handle
+            #       YYYY-MM-DDTHH:MM:SS+HH:MM, BUT NOT
+            #       YYYY-MM-DDTHH:MM:SS+HHMM (default from --output=short-iso-precise
+            time_ts = datetime.fromisoformat(time_str)
+            time_ns = int(datetime.timestamp(time_ts) * 1e9)
+
+            msg_begin = line.find("]: ") + 3
+            line = line[msg_begin:].strip()[:128]
+
             try:
                 data_length = self.data["time"].shape[0]
                 if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))
-                    self.data["values"].resize((data_length, 3))
+                    self.data["message"].resize((data_length,))
             except RuntimeError:
                 log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
                 break
             try:
                 self.data["time"][self.position] = time_ns
-                self.data["values"][self.position, :] = values[0:3]
+                self.data["message"][self.position] = line
                 self.position += 1
-            except (OSError, KeyError):
+            except OSError:
                 log.error(
                     "[%s] Caught a Write Error for Line: [%s] %s",
                     type(self).__name__,
@@ -126,16 +122,3 @@ class PHC2SYSMonitor(Monitor):
         if self.position == 0:
             log.warning("[%s] Service not running? No data collected yet", type(self).__name__)
             return
-        offset_ns, freq_Hz, _ = self.data["values"][self.position - 1, :]
-        if abs(offset_ns) > 500_000:
-            log.warning(
-                "[%s] Sync-Offset is unexpected high (%d us)",
-                type(self).__name__,
-                offset_ns // 1000,
-            )
-        if abs(freq_Hz) > 50_000_000:
-            log.warning(
-                "[%s] Sync-Compensation is unexpected high (%.3f MHz)",
-                type(self).__name__,
-                freq_Hz * 1e-6,
-            )

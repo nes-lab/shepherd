@@ -32,6 +32,7 @@ from .shared_mem_iv_input import IVTrace
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdPRUError
 from .sysfs_interface import check_pru_applied_settings
+from .sysfs_interface import get_state
 from .sysfs_interface import reset_pru_applied_settings
 from .sysfs_interface import set_stop
 
@@ -316,11 +317,20 @@ class ShepherdEmulator(ShepherdIO):
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.supervise_buffers(iv_inp=True, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
+                    # note that util is a criteria in this first loop
                     if ts_data_last - time.time() > 10:
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
                         break
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
                     time.sleep(self.segment_period_s / 10)
+                if get_state() == "idle":
+                    log.info("PRU-State changed to idle -> will STOP")
+                    # TODO: timer in kMod stops PRU to idle -> this should be improved
+                    #       a) one command-channel, one report-variable
+                    #           (not intertwined like shp_pru_state)
+                    #       b) running -> stopped /finish operations -> reset /able to start again
+                    #       c) pru could stop itself (time-aware)
+                    break
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
         force_subchunks = False

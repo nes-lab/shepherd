@@ -16,6 +16,7 @@ class NTPMonitor(Monitor):
         self,
         target: h5py.Group,
         compression: Compression | None = Compression.default,
+        backlog: int = 60,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.99)
         self.data.create_dataset(
@@ -30,7 +31,7 @@ class NTPMonitor(Monitor):
             "/usr/bin/journalctl",
             "--unit=systemd-timesyncd.service",
             "--follow",
-            "--lines=60",  # backlog
+            f"--lines={backlog}",
             "--boot",  # filter for current boot
             "--output=short-iso-precise",
         ]  # for client
@@ -87,7 +88,10 @@ class NTPMonitor(Monitor):
             #       YYYY-MM-DDTHH:MM:SS+HHMM (default from --output=short-iso-precise
             time_ts = datetime.fromisoformat(time_str)
             time_ns = int(datetime.timestamp(time_ts) * 1e9)
-            line = line[first_space:].strip()[:128]
+
+            msg_begin = line.find("]: ") + 3
+            line = line[msg_begin:].strip()[:128]
+
             try:
                 data_length = self.data["time"].shape[0]
                 if self.position >= data_length:

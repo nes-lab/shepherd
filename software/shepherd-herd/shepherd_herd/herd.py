@@ -729,6 +729,9 @@ class Herd:
         failings = self.run_cmd(
             sudo=True, cmd="/usr/bin/systemctl is-failed shepherd", timeout=30, verbose=False
         )
+        actives = self.run_cmd(
+            sudo=True, cmd="/usr/bin/systemctl is-active shepherd", timeout=30, verbose=False
+        )
         addition = f" --since='{since.isoformat(sep=' ')[:19]}'" if since is not None else ""
         replies = self.run_cmd(
             sudo=True,
@@ -742,10 +745,18 @@ class Herd:
         for hostname, result in replies.items():
             if not isinstance(result, Result):
                 continue
-            if not isinstance(failings.get(hostname), Result):
-                result.exited = 1  # failed by default
+            observer_failed = not isinstance(failings.get(hostname), Result) or (
+                failings.get(hostname).exited == 0
+            )
+            observer_active = isinstance(actives.get(hostname), Result) and (
+                actives.get(hostname).exited == 0
+            )
+            if observer_active:
+                result.exited = -1
+            elif observer_failed:
+                result.exited = 1
             else:
-                result.exited = int(failings.get(hostname).exited == 0)
+                result.exited = 0
             logs[hostname] = result
         return logs
 
