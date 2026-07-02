@@ -329,6 +329,7 @@ class ShepherdEmulator(ShepherdIO):
                     #       a) one command-channel, one report-variable
                     #           (not intertwined like shp_pru_state)
                     #       b) running -> stopped /finish operations -> reset /able to start again
+                    #       c) pru could stop itself (time-aware)
                     break
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
