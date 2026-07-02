@@ -2,6 +2,7 @@ import atexit
 import logging.handlers
 import multiprocessing
 import sys
+from logging import LogRecord
 
 import chromalog
 
@@ -93,3 +94,32 @@ def clear_message_queue() -> None:
 
 # last action on exit is to clear queue to prevent lockup
 atexit.register(clear_message_queue)
+
+
+class ContextFilterWorstLevel(logging.Filter):
+    def __init__(self) -> None:
+        self.worst_level = logging.INFO
+
+    def filter(self, record: LogRecord) -> bool:
+        self.worst_level = max(self.worst_level, record.levelno)
+        return True
+
+    def errored(self) -> bool:
+        return self.worst_level >= 40
+
+    def reset(self) -> None:
+        self.worst_level = logging.INFO
+
+
+log.addFilter(ContextFilterWorstLevel())
+
+
+def log_recorded_error() -> bool:
+    # TODO: transform this error-reporter into context-manager?
+    return any(isinstance(_flt, ContextFilterWorstLevel) and _flt.errored() for _flt in log.filters)
+
+
+def hide_recorded_errors() -> None:
+    for _flt in log.filters:
+        if isinstance(_flt, ContextFilterWorstLevel):
+            _flt.reset()

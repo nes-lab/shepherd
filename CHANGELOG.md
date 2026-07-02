@@ -1,6 +1,17 @@
 # History of Changes
 
-## 2026.06.2 - unreleased
+## 2026.07.1 - unreleased
+
+- herd - log-fetching differentiates active from failed instances (exit-code -1)
+- all CLI-tools exit non-zero when receiving external signal
+- sheep
+  - emu - exit measurement loop when PRU switches to idle
+  - emu & hrv - exit non-zero if an error (or worse) was handed to logger
+  - monitors - add backlog as argument
+  - monitors - add raw logs for ptp & phc2sys
+  - remove host-name and process-id from monitors
+
+## 2026.06.2
 
 Make the root filesystem less prone to errors
 

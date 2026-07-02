@@ -25,7 +25,9 @@ from shepherd_core.fw_tools import firmware_to_hex
 from shepherd_core.fw_tools import modify_uid
 
 from . import sysfs_interface
+from .logger import hide_recorded_errors
 from .logger import log
+from .logger import log_recorded_error
 from .logger import reset_verbosity
 from .logger import set_verbosity
 from .shepherd_debug import ShepherdDebug
@@ -41,10 +43,11 @@ from .shepherd_io import ShepherdIOError
 def run_harvester(cfg: HarvestTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
+    hide_recorded_errors()
     try:
         with ShepherdHarvester(cfg=cfg) as hrv:
             hrv.run()
-        failed = False
+        failed = log_recorded_error()
     except SystemExit:
         pass
     except ShepherdIOError:
@@ -55,10 +58,11 @@ def run_harvester(cfg: HarvestTask) -> bool:
 def run_emulator(cfg: EmulationTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
+    hide_recorded_errors()
     try:
         with ShepherdEmulator(cfg=cfg) as emu:
             emu.run()
-        failed = False
+        failed = log_recorded_error()
     except SystemExit:
         pass
     except ShepherdIOError:
@@ -129,7 +133,7 @@ def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
         ]
         ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
         if ret.returncode > 0:
-            log.error("Error during chip-erase (OpenOCD): %s", ret.stderr)
+            log.warning("Error during chip-erase (OpenOCD): %s", ret.stderr)
             raise RuntimeError  # noqa: TRY301
         log.debug("\tprogramming via OpenOCD")
         # TODO: pins are hardcoded in shepherd.cfg
@@ -143,7 +147,7 @@ def run_ocd_programmer(cfg: ProgrammingTask) -> bool:
         ]
         ret = subprocess.run(cmd, timeout=30, check=False)  # noqa: S603
         if ret.returncode > 0:
-            log.error("Error during programming (OpenOCD): %s", ret.stderr)
+            log.warning("Error during programming (OpenOCD): %s", ret.stderr)
             raise RuntimeError  # noqa: TRY301
         log.info("Finished Programming!")
     except OSError:
@@ -275,7 +279,7 @@ def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
         counter = 0
         while state != "idle" and not failed:
             if not sysfs_interface.check_pru_applied_settings():
-                log.error("PRU has NOT yet applied the settings!")
+                log.warning("PRU has NOT yet applied the settings!")
             log.info(
                 "Programming in progress,\tpgm_state = %s, shp_state = %s",
                 state,
