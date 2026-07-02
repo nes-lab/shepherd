@@ -77,8 +77,8 @@ class PHC2SYSMonitor(Monitor):
 
     def thread_fn(self) -> None:
         # example:
-        # sheep0 phc2sys[461]:
-        # [2209.816] CLOCK_REALTIME phc offset 344689866486 s2 freq +100000000 delay   1725
+        # 2026-07-02T12:10:54.881232+0200 sheep10 phc2sys[418]:
+        # [83167.767] CLOCK_REALTIME phc offset       114 s2 freq +129055 delay   1916
         while not self.event.is_set():
             line = self.process.stdout.readline()
             if len(line) < 1:
