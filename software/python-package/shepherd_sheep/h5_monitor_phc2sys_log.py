@@ -11,7 +11,7 @@ from .h5_monitor_abc import Monitor
 from .logger import log
 
 
-class PHC2SYSMonitor(Monitor):
+class PHC2SYSLogMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,

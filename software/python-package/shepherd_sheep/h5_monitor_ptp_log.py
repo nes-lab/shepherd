@@ -11,7 +11,7 @@ from .h5_monitor_abc import Monitor
 from .logger import log
 
 
-class PTPMonitor(Monitor):
+class PTPLogMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
