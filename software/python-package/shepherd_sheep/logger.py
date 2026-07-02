@@ -115,4 +115,11 @@ log.addFilter(ContextFilterWorstLevel())
 
 
 def log_recorded_error() -> bool:
+    # TODO: transform this error-reporter into context-manager?
     return any(isinstance(_flt, ContextFilterWorstLevel) and _flt.errored() for _flt in log.filters)
+
+
+def hide_recorded_errors() -> None:
+    for _flt in log.filters:
+        if isinstance(_flt, ContextFilterWorstLevel):
+            _flt.reset()

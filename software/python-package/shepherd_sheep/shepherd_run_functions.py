@@ -25,6 +25,7 @@ from shepherd_core.fw_tools import firmware_to_hex
 from shepherd_core.fw_tools import modify_uid
 
 from . import sysfs_interface
+from .logger import hide_recorded_errors
 from .logger import log
 from .logger import log_recorded_error
 from .logger import reset_verbosity
@@ -42,6 +43,7 @@ from .shepherd_io import ShepherdIOError
 def run_harvester(cfg: HarvestTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
+    hide_recorded_errors()
     try:
         with ShepherdHarvester(cfg=cfg) as hrv:
             hrv.run()
@@ -56,6 +58,7 @@ def run_harvester(cfg: HarvestTask) -> bool:
 def run_emulator(cfg: EmulationTask) -> bool:
     set_verbosity(state=cfg.verbose, temporary=True)
     failed = True
+    hide_recorded_errors()
     try:
         with ShepherdEmulator(cfg=cfg) as emu:
             emu.run()
