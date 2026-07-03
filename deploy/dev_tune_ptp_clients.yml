@@ -1,15 +1,17 @@
 ---
+
+- name: PTP-Host -> update service-config
+  hosts: sheep
+  become: true
+  strategy: free # noqa: run-once[play]
+  roles:
+    - ptp_client
+
 - name: PTP - make it less susceptible to high CPU util
   hosts: sheep
   become: true
 
   tasks:
-
-    - name: Role - PTP-Host
-      become: true
-      strategy: free # noqa: run-once[play]
-      roles:
-        - ptp_host
 
     - name: Configure PTP for higher timeouts
       ansible.builtin.lineinfile:
