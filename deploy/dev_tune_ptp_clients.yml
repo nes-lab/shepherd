@@ -18,8 +18,12 @@
         }
         - {
           regex: "tx_timestamp_timeout.*$",
-          replacement: "tx_timestamp_timeout  100",
+          replacement: "tx_timestamp_timeout  1", # 1 is default
+          # NOTE that relaxing timeout to 100 did more harm
         }
+
+    - name: bump priority of PTP
+      ansible.builtin.command: 'pgrep -f "ptp[0-9]+" | xargs -I {} sudo chrt -f --pid 75 {}'
 
     - name: Determine CPU-Governor
       ansible.builtin.command: 'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
