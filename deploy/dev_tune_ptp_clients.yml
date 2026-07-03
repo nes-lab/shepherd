@@ -1,11 +1,29 @@
 ---
 
+- name: Update Time
+  hosts: sheep
+  become: true
+  strategy: free  # noqa: run-once[play]
+  # ⤷ ansible won't wait for every host to continue next task
+
+  tasks:
+
+    - name: Get time and date from ansible controller
+      ansible.builtin.command: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+      delegate_to: localhost
+      changed_when: false
+      register: local_time
+      become: false
+    - name: Set correct time
+      ansible.builtin.command: "date -s {{ local_time.stdout }}"
+      changed_when: true
+
 - name: PTP-Host -> update service-config
   hosts: sheep
   become: true
   strategy: free # noqa: run-once[play]
   roles:
-    - ptp_client
+    - ptp_host
 
 - name: PTP - make it less susceptible to high CPU util
   hosts: sheep
@@ -43,6 +61,7 @@
         regexp: "kernel.sched_rt_runtime_us.*$"
         line: "kernel.sched_rt_runtime_us = -1"
         state: present
+        create: true
 
     - name: allow more RT-threads (immediate)
       ansible.builtin.shell:
