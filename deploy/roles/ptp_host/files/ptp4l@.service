@@ -16,7 +16,6 @@ ExecStart=/usr/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
 # slaveOnly     0/1     -> roles should be static
 # clock_servo   linreg/pi -> linreg should be superior
 
-
 RestartSec=5
 Restart=always
 StartLimitBurst=10
@@ -24,10 +23,12 @@ StartLimitBurst=10
 # improve responsiveness with RT
 RestrictRealtime=false
 LimitRTPRIO=infinity
-CPUSchedulingPriority=99
-CPUSchedulingPolicy=rr
+CPUSchedulingPriority=62
+CPUSchedulingPolicy=fifo
 IOSchedulingClass=realtime
 IOSchedulingPriority=3
+# Optionally, allow memory locking if needed (less jitter through page-faults)
+LimitMEMLOCK=infinity
 
 [Install]
 WantedBy=multi-user.target

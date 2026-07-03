@@ -22,9 +22,27 @@
           # NOTE that relaxing timeout to 100 did more harm
         }
 
-    - name: bump priority of PTP
+    - name: bump priority of PTP0
       ansible.builtin.shell:
-        cmd: 'pgrep -f "ptp[0-9]+" | xargs -I {} sudo chrt -f --pid 75 {}'
+        cmd: 'pgrep -f "ptp[0-3]+" | xargs -I {} sudo chrt -f --pid 60 {}'
+        # check with 'pgrep -f "ptp[0-9]+" | xargs -I {} sudo chrt -p {}'
+        # check with 'pgrep -f "ptp[0-9]+" -l'
+        # TODO: make permanent
+
+    - name: allow more RT-threads
+      ansible.builtin.lineinfile:
+        dest: "/etc/sysctl.d/99-rt.conf"
+        regexp: "kernel.sched_rt_runtime_us.*$"
+        line: "kernel.sched_rt_runtime_us = -1"
+        state: present
+
+    - name: allow more RT-threads (immediate)
+      ansible.builtin.shell:
+        cmd: sudo sysctl -w kernel.sched_rt_runtime_us=-1
+
+    - name: Resync
+      ansible.builtin.shell:
+        cmd: sudo shepherd-sheep resync
 
     - name: Determine CPU-Governor
       ansible.builtin.command: 'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
