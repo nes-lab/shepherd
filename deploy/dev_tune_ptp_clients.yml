@@ -29,4 +29,4 @@
     - name: Active CPU-Governor (should be performance)
       ansible.builtin.debug:
         msg:
-          - "governor = {{ cpu_governor..stdout.strip() }} "
+          - "gov={{ cpu_governor.stdout.strip() }}"
