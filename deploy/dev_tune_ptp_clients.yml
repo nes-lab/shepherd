@@ -39,13 +39,13 @@
         state: present
       loop:
         - {
-          regex: "delay_response_timeout.*$",
-          replacement: "delay_response_timeout  0",
+          regex: "^.delay_response_timeout.*$",
+          replacement: "#delay_response_timeout  0",
         }
         - {
-          regex: "tx_timestamp_timeout.*$",
+          regex: "^.tx_timestamp_timeout.*$",
           replacement: "tx_timestamp_timeout  1", # 1 is default
-          # NOTE that relaxing timeout to 100 did more harm
+          # NOTE that relaxing timeout to 100 did more harm? no
         }
 
     - name: bump priority of PTP0
