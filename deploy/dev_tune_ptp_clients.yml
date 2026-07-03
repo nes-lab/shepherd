@@ -5,6 +5,12 @@
 
   tasks:
 
+    - name: Role - PTP-Host
+      become: true
+      strategy: free # noqa: run-once[play]
+      roles:
+        - ptp_host
+
     - name: Configure PTP for higher timeouts
       ansible.builtin.lineinfile:
         dest: "/etc/linuxptp/ptp4l.conf"
