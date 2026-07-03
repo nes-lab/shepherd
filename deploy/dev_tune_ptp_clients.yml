@@ -1,0 +1,32 @@
+---
+- name: PTP - make it less susceptible to high CPU util
+  hosts: sheep
+  become: true
+
+  tasks:
+
+    - name: Configure PTP for higher timeouts
+      ansible.builtin.lineinfile:
+        dest: "/etc/linuxptp/ptp4l.conf"
+        regexp: "{{ item.regex }}"
+        line: "{{ item.replacement }}"
+        state: present
+      loop:
+        - {
+          regex: "delay_response_timeout.*$",
+          replacement: "delay_response_timeout  0",
+        }
+        - {
+          regex: "tx_timestamp_timeout.*$",
+          replacement: "tx_timestamp_timeout  100",
+        }
+
+    - name: Determine CPU-Governor
+      ansible.builtin.command: 'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
+      register: cpu_governor
+      changed_when: false
+
+    - name: Active CPU-Governor (should be performance)
+      ansible.builtin.debug:
+        msg:
+          - "governor = {{ cpu_governor..stdout.strip() }} "
