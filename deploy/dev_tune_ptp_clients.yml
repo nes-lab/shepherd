@@ -23,7 +23,8 @@
         }
 
     - name: bump priority of PTP
-      ansible.builtin.command: 'pgrep -f "ptp[0-9]+" | xargs -I {} sudo chrt -f --pid 75 {}'
+      ansible.builtin.shell:
+        cmd: 'pgrep -f "ptp[0-9]+" | xargs -I {} sudo chrt -f --pid 75 {}'
 
     - name: Determine CPU-Governor
       ansible.builtin.command: 'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
