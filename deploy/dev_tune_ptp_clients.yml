@@ -44,7 +44,7 @@
         #  # does not exist in current ptp-version
         #}
         - {
-          regex: "^.tx_timestamp_timeout.*$",
+          regex: "^.?tx_timestamp_timeout.*$",
           replacement: "tx_timestamp_timeout  1", # 1 is default
           # NOTE that relaxing timeout to 100 did more harm? no
         }
@@ -52,7 +52,7 @@
     - name: Remove faulty parameter
       ansible.builtin.lineinfile:
         dest: "/etc/linuxptp/ptp4l.conf"
-        regexp: "^.delay_response_timeout.*$"
+        regexp: "^.?delay_response_timeout.*$"
         state: absent
 
     - name: bump priority of PTP0
@@ -65,7 +65,7 @@
     - name: allow more RT-threads
       ansible.builtin.lineinfile:
         dest: "/etc/sysctl.d/99-rt.conf"
-        regexp: "kernel.sched_rt_runtime_us.*$"
+        regexp: "^.?kernel.sched_rt_runtime_us.*$"
         line: "kernel.sched_rt_runtime_us = -1"
         state: present
         create: true
