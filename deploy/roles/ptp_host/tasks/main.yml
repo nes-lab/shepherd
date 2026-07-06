@@ -30,6 +30,18 @@
     - ptp
     - conf
 
+- name: Configure PTP for higher timeouts
+  ansible.builtin.lineinfile:
+    dest: "/etc/linuxptp/ptp4l.conf"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regex: "^.?tx_timestamp_timeout.*$",
+      replacement: "tx_timestamp_timeout  10", # 1 is default
+    }
+
 - name: Install ntpdate package
   ansible.builtin.apt:
     name: ntpdate
@@ -52,6 +64,27 @@
   # manual: sudo systemctl restart ptp4l@eth0
   # status: sudo journalctl -u ptp4l@eth0 -f
 
+- name: Deploy prio-script for kworker
+  ansible.builtin.copy:
+    src: "set-ptp-kworker-prio.sh"
+    dest: "/usr/local/bin/"
+    mode: '0755'
+  tags:
+    - ptp
+    - conf
+
+- name: allow more RT-threads
+  ansible.builtin.lineinfile:
+    dest: "/etc/sysctl.d/99-rt.conf"
+    regexp: "^.?kernel.sched_rt_runtime_us.*$"
+    line: "kernel.sched_rt_runtime_us = -1"
+    state: present
+    create: true
+
+- name: allow more RT-threads (immediate)
+  ansible.builtin.shell:
+    cmd: sudo sysctl -w kernel.sched_rt_runtime_us=-1
+
 - name: Install ethtool
   ansible.builtin.apt:
     name: ethtool
@@ -67,3 +100,13 @@
     - hardware-receive
   failed_when: false
   tags: ptp
+
+- name: Determine CPU-Governor
+  ansible.builtin.command: 'cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
+  register: cpu_governor
+  changed_when: false
+
+- name: Check active CPU-Governor (should be 'performance')
+  ansible.builtin.debug:
+    msg:
+      - "gov={{ cpu_governor.stdout.strip() }}"
