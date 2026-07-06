@@ -367,7 +367,9 @@ class ShepherdEmulator(ShepherdIO):
                     if self.writer is not None:
                         self.writer.write_iv_buffer(data_iv)
                 if before_ts_end and (time.time() > ts_end):
-                    log.debug("End of measurement reached -> will collect remaining data")
+                    log.debug(
+                        "End of measurement reached -> will collect remaining data (sub-chunking)"
+                    )
                     # refresh TS before the routine can run dry
                     # this prevents early exit when power-tracing is disabled
                     force_subchunks = True

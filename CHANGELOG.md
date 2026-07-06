@@ -7,7 +7,7 @@
 - sheep
   - emu - exit measurement loop when PRU switches to idle
   - emu & hrv - exit non-zero if an error (or worse) was handed to logger during measurements
-  - emu - force small 1 or 10 ms breaks in main loop (depending of workload)
+  - emu & hrv - force small 1 or 10 ms breaks in main loop (depending of workload)
   - emu - properly exit main-loop when faulty condition is detected
   - monitors - add backlog as argument
   - monitors - add raw logs for ptp & phc2sys
