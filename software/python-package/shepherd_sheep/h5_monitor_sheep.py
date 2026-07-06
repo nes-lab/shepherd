@@ -54,9 +54,9 @@ class SheepMonitor(Monitor):
         time.sleep(2 * self.poll_interval)  # give thread time to write last bits
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_interval)
+            self.thread.join(timeout=5 * self.poll_interval)
             if self.thread.is_alive():
-                log.error(
+                log.warning(
                     "[%s] thread failed to end itself - will delete that instance",
                     type(self).__name__,
                 )
