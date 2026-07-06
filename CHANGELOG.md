@@ -6,10 +6,17 @@
 - all CLI-tools exit non-zero when receiving external signal
 - sheep
   - emu - exit measurement loop when PRU switches to idle
-  - emu & hrv - exit non-zero if an error (or worse) was handed to logger
+  - emu & hrv - exit non-zero if an error (or worse) was handed to logger during measurements
+  - emu - force small 1 or 10 ms breaks in main loop (depending of workload)
+  - emu - properly exit main-loop when faulty condition is detected
   - monitors - add backlog as argument
   - monitors - add raw logs for ptp & phc2sys
+  - monitors - give more time to quit and just warn if that fails
   - remove host-name and process-id from monitors
+  - gpio-recorder - decrease chunk-size from 1 MiB to 500 kiB (even out cpu-load)
+- tune PTP to be less susceptible to high CPU util
+  - increase prios and change scheduler of ptp-kworker, ptp, phc2sys
+  - increase timeout for answer of kworker (PTP tends to jump)
 
 ## 2026.06.2
 
