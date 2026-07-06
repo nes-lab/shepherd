@@ -44,7 +44,7 @@ class SharedMemGPIOOutput:
     SIZE_SECTION: int = 4 + SIZE_SAMPLES + SIZE_CANARY
     # ⤷ consist of index, samples, canary
 
-    N_SAMPLES_PER_CHUNK: int = 100_000
+    N_SAMPLES_PER_CHUNK: int = 50_000  # ~ 500 kiB Chunk
     N_BUFFER_CHUNKS: int = N_SAMPLES // N_SAMPLES_PER_CHUNK
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS

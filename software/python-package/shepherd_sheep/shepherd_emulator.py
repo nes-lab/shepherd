@@ -272,6 +272,7 @@ class ShepherdEmulator(ShepherdIO):
         # Main Loop
         ts_data_last = self.start_time
         buffer_segment_last = math.floor(duration_s / self.segment_period_s)
+        leave_main_loop = False
         for _, dsv, dsc in self.reader.read(
             start_n=self.buffer_segment_count,
             end_n=buffer_segment_last,
@@ -280,6 +281,8 @@ class ShepherdEmulator(ShepherdIO):
         ):
             # this loop fetches data and tries to fill it into the buffer
             # -> while there is no space it will do other tasks
+            if leave_main_loop:
+                break
 
             while not self.shared_mem.iv_inp.write(
                 data=IVTrace(voltage=dsv, current=dsc),
@@ -302,6 +305,7 @@ class ShepherdEmulator(ShepherdIO):
                     # TODO: this can't work - with the limiting tracers
                     if data_iv.timestamp() >= ts_end:
                         log.debug("Out of bound timestamp collected -> begin to exit now")
+                        leave_main_loop = True
                         break
                     ts_data_last = time.time()
                     if self.writer is not None:
@@ -320,9 +324,12 @@ class ShepherdEmulator(ShepherdIO):
                     # note that util is a criteria in this first loop
                     if ts_data_last - time.time() > 10:
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
+                        leave_main_loop = True
                         break
+                    time.sleep(0.010)
+                else:
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s / 10)
+                    time.sleep(0.001)
                 if get_state() == "idle":
                     log.info("PRU-State changed to idle -> will STOP")
                     # TODO: timer in kMod stops PRU to idle -> this should be improved
@@ -330,6 +337,7 @@ class ShepherdEmulator(ShepherdIO):
                     #           (not intertwined like shp_pru_state)
                     #       b) running -> stopped /finish operations -> reset /able to start again
                     #       c) pru could stop itself (time-aware)
+                    leave_main_loop = True
                     break
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
@@ -362,6 +370,7 @@ class ShepherdEmulator(ShepherdIO):
                     log.debug("End of measurement reached -> will collect remaining data")
                     # refresh TS before the routine can run dry
                     # this prevents early exit when power-tracing is disabled
+                    force_subchunks = True
                     ts_data_last = time.time()
                     before_ts_end = False
                 self.handle_pru_messages(panic_on_restart=before_ts_end)
@@ -370,9 +379,10 @@ class ShepherdEmulator(ShepherdIO):
                     if not before_ts_end and (time.time() - ts_data_last > 3):
                         log.info("Data-collection ran dry for 3s -> begin to exit now")
                         break
-                    force_subchunks = True
+                    time.sleep(0.010)  # self.segment_period_s / 5
+                else:
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(self.segment_period_s / 5)
+                    time.sleep(0.001)
 
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers

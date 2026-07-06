@@ -24,7 +24,7 @@ class SharedMemIVOutput:
     # ⤷ consist of index, samples, canary
 
     N_BUFFER_CHUNKS: int = 30
-    N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
+    N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS  # 20k samples = 320 kiB
     DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS

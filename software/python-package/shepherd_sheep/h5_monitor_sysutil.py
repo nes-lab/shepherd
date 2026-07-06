@@ -84,9 +84,9 @@ class SysUtilMonitor(Monitor):
     ) -> None:
         self.event.set()
         if self.thread is not None:
-            self.thread.join(timeout=2 * self.poll_interval)
+            self.thread.join(timeout=4 * self.poll_interval)
             if self.thread.is_alive():
-                log.error(
+                log.warning(
                     "[%s] thread failed to end itself - will delete that instance",
                     type(self).__name__,
                 )
