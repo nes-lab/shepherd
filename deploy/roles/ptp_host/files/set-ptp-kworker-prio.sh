@@ -7,3 +7,5 @@ sleep 0.2
 pgrep -f "ptp[0-3]" | while read pid; do
     sudo chrt -f --pid 60 "$pid"
 done
+# check with
+pgrep -f "ptp[0-9]+" | xargs -I {} chrt -p {}
