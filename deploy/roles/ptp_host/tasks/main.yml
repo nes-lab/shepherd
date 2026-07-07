@@ -65,6 +65,25 @@
       # newer versions (v4?, NOT v3.1.1) allow to set SO_PRIORITY also for non '-2'-option
     }
 
+- name: Configure PTP - faster Fault-recovery & better Protection
+  ansible.builtin.lineinfile:
+    dest: "/etc/linuxptp/ptp4l.conf"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regex: "^.?fault_reset_interval.*$",
+      replacement: "fault_reset_interval  0", # 4 is default
+      # 4 => 16 s recovery (2^n), -128 and ASAP are possible values
+      # TODO: start with 0, try -128
+    }
+    - {
+      regex: "^.?check_fup_sync.*$",
+      replacement: "check_fup_sync  1", # 0 is default
+      # protection against package reordering in network
+    }
+
 - name: Install ntpdate package
   ansible.builtin.apt:
     name: ntpdate
