@@ -10,7 +10,7 @@
     state: present
   tags: ptp
 
-- name: Configure PTP
+- name: Configure PTP - Hardware-timestamping
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
     regexp: "{{ item.regex }}"
@@ -30,7 +30,7 @@
     - ptp
     - conf
 
-- name: Configure PTP for higher timeouts
+- name: Configure PTP - relax Timeouts
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
     regexp: "{{ item.regex }}"
@@ -40,6 +40,29 @@
     - {
       regex: "^.?tx_timestamp_timeout.*$",
       replacement: "tx_timestamp_timeout  10", # 1 is default
+    }
+
+- name: Configure PTP - higher Prio
+  ansible.builtin.lineinfile:
+    dest: "/etc/linuxptp/ptp4l.conf"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regex: "^.?dscp_event.*$",
+      replacement: "dscp_event  48", # 0 is default
+    }
+    - {
+      regex: "^.?dscp_general.*$",
+      replacement: "dscp_general  48", # 0 is default
+      # https://en.wikipedia.org/wiki/Differentiated_services#Class_Selector
+      # should be higher than 32 (rt communication)
+    }
+    - {
+      regex: "^.?socket_priority.*$",
+      replacement: "socket_priority 7", # 0 is default
+      # newer versions (v4?, NOT v3.1.1) allow to set SO_PRIORITY also for non '-2'-option
     }
 
 - name: Install ntpdate package

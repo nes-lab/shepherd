@@ -8,15 +8,23 @@
   loop:
     - {
       regex: "slaveOnly.*$",
-      replacement: "slaveOnly  0",
+      replacement: "slaveOnly  1", # was 0
     }
     - {
       regex: "masterOnly.*$",
-      replacement: "masterOnly  0",
+      replacement: "masterOnly  0", # was 0
     }
     - {
       regex: "priority1.*$",
-      replacement: "priority1  128",
+      replacement: "priority1  128", # was 128
+    }
+    - {
+      regex: "clockClass.*$",
+      replacement: "clockClass  248", # was 248
+    }
+    - {
+      regex: "clockAccuracy.*$",
+      replacement: "clockAccuracy  0xFE", # was 0xFE
     }
   tags:
     - ptp
