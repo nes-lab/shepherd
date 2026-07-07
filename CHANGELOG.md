@@ -2,21 +2,29 @@
 
 ## 2026.07.1 - unreleased
 
+Sheep
+- emu - exit measurement loop when PRU switches to idle
+- emu & hrv - exit non-zero if an error (or worse) was handed to logger during measurements
+- emu & hrv - force small 1 or 10 ms breaks in main loop (depending of workload)
+- emu - fix high CPU load during last 10 s of measurement (small chunks were activated too early)
+- emu - properly exit main-loop when faulty condition is detected
+- monitors - add backlog as argument
+- monitors - add raw logs for ptp & phc2sys
+- monitors - give more time to quit and just warn if that fails
+- remove host-name and process-id from monitors
+- gpio-recorder - decrease chunk-size from 1 MiB to 500 kiB (even out cpu-load)
+
+PTP - tune to be less susceptible to high CPU load
+- increase prios and change scheduler of ptp-kworker, ptp, phc2sys
+- increase timeout for answer of kworker (PTP tends to jump)
+- increase prios of socket and dscp type (QoS)
+- set clients to "clientOnly 1" (this needs a dedicated timeserver)
+- prioritize clock of server setting priority1, clockAccuracy, ClockClass to make it a (fake) GM
+- sync GM of server via NTP / chrony
+
+Misc
 - herd - log-fetching differentiates active from failed instances (exit-code -1)
 - all CLI-tools exit non-zero when receiving external signal
-- sheep
-  - emu - exit measurement loop when PRU switches to idle
-  - emu & hrv - exit non-zero if an error (or worse) was handed to logger during measurements
-  - emu & hrv - force small 1 or 10 ms breaks in main loop (depending of workload)
-  - emu - properly exit main-loop when faulty condition is detected
-  - monitors - add backlog as argument
-  - monitors - add raw logs for ptp & phc2sys
-  - monitors - give more time to quit and just warn if that fails
-  - remove host-name and process-id from monitors
-  - gpio-recorder - decrease chunk-size from 1 MiB to 500 kiB (even out cpu-load)
-- tune PTP to be less susceptible to high CPU util
-  - increase prios and change scheduler of ptp-kworker, ptp, phc2sys
-  - increase timeout for answer of kworker (PTP tends to jump)
 
 ## 2026.06.2
 
