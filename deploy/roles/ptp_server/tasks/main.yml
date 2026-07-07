@@ -8,15 +8,31 @@
   loop:
     - {
       regex: "slaveOnly.*$",
-      replacement: "slaveOnly  0",
+      replacement: "slaveOnly  0", # was 0
     }
     - {
       regex: "masterOnly.*$",
-      replacement: "masterOnly  1",
+      replacement: "masterOnly  1", # was 0
     }
+    # BMCA Prio (0 ... 128)
     - {
       regex: "priority1.*$",
-      replacement: "priority1  100",
+      replacement: "priority1  10", # was 128
+
+    }
+    # make it GM with very high accuracy
+    - {
+      regex: "clockClass.*$",
+      replacement: "clockClass  20", # was 248
+    }
+    - {
+      regex: "clockAccuracy.*$",
+      replacement: "clockAccuracy  0x5E", # was 0xFE
+
+    }
+    - {
+      regex: "userDescription.*$",
+      replacement: "userDescription  rpi_gm", # was ;
     }
   tags:
     - ptp
