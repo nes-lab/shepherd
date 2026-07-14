@@ -98,6 +98,16 @@
       replacement: "syncReceiptTimeout  3", # 0 is default
       # allowed missed messages, now same as announceReceiptTimeout
     }
+    - {
+      regex: "^.?hwts_filter.*$",
+      replacement: "hwts_filter  check", # normal is default
+      # - note: full does not work
+      #         ioctl SIOCSHWTSTAMP failed: Numerical result out of range
+      # - Normal mode set the filters as needed.
+      # - Check mode only check but do not set.
+      # - Full mode set the receive filter to mark all packets with hardware time stamp,
+      #   so all applications can get them.
+    }
 
 - name: Install ntpdate package
   ansible.builtin.apt:
