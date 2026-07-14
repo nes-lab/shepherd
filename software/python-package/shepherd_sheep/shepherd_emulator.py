@@ -330,9 +330,6 @@ class ShepherdEmulator(ShepherdIO):
                 else:
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
                     time.sleep(0.001)
-                    # TODO: test if flushing buffers reduces high spikes in nw_sent
-                    if self.writer is not None:
-                        self.writer.h5file.flush()
                 if get_state() == "idle":
                     log.info("PRU-State changed to idle -> will STOP")
                     # TODO: timer in kMod stops PRU to idle -> this should be improved
@@ -388,9 +385,6 @@ class ShepherdEmulator(ShepherdIO):
                 else:
                     # rest of loop is non-blocking, so we better doze a while if nothing to do
                     time.sleep(0.001)
-                    # TODO: test if flushing buffers reduces high spikes in nw_sent
-                    if self.writer is not None:
-                        self.writer.h5file.flush()
 
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
