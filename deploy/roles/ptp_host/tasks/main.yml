@@ -100,13 +100,16 @@
     }
     - {
       regex: "^.?hwts_filter.*$",
-      replacement: "hwts_filter  check", # normal is default
-      # - note: full does not work
-      #         ioctl SIOCSHWTSTAMP failed: Numerical result out of range
+      replacement: "# hwts_filter  check", # normal is default
       # - Normal mode set the filters as needed.
       # - Check mode only check but do not set.
       # - Full mode set the receive filter to mark all packets with hardware time stamp,
       #   so all applications can get them.
+      #
+      # - note1: full does not work  (ptp v3.1.1, kernel 4.19)
+      #         Error "ioctl SIOCSHWTSTAMP failed: Numerical result out of range"
+      # - note2: check does not work (ptp v3.1.1, kernel 4.19)
+      #         Error "The current filter does not match the required"
     }
 
 - name: Install ntpdate package
