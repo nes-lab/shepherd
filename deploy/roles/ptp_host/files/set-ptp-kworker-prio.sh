@@ -19,8 +19,8 @@ done
 pgrep -f "kworker" | xargs -I {} chrt -p {}
 #
 # TODO: test to bump network-services
-pgrep -f "network" | while read pid; do
-    sudo chrt -f --pid 61 "$pid"
-done
+#pgrep -f "network" | while read pid; do
+#    sudo chrt -f --pid 61 "$pid"
+#done
 # check with
 pgrep -f "network" | xargs -I {} chrt -p {}
