@@ -75,7 +75,7 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
         DRV_SUCCESS)
     {
         pctrl->state = PRG_ERR_OPEN;
-        goto exit;
+        //goto exit;
     }
 
     pctrl->state = PRG_STATE_ERASING;
