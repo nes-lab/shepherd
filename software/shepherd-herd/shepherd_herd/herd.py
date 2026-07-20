@@ -878,20 +878,10 @@ class Herd:
 
     def resync(self) -> int:
         """Get current time via ntp and restart PTP on each sheep."""
-        commands = [
-            "/usr/bin/systemctl stop phc2sys@eth0",
-            "/usr/bin/systemctl stop ptp4l@eth0",
-            "/usr/sbin/ntpdate -b -s -u pool.ntp.org",
-            "/usr/bin/systemctl start phc2sys@eth0",
-            "/usr/bin/systemctl start ptp4l@eth0",
-            "shepherd-sheep fix",  # restarts kernel module
-        ]
-        exit_code = 0
-        for command in commands:
-            ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
-            self.print_output(ret, verbose=True)
-            exit_code = max([exit_code] + [abs(reply.exited) for reply in ret.values()])
-        return exit_code
+        command = "shepherd-sheep --verbose resync --timeout=120"
+        ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
+        self.print_output(ret, verbose=True)
+        return max([abs(reply.exited) for reply in ret.values()])
 
     @validate_call
     def run_task(

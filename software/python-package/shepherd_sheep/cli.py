@@ -416,10 +416,18 @@ def fix() -> None:
     short_help="Reloads PTP",
     context_settings={"ignore_unknown_options": True},
 )
+@click.option(
+    "--timeout", "-t", type=click.INT, default=100, help="Time to wait for PTP to stabilize"
+)
 @click.pass_context
-def resync(ctx: click.Context) -> None:
+def resync(ctx: click.Context, timeout: int) -> None:
     set_verbosity()
     if resync_ptp():
+        ctx.exit(1)
+    from .sys_ptp_status import PTPStatus
+
+    pstat = PTPStatus(sync_threshold_ns=1000, timeout_s=timeout)
+    if not pstat.wait_4_sync():
         ctx.exit(1)
 
 
