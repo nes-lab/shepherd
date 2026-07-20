@@ -1,8 +1,8 @@
 import os
 import subprocess
+import threading
 from datetime import datetime
 from datetime import timedelta
-from time import sleep
 from types import TracebackType
 
 from .logger import log
@@ -59,6 +59,7 @@ class PTPStatus:
             self.sync_threshold_ns,
             self.timeout_sync.total_seconds(),
         )
+        event = threading.Event()
         while True:
             line = self.process.stdout.readline()
             time_now = datetime.now()  # noqa: DTZ005
@@ -73,23 +74,29 @@ class PTPStatus:
                     self.timeout_output.total_seconds(),
                 )
                 return False
-            if len(line) < 1:
-                sleep(self.poll_interval)  # rate limiter
-                continue
-            try:
-                words = str(line).split()
-                i_start = words.index("offset")
-                values = [
-                    int(words[i_start + 1]),
-                    int(words[i_start + 4]),
-                    int(words[i_start + 7]),
-                ]
-                time_last = time_now
-            except ValueError:
+            if not isinstance(line, str) or len(line) < 1:
+                event.wait(self.poll_interval)  # rate limiter
                 continue
 
-            log.info("[%s] current sync-offset = %d ns", type(self).__name__, values[0])
-            if abs(values[0]) < self.sync_threshold_ns:
+            words = str(line).split()
+            if "offset" not in words:
+                log.warning("Stdout-line contains no 'offset'")
+                event.wait(self.poll_interval)
+                continue
+            offset_index = words.index("offset")
+            if len(words) <= offset_index + 1:
+                log.warning("Stdout-line too short after offset")
+                event.wait(self.poll_interval)
+                continue
+            offset_str = words[offset_index + 1]
+            if not offset_str.isnumeric():
+                log.warning("offset not numerical")
+                event.wait(self.poll_interval)
+                continue
+            time_last = time_now
+            offset_value = int(offset_str)
+            log.info("[%s] current sync-offset = %d ns", type(self).__name__, offset_value)
+            if abs(offset_value) < self.sync_threshold_ns:
                 log.info("[%s] goal reached!", type(self).__name__)
                 return True
 
