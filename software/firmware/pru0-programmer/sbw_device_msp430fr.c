@@ -474,16 +474,16 @@ static int sbw_dev_connect(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio
 
     // connect
     int rc;
-    if ((rc = sbw_jtag_connect()) != SBW_SUCCESS) return rc;
-    if (is_lock_key_programmed()) return SBW_ERR_GENERIC;
+    if ((rc = sbw_jtag_connect()) != SBW_SUCCESS) return rc; // SUCCESS | ERR_GENERIC
+    if (is_lock_key_programmed()) return SBW_ERR_GENERIC;    // true | false
     uint16_t core_id;
-    if ((rc = sbw_dev_get_coreip_id(&core_id)) != SBW_SUCCESS) return rc;
-    if ((rc = sbw_jtag_sync()) != SBW_SUCCESS) return rc;
-    if ((rc = sbw_dev_reset()) != SBW_SUCCESS) return rc;
+    if ((rc = sbw_dev_get_coreip_id(&core_id)) != SBW_SUCCESS) return rc; // SUCCESS | ERR_GENERIC
+    if ((rc = sbw_jtag_sync()) != SBW_SUCCESS) return rc;                 // SUCCESS | ERR_GENERIC
+    if ((rc = sbw_dev_reset()) != SBW_SUCCESS) return rc;                 // SUCCESS | ERR_GENERIC
 
     // TODO: riotee does not have this specialization below
     /* Disables FRAM write protection */
-    if ((rc = DisableMpu_430Xv2()) != SBW_SUCCESS)
+    if ((rc = DisableMpu_430Xv2()) != SBW_SUCCESS) // SUCCESS | ERR_GENERIC
     {
         sbw_dev_disconnect();
         return rc;

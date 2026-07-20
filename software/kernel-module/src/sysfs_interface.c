@@ -868,7 +868,7 @@ static ssize_t sysfs_prog_state_show(struct kobject *kobj, struct kobj_attribute
     {
         if (value == PRG_ERR_GENERIC) return sprintf(buf, "error generic (-0x%X)", -value);
         else if (value == PRG_ERR_OPEN)
-            return sprintf(buf, "error open/connecting (-0x%X)", -value);
+            return sprintf(buf, "error open/connecting to target (-0x%X)", -value);
         else if (value == PRG_ERR_WRITE) return sprintf(buf, "error writing data (-0x%X)", -value);
         else if (value == PRG_ERR_VERIFY)
             return sprintf(buf, "error verifying data (-0x%X)", -value);
