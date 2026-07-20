@@ -13,6 +13,12 @@ Sheep
 - monitors - give more time to quit and just warn if that fails
 - remove host-name and process-id from monitors
 - gpio-recorder - decrease chunk-size from 1 MiB to 500 kiB (even out cpu-load)
+- resync CLI-option now waits for PTP to settle (with custom timeout)
+  - herd now uses that exact function from sheep
+
+Programmer - SBW / msp430
+- add forced mode, that ignores errors during device.open()
+- inform via CLI, that data-rate option is ignored (SBW has fixed speeds)
 
 PTP - tune to be less susceptible to high CPU load
 - increase prios and change scheduler of ptp-kworker, ptp, phc2sys
@@ -21,6 +27,8 @@ PTP - tune to be less susceptible to high CPU load
 - set clients to "clientOnly 1" (this needs a dedicated timeserver)
 - prioritize clock of server setting priority1, clockAccuracy, ClockClass to make it a (fake) GM
 - sync GM of server via NTP / chrony
+- ~~bump prios of all kworkers and network-service~~
+- ~~activate filter for hw-timestamping~~
 
 Misc
 - herd - log-fetching differentiates active from failed instances (exit-code -1)
