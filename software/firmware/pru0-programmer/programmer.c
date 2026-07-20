@@ -5,6 +5,7 @@
   #define SWD_SUPPORT
 #endif
 
+#include "delay.h"
 #include "device.h"
 #include "intelhex.h"
 #include "msg_sys.h"
