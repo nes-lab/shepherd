@@ -16,7 +16,7 @@ class PTPStatus:
     ) -> None:
 
         self.timeout_sync: timedelta = timedelta(seconds=timeout_s)
-        self.timeout_output: timedelta = timedelta(seconds=min(timeout_s, 5))
+        self.timeout_output: timedelta = timedelta(seconds=min(timeout_s, 30))
         self.poll_interval: float = 0.51
         self.sync_threshold_ns: int = sync_threshold_ns
         command = [
