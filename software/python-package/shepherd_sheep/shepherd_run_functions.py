@@ -359,12 +359,13 @@ def run_task(cfg: ShpModel | Path | str) -> bool:
         element_str = str(element)
         if len(element_str) > limit_char:
             element_str = element_str[:limit_char] + f" [first {limit_char} chars]"
-
+        log.info("###")  # newlines get filtered out
         log.info(
-            "\n###~###~###~###~###~### Starting %s ###~###~###~###~###~###\n\n%s\n",
+            "###~###~###~###~###~### Starting %s ###~###~###~###~###~###",
             type(element).__name__,
-            element_str,
         )
+        log.info("###")  # newlines get filtered out
+        log.info("\n%s\n", element_str)
 
         if isinstance(element, EmulationTask):
             failed |= run_emulator(element)
