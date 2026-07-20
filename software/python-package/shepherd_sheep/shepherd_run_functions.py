@@ -194,6 +194,7 @@ def run_pru_programmer(cfg: ProgrammingTask, rate_factor: float = 1.0) -> bool:
         target = cfg.mcu_type.lower()
         if "msp430" in target:
             target = "msp430"
+            log.info("This adapter doesn't support configurable speed / data-rate")
         elif "nrf52" in target:
             target = "nrf52"
         else:
