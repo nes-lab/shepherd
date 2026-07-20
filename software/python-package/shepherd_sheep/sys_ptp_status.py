@@ -1,7 +1,8 @@
 import os
 import subprocess
+from datetime import datetime
+from datetime import timedelta
 from time import sleep
-from datetime import datetime, timedelta
 from types import TracebackType
 
 from .logger import log
@@ -12,7 +13,6 @@ class PTPStatus:
         self,
         sync_threshold_ns: int = 1000,
         timeout_s: float = 300,
-
     ) -> None:
 
         self.timeout_sync: timedelta = timedelta(seconds=timeout_s)
@@ -38,7 +38,6 @@ class PTPStatus:
             return
         os.set_blocking(self.process.stdout.fileno(), False)
 
-
     def __exit__(
         self,
         typ: type[BaseException] | None = None,
@@ -48,23 +47,31 @@ class PTPStatus:
     ) -> None:
         self.process.terminate()
 
-
     def wait_4_sync(self) -> bool:
         # example:
         # 2026-07-02T12:13:15.865238+0200 sheep10 ptp4l[408]:
         # [83308.751] main offset         62 s2 freq +129116 path delay      9749
-        time_last = datetime.now()
+        time_last = datetime.now()  # noqa: DTZ005
         time_stop = time_last + self.timeout_sync
-        log.info("[%s] sync-goal = %d ns, timeout = %.0f s", type(self).__name__, self.sync_threshold_ns, self.timeout_sync.total_seconds())
+        log.info(
+            "[%s] sync-goal = %d ns, timeout = %.0f s",
+            type(self).__name__,
+            self.sync_threshold_ns,
+            self.timeout_sync.total_seconds(),
+        )
         while True:
             line = self.process.stdout.readline()
-            time_now = datetime.now()
+            time_now = datetime.now()  # noqa: DTZ005
 
             if time_now > time_stop:
                 log.debug("[%s] timeout while waiting for sync", type(self).__name__)
                 return False
             if time_now > time_last + self.timeout_output:
-                log.debug("[%s] %.0f s timeout while waiting for PTP (is it running?)", type(self).__name__, self.timeout_output.total_seconds())
+                log.debug(
+                    "[%s] %.0f s timeout while waiting for PTP (is it running?)",
+                    type(self).__name__,
+                    self.timeout_output.total_seconds(),
+                )
                 return False
             if len(line) < 1:
                 sleep(self.poll_interval)  # rate limiter
