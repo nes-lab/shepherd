@@ -135,6 +135,33 @@ def resync_ptp() -> bool:
     ]
     had_error = False
     for command in commands:
-        had_error |= subprocess.run(command, timeout=10, check=False).returncode > 0  # noqa: S603
+        had_error |= (
+            subprocess.run(  # noqa: S603
+                command,
+                timeout=10,
+                check=False,
+            ).returncode
+            != 0
+        )
     reload_kernel_module()  # for restarting sync-loop to PRU
+    return had_error
+
+
+def mount_network_fs() -> bool:
+    commands = [
+        # TODO: replace specific mounts with --all?
+        ["/usr/bin/mount", "/var/shepherd/content", "--verbose"],
+        ["/usr/bin/mount", "/var/shepherd/experiments", "--verbose"],
+        ["/usr/bin/df", "-h", "--type=nfs4", "--sync", "--output=avail,target"],
+    ]
+    had_error = False
+    for command in commands:
+        had_error |= (
+            subprocess.run(  # noqa: S603
+                command,
+                timeout=20,
+                check=False,
+            ).returncode
+            != 0
+        )
     return had_error

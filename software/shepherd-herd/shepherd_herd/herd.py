@@ -195,10 +195,11 @@ class Herd:
             return
         try:
             cnx.open()
-        except (NoValidConnectionsError, SSHException, TimeoutError):
+        except (NoValidConnectionsError, SSHException, TimeoutError, ValueError):
             log.error(
                 "[%s] failed to open connection -> will exclude node from inventory",
                 cnx.host,  # = IP
+                exc_info=False,
             )
             cnx.close()
 
@@ -880,6 +881,13 @@ class Herd:
         """Get current time via ntp and restart PTP on each sheep."""
         command = "shepherd-sheep --verbose resync --timeout=120"
         ret = self.run_cmd(sudo=True, cmd=command, timeout=40)
+        self.print_output(ret, verbose=True)
+        return max([abs(reply.exited) for reply in ret.values()])
+
+    def mount(self) -> int:
+        """Make sure current network-drives are properly mounted."""
+        command = "shepherd-sheep mount"
+        ret = self.run_cmd(sudo=True, cmd=command, timeout=70)
         self.print_output(ret, verbose=True)
         return max([abs(reply.exited) for reply in ret.values()])
 

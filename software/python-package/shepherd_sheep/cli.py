@@ -22,6 +22,7 @@ from .logger import log
 from .logger import set_verbosity
 from .sys_access import check_on_kernel_module
 from .sys_access import disable_ntp
+from .sys_access import mount_network_fs
 from .sys_access import reload_kernel_module
 from .sys_access import resync_ptp
 from .usage_log import get_last_usage
@@ -428,6 +429,17 @@ def resync(ctx: click.Context, timeout: int) -> None:
 
     pstat = PTPStatus(sync_threshold_ns=1000, timeout_s=timeout)
     if not pstat.wait_4_sync():
+        ctx.exit(1)
+
+
+@cli.command(
+    short_help="(Re)Connect and check availability of network drives",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def mount(ctx: click.Context) -> None:
+    set_verbosity()
+    if mount_network_fs():
         ctx.exit(1)
 
 

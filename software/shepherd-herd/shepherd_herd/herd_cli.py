@@ -214,6 +214,19 @@ def timediff(ctx: click.Context) -> None:
 
 
 @cli.command(
+    short_help="(Re)Connect and check availability of network drives",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.pass_context
+def mount(ctx: click.Context) -> None:
+    """(Re)Connect and check availability of network drives"""
+    activate_verbosity()
+    with ctx.obj["herd"] as herd:
+        exit_code = herd.mount()
+    ctx.exit(exit_code)
+
+
+@cli.command(
     short_help="Helps to identify Observers by flashing LEDs near Targets (IO, EMU)",
     context_settings={"ignore_unknown_options": True},
 )
