@@ -15,6 +15,7 @@ Sheep
 - gpio-recorder - decrease chunk-size from 1 MiB to 500 kiB (even out cpu-load)
 - resync CLI-option now waits for PTP to settle (with custom timeout)
   - herd now uses that exact function from sheep
+- mount CLI-option now reconnects and checks availability of network drives
 
 Programmer - SBW / msp430
 - add forced mode, that ignores errors during device.open()
@@ -33,6 +34,8 @@ PTP - tune to be less susceptible to high CPU load
 Misc
 - herd - log-fetching differentiates active from failed instances (exit-code -1)
 - all CLI-tools exit non-zero when receiving external signal
+- herd - resync-cmd uses implementation of sheep
+- herd - added mount-cmd, uses implementation of sheep
 
 ## 2026.06.2
 
