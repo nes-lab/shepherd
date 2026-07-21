@@ -126,7 +126,7 @@ def disable_ntp() -> None:
 
 
 def resync_ptp() -> bool:
-    commands = [
+    commands: list[list[str]] = [
         ["/usr/bin/systemctl", "stop", "phc2sys@eth0"],
         ["/usr/bin/systemctl", "stop", "ptp4l@eth0"],
         ["/usr/sbin/ntpdate", "-b", "-s", "-u", "pool.ntp.org"],
@@ -135,6 +135,7 @@ def resync_ptp() -> bool:
     ]
     had_error = False
     for command in commands:
+        log.debug(">> CMD: %s", " ".join(command))
         had_error |= (
             subprocess.run(  # noqa: S603
                 command,
@@ -148,7 +149,7 @@ def resync_ptp() -> bool:
 
 
 def mount_network_fs() -> bool:
-    commands = [
+    commands: list[list[str]] = [
         # TODO: replace specific mounts with --all?
         ["/usr/bin/mount", "/var/shepherd/content", "--verbose"],
         ["/usr/bin/mount", "/var/shepherd/experiments", "--verbose"],
@@ -156,6 +157,7 @@ def mount_network_fs() -> bool:
     ]
     had_error = False
     for command in commands:
+        log.debug(">> CMD: %s", " ".join(command))
         had_error |= (
             subprocess.run(  # noqa: S603
                 command,
