@@ -10,7 +10,7 @@
     state: present
   tags: ptp
 
-- name: Configure PTP
+- name: Configure PTP - Hardware-timestamping
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
     regexp: "{{ item.regex }}"
@@ -30,7 +30,7 @@
     - ptp
     - conf
 
-- name: Configure PTP for higher timeouts
+- name: Configure PTP - relax Timeouts
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"
     regexp: "{{ item.regex }}"
@@ -40,6 +40,76 @@
     - {
       regex: "^.?tx_timestamp_timeout.*$",
       replacement: "tx_timestamp_timeout  10", # 1 is default
+    }
+
+- name: Configure PTP - higher Prio
+  ansible.builtin.lineinfile:
+    dest: "/etc/linuxptp/ptp4l.conf"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regex: "^.?dscp_event.*$",
+      replacement: "dscp_event  48", # 0 is default
+    }
+    - {
+      regex: "^.?dscp_general.*$",
+      replacement: "dscp_general  48", # 0 is default
+      # https://en.wikipedia.org/wiki/Differentiated_services#Class_Selector
+      # should be higher than 32 (rt communication)
+    }
+    - {
+      regex: "^.?socket_priority.*$",
+      replacement: "socket_priority 7", # 0 is default
+      # newer versions (v4?, NOT v3.1.1) allow to set SO_PRIORITY also for non '-2'-option
+    }
+
+- name: Configure PTP - faster Fault-recovery & better Protection
+  ansible.builtin.lineinfile:
+    dest: "/etc/linuxptp/ptp4l.conf"
+    regexp: "{{ item.regex }}"
+    line: "{{ item.replacement }}"
+    state: present
+  loop:
+    - {
+      regex: "^.?fault_reset_interval.*$",
+      replacement: "fault_reset_interval  0", # 4 is default
+      # 4 => 16 s recovery (2^n), -128 and ASAP are possible values
+      # TODO: start with 0, try -128
+    }
+    - {
+      regex: "^.?fault_badpeernet_interval.*$",
+      replacement: "fault_badpeernet_interval  0", # 4 is default
+      # 4 => 16 s recovery (2^n), -128 and ASAP are possible values
+    }
+    - {
+      regex: "^.?check_fup_sync.*$",
+      replacement: "check_fup_sync  1", # 0 is default
+      # protection against package reordering in network
+    }
+    - {
+      regex: "^.?announceReceiptTimeout.*$",
+      replacement: "announceReceiptTimeout  3", # 3 is default
+      # allowed missed messages
+    }
+    - {
+      regex: "^.?syncReceiptTimeout.*$",
+      replacement: "syncReceiptTimeout  3", # 0 is default
+      # allowed missed messages, now same as announceReceiptTimeout
+    }
+    - {
+      regex: "^.?hwts_filter.*$",
+      replacement: "# hwts_filter  check", # normal is default
+      # - Normal mode set the filters as needed.
+      # - Check mode only check but do not set.
+      # - Full mode set the receive filter to mark all packets with hardware time stamp,
+      #   so all applications can get them.
+      #
+      # - note1: full does not work  (ptp v3.1.1, kernel 4.19)
+      #         Error "ioctl SIOCSHWTSTAMP failed: Numerical result out of range"
+      # - note2: check does not work (ptp v3.1.1, kernel 4.19)
+      #         Error "The current filter does not match the required"
     }
 
 - name: Install ntpdate package

@@ -39,7 +39,7 @@ repos:
       - id: check-executables-have-shebangs
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.49.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013"] # ignore line length
@@ -65,7 +65,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.20
+    rev: v0.15.22
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -87,20 +87,20 @@ repos:
         args: ["--report-level=WARNING"]  # otherwise there is too much chatter
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         additional_dependencies: ["tomli"]  # for py<3.11
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.26.1
+    rev: v1.27.0
     hooks:
       - id: zizmor
         args: ["--min-severity", "high", "--no-progress", "--fix", "."]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v22.1.5
+    rev: v22.1.8
     hooks:
       - id: clang-format
         types_or: [c++, c]

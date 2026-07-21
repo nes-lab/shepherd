@@ -197,7 +197,9 @@ class ShepherdHarvester(ShepherdIO):
                     log.info("Data-collection ran dry for 5s -> begin to exit now")
                     break
                 # rest of loop is non-blocking, so we better doze a while if nothing to do
-                time.sleep(self.segment_period_s)
+                time.sleep(0.010)  # self.segment_period_s
+            else:
+                time.sleep(0.001)
 
         prog_bar.close()
         # Detect recorder missing start / end

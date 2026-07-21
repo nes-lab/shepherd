@@ -9,7 +9,7 @@ authors = [
 ]
 maintainers = [{name = "Ingmar Splitt", email = "ingmar.splitt@tu-dresden.de"}]
 
-version = "2026.06.2"
+version = "2026.07.1"
 
 license = "MIT"
 

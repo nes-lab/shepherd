@@ -472,23 +472,35 @@ static int sbw_dev_connect(const uint8_t pin_sbw_tck, const uint8_t pin_sbw_tdio
     // init (separate part for Riotee-impl)
     sbw_transport_init(pin_sbw_tck, pin_sbw_tdio, pin_sbw_dir, f_clk);
 
+#define OPEN_FORCED
+#ifdef OPEN_FORCED
+    const int rc1 = sbw_jtag_connect();  // SUCCESS | ERR_GENERIC
+    const int rc2 = sbw_jtag_sync();     // SUCCESS | ERR_GENERIC
+    const int rc3 = sbw_dev_reset();     // SUCCESS | ERR_GENERIC
+    const int rc4 = DisableMpu_430Xv2(); // SUCCESS | ERR_GENERIC
+    if (rc1 != SBW_SUCCESS) return rc1;
+    if (rc2 != SBW_SUCCESS) return rc2;
+    if (rc3 != SBW_SUCCESS) return rc3;
+    if (rc4 != SBW_SUCCESS) return rc4;
+#else
+
     // connect
     int rc;
-    if ((rc = sbw_jtag_connect()) != SBW_SUCCESS) return rc;
-    if (is_lock_key_programmed()) return SBW_ERR_GENERIC;
+    if ((rc = sbw_jtag_connect()) != SBW_SUCCESS) return rc; // SUCCESS | ERR_GENERIC
+    if (is_lock_key_programmed()) return SBW_ERR_GENERIC;    // true | false
     uint16_t core_id;
-    if ((rc = sbw_dev_get_coreip_id(&core_id)) != SBW_SUCCESS) return rc;
-    if ((rc = sbw_jtag_sync()) != SBW_SUCCESS) return rc;
-    if ((rc = sbw_dev_reset()) != SBW_SUCCESS) return rc;
+    if ((rc = sbw_dev_get_coreip_id(&core_id)) != SBW_SUCCESS) return rc; // SUCCESS | ERR_GENERIC
+    if ((rc = sbw_jtag_sync()) != SBW_SUCCESS) return rc;                 // SUCCESS | ERR_GENERIC
+    if ((rc = sbw_dev_reset()) != SBW_SUCCESS) return rc;                 // SUCCESS | ERR_GENERIC
 
     // TODO: riotee does not have this specialization below
-    /* Disables FRAM write protection */
-    if ((rc = DisableMpu_430Xv2()) != SBW_SUCCESS)
+    // Disables FRAM write protection
+    if ((rc = DisableMpu_430Xv2()) != SBW_SUCCESS) // SUCCESS | ERR_GENERIC
     {
         sbw_dev_disconnect();
         return rc;
     }
-
+#endif
     return DRV_SUCCESS;
 }
 

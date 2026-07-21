@@ -126,7 +126,7 @@ def disable_ntp() -> None:
 
 
 def resync_ptp() -> bool:
-    commands = [
+    commands: list[list[str]] = [
         ["/usr/bin/systemctl", "stop", "phc2sys@eth0"],
         ["/usr/bin/systemctl", "stop", "ptp4l@eth0"],
         ["/usr/sbin/ntpdate", "-b", "-s", "-u", "pool.ntp.org"],
@@ -135,6 +135,35 @@ def resync_ptp() -> bool:
     ]
     had_error = False
     for command in commands:
-        had_error |= subprocess.run(command, timeout=10, check=False).returncode > 0  # noqa: S603
+        log.debug(">> CMD: %s", " ".join(command))
+        had_error |= (
+            subprocess.run(  # noqa: S603
+                command,
+                timeout=10,
+                check=False,
+            ).returncode
+            != 0
+        )
     reload_kernel_module()  # for restarting sync-loop to PRU
+    return had_error
+
+
+def mount_network_fs() -> bool:
+    commands: list[list[str]] = [
+        # TODO: replace specific mounts with --all?
+        ["/usr/bin/mount", "/var/shepherd/content", "--verbose"],
+        ["/usr/bin/mount", "/var/shepherd/experiments", "--verbose"],
+        ["/usr/bin/df", "-h", "--type=nfs4", "--sync", "--output=avail,target"],
+    ]
+    had_error = False
+    for command in commands:
+        log.debug(">> CMD: %s", " ".join(command))
+        had_error |= (
+            subprocess.run(  # noqa: S603
+                command,
+                timeout=20,
+                check=False,
+            ).returncode
+            != 0
+        )
     return had_error

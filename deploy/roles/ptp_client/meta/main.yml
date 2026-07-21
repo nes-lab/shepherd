@@ -3,7 +3,7 @@ dependencies:
   - role: ptp_host
 
 galaxy_info:
-  description: Prepares Beaglebone to run as a PTP-Client.
+  description: Prepares Beaglebone to run as a PTP-Client. WARNING - this sets CLientOnly and needs a dedicated Timeserver.
   company: NES-Lab
   author: Kai & Ingmar
   license: MIT

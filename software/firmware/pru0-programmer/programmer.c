@@ -5,6 +5,7 @@
   #define SWD_SUPPORT
 #endif
 
+#include "delay.h"
 #include "device.h"
 #include "intelhex.h"
 #include "msg_sys.h"
@@ -75,7 +76,11 @@ void programmer(volatile struct ProgrammerCtrl *const pctrl, volatile const uint
         DRV_SUCCESS)
     {
         pctrl->state = PRG_ERR_OPEN;
+#ifdef SBW_SUPPORT
+        delay_ms(1200u); // do NOT exit on error, just highlevel print
+#else
         goto exit;
+#endif
     }
 
     pctrl->state = PRG_STATE_ERASING;
