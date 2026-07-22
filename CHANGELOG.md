@@ -44,7 +44,7 @@ Make the root filesystem less prone to errors
 - added playbook `dev_harden_rootfs.yml`
 - strategy 1 - move temporary data from FS to RAM
 - strategy 2 - make mounting of root-filesystem more robust
-- strategy 3 - check filesystem on every boot (NOT active)
+- strategy 3 - check filesystem on every boot
   - this caused the kMod to NOT start up, because PRU0 could not load firmware, because allocation of buffers in DRAM failed
   - 3 possible fixes were tried (https://github.com/nes-lab/shepherd/issues/162), all failed
   - ~~migration to a newer kernel is recommended~~

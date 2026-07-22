@@ -98,9 +98,11 @@
   - `-RA`: SMD, right angle, Double the price
   - `-EM2`: Edge-mount, needs paste on both sides, even pricier than `-RA`
   - maybe it is cheaper to just plug in an interface PCB with a second connector to get the same result
+- edge-PCB Target-Connector replace with FPC- or FCC-cable (flex-printed-circuit, flex-circuit-connector) to be less constraint positioning the target
 - P2 Connector for external triggering & signaling has no real use-case
 - describe P3 on PCB -> sync-port
 - allow routing AUX-voltage (second output of DAC) to the same target port to mimic V_Sense to allow developing better intermittent algorithms (allows sensing emulated V_harvest or V_storage_cap)
+- [route reset-line to target](https://github.com/nes-lab/shepherd/issues/164)
 
 ## Target Pin Def
 
