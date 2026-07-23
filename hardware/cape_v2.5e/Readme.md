@@ -90,19 +90,20 @@
 
 ## Errata & future Improvements
 
-- header to interface SBC as SMD? the goal is to speed up assembly with more automation
-  - this would also make it worthwhile to p'n'p the bottom side (7 Caps)
-- NOTE: PI5 is the hardest part to place & source (but has to be replaced anyway)
-  - main point of failure during production & hard to fix
+- [modularize cape by function (Pwr, hrv, emu, gpio)](https://github.com/orgua/shepherd-v2-planning/blob/main/docs/10_capes/cape_v30_design.md)
+- allow routing AUX-voltage (second output of DAC) to the same target port to mimic V_Sense to allow developing better intermittent algorithms (allows sensing emulated V_harvest or V_storage_cap)
+- [route reset-line to target](https://github.com/nes-lab/shepherd/issues/164)
 - Target-Connector is more useful right-angled, there are two versions:
   - `-RA`: SMD, right angle, Double the price
   - `-EM2`: Edge-mount, needs paste on both sides, even pricier than `-RA`
   - maybe it is cheaper to just plug in an interface PCB with a second connector to get the same result
 - edge-PCB Target-Connector replace with FPC- or FCC-cable (flex-printed-circuit, flex-circuit-connector) to be less constraint positioning the target
+- NOTE: PI5 is the hardest part to place & source (but has to be replaced anyway)
+  - main point of failure during production & hard to fix
+- header to interface SBC as SMD? the goal is to speed up assembly with more automation
+  - this would also make it worthwhile to p'n'p the bottom side (7 Caps)
 - P2 Connector for external triggering & signaling has no real use-case
 - describe P3 on PCB -> sync-port
-- allow routing AUX-voltage (second output of DAC) to the same target port to mimic V_Sense to allow developing better intermittent algorithms (allows sensing emulated V_harvest or V_storage_cap)
-- [route reset-line to target](https://github.com/nes-lab/shepherd/issues/164)
 
 ## Target Pin Def
 
