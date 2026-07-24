@@ -52,7 +52,7 @@ quiet_opt_t = typer.Option(
 
 
 @cli_pro.command()
-def measure(
+def measure(  # noqa: PLR0917
     host: str = host_arg_t,
     user: str = user_opt_t,
     password: str | None = pass_opt_t,

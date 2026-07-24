@@ -61,7 +61,7 @@ class Writer(CoreWriter):
 
     RATES_SUPPORTED = (10, 100, 1_000, 100_000)
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         file_path: Path,
         mode: str | None = None,

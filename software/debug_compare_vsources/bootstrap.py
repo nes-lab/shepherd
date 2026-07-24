@@ -26,7 +26,7 @@ hrv_list = [
 
 if not file_ivonne.exists():
     log.info("Input-IV-File not found - will download it")
-    urlretrieve(file_url, file_ivonne)  # noqa: S310
+    urlretrieve(file_url, file_ivonne)
 
 # convert IVonne to IVCurve
 if not file_ivcurve.exists():
