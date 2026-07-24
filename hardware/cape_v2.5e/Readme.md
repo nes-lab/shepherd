@@ -90,14 +90,30 @@
 
 ## Errata & future Improvements
 
-- [modularize cape by function (Pwr, hrv, emu, gpio)](https://github.com/orgua/shepherd-v2-planning/blob/main/docs/10_capes/cape_v30_design.md)
+- ~~[modularize cape by function (Pwr, hrv, emu, gpio)](https://github.com/orgua/shepherd-v2-planning/blob/main/docs/10_capes/cape_v30_design.md)~~
+  - reduce complexity
+  - make iterations easier
+  - reduce cost (cape is either hrv or emu)
+  - trivial switching of platforms
 - allow routing AUX-voltage (second output of DAC) to the same target port to mimic V_Sense to allow developing better intermittent algorithms (allows sensing emulated V_harvest or V_storage_cap)
+  - two GPIO available for the analog switch (48, 117) - can be slow sysgpio
+  - current 40 Pin target-connector has two NC pins left
 - [route reset-line to target](https://github.com/nes-lab/shepherd/issues/164)
+  - current 40 Pin target-connector has two NC pins left
+- ~~support 4 Target Ports?~~
 - Target-Connector is more useful right-angled, there are two versions:
   - `-RA`: SMD, right angle, Double the price
   - `-EM2`: Edge-mount, needs paste on both sides, even pricier than `-RA`
   - maybe it is cheaper to just plug in an interface PCB with a second connector to get the same result
 - edge-PCB Target-Connector replace with FPC- or FCC-cable (flex-printed-circuit, flex-circuit-connector) to be less constraint positioning the target
+  - features to keep: rotation-safe & shielded (currently 12x extra GND)
+  - needed IO: 16 GPIO, 2 Voltages, 2 PwrGood, 4 Prog, 1+ GND => 25+ Pins
+    - +1x for aux voltage
+    - +1x for reset line (nRF & msp have nReset) -> 2 lines or negate if needed
+    - +2x-3x for I2C-EEPROM (Write-Protection)
+    - in total 5 pins extra
+  - 40 pin FFC/FPC, 0.5 mm Pitch, 1.5€ -> 05-40-A-0050-A-4-06-4-T-HF
+  - 40 pin connector has similar space req. as edge connector, 0.5 € per connector, FFC2B35-40-G
 - NOTE: PI5 is the hardest part to place & source (but has to be replaced anyway)
   - main point of failure during production & hard to fix
 - header to interface SBC as SMD? the goal is to speed up assembly with more automation
