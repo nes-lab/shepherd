@@ -16,7 +16,7 @@ class PTPStatus:
     ) -> None:
 
         self.timeout_sync: timedelta = timedelta(seconds=timeout_s)
-        self.timeout_output: timedelta = timedelta(seconds=min(timeout_s, 30))
+        self.timeout_output: timedelta = timedelta(seconds=min(timeout_s, 60))
         self.poll_interval: float = 0.51
         self.sync_threshold_ns: int = sync_threshold_ns
         command = [
@@ -79,6 +79,7 @@ class PTPStatus:
                 event.wait(self.poll_interval)  # rate limiter
                 continue
 
+            time_last = time_now
             words = str(line).split()
             if "offset" not in words:
                 # discarded stdout: contains no 'offset'
@@ -94,7 +95,7 @@ class PTPStatus:
                 # discarded stdout: offset not numerical
                 event.wait(self.poll_interval)
                 continue
-            time_last = time_now
+
             offset_value = int(offset_str)
             log.info("[%s] sync-offset = %d ns", type(self).__name__, offset_value)
             if abs(offset_value) < self.sync_threshold_ns:
