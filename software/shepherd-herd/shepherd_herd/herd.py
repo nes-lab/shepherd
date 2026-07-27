@@ -1005,7 +1005,7 @@ class Herd:
                     writer.write(pw + "\r\n")
                 if "sysrq>" in output.lower():
                     writer.write("b")  # reboot
-                    log.info("Commanded Reboot for %s", host)
+                    log.info("Forced Reboot for %s issued via sysrqd", host)
                     break
             if datetime.now() - ts_start > timedelta(seconds=10):  # noqa: DTZ005
                 log.warning("Timeout while trying -> will quit")
