@@ -984,12 +984,14 @@ class Herd:
         reverse = {v: k for k, v in self.hostnames.items()}
         ip = reverse.get(host)
         if ip is None:
-            raise ValueError("Host not found")
+            log.error("Host not found")
+            return
         from decouple import config as dcoup_cfg
 
         pw = dcoup_cfg("SYSRQD_KEY", default="")
         if not pw:
-            raise ValueError("SYSRQD_KEY not found in environmental variables")
+            log.error("SYSRQD_KEY not found in environmental variables")
+            return
         import asyncio
 
         import telnetlib3
