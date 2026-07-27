@@ -37,6 +37,8 @@ dependencies = [
     "fabric",
     "ryaml",
     "tqdm",
+    "telnetlib3",  # telnet-client
+    "python-decouple",  # query env-vars
 ]
 
 [project.optional-dependencies]

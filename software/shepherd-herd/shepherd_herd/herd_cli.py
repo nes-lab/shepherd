@@ -137,6 +137,16 @@ def reboot(ctx: click.Context) -> None:
     ctx.exit(exit_code)
 
 
+@cli.command(short_help="Force restart shepherd observers.")
+@click.pass_context
+@click.argument("host", type=click.STRING)
+def unstick(ctx: click.Context, host: str) -> None:
+    import asyncio
+
+    with ctx.obj["herd"] as herd:
+        asyncio.run(herd.sysrq_reboot_forced(host))
+
+
 @cli.command(short_help="Run COMMAND on the shell")
 @click.pass_context
 @click.argument("command", type=click.STRING)
