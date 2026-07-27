@@ -51,7 +51,8 @@ class PTPStatus:
         # example:
         # 2026-07-02T12:13:15.865238+0200 sheep10 ptp4l[408]:
         # [83308.751] main offset         62 s2 freq +129116 path delay      9749
-        time_last = datetime.now()  # noqa: DTZ005
+        time_start = datetime.now()  # noqa: DTZ005
+        time_last = time_start
         time_stop = time_last + self.timeout_sync
         log.info(
             "[%s] sync-goal = %d ns, timeout = %.0f s",
@@ -80,24 +81,28 @@ class PTPStatus:
 
             words = str(line).split()
             if "offset" not in words:
-                log.debug("discarded stdout: contains no 'offset'")
+                # log.debug("discarded stdout: contains no 'offset'")
                 event.wait(self.poll_interval)
                 continue
             offset_index = words.index("offset")
             if len(words) <= offset_index + 1:
-                log.debug("discarded stdout: no content after offset")
+                # log.debug("discarded stdout: no content after offset")
                 event.wait(self.poll_interval)
                 continue
             offset_str = words[offset_index + 1]
             if not offset_str.isnumeric():
-                log.debug("discarded stdout: offset not numerical")
+                # log.debug("discarded stdout: offset not numerical")
                 event.wait(self.poll_interval)
                 continue
             time_last = time_now
             offset_value = int(offset_str)
-            log.info("[%s] current sync-offset = %d ns", type(self).__name__, offset_value)
+            log.info("[%s] sync-offset = %d ns", type(self).__name__, offset_value)
             if abs(offset_value) < self.sync_threshold_ns:
-                log.info("[%s] goal reached!", type(self).__name__)
+                log.info(
+                    "[%s] goal reached in %.0f s!",
+                    type(self).__name__,
+                    time_now - time_start,
+                )
                 return True
 
         return False
