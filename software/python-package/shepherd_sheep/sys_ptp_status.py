@@ -81,17 +81,17 @@ class PTPStatus:
 
             words = str(line).split()
             if "offset" not in words:
-                # log.debug("discarded stdout: contains no 'offset'")
+                # discarded stdout: contains no 'offset'
                 event.wait(self.poll_interval)
                 continue
             offset_index = words.index("offset")
             if len(words) <= offset_index + 1:
-                # log.debug("discarded stdout: no content after offset")
+                # discarded stdout: no content after offset
                 event.wait(self.poll_interval)
                 continue
             offset_str = words[offset_index + 1]
             if not offset_str.isnumeric():
-                # log.debug("discarded stdout: offset not numerical")
+                # discarded stdout: offset not numerical
                 event.wait(self.poll_interval)
                 continue
             time_last = time_now
