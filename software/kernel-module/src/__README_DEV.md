@@ -7,3 +7,8 @@ A good starting point for online literature:
 - [Doc for kernel 4.19](https://www.kernel.org/doc/html/v4.19/core-api/index.html#)
   - most basic APIs are described there, including some good practices
 - free Book [Linux Device Drivers](https://lwn.net/Kernel/LDD3/)
+
+## Kernel 6.1
+
+- https://elixir.bootlin.com/linux/v6.1.83/A/ident/memremap
+- https://www.kernel.org/doc/html/v6.1/core-api/index.html#

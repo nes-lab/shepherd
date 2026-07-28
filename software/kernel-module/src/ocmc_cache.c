@@ -47,7 +47,7 @@ void ocmc_cache_init(void)
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
 
     /* Maps the memory in OCMC, used as cache for PRU */
-    cache_io   = ioremap_nocache(OCMC_BASE_ADDR, OCMC_SIZE);
+    cache_io   = ioremap(OCMC_BASE_ADDR, OCMC_SIZE);
     if (cache_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: OCMC not properly mapped");

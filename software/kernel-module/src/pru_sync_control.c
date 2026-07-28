@@ -96,8 +96,8 @@ int sync_init(void)
     }
     sync_reset();
 
-    gpio0clear = ioremap_nocache(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
-    gpio0set   = ioremap_nocache(0x44E07000u + 0x194u, 4u);
+    gpio0clear = ioremap(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
+    gpio0set   = ioremap(0x44E07000u + 0x194u, 4u);
 
     /* timer for trigger */
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
