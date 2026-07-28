@@ -40,9 +40,16 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
     }
 
     /* swap firmware (only reboot if no name is supplied) */
-    if (strlen(pru0_file_name) > 0) { sprintf(shp_pdata->rproc_prus[0]->firmware, pru0_file_name); }
-    if (strlen(pru1_file_name) > 0) { sprintf(shp_pdata->rproc_prus[1]->firmware, pru1_file_name); }
-
+    if ((strlen(pru0_file_name) > 0) && (ret = rproc_set_firmware(shp_pdata->rproc_prus[0], pru0_file_name))
+    {
+        printk(KERN_ERR "shprd.k: swapping firmware for PRU0 failed");
+        return ret;
+    }
+    if ((strlen(pru1_file_name) > 0) && (ret = rproc_set_firmware(shp_pdata->rproc_prus[1], pru1_file_name))
+    {
+        printk(KERN_ERR "shprd.k: swapping firmware for PRU1 failed");
+        return ret;
+    }
     /* (re)start PRUs */
     if ((ret = rproc_boot(shp_pdata->rproc_prus[0])))
     {
