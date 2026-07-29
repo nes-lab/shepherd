@@ -88,14 +88,14 @@ static ssize_t sysfs_pru_applied_settings_reset(struct kobject *kobj, struct kob
                                                 const char *buffer, size_t count);
 
 struct kobj_attr_struct_s attr_state      = {.attr       = __ATTR(state, 0660, sysfs_state_show, NULL),
-                                             .val_offset = 0};
+                                             .val_offset = 0u};
 
 struct kobj_attr_struct_s attr_time_start = {
         .attr       = __ATTR(time_start, 0660, sysfs_time_show, sysfs_time_start_store),
-        .val_offset = 0};
+        .val_offset = 0u};
 struct kobj_attr_struct_s attr_time_stop = {
         .attr       = __ATTR(time_stop, 0660, sysfs_time_show, sysfs_time_stop_store),
-        .val_offset = 0};
+        .val_offset = 0u};
 
 struct kobj_attr_struct_s attr_mode = {
         .attr       = __ATTR(mode, 0660, sysfs_mode_show, sysfs_mode_store),
@@ -311,10 +311,10 @@ static ssize_t sysfs_pru1_firmware_store(struct kobject *kobj, struct kobj_attri
 
 struct kobj_attr_struct_s attr_pru0_firmware = {
         .attr = __ATTR(pru0_firmware, 0660, sysfs_pru0_firmware_show, sysfs_pru0_firmware_store),
-        .val_offset = 0};
+        .val_offset = 0u};
 struct kobj_attr_struct_s attr_pru1_firmware = {
         .attr = __ATTR(pru1_firmware, 0660, sysfs_pru1_firmware_show, sysfs_pru1_firmware_store),
-        .val_offset = 0};
+        .val_offset = 0u};
 
 static struct attribute *pru_firmware_attrs[] = {
         &attr_pru0_firmware.attr.attr,
@@ -588,16 +588,17 @@ static ssize_t sysfs_calibration_settings_store(struct kobject *kobj, struct kob
                tmp.dac_voltage_inv_factor_uV_n20, tmp.dac_voltage_offset_uV);
 
         iowrite32(tmp.adc_current_factor_nA_n8,
-                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0);
-        iowrite32(tmp.adc_current_offset_nA, pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4);
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0u);
+        iowrite32(tmp.adc_current_offset_nA,
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4u);
         iowrite32(tmp.adc_voltage_factor_uV_n8,
-                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8);
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8u);
         iowrite32(tmp.adc_voltage_offset_uV,
-                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12);
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12u);
         iowrite32(tmp.dac_voltage_inv_factor_uV_n20,
-                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16);
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16u);
         iowrite32(tmp.dac_voltage_offset_uV,
-                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20);
+                  pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20u);
         /* TODO: this should copy the struct in one go */
 
         return count;
@@ -613,12 +614,12 @@ static ssize_t sysfs_calibration_settings_show(struct kobject *kobj, struct kobj
             container_of(attr, struct kobj_attr_struct_s, attr);
 
     return sprintf(buf, "%u %d \n%u %d \n%u %d \n",
-                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0),
-                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4),
-                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8),
-                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12),
-                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16),
-                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20));
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 0u),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 4u),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 8u),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 12u),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 16u),
+                   ioread32(pru_shared_mem_io + kobj_attr_wrapped->val_offset + 20u));
 }
 
 static ssize_t sysfs_virtual_converter_settings_store(struct kobject        *kobj,
