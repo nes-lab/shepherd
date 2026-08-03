@@ -1,6 +1,18 @@
 # History of Changes
 
-## 2026.07.1 - unreleased
+## 2026.08.1 - unreleased
+
+Watchdog
+- add tooling to automatically update the hostname. This is helpful when swapping SD-Cards of the observers as this was the last manual update step. The hostname is derived from the MAC address. This will only work if the MAC address is found in the observer-fixtures of the testbed-client.
+
+Herd
+- add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
+
+Misc
+- add custom compiled PTP
+- update cape-errata, h5-benchmark
+
+## 2026.07.1
 
 Sheep
 - emu - exit measurement loop when PRU switches to idle
