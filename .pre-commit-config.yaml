@@ -97,7 +97,7 @@ repos:
     rev: v1.29.0
     hooks:
       - id: zizmor
-        args: ["--min-severity", "low", "--no-progress", "--fix"]
+        args: ["--min-severity", "high", "--no-progress", "--fix"]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v22.1.8
