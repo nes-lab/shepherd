@@ -13,10 +13,11 @@ from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
-import shepherd_watchdog.hostname_tooling as wht
 from shepherd_sheep.usage_log import usage_logger
-from shepherd_watchdog.config import WatchdogConfig
 from typing_extensions import Self
+
+import shepherd_watchdog.hostname_tooling as wht
+from shepherd_watchdog.config import WatchdogConfig
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
@@ -47,6 +48,10 @@ class Watchdog:
         log.debug(
             "  -> Ack-Signal on pin = %d, interval = %d s", self.cfg.pin_ack, self.cfg.interval
         )
+        if self.cfg.autoupdate_hostname:
+            with contextlib.suppress(Exception):
+                self.update_hostname()
+
         if self.cfg.network_needed:
             log.info("  -> will also check network connection")
         self.hosts_iter = itertools.cycle(self.cfg.network_hosts)
