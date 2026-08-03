@@ -13,10 +13,10 @@ from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
+import shepherd_watchdog.hostname_tooling as wht
 from shepherd_sheep.usage_log import usage_logger
-from typing_extensions import Self
-
 from shepherd_watchdog.config import WatchdogConfig
+from typing_extensions import Self
 
 # Top-Level Package-logger
 log = logging.getLogger("ShpWatchdog")
@@ -128,6 +128,33 @@ class Watchdog:
                 time.sleep(self.cfg.interval)
         except SystemExit:
             return
+
+    @staticmethod
+    def update_hostname() -> bool:
+
+        mac = wht.get_mac_address()
+        if not isinstance(mac, str):
+            log.warning("Failed to get MAC-address -> won't update hostname")
+            return False
+        log.info("MAC of local adapter: %s", mac)
+        hostname_dest = wht.mac_2_hostname(mac)
+        if not isinstance(hostname_dest, str):
+            log.warning(
+                "Failed to get destined Hostname / Entry not found -> won't update hostname"
+            )
+            return False
+        log.info("Destined Hostname: %s", hostname_dest)
+
+        hostname_current = wht.get_hostname()
+        log.info("Current Hostname: %s", hostname_current)
+        if hostname_dest != hostname_current:
+            log.info("Hostname-Mismatch detected -> will update hostname!")
+            wht.set_hostname(hostname_dest)
+            wht.adjust_hosts_domain_name(hostname_dest)
+            hostname_current = wht.get_hostname()
+            log.info("Current Hostname: %s", hostname_current)
+            return True
+        return False
 
 
 def main() -> None:

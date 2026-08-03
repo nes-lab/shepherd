@@ -34,6 +34,15 @@ class WatchdogConfig(BaseModel):
     A reboot is issued as soon as all of these fail to be pinged.
     """
 
+    autoupdate_hostname: bool = False
+    """ ⤷ testbed-specific functionality that adjusts the hostname
+
+     This is helpful when swapping SD-Cards of the observers as this was
+     the last manual update step. The hostname is derived from the MAC address.
+     This will only work if the MAC address is found in the observer-fixtures
+     of the testbed-client.
+     """
+
     @classmethod
     def file_path(cls) -> Path:
         return Path("/etc/shepherd/watchdog.yaml")
