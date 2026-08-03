@@ -13,7 +13,7 @@
 
 For ansible setup:
 
-- ansible `roles/sheep/defaults/main.yml` has hardcoded `sheep_cape_hw_var`
+- ansible `roles/sheep/defaults/main.yml` has hardcoded `sheep_cape_hw_ver`
 
 For an active installation:
 
@@ -44,7 +44,7 @@ useful commands
 
 ```shell
 cat /etc/debian_version
-# ⤷ currently shows debian 12.13
+# ⤷ currently shows debian 12.15
 sudo /usr/sbin/ntpdate -b -s -u pool.ntp.org
 # ⤷ for manual timesync
 sudo systemctl status phc2sys@eth0
