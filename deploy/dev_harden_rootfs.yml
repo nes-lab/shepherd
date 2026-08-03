@@ -27,7 +27,8 @@
       ansible.builtin.shell:
         # cmd: "set -o pipefail && mount | grep ' / ' | cut -d' ' --fields=1"
         # cmd: "mount | grep ' / ' | cut -d' ' --fields=1"
-        cmd: "df -h | grep mmcblk | cut -d' ' --fields=1"
+        # cmd: "df -h | grep mmcblk | cut -d' ' --fields=1" -> matches multiple deb12.15
+        cmd: "df -hT | grep -e 'mmcblk.*ext4.* /' | cut -d' ' --fields=1"
         # note: "set -o pipefail &&" in front does not work here -> empty string
       register: booted_part
       failed_when: false
@@ -43,7 +44,7 @@
         state: present
         insertafter: EOF
 
-      # STRATEGY 3 - check filesystem on every boot (NOT active)
+    # STRATEGY 3 - check filesystem on every boot
     - name: Check root-filesystem on every boot
       ansible.builtin.lineinfile:
         dest: "/boot/uEnv.txt"
@@ -56,6 +57,14 @@
         #                        as pru0 currently requests 47M (and fails sometimes)
         state: present
 
+    # STRATEGY 4 - remove swapping (new in debian 12.15)
+    - name: Remove fstab-mounting for swap-partition
+      ansible.builtin.lineinfile:
+        dest: /etc/fstab
+        regex: "^.*mmcblk.* swap .*$"
+        state: absent
+        # original: /dev/mmcblk0p2       none    swap    sw      0       0
+        # clean with: dd if=/dev/zero of=/dev/mmcblk0p2 bs=8M conv=sync status=progress
     - name: Restart device
       ansible.builtin.reboot:
         connect_timeout: 20
