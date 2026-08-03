@@ -109,6 +109,12 @@ cleaning_packages: [
   'firmware-misc-nonfree',
   'firmware-libertas',
   'firmware-ti-connectivity',
+
+  # new in debian 12.15 / 2026.08
+  'cockpit*', # web-console port 9090
+  'packagekit',
+  'sftp*',
+  'network-mana*',
 ]
 # find large packages: dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
 # test-stage: 'systemd-timesyncd' -> disables NTP-Support
