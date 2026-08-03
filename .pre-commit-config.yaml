@@ -65,7 +65,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.22
+    rev: v0.16.1
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -80,7 +80,7 @@ repos:
 #      - id: ansible-lint
 
   - repo: https://github.com/rstcheck/rstcheck
-    rev: v6.2.5
+    rev: v6.3.0
     hooks:
       - id: rstcheck
         additional_dependencies: ["rstcheck[sphinx,toml]"]
@@ -94,10 +94,10 @@ repos:
         exclude: \.(sch|brd|lbr)$
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.27.0
+    rev: v1.29.0
     hooks:
       - id: zizmor
-        args: ["--min-severity", "high", "--no-progress", "--fix", "."]
+        args: ["--min-severity", "high", "--no-progress", "--fix"]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v22.1.8

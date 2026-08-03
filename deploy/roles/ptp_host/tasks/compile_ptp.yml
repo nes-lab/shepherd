@@ -1,0 +1,36 @@
+---
+
+- name: GIT - Clone PTP-Repo
+  ansible.builtin.git:
+    repo: 'git://git.code.sf.net/p/linuxptp/code'
+    # mirror https://github.com/nwtime/linuxptp
+    dest: "{{ ptp_host_repo_path }}"
+    update: true
+    force: true
+  become: true
+  register: dl_ptp4l_ret
+  until: dl_ptp4l_ret is not failed
+  retries: 5
+
+- name: Own tool path
+  ansible.builtin.file:
+    path: "{{ ptp_host_repo_path }}/"
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "a+rw"
+    recurse: true
+  become: true
+
+- name: Build LinuxPTP (~2min)
+  community.general.make:
+    chdir: "{{ ptp_host_repo_path }}"
+    target: all
+  become: false
+
+- name: Install LinuxPTP
+  community.general.make:
+    chdir: "{{ ptp_host_repo_path }}"
+    target: install
+  become: true
+
+# apt installations are in /usr/sbin, self-compiled in /usr/local/sbin

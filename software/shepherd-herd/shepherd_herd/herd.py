@@ -980,12 +980,37 @@ class Herd:
             min_space = min(min_space, int(msg[pos - 1]))
         return min_space
 
-    def sysrq_reboot(self, host: str) -> None:
+    async def sysrq_reboot_forced(self, host: str) -> None:
         reverse = {v: k for k, v in self.hostnames.items()}
         ip = reverse.get(host)
         if ip is None:
-            raise ValueError("Host not found")
-        # TODO: telnet session to sysrqd
+            log.error("Host not found")
+            return
+        from decouple import config as dcoup_cfg
+
+        pw = dcoup_cfg("SYSRQD_KEY", default="")
+        if not pw:
+            log.error("SYSRQD_KEY not found in environmental variables")
+            return
+        import asyncio
+
+        import telnetlib3
+
+        reader, writer = await telnetlib3.open_connection(ip, 4094)
+        ts_start = datetime.now()  # noqa: DTZ005
+        while True:
+            output = await reader.read(n=100)
+            if output:
+                if "sysrqd password" in output.lower():
+                    writer.write(pw + "\r\n")
+                if "sysrq>" in output.lower():
+                    writer.write("b")  # reboot
+                    log.info("Forced Reboot for %s issued via sysrqd", host)
+                    break
+            if datetime.now() - ts_start > timedelta(seconds=10):  # noqa: DTZ005
+                log.warning("Timeout while trying -> will quit")
+                break
+            await asyncio.sleep(0.5)
 
     @staticmethod
     def disable_progress_bar() -> None:

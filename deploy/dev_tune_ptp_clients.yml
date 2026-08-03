@@ -3,7 +3,7 @@
 - name: Update Time
   hosts: sheep
   become: true
-  strategy: free  # noqa: run-once[play]
+  # strategy: free  # noqa: run-once[play]
   # ⤷ ansible won't wait for every host to continue next task
 
   tasks:
@@ -23,7 +23,7 @@
   become: true
   strategy: free # noqa: run-once[play]
   roles:
-    - ptp_client
+    - ptp_host
     # Tuning is now completely integrated here
 
 - name: Resync

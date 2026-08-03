@@ -148,7 +148,7 @@ class ShepherdDebug(ShepherdIO):
             )
         return values[0] * (2**32) + values[1]  # P_out_pW
 
-    def vsource_init(
+    def vsource_init(  # noqa: PLR0917
         self,
         src_cfg: VirtualSourceConfig,
         cal_emu: CalibrationEmulator,

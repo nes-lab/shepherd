@@ -10,6 +10,10 @@
     state: present
   tags: ptp
 
+- name: Compile newest LinuxPTP
+  ansible.builtin.include_tasks:
+    file: compile_ptp.yml
+
 - name: Configure PTP - Hardware-timestamping
   ansible.builtin.lineinfile:
     dest: "/etc/linuxptp/ptp4l.conf"

@@ -6,6 +6,8 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: ⬆
+    cooldown:
+      default-days: 7
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -13,6 +15,8 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: ⬆
+    cooldown:
+      default-days: 7
   # Python
   - package-ecosystem: "pip"
     directory: "/"
@@ -20,3 +24,5 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: ⬆
+    cooldown:
+      default-days: 7

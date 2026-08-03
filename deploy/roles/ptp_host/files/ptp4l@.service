@@ -9,13 +9,15 @@ Type=idle
 ExecStartPre=/usr/sbin/ntpdate -b -s -u pool.ntp.org
 ExecStartPre=-/usr/local/bin/set-ptp-kworker-prio.sh
 # ExecStart=/usr/sbin/ptp4l -f /etc/linuxptp/ptp4l.conf -i %I
-ExecStart=/usr/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
+# ExecStart=/usr/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
+ExecStart=/usr/local/sbin/ptp4l -A -H -f /etc/linuxptp/ptp4l.conf -i %I
 # -2 -> IEEE 802.3 Network Transport, TODO: seems to produce "sheep03 ptp4l[4062]: [2837.436] port 1: bad message"
 # -A -> Auto Delay Mechanism (E2E first, then maybe P2P)
 # -H -> use hardware timestamping
 # /etc/linuxptp/ptp4l.conf
 # slaveOnly     0/1     -> roles should be static
 # clock_servo   linreg/pi -> linreg should be superior
+# TODO: apt installations are in /usr/sbin, self-compiled in /usr/local/sbin
 
 RestartSec=5
 Restart=always

@@ -565,7 +565,7 @@ prog_attribs = [
 ]
 
 
-def write_programmer_ctrl(
+def write_programmer_ctrl(  # noqa: PLR0917
     target: str,
     datarate: int,
     pin_tck: int,
@@ -616,7 +616,7 @@ def read_programmer_ctrl() -> list:
     return parameters
 
 
-def send_programmer_ctrl(
+def send_programmer_ctrl(  # noqa: PLR0917
     target: str,
     datarate: int,
     pin_tck: int,
