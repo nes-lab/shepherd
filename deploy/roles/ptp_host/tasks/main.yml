@@ -13,6 +13,7 @@
 - name: Compile newest LinuxPTP
   ansible.builtin.include_tasks:
     file: compile_ptp.yml
+  when: false
 
 - name: Configure PTP - Hardware-timestamping
   ansible.builtin.lineinfile:
@@ -138,6 +139,9 @@
   # Tests
   # manual: sudo systemctl restart ptp4l@eth0
   # status: sudo journalctl -u ptp4l@eth0 -f
+
+- name: Reload source-configuration-files
+  ansible.builtin.command: 'systemctl daemon-reload'
 
 - name: Deploy prio-script for kworker
   ansible.builtin.copy:
