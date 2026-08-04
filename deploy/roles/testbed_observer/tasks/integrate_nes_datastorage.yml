@@ -21,12 +21,17 @@
     state: directory
     mode: "a+rwx"
 
+- name: Test if Node has Access to datastorage
+  ansible.builtin.command:
+    cmd: "ping -c 1 -W 5 {{ testbed_observer_nfs_server | split(':')[0] }}"
+  failed_when: false
+  register: nfs_available
+
+
 - name: Mount root of datastorage (temporary)
   ansible.builtin.command:
     cmd: "mount -t nfs4 {{ testbed_observer_nfs_server }} /tmp/shp_drive/"
-  register: mounted_tmp
-  failed_when: false
-  timeout: 20
+  when: nfs_available is not failed
 
 - name: Create directories (future mount-points of nfs-share)
   ansible.builtin.file:
@@ -37,7 +42,7 @@
     - "/tmp/shp_drive/experiments/"
     - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
     - "/tmp/shp_drive/content/"
-  when: mounted_tmp is not failed
+  when: nfs_available is not failed
 
 # Cleanup
 
