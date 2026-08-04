@@ -16,6 +16,7 @@ Ansible
 - harden_fs - remove new swap, improve root-detection
 - maintenance-role - integrate harden_fs
 - observer-role - allow adding datastorage without connection
+- general speedup by using new config-options (fact caching, skipping compression, keeping ssh-connections)
 
 Misc
 - add custom compiled PTP
