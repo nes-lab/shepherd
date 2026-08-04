@@ -104,7 +104,8 @@
     }
     - {
       regex: "^.?hwts_filter.*$",
-      replacement: "# hwts_filter  check", # normal is default
+      replacement: "hwts_filter  normal", # normal is default
+      # - None, when line not present
       # - Normal mode set the filters as needed.
       # - Check mode only check but do not set.
       # - Full mode set the receive filter to mark all packets with hardware time stamp,
