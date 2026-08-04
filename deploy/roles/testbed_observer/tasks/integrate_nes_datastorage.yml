@@ -31,7 +31,7 @@
 - name: Mount root of datastorage (temporary)
   ansible.builtin.command:
     cmd: "mount -t nfs4 {{ testbed_observer_nfs_server }} /tmp/shp_drive/"
-  when: nfs_available is not failed
+  when: nfs_available.rc == 0
 
 - name: Create directories (future mount-points of nfs-share)
   ansible.builtin.file:
@@ -42,7 +42,7 @@
     - "/tmp/shp_drive/experiments/"
     - "/tmp/shp_drive/experiments/{{ testbed_observer_hostname }}"
     - "/tmp/shp_drive/content/"
-  when: nfs_available is not failed
+  when: nfs_available.rc == 0
 
 # Cleanup
 
