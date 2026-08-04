@@ -9,8 +9,10 @@ Herd
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
 
 Ansible
-- cleanup-role - keep shepherd/.git dir
-- cleanup-role - remove more packages
+- cleaning-role
+  - keep shepherd/.git dir
+  - remove more packages
+  - speed up package-removal
 - harden_fs - remove new swap, improve root-detection
 - maintenance-role - integrate harden_fs
 - observer-role - allow adding datastorage without connection
