@@ -40,7 +40,7 @@ The DHCP server and your machine (for installation/control) must be connected to
 
 ## Installation - Images
 
-Shepherd is been tested and used on Debian based distributions. Fresh images can be sourced from the [rcn-ee](https://rcn-ee.com/rootfs/)-repo. Be sure to select the ones that `armhf`, `minimal`, `-ti` and `am335x` in the name / path. The following overview gives some recommendations. Be aware that this repo is updated constantly and links may break. Time of writing is 2024-07-08.
+Shepherd is been tested and used on Debian based distributions. Fresh images can be sourced from the [rcn-ee](https://rcn-ee.com/rootfs/)-repo. Be sure to select the ones that `armhf`, `base` or `minimal`, `-ti` and `am335x` in the name / path. The following overview gives some recommendations. Be aware that this repo is updated constantly and links may break. Time of writing is 2024-07-08.
 
 - [Debian 12 Bookwork](https://rcn-ee.com/rootfs/debian-armhf-12-bookworm-minimal-v6.1-ti/) is tested, fully working and recommended. It comes with python 3.11
 - Debian 13 Trixie does NOT work due to issues downgrading the kernel to 4.19

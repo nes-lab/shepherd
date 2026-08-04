@@ -3,17 +3,20 @@
 ## Prereqs
 
 - download image (Debian 12 recommended), see [](../user/getting_started.md)
-- burn to micro-SD card (i.e. with balena etcher)
+- write to micro-SD card (i.e. with balena etcher)
 - activate flasher in `/boot/uEnv.txt`
-- have a beaglebone ready & connected to a network
-- insert SD-Card and boot beaglebone -> image will be copied to internal eMMC
+  - recommended as pulling and writing the final image is much faster (4 GiB vs 32 GiB at ~15 MiB/s)
+- have a Beaglebone ready & connected to a network
+- insert SD-Card and boot Beaglebone -> image will be copied to internal eMMC -> Larson-Scanner shuts down when done
 - test the code
+- it helps to have a second micro-SD card ready when it's time to pull an image from the eMMC
+- to test the image you need a third SD-card
 
 ## Switch Cape-Version
 
 For ansible setup:
 
-- ansible `roles/sheep/defaults/main.yml` has hardcoded `sheep_cape_hw_var`
+- ansible `roles/sheep/defaults/main.yml` has hardcoded `sheep_cape_hw_ver`
 
 For an active installation:
 
@@ -44,7 +47,7 @@ useful commands
 
 ```shell
 cat /etc/debian_version
-# ⤷ currently shows debian 12.13
+# ⤷ currently shows debian 12.15
 sudo /usr/sbin/ntpdate -b -s -u pool.ntp.org
 # ⤷ for manual timesync
 sudo systemctl status phc2sys@eth0

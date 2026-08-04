@@ -40,6 +40,10 @@
   ansible.builtin.include_tasks:
     file: broadcast_mac.yml
 
+- name: Harden Filesystem
+  ansible.builtin.include_tasks:
+    file: harden_filesystem.yml
+
 - name: Restart device
   ansible.builtin.reboot:
     connect_timeout: 20

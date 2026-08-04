@@ -17,13 +17,20 @@
   when: kernelrelease.stdout.strip() is not ansible.builtin.search(cleaning_required_kernel_regex)
   # a wrong version would brick the image with the apt-task below
 
+- name: APT - update cache
+  ansible.builtin.command: 'apt update'
+  become: true
+
 - name: APT - Uninstall non-essential Packages
-  ansible.builtin.apt:
-    name: "{{ item }}"
-    state: absent
-    purge: true
+  # ansible.builtin.apt: -> replaced because it's much slower
+  # NOTE: handing the whole list at once would be faster, but trades off control
+  ansible.builtin.command: 'apt purge -y {{ item }}'
   failed_when: false
   with_items: "{{ cleaning_packages }}"
+  become: true
+
+- name: APT - remove orphaned dependencies
+  ansible.builtin.command: 'apt autoremove -y'
   become: true
 
 - name: Remove extra Firmwares
