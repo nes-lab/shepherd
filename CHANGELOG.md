@@ -8,6 +8,13 @@ Watchdog
 Herd
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
 
+Ansible
+- cleanup-role - keep shepherd/.git dir
+- cleanup-role - remove more packages
+- harden_fs - remove new swap, improve root-detection
+- maintenance-role - integrate harden_fs
+- observer-role - allow adding datastorage without connection
+
 Misc
 - add custom compiled PTP
 - update cape-errata, h5-benchmark
