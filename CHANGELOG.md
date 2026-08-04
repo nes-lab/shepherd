@@ -15,8 +15,14 @@ Ansible
   - speed up package-removal
 - harden_fs - remove new swap, improve root-detection
 - maintenance-role - integrate harden_fs
-- observer-role - allow adding datastorage without connection
+- observer-role
+  - allow adding datastorage without connection
+  - grow root-partition/FS
 - general speedup by using new config-options (fact caching, skipping compression, keeping ssh-connections)
+- ptp-host-role
+  - revert to use included PTP
+  - try normal hw-filtering
+  - disable PTP-compiling and reload systemd after setup
 
 Misc
 - add custom compiled PTP

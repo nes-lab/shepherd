@@ -12,3 +12,4 @@
     cmd: 'sudo resize2fs /dev/mmcblk0p1'
 
 # df -hT | grep -e 'mmcblk.*ext4.* /' | cut -d" " -s --fields=3
+# df -T | grep -e 'mmcblk.*ext4.* /' | tr -s [:space:] | cut -d' ' -s --fields=3
