@@ -3,23 +3,26 @@
 - name: CFG - Improve SSH-Speed
   ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
+    # TODO: better use /etc/ssh/sshd_config.d/*.conf
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
     state: present
   loop:
-    - {regex: '^.*UseDNS.*$', line: 'UseDNS no'}  # additional check with added latency
-    - {regex: '^.*Compression.*$', line: 'Compression no'}  # additional CPU-load
+    - {regex: '^.*UseDNS.*$', line: 'UseDNS no'}  # additional check with added latency, default=no
+    - {regex: '^.*Compression.*$', line: 'Compression no'}  # additional CPU-load, default=yes
 
 - name: CFG - Improve SSH-Stability
   ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
+    # TODO: better use /etc/ssh/sshd_config.d/*.conf
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
     state: present
   loop:
-    - {regex: '^.*ClientAliveInterval .*$', line: 'ClientAliveInterval  60'}
-    - {regex: '^.*ClientAliveCountMax.*$', line: 'ClientAliveCountMax 10'}
-    - {regex: '^.*TCPKeepAlive.*$', line: 'TCPKeepAlive yes'}
+    - {regex: '^.*ClientAliveInterval .*$', line: 'ClientAliveInterval  10'} # default=0/off
+    - {regex: '^.*ClientAliveCountMax.*$', line: 'ClientAliveCountMax 10'} # default=3
+      # interval * countMax = TTL before disconnect
+    - {regex: '^.*TCPKeepAlive.*$', line: 'TCPKeepAlive yes'} # default=yes
 
 - name: CFG - Adapt default Target to multi-user
   ansible.builtin.command: 'systemctl set-default multi-user'
