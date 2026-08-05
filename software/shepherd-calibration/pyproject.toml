@@ -6,7 +6,7 @@ maintainers = [{email = "ingmar.splitt@tu-dresden.de"}]
 description = "Synchronized Energy Harvesting Emulator and Recorder CLI"
 keywords = ["testbed", "beaglebone", "pru", "batteryless", "energyharvesting", "solar"]
 
-version = "2026.07.1"
+version = "2026.08.1"
 
 license = "MIT"
 
