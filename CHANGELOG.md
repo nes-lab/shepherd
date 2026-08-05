@@ -7,6 +7,7 @@ Watchdog
 
 Herd
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
+- make .open() less demanding
 
 Ansible
 - cleaning-role
@@ -15,12 +16,20 @@ Ansible
   - speed up package-removal
 - harden_fs - remove new swap, improve root-detection
 - maintenance-role - integrate harden_fs
-- observer-role - allow adding datastorage without connection
+- observer-role
+  - allow adding datastorage without connection
+  - grow root-partition/FS (disabled for now)
 - general speedup by using new config-options (fact caching, skipping compression, keeping ssh-connections)
+- improve sshd-stability
+- ptp-host-role
+  - revert to use included PTP
+  - try normal hw-filtering
+  - disable PTP-compiling and reload systemd after setup
 
 Misc
 - add custom compiled PTP
 - update cape-errata, h5-benchmark
+- sheep - fix exception during end of resync
 
 ## 2026.07.1
 

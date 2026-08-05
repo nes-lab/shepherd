@@ -211,6 +211,8 @@ class Herd:
         """
         threads = {}
         for cnx in self.group_all:
+            if cnx.is_connected:  # fast-path to keep thread-count low
+                continue
             hname = self.hostnames[cnx.host]
             threads[hname] = threading.Thread(target=self._thread_open, args=[cnx])
             threads[hname].start()

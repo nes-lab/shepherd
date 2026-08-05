@@ -1,0 +1,15 @@
+# Steps
+# - get initial size
+# - grow partition and FS
+# - compare size-grow
+
+- name: Resize Partition
+  ansible.builtin.command:
+    cmd: 'yes | parted /dev/mmcblk0 resizepart 1 100% ---pretend-input-tty'
+
+- name: Resize Filesystem
+  ansible.builtin.command:
+    cmd: 'sudo resize2fs /dev/mmcblk0p1'
+
+# df -hT | grep -e 'mmcblk.*ext4.* /' | cut -d" " -s --fields=3
+# df -T | grep -e 'mmcblk.*ext4.* /' | tr -s [:space:] | cut -d' ' -s --fields=3

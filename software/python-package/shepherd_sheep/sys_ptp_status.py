@@ -102,7 +102,7 @@ class PTPStatus:
                 log.info(
                     "[%s] goal reached in %.0f s!",
                     type(self).__name__,
-                    time_now - time_start,
+                    (time_now - time_start).total_seconds(),
                 )
                 return True
 

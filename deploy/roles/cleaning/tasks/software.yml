@@ -24,13 +24,14 @@
 - name: APT - Uninstall non-essential Packages
   # ansible.builtin.apt: -> replaced because it's much slower
   # NOTE: handing the whole list at once would be faster, but trades off control
-  ansible.builtin.command: 'apt purge -y {{ item }}'
+  ansible.builtin.command: 'apt purge --yes {{ item }}'
   failed_when: false
+  changed_when:
   with_items: "{{ cleaning_packages }}"
   become: true
 
 - name: APT - remove orphaned dependencies
-  ansible.builtin.command: 'apt autoremove -y'
+  ansible.builtin.command: 'apt autoremove --yes'
   become: true
 
 - name: Remove extra Firmwares

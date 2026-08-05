@@ -19,14 +19,21 @@
 - name: CFG - Improve SSHd-Security
   ansible.builtin.lineinfile:
     dest: /etc/ssh/sshd_config
+    # TODO: better use /etc/ssh/sshd_config.d/*.conf
     regexp: "{{ item.regex }}"
     line: "{{ item.line }}"
     state: present
   loop:
     - {regex: '^.*Protocol.*$', line: 'Protocol 2'}
-    - {regex: '^.*StrictModes.*$', line: 'StrictModes yes'}
-    - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 1m'}
-#    - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 3'}
+    - {regex: '^.*StrictModes.*$', line: 'StrictModes yes'} # default=yes
+    - {regex: '^.*LoginGraceTime.*$', line: 'LoginGraceTime 10'} # default=120
+          # TODO: was 60, test 10
+    - {regex: '^.*MaxAuthTries.*$', line: 'MaxAuthTries 20'} # default=6
+          # -> higher value increases risk of DDoS, but Server tries reconnecting a lot
+          # TODO: was default, try more to avoid blocking of server
+    - {regex: '^.*UnusedConnectionTimeout.*$', line: 'UnusedConnectionTimeout 30'} # default=none
+          # TODO: possible addition: "ChannelTimeout session=5m"-parameter
+          # TODO: better suited in performance/stability category
     - {regex: '^.*PermitRootLogin.*$', line: 'PermitRootLogin no'}
     - {regex: '^.*PasswordAuthentication.*$', line: 'PasswordAuthentication no'} # disable for debug
     - {regex: '^.*PermitEmptyPasswords.*$', line: 'PermitEmptyPasswords no'}
