@@ -15,6 +15,7 @@
 - name: Grow Root-Filesystem (for fresh images)
   ansible.builtin.include_tasks:
     file: grow_root_partition.yml
+  when: false
 
 - name: Extended watchdog reboots unreachable observers in testbed
   ansible.builtin.include_tasks:
