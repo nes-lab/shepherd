@@ -13,14 +13,14 @@
 
 
 / {
-   // note: (older) "ti,beaglebone" types seem to be working as well for v4.19.x-ti, but this is more future-proof
-   compatible = "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green";
+    // note: (older) "ti,beaglebone" types seem to be working as well for v4.19.x-ti, but this is more future-proof
+    compatible = "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green";
 
-   part-number = "BB-SHPRD";
-   version = "24A0";
+    part-number = "BB-SHEPHERD-CAPE";
+    version = "24A0";
 
-   /* This overlay uses the following resources */
-   exclusive-use =
+    /* This overlay uses the following resources */
+    exclusive-use =
 
         "P8.10", /*     WD ACK */
         "P8_11", /*     pru0_dbg_Led1 */
@@ -96,31 +96,18 @@
         // Target UART - TODO: only active for TESTs
         //"P9_24", /*  target_uart_tx */ // UART1
         //"P9_26", /*  target_uart_rx */
+};
 
-   /* Check Table 9-60 in am335x TRM */
+/* Check Table 9-60 in am335x TRM */
 
-   /* Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/  */
-   /* Note:
-        - root-path and "chosen" seem to produce a warning with dtc, internet is not helpful
-        - this is the reference solution chosen by: https://github.com/RobertCNelson/bb.org-overlays
-   */
-   fragment@0 {
-      target-path="/";
-      __overlay__ {
-         chosen {
-            overlays {
-               BB-SHPRD-24A0 = __TIMESTAMP__;
-            };
-         };
-      };
-   };
+/* Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/  */
+&{/chosen/overlays} {
+    BB-SHEPHERD-CAPE.neslab = __TIMESTAMP__;
+};
 
-
-   fragment@1 {
-      target = <&am33xx_pinmux>;
-      __overlay__ {
-         bb_shprd_pins: pinmux_bb_shprd_pins {
-            pinctrl-single,pins = <
+&am33xx_pinmux {
+    bb_shprd_pins: pinmux_bb_shprd_pins {
+        pinctrl-single,pins = <
 
             P8_10(MUX_MODE7)                // gpio2[4]
             P8_11(MUX_MODE6)                // pr1_pru0_pru_r30_15
@@ -184,45 +171,37 @@
             //P9_24(MUX_MODE7 | RX_ACTIVE)    // usually uart1
             //P9_26(MUX_MODE7 | RX_ACTIVE)    // usually uart1
 
-            >;
-         };
-      };
-   };
+        >;
+    };
+};
 
-   fragment@2 {
-       target = <&pruss>;
-       __overlay__ {
-            status = "okay";
-            pinctrl-names = "default";
-            pinctrl-0 = <&bb_shprd_pins>;
-            //memory-region = <&pru_dma_pool>;
-            shepherd{
-               compatible = "nes,shepherd";
-               prusses = <&pruss>;
-            };
-       };
-   };
+&pruss {
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&bb_shprd_pins>;
+    //memory-region = <&pru_dma_pool>;
+    shepherd {
+        compatible = "nes,shepherd";
+        prusses = <&pruss>;
+    };
+};
 
 /*
-    // also needed is "memory-region =" in fragment@2
-    // TODO: PRU carves out its own memory, so it won't use this (yet)
-    fragment@3 {
-        target-path = "/";
-        __overlay__ {
-            reserved-memory {
-                #address-cells = <0x01>;
-                #size-cells = <0x01>;
-                ranges;
+// also needed is "memory-region =" in fragment@2
+// TODO: PRU carves out its own memory, so it won't use this (yet)
+&{/} {
+    reserved-memory {
+        #address-cells = <0x01>;
+        #size-cells = <0x01>;
+        ranges;
 
-                pru_dma_pool: pru-dma-pool@9C200000 {
-                    compatible = "shared-dma-pool";
-                    //reg = <0x9C200000 0x3000000>; // 50 MB
-                    reg = <0x9C000000 0x02dc6524>; // 48 MB
-                    no-map;
-                    status = "okay";
-                };
-            };
+        pru_dma_pool: pru-dma-pool@9C200000 {
+            compatible = "shared-dma-pool";
+            //reg = <0x9C200000 0x3000000>; // 50 MB
+            reg = <0x9C000000 0x02dc6524>; // 48 MB
+            no-map;
+            status = "okay";
         };
     };
-*/
 };
+*/
