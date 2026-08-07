@@ -13,7 +13,8 @@
 #include "commons.h"
 #include "debug_routines.h"
 
-#include "resource_table.h"
+#include "intc_map.h"
+#include "resource_table_0.h"
 #include "shared_mem.h"
 #include "shepherd_config.h"
 #include "stdint_fast.h"
