@@ -44,7 +44,7 @@ static int shepherd_platform_data_init(struct platform_device *pdev)
 
     /*allocate mem for platform data*/
     shp_pdata = devm_kzalloc(&pdev->dev, sizeof(*shp_pdata), GFP_KERNEL);
-    if (!shp_pdata)
+    if (shp_pdata == NULL)
     {
         dev_err(&pdev->dev, "Unable to allocate platform data\n");
         return -1;
@@ -185,17 +185,17 @@ static int shepherd_drv_probe(struct platform_device *pdev)
     }
 
     /* Initialize shared memory and PRU interrupt controller */
-    mem_interface_init();
+    mem_interface_init(); // TODO: this can fail! add & eval retval
     msg_sys_init();
 
     /* Initialize synchronization mechanism between PRU1 and our clock */
-    sync_init();
+    sync_init(); // TODO: this can fail! add & eval retval
 
     /* Set up the sysfs interface for access from userspace */
-    sysfs_interface_init();
+    sysfs_interface_init(); // TODO: this can fail! add & eval retval
 
     /* cache for the input buffer */
-    ocmc_cache_init();
+    ocmc_cache_init(); // TODO: this can fail! add & eval retval
 
     return 0;
 }

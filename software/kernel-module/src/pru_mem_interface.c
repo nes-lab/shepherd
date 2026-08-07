@@ -33,9 +33,19 @@ void                          mem_interface_init(void)
         return;
     }
     /* Maps the control registers of the PRU's interrupt controller */
-    pru_intc_io       = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
+    pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
+    if (pru_intc_io == NULL)
+    {
+        printk(KERN_ERR "shprd.k: mem-interface mapping of PRU_INTC failed!");
+        return;
+    }
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
     pru_shared_mem_io = ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
+    if (pru_intc_io == NULL)
+    {
+        printk(KERN_ERR "shprd.k: mem-interface mapping of PRU_SHARED_MEM failed!");
+        return;
+    }
 
     hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     delayed_start_timer.function = &delayed_start_callback;

@@ -97,7 +97,17 @@ int sync_init(void)
     sync_reset();
 
     gpio0clear = ioremap(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
-    gpio0set   = ioremap(0x44E07000u + 0x194u, 4u);
+    if (gpio0clear == NULL)
+    {
+        printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0CLEAR failed!");
+        return -1;
+    }
+    gpio0set = ioremap(0x44E07000u + 0x194u, 4u);
+    if (gpio0set == NULL)
+    {
+        printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0SET failed!");
+        return -1;
+    }
 
     /* timer for trigger */
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
