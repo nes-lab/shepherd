@@ -1,4 +1,4 @@
-CAPE_HW_VER ?= 24
+CAPE_HW_VER ?= 25
 
 ifeq ($(CAPE_HW_VER), 22)
 override CAPE_HW_VER = 24
