@@ -52,6 +52,7 @@ unload:
 
 install: build
 	@echo 'Installing kernel module'
-	-@sudo mkdir -p $(EXTRA_DIR)
-	@sudo cp $(TARGET_MODULE).ko $(EXTRA_DIR)
+	-@sudo cp /boot/System.map-$(uname -r) /lib/modules/$(uname -r)/build/System.map
+	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) modules_install
 # also add name "shepherd" to /etc/modules for autostart
+# TODO: copying system-map must only be done ONCE per kernel-build
