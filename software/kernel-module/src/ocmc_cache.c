@@ -31,18 +31,18 @@ static struct hrtimer         update_timer;
 #define DELAY_TIMER ns_to_ktime(CACHE_BLOCK_SAMPLES_N *SAMPLE_INTERVAL_NS - 1000000u)
 
 
-void ocmc_cache_init(void)
+int ocmc_cache_init(void)
 {
     const uint64_t ts_now = ktime_get_real();
     if (init_done)
     {
         printk(KERN_ERR "shprd.cache: ocmc-cache init requested -> can't init twice!");
-        return;
+        return -1;
     }
     if (pru_shared_mem_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: cache needs shared-mem of PRU but got NULL");
-        return;
+        return -2;
     }
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
 
@@ -51,7 +51,7 @@ void ocmc_cache_init(void)
     if (cache_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: OCMC not properly mapped");
-        return;
+        return -3;
     }
 
     /* map physical RAM address (special case that fails with ioremap()) */
@@ -60,7 +60,7 @@ void ocmc_cache_init(void)
     if (buffr_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: BUF_IV_INP not properly mapped");
-        return;
+        return -4;
     }
     buffr_mem = (struct IVTraceInp *) buffr_io;
 
@@ -98,6 +98,7 @@ void ocmc_cache_init(void)
            (shared_mem->buffer_iv_inp_size + shared_mem->buffer_iv_out_size +
             shared_mem->buffer_gpio_size + shared_mem->buffer_util_size) /
                    1024);
+    return 0;
 }
 
 void ocmc_cache_exit(void)

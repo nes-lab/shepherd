@@ -25,26 +25,26 @@ static u8                     init_done = 0;
 static enum hrtimer_restart   delayed_start_callback(struct hrtimer *timer_for_restart);
 static enum hrtimer_restart   delayed_stop_callback(struct hrtimer *timer_for_restart);
 
-void                          mem_interface_init(void)
+int                           mem_interface_init(void)
 {
     if (init_done)
     {
         printk(KERN_ERR "shprd.k: mem-interface init requested -> can't init twice!");
-        return;
+        return -1;
     }
     /* Maps the control registers of the PRU's interrupt controller */
     pru_intc_io = ioremap(PRU_BASE_ADDR + PRU_INTC_OFFSET, PRU_INTC_SIZE);
     if (pru_intc_io == NULL)
     {
         printk(KERN_ERR "shprd.k: mem-interface mapping of PRU_INTC failed!");
-        return;
+        return -2;
     }
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
     pru_shared_mem_io = ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
-    if (pru_intc_io == NULL)
+    if (pru_shared_mem_io == NULL)
     {
         printk(KERN_ERR "shprd.k: mem-interface mapping of PRU_SHARED_MEM failed!");
-        return;
+        return -3;
     }
 
     hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -58,6 +58,7 @@ void                          mem_interface_init(void)
            (uint32_t) PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
 
     mem_interface_reset();
+    return 0;
 }
 
 void mem_interface_exit(void)

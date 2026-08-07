@@ -16,7 +16,7 @@ uint8_t get_msg_from_pru0(struct ProtoMsg *const element);
 
 void    msg_sys_exit(void);
 void    msg_sys_reset(void);
-void    msg_sys_init(void);
+int     msg_sys_init(void);
 void    msg_sys_test(void);
 
 void    msg_sys_pause(void);

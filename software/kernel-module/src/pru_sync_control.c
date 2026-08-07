@@ -100,13 +100,13 @@ int sync_init(void)
     if (gpio0clear == NULL)
     {
         printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0CLEAR failed!");
-        return -1;
+        return -2;
     }
     gpio0set = ioremap(0x44E07000u + 0x194u, 4u);
     if (gpio0set == NULL)
     {
         printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0SET failed!");
-        return -1;
+        return -3;
     }
 
     /* timer for trigger */
@@ -136,7 +136,7 @@ int sync_init(void)
     if (pru_shared_mem_io == NULL)
     {
         printk(KERN_ERR "shprd.sync: supervisor needs shared-mem of PRU but got NULL");
-        return 0;
+        return -4;
     }
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
     hrtimer_init(&supervisor_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);

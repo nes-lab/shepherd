@@ -106,12 +106,12 @@ void msg_sys_test(void)
     pru1_comm_send_sync_reply(&msg); // error-pipeline pru1
 }
 
-void msg_sys_init(void)
+int msg_sys_init(void)
 {
     if (init_done)
     {
         printk(KERN_ERR "shprd.k: msg-system init requested -> can't init twice!");
-        return;
+        return -1;
     }
 
     hrtimer_init(&coordinator_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -122,6 +122,7 @@ void msg_sys_init(void)
 
     msg_sys_start();
     msg_sys_test();
+    return 0;
 }
 
 

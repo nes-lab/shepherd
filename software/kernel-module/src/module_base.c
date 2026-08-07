@@ -178,26 +178,33 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 
     /* swap FW -> also handles sub-services for PRU */
     ret = swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT);
-    if (ret)
-    {
-        shepherd_platform_data_exit(pdev);
-        return ret;
-    }
+    if (ret) goto failure_probe;
 
     /* Initialize shared memory and PRU interrupt controller */
-    mem_interface_init(); // TODO: this can fail! add & eval retval
-    msg_sys_init();
+    ret = mem_interface_init();
+    if (ret) goto failure_probe;
+    ret = msg_sys_init();
+    if (ret) goto failure_probe;
 
     /* Initialize synchronization mechanism between PRU1 and our clock */
-    sync_init(); // TODO: this can fail! add & eval retval
+    ret = sync_init();
+    if (ret) goto failure_probe;
 
     /* Set up the sysfs interface for access from userspace */
-    sysfs_interface_init(); // TODO: this can fail! add & eval retval
+    ret = sysfs_interface_init(); // TODO: this can fail! add & eval retval
+    if (ret) goto failure_probe;
 
     /* cache for the input buffer */
-    ocmc_cache_init(); // TODO: this can fail! add & eval retval
+    ret = ocmc_cache_init();
+    if (ret) goto failure_probe;
 
     return 0;
+
+failure_probe:
+    shepherd_platform_data_exit(pdev);
+    printk(KERN_ERR
+           "shprd.k: Error during initialization of subsystems in kMod.probe -> will exit now!");
+    return ret;
 }
 
 static int shepherd_drv_remove(struct platform_device *pdev)
