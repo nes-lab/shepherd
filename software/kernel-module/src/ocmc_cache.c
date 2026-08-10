@@ -8,8 +8,9 @@
 #include "_shared_mem.h"
 #include "ocmc_cache.h"
 
-#define OCMC_BASE_ADDR         (0x40300000ul)
-#define OCMC_SIZE              (0x10000u)
+/* OCMC is a shared medium PM (power management) uses the first 4 + 4 kB */
+#define OCMC_BASE_ADDR         (0x40300000ul + 0x8000ul)
+#define OCMC_SIZE              (0x10000u>>1u)
 #define CLEAR_DISCARDED_BLOCKS (true)
 
 extern uint32_t               __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2))];
