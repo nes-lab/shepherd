@@ -53,8 +53,16 @@ int ocmc_cache_init(void)
         printk(KERN_ERR "shprd.cache: OCMC not properly mapped");
         return -3;
     }
+    else
+        printk(KERN_INFO "shprd.debug: CacheIO @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) cache_io, (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
 
-    /* map physical RAM address (special case that fails with ioremap()) */
+    /* map physical RAM address (special case that fails with ioremap())
+            WB -> read-allocate write-back cache
+            WT -> writes either bypass the cache or are written through to memory
+            WC -> writecombine mapping, whereby writes may be coalesced together
+                    (e.g. in the CPU's write buffers), but is otherwise uncached
+    */
     buffr_io = memremap((uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp),
                         MEMREMAP_WB);
     if (buffr_io == NULL)
@@ -62,6 +70,11 @@ int ocmc_cache_init(void)
         printk(KERN_ERR "shprd.cache: BUF_IV_INP not properly mapped");
         return -4;
     }
+    else
+        printk(KERN_INFO "shprd.debug: BufferIO @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) buffr_io, (uint32_t) shared_mem->buffer_iv_inp_ptr,
+               sizeof(struct IVTraceInp));
+
     buffr_mem = (struct IVTraceInp *) buffr_io;
 
     ocmc_cache_reset();
@@ -103,7 +116,7 @@ int ocmc_cache_init(void)
 
 void ocmc_cache_exit(void)
 {
-    if (update_timer.base != NULL) hrtimer_cancel(&update_timer);
+    if (init_done) hrtimer_cancel(&update_timer);
 
     if (cache_io != NULL)
     {

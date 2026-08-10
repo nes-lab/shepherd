@@ -67,9 +67,14 @@ const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
 void                      sync_exit(void)
 {
-    if (trigger_loop_timer.base != NULL) hrtimer_cancel(&trigger_loop_timer);
-    if (sync_loop_timer.base != NULL) hrtimer_cancel(&sync_loop_timer);
-    if (supervisor_loop_timer.base != NULL) hrtimer_cancel(&supervisor_loop_timer);
+    timers_active = 0u;
+
+    if (init_done)
+    {
+        hrtimer_cancel(&trigger_loop_timer);
+        hrtimer_cancel(&sync_loop_timer);
+        hrtimer_cancel(&supervisor_loop_timer);
+    }
 
     if (gpio0clear != NULL)
     {
@@ -102,12 +107,19 @@ int sync_init(void)
         printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0CLEAR failed!");
         return -2;
     }
+    else
+        printk(KERN_INFO "shprd.debug: Gpio0clear @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) gpio0clear, (uint32_t) (0x44E07000u + 0x190u), 4u);
+
     gpio0set = ioremap(0x44E07000u + 0x194u, 4u);
     if (gpio0set == NULL)
     {
         printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0SET failed!");
         return -3;
     }
+    else
+        printk(KERN_INFO "shprd.debug: Gpio0set @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) gpio0set, (uint32_t) (0x44E07000u + 0x194u), 4u);
 
     /* timer for trigger */
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);

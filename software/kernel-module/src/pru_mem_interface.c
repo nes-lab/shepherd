@@ -39,6 +39,10 @@ int                           mem_interface_init(void)
         printk(KERN_ERR "shprd.k: mem-interface mapping of PRU_INTC failed!");
         return -2;
     }
+    else
+        printk(KERN_INFO "shprd.debug: INTC @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) pru_intc_io, (uint32_t) (PRU_BASE_ADDR + PRU_INTC_OFFSET), PRU_INTC_SIZE);
+
     /* Maps the shared memory in the shared DDR, used to exchange info/control between PRU cores and kernel */
     pru_shared_mem_io = ioremap(PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
     if (pru_shared_mem_io == NULL)
@@ -46,6 +50,10 @@ int                           mem_interface_init(void)
         printk(KERN_ERR "shprd.k: mem-interface mapping of PRU_SHARED_MEM failed!");
         return -3;
     }
+    else
+        printk(KERN_INFO "shprd.debug: PRU_SHM @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) pru_shared_mem_io, (uint32_t) (PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET),
+               sizeof(struct SharedMem));
 
     hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     delayed_start_timer.function = &delayed_start_callback;
@@ -63,8 +71,11 @@ int                           mem_interface_init(void)
 
 void mem_interface_exit(void)
 {
-    if (delayed_start_timer.base != NULL) hrtimer_cancel(&delayed_start_timer);
-    if (delayed_stop_timer.base != NULL) hrtimer_cancel(&delayed_stop_timer);
+    if (init_done)
+    {
+        hrtimer_cancel(&delayed_start_timer);
+        hrtimer_cancel(&delayed_stop_timer);
+    }
 
     if (pru_intc_io != NULL)
     {
@@ -264,8 +275,16 @@ int mem_interface_schedule_delayed_stop(unsigned int stop_time_second)
     return 0;
 }
 
-int  mem_interface_cancel_delayed_start(void) { return hrtimer_cancel(&delayed_start_timer); }
-int  mem_interface_cancel_delayed_stop(void) { return hrtimer_cancel(&delayed_stop_timer); }
+int mem_interface_cancel_delayed_start(void)
+{
+    if (init_done) return hrtimer_cancel(&delayed_start_timer);
+    return 0;
+}
+int mem_interface_cancel_delayed_stop(void)
+{
+    if (init_done) return hrtimer_cancel(&delayed_stop_timer);
+    return 0;
+}
 
 void mem_interface_trigger(unsigned int system_event)
 {
