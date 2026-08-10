@@ -9,10 +9,10 @@
 #include "ocmc_cache.h"
 
 #define OCMC_BASE_ADDR         (0x40300000ul)
-#define OCMC_SIZE              (0xFFFFu)
+#define OCMC_SIZE              (0x10000u)
 #define CLEAR_DISCARDED_BLOCKS (true)
 
-extern uint32_t               __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2) - 1u)];
+extern uint32_t               __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2))];
 
 static volatile void __iomem *cache_io             = NULL;
 static void __iomem          *buffr_io             = NULL;
