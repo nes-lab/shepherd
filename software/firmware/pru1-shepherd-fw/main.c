@@ -395,12 +395,36 @@ int32_t event_loop()
 
 int main(void)
 {
+    if (0)
+    {
+        /* Clear any pending PRU-generated events */
+        __R31                       = 0x00000000u;
+        /* Map event 16 to channel 0 */
+        CT_INTC.CMR4_bit.CH_MAP_16  = 0u; /*TODO: Select correct bit field and enter proper value */
+        /* Map channel 1 to host 0 */
+        CT_INTC.HMR0_bit.HINT_MAP_1 = 0u; /*TODO: Select correct bit field and enter proper value */
+        /* Ensure event 16 is cleared */
+        CT_INTC.SICR                = 16; /*TODO: Clear proper event */
+        /* Enable event 16 */
+        CT_INTC.EISR                = 16; /*TODO: Enable proper event */
+        /* Enable Host interrupt 1 */
+        CT_INTC.HIEISR |= (1 << 0); /*TODO: Enable proper event */
+        // Globally enable host interrupts
+        CT_INTC.GER = 1; /*TODO: Enable global events */
+    }
+
     /* Allow OCP primary port access by the PRU so the PRU can read external memories */
     CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
     DEBUG_STATE_3;
 
     /* Enable 'timestamp' interrupt from ARM host */
     CT_INTC.EISR_bit.EN_SET_IDX = HOST_PRU_EVT_TIMESTAMP;
+
+    // TODO: pspp/lab4 does a lot more to initialize event 16
+    // https://git.ti.com/cgit/pru-software-support-package/pru-software-support-package/tree/labs/Hands_on_Labs/lab_4/solution/button_led_0/button_led_0.c
+    /* Configure GPI and GPO as Mode 0 (Direct Connect) */
+    // CT_CFG.GPCFG0 = 0x0000; // TODO: copy from pssp/lab4, do we need this?
+
 
     /* wait until pru0 is ready */
     while (SHARED_MEM.cmp0_trigger_for_pru1 == 0u) __delay_cycles(10);
