@@ -57,18 +57,18 @@
 			clock-names = "cpu";
 
 			clock-latency = <300000>; /* From omap-cpufreq driver */
-			cpu-idle-states = <&mpu_gate>;
+#			cpu-idle-states = <&mpu_gate>;
 		};
 
-		idle-states {
-			mpu_gate: mpu_gate {
-				compatible = "arm,idle-state";
-				entry-latency-us = <40>;
-				exit-latency-us = <90>;
-				min-residency-us = <300>;
-				ti,idle-wkup-m3;
-			};
-		};
+#		idle-states {
+#			mpu_gate: mpu_gate {
+#				compatible = "arm,idle-state";
+#				entry-latency-us = <40>;
+#				exit-latency-us = <90>;
+#				min-residency-us = <300>;
+#				ti,idle-wkup-m3;
+#			};
+#		};
 	};
 
 	cpu0_opp_table: opp-table {
@@ -493,17 +493,24 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				pm_sram_code: pm-code-sram@0 {
-					compatible = "ti,sram";
-					reg = <0x0 0x1000>;
-					protect-exec;
-				};
+#				pm_sram_code: pm-code-sram@0 {
+#					compatible = "ti,sram";
+#					reg = <0x0 0x1000>;
+#					protect-exec;
+#				};
 
-				pm_sram_data: pm-data-sram@1000 {
+#				pm_sram_data: pm-data-sram@1000 {
+#					compatible = "ti,sram";
+#					reg = <0x1000 0x1000>;
+#					pool;
+#				};
+
+                shp_data: shepherd-data-sram@0 {
 					compatible = "ti,sram";
-					reg = <0x1000 0x1000>;
+					reg = <0x0 0x10000>;
 					pool;
 				};
+
 			};
 		};
 
@@ -522,8 +529,8 @@
 				compatible = "ti,emif-am3352";
 				reg = <0 0x1000000>;
 				interrupts = <101>;
-				sram = <&pm_sram_code
-					&pm_sram_data>;
+#				sram = <&pm_sram_code
+#					&pm_sram_data>;
 			};
 		};
 
