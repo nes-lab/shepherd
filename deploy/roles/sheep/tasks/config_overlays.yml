@@ -25,7 +25,7 @@
     }
     - {
       regexpress: "#?enable_uboot_cape_universal=.*$",
-      replacement: "#enable_uboot_cape_universal=1",
+      replacement: "enable_uboot_cape_universal=0",
     }
   become: true
   tags: device-tree
