@@ -17,16 +17,17 @@ dependencies = [
     # forced dev versions:
     "shepherd-core[all]",
     "shepherd-data[all]",
-]
-requires-python = ">=3.11"
-
-[project.optional-dependencies]
-dev = [
+    # dev-flavor
     "prek",  # pre-commit plugin-replacement
     "bump2version",
     "ty",
     # temporary
     "dearpygui",
+]
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
 ]
 
 doc = [
