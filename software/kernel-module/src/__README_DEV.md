@@ -15,6 +15,8 @@ A good starting point for online literature:
 
 DevLog for moving codebase to v6.1: https://github.com/nes-lab/shepherd/issues/11
 
+## Kernel 6.18
+
 ## Debugging
 
 Show if device-tree was loaded:

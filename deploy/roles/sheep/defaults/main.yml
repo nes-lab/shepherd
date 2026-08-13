@@ -19,15 +19,8 @@ sheep_rebuild_kernel_module: true
 sheep_rebuild_python_package: true
 
 ### KERNEL ######
-sheep_kernel_pin: "6.1.83-ti-r42" # 2026-07-28: r42 was newest
-  # "4.19.280-bone76" -> won't load kernel-module
-  # "4.19.280-armv7-x76" -> won't load kernel-module
+sheep_kernel_pin: "6.18.42-bone46" # 2026-08-13: r46 was newest
 # -rt -> used for more reliable ptp & gpio-triggering, BUT communication with PRU fails
-# Updating to kernel 5.4 would be possible, but distros fail to boot with it
-# pssp 5.9 for kernel <= 5.4
-# pssp 6.0 for kernel >= 5.10
-# pssp 6.2 for kernel >= 6.1
-
 
 ### GCC ######
 sheep_gcc_tools_path: /usr/share/shepherd-tools
@@ -35,7 +28,7 @@ sheep_gcc_pru_support_path: /usr/share/shepherd-tools/pru-software-support-packa
 sheep_gcc_pru_cc_link: https://github.com/dinuxbg/gnupru/releases/download/2026.05
 sheep_gcc_pru_cc_release: pru-elf-2026.05.arm
 # Source: https://github.com/dinuxbg/gnupru  -> TODO: the ending was .armhf before + internal change -> look for that var and fix playbooks
-sheep_gcc_pru_support_branch: linux-4.19-rproc
+sheep_gcc_pru_support_branch: linux-6.4.0-rproc
 # Source: https://github.com/dinuxbg/pru-software-support-package
 
 ### TI CGT ###
