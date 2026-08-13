@@ -169,27 +169,40 @@ def mount_network_fs() -> bool:
     return had_error
 
 
+gpio_data: list[str] | None = None
+
+
+def get_gpio_info() -> list[str]:
+    ret = subprocess.run(
+        ["/usr/bin/sudo", "/usr/bin/gpioinfo"],
+        timeout=10,
+        check=False,
+        shell=False,
+        capture_output=True,
+    )
+    if ret.returncode != 0 or not isinstance(ret.stdout, bytes):
+        msg = f"Gpioinfo failed, got: {ret.stdout}"
+        raise ValueError(msg)
+
+    values = ret.stdout.decode().split("\n")
+    if len(values) < 60:
+        msg = f"Gpioinfo failed, got not enough info: {values}"
+        raise ValueError(msg)
+    return [x.strip() for x in values if not x.startswith("gpiochip")]
+
+
 def gpio_name_2_num(name: str | int) -> int:
     if isinstance(name, int):
         # keep backward compat for deprecated num-system (i.e. gpio 68)
         return name
-    cmd = ["/usr/bin/sudo", "/usr/bin/gpiofind", name]
-    ret = subprocess.run(  # noqa: S603
-        cmd,
-        timeout=10,
-        check=False,
-        stderr=subprocess.DEVNULL,
-    )
-    if ret.returncode != 0:
-        msg = f"Gpio {name} not found"
-        raise ValueError(msg)
-    if not ret.stdout.lower().startswith("gpiochip"):
-        msg = f"Gpio Location does not start with gpiochipX: {ret.stdout}"
-        raise ValueError
-    values = ret.stdout[8:].split()
-    if len(values) != 2:
-        msg = f"Gpio Location does not have exactly 2 values: {ret.stdout}"
-        raise ValueError(msg)
-    pin_num = int(values[0]) * 32 + int(values[1])
-    log.debug("GPIO %s was resolved to #%d", name, pin_num)
-    return pin_num
+
+    global gpio_data  # noqa: PLW0603
+    if gpio_data is None:
+        gpio_data = get_gpio_info()
+
+    for pin_num, gpio_date in enumerate(gpio_data):
+        if name in gpio_date:
+            log.debug("GPIO '%s' was resolved to # %d", name, pin_num)
+            return pin_num
+    msg = f"Gpio '{name}' not found"
+    raise ValueError(msg)
