@@ -53,7 +53,8 @@ class Watchdog:
         self.hosts_stat = dict.fromkeys(self.cfg.network_hosts, True)
 
     def __enter__(self) -> Self:
-        self.gpio_ack = GPIO(self.cfg.pin_ack, "out")
+        pin_num = self.gpio_name_2_num(self.cfg.pin_ack)
+        self.gpio_ack = GPIO(pin_num, "out")
         log.debug("Configured GPIO")
         return self
 
@@ -65,6 +66,32 @@ class Watchdog:
         extra_arg: int = 0,
     ) -> None:
         self.gpio_ack.close()
+
+    @staticmethod
+    def gpio_name_2_num(name: str | int) -> int:
+        if isinstance(name, int):
+            # keep backward compat for deprecated num-system (i.e. gpio 68)
+            return name
+        cmd = ["/usr/bin/sudo", "/usr/bin/gpiofind", name]
+        ret = subprocess.run(  # noqa: S603
+            cmd,
+            timeout=10,
+            check=False,
+            stderr=subprocess.DEVNULL,
+        )
+        if ret.returncode != 0:
+            msg = f"Gpio {name} not found"
+            raise ValueError(msg)
+        if not ret.stdout.lower().startswith("gpiochip"):
+            msg = f"Gpio Location does not start with gpiochipX: {ret.stdout}"
+            raise ValueError
+        values = ret.stdout[8:].split()
+        if len(values) != 2:
+            msg = f"Gpio Location does not have exactly 2 values: {ret.stdout}"
+            raise ValueError(msg)
+        pin_num = int(values[0]) * 32 + int(values[1])
+        log.debug("GPIO %s was resolved to #%d", name, pin_num)
+        return pin_num
 
     @staticmethod
     def ping(host: str) -> bool:
