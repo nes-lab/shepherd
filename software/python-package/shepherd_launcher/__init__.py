@@ -7,6 +7,7 @@ Relies on systemd service.
 import logging
 import os
 import signal
+import subprocess
 import sys
 import time
 from contextlib import suppress
@@ -27,6 +28,37 @@ log.propagate = False
 with suppress(ModuleNotFoundError):
     import dbus
     from periphery import GPIO
+
+gpio_cape_v2: dict[str, str] = {
+    "button": "P8_18",  # GPIO65 (deprecated naming scheme)
+    "led": "P8_19",  # GPIO22 (deprecated naming scheme)
+}
+
+
+def gpio_name_2_num(name: str | int) -> int:
+    if isinstance(name, int):
+        # keep backward compat for deprecated num-system (i.e. gpio 68)
+        return name
+    cmd = ["/usr/bin/sudo", "/usr/bin/gpiofind", name]
+    ret = subprocess.run(  # noqa: S603
+        cmd,
+        timeout=10,
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
+    if ret.returncode != 0:
+        msg = f"Gpio {name} not found"
+        raise ValueError(msg)
+    if not ret.stdout.lower().startswith("gpiochip"):
+        msg = f"Gpio Location does not start with gpiochipX: {ret.stdout}"
+        raise ValueError
+    values = ret.stdout[8:].split()
+    if len(values) != 2:
+        msg = f"Gpio Location does not have exactly 2 values: {ret.stdout}"
+        raise ValueError(msg)
+    pin_num = int(values[0]) * 32 + int(values[1])
+    log.debug("GPIO %s was resolved to #%d", name, pin_num)
+    return pin_num
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
@@ -49,20 +81,18 @@ class Launcher:
 
     def __init__(
         self,
-        pin_button: int,
-        pin_led: int,
         service_name: str,
     ) -> None:
+        self.pin_button: int = gpio_name_2_num(gpio_cape_v2["button"])
+        self.pin_led: int = gpio_name_2_num(gpio_cape_v2["led"])
+        self.service_name = service_name
         log.debug(
             "Initializing Launcher v%s for '%s' (pin_button = %d, pin_led = %d)",
             metadata.version("shepherd-sheep"),
-            service_name,
-            pin_button,
-            pin_led,
+            self.service_name,
+            self.pin_button,
+            self.pin_led,
         )
-        self.pin_button = pin_button
-        self.pin_led = pin_led
-        self.service_name = service_name
 
     def __enter__(self) -> Self:
         self.gpio_led = GPIO(self.pin_led, "out")
