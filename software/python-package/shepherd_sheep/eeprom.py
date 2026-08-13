@@ -17,6 +17,7 @@ from shepherd_core.data_models.base.calibration import CapeData
 from typing_extensions import Self
 
 from .logger import log
+from .sys_access import gpio_name_2_num
 
 # allow importing shepherd on x86 - for testing
 with suppress(ModuleNotFoundError):
@@ -46,7 +47,7 @@ class EEPROM:
 
     """
 
-    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: int = 49) -> None:
+    def __init__(self, bus_num: int = 2, address: int = 0x54, wp_pin: str = "P9_23") -> None:
         """Initializes EEPROM by bus number and address.
 
         Args:
@@ -55,7 +56,8 @@ class EEPROM:
                 by DIP switch
         """
         self.dev_path = f"/sys/bus/i2c/devices/{bus_num}-{address:04X}/eeprom"
-        self._write_protect_pin: GPIO = GPIO(wp_pin, "out")
+        wp_num = gpio_name_2_num(wp_pin)
+        self._write_protect_pin: GPIO = GPIO(wp_num, "out")
         self._write_protect_pin.write(value=True)
 
     def __enter__(self) -> Self:

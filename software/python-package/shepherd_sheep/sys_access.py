@@ -167,3 +167,29 @@ def mount_network_fs() -> bool:
             != 0
         )
     return had_error
+
+
+def gpio_name_2_num(name: str | int) -> int:
+    if isinstance(name, int):
+        # keep backward compat for deprecated num-system (i.e. gpio 68)
+        return name
+    cmd = ["/usr/bin/sudo", "/usr/bin/gpiofind", name]
+    ret = subprocess.run(  # noqa: S603
+        cmd,
+        timeout=10,
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
+    if ret.returncode != 0:
+        msg = f"Gpio {name} not found"
+        raise ValueError(msg)
+    if not ret.stdout.lower().startswith("gpiochip"):
+        msg = f"Gpio Location does not start with gpiochipX: {ret.stdout}"
+        raise ValueError
+    values = ret.stdout[8:].split()
+    if len(values) != 2:
+        msg = f"Gpio Location does not have exactly 2 values: {ret.stdout}"
+        raise ValueError(msg)
+    pin_num = int(values[0]) * 32 + int(values[1])
+    log.debug("GPIO %s was resolved to #%d", name, pin_num)
+    return pin_num
