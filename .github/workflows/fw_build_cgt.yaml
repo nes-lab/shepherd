@@ -16,10 +16,10 @@ jobs:
     env:
       pru_cgt_installer: "ti_cgt_pru_2.3.3_linux_installer_x86.bin"
       pru_cgt_link_pre: "https://software-dl.ti.com/codegen/esd/cgt_public_sw/PRU/2.3.3/"
-      pru_support_package: "pru-software-support-package-6.4.0"
+      pru_support_package: "pru-software-support-package-6.5.0"
       pru_support_link_pre: "https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git/snapshot/"
       PRU_CGT: "/usr/share/ti/ti-cgt-pru_2.3.3"
-      PRU_CGT_SUPPORT: "/usr/share/ti/pru-software-support-package-6.4.0"
+      PRU_CGT_SUPPORT: "/usr/share/ti/pru-software-support-package-6.5.0"
 
     steps:
 
@@ -46,7 +46,7 @@ jobs:
         working-directory: /usr/share/ti
 
       - name: Install PSSP dependency 🔧
-        run: git clone --branch v6.4.0 https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git
+        run: git clone --branch v6.5.0 https://git.ti.com/cgit/cgit.cgi/pru-software-support-package/pru-software-support-package.git
         working-directory: /usr/share/ti
 
       - name: Prepare using CGT 🍲
