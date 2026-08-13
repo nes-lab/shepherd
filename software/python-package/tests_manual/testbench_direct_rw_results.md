@@ -17,6 +17,7 @@ Software versions
 python             3.11.2
 
 h5py               3.16.0
+    hdf5-tools     1.10.8 (currently v2.1 is out)
 numpy              2.4.6
 pydantic           2.13.4
 pydantic_core      2.46.4
