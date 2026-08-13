@@ -45,6 +45,5 @@ sheep_ti_pru_cgt_path: /usr/share/ti/cgt-pru
 sheep_ti_pru_support_path: /usr/share/ti/pru-software-support-package
 sheep_ti_pru_cgt_installer: https://software-dl.ti.com/codegen/esd/cgt_public_sw/PRU/2.3.3/ti_cgt_pru_2.3.3_armlinuxa8hf_busybox_installer.sh
 # CGT-Updates: https://www.ti.com/tool/PRU-CGT#downloads
-sheep_ti_pru_support_tag: "v6.4.0"
+sheep_ti_pru_support_tag: "v6.5.0"
 # PSSP-Updates: https://git.ti.com/cgit/pru-software-support-package/pru-software-support-package/
-# Note: >= v6.0.0 is reserved for kernel >=5.10 and needs a intc_map.h
