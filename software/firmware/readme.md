@@ -124,7 +124,7 @@ export PRU_CGT_SUPPORT=/usr/share/ti/pru-software-support-package
 - corresponding ansible-playbook -> `shepherd/deploy/roles/sheep/task/toolchain_pru_gcc.yml`
 - install the cross toolchain from [gnupru](https://github.com/dinuxbg/gnupru.git)
 - install the PRU software support packages from [pssp](https://github.com/dinuxbg/pru-software-support-package.git)
-  - checkout branch `linux-4.19-rproc`
+  - checkout branch `linux-6.4.0-rproc` (for linux-6.1)
 - setup env variables, like below
 
 ```Shell

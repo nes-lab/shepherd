@@ -13,7 +13,6 @@
 
 
 / {
-    // note: (older) "ti,beaglebone" types seem to be working as well for v4.19.x-ti, but this is more future-proof
     compatible = "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green";
 
     part-number = "BB-SHEPHERD-CAPE";

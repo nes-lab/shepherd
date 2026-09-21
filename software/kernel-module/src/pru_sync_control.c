@@ -48,7 +48,7 @@ struct sync_data_s        sync_state;
 static u8                 init_done       = 0;
 
 /* PI-Tuning
- * - float is hard to use in kernel 4.19, so i32 it is ...
+ * - float is hard to use in kernel, so i32 it is ...
  * - Ki already includes 0.1 s sample_interval
  * - values are inverted (inv) and shifted by 10 bit (n10)
  */

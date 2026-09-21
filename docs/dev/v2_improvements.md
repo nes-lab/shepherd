@@ -87,7 +87,7 @@ Previous description is still correct, in detail:
 ### Bigger challenges in near future
 
 - hardware is getting quite old, but luckily software is improving (getting faster)
-- kernel 4.19 currently works (but has flaws) -> latest updates to 5.10 break kernel-module & pru
+- ~~kernel 4.19 currently works (but has flaws) -> latest updates to 5.10 break kernel-module & pru
 - chip-shortage is limiting our supply - 2 ICs only 15 left, current restock date mid '23
 
 
