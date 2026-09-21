@@ -146,7 +146,7 @@ void ocmc_cache_reset(void)
     error_detected = 0u;
 }
 
-uint32_t ocmc_cache_add(uint32_t block_idx)
+static uint32_t ocmc_cache_add(uint32_t block_idx)
 {
     /* refill one block if there is space for in cache */
     const uint32_t flag_idx  = block_idx >> 5u;
@@ -171,7 +171,7 @@ uint32_t ocmc_cache_add(uint32_t block_idx)
     return 1u;
 }
 
-uint32_t ocmc_cache_remove(uint32_t block_idx)
+static uint32_t ocmc_cache_remove(uint32_t block_idx)
 {
     /* discard a cached block */
     const uint32_t flag_idx  = block_idx >> 5u;
@@ -196,7 +196,7 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
 }
 
 
-void ocmc_cache_update(void)
+static void ocmc_cache_update(void)
 {
     /* Manages cache to shorten read-latency for PRU.
 

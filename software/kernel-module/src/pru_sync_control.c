@@ -208,7 +208,7 @@ void sync_reset(void)
     sync_state.ki_inv_n10   = ki_inv_n10_init;
 }
 
-void trigger_loop_start(void)
+static void trigger_loop_start(void)
 {
     struct ProtoMsg64 sync_reply64;
     const uint64_t    ts_now_ns = ktime_get_real_ns();
