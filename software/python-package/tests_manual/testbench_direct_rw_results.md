@@ -1,13 +1,15 @@
 # Benchmarking the File-OP-Pipeline
 
 Essential parts are taken from shepherd-codebase and can be benchmarked here.
-Its also a playground for new ideas and tracking changes (improvements and regressions) for later software versions.
+It's also a playground for new ideas and tracking changes (improvements and regressions) for later software versions.
 
 ## Learnings
 
 - h5py.directRW() does not make things faster for us -> plus code-quality is worse
-- switching to lzf and omitting timestamp -> each brings 30% improvement -> adds up to ~50%
+- ~~switching to lzf and omitting timestamp -> each brings 30% improvement -> adds up to ~50%
 - worst case (var I & V, plus reading) can DOS the BBB with 117% load without writing any gpio
+- gzip got a lot faster over the years - overhead is acceptable
+  - even loading harvesting traces with gzip6 comes with no mayor penalty
 
 ## BBB 2026-09-21
 
@@ -15,29 +17,37 @@ Mayor changes: active shuffle for datasets and optimized chunking for timestamps
 
 ```
 RUN with duration 60 s, Compression.null, random False
-        Old F2RAM = 3.933 s, RAM2F = 11.526 s
-        New F2RAM = 5.837 s, RAM2F = 6.652 s, RAM2Fts = 13.600
+        Old F2RAM = 3.882 s, RAM2F = 12.330 s
+        New F2RAM = 5.589 s, RAM2F = 6.717 s, RAM2Fts = 13.437
         Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
 RUN with duration 60 s, Compression.lzf, random False
-        Old F2RAM = 4.000 s, RAM2F = 10.961 s
-        New F2RAM = 3.850 s, RAM2F = 6.173 s, RAM2Fts = 12.996
+        Old F2RAM = 3.994 s, RAM2F = 10.913 s
+        New F2RAM = 3.855 s, RAM2F = 6.066 s, RAM2Fts = 12.831
         Size f_in = 6.078 MB, f_old = 6.035 MB, f_new = 2.632 MB, f_nts = 6.035 MB
 RUN with duration 60 s, Compression.gzip1, random False
-        Old F2RAM = 4.956 s, RAM2F = 12.684 s
-        New F2RAM = 4.537 s, RAM2F = 6.815 s, RAM2Fts = 14.707
+        Old F2RAM = 4.901 s, RAM2F = 12.583 s
+        New F2RAM = 4.470 s, RAM2F = 6.769 s, RAM2Fts = 14.556
         Size f_in = 4.165 MB, f_old = 4.161 MB, f_new = 1.964 MB, f_nts = 4.161 MB
+RUN with duration 60 s, Compression.gzip6, random False
+        Old F2RAM = 4.947 s, RAM2F = 14.875 s
+        New F2RAM = 4.689 s, RAM2F = 7.853 s, RAM2Fts = 16.723
+        Size f_in = 2.937 MB, f_old = 2.940 MB, f_new = 1.409 MB, f_nts = 2.940 MB
 RUN with duration 60 s, Compression.null, random True
-        Old F2RAM = 3.912 s, RAM2F = 11.630 s
-        New F2RAM = 7.006 s, RAM2F = 6.252 s, RAM2Fts = 13.933
+        Old F2RAM = 3.886 s, RAM2F = 11.226 s
+        New F2RAM = 3.873 s, RAM2F = 7.430 s, RAM2Fts = 14.994
         Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
 RUN with duration 60 s, Compression.lzf, random True
-        Old F2RAM = 4.284 s, RAM2F = 20.783 s
-        New F2RAM = 4.210 s, RAM2F = 16.892 s, RAM2Fts = 23.227
-        Size f_in = 48.612 MB, f_old = 48.569 MB, f_new = 45.166 MB, f_nts = 48.569 MB
+        Old F2RAM = 4.231 s, RAM2F = 20.715 s
+        New F2RAM = 4.180 s, RAM2F = 16.110 s, RAM2Fts = 22.892
+        Size f_in = 48.611 MB, f_old = 48.568 MB, f_new = 45.164 MB, f_nts = 48.568 MB
 RUN with duration 60 s, Compression.gzip1, random True
-        Old F2RAM = 5.927 s, RAM2F = 22.304 s
-        New F2RAM = 5.536 s, RAM2F = 16.563 s, RAM2Fts = 24.517
-        Size f_in = 44.844 MB, f_old = 44.840 MB, f_new = 42.643 MB, f_nts = 44.840 MB
+        Old F2RAM = 5.932 s, RAM2F = 22.650 s
+        New F2RAM = 5.484 s, RAM2F = 16.898 s, RAM2Fts = 24.236
+        Size f_in = 44.843 MB, f_old = 44.839 MB, f_new = 42.642 MB, f_nts = 44.839 MB
+RUN with duration 60 s, Compression.gzip6, random True
+        Old F2RAM = 5.847 s, RAM2F = 24.561 s
+        New F2RAM = 5.468 s, RAM2F = 18.450 s, RAM2Fts = 27.146
+        Size f_in = 44.063 MB, f_old = 44.065 MB, f_new = 42.534 MB, f_nts = 44.065 MB
 ```
 
 Analysis:
