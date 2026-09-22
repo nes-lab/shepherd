@@ -2,6 +2,11 @@
 
 ## 2026.08.1 - unreleased
 
+Sheep
+- improve performance of Hdf5-Writer by adding shuffle and optimizing chunking of timeseries
+- fix shared-mem access (potential bug)
+- add & update performance-benchmarks
+
 Watchdog
 - add tooling to automatically update the hostname. This is helpful when swapping SD-Cards of the observers as this was the last manual update step. The hostname is derived from the MAC address. This will only work if the MAC address is found in the observer-fixtures of the testbed-client.
 
@@ -30,6 +35,18 @@ Misc
 - add custom compiled PTP
 - update cape-errata, h5-benchmark
 - sheep - fix exception during end of resync
+
+Speed-Benchmark on a Beaglebone Green (compiled from [testbench_direct_rw](https://github.com/nes-lab/shepherd/blob/main/software/python-package/tests_manual/testbench_direct_rw_results.md)):
+
+| type          | static (60s R/W) | random (60s R/W) |
+|---------------|------------------|------------------|
+| none-base     | 2.970 / 11.593 s | 2.988 / 10.646 s |
+| lzf-base      | 4.024 / 17.988 s | 3.588 / 26.893 s |
+| gzip1-base    | 5.960 / 21.154 s | 6.777 / 29.791 s |
+| none-shuffle  | 3.882 / 12.330 s | 3.886 / 11.226 s |
+| lzf-shuffle   | 3.994 / 10.913 s | 4.231 / 20.715 s |
+| gzip1-shuffle | 4.901 / 12.583 s | 5.932 / 22.650 s |
+| gzip6-shuffle | 4.947 / 14.875 s | 5.847 / 24.561 s |
 
 ## 2026.07.1
 
