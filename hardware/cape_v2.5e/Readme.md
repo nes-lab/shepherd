@@ -120,6 +120,7 @@
   - this would also make it worthwhile to p'n'p the bottom side (7 Caps)
 - P2 Connector for external triggering & signaling has no real use-case
 - describe P3 on PCB -> sync-port
+- add shutdown-button (is missing on newer green eco)
 
 ## Target Pin Def
 
