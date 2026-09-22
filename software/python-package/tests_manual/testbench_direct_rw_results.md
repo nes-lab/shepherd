@@ -11,6 +11,45 @@ It's also a playground for new ideas and tracking changes (improvements and regr
 - gzip got a lot faster over the years - overhead is acceptable
   - even loading harvesting traces with gzip6 comes with no mayor penalty
 
+## BBB 2026-09-22
+
+Mayor changes: kernel 6.12.109 & 6.18.52, KMod not running
+
+```
+RUN with duration 60 s, Compression.null, random False
+        Old F2RAM = 3.559 s, RAM2F = 9.280 s
+        New F2RAM = 3.514 s, RAM2F = 5.250 s, RAM2Fts = 11.522
+        Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
+RUN with duration 60 s, Compression.lzf, random False
+        Old F2RAM = 3.619 s, RAM2F = 9.873 s
+        New F2RAM = 3.458 s, RAM2F = 5.471 s, RAM2Fts = 11.833
+        Size f_in = 6.078 MB, f_old = 6.035 MB, f_new = 2.632 MB, f_nts = 6.035 MB
+RUN with duration 60 s, Compression.gzip1, random False
+        Old F2RAM = 4.485 s, RAM2F = 11.542 s
+        New F2RAM = 4.042 s, RAM2F = 6.136 s, RAM2Fts = 13.426
+        Size f_in = 4.165 MB, f_old = 4.161 MB, f_new = 1.964 MB, f_nts = 4.161 MB
+RUN with duration 60 s, Compression.gzip6, random False
+        Old F2RAM = 4.522 s, RAM2F = 13.679 s
+        New F2RAM = 4.244 s, RAM2F = 7.196 s, RAM2Fts = 15.524
+        Size f_in = 2.937 MB, f_old = 2.940 MB, f_new = 1.409 MB, f_nts = 2.940 MB
+RUN with duration 60 s, Compression.null, random True
+        Old F2RAM = 3.653 s, RAM2F = 9.871 s
+        New F2RAM = 3.517 s, RAM2F = 5.236 s, RAM2Fts = 11.495
+        Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
+RUN with duration 60 s, Compression.lzf, random True
+        Old F2RAM = 3.873 s, RAM2F = 18.726 s
+        New F2RAM = 3.751 s, RAM2F = 14.579 s, RAM2Fts = 20.968
+        Size f_in = 48.613 MB, f_old = 48.570 MB, f_new = 45.166 MB, f_nts = 48.570 MB
+RUN with duration 60 s, Compression.gzip1, random True
+        Old F2RAM = 5.473 s, RAM2F = 20.164 s
+        New F2RAM = 6.740 s, RAM2F = 15.330 s, RAM2Fts = 22.190
+        Size f_in = 44.843 MB, f_old = 44.839 MB, f_new = 42.642 MB, f_nts = 44.839 MB
+RUN with duration 60 s, Compression.gzip6, random True
+        Old F2RAM = 5.335 s, RAM2F = 22.492 s
+        New F2RAM = 4.966 s, RAM2F = 16.156 s, RAM2Fts = 24.436
+        Size f_in = 44.063 MB, f_old = 44.065 MB, f_new = 42.534 MB, f_nts = 44.065 MB
+```
+
 ## BBB 2026-09-21
 
 Mayor changes: active shuffle for datasets and optimized chunking for timestamps
@@ -54,6 +93,7 @@ Conclusion:
 - 20-50 % less time needed for storing
 - smaller files
 - tested kernel 4.19 and 6.1 with similar performance
+- kernel 6.12-ti seems to be more busy and shows 10 % worse results
 
 ## BBB 2026-06
 
