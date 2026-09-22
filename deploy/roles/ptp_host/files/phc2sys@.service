@@ -11,8 +11,8 @@ Type=idle
 ExecStartPre=-/bin/sleep 5
 # ExecStart=/usr/sbin/phc2sys -w -s %I
 # ExecStart=/usr/sbin/phc2sys -rr -w -s %I
-# ExecStart=/usr/sbin/phc2sys -r -w -s %I -E linreg
-ExecStart=/usr/local/sbin/phc2sys -r -w -s %I -E linreg
+ExecStart=/usr/sbin/phc2sys -r -w -s %I -E linreg
+# ExecStart=/usr/local/sbin/phc2sys -r -w -s %I -E linreg
 # for client: -r -w -s %I -E linreg
 # for server: -a -rr -E linreg, TODO: put in ansible
 # for both:   -rr -w -s %I -E linreg

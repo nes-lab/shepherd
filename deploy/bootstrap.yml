@@ -1,6 +1,8 @@
 ---
 # sets up passwordless access for new user
-
+# TODO: this script should:
+#       - handle access / accounts
+#       - hostname & mac-address to IP config
 - name: Base setup
   hosts: all
   become: true

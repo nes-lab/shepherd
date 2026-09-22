@@ -35,3 +35,4 @@
     - name: Resync
       ansible.builtin.shell:
         cmd: sudo shepherd-sheep resync
+      failed_when: false # may be not connected to timeserver
