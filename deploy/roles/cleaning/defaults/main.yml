@@ -31,6 +31,7 @@ cleaning_packages: [
   'linux-image-6.18.*',
   'linux-image-7.1.*',
   'linux-image-7.2.*',
+  'linux-image-7.3.*',
   'linux-headers-4.14.*',
   'linux-headers-4.19.*',
   'linux-headers-5.4.*',
@@ -42,6 +43,7 @@ cleaning_packages: [
   'linux-headers-6.18.*',
   'linux-headers-7.1.*',
   'linux-headers-7.2.*',
+  'linux-headers-7.3.*',
 
   # not needed drivers / packages,
   # manually synced with omap-image-builder/rcn-ee.net-console-ubuntu-focal-v5.10-ti-armhf.conf
