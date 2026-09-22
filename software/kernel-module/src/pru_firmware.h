@@ -2,9 +2,7 @@
 #define KERNELMODULE_PRU_FIRMWARE_H
 
 struct shepherd_platform_data
-{
-    struct rproc *rproc_prus[2];
-};
+{ struct rproc *rproc_prus[2]; };
 
 extern struct shepherd_platform_data *shp_pdata;
 

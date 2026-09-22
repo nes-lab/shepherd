@@ -1,4 +1,3 @@
-
 from shepherd_sheep.sys_access import get_gpio_info
 from shepherd_sheep.sys_access import gpio_name_2_num
 
