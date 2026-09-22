@@ -4,6 +4,9 @@
 - old: current design
 - new: eval h5py.directRead()/Write() feature
 
+conclusion: new approach is slower when also writing timestamp
+            (like the old approach does)
+
 """
 
 import mmap
@@ -236,7 +239,7 @@ def ram_to_file_new_ts(path: Path, mem: SharedMemory, compression: Compression) 
 
 
 if __name__ == "__main__":
-    compressions = [Compression.lzf, Compression.gzip1, Compression.null]
+    compressions = [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]
     path_i = Path(__file__).parent / "artiHrv.h5"
     path_o1 = Path(__file__).parent / "artiEmu1.h5"
     path_o2 = Path(__file__).parent / "artiEmu2.h5"
@@ -279,28 +282,28 @@ if __name__ == "__main__":
                     number=1,
                 )
                 log.info(
-                    "RUN with duration %d s, compression %s, random %s",
+                    "RUN with duration %d s, %s, random %s",
                     duration,
                     str(compression),
                     str(random),
                 )
                 log.info(
-                    "\tOld F2RAM = %f s, RAM2F = %f s",
-                    round(two, 3),
-                    round(tro, 3),
+                    "\tOld F2RAM = %.3f s, RAM2F = %.3f s",
+                    two,
+                    tro,
                 )
                 log.info(
-                    "\tNew F2RAM = %f s, RAM2F = %f s, RAM2Fts = %f",
-                    round(twn, 3),
-                    round(trn, 3),
-                    round(trt, 3),
+                    "\tNew F2RAM = %.3f s, RAM2F = %.3f s, RAM2Fts = %.3f",
+                    twn,
+                    trn,
+                    trt,
                 )
                 log.info(
-                    "\tSize f_in = %f MB, f_old = %f MB, f_new = %f MB, f_nts = %f MB",
-                    round(path_i.stat().st_size / 2**20, 3),
-                    round(path_o1.stat().st_size / 2**20, 3),
-                    round(path_o2.stat().st_size / 2**20, 3),
-                    round(path_o3.stat().st_size / 2**20, 3),
+                    "\tSize f_in = %.3f MB, f_old = %.3f MB, f_new = %.3f MB, f_nts = %.3f MB",
+                    path_i.stat().st_size / 2**20,
+                    path_o1.stat().st_size / 2**20,
+                    path_o2.stat().st_size / 2**20,
+                    path_o3.stat().st_size / 2**20,
                 )
                 time.sleep(1)
                 path_i.unlink()
