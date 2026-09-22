@@ -32,8 +32,9 @@ class Monitor(ABC):
             shape=(self.increment,),
             dtype="u8",
             maxshape=(None,),
-            chunks=True,
+            chunks=(self.increment,),
             compression=compression,
+            shuffle=True,
         )
         self.data["time"].attrs["unit"] = "s"
         self.data["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
