@@ -14,6 +14,19 @@
 
 struct shepherd_platform_data *shp_pdata = NULL;
 
+void                           pru_rproc_shutdown(struct rproc *rproc)
+{
+    int ret;
+
+    if (!rproc) return;
+
+    if (rproc->state != RPROC_RUNNING) return;
+
+    ret = rproc_shutdown(rproc);
+    if (ret) pr_err("shprd.k: rproc_shutdown(%s) failed: %d", rproc->name, ret);
+}
+
+
 int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 {
     int       ret       = 0;
@@ -30,14 +43,8 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 
     /* halt PRUs */
     // NOTE: code is intertwined for simultaneous startup and clean states
-    if (shp_pdata->rproc_prus[0]->state == RPROC_RUNNING)
-    {
-        rproc_shutdown(shp_pdata->rproc_prus[0]);
-    }
-    if (shp_pdata->rproc_prus[1]->state == RPROC_RUNNING)
-    {
-        rproc_shutdown(shp_pdata->rproc_prus[1]);
-    }
+    pru_rproc_shutdown(shp_pdata->rproc_prus[0]);
+    pru_rproc_shutdown(shp_pdata->rproc_prus[1]);
 
     /* swap firmware (only reboot if no name is supplied) */
     if ((strlen(pru0_file_name) > 0) &&

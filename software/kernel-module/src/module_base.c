@@ -115,8 +115,9 @@ static int shepherd_platform_data_exit(struct platform_device *pdev)
         {
             if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
             {
-                rproc_shutdown(shp_pdata->rproc_prus[1]);
-                printk(KERN_INFO "shprd.k: PRU1 shut down");
+                if (rproc_shutdown(shp_pdata->rproc_prus[1]))
+                    pr_err("shprd.k: rproc_shutdown(%s) failed\n", shp_pdata->rproc_prus[1]->name);
+                else printk(KERN_INFO "shprd.k: PRU1 shut down");
             }
             rproc_put(shp_pdata->rproc_prus[1]);
             shp_pdata->rproc_prus[1] = NULL;
@@ -127,8 +128,9 @@ static int shepherd_platform_data_exit(struct platform_device *pdev)
         {
             if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
             {
-                rproc_shutdown(shp_pdata->rproc_prus[0]);
-                printk(KERN_INFO "shprd.k: PRU0 shut down");
+                if (rproc_shutdown(shp_pdata->rproc_prus[0]))
+                    pr_err("shprd.k: rproc_shutdown(%s) failed\n", shp_pdata->rproc_prus[0]->name);
+                else printk(KERN_INFO "shprd.k: PRU0 shut down");
             }
             rproc_put(shp_pdata->rproc_prus[0]);
             shp_pdata->rproc_prus[0] = NULL;

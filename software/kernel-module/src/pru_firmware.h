@@ -6,6 +6,9 @@ struct shepherd_platform_data
 
 extern struct shepherd_platform_data *shp_pdata;
 
+
+void                                  pru_rproc_shutdown(struct rproc *rproc);
+
 int  swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name);
 
 void read_pru_firmware(u8 pru_num, char *file_name);
