@@ -50,10 +50,10 @@ RUN with duration 60 s, Compression.gzip6, random True
         Size f_in = 44.063 MB, f_old = 44.065 MB, f_new = 42.534 MB, f_nts = 44.065 MB
 ```
 
-Analysis:
+Conclusion:
 - 20-50 % less time needed for storing
 - smaller files
-
+- tested kernel 4.19 and 6.1 with similar performance
 
 ## BBB 2026-06
 

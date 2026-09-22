@@ -10,7 +10,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/am33xx.h>
 
-// For dummy refrence when peripheral is not available.
+// For dummy reference when peripheral is not available.
 &{/} {
 	not_available: not_available {
 		// Use &not_available when required.

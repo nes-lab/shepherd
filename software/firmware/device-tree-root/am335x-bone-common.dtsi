@@ -97,7 +97,7 @@
 
 	cpsw_default: cpsw-default-pins {
 		pinctrl-single,pins = <
-			/* Slave 1 */
+			/* Sl-ave 1 */
 			AM33XX_PADCONF(AM335X_PIN_MII1_RX_ER, PIN_INPUT_PULLUP, MUX_MODE0)
 			AM33XX_PADCONF(AM335X_PIN_MII1_TX_EN, PIN_OUTPUT_PULLDOWN, MUX_MODE0)
 			AM33XX_PADCONF(AM335X_PIN_MII1_RX_DV, PIN_INPUT_PULLUP, MUX_MODE0)
@@ -116,7 +116,7 @@
 
 	cpsw_sleep: cpsw-sleep-pins {
 		pinctrl-single,pins = <
-			/* Slave 1 reset value */
+			/* Sl-ave 1 reset value */
 			AM33XX_PADCONF(AM335X_PIN_MII1_RX_ER, PIN_INPUT_PULLDOWN, MUX_MODE7)
 			AM33XX_PADCONF(AM335X_PIN_MII1_TX_EN, PIN_INPUT_PULLDOWN, MUX_MODE7)
 			AM33XX_PADCONF(AM335X_PIN_MII1_RX_DV, PIN_INPUT_PULLDOWN, MUX_MODE7)

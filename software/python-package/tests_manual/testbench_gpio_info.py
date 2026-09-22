@@ -1,3 +1,4 @@
+from shepherd_core import log
 from shepherd_sheep.sys_access import get_gpio_info
 from shepherd_sheep.sys_access import gpio_name_2_num
 
@@ -58,4 +59,4 @@ for gpio_value in gpio_v25:
     gpio_num = gpio_name_2_num(gpio_value)
     gpio_dsc = gpio_data[gpio_num]
     if "unused" not in gpio_dsc:
-        print(f"Problem {gpio_value} / {gpio_num}: {gpio_dsc}")
+        log.info(f"Problem? {gpio_value} / {gpio_num}: {gpio_dsc}")
