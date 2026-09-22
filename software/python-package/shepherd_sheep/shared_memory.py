@@ -72,7 +72,7 @@ class SharedMemory:
             fileno=self._fd,
             length=self._size,
             flags=mmap.MAP_SHARED,
-            access=mmap.PROT_WRITE,
+            access=mmap.ACCESS_WRITE,
             offset=self._address,
         )
         # TODO: could it also be async? might be error-source
