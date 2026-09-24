@@ -40,7 +40,9 @@ class Watchdog:
     """Allows to periodically reset hardware-watchdog on Cape."""
 
     def __init__(self) -> None:
-        self.cfg = WatchdogConfig.from_file()
+        self.cfg = None
+        with suppress(Exception):
+            self.cfg = WatchdogConfig.from_file()
         if self.cfg is None:
             self.cfg: WatchdogConfig = WatchdogConfig()
             self.cfg.to_file()
