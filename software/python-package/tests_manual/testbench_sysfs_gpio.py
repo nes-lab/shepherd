@@ -28,13 +28,13 @@ gpio_v25: dict[str, str] = {
 }
 
 gpio_data = get_gpio_info()
+
 for gpio_name, gpio_value in gpio_v25.items():
     gpio_num = gpio_name_2_num(gpio_value)
-    gpio_dsc = gpio_data[gpio_num]
+    gpio_dsc = gpio_data[gpio_num % 512]
     log.info(f"Trying {gpio_value} / {gpio_num} / {gpio_name}: {gpio_dsc}")
     try:
         gpio = GPIO(gpio_num, "in")
-        # kernel 6.18 has added 512-offset?!?
         gpio.close()
     except GPIOError:
         log.info("\t failed during export")

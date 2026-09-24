@@ -7,7 +7,6 @@ Relies on systemd service.
 import logging
 import os
 import signal
-import subprocess
 import sys
 import time
 from contextlib import suppress
@@ -15,6 +14,7 @@ from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
+from shepherd_sheep.sys_access import gpio_name_2_num
 from typing_extensions import Self
 
 # Top-Level Package-logger
@@ -35,42 +35,6 @@ gpio_cape_v2: dict[str, str] = {
 }
 
 gpio_data: list[str] | None = None
-
-
-def get_gpio_info() -> list[str]:
-    ret = subprocess.run(
-        ["/usr/bin/sudo", "/usr/bin/gpioinfo"],
-        timeout=10,
-        check=False,
-        shell=False,
-        capture_output=True,
-    )
-    if ret.returncode != 0 or not isinstance(ret.stdout, bytes):
-        msg = f"Gpioinfo failed, got: {ret.stdout}"
-        raise ValueError(msg)
-
-    values = ret.stdout.decode().split("\n")
-    if len(values) < 60:
-        msg = f"Gpioinfo failed, got not enough info: {values}"
-        raise ValueError(msg)
-    return [x.strip() for x in values if not x.startswith("gpiochip")]
-
-
-def gpio_name_2_num(name: str | int) -> int:
-    if isinstance(name, int):
-        # keep backward compat for deprecated num-system (i.e. gpio 68)
-        return name
-
-    global gpio_data  # noqa: PLW0603
-    if gpio_data is None:
-        gpio_data = get_gpio_info()
-
-    for pin_num, gpio_date in enumerate(gpio_data):
-        if name in gpio_date:
-            log.debug("GPIO '%s' was resolved to # %d", name, pin_num)
-            return pin_num
-    msg = f"Gpio '{name}' not found"
-    raise ValueError(msg)
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
