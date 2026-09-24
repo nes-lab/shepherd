@@ -49,8 +49,8 @@
       ansible.builtin.apt:
         name:
           [
-            "linux-image-{{ sheep_kernel_pin }}",
-            "linux-headers-{{ sheep_kernel_pin }}",
+            "linux-image-{{ new_kernel_version }}",
+            "linux-headers-{{ new_kernel_version }}",
           ]
         state: present
 
@@ -91,7 +91,7 @@
           regexpress: '#?uboot_overlay_pru=.*$',
           replacement: "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo",
           # note that this is still working with kernel 6.1
-        } # TODO: this _overlay_pru should maybe be _overlay_addr0? it is not listed in recent uEnvs
+        }
         - {
           regexpress: '#?uboot_overlay_addr4=.*$',
           replacement: "uboot_overlay_addr4=/lib/firmware/BB-SHPRD-24A0.dtbo",
@@ -115,9 +115,10 @@
       vars:
         sheep_install_basics: false
         sheep_shepherd_branch: dev  # default: main
-        sheep_refresh_source: "{{ refresh_from_host }}"
+        sheep_refresh_source: false
         sheep_rebuild_kernel_module: true  # default: true
         sheep_rebuild_python_package: true # default: true
+        sheep_cape_hw_ver: "24"
 
     - name: Reset Watchdog-Config
       ansible.builtin.command: "rm /etc/shepherd/watchdog.yaml"
