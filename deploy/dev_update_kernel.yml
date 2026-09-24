@@ -40,10 +40,6 @@
         msg:
           - "active   = {{ kernelrelease.stdout.strip() }}"
           - "required = {{ new_kernel_version }}"
-    - name: Check for required Kernel-Version
-      ansible.builtin.fail:
-        msg: Kernel-Version already active!
-      when: kernelrelease.stdout.strip() == new_kernel_version
 
     - name: APT - install hardcoded kernel image & headers
       ansible.builtin.apt:
@@ -53,20 +49,23 @@
             "linux-headers-{{ new_kernel_version }}",
           ]
         state: present
+      when: kernelrelease.stdout.strip() != new_kernel_version
 
     - name: Restart device
       ansible.builtin.reboot:
         connect_timeout: 20
         reboot_timeout: 200
         post_reboot_delay: 30
+      when: kernelrelease.stdout.strip() != new_kernel_version
 
-    - name: Remove space-waster
+    - name: Remove previous PSSP
       ansible.builtin.command: "rm -rf /usr/share/ti/pru-software-support-package"
       become: true
 
     - name: Clone PRU software support package (Ti PSSP)
       ansible.builtin.git:
-        repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
+        #repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
+        repo: 'https://git.ti.com/cgit/pru-software-support-package/pru-software-support-package'
         dest: /usr/share/ti/pru-software-support-package
         update: true
         version: "v6.5.0"
