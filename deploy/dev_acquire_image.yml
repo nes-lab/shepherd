@@ -49,3 +49,6 @@
 # safe without xz, mount, change uEnv.txt, umount, xz
 # sudo mkdir /mnt/image
 # sudo mount -o loop /home/NAME/Downloads/image.dd /mnt/image
+
+# Writeback to eMMC:
+# xz -dc image.img.xz | ssh jane@sheep0 'sudo dd of=/dev/mmcblk1 bs=4M iflag=fullblock conv=fsync status=progress'
