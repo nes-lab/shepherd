@@ -42,11 +42,8 @@
           - "required = {{ new_kernel_version }}"
     - name: Check for required Kernel-Version
       ansible.builtin.fail:
-        msg: |
-          Required Kernel-Version not active!
-          -> update_kernel.sh failed or /boot/uEnv.txt got changed
-      when: kernelrelease.stdout.strip() != new_kernel_version
-      # a wrong version would brick the image with the apt-task below
+        msg: Kernel-Version already active!
+      when: kernelrelease.stdout.strip() == new_kernel_version
 
     - name: APT - install hardcoded kernel image & headers
       ansible.builtin.apt:
