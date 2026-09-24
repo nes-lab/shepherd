@@ -7,6 +7,7 @@
   # ⤷ ansible won't wait for every host to continue next task
   vars:
     new_kernel_version: "6.1.83-ti-r42"
+    update_pssp: false
 
   pre_tasks: # update time
 
@@ -61,11 +62,11 @@
     - name: Remove previous PSSP
       ansible.builtin.command: "rm -rf /usr/share/ti/pru-software-support-package"
       become: true
+      when: update_pssp
 
     - name: Clone PRU software support package (Ti PSSP)
       ansible.builtin.git:
-        #repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
-        repo: 'https://git.ti.com/cgit/pru-software-support-package/pru-software-support-package'
+        repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
         dest: /usr/share/ti/pru-software-support-package
         update: true
         version: "v6.5.0"
@@ -74,6 +75,7 @@
       register: dl_pssp_ret
       until: dl_pssp_ret is not failed
       retries: 5
+      when: update_pssp
 
     - name: Enable shepherd overlays
       ansible.builtin.lineinfile:
