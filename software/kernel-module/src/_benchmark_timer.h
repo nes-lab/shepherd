@@ -29,11 +29,11 @@
  * Src: https://github.com/nes-lab/shepherd/blob/Kernel510_test/software/kernel-module/src/pru_sync_control.c
  */
 
- /* debug gpio - gpio0[22] - P8_19 - BUTTON_LED is suitable */
-static volatile void __iomem *gpio0set      = NULL;
-static volatile void __iomem *gpio0clear    = NULL;
+/* debug gpio - gpio0[22] - P8_19 - BUTTON_LED is suitable */
+static volatile void __iomem *gpio0set   = NULL;
+static volatile void __iomem *gpio0clear = NULL;
 
-void                timer_benchmark(void)
+void                          timer_benchmark(void)
 {
     uint32_t         counter;
     uint64_t         trigger_ns;
