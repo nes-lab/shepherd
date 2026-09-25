@@ -27,7 +27,7 @@ For an active installation:
 Check with:
 
 ```shell
-shepherd-herd shell "sudo cat /boot/uEnv.txt | grep BB-SHPRD-"
+shepherd-herd shell "sudo cat /boot/uEnv.txt | grep BB-SHEPHERD-CAPE-"
 shepherd-herd shell "sudo shepherd-sheep eeprom read --hw-version"
 shepherd-herd shell "sudo shepherd-sheep -v version"
 ```

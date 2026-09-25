@@ -11,43 +11,43 @@ It's also a playground for new ideas and tracking changes (improvements and regr
 - gzip got a lot faster over the years - overhead is acceptable
   - even loading harvesting traces with gzip6 comes with no mayor penalty
 
-## BBB 2026-09-22
+## BBB 2026-09-25
 
-Mayor changes: kernel 6.12.109 & 6.18.52, KMod not running
+Mayor changes: kernel 6.12.109 & 6.18.52
 
 ```
 RUN with duration 60 s, Compression.null, random False
-        Old F2RAM = 3.559 s, RAM2F = 9.280 s
-        New F2RAM = 3.514 s, RAM2F = 5.250 s, RAM2Fts = 11.522
+        Old F2RAM = 3.802 s, RAM2F = 10.507 s
+        New F2RAM = 6.653 s, RAM2F = 5.690 s, RAM2Fts = 13.013
         Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
 RUN with duration 60 s, Compression.lzf, random False
-        Old F2RAM = 3.619 s, RAM2F = 9.873 s
-        New F2RAM = 3.458 s, RAM2F = 5.471 s, RAM2Fts = 11.833
+        Old F2RAM = 3.806 s, RAM2F = 10.411 s
+        New F2RAM = 3.712 s, RAM2F = 5.752 s, RAM2Fts = 12.327
         Size f_in = 6.078 MB, f_old = 6.035 MB, f_new = 2.632 MB, f_nts = 6.035 MB
 RUN with duration 60 s, Compression.gzip1, random False
-        Old F2RAM = 4.485 s, RAM2F = 11.542 s
-        New F2RAM = 4.042 s, RAM2F = 6.136 s, RAM2Fts = 13.426
+        Old F2RAM = 4.695 s, RAM2F = 12.146 s
+        New F2RAM = 4.304 s, RAM2F = 6.501 s, RAM2Fts = 13.996
         Size f_in = 4.165 MB, f_old = 4.161 MB, f_new = 1.964 MB, f_nts = 4.161 MB
 RUN with duration 60 s, Compression.gzip6, random False
-        Old F2RAM = 4.522 s, RAM2F = 13.679 s
-        New F2RAM = 4.244 s, RAM2F = 7.196 s, RAM2Fts = 15.524
+        Old F2RAM = 4.722 s, RAM2F = 14.267 s
+        New F2RAM = 4.463 s, RAM2F = 7.591 s, RAM2Fts = 16.138
         Size f_in = 2.937 MB, f_old = 2.940 MB, f_new = 1.409 MB, f_nts = 2.940 MB
 RUN with duration 60 s, Compression.null, random True
-        Old F2RAM = 3.653 s, RAM2F = 9.871 s
-        New F2RAM = 3.517 s, RAM2F = 5.236 s, RAM2Fts = 11.495
+        Old F2RAM = 3.807 s, RAM2F = 10.060 s
+        New F2RAM = 6.639 s, RAM2F = 6.680 s, RAM2Fts = 18.100
         Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
 RUN with duration 60 s, Compression.lzf, random True
-        Old F2RAM = 3.873 s, RAM2F = 18.726 s
-        New F2RAM = 3.751 s, RAM2F = 14.579 s, RAM2Fts = 20.968
+        Old F2RAM = 4.081 s, RAM2F = 19.674 s
+        New F2RAM = 4.030 s, RAM2F = 15.316 s, RAM2Fts = 21.848
         Size f_in = 48.613 MB, f_old = 48.570 MB, f_new = 45.166 MB, f_nts = 48.570 MB
 RUN with duration 60 s, Compression.gzip1, random True
-        Old F2RAM = 5.473 s, RAM2F = 20.164 s
-        New F2RAM = 6.740 s, RAM2F = 15.330 s, RAM2Fts = 22.190
+        Old F2RAM = 5.651 s, RAM2F = 21.150 s
+        New F2RAM = 5.307 s, RAM2F = 15.540 s, RAM2Fts = 23.022
         Size f_in = 44.843 MB, f_old = 44.839 MB, f_new = 42.642 MB, f_nts = 44.839 MB
 RUN with duration 60 s, Compression.gzip6, random True
-        Old F2RAM = 5.335 s, RAM2F = 22.492 s
-        New F2RAM = 4.966 s, RAM2F = 16.156 s, RAM2Fts = 24.436
-        Size f_in = 44.063 MB, f_old = 44.065 MB, f_new = 42.534 MB, f_nts = 44.065 MB
+        Old F2RAM = 5.453 s, RAM2F = 23.367 s
+        New F2RAM = 5.279 s, RAM2F = 16.802 s, RAM2Fts = 25.532
+        Size f_in = 44.062 MB, f_old = 44.064 MB, f_new = 42.533 MB, f_nts = 44.064 MB
 ```
 
 ## BBB 2026-09-21

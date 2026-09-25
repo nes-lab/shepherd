@@ -162,7 +162,7 @@ Now it is recommended to check if ubuntu was indeed started from the sd-card as 
 
 ```Shell
 uname -a
-# ⤷ the string should contain "6.1." & "focal"
+# ⤷ the string should contain "6.12." & "focal"
 ll /dev/mmc*
 # ⤷ should show mmcblk0* (SD-Card) and mmcblk1* (internal eMMC)
 mount

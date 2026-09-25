@@ -19,7 +19,7 @@ sheep_rebuild_kernel_module: true
 sheep_rebuild_python_package: true
 
 ### KERNEL ######
-sheep_kernel_pin: "6.1.83-ti-r42" # 2026-07-28: r42 was newest
+sheep_kernel_pin: "6.12.109-bone72" # 2026-09-25: bone72 was newest
 # -rt -> used for more reliable ptp & gpio-triggering, BUT communication with PRU fails
 
 ### GCC ######

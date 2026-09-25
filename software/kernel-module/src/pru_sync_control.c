@@ -55,7 +55,7 @@ static u8                 init_done       = 0;
 const int32_t             kp_inv_n10_init = 1024 / 1.1;
 const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
-/* Benchmark high-res busy-wait - RESULTS:
+/* Benchmark high-res busy-wait - RESULTS kernel 4.19:
  * - ktime_get                  99.6us   215n   463ns/call
  * - ktime_get_real             100.3us  302n   332ns/call -> current best performer (4.19.94-ti-r73)
  * - ktime_get_ns               100.2us  257n   389ns/call
@@ -63,7 +63,17 @@ const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
  * - ktime_get_raw              99.3us   273n   364ns
  * - ktime_get_real_fast_ns     90.0us   308n   292ns
  * - increment-loop             825us    100k   8.25ns/iteration
+ *
+ * RESULTS kernel 6.12 (not verified by logic analyzer)
+ * - ktime_get = 398 n / ~100us
+ * - ktime_get_real = 399 n / ~100us
+ * - ktime_get_ns = 399 n / ~100us
+ * - ktime_get_real_ns = 398 n / ~100us
+ * - ktime_get_raw = 170 n / ~100us
+ * - ktime_get_real_fast_ns = 375 n / ~100us
+ * Src: https://github.com/nes-lab/shepherd/blob/Kernel510_test/software/kernel-module/src/pru_sync_control.c
  */
+
 
 void                      sync_exit(void)
 {

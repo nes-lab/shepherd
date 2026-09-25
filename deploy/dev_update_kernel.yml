@@ -6,7 +6,7 @@
   # strategy: free  # noqa: run-once[play]
   # ⤷ ansible won't wait for every host to continue next task
   vars:
-    new_kernel_version: "6.1.83-ti-r42"
+    new_kernel_version: "6.12.109-bone72"
     update_pssp: false
 
   pre_tasks: # update time
@@ -95,7 +95,7 @@
         }
         - {
           regexpress: '#?uboot_overlay_addr4=.*$',
-          replacement: "uboot_overlay_addr4=/lib/firmware/BB-SHPRD-24A0.dtbo",
+          replacement: "uboot_overlay_addr4=/lib/firmware/BB-SHEPHERD-CAPE-24A0.dtbo",
         }
         - {
           regexpress: '#?uboot_overlay_addr5=.*$',
@@ -104,7 +104,7 @@
         - {
           # cape-overlay (working for kernel 4.19) TODO: fix for kernel 6.1++
           regexpress: '#?dtb_overlay=.*$',
-          replacement: "#dtb_overlay=/lib/firmware/BB-SHPRD-24A0.dtbo",
+          replacement: "#dtb_overlay=/lib/firmware/BB-SHEPHERD-CAPE-24A0.dtbo",
         }
       become: true
 
