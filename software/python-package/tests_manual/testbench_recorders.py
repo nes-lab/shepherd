@@ -6,7 +6,7 @@
    - GpioRecorder   (high dynamic, event driven, 16 bit mask)
    - PruRecorder    (rare exec, every 0.1s, isochronous, 4 datasets
 
-result 2026-09-21 - baseline
+result 2026-09-21 - baseline (kernel 6.1)
     samples_n = 1000000 n, Compression.null
         IV, t = 1.410 s, out = 15.294 MiB
         PW, t = 2.294 s, out = 11.495 MiB
@@ -45,25 +45,25 @@ result 2026-09-21 - shuffle, chunk-optimized timestamps
         GP, t = 2.690 s, out = 3.588 MiB
         UT, t = 27.221 s, out = 8.317 MiB
 
-result 2026-09-22 - kernel 6.12.109 & 6.18.52 (kMod not running)
+result 2026-09-22 - kernel 6.12.109 & 6.18.52
     samples_n = 1000000 n, Compression.null
         IV, t = 1.236 s, out = 15.294 MiB
         PW, t = 2.091 s, out = 11.467 MiB
         GP, t = 1.029 s, out = 9.558 MiB
-        UT, t = 6.518 s, out = 14.178 MiB
+        UT, t = 7.518 s, out = 14.178 MiB
     samples_n = 1000000 n, Compression.lzf
         IV, t = 2.829 s, out = 8.123 MiB
         PW, t = 1.803 s, out = 0.525 MiB
         GP, t = 1.770 s, out = 3.851 MiB
         UT, t = 12.340 s, out = 8.452 MiB
-    samples_n = 1000000 n, Compression.gzip1
+    samples_n = 1000000 n, Compression.gzip1 -> ~ 10 % faster
         IV, t = 3.020 s, out = 7.496 MiB
         PW, t = 2.037 s, out = 0.295 MiB
         GP, t = 2.099 s, out = 3.621 MiB
-        UT, t = 20.706 s, out = 8.318 MiB
+        UT, t = 22.506 s, out = 8.318 MiB
     samples_n = 1000000 n, Compression.gzip6
         IV, t = 3.417 s, out = 7.366 MiB
-        PW, t = 2.275 s, out = 0.186 MiB
+        PW, t = 2.475 s, out = 0.186 MiB
         GP, t = 2.485 s, out = 3.588 MiB
         UT, t = 22.982 s, out = 8.318 MiB
 """

@@ -34,7 +34,7 @@ Ansible
 - image-acquire-script is faster and reports errors
 - add playbook for updating kernel (for testbed usage)
 
-Kernel-Update - Main Improvements:
+Kernel-Update 6.1 - Main Improvements:
 - switch from 4.19.94-ti-r74 (2018-10) to 6.1.83-ti-r39 (2022-12)
 - simplify device-tree (downward compatible)
 - makefile for device-tree compiles & installs all possible variations
@@ -45,11 +45,16 @@ Kernel-Update - Main Improvements:
 - migrate to newer pru support package (5.9 to 6.5) with different style of reserving interrupts
 - resolve issue with OCMC-RAM that is used by shepherd-cache and power-management
 
-Kernel-Update - Downsides:
+Kernel-Update 6.1 - Downsides:
 - OCMC-Cache between System and PRU is only half from before (it's partly used by linux)
    - from 64 kByte or 82 ms buffer to 32 kByte or 41 ms
    - power management (PM) uses the first 8 kByte, but cache-design needs 2^n
    - PM could be turned off (runtime-command available), but no one guarantees, that the OCMC isn't written to -> one could try to modify the device tree and NOT reserve that 4+4 kByte and check if system sticks to it (using shepherd resulted in a kernel panic when that shared area was modified)
+
+Kernel-Update 6.12:
+- migrate from 6.1.83-ti-r39 (2022-12) to 6.12.109-bone72 (2024-12)
+- device-tree - build-process now uses provided includes (less custom, error-prone code)
+- read/write-performance seems to have improved ~ 10 %
 
 Misc
 - add custom compiled PTP
