@@ -26,7 +26,8 @@ CFLAGS_MODULE += -Wno-implicit-int -Wno-implicit-function-declaration
 CFLAGS_MODULE += -Wmissing-attributes
 #CFLAGS_MODULE += -Wuse-after-free=3  # not avail on testbed
 CFLAGS_MODULE += -Wuninitialized
-CFLAGS_MODULE += -Wshadow=local
+#CFLAGS_MODULE += -Wshadow=local  # kernel 6.18 started throwing warnings
+
 # Analyze '-Wextra' or '-Wpedantic' with:
 # make 2> output.txt
 # -> look for "shepherd/software/kernel" but

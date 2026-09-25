@@ -55,13 +55,11 @@ int                           mem_interface_init(void)
                (uint32_t) pru_shared_mem_io, (uint32_t) (PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET),
                sizeof(struct SharedMem));
 
-    hrtimer_init(&delayed_start_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    delayed_start_timer.function = &delayed_start_callback;
+    hrtimer_setup(&delayed_start_timer, &delayed_start_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 
-    hrtimer_init(&delayed_stop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    delayed_stop_timer.function = &delayed_stop_callback;
+    hrtimer_setup(&delayed_stop_timer, &delayed_stop_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 
-    init_done                   = 1;
+    init_done = 1;
     printk(KERN_INFO "shprd.k: mem-interface initialized, shared mem @ 0x%X, size = %d bytes",
            (uint32_t) PRU_BASE_ADDR + PRU_SHARED_MEM_OFFSET, sizeof(struct SharedMem));
 

@@ -1,4 +1,3 @@
-#include <linux/delay.h>
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/io.h>

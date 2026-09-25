@@ -1,5 +1,5 @@
-#include <linux/delay.h>
 #include <linux/hrtimer.h>
+
 #include <linux/io.h>
 #include <linux/ktime.h>
 #include <linux/math64.h>
@@ -84,8 +84,7 @@ int ocmc_cache_init(void)
            (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
 
     /* timer for updates */
-    hrtimer_init(&update_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    update_timer.function = &update_callback;
+    hrtimer_setup(&update_timer, &update_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     hrtimer_start(&update_timer, ts_now + DELAY_TIMER, HRTIMER_MODE_ABS);
 
     init_done = 1u;

@@ -1,4 +1,3 @@
-#include <linux/delay.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 
@@ -58,7 +57,7 @@ uint8_t get_msg_from_pru0(struct ProtoMsg *const element)
 /***************************************************************/
 /***************************************************************/
 
-struct hrtimer              coordinator_loop_timer;
+struct hrtimer              coordinator_timer;
 static enum hrtimer_restart coordinator_callback(struct hrtimer *timer_for_restart);
 static u8                   timers_active          = 0u;
 static u8                   init_done              = 0u;
@@ -77,7 +76,7 @@ void msg_sys_exit(void)
 {
     timers_active = 0;
 
-    if (init_done) hrtimer_cancel(&coordinator_loop_timer);
+    if (init_done) hrtimer_cancel(&coordinator_timer);
 
     init_done = 0;
 
@@ -116,10 +115,9 @@ int msg_sys_init(void)
         return -1;
     }
 
-    hrtimer_init(&coordinator_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    coordinator_loop_timer.function = &coordinator_callback;
+    hrtimer_setup(&coordinator_timer, &coordinator_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 
-    init_done                       = 1;
+    init_done = 1;
     printk(KERN_INFO "shprd.k: msg-system initialized");
 
     msg_sys_start();
@@ -157,7 +155,7 @@ void msg_sys_start(void)
 
     msg_sys_reset();
 
-    hrtimer_start(&coordinator_loop_timer, ts_now_kt + ns_to_ktime(coord_timer_steps_ns[0]),
+    hrtimer_start(&coordinator_timer, ts_now_kt + ns_to_ktime(coord_timer_steps_ns[0]),
                   HRTIMER_MODE_ABS);
 
     timers_active = 1;
