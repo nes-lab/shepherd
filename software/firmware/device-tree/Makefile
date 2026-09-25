@@ -1,4 +1,4 @@
-DTS_ALL  := $(sort $(wildcard BB-SHPRD-*.dts))
+DTS_ALL  := $(sort $(wildcard BB-SHEPHERD-CAPE-*.dts))
 DTSP_ALL := $(DTS_ALL:.dts=.dtsp)
 DTBO_ALL := $(DTS_ALL:.dts=.dtbo)
 
