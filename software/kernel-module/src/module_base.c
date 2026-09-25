@@ -201,7 +201,7 @@ failure_1_pru:
     return ret;
 }
 
-static int shepherd_drv_remove(struct platform_device *pdev)
+static void shepherd_drv_remove(struct platform_device *pdev)
 {
     ocmc_cache_exit();
     sysfs_interface_exit();
@@ -212,7 +212,6 @@ static int shepherd_drv_remove(struct platform_device *pdev)
     shepherd_platform_data_exit(pdev);
     //platform_set_drvdata(pdev, NULL);
     printk(KERN_INFO "shprd.k: module exited from kernel!!!");
-    return 0;
 }
 
 static struct platform_driver shepherd_driver = {
