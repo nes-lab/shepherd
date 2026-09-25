@@ -1,6 +1,6 @@
 # History of Changes
 
-## 2026.08.1 - unreleased
+## 2026.09.1 - unreleased
 
 Sheep
 - improve performance of Hdf5-Writer by adding shuffle and optimizing chunking of timeseries
@@ -9,6 +9,7 @@ Sheep
 
 Watchdog
 - add tooling to automatically update the hostname. This is helpful when swapping SD-Cards of the observers as this was the last manual update step. The hostname is derived from the MAC address. This will only work if the MAC address is found in the observer-fixtures of the testbed-client.
+- make system immune to faulty config (avoids exception-loop with high cpu-util)
 
 Herd
 - add forced reboot via sysrq (CLI `unstick`). SYSRQD_KEY must be present in env-variables
@@ -30,6 +31,25 @@ Ansible
   - revert to use included PTP
   - try normal hw-filtering
   - disable PTP-compiling and reload systemd after setup
+- image-acquire-script is faster and reports errors
+- add playbook for updating kernel (for testbed usage)
+
+Kernel-Update - Main Improvements:
+- switch from 4.19.94-ti-r74 (2018-10) to 6.1.83-ti-r39 (2022-12)
+- simplify device-tree (downward compatible)
+- makefile for device-tree compiles & installs all possible variations
+- generalize GPIO-usage via sysfs (downward compatible) as gpiochip# is initialized async and order can change on newer kernel versions
+  - gpio-access via sysfs is now ready for kernel 6.1 to 6.18 (tested)
+- migrate to newer kernel API
+- heavily improve safety of kMods init-phase & shutdown
+- migrate to newer pru support package (5.9 to 6.5) with different style of reserving interrupts
+- resolve issue with OCMC-RAM that is used by shepherd-cache and power-management
+
+Kernel-Update - Downsides:
+- OCMC-Cache between System and PRU is only half from before (it's partly used by linux)
+   - from 64 kByte or 82 ms buffer to 32 kByte or 41 ms
+   - power management (PM) uses the first 8 kByte, but cache-design needs 2^n
+   - PM could be turned off (runtime-command available), but no one guarantees, that the OCMC isn't written to -> one could try to modify the device tree and NOT reserve that 4+4 kByte and check if system sticks to it (using shepherd resulted in a kernel panic when that shared area was modified)
 
 Misc
 - add custom compiled PTP
