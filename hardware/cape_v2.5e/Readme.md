@@ -121,6 +121,7 @@
 - P2 Connector for external triggering & signaling has no real use-case
 - describe P3 on PCB -> sync-port
 - add shutdown-button (is missing on newer green eco)
+- 5V input is enough - either add second input or remove 17V Reg (prone to burning out)
 
 ## Target Pin Def
 
