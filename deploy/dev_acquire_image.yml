@@ -25,10 +25,10 @@
       ansible.builtin.debug:
         msg:
           - "eMMC"
-          - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1' | xz -6 - | dd of={{ image_name }}"
+          - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk1 bs=4M iflag=fullblock status=progress' | xz -6 -T0 > {{ image_name }}"
           - " -> better: shutdown, start from SD-Card, check FS (fsck -p /dev/mmcblk1p1), copy"
           - "SD-Card"
-          - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk0' | xz -6 - | dd of={{ image_name }}"
+          - "{{ cmd_ssh }} 'sudo dd if=/dev/mmcblk0 bs=4M iflag=fullblock status=progress' | xz -6 -T0 > {{ image_name }}"
           - "-> better: shutdown, remove card and prepare image on external device"
 
 # TODO: could shrink the actual fs with: sudo resize2fs -p /dev/mmcblk0p1 3G
@@ -36,15 +36,10 @@
 # hostvars[inventory_hostname]['ansible_default_ipv4']['address']
 
 # base: 1.7 gb used, 1.7 gb free, 51% usage
-# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | gzip -1 - | dd of=image.img.gz -> 742 mb 1300s
-# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz -> 466 mb 1320s
-# ssh jacob@192.168.165.227 'sudo dd if=/dev/mmcblk1' | xz -3 - |  dd of=image3.img.xz -> 466 mb 1333s
-# ssh jane@10.0.0.11 'sudo dd if=/dev/mmcblk1' | xz -6 - |  dd of=image.img.xz         -> 384 mb  785s
-# ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | xz -6 - |  dd of=image.img.xz         -> 384 mb  785s
-# base: 1.4 gb used, 2.0 gb free, 41 % usage -> 363 mb,
-# - remove gcc-8, fw/iw
-# base: 1.2 gb used, 2.2 gb free, 36 % usage -> 326 mb,
-# base without shp: 788 - 825 mb, 2023-02-25, 1.4 gb with shp
+# ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | gzip -1 - | dd of=image.img.gz      -> 742 mb 1300s
+# ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | lzma -3 - | dd of=image.img.xz      -> 466 mb 1320s
+# ssh jane@sheep0 'sudo dd if=/dev/mmcblk1' | xz -6 - |  dd of=image.img.xz       -> 384 mb  785s
+# ssh jane@sheep0 'sudo dd if=/dev/mmcblk1 bs=4M iflag=fullblock status=progress' | xz -6 -T0 > image.img.xz   -> 650 mb  510s
 
 # safe without xz, mount, change uEnv.txt, umount, xz
 # sudo mkdir /mnt/image
