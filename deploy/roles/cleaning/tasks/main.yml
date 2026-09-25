@@ -32,8 +32,9 @@
     - "/usr/share/ti/pru-software-support-package/examples/"
     - "/lib/firmware/ti-connectivity/"
     - "/usr/share/ti/ticgttemp*"
-    #- "/opt/source/dtb-6.*"
     - "/opt/source/dtb-5.*"
+    #- "/opt/source/dtb-6.*" # kernel 6.18 currently in use
+    - "/opt/source/dtb-7.*"
 
 - name: Include cleaning shepherd-repo
   ansible.builtin.include_tasks:

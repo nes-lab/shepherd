@@ -17,14 +17,14 @@ static uint32_t               sys_ts_over_wrap_ns = U32T_MAX;
 static uint64_t               ts_upcoming_ns      = 0;
 static uint64_t               ts_previous_ns      = 0; /* for plausibility-check */
 
-static enum hrtimer_restart   trigger_loop_callback(struct hrtimer *timer_for_restart);
-static enum hrtimer_restart   sync_loop_callback(struct hrtimer *timer_for_restart);
-static enum hrtimer_restart   supervisor_loop_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   trigger_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   sync_callback(struct hrtimer *timer_for_restart);
+static enum hrtimer_restart   supervisor_callback(struct hrtimer *timer_for_restart);
 
 /* Timer to trigger fast sync_loop */
-static struct hrtimer         trigger_loop_timer;
-static struct hrtimer         sync_loop_timer;
-static struct hrtimer         supervisor_loop_timer;
+static struct hrtimer         trigger_timer;
+static struct hrtimer         sync_timer;
+static struct hrtimer         supervisor_timer;
 static u8                     timers_active = 0u;
 static struct SharedMem      *shared_mem    = NULL;
 
@@ -55,35 +55,15 @@ static u8                 init_done       = 0;
 const int32_t             kp_inv_n10_init = 1024 / 1.1;
 const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
-/* Benchmark high-res busy-wait - RESULTS kernel 4.19:
- * - ktime_get                  99.6us   215n   463ns/call
- * - ktime_get_real             100.3us  302n   332ns/call -> current best performer (4.19.94-ti-r73)
- * - ktime_get_ns               100.2us  257n   389ns/call
- * - ktime_get_real_ns          131.5us  247n   532ns
- * - ktime_get_raw              99.3us   273n   364ns
- * - ktime_get_real_fast_ns     90.0us   308n   292ns
- * - increment-loop             825us    100k   8.25ns/iteration
- *
- * RESULTS kernel 6.12 (not verified by logic analyzer)
- * - ktime_get = 398 n / ~100us
- * - ktime_get_real = 399 n / ~100us
- * - ktime_get_ns = 399 n / ~100us
- * - ktime_get_real_ns = 398 n / ~100us
- * - ktime_get_raw = 170 n / ~100us
- * - ktime_get_real_fast_ns = 375 n / ~100us
- * Src: https://github.com/nes-lab/shepherd/blob/Kernel510_test/software/kernel-module/src/pru_sync_control.c
- */
-
-
 void                      sync_exit(void)
 {
     timers_active = 0u;
 
     if (init_done)
     {
-        hrtimer_cancel(&trigger_loop_timer);
-        hrtimer_cancel(&sync_loop_timer);
-        hrtimer_cancel(&supervisor_loop_timer);
+        hrtimer_cancel(&trigger_timer);
+        hrtimer_cancel(&sync_timer);
+        hrtimer_cancel(&supervisor_timer);
     }
 
     if (gpio0clear != NULL)
@@ -132,27 +112,25 @@ int sync_init(void)
                (uint32_t) gpio0set, (uint32_t) (0x44E07000u + 0x194u), 4u);
 
     /* timer for trigger */
-    hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
     // TODO: HRTIMER_MODE_ABS_HARD wanted, but _HARD not defined in 4.19 (without -RT)
-    trigger_loop_timer.function = &trigger_loop_callback;
+    hrtimer_setup(&trigger_timer, &trigger_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 
     /* timer for Sync-Loop */
-    hrtimer_init(&sync_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    sync_loop_timer.function = &sync_loop_callback;
+    hrtimer_setup(&sync_timer, &sync_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 
-    init_done                = 1;
+    init_done = 1;
     printk(KERN_INFO "shprd.sync: pru-sync-system initialized");
 
-    ret_value = hrtimer_is_hres_active(&trigger_loop_timer);
+    ret_value = hrtimer_is_hres_active(&trigger_timer);
     printk("%sshprd.sync: trigger_hrtimer.hres    = %d (hres wanted)",
            ret_value == 1 ? KERN_INFO : KERN_ERR, ret_value);
-    ret_value = trigger_loop_timer.is_rel;
+    ret_value = trigger_timer.is_rel;
     printk("%sshprd.sync: trigger_hrtimer.is_rel  = %d (abs wanted)",
            ret_value == 0 ? KERN_INFO : KERN_ERR, ret_value);
-    ret_value = trigger_loop_timer.is_soft;
+    ret_value = trigger_timer.is_soft;
     printk("%sshprd.sync: trigger_hrtimer.is_soft = %d (hard wanted)",
            ret_value == 0 ? KERN_INFO : KERN_ERR, ret_value);
-    //printk(KERN_INFO "shprd.sync: trigger_hrtimer.is_hard = %d", trigger_loop_timer.is_hard); // needs kernel 5.4+
+    //printk(KERN_INFO "shprd.sync: trigger_hrtimer.is_hard = %d", trigger_timer.is_hard); // needs kernel 5.4+
 
     /* supervisor checks and corrects next_timestamp of PRU */
     if (pru_shared_mem_io == NULL)
@@ -161,8 +139,7 @@ int sync_init(void)
         return -4;
     }
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
-    hrtimer_init(&supervisor_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
-    supervisor_loop_timer.function = &supervisor_loop_callback;
+    hrtimer_setup(&supervisor_timer, &supervisor_callback, CLOCK_REALTIME, HRTIMER_MODE_ABS);
 
     sync_start();
     return 0;
@@ -205,7 +182,7 @@ void sync_start(void)
     else ns_to_next_trigger = SYNC_INTERVAL_NS - ns_over_wrap; // TODO: unused?
 
     timers_active = 1;
-    hrtimer_start(&sync_loop_timer, ns_to_ktime(ts_now_ns + 1000000u), HRTIMER_MODE_ABS);
+    hrtimer_start(&sync_timer, ns_to_ktime(ts_now_ns + 1000000u), HRTIMER_MODE_ABS);
     printk(KERN_INFO "shprd.sync: pru-sync-system started");
 }
 
@@ -218,7 +195,7 @@ void sync_reset(void)
     sync_state.ki_inv_n10   = ki_inv_n10_init;
 }
 
-static void trigger_loop_start(void)
+static void trigger_start(void)
 {
     struct ProtoMsg64 sync_reply64;
     const uint64_t    ts_now_ns = ktime_get_real_ns();
@@ -237,7 +214,7 @@ static void trigger_loop_start(void)
     ts_previous_ns = 0; // avoids triggering time-jump-detection
     ts_upcoming_ns += SYNC_INTERVAL_NS;
     sys_ts_over_wrap_ns = 0;
-    hrtimer_start(&trigger_loop_timer, ns_to_ktime(ts_upcoming_ns),
+    hrtimer_start(&trigger_timer, ns_to_ktime(ts_upcoming_ns),
                   HRTIMER_MODE_ABS); // was: HRTIMER_MODE_ABS_HARD for -rt Kernel
 
     printk(KERN_INFO "shprd.sync: pru1-init with reset of time to %llu - starting loop",
@@ -245,7 +222,7 @@ static void trigger_loop_start(void)
 }
 
 
-enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
+enum hrtimer_restart trigger_callback(struct hrtimer *timer_for_restart)
 {
     uint64_t ns_to_next_trigger;
     uint64_t ts_now_ns;
@@ -278,13 +255,13 @@ enum hrtimer_restart trigger_loop_callback(struct hrtimer *timer_for_restart)
     // NOTE: without load this trigger is accurate < 4 us
     hrtimer_forward(timer_for_restart, ns_to_ktime(ts_now_ns), ns_to_ktime(ns_to_next_trigger));
 
-    hrtimer_start(&supervisor_loop_timer, ns_to_ktime(ts_upcoming_ns - (SYNC_INTERVAL_NS / 2)),
+    hrtimer_start(&supervisor_timer, ns_to_ktime(ts_upcoming_ns - (SYNC_INTERVAL_NS / 2)),
                   HRTIMER_MODE_ABS);
 
     return HRTIMER_RESTART;
 }
 
-enum hrtimer_restart supervisor_loop_callback(struct hrtimer *timer_for_restart)
+enum hrtimer_restart supervisor_callback(struct hrtimer *timer_for_restart)
 {
     /* is executed half way in sync-windows (100 ms) */
     const uint64_t ts_upcoming_pru = shared_mem->next_sync_timestamp_ns;
@@ -300,7 +277,7 @@ enum hrtimer_restart supervisor_loop_callback(struct hrtimer *timer_for_restart)
 }
 
 /* Handler for sync-requests from PRU1 */
-enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
+enum hrtimer_restart sync_callback(struct hrtimer *timer_for_restart)
 {
     struct ProtoMsg       sync_rqst;
     struct ProtoMsg       sync_reply;
@@ -333,7 +310,7 @@ enum hrtimer_restart sync_loop_callback(struct hrtimer *timer_for_restart)
                 break;
 
             case MSG_SYNC_RESET:
-                trigger_loop_start();
+                trigger_start();
                 /* resetting to the longest sleep period */
                 step_pos = 0;
                 break;

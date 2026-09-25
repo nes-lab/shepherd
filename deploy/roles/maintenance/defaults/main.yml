@@ -2,4 +2,4 @@
 
 # user can control rule by altering these vars from outside
 maintenance_timezone: Europe/Berlin
-maintenance_kernel_pin: "6.12.109-bone72" # TODO: not used ATM / went to sheep
+maintenance_kernel_pin: "6.18.53-bone55" # TODO: not used ATM / went to sheep

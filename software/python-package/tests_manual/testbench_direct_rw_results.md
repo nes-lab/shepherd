@@ -93,7 +93,8 @@ Conclusion:
 - 20-50 % less time needed for storing
 - smaller files
 - tested kernel 4.19 and 6.1 with similar performance
-- kernel 6.12-ti seems to be more busy and shows 10 % worse results
+- ~~kernel 6.12-ti seems to be more busy and shows 10 % worse results
+  - that one seems broken (use -bone version)
 
 ## BBB 2026-06
 

@@ -1,6 +1,3 @@
-//
-//
-//
 #include <linux/delay.h>
 #include <linux/remoteproc.h>
 #include <linux/string.h>
@@ -71,7 +68,7 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
         return ret;
     }
 
-    /* Allow some time for the PRUs to initialize. This is critical!
+    /* Allow some time for the PRUs to initialize. This was critical!
 	   - 300 ms worked fine
 	   - logic analyzer shows that 55 ms should suffice (time between pru-bootups)
 	   - reduce 300 to 100 ms (for testing)
