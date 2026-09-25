@@ -1,3 +1,4 @@
+#include <linux/delay.h>
 #include <linux/remoteproc.h>
 #include <linux/string.h>
 #include <linux/types.h>
@@ -76,7 +77,7 @@ int swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name)
 		 - 50 ms sleep -> 154 ms busy wait
 		 - 10 ms sleep -> 114 ms busy wait, TODO: observe stability
 	*/
-    //msleep(10);
+    msleep(10);
 
     if (init_done)
     {
