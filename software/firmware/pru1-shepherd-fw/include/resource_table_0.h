@@ -38,14 +38,7 @@
 #include <rsc_types.h>
 #include <stddef.h>
 
-/* Definition for unused interrupts */
-#define HOST_UNUSED 255U
-
-/* Mapping sysevts to a channel. Each pair contains a sysevt, channel. */
-/* List of system events in TRM Table 4.22 */
-struct ch_map pru_intc_map[] = {
-        {HOST_PRU_EVT_TIMESTAMP, 0}, // Ext int for sync from ARM host
-};
+/* EMPTY TABLE */
 
 struct my_resource_table
 {
@@ -69,33 +62,16 @@ struct my_resource_table
 struct my_resource_table resourceTable = {
         {
                 1, /* Resource table version: only version 1 is supported by the current driver */
-                1, /* number of entries in the table */
+                0, /* number of entries in the table */
                 {0U, 0U}, /* reserved, must be zero */
         },
         /* offsets to entries */
         {
-                offsetof(struct my_resource_table, pru_ints),
+                0,
         },
 
         /* resource definitions */
-        {
-                TYPE_CUSTOM,
-                {TYPE_PRU_INTS},
-                sizeof(struct fw_rsc_custom_ints),
-                {
-                        /* PRU_INTS version */
-                        {0x0000,
-                         /* Channel-to-host mapping, 255 for unused
-                           In this example, channel 0 is on position 0, so channel 0
-                           maps to host interrupt 0 */
-                         {0, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED,
-                          HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED},
-                         /* Number of evts being mapped to channels */
-                         (sizeof(pru_intc_map) / sizeof(struct ch_map)),
-                         /* Pointer to the structure containing mapped events */
-                         pru_intc_map},
-                },
-        },
+        {},
 };
 
 #endif /* SHEPHERD_PRU1_RESOURCE_TABLE_H_ */

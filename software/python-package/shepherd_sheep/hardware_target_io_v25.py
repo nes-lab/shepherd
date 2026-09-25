@@ -37,21 +37,43 @@ prgDir2 = 11   # P8_32, GPIO0[11]
 
 from collections.abc import Mapping
 
+from .sys_access import gpio_name_2_num
+
+num_P8_14 = gpio_name_2_num("P8_14")
+num_P8_15 = gpio_name_2_num("P8_15")
+num_P8_16 = gpio_name_2_num("P8_16")
+num_P8_17 = gpio_name_2_num("P8_17")
+num_P8_26 = gpio_name_2_num("P8_26")
+num_P8_31 = gpio_name_2_num("P8_31")  # GPIO 78 (deprecated naming scheme)
+num_P8_32 = gpio_name_2_num("P8_32")
+num_P8_33 = gpio_name_2_num("P8_33")
+num_P8_34 = gpio_name_2_num("P8_34")
+num_P8_35 = gpio_name_2_num("P8_35")
+num_P8_36 = gpio_name_2_num("P8_36")
+num_P8_37 = gpio_name_2_num("P8_37")
+num_P8_38 = gpio_name_2_num("P8_38")
+
+num_P9_14 = gpio_name_2_num("P9_14")
+num_P9_17 = gpio_name_2_num("P9_17")
+num_P9_18 = gpio_name_2_num("P9_18")
+num_P9_24 = gpio_name_2_num("P9_24")
+num_P9_26 = gpio_name_2_num("P9_26")
+
 target_pins: list[dict] = [  # pin-order from target-connector
-    {"name": "gpio0", "pin": 14, "dir": 78},  # group A
-    {"name": "gpio1", "pin": 15, "dir": "I"},
-    {"name": "gpio2", "pin": 46, "dir": 79},  # group B
-    {"name": "gpio3", "pin": 47, "dir": 79},  # group B
-    {"name": "gpio4", "pin": 61, "dir": 50},  # group C
-    {"name": "gpio5", "pin": 80, "dir": 50},  # group C
-    {"name": "gpio6", "pin": 81, "dir": 50},  # group C
-    {"name": "gpio7", "pin": 26, "dir": 50},  # group C
-    {"name": "gpio8", "pin": 27, "dir": "I"},
+    {"name": "gpio0", "pin": num_P9_26, "dir": num_P8_37},  # group A
+    {"name": "gpio1", "pin": num_P9_24, "dir": "I"},
+    {"name": "gpio2", "pin": num_P8_16, "dir": num_P8_38},  # group B
+    {"name": "gpio3", "pin": num_P8_15, "dir": num_P8_38},  # group B
+    {"name": "gpio4", "pin": num_P8_26, "dir": num_P9_14},  # group C
+    {"name": "gpio5", "pin": num_P8_36, "dir": num_P9_14},  # group C
+    {"name": "gpio6", "pin": num_P8_34, "dir": num_P9_14},  # group C
+    {"name": "gpio7", "pin": num_P8_14, "dir": num_P9_14},  # group C
+    {"name": "gpio8", "pin": num_P8_17, "dir": "I"},
     # gpio9, gpio10, gpio11, pwr_good_low, pwr_good_high have no sys-pin connected
-    {"name": "prog1_clk", "pin": 5, "dir": "O"},  # P9_17
-    {"name": "prog1_io", "pin": 4, "dir": 10},  # P9_18, dir P8_31
-    {"name": "prog2_clk", "pin": 8, "dir": "O"},  # P8_35
-    {"name": "prog2_io", "pin": 9, "dir": 11},  # P8_33, dir P8_32, noqa: CM001
+    {"name": "prog1_clk", "pin": num_P9_17, "dir": "O"},
+    {"name": "prog1_io", "pin": num_P9_18, "dir": num_P8_31},
+    {"name": "prog2_clk", "pin": num_P8_35, "dir": "O"},
+    {"name": "prog2_io", "pin": num_P8_33, "dir": num_P8_32},
 ]
 
 target_port_to_cape_mapping: Mapping[int, int] = {

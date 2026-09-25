@@ -24,7 +24,6 @@ PRU_GCC_SUPPORT environment variable is not set. Examples given:
 (Linux) export PRU_GCC_SUPPORT=/path/to/ti/pru-software-support-package
 
 Link to Git: https://github.com/dinuxbg/pru-software-support-package
-		-> clone the linux-4.19-rproc branch
 *******************************************************************************
 
 endef

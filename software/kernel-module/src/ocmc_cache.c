@@ -8,11 +8,12 @@
 #include "_shared_mem.h"
 #include "ocmc_cache.h"
 
-#define OCMC_BASE_ADDR         (0x40300000ul)
-#define OCMC_SIZE              (0xFFFFu)
+/* OCMC is a shared medium PM (power management) uses the first 4 + 4 kB */
+#define OCMC_BASE_ADDR         (0x40300000ul + 0x8000ul)
+#define OCMC_SIZE              (0x10000u >> 1u)
 #define CLEAR_DISCARDED_BLOCKS (true)
 
-extern uint32_t               __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2) - 1u)];
+extern uint32_t               __cache_fits_[1 / (OCMC_SIZE >= (1u << CACHE_SIZE_LOG2))];
 
 static volatile void __iomem *cache_io             = NULL;
 static void __iomem          *buffr_io             = NULL;
@@ -31,37 +32,50 @@ static struct hrtimer         update_timer;
 #define DELAY_TIMER ns_to_ktime(CACHE_BLOCK_SAMPLES_N *SAMPLE_INTERVAL_NS - 1000000u)
 
 
-void ocmc_cache_init(void)
+int ocmc_cache_init(void)
 {
     const uint64_t ts_now = ktime_get_real();
     if (init_done)
     {
         printk(KERN_ERR "shprd.cache: ocmc-cache init requested -> can't init twice!");
-        return;
+        return -1;
     }
     if (pru_shared_mem_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: cache needs shared-mem of PRU but got NULL");
-        return;
+        return -2;
     }
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
 
     /* Maps the memory in OCMC, used as cache for PRU */
-    cache_io   = ioremap_nocache(OCMC_BASE_ADDR, OCMC_SIZE);
+    cache_io   = ioremap(OCMC_BASE_ADDR, OCMC_SIZE);
     if (cache_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: OCMC not properly mapped");
-        return;
+        return -3;
     }
+    else
+        printk(KERN_INFO "shprd.debug: CacheIO @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) cache_io, (uint32_t) OCMC_BASE_ADDR, OCMC_SIZE);
 
-    /* map physical RAM address (special case that fails with ioremap()) */
+    /* map physical RAM address (special case that fails with ioremap())
+            WB -> read-allocate write-back cache
+            WT -> writes either bypass the cache or are written through to memory
+            WC -> writecombine mapping, whereby writes may be coalesced together
+                    (e.g. in the CPU's write buffers), but is otherwise uncached
+    */
     buffr_io = memremap((uint32_t) shared_mem->buffer_iv_inp_ptr, sizeof(struct IVTraceInp),
                         MEMREMAP_WB);
     if (buffr_io == NULL)
     {
         printk(KERN_ERR "shprd.cache: BUF_IV_INP not properly mapped");
-        return;
+        return -4;
     }
+    else
+        printk(KERN_INFO "shprd.debug: BufferIO @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) buffr_io, (uint32_t) shared_mem->buffer_iv_inp_ptr,
+               sizeof(struct IVTraceInp));
+
     buffr_mem = (struct IVTraceInp *) buffr_io;
 
     ocmc_cache_reset();
@@ -98,11 +112,12 @@ void ocmc_cache_init(void)
            (shared_mem->buffer_iv_inp_size + shared_mem->buffer_iv_out_size +
             shared_mem->buffer_gpio_size + shared_mem->buffer_util_size) /
                    1024);
+    return 0;
 }
 
 void ocmc_cache_exit(void)
 {
-    if (update_timer.base != NULL) hrtimer_cancel(&update_timer);
+    if (init_done) hrtimer_cancel(&update_timer);
 
     if (cache_io != NULL)
     {
@@ -131,7 +146,7 @@ void ocmc_cache_reset(void)
     error_detected = 0u;
 }
 
-uint32_t ocmc_cache_add(uint32_t block_idx)
+static uint32_t ocmc_cache_add(uint32_t block_idx)
 {
     /* refill one block if there is space for in cache */
     const uint32_t flag_idx  = block_idx >> 5u;
@@ -156,7 +171,7 @@ uint32_t ocmc_cache_add(uint32_t block_idx)
     return 1u;
 }
 
-uint32_t ocmc_cache_remove(uint32_t block_idx)
+static uint32_t ocmc_cache_remove(uint32_t block_idx)
 {
     /* discard a cached block */
     const uint32_t flag_idx  = block_idx >> 5u;
@@ -181,7 +196,7 @@ uint32_t ocmc_cache_remove(uint32_t block_idx)
 }
 
 
-void ocmc_cache_update(void)
+static void ocmc_cache_update(void)
 {
     /* Manages cache to shorten read-latency for PRU.
 

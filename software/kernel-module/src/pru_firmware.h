@@ -2,11 +2,12 @@
 #define KERNELMODULE_PRU_FIRMWARE_H
 
 struct shepherd_platform_data
-{
-    struct rproc *rproc_prus[2];
-};
+{ struct rproc *rproc_prus[2]; };
 
 extern struct shepherd_platform_data *shp_pdata;
+
+
+void                                  pru_rproc_shutdown(struct rproc *rproc);
 
 int  swap_pru_firmware(const char *pru0_file_name, const char *pru1_file_name);
 

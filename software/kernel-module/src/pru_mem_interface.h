@@ -10,7 +10,7 @@
  * Maps the shared memory structure within the PRU's 'shared RAM' memory
  * region.
  */
-void               mem_interface_init(void);
+int                mem_interface_init(void);
 /**
  * Clean up communication between our kernel module and the PRUs.
  *

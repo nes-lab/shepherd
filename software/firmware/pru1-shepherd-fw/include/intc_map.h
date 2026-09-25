@@ -31,14 +31,6 @@
 #include <stddef.h>
 
 /*
- * Needed for PSSP 6.0.0. / Kernel 5.10, steps
- * - remove intc in resource_table.h
- * - activate pru_irq_map-Line in .cmd-File
- * - include this file in main.c
- */
-
-
-/*
  * .pru_irq_map is used by the RemoteProc driver during initialization. However,
  * the map is NOT used by the PRU firmware. That means DATA_SECTION and RETAIN
  * are required to prevent the PRU compiler from optimizing out .pru_irq_map.
@@ -61,5 +53,12 @@ struct pru_irq_rsc my_irq_rsc = {
         },
 };
 
+/* MISSING INFO HERE - still needed? or done in kMod?
+Channel-to-host mapping, 255 for unused
+In this example, channel 0 is on position 0, so channel 0
+maps to host interrupt 0
+{0, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED,
+HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED},
+*/
 
 #endif // PRU_FIRMWARE_PRU1_SHEPHERD_FW_INCLUDE_INTC_MAP_H

@@ -13,10 +13,10 @@ class WatchdogConfig(BaseModel):
     interval: int = 600
     """ ⤷ how often to send the ACK. Somewhere between 60 s to 30 minutes"""
 
-    pin_ack: int = 68
+    pin_ack: str = "P8_10"
     """ ⤷ pin that is resetting the hardware watchdog
 
-    Cape v2 uses P8_10 / GPIO 68
+    Cape v2 uses P8_10 / GPIO 68 (deprecated naming scheme)
     """
 
     network_needed: bool = False

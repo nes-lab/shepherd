@@ -44,7 +44,7 @@ static int shepherd_platform_data_init(struct platform_device *pdev)
 
     /*allocate mem for platform data*/
     shp_pdata = devm_kzalloc(&pdev->dev, sizeof(*shp_pdata), GFP_KERNEL);
-    if (!shp_pdata)
+    if (shp_pdata == NULL)
     {
         dev_err(&pdev->dev, "Unable to allocate platform data\n");
         return -1;
@@ -115,8 +115,9 @@ static int shepherd_platform_data_exit(struct platform_device *pdev)
         {
             if (shp_pdata->rproc_prus[1]->state != RPROC_OFFLINE)
             {
-                rproc_shutdown(shp_pdata->rproc_prus[1]);
-                printk(KERN_INFO "shprd.k: PRU1 shut down");
+                if (rproc_shutdown(shp_pdata->rproc_prus[1]))
+                    pr_err("shprd.k: rproc_shutdown(%s) failed\n", shp_pdata->rproc_prus[1]->name);
+                else printk(KERN_INFO "shprd.k: PRU1 shut down");
             }
             rproc_put(shp_pdata->rproc_prus[1]);
             shp_pdata->rproc_prus[1] = NULL;
@@ -127,36 +128,19 @@ static int shepherd_platform_data_exit(struct platform_device *pdev)
         {
             if (shp_pdata->rproc_prus[0]->state != RPROC_OFFLINE)
             {
-                rproc_shutdown(shp_pdata->rproc_prus[0]);
-                printk(KERN_INFO "shprd.k: PRU0 shut down");
+                if (rproc_shutdown(shp_pdata->rproc_prus[0]))
+                    pr_err("shprd.k: rproc_shutdown(%s) failed\n", shp_pdata->rproc_prus[0]->name);
+                else printk(KERN_INFO "shprd.k: PRU0 shut down");
             }
             rproc_put(shp_pdata->rproc_prus[0]);
             shp_pdata->rproc_prus[0] = NULL;
             printk(KERN_INFO "shprd.k: ref/handle for PRU0 was returned");
         }
 
-        // pt->pruss = pruss_get(pt->pru); // struct pruss *
-        //pruss_release_mem_region(pt->pruss, &pt->mem);
-
-        // tested with #include <linux/pruss.h>, didn't help unload problem
-        //pruss_put(pruss_get(shp_pdata->rproc_prus[0]));
-        //pruss_put(pruss_get(shp_pdata->rproc_prus[1]));
-        //printk(KERN_INFO "shprd.k: prusses returned");
-        //pru_rproc_put(shp_pdata->rproc_prus[0]);
-        //pru_rproc_put(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: pru_rproc_put() done");
-
-        //rproc_del(shp_pdata->rproc_prus[0]);
-        //rproc_del(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: rproc_del() done");
-        //rproc_free(shp_pdata->rproc_prus[0]);
-        //rproc_free(shp_pdata->rproc_prus[1]);
-        //printk(KERN_INFO "shprd.k: rproc_free() done");
-
-        devm_kfree(&pdev->dev, shp_pdata);
-        printk(KERN_INFO "shprd.k: platform-data 1 freed");
-        shp_pdata               = NULL;
-        pdev->dev.platform_data = NULL;
+        //devm_kfree(&pdev->dev, shp_pdata);
+        //printk(KERN_INFO "shprd.k: platform-data 1 freed");
+        shp_pdata = NULL;
+        //pdev->dev.platform_data = NULL;
         printk(KERN_INFO "shprd.k: platform-data 2 nulled");
     }
     return 0;
@@ -178,38 +162,55 @@ static int shepherd_drv_probe(struct platform_device *pdev)
 
     /* swap FW -> also handles sub-services for PRU */
     ret = swap_pru_firmware(PRU0_FW_DEFAULT, PRU1_FW_DEFAULT);
-    if (ret)
-    {
-        shepherd_platform_data_exit(pdev);
-        return ret;
-    }
+    if (ret) goto failure_1_pru;
 
     /* Initialize shared memory and PRU interrupt controller */
-    mem_interface_init();
-    msg_sys_init();
+    ret = mem_interface_init();
+    if (ret) goto failure_2_memif;
+    ret = msg_sys_init();
+    if (ret) goto failure_3_msg;
 
     /* Initialize synchronization mechanism between PRU1 and our clock */
-    sync_init();
+    ret = sync_init();
+    if (ret) goto failure_4_sync;
 
     /* Set up the sysfs interface for access from userspace */
-    sysfs_interface_init();
+    ret = sysfs_interface_init(); // TODO: this can fail! add & eval retval
+    if (ret) goto failure_5_sysfs;
 
     /* cache for the input buffer */
-    ocmc_cache_init();
+    ret = ocmc_cache_init();
+    if (ret) goto failure_6_ocmc;
 
     return 0;
+
+failure_6_ocmc:
+    ocmc_cache_exit();
+failure_5_sysfs:
+    sysfs_interface_exit();
+failure_4_sync:
+    sync_exit();
+failure_3_msg:
+    msg_sys_exit();
+failure_2_memif:
+    mem_interface_exit();
+failure_1_pru:
+    shepherd_platform_data_exit(pdev);
+    printk(KERN_ERR
+           "shprd.k: Error during initialization of subsystems in kMod.probe -> will exit now!");
+    return ret;
 }
 
 static int shepherd_drv_remove(struct platform_device *pdev)
 {
     ocmc_cache_exit();
     sysfs_interface_exit();
-    msg_sys_exit();
     sync_exit();
+    msg_sys_exit();
     mem_interface_exit();
     /* last active components get cleaned */
     shepherd_platform_data_exit(pdev);
-    platform_set_drvdata(pdev, NULL);
+    //platform_set_drvdata(pdev, NULL);
     printk(KERN_INFO "shprd.k: module exited from kernel!!!");
     return 0;
 }

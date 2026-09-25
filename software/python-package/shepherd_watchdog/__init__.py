@@ -13,6 +13,7 @@ from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
+from shepherd_sheep.sys_access import gpio_name_2_num
 from shepherd_sheep.usage_log import usage_logger
 from typing_extensions import Self
 
@@ -39,7 +40,9 @@ class Watchdog:
     """Allows to periodically reset hardware-watchdog on Cape."""
 
     def __init__(self) -> None:
-        self.cfg = WatchdogConfig.from_file()
+        self.cfg = None
+        with suppress(Exception):
+            self.cfg = WatchdogConfig.from_file()
         if self.cfg is None:
             self.cfg: WatchdogConfig = WatchdogConfig()
             self.cfg.to_file()
@@ -58,7 +61,8 @@ class Watchdog:
         self.hosts_stat = dict.fromkeys(self.cfg.network_hosts, True)
 
     def __enter__(self) -> Self:
-        self.gpio_ack = GPIO(self.cfg.pin_ack, "out")
+        pin_num = gpio_name_2_num(self.cfg.pin_ack)
+        self.gpio_ack = GPIO(pin_num, "out")
         log.debug("Configured GPIO")
         return self
 

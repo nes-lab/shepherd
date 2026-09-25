@@ -167,3 +167,65 @@ def mount_network_fs() -> bool:
             != 0
         )
     return had_error
+
+
+gpio_data: list[str] | None = None
+gpio_offset: int | None = None
+
+
+def get_gpio_info() -> list[str]:
+    ret = subprocess.run(
+        ["/usr/bin/sudo", "/usr/bin/gpioinfo"],
+        timeout=10,
+        check=False,
+        shell=False,
+        capture_output=True,
+    )
+    if ret.returncode != 0 or not isinstance(ret.stdout, bytes):
+        msg = f"Gpioinfo failed, got: {ret.stdout}"
+        raise ValueError(msg)
+
+    values = ret.stdout.decode().split("\n")
+    if len(values) < 60:
+        msg = f"Gpioinfo failed, got not enough info: {values}"
+        raise ValueError(msg)
+    return [x.strip() for x in values if not x.startswith("gpiochip")]
+
+
+def get_gpio_offset() -> int:
+    """Figure out the GPIO-offset to sysfs-access
+
+    It is currently just a guessing game.
+    later than 6.1, earlier than 6.12
+    """
+    import os
+
+    kernel_version = os.uname()[2]
+    kernel_nums = kernel_version.split(".")
+    if int(kernel_nums[0]) < 6:
+        return 0
+    if int(kernel_nums[1]) < 11:
+        return 0
+    log.debug("SYSFS-GPIO-OFFSET was determined to be 512")
+    return 512
+
+
+def gpio_name_2_num(name: str | int) -> int:
+    if isinstance(name, int):
+        # keep backward compat for deprecated num-system (i.e. gpio 68)
+        return name
+
+    global gpio_data  # noqa: PLW0603
+    if gpio_data is None:
+        gpio_data = get_gpio_info()
+
+    global gpio_offset  # noqa: PLW0603
+    if gpio_offset is None:
+        gpio_offset = get_gpio_offset()
+
+    for pin_num, gpio_date in enumerate(gpio_data):
+        if name in gpio_date:
+            log.debug("GPIO '%s' was resolved to # %d (offset=%d)", name, pin_num, gpio_offset)
+            return pin_num + gpio_offset
+    msg = f"Gpio '{name}' not found"
+    raise ValueError(msg)

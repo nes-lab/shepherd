@@ -32,7 +32,7 @@
     - "/usr/share/ti/pru-software-support-package/examples/"
     - "/lib/firmware/ti-connectivity/"
     - "/usr/share/ti/ticgttemp*"
-    - "/opt/source/dtb-6.*"
+    #- "/opt/source/dtb-6.*"
     - "/opt/source/dtb-5.*"
 
 - name: Include cleaning shepherd-repo

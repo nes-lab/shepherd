@@ -92,7 +92,9 @@ SECTIONS {
 	.farbss		>  PRU_DMEM_0_1, PAGE 1
 	.fardata	>  PRU_DMEM_0_1, PAGE 1
 
-	.resource_table > PRU_DMEM_0_1, PAGE 1
-
-    //.pru_irq_map (COPY) : { *(.pru_irq_map) }
+    .resource_table > PRU_DMEM_0_1, PAGE 1
+    .pru_irq_map (COPY) :
+    {
+        *(.pru_irq_map)
+    }
 }

@@ -48,7 +48,7 @@ struct sync_data_s        sync_state;
 static u8                 init_done       = 0;
 
 /* PI-Tuning
- * - float is hard to use in kernel 4.19, so i32 it is ...
+ * - float is hard to use in kernel, so i32 it is ...
  * - Ki already includes 0.1 s sample_interval
  * - values are inverted (inv) and shifted by 10 bit (n10)
  */
@@ -67,9 +67,14 @@ const int32_t             ki_inv_n10_init = 1024 / (0.9 * 0.1); //
 
 void                      sync_exit(void)
 {
-    if (trigger_loop_timer.base != NULL) hrtimer_cancel(&trigger_loop_timer);
-    if (sync_loop_timer.base != NULL) hrtimer_cancel(&sync_loop_timer);
-    if (supervisor_loop_timer.base != NULL) hrtimer_cancel(&supervisor_loop_timer);
+    timers_active = 0u;
+
+    if (init_done)
+    {
+        hrtimer_cancel(&trigger_loop_timer);
+        hrtimer_cancel(&sync_loop_timer);
+        hrtimer_cancel(&supervisor_loop_timer);
+    }
 
     if (gpio0clear != NULL)
     {
@@ -96,8 +101,25 @@ int sync_init(void)
     }
     sync_reset();
 
-    gpio0clear = ioremap_nocache(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
-    gpio0set   = ioremap_nocache(0x44E07000u + 0x194u, 4u);
+    gpio0clear = ioremap(0x44E07000u + 0x190u, 4u); // BBB, GPIO0
+    if (gpio0clear == NULL)
+    {
+        printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0CLEAR failed!");
+        return -2;
+    }
+    else
+        printk(KERN_INFO "shprd.debug: Gpio0clear @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) gpio0clear, (uint32_t) (0x44E07000u + 0x190u), 4u);
+
+    gpio0set = ioremap(0x44E07000u + 0x194u, 4u);
+    if (gpio0set == NULL)
+    {
+        printk(KERN_ERR "shprd.k: sync-control mapping of GPIO0SET failed!");
+        return -3;
+    }
+    else
+        printk(KERN_INFO "shprd.debug: Gpio0set @ 0x%X virt, 0x%X phys, %d bytes",
+               (uint32_t) gpio0set, (uint32_t) (0x44E07000u + 0x194u), 4u);
 
     /* timer for trigger */
     hrtimer_init(&trigger_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -126,7 +148,7 @@ int sync_init(void)
     if (pru_shared_mem_io == NULL)
     {
         printk(KERN_ERR "shprd.sync: supervisor needs shared-mem of PRU but got NULL");
-        return 0;
+        return -4;
     }
     shared_mem = (struct SharedMem *) pru_shared_mem_io;
     hrtimer_init(&supervisor_loop_timer, CLOCK_REALTIME, HRTIMER_MODE_ABS);
@@ -186,7 +208,7 @@ void sync_reset(void)
     sync_state.ki_inv_n10   = ki_inv_n10_init;
 }
 
-void trigger_loop_start(void)
+static void trigger_loop_start(void)
 {
     struct ProtoMsg64 sync_reply64;
     const uint64_t    ts_now_ns = ktime_get_real_ns();

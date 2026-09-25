@@ -27,7 +27,7 @@
 /*
  * Cache for Input-IV-Buffer
  */
-#define CACHE_SIZE_LOG2            (16u)                                   // 64kByte
+#define CACHE_SIZE_LOG2            (16u - 1) // 2^16 = 64kByte, ~ 82 ms
 #define CACHE_SAMPLES_LOG2         (CACHE_SIZE_LOG2 - IV_SAMPLE_SIZE_LOG2) // 13
 #define CACHE_SAMPLES_N            (1u << CACHE_SAMPLES_LOG2)              // 8192
 #define CACHE_IDX_MASK             (CACHE_SAMPLES_N - 1u)
@@ -48,7 +48,8 @@
 #define CACHE_U32_FLAGS_N          (1u << CACHE_U32_FLAGS_LOG2) // 32
 #define CACHE_U32_FLAG_SIZE        (4u * CACHE_U32_FLAGS_N)     // 128
 
-#define L3OCMC_ADDR                ((uint8_t *) 0x40300000u)
+#define L3OCMC_ADDR                ((uint8_t *) 0x40300000u + 0x8000u)
+/* OCMC is a shared medium PM (power management) uses the first 4 + 4 kB */
 
 extern uint32_t
         __cache_fits_buffer[1 / ((1u << BUFFER_IV_INP_SAMPLES_LOG2) >= BUFFER_IV_INP_SAMPLES_N)];

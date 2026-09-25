@@ -44,6 +44,28 @@ result 2026-09-21 - shuffle, chunk-optimized timestamps
         PW, t = 2.474 s, out = 0.186 MiB
         GP, t = 2.690 s, out = 3.588 MiB
         UT, t = 27.221 s, out = 8.317 MiB
+
+result 2026-09-22 - kernel 6.12.109 & 6.18.52 (kMod not running)
+    samples_n = 1000000 n, Compression.null
+        IV, t = 1.236 s, out = 15.294 MiB
+        PW, t = 2.091 s, out = 11.467 MiB
+        GP, t = 1.029 s, out = 9.558 MiB
+        UT, t = 6.518 s, out = 14.178 MiB
+    samples_n = 1000000 n, Compression.lzf
+        IV, t = 2.829 s, out = 8.123 MiB
+        PW, t = 1.803 s, out = 0.525 MiB
+        GP, t = 1.770 s, out = 3.851 MiB
+        UT, t = 12.340 s, out = 8.452 MiB
+    samples_n = 1000000 n, Compression.gzip1
+        IV, t = 3.020 s, out = 7.496 MiB
+        PW, t = 2.037 s, out = 0.295 MiB
+        GP, t = 2.099 s, out = 3.621 MiB
+        UT, t = 20.706 s, out = 8.318 MiB
+    samples_n = 1000000 n, Compression.gzip6
+        IV, t = 3.417 s, out = 7.366 MiB
+        PW, t = 2.275 s, out = 0.186 MiB
+        GP, t = 2.485 s, out = 3.588 MiB
+        UT, t = 22.982 s, out = 8.318 MiB
 """
 
 import time

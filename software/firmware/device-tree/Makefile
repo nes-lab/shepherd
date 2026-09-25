@@ -1,44 +1,39 @@
-CAPE_HW_VER ?= 25
+DTS_ALL  := $(sort $(wildcard BB-SHPRD-*.dts))
+DTSP_ALL := $(DTS_ALL:.dts=.dtsp)
+DTBO_ALL := $(DTS_ALL:.dts=.dtbo)
 
-ifeq ($(CAPE_HW_VER), 22)
-override CAPE_HW_VER = 24
-else ifeq ($(CAPE_HW_VER), 23)
-override CAPE_HW_VER = 24
-endif
 
-TARGET = BB-SHPRD-$(CAPE_HW_VER)A0
-# command above sets the default (v2.5e Rev 0, Emu only)
-# -> currently supported: 22, 23, 24 (HRV & EMU) & 25 (EMU only)
-# i.e. overwrite with: make CAPE_HW_VER=24
-# TODO: could be dynamically determined by reading EEPROM
+.PHONY: all
+all: $(DTBO_ALL)
 
-$(TARGET).dtbo: $(TARGET).dtsp
+%.dtsp: %.dts
 	@echo ' '
-	@echo '*******************  Compiling DT-File ************************'
-	dtc -W no-unit_address_vs_reg -@ -I dts -O dtb -o $@ $<
-	@echo ' '
-
-$(TARGET).dtsp: $(TARGET).dts
-	@echo ' '
-	@echo '*******************  Precompiling DT-File *********************'
+	@echo '*******************  Precompiling DT-File: $< *******************'
 	cpp -nostdinc -I include -I arch  -undef -x assembler-with-cpp $< $@
 	@echo ' '
 
-.PHONY: all
-all: $(TARGET).dtbo
+%.dtbo: %.dtsp
+	@echo ' '
+	@echo '*******************  Compiling DT-File: $@ *******************'
+	dtc -W no-unit_address_vs_reg -@ -I dts -O dtb -o $@ $<
+	@echo ' '
+
+# keep the preprocessed sources
+.SECONDARY: $(DTSP_ALL)
 
 .PHONY: clean
 clean:
 	@echo ' '
 	@echo '*******************  Cleaning DT-Files ************************'
-	rm -f $(TARGET).dtbo
-	rm -f $(TARGET).dtsp
+	rm -f $(DTBO_ALL) $(DTSP_ALL)
 	@echo ' '
 
 .PHONY: install
-install: $(TARGET).dtbo
+install: $(DTBO_ALL)
 	@echo ' '
 	@echo '*******************  Installing DT-Files **********************'
-	install -D $(TARGET).dtbo \
-		$(DESTDIR)/lib/firmware/$(TARGET).dtbo
+	@for f in $(DTBO_ALL); do \
+		echo "  -> $(DESTDIR)/lib/firmware/$$f"; \
+		install -D $$f $(DESTDIR)/lib/firmware/$$f; \
+	done
 	@echo ' '

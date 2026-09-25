@@ -14,6 +14,7 @@ from importlib import metadata
 from types import FrameType
 from types import TracebackType
 
+from shepherd_sheep.sys_access import gpio_name_2_num
 from typing_extensions import Self
 
 # Top-Level Package-logger
@@ -27,6 +28,13 @@ log.propagate = False
 with suppress(ModuleNotFoundError):
     import dbus
     from periphery import GPIO
+
+gpio_cape_v2: dict[str, str] = {
+    "button": "P8_18",  # GPIO65 (deprecated naming scheme)
+    "led": "P8_19",  # GPIO22 (deprecated naming scheme)
+}
+
+gpio_data: list[str] | None = None
 
 
 def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
@@ -49,20 +57,18 @@ class Launcher:
 
     def __init__(
         self,
-        pin_button: int,
-        pin_led: int,
         service_name: str,
     ) -> None:
+        self.pin_button: int = gpio_name_2_num(gpio_cape_v2["button"])
+        self.pin_led: int = gpio_name_2_num(gpio_cape_v2["led"])
+        self.service_name = service_name
         log.debug(
             "Initializing Launcher v%s for '%s' (pin_button = %d, pin_led = %d)",
             metadata.version("shepherd-sheep"),
-            service_name,
-            pin_button,
-            pin_led,
+            self.service_name,
+            self.pin_button,
+            self.pin_led,
         )
-        self.pin_button = pin_button
-        self.pin_led = pin_led
-        self.service_name = service_name
 
     def __enter__(self) -> Self:
         self.gpio_led = GPIO(self.pin_led, "out")

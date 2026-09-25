@@ -1,0 +1,126 @@
+---
+
+- name: Migrate to newer kernel
+  hosts: sheep
+  become: true
+  # strategy: free  # noqa: run-once[play]
+  # ⤷ ansible won't wait for every host to continue next task
+  vars:
+    new_kernel_version: "6.1.83-ti-r42"
+    update_pssp: false
+
+  pre_tasks: # update time
+
+    - name: Get time and date from ansible controller
+      ansible.builtin.command: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+      delegate_to: localhost
+      changed_when: false
+      register: local_time
+      become: false
+    - name: Set correct time
+      ansible.builtin.command: "date -s {{ local_time.stdout }}"
+      changed_when: true
+
+  tasks:
+
+    - name: APT - Update Cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: APT - Upgrade all packages to the latest version
+      ansible.builtin.apt:
+        upgrade: dist
+
+    - name: Uname - Get Kernel-Release
+      ansible.builtin.command: 'uname --kernel-release'
+      register: kernelrelease
+      changed_when: false
+    - name: Inform about Kernel-Version
+      ansible.builtin.debug:
+        msg:
+          - "active   = {{ kernelrelease.stdout.strip() }}"
+          - "required = {{ new_kernel_version }}"
+
+    - name: APT - install hardcoded kernel image & headers
+      ansible.builtin.apt:
+        name:
+          [
+            "linux-image-{{ new_kernel_version }}",
+            "linux-headers-{{ new_kernel_version }}",
+          ]
+        state: present
+      when: kernelrelease.stdout.strip() != new_kernel_version
+
+    - name: Restart device
+      ansible.builtin.reboot:
+        connect_timeout: 20
+        reboot_timeout: 200
+        post_reboot_delay: 30
+      when: kernelrelease.stdout.strip() != new_kernel_version
+
+    - name: Remove previous PSSP
+      ansible.builtin.command: "rm -rf /usr/share/ti/pru-software-support-package"
+      become: true
+      when: update_pssp
+
+    - name: Clone PRU software support package (Ti PSSP)
+      ansible.builtin.git:
+        repo: 'https://git.ti.com/git/pru-software-support-package/pru-software-support-package.git'
+        dest: /usr/share/ti/pru-software-support-package
+        update: true
+        version: "v6.5.0"
+        force: true
+      become: true
+      register: dl_pssp_ret
+      until: dl_pssp_ret is not failed
+      retries: 5
+      when: update_pssp
+
+    - name: Enable shepherd overlays
+      ansible.builtin.lineinfile:
+        dest: "/boot/uEnv.txt"
+        regexp: "{{ item.regexpress }}"
+        line: "{{ item.replacement }}"
+        state: present
+      loop:
+        - {
+          regexpress: "#?enable_uboot_overlays=.*$",
+          replacement: "enable_uboot_overlays=1",
+        }
+        - {
+          regexpress: '#?uboot_overlay_pru=.*$',
+          replacement: "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo",
+          # note that this is still working with kernel 6.1
+        }
+        - {
+          regexpress: '#?uboot_overlay_addr4=.*$',
+          replacement: "uboot_overlay_addr4=/lib/firmware/BB-SHPRD-24A0.dtbo",
+        }
+        - {
+          regexpress: '#?uboot_overlay_addr5=.*$',
+          replacement: "uboot_overlay_addr5=/lib/firmware/BB-UART1-00A0.dtbo",
+        }
+        - {
+          # cape-overlay (working for kernel 4.19) TODO: fix for kernel 6.1++
+          regexpress: '#?dtb_overlay=.*$',
+          replacement: "#dtb_overlay=/lib/firmware/BB-SHPRD-24A0.dtbo",
+        }
+      become: true
+
+  post_tasks:
+
+    - name: Rebuild Software
+      ansible.builtin.include_role:
+        name: sheep
+      vars:
+        sheep_install_basics: false
+        sheep_shepherd_branch: dev  # default: main
+        sheep_refresh_source: false
+        sheep_rebuild_kernel_module: true  # default: true
+        sheep_rebuild_python_package: true # default: true
+        sheep_cape_hw_ver: "24"
+
+    - name: Reset Watchdog-Config
+      ansible.builtin.command: "rm /etc/shepherd/watchdog.yaml"
+      become: true

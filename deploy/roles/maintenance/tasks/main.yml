@@ -32,6 +32,13 @@
 
   # TODO: - name: CFG - Set CPU Governor to more relaxed state (powersave)
 
+- name: SCRIPT - Update U-boot / Bootloader
+  ansible.builtin.shell: # pipefail-setting prevents surprises
+    cmd: "set -o pipefail && /opt/u-boot/bb-u-boot-am335x-evm/install.sh"
+  changed_when: true
+  become: true
+  failed_when: false # certificate may be invalid
+
 - name: Performance-modifications
   ansible.builtin.include_tasks:
     file: performance.yml

@@ -9,6 +9,7 @@
 #include "gpio.h"
 #include "iep.h"
 #include "intc.h"
+#include "intc_map_0.h"
 #include "resource_table_def.h"
 #include "stdint_fast.h"
 

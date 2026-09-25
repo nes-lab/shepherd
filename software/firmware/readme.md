@@ -104,8 +104,7 @@ Note: during restart of kernel module, Pru0 seems to boot ~ 60 ms earlier than P
 - corresponding ansible-playbook -> `shepherd/deploy/roles/sheep/task/toolchain_pru_ti.yml`
 - install [CGT](https://www.ti.com/tool/PRU-CGT#downloads)
 - clone [PSSP](https://git.ti.com/cgit/pru-software-support-package/pru-software-support-package/)
-  - make sure to use `v5.9.0`
-  - Note: >= `v6.0.0` is reserved for kernel >=5.10 and needs a intc_map.h
+  - make sure to use `v6.5.0` or newer
 - setup env-variables, like below
 
 ```Shell
@@ -125,7 +124,7 @@ export PRU_CGT_SUPPORT=/usr/share/ti/pru-software-support-package
 - corresponding ansible-playbook -> `shepherd/deploy/roles/sheep/task/toolchain_pru_gcc.yml`
 - install the cross toolchain from [gnupru](https://github.com/dinuxbg/gnupru.git)
 - install the PRU software support packages from [pssp](https://github.com/dinuxbg/pru-software-support-package.git)
-  - checkout branch `linux-4.19-rproc`
+  - checkout branch `linux-6.4.0-rproc` (for linux-6.1)
 - setup env variables, like below
 
 ```Shell

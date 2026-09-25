@@ -49,7 +49,7 @@
 /*
  * Cache for Input-IV-Buffer
  */
-#define CACHE_SIZE_LOG2            (16u)                                   // 64kByte
+#define CACHE_SIZE_LOG2            (16u - 1) // 2^16 = 64kByte, ~ 82 ms
 #define CACHE_SAMPLES_LOG2         (CACHE_SIZE_LOG2 - IV_SAMPLE_SIZE_LOG2) // 13
 #define CACHE_SAMPLES_N            (1u << CACHE_SAMPLES_LOG2)              // 8192
 #define CACHE_IDX_MASK             (CACHE_SAMPLES_N - 1u)

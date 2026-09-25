@@ -55,12 +55,12 @@
  */
 
 #ifndef NRF52840_H
-  #define NRF52840_H
+#define NRF52840_H
 
-  #ifdef __cplusplus
+#ifdef __cplusplus
 extern "C"
 {
-  #endif
+#endif
 
     /** @addtogroup Configuration_of_CMSIS
  * @{
@@ -2833,79 +2833,79 @@ extern "C"
  * @{
  */
 
-  #define NRF_FICR_BASE        0x10000000UL
-  #define NRF_UICR_BASE        0x10001000UL
-  #define NRF_CLOCK_BASE       0x40000000UL
-  #define NRF_POWER_BASE       0x40000000UL
-  #define NRF_P0_BASE          0x50000000UL
-  #define NRF_P1_BASE          0x50000300UL
-  #define NRF_RADIO_BASE       0x40001000UL
-  #define NRF_UART0_BASE       0x40002000UL
-  #define NRF_UARTE0_BASE      0x40002000UL
-  #define NRF_SPI0_BASE        0x40003000UL
-  #define NRF_SPIM0_BASE       0x40003000UL
-  #define NRF_SPIS0_BASE       0x40003000UL
-  #define NRF_TWI0_BASE        0x40003000UL
-  #define NRF_TWIM0_BASE       0x40003000UL
-  #define NRF_TWIS0_BASE       0x40003000UL
-  #define NRF_SPI1_BASE        0x40004000UL
-  #define NRF_SPIM1_BASE       0x40004000UL
-  #define NRF_SPIS1_BASE       0x40004000UL
-  #define NRF_TWI1_BASE        0x40004000UL
-  #define NRF_TWIM1_BASE       0x40004000UL
-  #define NRF_TWIS1_BASE       0x40004000UL
-  #define NRF_NFCT_BASE        0x40005000UL
-  #define NRF_GPIOTE_BASE      0x40006000UL
-  #define NRF_SAADC_BASE       0x40007000UL
-  #define NRF_TIMER0_BASE      0x40008000UL
-  #define NRF_TIMER1_BASE      0x40009000UL
-  #define NRF_TIMER2_BASE      0x4000A000UL
-  #define NRF_RTC0_BASE        0x4000B000UL
-  #define NRF_TEMP_BASE        0x4000C000UL
-  #define NRF_RNG_BASE         0x4000D000UL
-  #define NRF_ECB_BASE         0x4000E000UL
-  #define NRF_AAR_BASE         0x4000F000UL
-  #define NRF_CCM_BASE         0x4000F000UL
-  #define NRF_WDT_BASE         0x40010000UL
-  #define NRF_RTC1_BASE        0x40011000UL
-  #define NRF_QDEC_BASE        0x40012000UL
-  #define NRF_COMP_BASE        0x40013000UL
-  #define NRF_LPCOMP_BASE      0x40013000UL
-  #define NRF_EGU0_BASE        0x40014000UL
-  #define NRF_SWI0_BASE        0x40014000UL
-  #define NRF_EGU1_BASE        0x40015000UL
-  #define NRF_SWI1_BASE        0x40015000UL
-  #define NRF_EGU2_BASE        0x40016000UL
-  #define NRF_SWI2_BASE        0x40016000UL
-  #define NRF_EGU3_BASE        0x40017000UL
-  #define NRF_SWI3_BASE        0x40017000UL
-  #define NRF_EGU4_BASE        0x40018000UL
-  #define NRF_SWI4_BASE        0x40018000UL
-  #define NRF_EGU5_BASE        0x40019000UL
-  #define NRF_SWI5_BASE        0x40019000UL
-  #define NRF_TIMER3_BASE      0x4001A000UL
-  #define NRF_TIMER4_BASE      0x4001B000UL
-  #define NRF_PWM0_BASE        0x4001C000UL
-  #define NRF_PDM_BASE         0x4001D000UL
-  #define NRF_ACL_BASE         0x4001E000UL
-  #define NRF_NVMC_BASE        0x4001E000UL
-  #define NRF_PPI_BASE         0x4001F000UL
-  #define NRF_MWU_BASE         0x40020000UL
-  #define NRF_PWM1_BASE        0x40021000UL
-  #define NRF_PWM2_BASE        0x40022000UL
-  #define NRF_SPI2_BASE        0x40023000UL
-  #define NRF_SPIM2_BASE       0x40023000UL
-  #define NRF_SPIS2_BASE       0x40023000UL
-  #define NRF_RTC2_BASE        0x40024000UL
-  #define NRF_I2S_BASE         0x40025000UL
-  #define NRF_FPU_BASE         0x40026000UL
-  #define NRF_USBD_BASE        0x40027000UL
-  #define NRF_UARTE1_BASE      0x40028000UL
-  #define NRF_QSPI_BASE        0x40029000UL
-  #define NRF_CC_HOST_RGF_BASE 0x5002A000UL
-  #define NRF_CRYPTOCELL_BASE  0x5002A000UL
-  #define NRF_PWM3_BASE        0x4002D000UL
-  #define NRF_SPIM3_BASE       0x4002F000UL
+#define NRF_FICR_BASE        0x10000000UL
+#define NRF_UICR_BASE        0x10001000UL
+#define NRF_CLOCK_BASE       0x40000000UL
+#define NRF_POWER_BASE       0x40000000UL
+#define NRF_P0_BASE          0x50000000UL
+#define NRF_P1_BASE          0x50000300UL
+#define NRF_RADIO_BASE       0x40001000UL
+#define NRF_UART0_BASE       0x40002000UL
+#define NRF_UARTE0_BASE      0x40002000UL
+#define NRF_SPI0_BASE        0x40003000UL
+#define NRF_SPIM0_BASE       0x40003000UL
+#define NRF_SPIS0_BASE       0x40003000UL
+#define NRF_TWI0_BASE        0x40003000UL
+#define NRF_TWIM0_BASE       0x40003000UL
+#define NRF_TWIS0_BASE       0x40003000UL
+#define NRF_SPI1_BASE        0x40004000UL
+#define NRF_SPIM1_BASE       0x40004000UL
+#define NRF_SPIS1_BASE       0x40004000UL
+#define NRF_TWI1_BASE        0x40004000UL
+#define NRF_TWIM1_BASE       0x40004000UL
+#define NRF_TWIS1_BASE       0x40004000UL
+#define NRF_NFCT_BASE        0x40005000UL
+#define NRF_GPIOTE_BASE      0x40006000UL
+#define NRF_SAADC_BASE       0x40007000UL
+#define NRF_TIMER0_BASE      0x40008000UL
+#define NRF_TIMER1_BASE      0x40009000UL
+#define NRF_TIMER2_BASE      0x4000A000UL
+#define NRF_RTC0_BASE        0x4000B000UL
+#define NRF_TEMP_BASE        0x4000C000UL
+#define NRF_RNG_BASE         0x4000D000UL
+#define NRF_ECB_BASE         0x4000E000UL
+#define NRF_AAR_BASE         0x4000F000UL
+#define NRF_CCM_BASE         0x4000F000UL
+#define NRF_WDT_BASE         0x40010000UL
+#define NRF_RTC1_BASE        0x40011000UL
+#define NRF_QDEC_BASE        0x40012000UL
+#define NRF_COMP_BASE        0x40013000UL
+#define NRF_LPCOMP_BASE      0x40013000UL
+#define NRF_EGU0_BASE        0x40014000UL
+#define NRF_SWI0_BASE        0x40014000UL
+#define NRF_EGU1_BASE        0x40015000UL
+#define NRF_SWI1_BASE        0x40015000UL
+#define NRF_EGU2_BASE        0x40016000UL
+#define NRF_SWI2_BASE        0x40016000UL
+#define NRF_EGU3_BASE        0x40017000UL
+#define NRF_SWI3_BASE        0x40017000UL
+#define NRF_EGU4_BASE        0x40018000UL
+#define NRF_SWI4_BASE        0x40018000UL
+#define NRF_EGU5_BASE        0x40019000UL
+#define NRF_SWI5_BASE        0x40019000UL
+#define NRF_TIMER3_BASE      0x4001A000UL
+#define NRF_TIMER4_BASE      0x4001B000UL
+#define NRF_PWM0_BASE        0x4001C000UL
+#define NRF_PDM_BASE         0x4001D000UL
+#define NRF_ACL_BASE         0x4001E000UL
+#define NRF_NVMC_BASE        0x4001E000UL
+#define NRF_PPI_BASE         0x4001F000UL
+#define NRF_MWU_BASE         0x40020000UL
+#define NRF_PWM1_BASE        0x40021000UL
+#define NRF_PWM2_BASE        0x40022000UL
+#define NRF_SPI2_BASE        0x40023000UL
+#define NRF_SPIM2_BASE       0x40023000UL
+#define NRF_SPIS2_BASE       0x40023000UL
+#define NRF_RTC2_BASE        0x40024000UL
+#define NRF_I2S_BASE         0x40025000UL
+#define NRF_FPU_BASE         0x40026000UL
+#define NRF_USBD_BASE        0x40027000UL
+#define NRF_UARTE1_BASE      0x40028000UL
+#define NRF_QSPI_BASE        0x40029000UL
+#define NRF_CC_HOST_RGF_BASE 0x5002A000UL
+#define NRF_CRYPTOCELL_BASE  0x5002A000UL
+#define NRF_PWM3_BASE        0x4002D000UL
+#define NRF_SPIM3_BASE       0x4002F000UL
 
     /** @} */ /* End of group Device_Peripheral_peripheralAddr */
 
@@ -2920,79 +2920,79 @@ extern "C"
  * @{
  */
 
-  #define NRF_FICR             ((NRF_FICR_Type *) NRF_FICR_BASE)
-  #define NRF_UICR             ((NRF_UICR_Type *) NRF_UICR_BASE)
-  #define NRF_CLOCK            ((NRF_CLOCK_Type *) NRF_CLOCK_BASE)
-  #define NRF_POWER            ((NRF_POWER_Type *) NRF_POWER_BASE)
-  #define NRF_P0               ((NRF_GPIO_Type *) NRF_P0_BASE)
-  #define NRF_P1               ((NRF_GPIO_Type *) NRF_P1_BASE)
-  #define NRF_RADIO            ((NRF_RADIO_Type *) NRF_RADIO_BASE)
-  #define NRF_UART0            ((NRF_UART_Type *) NRF_UART0_BASE)
-  #define NRF_UARTE0           ((NRF_UARTE_Type *) NRF_UARTE0_BASE)
-  #define NRF_SPI0             ((NRF_SPI_Type *) NRF_SPI0_BASE)
-  #define NRF_SPIM0            ((NRF_SPIM_Type *) NRF_SPIM0_BASE)
-  #define NRF_SPIS0            ((NRF_SPIS_Type *) NRF_SPIS0_BASE)
-  #define NRF_TWI0             ((NRF_TWI_Type *) NRF_TWI0_BASE)
-  #define NRF_TWIM0            ((NRF_TWIM_Type *) NRF_TWIM0_BASE)
-  #define NRF_TWIS0            ((NRF_TWIS_Type *) NRF_TWIS0_BASE)
-  #define NRF_SPI1             ((NRF_SPI_Type *) NRF_SPI1_BASE)
-  #define NRF_SPIM1            ((NRF_SPIM_Type *) NRF_SPIM1_BASE)
-  #define NRF_SPIS1            ((NRF_SPIS_Type *) NRF_SPIS1_BASE)
-  #define NRF_TWI1             ((NRF_TWI_Type *) NRF_TWI1_BASE)
-  #define NRF_TWIM1            ((NRF_TWIM_Type *) NRF_TWIM1_BASE)
-  #define NRF_TWIS1            ((NRF_TWIS_Type *) NRF_TWIS1_BASE)
-  #define NRF_NFCT             ((NRF_NFCT_Type *) NRF_NFCT_BASE)
-  #define NRF_GPIOTE           ((NRF_GPIOTE_Type *) NRF_GPIOTE_BASE)
-  #define NRF_SAADC            ((NRF_SAADC_Type *) NRF_SAADC_BASE)
-  #define NRF_TIMER0           ((NRF_TIMER_Type *) NRF_TIMER0_BASE)
-  #define NRF_TIMER1           ((NRF_TIMER_Type *) NRF_TIMER1_BASE)
-  #define NRF_TIMER2           ((NRF_TIMER_Type *) NRF_TIMER2_BASE)
-  #define NRF_RTC0             ((NRF_RTC_Type *) NRF_RTC0_BASE)
-  #define NRF_TEMP             ((NRF_TEMP_Type *) NRF_TEMP_BASE)
-  #define NRF_RNG              ((NRF_RNG_Type *) NRF_RNG_BASE)
-  #define NRF_ECB              ((NRF_ECB_Type *) NRF_ECB_BASE)
-  #define NRF_AAR              ((NRF_AAR_Type *) NRF_AAR_BASE)
-  #define NRF_CCM              ((NRF_CCM_Type *) NRF_CCM_BASE)
-  #define NRF_WDT              ((NRF_WDT_Type *) NRF_WDT_BASE)
-  #define NRF_RTC1             ((NRF_RTC_Type *) NRF_RTC1_BASE)
-  #define NRF_QDEC             ((NRF_QDEC_Type *) NRF_QDEC_BASE)
-  #define NRF_COMP             ((NRF_COMP_Type *) NRF_COMP_BASE)
-  #define NRF_LPCOMP           ((NRF_LPCOMP_Type *) NRF_LPCOMP_BASE)
-  #define NRF_EGU0             ((NRF_EGU_Type *) NRF_EGU0_BASE)
-  #define NRF_SWI0             ((NRF_SWI_Type *) NRF_SWI0_BASE)
-  #define NRF_EGU1             ((NRF_EGU_Type *) NRF_EGU1_BASE)
-  #define NRF_SWI1             ((NRF_SWI_Type *) NRF_SWI1_BASE)
-  #define NRF_EGU2             ((NRF_EGU_Type *) NRF_EGU2_BASE)
-  #define NRF_SWI2             ((NRF_SWI_Type *) NRF_SWI2_BASE)
-  #define NRF_EGU3             ((NRF_EGU_Type *) NRF_EGU3_BASE)
-  #define NRF_SWI3             ((NRF_SWI_Type *) NRF_SWI3_BASE)
-  #define NRF_EGU4             ((NRF_EGU_Type *) NRF_EGU4_BASE)
-  #define NRF_SWI4             ((NRF_SWI_Type *) NRF_SWI4_BASE)
-  #define NRF_EGU5             ((NRF_EGU_Type *) NRF_EGU5_BASE)
-  #define NRF_SWI5             ((NRF_SWI_Type *) NRF_SWI5_BASE)
-  #define NRF_TIMER3           ((NRF_TIMER_Type *) NRF_TIMER3_BASE)
-  #define NRF_TIMER4           ((NRF_TIMER_Type *) NRF_TIMER4_BASE)
-  #define NRF_PWM0             ((NRF_PWM_Type *) NRF_PWM0_BASE)
-  #define NRF_PDM              ((NRF_PDM_Type *) NRF_PDM_BASE)
-  #define NRF_ACL              ((NRF_ACL_Type *) NRF_ACL_BASE)
-  #define NRF_NVMC             ((NRF_NVMC_Type *) NRF_NVMC_BASE)
-  #define NRF_PPI              ((NRF_PPI_Type *) NRF_PPI_BASE)
-  #define NRF_MWU              ((NRF_MWU_Type *) NRF_MWU_BASE)
-  #define NRF_PWM1             ((NRF_PWM_Type *) NRF_PWM1_BASE)
-  #define NRF_PWM2             ((NRF_PWM_Type *) NRF_PWM2_BASE)
-  #define NRF_SPI2             ((NRF_SPI_Type *) NRF_SPI2_BASE)
-  #define NRF_SPIM2            ((NRF_SPIM_Type *) NRF_SPIM2_BASE)
-  #define NRF_SPIS2            ((NRF_SPIS_Type *) NRF_SPIS2_BASE)
-  #define NRF_RTC2             ((NRF_RTC_Type *) NRF_RTC2_BASE)
-  #define NRF_I2S              ((NRF_I2S_Type *) NRF_I2S_BASE)
-  #define NRF_FPU              ((NRF_FPU_Type *) NRF_FPU_BASE)
-  #define NRF_USBD             ((NRF_USBD_Type *) NRF_USBD_BASE)
-  #define NRF_UARTE1           ((NRF_UARTE_Type *) NRF_UARTE1_BASE)
-  #define NRF_QSPI             ((NRF_QSPI_Type *) NRF_QSPI_BASE)
-  #define NRF_CC_HOST_RGF      ((NRF_CC_HOST_RGF_Type *) NRF_CC_HOST_RGF_BASE)
-  #define NRF_CRYPTOCELL       ((NRF_CRYPTOCELL_Type *) NRF_CRYPTOCELL_BASE)
-  #define NRF_PWM3             ((NRF_PWM_Type *) NRF_PWM3_BASE)
-  #define NRF_SPIM3            ((NRF_SPIM_Type *) NRF_SPIM3_BASE)
+#define NRF_FICR             ((NRF_FICR_Type *) NRF_FICR_BASE)
+#define NRF_UICR             ((NRF_UICR_Type *) NRF_UICR_BASE)
+#define NRF_CLOCK            ((NRF_CLOCK_Type *) NRF_CLOCK_BASE)
+#define NRF_POWER            ((NRF_POWER_Type *) NRF_POWER_BASE)
+#define NRF_P0               ((NRF_GPIO_Type *) NRF_P0_BASE)
+#define NRF_P1               ((NRF_GPIO_Type *) NRF_P1_BASE)
+#define NRF_RADIO            ((NRF_RADIO_Type *) NRF_RADIO_BASE)
+#define NRF_UART0            ((NRF_UART_Type *) NRF_UART0_BASE)
+#define NRF_UARTE0           ((NRF_UARTE_Type *) NRF_UARTE0_BASE)
+#define NRF_SPI0             ((NRF_SPI_Type *) NRF_SPI0_BASE)
+#define NRF_SPIM0            ((NRF_SPIM_Type *) NRF_SPIM0_BASE)
+#define NRF_SPIS0            ((NRF_SPIS_Type *) NRF_SPIS0_BASE)
+#define NRF_TWI0             ((NRF_TWI_Type *) NRF_TWI0_BASE)
+#define NRF_TWIM0            ((NRF_TWIM_Type *) NRF_TWIM0_BASE)
+#define NRF_TWIS0            ((NRF_TWIS_Type *) NRF_TWIS0_BASE)
+#define NRF_SPI1             ((NRF_SPI_Type *) NRF_SPI1_BASE)
+#define NRF_SPIM1            ((NRF_SPIM_Type *) NRF_SPIM1_BASE)
+#define NRF_SPIS1            ((NRF_SPIS_Type *) NRF_SPIS1_BASE)
+#define NRF_TWI1             ((NRF_TWI_Type *) NRF_TWI1_BASE)
+#define NRF_TWIM1            ((NRF_TWIM_Type *) NRF_TWIM1_BASE)
+#define NRF_TWIS1            ((NRF_TWIS_Type *) NRF_TWIS1_BASE)
+#define NRF_NFCT             ((NRF_NFCT_Type *) NRF_NFCT_BASE)
+#define NRF_GPIOTE           ((NRF_GPIOTE_Type *) NRF_GPIOTE_BASE)
+#define NRF_SAADC            ((NRF_SAADC_Type *) NRF_SAADC_BASE)
+#define NRF_TIMER0           ((NRF_TIMER_Type *) NRF_TIMER0_BASE)
+#define NRF_TIMER1           ((NRF_TIMER_Type *) NRF_TIMER1_BASE)
+#define NRF_TIMER2           ((NRF_TIMER_Type *) NRF_TIMER2_BASE)
+#define NRF_RTC0             ((NRF_RTC_Type *) NRF_RTC0_BASE)
+#define NRF_TEMP             ((NRF_TEMP_Type *) NRF_TEMP_BASE)
+#define NRF_RNG              ((NRF_RNG_Type *) NRF_RNG_BASE)
+#define NRF_ECB              ((NRF_ECB_Type *) NRF_ECB_BASE)
+#define NRF_AAR              ((NRF_AAR_Type *) NRF_AAR_BASE)
+#define NRF_CCM              ((NRF_CCM_Type *) NRF_CCM_BASE)
+#define NRF_WDT              ((NRF_WDT_Type *) NRF_WDT_BASE)
+#define NRF_RTC1             ((NRF_RTC_Type *) NRF_RTC1_BASE)
+#define NRF_QDEC             ((NRF_QDEC_Type *) NRF_QDEC_BASE)
+#define NRF_COMP             ((NRF_COMP_Type *) NRF_COMP_BASE)
+#define NRF_LPCOMP           ((NRF_LPCOMP_Type *) NRF_LPCOMP_BASE)
+#define NRF_EGU0             ((NRF_EGU_Type *) NRF_EGU0_BASE)
+#define NRF_SWI0             ((NRF_SWI_Type *) NRF_SWI0_BASE)
+#define NRF_EGU1             ((NRF_EGU_Type *) NRF_EGU1_BASE)
+#define NRF_SWI1             ((NRF_SWI_Type *) NRF_SWI1_BASE)
+#define NRF_EGU2             ((NRF_EGU_Type *) NRF_EGU2_BASE)
+#define NRF_SWI2             ((NRF_SWI_Type *) NRF_SWI2_BASE)
+#define NRF_EGU3             ((NRF_EGU_Type *) NRF_EGU3_BASE)
+#define NRF_SWI3             ((NRF_SWI_Type *) NRF_SWI3_BASE)
+#define NRF_EGU4             ((NRF_EGU_Type *) NRF_EGU4_BASE)
+#define NRF_SWI4             ((NRF_SWI_Type *) NRF_SWI4_BASE)
+#define NRF_EGU5             ((NRF_EGU_Type *) NRF_EGU5_BASE)
+#define NRF_SWI5             ((NRF_SWI_Type *) NRF_SWI5_BASE)
+#define NRF_TIMER3           ((NRF_TIMER_Type *) NRF_TIMER3_BASE)
+#define NRF_TIMER4           ((NRF_TIMER_Type *) NRF_TIMER4_BASE)
+#define NRF_PWM0             ((NRF_PWM_Type *) NRF_PWM0_BASE)
+#define NRF_PDM              ((NRF_PDM_Type *) NRF_PDM_BASE)
+#define NRF_ACL              ((NRF_ACL_Type *) NRF_ACL_BASE)
+#define NRF_NVMC             ((NRF_NVMC_Type *) NRF_NVMC_BASE)
+#define NRF_PPI              ((NRF_PPI_Type *) NRF_PPI_BASE)
+#define NRF_MWU              ((NRF_MWU_Type *) NRF_MWU_BASE)
+#define NRF_PWM1             ((NRF_PWM_Type *) NRF_PWM1_BASE)
+#define NRF_PWM2             ((NRF_PWM_Type *) NRF_PWM2_BASE)
+#define NRF_SPI2             ((NRF_SPI_Type *) NRF_SPI2_BASE)
+#define NRF_SPIM2            ((NRF_SPIM_Type *) NRF_SPIM2_BASE)
+#define NRF_SPIS2            ((NRF_SPIS_Type *) NRF_SPIS2_BASE)
+#define NRF_RTC2             ((NRF_RTC_Type *) NRF_RTC2_BASE)
+#define NRF_I2S              ((NRF_I2S_Type *) NRF_I2S_BASE)
+#define NRF_FPU              ((NRF_FPU_Type *) NRF_FPU_BASE)
+#define NRF_USBD             ((NRF_USBD_Type *) NRF_USBD_BASE)
+#define NRF_UARTE1           ((NRF_UARTE_Type *) NRF_UARTE1_BASE)
+#define NRF_QSPI             ((NRF_QSPI_Type *) NRF_QSPI_BASE)
+#define NRF_CC_HOST_RGF      ((NRF_CC_HOST_RGF_Type *) NRF_CC_HOST_RGF_BASE)
+#define NRF_CRYPTOCELL       ((NRF_CRYPTOCELL_Type *) NRF_CRYPTOCELL_BASE)
+#define NRF_PWM3             ((NRF_PWM_Type *) NRF_PWM3_BASE)
+#define NRF_SPIM3            ((NRF_SPIM_Type *) NRF_SPIM3_BASE)
 
 #endif /* NRF52840_H */
 
