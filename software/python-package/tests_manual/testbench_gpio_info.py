@@ -57,6 +57,8 @@ gpio_v25: list[str] = [
 gpio_data = get_gpio_info()
 for gpio_value in gpio_v25:
     gpio_num = gpio_name_2_num(gpio_value)
-    gpio_dsc = gpio_data[gpio_num]
+    gpio_dsc = gpio_data[gpio_num % 512]
     if "unused" not in gpio_dsc:
-        log.info(f"Problem? {gpio_value} / {gpio_num}: {gpio_dsc}")
+        log.warning(f"Problem? {gpio_value} / {gpio_num}: {gpio_dsc}")
+    else:
+        log.info(f"\t{gpio_value} / {gpio_num}: {gpio_dsc}")
