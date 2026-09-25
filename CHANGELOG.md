@@ -51,10 +51,12 @@ Kernel-Update 6.1 - Downsides:
    - power management (PM) uses the first 8 kByte, but cache-design needs 2^n
    - PM could be turned off (runtime-command available), but no one guarantees, that the OCMC isn't written to -> one could try to modify the device tree and NOT reserve that 4+4 kByte and check if system sticks to it (using shepherd resulted in a kernel panic when that shared area was modified)
 
-Kernel-Update 6.12:
-- migrate from 6.1.83-ti-r39 (2022-12) to 6.12.109-bone72 (2024-12)
+Kernel-Update 6.18:
+- migrate from 6.1.83-ti-r39 (2022-12) to 6.18.53-bone55 (2025-11)
+- that's the first kernel-version that fully supports the beaglebone green eco
 - device-tree - build-process now uses provided includes (less custom, error-prone code)
 - read/write-performance seems to have improved ~ 10 %
+- add back benchmark for ktimers
 
 Misc
 - add custom compiled PTP
