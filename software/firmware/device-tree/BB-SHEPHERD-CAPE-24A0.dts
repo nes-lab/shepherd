@@ -13,7 +13,7 @@
 
 
 / {
-    compatible = "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green";
+    compatible = "ti,am335x", "ti,am335x-bone", "ti,am335x-bone-black", "ti,am335x-bone-green", "seeed,am335x-bone-green-eco";
 
     part-number = "BB-SHEPHERD-CAPE";
     version = "24A0";
@@ -100,8 +100,11 @@
 /* Check Table 9-60 in am335x TRM */
 
 /* Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/  */
-&{/chosen/overlays} {
-    BB-SHEPHERD-CAPE-24A0 = __TIMESTAMP__;
+// &{/chosen/overlays} { -> should, but does not work?
+&{/chosen} {
+	overlays {
+	BB-SHEPHERD-CAPE-24A0 = __TIMESTAMP__;
+	};
 };
 
 &am33xx_pinmux {
