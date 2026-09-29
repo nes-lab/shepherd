@@ -69,7 +69,7 @@
       replacement: "enable_uboot_cape_universal=0",
     }
   tags: gps
-  when: false  # TODO: this is sheeps responsibility?!?
+  when: false  # TODO: this is sheep responsibility
 
 - name: Restart device
   ansible.builtin.reboot:
