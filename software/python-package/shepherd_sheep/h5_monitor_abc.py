@@ -62,3 +62,7 @@ class Monitor(ABC):
     @abstractmethod
     def thread_fn(self) -> None:
         pass
+
+    @abstractmethod
+    def check_status(self) -> None:
+        pass

@@ -69,7 +69,7 @@ class GpioRecorder(Monitor):
         self.queue.cancel_join_thread()
         self.queue.close()
         if self.dropped_data:
-            log.warning("[%s] dropped data due to backpressure", type(self).__name__)
+            log.error("[%s] dropped data due to backpressure", type(self).__name__)
         self.data["value"].resize((self.position,))
         super().__exit__()
 
@@ -80,20 +80,23 @@ class GpioRecorder(Monitor):
         self.queue.put(data)
 
     def thread_fn(self) -> None:
-        while not self.queue.empty() or not self.event.wait(self.poll_interval):
-            data = self.queue.get()
-            len_new = len(data)
-            if len_new < 1:
-                return
-            pos_end = self.position + len_new
-            data_length = self.data["time"].shape[0]
-            if pos_end >= data_length:
-                data_length += max(self.increment, pos_end - data_length)
-                self.data["time"].resize((data_length,))
-                self.data["value"].resize((data_length,))
-            self.data["time"][self.position : pos_end] = data.timestamps_ns
-            self.data["value"][self.position : pos_end] = data.bitmasks
-            self.position = pos_end
+        while not self.event.is_set():
+            if self.queue.empty():
+                self.event.wait(self.poll_interval)  # rate limiter
+            else:
+                data = self.queue.get()
+                len_new = len(data)
+                if len_new < 1:
+                    return
+                pos_end = self.position + len_new
+                data_length = self.data["time"].shape[0]
+                if pos_end >= data_length:
+                    data_length += max(self.increment, pos_end - data_length)
+                    self.data["time"].resize((data_length,))
+                    self.data["value"].resize((data_length,))
+                self.data["time"][self.position : pos_end] = data.timestamps_ns
+                self.data["value"][self.position : pos_end] = data.bitmasks
+                self.position = pos_end
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def check_status(self) -> None:

@@ -67,7 +67,9 @@ class SheepMonitor(Monitor):
 
     def thread_fn(self) -> None:
         while not self.event.is_set():
-            if self.queue.qsize() > 0:
+            if self.queue.empty():
+                self.event.wait(self.poll_interval)  # rate limiter
+            else:
                 rec = self.queue.get()
                 try:
                     data_length = self.data["time"].shape[0]
@@ -86,6 +88,8 @@ class SheepMonitor(Monitor):
                 self.data["message"][self.position] = rec.message
                 self.data["level"][self.position] = rec.levelno
                 self.position += 1
-            else:
-                self.event.wait(self.poll_interval)  # rate limiter
+
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        return

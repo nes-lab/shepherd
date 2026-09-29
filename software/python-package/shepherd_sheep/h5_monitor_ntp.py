@@ -113,3 +113,6 @@ class NTPMonitor(Monitor):
                     line,
                 )
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        return

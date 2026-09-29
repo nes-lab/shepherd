@@ -16,9 +16,9 @@ class UARTMonitor(Monitor):
     def __init__(
         self,
         target: h5py.Group,
+        config: UartLogging,
         compression: Compression | None = Compression.default,
         uart: str = "/dev/ttyS1",
-        config: UartLogging | None = None,
     ) -> None:
         super().__init__(target, compression, poll_interval=0.05)
         self.uart = uart
@@ -33,9 +33,8 @@ class UARTMonitor(Monitor):
         )
         self.data["message"].attrs["description"] = "raw ascii-bytes"
 
-        if config is None:
+        if not isinstance(self.config, UartLogging):
             return
-
         if (not isinstance(self.config.baudrate, int)) or (self.config.baudrate == 0):
             return
 
@@ -98,7 +97,7 @@ class UARTMonitor(Monitor):
                 parity=self.config.parity,
                 timeout=0,
             ) as uart:
-                while not self.event.wait(self.poll_interval):  # rate limiter & exit
+                while not self.event.is_set():
                     if uart.in_waiting > 0:
                         # hdf5 can embed raw bytes, but can't handle nullbytes
                         output = uart.read(uart.in_waiting).replace(b"\x00", b"")
@@ -113,6 +112,8 @@ class UARTMonitor(Monitor):
                             )
                             self.data["message"][self.position] = output
                             self.position += 1
+                    else:
+                        self.event.wait(self.poll_interval)
 
         except RuntimeError:
             log.error("[%s] HDF5-File unavailable - will stop", type(self).__name__)
@@ -124,7 +125,7 @@ class UARTMonitor(Monitor):
                 type(self).__name__,
                 e,
                 self.uart,
-                self.baudrate,
+                self.config.baudrate,
             )
         except serial.SerialException as e:
             log.error(
@@ -135,3 +136,6 @@ class UARTMonitor(Monitor):
                 self.uart,
             )
         log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def check_status(self) -> None:
+        return

@@ -106,7 +106,7 @@ class PowerRecorder(Monitor):
         self.queue.cancel_join_thread()
         self.queue.close()
         if self.dropped_data:
-            log.warning("[%s] dropped data due to backpressure", type(self).__name__)
+            log.error("[%s] dropped data due to backpressure", type(self).__name__)
         self.data["value"].resize((self.position,))
         super().__exit__()
 
@@ -117,54 +117,57 @@ class PowerRecorder(Monitor):
         self.queue.put(data)
 
     def thread_fn(self) -> None:
-        while not self.queue.empty() or not self.event.wait(self.poll_interval):
-            data = self.queue.get()
-            len_add = len(data)
-            if len_add < self.reduction_factor:  # is 1 when not used
-                return
-            if len_add % self.reduction_factor != 0:
-                log.warning("Power-Tracer Input got odd size - some samples will be discarded")
-            len_red = len_add // self.reduction_factor
-            len_add = len_red * self.reduction_factor
-
-            """wanted:
-                    self.cal_data.voltage.raw_to_si(data.voltage[:len_add]).astype(np.float32)
-                    * self.cal_data.current.raw_to_si(data.current[:len_add]).astype(np.float32)
-                    / self.gain
-            Problem: upcast to float64 - which crashes the beaglebone
-            """
-            V_ = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
-            C_ = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
-            power = ((V_ * C_) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
-
-            # timestamps are automatically reduced
-            if isinstance(data.timestamp_ns, int):
-                # This is currently not used
-                data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
-            elif isinstance(data.timestamp_ns, np.ndarray):
-                # benchmarked slices: [:] is as fast as [::1] on BBB
-                data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
+        while not self.event.is_set():
+            if self.queue.empty():
+                self.event.wait(self.poll_interval)  # rate limiter
             else:
-                raise TypeError("timestamp_ns must be int or np.ndarray")
+                data = self.queue.get()
+                len_add = len(data)
+                if len_add < self.reduction_factor:  # is 1 when not used
+                    return
+                if len_add % self.reduction_factor != 0:
+                    log.warning("Power-Tracer Input got odd size - some samples will be discarded")
+                len_red = len_add // self.reduction_factor
+                len_add = len_red * self.reduction_factor
 
-            if self.reduce:
-                power = (
-                    power.reshape(len_red, self.reduction_factor)
-                    .mean(axis=1, dtype=np.uint64)
-                    .astype(np.uint32)
-                )
-                len_add = len_red
+                """wanted:
+                        self.cal_data.voltage.raw_to_si(data.voltage[:len_add]).astype(np.float32)
+                        * self.cal_data.current.raw_to_si(data.current[:len_add]).astype(np.float32)
+                        / self.gain
+                Problem: upcast to float64 - which crashes the beaglebone
+                """
+                V_ = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
+                C_ = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
+                power = ((V_ * C_) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
 
-            pos_end = self.position + len_add
-            data_length = self.data["time"].shape[0]
+                # timestamps are automatically reduced
+                if isinstance(data.timestamp_ns, int):
+                    # This is currently not used
+                    data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
+                elif isinstance(data.timestamp_ns, np.ndarray):
+                    # benchmarked slices: [:] is as fast as [::1] on BBB
+                    data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
+                else:
+                    raise TypeError("timestamp_ns must be int or np.ndarray")
 
-            if pos_end >= data_length:
-                data_length += max(self.increment, pos_end - data_length)
-                self.data["time"].resize((data_length,))
-                self.data["value"].resize((data_length,))
-            self.data["time"][self.position : pos_end] = data.timestamp_ns
-            self.data["value"][self.position : pos_end] = power
-            self.position = pos_end
+                if self.reduce:
+                    power = (
+                        power.reshape(len_red, self.reduction_factor)
+                        .mean(axis=1, dtype=np.uint64)
+                        .astype(np.uint32)
+                    )
+                    len_add = len_red
+
+                pos_end = self.position + len_add
+                data_length = self.data["time"].shape[0]
+
+                if pos_end >= data_length:
+                    data_length += max(self.increment, pos_end - data_length)
+                    self.data["time"].resize((data_length,))
+                    self.data["value"].resize((data_length,))
+                self.data["time"][self.position : pos_end] = data.timestamp_ns
+                self.data["value"][self.position : pos_end] = power
+                self.position = pos_end
 
         log.debug("[%s] thread ended itself", type(self).__name__)
 

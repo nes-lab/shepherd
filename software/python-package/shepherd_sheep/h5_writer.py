@@ -279,7 +279,7 @@ class Writer(CoreWriter):
             self.monitors.append(
                 UARTMonitor(
                     self.uart_grp,
-                    self._compression,
+                    compression=self._compression,
                     config=uart,
                 ),
             )
