@@ -1,8 +1,8 @@
 import atexit
 import logging.handlers
-import multiprocessing
 import sys
 from logging import LogRecord
+from queue import Queue
 
 import chromalog
 
@@ -16,7 +16,7 @@ console_handler = chromalog.ColorizingStreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
 
 # Queue saves log for later putting it in hdf5-file
-queue = multiprocessing.Queue(-1)
+queue = Queue(-1)
 queue_handler = logging.handlers.QueueHandler(queue)
 queue_handler.setLevel(logging.DEBUG)
 
@@ -75,7 +75,7 @@ def reset_verbosity() -> None:
     set_log_verbose_level(console_handler, 2)
 
 
-def get_message_queue() -> multiprocessing.Queue:
+def get_message_queue() -> Queue:
     """Hand over queue.
 
     - read & delete with queue.get().
@@ -88,8 +88,6 @@ def get_message_queue() -> multiprocessing.Queue:
 def clear_message_queue() -> None:
     """If no one reads the queue, the thread will not finish, so add option to empty it"""
     log.removeHandler(queue_handler)
-    queue.cancel_join_thread()
-    queue.close()
 
 
 # last action on exit is to clear queue to prevent lockup
