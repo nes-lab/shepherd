@@ -27,22 +27,25 @@ class Monitor(ABC):
         self.thread: threading.Thread | None = None
 
         # create time, others have to be created in main class
-        self.data.create_dataset(
-            name="time",
-            shape=(self.increment,),
-            dtype="u8",
-            maxshape=(None,),
-            chunks=(self.increment,),
-            compression=compression,
-            shuffle=True,
-        )
-        self.data["time"].attrs["unit"] = "s"
-        self.data["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
-        self.data["time"].attrs["gain"] = 1e-9
-        self.data["time"].attrs["offset"] = 0
+        if "time" not in self.data:
+            self.data.create_dataset(
+                name="time",
+                shape=(self.increment,),
+                dtype="u8",
+                maxshape=(None,),
+                chunks=(self.increment,),
+                compression=compression,
+                shuffle=True,
+            )
+            self.data["time"].attrs["unit"] = "s"
+            self.data["time"].attrs["description"] = "system time [s] = value * gain + (offset)"
+            self.data["time"].attrs["gain"] = 1e-9
+            self.data["time"].attrs["offset"] = 0
         log.debug(
-            "[%s] Activated",
+            "[%s] Activated (t_poll=%.3fs, increment=%d)",
             type(self).__name__,
+            self.poll_interval,
+            self.increment,
         )
 
     def __exit__(

@@ -14,6 +14,7 @@ from typing_extensions import Self
 
 from . import commons
 from .h5_monitor_ntp import NTPMonitor
+from .h5_recorder_iv import IVRecorder
 from .h5_recorder_power import PowerRecorder
 
 if TYPE_CHECKING:
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
 
     from .h5_monitor_abc import Monitor
 
-import numpy as np
 from shepherd_core.data_models.base.calibration import CalibrationEmulator as CalEmu
 from shepherd_core.data_models.base.calibration import CalibrationHarvester as CalHrv
 from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
@@ -43,7 +43,6 @@ from .h5_recorder_pru import PruRecorder
 from .logger import log
 from .shared_mem_gpio_output import GPIOTrace
 from .shared_mem_iv_input import IVTrace
-from .shared_mem_iv_output import SharedMemIVOutput
 from .shared_mem_util_output import UtilTrace
 
 
@@ -106,14 +105,6 @@ class Writer(CoreWriter):
         )
         self.only_power = only_power
 
-        self.buffer_timeseries = (
-            self.reduction_factor
-            * commons.SAMPLE_INTERVAL_NS
-            * np.arange(
-                SharedMemIVOutput.N_SAMPLES_PER_CHUNK // self.reduction_factor,
-            ).astype(np.uint64)
-        )
-
         self.grp_data: h5py.Group = self.h5file["data"]
 
         # Optimization: allowing larger more efficient resizes
@@ -146,17 +137,20 @@ class Writer(CoreWriter):
         # Create group for additional recorders
         self.gpio_grp = self.h5file.create_group("gpio")
         self.pru_util_grp = self.h5file.create_group("pru_util")
+
         # prepare recorders
         self.rec_gpio = GpioRecorder(self.gpio_grp, compression=self._compression)
         self.rec_pru = PruRecorder(self.pru_util_grp, compression=self._compression)
         if self.only_power:
             self.power_grp = self.h5file.create_group("power")
-            self.rec_power = PowerRecorder(
-                data_rate=self.samplerate_sps,
-                cal_data=self._cal,
+            self.rec_iv = PowerRecorder(
                 target=self.power_grp,
+                cal_data=self._cal,
                 compression=self._compression,
+                reduction_factor=self.reduction_factor,
             )
+        else:
+            self.rec_iv = IVRecorder(self.grp_data, self.reduction_factor)
 
         # targets for logging-monitor # TODO: redesign? all should be kept in data_0
         self.sheep_grp = self.h5file.create_group("sheep")
@@ -177,16 +171,12 @@ class Writer(CoreWriter):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        # trim over-provisioned parts
-        self.grp_data["time"].resize((self.data_pos,))
-        self.grp_data["voltage"].resize((self.data_pos,))
-        self.grp_data["current"].resize((self.data_pos,))
-
         # end recorders
-        self.rec_gpio.__exit__()
         self.rec_pru.__exit__()
-        if hasattr(self, "rec_power"):
-            self.rec_power.__exit__()
+        self.rec_gpio.__exit__()
+        if isinstance(self.rec_iv, IVRecorder):
+            self.data_pos = self.rec_iv.finalize_write()
+        self.rec_iv.__exit__()  # can be power or iv
 
         # end monitors
         for monitor in self.monitors:
@@ -200,59 +190,7 @@ class Writer(CoreWriter):
         Args:
             data: buffer-segment containing IV data
         """
-        # First, we have to resize the corresponding datasets
-        if self.only_power:
-            self.rec_power.write(data)
-            return
-
-        len_add = len(data)
-        if len_add < self.reduction_factor:  # is 1 when not used
-            return
-        if len_add % self.reduction_factor != 0:
-            log.warning("Power-Tracer Input got odd size - some samples will be discarded")
-        len_red = len(data) // self.reduction_factor
-        len_add = len_red * self.reduction_factor
-
-        # timestamps are automatically reduced
-        if isinstance(data.timestamp_ns, int):
-            data.timestamp_ns = self.buffer_timeseries[:len_red] + data.timestamp_ns
-        elif isinstance(data.timestamp_ns, np.ndarray):
-            # benchmarked slices: [:] is as fast as [::1] on BBB
-            data.timestamp_ns = data.timestamp_ns[: len_add : self.reduction_factor]
-        else:
-            raise TypeError("timestamp_ns must be int or np.ndarray")
-
-        if self.reduce:  # aka resampling via binning
-            # Note: input is u18, max reduction is 10k (u14), so u32 should be fine
-            data.voltage = (
-                data.voltage[:len_add]
-                .reshape(len_red, self.reduction_factor)
-                .mean(axis=1, dtype=np.uint64)
-                .clip(0, 2**32)
-                .astype(np.uint32)
-            )
-            data.current = (
-                data.current[:len_add]
-                .reshape(len_red, self.reduction_factor)
-                .mean(axis=1, dtype=np.uint64)
-                .clip(0, 2**32)
-                .astype(np.uint32)
-            )
-            len_add = len_red
-
-        # add to file
-        data_end_pos = self.data_pos + len_add
-        data_length_h5 = self.grp_data["voltage"].shape[0]
-        if data_end_pos >= data_length_h5:
-            data_length_h5 += self.data_inc
-            self.grp_data["voltage"].resize((data_length_h5,))
-            self.grp_data["current"].resize((data_length_h5,))
-            self.grp_data["time"].resize((data_length_h5,))
-
-        self.grp_data["voltage"][self.data_pos : data_end_pos] = data.voltage
-        self.grp_data["current"][self.data_pos : data_end_pos] = data.current
-        self.grp_data["time"][self.data_pos : data_end_pos] = data.timestamp_ns
-        self.data_pos = data_end_pos
+        self.rec_iv.write(data)  # dynamically power- or iv-recorder
 
     def write_gpio_buffer(self, data: GPIOTrace) -> None:
         self.rec_gpio.write(data)
