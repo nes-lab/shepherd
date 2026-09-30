@@ -1,5 +1,5 @@
-import multiprocessing
 import threading
+from queue import Queue
 from types import TracebackType
 
 import h5py
@@ -15,15 +15,14 @@ from .shared_mem_iv_input import IVTrace
 from .shared_mem_iv_output import SharedMemIVOutput
 
 
+# TODO: can be another thread-fn in IVRecorder
 class PowerRecorder(Monitor):
-    RATES_SUPPORTED = (10, 100, 1_000, 100_000)
-
     def __init__(
         self,
-        data_rate: int,
-        cal_data: CalSeries | CalEmu,
         target: h5py.Group,
+        cal_data: CalSeries | CalEmu,
         compression: Compression | None = Compression.default,
+        reduction_factor: int = 1,
     ) -> None:
         super().__init__(
             target,
@@ -31,15 +30,8 @@ class PowerRecorder(Monitor):
             poll_interval=0.1,
             increment=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
         )
-        self.samplerate_sps: int = 10**9 // SAMPLE_INTERVAL_NS
-        if data_rate not in self.RATES_SUPPORTED:
-            raise ValueError(
-                "Data-rate for Power must be in [Hz, Samples-per-second]: %s",
-                self.RATES_SUPPORTED,
-            )
-        self.data_rate = data_rate
-        self.reduction_factor: int = self.samplerate_sps // self.data_rate
-        self.reduce: bool = self.data_rate != self.samplerate_sps
+        self.reduction_factor: int = reduction_factor
+        self.reduce: bool = self.reduction_factor != 1
 
         self.buffer_timeseries = (
             self.reduction_factor
@@ -74,14 +66,14 @@ class PowerRecorder(Monitor):
         self.data["value"].attrs["gain"] = self.gain
         self.data["value"].attrs["offset"] = 0
 
+        self.dropped_data = False
         self.queue_size = int(
             80e6 / (SharedMemIVOutput.SIZE_SAMPLE * SharedMemIVOutput.N_SAMPLES_PER_CHUNK)
         )  # MB
-        self.queue = multiprocessing.Queue(self.queue_size)
-        self.dropped_data = False
+        self.queue = Queue(maxsize=self.queue_size)
         log.info("[%s] starts with size_queue = %d", type(self).__name__, self.queue_size)
         self.thread = threading.Thread(
-            target=self.thread_fn,
+            target=self.thread_fn_reduce if self.reduce else self.thread_fn,
             daemon=True,
             name="Shp.H5Rec.Power",
         )
@@ -103,8 +95,7 @@ class PowerRecorder(Monitor):
                     type(self).__name__,
                 )
             self.thread = None
-        self.queue.cancel_join_thread()
-        self.queue.close()
+        # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
         self.data["value"].resize((self.position,))
@@ -117,6 +108,40 @@ class PowerRecorder(Monitor):
         self.queue.put(data)
 
     def thread_fn(self) -> None:
+        while not self.event.is_set():
+            if self.queue.empty():
+                self.event.wait(self.poll_interval)  # rate limiter
+            else:
+                data = self.queue.get()
+                len_add = len(data)
+                """wanted:
+                        self.cal_data.voltage.raw_to_si(data.voltage[:len_add]).astype(np.float32)
+                        * self.cal_data.current.raw_to_si(data.current[:len_add]).astype(np.float32)
+                        / self.gain
+                Problem: upcast to float64 - which crashes the beaglebone
+                """
+                V_ = data.voltage[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_V_raw
+                C_ = data.current[:len_add].clip(0, 2**18).astype(np.int64) + self.offset_C_raw
+                power = ((V_ * C_) * self.gain_P_nW).clip(0, 2**32).astype(np.uint32)
+
+                # timestamps are automatically reduced
+                if isinstance(data.timestamp_ns, int):
+                    # This is currently not used
+                    data.timestamp_ns = self.buffer_timeseries + data.timestamp_ns
+
+                pos_end = self.position + len_add
+                data_length = self.data["time"].shape[0]
+
+                if pos_end >= data_length:
+                    data_length += max(self.increment, pos_end - data_length)
+                    self.data["time"].resize((data_length,))
+                    self.data["value"].resize((data_length,))
+                self.data["time"][self.position : pos_end] = data.timestamp_ns
+                self.data["value"][self.position : pos_end] = power
+                self.position = pos_end
+        log.debug("[%s] thread ended itself", type(self).__name__)
+
+    def thread_fn_reduce(self) -> None:
         while not self.event.is_set():
             if self.queue.empty():
                 self.event.wait(self.poll_interval)  # rate limiter
@@ -168,7 +193,6 @@ class PowerRecorder(Monitor):
                 self.data["time"][self.position : pos_end] = data.timestamp_ns
                 self.data["value"][self.position : pos_end] = power
                 self.position = pos_end
-
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def check_status(self) -> None:
