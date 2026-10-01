@@ -80,24 +80,34 @@ class ShepherdEmulator(ShepherdIO):
             )
 
         # PRU expects values in SI: uV and nV
-        self.cal_pru = CalibrationSeries(
-            voltage=CalibrationPair(
-                gain=1e6 * cal_inp.voltage.gain,
-                offset=1e6 * cal_inp.voltage.offset,
-                unit="V",
-            ),
-            current=CalibrationPair(
-                gain=1e9 * cal_inp.current.gain,
-                offset=1e9 * cal_inp.current.offset,
-                unit="A",
-            ),
-        )
-        # TODO: set cal_pru to None if input already scaled to PRU
-        log.debug("Calibration-Setting of input file:")
-        for key, value in self.cal_pru.model_dump(
-            exclude_unset=False, exclude_defaults=False
-        ).items():
-            log.debug("\t%s: %s", key, value)
+        if (
+            (cal_inp.voltage.gain == 1e-6)
+            and (cal_inp.voltage.offset == 0)
+            and (cal_inp.current.gain == 1e-9)
+            and (cal_inp.current.offset == 0)
+        ):
+            log.info("Input-File already scaled to PRU! computational advantage")
+            self.cal_pru = None
+        else:
+            self.cal_pru = CalibrationSeries(
+                voltage=CalibrationPair(
+                    gain=1e6 * cal_inp.voltage.gain,
+                    offset=1e6 * cal_inp.voltage.offset,
+                    unit="V",
+                ),
+                current=CalibrationPair(
+                    gain=1e9 * cal_inp.current.gain,
+                    offset=1e9 * cal_inp.current.offset,
+                    unit="A",
+                ),
+            )
+
+        if self.cal_pru is not None:
+            log.debug("Calibration-Setting of input file:")
+            for key, value in self.cal_pru.model_dump(
+                exclude_unset=False, exclude_defaults=False
+            ).items():
+                log.debug("\t%s: %s", key, value)
 
         self.cal_emu = retrieve_calibration(
             use_default_cal=cfg.use_cal_default,
@@ -237,8 +247,17 @@ class ShepherdEmulator(ShepherdIO):
         if self.writer is not None:
             self.writer.check_monitors()
 
+        # rate limit for main loop depending on load
+        dur_sleep_idle = 0.66 * min(
+            self.shared_mem.iv_inp.duration_chunk_s,
+            self.shared_mem.iv_out.DURATION_CHUNK_S,
+            self.shared_mem.gpio.DURATION_CHUNK_S,
+            self.shared_mem.util.DURATION_CHUNK_S,
+        )
+        dur_sleep_load = dur_sleep_idle / 2
+
         log.info("waiting %.2f s until start", self.start_time - time.time())
-        while self.wait_for_start(5, raising=False):
+        while self.wait_for_start(1, raising=False):
             # pre-experiment loop that collects pru-util values
             data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
             if data_ut and self.writer is not None:
@@ -247,7 +266,9 @@ class ShepherdEmulator(ShepherdIO):
                 raise TimeoutError("Timed out waiting for Start")
 
         self.handle_pru_messages(panic_on_restart=False)
-        log.info(">>> Shepherd started! <<< T_sys = %f", time.time())
+        log.info(
+            ">>> Shepherd started! <<< T_sys = %f, sleep_idle = %.3f s", time.time(), dur_sleep_idle
+        )
         if not check_pru_applied_settings():
             log.error("PRU has NOT yet applied the settings!")
 
@@ -289,17 +310,17 @@ class ShepherdEmulator(ShepherdIO):
                 cal=self.cal_pru,
                 verbose=self.verbose_extra,
             ):
-                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
-                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
                 data_ut = self.shared_mem.util.read(
                     timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
                 )
-
-                if data_gp and self.writer is not None:
-                    self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:
                     self.writer.write_util_buffer(data_ut)
 
+                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
+                if data_gp and self.writer is not None:
+                    self.writer.write_gpio_buffer(data_gp)
+
+                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
                     # TODO: this can't work - with the limiting tracers
@@ -309,27 +330,19 @@ class ShepherdEmulator(ShepherdIO):
                         break
                     ts_data_last = time.time()
                     if self.writer is not None:
-                        try:
-                            self.writer.write_iv_buffer(data_iv)
-                        except OSError as _xpt:
-                            log.error(
-                                "Failed to write data to HDF5-File - will STOP! error = %s",
-                                _xpt,
-                            )
-                            return
+                        self.writer.write_iv_buffer(data_iv)
 
                 self.handle_pru_messages(panic_on_restart=True)
                 self.shared_mem.supervise_buffers(iv_inp=True, iv_out=True, gpio=True, util=True)
                 if not (data_iv or data_gp or data_ut):
                     # note that util is a criteria in this first loop
-                    if ts_data_last - time.time() > 10:
+                    if time.time() - ts_data_last > 10:
                         log.error("Main sheep-routine ran dry for 10s, will STOP")
                         leave_main_loop = True
                         break
-                    time.sleep(0.010)
+                    time.sleep(dur_sleep_idle)  # doze a while if nothing to do
                 else:
-                    # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(0.001)
+                    time.sleep(dur_sleep_load)
                 if get_state() == "idle":
                     log.info("PRU-State changed to idle -> will STOP")
                     # TODO: timer in kMod stops PRU to idle -> this should be improved
@@ -345,18 +358,19 @@ class ShepherdEmulator(ShepherdIO):
         before_ts_end = True
         try:
             while True:
-                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
-                data_gp = self.shared_mem.gpio.read(
-                    force=force_subchunks, verbose=self.verbose_extra
-                )
                 data_ut = self.shared_mem.util.read(
                     timestamp_end_ns=ts_end_ns, force=force_subchunks, verbose=self.verbose_extra
                 )
-                if data_gp and self.writer is not None:
-                    self.writer.write_gpio_buffer(data_gp)
                 if data_ut and self.writer is not None:
                     self.writer.write_util_buffer(data_ut)
 
+                data_gp = self.shared_mem.gpio.read(
+                    force=force_subchunks, verbose=self.verbose_extra
+                )
+                if data_gp and self.writer is not None:
+                    self.writer.write_gpio_buffer(data_gp)
+
+                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
                     if data_iv.timestamp() > ts_end:
@@ -381,10 +395,9 @@ class ShepherdEmulator(ShepherdIO):
                     if not before_ts_end and (time.time() - ts_data_last > 3):
                         log.info("Data-collection ran dry for 3s -> begin to exit now")
                         break
-                    time.sleep(0.010)  # self.segment_period_s / 5
+                    time.sleep(dur_sleep_idle)  # doze a while if nothing to do
                 else:
-                    # rest of loop is non-blocking, so we better doze a while if nothing to do
-                    time.sleep(0.001)
+                    time.sleep(dur_sleep_load)
 
         except ShepherdPRUError as e:
             # We're done when the PRU has processed all emulation data buffers
