@@ -20,7 +20,7 @@ class IVRecorder(Monitor):
     ) -> None:
         super().__init__(
             target,
-            poll_interval=0.6 * 1e-3 * SharedMemIVOutput.DURATION_CHUNK_MS,
+            poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
             increment=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
         )
 

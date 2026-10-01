@@ -70,6 +70,7 @@ class SheepMonitor(Monitor):
             if self.queue.empty():
                 self.event.wait(self.poll_interval)  # rate limiter
             else:
+                self.event.wait(self.rate_limit_interval)
                 rec = self.queue.get()
                 try:
                     data_length = self.data["time"].shape[0]

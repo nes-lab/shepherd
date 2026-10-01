@@ -27,7 +27,7 @@ class PowerRecorder(Monitor):
         super().__init__(
             target,
             compression,
-            poll_interval=0.1,
+            poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
             increment=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
         )
         self.reduction_factor: int = reduction_factor

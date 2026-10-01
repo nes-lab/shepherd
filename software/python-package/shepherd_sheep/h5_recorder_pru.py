@@ -18,7 +18,11 @@ class PruRecorder(Monitor):
         target: h5py.Group,
         compression: Compression | None = Compression.default,
     ) -> None:
-        super().__init__(target, compression, poll_interval=0.5)
+        super().__init__(
+            target,
+            compression,
+            poll_interval=0.66 * SharedMemUtilOutput.DURATION_CHUNK_S,
+        )
 
         self.data.create_dataset(
             name="values",

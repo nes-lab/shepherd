@@ -73,6 +73,7 @@ class KernelMonitor(Monitor):
 
     def thread_fn(self) -> None:
         while not self.event.is_set():
+            self.event.wait(self.rate_limit_interval)
             line = self.process.stdout.readline()
             if len(line) < 1:
                 self.event.wait(self.poll_interval)  # rate limiter

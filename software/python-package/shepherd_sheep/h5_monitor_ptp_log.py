@@ -80,6 +80,7 @@ class PTPLogMonitor(Monitor):
         # 2026-07-02T12:13:15.865238+0200 sheep10 ptp4l[408]:
         # [83308.751] main offset         62 s2 freq +129116 path delay      9749
         while not self.event.is_set():
+            self.event.wait(self.rate_limit_interval)
             line = self.process.stdout.readline()
             if len(line) < 1:
                 self.event.wait(self.poll_interval)  # rate limiter

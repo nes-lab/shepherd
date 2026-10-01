@@ -72,7 +72,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
         if current_state == wanted_state:
             return time.time() - ts_start
 
-        if time.time() - ts_start > timeout:
+        if time.time() - ts_start >= timeout:
             msg = (
                 f"timed out waiting for state '{wanted_state}' - current state is '{current_state}'"
             )

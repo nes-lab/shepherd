@@ -21,6 +21,7 @@ class Monitor(ABC):
     ) -> None:
         self.data: h5py.Group = target
         self.poll_interval: float = poll_interval
+        self.rate_limit_interval: float = 0.1 * poll_interval
         self.position: int = 0
         self.increment: int = increment
         self.event = threading.Event()
