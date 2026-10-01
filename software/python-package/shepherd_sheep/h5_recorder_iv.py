@@ -104,6 +104,7 @@ class IVRecorder(Monitor):
                 self.data["current"][self.position : pos_end] = data.current
                 self.data["time"][self.position : pos_end] = data.timestamp_ns
                 self.position = pos_end
+        # TODO: catch OSError - "Failed to write data to HDF5-File - will STOP! error = %s",
         log.debug("[%s] thread ended itself", type(self).__name__)
 
     def thread_fn_reduce(self) -> None:

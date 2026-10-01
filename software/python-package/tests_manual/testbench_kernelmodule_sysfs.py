@@ -1,6 +1,6 @@
 """
 The FNs called during main-loop should be optimized!
-- generators / interator are 10x faster
+- generators / iterator are 10x faster
 
 Benchmark results 2026-10-01
         read_pru_msg_v1() = 0.512 s for 1000 reps
@@ -25,7 +25,7 @@ def read_pru_msg_v1() -> tuple[int, list[int]] | None:
             message = f.read().rstrip()
         msg_parts = [int(x) for x in message.split()]
         if len(msg_parts) < 2:
-            raise SysfsInterfaceError("pru_msg was too short")
+            raise SysfsInterfaceError("pru_msg was too short")  # noqa: TRY301
         return msg_parts[0], msg_parts[1:]
     except SysfsInterfaceError:
         return None
