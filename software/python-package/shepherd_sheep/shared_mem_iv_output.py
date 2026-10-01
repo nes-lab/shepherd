@@ -86,6 +86,8 @@ class SharedMemIVOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self._generate_chunk_views()
+
         self.fill_level: float = 0
         self.fill_last: float = 0
 
@@ -113,6 +115,7 @@ class SharedMemIVOutput:
         self.timestamp_last: int = 0
 
     def __enter__(self) -> Self:
+        """Clear section and set Canary."""
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
@@ -126,6 +129,32 @@ class SharedMemIVOutput:
         extra_arg: int = 0,
     ) -> None:
         self.check_canary()
+
+    def _generate_chunk_views(self) -> None:
+        self.chunks: list[IVTrace] = []
+        for _iter in range(self.N_BUFFER_CHUNKS):
+            _index = _iter * self.N_SAMPLES_PER_CHUNK
+            chunk = IVTrace(
+                voltage=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_voltages + _index * 4,
+                ),
+                current=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_currents + _index * 4,
+                ),
+                timestamp_ns=np.frombuffer(
+                    self._mm,
+                    np.uint64,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_timestamps + _index * 8,
+                ),
+            )
+            self.chunks.append(chunk)
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
@@ -156,15 +185,19 @@ class SharedMemIVOutput:
         self.fill_last = self.fill_level
         return avail_length
 
-    def read(self, *, verbose: bool = False) -> IVTrace | None:
-        """Extracts trace from PRU-shared buffer in RAM.
+    def request_chunk(self, *, verbose: bool = False) -> IVTrace | None:
+        """Extracts chunk-view of trace from PRU-shared buffer in RAM.
 
         :param verbose: chatter-prevention, performance-critical computation saver
+
+        Benchmarks:
+        - old read with generating views takes 0.21 ms
+        - generating all buffered views takes 2.3 - 5 ms
+        - new read/request_chunk with precompiled views takes 0.11 ms
 
         Returns: IVTrace if available
         """
         avail_length = self.get_size_available()
-
         if avail_length < self.N_SAMPLES_PER_CHUNK:
             return None  # nothing to do
 
@@ -174,27 +207,13 @@ class SharedMemIVOutput:
                 type(self).__name__,
             )
 
-        if self.OPTIMIZE_TIMESTAMPS:
-            self._mm.seek(self._offset_timestamps + self.index_next * 8)
-            timestamps_ns = self.ST_U64.unpack(self._mm.read(8))[0]
-            pru_ts_start = timestamps_ns
-            self._mm.seek(
-                self._offset_timestamps + (self.index_next + self.N_SAMPLES_PER_CHUNK - 1) * 8
-            )
-            pru_ts_stopp = self.ST_U64.unpack(self._mm.read(8))[0]
-        else:
-            timestamps_ns = np.frombuffer(
-                self._mm,
-                np.uint64,
-                count=self.N_SAMPLES_PER_CHUNK,
-                offset=self._offset_timestamps + self.index_next * 8,
-            )
-            pru_ts_start = int(timestamps_ns[0])
-            pru_ts_stopp = int(timestamps_ns[-1])
+        chunk_data = self.chunks[self.index_next // self.N_SAMPLES_PER_CHUNK]
+        chunk_ts_start = int(chunk_data.timestamp_ns[0])
+        chunk_ts_end = int(chunk_data.timestamp_ns[-1])
 
         if self.timestamp_last > 0:
-            diff_ms = (pru_ts_start - self.timestamp_last) // 10**6
-            if pru_ts_start == 0:
+            diff_ms = (chunk_ts_start - self.timestamp_last) // 10**6
+            if chunk_ts_start == 0:
                 log.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 log.error(
@@ -211,42 +230,26 @@ class SharedMemIVOutput:
                     "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
-        self.timestamp_last = pru_ts_start
+        self.timestamp_last = chunk_ts_start
 
         # prepare & fetch data
         if not self.ts_set:  # recording not wanted
-            data = None
-        elif (pru_ts_start <= self.ts_stop) and (pru_ts_stopp >= self.ts_start):
-            data = IVTrace(
-                voltage=np.frombuffer(
-                    self._mm,
-                    np.uint32,
-                    count=self.N_SAMPLES_PER_CHUNK,
-                    offset=self._offset_voltages + self.index_next * 4,
-                ),
-                current=np.frombuffer(
-                    self._mm,
-                    np.uint32,
-                    count=self.N_SAMPLES_PER_CHUNK,
-                    offset=self._offset_currents + self.index_next * 4,
-                ),
-                timestamp_ns=timestamps_ns,
-            )
-        else:
-            data = None
+            chunk_data = None
+        elif (chunk_ts_start > self.ts_stop) or (chunk_ts_end < self.ts_start):
+            chunk_data = None
             log.debug(
                 "[%s] Discarded data - out of time-boundary (t_pru = %d).",
                 type(self).__name__,
-                pru_ts_start,
+                chunk_ts_start,
             )
 
         if verbose:
             log.debug(
-                "[%s] Retrieving index=%6d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
+                "[%s] Retrieving index=%d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
                 type(self).__name__,
                 self.index_next,
                 self.N_SAMPLES_PER_CHUNK,
-                pru_ts_start * 1e-9 - self.xp_start,
+                chunk_ts_start * 1e-9 - self.xp_start,
                 time.time() - self.xp_start,
                 100 * self.fill_level,
             )
@@ -257,4 +260,4 @@ class SharedMemIVOutput:
         if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()
 
-        return data
+        return chunk_data

@@ -259,8 +259,9 @@ class ShepherdEmulator(ShepherdIO):
         log.info("waiting %.2f s until start", self.start_time - time.time())
         while self.wait_for_start(1, raising=False):
             # pre-experiment loop that collects pru-util values
-            data_ut = self.shared_mem.util.read(verbose=self.verbose_extra)
+            data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
             if data_ut and self.writer is not None:
+                data_ut.calc_mean()
                 self.writer.write_util_buffer(data_ut)
             if time.time() > self.start_time + 10:
                 raise TimeoutError("Timed out waiting for Start")
@@ -310,17 +311,17 @@ class ShepherdEmulator(ShepherdIO):
                 cal=self.cal_pru,
                 verbose=self.verbose_extra,
             ):
-                data_ut = self.shared_mem.util.read(
-                    timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra
-                )
+                data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
                 if data_ut and self.writer is not None:
+                    data_ut.calc_mean()
+                    data_ut.check_status(timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra)
                     self.writer.write_util_buffer(data_ut)
 
-                data_gp = self.shared_mem.gpio.read(verbose=self.verbose_extra)
+                data_gp = self.shared_mem.gpio.request_chunk(verbose=self.verbose_extra)
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
 
-                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
                     # TODO: this can't work - with the limiting tracers
@@ -358,19 +359,19 @@ class ShepherdEmulator(ShepherdIO):
         before_ts_end = True
         try:
             while True:
-                data_ut = self.shared_mem.util.read(
-                    timestamp_end_ns=ts_end_ns, force=force_subchunks, verbose=self.verbose_extra
-                )
+                data_ut = self.shared_mem.util.request_chunk(verbose=self.verbose_extra)
                 if data_ut and self.writer is not None:
+                    data_ut.calc_mean()
+                    data_ut.check_status(timestamp_end_ns=ts_end_ns, verbose=self.verbose_extra)
                     self.writer.write_util_buffer(data_ut)
 
-                data_gp = self.shared_mem.gpio.read(
+                data_gp = self.shared_mem.gpio.request_chunk(
                     force=force_subchunks, verbose=self.verbose_extra
                 )
                 if data_gp and self.writer is not None:
                     self.writer.write_gpio_buffer(data_gp)
 
-                data_iv = self.shared_mem.iv_out.read(verbose=self.verbose_extra)
+                data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
                     if data_iv.timestamp() > ts_end:

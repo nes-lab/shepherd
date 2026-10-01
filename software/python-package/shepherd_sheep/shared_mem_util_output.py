@@ -19,27 +19,72 @@ class UtilTrace:
     Over a sync period the PRU logs ticks needed per sample-loop
     """
 
+    warn_counter: int = 0  # this should be shared
+
     def __init__(
         self,
         timestamps_ns: np.ndarray,
-        pru0_tsample_mean: np.ndarray,
+        pru0_tsample_sum: np.ndarray,
         pru0_tsample_max: np.ndarray,
         pru1_tsample_max: np.ndarray,
         sample_count: np.ndarray,
     ) -> None:
         self.timestamps_ns = timestamps_ns
-        self.pru0_tsample_mean = pru0_tsample_mean
+        self.pru0_tsample_sum = pru0_tsample_sum
         self.pru0_tsample_max = pru0_tsample_max
         self.pru1_tsample_max = pru1_tsample_max
         self.sample_count = sample_count
+        self.pru0_tsample_mean: np.ndarray | None = None
 
     def __len__(self) -> int:
         return min(
             self.timestamps_ns.size,
-            self.pru0_tsample_mean.size,
+            self.pru0_tsample_sum.size,
             self.pru0_tsample_max.size,
             self.pru1_tsample_max.size,
         )
+
+    def calc_mean(self) -> None:
+        """Calculate the mean of pru0_tsample."""
+        sample_count_safe = self.sample_count
+        sample_count_safe[sample_count_safe < 1] = 1
+        self.pru0_tsample_mean = self.pru0_tsample_sum / sample_count_safe
+
+    def check_status(self, timestamp_end_ns: int | None = None, *, verbose: bool = False) -> None:
+
+        chunk_ts_end = int(self.timestamps_ns[-1])
+        if timestamp_end_ns is not None and chunk_ts_end >= timestamp_end_ns:
+            # avoids warning after experiment ended (cache empty, long reads)
+            return
+
+        # TODO: cleanup, every crit-instance should be reported
+        util_mean_val = self.pru0_tsample_sum.mean() * 100 / commons.SAMPLE_INTERVAL_NS
+        util_max_val = self.pru0_tsample_max.max() * 100 / commons.SAMPLE_INTERVAL_NS
+        util_mean_crit = util_mean_val > 95.0
+        util_max_crit = util_max_val >= 100.0
+
+        if (self.warn_counter > 0) and (util_mean_crit or util_max_crit):
+            log.warning(
+                "Pru0-Util: mean = %.3f %%, max = %.3f %% "
+                "-> WARNING: probably broken real-time-condition",
+                util_mean_val,
+                util_max_val,
+            )
+            self.warn_counter -= 1
+            if self.warn_counter == 0:
+                # silenced because this is causing overhead without a cape
+                log.warning("Pru0-Util-Warning is silenced now! Is emu running without a cape?")
+        elif verbose:
+            log.info(
+                "Pru0-Util = [%.3f, %.3f] %% (mean,max); "
+                "sample-count [%d, %d] n (min,max); "
+                "tGpioMax = %d ns",
+                util_mean_val,
+                util_max_val,
+                self.sample_count.min(),
+                self.sample_count.max(),
+                self.pru1_tsample_max.max(),
+            )
 
 
 class SharedMemUtilOutput:
@@ -106,12 +151,13 @@ class SharedMemUtilOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self._generate_chunk_views()
+
         self.fill_level: float = 0
         self.fill_last: float = 0
 
-        self.warn_counter: int = 10
-
     def __enter__(self) -> Self:
+        """Clear section and set Canary."""
         # TODO: there should also be alternative access: _mm[a:b] = b'...'
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
@@ -126,6 +172,44 @@ class SharedMemUtilOutput:
         extra_arg: int = 0,
     ) -> None:
         self.check_canary()
+
+    def _generate_chunk_views(self) -> None:
+        self.chunks: list[UtilTrace] = []
+        for _iter in range(self.N_BUFFER_CHUNKS):
+            _index = _iter * self.N_SAMPLES_PER_CHUNK
+            chunk = UtilTrace(
+                timestamps_ns=np.frombuffer(
+                    self._mm,
+                    np.uint64,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_timestamps + _index * 8,
+                ),
+                pru0_tsample_max=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_pru0_tsample_max + _index * 4,
+                ),
+                pru1_tsample_max=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_pru1_tsample_max + _index * 4,
+                ),
+                pru0_tsample_sum=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_pru0_tsample_sum + _index * 4,
+                ),
+                sample_count=np.frombuffer(
+                    self._mm,
+                    np.uint32,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_sample_count + _index * 4,
+                ),
+            )
+            self.chunks.append(chunk)
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
@@ -149,105 +233,35 @@ class SharedMemUtilOutput:
         self.fill_last = self.fill_level
         return avail_length
 
-    def read(
-        self, timestamp_end_ns: int | None = None, *, force: bool = False, verbose: bool = False
-    ) -> UtilTrace | None:
-        avail_length = self.get_size_available()
-        if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
-            return None  # nothing to do
+    def request_chunk(self, *, verbose: bool = False) -> UtilTrace | None:
+        """Extracts chunk-view from PRU-shared buffer in RAM."""
 
-        # adjust read length to stay within chunk-size and also consider end of ring-buffer
-        read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
+        avail_length = self.get_size_available()
+        if avail_length < self.N_SAMPLES_PER_CHUNK:
+            return None  # nothing to do
 
         if self.fill_level > 0.8:
             log.warning(
                 "[%s] Fill-level critical (80%%)",
                 type(self).__name__,
             )
+
+        chunk_data = self.chunks[self.index_next // self.N_SAMPLES_PER_CHUNK]
+
         if verbose:
             log.debug(
                 "[%s] Retrieving index %4d, len %d, @%.3f sys_ts, %.2f %%fill",
                 type(self).__name__,
                 self.index_next,
-                read_length,
+                self.N_SAMPLES_PER_CHUNK,
                 time.time(),
                 100 * self.fill_level,
             )
-        # prepare & fetch data
-        sample_count = np.frombuffer(
-            self._mm,
-            np.uint32,
-            count=read_length,
-            offset=self._offset_sample_count + self.index_next * 4,
-        )
-        sample_count_safe = sample_count
-        sample_count_safe[sample_count_safe < 1] = 1
 
-        data = UtilTrace(
-            timestamps_ns=np.frombuffer(
-                self._mm,
-                np.uint64,
-                count=read_length,
-                offset=self._offset_timestamps + self.index_next * 8,
-            ),
-            pru0_tsample_max=np.frombuffer(
-                self._mm,
-                np.uint32,
-                count=read_length,
-                offset=self._offset_pru0_tsample_max + self.index_next * 4,
-            ),
-            pru1_tsample_max=np.frombuffer(
-                self._mm,
-                np.uint32,
-                count=read_length,
-                offset=self._offset_pru1_tsample_max + self.index_next * 4,
-            ),
-            pru0_tsample_mean=np.frombuffer(
-                self._mm,
-                np.uint32,
-                count=read_length,
-                offset=self._offset_pru0_tsample_sum + self.index_next * 4,
-            )
-            / sample_count_safe,
-            sample_count=sample_count,
-        )
         # TODO: segment should be reset to ZERO to better detect errors
-        self.index_next = (self.index_next + read_length) % self.N_SAMPLES
-        if timestamp_end_ns is None or data.timestamps_ns[-1] < timestamp_end_ns:
-            # avoids warning after experiment ended (cache empty, long reads)
-            self.check_status(data, verbose=verbose)
+        self.index_next = (self.index_next + self.N_SAMPLES_PER_CHUNK) % self.N_SAMPLES
 
         if self.index_next < self.N_SAMPLES_PER_CHUNK:  # once a cycle
             self.check_canary()
 
-        return data
-
-    def check_status(self, data: UtilTrace, *, verbose: bool = False) -> None:
-        # TODO: cleanup, every crit-instance should be reported
-        util_mean_val = data.pru0_tsample_mean.mean() * 100 / commons.SAMPLE_INTERVAL_NS
-        util_max_val = data.pru0_tsample_max.max() * 100 / commons.SAMPLE_INTERVAL_NS
-        util_mean_crit = util_mean_val > 95.0
-        util_max_crit = util_max_val >= 100.0
-
-        if (self.warn_counter > 0) and (util_mean_crit or util_max_crit):
-            log.warning(
-                "Pru0-Util: mean = %.3f %%, max = %.3f %% "
-                "-> WARNING: probably broken real-time-condition",
-                util_mean_val,
-                util_max_val,
-            )
-            self.warn_counter -= 1
-            if self.warn_counter == 0:
-                # silenced because this is causing overhead without a cape
-                log.warning("Pru0-Util-Warning is silenced now! Is emu running without a cape?")
-        elif verbose:
-            log.info(
-                "Pru0-Util = [%.3f, %.3f] %% (mean,max); "
-                "sample-count [%d, %d] n (min,max); "
-                "tGpioMax = %d ns",
-                util_mean_val,
-                util_max_val,
-                data.sample_count.min(),
-                data.sample_count.max(),
-                data.pru1_tsample_max.max(),
-            )
+        return chunk_data

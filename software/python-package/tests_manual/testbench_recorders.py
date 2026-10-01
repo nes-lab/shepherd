@@ -125,11 +125,12 @@ def generate_util(sample_count: int) -> list[UtilTrace]:
     for _iter in range(sample_count // samples_per_trace):
         trace = UtilTrace(
             timestamps_ns=_iter + time_vector,
-            pru0_tsample_mean=rng.uniform(low=0, high=10_000, size=samples_per_trace),
+            pru0_tsample_sum=rng.uniform(low=0, high=10_000, size=samples_per_trace),
             pru0_tsample_max=rng.uniform(low=0, high=10_000, size=samples_per_trace),
             pru1_tsample_max=rng.uniform(low=0, high=10_000, size=samples_per_trace),
             sample_count=rng.uniform(low=9_000, high=10_000, size=samples_per_trace),
         )
+        trace.calc_mean()
         samples.append(trace)
     return samples
 

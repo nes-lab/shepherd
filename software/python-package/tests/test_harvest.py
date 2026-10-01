@@ -58,7 +58,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
     for _ in range(100):
         data_ = None
         while data_ is None:
-            data_ = harvester.shared_mem.iv_out.read()
+            data_ = harvester.shared_mem.iv_out.request_chunk()
             time.sleep(harvester.segment_period_s / 2)
         writer.write_iv_buffer(data_)
 

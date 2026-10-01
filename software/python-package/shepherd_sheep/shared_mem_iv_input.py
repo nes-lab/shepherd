@@ -201,6 +201,7 @@ class SharedMemIVInput:
             data.voltage = cal.voltage.raw_to_si(data.voltage).astype(np.uint32)
             data.current = cal.current.raw_to_si(data.current).astype(np.uint32)
         # interweave data (voltage | current in parallel)
+        # TODO: optimize with memory-view .from_buffer()?
         iv_data = np.empty((2 * len(data),), dtype=data.voltage.dtype)
         iv_data[0::2] = data.voltage[: len(data)]
         iv_data[1::2] = data.current[: len(data)]

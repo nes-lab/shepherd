@@ -95,6 +95,8 @@ class SharedMemGPIOOutput:
             self.N_BUFFER_CHUNKS,
         )
 
+        self._generate_chunk_views()
+
         self.fill_level: float = 0
         self.fill_last: float = 0
 
@@ -136,6 +138,7 @@ class SharedMemGPIOOutput:
         )  # TODO: add unittest!
 
     def __enter__(self) -> Self:
+        """Clear section and set Canary."""
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
@@ -149,6 +152,26 @@ class SharedMemGPIOOutput:
         extra_arg: int = 0,
     ) -> None:
         self.check_canary()
+
+    def _generate_chunk_views(self) -> None:
+        self.chunks: list[GPIOTrace] = []
+        for _iter in range(self.N_BUFFER_CHUNKS):
+            _index = _iter * self.N_SAMPLES_PER_CHUNK
+            chunk = GPIOTrace(
+                timestamps_ns=np.frombuffer(
+                    self._mm,
+                    np.uint64,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_timestamps + _index * 8,
+                ),
+                bitmasks=np.frombuffer(
+                    self._mm,
+                    np.uint16,
+                    count=self.N_SAMPLES_PER_CHUNK,
+                    offset=self._offset_bitmasks + _index * 2,
+                ),
+            )
+            self.chunks.append(chunk)
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
@@ -178,14 +201,17 @@ class SharedMemGPIOOutput:
         self.fill_last = self.fill_level
         return avail_length
 
-    def read(
+    def request_chunk(
         self, *, force: bool = False, discard: bool = False, verbose: bool = False
     ) -> GPIOTrace | None:
+        """Extracts chunk-view of trace from PRU-shared buffer in RAM."""
+
         avail_length = self.get_size_available()
         if (avail_length < 1) or (not force and (avail_length < self.N_SAMPLES_PER_CHUNK)):
             return None  # nothing to do
         # adjust read length to stay within chunk-size and also consider end of ring-buffer
         read_length = min(avail_length, self.N_SAMPLES_PER_CHUNK, self.N_SAMPLES - self.index_next)
+        # TODO: align code with others - put subchunking in another FN to get only precompiled views
 
         if discard or self.fill_level > 0.8:
             # show an error here, as we will now drop samples

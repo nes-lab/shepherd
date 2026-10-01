@@ -139,4 +139,4 @@ class SharedMemory:
             or (util and self.util.fill_level > 0.80)
         ):
             # warning will be generated in read()-fn
-            self.gpio.read(discard=True)
+            self.gpio.request_chunk(discard=True)
