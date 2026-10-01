@@ -31,6 +31,10 @@ class SharedMemIVOutput:
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_OUT_INTERVAL_S
 
+    OPTIMIZE_TIMESTAMPS: bool = True
+    ST_U32 = struct.Struct("=L")
+    ST_U64 = struct.Struct("=Q")
+
     def __init__(self, mem_map: mmap, cfg: PowerTracing | None, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
         self.size_by_sys: int = sysfs.get_trace_iv_out_size()
@@ -112,7 +116,7 @@ class SharedMemIVOutput:
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
-        self._mm.write(struct.pack("=L", commons.CANARY_VALUE_U32))
+        self._mm.write(self.ST_U32.pack(commons.CANARY_VALUE_U32))
 
     def __exit__(
         self,
@@ -125,7 +129,7 @@ class SharedMemIVOutput:
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
-        canary: int = struct.unpack("=L", self._mm.read(4))[0]
+        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
@@ -143,7 +147,7 @@ class SharedMemIVOutput:
         # determine current state
         # TODO: add mode to wait blocking?
         self._mm.seek(self._offset_idx_pru)
-        index_pru = struct.unpack("=L", self._mm.read(4))[0]
+        index_pru = self.ST_U32.unpack(self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
@@ -170,17 +174,27 @@ class SharedMemIVOutput:
                 type(self).__name__,
             )
 
-        timestamps_ns = np.frombuffer(
-            self._mm,
-            np.uint64,
-            count=self.N_SAMPLES_PER_CHUNK,
-            offset=self._offset_timestamps + self.index_next * 8,
-        )
-        pru_timestamp = int(timestamps_ns[0])
+        if self.OPTIMIZE_TIMESTAMPS:
+            self._mm.seek(self._offset_timestamps + self.index_next * 8)
+            timestamps_ns = self.ST_U64.unpack(self._mm.read(8))[0]
+            pru_ts_start = timestamps_ns
+            self._mm.seek(
+                self._offset_timestamps + (self.index_next + self.N_SAMPLES_PER_CHUNK - 1) * 8
+            )
+            pru_ts_stopp = self.ST_U64.unpack(self._mm.read(8))[0]
+        else:
+            timestamps_ns = np.frombuffer(
+                self._mm,
+                np.uint64,
+                count=self.N_SAMPLES_PER_CHUNK,
+                offset=self._offset_timestamps + self.index_next * 8,
+            )
+            pru_ts_start = int(timestamps_ns[0])
+            pru_ts_stopp = int(timestamps_ns[-1])
 
         if self.timestamp_last > 0:
-            diff_ms = (pru_timestamp - self.timestamp_last) // 10**6
-            if pru_timestamp == 0:
+            diff_ms = (pru_ts_start - self.timestamp_last) // 10**6
+            if pru_ts_start == 0:
                 log.error("ZERO      timestamp detected after recv it from PRU")
             if diff_ms < 0:
                 log.error(
@@ -197,12 +211,12 @@ class SharedMemIVOutput:
                     "FORWARDS  timestamp-jump detected after recv it from PRU -> %d ms",
                     diff_ms,
                 )
-        self.timestamp_last = pru_timestamp
+        self.timestamp_last = pru_ts_start
 
         # prepare & fetch data
         if not self.ts_set:  # recording not wanted
             data = None
-        elif (timestamps_ns[0] <= self.ts_stop) and (timestamps_ns[-1] >= self.ts_start):
+        elif (pru_ts_start <= self.ts_stop) and (pru_ts_stopp >= self.ts_start):
             data = IVTrace(
                 voltage=np.frombuffer(
                     self._mm,
@@ -223,7 +237,7 @@ class SharedMemIVOutput:
             log.debug(
                 "[%s] Discarded data - out of time-boundary (t_pru = %d).",
                 type(self).__name__,
-                pru_timestamp,
+                pru_ts_start,
             )
 
         if verbose:
@@ -232,7 +246,7 @@ class SharedMemIVOutput:
                 type(self).__name__,
                 self.index_next,
                 self.N_SAMPLES_PER_CHUNK,
-                pru_timestamp * 1e-9 - self.xp_start,
+                pru_ts_start * 1e-9 - self.xp_start,
                 time.time() - self.xp_start,
                 100 * self.fill_level,
             )

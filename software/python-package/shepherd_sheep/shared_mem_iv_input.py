@@ -72,6 +72,9 @@ class SharedMemIVInput:
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS_DEF
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_INP_INTERVAL_S
 
+    ST_U32 = struct.Struct("=L")
+    ST_U64 = struct.Struct("=Q")
+
     # TODO: something like that would allow automatic processing
     SIZES: Mapping[str, int] = MappingProxyType(
         {
@@ -130,11 +133,11 @@ class SharedMemIVInput:
 
     def __enter__(self) -> Self:
         self._mm.seek(self._offset_idx_sys)
-        self._mm.write(struct.pack("=L", commons.IDX_OUT_OF_BOUND))
+        self._mm.write(self.ST_U32.pack(commons.IDX_OUT_OF_BOUND))
         self._mm.seek(self._offset_samples)
         self._mm.write(bytes(bytearray(self.SIZE_SAMPLES)))
         self._mm.seek(self._offset_canary)
-        self._mm.write(struct.pack("=L", commons.CANARY_VALUE_U32))
+        self._mm.write(self.ST_U32.pack(commons.CANARY_VALUE_U32))
 
     def __exit__(
         self,
@@ -147,7 +150,7 @@ class SharedMemIVInput:
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
-        canary: int = struct.unpack("=L", self._mm.read(4))[0]
+        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
@@ -159,7 +162,7 @@ class SharedMemIVInput:
         if self.index_next is None:
             return min(self.N_SAMPLES, self.n_samples_per_chunk)
         self._mm.seek(self._offset_idx_pru)
-        index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
+        index_pru: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if index_pru > self.N_SAMPLES:
             # still out-of-bound (u32_max)
             index_pru = self.N_SAMPLES - 1
@@ -230,7 +233,7 @@ class SharedMemIVInput:
         # update sys-index
         self.index_next = (self.index_next + len(data)) % self.N_SAMPLES
         self._mm.seek(self._offset_idx_sys)
-        self._mm.write(struct.pack("=L", self.index_next))
+        self._mm.write(self.ST_U32.pack(self.index_next))
 
         if self.index_next < self.n_samples_per_chunk:  # once a cycle
             self.check_canary()

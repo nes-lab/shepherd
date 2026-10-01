@@ -59,6 +59,9 @@ class SharedMemUtilOutput:
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_UTIL_INTERVAL_S
 
+    ST_U32 = struct.Struct("=L")
+    ST_U64 = struct.Struct("=Q")
+
     def __init__(self, mem_map: mmap) -> None:
         self._mm: mmap = mem_map
         self.size_by_sys: int = sysfs.get_trace_util_size()
@@ -113,7 +116,7 @@ class SharedMemUtilOutput:
         self._mm.seek(self._offset_base)
         self._mm.write(bytes(bytearray(self.SIZE_SECTION - self.SIZE_CANARY)))
         self._mm.seek(self._offset_canary)
-        self._mm.write(struct.pack("=L", commons.CANARY_VALUE_U32))
+        self._mm.write(self.ST_U32.pack(commons.CANARY_VALUE_U32))
 
     def __exit__(
         self,
@@ -126,7 +129,7 @@ class SharedMemUtilOutput:
 
     def check_canary(self) -> None:
         self._mm.seek(self._offset_canary)
-        canary: int = struct.unpack("=L", self._mm.read(4))[0]
+        canary: int = self.ST_U32.unpack(self._mm.read(4))[0]
         if canary != commons.CANARY_VALUE_U32:
             msg = (
                 f"[{type(self).__name__}] Canary was harmed! "
@@ -137,7 +140,7 @@ class SharedMemUtilOutput:
     def get_size_available(self) -> int:
         # determine current fill-level
         self._mm.seek(self._offset_idx_pru)
-        index_pru: int = struct.unpack("=L", self._mm.read(4))[0]
+        index_pru: int = self.ST_U32.unpack(self._mm.read(4))[0]
         avail_length = (index_pru - self.index_next) % self.N_SAMPLES
         self.fill_level = avail_length / self.N_SAMPLES
         # detect overflow
