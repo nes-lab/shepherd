@@ -46,6 +46,7 @@ class SharedMemGPIOOutput:
 
     N_SAMPLES_PER_CHUNK: int = 50_000  # ~ 500 kiB Chunk
     N_BUFFER_CHUNKS: int = N_SAMPLES // N_SAMPLES_PER_CHUNK
+    DURATION_CHUNK_S: float = N_SAMPLES_PER_CHUNK / 1e6  # ~ 1 MSPS
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_GPIO_INTERVAL_S

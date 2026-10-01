@@ -25,7 +25,8 @@ class SharedMemIVOutput:
 
     N_BUFFER_CHUNKS: int = 30
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS  # 20k samples = 320 kiB
-    DURATION_CHUNK_MS: int = N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS // 10**6
+    DURATION_CHUNK_MS: int = (N_SAMPLES_PER_CHUNK * commons.SAMPLE_INTERVAL_NS) // 10**6
+    DURATION_CHUNK_S: float = commons.BUFFER_IV_OUT_INTERVAL_S / N_BUFFER_CHUNKS
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_OUT_INTERVAL_S

@@ -67,6 +67,7 @@ class SharedMemIVInput:
 
     N_BUFFER_CHUNKS_DEF: int = 16
     N_SAMPLES_PER_CHUNK_DEF: int = N_SAMPLES // N_BUFFER_CHUNKS_DEF
+    # DURATION_CHUNK_S is dynamic, see below in init
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS_DEF
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_IV_INP_INTERVAL_S
@@ -86,6 +87,7 @@ class SharedMemIVInput:
 
         self.n_samples_per_chunk: int = n_samples_per_segment or self.N_SAMPLES_PER_CHUNK_DEF
         self.n_buffer_chunks: int = self.N_SAMPLES // self.n_samples_per_chunk
+        self.duration_chunk_s: float = commons.BUFFER_IV_INP_INTERVAL_S / self.n_buffer_chunks
 
         self.size_by_sys: int = sysfs.get_trace_iv_inp_size()
         self.address: int = sysfs.get_trace_iv_inp_address()

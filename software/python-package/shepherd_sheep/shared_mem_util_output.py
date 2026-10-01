@@ -53,6 +53,8 @@ class SharedMemUtilOutput:
 
     N_BUFFER_CHUNKS: int = 20
     N_SAMPLES_PER_CHUNK: int = N_SAMPLES // N_BUFFER_CHUNKS
+    DURATION_SAMPLE_S: float = 0.1
+    DURATION_CHUNK_S: float = DURATION_SAMPLE_S * N_BUFFER_CHUNKS
     # Overflow detection
     FILL_GAP: float = 1.0 / N_BUFFER_CHUNKS
     POLL_INTERVAL: float = (0.5 - FILL_GAP) * commons.BUFFER_UTIL_INTERVAL_S
