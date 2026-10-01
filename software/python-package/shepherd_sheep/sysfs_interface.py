@@ -7,6 +7,7 @@ provided by the shepherd kernel module
 """
 
 import time
+from collections.abc import Generator
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -82,7 +83,7 @@ def wait_for_state(wanted_state: str, timeout: float) -> float:
         time.sleep(0.1)
 
 
-def set_start(timestamp_s: float | int | None = None) -> True:  # noqa: PYI041
+def set_start(timestamp_s: float | int | None = None) -> bool:  # noqa: PYI041
     """Starts pru-routines.
 
     Writes 'now' to the sysfs/time_start attribute in
@@ -541,16 +542,25 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
-def read_pru_msg() -> tuple[int, list[int]]:
-    """
-    Returns:
-    """
-    with Path("/sys/shepherd/pru_msg_box").open(encoding="utf-8") as f:
-        message = f.read().rstrip()
-    msg_parts = [int(x) for x in message.split()]
-    if len(msg_parts) < 2:
-        raise SysfsInterfaceError("pru_msg was too short")
-    return msg_parts[0], msg_parts[1:]
+def read_pru_msg_generator() -> Generator[tuple[int, list[int]] | None, None, None]:
+    """Faster access with generator due to usage in main loops."""
+    while True:
+        with Path("/sys/shepherd/pru_msg_box").open(encoding="utf-8") as f:
+            while f.readable():
+                f.seek(0)
+                message = f.read().rstrip()
+                msg_parts = [int(x) for x in message.split()]
+                if len(msg_parts) < 2:
+                    yield None
+                yield msg_parts[0], msg_parts[1:]
+
+
+read_pru_msg_iter = read_pru_msg_generator()
+
+
+def read_pru_msg() -> tuple[int, list[int]] | None:
+    """Faster access with iterator due to usage in main loops."""
+    return next(read_pru_msg_iter)
 
 
 prog_attribs = [
@@ -780,9 +790,21 @@ def get_mode() -> str:
         return str(f.read().rstrip())
 
 
+def get_state_generator() -> Generator[str, None, None]:
+    """Faster access with generator due to usage in main loops."""
+    while True:
+        with Path("/sys/shepherd/state").open(encoding="utf-8") as f:
+            while f.readable():
+                f.seek(0)
+                yield str(f.read().rstrip())
+
+
+get_state_iter = get_state_generator()
+
+
 def get_state() -> str:
-    with Path("/sys/shepherd/state").open(encoding="utf-8") as f:
-        return str(f.read().rstrip())
+    """Faster access with iterator due to usage in main loops."""
+    return next(get_state_iter)
 
 
 def get_trace_iv_inp_address() -> int:

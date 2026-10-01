@@ -204,23 +204,21 @@ class ShepherdIO:
                 before raising timeout exception
 
         """
-        # TODO: cleanest way without exception: ask sysfs-file with current msg-count
         for _ in range(timeout_n):
-            try:
-                return sysfs.read_pru_msg()
-            except sysfs.SysfsInterfaceError:  # noqa: PERF203
+            msg = sysfs.read_pru_msg()
+            if msg is None:
                 time.sleep(self.segment_period_s)
                 continue
+            return msg
         raise ShepherdTimeoutError
 
     @staticmethod
     def _flush_msgs() -> None:
         """Flushes msg_channel by reading all available bytes."""
-        try:
-            while True:
-                sysfs.read_pru_msg()
-        except sysfs.SysfsInterfaceError:
-            pass
+        while True:
+            msg = sysfs.read_pru_msg()
+            if msg is None:
+                return
 
     def start(
         self,
@@ -543,11 +541,11 @@ class ShepherdIO:
             ShepherdPRUError: If unrecoverable error was detected
         """
         while True:
-            try:
-                msg_type, values = sysfs.read_pru_msg()
-            except sysfs.SysfsInterfaceError:
+            msg = sysfs.read_pru_msg()
+            if msg is None:
                 return
 
+            msg_type, values = msg
             if msg_type == commons.MSG_DBG_PRINT:
                 log.info("Received cmd to print: %d, %d", values[0], values[1])
                 continue
