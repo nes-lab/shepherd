@@ -538,14 +538,14 @@ def write_pru_msg(msg_type: int, values: list | float | int) -> None:  # noqa: P
             )
             raise SysfsInterfaceError(msg)
 
-    with Path("/sys/shepherd/pru_msg_box").open("w", encoding="utf-8") as file:
+    with Path("/sys/shepherd/pru_msg_inbox").open("w", encoding="utf-8") as file:
         file.write(f"{msg_type} {values[0]} {values[1]}")
 
 
 def read_pru_msg_generator() -> Generator[tuple[int, list[int]] | None, None, None]:
     """Faster access with generator due to usage in main loops."""
     while True:
-        with Path("/sys/shepherd/pru_msg_box").open(encoding="utf-8") as f:
+        with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
             while f.readable():
                 f.seek(0)
                 message = f.read().rstrip()
@@ -558,9 +558,19 @@ def read_pru_msg_generator() -> Generator[tuple[int, list[int]] | None, None, No
 read_pru_msg_iter = read_pru_msg_generator()
 
 
-def read_pru_msg() -> tuple[int, list[int]] | None:
+def read_pru_msg_fast() -> tuple[int, list[int]] | None:
     """Faster access with iterator due to usage in main loops."""
+    # TODO: does not work in pytest!?! 'OError: [Errno 19] No such device'
     return next(read_pru_msg_iter)
+
+
+def read_pru_msg() -> tuple[int, list[int]] | None:
+    with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
+        message = f.read().rstrip()
+        msg_parts = [int(x) for x in message.split()]
+        if len(msg_parts) < 2:
+            return None
+        return msg_parts[0], msg_parts[1:]
 
 
 prog_attribs = [
@@ -802,9 +812,15 @@ def get_state_generator() -> Generator[str, None, None]:
 get_state_iter = get_state_generator()
 
 
-def get_state() -> str:
+def get_state_fast() -> str:
     """Faster access with iterator due to usage in main loops."""
+    # TODO: does not work in pytest!?! 'OError: [Errno 19] No such device'
     return next(get_state_iter)
+
+
+def get_state() -> str:
+    with Path("/sys/shepherd/state").open(encoding="utf-8") as f:
+        return str(f.read().rstrip())
 
 
 def get_trace_iv_inp_address() -> int:

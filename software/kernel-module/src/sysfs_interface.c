@@ -120,8 +120,11 @@ struct kobj_attr_struct_s attr_virtual_storage_settings = {
         .attr       = __ATTR(virtual_storage_settings, 0660, sysfs_virtual_storage_settings_show,
                              sysfs_virtual_storage_settings_store),
         .val_offset = offsetof(struct SharedMem, storage_settings)};
-struct kobj_attr_struct_s attr_pru_msg_system_settings = {
-        .attr = __ATTR(pru_msg_box, 0660, sysfs_pru_msg_system_show, sysfs_pru_msg_system_store),
+struct kobj_attr_struct_s attr_pru_msg_out_system_settings = {
+        .attr       = __ATTR(pru_msg_outbox, 0660, sysfs_pru_msg_system_show, NULL),
+        .val_offset = 0};
+struct kobj_attr_struct_s attr_pru_msg_inp_system_settings = {
+        .attr       = __ATTR(pru_msg_inbox, 0660, NULL, sysfs_pru_msg_system_store),
         .val_offset = 0};
 struct kobj_attr_struct_s attr_gpio_tracer_mask = {
         .attr = __ATTR(gpio_tracer_mask, 0660, sysfs_SharedMem_show, sysfs_gpio_tracer_mask_store),
@@ -142,7 +145,8 @@ static struct attribute *shp_attrs[] = {
         &attr_virtual_converter_settings.attr.attr,
         &attr_virtual_harvester_settings.attr.attr,
         &attr_virtual_storage_settings.attr.attr,
-        &attr_pru_msg_system_settings.attr.attr,
+        &attr_pru_msg_out_system_settings.attr.attr,
+        &attr_pru_msg_inp_system_settings.attr.attr,
         &attr_gpio_tracer_mask.attr.attr,
         &attr_pru_applied_settings.attr.attr,
         NULL,
