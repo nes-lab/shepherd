@@ -207,6 +207,7 @@ class ShepherdHarvester(ShepherdIO):
 
         prog_bar.close()
         # Detect recorder missing start / end
+        self.writer.flush_queues()
         gain = self.writer.ds_time.attrs["gain"]
         file_start = self.writer.ds_time[0] * gain
         file_end = self.writer.ds_time[self.writer.rec_iv.position - 1] * gain

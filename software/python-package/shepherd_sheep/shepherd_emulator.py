@@ -355,6 +355,7 @@ class ShepherdEmulator(ShepherdIO):
                     break
 
         log.debug("FINISHED supplying input-data -> process remaining buffer")
+        ts_data_last = time.time()  # prevents race-conditions
         force_subchunks = False
         before_ts_end = True
         try:
@@ -417,6 +418,7 @@ class ShepherdEmulator(ShepherdIO):
         prog_bar.close()
         # Detect recorder missing start / end
         if self.writer is not None and self.writer.rec_iv.position >= 1:
+            self.writer.flush_queues()
             gain = self.writer.ds_time.attrs["gain"]
             file_start = self.writer.ds_time[0] * gain
             file_end = self.writer.ds_time[self.writer.rec_iv.position - 1] * gain
