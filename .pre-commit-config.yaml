@@ -65,7 +65,7 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.9
+    rev: v0.16.10
     hooks:
       - id: ruff-format
       - id: ruff-check
@@ -100,7 +100,7 @@ repos:
         args: ["--min-severity", "high", "--no-progress", "--fix", "."]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v23.1.1
+    rev: v23.1.2
     hooks:
       - id: clang-format
         types_or: [c++, c]
