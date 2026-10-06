@@ -6,12 +6,14 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CalibrationSeries
 from shepherd_core.data_models.content import VirtualSourceConfig
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.reader import Reader as CoreReader
+from shepherd_core.writer import Writer as CoreWriter
 from shepherd_sheep import commons
 from shepherd_sheep import sysfs_interface
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
@@ -38,20 +40,19 @@ def src_cfg() -> VirtualSourceConfig:
 
 def data_h5(tmp_path: Path, duration_s: float = 10.0) -> Path:
     store_path = tmp_path / "hrv_example.h5"
-    with Writer(
+    with CoreWriter(
         store_path,
         cal_data=CalibrationCape().harvester,
         force_overwrite=True,
     ) as store:
         store.store_hostname("Inky")
+        len_ = 10_000
         for i in range(round(10 * duration_s)):
-            len_ = 10_000
-            mock_data = IVTrace(
+            store.append_iv_data_raw(
+                timestamp=i * len_ * SAMPLE_INTERVAL_NS,
                 voltage=random_data(len_),
                 current=random_data(len_),
-                timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
             )
-            store.write_iv_buffer(mock_data)
     return store_path
 
 
@@ -118,6 +119,7 @@ def test_emulation(
             writer.write_iv_buffer(data_)
         else:
             time.sleep(emulator.segment_period_s / 2)
+    writer.flush_queues()
 
 
 @pytest.mark.hardware
@@ -147,6 +149,71 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
         assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(
             start_time,
         )
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+@pytest.mark.parametrize("only_power", [True, False])
+@pytest.mark.parametrize("samplerate", [10, 100, 1_000, 100_000])
+def test_emulate_variations(
+    tmp_path: Path, data_h5: Path, samplerate: int, *, only_power: bool
+) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    power_tracer = PowerTracing(only_power=only_power, samplerate=samplerate)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        power_tracing=power_tracer,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert (
+            hf_emu["data"]["time"].shape[0]
+            == hf_hrv["data"]["time"].shape[0] * samplerate // 100_000
+        )
+        assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+def test_emulate_intermediate(tmp_path: Path, data_h5: Path) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    power_tracer = PowerTracing(intermediate_voltage=True)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        power_tracing=power_tracer,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
+        assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
 
 
 @pytest.mark.hardware

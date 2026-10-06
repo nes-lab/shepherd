@@ -66,6 +66,8 @@ result 2026-09-22 - kernel 6.12.109 & 6.18.52
         PW, t = 2.475 s, out = 0.186 MiB
         GP, t = 2.485 s, out = 3.588 MiB
         UT, t = 22.982 s, out = 8.318 MiB
+
+result 2026-10-02 - trixie with py313
 """
 
 import time
@@ -147,6 +149,7 @@ def iv_to_file(path: Path, data: list[IVTrace], compression: Compression) -> Non
         sw.store_hostname("Emu")
         for _date in data:
             sw.write_iv_buffer(_date)
+        sw.flush_queues()
         sw.h5file.flush()
 
 
@@ -163,6 +166,7 @@ def pw_to_file(path: Path, data: list[IVTrace], compression: Compression) -> Non
         sw.store_hostname("Emu")
         for _date in data:
             sw.write_iv_buffer(_date)
+        sw.flush_queues()
         sw.h5file.flush()
 
 
@@ -178,6 +182,7 @@ def gp_to_file(path: Path, data: list[GPIOTrace], compression: Compression) -> N
         sw.store_hostname("Emu")
         for _date in data:
             sw.write_gpio_buffer(_date)
+        sw.flush_queues()
         sw.h5file.flush()
 
 
@@ -193,6 +198,7 @@ def ut_to_file(path: Path, data: list[UtilTrace], compression: Compression) -> N
         sw.store_hostname("Emu")
         for _date in data:
             sw.write_util_buffer(_date)
+        sw.flush_queues()
         sw.h5file.flush()
 
 

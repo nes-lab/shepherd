@@ -9,6 +9,7 @@ from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.base.calibration import CalibrationSeries
 from shepherd_core.reader import Reader as CoreReader
+from shepherd_core.writer import Writer as CoreWriter
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.h5_writer import Writer
 from shepherd_sheep.shared_mem_iv_input import IVTrace
@@ -30,16 +31,15 @@ def data_buffer() -> IVTrace:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     name = tmp_path / "hrv_example.h5"
-    with Writer(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
+    with CoreWriter(name, cal_data=CalibrationHarvester(), force_overwrite=True) as store:
         store.store_hostname("Pinky")
+        len_ = 10_000
         for i in range(100):
-            len_ = 10_000
-            mock_data = IVTrace(
+            store.append_iv_data_raw(
+                timestamp=i * len_ * SAMPLE_INTERVAL_NS,
                 voltage=random_data(len_),
                 current=random_data(len_),
-                timestamp_ns=i * len_ * SAMPLE_INTERVAL_NS,
             )
-            store.write_iv_buffer(mock_data)
     return name
 
 
@@ -89,6 +89,7 @@ def test_h5writer_data(
     d = tmp_path / "harvest.h5"
     with Writer(file_path=d, cal_data=cal_cape.harvester, mode=mode) as log:
         log.write_iv_buffer(data_buffer)
+        log.flush_queues()
 
     with h5py.File(d, "r") as written:
         assert "data" in written
@@ -146,6 +147,7 @@ def test_h5writer_performance(
         cal_data=cal_cape.harvester,
     ) as log:
         log.write_iv_buffer(data_buffer)
+        log.flush_queues()
 
 
 def test_reader_performance(data_h5: Path) -> None:
