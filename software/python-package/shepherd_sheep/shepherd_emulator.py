@@ -416,10 +416,10 @@ class ShepherdEmulator(ShepherdIO):
             )
         prog_bar.close()
         # Detect recorder missing start / end
-        if self.writer is not None and self.writer.data_pos >= 1:
+        if self.writer is not None and self.writer.rec_iv.position >= 1:
             gain = self.writer.ds_time.attrs["gain"]
             file_start = self.writer.ds_time[0] * gain
-            file_end = self.writer.ds_time[self.writer.data_pos - 1] * gain
+            file_end = self.writer.ds_time[self.writer.rec_iv.position - 1] * gain
             if file_start > self.start_time:
                 log.error(
                     "Recorder missed %.3f s IVTrace after start", file_start - self.start_time
