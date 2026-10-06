@@ -223,15 +223,6 @@ class SharedMemGPIOOutput:
             self.index_next = (self.index_next + read_length) % self.N_SAMPLES
             return None
 
-        if verbose:
-            log.debug(
-                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, %.2f %%fill",
-                type(self).__name__,
-                self.index_next,
-                read_length,
-                time.time(),
-                100 * self.fill_level,
-            )
         # prepare & fetch data
         timestamps = np.frombuffer(
             self._mm,
@@ -258,6 +249,18 @@ class SharedMemGPIOOutput:
                 "[%s] Discarded data - out of time-boundary",
                 type(self).__name__,
             )
+
+        if verbose:
+            log.debug(
+                "[%s] Retrieving index %6d with len %d @sys_ts %.3f, %.2f %%fill, data=%s",
+                type(self).__name__,
+                self.index_next,
+                read_length,
+                time.time(),
+                100 * self.fill_level,
+                type(data).__name__,
+            )
+
         # TODO: segment should be reset to ZERO to better detect errors
         self.index_next = (self.index_next + read_length) % self.N_SAMPLES
 

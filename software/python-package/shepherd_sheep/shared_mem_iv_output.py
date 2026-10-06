@@ -245,13 +245,14 @@ class SharedMemIVOutput:
 
         if verbose:
             log.debug(
-                "[%s] Retrieving index=%d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill",
+                "[%s] Retrieving index=%d, len=%d, ts=%.3f, ts_sys=%.3f, %.2f %%fill, data=%s",
                 type(self).__name__,
                 self.index_next,
                 self.N_SAMPLES_PER_CHUNK,
                 chunk_ts_start * 1e-9 - self.xp_start,
                 time.time() - self.xp_start,
                 100 * self.fill_level,
+                type(chunk_data).__name__,
             )
 
         # TODO: segment in buffer should be reset to ZERO to better detect errors
