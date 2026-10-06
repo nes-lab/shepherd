@@ -9,7 +9,7 @@ from shepherd_core.data_models.base.calibration import CalibrationEmulator as Ca
 from shepherd_core.data_models.base.calibration import CalibrationSeries as CalSeries
 from shepherd_core.data_models.content.enum_datatypes import Compression
 
-from .commons import SAMPLE_INTERVAL_NS
+from . import commons
 from .h5_monitor_abc import Monitor
 from .logger import log
 from .shared_mem_iv_input import IVTrace
@@ -38,7 +38,7 @@ class PowerRecorder(Monitor):
 
         self.buffer_timeseries = (
             self.reduction_factor
-            * SAMPLE_INTERVAL_NS
+            * commons.SAMPLE_INTERVAL_NS
             * np.arange(
                 SharedMemIVOutput.N_SAMPLES_PER_CHUNK // self.reduction_factor,
             ).astype(np.uint64)
@@ -202,3 +202,21 @@ class PowerRecorder(Monitor):
 
     def check_status(self) -> None:
         return
+
+    def check_dataset(self, t_start: int, t_end: int) -> bool:
+        self.flush_queue()
+        had_error = False
+        if self.position < 1:
+            return had_error
+        gain = self.data["time"].attrs["gain"]
+        file_start = self.data["time"][0] * gain
+        file_end = self.data["time"][self.position - 1] * gain
+        if file_start > t_start:
+            log.error("Recorder missed %.3f s IVTrace after start", file_start - t_start)
+            had_error = True
+        if file_end < t_end - max(
+            1e-3, 2.0 * self.reduction_factor / commons.SAMPLE_RATE_DEFAULT_SPS
+        ):
+            log.error("Recorder missed ~ %.3f s IVTrace before end", t_end - file_end)
+            had_error = True
+        return had_error

@@ -100,6 +100,7 @@ class IVRecorder(Monitor):
                 data_length = self.data["voltage"].shape[0]
                 if pos_end >= data_length:
                     data_length += self.increment
+                    # TODO: faster with direct naming? i.e. self.ds_time
                     self.data["voltage"].resize((data_length,))
                     self.data["current"].resize((data_length,))
                     self.data["time"].resize((data_length,))
@@ -169,3 +170,22 @@ class IVRecorder(Monitor):
 
     def check_status(self) -> None:
         return
+
+    def check_dataset(self, t_start: int, t_end: int) -> bool:
+        # TODO: bring this feature to the other recorders?
+        self.flush_queue()
+        had_error = False
+        if self.position < 1:
+            return had_error
+        gain = self.data["time"].attrs["gain"]
+        file_start = self.data["time"][0] * gain
+        file_end = self.data["time"][self.position - 1] * gain
+        if file_start > t_start:
+            log.error("Recorder missed %.3f s IVTrace after start", file_start - t_start)
+            had_error = True
+        if file_end < t_end - max(
+            1e-3, 2.0 * self.reduction_factor / commons.SAMPLE_RATE_DEFAULT_SPS
+        ):
+            log.error("Recorder missed ~ %.3f s IVTrace before end", t_end - file_end)
+            had_error = True
+        return had_error
