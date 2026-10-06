@@ -5,6 +5,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from shepherd_core import Compression
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationHarvester
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_sheep.h5_writer import Writer
@@ -61,6 +63,7 @@ def test_harvester(writer: Writer, harvester: ShepherdHarvester) -> None:
             data_ = harvester.shared_mem.iv_out.request_chunk()
             time.sleep(harvester.segment_period_s / 2)
         writer.write_iv_buffer(data_)
+    writer.flush_queues()
 
 
 @pytest.mark.hardware  # TODO: extend with new harvester-options
@@ -76,6 +79,87 @@ def test_harvester_fn(tmp_path: Path) -> None:
         duration=10,
         force_overwrite=True,
         use_cal_default=True,
+    )
+    run_harvester(cfg)
+
+    with h5py.File(path, "r+") as hf:
+        n_samples = hf["data"]["time"].shape[0]
+        assert 900_000 < n_samples <= 1_100_000
+        assert hf["data"]["time"][0] == time_start * 10**9
+        # test for equidistant timestamps
+        time_series = hf["data"]["time"]
+        diff_series = time_series[1:] - time_series[:-1]
+        unique = np.unique(diff_series)
+        assert len(unique) == 1
+
+
+@pytest.mark.hardware
+@pytest.mark.harvester
+@pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
+@pytest.mark.parametrize("samplerate", [10, 100, 1_000, 100_000])
+def test_harvester_var_samplerates(tmp_path: Path, samplerate: int) -> None:
+    path = tmp_path / "rec.h5"
+    time_start = int(time.time() + 15)
+    power_tracer = PowerTracing(only_power=False, samplerate=samplerate)
+    cfg = HarvestTask(
+        output_path=path,
+        time_start=time_start,
+        duration=10,
+        force_overwrite=True,
+        use_cal_default=True,
+        power_tracing=power_tracer,
+    )
+    run_harvester(cfg)
+
+    with h5py.File(path, "r+") as hf:
+        n_samples = hf["data"]["time"].shape[0] * 100_000 // samplerate
+        assert 900_000 < n_samples <= 1_100_000
+        assert hf["data"]["time"][0] == time_start * 10**9
+        # test for equidistant timestamps
+        time_series = hf["data"]["time"]
+        diff_series = time_series[1:] - time_series[:-1]
+        unique = np.unique(diff_series)
+        assert len(unique) == 1
+
+
+@pytest.mark.hardware
+@pytest.mark.harvester
+@pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
+@pytest.mark.parametrize("samplerate", [10, 100, 1_000, 100_000])
+def test_harvester_var_samplerates_only_power(tmp_path: Path, samplerate: int) -> None:
+    path = tmp_path / "rec.h5"
+    time_start = int(time.time() + 15)
+    power_tracer = PowerTracing(only_power=True, samplerate=samplerate)
+    cfg = HarvestTask(
+        output_path=path,
+        time_start=time_start,
+        duration=10,
+        force_overwrite=True,
+        use_cal_default=True,
+        power_tracing=power_tracer,
+    )
+    run_harvester(cfg)
+
+
+@pytest.mark.hardware
+@pytest.mark.harvester
+@pytest.mark.timeout(60)
+@pytest.mark.usefixtures("_shepherd_up")
+@pytest.mark.parametrize(
+    "compression", [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]
+)
+def test_harvester_var_compressions(tmp_path: Path, compression: Compression) -> None:
+    path = tmp_path / "rec.h5"
+    time_start = int(time.time() + 15)
+    cfg = HarvestTask(
+        output_path=path,
+        time_start=time_start,
+        duration=10,
+        force_overwrite=True,
+        use_cal_default=True,
+        output_compression=compression,
     )
     run_harvester(cfg)
 

@@ -6,6 +6,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 import pytest
+from shepherd_core import Compression
 from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationCape
 from shepherd_core.data_models.base.calibration import CalibrationSeries
@@ -154,14 +155,11 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
 @pytest.mark.hardware
 @pytest.mark.emulator
 @pytest.mark.usefixtures("_shepherd_up")
-@pytest.mark.parametrize("only_power", [True, False])
 @pytest.mark.parametrize("samplerate", [10, 100, 1_000, 100_000])
-def test_emulate_variations(
-    tmp_path: Path, data_h5: Path, samplerate: int, *, only_power: bool
-) -> None:
+def test_emulate_var_samplerates(tmp_path: Path, data_h5: Path, samplerate: int) -> None:
     output = tmp_path / "rec.h5"
     start_time = round(time.time() + 25)
-    power_tracer = PowerTracing(only_power=only_power, samplerate=samplerate)
+    power_tracer = PowerTracing(only_power=False, samplerate=samplerate)
     emu_cfg = EmulationTask(
         input_path=data_h5,
         output_path=output,
@@ -174,7 +172,10 @@ def test_emulate_variations(
         pwr_port="A",
         voltage_aux=2.5,
         virtual_source=VirtualSourceConfig(name="direct"),
+        output_compression=Compression.null,
         power_tracing=power_tracer,
+        gpio_tracing=None,
+        uart_logging=None,
         verbose=3,
     )
     run_emulator(emu_cfg)
@@ -184,6 +185,70 @@ def test_emulate_variations(
             hf_emu["data"]["time"].shape[0]
             == hf_hrv["data"]["time"].shape[0] * samplerate // 100_000
         )
+        assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+@pytest.mark.parametrize("samplerate", [10, 100, 1_000, 100_000])
+def test_emulate_var_samplerates_only_power(tmp_path: Path, data_h5: Path, samplerate: int) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+    power_tracer = PowerTracing(only_power=True, samplerate=samplerate)
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        output_compression=Compression.null,
+        power_tracing=power_tracer,
+        gpio_tracing=None,
+        uart_logging=None,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+    # TODO: test timestamps of power-trace
+
+
+@pytest.mark.hardware
+@pytest.mark.emulator
+@pytest.mark.usefixtures("_shepherd_up")
+@pytest.mark.parametrize(
+    "compression", [Compression.null, Compression.lzf, Compression.gzip1, Compression.gzip6]
+)
+def test_emulate_var_compressions(tmp_path: Path, data_h5: Path, compression: Compression) -> None:
+    output = tmp_path / "rec.h5"
+    start_time = round(time.time() + 25)
+
+    emu_cfg = EmulationTask(
+        input_path=data_h5,
+        output_path=output,
+        duration=None,
+        force_overwrite=True,
+        use_cal_default=True,
+        time_start=start_time,
+        enable_io=True,
+        io_port="A",
+        pwr_port="A",
+        voltage_aux=2.5,
+        virtual_source=VirtualSourceConfig(name="direct"),
+        output_compression=compression,
+        gpio_tracing=None,
+        uart_logging=None,
+        verbose=3,
+    )
+    run_emulator(emu_cfg)
+
+    with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
+        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
         assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
 
 
@@ -207,6 +272,8 @@ def test_emulate_intermediate(tmp_path: Path, data_h5: Path) -> None:
         voltage_aux=2.5,
         virtual_source=VirtualSourceConfig(name="direct"),
         power_tracing=power_tracer,
+        gpio_tracing=None,
+        uart_logging=None,
         verbose=3,
     )
     run_emulator(emu_cfg)

@@ -13,6 +13,7 @@ from shepherd_core.writer import Writer as CoreWriter
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 from shepherd_sheep.h5_writer import Writer
 from shepherd_sheep.shared_mem_iv_input import IVTrace
+from shepherd_sheep.shared_mem_iv_output import SharedMemIVOutput
 
 
 def random_data(length: int) -> np.ndarray:
@@ -22,7 +23,7 @@ def random_data(length: int) -> np.ndarray:
 
 @pytest.fixture
 def data_buffer() -> IVTrace:
-    len_ = 10_000
+    len_ = SharedMemIVOutput.N_SAMPLES_PER_CHUNK
     voltage = random_data(len_)
     current = random_data(len_)
     return IVTrace(voltage, current, 1551848387472)
