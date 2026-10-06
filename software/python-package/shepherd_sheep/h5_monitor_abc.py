@@ -57,7 +57,8 @@ class Monitor(ABC):
         extra_arg: int = 0,
     ) -> None:
         self.data["time"].resize((self.position,))
-        log.info(
+        log_fn = log.info if self.data["time"].shape[0] > 0 else log.debug
+        log_fn(
             "[%s] recorded %d events",
             type(self).__name__,
             self.data["time"].shape[0],

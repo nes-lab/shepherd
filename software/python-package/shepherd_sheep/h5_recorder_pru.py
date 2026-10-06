@@ -52,7 +52,7 @@ class PruRecorder(Monitor):
                 10e6 / (SharedMemUtilOutput.SIZE_SAMPLE * SharedMemUtilOutput.N_SAMPLES_PER_CHUNK)
             )  # MB
             self.queue = Queue(maxsize=self.queue_size)
-            log.info("[%s] starts with size_queue = %d", type(self).__name__, self.queue_size)
+            log.debug("[%s] starts with size_queue = %d", type(self).__name__, self.queue_size)
             self.thread = threading.Thread(
                 target=self.thread_fn,
                 daemon=True,

@@ -74,7 +74,7 @@ class PowerRecorder(Monitor):
             80e6 / (SharedMemIVOutput.SIZE_SAMPLE * SharedMemIVOutput.N_SAMPLES_PER_CHUNK)
         )  # MB
         self.queue = Queue(maxsize=self.queue_size)
-        log.info("[%s] starts with size_queue = %d", type(self).__name__, self.queue_size)
+        log.debug("[%s] starts with size_queue = %d", type(self).__name__, self.queue_size)
         self.thread = threading.Thread(
             target=self.thread_fn_reduce if self.reduce else self.thread_fn,
             daemon=True,
