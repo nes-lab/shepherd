@@ -70,3 +70,13 @@ class Monitor(ABC):
     @abstractmethod
     def check_status(self) -> None:
         pass
+
+    def flush_queue(self, timeout: float = 10) -> bool:
+        if not hasattr(self, "queue"):
+            return True
+        time_passed: float = 0
+        while self.thread is not None and self.thread.is_alive() and not self.queue.empty():
+            if time_passed >= timeout:
+                return False
+            self.event.wait(self.poll_interval)
+        return True

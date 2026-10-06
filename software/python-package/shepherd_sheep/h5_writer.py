@@ -49,6 +49,9 @@ from .shared_mem_util_output import UtilTrace
 class Writer(CoreWriter):
     """Stores data coming from PRU's in HDF5 format
 
+    NOTE: this is optimized for live measurements.
+    Individual recorders/monitors are rate limited and queued to unblock write-commands.
+
     Args:
         file_path (Path): Name of the HDF5 file that data will be written to
         cal_data (CalibrationEmulator or CalibrationHarvester): Data is written as raw ADC
@@ -99,6 +102,7 @@ class Writer(CoreWriter):
             window_samples,
             cal_data,
             compression,
+            big_chunks=False,
             modify_existing=modify_existing,
             force_overwrite=force_overwrite,
             verbose=verbose,
@@ -106,15 +110,6 @@ class Writer(CoreWriter):
         self.only_power = only_power
 
         self.grp_data: h5py.Group = self.h5file["data"]
-
-        # Optimization: allowing larger more efficient resizes
-        #               (before .resize() was called per element)
-        # h5py v3.4 is taking 20% longer for .write_buffer() than v2.1
-        # this change speeds up v3.4 by 30% (even system load drops from 90% to 70%), v2.1 by 16%
-        self.data_pos = 0
-        self.data_inc = int(100 * self.samplerate_sps)
-        # NOTE for possible optimization: align resize with chunk-size
-        #      -> rely on autochunking -> inc = h5ds.chunks
 
         # prepare Monitors
         self.sysutil_log_enabled: bool = True
@@ -174,8 +169,6 @@ class Writer(CoreWriter):
         # end recorders
         self.rec_pru.__exit__()
         self.rec_gpio.__exit__()
-        if isinstance(self.rec_iv, IVRecorder):
-            self.data_pos = self.rec_iv.finalize_write()
         self.rec_iv.__exit__()  # can be power or iv
 
         # end monitors
@@ -185,7 +178,9 @@ class Writer(CoreWriter):
         super().__exit__()
 
     def write_iv_buffer(self, data: IVTrace) -> None:
-        """Writes data from buffer to file.
+        """Writes data from buffer to file-write-queue.
+
+        Note: storage is queued to unblock write-commands, also rate-limited to even load.
 
         Args:
             data: buffer-segment containing IV data
@@ -193,10 +188,17 @@ class Writer(CoreWriter):
         self.rec_iv.write(data)  # dynamically power- or iv-recorder
 
     def write_gpio_buffer(self, data: GPIOTrace) -> None:
+        # Note: storage is queued to unblock write-commands, also rate-limited to even load.
         self.rec_gpio.write(data)
 
     def write_util_buffer(self, data: UtilTrace) -> None:
+        # Note: storage is queued to unblock write-commands, also rate-limited to even load.
         self.rec_pru.write(data)
+
+    def flush_queues(self) -> None:
+        self.rec_pru.flush_queue()
+        self.rec_gpio.flush_queue()
+        self.rec_iv.flush_queue()
 
     def start_monitors(
         self,

@@ -22,6 +22,7 @@ class PruRecorder(Monitor):
             target,
             compression,
             poll_interval=0.66 * SharedMemUtilOutput.DURATION_CHUNK_S,
+            increment=10 * SharedMemUtilOutput.N_SAMPLES_PER_CHUNK,
         )
 
         self.data.create_dataset(
@@ -65,6 +66,7 @@ class PruRecorder(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        self.flush_queue()
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=20 * self.poll_interval)

@@ -21,9 +21,10 @@ class IVRecorder(Monitor):
         super().__init__(
             target,
             poll_interval=0.66 * SharedMemIVOutput.DURATION_CHUNK_S,
-            increment=SharedMemIVOutput.N_SAMPLES_PER_CHUNK,
+            increment=10 * SharedMemIVOutput.N_SAMPLES_PER_CHUNK // reduction_factor,
         )
-
+        if reduction_factor not in [1, 10, 100, 1000, 10000, 100_000]:
+            raise ValueError("reduction-factor must be 10^n, n=[0..5]")
         # this monitor won't create its own datasets
         self.reduction_factor: int = reduction_factor
         self.reduce: bool = self.reduction_factor != 1
@@ -55,6 +56,7 @@ class IVRecorder(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        self.flush_queue()
         self.finalize_write()
         # py313 has shutdown for queue
         if self.dropped_data:

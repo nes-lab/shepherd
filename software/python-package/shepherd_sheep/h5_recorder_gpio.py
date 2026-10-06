@@ -57,6 +57,7 @@ class GpioRecorder(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
+        self.flush_queue()
         self.event.set()
         if self.thread is not None:
             self.thread.join(timeout=20 * self.poll_interval)
