@@ -1,3 +1,4 @@
+import copy
 import threading
 from queue import Queue
 from types import TracebackType
@@ -77,7 +78,8 @@ class GpioRecorder(Monitor):
         if self.queue.full():
             self.dropped_data = True
             return  # drop package
-        self.queue.put(data)
+        data_new = copy.deepcopy(data)
+        self.queue.put(data_new)
 
     def thread_fn(self) -> None:
         while not self.event.is_set():
