@@ -21,7 +21,7 @@ from shepherd_sheep.sysfs_interface import read_pru_msg
 
 def read_pru_msg_v1() -> tuple[int, list[int]] | None:
     try:
-        with Path("/sys/shepherd/pru_msg_box").open(encoding="utf-8") as f:
+        with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
             message = f.read().rstrip()
         msg_parts = [int(x) for x in message.split()]
         if len(msg_parts) < 2:
@@ -33,7 +33,7 @@ def read_pru_msg_v1() -> tuple[int, list[int]] | None:
 
 def read_pru_msg_v2() -> Generator[tuple[int, list[int]] | None, None, None]:
     while True:
-        with Path("/sys/shepherd/pru_msg_box").open(encoding="utf-8") as f:
+        with Path("/sys/shepherd/pru_msg_outbox").open(encoding="utf-8") as f:
             while f.readable():
                 f.seek(0)
                 message = f.read().rstrip()
@@ -46,6 +46,28 @@ def read_pru_msg_v2() -> Generator[tuple[int, list[int]] | None, None, None]:
 pru_msg_v2 = read_pru_msg_v2()
 
 
+def read_pru_msg_v3() -> Generator[tuple[int, list[int]] | None, None, None]:
+    path = Path("/sys/shepherd/pru_msg_outbox")
+    while True:
+        if not path.exists():
+            time.sleep(0.1)
+            continue
+        try:
+            with path.open(encoding="utf-8") as f:
+                while f.readable():
+                    f.seek(0)
+                    message = f.read().rstrip()
+                    msg_parts = [int(x) for x in message.split()]
+                    if len(msg_parts) < 2:
+                        yield None
+                    yield msg_parts[0], msg_parts[1:]
+        except OSError:
+            continue
+
+
+pru_msg_v3 = read_pru_msg_v3()
+
+
 def read_pru_msg_now() -> tuple[int, list[int]] | None:
     return read_pru_msg()
 
@@ -56,6 +78,7 @@ if __name__ == "__main__":
     for routine_under_test in [
         "read_pru_msg_v1()",
         "next(pru_msg_v2)",
+        "next(pru_msg_v3)",
         "read_pru_msg_now()",
     ]:
         repetitions = 1000
