@@ -67,8 +67,9 @@ def calculate_stats(file: Path, title: str) -> None:
             t_start = reader.h5file["data"]["time"][0]
             t_end = reader.h5file["data"]["time"][-1]
         else:
-            t_end = reader.h5file["sys_util"]["time"][-5]
-            t_start = reader.h5file["sys_util"]["time"][-65]
+            _len = reader.h5file["sys_util"]["time"].shape[0]
+            t_end = reader.h5file["sys_util"]["time"][-min(5, _len)]
+            t_start = reader.h5file["sys_util"]["time"][-min(65, _len)]
         ds_time = reader.h5file["sys_util"]["time"]
         ds_cpu = reader.h5file["sys_util"]["cpu"]
         ds_filter = ds_time[:] >= t_start  # / ds_time.attrs["gain"]
