@@ -8,6 +8,14 @@ Variations:
 - compressions from none to gzip6
 - samplerate-reduction from 1x to 100_000x
 - prep-time 15, 20, 25, 30 s
+- pre-scaling, vs native harvest-files as input for EMU
+- random vs static input as input for EMU
+- try uart & gpio-capture with the target uart-firmwares
+
+TODO:
+- try different vsrouces,
+- try intermediate voltage
+- try prepared .hrv-files
 
 Modus Operandi:
 - vary 1 or 2 variables and keep the rest default or
@@ -26,20 +34,28 @@ import numpy as np
 from shepherd_core import Compression
 from shepherd_core import Reader
 from shepherd_core.data_models import EnergyDType
+from shepherd_core.data_models import GpioTracing
 from shepherd_core.data_models import PowerTracing
+from shepherd_core.data_models import UartLogging
 from shepherd_core.data_models import VirtualSourceConfig
+from shepherd_core.data_models.base.calibration import CalibrationPair
+from shepherd_core.data_models.base.calibration import CalibrationSeries
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.task import HarvestTask
+from shepherd_core.data_models.task import ProgrammingTask
+from shepherd_core.data_models.testbed import ProgrammerProtocol
 from shepherd_core.logger import log
 from shepherd_core.writer import Writer
 from shepherd_sheep.shepherd_run_functions import run_emulator
 from shepherd_sheep.shepherd_run_functions import run_harvester
+from shepherd_sheep.shepherd_run_functions import run_programmer
 
 path_storage = Path("/var/shepherd/recordings")
+path_firmware = Path(__file__).parent / "firmwares"
 skip_hrv = False
 
-log.info("| %s | %s | %s | %s | %s |", "type".ljust(34), "cpu_min", "cpu_max", "cpu_mean", "note")
-log.info("|------------------------------------|---------|---------|----------|------|")
+log.info("| %s | cpu_min | cpu_max | cpu_mean | MiB/s | note |", "type".ljust(34))
+log.info("|------------------------------------|---------|---------|----------|-------|------|")
 
 
 def calculate_stats(file: Path, title: str) -> None:
@@ -58,7 +74,23 @@ def calculate_stats(file: Path, title: str) -> None:
         cpu_mean = np.mean(cpu_selection)
         cpu_max = np.max(cpu_selection)
         cpu_min = np.min(cpu_selection)
-    log.info("| %s | %d | %d | %.1f | - |", title.ljust(34), cpu_min, cpu_max, cpu_mean)
+        datarate = file.stat().st_size / (60 * 2**20)
+        notes = []
+        if not reader.is_valid() or reader.count_errors_in_log() > 0:
+            notes.append("faulty")
+        if reader.runtime_s < 60:
+            notes.append("incomplete")
+        if cpu_mean > 90:
+            notes.append("overload")
+    log.info(
+        "| %s | %d | %d | %.1f | %.3f | %s |",
+        title.ljust(34),
+        cpu_min,
+        cpu_max,
+        cpu_mean,
+        datarate,
+        ", ".join(notes),
+    )
 
 
 def bench_hrv_sweep_starttime() -> None:
@@ -74,6 +106,7 @@ def bench_hrv_sweep_starttime() -> None:
                 use_cal_default=True,
             )
             log.info(title)
+            time.sleep(5)
             run_harvester(cfg)
         calculate_stats(path_output, title)
 
@@ -95,6 +128,7 @@ def bench_hrv_sweep_samplerate_poweronly() -> None:
                     power_tracing=power_tracer,
                 )
                 log.info(title)
+                time.sleep(5)
                 run_harvester(cfg)
             calculate_stats(path_output, title)
 
@@ -113,6 +147,7 @@ def bench_hrv_sweep_compression() -> None:
                 output_compression=_compression,
             )
             log.info(title)
+            time.sleep(5)
             run_harvester(cfg)
         calculate_stats(path_output, title)
 
@@ -121,13 +156,24 @@ def generate_harvest_file(
     compression: Compression,
     *,
     random: bool = True,
+    scaled: bool = False,
 ) -> Path:
-    rand_str = "random" if random else "static"
-    path = path_storage / f"hrv_synth_{compression.value}_{rand_str}.h5"
+    random_str = "random" if random else "static"
+    scaled_str = "scaled" if scaled else "native"
+    path = path_storage / f"hrv_synth_{compression.value}_{random_str}_{scaled_str}.h5"
     duration = 60
     if not path.exists():
         rng = np.random.default_rng()
         samples_per_1s = Writer.CHUNK_SAMPLES_N * 10
+        cal_data = (
+            CalibrationSeries(
+                # sheep can skip scaling if cal is ideal (applied here)
+                voltage=CalibrationPair(gain=1e-6, offset=0),
+                current=CalibrationPair(gain=1e-9, offset=0),
+            )
+            if scaled
+            else None
+        )
         with Writer(
             path,
             mode="harvester",
@@ -135,6 +181,7 @@ def generate_harvest_file(
             verbose=False,
             force_overwrite=True,
             compression=compression,
+            cal_data=cal_data,
         ) as sw:
             sw.store_hostname("Hrv")
             for _iter in range(duration):
@@ -167,6 +214,7 @@ def bench_emu_sweep_starttime() -> None:
                 gpio_tracing=None,
             )
             log.info(title)
+            time.sleep(5)
             run_emulator(cfg)
         calculate_stats(path_output, title)
 
@@ -193,6 +241,7 @@ def bench_emu_sweep_samplerate_poweronly() -> None:
                     power_tracing=power_tracer,
                 )
                 log.info(title)
+                time.sleep(5)
                 run_emulator(cfg)
             calculate_stats(path_output, title)
 
@@ -216,6 +265,7 @@ def bench_emu_sweep_output_compression() -> None:
                 output_compression=_compression,
             )
             log.info(title)
+            time.sleep(5)
             run_emulator(cfg)
         calculate_stats(path_output, title)
 
@@ -238,11 +288,107 @@ def bench_emu_sweep_input_compression() -> None:
                 gpio_tracing=None,
             )
             log.info(title)
+            time.sleep(5)
             run_emulator(cfg)
         calculate_stats(path_output, title)
 
 
+def bench_emu_sweep_input_options() -> None:
+    for _scaled in [False, True]:
+        for _random in [False, True]:
+            _scaled_add = "scaled" if _scaled else "native"
+            _random_add = "random" if _random else "static"
+            title = f"EMU input-option={_scaled_add}+{_random_add}"
+            path_output = path_storage / f"emu_input-option_{_scaled_add}+{_random_add}.h5"
+            if not path_output.exists():
+                path_input = generate_harvest_file(Compression.lzf, random=_random, scaled=_scaled)
+                time_start = int(time.time() + 25)
+                cfg = EmulationTask(
+                    input_path=path_input,
+                    output_path=path_output,
+                    duration=60,
+                    use_cal_default=True,
+                    time_start=time_start,
+                    virtual_source=VirtualSourceConfig(name="neutral"),
+                    uart_logging=None,
+                    gpio_tracing=None,
+                )
+                log.info(title)
+                time.sleep(5)
+                run_emulator(cfg)
+            calculate_stats(path_output, title)
+
+
+def bench_emu_sweep_datarates() -> None:
+    for _rate in [
+        2_400,
+        4_800,
+        9_600,
+        19_200,
+        38_400,
+        57_600,
+        115_200,
+        230_400,
+    ]:  # ,  460_800, 921_600, 1_000_000]:
+        for _type in ["uart", "gpio"]:
+            title = f"EMU {_type} datarate{_rate}"
+            path_output = path_storage / f"emu_{_type}_rate_{_rate}.h5"
+            if not path_output.exists():
+                path_input = path_firmware / f"build_{_rate}.hex"
+                if not path_input.exists():
+                    log.warning("Firmware not found - will skip")
+                    continue
+                cfg = ProgrammingTask(
+                    firmware_file=path_input,
+                    mcu_type="nrf52",
+                    protocol=ProgrammerProtocol.SWD,
+                )
+                run_programmer(cfg)
+                path_input = generate_harvest_file(Compression.lzf, random=True, scaled=True)
+                time_start = int(time.time() + 25)
+                cfg = EmulationTask(
+                    input_path=path_input,
+                    output_path=path_output,
+                    duration=60,
+                    use_cal_default=True,
+                    time_start=time_start,
+                    virtual_source=VirtualSourceConfig(name="neutral"),
+                    uart_logging=UartLogging(baudrate=_rate) if _type == "uart" else None,
+                    gpio_tracing=GpioTracing() if _type == "gpio" else None,
+                )
+                log.info(title)
+                time.sleep(5)
+                run_emulator(cfg)
+            calculate_stats(path_output, title)
+
+
+def bench_emu_optimized() -> None:
+    title = "EMU optimized"
+    path_output = path_storage / "emu_optimized.h5"
+    if not path_output.exists():
+        path_input = generate_harvest_file(Compression.lzf, random=True, scaled=True)
+        time_start = int(time.time() + 25)
+        cfg = EmulationTask(
+            input_path=path_input,
+            output_path=path_output,
+            duration=60,
+            use_cal_default=True,
+            time_start=time_start,
+            virtual_source=VirtualSourceConfig(name="neutral"),
+            uart_logging=None,
+            gpio_tracing=None,
+            output_compression=Compression.lzf,
+        )
+        log.info(title)
+        time.sleep(5)
+        run_emulator(cfg)
+    calculate_stats(path_output, title)
+
+
 if __name__ == "__main__":
+    bench_emu_optimized()
+    bench_emu_sweep_datarates()
+    bench_emu_sweep_input_options()
     bench_emu_sweep_starttime()
     bench_emu_sweep_samplerate_poweronly()
     bench_emu_sweep_output_compression()
