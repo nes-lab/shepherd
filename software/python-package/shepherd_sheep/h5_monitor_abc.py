@@ -72,12 +72,17 @@ class Monitor(ABC):
     def check_status(self) -> None:
         pass
 
-    def flush_queue(self, timeout: float = 10) -> bool:
+    def flush_queue(self) -> bool:
         if not hasattr(self, "queue"):
             return True
-        time_passed: float = 0
-        while self.thread is not None and self.thread.is_alive() and not self.queue.empty():
-            if time_passed >= timeout:
+        if len(self.queue) > 20:
+            log.info(
+                "[%s] flushing %d queue-entries to disk (backpressure)",
+                type(self).__name__,
+                len(self.queue),
+            )
+        while not self.queue.empty():
+            if self.thread is None or not self.thread.is_alive():
                 return False
             self.event.wait(self.poll_interval)
         return True

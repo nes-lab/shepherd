@@ -48,9 +48,8 @@ class PruRecorder(Monitor):
         self.dropped_data = False
         self.direct = False
         if not self.direct:
-            self.queue_size = int(
-                10e6 / (SharedMemUtilOutput.SIZE_SAMPLE * SharedMemUtilOutput.N_SAMPLES_PER_CHUNK)
-            )  # MB
+            chunk_size = SharedMemUtilOutput.SIZE_SAMPLE * SharedMemUtilOutput.N_SAMPLES_PER_CHUNK
+            self.queue_size = min(int(10e6 / chunk_size), 1000)  # 10 MB max
             self.queue = Queue(maxsize=self.queue_size)
             log.debug("[%s] starts with size_queue = %d", type(self).__name__, self.queue_size)
             self.thread = threading.Thread(
