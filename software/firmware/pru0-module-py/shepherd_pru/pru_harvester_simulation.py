@@ -70,7 +70,7 @@ def simulate_harvester(
         ):
             v_uV = cal_inp.voltage.raw_to_si(v_inp) * 1e6
             i_nA = cal_inp.current.raw_to_si(i_inp) * 1e9
-            length = min(v_uV.size, i_nA.size)
+            length = min(len(v_uV), len(i_nA))
             for _n in range(length):
                 v_uV[_n], i_nA[_n] = hrv.ivcurve_sample(
                     _voltage_uV=int(v_uV[_n]), _current_nA=int(i_nA[_n])

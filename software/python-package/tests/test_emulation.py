@@ -105,7 +105,7 @@ def test_emulation(
     emulator.start(wait_blocking=False)
     emulator.wait_for_start(15)
     for _, dsv, dsc in shp_reader.read(start_n=emulator.buffer_segment_count, is_raw=True):
-        while not emulator.shared_mem.iv_inp.write(
+        while not emulator.shared_mem.iv_inp.write_iv(
             data=IVTrace(voltage=dsv, current=dsc), cal=emulator.cal_pru, verbose=True
         ):
             data_ = emulator.shared_mem.iv_out.request_chunk(verbose=True)
@@ -146,7 +146,7 @@ def test_emulate_fn(tmp_path: Path, data_h5: Path) -> None:
     run_emulator(emu_cfg)
 
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
-        assert hf_emu["data"]["time"].shape[0] == hf_hrv["data"]["time"].shape[0]
+        assert len(hf_emu["data"]["time"]) == len(hf_hrv["data"]["time"])
         assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(
             start_time,
         )
@@ -181,10 +181,7 @@ def test_emulate_var_samplerates(tmp_path: Path, data_h5: Path, samplerate: int)
     run_emulator(emu_cfg)
 
     with h5py.File(output, "r+") as hf_emu, h5py.File(data_h5, "r") as hf_hrv:
-        assert (
-            hf_emu["data"]["time"].shape[0]
-            == hf_hrv["data"]["time"].shape[0] * samplerate // 100_000
-        )
+        assert len(hf_emu["data"]["time"]) == len(hf_hrv["data"]["time"]) * samplerate // 100_000
         assert hf_emu["data"]["time"][0] == CalibrationSeries().time.si_to_raw(start_time)
 
 

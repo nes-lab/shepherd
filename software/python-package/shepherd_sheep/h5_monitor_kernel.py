@@ -91,7 +91,7 @@ class KernelMonitor(Monitor):
             line = line[msg_begin:].strip()[:128]
 
             try:
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])  # a faster .shape[0]
                 if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))

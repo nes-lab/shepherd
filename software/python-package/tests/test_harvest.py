@@ -83,7 +83,7 @@ def test_harvester_fn(tmp_path: Path) -> None:
     run_harvester(cfg)
 
     with h5py.File(path, "r+") as hf:
-        n_samples = hf["data"]["time"].shape[0]
+        n_samples = len(hf["data"]["time"])
         assert 900_000 < n_samples <= 1_100_000
         assert hf["data"]["time"][0] == time_start * 10**9
         # test for equidistant timestamps
@@ -113,7 +113,7 @@ def test_harvester_var_samplerates(tmp_path: Path, samplerate: int) -> None:
     run_harvester(cfg)
 
     with h5py.File(path, "r+") as hf:
-        n_samples = hf["data"]["time"].shape[0] * 100_000 // samplerate
+        n_samples = len(hf["data"]["time"]) * 100_000 // samplerate
         assert 900_000 < n_samples <= 1_100_000
         assert hf["data"]["time"][0] == time_start * 10**9
         # test for equidistant timestamps
@@ -164,7 +164,7 @@ def test_harvester_var_compressions(tmp_path: Path, compression: Compression) ->
     run_harvester(cfg)
 
     with h5py.File(path, "r+") as hf:
-        n_samples = hf["data"]["time"].shape[0]
+        n_samples = len(hf["data"]["time"])
         assert 900_000 < n_samples <= 1_100_000
         assert hf["data"]["time"][0] == time_start * 10**9
         # test for equidistant timestamps

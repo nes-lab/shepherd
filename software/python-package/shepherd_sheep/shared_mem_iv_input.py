@@ -182,44 +182,50 @@ class SharedMemIVInput:
     def can_fit_new_chunk(self) -> bool:
         return self.get_size_available() >= self.n_samples_per_chunk
 
-    def write(
+    def write_iv(
         self,
-        data: IVTrace,
+        data: IVTrace | np.ndarray,
         cal: CalibrationSeries | None,
         *,
         verbose: bool = False,
     ) -> bool:
-        if len(data) > self.get_size_available():
+        len_data = len(data)
+        if len_data > self.get_size_available():
             return False  # no available space
         ts_start = time.time() if verbose else None
         if self.index_next is None:
             self.index_next = 0
-        # TODO: This part could be optimized further - write a benchmark
-        # transform raw ADC data to SI-Units -> the virtual-source-emulator in PRU expects uV and nV
-        if cal:
+
+        if isinstance(data, IVTrace):
+            # transform raw ADC data to SI-Units
+            # -> the virtual-source-emulator in PRU expects uV and nV
+            iv_data = np.empty((len_data, 2), dtype=data.voltage.dtype)
             # option to disable scaling here if already done (performance improvement)
-            data.voltage = cal.voltage.raw_to_si(data.voltage).astype(np.uint32)
-            data.current = cal.current.raw_to_si(data.current).astype(np.uint32)
-        # interweave data (voltage | current in parallel)
-        # TODO: optimize with memory-view .from_buffer()?
-        iv_data = np.empty((2 * len(data),), dtype=data.voltage.dtype)
-        iv_data[0::2] = data.voltage[: len(data)]
-        iv_data[1::2] = data.current[: len(data)]
+            if cal:
+                iv_data[:, 0] = cal.voltage.raw_to_si(data.voltage).astype(np.uint32)
+                iv_data[:, 1] = cal.current.raw_to_si(data.current).astype(np.uint32)
+            else:
+                # interweave data (voltage | current in parallel)
+                iv_data[:, 0] = data.voltage[:len_data]
+                iv_data[:, 1] = data.current[:len_data]
+        else:
+            # reshape just to be safe - its cheap
+            iv_data = data.reshape((len_data, 2), order="C")
+
         # Seek buffer location in memory and skip header
-        if self.index_next + len(data) <= self.N_SAMPLES:
+        if self.index_next + len_data <= self.N_SAMPLES:
             self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
             self._mm.write(iv_data.tobytes())
         else:
-            cut_position = 2 * (self.N_SAMPLES - self.index_next)
+            cut_position = self.N_SAMPLES - self.index_next
             self._mm.seek(self._offset_samples + self.index_next * self.SIZE_SAMPLE)
             self._mm.write(iv_data[:cut_position].tobytes())
             if len(iv_data[:cut_position]) + len(iv_data[cut_position:]) > len(iv_data):
-                log.error(
-                    "NUMPY specific error %d, %d, %d",
-                    len(iv_data[:cut_position]),
-                    len(iv_data[cut_position:]),
-                    len(iv_data),
+                msg = (
+                    f"NUMPY specific error "
+                    f"{len(iv_data[:cut_position])}, {len(iv_data[cut_position:])}, {len(iv_data)}"
                 )
+                raise ValueError(msg)
             self._mm.seek(self._offset_samples)
             self._mm.write(iv_data[cut_position:].tobytes())
 

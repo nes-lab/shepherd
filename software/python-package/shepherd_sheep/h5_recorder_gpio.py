@@ -91,7 +91,7 @@ class GpioRecorder(Monitor):
                 if len_new < 1:
                     return
                 pos_end = self.position + len_new
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])  # a faster .shape[0]
                 if pos_end >= data_length:
                     data_length += max(self.increment, pos_end - data_length)
                     self.data["time"].resize((data_length,))

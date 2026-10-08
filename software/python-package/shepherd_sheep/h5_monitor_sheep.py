@@ -73,7 +73,7 @@ class SheepMonitor(Monitor):
                 self.event.wait(self.rate_limit_interval)
                 rec = self.queue.get()
                 try:
-                    data_length = self.data["time"].shape[0]
+                    data_length = len(self.data["time"])  # a faster .shape[0]
                     if self.position >= data_length:
                         data_length += self.increment
                         self.data["time"].resize((data_length,))

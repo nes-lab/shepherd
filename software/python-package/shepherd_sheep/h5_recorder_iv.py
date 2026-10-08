@@ -97,7 +97,7 @@ class IVRecorder(Monitor):
                 if isinstance(data.timestamp_ns, int):
                     data.timestamp_ns = self.buffer_timeseries + data.timestamp_ns
                 pos_end = self.position + len_add
-                data_length = self.data["voltage"].shape[0]
+                data_length = len(self.data["voltage"])  # faster .shape[0]
                 if pos_end >= data_length:
                     data_length += self.increment
                     # TODO: faster with direct naming? i.e. self.ds_time
@@ -155,7 +155,7 @@ class IVRecorder(Monitor):
 
                 # add to file
                 data_end_pos = self.position + len_add
-                data_length_h5 = self.data["voltage"].shape[0]
+                data_length_h5 = len(self.data["voltage"])
                 if data_end_pos >= data_length_h5:
                     data_length_h5 += self.increment
                     self.data["voltage"].resize((data_length_h5,))

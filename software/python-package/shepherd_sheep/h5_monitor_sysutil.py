@@ -105,7 +105,7 @@ class SysUtilMonitor(Monitor):
         while not self.event.wait(self.poll_interval):  # rate limiter & exit
             ts_now_ns = int(time.time() * 1e9)
             if ts_now_ns >= self.log_timestamp_ns:
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])  # a faster .shape[0]
                 if self.position >= data_length:
                     data_length += self.increment
                     self.data["time"].resize((data_length,))

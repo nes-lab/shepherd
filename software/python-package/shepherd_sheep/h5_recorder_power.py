@@ -135,7 +135,7 @@ class PowerRecorder(Monitor):
                     data.timestamp_ns = self.buffer_timeseries + data.timestamp_ns
 
                 pos_end = self.position + len_add
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])
 
                 if pos_end >= data_length:
                     data_length += max(self.increment, pos_end - data_length)
@@ -189,7 +189,7 @@ class PowerRecorder(Monitor):
                     len_add = len_red
 
                 pos_end = self.position + len_add
-                data_length = self.data["time"].shape[0]
+                data_length = len(self.data["time"])
 
                 if pos_end >= data_length:
                     data_length += max(self.increment, pos_end - data_length)
