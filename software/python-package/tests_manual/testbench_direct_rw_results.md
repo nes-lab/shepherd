@@ -11,9 +11,59 @@ It's also a playground for new ideas and tracking changes (improvements and regr
 - gzip got a lot faster over the years - overhead is acceptable
   - even loading harvesting traces with gzip6 comes with no mayor penalty
 
-## BBB 2026-09-25
+## BBB 2026-10-02 - trixie with py313
 
-Mayor changes: kernel 6.12.109 & 6.18.52
+```
+RUN with duration 60 s, Compression.null, random False
+        Old F2RAM = 7.204 s, RAM2F = 11.804 s
+        New F2RAM = 6.487 s, RAM2F = 5.882 s, RAM2Fts = 12.807
+        Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.lzf, random False
+        Old F2RAM = 4.004 s, RAM2F = 10.834 s
+        New F2RAM = 3.961 s, RAM2F = 6.006 s, RAM2Fts = 12.351
+        Size f_in = 6.078 MB, f_old = 6.035 MB, f_new = 2.632 MB, f_nts = 6.035 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.gzip1, random False
+        Old F2RAM = 4.835 s, RAM2F = 12.516 s
+        New F2RAM = 4.497 s, RAM2F = 6.650 s, RAM2Fts = 14.004
+        Size f_in = 4.165 MB, f_old = 4.161 MB, f_new = 1.964 MB, f_nts = 4.161 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.gzip6, random False
+        Old F2RAM = 4.956 s, RAM2F = 14.769 s
+        New F2RAM = 4.698 s, RAM2F = 7.760 s, RAM2Fts = 16.297
+        Size f_in = 2.937 MB, f_old = 2.940 MB, f_new = 1.409 MB, f_nts = 2.940 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.null, random True
+        Old F2RAM = 4.042 s, RAM2F = 11.047 s
+        New F2RAM = 6.877 s, RAM2F = 6.514 s, RAM2Fts = 12.976
+        Size f_in = 91.632 MB, f_old = 91.632 MB, f_new = 45.832 MB, f_nts = 91.632 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.lzf, random True
+        Old F2RAM = 4.221 s, RAM2F = 20.971 s
+        New F2RAM = 6.511 s, RAM2F = 16.327 s, RAM2Fts = 22.680
+        Size f_in = 48.613 MB, f_old = 48.570 MB, f_new = 45.167 MB, f_nts = 48.570 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.gzip1, random True
+        Old F2RAM = 5.845 s, RAM2F = 22.304 s
+        New F2RAM = 8.141 s, RAM2F = 16.724 s, RAM2Fts = 23.747
+        Size f_in = 44.844 MB, f_old = 44.840 MB, f_new = 42.643 MB, f_nts = 44.840 MB
+[FileValidation] dataset 'voltage' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+[FileValidation] dataset 'current' has different size (=6000000), compared to time (=0), in 'artiEmu2.h5'
+RUN with duration 60 s, Compression.gzip6, random True
+        Old F2RAM = 5.719 s, RAM2F = 24.729 s
+        New F2RAM = 7.697 s, RAM2F = 17.987 s, RAM2Fts = 26.425
+        Size f_in = 44.062 MB, f_old = 44.065 MB, f_new = 42.534 MB, f_nts = 44.065 MB
+```
+
+
+## BBB 2026-09-25 - kernel 6.12.109 & 6.18.52
 
 ```
 RUN with duration 60 s, Compression.null, random False

@@ -77,6 +77,7 @@ from timeit import timeit
 import numpy as np
 from shepherd_core import Compression
 from shepherd_core.data_models import EnergyDType
+from shepherd_core.data_models import PowerTracing
 from shepherd_core.data_models.base.calibration import CalibrationSeries
 from shepherd_core.logger import log
 from shepherd_sheep.h5_writer import Writer
@@ -154,6 +155,7 @@ def iv_to_file(path: Path, data: list[IVTrace], compression: Compression) -> Non
 
 
 def pw_to_file(path: Path, data: list[IVTrace], compression: Compression) -> None:
+    cfg_pwr = PowerTracing(only_power=True)
     with Writer(
         path,
         mode="emulator",
@@ -161,7 +163,7 @@ def pw_to_file(path: Path, data: list[IVTrace], compression: Compression) -> Non
         verbose=False,
         force_overwrite=True,
         compression=compression,
-        only_power=True,
+        cfg_pwr=cfg_pwr,
     ) as sw:
         sw.store_hostname("Emu")
         for _date in data:
