@@ -26,7 +26,7 @@ from shepherd_core.data_models.task import FirmwareModTask
 from shepherd_core.data_models.task import HarvestTask
 from shepherd_core.data_models.task import ProgrammingTask
 from shepherd_core.data_models.testbed import ProgrammerProtocol
-from shepherd_core.writer import Writer
+from shepherd_core.writer import Writer as CoreWriter
 from shepherd_sheep.cli import cli
 from shepherd_sheep.commons import SAMPLE_INTERVAL_NS
 
@@ -39,7 +39,7 @@ def random_data(length: int) -> np.ndarray:
 @pytest.fixture
 def data_h5(tmp_path: Path) -> Path:
     store_path = tmp_path / "harvest_example.h5"
-    with Writer(
+    with CoreWriter(
         store_path,
         cal_data=CalibrationHarvester(),
         force_overwrite=True,
