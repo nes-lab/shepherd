@@ -34,6 +34,7 @@ class GpioRecorder(Monitor):
             maxshape=(None,),
             chunks=(self.increment,),
             compression=compression,
+            shuffle=True,
         )
         self.data["value"].attrs["unit"] = "n"
         self.data["value"].attrs["description"] = ryaml.dumps(GPIO_LOG_BIT_POSITIONS)
@@ -59,15 +60,7 @@ class GpioRecorder(Monitor):
         extra_arg: int = 0,
     ) -> None:
         self.flush_queue()
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=20 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
+        self.shutdown_thread()
         # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
