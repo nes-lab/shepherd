@@ -42,7 +42,6 @@ class ShepherdHarvester(ShepherdIO):
         log.debug("ShepherdHarvester-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
-            trace_iv=cfg.power_tracing,
             trace_gpio=None,
         )
         self.cfg = cfg
@@ -78,8 +77,7 @@ class ShepherdHarvester(ShepherdIO):
             datatype=cfg.virtual_harvester.get_datatype(),
             window_samples=cfg.virtual_harvester.calc_window_size(for_emu=True),
             cal_data=self.cal_hrv,
-            sample_rate=cfg.power_tracing.samplerate if log_iv else None,
-            only_power=cfg.power_tracing.only_power if log_iv else False,
+            cfg_pwr=cfg.power_tracing if log_iv else None,
             # TODO: enabled options above should raise for ivcurves
             compression=cfg.output_compression,
             force_overwrite=cfg.force_overwrite,
@@ -177,7 +175,7 @@ class ShepherdHarvester(ShepherdIO):
             data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
             if data_iv is not None:
                 prog_bar.update(n=int(10 * data_iv.duration()))
-                if data_iv.timestamp() > ts_end:
+                if data_iv.timestamp_s() > ts_end:
                     log.debug("FINISHED! Out of bound timestamp collected -> begin to exit now")
                     break
                 ts_data_last = time.time()

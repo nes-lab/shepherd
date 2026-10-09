@@ -17,6 +17,7 @@ from shepherd_core.data_models.content.virtual_storage_config_pru import Storage
 from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.task import EmulationTask
 from shepherd_core.data_models.testbed import TargetPort
+from shepherd_core.hrv_format.reader import Reader as HrvReader
 from shepherd_core.reader import Reader as CoreReader
 from tqdm import tqdm
 from typing_extensions import Self
@@ -54,7 +55,6 @@ class ShepherdEmulator(ShepherdIO):
         log.debug("ShepherdEmulator-Init in %s-mode", mode)
         super().__init__(
             mode=mode,
-            trace_iv=cfg.power_tracing,
             trace_gpio=cfg.gpio_tracing,
         )
         self.cfg = cfg
@@ -66,18 +66,16 @@ class ShepherdEmulator(ShepherdIO):
         if not cfg.input_path.exists():
             msg = f"Input-File does not exist ({cfg.input_path})"
             raise FileNotFoundError(msg)
-        self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
+        if cfg.input_path.suffix in HrvReader.SUFFIX_VALID:
+            self.reader = HrvReader(cfg.input_path, verbose=get_verbosity())
+        else:
+            self.reader = CoreReader(cfg.input_path, verbose=get_verbosity())
         self.stack.enter_context(self.reader)
         if self.reader.get_mode() != "harvester":
             log.error("Input-File has wrong mode (%s != harvester)", self.reader.get_mode())
 
         self.samples_per_segment = self.reader.CHUNK_SAMPLES_N
         cal_inp = self.reader.get_calibration_data()
-        if cal_inp is None:
-            cal_inp = CalibrationSeries()
-            log.warning(
-                "No calibration data from emulation-input (harvest) provided - using defaults",
-            )
 
         # PRU expects values in SI: uV and nV
         if (
@@ -120,7 +118,7 @@ class ShepherdEmulator(ShepherdIO):
         else:
             self.start_time = round(cfg.time_start.timestamp())
 
-        # TODO: write gpio-mask
+        # NOTE: gpio-mask is written to PRU in SharedMemGPIOOutput
 
         trace_iv = isinstance(cfg.power_tracing, PowerTracing)
         trace_cap = trace_iv and cfg.power_tracing.intermediate_voltage
@@ -168,11 +166,11 @@ class ShepherdEmulator(ShepherdIO):
                 cal_data=CalibrationSeries.from_cal(
                     cal_file, emu_port_a=(cfg.pwr_port == TargetPort.A)
                 ),
-                sample_rate=cfg.power_tracing.samplerate if trace_iv else None,
-                only_power=cfg.power_tracing.only_power if trace_iv else False,
+                cfg_pwr=cfg.power_tracing if trace_iv else None,
                 compression=cfg.output_compression,
                 verbose=get_verbosity(),
             )
+            self.writer.activate_iv_time_limits(int(1e9 * self.start_time))
 
         # hard-wire pin-direction until they are configurable
         self._io: TargetIO | None = TargetIO()
@@ -214,13 +212,15 @@ class ShepherdEmulator(ShepherdIO):
             unit="n",
             leave=False,
         )
-        for _, dsv, dsc in self.reader.read(
+        for input_data in self.reader.read(
             end_n=self.buffer_segment_count,
             is_raw=True,
             omit_timestamps=True,
         ):
-            if not self.shared_mem.iv_inp.write(
-                data=IVTrace(voltage=dsv, current=dsc),
+            if not self.shared_mem.iv_inp.write_iv(
+                data=IVTrace(voltage=input_data[1], current=input_data[2])
+                if isinstance(input_data, tuple)
+                else input_data,
                 cal=self.cal_pru,
                 verbose=False,
             ):
@@ -236,7 +236,6 @@ class ShepherdEmulator(ShepherdIO):
         extra_arg: int = 0,
     ) -> None:
         self.set_power_io_level_converter(state=False)
-        time.sleep(2)  # TODO: experimental - for releasing uart-backpressure
         self.stack.close()
         super().__exit__()
 
@@ -295,7 +294,7 @@ class ShepherdEmulator(ShepherdIO):
         ts_data_last = self.start_time
         buffer_segment_last = math.floor(duration_s / self.segment_period_s)
         leave_main_loop = False
-        for _, dsv, dsc in self.reader.read(
+        for input_data in self.reader.read(
             start_n=self.buffer_segment_count,
             end_n=buffer_segment_last,
             is_raw=True,
@@ -306,8 +305,11 @@ class ShepherdEmulator(ShepherdIO):
             if leave_main_loop:
                 break
 
-            while not self.shared_mem.iv_inp.write(
-                data=IVTrace(voltage=dsv, current=dsc),
+            # if isinstance(tvi_data, tuple):
+            while not self.shared_mem.iv_inp.write_iv(
+                data=IVTrace(voltage=input_data[1], current=input_data[2])
+                if isinstance(input_data, tuple)
+                else input_data,
                 cal=self.cal_pru,
                 verbose=self.verbose_extra,
             ):
@@ -325,7 +327,7 @@ class ShepherdEmulator(ShepherdIO):
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
                     # TODO: this can't work - with the limiting tracers
-                    if data_iv.timestamp() >= ts_end:
+                    if data_iv.timestamp_s() >= ts_end:
                         log.debug("Out of bound timestamp collected -> begin to exit now")
                         leave_main_loop = True
                         break
@@ -375,7 +377,7 @@ class ShepherdEmulator(ShepherdIO):
                 data_iv = self.shared_mem.iv_out.request_chunk(verbose=self.verbose_extra)
                 if data_iv:
                     prog_bar.update(n=int(10 * data_iv.duration()))
-                    if data_iv.timestamp() > ts_end:
+                    if data_iv.timestamp_s() > ts_end:
                         log.debug("Out of bound timestamp collected -> will discard")
                         data_iv = None
                 if data_iv:

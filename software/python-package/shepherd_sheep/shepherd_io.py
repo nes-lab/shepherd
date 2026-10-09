@@ -16,7 +16,6 @@ from shepherd_core.data_models.content.virtual_harvester_config_pru import Harve
 from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.experiment import GpioTracing
-from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 from shepherd_core.reader import Reader
 from typing_extensions import Self
@@ -98,7 +97,6 @@ class ShepherdIO:
     def __init__(
         self,
         mode: str,
-        trace_iv: PowerTracing | None,
         trace_gpio: GpioTracing | None,
     ) -> None:
         """Initializes relevant variables.
@@ -124,7 +122,6 @@ class ShepherdIO:
             self.component = "emulator"
         self.gpios = {}
 
-        self.trace_iv = trace_iv
         self.trace_gpio = trace_gpio
 
         # placeholders
@@ -269,7 +266,6 @@ class ShepherdIO:
         start_time = self.start_time if hasattr(self, "start_time") else time.time()
 
         self.shared_mem = SharedMemory(
-            self.trace_iv,
             self.trace_gpio,
             start_timestamp_ns=int(1e9 * start_time),
             n_samples_per_segment=self.samples_per_segment,

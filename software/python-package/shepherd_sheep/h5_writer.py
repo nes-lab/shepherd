@@ -6,10 +6,12 @@ HDF5 files.
 
 """
 
+from datetime import timedelta
 from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
 
+from shepherd_core.data_models.experiment import PowerTracing
 from typing_extensions import Self
 
 from . import commons
@@ -71,28 +73,35 @@ class Writer(CoreWriter):
         window_samples: int | None = None,
         cal_data: CalSeries | CalEmu | CalHrv | None = None,
         compression: Compression = Compression.default,
-        sample_rate: int | None = None,
+        cfg_pwr: PowerTracing | None = None,
         *,
         modify_existing: bool = False,
         force_overwrite: bool = False,
-        only_power: bool = False,
         verbose: bool | None = True,
     ) -> None:
         # hopefully overwrite defaults from Reader
         self.samplerate_sps: int = 10**9 // commons.SAMPLE_INTERVAL_NS
         self.reduce: bool = False
         self.reduction_factor: int = 1
-        if isinstance(sample_rate, int):
-            if sample_rate not in self.RATES_SUPPORTED:
+        if cfg_pwr is not None:
+            if cfg_pwr.samplerate not in self.RATES_SUPPORTED:
                 raise ValueError(
                     "Data-rate for Power must be in [Hz, Samples-per-second]: %s",
                     self.RATES_SUPPORTED,
                 )
-            self.reduce: bool = sample_rate != self.samplerate_sps
-            self.reduction_factor: int = self.samplerate_sps // sample_rate
-            self.samplerate_sps = sample_rate
+            self.reduce: bool = cfg_pwr.samplerate != self.samplerate_sps
+            self.reduction_factor: int = self.samplerate_sps // cfg_pwr.samplerate
+            self.samplerate_sps = cfg_pwr.samplerate
         if self.reduce:
             log.info("Activated custom sample-rate: %d", self.samplerate_sps)
+
+        self.cfg_pwr = cfg_pwr
+        self.only_power = cfg_pwr.only_power if cfg_pwr is not None else False
+
+        # config for timestamp-limiting (previous tracers in shared mem)
+        self.iv_ts_limited: bool = False
+        self.iv_ts_start: int | None = None
+        self.iv_ts_stop: int | None = None
 
         # TODO: derive verbose-state
         super().__init__(
@@ -107,7 +116,6 @@ class Writer(CoreWriter):
             force_overwrite=force_overwrite,
             verbose=verbose,
         )
-        self.only_power = only_power
 
         self.grp_data: h5py.Group = self.h5file["data"]
 
@@ -177,6 +185,30 @@ class Writer(CoreWriter):
         log.info("Wrote result to: %s", self.file_path.as_posix())
         super().__exit__()
 
+    @staticmethod
+    def timedelta_to_ns(delta: timedelta | None, default_s: int = 0) -> int:
+        if isinstance(delta, timedelta):
+            return int(delta.total_seconds() * 10**9)
+        return int(timedelta(seconds=default_s).total_seconds() * 10**9)
+
+    def activate_iv_time_limits(self, ts_xp_start_ns: int) -> None:
+        if self.cfg_pwr is None:
+            return
+
+        self.iv_ts_start = ts_xp_start_ns + self.timedelta_to_ns(self.cfg_pwr.delay)
+        self.iv_ts_stop = self.iv_ts_start + self.timedelta_to_ns(
+            self.cfg_pwr.duration, default_s=10**6
+        )
+        # ⤷ duration defaults to ~ 100 days (10**6 seconds)
+        self.iv_ts_limited = True
+        log.debug(
+            "[%s] Time-boundaries set to [%.2f, %.2f] => %.0f s",
+            type(self).__name__,
+            self.iv_ts_start / 1e9,
+            self.iv_ts_stop / 1e9,
+            (self.iv_ts_stop - self.iv_ts_start) / 1e9,
+        )
+
     def write_iv_buffer(self, data: IVTrace) -> None:
         """Writes data from buffer to file-write-queue.
 
@@ -185,6 +217,15 @@ class Writer(CoreWriter):
         Args:
             data: buffer-segment containing IV data
         """
+        if self.iv_ts_limited:
+            ts_chunk = data.timestamp_ns()
+            if (ts_chunk > self.iv_ts_stop) or (ts_chunk < self.iv_ts_start):
+                log.debug(
+                    "[%s] Discarded data - out of time-boundary (t_pru = %d).",
+                    type(self).__name__,
+                    ts_chunk,
+                )
+                return
         self.rec_iv.write(data)  # dynamically power- or iv-recorder
 
     def write_gpio_buffer(self, data: GPIOTrace) -> None:

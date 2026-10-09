@@ -12,7 +12,6 @@ from shepherd_core.data_models.content.virtual_harvester_config_pru import Harve
 from shepherd_core.data_models.content.virtual_source_config_pru import ConverterPRUConfig
 from shepherd_core.data_models.content.virtual_storage_config_pru import StoragePRUConfig
 from shepherd_core.data_models.experiment import GpioTracing
-from shepherd_core.data_models.experiment import PowerTracing
 from shepherd_core.data_models.testbed import TargetPort
 from typing_extensions import Self
 
@@ -21,6 +20,7 @@ from . import sysfs_interface
 from .eeprom import EEPROM
 from .hardware_target_io import TargetIO
 from .logger import log
+from .shared_mem_iv_input import IVTrace  # noqa: TC001
 from .shepherd_io import ShepherdIO
 from .shepherd_io import ShepherdIOError
 from .shepherd_io import ShepherdRxError
@@ -37,7 +37,7 @@ class ShepherdDebug(ShepherdIO):
     """
 
     def __init__(self, use_io: bool = True) -> None:
-        super().__init__("debug", trace_iv=PowerTracing(), trace_gpio=GpioTracing())
+        super().__init__("debug", trace_gpio=GpioTracing())
 
         self._io: TargetIO | None = TargetIO() if use_io else None
 
@@ -421,12 +421,12 @@ class ShepherdDebug(ShepherdIO):
             self.shared_mem.iv_out.request_chunk()
             time.sleep(self.segment_period_s)
         for _ in range(length_n_buffers):  # get Data
-            data_iv_ = None
+            data_iv_: IVTrace | None = None
             while data_iv_ is None:
                 data_iv_ = self.shared_mem.iv_out.request_chunk()
                 time.sleep(self.segment_period_s / 2)
-            c_array = np.hstack((c_array, data_iv_.current))
-            v_array = np.hstack((v_array, data_iv_.voltage))
+            c_array = np.hstack((c_array, data_iv_.ds_current))
+            v_array = np.hstack((v_array, data_iv_.ds_voltage))
         super().reinitialize_prus()
         base_array = np.vstack((c_array, v_array))
         return msgpack.packb(

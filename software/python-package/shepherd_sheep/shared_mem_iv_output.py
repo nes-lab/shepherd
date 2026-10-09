@@ -1,11 +1,9 @@
 import mmap
 import struct
 import time
-from datetime import timedelta
 from types import TracebackType
 
 import numpy as np
-from shepherd_core.data_models.experiment import PowerTracing
 from typing_extensions import Self
 
 from . import commons
@@ -35,7 +33,7 @@ class SharedMemIVOutput:
     ST_U32 = struct.Struct("=L")
     ST_U64 = struct.Struct("=Q")
 
-    def __init__(self, mem_map: mmap, cfg: PowerTracing | None, ts_xp_start_ns: int) -> None:
+    def __init__(self, mem_map: mmap, ts_xp_start_ns: int) -> None:
         self._mm: mmap = mem_map
         self.size_by_sys: int = sysfs.get_trace_iv_out_size()
         self.address: int = sysfs.get_trace_iv_out_address()
@@ -59,9 +57,6 @@ class SharedMemIVOutput:
                 f" - increase chunk-size"
             )
             raise ValueError(msg)
-
-        self.ts_start: int | None = None
-        self.ts_stop: int | None = None
 
         self.index_next: int = 0
 
@@ -92,25 +87,6 @@ class SharedMemIVOutput:
         self.fill_last: float = 0
 
         self.xp_start: float = ts_xp_start_ns * 1e-9
-
-        self.ts_start: int | None = None
-        self.ts_stop: int | None = None
-        self.ts_set: bool = False
-
-        if cfg is not None:
-            self.ts_set = True
-            self.ts_start = ts_xp_start_ns + self.timedelta_to_ns(cfg.delay)
-            self.ts_stop = self.ts_start + self.timedelta_to_ns(cfg.duration, default_s=10**6)
-            # ⤷ duration defaults to ~ 100 days (10**6 seconds)
-            log.debug(
-                "[%s] Tracer time-boundaries set to [%.2f, %.2f] => %.0f s",
-                type(self).__name__,
-                self.ts_start / 1e9,
-                self.ts_stop / 1e9,
-                (self.ts_stop - self.ts_start) / 1e9,
-            )
-        else:
-            log.debug("[%s] Tracer deactivated", type(self).__name__)
 
         self.timestamp_last: int = 0
 
@@ -166,12 +142,6 @@ class SharedMemIVOutput:
             )
             raise BufferError(msg)
 
-    @staticmethod
-    def timedelta_to_ns(delta: timedelta | None, default_s: int = 0) -> int:
-        if isinstance(delta, timedelta):
-            return int(delta.total_seconds() * 10**9)
-        return int(timedelta(seconds=default_s).total_seconds() * 10**9)
-
     def get_size_available(self) -> int:
         # determine current state
         # TODO: add mode to wait blocking?
@@ -208,8 +178,8 @@ class SharedMemIVOutput:
             )
 
         chunk_data = self.chunks[self.index_next // self.N_SAMPLES_PER_CHUNK]
-        chunk_ts_start = int(chunk_data.timestamp_ns[0])
-        chunk_ts_end = int(chunk_data.timestamp_ns[-1])
+        chunk_ts_start = int(chunk_data.ds_time[0])
+        chunk_ts_end = int(chunk_data.ds_time[-1])
 
         if self.timestamp_last > 0:
             diff_ms = (chunk_ts_start - self.timestamp_last) // 10**6
@@ -233,12 +203,10 @@ class SharedMemIVOutput:
         self.timestamp_last = chunk_ts_start
 
         # prepare & fetch data
-        if not self.ts_set:  # recording not wanted
-            chunk_data = None
-        elif (chunk_ts_start > self.ts_stop) or (chunk_ts_end < self.ts_start):
+        if chunk_ts_end < self.xp_start:
             chunk_data = None
             log.debug(
-                "[%s] Discarded data - out of time-boundary (t_pru = %d).",
+                "[%s] Discarded data - TS before start of experiment (t_pru = %d).",
                 type(self).__name__,
                 chunk_ts_start,
             )

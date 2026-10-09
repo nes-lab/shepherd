@@ -29,22 +29,29 @@ class IVTrace:
         current: np.ndarray,
         timestamp_ns: np.ndarray | int | None = None,
     ) -> None:
-        self.timestamp_ns = timestamp_ns
-        self.voltage = voltage
-        self.current = current
+        self.ds_time = timestamp_ns
+        self.ds_voltage = voltage
+        self.ds_current = current
 
     def __len__(self) -> int:
-        if isinstance(self.timestamp_ns, int | None):
-            return min(self.voltage.size, self.current.size)
-        if isinstance(self.timestamp_ns, np.ndarray):
-            return min(self.voltage.size, self.current.size, self.timestamp_ns.size)
+        if isinstance(self.ds_time, int | None):
+            return min(self.ds_voltage.size, self.ds_current.size)
+        if isinstance(self.ds_time, np.ndarray):
+            return min(self.ds_voltage.size, self.ds_current.size, self.ds_time.size)
         raise TypeError("Got unexpected timestamp type")
 
-    def timestamp(self) -> float:
-        if isinstance(self.timestamp_ns, int):
-            return self.timestamp_ns / 1e9
-        if isinstance(self.timestamp_ns, np.ndarray):
-            return self.timestamp_ns.item(0) / 1e9
+    def timestamp_s(self) -> float:
+        if isinstance(self.ds_time, int):
+            return self.ds_time / 1e9
+        if isinstance(self.ds_time, np.ndarray):
+            return self.ds_time.item(0) / 1e9
+        raise TypeError("Got unexpected timestamp type")
+
+    def timestamp_ns(self) -> int:
+        if isinstance(self.ds_time, int):
+            return self.ds_time
+        if isinstance(self.ds_time, np.ndarray):
+            return int(self.ds_time.item(0))
         raise TypeError("Got unexpected timestamp type")
 
     def duration(self) -> float:
@@ -199,15 +206,15 @@ class SharedMemIVInput:
         if isinstance(data, IVTrace):
             # transform raw ADC data to SI-Units
             # -> the virtual-source-emulator in PRU expects uV and nV
-            iv_data = np.empty((len_data, 2), dtype=data.voltage.dtype)
+            iv_data = np.empty((len_data, 2), dtype=data.ds_voltage.dtype)
             # option to disable scaling here if already done (performance improvement)
             if cal:
-                iv_data[:, 0] = cal.voltage.raw_to_si(data.voltage).astype(np.uint32)
-                iv_data[:, 1] = cal.current.raw_to_si(data.current).astype(np.uint32)
+                iv_data[:, 0] = cal.voltage.raw_to_si(data.ds_voltage).astype(np.uint32)
+                iv_data[:, 1] = cal.current.raw_to_si(data.ds_current).astype(np.uint32)
             else:
                 # interweave data (voltage | current in parallel)
-                iv_data[:, 0] = data.voltage[:len_data]
-                iv_data[:, 1] = data.current[:len_data]
+                iv_data[:, 0] = data.ds_voltage[:len_data]
+                iv_data[:, 1] = data.ds_current[:len_data]
         else:
             # reshape just to be safe - its cheap
             iv_data = data.reshape((len_data, 2), order="C")
