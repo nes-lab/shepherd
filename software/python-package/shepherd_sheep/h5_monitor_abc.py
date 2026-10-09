@@ -64,6 +64,17 @@ class Monitor(ABC):
             len(self.data["time"]),
         )
 
+    def shutdown_thread(self) -> None:
+        self.event.set()
+        if self.thread is not None:
+            self.thread.join(timeout=20 * self.poll_interval)
+            if self.thread.is_alive():
+                log.warning(
+                    "[%s] thread failed to end itself - will delete that instance",
+                    type(self).__name__,
+                )
+            self.thread = None
+
     @abstractmethod
     def thread_fn(self) -> None:
         pass
@@ -75,11 +86,11 @@ class Monitor(ABC):
     def flush_queue(self) -> bool:
         if not hasattr(self, "queue"):
             return True
-        if len(self.queue) > 20:
+        if self.queue.qsize() > 20:
             log.info(
                 "[%s] flushing %d queue-entries to disk (backpressure)",
                 type(self).__name__,
-                len(self.queue),
+                self.queue.qsize(),
             )
         while not self.queue.empty():
             if self.thread is None or not self.thread.is_alive():

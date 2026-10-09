@@ -62,15 +62,7 @@ class PHC2SYSLogMonitor(Monitor):
         tb: TracebackType | None = None,
         extra_arg: int = 0,
     ) -> None:
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=4 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
+        self.shutdown_thread()
         self.process.terminate()
         self.data["message"].resize((self.position,))
         super().__exit__()

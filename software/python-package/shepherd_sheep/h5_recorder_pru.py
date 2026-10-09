@@ -67,18 +67,8 @@ class PruRecorder(Monitor):
         extra_arg: int = 0,
     ) -> None:
         self.flush_queue()
-        self.event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=20 * self.poll_interval)
-            if self.thread.is_alive():
-                log.warning(
-                    "[%s] thread failed to end itself - will delete that instance",
-                    type(self).__name__,
-                )
-            self.thread = None
-        if hasattr(self, "queue"):
-            # py313 has shutdown for queue
-            pass
+        self.shutdown_thread()
+        # py313 has shutdown for queue
         if self.dropped_data:
             log.error("[%s] dropped data due to backpressure", type(self).__name__)
         self.data["values"].resize((self.position, 3))
