@@ -121,21 +121,20 @@ class SharedMemGPIOOutput:
         else:
             log.debug("[%s] Tracer deactivated", type(self).__name__)
 
-        # gpio masking, configured for cape v2.4
-
-        mask_gpio = 0
+        # gpio masking, dynamically configured for cape (v2.4 or v2.5)
         if cfg is not None:
+            mask_gpio = 0
             for gpio in cfg.gpios:
                 pin_num = target_port_to_cape_mapping.get(gpio)
                 if pin_num is not None:
                     mask_gpio |= 2**pin_num
-        sysfs.wait_for_state("idle", 4)
-        sysfs.write_gpio_tracer_mask(mask_gpio)
-        log.debug(
-            "[%s] Tracer GPIO mask = %s (max is 0x03FF for cape v2.4, 0x3FFF for v2.5)",
-            type(self).__name__,
-            f"0x{mask_gpio:X}",
-        )  # TODO: add unittest!
+            sysfs.wait_for_state("idle", 4)
+            sysfs.write_gpio_tracer_mask(mask_gpio)
+            log.debug(
+                "[%s] Tracer GPIO mask = %s (max is 0x03FF for cape v2.4, 0x3FFF for v2.5)",
+                type(self).__name__,
+                f"0x{mask_gpio:X}",
+            )  # TODO: add unittest!
 
     def __enter__(self) -> Self:
         """Clear section and set Canary."""
